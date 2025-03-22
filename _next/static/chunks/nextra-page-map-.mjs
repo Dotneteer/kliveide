@@ -247,6 +247,12 @@ export const pageMap = [{
   children: [{
     data: z80_assembly_meta
   }, {
+    name: "directives",
+    route: "/z80-assembly/directives",
+    frontMatter: {
+      "sidebarTitle": "Directives"
+    }
+  }, {
     name: "expressions",
     route: "/z80-assembly/expressions",
     frontMatter: {
