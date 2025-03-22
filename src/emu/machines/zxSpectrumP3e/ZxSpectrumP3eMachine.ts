@@ -329,6 +329,22 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  getRomFlags(): boolean[] {
+    return [
+      this.memory.bankData[0].isReadOnly,
+      this.memory.bankData[1].isReadOnly,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ];
+  }
+
+  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */

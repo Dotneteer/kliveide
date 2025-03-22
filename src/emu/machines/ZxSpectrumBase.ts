@@ -570,4 +570,9 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * The number of consequtive frames after which the UI should be refreshed
    */
   readonly uiFrameFrequency = 1;
+
+  /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  abstract getRomFlags(): boolean[];
 }

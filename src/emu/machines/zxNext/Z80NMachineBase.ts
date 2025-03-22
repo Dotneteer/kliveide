@@ -348,6 +348,11 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   abstract getCurrentPartitionLabels(): string[];
 
   /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  abstract getRomFlags(): boolean[];
+
+  /**
    * Indicates if the machine's operating system is initialized
    */
   abstract get isOsInitialized(): boolean;
