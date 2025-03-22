@@ -11,7 +11,11 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction, resetCompileAction } from "@common/state/actions";
+import {
+  incBreakpointsVersionAction,
+  incEditorVersionAction,
+  resetCompileAction
+} from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -21,6 +25,7 @@ import { createEmuApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
 import { Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { useMainApi } from "@renderer/core/MainApi";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 let monacoInitialized = false;
 
@@ -219,17 +224,23 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       const settings = (await mainApi.getUserSettings())?.shortcuts ?? {};
       if (settings.stepInto) {
         bindKey(settings.stepInto, async () => {
-          await emuApi.issueMachineCommand("stepInto");
+          if (!compilation.inProgress && execState === MachineControllerState.Paused) {
+            await emuApi.issueMachineCommand("stepInto");
+          }
         });
       }
       if (settings.stepOver) {
         bindKey(settings.stepOver, async () => {
-          await emuApi.issueMachineCommand("stepOver");
+          if (!compilation.inProgress && execState === MachineControllerState.Paused) {
+            await emuApi.issueMachineCommand("stepOver");
+          }
         });
       }
       if (settings.stepOut) {
         bindKey(settings.stepOut, async () => {
-          await emuApi.issueMachineCommand("stepOut");
+          if (!compilation.inProgress && execState === MachineControllerState.Paused) {
+            await emuApi.issueMachineCommand("stepOut");
+          }
         });
       }
 
