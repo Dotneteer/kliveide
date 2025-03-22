@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { toHexa4 } from "../services/ide-commands";
@@ -39,7 +39,7 @@ export const BreakpointIndicator = ({
   const cbkRef = useTooltipRef();
   const ref = useTooltipRef();
   const [pointed, setPointed] = useState(false);
-  const [isDisabled] = useState(disabled);
+  const [isDisabled, setIsDisabled] = useState(disabled);
 
   // --- Calculate tooltip text
   let addrLabel =
@@ -98,6 +98,10 @@ export const BreakpointIndicator = ({
     fill = "--color-breakpoint-disabled";
   }
 
+  useEffect(() => {
+    setIsDisabled(disabled);
+  }, [disabled]);
+
   // --- Handle adding/removing a breakpoint
   const handleRemove = async () => {
     let command =
@@ -132,7 +136,7 @@ export const BreakpointIndicator = ({
     >
       {showType && (
         <div ref={cbkRef} style={{ zoom: 0.8 }}>
-          <Checkbox initialValue={!isDisabled} right={true} onChange={enableOrDisable} />
+          <Checkbox key={address} initialValue={!isDisabled} right={true} onChange={enableOrDisable} />
           <TooltipFactory
             refElement={cbkRef.current}
             placement="right"

@@ -14,6 +14,9 @@ import { toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import classnames from "classnames";
+import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
+import { useAppServices } from "../services/AppServicesProvider";
 
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
@@ -38,6 +41,7 @@ const BreakpointsPanel = () => {
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
     const bpState = await emuApi.listBreakpoints();
+    console.log("bps", bpState.breakpoints);
     const cpuState = await emuApi.getCpuState();
     setLastCpuState(cpuState);
     pcValue.current = cpuState.pc;
@@ -81,7 +85,7 @@ const BreakpointsPanel = () => {
     }
 
     // --- Store the breakpoint info
-    setBps(bpState.breakpoints);
+    setBps(bpState.breakpoints.map((bp) => ({ ...bp })));
   };
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
@@ -135,6 +139,7 @@ const BreakpointsPanel = () => {
                 isCurrent = !!(lastCpuState?.lastIoWritePort === addr);
               }
             }
+
             return (
               <div className={styles.breakpoint}>
                 <LabelSeparator width={4} />
@@ -158,7 +163,7 @@ const BreakpointsPanel = () => {
                 {bp.resolvedAddress !== undefined && (
                   <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={80} />
                 )}
-                <Label text={addrKey} width={addr !== undefined ? 40 : undefined} />
+                <BreakpointAddressLabel addrKey={addrKey} breakpoint={bp} />
                 {bp.address !== undefined && <Label text="" width={40} />}
                 {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
                 {(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) &&
@@ -177,6 +182,41 @@ const BreakpointsPanel = () => {
         />
       )}
     </div>
+  );
+};
+
+type BreakpointAddressLabelProps = {
+  addrKey: string;
+  breakpoint: BreakpointInfo;
+};
+
+const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelProps) => {
+  const { ideCommandsService } = useAppServices();
+  const navRef = useTooltipRef();
+  const navigable = breakpoint.resource !== undefined && breakpoint.line !== undefined;
+
+  return (
+    <span
+      ref={navRef}
+      className={classnames({ [styles.navigable]: navigable })}
+      onClick={async () => {
+        const command = `nav "${breakpoint.resource}" ${breakpoint.line}`;
+        console.log(command);
+        await ideCommandsService.executeCommand(command);
+      }}
+    >
+      <Label text={addrKey} width={breakpoint.address !== undefined ? 40 : undefined} />
+      {navigable && (
+        <TooltipFactory
+          refElement={navRef.current}
+          placement="bottom"
+          offsetX={0}
+          offsetY={40}
+          showDelay={100}
+          content="Click to navigate to the source code"
+        />
+      )}
+    </span>
   );
 };
 
