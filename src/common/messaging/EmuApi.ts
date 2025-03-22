@@ -172,6 +172,10 @@ class EmuApiImpl {
   ): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async getRomFlags(): Promise<boolean[]> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 // --- The response with the CPU state information

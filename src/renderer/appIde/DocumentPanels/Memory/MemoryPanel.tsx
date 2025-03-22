@@ -23,6 +23,8 @@ import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
 import { incProjectFileVersionAction, setWorkspaceSettingsAction } from "@common/state/actions";
 import { MEMORY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
+import { SetMemoryDialog } from "@renderer/appIde/dialogs/SetMemoryDialog";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 
 type BankedMemoryPanelViewState = {
   topIndex?: number;
@@ -46,6 +48,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
   const emuApi = useEmuApi();
   const mainApi = useMainApi();
+  const { ideCommandsService } = useAppServices();
 
   // --- Get the machine information
   const machineState = useSelector((s) => s.emulatorState?.machineState);
@@ -96,6 +99,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const pointedRegs = useRef<Record<number, string>>({});
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
+  const [romFlags, setRomFlags] = useState<boolean[]>([]);
 
   // --- We need to use a reference to autorefresh, as we pass this info to another trhead
   const cachedRefreshState = useRef<CachedRefreshState>({
@@ -103,6 +107,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     decimalView,
     currentSegment
   });
+
+  const [isMemoryDialogOpen, setMemoryDialogOpen] = useState(false);
+  const [addressToEdit, setAddressToEdit] = useState<number>(null);
 
   // --- Respond to machineId changes
   useEffect(() => {
@@ -112,6 +119,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     setBanksView(romPagesValue > 0 || ramBankValue > 0);
     setDisplayBankMatrix(ramBankValue > 8 || romPagesValue > 8);
     (async () => {
+      setRomFlags(await emuApi.getRomFlags());
       const options: DropdownOption[] = [];
       const labels = await emuApi.getPartitionLabels();
       setPartitionLabels(labels);
@@ -321,8 +329,30 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     );
   };
 
+  const editMemoryContent = (address: number) => {
+    setMemoryDialogOpen(true);
+    setAddressToEdit(address);
+  };
+
+  // --- Rename dialog box to display
+  const setMemoryDialog = isMemoryDialogOpen && (
+    <SetMemoryDialog
+      address={addressToEdit}
+      currentValue={memory.current[addressToEdit]}
+      decimal={decimalView}
+      onSetMemory={async (newValue: string, sizeOption: string, bigEndian: boolean) => {
+        const command = `setmem ${addressToEdit} ${newValue.replace(" ", "")} ${sizeOption} ${bigEndian ? "-be" : ""}`;
+        await ideCommandsService.executeCommand(command);
+      }}
+      onClose={() => {
+        setMemoryDialogOpen(false);
+      }}
+    />
+  );
+
   return (
     <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+      {setMemoryDialog}
       <PanelHeader>
         <OptionsBar />
       </PanelHeader>
@@ -402,6 +432,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             const partitionLabel = isFullView
               ? mem64kLabels[memoryItems[idx] >> 13]
               : partitionLabels?.[currentSegment];
+
+            const section1Address = memoryItems[idx];
+            const section2Address = memoryItems[idx] + 0x08;
+            const section1IsRom = romFlags[(section1Address >> 13) & 0x07];
+            const section2IsRom = romFlags[(section2Address >> 13) & 0x07];
+
             return (
               <HStack
                 backgroundColor={idx % 2 === 0 ? "--bgcolor-disass-even-row" : "transparent"}
@@ -410,23 +446,27 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
                 <DumpSection
                   showPartitions={bankLabel}
                   partitionLabel={partitionLabel}
-                  address={memoryItems[idx]}
+                  address={section1Address}
                   memory={memory.current}
                   charDump={charDump}
                   pointedInfo={pointedRegs.current}
                   decimalView={decimalView}
                   lastJumpAddress={lastJumpAddress}
+                  isRom={section1IsRom}
+                  editClicked={editMemoryContent}
                 />
                 {twoColumns && (
                   <DumpSection
                     showPartitions={bankLabel}
                     partitionLabel={partitionLabel}
-                    address={memoryItems[idx] + 0x08}
+                    address={section2Address}
                     memory={memory.current}
                     pointedInfo={pointedRegs.current}
                     charDump={charDump}
                     decimalView={decimalView}
                     lastJumpAddress={lastJumpAddress}
+                    isRom={section2IsRom}
+                    editClicked={editMemoryContent}
                   />
                 )}
               </HStack>

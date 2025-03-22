@@ -311,6 +311,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  getRomFlags(): boolean[] {
+    return [false, false, false, false, false, false, false, false];
+  }
+
+  /**
    * Gets the current call stack information
    */
   getCallStack(frames = 16): CallStackInfo {

@@ -181,6 +181,13 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  getRomFlags(): boolean[] {
+    return [true, true, false, false, false, false, false, false];
+  }
+
+  /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */

@@ -765,6 +765,14 @@ class EmuMessageProcessor {
         break;
     }
   }
+
+  async getRomFlags(): Promise<boolean[]> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getRomFlags();
+  }
 }
 
 /**

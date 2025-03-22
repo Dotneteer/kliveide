@@ -242,6 +242,11 @@ export interface IZ80Machine extends IZ80Cpu, IMachineEventHandler {
   getCurrentPartitionLabels(): string[];
 
   /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  getRomFlags(): boolean[];
+
+  /**
    * Indicates if the machine's operating system is initialized
    */
   get isOsInitialized(): boolean;

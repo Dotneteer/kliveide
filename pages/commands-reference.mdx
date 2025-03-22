@@ -1,3 +1,5 @@
+import { Callout } from 'nextra/components'
+
 # Commands Reference
 
 ## `bp-ea`
@@ -504,6 +506,10 @@ setz80Reg <register> <value>
 ```
 
 Available aliases: `sr`
+
+<Callout type="info" emoji="💡">
+This command runs only when the machine is paused. In other states, it gives an error message.
+</Callout>
 
 When the value is outside the register's valid range, the command will give you a warning and keep only the last 8 or 16 bits.
 

@@ -17,6 +17,8 @@ type DumpProps = {
   charDump: boolean;
   pointedInfo?: Record<number, string>;
   lastJumpAddress: number;
+  isRom?: boolean;
+  editClicked?: (address: number) => void;
 };
 
 export const DumpSection = ({
@@ -27,7 +29,9 @@ export const DumpSection = ({
   decimalView,
   charDump,
   pointedInfo,
-  lastJumpAddress
+  lastJumpAddress,
+  isRom,
+  editClicked
 }: DumpProps) => {
   if (!memory) return null;
 
@@ -71,6 +75,8 @@ export const DumpSection = ({
         value={memory[address + 0]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <ByteValue
         address={address + 1}
@@ -78,6 +84,8 @@ export const DumpSection = ({
         value={memory[address + 1]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <ByteValue
         address={address + 2}
@@ -85,6 +93,8 @@ export const DumpSection = ({
         value={memory[address + 2]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <ByteValue
         address={address + 3}
@@ -92,6 +102,8 @@ export const DumpSection = ({
         value={memory[address + 3]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <ByteValue
         address={address + 4}
@@ -99,6 +111,8 @@ export const DumpSection = ({
         value={memory[address + 4]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <ByteValue
         address={address + 5}
@@ -106,6 +120,8 @@ export const DumpSection = ({
         value={memory[address + 5]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <ByteValue
         address={address + 6}
@@ -113,6 +129,8 @@ export const DumpSection = ({
         value={memory[address + 6]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <ByteValue
         address={address + 7}
@@ -120,18 +138,60 @@ export const DumpSection = ({
         value={memory[address + 7]}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
+        isRom={isRom}
+        editClicked={editClicked}
       />
       <LabelSeparator width={8} />
       {charDump && (
         <>
-          <CharValue address={address + 0} value={memory[address + 0]} pointedInfo={pointedInfo} />
-          <CharValue address={address + 1} value={memory[address + 1]} pointedInfo={pointedInfo} />
-          <CharValue address={address + 2} value={memory[address + 2]} pointedInfo={pointedInfo} />
-          <CharValue address={address + 3} value={memory[address + 3]} pointedInfo={pointedInfo} />
-          <CharValue address={address + 4} value={memory[address + 4]} pointedInfo={pointedInfo} />
-          <CharValue address={address + 5} value={memory[address + 5]} pointedInfo={pointedInfo} />
-          <CharValue address={address + 6} value={memory[address + 6]} pointedInfo={pointedInfo} />
-          <CharValue address={address + 7} value={memory[address + 7]} pointedInfo={pointedInfo} />
+          <CharValue
+            address={address + 0}
+            value={memory[address + 0]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
+          <CharValue
+            address={address + 1}
+            value={memory[address + 1]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
+          <CharValue
+            address={address + 2}
+            value={memory[address + 2]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
+          <CharValue
+            address={address + 3}
+            value={memory[address + 3]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
+          <CharValue
+            address={address + 4}
+            value={memory[address + 4]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
+          <CharValue
+            address={address + 5}
+            value={memory[address + 5]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
+          <CharValue
+            address={address + 6}
+            value={memory[address + 6]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
+          <CharValue
+            address={address + 7}
+            value={memory[address + 7]}
+            pointedInfo={pointedInfo}
+            editClicked={editClicked}
+          />
           <LabelSeparator width={8} />
         </>
       )}
@@ -145,9 +205,19 @@ type ByteValueProps = {
   value?: number;
   pointedInfo?: Record<number, string>;
   lastJumpAddress?: number;
+  isRom?: boolean;
+  editClicked?: (address: number) => void;
 };
 
-const ByteValue = ({ address, decimalView, value, pointedInfo, lastJumpAddress }: ByteValueProps) => {
+const ByteValue = ({
+  address,
+  decimalView,
+  value,
+  pointedInfo,
+  lastJumpAddress,
+  isRom,
+  editClicked
+}: ByteValueProps) => {
   // --- Do not display non-existing values
   if (value === undefined) return <div style={{ width: 20 }}></div>;
 
@@ -159,6 +229,7 @@ const ByteValue = ({ address, decimalView, value, pointedInfo, lastJumpAddress }
     "Value at " +
     (decimalView ? `${address} ($${toHexa4(address)}):\n` : `$${toHexa4(address)} (${address}):\n`);
   title += `${tooltipCache[value]}${pointed ? `\nPointed by: ${pointedHint}` : ""}`;
+  title += isRom ? "\n(ROM)" : "\nRight-click to edit the memory value";
   return (
     <div
       ref={ref}
@@ -168,6 +239,12 @@ const ByteValue = ({ address, decimalView, value, pointedInfo, lastJumpAddress }
         [styles.decimal]: decimalView,
         [styles.lastJump]: lastJumpAddress === address
       })}
+      onContextMenu={(e) => {
+        if (isRom) return false;
+        e.preventDefault();
+        editClicked?.(address);
+        return false;
+      }}
     >
       {decimalView ? toDecimal3(value) : toHexa2(value)}
       {title && (
@@ -184,15 +261,24 @@ const ByteValue = ({ address, decimalView, value, pointedInfo, lastJumpAddress }
   );
 };
 
-const CharValue = ({ address, value }: ByteValueProps) => {
+const CharValue = ({ address, value, isRom, editClicked }: ByteValueProps) => {
   const hasValue = value !== undefined;
   const ref = useTooltipRef(value);
   const valueInfo = characterSet[(value ?? 0x20) & 0xff];
   let text = valueInfo.v ?? ".";
-  const title = `Value at $${toHexa4(address)} (${address}):\n${tooltipCache[value]}`;
-  value;
+  let title = `Value at $${toHexa4(address)} (${address}):\n${tooltipCache[value]}`;
+  title += isRom ? "\n(ROM)" : "\nRight-click to edit the memory value";
   return (
-    <div ref={ref} className={styles.char}>
+    <div
+      ref={ref}
+      className={styles.char}
+      onContextMenu={(e) => {
+        if (isRom) return false;
+        e.preventDefault();
+        editClicked?.(address);
+        return false;
+      }}
+    >
       {text}
       {title && hasValue && (
         <TooltipFactory
