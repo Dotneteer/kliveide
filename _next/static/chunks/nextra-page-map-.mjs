@@ -103,6 +103,12 @@ export const pageMap = [{
       "sidebarTitle": "Instant Screen"
     }
   }, {
+    name: "measure-t-states",
+    route: "/howto/measure-t-states",
+    frontMatter: {
+      "sidebarTitle": "Measure T States"
+    }
+  }, {
     name: "shortcuts",
     route: "/howto/shortcuts",
     frontMatter: {
