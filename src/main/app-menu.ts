@@ -34,7 +34,8 @@ import {
   showKeyboardAction,
   setKeyMappingsAction,
   setIdeDisableAutoOpenBuildRootAction,
-  setIdeDisableAutoOpenProjectAction
+  setIdeDisableAutoOpenProjectAction,
+  setIdeDisableAutoCompleteAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
@@ -103,6 +104,7 @@ const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
 const IDE_AUTO_OPEN_PROJECT = "ide_auto_open_project";
 const IDE_AUTO_OPEN_BUILD_ROOT = "ide_auto_open_build_root";
+const IDE_AUTO_COMPLETE = "ide_auto_complete";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -867,6 +869,17 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             checked: !appState.ideSettings?.disableAutoOpenBuildRoot,
             click: async (mi) => {
               mainStore.dispatch(setIdeDisableAutoOpenBuildRootAction(!mi.checked));
+              saveAppSettings();
+            }
+          },
+          { type: "separator" },
+          {
+            id: IDE_AUTO_COMPLETE,
+            label: "Enable AutoComplete",
+            type: "checkbox",
+            checked: !appState.ideSettings?.disableAutoComplete,
+            click: async (mi) => {
+              mainStore.dispatch(setIdeDisableAutoCompleteAction(!mi.checked));
               saveAppSettings();
             }
           }
