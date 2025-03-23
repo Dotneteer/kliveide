@@ -337,6 +337,10 @@ const ExplorerPanel = () => {
   // --- This function represents a project item component
   const projectItemRenderer = (idx: number) => {
     const node = tree.getViewNodeByIndex(idx);
+    if (!node) {
+      // --- This should not happen
+      return <div style={{display: "none"}}></div>
+    }
     const isSelected = idx === selected;
     const isRoot = tree.rootNode === node;
     return (
