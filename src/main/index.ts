@@ -16,7 +16,7 @@
 // the renderer process know whether it functions as an emulator (`?emu` parameter) or as an IDE window (`?ide`
 // parameter).
 // ====================================================================================================================
-import { app, shell, BrowserWindow, ipcMain, Menu, globalShortcut } from "electron";
+import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
 
 import fs from "fs";
 import { release } from "os";
@@ -319,10 +319,10 @@ async function createAppWindows() {
     }
 
     // --- Manage the Stay on top for the emu window
-    if (!!state.emuViewOptions?.stayOnTop && !emuWindow.isAlwaysOnTop()) {
-      emuWindow.setAlwaysOnTop(true);
-    } else  if (!state.emuViewOptions?.stayOnTop && emuWindow.isAlwaysOnTop()) {
-      emuWindow.setAlwaysOnTop(false);
+    if (!!state.emuViewOptions?.stayOnTop && !emuWindow?.isAlwaysOnTop()) {
+      emuWindow?.setAlwaysOnTop(true);
+    } else  if (!state.emuViewOptions?.stayOnTop && emuWindow?.isAlwaysOnTop()) {
+      emuWindow?.setAlwaysOnTop(false);
     }
 
     // --- Adjust menu items whenever the app state changes
