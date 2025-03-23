@@ -207,7 +207,7 @@ const IdeApp = () => {
           const projectPath = settings?.project?.folderPath;
           if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
             // --- Let's load the last propject
-            console.log("Opening app");
+            console.log("Opening the last project: ", projectPath);
             await mainApi.openFolder(projectPath);
             state = store.getState();
             const buildRoot = state.project?.buildRoots?.[0];
