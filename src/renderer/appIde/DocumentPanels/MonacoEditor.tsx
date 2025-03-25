@@ -328,6 +328,13 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     // --- Pass back the API so that the document ub service can use it
     apiLoaded?.(editorApi);
 
+    // --- Respond to cursor position changes
+    ed.onDidChangeCursorPosition((e) => {
+      projectService
+        .getActiveDocumentHubService()
+        .saveActiveDocumentPosition(e.position.lineNumber, e.position.column);
+    });
+
     // --- Dispose event handlers when the editor is about to dispose
     editor.current.onDidDispose(() => {
       disposables.forEach((d) => d.dispose());
@@ -601,8 +608,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * Gets the resource name of this document
    */
   function getResourceName(): string {
-    const projPath = store.getState().project.folderPath;
-    return document.id.substring(projPath.length);
+    const projPath = store.getState().project?.folderPath;
+    return document.id.substring(projPath?.length);
   }
 
   /**
