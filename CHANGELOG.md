@@ -2,9 +2,12 @@
 
 ## 0.42.0: Planned private build
 
+- Issue #929
 - Issue #923
 - Issue #921
 - Issue #916
+- Issue #915
+- Issue #879
 
 ## 0.34.0 - 0.41.0: Private builds
 

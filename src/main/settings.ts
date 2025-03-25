@@ -29,6 +29,7 @@ export type IdeSettings = {
   disableAutoOpenBuildRoot?: boolean;
   disableAutoOpenProject?: boolean;
   disableAutoComplete?: boolean;
+  closeEmulatorWithIde?: boolean;
 }
 
 export type AppSettings = {
