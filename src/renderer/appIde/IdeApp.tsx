@@ -23,7 +23,6 @@ import {
   setToolsAction,
   activateToolAction,
   displayDialogAction,
-  resetCompileAction
 } from "@state/actions";
 import { useRef, useEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
@@ -133,6 +132,7 @@ const IdeApp = () => {
 
   // --- Visual state
   const appPath = decodeURI(location.search.split("=")?.[1]);
+  const ideLoaded = useSelector((s) => s.ideLoaded ?? false);
   const dimmed = useSelector((s) => s.dimMenu ?? false);
   const isWindows = useSelector((s) => s.isWindows ?? false);
   const showToolbar = useSelector((s) => s.ideViewOptions.showToolbar);
@@ -191,28 +191,34 @@ const IdeApp = () => {
     }
 
     // --- It is time to initialize the IDE
-    (async () => {
-      let state = store.getState();
-      const mainApi = createMainApi(messenger);
-      if (!state.ideSettings.disableAutoOpenProject) {
-        const settings = await mainApi.getAppSettings();
-        const projectPath = settings?.project?.folderPath;
-        if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
-          // --- Let's load the last propject
-          await mainApi.openFolder(projectPath);
-          state = store.getState();
-          const buildRoot = state.project?.buildRoots?.[0];
-          if (!(settings?.ideSettings?.disableAutoOpenBuildRoot ?? false) && buildRoot) {
-            // --- Open the build root file
-          }
-        }
-      }
-    })();
   }, [appPath]);
 
   useEffect(() => {
     setIsWindows(isWindows);
   }, [isWindows]);
+
+  useEffect(() => {
+    if (ideLoaded) {
+      (async () => {
+        let state = store.getState();
+        const mainApi = createMainApi(messenger);
+        if (!state.ideSettings.disableAutoOpenProject) {
+          const settings = await mainApi.getAppSettings();
+          const projectPath = settings?.project?.folderPath;
+          if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
+            // --- Let's load the last propject
+            console.log("Opening the last project: ", projectPath);
+            await mainApi.openFolder(projectPath);
+            state = store.getState();
+            const buildRoot = state.project?.buildRoots?.[0];
+            if (!(settings?.ideSettings?.disableAutoOpenBuildRoot ?? false) && buildRoot) {
+              // --- Open the build root file
+            }
+          }
+        }
+      })();
+    }
+  }, [ideLoaded]);
 
   return (
     <FullPanel id="appMain">

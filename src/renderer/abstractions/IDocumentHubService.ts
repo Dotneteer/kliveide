@@ -138,6 +138,12 @@ export interface IDocumentHubService {
   saveActiveDocumentState(state: any): void;
 
   /**
+   * Saves the state of the active document
+   * @param state State to save
+   */
+  saveActiveDocumentPosition(line: number, column: number): void;
+
+  /**
    * Gets the associated API of the specified document
    * @param id Document ID
    */
