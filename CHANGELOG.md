@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.42.0: Planned private build
+
+- Issue #923
+
+## 0.34.0 - 0.41.0: Private builds
+
 ## 0.33.0
 
 ### Features
