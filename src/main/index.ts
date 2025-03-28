@@ -57,7 +57,6 @@ import {
   setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
   setEmuStayOnTopAction,
-  setIdeDisableAutoCompleteAction,
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -264,7 +263,7 @@ async function createAppWindows() {
       mainStore.dispatch(
         setIdeDisableAutoOpenProjectAction(ideSettings?.disableAutoOpenProject ?? false)
       );
-      mainStore.dispatch(setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false));
+
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
