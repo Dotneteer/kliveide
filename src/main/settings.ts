@@ -28,6 +28,7 @@ export type ExportDialogSettings = {
 export type IdeSettings = {
   disableAutoOpenBuildRoot?: boolean;
   disableAutoOpenProject?: boolean;
+  disableAutoComplete?: boolean;
 }
 
 export type AppSettings = {

@@ -18,6 +18,12 @@ export function ideSettingsReducer(state: IdeSettings, { type, payload }: Action
         disableAutoOpenProject: payload?.flag
       };
 
+    case "SET_IDE_DISABLE_AUTO_COMPLETE":
+      return {
+        ...state,
+        disableAutoComplete: payload?.flag
+      };
+
     default:
       return state;
   }

@@ -191,12 +191,24 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Recognize document actiovation to restore the previous document state
   const [activationVersion, setActivationVersion] = useState(0);
 
+  // --- Use these states to update editor options
+  const disableAutoComplete = useSelector((s) => s.ideSettings?.disableAutoComplete ?? false);
+
   // --- Focus on document activation
   useEffect(() => {
     requestAnimationFrame(() => {
       editor.current?.focus();
     });
   }, [activationVersion]);
+
+  useEffect(() => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        quickSuggestions: !disableAutoComplete,
+        suggestOnTriggerCharacters: !disableAutoComplete
+      });
+    }
+  }, [disableAutoComplete]);
 
   // --- Respond to theme changes
   useEffect(() => {
