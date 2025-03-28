@@ -33,3 +33,4 @@ dist-electron
 .next
 out
 docs-out
+tsconfig.tsbuildinfo
