@@ -10,17 +10,19 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { incProjectViewStateVersionAction } from "@common/state/actions";
+import { incProjectViewStateVersionAction, setWorkspaceSettingsAction } from "@common/state/actions";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
+import { useMainApi } from "@renderer/core/MainApi";
 
 /**
  * This component represents the header of a document hub
  */
 export const DocumentsHeader = () => {
   const dispatch = useDispatch();
+  const mainApi = useMainApi();
   const { store } = useRendererContext();
   const { projectService } = useAppServices();
   const documentHubService = useDocumentHubService();
@@ -56,11 +58,24 @@ export const DocumentsHeader = () => {
       setSelectedIsBuildRoot(buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0);
     }
     setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.name, store));
+
   }, [openDocs, buildRoots, activeDocIndex, hubVersion]);
 
   // --- Make sure that the index is visible
   useEffect(() => {
     ensureTabVisible();
+    // --- Save document information to the project
+    const workspace: DocumentWorkspace = {
+      documents: openDocs?.map(d => ({ type: d.type, id: d.id, position: {
+        line: d.editPosition?.line ?? 0,
+        column: d.editPosition?.column ?? 0
+      } })),
+      activeDocumentId: openDocs?.[activeDocIndex]?.id
+    };
+    store.dispatch(setWorkspaceSettingsAction(DOCS_WORKSPACE, workspace), "ide");
+    (async () => {
+      await mainApi.saveProject();
+    })();
   }, [activeDocIndex, selectedIsBuildRoot]);
 
   // --- Refresh the changed project document
@@ -325,3 +340,19 @@ const BuildRootCommandBar = () => {
     </>
   );
 };
+
+export const DOCS_WORKSPACE = "docsWorkspace";
+
+export type SavedDocumentInfo = {
+  type: string;
+  id: string;
+  position?: {
+    line: number;
+    column?: number;
+  }
+}
+
+export type DocumentWorkspace = {
+  documents: SavedDocumentInfo[];
+  activeDocumentId: string;
+}

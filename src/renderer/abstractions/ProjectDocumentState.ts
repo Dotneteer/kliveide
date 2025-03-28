@@ -76,4 +76,12 @@ export type ProjectDocumentState = {
    * References to document services that use the particular project documents
    */
   usedIn?: IDocumentHubService[]
+
+  /**
+   * Stores the edit position of the document
+   */
+  editPosition?: {
+    line: number;
+    column: number;
+  };
 };
