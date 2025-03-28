@@ -178,9 +178,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const execState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- Store Monaco editor decorations to display breakpoint information
-  const oldDecorations = useRef<string[]>([]);
+  const bpDecorations = useRef<EditorDecorationsCollection>(null);
   const hoverDecorations = useRef<EditorDecorationsCollection>(null);
-  const oldExecPointDecoration = useRef<string[]>([]);
+  const execPointDecoration = useRef<EditorDecorationsCollection>(null);
 
   // --- The name of the resource this editor displays
   const resourceName = document.node?.projectPath;
@@ -450,7 +450,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     const decorations: Decoration[] = [];
     const editorLines = editor.current?.getModel()?.getLineCount() ?? null;
 
-    // --- Iterate through all breakpoins
+    // --- Iterate through all breakpoins using this file's resource name as a filter
+    const resourceName = getResourceName();
     bps.forEach(async (bp) => {
       let unreachable = true;
       if (
@@ -460,7 +461,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         // --- In case of a successful compilation, test if the breakpoint is allowed
         const sep = getIsWindows() ? "\\" : "/";
         const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
-          fi.filename.replaceAll(sep, "/").endsWith(getResourceName())
+          fi.filename.replaceAll(sep, "/").endsWith(resourceName)
         );
         if (fileIndex >= 0) {
           // --- We have address information for this source code file
@@ -481,11 +482,13 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
               }
             }
           }
+        } else {
+          return;
         }
       }
 
       // --- Render the breakpoint according to its type and reachability
-      if (editorLines !== null) {
+      if (editorLines !== null && bp.resource === resourceName.slice(1)) {
         if (bp.line <= editorLines) {
           let decoration: monacoEditor.editor.IModelDeltaDecoration;
           if (bp.disabled) {
@@ -507,7 +510,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       }
     });
 
-    oldDecorations.current = editor.current.deltaDecorations(oldDecorations.current, decorations);
+    if (bpDecorations.current) {
+      bpDecorations.current.clear();
+    }
+    bpDecorations.current = editor.current.createDecorationsCollection(decorations);
     return bps;
   }
 
@@ -604,44 +610,49 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
    * @returns
    */
   async function refreshCurrentBreakpoint(bps: BreakpointInfo[]): Promise<void> {
+    // --- No editor, no decorations
     if (!editor.current) {
       return;
     }
 
-    oldExecPointDecoration.current = editor.current.deltaDecorations(
-      oldExecPointDecoration.current,
-      []
-    );
-
+    // --- No output with debug information, no decorations
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;
     }
+
+    // --- Store the decorations
+    const decorations: Decoration[] = [];
 
     // --- Get the current PC value
     const cpuStateResponse = await emuApi.getCpuState();
     const pc = cpuStateResponse.pc;
 
-    // --- Does this file contains the default breakpoint?
-    const sep = getIsWindows() ? "\\" : "/";
-    const fileIndex = compilation.result.sourceFileList.findIndex((fi) =>
-      fi.filename.replaceAll(sep, "/").endsWith(getResourceName())
-    );
-    if (fileIndex >= 0) {
-      // --- We have address information for this source code file
-      const lineInfo = compilation.result.listFileItems.find(
-        (li) => li.fileIndex === fileIndex && li.address === pc
+    // --- Is the machine running?
+    const machineState = store.getState().emulatorState?.machineState;
+    if (
+      machineState === MachineControllerState.Running ||
+      machineState == MachineControllerState.Paused
+    ) {
+      // --- Does this file contains the default breakpoint?
+      const sep = getIsWindows() ? "\\" : "/";
+      const fileIndex = compilation.result.sourceFileList.findIndex((fi) =>
+        fi.filename.replaceAll(sep, "/").endsWith(getResourceName())
       );
-
-      // --- Get source map information
-      const sourceMapInfo = compilation.result.sourceMap[pc];
-      if (lineInfo) {
-        const resName = getResourceName()?.slice(1);
-        const activeBp = bps.find(
-          (bp) => (bp.line === lineInfo.lineNumber && bp.resource === resName) || bp.address === pc
+      if (fileIndex >= 0) {
+        // --- We have address information for this source code file
+        const lineInfo = compilation.result.listFileItems.find(
+          (li) => li.fileIndex === fileIndex && li.address === pc
         );
-        oldExecPointDecoration.current = editor.current.deltaDecorations(
-          oldExecPointDecoration.current,
-          [
+
+        // --- Get source map information
+        const sourceMapInfo = compilation.result.sourceMap[pc];
+        if (lineInfo) {
+          const resName = getResourceName()?.slice(1);
+          const activeBp = bps.find(
+            (bp) =>
+              (bp.line === lineInfo.lineNumber && bp.resource === resName) || bp.address === pc
+          );
+          decorations.push(
             createCurrentBreakpointDecoration(
               languageInfo.fullLineBreakpoints,
               lineInfo.lineNumber,
@@ -649,15 +660,15 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
               sourceMapInfo?.endColumn,
               activeBp
             )
-          ]
-        );
+          );
+        }
       }
-      return;
     }
-    oldExecPointDecoration.current = editor.current.deltaDecorations(
-      oldExecPointDecoration.current,
-      []
-    );
+
+    if (execPointDecoration.current) {
+      execPointDecoration.current.clear();
+    }
+    execPointDecoration.current = editor.current.createDecorationsCollection(decorations);
   }
 };
 
