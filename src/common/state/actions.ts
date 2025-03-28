@@ -377,6 +377,11 @@ export const setIdeDisableAutoOpenProjectAction: ActionCreator = (flag: boolean)
   payload: { flag }
 });
 
+export const setIdeDisableAutoCompleteAction: ActionCreator = (flag: boolean) => ({
+  type: "SET_IDE_DISABLE_AUTO_COMPLETE",
+  payload: { flag }
+});
+
 export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSettings) => ({
   type: "SET_IDE_EXPORT_DIALOG",
   payload: { value }

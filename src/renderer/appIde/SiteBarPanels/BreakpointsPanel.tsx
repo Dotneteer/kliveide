@@ -194,6 +194,13 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
   const { ideCommandsService } = useAppServices();
   const navRef = useTooltipRef();
   const navigable = breakpoint.resource !== undefined && breakpoint.line !== undefined;
+  let filename = "";
+  if (navigable) {
+    const segments = breakpoint.resource.split("/");
+    if (segments.length > 0) {
+      filename = segments[segments.length - 1];
+    } 
+  }
 
   return (
     <span
@@ -213,7 +220,7 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
           offsetX={0}
           offsetY={40}
           showDelay={100}
-          content="Click to navigate to the source code"
+          content={`Goto to ${filename}:${breakpoint.line}`}
         />
       )}
     </span>

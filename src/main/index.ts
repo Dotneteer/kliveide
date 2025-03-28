@@ -16,7 +16,7 @@
 // the renderer process know whether it functions as an emulator (`?emu` parameter) or as an IDE window (`?ide`
 // parameter).
 // ====================================================================================================================
-import { app, shell, BrowserWindow, ipcMain, Menu, globalShortcut } from "electron";
+import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
 
 import fs from "fs";
 import { release } from "os";
@@ -57,6 +57,7 @@ import {
   setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
   setEmuStayOnTopAction,
+  setIdeDisableAutoCompleteAction,
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -263,7 +264,7 @@ async function createAppWindows() {
       mainStore.dispatch(
         setIdeDisableAutoOpenProjectAction(ideSettings?.disableAutoOpenProject ?? false)
       );
-
+      mainStore.dispatch(setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false));
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
@@ -319,10 +320,10 @@ async function createAppWindows() {
     }
 
     // --- Manage the Stay on top for the emu window
-    if (!!state.emuViewOptions?.stayOnTop && !emuWindow.isAlwaysOnTop()) {
-      emuWindow.setAlwaysOnTop(true);
-    } else  if (!state.emuViewOptions?.stayOnTop && emuWindow.isAlwaysOnTop()) {
-      emuWindow.setAlwaysOnTop(false);
+    if (!!state.emuViewOptions?.stayOnTop && !emuWindow?.isAlwaysOnTop()) {
+      emuWindow?.setAlwaysOnTop(true);
+    } else  if (!state.emuViewOptions?.stayOnTop && emuWindow?.isAlwaysOnTop()) {
+      emuWindow?.setAlwaysOnTop(false);
     }
 
     // --- Adjust menu items whenever the app state changes
