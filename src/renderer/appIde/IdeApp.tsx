@@ -233,17 +233,29 @@ const IdeApp = () => {
             const lastOpenDocs = (
               state.workspaceSettings?.[DOCS_WORKSPACE]?.documents ?? []
             ).filter((d: { type: string; }) => d.type === CODE_EDITOR);
+            const activeDocId = state.workspaceSettings?.[DOCS_WORKSPACE]?.activeDocumentId;
+            let activeDocCommand = "";
             for (const doc of lastOpenDocs) {
               console.log("Document:", JSON.stringify(doc))
               if (doc.id.startsWith(projectPath)) {
-                const projectId = doc.id.substring(projectPath.length + 1);
+                const navigateToId = doc.id.substring(projectPath.length + 1);
                 const line = doc.position?.line ?? 0;
-                const column = doc.position?.column ?? 0;
-                const command = `nav "${projectId}" ${line} ${column}`;
+                const column = (doc.position?.column ?? 0) + 1;
+                const command = `nav "${navigateToId}" ${line} ${column}`;
                 console.log(command);
                 await appServices.ideCommandsService.executeCommand(command);
+                if (doc.id === activeDocId) {
+                  activeDocCommand = command;
+                }
               }
             }
+
+            // --- Navigate to the active document
+            console.log("Navigate to the active document");
+            if (activeDocCommand) {
+              await appServices.ideCommandsService.executeCommand(activeDocCommand);
+            }
+            console.log("Project workspace opened");
           }
         }
       })();

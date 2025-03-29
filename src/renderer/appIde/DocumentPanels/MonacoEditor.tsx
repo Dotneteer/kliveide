@@ -154,6 +154,7 @@ type EditorProps = {
 export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
+  const mounted = useRef(false);
 
   // --- Recognize app theme changes and update Monaco editor theme accordingly
   const { theme } = useTheme();
@@ -188,18 +189,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- The language to use with Monaco editor for syntax highlighting
   const languageInfo = customLanguagesRegistry.find((l) => l.id === document.language);
 
-  // --- Recognize document actiovation to restore the previous document state
-  const [activationVersion, setActivationVersion] = useState(0);
-
   // --- Use these states to update editor options
   const disableAutoComplete = useSelector((s) => s.ideSettings?.disableAutoComplete ?? false);
-
-  // --- Focus on document activation
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      editor.current?.focus();
-    });
-  }, [activationVersion]);
 
   useEffect(() => {
     if (editor.current) {
@@ -289,15 +280,33 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   // --- Initializes the editor when mounted
   const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
     // --- Restore the view state to display the editor is it has been left
+    mounted.current = false;
     editor.current = ed;
     ed.setValue(value);
+
+    const saveViewState = () => {
+      if (mounted.current) {
+        const viewState = ed.saveViewState();
+        projectService.getActiveDocumentHubService().setDocumentViewState(document.id, viewState);
+      }
+    };
 
     // --- Mount events to save the view state
     const disposables: monacoEditor.IDisposable[] = [];
     disposables.push(
       ed.onMouseDown(handleEditorMouseDown),
       ed.onMouseLeave(handleEditorMouseLeave),
-      ed.onMouseMove(handleEditorMouseMove)
+      ed.onMouseMove(handleEditorMouseMove),
+      ed.onDidChangeCursorPosition(saveViewState),
+      ed.onDidChangeCursorSelection(saveViewState),
+      ed.onDidScrollChange(saveViewState),
+      ed.onDidBlurEditorWidget(saveViewState),
+      ed.onDidChangeCursorPosition((e) => {
+        projectService
+          .getActiveDocumentHubService()
+          .saveActiveDocumentPosition(e.position.lineNumber, e.position.column);
+        store.dispatch(incEditorVersionAction());
+      })
     );
 
     // --- Create the API
@@ -319,35 +328,34 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       setPosition: (lineNumber: number, column: number) => {
         ed.revealLineInCenter(lineNumber);
         ed.setPosition({ lineNumber, column });
-        requestAnimationFrame(() => {
-          ed.focus();
-        });
+        ed.focus();
+        store.dispatch(incEditorVersionAction());
       }
     };
 
     // --- Pass back the API so that the document ub service can use it
     apiLoaded?.(editorApi);
 
-    // --- Respond to cursor position changes
-    ed.onDidChangeCursorPosition((e) => {
-      projectService
-        .getActiveDocumentHubService()
-        .saveActiveDocumentPosition(e.position.lineNumber, e.position.column);
-    });
+    const viewState = projectService
+      .getActiveDocumentHubService()
+      .getDocumentViewState(document.id);
+    if (viewState) {
+      ed.restoreViewState(viewState);
+    }
+    ed.focus();
 
     // --- Dispose event handlers when the editor is about to dispose
     editor.current.onDidDispose(() => {
       disposables.forEach((d) => d.dispose());
     });
 
+    mounted.current = true;
+
     // --- Show breakpoinst and other decorations when initially displaying the editor
     (async () => {
       const bps = await refreshBreakpoints();
       await refreshCurrentBreakpoint(bps);
     })();
-
-    // --- Sign the document has been activated (again)
-    setActivationVersion(activationVersion + 1);
   };
 
   // --- Handle document changes
