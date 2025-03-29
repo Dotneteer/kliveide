@@ -22,7 +22,7 @@ import {
   selectActivityAction,
   setToolsAction,
   activateToolAction,
-  displayDialogAction,
+  displayDialogAction
 } from "@state/actions";
 import { useRef, useEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
