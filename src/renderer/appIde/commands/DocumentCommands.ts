@@ -48,7 +48,6 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     const nodeData = projNode.data;
     const docService = context.service.projectService.getActiveDocumentHubService();
     const doc = docService.getDocument(projNode.data.fullPath);
-    console.log("Document:", doc);
     if (doc) {
       // --- Activate the open document
       await docService.setActiveDocument(doc.id);

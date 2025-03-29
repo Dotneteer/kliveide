@@ -153,6 +153,9 @@ const IdeApp = () => {
   // --- Use the current instance of the app services
   const mounted = useRef(false);
   useEffect(() => {
+    console.log("AppPath", appPath);
+    initializeMonaco(appPath);
+
     setCachedAppServices(appServices);
     setCachedStore(store);
 
@@ -185,36 +188,35 @@ const IdeApp = () => {
 
     // --- Sign that the UI is ready
     dispatch(ideLoadedAction());
-  }, [appServices, store, messenger]);
-
-  useEffect(() => {
-    if (appPath) {
-      console.log("App path: ", appPath);
-      initializeMonaco(appPath);
-    }
-
-    // --- It is time to initialize the IDE
-  }, [appPath]);
+  }, [appPath, appServices, store, messenger]);
 
   useEffect(() => {
     setIsWindows(isWindows);
   }, [isWindows]);
 
   useEffect(() => {
+    console.log("IdeLoaded effect:", ideLoaded);
     if (ideLoaded) {
       (async () => {
+        console.log("Load IDE settings")
         let state = store.getState();
         const mainApi = createMainApi(messenger);
         if (!state.ideSettings.disableAutoOpenProject) {
+          console.log("Query settings");
           const settings = await mainApi.getAppSettings();
-          const projectPath = settings?.project?.folderPath;
+          console.log("IDE settings:", JSON.stringify(settings?.ideSettings))
+          let projectPath = settings?.project?.folderPath;
+          console.log("Project path:", projectPath)
           if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
             // --- Let's load the last propject
-            console.log("Opening the last project: ", projectPath);
+            projectPath = projectPath.replaceAll("\\", "/");
+            console.log("Opening project");
             await mainApi.openFolder(projectPath);
+            console.log("Project opened");
             state = store.getState();
 
             // --- Wait up to 10 seconds for the project to be opened
+            console.log("Waiting for the end of project loading")
             let count = 0;
             while (count < 100) {
               if (store.getState().project?.folderPath === projectPath) break;
@@ -227,15 +229,18 @@ const IdeApp = () => {
             }
 
             // --- Open the last documents
+            console.log("Time to open project workdspace");
             const lastOpenDocs = (
               state.workspaceSettings?.[DOCS_WORKSPACE]?.documents ?? []
             ).filter((d: { type: string; }) => d.type === CODE_EDITOR);
             for (const doc of lastOpenDocs) {
+              console.log("Document:", JSON.stringify(doc))
               if (doc.id.startsWith(projectPath)) {
                 const projectId = doc.id.substring(projectPath.length + 1);
                 const line = doc.position?.line ?? 0;
                 const column = doc.position?.column ?? 0;
                 const command = `nav "${projectId}" ${line} ${column}`;
+                console.log(command);
                 await appServices.ideCommandsService.executeCommand(command);
               }
             }
