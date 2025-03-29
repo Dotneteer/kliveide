@@ -41,7 +41,6 @@ const BreakpointsPanel = () => {
   const refreshBreakpoints = async () => {
     // --- Get breakpoint information
     const bpState = await emuApi.listBreakpoints();
-    console.log("bps", bpState.breakpoints);
     const cpuState = await emuApi.getCpuState();
     setLastCpuState(cpuState);
     pcValue.current = cpuState.pc;
@@ -115,69 +114,73 @@ const BreakpointsPanel = () => {
         <VirtualizedList
           items={bps}
           renderItem={(idx) => {
-            const bp = bps[idx];
-            const addrKey = getBreakpointKey(
-              { ...bp, memoryRead: false, memoryWrite: false, ioRead: false, ioWrite: false },
-              partitionLabels
-            );
-            const addr = bp.address;
-            const disabled = bp.disabled ?? false;
-            let isCurrent = false;
-            if (bp.exec) {
-              isCurrent =
-                (machineState === MachineControllerState.Running ||
-                  machineState === MachineControllerState.Paused) &&
-                (pcValue.current === addr || pcValue.current === bp.resolvedAddress);
-            } else if (machineState === MachineControllerState.Paused) {
-              if (bp.memoryRead) {
-                isCurrent = lastCpuState?.lastMemoryReads?.includes(addr) ?? false;
-              } else if (bp.memoryWrite) {
-                isCurrent = lastCpuState?.lastMemoryWrites?.includes(addr) ?? false;
-              } else if (bp.ioRead) {
-                isCurrent = !!(lastCpuState?.lastIoReadPort === addr);
-              } else if (bp.ioWrite) {
-                isCurrent = !!(lastCpuState?.lastIoWritePort === addr);
+            try {
+              const bp = bps[idx];
+              const addrKey = getBreakpointKey(
+                { ...bp, memoryRead: false, memoryWrite: false, ioRead: false, ioWrite: false },
+                partitionLabels
+              );
+              const addr = bp.address;
+              const disabled = bp.disabled ?? false;
+              let isCurrent = false;
+              if (bp.exec) {
+                isCurrent =
+                  (machineState === MachineControllerState.Running ||
+                    machineState === MachineControllerState.Paused) &&
+                  (pcValue.current === addr || pcValue.current === bp.resolvedAddress);
+              } else if (machineState === MachineControllerState.Paused) {
+                if (bp.memoryRead) {
+                  isCurrent = lastCpuState?.lastMemoryReads?.includes(addr) ?? false;
+                } else if (bp.memoryWrite) {
+                  isCurrent = lastCpuState?.lastMemoryWrites?.includes(addr) ?? false;
+                } else if (bp.ioRead) {
+                  isCurrent = !!(lastCpuState?.lastIoReadPort === addr);
+                } else if (bp.ioWrite) {
+                  isCurrent = !!(lastCpuState?.lastIoWritePort === addr);
+                }
               }
-            }
 
-            return (
-              <div className={styles.breakpoint}>
-                <LabelSeparator width={4} />
-                <BreakpointIndicator
-                  partition={
-                    bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined
-                  }
-                  address={addr ?? addrKey}
-                  resolvedAddress={bp.resolvedAddress}
-                  current={isCurrent}
-                  hasBreakpoint={true}
-                  disabled={disabled}
-                  memoryRead={bp.memoryRead}
-                  memoryWrite={bp.memoryWrite}
-                  ioRead={bp.ioRead}
-                  ioWrite={bp.ioWrite}
-                  ioMask={bp.ioMask}
-                  showType
-                />
-                <LabelSeparator width={4} />
-                {bp.resolvedAddress !== undefined && (
-                  <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={80} />
-                )}
-                <BreakpointAddressLabel addrKey={addrKey} breakpoint={bp} />
-                {bp.address !== undefined && <Label text="" width={40} />}
-                {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
-                {(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) &&
-                  machineState === MachineControllerState.Paused && (
-                    <>
-                      <Secondary
-                        text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`}
-                        width={52}
-                      />
-                      <Value text={disassLines.current[idx] ?? "???"} width="auto" />
-                    </>
+              return (
+                <div className={styles.breakpoint}>
+                  <LabelSeparator width={4} />
+                  <BreakpointIndicator
+                    partition={
+                      bp?.partition !== undefined ? partitionLabels[bp.partition] ?? "?" : undefined
+                    }
+                    address={addr ?? addrKey}
+                    resolvedAddress={bp.resolvedAddress}
+                    current={isCurrent}
+                    hasBreakpoint={true}
+                    disabled={disabled}
+                    memoryRead={bp.memoryRead}
+                    memoryWrite={bp.memoryWrite}
+                    ioRead={bp.ioRead}
+                    ioWrite={bp.ioWrite}
+                    ioMask={bp.ioMask}
+                    showType
+                  />
+                  <LabelSeparator width={4} />
+                  {bp.resolvedAddress !== undefined && (
+                    <Value text={`$${toHexa4(bp.resolvedAddress)}`} width={80} />
                   )}
-              </div>
-            );
+                  <BreakpointAddressLabel addrKey={addrKey} breakpoint={bp} />
+                  {bp.address !== undefined && <Label text="" width={40} />}
+                  {bp.exec && <Value text={disassLines.current[idx] ?? "???"} width="auto" />}
+                  {(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite) &&
+                    machineState === MachineControllerState.Paused && (
+                      <>
+                        <Secondary
+                          text={`$${toHexa4(lastCpuState?.opStartAddress ?? -1)}:`}
+                          width={52}
+                        />
+                        <Value text={disassLines.current[idx] ?? "???"} width="auto" />
+                      </>
+                    )}
+                </div>
+              );
+            } catch (e) {
+              return <div key={idx} />;
+            }
           }}
         />
       )}
@@ -199,7 +202,7 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
     const segments = breakpoint.resource.split("/");
     if (segments.length > 0) {
       filename = segments[segments.length - 1];
-    } 
+    }
   }
 
   return (
