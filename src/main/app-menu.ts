@@ -33,7 +33,6 @@ import {
   setVolatileDocStateAction,
   showKeyboardAction,
   setKeyMappingsAction,
-  setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
   setIdeDisableAutoCompleteAction
 } from "@state/actions";
@@ -103,7 +102,6 @@ const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
 const IDE_AUTO_OPEN_PROJECT = "ide_auto_open_project";
-const IDE_AUTO_OPEN_BUILD_ROOT = "ide_auto_open_build_root";
 const IDE_AUTO_COMPLETE = "ide_auto_complete";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
@@ -859,16 +857,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             checked: !appState.ideSettings?.disableAutoOpenProject,
             click: async (mi) => {
               mainStore.dispatch(setIdeDisableAutoOpenProjectAction(!mi.checked));
-              saveAppSettings();
-            }
-          },
-          {
-            id: IDE_AUTO_OPEN_BUILD_ROOT,
-            label: "Open the build root of the project",
-            type: "checkbox",
-            checked: !appState.ideSettings?.disableAutoOpenBuildRoot,
-            click: async (mi) => {
-              mainStore.dispatch(setIdeDisableAutoOpenBuildRootAction(!mi.checked));
               saveAppSettings();
             }
           },

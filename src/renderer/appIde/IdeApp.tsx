@@ -116,6 +116,9 @@ import { FullPanel } from "@renderer/controls/new/Panels";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
+import { DOCS_WORKSPACE } from "./DocumentArea/DocumentsHeader";
+import { CODE_EDITOR } from "@common/state/common-ids";
+import { delay } from "@renderer/utils/timing";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -162,9 +165,6 @@ const IdeApp = () => {
     // --- Register the services to be used with the IDE
     registerCommands(appServices.ideCommandsService);
 
-    // --- Sign that the UI is ready
-    dispatch(ideLoadedAction());
-
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
     const sampleRate = audioCtx.sampleRate;
@@ -182,6 +182,9 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find((t) => t.visible ?? true).id));
+
+    // --- Sign that the UI is ready
+    dispatch(ideLoadedAction());
   }, [appServices, store, messenger]);
 
   useEffect(() => {
@@ -210,9 +213,31 @@ const IdeApp = () => {
             console.log("Opening the last project: ", projectPath);
             await mainApi.openFolder(projectPath);
             state = store.getState();
-            const buildRoot = state.project?.buildRoots?.[0];
-            if (!(settings?.ideSettings?.disableAutoOpenBuildRoot ?? false) && buildRoot) {
-              // --- Open the build root file
+
+            // --- Wait up to 10 seconds for the project to be opened
+            let count = 0;
+            while (count < 100) {
+              if (store.getState().project?.folderPath === projectPath) break;
+              count++;
+              await delay(100);
+            }
+            if (count >= 100) {
+              console.error("Timeout while opening the last project");
+              return;
+            }
+
+            // --- Open the last documents
+            const lastOpenDocs = (
+              state.workspaceSettings?.[DOCS_WORKSPACE]?.documents ?? []
+            ).filter((d: { type: string; }) => d.type === CODE_EDITOR);
+            for (const doc of lastOpenDocs) {
+              if (doc.id.startsWith(projectPath)) {
+                const projectId = doc.id.substring(projectPath.length + 1);
+                const line = doc.position?.line ?? 0;
+                const column = doc.position?.column ?? 0;
+                const command = `nav "${projectId}" ${line} ${column}`;
+                await appServices.ideCommandsService.executeCommand(command);
+              }
             }
           }
         }

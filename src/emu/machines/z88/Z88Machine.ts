@@ -143,6 +143,13 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  getRomFlags(): boolean[] {
+    return [false, false, false, false, false, false, false, false];
+  }
+
+  /**
    * Parses a partition label to get the partition number
    * @param label Label to parse
    */

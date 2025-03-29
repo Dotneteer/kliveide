@@ -97,6 +97,7 @@ class DocumentHubService implements IDocumentHubService {
         }
       } else {
         // --- Add as the last document
+        document.isTemporary = false;
         this._openDocs.push(document);
       }
     }
