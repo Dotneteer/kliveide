@@ -116,9 +116,6 @@ import { FullPanel } from "@renderer/controls/new/Panels";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
-import { DOCS_WORKSPACE } from "./DocumentArea/DocumentsHeader";
-import { CODE_EDITOR } from "@common/state/common-ids";
-import { delay } from "@renderer/utils/timing";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -213,49 +210,6 @@ const IdeApp = () => {
             console.log("Opening project");
             await mainApi.openFolder(projectPath);
             console.log("Project opened");
-            state = store.getState();
-
-            // --- Wait up to 10 seconds for the project to be opened
-            console.log("Waiting for the end of project loading")
-            let count = 0;
-            while (count < 100) {
-              if (store.getState().project?.folderPath === projectPath) break;
-              count++;
-              await delay(100);
-            }
-            if (count >= 100) {
-              console.error("Timeout while opening the last project");
-              return;
-            }
-
-            // --- Open the last documents
-            console.log("Time to open project workdspace");
-            const lastOpenDocs = (
-              state.workspaceSettings?.[DOCS_WORKSPACE]?.documents ?? []
-            ).filter((d: { type: string; }) => d.type === CODE_EDITOR);
-            const activeDocId = state.workspaceSettings?.[DOCS_WORKSPACE]?.activeDocumentId;
-            let activeDocCommand = "";
-            for (const doc of lastOpenDocs) {
-              console.log("Document:", JSON.stringify(doc))
-              if (doc.id.startsWith(projectPath)) {
-                const navigateToId = doc.id.substring(projectPath.length + 1);
-                const line = doc.position?.line ?? 0;
-                const column = (doc.position?.column ?? 0) + 1;
-                const command = `nav "${navigateToId}" ${line} ${column}`;
-                console.log(command);
-                await appServices.ideCommandsService.executeCommand(command);
-                if (doc.id === activeDocId) {
-                  activeDocCommand = command;
-                }
-              }
-            }
-
-            // --- Navigate to the active document
-            console.log("Navigate to the active document");
-            if (activeDocCommand) {
-              await appServices.ideCommandsService.executeCommand(activeDocCommand);
-            }
-            console.log("Project workspace opened");
           }
         }
       })();

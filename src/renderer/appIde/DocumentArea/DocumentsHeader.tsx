@@ -63,13 +63,13 @@ export const DocumentsHeader = () => {
 
   // --- Make sure that the index is visible
   useEffect(() => {
-    const projectClosed = !store.getState().project?.folderPath;
-    if (projectClosed) return;
+    const folderPath = store.getState().project?.folderPath;
+    if (!folderPath) return;
 
     ensureTabVisible();
     // --- Save document information to the project
     const workspace: DocumentWorkspace = {
-      documents: openDocs?.map(d => ({ type: d.type, id: d.id, position: {
+      documents: openDocs?.filter(d => d.id.startsWith(folderPath))?.map(d => ({ type: d.type, id: d.id, position: {
         line: d.editPosition?.line ?? 0,
         column: d.editPosition?.column ?? 0
       } })),

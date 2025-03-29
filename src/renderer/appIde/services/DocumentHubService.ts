@@ -292,6 +292,14 @@ class DocumentHubService implements IDocumentHubService {
     await this.closeDocuments(
       ...this._openDocs.filter((d) => exceptIds?.includes(d.id) !== true).map((d) => d.id)
     );
+
+    // --- Wait while all documents are closed
+    let count = 0;
+    while (count < 100) {
+      await delay(100);
+      if (this._openDocs.length <= 0) break;
+      count++;
+    }
   }
 
   /**

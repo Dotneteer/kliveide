@@ -40,7 +40,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
-import { openFolder, saveKliveProject } from "./projects";
+import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
 import {
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
@@ -184,7 +184,13 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     return {
       label: rp,
       click: async () => {
-        await executeIdeCommand(ideWindow, `open "${rp}"`, undefined, true);
+        ensureIdeWindow();
+        await getIdeApi().saveAllBeforeQuit();
+        mainStore.dispatch(closeFolderAction());
+        await getEmuApi().eraseAllBreakpoints();
+        fileChangeWatcher.stopWatching();
+        await saveKliveProject();
+        await openFolderByPath(rp);
       }
     };
   });

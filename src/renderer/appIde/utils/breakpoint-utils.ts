@@ -6,7 +6,7 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 export async function getBreakpoints(messenger: MessengerBase): Promise<BreakpointInfo[]> {
   // --- Get breakpoint information
   const bpResponse = await createEmuApi(messenger).listBreakpoints();
-  return bpResponse.breakpoints;
+  return bpResponse?.breakpoints ?? [];
 }
 
 export async function addBreakpoint(
