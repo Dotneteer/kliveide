@@ -7,6 +7,9 @@ import { saveProject } from "./utils/save-project";
 import { BUILD_FILE } from "@common/structs/project-const";
 import { incBuildFileVersionAction } from "@common/state/actions";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { delay } from "@renderer/utils/timing";
+import { DOCS_WORKSPACE } from "./DocumentArea/DocumentsHeader";
+import { CODE_EDITOR } from "@common/state/common-ids";
 
 /**
  * This component represents an event handler to manage the global IDE events
@@ -55,11 +58,77 @@ export const IdeEventsHandler = () => {
         store.dispatch(incBuildFileVersionAction(), "ide");
       }
     };
+
+    const onProjectLoaded = async () => {
+      const state = store.getState();
+      const projectPath = state.project?.folderPath;
+
+      // --- Wait up to 10 seconds for the project to be opened
+      console.log("Waiting for the end of project loading");
+      let count = 0;
+      while (count < 100) {
+        if (store.getState().project?.folderPath === projectPath) break;
+        count++;
+        await delay(100);
+      }
+      if (count >= 100) {
+        console.error("Timeout while opening the last project");
+        return;
+      }
+
+      // --- Wait up to 10 seconds for the project tree to be loaded
+      console.log("Waiting for the end of project tree loading");
+      count = 0;
+
+      while (count < 100) {
+        const tree = projectService.getProjectTree();
+        if (tree) break;
+        count++;
+        await delay(100);
+      }
+      if (count >= 100) {
+        console.error("Timeout while loading the project tree");
+        return;
+      }
+
+      // --- Open the last documents
+      console.log("Time to open project workspace");
+      await projectService.getActiveDocumentHubService().closeAllDocuments();
+      const lastOpenDocs = (state.workspaceSettings?.[DOCS_WORKSPACE]?.documents ?? []).filter(
+        (d: { type: string }) => d.type === CODE_EDITOR
+      );
+      const activeDocId = state.workspaceSettings?.[DOCS_WORKSPACE]?.activeDocumentId;
+      let activeDocCommand = "";
+      for (const doc of lastOpenDocs) {
+        console.log("Document:", JSON.stringify(doc));
+        if (doc.id.startsWith(projectPath)) {
+          const navigateToId = doc.id.substring(projectPath.length + 1);
+          const line = doc.position?.line ?? 0;
+          const column = (doc.position?.column ?? 0) + 1;
+          const command = `nav "${navigateToId}" ${line} ${column}`;
+          console.log(command);
+          await ideCommandsService.executeCommand(command);
+          if (doc.id === activeDocId) {
+            activeDocCommand = command;
+          }
+        }
+      }
+
+      // --- Navigate to the active document
+      console.log("Navigate to the active document");
+      if (activeDocCommand) {
+        await ideCommandsService.executeCommand(activeDocCommand);
+      }
+      console.log("Project workspace opened");
+    };
+
     projectService.fileSaved.on(onFileSaved);
+    projectService.projectOpened.on(onProjectLoaded);
     return () => {
       projectService.fileSaved.off(onFileSaved);
+      projectService.projectOpened.off(onProjectLoaded);
     };
-  }, []);
+  }, [projectService]);
 
   // --- Do not render any visual elements
   return null;

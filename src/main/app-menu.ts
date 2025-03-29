@@ -33,7 +33,6 @@ import {
   setVolatileDocStateAction,
   showKeyboardAction,
   setKeyMappingsAction,
-  setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
   setIdeDisableAutoCompleteAction
 } from "@state/actions";
@@ -41,7 +40,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { appSettings, saveAppSettings } from "./settings";
-import { openFolder, saveKliveProject } from "./projects";
+import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
 import {
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
@@ -103,7 +102,6 @@ const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
 const IDE_AUTO_OPEN_PROJECT = "ide_auto_open_project";
-const IDE_AUTO_OPEN_BUILD_ROOT = "ide_auto_open_build_root";
 const IDE_AUTO_COMPLETE = "ide_auto_complete";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
@@ -186,7 +184,13 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     return {
       label: rp,
       click: async () => {
-        await executeIdeCommand(ideWindow, `open "${rp}"`, undefined, true);
+        ensureIdeWindow();
+        await getIdeApi().saveAllBeforeQuit();
+        mainStore.dispatch(closeFolderAction());
+        await getEmuApi().eraseAllBreakpoints();
+        fileChangeWatcher.stopWatching();
+        await saveKliveProject();
+        await openFolderByPath(rp);
       }
     };
   });
@@ -859,16 +863,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             checked: !appState.ideSettings?.disableAutoOpenProject,
             click: async (mi) => {
               mainStore.dispatch(setIdeDisableAutoOpenProjectAction(!mi.checked));
-              saveAppSettings();
-            }
-          },
-          {
-            id: IDE_AUTO_OPEN_BUILD_ROOT,
-            label: "Open the build root of the project",
-            type: "checkbox",
-            checked: !appState.ideSettings?.disableAutoOpenBuildRoot,
-            click: async (mi) => {
-              mainStore.dispatch(setIdeDisableAutoOpenBuildRootAction(!mi.checked));
               saveAppSettings();
             }
           },

@@ -35,12 +35,14 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
     // --- Check if a project node exists
     const projState = context.store.getState()?.project;
     if (!projState?.folderPath) {
+      console.log("Here 1");
       return commandError("No project is open.");
     }
 
     // --- Get the project node
     const projNode = context.service.projectService.getNodeForFile(args.filename);
     if (!projNode) {
+      console.log("Here 2", args.filename);
       return commandError(`File '${args.filename}' not found in the project.`);
     }
 
@@ -56,7 +58,7 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       // TODO: Allow the currently active document to save itself before opening the new one
 
       // --- Open it
-      await docService.openDocument(newDoc);
+      await docService.openDocument(newDoc, undefined, false);
     }
 
     // --- The document should be open

@@ -150,6 +150,9 @@ const IdeApp = () => {
   // --- Use the current instance of the app services
   const mounted = useRef(false);
   useEffect(() => {
+    console.log("AppPath", appPath);
+    initializeMonaco(appPath);
+
     setCachedAppServices(appServices);
     setCachedStore(store);
 
@@ -161,9 +164,6 @@ const IdeApp = () => {
 
     // --- Register the services to be used with the IDE
     registerCommands(appServices.ideCommandsService);
-
-    // --- Sign that the UI is ready
-    dispatch(ideLoadedAction());
 
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
@@ -182,38 +182,34 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find((t) => t.visible ?? true).id));
-  }, [appServices, store, messenger]);
 
-  useEffect(() => {
-    if (appPath) {
-      console.log("App path: ", appPath);
-      initializeMonaco(appPath);
-    }
-
-    // --- It is time to initialize the IDE
-  }, [appPath]);
+    // --- Sign that the UI is ready
+    dispatch(ideLoadedAction());
+  }, [appPath, appServices, store, messenger]);
 
   useEffect(() => {
     setIsWindows(isWindows);
   }, [isWindows]);
 
   useEffect(() => {
+    console.log("IdeLoaded effect:", ideLoaded);
     if (ideLoaded) {
       (async () => {
+        console.log("Load IDE settings")
         let state = store.getState();
         const mainApi = createMainApi(messenger);
         if (!state.ideSettings.disableAutoOpenProject) {
+          console.log("Query settings");
           const settings = await mainApi.getAppSettings();
-          const projectPath = settings?.project?.folderPath;
+          console.log("IDE settings:", JSON.stringify(settings?.ideSettings))
+          let projectPath = settings?.project?.folderPath;
+          console.log("Project path:", projectPath)
           if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
             // --- Let's load the last propject
-            console.log("Opening the last project: ", projectPath);
+            projectPath = projectPath.replaceAll("\\", "/");
+            console.log("Opening project");
             await mainApi.openFolder(projectPath);
-            state = store.getState();
-            const buildRoot = state.project?.buildRoots?.[0];
-            if (!(settings?.ideSettings?.disableAutoOpenBuildRoot ?? false) && buildRoot) {
-              // --- Open the build root file
-            }
+            console.log("Project opened");
           }
         }
       })();

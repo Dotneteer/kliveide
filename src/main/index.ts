@@ -54,7 +54,6 @@ import {
   setMachineSpecificAction,
   setMediaAction,
   showInstantScreenAction,
-  setIdeDisableAutoOpenBuildRootAction,
   setIdeDisableAutoOpenProjectAction,
   setEmuStayOnTopAction,
   setIdeDisableAutoCompleteAction,
@@ -258,9 +257,6 @@ async function createAppWindows() {
 
       // --- Update IDE Settings
       const ideSettings = appSettings.ideSettings;
-      mainStore.dispatch(
-        setIdeDisableAutoOpenBuildRootAction(ideSettings?.disableAutoOpenBuildRoot ?? false)
-      );
       mainStore.dispatch(
         setIdeDisableAutoOpenProjectAction(ideSettings?.disableAutoOpenProject ?? false)
       );

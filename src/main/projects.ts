@@ -222,14 +222,6 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
     await processBuildFile();
   }
 
-  // --- Open the build root file
-  const projectState = mainStore.getState().project;
-  const buildRoot = projectState.buildRoots?.[0];
-  if (!appSettings?.ideSettings?.disableAutoOpenBuildRoot && buildRoot) {
-    await new Promise((r) => setTimeout(r, 400));
-    await getIdeApi().executeCommand(`nav "${buildRoot}"`);
-  }
-
   // --- Save the folder into settings
   appSettings.folders ??= {};
   appSettings.folders[LAST_PROJECT_FOLDER] = projectFolder;

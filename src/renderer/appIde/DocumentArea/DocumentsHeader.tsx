@@ -63,10 +63,13 @@ export const DocumentsHeader = () => {
 
   // --- Make sure that the index is visible
   useEffect(() => {
+    const folderPath = store.getState().project?.folderPath;
+    if (!folderPath) return;
+
     ensureTabVisible();
     // --- Save document information to the project
     const workspace: DocumentWorkspace = {
-      documents: openDocs?.map(d => ({ type: d.type, id: d.id, position: {
+      documents: openDocs?.filter(d => d.id.startsWith(folderPath))?.map(d => ({ type: d.type, id: d.id, position: {
         line: d.editPosition?.line ?? 0,
         column: d.editPosition?.column ?? 0
       } })),
@@ -76,10 +79,13 @@ export const DocumentsHeader = () => {
     (async () => {
       await mainApi.saveProject();
     })();
-  }, [activeDocIndex, selectedIsBuildRoot]);
+  }, [activeDocIndex, openDocs, editorVersion]);
 
   // --- Refresh the changed project document
   useEffect(() => {
+    const projectClosed = !store.getState().project?.folderPath;
+    if (projectClosed) return;
+
     // --- Get the data of the document
     (async () => {
       // --- Check if the project document is visible
@@ -89,7 +95,7 @@ export const DocumentsHeader = () => {
       // --- Refresh the contents of the document
       const viewState = documentHubService.getDocumentViewState(projectDoc.id);
       documentHubService.setDocumentViewState(projectDoc.id, viewState);
-      dispatch(incProjectViewStateVersionAction());
+      setTimeout(() => dispatch(incProjectViewStateVersionAction()), 1000);
     })();
   }, [projectVersion]);
 
