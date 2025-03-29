@@ -223,7 +223,7 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
           offsetX={0}
           offsetY={40}
           showDelay={100}
-          content={`Goto to ${filename}:${breakpoint.line}`}
+          content={`Go to ${filename}:${breakpoint.line}`}
         />
       )}
     </span>
