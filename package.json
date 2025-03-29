@@ -53,7 +53,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "electron": "^33.0.2",
     "electron-builder": "^25.1.8",
-    "electron-vite": "^2.3.0",
+    "electron-vite": "^3.1.0",
     "eslint": "^8.31.0",
     "execa": "^8.0.1",
     "expect": "^29.3.1",
