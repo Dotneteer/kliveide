@@ -85,6 +85,12 @@ export const pageMap = [{
       "sidebarTitle": "Always on Top"
     }
   }, {
+    name: "diagnostics",
+    route: "/howto/diagnostics",
+    frontMatter: {
+      "sidebarTitle": "Diagnostics"
+    }
+  }, {
     name: "file-extensions",
     route: "/howto/file-extensions",
     frontMatter: {
