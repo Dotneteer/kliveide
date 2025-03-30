@@ -18,7 +18,8 @@ export function emulatorStateReducer(
     case "SET_MACHINE_STATE":
       return {
         ...state,
-        machineState: payload?.state
+        machineState: payload?.state,
+        pcValue: payload?.numValue
       };
 
     case "SET_MACHINE_CONFIG":

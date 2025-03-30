@@ -162,9 +162,9 @@ export const setMachineConfigAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
-export const setMachineStateAction: ActionCreator = (state: MachineControllerState) => ({
+export const setMachineStateAction: ActionCreator = (state: MachineControllerState, numValue: number) => ({
   type: "SET_MACHINE_STATE",
-  payload: { state }
+  payload: { state, numValue }
 });
 
 export const muteSoundAction: ActionCreator = (flag: boolean) => ({

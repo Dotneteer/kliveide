@@ -90,6 +90,7 @@ export type EmulatorState = {
   config?: Record<string, any>;
   machineSpecific?: Record<string, any>;
   machineState?: MachineControllerState;
+  pcValue?: number;
   isDebugging?: boolean;
   soundLevel?: number;
   soundMuted?: boolean;
