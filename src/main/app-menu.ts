@@ -34,7 +34,8 @@ import {
   showKeyboardAction,
   setKeyMappingsAction,
   setIdeDisableAutoOpenProjectAction,
-  setIdeDisableAutoCompleteAction
+  setIdeDisableAutoCompleteAction,
+  closeEmuWithIdeAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
@@ -103,6 +104,7 @@ const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
 const IDE_AUTO_OPEN_PROJECT = "ide_auto_open_project";
 const IDE_AUTO_COMPLETE = "ide_auto_complete";
+const IDE_CLOSE_EMU_WITH_IDE = "ide_close_emu_with_ide";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -877,7 +879,19 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               mainStore.dispatch(setIdeDisableAutoCompleteAction(!mi.checked));
               saveAppSettings();
             }
+          },
+          { type: "separator" },
+          {
+            id: IDE_CLOSE_EMU_WITH_IDE,
+            label: "Close Emulator when IDE is closed",
+            type: "checkbox",
+            checked: !appState.ideSettings?.closeEmulatorWithIde,
+            click: async (mi) => {
+              mainStore.dispatch(closeEmuWithIdeAction(!mi.checked));
+              saveAppSettings();
+            }
           }
+
         ]
       }
     ]
