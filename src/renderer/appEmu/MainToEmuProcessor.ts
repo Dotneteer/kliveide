@@ -790,7 +790,6 @@ export async function processMainToEmuMessages(
 
   switch (message.type) {
     case "ForwardAction":
-      console.log("Forwarding action", message.action, message.sourceId);
       // --- The emu sent a state change action. Replay it in the main store without formarding it
       store.dispatch(message.action, message.sourceId);
       break;

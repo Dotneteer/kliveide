@@ -100,7 +100,7 @@ export class MachineController implements IMachineController {
 
     const oldState = this._machineState;
     this._machineState = value;
-    this.store.dispatch(setMachineStateAction(value), "emu");
+    this.store.dispatch(setMachineStateAction(value, this.machine.pc), "emu");
     this.stateChanged.fire({ oldState, newState: this._machineState });
   }
 
@@ -288,7 +288,7 @@ export class MachineController implements IMachineController {
           }
           await this.run(
             FrameTerminationMode.UntilExecutionPoint,
-            debug ? DebugStepMode.StopAtBreakpoint : DebugStepMode.NoDebug,
+            DebugStepMode.NoDebug,
             step.rom,
             step.execPoint
           );

@@ -117,7 +117,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const setPauseOverlay = () => {
     const showShadow = store.getState()?.emuViewOptions?.showInstantScreen;
     setOverlay(
-      `Paused (PC: $${toHexa4(controller.machine.pc)})${showShadow ? " - Shadow screen" : ""}`
+      `Paused (PC: $${toHexa4(controller.machine.pc)})${showShadow ? " - Instant screen" : ""}`
     );
   };
 
@@ -420,13 +420,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Displays the screen
   function displayScreenData(): void {
     if (!pixelData.current) {
-      console.log("No pixel data");
       return;
     }
     const screenEl = screenElement.current;
     const shadowScreenEl = shadowScreenElement.current;
     if (!screenEl || !shadowScreenEl) {
-      console.log("No screen");
       return;
     }
 
@@ -434,7 +432,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       willReadFrequently: true
     });
     if (!shadowCtx) {
-      console.log("No shadowCtx");
       return;}
 
     shadowCtx.imageSmoothingEnabled = false;
@@ -452,7 +449,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
     const screenData = controller?.machine?.getPixelBuffer();
     if (!screenData) {
-      console.log("No pixel data");
       return;
     }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
@@ -466,7 +462,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       screenCtx.imageSmoothingEnabled = false;
       screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
     }
-    console.log("Display updated");
   }
 
   // --- Hanldles key events

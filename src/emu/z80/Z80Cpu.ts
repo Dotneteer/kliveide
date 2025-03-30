@@ -552,6 +552,7 @@ export class Z80Cpu implements IZ80Cpu {
     } else {
       this.stepOutAddress = -1;
     }
+    console.log("Step out address marked: " + this.stepOutAddress, this.stepOutStack);
   }
 
   /**

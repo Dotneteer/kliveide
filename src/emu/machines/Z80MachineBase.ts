@@ -336,6 +336,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract getCurrentPartitionLabels(): string[];
 
   /**
+   * Gets a flag for each 8K page that indicates if the page is a ROM
+   */
+  abstract getRomFlags(): boolean[];
+
+  /**
    * Indicates if the machine's operating system is initialized
    */
   abstract get isOsInitialized(): boolean;
@@ -537,7 +542,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     // --- Sign that the loop execution is in progress
     const z80Machine = this;
     this.executionContext.lastTerminationReason = undefined;
-    var instructionsExecuted = 0;
+    let instructionsExecuted = 0;
 
     // --- Check the startup breakpoint
     if (this.pc != this.executionContext.debugSupport?.lastStartupBreakpoint) {
@@ -676,8 +681,13 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
       switch (z80Machine.executionContext.debugStepMode) {
         case DebugStepMode.StepInto:
           // --- Stop right after the first executed instruction
-          return instructionsExecuted > 0;
+          const shouldStop = instructionsExecuted > 0;
+          if (shouldStop) {
+            debugSupport.imminentBreakpoint = undefined;
+          }
+          return shouldStop;
 
+        case DebugStepMode.StepOver:
         case DebugStepMode.StopAtBreakpoint:
           const stopAt = debugSupport.shouldStopAt(z80Machine.pc, () =>
             z80Machine.getPartition(z80Machine.pc)
@@ -690,11 +700,17 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
           ) {
             // --- Stop when reached a breakpoint
             debugSupport.lastBreakpoint = z80Machine.pc;
+            debugSupport.imminentBreakpoint = undefined;
+            console.log(
+              `instE: ${instructionsExecuted}, stopAt: ${stopAt}, lastBreakpoint: ${debugSupport.lastBreakpoint}, pc: ${z80Machine.pc}`
+            );
             return true;
           }
-          break;
+          if (z80Machine.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
+            break;
+          }
 
-        case DebugStepMode.StepOver:
+          // --- Step over checks
           if (debugSupport.imminentBreakpoint !== undefined) {
             // --- We also stop if an imminent breakpoint is reached, and also remove this breakpoint
             if (debugSupport.imminentBreakpoint === z80Machine.pc) {
@@ -718,6 +734,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
               instructionsExecuted > 0 &&
               (debugSupport.imminentBreakpoint === undefined || imminentJustCreated)
             ) {
+              debugSupport.imminentBreakpoint = undefined;
               return true;
             }
           }
@@ -726,6 +743,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
         case DebugStepMode.StepOut:
           if (z80Machine.stepOutAddress === z80Machine.pc) {
             // --- We reached the step-out address
+            debugSupport.imminentBreakpoint = undefined;
             return true;
           }
           break;

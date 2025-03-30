@@ -8,14 +8,24 @@ import { useEffect, useRef } from "react";
  * @param refreshInterval Refresh interval in milliseconds
  * @param handler Refrehs event handler
  */
-export function useStateRefresh (
+export function useStateRefresh(
   refreshInterval: number,
   handler: (state: MachineControllerState) => void | Promise<void>
 ): void {
-  const machineState = useSelector(s => s.emulatorState?.machineState);
+  const machineState = useSelector((s) => s.emulatorState?.machineState);
+  const pcValue = useSelector(s => s.emulatorState?.pcValue);
+  const lastMachineState = useRef<MachineControllerState>(machineState);
 
   // --- Initial refresh
   const initialized = useRef(false);
+
+  let timerHandler: NodeJS.Timeout | undefined;
+  const releaseTimer = () => {
+    if (timerHandler) {
+      clearInterval(timerHandler);
+      timerHandler = undefined;
+    }
+  };
 
   useEffect(() => {
     if (initialized.current) return null;
@@ -29,19 +39,15 @@ export function useStateRefresh (
 
   // --- Respond to machine state change events
   useEffect(() => {
-    let timerHandler: NodeJS.Timeout | undefined;
-    const releaseTimer = () => {
-      if (timerHandler) {
-        clearInterval(timerHandler);
-        timerHandler = undefined;
-      }
-    };
-
     // --- Refresh the status
     releaseTimer();
     switch (machineState) {
       case MachineControllerState.Running:
         // --- The machine is running, set up periodic status refresh
+        if (lastMachineState.current === MachineControllerState.Running)  {
+          // --- No change, no new timer
+          break;
+        }
         timerHandler = setInterval(() => {
           handler(machineState);
         }, refreshInterval);
@@ -53,8 +59,9 @@ export function useStateRefresh (
         handler(machineState);
         break;
     }
+    lastMachineState.current = machineState;
 
     // --- Release the timer when disposing this hook
     return () => releaseTimer();
-  }, [machineState]);
+  }, [machineState, pcValue]);
 }

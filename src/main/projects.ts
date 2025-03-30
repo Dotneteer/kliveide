@@ -196,6 +196,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       await getEmuApi().eraseAllBreakpoints();
       if (projectStruct.debugger?.breakpoints) {
         for (const bp of projectStruct.debugger.breakpoints) {
+          if (bp.line && bp.line <= 0) continue;
           delete bp.resolvedAddress;
           await getEmuApi().setBreakpoint(bp);
           if (bp.disabled) {
