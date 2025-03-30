@@ -142,7 +142,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const ideFocus = appState?.ideFocused;
 
   const settingsReader = createSettingsReader(mainStore);
-  const allowDevTools = settingsReader.readSetting("devTools.allow");
+  const devToolsValue = settingsReader.readSetting("devTools.allow");
+  const allowDevTools = devToolsValue === "1" || devToolsValue === "true";
   const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F9";
   const stepIntoShortcut =
     settingsReader.readSetting("shortcuts.stepInto") ?? (__DARWIN__ ? "F12" : "F11");
