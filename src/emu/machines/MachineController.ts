@@ -288,7 +288,7 @@ export class MachineController implements IMachineController {
           }
           await this.run(
             FrameTerminationMode.UntilExecutionPoint,
-            debug ? DebugStepMode.StopAtBreakpoint : DebugStepMode.NoDebug,
+            DebugStepMode.NoDebug,
             step.rom,
             step.execPoint
           );
