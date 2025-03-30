@@ -782,11 +782,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               undefined,
               true
             );
-            if (commandResult.success && commandResult.value) {
+            if (!commandResult.success) {
               if (task.id !== "exportCode") {
                 await executeIdeCommand(
                   ideWindow,
-                  `script-output ${commandResult.value}`,
+                  "outp build",
                   undefined,
                   true
                 );

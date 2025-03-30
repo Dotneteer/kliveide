@@ -1035,8 +1035,6 @@ async function injectCode(
       return commandError(message);
     }
     if (errorNo > 0) {
-      const returnMessage = "Compilation failed with errors. Check the Output panel for details.";
-      await context.mainApi.displayMessageBox("error", "Injecting code", returnMessage);
       await context.service.ideCommandsService.executeCommand("outp build");
       return commandError("Code compilation failed. No code injected.");
     }
