@@ -33,7 +33,7 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
-import { CpuState } from "@common/messaging/EmuApi";
+import { CpuState, CpuStateChunk } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
@@ -772,6 +772,19 @@ class EmuMessageProcessor {
       noController();
     }
     return controller.machine.getRomFlags();
+  }
+
+  async getCpuStateChunk(): Promise<CpuStateChunk> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    const machine = controller.machine;
+    return {
+      state: controller.state,
+      pcValue: machine.pc,
+      tacts: machine.tacts
+    };
   }
 }
 

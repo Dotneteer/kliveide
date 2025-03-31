@@ -4,7 +4,7 @@ import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/Labe
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
 import { SysVarType } from "@abstractions/SysVar";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
@@ -22,16 +22,16 @@ type SysVarData = {
 };
 
 const SysVarsPanel = () => {
-  const emuApiAlt = useEmuApi();
+  const emuApi = useEmuApi();
   const [sysVars, setSysVars] = useState<SysVarData[]>([]);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
   const refreshSysVars = async () => {
     // --- Get breakpoint information
-    const sysVars = await emuApiAlt.getSysVars();
+    const sysVars = await emuApi.getSysVars();
 
-    const memResponse = await emuApiAlt.getMemoryContents();
+    const memResponse = await emuApi.getMemoryContents();
 
     const memory = memResponse.memory;
     const vars = sysVars.map((sv) => {
@@ -73,7 +73,7 @@ const SysVarsPanel = () => {
   }, [machineState]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, async () => {
+  useEmuStateListener(emuApi, async () => {
     await refreshSysVars();
   });
 

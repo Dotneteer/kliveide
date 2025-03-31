@@ -1,11 +1,10 @@
-import { Flag, Label, LabelSeparator, Separator, Value } from "@controls/Labels";
-import { useEffect, useState } from "react";
-import { useStateRefresh } from "../useStateRefresh";
 import styles from "./CpuPanel.module.scss";
+import { Flag, Label, LabelSeparator, Separator, Value } from "@controls/Labels";
+import { useState } from "react";
+import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState } from "@common/messaging/EmuApi";
 import { toBin16, toBin8 } from "../services/ide-commands";
-import { useSelector } from "@renderer/core/RendererProvider";
 
 const FLAG_WIDTH = 16;
 const LAB_WIDTH = 36;
@@ -15,7 +14,6 @@ const TACT_WIDTH = 72;
 const CpuPanel = () => {
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<CpuState>(null);
-  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
 
   const toHexa2 = (value?: number) =>
     value !== undefined ? value.toString(16).toUpperCase().padStart(2, "0") : "--";
@@ -39,16 +37,9 @@ const CpuPanel = () => {
   const toFlag = (value: number | undefined, bitNo: number) =>
     value !== undefined ? !!(value & (1 << bitNo)) : undefined;
 
-  // --- Take care of refreshing the screen
-  useStateRefresh(1000, async () => {
+  useEmuStateListener(emuApi, async () => {
     setCpuState(await emuApi.getCpuState());
   });
-
-  useEffect(() => {
-    (async () => {
-      setCpuState(await emuApi.getCpuState());
-    })();
-  }, [emuViewVersion]);
 
   return (
     <div className={styles.cpuPanel}>

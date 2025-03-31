@@ -9,7 +9,7 @@ import { AddressInput } from "@renderer/controls/AddressInput";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { DumpSection } from "../DumpSection";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-import { useStateRefresh } from "@renderer/appIde/useStateRefresh";
+import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
@@ -271,7 +271,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 
   // --- Take care of refreshing the screen
-  useStateRefresh(1000, refreshMemoryView);
+  useEmuStateListener(emuApi, refreshMemoryView);
 
   const OptionsBar = () => {
     return (

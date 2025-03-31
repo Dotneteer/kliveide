@@ -1,7 +1,7 @@
 import styles from "./SplitPanel.module.scss";
 
 import { useResizeObserver } from "../core/useResizeObserver";
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import classnames from "classnames";
 
@@ -19,6 +19,7 @@ type Props = {
   minSize?: number;
   secondaryVisible?: boolean;
   splitterThickness?: number;
+  onUpdatePrimarySize?: (newSize: string) => void;
 };
 
 /**
@@ -33,7 +34,8 @@ export const SplitPanel = ({
   initialSecondarySize,
   minSize = 20,
   secondaryVisible = true,
-  splitterThickness = 4
+  splitterThickness = 4,
+  onUpdatePrimarySize
 }: Props) => {
   // --- Referencies we need to handling the splitter within the panel
   const mainContainer = useRef<HTMLDivElement>(null);
@@ -160,6 +162,11 @@ export const SplitPanel = ({
       splitterThickness / 2;
     setSplitterPosition(splitterPosValue);
   });
+
+  // --- Save the primary size
+  useEffect(() => {
+    onUpdatePrimarySize?.(typeof primarySize === "number" ? `${primarySize}px` : primarySize);
+  }, [primarySize]);
 
   return (
     <div className={[styles.splitPanel, containerClass].join(" ")} ref={mainContainer}>

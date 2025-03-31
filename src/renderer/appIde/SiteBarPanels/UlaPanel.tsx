@@ -1,7 +1,7 @@
 import { Flag, Label, Separator } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useState } from "react";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./UlaPanel.module.scss";
 import { LabeledValue } from "@renderer/controls/LabeledValue";
 import { LabeledFlag } from "@renderer/controls/LabeledFlag";
@@ -16,7 +16,7 @@ const UlaPanel = () => {
   const [ulaState, setUlaState] = useState<UlaState>(null);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
 
-  useStateRefresh(250, async () => setUlaState(await emuApi.getUlaState()));
+  useEmuStateListener(emuApi, async () => setUlaState(await emuApi.getUlaState()));
 
   const keyClicked = async (lineNo: number, bitNo: number) => {
     const keyState = !!(ulaState?.keyLines?.[lineNo] & (1 << bitNo));
@@ -26,14 +26,14 @@ const UlaPanel = () => {
       : newUlaState.keyLines[lineNo] | (1 << bitNo);
     await emuApi.setKeyStatus(5 * lineNo + bitNo, !keyState);
     setUlaState(newUlaState);
-  }
+  };
 
   return (
     <div className={styles.ulaPanel}>
       <LabeledValue label="FCL" value={ulaState?.fcl} toolTip="Frame Clock" />
       <LabeledValue label="FRM" value={ulaState?.frm} toolTip="#of frames rendered" />
-      <LabeledValue label="RAS" value={ulaState?.ras} toolTip="Current raster line" />
-      <LabeledValue label="POS" value={ulaState?.pos} toolTip="Pixel in the current line" />
+      <LabeledValue label="RAS" value={ulaState?.ras ?? 0} toolTip="Current raster line" />
+      <LabeledValue label="POS" value={ulaState?.pos ?? 0} toolTip="Pixel in the current line" />
       <LabeledValue label="PIX" value={ulaState?.pix} toolTip="Pixel operation" />
       <LabeledValue label="BOR" value={ulaState?.bor} toolTip="Current border color" />
       <LabeledValue label="FLO" value={ulaState?.flo} toolTip="Floating bus value" />

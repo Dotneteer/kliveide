@@ -5,7 +5,7 @@ import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
 import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import styles from "./BreakpointsPanel.module.scss";
@@ -103,7 +103,7 @@ const BreakpointsPanel = () => {
   }, [machineId]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(1000, async () => {
+  useEmuStateListener(emuApi, async () => {
     await refreshBreakpoints();
   });
 

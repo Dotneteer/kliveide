@@ -3,16 +3,18 @@ import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { LabelSeparator, Label, Secondary, Value } from "@controls/Labels";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./NecUpd765Panel.module.scss";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { PortOperationType } from "@abstractions/FloppyLogEntry";
 import { Icon } from "@renderer/controls/Icon";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
+  const emuApi = useEmuApi();
   const [log, setLog] = useState<FloppyLogEntry[]>([]);
 
   // --- This function queries the breakpoints from the emulator
@@ -24,7 +26,7 @@ const NecUpd765Panel = () => {
   };
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, async () => {
+  useEmuStateListener(emuApi, async () => {
     await refreshLogEntries();
   });
 

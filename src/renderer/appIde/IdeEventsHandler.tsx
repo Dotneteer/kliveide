@@ -10,6 +10,9 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { delay } from "@renderer/utils/timing";
 import { DOCS_WORKSPACE } from "./DocumentArea/DocumentsHeader";
 import { CODE_EDITOR } from "@common/state/common-ids";
+import { useInterval } from "usehooks-ts";
+import { CpuStateChunk } from "@common/messaging/EmuApi";
+import { useEmuStateListener } from "./useStateRefresh";
 
 /**
  * This component represents an event handler to manage the global IDE events
@@ -25,6 +28,9 @@ export const IdeEventsHandler = () => {
   const breakpointsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
   const syncBps = useSelector((s) => s.ideViewOptions.syncSourceBreakpoints ?? true);
   const buildFilePath = useRef<string>(null);
+
+  const lastStateChunk = useRef<CpuStateChunk>(null);
+  const latestRefresh = useRef<number>(new Date().valueOf());
 
   // --- Refresh the code location whenever the machine is paused
   useEffect(() => {
@@ -129,6 +135,23 @@ export const IdeEventsHandler = () => {
       projectService.projectOpened.off(onProjectLoaded);
     };
   }, [projectService]);
+
+  // useInterval(async () => {
+  //   const newState = await emuApi.getCpuStateChunk();
+  //   const oldState = lastStateChunk.current;
+  //   const changed =
+  //     !oldState ||
+  //     oldState.state !== newState.state ||
+  //     oldState.pcValue !== newState.pcValue ||
+  //     oldState.tacts !== newState.tacts;
+  //   if (changed) {
+  //     console.log("CPU state changed");
+  //   } else if (new Date().valueOf() - latestRefresh.current > 500) {
+  //     latestRefresh.current = new Date().valueOf();
+  //     console.log("CPU state changed");
+  //   }
+  //   lastStateChunk.current = newState;
+  // }, 100);
 
   // --- Do not render any visual elements
   return null;

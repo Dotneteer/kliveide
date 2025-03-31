@@ -12,7 +12,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import { toHexa2 } from "../services/ide-commands";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import {
   BasicLine,
   BasicLineSpan,
@@ -356,8 +356,8 @@ const BasicPanel = ({ viewState }: DocumentProps<BasicViewState>) => {
   }, [autoRefresh, showCodes, showSpectrumFont]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, () => {
-    refreshBasicView(useAutoRefresh.current);
+  useEmuStateListener(emuApi, async () => {
+    await refreshBasicView(useAutoRefresh.current);
   });
 
   // --- Save the current top addresds

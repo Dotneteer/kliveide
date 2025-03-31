@@ -2,7 +2,7 @@ import { Flag, Label, LabelSeparator, Value } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa2, toHexa6 } from "../services/ide-commands";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./MemMappingPanel.module.scss";
 import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -51,7 +51,7 @@ const MemMappingPanel = () => {
   }, [machineState]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, async () => {
+  useEmuStateListener(emuApi, async () => {
     await refreshMemoryMappingState();
   });
 

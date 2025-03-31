@@ -2,7 +2,7 @@ import { Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa2 } from "../services/ide-commands";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./NextRegPanel.module.scss";
 import {} from "@controls/Tooltip";
 import { NextRegDescriptor, RegValueState } from "@emu/machines/zxNext/NextRegDevice";
@@ -49,7 +49,7 @@ const NextRegPanel = () => {
   }, [machineState]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(500, async () => {
+  useEmuStateListener(emuApi, async () => {
     await refreshNextDeviceState();
   });
 

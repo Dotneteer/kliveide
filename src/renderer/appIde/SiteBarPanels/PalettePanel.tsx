@@ -4,9 +4,8 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { useState } from "react";
 import { PaletteDeviceInfo } from "@common/messaging/EmuApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import classnames from "classnames";
-import { toHexa2 } from "../services/ide-commands";
 
 const noInfo: number[] = Array.from({ length: 0x100 }, () => 0);
 
@@ -15,7 +14,7 @@ const PalettePanel = () => {
   const [paletteState, setPaletteState] = useState<PaletteDeviceInfo>(null);
 
   // --- Take care of refreshing the palette info
-  useStateRefresh(1000, async () => {
+  useEmuStateListener(emuApi, async () => {
     setPaletteState(await emuApi.getPalettedDeviceInfo());
   });
 
@@ -85,9 +84,7 @@ const Palette = ({ title, palette, intiallyVisible, active }: Props) => {
           <LabeledSwitch label={title} value={visible} clicked={(v) => setVisible(v)} />
         </div>
       </div>
-      {visible && (
-        <NextPaletteViewer palette={palette} smallDisplay={true} />
-      )}
+      {visible && <NextPaletteViewer palette={palette} smallDisplay={true} />}
     </div>
   );
 };

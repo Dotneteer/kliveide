@@ -9,6 +9,7 @@ import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -176,6 +177,17 @@ class EmuApiImpl {
   async getRomFlags(): Promise<boolean[]> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async getCpuStateChunk(): Promise<CpuStateChunk> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+}
+
+// --- The response with the CPU state chunk
+export type CpuStateChunk = {
+  state: MachineControllerState;
+  pcValue: number;
+  tacts: number;
 }
 
 // --- The response with the CPU state information
