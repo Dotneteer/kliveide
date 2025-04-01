@@ -18,6 +18,12 @@ export function ideSettingsReducer(state: IdeSettings, { type, payload }: Action
         disableAutoComplete: payload?.flag
       };
 
+    case "SET_IDE_CLOSE_EMU_WITH_IDE":
+      return {
+        ...state,
+        closeEmulatorWithIde: payload?.flag
+      };
+
     default:
       return state;
   }

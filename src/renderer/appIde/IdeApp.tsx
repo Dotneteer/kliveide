@@ -142,6 +142,8 @@ const IdeApp = () => {
   const maximizeToolPanels = useSelector((s) => s.ideViewOptions.maximizeTools);
   const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
   const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
+  const sideBarWidth = useSelector((s) => s.ideViewOptions.sideBarWidth ?? "25%");
+  const toolPanelHeight = useSelector((s) => s.ideViewOptions.toolPanelHeight ?? "33%");
 
   const activityOrder = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? 3 : 0;
   const primaryBarsPos = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? "right" : "left";
@@ -195,15 +197,15 @@ const IdeApp = () => {
     console.log("IdeLoaded effect:", ideLoaded);
     if (ideLoaded) {
       (async () => {
-        console.log("Load IDE settings")
+        console.log("Load IDE settings");
         let state = store.getState();
         const mainApi = createMainApi(messenger);
         if (!state.ideSettings.disableAutoOpenProject) {
           console.log("Query settings");
           const settings = await mainApi.getAppSettings();
-          console.log("IDE settings:", JSON.stringify(settings?.ideSettings))
+          console.log("IDE settings:", JSON.stringify(settings?.ideSettings));
           let projectPath = settings?.project?.folderPath;
-          console.log("Project path:", projectPath)
+          console.log("Project path:", projectPath);
           if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
             // --- Let's load the last propject
             projectPath = projectPath.replaceAll("\\", "/");
@@ -225,8 +227,11 @@ const IdeApp = () => {
         <SplitPanel
           primaryLocation={primaryBarsPos}
           primaryVisible={showSideBar}
-          initialPrimarySize="25%"
+          initialPrimarySize={sideBarWidth}
           minSize={60}
+          onUpdatePrimarySize={(size: string) => {
+            console.log("SideBar size:", size);
+          }}
         >
           <SiteBar />
           <SplitPanel
@@ -234,7 +239,10 @@ const IdeApp = () => {
             primaryVisible={showToolPanels}
             minSize={160}
             secondaryVisible={!maximizeToolPanels}
-            initialPrimarySize="33%"
+            initialPrimarySize={toolPanelHeight}
+            onUpdatePrimarySize={(size: string) => {
+              console.log("ToolPanel size:", size);
+            }}
           >
             <ToolArea siblingPosition={docPanelsPos} />
             <DocumentArea />

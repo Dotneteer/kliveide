@@ -452,7 +452,7 @@ export class DebugSupport implements IDebugSupport {
     this.breakpointDefs.forEach((bp) => {
       const bpKey = getBreakpointKey(bp);
       if (bp.resource === resource) {
-        if (bp.line > lineCount) {
+        if (bp.line <= 0 || bp.line > lineCount) {
           // --- Delete as it overflows the file
           toDelete.add(bpKey);
         } else if (mapped.has(bpKey)) {

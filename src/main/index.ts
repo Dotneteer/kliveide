@@ -57,6 +57,7 @@ import {
   setIdeDisableAutoOpenProjectAction,
   setEmuStayOnTopAction,
   setIdeDisableAutoCompleteAction,
+  closeEmuWithIdeAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -260,7 +261,10 @@ async function createAppWindows() {
       mainStore.dispatch(
         setIdeDisableAutoOpenProjectAction(ideSettings?.disableAutoOpenProject ?? false)
       );
-      mainStore.dispatch(setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false));
+      mainStore.dispatch(
+        setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false)
+      );
+      mainStore.dispatch(closeEmuWithIdeAction(ideSettings?.closeEmulatorWithIde ?? true));
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
@@ -318,7 +322,7 @@ async function createAppWindows() {
     // --- Manage the Stay on top for the emu window
     if (!!state.emuViewOptions?.stayOnTop && !emuWindow?.isAlwaysOnTop()) {
       emuWindow?.setAlwaysOnTop(true);
-    } else  if (!state.emuViewOptions?.stayOnTop && emuWindow?.isAlwaysOnTop()) {
+    } else if (!state.emuViewOptions?.stayOnTop && emuWindow?.isAlwaysOnTop()) {
       emuWindow?.setAlwaysOnTop(false);
     }
 
@@ -378,6 +382,8 @@ async function createAppWindows() {
 
   // --- Do not close the IDE (unless exiting the app), only hide it
   ideWindow.on("close", async (e) => {
+    const closeIde = mainStore.getState().ideSettings?.closeEmulatorWithIde;
+
     if (ideWindow?.webContents) {
       appSettings.windowStates ??= {};
       appSettings.windowStates.ideZoomFactor = ideWindow.webContents.getZoomFactor();
@@ -396,16 +402,21 @@ async function createAppWindows() {
       return;
     }
 
-    // --- Do not allow the IDE close, instead, hide it.
     e.preventDefault();
-    ideWindow.hide();
-    if (appSettings.windowStates && !ideWindowStateSaved) {
-      // --- Make sure to save the last IDE settings
-      appSettings.windowStates.showIdeOnStartup = false;
-    }
+    if (!closeIde) {
+      // --- Close the EMU window as well
+      emuWindow?.close();
+    } else {
+      // --- Do not allow the IDE close, instead, hide it.
+      ideWindow.hide();
+      if (appSettings.windowStates && !ideWindowStateSaved) {
+        // --- Make sure to save the last IDE settings
+        appSettings.windowStates.showIdeOnStartup = false;
+      }
 
-    // --- IDE id hidden, so it's not focused
-    mainStore.dispatch(ideFocusedAction(false));
+      // --- IDE id hidden, so it's not focused
+      mainStore.dispatch(ideFocusedAction(false));
+    }
   });
 
   // --- Test actively push message to the Electron-Renderer

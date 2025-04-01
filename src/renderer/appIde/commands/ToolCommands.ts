@@ -42,9 +42,9 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
 
     // --- Select the panel
     const dispatch = context.store.dispatch;
-    dispatch(showToolPanelsAction(true));
-    dispatch(activateOutputPaneAction(args.paneId));
-    dispatch(activateToolAction("output"));
+    dispatch(showToolPanelsAction(true), "ide");
+    dispatch(activateOutputPaneAction(args.paneId), "ide");
+    dispatch(activateToolAction("output"), "ide");
 
     // --- Done.
     writeSuccessMessage(context.output, `Output panel ${args.paneId} is displayed.`);

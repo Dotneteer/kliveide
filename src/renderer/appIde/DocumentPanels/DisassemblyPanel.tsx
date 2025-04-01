@@ -28,7 +28,7 @@ import classnames from "classnames";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
@@ -66,7 +66,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
-  const emuApiAlt = useEmuApi();
+  const emuApi = useEmuApi();
   const mainApi = useMainApi();
 
   // --- Get the machine information
@@ -159,7 +159,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     setDisplayBankMatrix(ramBankValue > 8 || romPagesValue > 8);
     (async function () {
       const options: DropdownOption[] = [];
-      const labels = await emuApiAlt.getPartitionLabels();
+      const labels = await emuApi.getPartitionLabels();
       setPartitionLabels(labels);
       if (ramBankValue <= 8) {
         const ordered = Object.keys(labels)
@@ -217,7 +217,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         }
       }
 
-      const getMemoryResponse = await emuApiAlt.getMemoryContents(partition);
+      const getMemoryResponse = await emuApi.getMemoryContents(partition);
       setMem64kLabels(getMemoryResponse.partitionLabels);
 
       const memory = getMemoryResponse.memory;
@@ -369,9 +369,14 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   ]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(1000, async () => {
+  useEmuStateListener(emuApi, async () => {
     await refreshDisassembly();
   });
+
+  // // --- Take care of refreshing the screen
+  // useStateRefresh(1000, async () => {
+  //   await refreshDisassembly();
+  // });
 
   const bank16KOptions: DropdownOption[] = [];
   for (let i = 0; i < 8; i++) {

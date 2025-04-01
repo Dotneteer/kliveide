@@ -53,6 +53,8 @@ export type IdeViewOptions = {
   showSidebar?: boolean;
   editorFontSize?: number;
   syncSourceBreakpoints?: boolean;
+  sideBarWidth?: string;
+  toolPanelHeight?: string;
 };
 
 /**

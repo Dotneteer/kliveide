@@ -2,7 +2,7 @@ import { Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa4 } from "../services/ide-commands";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./CallStackPanel.module.scss";
 import { Icon } from "@renderer/controls/Icon";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -36,7 +36,7 @@ const CallStackPanel = () => {
   }, [machineState, emuViewVersion]);
 
   // --- Take care of refreshing the screen
-  useStateRefresh(1000, async () => {
+  useEmuStateListener(emuApi, async () => {
     await refreshMemoryMappingState();
   });
 

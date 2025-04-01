@@ -1,6 +1,6 @@
 import { Separator } from "@controls/Labels";
 import { useState } from "react";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import { LabeledValue } from "@renderer/controls/LabeledValue";
 import { LabeledFlag } from "@renderer/controls/LabeledFlag";
 import styles from "./PsgPanel.module.scss";
@@ -11,7 +11,7 @@ const PsgPanel = () => {
   const emuApi = useEmuApi();
   const [psgState, setPsgState] = useState<PsgChipState>(null);
 
-  useStateRefresh(250, async () => {
+  useEmuStateListener(emuApi, async () => {
     const state = (await emuApi.getPsgState());
     setPsgState(state);
   });

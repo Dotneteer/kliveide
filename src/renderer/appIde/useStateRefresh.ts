@@ -1,67 +1,92 @@
-import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { CpuStateChunk, EmuApi } from "@common/messaging/EmuApi";
+import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 
-/**
- * This react hook executes refresh events whenever the machine's state changes or the specified
- * time period expires
- * @param refreshInterval Refresh interval in milliseconds
- * @param handler Refrehs event handler
- */
-export function useStateRefresh(
-  refreshInterval: number,
-  handler: (state: MachineControllerState) => void | Promise<void>
-): void {
-  const machineState = useSelector((s) => s.emulatorState?.machineState);
-  const pcValue = useSelector(s => s.emulatorState?.pcValue);
-  const lastMachineState = useRef<MachineControllerState>(machineState);
+type Callback = (state: MachineControllerState) => Promise<void>;
 
-  // --- Initial refresh
-  const initialized = useRef(false);
+class EmuStateListener {
+  static instance: EmuStateListener;
+  private readonly intervalTime = 100; // 100ms interval
+  private intervalId: NodeJS.Timeout | null = null;
+  private callbacks = new Set<Callback>();
+  private oldState: CpuStateChunk | null = null;
+  private lastRefresh = new Date().valueOf();
+  private isRunning = false;
 
-  let timerHandler: NodeJS.Timeout | undefined;
-  const releaseTimer = () => {
-    if (timerHandler) {
-      clearInterval(timerHandler);
-      timerHandler = undefined;
+  static getInstanceWith(emuApi: EmuApi): EmuStateListener {
+    if (!EmuStateListener.instance) {
+      EmuStateListener.instance = new EmuStateListener(emuApi);
     }
-  };
+    return EmuStateListener.instance;
+  }
 
-  useEffect(() => {
-    if (initialized.current) return null;
-    initialized.current = true;
-    handler(machineState);
+  private constructor(public readonly emuApi: EmuApi) {}
 
-    return () => {
-      initialized.current = false;
-    };
-  }, [initialized.current]);
+  private startTimer() {
+    if (this.intervalId) return; // Prevent duplicate timers
 
-  // --- Respond to machine state change events
-  useEffect(() => {
-    // --- Refresh the status
-    releaseTimer();
-    switch (machineState) {
-      case MachineControllerState.Running:
-        // --- The machine is running, set up periodic status refresh
-        if (lastMachineState.current === MachineControllerState.Running)  {
-          // --- No change, no new timer
-          break;
+    this.intervalId = setInterval(() => {
+      (async () => {
+        if (this.isRunning) return;
+
+        this.isRunning = true;
+        try {
+          const newState = await this.emuApi.getCpuStateChunk();
+          const changed =
+            !this.oldState ||
+            this.oldState.state !== newState.state ||
+            this.oldState.pcValue !== newState.pcValue ||
+            this.oldState.tacts !== newState.tacts;
+          if (changed) {
+            if (newState.state === MachineControllerState.Paused) {
+              // --- The machine is paused, refresh the state immediately
+              this.callbacks.forEach((cb) => cb(newState.state));
+              this.lastRefresh = new Date().valueOf();
+            } else if (new Date().valueOf() - this.lastRefresh > 750) {
+              this.callbacks.forEach((cb) => cb(newState.state));
+              this.lastRefresh = new Date().valueOf();
+            }
+          } else if (new Date().valueOf() - this.lastRefresh > 5000) {
+            this.lastRefresh = new Date().valueOf();
+            this.callbacks.forEach((cb) => cb(newState.state));
+          }
+          this.oldState = newState;
+        } finally {
+          this.isRunning = false;
         }
-        timerHandler = setInterval(() => {
-          handler(machineState);
-        }, refreshInterval);
-        break;
+      })();
+    }, this.intervalTime);
+  }
 
-      case MachineControllerState.None:
-      case MachineControllerState.Paused:
-      case MachineControllerState.Stopped:
-        handler(machineState);
-        break;
+  subscribe(callback: Callback) {
+    this.callbacks.add(callback);
+    this.startTimer();
+  }
+
+  unsubscribe(callback: Callback) {
+    this.callbacks.delete(callback);
+    if (this.callbacks.size === 0 && this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
     }
-    lastMachineState.current = machineState;
+  }
+}
 
-    // --- Release the timer when disposing this hook
-    return () => releaseTimer();
-  }, [machineState, pcValue]);
+export function useEmuStateListener(emuApi: EmuApi, callback: Callback, onInit = true): void {
+  const listener = EmuStateListener.getInstanceWith(emuApi);
+
+  useInitializeAsync(async () => {
+    if (onInit) {
+      const state = await emuApi.getCpuStateChunk();
+      callback(state.state);
+    }
+  });
+
+  useEffect(() => {
+    listener.subscribe(callback);
+    return () => {
+      listener.unsubscribe(callback);
+    };
+  }, [emuApi, callback]);
 }

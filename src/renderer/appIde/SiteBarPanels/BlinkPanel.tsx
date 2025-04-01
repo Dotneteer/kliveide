@@ -8,7 +8,7 @@ import {
   Value
 } from "@controls/Labels";
 import { useState } from "react";
-import { useStateRefresh } from "../useStateRefresh";
+import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./BlinkPanel.module.scss";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -23,7 +23,7 @@ const BlinkPanel = () => {
   const emuApi = useEmuApi();
   const [blinkState, setBlinkState] = useState<BlinkState>(null);
 
-  useStateRefresh(1000, async () => setBlinkState(await emuApi.getBlinkState()));
+  useEmuStateListener(emuApi, async () => setBlinkState(await emuApi.getBlinkState()));
 
   return (
     <div className={styles.blinkPanel}>
