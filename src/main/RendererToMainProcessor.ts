@@ -210,7 +210,8 @@ class MainMessageProcessor {
     return filePath;
   }
 
-  saveProject() {
+  async saveProject() {
+    await new Promise((resolve) => setTimeout(resolve, 200));
     saveKliveProject();
   }
 

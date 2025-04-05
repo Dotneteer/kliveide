@@ -4,7 +4,7 @@ import { IdeViewOptions } from "./AppState";
 /**
  * This reducer is used to manage the emulator view option properties
  */
-export function ideViewOptionsReducer (
+export function ideViewOptionsReducer(
   state: IdeViewOptions,
   { type, payload }: Action
 ): IdeViewOptions {
@@ -29,6 +29,10 @@ export function ideViewOptionsReducer (
       return { ...state, editorFontSize: payload?.numValue };
     case "SYNC_SOURCE_BREAKPOINTS":
       return { ...state, syncSourceBreakpoints: payload?.flag };
+    case "SET_SIDEBAR_WIDTH":
+      return { ...state, sideBarWidth: payload?.value };
+    case "SET_TOOL_PANEL_HEIGHT":
+      return { ...state, toolPanelHeight: payload?.value };
     default:
       return state;
   }

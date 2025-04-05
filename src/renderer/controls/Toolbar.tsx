@@ -105,7 +105,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
 
   const { outputPaneService, ideCommandsService } = useAppServices();
   const saveProject = async () => {
-    await new Promise((r) => setTimeout(r, 100));
     await mainApi.saveProject();
   };
 

@@ -22,7 +22,9 @@ import {
   selectActivityAction,
   setToolsAction,
   activateToolAction,
-  displayDialogAction
+  displayDialogAction,
+  setWorkspaceSettingsAction,
+  incProjectFileVersionAction
 } from "@state/actions";
 import { useRef, useEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
@@ -74,7 +76,7 @@ import {
   ShowMemoryCommand
 } from "./commands/ToolCommands";
 import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
-import { IdeEventsHandler } from "./IdeEventsHandler";
+import { IdeEventsHandler, SIDE_BAR_WIDTH, TOOL_PANEL_HEIGHT } from "./IdeEventsHandler";
 import { ExcludedProjectItemsDialog } from "./dialogs/ExcludedProjectItemsDialog";
 import {
   ProjectExcludeItemsCommand,
@@ -116,6 +118,7 @@ import { FullPanel } from "@renderer/controls/new/Panels";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -123,6 +126,7 @@ const IdeApp = () => {
   // --- Used services
   const dispatch = useDispatch();
   const appServices = useAppServices();
+  const mainApi = useMainApi();
   const { store, messenger } = useRendererContext();
 
   // --- Default document service instance
@@ -229,8 +233,12 @@ const IdeApp = () => {
           primaryVisible={showSideBar}
           initialPrimarySize={sideBarWidth}
           minSize={60}
-          onUpdatePrimarySize={(size: string) => {
-            console.log("SideBar size:", size);
+          onPrimarySizeUpdateCompleted={(size: string) => {
+            dispatch(setWorkspaceSettingsAction(SIDE_BAR_WIDTH, size));
+            (async () => {
+              await mainApi.saveProject();
+              dispatch(incProjectFileVersionAction());
+            })();
           }}
         >
           <SiteBar />
@@ -240,8 +248,13 @@ const IdeApp = () => {
             minSize={160}
             secondaryVisible={!maximizeToolPanels}
             initialPrimarySize={toolPanelHeight}
-            onUpdatePrimarySize={(size: string) => {
+            onPrimarySizeUpdateCompleted={(size: string) => {
+              dispatch(setWorkspaceSettingsAction(TOOL_PANEL_HEIGHT, size));
               console.log("ToolPanel size:", size);
+              (async () => {
+                await mainApi.saveProject();
+                dispatch(incProjectFileVersionAction());
+              })();
             }}
           >
             <ToolArea siblingPosition={docPanelsPos} />

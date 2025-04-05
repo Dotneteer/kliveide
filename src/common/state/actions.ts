@@ -137,6 +137,11 @@ export const setSideBarPanelSizeAction: ActionCreator = (
   payload: { id, size, nextId, nextSize }
 });
 
+export const setSideBarPanelWidthAction: ActionCreator = (value: number) => ({
+  type: "SET_SIDEBAR_WIDTH",
+  payload: { value }
+});
+
 export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   type: "SET_TOOLS",
   payload: { tools }
@@ -145,6 +150,11 @@ export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
 export const activateToolAction: ActionCreator = (id: string) => ({
   type: "ACTIVATE_TOOL",
   payload: { id }
+});
+
+export const setTooPanelHeightAction: ActionCreator = (value: number) => ({
+  type: "SET_TOOL_PANEL_HEIGHT",
+  payload: { value }
 });
 
 export const setMachineTypeAction: ActionCreator = (id: string) => ({
@@ -400,3 +410,4 @@ export const closeEmuWithIdeAction: ActionCreator = (flag: boolean) => ({
   type: "SET_IDE_CLOSE_EMU_WITH_IDE",
   payload: { flag }
 });
+

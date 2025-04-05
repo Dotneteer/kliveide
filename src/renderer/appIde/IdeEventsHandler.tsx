@@ -5,14 +5,14 @@ import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-
 import { useAppServices } from "./services/AppServicesProvider";
 import { saveProject } from "./utils/save-project";
 import { BUILD_FILE } from "@common/structs/project-const";
-import { incBuildFileVersionAction } from "@common/state/actions";
+import { incBuildFileVersionAction, maximizeToolsAction, setSideBarPanelWidthAction, setTooPanelHeightAction, showSideBarAction } from "@common/state/actions";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { delay } from "@renderer/utils/timing";
 import { DOCS_WORKSPACE } from "./DocumentArea/DocumentsHeader";
 import { CODE_EDITOR } from "@common/state/common-ids";
-import { useInterval } from "usehooks-ts";
-import { CpuStateChunk } from "@common/messaging/EmuApi";
-import { useEmuStateListener } from "./useStateRefresh";
+
+export const TOOL_PANEL_HEIGHT = "toolPanelHeight";
+export const SIDE_BAR_WIDTH = "sideBarWidth";
 
 /**
  * This component represents an event handler to manage the global IDE events
@@ -28,9 +28,6 @@ export const IdeEventsHandler = () => {
   const breakpointsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
   const syncBps = useSelector((s) => s.ideViewOptions.syncSourceBreakpoints ?? true);
   const buildFilePath = useRef<string>(null);
-
-  const lastStateChunk = useRef<CpuStateChunk>(null);
-  const latestRefresh = useRef<number>(new Date().valueOf());
 
   // --- Refresh the code location whenever the machine is paused
   useEffect(() => {
@@ -68,6 +65,7 @@ export const IdeEventsHandler = () => {
     const onProjectLoaded = async () => {
       const state = store.getState();
       const projectPath = state.project?.folderPath;
+      store.dispatch(showSideBarAction(true));
 
       // --- Wait up to 10 seconds for the project to be opened
       console.log("Waiting for the end of project loading");
@@ -126,6 +124,21 @@ export const IdeEventsHandler = () => {
         await ideCommandsService.executeCommand(activeDocCommand);
       }
       console.log("Project workspace opened");
+
+      // --- Adjust the size of IDE splitters
+      const wpState = store.getState();
+      const sideBarWidth = wpState.workspaceSettings?.[SIDE_BAR_WIDTH];
+      if (sideBarWidth) {
+        store.dispatch(setSideBarPanelWidthAction(sideBarWidth));
+      }
+      const toolPanelHeight = wpState.workspaceSettings?.[TOOL_PANEL_HEIGHT];
+      if (toolPanelHeight) {
+        store.dispatch(setTooPanelHeightAction(toolPanelHeight));
+      }
+      const maximizeToolPanels = wpState.ideViewOptions?.maximizeTools;
+      if (maximizeToolPanels) {
+        store.dispatch(maximizeToolsAction(true));
+      }
     };
 
     projectService.fileSaved.on(onFileSaved);

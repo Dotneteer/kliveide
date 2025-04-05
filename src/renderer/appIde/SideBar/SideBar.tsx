@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { activityRegistry, sideBarPanelRegistry } from "@renderer/registry";
 import { SideBarPanelState } from "@state/AppState";
 import {
-  setSideBarPanelSizeAction,
+  setSideBarPanelWidthAction,
   setSideBarPanelsStateAction
 } from "@state/actions";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
@@ -193,7 +193,7 @@ export const SiteBar = ({ order }: Props) => {
 
     // --- Set the sizes of the resized panels
     dispatch(
-      setSideBarPanelSizeAction(
+      setSideBarPanelWidthAction(
         sizedPanel.id,
         newSizeInPixels * pixelRatio.current,
         nextPanel.id,
