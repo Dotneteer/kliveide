@@ -11,17 +11,11 @@ export interface ActionTypes {
   SET_THEME: null;
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
-  EMU_STAY_ON_TOP
+  EMU_STAY_ON_TOP: null,
   DIM_MENU: null,
   INC_MENU_VERSION: null;
 
-  SHOW_EMU_TOOLBAR: null;
-  SHOW_EMU_STATUSBAR: null;
-  SHOW_IDE_TOOLBAR: null;
-  SHOW_IDE_STATUSBAR: null;
   SHOW_TOOL_PANELS: null;
-  SHOW_KEYBOARD: null;
-  SHOW_SHADOW_SCREEN: null;
   EMU_SET_KEYBOARD_LAYOUT: null;
   SHOW_FRAME_INFO: null;
   SET_IDE_FONT_SIZE: null;
@@ -52,7 +46,6 @@ export interface ActionTypes {
   MUTE_SOUND: null;
   INC_EMU_VIEW_VERSION: null;
   SET_SOUND_LEVEL: null;
-  SET_FAST_LOAD: null;
   SET_CLOCK_MULTIPLIER: null;
   SET_AUDIO_SAMPLE_RATE: null;
   SET_DISK_FILE: null;
@@ -103,4 +96,8 @@ export interface ActionTypes {
   SET_WORKSPACE_SETTINGS: null;
   SET_SIDEBAR_WIDTH: null;
   SET_TOOL_PANEL_HEIGHT: null;
+
+  // --- Globa setting now use this action type
+  INIT_GLOBAL_SETTINGS: null;
+  SET_GLOBAL_SETTING: null;
 }

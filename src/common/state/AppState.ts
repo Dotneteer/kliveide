@@ -22,6 +22,7 @@ export type AppState = {
   ideFocused?: boolean;
   dimMenu?: boolean;
   theme?: string;
+  globalSettings?: Record<string, any>;
   ideViewOptions?: IdeViewOptions;
   ideView?: IdeView;
   ideSettings?: IdeSettings;
@@ -61,10 +62,6 @@ export type IdeViewOptions = {
  * Represents the state of the EMU view options
  */
 export type EmuViewOptions = {
-  showKeyboard?: boolean;
-  showToolbar?: boolean;
-  showStatusBar?: boolean;
-  showInstantScreen?: boolean;
   keyboardLayout?: string;
   stayOnTop?: boolean;
 };
@@ -97,7 +94,6 @@ export type EmulatorState = {
   soundLevel?: number;
   soundMuted?: boolean;
   savedSoundLevel?: number;
-  fastLoad?: boolean;
   clockMultiplier?: number;
   audioSampleRate?: number;
   breakpointsVersion: number;
@@ -156,6 +152,7 @@ export const initialAppState: AppState = {
   emuFocused: false,
   ideFocused: false,
   menuVersion: 0,
+  globalSettings: {},
   ideViewOptions: {
     showToolbar: true,
     showStatusBar: true,
@@ -180,9 +177,6 @@ export const initialAppState: AppState = {
     toolCommandSeqNo: 0
   },
   emuViewOptions: {
-    showToolbar: true,
-    showStatusBar: true,
-    showKeyboard: false,
     stayOnTop: false
   },
   ideSettings: {},
@@ -192,7 +186,6 @@ export const initialAppState: AppState = {
     soundLevel: 0.8,
     soundMuted: false,
     savedSoundLevel: 0.8,
-    fastLoad: true,
     clockMultiplier: 1,
     breakpointsVersion: 0,
     emuViewVersion: 0

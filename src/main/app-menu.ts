@@ -14,8 +14,6 @@ import os from "os";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import {
-  showEmuStatusBarAction,
-  showEmuToolbarAction,
   primaryBarOnRightAction,
   showSideBarAction,
   showToolPanelsAction,
@@ -24,14 +22,11 @@ import {
   setThemeAction,
   setClockMultiplierAction,
   setSoundLevelAction,
-  showIdeToolbarAction,
-  showIdeStatusBarAction,
   closeFolderAction,
   displayDialogAction,
   setIdeFontSizeAction,
   dimMenuAction,
   setVolatileDocStateAction,
-  showKeyboardAction,
   setKeyMappingsAction,
   setIdeDisableAutoOpenProjectAction,
   setIdeDisableAutoCompleteAction,
@@ -58,6 +53,16 @@ import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import { getSettingDefinition, getSettingValue, setSettingValue } from "./settings-utils";
+import {
+  SETTING_EMU_SHOW_INSTANT_SCREEN,
+  SETTING_EMU_SHOW_KEYBOARD,
+  SETTING_EMU_SHOW_STATUS_BAR,
+  SETTING_EMU_SHOW_TOOLBAR,
+  SETTING_IDE_SHOW_STATUS_BAR,
+  SETTING_IDE_SHOW_TOOLBAR
+} from "@common/settings/setting-const";
+import { create } from "lodash";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -66,14 +71,9 @@ const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
 const RECENT_PROJECTS = "recent_projects";
 const CLOSE_FOLDER = "close_folder";
-const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
 const TOGGLE_PRIMARY_BAR_RIGHT = "primary_side_bar_right";
-const TOGGLE_EMU_TOOLBAR = "toggle_emu_toolbar";
-const TOGGLE_EMU_STATUS_BAR = "toggle_emu_status_bar";
-const TOGGLE_IDE_TOOLBAR = "toggle_ide_toolbar";
-const TOGGLE_IDE_STATUS_BAR = "toggle_ide_status_bar";
 const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
 const TOGGLE_TOOLS_TOP = "tool_panels_top";
 const MAXIMIZE_TOOLS = "tools_maximize";
@@ -377,65 +377,23 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         type: "separator",
         visible: !ideTraits.isVisible
       },
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_TOOLBAR, { visibleFn: () => emuTraits.isFocused }),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLBAR, { visibleFn: () => ideTraits.isFocused }),
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_STATUS_BAR, {
+        visibleFn: () => emuTraits.isFocused
+      }),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_STATUS_BAR, {
+        visibleFn: () => ideTraits.isFocused
+      }),
       {
-        id: TOGGLE_EMU_TOOLBAR,
-        label: "Show the Toolbar",
-        type: "checkbox",
-        visible: emuTraits.isFocused,
-        checked: appState.emuViewOptions.showToolbar,
-        click: async (mi) => {
-          mainStore.dispatch(showEmuToolbarAction(mi.checked));
-          await saveKliveProject();
-        }
+        type: "separator"
       },
-      {
-        id: TOGGLE_IDE_TOOLBAR,
-        label: "Show the Toolbar",
-        type: "checkbox",
-        visible: ideTraits.isFocused,
-        checked: appState.ideViewOptions.showToolbar,
-        click: async (mi) => {
-          mainStore.dispatch(showIdeToolbarAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_EMU_STATUS_BAR,
-        label: "Show the Status Bar",
-        type: "checkbox",
-        visible: emuTraits.isFocused,
-        checked: appState.emuViewOptions.showStatusBar,
-        click: async (mi) => {
-          mainStore.dispatch(showEmuStatusBarAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_IDE_STATUS_BAR,
-        label: "Show the Status Bar",
-        type: "checkbox",
-        visible: ideTraits.isFocused,
-        checked: appState.ideViewOptions.showStatusBar,
-        click: async (mi) => {
-          mainStore.dispatch(showIdeStatusBarAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_KEYBOARD,
-        label: "Show the Virtual Keyboard",
-        type: "checkbox",
-        visible: emuTraits.isFocused,
-        checked: appState.emuViewOptions.showKeyboard,
-        click: async (mi) => {
-          mainStore.dispatch(showKeyboardAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        type: "separator",
-        visible: emuTraits.isFocused || ideTraits.isFocused
-      },
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD, {
+        visibleFn: () => emuTraits.isFocused
+      }),
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_INSTANT_SCREEN, {
+        visibleFn: () => emuTraits.isFocused
+      }),
       {
         id: TOGGLE_SIDE_BAR,
         label: "Show the Side Bar",
@@ -786,12 +744,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             );
             if (!commandResult.success) {
               if (task.id !== "exportCode") {
-                await executeIdeCommand(
-                  ideWindow,
-                  "outp build",
-                  undefined,
-                  true
-                );
+                await executeIdeCommand(ideWindow, "outp build", undefined, true);
               }
             }
           }
@@ -891,7 +844,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               saveAppSettings();
             }
           }
-
         ]
       }
     ]
@@ -1129,4 +1081,28 @@ async function showMessage(
 
 function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem>(items: T[]): T[] {
   return items.filter((i) => i.visible !== false);
+}
+
+export function createBooleanSettingsMenu(
+  settingsId: string,
+  options?: { enabledFn?: () => boolean; visibleFn?: () => boolean }
+): MenuItemConstructorOptions {
+  const definition = getSettingDefinition(settingsId);
+  if (!definition) {
+    throw new Error(`Setting definition not found for ${settingsId}`);
+  }
+
+  const currentValue = getSettingValue(settingsId);
+
+  return {
+    id: `Setting_${settingsId}`,
+    label: definition.title,
+    type: "checkbox",
+    enabled: options?.enabledFn?.() ?? true,
+    visible: options?.visibleFn?.() ?? true,
+    checked: !!currentValue,
+    click: (mi) => {
+      setSettingValue(settingsId, mi.checked);
+    }
+  };
 }

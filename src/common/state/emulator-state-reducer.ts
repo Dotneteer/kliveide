@@ -50,12 +50,6 @@ export function emulatorStateReducer(
         savedSoundLevel: payload?.numValue === 0.0 ? state.soundLevel : payload?.numValue
       };
 
-    case "SET_FAST_LOAD":
-      return {
-        ...state,
-        fastLoad: payload?.flag
-      };
-
     case "SET_DEBUGGING":
       return {
         ...state,

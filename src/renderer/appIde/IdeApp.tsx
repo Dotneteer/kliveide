@@ -1,7 +1,7 @@
 import { BackDrop } from "@controls/BackDrop";
 import { SplitPanel } from "@controls/SplitPanel";
 import { Toolbar } from "@controls/Toolbar";
-import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@renderer/registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import {
@@ -114,11 +114,12 @@ import {
 import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
 import { ShellCommand } from "./commands/ShellCommand";
-import { FullPanel } from "@renderer/controls/new/Panels";
+import { FullPanel, VStack } from "@renderer/controls/new/Panels";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
 import { useMainApi } from "@renderer/core/MainApi";
+import { SETTING_IDE_SHOW_STATUS_BAR, SETTING_IDE_SHOW_TOOLBAR } from "@common/settings/setting-const";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -139,8 +140,8 @@ const IdeApp = () => {
   const ideLoaded = useSelector((s) => s.ideLoaded ?? false);
   const dimmed = useSelector((s) => s.dimMenu ?? false);
   const isWindows = useSelector((s) => s.isWindows ?? false);
-  const showToolbar = useSelector((s) => s.ideViewOptions.showToolbar);
-  const showStatusBar = useSelector((s) => s.ideViewOptions.showStatusBar);
+  const showToolbar = useGlobalSetting(SETTING_IDE_SHOW_TOOLBAR);
+  const showStatusBar = useGlobalSetting(SETTING_IDE_SHOW_STATUS_BAR);
   const showSideBar = useSelector((s) => s.ideViewOptions.showSidebar);
   const showToolPanels = useSelector((s) => s.ideViewOptions.showToolPanels);
   const maximizeToolPanels = useSelector((s) => s.ideViewOptions.maximizeTools);

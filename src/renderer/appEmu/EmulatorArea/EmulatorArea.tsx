@@ -1,12 +1,13 @@
 import { SplitPanel } from "@controls/SplitPanel";
 import { EmulatorPanel } from "./EmulatorPanel";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { KeyboardApi, KeyboardPanel } from "../Keyboard/KeyboardPanel";
 import styles from "./EmulatorArea.module.scss";
 import { useRef } from "react";
+import { SETTING_EMU_SHOW_KEYBOARD } from "@common/settings/setting-const";
 
 export const EmulatorArea = () => {
-  const keyboardVisible = useSelector((s) => s.emuViewOptions?.showKeyboard ?? false);
+  const keyboardVisible = useGlobalSetting(SETTING_EMU_SHOW_KEYBOARD);
 
   let api = useRef<KeyboardApi>();
 

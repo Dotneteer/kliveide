@@ -1,12 +1,9 @@
 import styles from "./Toolbar.module.scss";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import {
   muteSoundAction,
-  setFastLoadAction,
-  showKeyboardAction,
-  showInstantScreenAction,
   syncSourceBreakpointsAction,
   setEmuStayOnTopAction
 } from "@state/actions";
@@ -23,6 +20,11 @@ import { useIdeApi } from "@renderer/core/IdeApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { HStack } from "./new/Panels";
 import Dropdown from "./Dropdown";
+import {
+  SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_SHOW_INSTANT_SCREEN,
+  SETTING_EMU_SHOW_KEYBOARD
+} from "@common/settings/setting-const";
 
 type Props = {
   ide: boolean;
@@ -73,12 +75,12 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const machineInfo = machineRegistry.find((mi) => mi.machineId === machineId);
   const state = useSelector((s) => s.emulatorState?.machineState);
   const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
-  const showKeyboard = useSelector((s) => s.emuViewOptions?.showKeyboard ?? false);
-  const showInstantScreen = useSelector((s) => s.emuViewOptions?.showInstantScreen ?? false);
+  const showKeyboard = useGlobalSetting(SETTING_EMU_SHOW_KEYBOARD);
+  const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const stayOnTop = useSelector((s) => s.emuViewOptions?.stayOnTop ?? false);
   const syncSourceBps = useSelector((s) => s.ideViewOptions?.syncSourceBreakpoints ?? true);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
-  const fastLoad = useSelector((s) => s.emulatorState?.fastLoad ?? false);
+  const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging ?? false);
   const isCompiling = useSelector((s) => s.compilation?.inProgress ?? false);
   const isStopped =
@@ -269,8 +271,10 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             selected={showInstantScreen}
             title="Turn on/off instant screen"
             clicked={async () => {
-              dispatch(showInstantScreenAction(!showInstantScreen));
-              await saveProject();
+              await mainApi.setGlobalSettingsValue(
+                SETTING_EMU_SHOW_INSTANT_SCREEN,
+                !showInstantScreen
+              );
             }}
           />
           <ToolbarSeparator />
@@ -280,8 +284,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             selected={showKeyboard}
             title="Show/Hide keyboard"
             clicked={async () => {
-              dispatch(showKeyboardAction(!showKeyboard));
-              await saveProject();
+              await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_KEYBOARD, !showKeyboard);
             }}
           />
           <ToolbarSeparator />
@@ -315,8 +318,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               title="Fast LOAD mode"
               selected={fastLoad}
               clicked={async () => {
-                dispatch(setFastLoadAction(!fastLoad));
-                await saveProject();
+                await mainApi.setGlobalSettingsValue(SETTING_EMU_FAST_LOAD, !fastLoad);
               }}
             />
           )}

@@ -5,6 +5,16 @@ import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-re
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ExportDialogSettings } from "@main/settings";
 
+export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
+  type: "INIT_GLOBAL_SETTINGS",
+  payload: { value }
+});
+
+export const setGlobalSettingAction: ActionCreator = (id: string, value: any) => ({
+  type: "SET_GLOBAL_SETTING",
+  payload: { id, value }
+});
+
 export const unloadWindowsAction: ActionCreator = () => ({
   type: "UNLOAD_WINDOWS"
 });
@@ -55,26 +65,6 @@ export const selectActivityAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
-export const showEmuToolbarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_EMU_TOOLBAR",
-  payload: { flag }
-});
-
-export const showEmuStatusBarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_EMU_STATUSBAR",
-  payload: { flag }
-});
-
-export const showIdeToolbarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_IDE_TOOLBAR",
-  payload: { flag }
-});
-
-export const showIdeStatusBarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_IDE_STATUSBAR",
-  payload: { flag }
-});
-
 export const showSideBarAction: ActionCreator = (flag: boolean) => ({
   type: "SHOW_SIDE_BAR",
   payload: { flag }
@@ -97,16 +87,6 @@ export const toolPanelsOnTopAction: ActionCreator = (flag: boolean) => ({
 
 export const maximizeToolsAction: ActionCreator = (flag: boolean) => ({
   type: "MAXIMIZE_TOOLS",
-  payload: { flag }
-});
-
-export const showKeyboardAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_KEYBOARD",
-  payload: { flag }
-});
-
-export const showInstantScreenAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_SHADOW_SCREEN",
   payload: { flag }
 });
 
@@ -172,7 +152,10 @@ export const setMachineConfigAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
-export const setMachineStateAction: ActionCreator = (state: MachineControllerState, numValue: number) => ({
+export const setMachineStateAction: ActionCreator = (
+  state: MachineControllerState,
+  numValue: number
+) => ({
   type: "SET_MACHINE_STATE",
   payload: { state, numValue }
 });
@@ -185,11 +168,6 @@ export const muteSoundAction: ActionCreator = (flag: boolean) => ({
 export const setSoundLevelAction: ActionCreator = (numValue: number) => ({
   type: "SET_SOUND_LEVEL",
   payload: { numValue }
-});
-
-export const setFastLoadAction: ActionCreator = (flag: boolean) => ({
-  type: "SET_FAST_LOAD",
-  payload: { flag }
 });
 
 export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
@@ -410,4 +388,3 @@ export const closeEmuWithIdeAction: ActionCreator = (flag: boolean) => ({
   type: "SET_IDE_CLOSE_EMU_WITH_IDE",
   payload: { flag }
 });
-

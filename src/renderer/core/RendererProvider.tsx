@@ -1,8 +1,10 @@
+import { KliveGlobalSettings } from "@common/settings/setting-definitions";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { Action } from "@state/Action";
 import { AppState } from "@state/AppState";
 import { Dispatch, Store } from "@state/redux-light";
+import { get } from "lodash";
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 
 // The renderer app's context
@@ -69,6 +71,47 @@ export function useSelector<Selected>(stateMapper: (state: AppState) => Selected
       const storeState = store.getState();
       if (!storeState) return;
       const mappedState = stateMapper(storeState);
+      if (typeof mappedState === "object" && mappedState != undefined) {
+        if (Array.isArray(mappedState)) {
+          setState(mappedState.slice(0) as any);
+        } else {
+          setState({ ...mappedState });
+        }
+      } else {
+        setState(mappedState);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [store, storeState]);
+
+  return state;
+}
+
+/**
+ * This React hook makes the a mapped state value available within any component logic using the hook.
+ */
+export function useGlobalSetting(settingId: string): any {
+  const store = useStore();
+  const settingsDef = KliveGlobalSettings[settingId];
+  if (!settingsDef) {
+    return null;
+  }
+
+  const storeState = get(
+    store.getState()?.globalSettings ?? {},
+    settingId,
+    settingsDef.defaultValue
+  );
+  const [state, setState] = useState(storeState);
+
+  useEffect(() => {
+    const unsubscribe = store.subscribe(() => {
+      const mappedState = get(
+        store.getState()?.globalSettings ?? {},
+        settingId,
+        settingsDef.defaultValue
+      );
       if (typeof mappedState === "object" && mappedState != undefined) {
         if (Array.isArray(mappedState)) {
           setState(mappedState.slice(0) as any);

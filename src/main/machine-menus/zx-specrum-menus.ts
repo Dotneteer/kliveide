@@ -8,7 +8,6 @@ import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "@common/machines/constants";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import {
-  setFastLoadAction,
   setVolatileDocStateAction,
   setMediaAction,
   displayDialogAction
@@ -21,6 +20,8 @@ import { appSettings } from "@main/settings";
 import { dialog, BrowserWindow, app } from "electron";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
+import { createBooleanSettingsMenu } from "@main/app-menu";
+import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
@@ -32,16 +33,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
   const emuWindow = windowInfo.emuWindow;
   const appState = mainStore.getState();
   if (machine.features?.[MF_TAPE_SUPPORT]) {
-    items.push({
-      id: "toggle_fast_load",
-      label: "Fast Load",
-      type: "checkbox",
-      checked: !!appState.emulatorState?.fastLoad,
-      click: async () => {
-        mainStore.dispatch(setFastLoadAction(!appState.emulatorState?.fastLoad));
-        await saveKliveProject();
-      }
-    });
+    items.push(createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD) as any);
     items.push({
       id: "rewind_tape",
       label: "Rewind Tape",

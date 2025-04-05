@@ -12,6 +12,7 @@ import { mediaReducer } from "./media-reducer";
 import { scriptsReducer } from "./scripts-reducer";
 import { ideSettingsReducer } from "./ide-settings-reducer";
 import { workspaceSettingsReducer } from "./workspace-settings-reducer";
+import { globalSettingsReducer } from "./global-settings-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -21,6 +22,7 @@ import { workspaceSettingsReducer } from "./workspace-settings-reducer";
  */
 function appReducer(state: AppState, action: Action): AppState {
   state = appStateFlagsReducer(state, action);
+  invokeReducer(state.globalSettings, globalSettingsReducer, (a, n) => (a.globalSettings = n));
   invokeReducer(state.ideViewOptions, ideViewOptionsReducer, (a, n) => (a.ideViewOptions = n));
   invokeReducer(state.emuViewOptions, emuViewOptionsReducer, (a, n) => (a.emuViewOptions = n));
   invokeReducer(state.ideView, ideViewReducer, (a, n) => (a.ideView = n));

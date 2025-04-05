@@ -38,26 +38,20 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   setThemeAction,
-  showKeyboardAction,
-  setFastLoadAction,
   displayDialogAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
-  showEmuToolbarAction,
-  showEmuStatusBarAction,
-  showIdeToolbarAction,
-  showIdeStatusBarAction,
   primaryBarOnRightAction,
   toolPanelsOnTopAction,
   maximizeToolsAction,
   emuSetKeyboardLayoutAction,
   setMachineSpecificAction,
   setMediaAction,
-  showInstantScreenAction,
   setIdeDisableAutoOpenProjectAction,
   setEmuStayOnTopAction,
   setIdeDisableAutoCompleteAction,
-  closeEmuWithIdeAction
+  closeEmuWithIdeAction,
+  initGlobalSettingsAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -250,6 +244,9 @@ async function createAppWindows() {
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));
 
+      // --- Store all global settings
+      mainStore.dispatch(initGlobalSettingsAction(appSettings.globalSettings ?? {}));
+
       // --- Set saved traits
       if (appSettings.startScreenDisplayed) {
         mainStore.dispatch(startScreenDisplayedAction());
@@ -268,18 +265,11 @@ async function createAppWindows() {
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
-      mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
-      mainStore.dispatch(showInstantScreenAction(appSettings.showInstantScreen ?? false));
       mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
-      mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
-      mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));
       mainStore.dispatch(setEmuStayOnTopAction(appSettings.emuStayOnTop ?? false));
-      mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? true));
-      mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true));
       mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
       mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
       mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
-      mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
       Object.entries(appSettings.media).forEach(([key, value]) => {
         mainStore.dispatch(setMediaAction(key, value));
       });

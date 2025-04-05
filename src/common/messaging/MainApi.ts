@@ -211,6 +211,10 @@ class MainApiImpl {
   async reloadTapeFile(): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async setGlobalSettingsValue(_settingId: string, _value: any): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 export type MainApi = MainApiImpl;
