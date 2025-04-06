@@ -67,7 +67,7 @@ export const SplitPanel = ({
   const splitterVisible =
     !!primaryPanel && !!primaryVisible && !!secondaryPanel && !!secondaryVisible;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setPrimarySize(secondaryVisible ? resolveSize(initialPrimarySize) : "100%");
   }, [initialPrimarySize, secondaryVisible]);
 

@@ -6,4 +6,6 @@ export type Setting = {
   defaultValue?: any;
   saveWithIde?: boolean;
   saveWithProject?: boolean;
+  boundTo?: "emu" | "ide";
+  volatile?: boolean;
 };

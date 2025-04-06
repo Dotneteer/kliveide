@@ -44,18 +44,7 @@ export type AppState = {
  * Represents the state of the IDE view options
  */
 export type IdeViewOptions = {
-  showToolbar?: boolean;
-  showStatusBar?: boolean;
-  primaryBarOnRight?: boolean;
-  showToolPanels?: boolean;
-  toolPanelsOnTop?: boolean;
-  maximizeTools?: boolean;
-  showFrameInfo?: boolean;
-  showSidebar?: boolean;
   editorFontSize?: number;
-  syncSourceBreakpoints?: boolean;
-  sideBarWidth?: string;
-  toolPanelHeight?: string;
 };
 
 /**
@@ -63,7 +52,6 @@ export type IdeViewOptions = {
  */
 export type EmuViewOptions = {
   keyboardLayout?: string;
-  stayOnTop?: boolean;
 };
 
 export type IdeView = {
@@ -154,16 +142,7 @@ export const initialAppState: AppState = {
   menuVersion: 0,
   globalSettings: {},
   ideViewOptions: {
-    showToolbar: true,
-    showStatusBar: true,
-    primaryBarOnRight: false,
-    showToolPanels: true,
-    toolPanelsOnTop: false,
-    maximizeTools: false,
-    showFrameInfo: true,
-    showSidebar: true,
     editorFontSize: 16,
-    syncSourceBreakpoints: true
   },
   ideView: {
     sideBarPanels: {},
@@ -176,9 +155,7 @@ export const initialAppState: AppState = {
     activeOutputPane: PANE_ID_EMU,
     toolCommandSeqNo: 0
   },
-  emuViewOptions: {
-    stayOnTop: false
-  },
+  emuViewOptions: {},
   ideSettings: {},
   emulatorState: {
     config: {},

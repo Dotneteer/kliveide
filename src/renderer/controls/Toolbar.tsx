@@ -2,11 +2,7 @@ import styles from "./Toolbar.module.scss";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
-import {
-  muteSoundAction,
-  syncSourceBreakpointsAction,
-  setEmuStayOnTopAction
-} from "@state/actions";
+import { muteSoundAction } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import { useEffect, useState } from "react";
@@ -23,7 +19,9 @@ import Dropdown from "./Dropdown";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
-  SETTING_EMU_SHOW_KEYBOARD
+  SETTING_EMU_SHOW_KEYBOARD,
+  SETTING_EMU_STAY_ON_TOP,
+  SETTING_IDE_SYNC_BREAKPOINTS
 } from "@common/settings/setting-const";
 
 type Props = {
@@ -77,8 +75,8 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const volatileDocs = useSelector((s) => s.ideView.volatileDocs);
   const showKeyboard = useGlobalSetting(SETTING_EMU_SHOW_KEYBOARD);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
-  const stayOnTop = useSelector((s) => s.emuViewOptions?.stayOnTop ?? false);
-  const syncSourceBps = useSelector((s) => s.ideViewOptions?.syncSourceBreakpoints ?? true);
+  const stayOnTop = useGlobalSetting(SETTING_EMU_STAY_ON_TOP);
+  const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging ?? false);
@@ -260,8 +258,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             selected={stayOnTop}
             title={"Stay on top"}
             clicked={async () => {
-              dispatch(setEmuStayOnTopAction(!stayOnTop));
-              await saveProject();
+              await mainApi.setGlobalSettingsValue(SETTING_EMU_STAY_ON_TOP, !stayOnTop);
             }}
           />
           <ToolbarSeparator />
@@ -342,10 +339,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
             iconName="sync-ignored"
             selected={syncSourceBps}
             fill="--color-toolbarbutton-orange"
-            title="Stop sync with current source code breakpoint"
-            enable={kliveProjectLoaded}
-            clicked={() => {
-              dispatch(syncSourceBreakpointsAction(!syncSourceBps));
+            title="Sync the source with the current breakpoint"
+            clicked={async () => {
+              await mainApi.setGlobalSettingsValue(SETTING_IDE_SYNC_BREAKPOINTS, !syncSourceBps);
             }}
           />
           <ToolbarSeparator />

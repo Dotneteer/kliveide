@@ -7,9 +7,7 @@ import {
   closeFolderAction,
   dimMenuAction,
   incProjectFileVersionAction,
-  maximizeToolsAction,
   openFolderAction,
-  primaryBarOnRightAction,
   resetCompileAction,
   saveProjectSettingAction,
   setBuildRootAction,
@@ -17,9 +15,6 @@ import {
   setIdeFontSizeAction,
   setMachineSpecificAction,
   setProjectBuildFileAction,
-  showSideBarAction,
-  showToolPanelsAction,
-  toolPanelsOnTopAction,
   setExportDialogInfoAction,
   setWorkspaceSettingsAction,
   initGlobalSettingsAction
@@ -173,11 +168,6 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
 
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
       disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
-      disp(showSideBarAction(projectStruct.viewOptions.showSidebar));
-      disp(primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight));
-      disp(showToolPanelsAction(projectStruct.viewOptions.showToolPanels));
-      disp(toolPanelsOnTopAction(projectStruct.viewOptions.toolPanelsOnTop));
-      disp(maximizeToolsAction(projectStruct.viewOptions.maximizeTools));
       disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
@@ -334,15 +324,7 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     viewOptions: {
       theme: state.theme,
       editorFontSize: state.ideViewOptions?.editorFontSize,
-      maximizeTools: state.ideViewOptions?.maximizeTools,
-      primaryBarOnRight: state.ideViewOptions?.primaryBarOnRight,
       keyboardLayout: state.emuViewOptions.keyboardLayout,
-      showFrameInfo: state.ideViewOptions.showFrameInfo,
-      showIdeStatusbar: state.ideViewOptions.showStatusBar,
-      showIdeToolbar: state.ideViewOptions.showToolbar,
-      showSidebar: state.ideViewOptions.showSidebar,
-      showToolPanels: state.ideViewOptions.showToolPanels,
-      toolPanelsOnTop: state.ideViewOptions.toolPanelsOnTop
     },
     debugger: {
       breakpoints: bpResponse.breakpoints
@@ -420,17 +402,8 @@ type KliveProjectStructure = {
 
 interface ViewOptions {
   theme?: string;
-  showEmuStatusbar?: boolean;
-  showIdeToolbar?: boolean;
-  showIdeStatusbar?: boolean;
-  showFrameInfo?: boolean;
   keyboardLayout?: string;
-  showSidebar?: boolean;
   keyboardHeight?: number;
-  primaryBarOnRight?: boolean;
-  showToolPanels?: boolean;
-  toolPanelsOnTop?: boolean;
-  maximizeTools?: boolean;
   editorFontSize?: number;
 }
 

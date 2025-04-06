@@ -11,8 +11,6 @@ export function emuViewOptionsReducer(
   switch (type) {
     case "EMU_SET_KEYBOARD_LAYOUT":
       return { ...state, keyboardLayout: payload?.id };
-    case "EMU_STAY_ON_TOP":
-      return { ...state, stayOnTop: payload?.flag };
     default:
       return state;
   }

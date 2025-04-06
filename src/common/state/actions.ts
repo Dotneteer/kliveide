@@ -65,31 +65,6 @@ export const selectActivityAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
-export const showSideBarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_SIDE_BAR",
-  payload: { flag }
-});
-
-export const primaryBarOnRightAction: ActionCreator = (flag: boolean) => ({
-  type: "PRIMARY_BAR_ON_RIGHT",
-  payload: { flag }
-});
-
-export const showToolPanelsAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_TOOL_PANELS",
-  payload: { flag }
-});
-
-export const toolPanelsOnTopAction: ActionCreator = (flag: boolean) => ({
-  type: "TOOLS_ON_TOP",
-  payload: { flag }
-});
-
-export const maximizeToolsAction: ActionCreator = (flag: boolean) => ({
-  type: "MAXIMIZE_TOOLS",
-  payload: { flag }
-});
-
 export const showFrameInfoAction: ActionCreator = (flag: boolean) => ({
   type: "SHOW_FRAME_INFO",
   payload: { flag }
@@ -117,11 +92,6 @@ export const setSideBarPanelSizeAction: ActionCreator = (
   payload: { id, size, nextId, nextSize }
 });
 
-export const setSideBarPanelWidthAction: ActionCreator = (value: number) => ({
-  type: "SET_SIDEBAR_WIDTH",
-  payload: { value }
-});
-
 export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   type: "SET_TOOLS",
   payload: { tools }
@@ -130,11 +100,6 @@ export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
 export const activateToolAction: ActionCreator = (id: string) => ({
   type: "ACTIVATE_TOOL",
   payload: { id }
-});
-
-export const setTooPanelHeightAction: ActionCreator = (value: number) => ({
-  type: "SET_TOOL_PANEL_HEIGHT",
-  payload: { value }
 });
 
 export const setMachineTypeAction: ActionCreator = (id: string) => ({
@@ -284,11 +249,6 @@ export const incEditorVersionAction: ActionCreator = () => ({
   type: "INC_EDITOR_VERSION"
 });
 
-export const syncSourceBreakpointsAction: ActionCreator = (flag) => ({
-  type: "SYNC_SOURCE_BREAKPOINTS",
-  payload: { flag }
-});
-
 export const setDebuggingAction: ActionCreator = (flag) => ({
   type: "SET_DEBUGGING",
   payload: { flag }
@@ -373,11 +333,6 @@ export const setExportDialogInfoAction: ActionCreator = (value: ExportDialogSett
 export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_WORKSPACE_SETTINGS",
   payload: { id, value }
-});
-
-export const setEmuStayOnTopAction: ActionCreator = (flag: boolean) => ({
-  type: "EMU_STAY_ON_TOP",
-  payload: { flag }
 });
 
 export const incEmuViewVersionAction: ActionCreator = () => ({

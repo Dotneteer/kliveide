@@ -5,10 +5,7 @@ import { SideBarPanel } from "./SideBarPanel";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { activityRegistry, sideBarPanelRegistry } from "@renderer/registry";
 import { SideBarPanelState } from "@state/AppState";
-import {
-  setSideBarPanelWidthAction,
-  setSideBarPanelsStateAction
-} from "@state/actions";
+import { setSideBarPanelsStateAction } from "@state/actions";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { noop } from "@renderer/utils/stablerefs";
 import { useAppServices } from "../services/AppServicesProvider";
@@ -28,21 +25,21 @@ export const SiteBar = ({ order }: Props) => {
   const { machineService } = useAppServices();
 
   // --- Follow changes of the current activities and panel state changes
-  const activityId = useSelector(s => s.ideView.activity);
-  const sideBarPanelsState = useSelector(s => s.ideView.sideBarPanels);
-  const machineId = useSelector(s => s.emulatorState?.machineId);
-  const machineConfig = useSelector(s => s.emulatorState?.config);
+  const activityId = useSelector((s) => s.ideView.activity);
+  const sideBarPanelsState = useSelector((s) => s.ideView.sideBarPanels);
+  const machineId = useSelector((s) => s.emulatorState?.machineId);
+  const machineConfig = useSelector((s) => s.emulatorState?.config);
   const machineInfo = machineService.getMachineInfo();
 
   // --- Obtain the current activity and panel states
-  const activity = activityRegistry.find(a => a.id === activityId);
-  const panels = sideBarPanelRegistry.filter(reg => {
+  const activity = activityRegistry.find((a) => a.id === activityId);
+  const panels = sideBarPanelRegistry.filter((reg) => {
     return (
       reg.hostActivity === activityId &&
       (!reg.restrictTo || reg.restrictTo.includes(machineId)) &&
       (!reg.requireFeature ||
-        reg.requireFeature.every(f => machineInfo?.machine?.features?.[f])) &&
-      (!reg.requireConfig || reg.requireConfig.every(f => machineConfig?.[f]))
+        reg.requireFeature.every((f) => machineInfo?.machine?.features?.[f])) &&
+      (!reg.requireConfig || reg.requireConfig.every((f) => machineConfig?.[f]))
     );
   });
 
@@ -90,9 +87,7 @@ export const SiteBar = ({ order }: Props) => {
     // --- Is the current panel sizable?
     const thisExpanded = state?.expanded;
     const nextExpanded =
-      i < panels.length - 1
-        ? sideBarPanelsState[panels[i + 1].id]?.expanded
-        : false;
+      i < panels.length - 1 ? sideBarPanelsState[panels[i + 1].id]?.expanded : false;
     const sizeable = thisExpanded && nextExpanded;
 
     // --- Add the current panel
@@ -107,12 +102,12 @@ export const SiteBar = ({ order }: Props) => {
         headingSized={
           i
             ? noop
-            : h => {
+            : (h) => {
                 panelHeadingHeight.current = h;
               }
         }
         startSizing={(pos, size) => startSizingPanel(i, pos, size)}
-        sizing={pos => sizingPanel(i, pos)}
+        sizing={(pos) => sizingPanel(i, pos)}
         endSizing={endSizingPanel}
       />
     );
@@ -127,7 +122,7 @@ export const SiteBar = ({ order }: Props) => {
   );
 
   // --- Set the initial state of new panels displayed the first time
-  function initializeUndisplayedPanels (): void {
+  function initializeUndisplayedPanels(): void {
     const initialPanelStates: Record<string, SideBarPanelState> = {};
     let newStates = 0;
     for (const panel of panels) {
@@ -146,7 +141,7 @@ export const SiteBar = ({ order }: Props) => {
   }
 
   // --- Start sizing the specified panel
-  function startSizingPanel (idx: number, pos: number, size: number): void {
+  function startSizingPanel(idx: number, pos: number, size: number): void {
     // --- Check if the sizing context is valid
     const sizedPanel = panels[idx];
     if (!sizedPanel) return;
@@ -161,7 +156,7 @@ export const SiteBar = ({ order }: Props) => {
   }
 
   // --- Resizing the specified panel
-  function sizingPanel (idx: number, pos: number): void {
+  function sizingPanel(idx: number, pos: number): void {
     // --- Now, calculate the new panel sizes. First check that we are in a valid resize context.
     const sizedPanel = panels[idx];
     if (!sizedPanel) return;
@@ -176,13 +171,9 @@ export const SiteBar = ({ order }: Props) => {
     if (!nextPanelState || !nextPanelState.expanded) return;
 
     // --- At this point, the sizing context is valid, calculate the new size
-    const totalSizeInPixels =
-      (sizedPanelState.size + nextPanelState.size) / pixelRatio.current;
+    const totalSizeInPixels = (sizedPanelState.size + nextPanelState.size) / pixelRatio.current;
     const delta = pos - panelGripPos.current;
-    let newSizeInPixels = Math.max(
-      panelStartSize.current + delta,
-      MIN_PANEL_SIZE
-    );
+    let newSizeInPixels = Math.max(panelStartSize.current + delta, MIN_PANEL_SIZE);
     let nextSizeInPixels = totalSizeInPixels - newSizeInPixels;
 
     // --- Is the new size to big?
@@ -190,20 +181,10 @@ export const SiteBar = ({ order }: Props) => {
       nextSizeInPixels = MIN_PANEL_SIZE;
       newSizeInPixels = totalSizeInPixels - MIN_PANEL_SIZE;
     }
-
-    // --- Set the sizes of the resized panels
-    dispatch(
-      setSideBarPanelWidthAction(
-        sizedPanel.id,
-        newSizeInPixels * pixelRatio.current,
-        nextPanel.id,
-        nextSizeInPixels * pixelRatio.current
-      )
-    );
   }
 
   // --- Complete sizing the panel
-  function endSizingPanel (): void {
+  function endSizingPanel(): void {
     panelBeingSized.current = -1;
     panelGripPos.current = 0;
   }

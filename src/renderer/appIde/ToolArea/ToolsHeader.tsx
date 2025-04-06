@@ -1,10 +1,7 @@
-import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { toolPanelRegistry } from "@renderer/registry";
 import {
   incToolCommandSeqNoAction,
-  maximizeToolsAction,
-  showToolPanelsAction,
-  toolPanelsOnTopAction
 } from "@state/actions";
 import { createElement } from "react";
 import { SpaceFiller } from "@controls/SpaceFiller";
@@ -13,6 +10,7 @@ import styles from "./ToolsHeader.module.scss";
 import { ToolTab } from "./ToolTab";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { useMainApi } from "@renderer/core/MainApi";
+import { SETTING_IDE_MAXIMIZE_TOOLS, SETTING_IDE_TOOLS_ON_TOP } from "@common/settings/setting-const";
 
 type Props = {
   tool: ToolInfo;
@@ -23,7 +21,7 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
   const mainApi = useMainApi();
   const tools = useSelector((s) => s.ideView?.tools);
   const activeTool = useSelector((s) => s.ideView?.activeTool);
-  const maximized = useSelector((s) => s.ideViewOptions.maximizeTools);
+  const maximized = useGlobalSetting(SETTING_IDE_MAXIMIZE_TOOLS);
   const panelRenderer = toolPanelRegistry.find((p) => p.id === tool?.id);
   const headerElement = panelRenderer?.headerRenderer
     ? createElement(panelRenderer.headerRenderer)
@@ -46,9 +44,8 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
           rotate={topPosition ? 0 : 180}
           title={topPosition ? "Display at the bottom" : "Display at the top"}
           clicked={async () => {
-            dispatch(toolPanelsOnTopAction(!topPosition));
+            await mainApi.setGlobalSettingsValue(SETTING_IDE_TOOLS_ON_TOP, !topPosition);
             dispatch(incToolCommandSeqNoAction());
-            await mainApi.saveProject();
           }}
         />
         <TabButton
@@ -56,8 +53,7 @@ export const ToolsHeader = ({ tool, topPosition }: Props) => {
           title={(maximized ? "Restore" : "Maximize") + " Command and Output"}
           useSpace={true}
           clicked={async () => {
-            dispatch(maximizeToolsAction(!maximized));
-            await mainApi.saveProject();
+            await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, !maximized);
           }}
         />
       </div>

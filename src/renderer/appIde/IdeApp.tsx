@@ -1,7 +1,12 @@
 import { BackDrop } from "@controls/BackDrop";
 import { SplitPanel } from "@controls/SplitPanel";
 import { Toolbar } from "@controls/Toolbar";
-import { useDispatch, useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import {
+  useDispatch,
+  useGlobalSetting,
+  useRendererContext,
+  useSelector
+} from "@renderer/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@renderer/registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import {
@@ -23,10 +28,9 @@ import {
   setToolsAction,
   activateToolAction,
   displayDialogAction,
-  setWorkspaceSettingsAction,
   incProjectFileVersionAction
 } from "@state/actions";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useLayoutEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
 import {
@@ -76,7 +80,7 @@ import {
   ShowMemoryCommand
 } from "./commands/ToolCommands";
 import { ExportCodeDialog } from "./dialogs/ExportCodeDialog";
-import { IdeEventsHandler, SIDE_BAR_WIDTH, TOOL_PANEL_HEIGHT } from "./IdeEventsHandler";
+import { IdeEventsHandler } from "./IdeEventsHandler";
 import { ExcludedProjectItemsDialog } from "./dialogs/ExcludedProjectItemsDialog";
 import {
   ProjectExcludeItemsCommand,
@@ -114,12 +118,22 @@ import {
 import { DisplayDialogCommand } from "./commands/DialogCommands";
 import { setIsWindows } from "@renderer/os-utils";
 import { ShellCommand } from "./commands/ShellCommand";
-import { FullPanel, VStack } from "@renderer/controls/new/Panels";
+import { FullPanel } from "@renderer/controls/new/Panels";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SETTING_IDE_SHOW_STATUS_BAR, SETTING_IDE_SHOW_TOOLBAR } from "@common/settings/setting-const";
+import {
+  SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_SHOW_SIDEBAR,
+  SETTING_IDE_SHOW_STATUS_BAR,
+  SETTING_IDE_SHOW_TOOLBAR,
+  SETTING_IDE_SHOW_TOOLS,
+  SETTING_IDE_SIDEBAR_TO_RIGHT,
+  SETTING_IDE_SIDEBAR_WIDHT,
+  SETTING_IDE_TOOLPANEL_HEIGHT,
+  SETTING_IDE_TOOLS_ON_TOP
+} from "@common/settings/setting-const";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -142,20 +156,21 @@ const IdeApp = () => {
   const isWindows = useSelector((s) => s.isWindows ?? false);
   const showToolbar = useGlobalSetting(SETTING_IDE_SHOW_TOOLBAR);
   const showStatusBar = useGlobalSetting(SETTING_IDE_SHOW_STATUS_BAR);
-  const showSideBar = useSelector((s) => s.ideViewOptions.showSidebar);
-  const showToolPanels = useSelector((s) => s.ideViewOptions.showToolPanels);
-  const maximizeToolPanels = useSelector((s) => s.ideViewOptions.maximizeTools);
+  const showSideBar = useGlobalSetting(SETTING_IDE_SHOW_SIDEBAR);
+  const sidebarToRight = useGlobalSetting(SETTING_IDE_SIDEBAR_TO_RIGHT);
+  const showToolPanels = useGlobalSetting(SETTING_IDE_SHOW_TOOLS);
+  const maximizeToolPanels = useGlobalSetting(SETTING_IDE_MAXIMIZE_TOOLS);
   const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
   const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
-  const sideBarWidth = useSelector((s) => s.ideViewOptions.sideBarWidth ?? "25%");
-  const toolPanelHeight = useSelector((s) => s.ideViewOptions.toolPanelHeight ?? "33%");
-
-  const activityOrder = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? 3 : 0;
-  const primaryBarsPos = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? "right" : "left";
-  const docPanelsPos = useSelector((s) => s.ideViewOptions.toolPanelsOnTop) ? "top" : "bottom";
+  const sideBarWidth = useGlobalSetting(SETTING_IDE_SIDEBAR_WIDHT);
+  const toolPanelHeight = useGlobalSetting(SETTING_IDE_TOOLPANEL_HEIGHT);
+  const toolPanelOnTop = useGlobalSetting(SETTING_IDE_TOOLS_ON_TOP);
+  const [currentSidebarWidth, setCurrentSidebarWidth] = useState(sideBarWidth);
+  const [currentToolPanelHeight, setCurrentToolPanelHeight] = useState(toolPanelHeight);
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
+
   useEffect(() => {
     console.log("AppPath", appPath);
     initializeMonaco(appPath);
@@ -189,8 +204,6 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(activateToolAction(regTools.find((t) => t.visible ?? true).id));
-
-    // --- Sign that the UI is ready
     dispatch(ideLoadedAction());
   }, [appPath, appServices, store, messenger]);
 
@@ -223,42 +236,44 @@ const IdeApp = () => {
     }
   }, [ideLoaded]);
 
+  useLayoutEffect(() => {
+    setCurrentSidebarWidth(sideBarWidth);
+    setCurrentToolPanelHeight(toolPanelHeight);
+  }, [sideBarWidth, toolPanelHeight]);
+
   return (
     <FullPanel id="appMain">
       <IdeEventsHandler />
       {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}
       <FullPanel orientation="horizontal">
-        <ActivityBar activities={activityRegistry} order={activityOrder} />
+        <ActivityBar activities={activityRegistry} order={sidebarToRight ? 3 : 0} />
         <SplitPanel
-          primaryLocation={primaryBarsPos}
+          primaryLocation={sidebarToRight ? "right" : "left"}
           primaryVisible={showSideBar}
-          initialPrimarySize={sideBarWidth}
+          initialPrimarySize={currentSidebarWidth}
           minSize={60}
           onPrimarySizeUpdateCompleted={(size: string) => {
-            dispatch(setWorkspaceSettingsAction(SIDE_BAR_WIDTH, size));
             (async () => {
-              await mainApi.saveProject();
+              await mainApi.setGlobalSettingsValue(SETTING_IDE_SIDEBAR_WIDHT, size);
               dispatch(incProjectFileVersionAction());
             })();
           }}
         >
           <SiteBar />
           <SplitPanel
-            primaryLocation={docPanelsPos}
+            primaryLocation={toolPanelOnTop ? "top" : "bottom"}
             primaryVisible={showToolPanels}
             minSize={160}
-            secondaryVisible={!maximizeToolPanels}
-            initialPrimarySize={toolPanelHeight}
+            secondaryVisible={!maximizeToolPanels || !showToolPanels}
+            initialPrimarySize={currentToolPanelHeight}
             onPrimarySizeUpdateCompleted={(size: string) => {
-              dispatch(setWorkspaceSettingsAction(TOOL_PANEL_HEIGHT, size));
-              console.log("ToolPanel size:", size);
               (async () => {
-                await mainApi.saveProject();
+                await mainApi.setGlobalSettingsValue(SETTING_IDE_TOOLPANEL_HEIGHT, size);
                 dispatch(incProjectFileVersionAction());
               })();
             }}
           >
-            <ToolArea siblingPosition={docPanelsPos} />
+            <ToolArea siblingPosition={toolPanelOnTop ? "top" : "bottom"} />
             <DocumentArea />
           </SplitPanel>
         </SplitPanel>

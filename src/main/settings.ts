@@ -45,10 +45,6 @@ export type AppSettings = {
   startScreenDisplayed?: boolean;
   theme?: string;
   keyboardLayout?: string;
-  emuStayOnTop?: boolean;
-  primaryBarRight?: boolean;
-  toolPanelsTop?: boolean;
-  maximizeTools?: boolean;
 
   machineId?: string;
   modelId?: string;
@@ -87,10 +83,6 @@ export function saveAppSettings (): void {
     appSettings.globalSettings = state.globalSettings;
     appSettings.ideSettings = state.ideSettings;
     appSettings.keyboardLayout = state.emuViewOptions?.keyboardLayout;
-    appSettings.emuStayOnTop = state.emuViewOptions?.stayOnTop ?? false;
-    appSettings.primaryBarRight = state.ideViewOptions?.primaryBarOnRight ?? false;
-    appSettings.toolPanelsTop = state.ideViewOptions?.toolPanelsOnTop ?? false;
-    appSettings.maximizeTools = state.ideViewOptions?.maximizeTools ?? false;
     appSettings.machineId = state.emulatorState?.machineId;
     appSettings.modelId = state.emulatorState?.modelId;
     appSettings.config = state.emulatorState?.config;

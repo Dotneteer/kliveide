@@ -41,14 +41,10 @@ import {
   displayDialogAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
-  primaryBarOnRightAction,
-  toolPanelsOnTopAction,
-  maximizeToolsAction,
   emuSetKeyboardLayoutAction,
   setMachineSpecificAction,
   setMediaAction,
   setIdeDisableAutoOpenProjectAction,
-  setEmuStayOnTopAction,
   setIdeDisableAutoCompleteAction,
   closeEmuWithIdeAction,
   initGlobalSettingsAction
@@ -74,6 +70,8 @@ import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import { SETTING_EMU_STAY_ON_TOP } from "@common/settings/setting-const";
+import { getSettingValue } from "./settings-utils";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -237,7 +235,9 @@ async function createAppWindows() {
   // --- Respond to state changes
   storeUnsubscribe = mainStore.subscribe(async () => {
     const state = mainStore.getState();
+
     if (state.emuLoaded && !machineTypeInitialized) {
+      console.log("Initializing EMU window");
       // --- Sign machine initialization is done, so we do not run into this code again
       machineTypeInitialized = true;
 
@@ -266,10 +266,6 @@ async function createAppWindows() {
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
       mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
-      mainStore.dispatch(setEmuStayOnTopAction(appSettings.emuStayOnTop ?? false));
-      mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
-      mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
-      mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
       Object.entries(appSettings.media).forEach(([key, value]) => {
         mainStore.dispatch(setMediaAction(key, value));
       });
@@ -310,9 +306,10 @@ async function createAppWindows() {
     }
 
     // --- Manage the Stay on top for the emu window
-    if (!!state.emuViewOptions?.stayOnTop && !emuWindow?.isAlwaysOnTop()) {
+    const isEmuOnTop = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
+    if (isEmuOnTop && !emuWindow?.isAlwaysOnTop()) {
       emuWindow?.setAlwaysOnTop(true);
-    } else if (!state.emuViewOptions?.stayOnTop && emuWindow?.isAlwaysOnTop()) {
+    } else if (!isEmuOnTop && emuWindow?.isAlwaysOnTop()) {
       emuWindow?.setAlwaysOnTop(false);
     }
 
@@ -549,4 +546,20 @@ async function forwardActions(message: RequestMessage): Promise<ResponseMessage 
 async function saveOnClose() {
   await getIdeApi().saveAllBeforeQuit();
   ideSaved = true;
+}
+
+export function isEmuWindowFocused() {
+  return (emuWindow?.isDestroyed() ?? false) === false && emuWindow.isFocused?.();
+}
+
+export function isEmuWindowVisible() {
+  return (emuWindow?.isDestroyed() ?? false) === false && emuWindow.isVisible?.();
+}
+
+export function isIdeWindowFocused() {
+  return (ideWindow?.isDestroyed() ?? false) === false && ideWindow.isFocused?.();
+}
+
+export function isIdeWindowVisible() {
+  return (ideWindow?.isDestroyed() ?? false) === false && ideWindow.isVisible?.();
 }

@@ -12,7 +12,6 @@ import {
   activateOutputPaneAction,
   activateToolAction,
   setVolatileDocStateAction,
-  showToolPanelsAction
 } from "@state/actions";
 import {
   MEMORY_EDITOR,
@@ -21,6 +20,7 @@ import {
   DISASSEMBLY_EDITOR
 } from "@common/state/common-ids";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { SETTING_IDE_SHOW_TOOLS } from "@common/settings/setting-const";
 
 type SelectOutputArgs = {
   paneId: string;
@@ -42,7 +42,7 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
 
     // --- Select the panel
     const dispatch = context.store.dispatch;
-    dispatch(showToolPanelsAction(true), "ide");
+    await context.mainApi.setGlobalSettingsValue(SETTING_IDE_SHOW_TOOLS, true);
     dispatch(activateOutputPaneAction(args.paneId), "ide");
     dispatch(activateToolAction("output"), "ide");
 

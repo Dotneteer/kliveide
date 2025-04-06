@@ -11,19 +11,12 @@ export interface ActionTypes {
   SET_THEME: null;
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
-  EMU_STAY_ON_TOP: null,
   DIM_MENU: null,
   INC_MENU_VERSION: null;
 
-  SHOW_TOOL_PANELS: null;
   EMU_SET_KEYBOARD_LAYOUT: null;
   SHOW_FRAME_INFO: null;
   SET_IDE_FONT_SIZE: null;
-
-  SHOW_SIDE_BAR: null;
-  PRIMARY_BAR_ON_RIGHT: null;
-  TOOLS_ON_TOP: null;
-  MAXIMIZE_TOOLS: null;
 
   SET_ACTIVITY: null;
   SET_SIDEBAR_PANEL_EXPANDED: null;
@@ -74,7 +67,6 @@ export interface ActionTypes {
   START_COMPILE: null;
   END_COMPILE: null;
   INC_INJECTION_VERSION: null;
-  SYNC_SOURCE_BREAKPOINTS: null;
 
   APPLY_PROJECT_SETTING: null;
   APPLY_USER_SETTING: null;
