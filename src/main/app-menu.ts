@@ -22,7 +22,6 @@ import {
   dimMenuAction,
   setVolatileDocStateAction,
   setKeyMappingsAction,
-  setIdeDisableAutoOpenProjectAction,
   setIdeDisableAutoCompleteAction,
   closeEmuWithIdeAction
 } from "@state/actions";
@@ -56,6 +55,7 @@ import {
   SETTING_EMU_STAY_ON_TOP,
   SETTING_IDE_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
   SETTING_IDE_SHOW_STATUS_BAR,
   SETTING_IDE_SHOW_TOOLBAR,
@@ -65,7 +65,6 @@ import {
   SETTING_IDE_TOOLS_ON_TOP
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
-import { set } from "lodash";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -100,7 +99,6 @@ const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
-const IDE_AUTO_OPEN_PROJECT = "ide_auto_open_project";
 const IDE_AUTO_COMPLETE = "ide_auto_complete";
 const IDE_CLOSE_EMU_WITH_IDE = "ide_close_emu_with_ide";
 
@@ -738,16 +736,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: IDE_SETTINGS,
         label: "IDE Settings",
         submenu: [
-          {
-            id: IDE_AUTO_OPEN_PROJECT,
-            label: "Open the last project at startup",
-            type: "checkbox",
-            checked: !appState.ideSettings?.disableAutoOpenProject,
-            click: async (mi) => {
-              mainStore.dispatch(setIdeDisableAutoOpenProjectAction(!mi.checked));
-              saveAppSettings();
-            }
-          },
+          createBooleanSettingsMenu(SETTING_IDE_OPEN_LAST_PROJECT),
           { type: "separator" },
           {
             id: IDE_AUTO_COMPLETE,

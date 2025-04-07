@@ -39,7 +39,7 @@ export function setSettingValue(id: string, value: any): void {
   }
 
   const state = mainStore.getState();
-  const currentValue = get(state.globalSettings, setting.id, null);
+  const currentValue = get(state.globalSettings, setting.id);
   if (currentValue === value) {
     // --- No change
     return;

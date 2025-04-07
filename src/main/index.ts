@@ -43,7 +43,6 @@ import {
   setKeyMappingsAction,
   setMachineSpecificAction,
   setMediaAction,
-  setIdeDisableAutoOpenProjectAction,
   setIdeDisableAutoCompleteAction,
   closeEmuWithIdeAction,
   initGlobalSettingsAction
@@ -253,9 +252,6 @@ async function createAppWindows() {
 
       // --- Update IDE Settings
       const ideSettings = appSettings.ideSettings;
-      mainStore.dispatch(
-        setIdeDisableAutoOpenProjectAction(ideSettings?.disableAutoOpenProject ?? false)
-      );
       mainStore.dispatch(
         setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false)
       );

@@ -58,18 +58,6 @@ export function ideViewReducer (
         tools: payload?.tools
       };
 
-    case "ACTIVATE_TOOL":
-      return {
-        ...state,
-        activeTool: payload?.id
-      };
-
-    case "ACTIVATE_OUTPUT_PANE":
-      return {
-        ...state,
-        activeOutputPane: payload?.id
-      };
-
     case "SET_IDE_STATUS_MESSAGE":
       return {
         ...state,

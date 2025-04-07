@@ -9,12 +9,6 @@ export function globalSettingsReducer(
   { type, payload }: Action
 ): Record<string, any> {
   switch (type) {
-    case "INIT_GLOBAL_SETTINGS":
-      // --- Initialize the global settings with the default values
-      return {
-        ...payload.value
-      };
-
     case "SET_GLOBAL_SETTING":
       const oldSettings = state || {};
       const newSettings = set(oldSettings, payload.id, payload.value);

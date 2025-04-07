@@ -6,12 +6,6 @@ import { IdeSettings } from "@main/settings";
  */
 export function ideSettingsReducer(state: IdeSettings, { type, payload }: Action): IdeSettings {
   switch (type) {
-    case "SET_IDE_DISABLE_AUTO_OPEN_PROJECT":
-      return {
-        ...state,
-        disableAutoOpenProject: payload?.flag
-      };
-
     case "SET_IDE_DISABLE_AUTO_COMPLETE":
       return {
         ...state,

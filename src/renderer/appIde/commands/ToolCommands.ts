@@ -9,8 +9,6 @@ import {
 } from "@renderer/appIde/services/ide-commands";
 import { outputPaneRegistry } from "@renderer/registry";
 import {
-  activateOutputPaneAction,
-  activateToolAction,
   setVolatileDocStateAction,
 } from "@state/actions";
 import {
@@ -20,7 +18,7 @@ import {
   DISASSEMBLY_EDITOR
 } from "@common/state/common-ids";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
-import { SETTING_IDE_SHOW_TOOLS } from "@common/settings/setting-const";
+import { SETTING_IDE_ACTIVE_OUTPUT_PANE, SETTING_IDE_ACTIVE_TOOL, SETTING_IDE_SHOW_TOOLS } from "@common/settings/setting-const";
 
 type SelectOutputArgs = {
   paneId: string;
@@ -41,10 +39,9 @@ export class SelectOutputPaneCommand extends IdeCommandBase<SelectOutputArgs> {
     }
 
     // --- Select the panel
-    const dispatch = context.store.dispatch;
     await context.mainApi.setGlobalSettingsValue(SETTING_IDE_SHOW_TOOLS, true);
-    dispatch(activateOutputPaneAction(args.paneId), "ide");
-    dispatch(activateToolAction("output"), "ide");
+    await context.mainApi.setGlobalSettingsValue(SETTING_IDE_ACTIVE_OUTPUT_PANE, args.paneId);
+    await context.mainApi.setGlobalSettingsValue(SETTING_IDE_ACTIVE_TOOL, "output");
 
     // --- Done.
     writeSuccessMessage(context.output, `Output panel ${args.paneId} is displayed.`);

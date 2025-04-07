@@ -10,7 +10,7 @@ import styles from "./ToolsHeader.module.scss";
 import { ToolTab } from "./ToolTab";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SETTING_IDE_MAXIMIZE_TOOLS, SETTING_IDE_TOOLS_ON_TOP } from "@common/settings/setting-const";
+import { SETTING_IDE_ACTIVE_TOOL, SETTING_IDE_MAXIMIZE_TOOLS, SETTING_IDE_TOOLS_ON_TOP } from "@common/settings/setting-const";
 
 type Props = {
   tool: ToolInfo;
@@ -20,7 +20,7 @@ type Props = {
 export const ToolsHeader = ({ tool, topPosition }: Props) => {
   const mainApi = useMainApi();
   const tools = useSelector((s) => s.ideView?.tools);
-  const activeTool = useSelector((s) => s.ideView?.activeTool);
+  const activeTool = useGlobalSetting(SETTING_IDE_ACTIVE_TOOL);
   const maximized = useGlobalSetting(SETTING_IDE_MAXIMIZE_TOOLS);
   const panelRenderer = toolPanelRegistry.find((p) => p.id === tool?.id);
   const headerElement = panelRenderer?.headerRenderer

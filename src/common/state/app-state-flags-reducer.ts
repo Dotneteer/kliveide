@@ -22,8 +22,8 @@ export function appStateFlagsReducer (
     case "IDE_LOADED":
       return { ...state, ideLoaded: true, ideStateSynched: false };
 
-    case "IDE_STATE_SYNCHED":
-      return { ...state, ideStateSynched: true };
+    case "INIT_GLOBAL_SETTINGS":
+      return { ...state, ideStateSynched: true, globalSettings: payload.value };
 
     case "IS_WINDOWS":
       return { ...state, isWindows: payload?.flag };

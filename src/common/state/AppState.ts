@@ -46,8 +46,6 @@ export type IdeView = {
   explorerViewVersion?: number;
   volatileDocs: Record<string, boolean>;
   tools?: ToolInfo[];
-  activeTool?: string;
-  activeOutputPane?: string;
   statusMessage?: string;
   statusSuccess?: boolean;
   toolCommandSeqNo: number;
@@ -132,8 +130,6 @@ export const initialAppState: AppState = {
     explorerViewVersion: 1,
     volatileDocs: {},
     tools: [],
-    activeTool: "command",
-    activeOutputPane: PANE_ID_EMU,
     toolCommandSeqNo: 0
   },
   ideSettings: {},

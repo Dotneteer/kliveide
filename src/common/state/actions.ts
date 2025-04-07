@@ -31,10 +31,6 @@ export const ideLoadedAction: ActionCreator = () => ({
   type: "IDE_LOADED"
 });
 
-export const ideSynchedAction: ActionCreator = () => ({
-  type: "IDE_STATE_SYNCHED"
-});
-
 export const dimMenuAction: ActionCreator = (flag: boolean) => ({
   type: "DIM_MENU",
   payload: { flag }
@@ -97,11 +93,6 @@ export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   payload: { tools }
 });
 
-export const activateToolAction: ActionCreator = (id: string) => ({
-  type: "ACTIVATE_TOOL",
-  payload: { id }
-});
-
 export const setMachineTypeAction: ActionCreator = (id: string) => ({
   type: "SET_MACHINE_TYPE",
   payload: { id }
@@ -148,11 +139,6 @@ export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
 export const setMediaAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_MEDIA",
   payload: { id, value }
-});
-
-export const activateOutputPaneAction: ActionCreator = (id: string) => ({
-  type: "ACTIVATE_OUTPUT_PANE",
-  payload: { id }
 });
 
 export const setIdeStatusMessageAction: ActionCreator = (text: string, flag?: boolean) => ({
@@ -308,11 +294,6 @@ export const setProjectBuildFileAction: ActionCreator = (flag) => ({
 
 export const incBuildFileVersionAction: ActionCreator = () => ({
   type: "INC_BUILD_FILE_VERSION"
-});
-
-export const setIdeDisableAutoOpenProjectAction: ActionCreator = (flag: boolean) => ({
-  type: "SET_IDE_DISABLE_AUTO_OPEN_PROJECT",
-  payload: { flag }
 });
 
 export const setIdeDisableAutoCompleteAction: ActionCreator = (flag: boolean) => ({

@@ -27,7 +27,6 @@ export interface ActionTypes {
   INC_EDITOR_VERSION: null;
 
   SET_TOOLS: null;
-  ACTIVATE_TOOL: null;
 
   SET_MACHINE_TYPE: null;
   SET_MODEL_TYPE: null;
@@ -42,8 +41,6 @@ export interface ActionTypes {
   SET_AUDIO_SAMPLE_RATE: null;
   SET_DISK_FILE: null;
   PROTECT_DISK: null;
-
-  ACTIVATE_OUTPUT_PANE: null;
 
   SET_IDE_STATUS_MESSAGE: null;
   INC_BPS_VERSION: null;
@@ -80,7 +77,6 @@ export interface ActionTypes {
 
   SET_SCRIPTS_STATUS: null;
 
-  SET_IDE_DISABLE_AUTO_OPEN_PROJECT: null;
   SET_IDE_DISABLE_AUTO_COMPLETE: null;
   SET_IDE_CLOSE_EMU_WITH_IDE: null;
   SET_IDE_EXPORT_DIALOG: null;

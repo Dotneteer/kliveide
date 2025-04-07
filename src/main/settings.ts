@@ -27,7 +27,6 @@ export type ExportDialogSettings = {
 }
 
 export type IdeSettings = {
-  disableAutoOpenProject?: boolean;
   disableAutoComplete?: boolean;
   closeEmulatorWithIde?: boolean;
 }

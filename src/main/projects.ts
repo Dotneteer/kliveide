@@ -37,6 +37,8 @@ import { getModelConfig } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
 import { KliveGlobalSettings } from "@common/settings/setting-definitions";
+import { getSettingDefinition } from "./settings-utils";
+import { get, set } from "lodash";
 
 type ProjectCreationResult = {
   path?: string;
@@ -162,8 +164,15 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       // --- Apply the machine type saved in the project
       await setMachineType(projectStruct.machineType, projectStruct.modelId, projectStruct.config);
 
-      // --- Apply settings if the project is valid
-      disp(initGlobalSettingsAction(projectStruct.globalSettings ?? {}));
+      // --- Apply settings if the project is valid, merge with current state
+      const mergedGlobals = mainStore.getState().globalSettings;
+      Object.keys(KliveGlobalSettings).forEach((key) => {
+        const projSetting = get(projectStruct.globalSettings, key);
+        if (projSetting) {
+          set(mergedGlobals, key, projSetting);
+        }
+      });
+      disp(initGlobalSettingsAction(mergedGlobals));
 
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
       disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
@@ -305,6 +314,12 @@ export function getKliveProjectFolder(projectFolder: string): string {
 export async function getKliveProjectStructure(): Promise<KliveProjectStructure> {
   const state = mainStore.getState();
   const bpResponse = await getEmuApi().listBreakpoints();
+  const globalSettings: Record<string, any> = {};
+  Object.keys(KliveGlobalSettings).forEach((key) => {
+    if (getSettingDefinition(key)?.saveWithProject ?? true) {
+      set(globalSettings, key, get(state.globalSettings, key));
+    }
+  });
   return {
     kliveVersion: app.getVersion(),
     machineType: state.emulatorState.machineId,
@@ -320,7 +335,7 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
       excludedProjectItems: state.project?.excludedItems ?? []
     },
     viewOptions: {
-      theme: state.theme,
+      theme: state.theme
     },
     debugger: {
       breakpoints: bpResponse.breakpoints
@@ -331,7 +346,7 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     settings: state.projectSettings,
     exportDialog: state.project?.exportSettings,
     workspaceSettings: state.workspaceSettings,
-    globalSettings: state.globalSettings
+    globalSettings
   };
 }
 

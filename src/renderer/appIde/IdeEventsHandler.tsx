@@ -14,7 +14,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import {
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_SHOW_SIDEBAR,
-  SETTING_IDE_SIDEBAR_WIDHT,
+  SETTING_IDE_SIDEBAR_WIDTH,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLPANEL_HEIGHT
 } from "@common/settings/setting-const";
@@ -137,12 +137,12 @@ export const IdeEventsHandler = () => {
         await ideCommandsService.executeCommand(activeDocCommand);
       }
       console.log("Project workspace opened");
-      const sideBarWidth = get(state, SETTING_IDE_SIDEBAR_WIDHT);
+      const sideBarWidth = get(state, SETTING_IDE_SIDEBAR_WIDTH);
       const toolPanelHeight = get(state, SETTING_IDE_TOOLPANEL_HEIGHT);
 
       // --- Adjust the size of IDE splitters
       if (sideBarWidth) {
-        await mainApi.setGlobalSettingsValue(SETTING_IDE_SIDEBAR_WIDHT, sideBarWidth);
+        await mainApi.setGlobalSettingsValue(SETTING_IDE_SIDEBAR_WIDTH, sideBarWidth);
       }
       if (toolPanelHeight) {
         await mainApi.setGlobalSettingsValue(SETTING_IDE_TOOLPANEL_HEIGHT, toolPanelHeight);
@@ -159,23 +159,6 @@ export const IdeEventsHandler = () => {
       projectService.projectOpened.off(onProjectLoaded);
     };
   }, [projectService]);
-
-  // useInterval(async () => {
-  //   const newState = await emuApi.getCpuStateChunk();
-  //   const oldState = lastStateChunk.current;
-  //   const changed =
-  //     !oldState ||
-  //     oldState.state !== newState.state ||
-  //     oldState.pcValue !== newState.pcValue ||
-  //     oldState.tacts !== newState.tacts;
-  //   if (changed) {
-  //     console.log("CPU state changed");
-  //   } else if (new Date().valueOf() - latestRefresh.current > 500) {
-  //     latestRefresh.current = new Date().valueOf();
-  //     console.log("CPU state changed");
-  //   }
-  //   lastStateChunk.current = newState;
-  // }, 100);
 
   // --- Do not render any visual elements
   return null;

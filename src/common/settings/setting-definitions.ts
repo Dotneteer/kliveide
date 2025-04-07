@@ -1,5 +1,28 @@
 import { Setting } from "@abstractions/Setting";
-import { SETTING_EMU_FAST_LOAD, SETTING_EMU_KEYBOARD_LAYOUT, SETTING_EMU_SHOW_INSTANT_SCREEN, SETTING_EMU_SHOW_KEYBOARD, SETTING_EMU_SHOW_STATUS_BAR, SETTING_EMU_SHOW_TOOLBAR, SETTING_EMU_STAY_ON_TOP, SETTING_IDE_EDITOR_FONT_SIZE, SETTING_IDE_MAXIMIZE_TOOLS, SETTING_IDE_SHOW_SIDEBAR, SETTING_IDE_SHOW_STATUS_BAR, SETTING_IDE_SHOW_TOOLBAR, SETTING_IDE_SHOW_TOOLS, SETTING_IDE_SIDEBAR_TO_RIGHT, SETTING_IDE_SIDEBAR_WIDHT as SETTING_IDE_SIDEBAR_WIDTH, SETTING_IDE_SYNC_BREAKPOINTS, SETTING_IDE_TOOLPANEL_HEIGHT, SETTING_IDE_TOOLS_ON_TOP } from "@common/settings/setting-const";
+import { PANE_ID_EMU } from "@common/integration/constants";
+import {
+  SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_KEYBOARD_LAYOUT,
+  SETTING_EMU_SHOW_INSTANT_SCREEN,
+  SETTING_EMU_SHOW_KEYBOARD,
+  SETTING_EMU_SHOW_STATUS_BAR,
+  SETTING_EMU_SHOW_TOOLBAR,
+  SETTING_EMU_STAY_ON_TOP,
+  SETTING_IDE_ACTIVE_OUTPUT_PANE,
+  SETTING_IDE_ACTIVE_TOOL,
+  SETTING_IDE_EDITOR_FONT_SIZE,
+  SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_OPEN_LAST_PROJECT,
+  SETTING_IDE_SHOW_SIDEBAR,
+  SETTING_IDE_SHOW_STATUS_BAR,
+  SETTING_IDE_SHOW_TOOLBAR,
+  SETTING_IDE_SHOW_TOOLS,
+  SETTING_IDE_SIDEBAR_TO_RIGHT,
+  SETTING_IDE_SIDEBAR_WIDTH,
+  SETTING_IDE_SYNC_BREAKPOINTS,
+  SETTING_IDE_TOOLPANEL_HEIGHT,
+  SETTING_IDE_TOOLS_ON_TOP
+} from "@common/settings/setting-const";
 
 const settingDefinitions: Setting[] = [
   {
@@ -70,7 +93,7 @@ const settingDefinitions: Setting[] = [
     defaultValue: "uk",
     saveWithIde: true,
     saveWithProject: true,
-    boundTo: "emu", 
+    boundTo: "emu"
   },
   {
     id: SETTING_IDE_SHOW_TOOLBAR,
@@ -159,7 +182,7 @@ const settingDefinitions: Setting[] = [
     defaultValue: "25%",
     saveWithIde: true,
     saveWithProject: true,
-    volatile: true,
+    volatile: true
   },
   {
     id: SETTING_IDE_TOOLPANEL_HEIGHT,
@@ -168,16 +191,44 @@ const settingDefinitions: Setting[] = [
     defaultValue: "33%",
     saveWithIde: true,
     saveWithProject: true,
-    volatile: true,
+    volatile: true
   },
   {
     id: SETTING_IDE_EDITOR_FONT_SIZE,
-    title: "(Toolpanel height)",
+    title: "Editor font size",
+    description: "Font size for the editor.",
     type: "number",
     defaultValue: 16,
     saveWithIde: true,
-    saveWithProject: true,
+    saveWithProject: true
   },
+  {
+    id: SETTING_IDE_ACTIVE_TOOL,
+    title: "(active tool)",
+    type: "string",
+    defaultValue: "commands",
+    saveWithIde: true,
+    saveWithProject: true,
+    volatile: true
+  },
+  {
+    id: SETTING_IDE_ACTIVE_OUTPUT_PANE,
+    title: "(active output pane)",
+    type: "string",
+    defaultValue: PANE_ID_EMU,
+    saveWithIde: true,
+    saveWithProject: true,
+    volatile: true
+  },
+  {
+    id: SETTING_IDE_OPEN_LAST_PROJECT,
+    title: "Open the last project at startup",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    saveWithProject: false,
+    boundTo: "ide"
+  }
 ];
 
 export const KliveGlobalSettings: Record<string, Setting> = settingDefinitions.reduce(
