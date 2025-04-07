@@ -78,7 +78,6 @@ export interface ActionTypes {
   SET_SCRIPTS_STATUS: null;
 
   SET_IDE_DISABLE_AUTO_COMPLETE: null;
-  SET_IDE_CLOSE_EMU_WITH_IDE: null;
   SET_IDE_EXPORT_DIALOG: null;
   SET_WORKSPACE_SETTINGS: null;
   SET_SIDEBAR_WIDTH: null;

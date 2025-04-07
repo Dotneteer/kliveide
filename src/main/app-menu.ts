@@ -23,7 +23,6 @@ import {
   setVolatileDocStateAction,
   setKeyMappingsAction,
   setIdeDisableAutoCompleteAction,
-  closeEmuWithIdeAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
@@ -53,6 +52,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
@@ -100,7 +100,6 @@ const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
 const IDE_AUTO_COMPLETE = "ide_auto_complete";
-const IDE_CLOSE_EMU_WITH_IDE = "ide_close_emu_with_ide";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -749,16 +748,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             }
           },
           { type: "separator" },
-          {
-            id: IDE_CLOSE_EMU_WITH_IDE,
-            label: "Close Emulator when IDE is closed",
-            type: "checkbox",
-            checked: !appState.ideSettings?.closeEmulatorWithIde,
-            click: async (mi) => {
-              mainStore.dispatch(closeEmuWithIdeAction(!mi.checked));
-              saveAppSettings();
-            }
-          }
+          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU)
         ]
       }
     ]

@@ -314,8 +314,3 @@ export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any
 export const incEmuViewVersionAction: ActionCreator = () => ({
   type: "INC_EMU_VIEW_VERSION"
 });
-
-export const closeEmuWithIdeAction: ActionCreator = (flag: boolean) => ({
-  type: "SET_IDE_CLOSE_EMU_WITH_IDE",
-  payload: { flag }
-});

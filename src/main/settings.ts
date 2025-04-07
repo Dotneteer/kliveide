@@ -28,7 +28,6 @@ export type ExportDialogSettings = {
 
 export type IdeSettings = {
   disableAutoComplete?: boolean;
-  closeEmulatorWithIde?: boolean;
 }
 
 export type AppSettings = {

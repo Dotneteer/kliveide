@@ -10,6 +10,7 @@ import {
   SETTING_EMU_STAY_ON_TOP,
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
+  SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
@@ -228,7 +229,17 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     saveWithProject: false,
     boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_CLOSE_EMU,
+    title: "Close Emulator when IDE is closed",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    saveWithProject: false,
+    boundTo: "ide"
   }
+
 ];
 
 export const KliveGlobalSettings: Record<string, Setting> = settingDefinitions.reduce(

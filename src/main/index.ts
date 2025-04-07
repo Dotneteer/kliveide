@@ -44,7 +44,6 @@ import {
   setMachineSpecificAction,
   setMediaAction,
   setIdeDisableAutoCompleteAction,
-  closeEmuWithIdeAction,
   initGlobalSettingsAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
@@ -68,7 +67,7 @@ import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
-import { SETTING_EMU_STAY_ON_TOP } from "@common/settings/setting-const";
+import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import { getSettingValue } from "./settings-utils";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
@@ -255,7 +254,6 @@ async function createAppWindows() {
       mainStore.dispatch(
         setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false)
       );
-      mainStore.dispatch(closeEmuWithIdeAction(ideSettings?.closeEmulatorWithIde ?? true));
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
@@ -362,7 +360,7 @@ async function createAppWindows() {
 
   // --- Do not close the IDE (unless exiting the app), only hide it
   ideWindow.on("close", async (e) => {
-    const closeIde = mainStore.getState().ideSettings?.closeEmulatorWithIde;
+    const closeIde = getSettingValue(SETTING_IDE_CLOSE_EMU);
 
     if (ideWindow?.webContents) {
       appSettings.windowStates ??= {};
@@ -383,7 +381,7 @@ async function createAppWindows() {
     }
 
     e.preventDefault();
-    if (!closeIde) {
+    if (closeIde) {
       // --- Close the EMU window as well
       emuWindow?.close();
     } else {
