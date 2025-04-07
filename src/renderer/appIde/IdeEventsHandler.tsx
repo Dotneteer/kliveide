@@ -131,6 +131,7 @@ export const IdeEventsHandler = () => {
         }
       }
 
+      // --- Open build root, if required
       // --- Navigate to the active document
       console.log("Navigate to the active document");
       if (activeDocCommand) {

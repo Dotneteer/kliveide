@@ -172,7 +172,8 @@ async function createAppWindows() {
       preload,
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false
+      webSecurity: false,
+      backgroundThrottling: false
     }
   });
   if (displayEmuDevTools) {
@@ -211,7 +212,8 @@ async function createAppWindows() {
       preload,
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false
+      webSecurity: false,
+      backgroundThrottling: false
     },
     show: showIde
   });
