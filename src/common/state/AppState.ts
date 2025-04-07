@@ -23,10 +23,8 @@ export type AppState = {
   dimMenu?: boolean;
   theme?: string;
   globalSettings?: Record<string, any>;
-  ideViewOptions?: IdeViewOptions;
   ideView?: IdeView;
   ideSettings?: IdeSettings;
-  emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
   media?: MediaState;
   project?: IdeProject;
@@ -38,20 +36,6 @@ export type AppState = {
   menuVersion?: number;
   scripts?: ScriptRunInfo[];
   workspaceSettings?: Record<string, any>;
-};
-
-/**
- * Represents the state of the IDE view options
- */
-export type IdeViewOptions = {
-  editorFontSize?: number;
-};
-
-/**
- * Represents the state of the EMU view options
- */
-export type EmuViewOptions = {
-  keyboardLayout?: string;
 };
 
 export type IdeView = {
@@ -141,9 +125,6 @@ export const initialAppState: AppState = {
   ideFocused: false,
   menuVersion: 0,
   globalSettings: {},
-  ideViewOptions: {
-    editorFontSize: 16,
-  },
   ideView: {
     sideBarPanels: {},
     documentHubState: {},
@@ -155,7 +136,6 @@ export const initialAppState: AppState = {
     activeOutputPane: PANE_ID_EMU,
     toolCommandSeqNo: 0
   },
-  emuViewOptions: {},
   ideSettings: {},
   emulatorState: {
     config: {},

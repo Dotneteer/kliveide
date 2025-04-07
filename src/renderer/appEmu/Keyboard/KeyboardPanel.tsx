@@ -4,8 +4,9 @@ import { Sp128Keyboard } from "./Sp128Keyboard";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import styles from "./KeyboardPanel.module.scss";
 import { Z88Keyboard } from "./Z88Keyboard";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useGlobalSetting } from "@renderer/core/RendererProvider";
 import { NextKeyboard } from "./NextKeyboard";
+import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
 
 export type KeyboardApi = {
   signKeyStatus: (code: number, down: boolean) => void;
@@ -27,7 +28,7 @@ export const KeyboardPanel = ({
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
   const hostElement = useRef<HTMLDivElement>();
-  const layout = useSelector(s => s.emuViewOptions.keyboardLayout);
+  const layout = useGlobalSetting(SETTING_EMU_KEYBOARD_LAYOUT);
 
   // --- Handle resizing
   useResizeObserver(hostElement, () => {

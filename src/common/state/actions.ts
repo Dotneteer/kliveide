@@ -182,11 +182,6 @@ export const displayDialogAction: ActionCreator = (index?: number, value?: any) 
   payload: { index, value }
 });
 
-export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
-  type: "SET_IDE_FONT_SIZE",
-  payload: { numValue }
-});
-
 export const setBuildRootAction: ActionCreator = (files: string[], flag: boolean) => ({
   type: "SET_BUILD_ROOT",
   payload: { files, flag }

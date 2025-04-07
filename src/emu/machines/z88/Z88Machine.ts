@@ -8,8 +8,6 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
 import type { CardSlotState } from "./memory/CardSlotState";
-import type { AppState } from "@common/state/AppState";
-import type { Store } from "@common/state/redux-light";
 
 import { Z80MachineBase } from "../Z80MachineBase";
 import { Z88KeyCode } from "./Z88KeyCode";
@@ -34,8 +32,11 @@ import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { createZ88MemoryCard } from "./memory/CardType";
-import { emuSetKeyboardLayoutAction } from "@common/state/actions";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { createMainApi } from "@common/messaging/MainApi";
+import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
+import { get } from "lodash";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -99,11 +100,12 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Initialize the machine
    */
   constructor(
-    private readonly store: Store<AppState>,
+    private readonly store: any,
     model: MachineModel,
-    public readonly config: MachineConfigSet
+    public readonly config: MachineConfigSet,
+    private readonly messenger: MessengerBase
   ) {
-    super(config);
+    super(config, messenger);
 
     // --- config overrides model.config
     this.config = config ?? model?.config;
@@ -221,7 +223,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       if (supported.indexOf(keyboardLayout) < 0) {
         keyboardLayout = "uk";
       }
-      this.store.dispatch(emuSetKeyboardLayoutAction(keyboardLayout), "emu");
+
+      await createMainApi(this.messenger).setGlobalSettingsValue(
+        SETTING_EMU_KEYBOARD_LAYOUT,
+        keyboardLayout
+      );
 
       // --- Configure the machine (using the dynamic configuration, too)
       await this.configure();

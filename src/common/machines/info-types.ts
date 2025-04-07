@@ -1,3 +1,4 @@
+import { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
 import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
@@ -105,7 +106,12 @@ export type MachineUiRendererInfo = {
    * Creates the emulate machine instance
    * @returns The emulated machine instance
    */
-  factory: (store: Store<AppState>, model?: MachineModel, config?: MachineConfigSet) => IZ80Machine;
+  factory: (
+    store: Store<AppState>,
+    model?: MachineModel,
+    config?: MachineConfigSet,
+    messenger?: MessengerBase
+  ) => IZ80Machine;
 };
 
 /**
@@ -149,7 +155,6 @@ export type HelpLinkInfo = {
   label?: string;
   url?: string;
 };
-
 
 export type CharDescriptor = {
   // --- Character value

@@ -16,7 +16,6 @@ export interface ActionTypes {
 
   EMU_SET_KEYBOARD_LAYOUT: null;
   SHOW_FRAME_INFO: null;
-  SET_IDE_FONT_SIZE: null;
 
   SET_ACTIVITY: null;
   SET_SIDEBAR_PANEL_EXPANDED: null;

@@ -1,5 +1,5 @@
 import { Setting } from "@abstractions/Setting";
-import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN, SETTING_EMU_SHOW_KEYBOARD, SETTING_EMU_SHOW_STATUS_BAR, SETTING_EMU_SHOW_TOOLBAR, SETTING_EMU_STAY_ON_TOP, SETTING_IDE_MAXIMIZE_TOOLS, SETTING_IDE_SHOW_SIDEBAR, SETTING_IDE_SHOW_STATUS_BAR, SETTING_IDE_SHOW_TOOLBAR, SETTING_IDE_SHOW_TOOLS, SETTING_IDE_SIDEBAR_TO_RIGHT, SETTING_IDE_SIDEBAR_WIDHT as SETTING_IDE_SIDEBAR_WIDTH, SETTING_IDE_SYNC_BREAKPOINTS, SETTING_IDE_TOOLPANEL_HEIGHT, SETTING_IDE_TOOLS_ON_TOP } from "@common/settings/setting-const";
+import { SETTING_EMU_FAST_LOAD, SETTING_EMU_KEYBOARD_LAYOUT, SETTING_EMU_SHOW_INSTANT_SCREEN, SETTING_EMU_SHOW_KEYBOARD, SETTING_EMU_SHOW_STATUS_BAR, SETTING_EMU_SHOW_TOOLBAR, SETTING_EMU_STAY_ON_TOP, SETTING_IDE_EDITOR_FONT_SIZE, SETTING_IDE_MAXIMIZE_TOOLS, SETTING_IDE_SHOW_SIDEBAR, SETTING_IDE_SHOW_STATUS_BAR, SETTING_IDE_SHOW_TOOLBAR, SETTING_IDE_SHOW_TOOLS, SETTING_IDE_SIDEBAR_TO_RIGHT, SETTING_IDE_SIDEBAR_WIDHT as SETTING_IDE_SIDEBAR_WIDTH, SETTING_IDE_SYNC_BREAKPOINTS, SETTING_IDE_TOOLPANEL_HEIGHT, SETTING_IDE_TOOLS_ON_TOP } from "@common/settings/setting-const";
 
 const settingDefinitions: Setting[] = [
   {
@@ -61,6 +61,16 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     saveWithProject: true,
     boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_KEYBOARD_LAYOUT,
+    title: "Keyboard Layout",
+    description: "Keyboard layout for the emulator.",
+    type: "string",
+    defaultValue: "uk",
+    saveWithIde: true,
+    saveWithProject: true,
+    boundTo: "emu", 
   },
   {
     id: SETTING_IDE_SHOW_TOOLBAR,
@@ -159,6 +169,14 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     saveWithProject: true,
     volatile: true,
+  },
+  {
+    id: SETTING_IDE_EDITOR_FONT_SIZE,
+    title: "(Toolpanel height)",
+    type: "number",
+    defaultValue: 16,
+    saveWithIde: true,
+    saveWithProject: true,
   },
 ];
 

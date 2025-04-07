@@ -19,7 +19,6 @@ import {
   setSoundLevelAction,
   closeFolderAction,
   displayDialogAction,
-  setIdeFontSizeAction,
   dimMenuAction,
   setVolatileDocStateAction,
   setKeyMappingsAction,
@@ -55,6 +54,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_IDE_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_SHOW_SIDEBAR,
   SETTING_IDE_SHOW_STATUS_BAR,
@@ -65,6 +65,7 @@ import {
   SETTING_IDE_TOOLS_ON_TOP
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
+import { set } from "lodash";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -297,15 +298,15 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       value: 24
     }
   ];
+  const currentFontSize = getSettingValue(SETTING_IDE_EDITOR_FONT_SIZE);
   const editorFontMenu: MenuItemConstructorOptions[] = editorFontOptions.map((f, idx) => {
     return {
       id: `${EDITOR_FONT_SIZE}_${idx}`,
       label: f.label,
       type: "checkbox",
-      checked: appState.ideViewOptions?.editorFontSize === f.value,
+      checked: currentFontSize === f.value,
       click: async () => {
-        mainStore.dispatch(setIdeFontSizeAction(f.value));
-        await saveKliveProject();
+        setSettingValue(SETTING_IDE_EDITOR_FONT_SIZE, f.value);
       }
     };
   });

@@ -1,10 +1,8 @@
 import { Action } from "./Action";
 import { AppState, initialAppState } from "./AppState";
 import { appStateFlagsReducer } from "./app-state-flags-reducer";
-import { ideViewOptionsReducer } from "./ide-view-options-reducer";
 import { ideViewReducer } from "./ide-view-reducer";
 import { ActionForwarder, createStore, Reducer } from "./redux-light";
-import { emuViewOptionsReducer } from "./emu-view-options-reducer";
 import { emulatorStateReducer } from "./emulator-state-reducer";
 import { projectReducer } from "./project-reducer";
 import { compilationReducer } from "./compilation-reducer";
@@ -23,8 +21,6 @@ import { globalSettingsReducer } from "./global-settings-reducer";
 function appReducer(state: AppState, action: Action): AppState {
   state = appStateFlagsReducer(state, action);
   invokeReducer(state.globalSettings, globalSettingsReducer, (a, n) => (a.globalSettings = n));
-  invokeReducer(state.ideViewOptions, ideViewOptionsReducer, (a, n) => (a.ideViewOptions = n));
-  invokeReducer(state.emuViewOptions, emuViewOptionsReducer, (a, n) => (a.emuViewOptions = n));
   invokeReducer(state.ideView, ideViewReducer, (a, n) => (a.ideView = n));
   invokeReducer(state.emulatorState, emulatorStateReducer, (a, n) => (a.emulatorState = n));
   invokeReducer(state.project, projectReducer, (a, n) => (a.project = n));

@@ -76,7 +76,7 @@ class MachineService implements IMachineService {
 
     // --- Initialize the new machine
     const rendererInfo = machineRendererRegistry.find((r) => r.machineId === machineId);
-    const machine = rendererInfo.factory(this.store, modelInfo, config);
+    const machine = rendererInfo.factory(this.store, modelInfo, config, this.messenger);
     this._controller = new MachineController(this.store, this.messenger, machine);
 
     // --- Restore the breakpoints from the old machine

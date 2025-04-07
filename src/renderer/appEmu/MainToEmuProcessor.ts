@@ -49,8 +49,8 @@ class EmuMessageProcessor {
     private readonly machineService: IMachineService
   ) {}
 
-  setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
-    this.machineService.setMachineType(machineId, modelId, config);
+  async setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
+    await this.machineService.setMachineType(machineId, modelId, config);
   }
 
   issueMachineCommand(command: MachineCommand, customCommand?: string) {

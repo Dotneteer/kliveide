@@ -41,7 +41,6 @@ import {
   displayDialogAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
-  emuSetKeyboardLayoutAction,
   setMachineSpecificAction,
   setMediaAction,
   setIdeDisableAutoOpenProjectAction,
@@ -237,7 +236,6 @@ async function createAppWindows() {
     const state = mainStore.getState();
 
     if (state.emuLoaded && !machineTypeInitialized) {
-      console.log("Initializing EMU window");
       // --- Sign machine initialization is done, so we do not run into this code again
       machineTypeInitialized = true;
 
@@ -265,7 +263,6 @@ async function createAppWindows() {
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
-      mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
       Object.entries(appSettings.media).forEach(([key, value]) => {
         mainStore.dispatch(setMediaAction(key, value));
       });

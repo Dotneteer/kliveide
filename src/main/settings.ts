@@ -44,8 +44,6 @@ export type AppSettings = {
   ideSettings?: IdeSettings;
   startScreenDisplayed?: boolean;
   theme?: string;
-  keyboardLayout?: string;
-
   machineId?: string;
   modelId?: string;
   config?: Record<string, any>;
@@ -82,7 +80,6 @@ export function saveAppSettings (): void {
     appSettings.theme = state.theme;
     appSettings.globalSettings = state.globalSettings;
     appSettings.ideSettings = state.ideSettings;
-    appSettings.keyboardLayout = state.emuViewOptions?.keyboardLayout;
     appSettings.machineId = state.emulatorState?.machineId;
     appSettings.modelId = state.emulatorState?.modelId;
     appSettings.config = state.emulatorState?.config;

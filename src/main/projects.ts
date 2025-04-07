@@ -12,7 +12,6 @@ import {
   saveProjectSettingAction,
   setBuildRootAction,
   setExcludedProjectItemsAction,
-  setIdeFontSizeAction,
   setMachineSpecificAction,
   setProjectBuildFileAction,
   setExportDialogInfoAction,
@@ -168,7 +167,6 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
 
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
       disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
-      disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
       disp(setExportDialogInfoAction(projectStruct.exportDialog));
@@ -323,8 +321,6 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     },
     viewOptions: {
       theme: state.theme,
-      editorFontSize: state.ideViewOptions?.editorFontSize,
-      keyboardLayout: state.emuViewOptions.keyboardLayout,
     },
     debugger: {
       breakpoints: bpResponse.breakpoints
@@ -402,9 +398,7 @@ type KliveProjectStructure = {
 
 interface ViewOptions {
   theme?: string;
-  keyboardLayout?: string;
   keyboardHeight?: number;
-  editorFontSize?: number;
 }
 
 // --- Represents the state of the debugger
