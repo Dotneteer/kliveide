@@ -240,8 +240,12 @@ const IdeApp = () => {
             // --- Let's load the last propject
             projectPath = projectPath.replaceAll("\\", "/");
             console.log("Opening project");
-            await mainApi.openFolder(projectPath);
-            console.log("Project opened");
+            const result = await mainApi.openFolder(projectPath);
+            if (result) {
+              console.log("Opening project resulted in error:", result);
+            } else {
+              console.log("Project opened");
+            }
           }
         }
       })();

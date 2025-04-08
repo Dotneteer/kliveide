@@ -78,6 +78,7 @@ export type FloppyDiskState = {
 export type IdeProject = {
   folderPath?: string | null;
   isKliveProject?: boolean;
+  workspaceLoaded?: boolean;
   buildRoots?: string[];
   projectFileVersion?: number;
   projectViewStateVersion?: number;

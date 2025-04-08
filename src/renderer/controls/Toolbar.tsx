@@ -23,6 +23,7 @@ import {
   SETTING_EMU_STAY_ON_TOP,
   SETTING_IDE_SYNC_BREAKPOINTS
 } from "@common/settings/setting-const";
+import { MEDIA_TAPE } from "@common/structs/project-const";
 
 type Props = {
   ide: boolean;
@@ -79,6 +80,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
+  const tapeFile = useSelector((s) => s.media?.[MEDIA_TAPE]);
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging ?? false);
   const isCompiling = useSelector((s) => s.compilation?.inProgress ?? false);
   const isStopped =
@@ -324,6 +326,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               iconName="reverse-tape"
               fill="--color-toolbarbutton"
               title="Rewind the tape"
+              enable={!!tapeFile}
               clicked={async () => {
                 await mainApi.reloadTapeFile();
                 await emuApi.issueMachineCommand("rewind");

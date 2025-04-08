@@ -159,6 +159,10 @@ export const openFolderAction: ActionCreator = (file: string, flag: boolean) => 
   payload: { file, flag }
 });
 
+export const workspaceLoadedAction: ActionCreator = () => ({
+  type: "WORKSPACE_LOADED"
+});
+
 export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER"
 });

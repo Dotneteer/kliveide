@@ -5,7 +5,7 @@ import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-
 import { useAppServices } from "./services/AppServicesProvider";
 import { saveProject } from "./utils/save-project";
 import { BUILD_FILE } from "@common/structs/project-const";
-import { incBuildFileVersionAction } from "@common/state/actions";
+import { incBuildFileVersionAction, workspaceLoadedAction } from "@common/state/actions";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { delay } from "@renderer/utils/timing";
 import { DOCS_WORKSPACE } from "./DocumentArea/DocumentsHeader";
@@ -19,6 +19,9 @@ import {
   SETTING_IDE_TOOLPANEL_HEIGHT
 } from "@common/settings/setting-const";
 import { get } from "lodash";
+import { IProjectService } from "@renderer/abstractions/IProjectService";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
 
 export const TOOL_PANEL_HEIGHT = "toolPanelHeight";
 
@@ -80,33 +83,8 @@ export const IdeEventsHandler = () => {
       await mainApi.setGlobalSettingsValue(SETTING_IDE_SHOW_SIDEBAR, true);
       await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, false);
 
-      // --- Wait up to 10 seconds for the project to be opened
-      console.log("Waiting for the end of project loading");
-      let count = 0;
-      while (count < 100) {
-        if (store.getState().project?.folderPath === projectPath) break;
-        count++;
-        await delay(100);
-      }
-      if (count >= 100) {
-        console.error("Timeout while opening the last project");
-        return;
-      }
-
-      // --- Wait up to 10 seconds for the project tree to be loaded
-      console.log("Waiting for the end of project tree loading");
-      count = 0;
-
-      while (count < 100) {
-        const tree = projectService.getProjectTree();
-        if (tree) break;
-        count++;
-        await delay(100);
-      }
-      if (count >= 100) {
-        console.error("Timeout while loading the project tree");
-        return;
-      }
+      // --- Wait while the project is loaded
+      await ensureProjectLoaded(projectService);
 
       // --- Open the last documents
       console.log("Time to open project workspace");
@@ -151,6 +129,8 @@ export const IdeEventsHandler = () => {
       if (maximizeToolPanels) {
         await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, true);
       }
+
+      store.dispatch(workspaceLoadedAction(), "ide");
     };
 
     projectService.fileSaved.on(onFileSaved);
@@ -190,3 +170,36 @@ export const IdeEventsHandler = () => {
     await ideCommandsService.executeCommand(`nav "${fullFile}" ${fileLine.line}`);
   }
 };
+
+export async function ensureProjectLoaded(projectService: IProjectService) {
+  // --- Wait up to 10 seconds for the project tree to be loaded
+  console.log("Waiting for the end of project tree loading");
+  let count = 0;
+
+  while (count < 100) {
+    const tree = projectService.getProjectTree();
+    if (tree) break;
+    count++;
+    await delay(100);
+  }
+  if (count >= 100) {
+    console.error("Timeout while loading the project tree");
+    return;
+  }
+}
+
+export async function ensureWorkspaceLoaded(store: Store<AppState>) {
+  // --- Wait up to 10 seconds for the project tree to be loaded
+  console.log("Waiting for the end of workspace loading");
+  let count = 0;
+
+  while (count < 100) {
+    if (store.getState()?.project?.workspaceLoaded) break;
+    count++;
+    await delay(100);
+  }
+  if (count >= 100) {
+    console.error("Timeout while loading the workspace");
+    return;
+  }
+}

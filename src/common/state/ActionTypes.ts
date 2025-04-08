@@ -48,6 +48,7 @@ export interface ActionTypes {
 
   OPEN_FOLDER: null;
   CLOSE_FOLDER: null;
+  WORKSPACE_LOADED: null;
   SET_BUILD_ROOT: null;
   INC_PROJECT_FILE_VERSION: null;
   INC_PROJECT_VIEWSTATE_VERSION: null;
