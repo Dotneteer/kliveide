@@ -54,6 +54,7 @@ import { InputStream } from "./z80-compiler/input-stream";
 import { TokenStream } from "./z80-compiler/token-stream";
 import { Z80AsmParser } from "./z80-compiler/z80-asm-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { setSettingValue } from "./settings-utils";
 
 class MainMessageProcessor {
   constructor(
@@ -210,7 +211,8 @@ class MainMessageProcessor {
     return filePath;
   }
 
-  saveProject() {
+  async saveProject() {
+    await new Promise((resolve) => setTimeout(resolve, 200));
     saveKliveProject();
   }
 
@@ -385,6 +387,10 @@ class MainMessageProcessor {
     if (tapeFile) {
       await setSelectedTapeFile(tapeFile);
     }
+  }
+
+  async setGlobalSettingsValue(settingId: string, value: any): Promise<void> {
+    setSettingValue(settingId, value);
   }
 }
 

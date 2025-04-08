@@ -5,6 +5,16 @@ import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-re
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ExportDialogSettings } from "@main/settings";
 
+export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
+  type: "INIT_GLOBAL_SETTINGS",
+  payload: { value }
+});
+
+export const setGlobalSettingAction: ActionCreator = (id: string, value: any) => ({
+  type: "SET_GLOBAL_SETTING",
+  payload: { id, value }
+});
+
 export const unloadWindowsAction: ActionCreator = () => ({
   type: "UNLOAD_WINDOWS"
 });
@@ -19,10 +29,6 @@ export const emuSynchedAction: ActionCreator = () => ({
 
 export const ideLoadedAction: ActionCreator = () => ({
   type: "IDE_LOADED"
-});
-
-export const ideSynchedAction: ActionCreator = () => ({
-  type: "IDE_STATE_SYNCHED"
 });
 
 export const dimMenuAction: ActionCreator = (flag: boolean) => ({
@@ -53,61 +59,6 @@ export const setThemeAction: ActionCreator = (id: string) => ({
 export const selectActivityAction: ActionCreator = (id: string) => ({
   type: "SET_ACTIVITY",
   payload: { id }
-});
-
-export const showEmuToolbarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_EMU_TOOLBAR",
-  payload: { flag }
-});
-
-export const showEmuStatusBarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_EMU_STATUSBAR",
-  payload: { flag }
-});
-
-export const showIdeToolbarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_IDE_TOOLBAR",
-  payload: { flag }
-});
-
-export const showIdeStatusBarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_IDE_STATUSBAR",
-  payload: { flag }
-});
-
-export const showSideBarAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_SIDE_BAR",
-  payload: { flag }
-});
-
-export const primaryBarOnRightAction: ActionCreator = (flag: boolean) => ({
-  type: "PRIMARY_BAR_ON_RIGHT",
-  payload: { flag }
-});
-
-export const showToolPanelsAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_TOOL_PANELS",
-  payload: { flag }
-});
-
-export const toolPanelsOnTopAction: ActionCreator = (flag: boolean) => ({
-  type: "TOOLS_ON_TOP",
-  payload: { flag }
-});
-
-export const maximizeToolsAction: ActionCreator = (flag: boolean) => ({
-  type: "MAXIMIZE_TOOLS",
-  payload: { flag }
-});
-
-export const showKeyboardAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_KEYBOARD",
-  payload: { flag }
-});
-
-export const showInstantScreenAction: ActionCreator = (flag: boolean) => ({
-  type: "SHOW_SHADOW_SCREEN",
-  payload: { flag }
 });
 
 export const showFrameInfoAction: ActionCreator = (flag: boolean) => ({
@@ -142,11 +93,6 @@ export const setToolsAction: ActionCreator = (tools: ToolInfo[]) => ({
   payload: { tools }
 });
 
-export const activateToolAction: ActionCreator = (id: string) => ({
-  type: "ACTIVATE_TOOL",
-  payload: { id }
-});
-
 export const setMachineTypeAction: ActionCreator = (id: string) => ({
   type: "SET_MACHINE_TYPE",
   payload: { id }
@@ -162,7 +108,10 @@ export const setMachineConfigAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
-export const setMachineStateAction: ActionCreator = (state: MachineControllerState, numValue: number) => ({
+export const setMachineStateAction: ActionCreator = (
+  state: MachineControllerState,
+  numValue: number
+) => ({
   type: "SET_MACHINE_STATE",
   payload: { state, numValue }
 });
@@ -175,11 +124,6 @@ export const muteSoundAction: ActionCreator = (flag: boolean) => ({
 export const setSoundLevelAction: ActionCreator = (numValue: number) => ({
   type: "SET_SOUND_LEVEL",
   payload: { numValue }
-});
-
-export const setFastLoadAction: ActionCreator = (flag: boolean) => ({
-  type: "SET_FAST_LOAD",
-  payload: { flag }
 });
 
 export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
@@ -195,11 +139,6 @@ export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
 export const setMediaAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_MEDIA",
   payload: { id, value }
-});
-
-export const activateOutputPaneAction: ActionCreator = (id: string) => ({
-  type: "ACTIVATE_OUTPUT_PANE",
-  payload: { id }
 });
 
 export const setIdeStatusMessageAction: ActionCreator = (text: string, flag?: boolean) => ({
@@ -220,6 +159,10 @@ export const openFolderAction: ActionCreator = (file: string, flag: boolean) => 
   payload: { file, flag }
 });
 
+export const workspaceLoadedAction: ActionCreator = () => ({
+  type: "WORKSPACE_LOADED"
+});
+
 export const closeFolderAction: ActionCreator = () => ({
   type: "CLOSE_FOLDER"
 });
@@ -227,11 +170,6 @@ export const closeFolderAction: ActionCreator = () => ({
 export const displayDialogAction: ActionCreator = (index?: number, value?: any) => ({
   type: "DISPLAY_DIALOG",
   payload: { index, value }
-});
-
-export const setIdeFontSizeAction: ActionCreator = (numValue?: number) => ({
-  type: "SET_IDE_FONT_SIZE",
-  payload: { numValue }
 });
 
 export const setBuildRootAction: ActionCreator = (files: string[], flag: boolean) => ({
@@ -294,11 +232,6 @@ export const setVolatileDocStateAction: ActionCreator = (id, flag) => ({
 
 export const incEditorVersionAction: ActionCreator = () => ({
   type: "INC_EDITOR_VERSION"
-});
-
-export const syncSourceBreakpointsAction: ActionCreator = (flag) => ({
-  type: "SYNC_SOURCE_BREAKPOINTS",
-  payload: { flag }
 });
 
 export const setDebuggingAction: ActionCreator = (flag) => ({
@@ -367,11 +300,6 @@ export const incBuildFileVersionAction: ActionCreator = () => ({
   type: "INC_BUILD_FILE_VERSION"
 });
 
-export const setIdeDisableAutoOpenProjectAction: ActionCreator = (flag: boolean) => ({
-  type: "SET_IDE_DISABLE_AUTO_OPEN_PROJECT",
-  payload: { flag }
-});
-
 export const setIdeDisableAutoCompleteAction: ActionCreator = (flag: boolean) => ({
   type: "SET_IDE_DISABLE_AUTO_COMPLETE",
   payload: { flag }
@@ -387,16 +315,6 @@ export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any
   payload: { id, value }
 });
 
-export const setEmuStayOnTopAction: ActionCreator = (flag: boolean) => ({
-  type: "EMU_STAY_ON_TOP",
-  payload: { flag }
-});
-
 export const incEmuViewVersionAction: ActionCreator = () => ({
   type: "INC_EMU_VIEW_VERSION"
-});
-
-export const closeEmuWithIdeAction: ActionCreator = (flag: boolean) => ({
-  type: "SET_IDE_CLOSE_EMU_WITH_IDE",
-  payload: { flag }
 });

@@ -7,12 +7,7 @@ import type { AppState } from "@state/AppState";
 import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "@common/machines/constants";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import {
-  setFastLoadAction,
-  setVolatileDocStateAction,
-  setMediaAction,
-  displayDialogAction
-} from "@state/actions";
+import { setVolatileDocStateAction, setMediaAction, displayDialogAction } from "@state/actions";
 import { BASIC_PANEL_ID } from "@state/common-ids";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
@@ -21,6 +16,8 @@ import { appSettings } from "@main/settings";
 import { dialog, BrowserWindow, app } from "electron";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
+import { createBooleanSettingsMenu } from "@main/app-menu";
+import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
@@ -32,16 +29,7 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
   const emuWindow = windowInfo.emuWindow;
   const appState = mainStore.getState();
   if (machine.features?.[MF_TAPE_SUPPORT]) {
-    items.push({
-      id: "toggle_fast_load",
-      label: "Fast Load",
-      type: "checkbox",
-      checked: !!appState.emulatorState?.fastLoad,
-      click: async () => {
-        mainStore.dispatch(setFastLoadAction(!appState.emulatorState?.fastLoad));
-        await saveKliveProject();
-      }
-    });
+    items.push(createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD) as any);
     items.push({
       id: "rewind_tape",
       label: "Rewind Tape",
@@ -55,6 +43,15 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
       label: "Select Tape File...",
       click: async () => {
         await setTapeFile(emuWindow, appState);
+        await saveKliveProject();
+      }
+    });
+    items.push({
+      id: "eject_tape",
+      label: "Eject Tape",
+      enabled: !!appState.media?.[MEDIA_TAPE],
+      click: async () => {
+        await ejectTape(true);
         await saveKliveProject();
       }
     });
@@ -176,8 +173,10 @@ export async function setSelectedTapeFile(filename: string): Promise<void> {
   } catch (err) {
     dialog.showErrorBox(
       "Error while reading tape file",
-      `Reading file ${filename} resulted in error: ${err.message}`
+      `Reading file ${filename} resulted in error: ${err.message}\n\n` +
+        "The faulty tape file will be ejected after closing this dialog."
     );
+    await ejectTape();
   }
 }
 
@@ -207,6 +206,26 @@ async function setTapeFile(browserWindow: BrowserWindow, state: AppState): Promi
 
   // --- Read the file
   await setSelectedTapeFile(dialogResult.filePaths[0]);
+}
+
+/**
+ * Ejects the current tape file
+ * @param browserWindow Host browser window
+ */
+async function ejectTape(confirm = false): Promise<void> {
+  if (confirm) {
+    const result = await dialog.showMessageBox({
+      type: "question",
+      buttons: ["Yes", "No"],
+      title: "Eject Tape",
+      message: "Are you sure you want to eject the tape?"
+    });
+    if (result.response !== 0) return;
+  }
+  // --- Store the last selected tape file
+  mainStore.dispatch(setMediaAction(MEDIA_TAPE, ""));
+  await getEmuApi().setTapeFile("", new Uint8Array(0));
+  await logEmuEvent(`Tape file ejected.`);
 }
 
 /**

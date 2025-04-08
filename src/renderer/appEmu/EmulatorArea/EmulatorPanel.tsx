@@ -2,7 +2,7 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
-import { useSelector, useStore } from "@renderer/core/RendererProvider";
+import { useGlobalSetting, useSelector, useStore } from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useEffect, useRef, useState } from "react";
@@ -19,6 +19,7 @@ import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 import { machineEmuToolRegistry } from "../tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
+import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN } from "@common/settings/setting-const";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -58,9 +59,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const yRatio = useRef(1);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
-  const fastLoad = useSelector((s) => s.emulatorState?.fastLoad);
+  const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
-  const showInstantScreen = useSelector((s) => s.emuViewOptions?.showInstantScreen);
+  const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
@@ -115,9 +116,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Sets the overlay for paused mode
   const setPauseOverlay = () => {
-    const showShadow = store.getState()?.emuViewOptions?.showInstantScreen;
     setOverlay(
-      `Paused (PC: $${toHexa4(controller.machine.pc)})${showShadow ? " - Instant screen" : ""}`
+      `Paused (PC: $${toHexa4(controller.machine.pc)})${showInstantScreen ? " - Instant screen" : ""}`
     );
   };
 
@@ -295,8 +295,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           case MachineControllerState.Paused:
             setPauseOverlay();
             await beeperRenderer?.current?.suspend();
-            const showShadow = store.getState()?.emuViewOptions?.showInstantScreen;
-            if (showShadow) {
+            if (showInstantScreen) {
               const shadow = renderInstantScreen();
               if (!savedPixelBuffer) {
                 savedPixelBuffer = new Uint32Array(shadow);

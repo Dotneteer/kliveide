@@ -20,6 +20,7 @@ type Props = {
   secondaryVisible?: boolean;
   splitterThickness?: number;
   onUpdatePrimarySize?: (newSize: string) => void;
+  onPrimarySizeUpdateCompleted?: (newSize: string) => void;
 };
 
 /**
@@ -35,7 +36,8 @@ export const SplitPanel = ({
   minSize = 20,
   secondaryVisible = true,
   splitterThickness = 4,
-  onUpdatePrimarySize
+  onUpdatePrimarySize,
+  onPrimarySizeUpdateCompleted
 }: Props) => {
   // --- Referencies we need to handling the splitter within the panel
   const mainContainer = useRef<HTMLDivElement>(null);
@@ -64,6 +66,10 @@ export const SplitPanel = ({
   const primaryDim = horizontal ? "width" : "height";
   const splitterVisible =
     !!primaryPanel && !!primaryVisible && !!secondaryPanel && !!secondaryVisible;
+
+  useLayoutEffect(() => {
+    setPrimarySize(secondaryVisible ? resolveSize(initialPrimarySize) : "100%");
+  }, [initialPrimarySize, secondaryVisible]);
 
   // --- Respond to panel visibility changes
   useLayoutEffect(() => {
@@ -188,6 +194,9 @@ export const SplitPanel = ({
           onSplitterMoved={(newPos) => {
             setPrimarySize(newPos);
           }}
+          onMoveCompleted={(newPos) => {
+            onPrimarySizeUpdateCompleted?.(`${newPos}px`);
+          }}
         />
       )}
     </div>
@@ -203,6 +212,7 @@ type SplitterProps = {
   minRange: number;
   maxRange: number;
   onSplitterMoved?: (newPos: number) => void;
+  onMoveCompleted?: (newPos: number) => void;
 };
 
 const Splitter = ({
@@ -213,13 +223,15 @@ const Splitter = ({
   splitterSize,
   minRange,
   maxRange,
-  onSplitterMoved
+  onSplitterMoved,
+  onMoveCompleted
 }: SplitterProps) => {
   const { uiService } = useAppServices();
   const horizontal = isHorizontal(location);
   const [isMoving, setIsMoving] = useState(false);
   const [pointed, setPointed] = useState(false);
   const gripPosition = useRef(0);
+  const lastPrimarySize = useRef(0);
 
   const startMove = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
@@ -236,6 +248,7 @@ const Splitter = ({
     let newPrimarySize = moveDir * (gripPosition.current + delta - anchorPos);
     newPrimarySize = resize(newPrimarySize, minRange, maxRange);
     onSplitterMoved?.(newPrimarySize);
+    lastPrimarySize.current = newPrimarySize;
   };
 
   const endMove = () => {
@@ -243,6 +256,7 @@ const Splitter = ({
     document.body.style.cursor = "default";
     window.removeEventListener("mousemove", move);
     window.removeEventListener("mouseup", endMove);
+    onMoveCompleted?.(lastPrimarySize.current);
   };
 
   return (

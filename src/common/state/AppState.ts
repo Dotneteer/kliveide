@@ -22,10 +22,9 @@ export type AppState = {
   ideFocused?: boolean;
   dimMenu?: boolean;
   theme?: string;
-  ideViewOptions?: IdeViewOptions;
+  globalSettings?: Record<string, any>;
   ideView?: IdeView;
   ideSettings?: IdeSettings;
-  emuViewOptions?: EmuViewOptions;
   emulatorState?: EmulatorState;
   media?: MediaState;
   project?: IdeProject;
@@ -39,36 +38,6 @@ export type AppState = {
   workspaceSettings?: Record<string, any>;
 };
 
-/**
- * Represents the state of the IDE view options
- */
-export type IdeViewOptions = {
-  showToolbar?: boolean;
-  showStatusBar?: boolean;
-  primaryBarOnRight?: boolean;
-  showToolPanels?: boolean;
-  toolPanelsOnTop?: boolean;
-  maximizeTools?: boolean;
-  showFrameInfo?: boolean;
-  showSidebar?: boolean;
-  editorFontSize?: number;
-  syncSourceBreakpoints?: boolean;
-  sideBarWidth?: string;
-  toolPanelHeight?: string;
-};
-
-/**
- * Represents the state of the EMU view options
- */
-export type EmuViewOptions = {
-  showKeyboard?: boolean;
-  showToolbar?: boolean;
-  showStatusBar?: boolean;
-  showInstantScreen?: boolean;
-  keyboardLayout?: string;
-  stayOnTop?: boolean;
-};
-
 export type IdeView = {
   activity?: string;
   sideBarPanels?: Record<string, SideBarPanelState>;
@@ -77,8 +46,6 @@ export type IdeView = {
   explorerViewVersion?: number;
   volatileDocs: Record<string, boolean>;
   tools?: ToolInfo[];
-  activeTool?: string;
-  activeOutputPane?: string;
   statusMessage?: string;
   statusSuccess?: boolean;
   toolCommandSeqNo: number;
@@ -97,7 +64,6 @@ export type EmulatorState = {
   soundLevel?: number;
   soundMuted?: boolean;
   savedSoundLevel?: number;
-  fastLoad?: boolean;
   clockMultiplier?: number;
   audioSampleRate?: number;
   breakpointsVersion: number;
@@ -112,6 +78,7 @@ export type FloppyDiskState = {
 export type IdeProject = {
   folderPath?: string | null;
   isKliveProject?: boolean;
+  workspaceLoaded?: boolean;
   buildRoots?: string[];
   projectFileVersion?: number;
   projectViewStateVersion?: number;
@@ -156,18 +123,7 @@ export const initialAppState: AppState = {
   emuFocused: false,
   ideFocused: false,
   menuVersion: 0,
-  ideViewOptions: {
-    showToolbar: true,
-    showStatusBar: true,
-    primaryBarOnRight: false,
-    showToolPanels: true,
-    toolPanelsOnTop: false,
-    maximizeTools: false,
-    showFrameInfo: true,
-    showSidebar: true,
-    editorFontSize: 16,
-    syncSourceBreakpoints: true
-  },
+  globalSettings: {},
   ideView: {
     sideBarPanels: {},
     documentHubState: {},
@@ -175,15 +131,7 @@ export const initialAppState: AppState = {
     explorerViewVersion: 1,
     volatileDocs: {},
     tools: [],
-    activeTool: "command",
-    activeOutputPane: PANE_ID_EMU,
     toolCommandSeqNo: 0
-  },
-  emuViewOptions: {
-    showToolbar: true,
-    showStatusBar: true,
-    showKeyboard: false,
-    stayOnTop: false
   },
   ideSettings: {},
   emulatorState: {
@@ -192,7 +140,6 @@ export const initialAppState: AppState = {
     soundLevel: 0.8,
     soundMuted: false,
     savedSoundLevel: 0.8,
-    fastLoad: true,
     clockMultiplier: 1,
     breakpointsVersion: 0,
     emuViewVersion: 0

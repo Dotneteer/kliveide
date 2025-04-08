@@ -14,28 +14,15 @@ import os from "os";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
 import {
-  showEmuStatusBarAction,
-  showEmuToolbarAction,
-  primaryBarOnRightAction,
-  showSideBarAction,
-  showToolPanelsAction,
-  toolPanelsOnTopAction,
-  maximizeToolsAction,
   setThemeAction,
   setClockMultiplierAction,
   setSoundLevelAction,
-  showIdeToolbarAction,
-  showIdeStatusBarAction,
   closeFolderAction,
   displayDialogAction,
-  setIdeFontSizeAction,
   dimMenuAction,
   setVolatileDocStateAction,
-  showKeyboardAction,
   setKeyMappingsAction,
-  setIdeDisableAutoOpenProjectAction,
   setIdeDisableAutoCompleteAction,
-  closeEmuWithIdeAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
@@ -58,6 +45,26 @@ import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
+import { getSettingDefinition, getSettingValue, setSettingValue } from "./settings-utils";
+import {
+  SETTING_EMU_SHOW_INSTANT_SCREEN,
+  SETTING_EMU_SHOW_KEYBOARD,
+  SETTING_EMU_SHOW_STATUS_BAR,
+  SETTING_EMU_SHOW_TOOLBAR,
+  SETTING_EMU_STAY_ON_TOP,
+  SETTING_IDE_CLOSE_EMU,
+  SETTING_IDE_EDITOR_FONT_SIZE,
+  SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_OPEN_LAST_PROJECT,
+  SETTING_IDE_SHOW_SIDEBAR,
+  SETTING_IDE_SHOW_STATUS_BAR,
+  SETTING_IDE_SHOW_TOOLBAR,
+  SETTING_IDE_SHOW_TOOLS,
+  SETTING_IDE_SIDEBAR_TO_RIGHT,
+  SETTING_IDE_SYNC_BREAKPOINTS,
+  SETTING_IDE_TOOLS_ON_TOP
+} from "@common/settings/setting-const";
+import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -66,17 +73,7 @@ const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
 const RECENT_PROJECTS = "recent_projects";
 const CLOSE_FOLDER = "close_folder";
-const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
-const TOGGLE_SIDE_BAR = "toggle_side_bar";
-const TOGGLE_PRIMARY_BAR_RIGHT = "primary_side_bar_right";
-const TOGGLE_EMU_TOOLBAR = "toggle_emu_toolbar";
-const TOGGLE_EMU_STATUS_BAR = "toggle_emu_status_bar";
-const TOGGLE_IDE_TOOLBAR = "toggle_ide_toolbar";
-const TOGGLE_IDE_STATUS_BAR = "toggle_ide_status_bar";
-const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
-const TOGGLE_TOOLS_TOP = "tool_panels_top";
-const MAXIMIZE_TOOLS = "tools_maximize";
 const THEMES = "themes";
 const LIGHT_THEME = "light_theme";
 const DARK_THEME = "dark_theme";
@@ -102,9 +99,7 @@ const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
-const IDE_AUTO_OPEN_PROJECT = "ide_auto_open_project";
 const IDE_AUTO_COMPLETE = "ide_auto_complete";
-const IDE_CLOSE_EMU_WITH_IDE = "ide_close_emu_with_ide";
 
 const EDITOR_FONT_SIZE = "editor_font_size";
 
@@ -152,16 +147,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const stepOverShortcut = settingsReader.readSetting("shortcuts.stepOver") ?? "F10";
   const stepOutShortcut =
     settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11");
-
-  const getWindowTraits = (w?: BrowserWindow) => {
-    return {
-      isFocused: (w?.isDestroyed() ?? false) === false && w.isFocused?.(),
-      isVisible: (w?.isDestroyed() ?? false) === false && w.isVisible?.()
-    };
-  };
-
-  const emuTraits = getWindowTraits(emuWindow);
-  const ideTraits = getWindowTraits(ideWindow);
 
   // ==========================================================================
   // Application system menu on MacOS
@@ -310,15 +295,15 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       value: 24
     }
   ];
+  const currentFontSize = getSettingValue(SETTING_IDE_EDITOR_FONT_SIZE);
   const editorFontMenu: MenuItemConstructorOptions[] = editorFontOptions.map((f, idx) => {
     return {
       id: `${EDITOR_FONT_SIZE}_${idx}`,
       label: f.label,
       type: "checkbox",
-      checked: appState.ideViewOptions?.editorFontSize === f.value,
+      checked: currentFontSize === f.value,
       click: async () => {
-        mainStore.dispatch(setIdeFontSizeAction(f.value));
-        await saveKliveProject();
+        setSettingValue(SETTING_IDE_EDITOR_FONT_SIZE, f.value);
       }
     };
   });
@@ -368,141 +353,37 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       {
         id: SHOW_IDE_WINDOW,
         label: "Show IDE",
-        visible: !ideTraits.isVisible,
+        visible: !isIdeWindowVisible(),
         click: () => {
           ensureIdeWindow();
         }
       },
       {
         type: "separator",
-        visible: !ideTraits.isVisible
+        visible: !isIdeWindowVisible()
       },
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_TOOLBAR),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLBAR),
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_STATUS_BAR),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_STATUS_BAR),
       {
-        id: TOGGLE_EMU_TOOLBAR,
-        label: "Show the Toolbar",
-        type: "checkbox",
-        visible: emuTraits.isFocused,
-        checked: appState.emuViewOptions.showToolbar,
-        click: async (mi) => {
-          mainStore.dispatch(showEmuToolbarAction(mi.checked));
-          await saveKliveProject();
-        }
+        type: "separator"
       },
-      {
-        id: TOGGLE_IDE_TOOLBAR,
-        label: "Show the Toolbar",
-        type: "checkbox",
-        visible: ideTraits.isFocused,
-        checked: appState.ideViewOptions.showToolbar,
-        click: async (mi) => {
-          mainStore.dispatch(showIdeToolbarAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_EMU_STATUS_BAR,
-        label: "Show the Status Bar",
-        type: "checkbox",
-        visible: emuTraits.isFocused,
-        checked: appState.emuViewOptions.showStatusBar,
-        click: async (mi) => {
-          mainStore.dispatch(showEmuStatusBarAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_IDE_STATUS_BAR,
-        label: "Show the Status Bar",
-        type: "checkbox",
-        visible: ideTraits.isFocused,
-        checked: appState.ideViewOptions.showStatusBar,
-        click: async (mi) => {
-          mainStore.dispatch(showIdeStatusBarAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_KEYBOARD,
-        label: "Show the Virtual Keyboard",
-        type: "checkbox",
-        visible: emuTraits.isFocused,
-        checked: appState.emuViewOptions.showKeyboard,
-        click: async (mi) => {
-          mainStore.dispatch(showKeyboardAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        type: "separator",
-        visible: emuTraits.isFocused || ideTraits.isFocused
-      },
-      {
-        id: TOGGLE_SIDE_BAR,
-        label: "Show the Side Bar",
-        type: "checkbox",
-        checked: appState.ideViewOptions.showSidebar,
-        visible: ideTraits.isFocused,
-        click: async (mi) => {
-          mainStore.dispatch(showSideBarAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_PRIMARY_BAR_RIGHT,
-        label: "Move Primary Side Bar Right",
-        type: "checkbox",
-        enabled: !!appState.ideViewOptions.showSidebar,
-        checked: appState.ideViewOptions.primaryBarOnRight,
-        visible: ideTraits.isFocused,
-        click: async (mi) => {
-          mainStore.dispatch(primaryBarOnRightAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD),
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_INSTANT_SCREEN),
+      createBooleanSettingsMenu(SETTING_EMU_STAY_ON_TOP),
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_SIDEBAR),
+      createBooleanSettingsMenu(SETTING_IDE_SIDEBAR_TO_RIGHT),
       { type: "separator" },
-      {
-        id: TOGGLE_TOOL_PANELS,
-        label: "Show Commands and Output",
-        type: "checkbox",
-        checked: appState.ideViewOptions.showToolPanels,
-        visible: ideTraits.isFocused,
-        click: async (mi) => {
-          const checked = mi.checked;
-          mainStore.dispatch(showToolPanelsAction(checked));
-          if (checked) {
-            mainStore.dispatch(maximizeToolsAction(false));
-          }
-          await saveKliveProject();
-        }
-      },
-      {
-        id: TOGGLE_TOOLS_TOP,
-        label: "Move Commands and Output to the top",
-        type: "checkbox",
-        enabled: !!appState.ideViewOptions.showToolPanels,
-        checked: appState.ideViewOptions.toolPanelsOnTop,
-        visible: ideTraits.isFocused,
-        click: async (mi) => {
-          mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
-          await saveKliveProject();
-        }
-      },
-      {
-        id: MAXIMIZE_TOOLS,
-        label: "Maximize Commands and Output",
-        type: "checkbox",
-        enabled: !!appState.ideViewOptions.showToolPanels,
-        checked: appState.ideViewOptions.maximizeTools,
-        visible: ideTraits.isFocused,
-        click: async (mi) => {
-          const checked = mi.checked;
-          if (checked) {
-            mainStore.dispatch(showToolPanelsAction(true));
-          }
-          mainStore.dispatch(maximizeToolsAction(checked));
-          await saveKliveProject();
-        }
-      },
+      createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLS),
+      createBooleanSettingsMenu(SETTING_IDE_TOOLS_ON_TOP, {
+        enabledFn: () => !!getSettingValue(SETTING_IDE_SHOW_TOOLS)
+      }),
+      createBooleanSettingsMenu(SETTING_IDE_MAXIMIZE_TOOLS, {
+        enabledFn: () => !!getSettingValue(SETTING_IDE_SHOW_TOOLS)
+      }),
+      { type: "separator" },
+      createBooleanSettingsMenu(SETTING_IDE_SYNC_BREAKPOINTS),
       { type: "separator" },
       {
         id: THEMES,
@@ -741,7 +622,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       id: SELECT_KEY_MAPPING,
       label: "Select Key Mapping...",
-      visible: !ideTraits.isFocused,
+      visible: !isIdeWindowFocused(),
       click: async () => {
         await setKeyMappingFile(emuWindow);
         await saveKliveProject();
@@ -750,7 +631,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       id: RESET_KEY_MAPPING,
       label: "Reset Key Mapping",
-      visible: !ideTraits.isFocused,
+      visible: !isIdeWindowFocused(),
       click: async () => {
         mainStore.dispatch(setKeyMappingsAction(undefined, undefined));
         await saveKliveProject();
@@ -786,12 +667,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             );
             if (!commandResult.success) {
               if (task.id !== "exportCode") {
-                await executeIdeCommand(
-                  ideWindow,
-                  "outp build",
-                  undefined,
-                  true
-                );
+                await executeIdeCommand(ideWindow, "outp build", undefined, true);
               }
             }
           }
@@ -824,7 +700,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   template.push({
     id: IDE_MENU,
-    visible: ideTraits.isVisible,
+    visible: isIdeWindowVisible(),
     label: "IDE",
     submenu: [
       {
@@ -859,16 +735,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: IDE_SETTINGS,
         label: "IDE Settings",
         submenu: [
-          {
-            id: IDE_AUTO_OPEN_PROJECT,
-            label: "Open the last project at startup",
-            type: "checkbox",
-            checked: !appState.ideSettings?.disableAutoOpenProject,
-            click: async (mi) => {
-              mainStore.dispatch(setIdeDisableAutoOpenProjectAction(!mi.checked));
-              saveAppSettings();
-            }
-          },
+          createBooleanSettingsMenu(SETTING_IDE_OPEN_LAST_PROJECT),
           { type: "separator" },
           {
             id: IDE_AUTO_COMPLETE,
@@ -881,17 +748,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             }
           },
           { type: "separator" },
-          {
-            id: IDE_CLOSE_EMU_WITH_IDE,
-            label: "Close Emulator when IDE is closed",
-            type: "checkbox",
-            checked: !appState.ideSettings?.closeEmulatorWithIde,
-            click: async (mi) => {
-              mainStore.dispatch(closeEmuWithIdeAction(!mi.checked));
-              saveAppSettings();
-            }
-          }
-
+          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU)
         ]
       }
     ]
@@ -954,7 +811,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         id: HELP_SHOW_WELCOME,
         label: "Welcome screen",
         click: () => {
-          if (ideTraits.isFocused) {
+          if (isIdeWindowFocused()) {
             mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_IDE));
           } else {
             mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
@@ -978,7 +835,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
 
   // --- Set the menu
   if (__DARWIN__) {
-    const windowFocused = emuTraits.isFocused ? emuWindow : ideWindow;
+    const windowFocused = isEmuWindowFocused() ? emuWindow : ideWindow;
     if (!windowFocused.isDestroyed()) {
       template.forEach(templateTransform(windowFocused));
       Menu.setApplicationMenu(Menu.buildFromTemplate(template));
@@ -1129,4 +986,34 @@ async function showMessage(
 
 function filterVisibleItems<T extends MenuItemConstructorOptions | MenuItem>(items: T[]): T[] {
   return items.filter((i) => i.visible !== false);
+}
+
+export function createBooleanSettingsMenu(
+  settingsId: string,
+  options?: { enabledFn?: () => boolean; visibleFn?: () => boolean }
+): MenuItemConstructorOptions {
+  const definition = getSettingDefinition(settingsId);
+  if (!definition) {
+    throw new Error(`Setting definition not found for ${settingsId}`);
+  }
+
+  const currentValue = getSettingValue(settingsId);
+  let visible = options?.visibleFn
+    ? options.visibleFn()
+    : definition.boundTo === "emu"
+      ? isEmuWindowFocused()
+      : definition.boundTo === "ide"
+        ? isIdeWindowFocused()
+        : true;
+  return {
+    id: `Setting_${settingsId}`,
+    label: definition.title,
+    type: "checkbox",
+    enabled: options?.enabledFn?.() ?? true,
+    visible,
+    checked: !!currentValue,
+    click: (mi) => {
+      setSettingValue(settingsId, mi.checked);
+    }
+  };
 }

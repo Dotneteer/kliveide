@@ -9,6 +9,8 @@ import { saveKliveProject } from "@main/projects";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { setMachineType } from "@main/registeredMachines";
+import { getSettingValue, setSettingValue } from "@main/settings-utils";
+import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
 
 const Z88_KEYBOARDS = "z88_keyboards";
 const Z88_DE_KEYBOARD = "z88_de_layout";
@@ -32,7 +34,7 @@ export const z88KeyboardLayoutRenderer: MachineMenuRenderer = () => {
     { id: Z88_DK_KEYBOARD, label: "Danish && Norwegian", kdid: "dk" },
     { id: Z88_SE_KEYBOARD, label: "Swedish && Finish", kdid: "se" }
   ];
-  const kbState = mainStore.getState()?.emuViewOptions?.keyboardLayout;
+  const kbState = getSettingValue(SETTING_EMU_KEYBOARD_LAYOUT);
   return [
     {
       id: Z88_KEYBOARDS,
@@ -44,8 +46,7 @@ export const z88KeyboardLayoutRenderer: MachineMenuRenderer = () => {
         type: "radio",
         checked: layout.kdid === kbState,
         click: async () => {
-          mainStore.dispatch(emuSetKeyboardLayoutAction(layout.kdid));
-          await saveKliveProject();
+          setSettingValue(SETTING_EMU_KEYBOARD_LAYOUT, layout.kdid);
         }
       }))
     }

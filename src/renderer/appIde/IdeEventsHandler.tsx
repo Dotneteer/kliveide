@@ -1,18 +1,29 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef } from "react";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { useAppServices } from "./services/AppServicesProvider";
 import { saveProject } from "./utils/save-project";
 import { BUILD_FILE } from "@common/structs/project-const";
-import { incBuildFileVersionAction } from "@common/state/actions";
+import { incBuildFileVersionAction, workspaceLoadedAction } from "@common/state/actions";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { delay } from "@renderer/utils/timing";
 import { DOCS_WORKSPACE } from "./DocumentArea/DocumentsHeader";
 import { CODE_EDITOR } from "@common/state/common-ids";
-import { useInterval } from "usehooks-ts";
-import { CpuStateChunk } from "@common/messaging/EmuApi";
-import { useEmuStateListener } from "./useStateRefresh";
+import { useMainApi } from "@renderer/core/MainApi";
+import {
+  SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_SHOW_SIDEBAR,
+  SETTING_IDE_SIDEBAR_WIDTH,
+  SETTING_IDE_SYNC_BREAKPOINTS,
+  SETTING_IDE_TOOLPANEL_HEIGHT
+} from "@common/settings/setting-const";
+import { get } from "lodash";
+import { IProjectService } from "@renderer/abstractions/IProjectService";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+
+export const TOOL_PANEL_HEIGHT = "toolPanelHeight";
 
 /**
  * This component represents an event handler to manage the global IDE events
@@ -21,16 +32,14 @@ export const IdeEventsHandler = () => {
   const { store, messenger } = useRendererContext();
   const { ideCommandsService, projectService } = useAppServices();
   const emuApi = useEmuApi();
+  const mainApi = useMainApi();
 
   const project = useSelector((s) => s.project);
   const compilation = useSelector((s) => s.compilation);
   const execState = useSelector((s) => s.emulatorState?.machineState);
   const breakpointsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
-  const syncBps = useSelector((s) => s.ideViewOptions.syncSourceBreakpoints ?? true);
+  const syncBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
   const buildFilePath = useRef<string>(null);
-
-  const lastStateChunk = useRef<CpuStateChunk>(null);
-  const latestRefresh = useRef<number>(new Date().valueOf());
 
   // --- Refresh the code location whenever the machine is paused
   useEffect(() => {
@@ -69,33 +78,13 @@ export const IdeEventsHandler = () => {
       const state = store.getState();
       const projectPath = state.project?.folderPath;
 
-      // --- Wait up to 10 seconds for the project to be opened
-      console.log("Waiting for the end of project loading");
-      let count = 0;
-      while (count < 100) {
-        if (store.getState().project?.folderPath === projectPath) break;
-        count++;
-        await delay(100);
-      }
-      if (count >= 100) {
-        console.error("Timeout while opening the last project");
-        return;
-      }
+      // --- Store current view options to set them later
+      const maximizeToolPanels = get(state?.globalSettings, SETTING_IDE_MAXIMIZE_TOOLS, false);
+      await mainApi.setGlobalSettingsValue(SETTING_IDE_SHOW_SIDEBAR, true);
+      await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, false);
 
-      // --- Wait up to 10 seconds for the project tree to be loaded
-      console.log("Waiting for the end of project tree loading");
-      count = 0;
-
-      while (count < 100) {
-        const tree = projectService.getProjectTree();
-        if (tree) break;
-        count++;
-        await delay(100);
-      }
-      if (count >= 100) {
-        console.error("Timeout while loading the project tree");
-        return;
-      }
+      // --- Wait while the project is loaded
+      await ensureProjectLoaded(projectService);
 
       // --- Open the last documents
       console.log("Time to open project workspace");
@@ -120,12 +109,28 @@ export const IdeEventsHandler = () => {
         }
       }
 
+      // --- Open build root, if required
       // --- Navigate to the active document
       console.log("Navigate to the active document");
       if (activeDocCommand) {
         await ideCommandsService.executeCommand(activeDocCommand);
       }
       console.log("Project workspace opened");
+      const sideBarWidth = get(state, SETTING_IDE_SIDEBAR_WIDTH);
+      const toolPanelHeight = get(state, SETTING_IDE_TOOLPANEL_HEIGHT);
+
+      // --- Adjust the size of IDE splitters
+      if (sideBarWidth) {
+        await mainApi.setGlobalSettingsValue(SETTING_IDE_SIDEBAR_WIDTH, sideBarWidth);
+      }
+      if (toolPanelHeight) {
+        await mainApi.setGlobalSettingsValue(SETTING_IDE_TOOLPANEL_HEIGHT, toolPanelHeight);
+      }
+      if (maximizeToolPanels) {
+        await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, true);
+      }
+
+      store.dispatch(workspaceLoadedAction(), "ide");
     };
 
     projectService.fileSaved.on(onFileSaved);
@@ -135,23 +140,6 @@ export const IdeEventsHandler = () => {
       projectService.projectOpened.off(onProjectLoaded);
     };
   }, [projectService]);
-
-  // useInterval(async () => {
-  //   const newState = await emuApi.getCpuStateChunk();
-  //   const oldState = lastStateChunk.current;
-  //   const changed =
-  //     !oldState ||
-  //     oldState.state !== newState.state ||
-  //     oldState.pcValue !== newState.pcValue ||
-  //     oldState.tacts !== newState.tacts;
-  //   if (changed) {
-  //     console.log("CPU state changed");
-  //   } else if (new Date().valueOf() - latestRefresh.current > 500) {
-  //     latestRefresh.current = new Date().valueOf();
-  //     console.log("CPU state changed");
-  //   }
-  //   lastStateChunk.current = newState;
-  // }, 100);
 
   // --- Do not render any visual elements
   return null;
@@ -182,3 +170,36 @@ export const IdeEventsHandler = () => {
     await ideCommandsService.executeCommand(`nav "${fullFile}" ${fileLine.line}`);
   }
 };
+
+export async function ensureProjectLoaded(projectService: IProjectService) {
+  // --- Wait up to 10 seconds for the project tree to be loaded
+  console.log("Waiting for the end of project tree loading");
+  let count = 0;
+
+  while (count < 100) {
+    const tree = projectService.getProjectTree();
+    if (tree) break;
+    count++;
+    await delay(100);
+  }
+  if (count >= 100) {
+    console.error("Timeout while loading the project tree");
+    return;
+  }
+}
+
+export async function ensureWorkspaceLoaded(store: Store<AppState>) {
+  // --- Wait up to 10 seconds for the project tree to be loaded
+  console.log("Waiting for the end of workspace loading");
+  let count = 0;
+
+  while (count < 100) {
+    if (store.getState()?.project?.workspaceLoaded) break;
+    count++;
+    await delay(100);
+  }
+  if (count >= 100) {
+    console.error("Timeout while loading the workspace");
+    return;
+  }
+}

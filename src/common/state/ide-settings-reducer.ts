@@ -6,22 +6,10 @@ import { IdeSettings } from "@main/settings";
  */
 export function ideSettingsReducer(state: IdeSettings, { type, payload }: Action): IdeSettings {
   switch (type) {
-    case "SET_IDE_DISABLE_AUTO_OPEN_PROJECT":
-      return {
-        ...state,
-        disableAutoOpenProject: payload?.flag
-      };
-
     case "SET_IDE_DISABLE_AUTO_COMPLETE":
       return {
         ...state,
         disableAutoComplete: payload?.flag
-      };
-
-    case "SET_IDE_CLOSE_EMU_WITH_IDE":
-      return {
-        ...state,
-        closeEmulatorWithIde: payload?.flag
       };
 
     default:

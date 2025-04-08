@@ -11,25 +11,11 @@ export interface ActionTypes {
   SET_THEME: null;
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
-  EMU_STAY_ON_TOP
   DIM_MENU: null,
   INC_MENU_VERSION: null;
 
-  SHOW_EMU_TOOLBAR: null;
-  SHOW_EMU_STATUSBAR: null;
-  SHOW_IDE_TOOLBAR: null;
-  SHOW_IDE_STATUSBAR: null;
-  SHOW_TOOL_PANELS: null;
-  SHOW_KEYBOARD: null;
-  SHOW_SHADOW_SCREEN: null;
   EMU_SET_KEYBOARD_LAYOUT: null;
   SHOW_FRAME_INFO: null;
-  SET_IDE_FONT_SIZE: null;
-
-  SHOW_SIDE_BAR: null;
-  PRIMARY_BAR_ON_RIGHT: null;
-  TOOLS_ON_TOP: null;
-  MAXIMIZE_TOOLS: null;
 
   SET_ACTIVITY: null;
   SET_SIDEBAR_PANEL_EXPANDED: null;
@@ -41,7 +27,6 @@ export interface ActionTypes {
   INC_EDITOR_VERSION: null;
 
   SET_TOOLS: null;
-  ACTIVATE_TOOL: null;
 
   SET_MACHINE_TYPE: null;
   SET_MODEL_TYPE: null;
@@ -52,13 +37,10 @@ export interface ActionTypes {
   MUTE_SOUND: null;
   INC_EMU_VIEW_VERSION: null;
   SET_SOUND_LEVEL: null;
-  SET_FAST_LOAD: null;
   SET_CLOCK_MULTIPLIER: null;
   SET_AUDIO_SAMPLE_RATE: null;
   SET_DISK_FILE: null;
   PROTECT_DISK: null;
-
-  ACTIVATE_OUTPUT_PANE: null;
 
   SET_IDE_STATUS_MESSAGE: null;
   INC_BPS_VERSION: null;
@@ -66,6 +48,7 @@ export interface ActionTypes {
 
   OPEN_FOLDER: null;
   CLOSE_FOLDER: null;
+  WORKSPACE_LOADED: null;
   SET_BUILD_ROOT: null;
   INC_PROJECT_FILE_VERSION: null;
   INC_PROJECT_VIEWSTATE_VERSION: null;
@@ -81,7 +64,6 @@ export interface ActionTypes {
   START_COMPILE: null;
   END_COMPILE: null;
   INC_INJECTION_VERSION: null;
-  SYNC_SOURCE_BREAKPOINTS: null;
 
   APPLY_PROJECT_SETTING: null;
   APPLY_USER_SETTING: null;
@@ -96,9 +78,13 @@ export interface ActionTypes {
 
   SET_SCRIPTS_STATUS: null;
 
-  SET_IDE_DISABLE_AUTO_OPEN_PROJECT: null;
   SET_IDE_DISABLE_AUTO_COMPLETE: null;
-  SET_IDE_CLOSE_EMU_WITH_IDE: null;
   SET_IDE_EXPORT_DIALOG: null;
   SET_WORKSPACE_SETTINGS: null;
+  SET_SIDEBAR_WIDTH: null;
+  SET_TOOL_PANEL_HEIGHT: null;
+
+  // --- Globa setting now use this action type
+  INIT_GLOBAL_SETTINGS: null;
+  SET_GLOBAL_SETTING: null;
 }

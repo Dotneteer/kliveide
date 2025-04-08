@@ -7,6 +7,7 @@ import { app } from "electron";
 import { mainStore } from "./main-store";
 import { getRecentProjects, setRecentProjects } from "./projects";
 import { IdeProject } from "@common/state/AppState";
+import { KliveGlobalSettings } from "@common/settings/setting-definitions";
 
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive.settings";
@@ -26,9 +27,7 @@ export type ExportDialogSettings = {
 }
 
 export type IdeSettings = {
-  disableAutoOpenProject?: boolean;
   disableAutoComplete?: boolean;
-  closeEmulatorWithIde?: boolean;
 }
 
 export type AppSettings = {
@@ -39,22 +38,10 @@ export type AppSettings = {
     emuZoomFactor?: number;
     ideZoomFactor?: number;
   };
+  globalSettings?: typeof KliveGlobalSettings;
   ideSettings?: IdeSettings;
   startScreenDisplayed?: boolean;
   theme?: string;
-  showKeyboard?: boolean;
-  showInstantScreen?: boolean;
-  keyboardLayout?: string;
-  showIdeToolbar?: boolean;
-  showIdeStatusBar?: boolean;
-  showEmuToolbar?: boolean;
-  showEmuStatusBar?: boolean;
-  emuStayOnTop?: boolean;
-  primaryBarRight?: boolean;
-  toolPanelsTop?: boolean;
-  maximizeTools?: boolean;
-
-  fastLoad?: boolean;
   machineId?: string;
   modelId?: string;
   config?: Record<string, any>;
@@ -89,19 +76,8 @@ export function saveAppSettings (): void {
     const state = mainStore.getState();
     appSettings.startScreenDisplayed = state.startScreenDisplayed;
     appSettings.theme = state.theme;
+    appSettings.globalSettings = state.globalSettings;
     appSettings.ideSettings = state.ideSettings;
-    appSettings.showKeyboard = state.emuViewOptions?.showKeyboard ?? false;
-    appSettings.showInstantScreen = state.emuViewOptions?.showInstantScreen ?? false;
-    appSettings.keyboardLayout = state.emuViewOptions?.keyboardLayout;
-    appSettings.showIdeToolbar = state.ideViewOptions?.showToolbar ?? false;
-    appSettings.showIdeStatusBar = state.ideViewOptions?.showStatusBar ?? false;
-    appSettings.showEmuToolbar = state.emuViewOptions?.showToolbar ?? false;
-    appSettings.showEmuStatusBar = state.emuViewOptions?.showStatusBar ?? false;
-    appSettings.emuStayOnTop = state.emuViewOptions?.stayOnTop ?? false;
-    appSettings.primaryBarRight = state.ideViewOptions?.primaryBarOnRight ?? false;
-    appSettings.toolPanelsTop = state.ideViewOptions?.toolPanelsOnTop ?? false;
-    appSettings.maximizeTools = state.ideViewOptions?.maximizeTools ?? false;
-    appSettings.fastLoad = state.emulatorState?.fastLoad ?? true;
     appSettings.machineId = state.emulatorState?.machineId;
     appSettings.modelId = state.emulatorState?.modelId;
     appSettings.config = state.emulatorState?.config;

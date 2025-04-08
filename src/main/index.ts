@@ -38,26 +38,13 @@ import {
   setClockMultiplierAction,
   setSoundLevelAction,
   setThemeAction,
-  showKeyboardAction,
-  setFastLoadAction,
   displayDialogAction,
   startScreenDisplayedAction,
   setKeyMappingsAction,
-  showEmuToolbarAction,
-  showEmuStatusBarAction,
-  showIdeToolbarAction,
-  showIdeStatusBarAction,
-  primaryBarOnRightAction,
-  toolPanelsOnTopAction,
-  maximizeToolsAction,
-  emuSetKeyboardLayoutAction,
   setMachineSpecificAction,
   setMediaAction,
-  showInstantScreenAction,
-  setIdeDisableAutoOpenProjectAction,
-  setEmuStayOnTopAction,
   setIdeDisableAutoCompleteAction,
-  closeEmuWithIdeAction
+  initGlobalSettingsAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -80,6 +67,8 @@ import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
+import { getSettingValue } from "./settings-utils";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -183,7 +172,8 @@ async function createAppWindows() {
       preload,
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false
+      webSecurity: false,
+      backgroundThrottling: false
     }
   });
   if (displayEmuDevTools) {
@@ -222,7 +212,8 @@ async function createAppWindows() {
       preload,
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false
+      webSecurity: false,
+      backgroundThrottling: false
     },
     show: showIde
   });
@@ -243,12 +234,16 @@ async function createAppWindows() {
   // --- Respond to state changes
   storeUnsubscribe = mainStore.subscribe(async () => {
     const state = mainStore.getState();
+
     if (state.emuLoaded && !machineTypeInitialized) {
       // --- Sign machine initialization is done, so we do not run into this code again
       machineTypeInitialized = true;
 
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));
+
+      // --- Store all global settings
+      mainStore.dispatch(initGlobalSettingsAction(appSettings.globalSettings ?? {}));
 
       // --- Set saved traits
       if (appSettings.startScreenDisplayed) {
@@ -259,27 +254,11 @@ async function createAppWindows() {
       // --- Update IDE Settings
       const ideSettings = appSettings.ideSettings;
       mainStore.dispatch(
-        setIdeDisableAutoOpenProjectAction(ideSettings?.disableAutoOpenProject ?? false)
-      );
-      mainStore.dispatch(
         setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false)
       );
-      mainStore.dispatch(closeEmuWithIdeAction(ideSettings?.closeEmulatorWithIde ?? true));
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
-      mainStore.dispatch(showKeyboardAction(appSettings.showKeyboard ?? false));
-      mainStore.dispatch(showInstantScreenAction(appSettings.showInstantScreen ?? false));
-      mainStore.dispatch(emuSetKeyboardLayoutAction(appSettings.keyboardLayout));
-      mainStore.dispatch(showEmuToolbarAction(appSettings.showEmuToolbar ?? true));
-      mainStore.dispatch(showEmuStatusBarAction(appSettings.showEmuStatusBar ?? true));
-      mainStore.dispatch(setEmuStayOnTopAction(appSettings.emuStayOnTop ?? false));
-      mainStore.dispatch(showIdeToolbarAction(appSettings.showIdeToolbar ?? true));
-      mainStore.dispatch(showIdeStatusBarAction(appSettings.showIdeStatusBar ?? true));
-      mainStore.dispatch(primaryBarOnRightAction(appSettings.primaryBarRight ?? false));
-      mainStore.dispatch(toolPanelsOnTopAction(appSettings.toolPanelsTop ?? false));
-      mainStore.dispatch(maximizeToolsAction(appSettings.maximizeTools ?? false));
-      mainStore.dispatch(setFastLoadAction(appSettings.fastLoad ?? true));
       Object.entries(appSettings.media).forEach(([key, value]) => {
         mainStore.dispatch(setMediaAction(key, value));
       });
@@ -320,9 +299,10 @@ async function createAppWindows() {
     }
 
     // --- Manage the Stay on top for the emu window
-    if (!!state.emuViewOptions?.stayOnTop && !emuWindow?.isAlwaysOnTop()) {
+    const isEmuOnTop = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
+    if (isEmuOnTop && !emuWindow?.isAlwaysOnTop()) {
       emuWindow?.setAlwaysOnTop(true);
-    } else if (!state.emuViewOptions?.stayOnTop && emuWindow?.isAlwaysOnTop()) {
+    } else if (!isEmuOnTop && emuWindow?.isAlwaysOnTop()) {
       emuWindow?.setAlwaysOnTop(false);
     }
 
@@ -382,7 +362,7 @@ async function createAppWindows() {
 
   // --- Do not close the IDE (unless exiting the app), only hide it
   ideWindow.on("close", async (e) => {
-    const closeIde = mainStore.getState().ideSettings?.closeEmulatorWithIde;
+    const closeIde = getSettingValue(SETTING_IDE_CLOSE_EMU);
 
     if (ideWindow?.webContents) {
       appSettings.windowStates ??= {};
@@ -403,7 +383,7 @@ async function createAppWindows() {
     }
 
     e.preventDefault();
-    if (!closeIde) {
+    if (closeIde) {
       // --- Close the EMU window as well
       emuWindow?.close();
     } else {
@@ -559,4 +539,20 @@ async function forwardActions(message: RequestMessage): Promise<ResponseMessage 
 async function saveOnClose() {
   await getIdeApi().saveAllBeforeQuit();
   ideSaved = true;
+}
+
+export function isEmuWindowFocused() {
+  return (emuWindow?.isDestroyed() ?? false) === false && emuWindow.isFocused?.();
+}
+
+export function isEmuWindowVisible() {
+  return (emuWindow?.isDestroyed() ?? false) === false && emuWindow.isVisible?.();
+}
+
+export function isIdeWindowFocused() {
+  return (ideWindow?.isDestroyed() ?? false) === false && ideWindow.isFocused?.();
+}
+
+export function isIdeWindowVisible() {
+  return (ideWindow?.isDestroyed() ?? false) === false && ideWindow.isVisible?.();
 }

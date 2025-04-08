@@ -11,7 +11,14 @@ export function projectReducer(state: IdeProject, { type, payload }: Action): Id
       return {
         ...state,
         folderPath: payload?.file,
-        isKliveProject: payload?.flag
+        isKliveProject: payload?.flag,
+        workspaceLoaded: false
+      };
+
+    case "WORKSPACE_LOADED":
+      return {
+        ...state,
+        workspaceLoaded: true
       };
 
     case "CLOSE_FOLDER":
@@ -19,8 +26,7 @@ export function projectReducer(state: IdeProject, { type, payload }: Action): Id
         projectFileVersion: 1,
         projectViewStateVersion: 1,
         buildFileVersion: 1,
-        folderPath: null,
-        
+        folderPath: null
       };
 
     case "SET_BUILD_ROOT":

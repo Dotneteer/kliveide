@@ -3,7 +3,7 @@ import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import AutoSizer from "../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
-import { useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
@@ -22,6 +22,7 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { useMainApi } from "@renderer/core/MainApi";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { SETTING_IDE_EDITOR_FONT_SIZE } from "@common/settings/setting-const";
 
 let monacoInitialized = false;
 
@@ -162,7 +163,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const [monacoTheme, setMonacoTheme] = useState("");
 
   // --- Respond to editor font size change requests
-  const editorFontSize = useSelector((s) => s.ideViewOptions?.editorFontSize ?? 12);
+  const editorFontSize = useGlobalSetting(SETTING_IDE_EDITOR_FONT_SIZE);
 
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();

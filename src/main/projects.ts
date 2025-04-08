@@ -7,27 +7,16 @@ import {
   closeFolderAction,
   dimMenuAction,
   incProjectFileVersionAction,
-  maximizeToolsAction,
   openFolderAction,
-  primaryBarOnRightAction,
   resetCompileAction,
   saveProjectSettingAction,
   setBuildRootAction,
   setExcludedProjectItemsAction,
-  setIdeFontSizeAction,
   setMachineSpecificAction,
   setProjectBuildFileAction,
-  showEmuStatusBarAction,
-  showEmuToolbarAction,
-  showIdeStatusBarAction,
-  showIdeToolbarAction,
-  showKeyboardAction,
-  showInstantScreenAction,
-  showSideBarAction,
-  showToolPanelsAction,
-  toolPanelsOnTopAction,
   setExportDialogInfoAction,
-  setWorkspaceSettingsAction
+  setWorkspaceSettingsAction,
+  initGlobalSettingsAction
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
@@ -47,6 +36,9 @@ import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
+import { KliveGlobalSettings } from "@common/settings/setting-definitions";
+import { getSettingDefinition } from "./settings-utils";
+import { get, set } from "lodash";
 
 type ProjectCreationResult = {
   path?: string;
@@ -172,21 +164,18 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       // --- Apply the machine type saved in the project
       await setMachineType(projectStruct.machineType, projectStruct.modelId, projectStruct.config);
 
-      // --- Apply settings if the project is valid
+      // --- Apply settings if the project is valid, merge with current state
+      const mergedGlobals = mainStore.getState().globalSettings;
+      Object.keys(KliveGlobalSettings).forEach((key) => {
+        const projSetting = get(projectStruct.globalSettings, key);
+        if (projSetting) {
+          set(mergedGlobals, key, projSetting);
+        }
+      });
+      disp(initGlobalSettingsAction(mergedGlobals));
+
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
       disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
-      disp(showEmuToolbarAction(projectStruct.viewOptions.showEmuToolbar));
-      disp(showEmuStatusBarAction(projectStruct.viewOptions.showEmuStatusbar));
-      disp(showIdeToolbarAction(projectStruct.viewOptions.showIdeToolbar));
-      disp(showIdeStatusBarAction(projectStruct.viewOptions.showIdeStatusbar));
-      disp(showKeyboardAction(projectStruct.viewOptions.showKeyboard));
-      disp(showInstantScreenAction(projectStruct.viewOptions.showInstantScreen));
-      disp(showSideBarAction(projectStruct.viewOptions.showSidebar));
-      disp(primaryBarOnRightAction(projectStruct.viewOptions.primaryBarOnRight));
-      disp(showToolPanelsAction(projectStruct.viewOptions.showToolPanels));
-      disp(toolPanelsOnTopAction(projectStruct.viewOptions.toolPanelsOnTop));
-      disp(maximizeToolsAction(projectStruct.viewOptions.maximizeTools));
-      disp(setIdeFontSizeAction(projectStruct.viewOptions.editorFontSize));
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
       disp(saveProjectSettingAction(projectStruct.settings));
       disp(setExportDialogInfoAction(projectStruct.exportDialog));
@@ -325,6 +314,12 @@ export function getKliveProjectFolder(projectFolder: string): string {
 export async function getKliveProjectStructure(): Promise<KliveProjectStructure> {
   const state = mainStore.getState();
   const bpResponse = await getEmuApi().listBreakpoints();
+  const globalSettings: Record<string, any> = {};
+  Object.keys(KliveGlobalSettings).forEach((key) => {
+    if (getSettingDefinition(key)?.saveWithProject ?? true) {
+      set(globalSettings, key, get(state.globalSettings, key));
+    }
+  });
   return {
     kliveVersion: app.getVersion(),
     machineType: state.emulatorState.machineId,
@@ -335,27 +330,12 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     soundMuted: state.emulatorState.soundMuted,
     savedSoundLevel: state.emulatorState.savedSoundLevel,
     media: state.media,
-    fastLoad: state.emulatorState.fastLoad,
     machineSpecific: state.emulatorState.machineSpecific,
     ide: {
       excludedProjectItems: state.project?.excludedItems ?? []
     },
     viewOptions: {
-      theme: state.theme,
-      editorFontSize: state.ideViewOptions?.editorFontSize,
-      maximizeTools: state.ideViewOptions?.maximizeTools,
-      primaryBarOnRight: state.ideViewOptions?.primaryBarOnRight,
-      showEmuStatusbar: state.emuViewOptions.showStatusBar,
-      showEmuToolbar: state.emuViewOptions.showToolbar,
-      showKeyboard: state.emuViewOptions.showKeyboard,
-      showInstantScreen: state.emuViewOptions.showInstantScreen,
-      keyboardLayout: state.emuViewOptions.keyboardLayout,
-      showFrameInfo: state.ideViewOptions.showFrameInfo,
-      showIdeStatusbar: state.ideViewOptions.showStatusBar,
-      showIdeToolbar: state.ideViewOptions.showToolbar,
-      showSidebar: state.ideViewOptions.showSidebar,
-      showToolPanels: state.ideViewOptions.showToolPanels,
-      toolPanelsOnTop: state.ideViewOptions.toolPanelsOnTop
+      theme: state.theme
     },
     debugger: {
       breakpoints: bpResponse.breakpoints
@@ -365,7 +345,8 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     },
     settings: state.projectSettings,
     exportDialog: state.project?.exportSettings,
-    workspaceSettings: state.workspaceSettings
+    workspaceSettings: state.workspaceSettings,
+    globalSettings
   };
 }
 
@@ -419,7 +400,6 @@ type KliveProjectStructure = {
   soundMuted?: boolean;
   savedSoundLevel?: number;
   media?: Record<string, any>;
-  fastLoad?: boolean;
   machineSpecific?: Record<string, any>;
   keyMappingFile?: string;
   ide?: Record<string, any>;
@@ -427,26 +407,13 @@ type KliveProjectStructure = {
   builder?: BuilderState;
   settings?: Record<string, any>;
   exportDialog?: ExportDialogSettings;
+  globalSettings?: typeof KliveGlobalSettings;
   workspaceSettings?: Record<string, any>;
 };
 
 interface ViewOptions {
   theme?: string;
-  showEmuToolbar?: boolean;
-  showEmuStatusbar?: boolean;
-  showIdeToolbar?: boolean;
-  showIdeStatusbar?: boolean;
-  showFrameInfo?: boolean;
-  showKeyboard?: boolean;
-  showInstantScreen?: boolean;
-  keyboardLayout?: string;
-  showSidebar?: boolean;
   keyboardHeight?: number;
-  primaryBarOnRight?: boolean;
-  showToolPanels?: boolean;
-  toolPanelsOnTop?: boolean;
-  maximizeTools?: boolean;
-  editorFontSize?: number;
 }
 
 // --- Represents the state of the debugger

@@ -1,16 +1,17 @@
 # Klive IDE Changelog
 
-## 0.44.0: Planned private build
+## 0.45.0: Planned private build
 
-- Issue #939
-- Issue #921
-- Issue #905
-- Issue #895
+- Issue #955
+- Issue #954
+- Issue #951
+- Issue #944
+- Issue #899
 - Issue #879
-- Issue #875
-- Issue #862
+- Issue #876
 
-## 0.34.0 - 0.43.5: Private builds
+
+## 0.34.0 - 0.44.1: Private builds
 
 ## 0.33.0
 

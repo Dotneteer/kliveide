@@ -9,6 +9,8 @@ import { split } from "lodash";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { useMainApi } from "@renderer/core/MainApi";
 import Dropdown from "@renderer/controls/Dropdown";
+import { useRendererContext } from "@renderer/core/RendererProvider";
+import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
 
 const NEW_PROJECT_FOLDER_ID = "newProjectFolder";
 const INITIAL_MACHINE_IDE = "sp48";
@@ -27,7 +29,8 @@ type Props = {
 
 export const NewProjectDialog = ({ onClose }: Props) => {
   const mainApi = useMainApi();
-  const { validationService } = useAppServices();
+  const { validationService, projectService, ideCommandsService } = useAppServices();
+  const { store } = useRendererContext();
   const modalApi = useRef<ModalApi>(null);
   const [machineId, setMachineId] = useState<string>(INITIAL_MACHINE_IDE);
   const [modelId, setmodelId] = useState<string>(undefined);
@@ -94,6 +97,15 @@ export const NewProjectDialog = ({ onClose }: Props) => {
           );
           // --- Open the newly created project
           await mainApi.openFolder(responsePath);
+          await ensureProjectLoaded(projectService);
+          await ensureWorkspaceLoaded(store);
+
+          // --- Navigate to the project root
+          const buildRoots = store.getState().project?.buildRoots;
+          if (buildRoots.length > 0) {
+            console.log("Navigate to the project root", buildRoots[0]);
+            ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
+          }
         } catch (error) {
           await mainApi.displayMessageBox("error", "New Klive Project Error", error.toString());
           return true;

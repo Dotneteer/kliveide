@@ -1,7 +1,12 @@
 import { BackDrop } from "@controls/BackDrop";
 import { SplitPanel } from "@controls/SplitPanel";
 import { Toolbar } from "@controls/Toolbar";
-import { useDispatch, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import {
+  useDispatch,
+  useGlobalSetting,
+  useRendererContext,
+  useSelector
+} from "@renderer/core/RendererProvider";
 import { activityRegistry, toolPanelRegistry } from "@renderer/registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import {
@@ -21,10 +26,10 @@ import {
   setAudioSampleRateAction,
   selectActivityAction,
   setToolsAction,
-  activateToolAction,
-  displayDialogAction
+  displayDialogAction,
+  incProjectFileVersionAction
 } from "@state/actions";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useLayoutEffect } from "react";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import { ActivityBar } from "./ActivityBar/ActivityBar";
 import {
@@ -116,6 +121,20 @@ import { FullPanel } from "@renderer/controls/new/Panels";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SetZ80RegisterCommand } from "./commands/SetZ80RegisterCommand";
 import { SetMemoryContentCommand } from "./commands/SetMemoryContentCommand";
+import { useMainApi } from "@renderer/core/MainApi";
+import {
+  SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_OPEN_LAST_PROJECT,
+  SETTING_IDE_SHOW_SIDEBAR,
+  SETTING_IDE_SHOW_STATUS_BAR,
+  SETTING_IDE_SHOW_TOOLBAR,
+  SETTING_IDE_SHOW_TOOLS,
+  SETTING_IDE_SIDEBAR_TO_RIGHT,
+  SETTING_IDE_SIDEBAR_WIDTH,
+  SETTING_IDE_TOOLPANEL_HEIGHT,
+  SETTING_IDE_TOOLS_ON_TOP
+} from "@common/settings/setting-const";
+import { get } from "lodash";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -123,6 +142,7 @@ const IdeApp = () => {
   // --- Used services
   const dispatch = useDispatch();
   const appServices = useAppServices();
+  const mainApi = useMainApi();
   const { store, messenger } = useRendererContext();
 
   // --- Default document service instance
@@ -135,23 +155,24 @@ const IdeApp = () => {
   const ideLoaded = useSelector((s) => s.ideLoaded ?? false);
   const dimmed = useSelector((s) => s.dimMenu ?? false);
   const isWindows = useSelector((s) => s.isWindows ?? false);
-  const showToolbar = useSelector((s) => s.ideViewOptions.showToolbar);
-  const showStatusBar = useSelector((s) => s.ideViewOptions.showStatusBar);
-  const showSideBar = useSelector((s) => s.ideViewOptions.showSidebar);
-  const showToolPanels = useSelector((s) => s.ideViewOptions.showToolPanels);
-  const maximizeToolPanels = useSelector((s) => s.ideViewOptions.maximizeTools);
+  const showToolbar = useGlobalSetting(SETTING_IDE_SHOW_TOOLBAR);
+  const showStatusBar = useGlobalSetting(SETTING_IDE_SHOW_STATUS_BAR);
+  const showSideBar = useGlobalSetting(SETTING_IDE_SHOW_SIDEBAR);
+  const sidebarToRight = useGlobalSetting(SETTING_IDE_SIDEBAR_TO_RIGHT);
+  const showToolPanels = useGlobalSetting(SETTING_IDE_SHOW_TOOLS);
+  const maximizeToolPanels = useGlobalSetting(SETTING_IDE_MAXIMIZE_TOOLS);
   const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
   const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
-  const sideBarWidth = useSelector((s) => s.ideViewOptions.sideBarWidth ?? "25%");
-  const toolPanelHeight = useSelector((s) => s.ideViewOptions.toolPanelHeight ?? "33%");
-
-  const activityOrder = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? 3 : 0;
-  const primaryBarsPos = useSelector((s) => s.ideViewOptions.primaryBarOnRight) ? "right" : "left";
-  const docPanelsPos = useSelector((s) => s.ideViewOptions.toolPanelsOnTop) ? "top" : "bottom";
+  const sideBarWidth = useGlobalSetting(SETTING_IDE_SIDEBAR_WIDTH);
+  const toolPanelHeight = useGlobalSetting(SETTING_IDE_TOOLPANEL_HEIGHT);
+  const toolPanelOnTop = useGlobalSetting(SETTING_IDE_TOOLS_ON_TOP);
+  const [currentSidebarWidth, setCurrentSidebarWidth] = useState(sideBarWidth);
+  const [currentToolPanelHeight, setCurrentToolPanelHeight] = useState(toolPanelHeight);
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
-  useEffect(() => {
+
+  useLayoutEffect(() => {
     console.log("AppPath", appPath);
     initializeMonaco(appPath);
 
@@ -183,9 +204,6 @@ const IdeApp = () => {
       } as ToolInfo;
     });
     dispatch(setToolsAction(regTools));
-    dispatch(activateToolAction(regTools.find((t) => t.visible ?? true).id));
-
-    // --- Sign that the UI is ready
     dispatch(ideLoadedAction());
   }, [appPath, appServices, store, messenger]);
 
@@ -197,54 +215,81 @@ const IdeApp = () => {
     console.log("IdeLoaded effect:", ideLoaded);
     if (ideLoaded) {
       (async () => {
+        // --- Wait for global settings sync
+        let counter = 0;
+        while (counter < 100) {
+          if (store.getState().ideStateSynched) break;
+          counter++;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        if (counter >= 100) {
+          console.error("Timeout while waiting for IDE settings sync");
+          return;
+        }
+
         console.log("Load IDE settings");
         let state = store.getState();
         const mainApi = createMainApi(messenger);
-        if (!state.ideSettings.disableAutoOpenProject) {
+        const openLastProject = get(state?.globalSettings, SETTING_IDE_OPEN_LAST_PROJECT);
+        if (openLastProject) {
           console.log("Query settings");
           const settings = await mainApi.getAppSettings();
-          console.log("IDE settings:", JSON.stringify(settings?.ideSettings));
           let projectPath = settings?.project?.folderPath;
           console.log("Project path:", projectPath);
-          if (!(settings?.ideSettings?.disableAutoOpenProject ?? false) && projectPath) {
+          if (projectPath) {
             // --- Let's load the last propject
             projectPath = projectPath.replaceAll("\\", "/");
             console.log("Opening project");
-            await mainApi.openFolder(projectPath);
-            console.log("Project opened");
+            const result = await mainApi.openFolder(projectPath);
+            if (result) {
+              console.log("Opening project resulted in error:", result);
+            } else {
+              console.log("Project opened");
+            }
           }
         }
       })();
     }
   }, [ideLoaded]);
 
+  useLayoutEffect(() => {
+    setCurrentSidebarWidth(sideBarWidth);
+    setCurrentToolPanelHeight(toolPanelHeight);
+  }, [sideBarWidth, toolPanelHeight]);
+
   return (
     <FullPanel id="appMain">
       <IdeEventsHandler />
       {showToolbar && <Toolbar ide={true} kliveProjectLoaded={kliveProjectLoaded} />}
       <FullPanel orientation="horizontal">
-        <ActivityBar activities={activityRegistry} order={activityOrder} />
+        <ActivityBar activities={activityRegistry} order={sidebarToRight ? 3 : 0} />
         <SplitPanel
-          primaryLocation={primaryBarsPos}
+          primaryLocation={sidebarToRight ? "right" : "left"}
           primaryVisible={showSideBar}
-          initialPrimarySize={sideBarWidth}
+          initialPrimarySize={currentSidebarWidth}
           minSize={60}
-          onUpdatePrimarySize={(size: string) => {
-            console.log("SideBar size:", size);
+          onPrimarySizeUpdateCompleted={(size: string) => {
+            (async () => {
+              await mainApi.setGlobalSettingsValue(SETTING_IDE_SIDEBAR_WIDTH, size);
+              dispatch(incProjectFileVersionAction());
+            })();
           }}
         >
           <SiteBar />
           <SplitPanel
-            primaryLocation={docPanelsPos}
+            primaryLocation={toolPanelOnTop ? "top" : "bottom"}
             primaryVisible={showToolPanels}
             minSize={160}
-            secondaryVisible={!maximizeToolPanels}
-            initialPrimarySize={toolPanelHeight}
-            onUpdatePrimarySize={(size: string) => {
-              console.log("ToolPanel size:", size);
+            secondaryVisible={!maximizeToolPanels || !showToolPanels}
+            initialPrimarySize={currentToolPanelHeight}
+            onPrimarySizeUpdateCompleted={(size: string) => {
+              (async () => {
+                await mainApi.setGlobalSettingsValue(SETTING_IDE_TOOLPANEL_HEIGHT, size);
+                dispatch(incProjectFileVersionAction());
+              })();
             }}
           >
-            <ToolArea siblingPosition={docPanelsPos} />
+            <ToolArea siblingPosition={toolPanelOnTop ? "top" : "bottom"} />
             <DocumentArea />
           </SplitPanel>
         </SplitPanel>

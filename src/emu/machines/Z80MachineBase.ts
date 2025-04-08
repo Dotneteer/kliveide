@@ -15,6 +15,7 @@ import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { MessengerBase } from "@common/messaging/MessengerBase";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -39,7 +40,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Initialize the machine using the specified configuration
    * @param config Machine configuration
    */
-  constructor(readonly config: MachineConfigSet = {}) {
+  constructor(readonly config: MachineConfigSet = {}, private readonly _messenger: MessengerBase) {
     super();
   }
 

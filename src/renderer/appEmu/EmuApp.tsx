@@ -3,6 +3,7 @@ import { BackDrop } from "@controls/BackDrop";
 import { Toolbar } from "@controls/Toolbar";
 import {
   useDispatch,
+  useGlobalSetting,
   useRendererContext,
   useSelector
 } from "@renderer/core/RendererProvider";
@@ -45,6 +46,7 @@ import {
 } from "@renderer/CachedServices";
 import { setIsWindows } from "@renderer/os-utils";
 import { FullPanel } from "@renderer/controls/new/Panels";
+import { SETTING_EMU_SHOW_STATUS_BAR, SETTING_EMU_SHOW_TOOLBAR } from "@common/settings/setting-const";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -55,8 +57,8 @@ const EmuApp = () => {
   const { store, messenger } = useRendererContext();
 
   // --- Visual state
-  const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
-  const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
+  const showToolbar = useGlobalSetting(SETTING_EMU_SHOW_TOOLBAR);
+  const showStatusBar = useGlobalSetting(SETTING_EMU_SHOW_STATUS_BAR);
   const kliveProjectLoaded = useSelector(
     s => s.project?.isKliveProject ?? false
   );

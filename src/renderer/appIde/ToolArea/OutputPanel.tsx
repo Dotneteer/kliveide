@@ -1,7 +1,10 @@
-import { useDispatch, useSelector, useStore } from "@renderer/core/RendererProvider";
+import {
+  useDispatch,
+  useGlobalSetting,
+  useStore
+} from "@renderer/core/RendererProvider";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import {
-  activateOutputPaneAction,
   incToolCommandSeqNoAction,
   setIdeStatusMessageAction
 } from "@state/actions";
@@ -12,12 +15,14 @@ import styles from "./OutputPanel.module.scss";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
 import Dropdown from "@renderer/controls/Dropdown";
+import { SETTING_IDE_ACTIVE_OUTPUT_PANE } from "@common/settings/setting-const";
+import { useMainApi } from "@renderer/core/MainApi";
 
 const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
   const store = useStore();
   const tool = useRef<ToolInfo>();
-  const activePane = useSelector((s) => s.ideView?.activeOutputPane);
+  const activePane = useGlobalSetting(SETTING_IDE_ACTIVE_OUTPUT_PANE);
   const [buffer, setBuffer] = useState<IOutputBuffer>();
 
   useEffect(() => {
@@ -36,12 +41,13 @@ export const outputPanelRenderer = () => <OutputPanel />;
 
 export const outputPanelHeaderRenderer = () => {
   const dispatch = useDispatch();
+  const mainApi = useMainApi();
   const { outputPaneService } = useAppServices();
   const panes = outputPaneService.getRegisteredOutputPanes().map((p) => ({
     value: p.id,
     label: p.displayName
   }));
-  const activePane = useSelector((s) => s.ideView?.activeOutputPane);
+  const activePane = useGlobalSetting(SETTING_IDE_ACTIVE_OUTPUT_PANE);
   return (
     <>
       <Dropdown
@@ -49,8 +55,8 @@ export const outputPanelHeaderRenderer = () => {
         options={panes}
         initialValue={activePane}
         width={140}
-        onChanged={(option) => {
-          dispatch(activateOutputPaneAction(option));
+        onChanged={async (option) => {
+          await mainApi.setGlobalSettingsValue(SETTING_IDE_ACTIVE_OUTPUT_PANE, option);
         }}
       />
       <TabButtonSpace />

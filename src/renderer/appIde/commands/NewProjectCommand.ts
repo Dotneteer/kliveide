@@ -1,5 +1,6 @@
 import { IdeCommandContext } from "../../abstractions/IdeCommandContext";
 import { IdeCommandResult } from "../../abstractions/IdeCommandResult";
+import { ensureProjectLoaded, ensureWorkspaceLoaded } from "../IdeEventsHandler";
 import {
   commandError,
   writeSuccessMessage,
@@ -52,11 +53,17 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
             finalMessage: `Error opening folder: ${errorMessage}`
           };
         }
-        writeSuccessMessage(
-          context.output,
-          `Klive project successfully created in ${responsePath}`
-        );
+        await ensureProjectLoaded(context.service.projectService);
+        await ensureWorkspaceLoaded(context.store);
+
+        // --- Navigate to the project root
+        const buildRoots = context.store.getState().project?.buildRoots;
+        if (buildRoots.length > 0) {
+          console.log("Navigate to the project root", buildRoots[0]);
+          context.service.ideCommandsService.executeCommand(`nav "${buildRoots[0]}"`);
+        }
       }
+      writeSuccessMessage(context.output, `Klive project successfully created in ${responsePath}`);
     } catch (error) {
       return commandError(error.toString());
     }
