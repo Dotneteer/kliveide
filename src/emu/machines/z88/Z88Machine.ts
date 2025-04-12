@@ -36,7 +36,6 @@ import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
-import { get } from "lodash";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -100,7 +99,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Initialize the machine
    */
   constructor(
-    private readonly store: any,
     model: MachineModel,
     public readonly config: MachineConfigSet,
     private readonly messenger: MessengerBase

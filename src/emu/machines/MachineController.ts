@@ -30,7 +30,7 @@ import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
-import { get } from "lodash";
+import { getGlobalSetting } from "@renderer/core/RendererProvider";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -390,7 +390,7 @@ export class MachineController implements IMachineController {
   ): Promise<void> {
     switch (this.state) {
       case MachineControllerState.Running:
-        throw new Error("The machine is already running");
+        return;
 
       case MachineControllerState.None:
       case MachineControllerState.Stopped:
@@ -424,7 +424,7 @@ export class MachineController implements IMachineController {
     this.machine.tactsAtLastStart = this.machine.tacts;
 
     // --- Obtain fastload settings
-    const fastLoad = get(this.store.getState()?.globalSettings, SETTING_EMU_FAST_LOAD, false);
+    const fastLoad = getGlobalSetting(this.store, SETTING_EMU_FAST_LOAD);
     this.machine.setMachineProperty(FAST_LOAD, fastLoad);
 
     // --- Sign if we are in debug mode

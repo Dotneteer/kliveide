@@ -2,6 +2,7 @@ import { BackDrop } from "@controls/BackDrop";
 import { SplitPanel } from "@controls/SplitPanel";
 import { Toolbar } from "@controls/Toolbar";
 import {
+  getGlobalSetting,
   useDispatch,
   useGlobalSetting,
   useRendererContext,
@@ -134,7 +135,6 @@ import {
   SETTING_IDE_TOOLPANEL_HEIGHT,
   SETTING_IDE_TOOLS_ON_TOP
 } from "@common/settings/setting-const";
-import { get } from "lodash";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -228,9 +228,8 @@ const IdeApp = () => {
         }
 
         console.log("Load IDE settings");
-        let state = store.getState();
         const mainApi = createMainApi(messenger);
-        const openLastProject = get(state?.globalSettings, SETTING_IDE_OPEN_LAST_PROJECT);
+        const openLastProject = getGlobalSetting(store, SETTING_IDE_OPEN_LAST_PROJECT);
         if (openLastProject) {
           console.log("Query settings");
           const settings = await mainApi.getAppSettings();

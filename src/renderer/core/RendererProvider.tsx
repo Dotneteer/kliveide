@@ -88,6 +88,14 @@ export function useSelector<Selected>(stateMapper: (state: AppState) => Selected
   return state;
 }
 
+export function getGlobalSetting(store: Store<AppState>, settingId: string): any {
+  const settingsDef = KliveGlobalSettings[settingId];
+  if (!settingsDef) {
+    return null;
+  }
+  return get(store.getState()?.globalSettings ?? {}, settingId, settingsDef.defaultValue);
+}
+
 /**
  * This React hook makes the a mapped state value available within any component logic using the hook.
  */

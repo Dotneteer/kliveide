@@ -702,9 +702,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
             // --- Stop when reached a breakpoint
             debugSupport.lastBreakpoint = z80Machine.pc;
             debugSupport.imminentBreakpoint = undefined;
-            console.log(
-              `instE: ${instructionsExecuted}, stopAt: ${stopAt}, lastBreakpoint: ${debugSupport.lastBreakpoint}, pc: ${z80Machine.pc}`
-            );
             return true;
           }
           if (z80Machine.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {

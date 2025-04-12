@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { getGlobalSetting, useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef } from "react";
 import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { useAppServices } from "./services/AppServicesProvider";
@@ -18,7 +18,6 @@ import {
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLPANEL_HEIGHT
 } from "@common/settings/setting-const";
-import { get } from "lodash";
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
@@ -79,7 +78,7 @@ export const IdeEventsHandler = () => {
       const projectPath = state.project?.folderPath;
 
       // --- Store current view options to set them later
-      const maximizeToolPanels = get(state?.globalSettings, SETTING_IDE_MAXIMIZE_TOOLS, false);
+      const maximizeToolPanels = getGlobalSetting(store, SETTING_IDE_MAXIMIZE_TOOLS);
       await mainApi.setGlobalSettingsValue(SETTING_IDE_SHOW_SIDEBAR, true);
       await mainApi.setGlobalSettingsValue(SETTING_IDE_MAXIMIZE_TOOLS, false);
 
@@ -116,8 +115,8 @@ export const IdeEventsHandler = () => {
         await ideCommandsService.executeCommand(activeDocCommand);
       }
       console.log("Project workspace opened");
-      const sideBarWidth = get(state, SETTING_IDE_SIDEBAR_WIDTH);
-      const toolPanelHeight = get(state, SETTING_IDE_TOOLPANEL_HEIGHT);
+      const sideBarWidth = getGlobalSetting(store, SETTING_IDE_SIDEBAR_WIDTH);
+      const toolPanelHeight = getGlobalSetting(store, SETTING_IDE_TOOLPANEL_HEIGHT);
 
       // --- Adjust the size of IDE splitters
       if (sideBarWidth) {

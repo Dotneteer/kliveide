@@ -43,7 +43,6 @@ import {
   setKeyMappingsAction,
   setMachineSpecificAction,
   setMediaAction,
-  setIdeDisableAutoCompleteAction,
   initGlobalSettingsAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
@@ -252,10 +251,6 @@ async function createAppWindows() {
       mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"));
 
       // --- Update IDE Settings
-      const ideSettings = appSettings.ideSettings;
-      mainStore.dispatch(
-        setIdeDisableAutoCompleteAction(ideSettings?.disableAutoComplete ?? false)
-      );
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));

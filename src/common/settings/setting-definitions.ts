@@ -11,7 +11,7 @@ import {
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
-  SETTING_IDE_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -22,7 +22,14 @@ import {
   SETTING_IDE_SIDEBAR_WIDTH,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLPANEL_HEIGHT,
-  SETTING_IDE_TOOLS_ON_TOP
+  SETTING_IDE_TOOLS_ON_TOP,
+  SETTING_EDITOR_AUTOCOMPLETE,
+  SETTING_EDITOR_TABSIZE,
+  SETTING_EDITOR_INSERT_SPACES,
+  SETTING_EDITOR_RENDER_WHITESPACE,
+  SETTING_EDITOR_DETECT_INDENTATION,
+  SETTING_EDITOR_SELECTION_HIGHLIGHT,
+  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT
 } from "@common/settings/setting-const";
 
 const settingDefinitions: Setting[] = [
@@ -195,15 +202,6 @@ const settingDefinitions: Setting[] = [
     volatile: true
   },
   {
-    id: SETTING_IDE_EDITOR_FONT_SIZE,
-    title: "Editor font size",
-    description: "Font size for the editor.",
-    type: "number",
-    defaultValue: 16,
-    saveWithIde: true,
-    saveWithProject: true
-  },
-  {
     id: SETTING_IDE_ACTIVE_TOOL,
     title: "(active tool)",
     type: "string",
@@ -238,8 +236,79 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     saveWithProject: false,
     boundTo: "ide"
+  },
+  {
+    id: SETTING_EDITOR_FONT_SIZE,
+    title: "Font Size",
+    description: "Font size for the editor.",
+    type: "number",
+    defaultValue: 16,
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_AUTOCOMPLETE,
+    title: "Enable AutoComplete",
+    description: "Enable or disable the auto-complete feature in the editor.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_TABSIZE,
+    title: "Tab size",
+    description: "Number of spaces per tab in the editor.",
+    type: "number",
+    defaultValue: 4,
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_INSERT_SPACES,
+    title: "Insert Spaces Instead of Tabs",
+    description: "Use spaces instead of tabs for indentation.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_RENDER_WHITESPACE,
+    title: "Render whitespace characters",
+    description: "Render whitespace characters in the editor.",
+    type: "string",
+    defaultValue: "none",
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_DETECT_INDENTATION,
+    title: "Detect Indentation",
+    description: "Automatically detect indentation settings.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_SELECTION_HIGHLIGHT,
+    title: "Enable Selection Highlight",
+    description: "Enable or disable the selection highlight feature in the editor.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
+    title: "Enable Occurrences Highlight",
+    description: "Enable or disable the occurrences highlight feature in the editor.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    saveWithProject: true
   }
-
 ];
 
 export const KliveGlobalSettings: Record<string, Setting> = settingDefinitions.reduce(
