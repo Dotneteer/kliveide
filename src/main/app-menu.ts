@@ -21,8 +21,7 @@ import {
   displayDialogAction,
   dimMenuAction,
   setVolatileDocStateAction,
-  setKeyMappingsAction,
-  setIdeDisableAutoCompleteAction,
+  setKeyMappingsAction
 } from "@state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
@@ -53,7 +52,7 @@ import {
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
   SETTING_IDE_CLOSE_EMU,
-  SETTING_IDE_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
@@ -62,7 +61,14 @@ import {
   SETTING_IDE_SHOW_TOOLS,
   SETTING_IDE_SIDEBAR_TO_RIGHT,
   SETTING_IDE_SYNC_BREAKPOINTS,
-  SETTING_IDE_TOOLS_ON_TOP
+  SETTING_IDE_TOOLS_ON_TOP,
+  SETTING_EDITOR_AUTOCOMPLETE,
+  SETTING_EDITOR_INSERT_SPACES,
+  SETTING_EDITOR_TABSIZE,
+  SETTING_EDITOR_RENDER_WHITESPACE,
+  SETTING_EDITOR_DETECT_INDENTATION,
+  SETTING_EDITOR_SELECTION_HIGHLIGHT,
+  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
 
@@ -99,9 +105,11 @@ const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
 const IDE_SHOW_DISASSEMBLY = "show_banked_disassembly";
 const IDE_SETTINGS = "ide_settings";
-const IDE_AUTO_COMPLETE = "ide_auto_complete";
 
+const EDITOR_OPTIONS = "editor_options";
 const EDITOR_FONT_SIZE = "editor_font_size";
+const EDITOR_TAB_SIZE = "editor_tab_size";
+const EDITOR_RENDER_WHITESPACE = "editor_render_whitespace";
 
 const HELP_MENU = "help_menu";
 const HELP_ABOUT = "help_about";
@@ -295,15 +303,78 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       value: 24
     }
   ];
-  const currentFontSize = getSettingValue(SETTING_IDE_EDITOR_FONT_SIZE);
-  const editorFontMenu: MenuItemConstructorOptions[] = editorFontOptions.map((f, idx) => {
+  const currentFontSize = getSettingValue(SETTING_EDITOR_FONT_SIZE);
+  const editorFontSizeMenu: MenuItemConstructorOptions[] = editorFontOptions.map((f, idx) => {
     return {
       id: `${EDITOR_FONT_SIZE}_${idx}`,
       label: f.label,
       type: "checkbox",
       checked: currentFontSize === f.value,
       click: async () => {
-        setSettingValue(SETTING_IDE_EDITOR_FONT_SIZE, f.value);
+        setSettingValue(SETTING_EDITOR_FONT_SIZE, f.value);
+      }
+    };
+  });
+
+  const tabSizeOptions = [
+    {
+      label: "2",
+      value: 2
+    },
+    {
+      label: "4",
+      value: 4
+    },
+    {
+      label: "8",
+      value: 8
+    },
+    {
+      label: "16",
+      value: 16
+    },
+  ];
+  const currentTabSize = getSettingValue(SETTING_EDITOR_TABSIZE);
+  const editorTabSizeMenu: MenuItemConstructorOptions[] = tabSizeOptions.map((f, idx) => {
+    return {
+      id: `${EDITOR_TAB_SIZE}_${idx}`,
+      label: f.label,
+      type: "checkbox",
+      checked: currentTabSize === f.value,
+      click: async () => {
+        setSettingValue(SETTING_EDITOR_TABSIZE, f.value);
+      }
+    };
+  });
+
+  const renderWhitespaceOptions = [
+    {
+      label: "Do not render whitespaces",
+      value: "none"
+    },
+    {
+      label: "Render whitespace at line boundaries",
+      value: "boundary"
+    },
+    {
+      label: "Only render whitespace inside selected text",
+      value: "selection"
+    },
+    {
+      label: "Render all whitespace characters",
+      value: "all"
+    },
+  ];
+
+  const currentRenderWhitespace = getSettingValue(SETTING_EDITOR_RENDER_WHITESPACE);
+  const editorRenderWhitespaceMenu: MenuItemConstructorOptions[] = renderWhitespaceOptions.map((f, idx) => {
+    return {
+      id: `${EDITOR_RENDER_WHITESPACE}_${idx}`,
+      label: f.label,
+      type: "checkbox",
+      checked: currentRenderWhitespace === f.value,
+      click: async () => {
+        setSettingValue(SETTING_EDITOR_RENDER_WHITESPACE, f.value);
       }
     };
   });
@@ -413,9 +484,32 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       { type: "separator" },
       {
-        id: EDITOR_FONT_SIZE,
-        label: "Editor Font Size",
-        submenu: editorFontMenu
+        id: EDITOR_OPTIONS,
+        label: "Editor Options",
+        submenu: [
+          {
+            id: EDITOR_FONT_SIZE,
+            label: "Font Size",
+            submenu: editorFontSizeMenu
+          },
+          createBooleanSettingsMenu(SETTING_EDITOR_AUTOCOMPLETE),
+          createBooleanSettingsMenu(SETTING_EDITOR_SELECTION_HIGHLIGHT),
+          createBooleanSettingsMenu(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT),
+          { type: "separator" },
+          createBooleanSettingsMenu(SETTING_EDITOR_DETECT_INDENTATION),
+          createBooleanSettingsMenu(SETTING_EDITOR_INSERT_SPACES),
+          {
+            id: EDITOR_RENDER_WHITESPACE,
+            label: "Render Whitespaces",
+            submenu: editorRenderWhitespaceMenu
+          },
+          { type: "separator" },
+          {
+            id: EDITOR_TAB_SIZE,
+            label: "Tab Size",
+            submenu: editorTabSizeMenu
+          },
+        ]
       },
       { type: "separator" },
       ...specificViewMenus
@@ -736,17 +830,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         label: "IDE Settings",
         submenu: [
           createBooleanSettingsMenu(SETTING_IDE_OPEN_LAST_PROJECT),
-          { type: "separator" },
-          {
-            id: IDE_AUTO_COMPLETE,
-            label: "Enable AutoComplete",
-            type: "checkbox",
-            checked: !appState.ideSettings?.disableAutoComplete,
-            click: async (mi) => {
-              mainStore.dispatch(setIdeDisableAutoCompleteAction(!mi.checked));
-              saveAppSettings();
-            }
-          },
           { type: "separator" },
           createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU)
         ]

@@ -22,7 +22,7 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { useMainApi } from "@renderer/core/MainApi";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { SETTING_IDE_EDITOR_FONT_SIZE } from "@common/settings/setting-const";
+import { SETTING_EDITOR_AUTOCOMPLETE, SETTING_EDITOR_DETECT_INDENTATION, SETTING_EDITOR_FONT_SIZE, SETTING_EDITOR_SELECTION_HIGHLIGHT, SETTING_EDITOR_INSERT_SPACES, SETTING_EDITOR_RENDER_WHITESPACE, SETTING_EDITOR_TABSIZE, SETTING_EDITOR_OCCURRENCES_HIGHLIGHT } from "@common/settings/setting-const";
 
 let monacoInitialized = false;
 
@@ -163,7 +163,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const [monacoTheme, setMonacoTheme] = useState("");
 
   // --- Respond to editor font size change requests
-  const editorFontSize = useGlobalSetting(SETTING_IDE_EDITOR_FONT_SIZE);
+  const editorFontSize = useGlobalSetting(SETTING_EDITOR_FONT_SIZE);
 
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();
@@ -191,16 +191,113 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const languageInfo = customLanguagesRegistry.find((l) => l.id === document.language);
 
   // --- Use these states to update editor options
-  const disableAutoComplete = useSelector((s) => s.ideSettings?.disableAutoComplete ?? false);
+  const enableAutoComplete = useGlobalSetting(SETTING_EDITOR_AUTOCOMPLETE);
+  const insertSpaces = useGlobalSetting(SETTING_EDITOR_INSERT_SPACES);
+  const renderWhitespaces = useGlobalSetting(SETTING_EDITOR_RENDER_WHITESPACE);
+  const tabSize = useGlobalSetting(SETTING_EDITOR_TABSIZE);
+  const detectIndentation = useGlobalSetting(SETTING_EDITOR_DETECT_INDENTATION);
+  const enableSelectionHighlight = useGlobalSetting(SETTING_EDITOR_SELECTION_HIGHLIGHT);
+  const enableOccurrencesHighlight = useGlobalSetting(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT);
 
-  useEffect(() => {
+
+  // --- Sets the Auto complete editor option
+  const updateAutoComplete = () => {
     if (editor.current) {
       editor.current.updateOptions({
-        quickSuggestions: !disableAutoComplete,
-        suggestOnTriggerCharacters: !disableAutoComplete
+        quickSuggestions: enableAutoComplete,
+        suggestOnTriggerCharacters: enableAutoComplete
       });
     }
-  }, [disableAutoComplete]);
+  }
+
+  // --- Sets the InsertSpaces editor option
+  const updateInsertSpaces = () => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        insertSpaces,
+      });
+    }
+  }
+
+  // --- Sets the RenderWhitespaces editor option
+  const updateRenderWhitespaces = () => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        renderWhitespace: renderWhitespaces
+      });
+    }
+  }
+
+  // --- Sets the tab size of the editor
+  const updateTabSize = () => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        tabSize,
+      });
+    }
+  }
+
+  // --- Set the detect indentation flag
+  const updateDetectIndentation = () => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        detectIndentation,
+      });
+    }
+  }
+
+  // --- Set the highlight flag
+  const updateSelectionHighlight = () => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        selectionHighlight: enableSelectionHighlight,
+      });
+    }
+  }
+
+  // --- Set the occurrences highlight flag
+  const updateOccurrencesHighlight = () => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        occurrencesHighlight: enableOccurrencesHighlight,
+      });
+    }
+  }  
+
+  // --- Update Autocomplete changes
+  useEffect(() => {
+    updateAutoComplete();
+  }, [enableAutoComplete]);
+
+  // --- Update InsertSpaces changes
+  useEffect(() => {
+    updateInsertSpaces();
+  }, [insertSpaces]);
+
+  // --- Update RenderWhitespaces changes
+  useEffect(() => {
+    updateRenderWhitespaces();
+  }, [renderWhitespaces]);
+
+  // --- Update TabSize changes
+  useEffect(() => {
+    updateTabSize();
+  }, [tabSize]);
+
+  // --- Update DetectIndentation changes
+  useEffect(() => {
+    updateDetectIndentation();
+  }, [detectIndentation]);
+
+  // --- Update selection highlight changes
+  useEffect(() => {
+    updateSelectionHighlight();
+  }, [enableSelectionHighlight]);
+
+  // --- Update the occurrences highlight changes
+  useEffect(() => {
+    updateOccurrencesHighlight();
+  }, [enableOccurrencesHighlight]);
 
   // --- Respond to theme changes
   useEffect(() => {
@@ -265,7 +362,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   // --- Respond to editor font size changes
   useEffect(() => {
-    editor.current;
   }, [editorFontSize]);
 
   // --- Refresh breakpoints when they may change
@@ -343,6 +439,17 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     if (viewState) {
       ed.restoreViewState(viewState);
     }
+
+    // --- Set the editor's options
+    updateAutoComplete();
+    updateInsertSpaces();
+    updateRenderWhitespaces();
+    updateTabSize();
+    updateDetectIndentation();
+    updateSelectionHighlight();
+    updateOccurrencesHighlight();
+
+    // --- Focus the editor
     ed.focus();
 
     // --- Dispose event handlers when the editor is about to dispose

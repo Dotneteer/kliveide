@@ -1,8 +1,6 @@
 import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { toolPanelRegistry } from "@renderer/registry";
-import {
-  incToolCommandSeqNoAction,
-} from "@state/actions";
+import { incToolCommandSeqNoAction } from "@state/actions";
 import { createElement } from "react";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import { TabButton } from "@controls/TabButton";
@@ -10,7 +8,11 @@ import styles from "./ToolsHeader.module.scss";
 import { ToolTab } from "./ToolTab";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SETTING_IDE_ACTIVE_TOOL, SETTING_IDE_MAXIMIZE_TOOLS, SETTING_IDE_TOOLS_ON_TOP } from "@common/settings/setting-const";
+import {
+  SETTING_IDE_ACTIVE_TOOL,
+  SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_TOOLS_ON_TOP
+} from "@common/settings/setting-const";
 
 type Props = {
   tool: ToolInfo;

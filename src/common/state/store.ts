@@ -8,7 +8,6 @@ import { projectReducer } from "./project-reducer";
 import { compilationReducer } from "./compilation-reducer";
 import { mediaReducer } from "./media-reducer";
 import { scriptsReducer } from "./scripts-reducer";
-import { ideSettingsReducer } from "./ide-settings-reducer";
 import { workspaceSettingsReducer } from "./workspace-settings-reducer";
 import { globalSettingsReducer } from "./global-settings-reducer";
 
@@ -27,7 +26,6 @@ function appReducer(state: AppState, action: Action): AppState {
   invokeReducer(state.compilation, compilationReducer, (a, n) => (a.compilation = n));
   invokeReducer(state.media, mediaReducer, (a, n) => (a.media = n));
   invokeReducer(state.scripts, scriptsReducer, (a, n) => (a.scripts = n));
-  invokeReducer(state.ideSettings, ideSettingsReducer, (a, n) => (a.ideSettings = n));
   invokeReducer(
     state.workspaceSettings,
     workspaceSettingsReducer,

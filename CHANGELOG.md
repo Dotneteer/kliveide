@@ -2,16 +2,11 @@
 
 ## 0.45.0: Planned private build
 
-- Issue #955
-- Issue #954
-- Issue #951
-- Issue #944
-- Issue #899
-- Issue #879
-- Issue #876
+- New Editor settings
+- Issue #957
 
 
-## 0.34.0 - 0.44.1: Private builds
+## 0.34.0 - 0.45.0: Private builds
 
 ## 0.33.0
 

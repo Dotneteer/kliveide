@@ -2,14 +2,13 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
-import { useGlobalSetting, useSelector, useStore } from "@renderer/core/RendererProvider";
+import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
 import { FAST_LOAD } from "@emu/machines/machine-props";
-import { MachineController } from "@emu/machines/MachineController";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -116,6 +115,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Sets the overlay for paused mode
   const setPauseOverlay = () => {
+    const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
     setOverlay(
       `Paused (PC: $${toHexa4(controller.machine.pc)})${showInstantScreen ? " - Instant screen" : ""}`
     );
@@ -200,6 +200,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   });
 
   useEffect(() => {
+    const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
     if (showInstantScreen) {
       renderInstantScreen();
       displayScreenData();
@@ -237,7 +238,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   );
 
   // --- Handles machine controller changes
-  async function machineControllerChanged(ctrl: MachineController): Promise<void> {
+  async function machineControllerChanged(ctrl: IMachineController): Promise<void> {
     // --- Let's store a ref
     controllerRef.current = ctrl;
     if (!ctrl) return;
@@ -295,6 +296,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           case MachineControllerState.Paused:
             setPauseOverlay();
             await beeperRenderer?.current?.suspend();
+            const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
             if (showInstantScreen) {
               const shadow = renderInstantScreen();
               if (!savedPixelBuffer) {
