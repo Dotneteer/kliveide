@@ -5,7 +5,6 @@ import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 
 import { incBreakpointsVersionAction } from "@state/actions";
 import { getBreakpointKey } from "@common/utils/breakpoints";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 // --- Breakpoint flags
 // --- Execution breakpoint
@@ -42,6 +41,8 @@ export class DebugSupport implements IDebugSupport {
   breakpointFlags = new Uint16Array(0x1_0000);
   breakpointData = new Map<number, BreakpointData>();
 
+  private suspendVersionIncrement = false;
+
   /**
    * Initializes the service using the specified store
    * @param store Application state store
@@ -50,9 +51,15 @@ export class DebugSupport implements IDebugSupport {
     private readonly store?: Store<AppState>,
     bps?: BreakpointInfo[]
   ) {
-    if (bps) {
-      bps.forEach((bp) => this.addBreakpoint(bp));
+    this.suspendVersionIncrement = true;
+    try {
+      if (bps) {
+        bps.forEach((bp) => this.addBreakpoint(bp));
+      }
+    } finally {
+      this.suspendVersionIncrement = false;
     }
+    this.store?.dispatch(incBreakpointsVersionAction(), "emu");
   }
 
   /**
@@ -273,7 +280,9 @@ export class DebugSupport implements IDebugSupport {
     }
 
     // --- Done, sign the change
-    this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+    if (!this.suspendVersionIncrement) {
+      this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+    }
     return !oldBp;
   }
 
@@ -398,7 +407,7 @@ export class DebugSupport implements IDebugSupport {
           }
         } else {
           // --- Set (disabled) or reset the flag
-          console.log()
+          console.log();
           if (enabled) {
             this.breakpointFlags[address] &= ~flag;
           } else {
@@ -417,15 +426,32 @@ export class DebugSupport implements IDebugSupport {
    * Scrolls down breakpoints
    * @param def Breakpoint address
    * @param lineNo Line number to shift down
+   * @param lowerBound Lower bound of area to remove breakpoints from
+   * @param upperBound Upper bound of area to remove breakpoints from
    */
-  scrollBreakpoints(def: BreakpointInfo, shift: number): void {
+  scrollBreakpoints(
+    def: BreakpointInfo,
+    shift: number,
+    lowerBound?: number,
+    upperBound?: number
+  ): void {
     let changed = false;
     const values: BreakpointInfo[] = [];
     for (const value of this.breakpointDefs.values()) {
       values.push(value);
     }
     values.forEach((bp) => {
+      if (lowerBound !== undefined && upperBound !== undefined) {
+        // --- Remove breakpoints in the specified area
+        if (bp.resource === def.resource && bp.line >= lowerBound && bp.line < upperBound) {
+          const oldKey = getBreakpointKey(bp);
+          this.breakpointDefs.delete(oldKey);
+          return;
+        }
+      }
+
       if (bp.resource === def.resource && bp.line >= def.line) {
+        // --- Shift the breakpoint
         const oldKey = getBreakpointKey(bp);
         this.breakpointDefs.delete(oldKey);
         bp.line += shift;
@@ -498,6 +524,25 @@ export class DebugSupport implements IDebugSupport {
     } else {
       this.breakpointFlags[address] &= ~DIS_EXEC_BP;
     }
+  }
+
+  /**
+   * Changes the list of existing breakpoints to the provided ones.
+   * @param breakpoints Breakpoints to set
+   */
+  resetBreakpointsTo(bps: BreakpointInfo[]): void {
+    this.breakpointDefs = new Map<string, BreakpointInfo>();
+    this.breakpointFlags = new Uint16Array(0x1_0000);
+    this.breakpointData = new Map<number, BreakpointData>();
+    this.suspendVersionIncrement = true;
+    try {
+      if (bps) {
+        bps.forEach((bp) => this.addBreakpoint(bp));
+      }
+    } finally {
+      this.suspendVersionIncrement = false;
+    }
+    this.store?.dispatch(incBreakpointsVersionAction(), "emu");
   }
 
   // --- Get the breakpoint flags from the definition

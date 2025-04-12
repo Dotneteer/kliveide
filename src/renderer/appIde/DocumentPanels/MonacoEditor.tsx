@@ -22,9 +22,20 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { useMainApi } from "@renderer/core/MainApi";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { SETTING_EDITOR_AUTOCOMPLETE, SETTING_EDITOR_DETECT_INDENTATION, SETTING_EDITOR_FONT_SIZE, SETTING_EDITOR_SELECTION_HIGHLIGHT, SETTING_EDITOR_INSERT_SPACES, SETTING_EDITOR_RENDER_WHITESPACE, SETTING_EDITOR_TABSIZE, SETTING_EDITOR_OCCURRENCES_HIGHLIGHT } from "@common/settings/setting-const";
+import {
+  SETTING_EDITOR_AUTOCOMPLETE,
+  SETTING_EDITOR_DETECT_INDENTATION,
+  SETTING_EDITOR_FONT_SIZE,
+  SETTING_EDITOR_SELECTION_HIGHLIGHT,
+  SETTING_EDITOR_INSERT_SPACES,
+  SETTING_EDITOR_RENDER_WHITESPACE,
+  SETTING_EDITOR_TABSIZE,
+  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT
+} from "@common/settings/setting-const";
 
 let monacoInitialized = false;
+
+let MAX_BP_UNDO_STACK = 64;
 
 // --- We use these shortcuts in this file for Monaco types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
@@ -157,6 +168,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const mounted = useRef(false);
 
+  // --- Keep track of the editors undo stack
+  const undoStack = useRef<Map<string, BreakpointInfo[][]>>(new Map());
+  const redoStack = useRef<Map<string, BreakpointInfo[][]>>(new Map());
+
   // --- Recognize app theme changes and update Monaco editor theme accordingly
   const { theme } = useTheme();
   const mainApi = useMainApi();
@@ -199,7 +214,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const enableSelectionHighlight = useGlobalSetting(SETTING_EDITOR_SELECTION_HIGHLIGHT);
   const enableOccurrencesHighlight = useGlobalSetting(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT);
 
-
   // --- Sets the Auto complete editor option
   const updateAutoComplete = () => {
     if (editor.current) {
@@ -208,16 +222,16 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         suggestOnTriggerCharacters: enableAutoComplete
       });
     }
-  }
+  };
 
   // --- Sets the InsertSpaces editor option
   const updateInsertSpaces = () => {
     if (editor.current) {
       editor.current.updateOptions({
-        insertSpaces,
+        insertSpaces
       });
     }
-  }
+  };
 
   // --- Sets the RenderWhitespaces editor option
   const updateRenderWhitespaces = () => {
@@ -226,43 +240,43 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         renderWhitespace: renderWhitespaces
       });
     }
-  }
+  };
 
   // --- Sets the tab size of the editor
   const updateTabSize = () => {
     if (editor.current) {
       editor.current.updateOptions({
-        tabSize,
+        tabSize
       });
     }
-  }
+  };
 
   // --- Set the detect indentation flag
   const updateDetectIndentation = () => {
     if (editor.current) {
       editor.current.updateOptions({
-        detectIndentation,
+        detectIndentation
       });
     }
-  }
+  };
 
   // --- Set the highlight flag
   const updateSelectionHighlight = () => {
     if (editor.current) {
       editor.current.updateOptions({
-        selectionHighlight: enableSelectionHighlight,
+        selectionHighlight: enableSelectionHighlight
       });
     }
-  }
+  };
 
   // --- Set the occurrences highlight flag
   const updateOccurrencesHighlight = () => {
     if (editor.current) {
       editor.current.updateOptions({
-        occurrencesHighlight: enableOccurrencesHighlight,
+        occurrencesHighlight: enableOccurrencesHighlight
       });
     }
-  }  
+  };
 
   // --- Update Autocomplete changes
   useEffect(() => {
@@ -361,8 +375,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   }, [editor.current]);
 
   // --- Respond to editor font size changes
-  useEffect(() => {
-  }, [editorFontSize]);
+  useEffect(() => {}, [editorFontSize]);
 
   // --- Refresh breakpoints when they may change
   useEffect(() => {
@@ -380,6 +393,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     mounted.current = false;
     editor.current = ed;
     ed.setValue(value);
+
+    ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyY, () =>
+      ed.trigger("keyboard", "redo", null)
+    );
 
     const saveViewState = () => {
       if (mounted.current) {
@@ -471,45 +488,123 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     // --- Now, make this document permanent
     projectService.setPermanent(document.id);
 
-    // --- Does the editor support breakpoints?
-    if (languageInfo?.supportsBreakpoints) {
-      // --- Keep track of breakpoint changes
-      if (e.changes.length > 0) {
-        // --- Get the text that has been deleted
-        const change = e.changes[0];
-        const deletedText = editor.current.getModel().getValueInRange(change.range);
-        const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || []).length;
+    // --- Handle breakpoint redos and undos
+    const resourceKey = `${editor.current.getId()}-${resourceName}`;
+    if (e.isUndoing) {
+      // --- Undo the breakpoints
+      const currentSet = undoStack.current.get(resourceKey);
+      if (currentSet && currentSet.length > 0) {
+        // --- We have a set of breakpoints to restore, get it from the stack
+        const lastSet = currentSet.pop();
 
-        // --- Have we deleted one or more EOLs?
-        if (deletedLines > 0) {
-          // --- Yes, scroll up breakpoints
-          await createEmuApi(messenger).scrollBreakpoints(
-            {
-              resource: resourceName,
-              line: change.range.startLineNumber
-            },
-            -deletedLines
+        // --- Restore the previous breakpoints
+        await createEmuApi(messenger).resetBreakpointsTo(lastSet);
+
+        // --- Update the redo stack
+        let currentRedo = redoStack.current.get(resourceKey);
+        if (!currentRedo) {
+          currentRedo = [];
+          redoStack.current.set(resourceKey, currentRedo);
+        }
+        currentRedo.push(lastSet);
+
+        // --- Keep the redo length limit
+        if (currentRedo.length > MAX_BP_UNDO_STACK) {
+          currentRedo.shift();
+        }
+        console.log("Changes pushed to redo stack");
+      }
+    } else if (e.isRedoing) {
+      // --- Redo the breakpoints
+      const currentSet = redoStack.current.get(resourceKey);
+      if (currentSet && currentSet.length > 0) {
+        // --- We have a set of breakpoints to restore, get it from the stack
+        const lastSet = currentSet.pop();
+
+        // --- Restore the previous breakpoints
+        await createEmuApi(messenger).resetBreakpointsTo(lastSet);
+
+        // --- Update the undo stack
+        let currentUndo = undoStack.current.get(resourceKey);
+        if (!currentUndo) {
+          currentUndo = [];
+          undoStack.current.set(resourceKey, currentUndo);
+        }
+        currentUndo.push(lastSet);
+
+        // --- Keep the redo length limit
+        if (currentUndo.length > MAX_BP_UNDO_STACK) {
+          currentUndo.shift();
+        }
+      }
+    } else {
+      // --- We are executing a normal (not redo or undo) operation
+      // --- Get the current set of breakpoints
+      const breakpoints = await getBreakpoints(messenger);
+
+      // --- Get the undo stack of this document
+      let currentSet = undoStack.current.get(resourceKey);
+      if (!currentSet) {
+        currentSet = [];
+        undoStack.current.set(resourceKey, currentSet);
+      }
+
+      // --- Push the current breakpoints to the undo stack
+      currentSet.push(breakpoints);
+
+      // --- Keep the undo length limit
+      if (currentSet.length > MAX_BP_UNDO_STACK) {
+        currentSet.shift();
+      }
+
+      // --- Does the editor support breakpoints?
+      if (languageInfo?.supportsBreakpoints) {
+        // --- Keep track of breakpoint changes
+        if (e.changes.length > 0) {
+          // --- Get the text that has been deleted
+          const change = e.changes[0];
+          const deletedText = editor.current.getModel().getValueInRange(change.range);
+          const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || []).length;
+
+          // --- Have we deleted one or more EOLs?
+          if (deletedLines > 0) {
+            const lowerBound =
+              change.range.startLineNumber + (change.range.startColumn === 1 ? 0 : 1);
+            const upperBound = change.range.endLineNumber;
+
+            // --- Yes, scroll up breakpoints
+            await createEmuApi(messenger).scrollBreakpoints(
+              {
+                resource: resourceName,
+                line: lowerBound
+              },
+              -deletedLines,
+              lowerBound,
+              upperBound
+            );
+          }
+
+          // --- Have we inserted one or more EOLs?
+          const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || []).length;
+          if (insertedLines > 0) {
+            // --- Yes, scroll down breakpoints.
+            const lineText = editor.current.getModel().getLineContent(change.range.startLineNumber);
+            const shouldShiftDown = lineText?.trim().length === 0;
+            await createEmuApi(messenger).scrollBreakpoints(
+              {
+                resource: resourceName,
+                line: change.range.startLineNumber + (shouldShiftDown ? 0 : 1)
+              },
+              insertedLines
+            );
+          }
+
+          // --- If changed, normalize breakpoints
+          await createEmuApi(messenger).normalizeBreakpoints(
+            resourceName,
+            editor.current.getModel()?.getLineCount() ?? -1
           );
         }
-
-        // --- Have we inserted one or more EOLs?
-        const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || []).length;
-        if (insertedLines > 0) {
-          // --- Yes, scroll down breakpoints.
-          await createEmuApi(messenger).scrollBreakpoints(
-            {
-              resource: resourceName,
-              line: change.range.startLineNumber + (change.range.startColumn === 1 ? 0 : 1)
-            },
-            insertedLines
-          );
-        }
-
-        // --- If changed, normalize breakpoints
-        await createEmuApi(messenger).normalizeBreakpoints(
-          resourceName,
-          editor.current.getModel()?.getLineCount() ?? -1
-        );
       }
     }
 

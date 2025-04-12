@@ -497,12 +497,28 @@ class EmuMessageProcessor {
     controller.resolveBreakpoints(breakpoints);
   }
 
-  scrollBreakpoints(addr: BreakpointInfo, shift: number) {
+  scrollBreakpoints(addr: BreakpointInfo, shift: number, lowerBound?: number, upperBound?: number) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    controller.debugSupport.scrollBreakpoints(addr, shift);
+    controller.debugSupport.scrollBreakpoints(addr, shift, lowerBound, upperBound);
+  }
+
+  resetBreakpointsTo(bps: BreakpointInfo[]) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.debugSupport.resetBreakpointsTo(bps);
+  }
+
+  getAllBreakpoints() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.debugSupport.breakpoints;
   }
 
   normalizeBreakpoints(resource: string, lineCount: number) {

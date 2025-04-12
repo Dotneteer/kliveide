@@ -143,28 +143,26 @@ export class TapeDevice implements ITapeDevice {
   /// Initialize the tape device and assign it to its host machine.
   /// </summary>
   /// <param name="machine">The machine hosting this device</param>
-  constructor (public readonly machine: IZxSpectrumMachine) {
+  constructor(public readonly machine: IZxSpectrumMachine) {
     const device = this;
-    machine.machinePropertyChanged.on(args =>
-      this.onMachinePropertiesChanged(device, args)
-    );
+    machine.machinePropertyChanged.on((args) => this.onMachinePropertiesChanged(device, args));
     this.reset();
   }
 
   /**
    * Dispose the resources held by the device
    */
-  dispose (): void {
+  dispose(): void {
     // --- Nothing to dispose
   }
 
   /**
    * Get or set the current operation mode of the tape device.
    */
-  get tapeMode (): TapeMode {
+  get tapeMode(): TapeMode {
     return this._tapeMode;
   }
-  set tapeMode (value: TapeMode) {
+  set tapeMode(value: TapeMode) {
     if (this._tapeMode === value) return;
     this._tapeMode = value;
     this.machine.setMachineProperty(TAPE_MODE, value);
@@ -173,7 +171,7 @@ export class TapeDevice implements ITapeDevice {
   /**
    * Reset the device to its initial state.
    */
-  reset (): void {
+  reset(): void {
     this._tapeMode = TapeMode.Passive;
     this._currentBlockIndex = -1;
     this._tapeEof = false;
@@ -183,7 +181,7 @@ export class TapeDevice implements ITapeDevice {
   /**
    * This method updates the current tape mode according to the current ROM index and PC value
    */
-  updateTapeMode (): void {
+  updateTapeMode(): void {
     // --- Handle passive mode
     if (this.tapeMode === TapeMode.Passive) {
       if (!this.machine.isSpectrum48RomSelected) {
@@ -225,10 +223,7 @@ export class TapeDevice implements ITapeDevice {
     // --- Handle LOAD mode
     if (this.tapeMode === TapeMode.Load) {
       // --- Move to passive mode when tape ends or a tape error occurs
-      if (
-        this._tapeEof ||
-        (this.machine.isSpectrum48RomSelected && this.machine.pc === 0x0008)
-      ) {
+      if (this._tapeEof || (this.machine.isSpectrum48RomSelected && this.machine.pc === 0x0008)) {
         this.tapeMode = TapeMode.Passive;
       }
       return;
@@ -248,16 +243,18 @@ export class TapeDevice implements ITapeDevice {
    * This method returns the value of the EAR bit read from the tape.
    * @returns
    */
-  getTapeEarBit (): boolean {
+  getTapeEarBit(): boolean {
     // --- Calculate the current position
     const pos = this.machine.tacts - this._tapeStartTact;
-    const block = this._blocks[this._currentBlockIndex];
+    const block = this._blocks?.[this._currentBlockIndex];
+
+    // --- Tape might be ejected. In this case return with a high bit
+    if (block?.data === undefined) {
+      return true; // => High EAR bit
+    }
 
     // --- PILOT or SYNC phase?
-    if (
-      this._playPhase === PlayPhase.Pilot ||
-      this._playPhase === PlayPhase.Sync
-    ) {
+    if (this._playPhase === PlayPhase.Pilot || this._playPhase === PlayPhase.Sync) {
       // --- Generate appropriate pilot or sync EAR bit
       if (pos <= this._tapePilotEndPos) {
         // --- Alternating pilot pulses
@@ -329,9 +326,7 @@ export class TapeDevice implements ITapeDevice {
 
       // --- Prepare to the terminating sync
       this._tapeTermEndPos =
-        this._tapeBitStartPos +
-        2 * this._tapeBitPulseLen +
-        block.endSyncPulseLenght;
+        this._tapeBitStartPos + 2 * this._tapeBitPulseLen + block.endSyncPulseLenght;
       return false;
     }
 
@@ -343,8 +338,7 @@ export class TapeDevice implements ITapeDevice {
 
       // --- We terminated the data, it's pause time (1 second)
       this._playPhase = PlayPhase.Pause;
-      this._tapePauseEndPos =
-        this._tapeTermEndPos + this.machine.baseClockFrequency;
+      this._tapePauseEndPos = this._tapeTermEndPos + this.machine.baseClockFrequency;
       return true; // => High EAR bit
     }
 
@@ -366,7 +360,7 @@ export class TapeDevice implements ITapeDevice {
   /// Process the specified MIC bit value.
   /// </summary>
   /// <param name="micBit">MIC bit to process</param>
-  processMicBit (micBit: boolean): void {
+  processMicBit(micBit: boolean): void {
     if (this._tapeMode !== TapeMode.Save || this.micBit === micBit) {
       return;
     }
@@ -375,10 +369,7 @@ export class TapeDevice implements ITapeDevice {
 
     // --- Classify the pulse by its width
     let pulse = MicPulseType.None;
-    if (
-      length >= BIT_0_PL - SAVE_PULSE_TOLERANCE &&
-      length <= BIT_0_PL + SAVE_PULSE_TOLERANCE
-    ) {
+    if (length >= BIT_0_PL - SAVE_PULSE_TOLERANCE && length <= BIT_0_PL + SAVE_PULSE_TOLERANCE) {
       pulse = MicPulseType.Bit0;
     } else if (
       length >= BIT_1_PL - SAVE_PULSE_TOLERANCE &&
@@ -429,10 +420,7 @@ export class TapeDevice implements ITapeDevice {
         if (pulse === MicPulseType.Pilot) {
           this._pilotPulseCount++;
           nextPhase = SavePhase.Pilot;
-        } else if (
-          pulse === MicPulseType.Sync1 &&
-          this._pilotPulseCount >= MIN_PILOT_PULSE_COUNT
-        ) {
+        } else if (pulse === MicPulseType.Sync1 && this._pilotPulseCount >= MIN_PILOT_PULSE_COUNT) {
           nextPhase = SavePhase.Sync1;
         }
         break;
@@ -465,9 +453,7 @@ export class TapeDevice implements ITapeDevice {
 
             // --- Add this bit to the received data
             this._bitOffset++;
-            this._dataByte =
-              (this._dataByte * 2 + (pulse == MicPulseType.Bit0 ? 0 : 1)) &
-              0xff;
+            this._dataByte = (this._dataByte * 2 + (pulse == MicPulseType.Bit0 ? 0 : 1)) & 0xff;
             if (this._bitOffset === 8) {
               // --- We received a full byte
               this._dataBuffer[this._dataLength++] = this._dataByte;
@@ -505,7 +491,7 @@ export class TapeDevice implements ITapeDevice {
   /**
    * Moves to the next tape block to play
    */
-  nextTapeBlock (): void {
+  nextTapeBlock(): void {
     // --- No next block situations
     if (this._tapeEof) return;
     if (!this._blocks) {
@@ -527,8 +513,7 @@ export class TapeDevice implements ITapeDevice {
     this._playPhase = PlayPhase.Pilot;
     this._tapeStartTact = this.machine.tacts;
     this._tapePilotEndPos =
-      block.pilotPulseLength *
-      (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT);
+      block.pilotPulseLength * (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT);
     this._tapeSync1EndPos = this._tapePilotEndPos + block.sync1PulseLength;
     this._tapeSync2EndPos = this._tapeSync1EndPos + block.sync2PulseLength;
     this._dataIndex = 0;
@@ -539,7 +524,7 @@ export class TapeDevice implements ITapeDevice {
    * Emulates loading the current block in fast mode.
    * @returns
    */
-  fastLoad (): void {
+  fastLoad(): void {
     // --- Stop playing if no more blocks
     if (this._tapeEof) {
       return;
@@ -630,7 +615,7 @@ export class TapeDevice implements ITapeDevice {
   /**
    * Respond to the tape data changes and rewind requests
    */
-  onMachinePropertiesChanged (
+  onMachinePropertiesChanged(
     device: TapeDevice,
     handler: { propertyName: string; newValue?: any }
   ): void {
@@ -670,13 +655,13 @@ export class TapeSaver implements ITapeSaver {
   private _name: string;
   private _headerBlock: TzxStandardSpeedBlock;
 
-  constructor (private readonly tapeDevice: TapeDevice) {}
+  constructor(private readonly tapeDevice: TapeDevice) {}
 
   /**
    * This method sets the name of the file according to the Spectrum SAVE HEADER information
    * @param name Name to set
    */
-  setName (name: string): void {
+  setName(name: string): void {
     this._name = name;
   }
 
@@ -684,7 +669,7 @@ export class TapeSaver implements ITapeSaver {
    * Appends the TZX block to the tape file
    * @param block Tape block to save
    */
-  saveTapeBlock (block: TzxStandardSpeedBlock): void {
+  saveTapeBlock(block: TzxStandardSpeedBlock): void {
     if (block.dataLength === 0x13 && block?.data[0] === 0x00) {
       this._headerBlock = block;
     } else if (block.data?.[0] === 0xff) {
