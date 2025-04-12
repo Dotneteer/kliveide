@@ -394,8 +394,31 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     editor.current = ed;
     ed.setValue(value);
 
+    // --- We need to add these commands to the editor to be able to use the shortcuts. 
+    // --- Otherwise, the v0.46.0 Monaco editor will not work properly with Electron v0.35.1.
     ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyY, () =>
       ed.trigger("keyboard", "redo", null)
+    );
+
+    // Copy with Ctrl+Shift+C
+    ed.addCommand(
+      monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyC,
+      () => {
+        const selection = ed.getSelection();
+        const text = ed.getModel()?.getValueInRange(selection);
+        if (text) {
+          navigator.clipboard.writeText(text);
+        }
+      }
+    );
+
+    // Paste with Ctrl+Shift+V
+    ed.addCommand(
+      monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyV,
+      async () => {
+        const text = await navigator.clipboard.readText();
+        ed.trigger("keyboard", "type", { text });
+      }
     );
 
     const saveViewState = () => {
@@ -512,7 +535,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         if (currentRedo.length > MAX_BP_UNDO_STACK) {
           currentRedo.shift();
         }
-        console.log("Changes pushed to redo stack");
       }
     } else if (e.isRedoing) {
       // --- Redo the breakpoints
