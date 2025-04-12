@@ -89,8 +89,11 @@ export interface IDebugSupport {
    * Scrolls down breakpoints
    * @param def Breakpoint address
    * @param lineNo Line number to shift down
+   * @param lowerBound Lower bound of area to remove breakpoints from
+   * @param upperBound Upper bound of area to remove breakpoints from
    */
-  scrollBreakpoints(def: BreakpointInfo, shift: number): void;
+  scrollBreakpoints(def: BreakpointInfo, shift: number, lowerBound?: number,
+    upperBound?: number): void;
 
   /**
    * Normalizes source code breakpoint. Removes the ones that overflow the
@@ -109,4 +112,10 @@ export interface IDebugSupport {
    * Resolves the specified resouce breakpoint to an address
    */
   resolveBreakpoint(resource: string, line: number, address: number): void;
+
+  /**
+   * Changes the list of existing breakpoints to the provided ones.
+   * @param breakpoints Breakpoints to set
+   */
+  resetBreakpointsTo(breakpoints: BreakpointInfo[]): void;
 }

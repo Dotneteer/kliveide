@@ -4,6 +4,8 @@
 
 - New Editor settings
 - Issue #957
+- Issue #951
+
 
 
 ## 0.34.0 - 0.45.0: Private builds

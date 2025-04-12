@@ -109,7 +109,16 @@ class EmuApiImpl {
     throw new Error(NO_PROXY_ERROR);
   }
 
-  async scrollBreakpoints(_addr: BreakpointInfo, _shift: number): Promise<void> {
+  async scrollBreakpoints(
+    _addr: BreakpointInfo,
+    _shift: number,
+    _lowerBound?: number,
+    _upperBound?: number
+  ): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
+  async resetBreakpointsTo(_bps: BreakpointInfo[]): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
 
@@ -188,7 +197,7 @@ export type CpuStateChunk = {
   state: MachineControllerState;
   pcValue: number;
   tacts: number;
-}
+};
 
 // --- The response with the CPU state information
 export type CpuState = {
