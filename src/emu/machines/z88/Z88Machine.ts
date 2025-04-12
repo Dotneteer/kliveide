@@ -103,7 +103,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     public readonly config: MachineConfigSet,
     private readonly messenger: MessengerBase
   ) {
-    super(config, messenger);
+    super(config);
 
     // --- config overrides model.config
     this.config = config ?? model?.config;

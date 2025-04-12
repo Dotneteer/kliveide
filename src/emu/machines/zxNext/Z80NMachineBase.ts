@@ -668,63 +668,74 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
       const debugSupport = z80Machine.executionContext.debugSupport;
       if (!debugSupport) return false;
 
-      // --- Stop according to the current debug mode strategy
-      switch (z80Machine.executionContext.debugStepMode) {
-        case DebugStepMode.StepInto:
-          // --- Stop right after the first executed instruction
-          return instructionsExecuted > 0;
+      if (z80Machine.executionContext.debugStepMode === DebugStepMode.StepInto) {
+        // --- Stop right after the first executed instruction
+        const shouldStop = instructionsExecuted > 0;
+        if (shouldStop) {
+          debugSupport.imminentBreakpoint = undefined;
+        }
+        return shouldStop;
+      }
 
-        case DebugStepMode.StopAtBreakpoint:
-          const stopAt = debugSupport.shouldStopAt(z80Machine.pc, () =>
-            z80Machine.getPartition(z80Machine.pc)
-          );
+      // --- Go on with StepAtBreakpoint, StepOver, and StepOut
+      // --- Stop if PC reaches a breakpoint
+      const stopAt = debugSupport.shouldStopAt(z80Machine.pc, () =>
+        z80Machine.getPartition(z80Machine.pc)
+      );
+      if (
+        stopAt &&
+        (instructionsExecuted > 0 ||
+          debugSupport.lastBreakpoint === undefined ||
+          debugSupport.lastBreakpoint !== z80Machine.pc)
+      ) {
+        // --- Stop when reached a breakpoint
+        debugSupport.lastBreakpoint = z80Machine.pc;
+        debugSupport.imminentBreakpoint = undefined;
+        return true;
+      }
+
+      if (z80Machine.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
+        // --- No breakpoint found and we stop only at defined breakpoints.
+        return false;
+      }
+
+      // --- Step over checks
+      if (z80Machine.executionContext.debugStepMode === DebugStepMode.StepOver) {
+        if (debugSupport.imminentBreakpoint !== undefined) {
+          // --- We also stop if an imminent breakpoint is reached, and also remove this breakpoint
+          if (debugSupport.imminentBreakpoint === z80Machine.pc) {
+            debugSupport.imminentBreakpoint = undefined;
+            return true;
+          }
+        } else {
+          let imminentJustCreated = false;
+
+          // --- We check for a CALL-like instruction
+          var length = z80Machine.getCallInstructionLength();
+          if (length > 0) {
+            // --- Its a CALL-like instruction, create an imminent breakpoint
+            debugSupport.imminentBreakpoint = (z80Machine.pc + length) & 0xffff;
+            imminentJustCreated = true;
+          }
+
+          // --- We stop, we executed at least one instruction and if there's no imminent
+          // --- breakpoint or we've just created one
           if (
-            stopAt &&
-            (instructionsExecuted > 0 ||
-              debugSupport.lastBreakpoint === undefined ||
-              debugSupport.lastBreakpoint !== z80Machine.pc)
+            instructionsExecuted > 0 &&
+            (debugSupport.imminentBreakpoint === undefined || imminentJustCreated)
           ) {
-            // --- Stop when reached a breakpoint
-            debugSupport.lastBreakpoint = z80Machine.pc;
+            debugSupport.imminentBreakpoint = undefined;
             return true;
           }
-          break;
+        }
+        return false;
+      }
 
-        case DebugStepMode.StepOver:
-          if (debugSupport.imminentBreakpoint !== undefined) {
-            // --- We also stop if an imminent breakpoint is reached, and also remove this breakpoint
-            if (debugSupport.imminentBreakpoint === z80Machine.pc) {
-              debugSupport.imminentBreakpoint = undefined;
-              return true;
-            }
-          } else {
-            let imminentJustCreated = false;
-
-            // --- We check for a CALL-like instruction
-            var length = z80Machine.getCallInstructionLength();
-            if (length > 0) {
-              // --- Its a CALL-like instruction, create an imminent breakpoint
-              debugSupport.imminentBreakpoint = (z80Machine.pc + length) & 0xffff;
-              imminentJustCreated = true;
-            }
-
-            // --- We stop, we executed at least one instruction and if there's no imminent
-            // --- breakpoint or we've just created one
-            if (
-              instructionsExecuted > 0 &&
-              (debugSupport.imminentBreakpoint === undefined || imminentJustCreated)
-            ) {
-              return true;
-            }
-          }
-          break;
-
-        case DebugStepMode.StepOut:
-          if (z80Machine.stepOutAddress === z80Machine.pc) {
-            // --- We reached the step-out address
-            return true;
-          }
-          break;
+      // --- Step out checks
+      if (z80Machine.stepOutAddress === z80Machine.pc) {
+        // --- We reached the step-out address
+        debugSupport.imminentBreakpoint = undefined;
+        return true;
       }
       return false;
     }

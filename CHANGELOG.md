@@ -1,10 +1,12 @@
 # Klive IDE Changelog
 
-## 0.45.0: Planned private build
+## 0.46.0: Planned private build
 
 - New Editor settings
+- Issus #958
 - Issue #957
 - Issue #951
+- Issue #945
 
 
 
