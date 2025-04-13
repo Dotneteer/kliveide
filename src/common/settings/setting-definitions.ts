@@ -29,7 +29,8 @@ import {
   SETTING_EDITOR_RENDER_WHITESPACE,
   SETTING_EDITOR_DETECT_INDENTATION,
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
-  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT
+  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
+  SETTING_EMU_KEYBOARD_HEIGHT
 } from "@common/settings/setting-const";
 
 const settingDefinitions: Setting[] = [
@@ -102,6 +103,15 @@ const settingDefinitions: Setting[] = [
     saveWithIde: true,
     saveWithProject: true,
     boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_KEYBOARD_HEIGHT,
+    title: "(keyboard height)",
+    type: "string",
+    defaultValue: "33%",
+    saveWithIde: true,
+    saveWithProject: true,
+    volatile: true
   },
   {
     id: SETTING_IDE_SHOW_TOOLBAR,
