@@ -39,6 +39,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { VStack } from "@renderer/controls/new/Panels";
+import { delay } from "@renderer/utils/timing";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -312,6 +313,7 @@ const ExplorerPanel = () => {
             newNode.data.isBinary = fileTypeEntry.isBinary;
           }
           selectedContextNode.insertAndSort(newNode, (a, b) => compareProjectNode(a.data, b.data));
+
           refreshTree();
           projectService.signItemAdded(newNode);
           const newIndex = tree.findIndex(newNode);
@@ -323,7 +325,7 @@ const ExplorerPanel = () => {
             if (!newNode.data.isFolder) {
               await ideCommandsService.executeCommand(`nav "${newNode.data.fullPath}"`);
             }
-          }, 0);
+          }, 600);
         } catch (err) {
           await mainApi.displayMessageBox("error", "Add new item error", err.toString());
         }
@@ -339,7 +341,7 @@ const ExplorerPanel = () => {
     const node = tree.getViewNodeByIndex(idx);
     if (!node) {
       // --- This should not happen
-      return <div style={{display: "none"}}></div>
+      return <div style={{ display: "none" }}></div>;
     }
     const isSelected = idx === selected;
     const isRoot = tree.rootNode === node;

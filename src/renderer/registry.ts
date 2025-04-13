@@ -91,6 +91,7 @@ import { nextRegPanelRenderer } from "./appIde/SiteBarPanels/NextRegPanel";
 import { nextMemMappingPanelRenderer } from "./appIde/SiteBarPanels/MemMappingPanel";
 import { callStackPanelRenderer } from "./appIde/SiteBarPanels/CallStackPanel";
 import { nextPalettePanelRenderer } from "./appIde/SiteBarPanels/PalettePanel";
+import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -426,6 +427,14 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".lua",
+    canBeBuildRoot: true,
+    editor: CODE_EDITOR,
+    subType: "lua",
+    icon: "@file-c"
+  },
+  {
+    matchType: "ends",
     pattern: ".h",
     editor: CODE_EDITOR,
     subType: "c",
@@ -436,6 +445,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".kz80.asm",
     editor: CODE_EDITOR,
     subType: "kz80-asm",
+    icon: "@file-kz80-asm"
+  },
+  {
+    matchType: "ends",
+    pattern: ".sjasm",
+    editor: CODE_EDITOR,
+    subType: "sjasm",
     icon: "@file-kz80-asm"
   },
   {
@@ -656,5 +672,6 @@ export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
   asmKz80LanguageProvider,
   asmZxbLanguageProvider,
   zxBasLanguageProvider,
-  ksxLanguageProvider
+  ksxLanguageProvider,
+  sjasmZ80LanguageProvider
 ];

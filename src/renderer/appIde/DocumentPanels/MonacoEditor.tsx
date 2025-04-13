@@ -394,32 +394,28 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     editor.current = ed;
     ed.setValue(value);
 
-    // --- We need to add these commands to the editor to be able to use the shortcuts. 
+    // --- We need to add these commands to the editor to be able to use the shortcuts.
     // --- Otherwise, the v0.46.0 Monaco editor will not work properly with Electron v0.35.1.
     ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyY, () =>
       ed.trigger("keyboard", "redo", null)
     );
 
     // Copy with Ctrl+Shift+C
-    ed.addCommand(
-      monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyC,
-      () => {
-        const selection = ed.getSelection();
-        const text = ed.getModel()?.getValueInRange(selection);
-        if (text) {
-          navigator.clipboard.writeText(text);
-        }
+    ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyC, () => {
+      const selection = ed.getSelection();
+      const text = ed.getModel()?.getValueInRange(selection);
+      if (text) {
+        navigator.clipboard.writeText(text);
       }
-    );
+    });
 
     // Paste with Ctrl+Shift+V
-    ed.addCommand(
-      monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyV,
-      async () => {
-        const text = await navigator.clipboard.readText();
-        ed.trigger("keyboard", "type", { text });
-      }
-    );
+    ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyV, async () => {
+      let text = await navigator.clipboard.readText();
+      // --- Correct line breaks for paste
+      text = text.replace(/\r?\n/g, "\r");
+      ed.trigger("keyboard", "type", { text });
+    });
 
     const saveViewState = () => {
       if (mounted.current) {
