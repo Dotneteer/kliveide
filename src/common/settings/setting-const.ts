@@ -5,6 +5,7 @@ export const SETTING_EMU_SHOW_INSTANT_SCREEN = "emuViewOptions.showInstantScreen
 export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
 export const SETTING_EMU_STAY_ON_TOP = "emuOptions.stayOnTop";
 export const SETTING_EMU_KEYBOARD_LAYOUT = "emuOptions.keyboardLayout";
+export const SETTING_EMU_KEYBOARD_HEIGHT = "emuOptions.keyboardPanelHeight";
 export const SETTING_IDE_SHOW_TOOLBAR = "ideViewOptions.showToolbar";
 export const SETTING_IDE_SHOW_STATUS_BAR = "ideViewOptions.showStatusBar";
 export const SETTING_IDE_SHOW_SIDEBAR = "ideViewOptions.showSidebar";
