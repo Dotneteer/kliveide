@@ -405,15 +405,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       const selection = ed.getSelection();
       const text = ed.getModel()?.getValueInRange(selection);
       if (text) {
-        console.log("Copying text: ", text);
-        // --- check if text contain line break
-        // --- Convert text to ascii bytes
-        const bytes = new Uint8Array(text.length);
-        for (let i = 0; i < text.length; i++) {
-          bytes[i] = text.charCodeAt(i);
-        }
-        console.log("text bytes", bytes);
-
         navigator.clipboard.writeText(text);
       }
     });
@@ -421,15 +412,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     // Paste with Ctrl+Shift+V
     ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyV, async () => {
       let text = await navigator.clipboard.readText();
-      console.log("Pasting text: ", text);
-      text = text.replace(/\n/g, "\r");
-      // --- check if text contain line break
-        // --- Convert text to ascii bytes
-        const bytes = new Uint8Array(text.length);
-        for (let i = 0; i < text.length; i++) {
-          bytes[i] = text.charCodeAt(i);
-        }
-        console.log("text bytes", bytes);
+      // --- Correct line breaks for paste
+      text = text.replace(/\r?\n/g, "\r");
       ed.trigger("keyboard", "type", { text });
     });
 
