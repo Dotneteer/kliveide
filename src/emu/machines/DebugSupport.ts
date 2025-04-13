@@ -407,7 +407,6 @@ export class DebugSupport implements IDebugSupport {
           }
         } else {
           // --- Set (disabled) or reset the flag
-          console.log();
           if (enabled) {
             this.breakpointFlags[address] &= ~flag;
           } else {

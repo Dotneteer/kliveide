@@ -43,6 +43,7 @@ export async function refreshSourceCodeBreakpoints(
   messenger: MessengerBase
 ): Promise<void> {
   const compilation = store.getState().compilation!;
+  const emuApi = createEmuApi(messenger);
   const resolvedBp: ResolvedBreakpoint[] = [];
   if (compilation.result && !compilation.failed && compilation.result.errors?.length === 0) {
     if (!isDebuggableCompilerOutput(compilation.result)) {
@@ -53,6 +54,7 @@ export async function refreshSourceCodeBreakpoints(
     const bps = await getBreakpoints(messenger);
     for (const bp of bps) {
       if (!bp.resource) continue;
+      delete bp.resolvedAddress;
       const fileIndex = compilation.result.sourceFileList.findIndex((fi) =>
         fi.filename.endsWith(bp.resource!)
       );
@@ -69,6 +71,8 @@ export async function refreshSourceCodeBreakpoints(
         }
       }
     }
+    await emuApi.resetBreakpointsTo(bps);
   }
-  await createEmuApi(messenger).resolveBreakpoints(resolvedBp);
+
+  await emuApi.resolveBreakpoints(resolvedBp);
 }
