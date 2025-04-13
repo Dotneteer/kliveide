@@ -394,32 +394,44 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     editor.current = ed;
     ed.setValue(value);
 
-    // --- We need to add these commands to the editor to be able to use the shortcuts. 
+    // --- We need to add these commands to the editor to be able to use the shortcuts.
     // --- Otherwise, the v0.46.0 Monaco editor will not work properly with Electron v0.35.1.
     ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyY, () =>
       ed.trigger("keyboard", "redo", null)
     );
 
     // Copy with Ctrl+Shift+C
-    ed.addCommand(
-      monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyC,
-      () => {
-        const selection = ed.getSelection();
-        const text = ed.getModel()?.getValueInRange(selection);
-        if (text) {
-          navigator.clipboard.writeText(text);
+    ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyC, () => {
+      const selection = ed.getSelection();
+      const text = ed.getModel()?.getValueInRange(selection);
+      if (text) {
+        console.log("Copying text: ", text);
+        // --- check if text contain line break
+        // --- Convert text to ascii bytes
+        const bytes = new Uint8Array(text.length);
+        for (let i = 0; i < text.length; i++) {
+          bytes[i] = text.charCodeAt(i);
         }
+        console.log("text bytes", bytes);
+
+        navigator.clipboard.writeText(text);
       }
-    );
+    });
 
     // Paste with Ctrl+Shift+V
-    ed.addCommand(
-      monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyV,
-      async () => {
-        const text = await navigator.clipboard.readText();
-        ed.trigger("keyboard", "type", { text });
-      }
-    );
+    ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyV, async () => {
+      let text = await navigator.clipboard.readText();
+      console.log("Pasting text: ", text);
+      text = text.replace(/\n/g, "\r");
+      // --- check if text contain line break
+        // --- Convert text to ascii bytes
+        const bytes = new Uint8Array(text.length);
+        for (let i = 0; i < text.length; i++) {
+          bytes[i] = text.charCodeAt(i);
+        }
+        console.log("text bytes", bytes);
+      ed.trigger("keyboard", "type", { text });
+    });
 
     const saveViewState = () => {
       if (mounted.current) {
