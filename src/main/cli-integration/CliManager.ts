@@ -44,7 +44,7 @@ export abstract class CliManager {
   /**
    * Prepares the command name
    */
-  protected abstract preperareCommand(): string;
+  protected abstract prepareCommand(): string;
 
   /**
    * Define the default options that may override the provided options
@@ -78,11 +78,11 @@ export abstract class CliManager {
   }
 
   /**
-   * Executes the ZCC process
+   * Executes the process
    */
   async execute(): Promise<CompilerResult | null> {
     // --- Prepare the command line
-    const command = this.preperareCommand();
+    const command = this.prepareCommand();
     this.overrideOptions(this.defaultOptions());
 
     // --- Prepare the command line arguments

@@ -17,7 +17,7 @@ export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   },
   supportsBreakpoints: true,
   fullLineBreakpoints: true,
-  compiler: "Z80Compiler",
+  compiler: "SjasmPCompiler",
   languageDef: {
     ignoreCase: true,
     keywords: [
@@ -406,19 +406,15 @@ export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ],
 
       lua_block: [
-        [
-          /endlua\s*/,
-          { token: "@rematch", next: "@pop", nextEmbedded: "@pop" },
-        ],
-        [/"/, "string", "@string"],
+        [/endlua\s*/, { token: "@rematch", next: "@pop", nextEmbedded: "@pop" }],
+        [/"/, "string", "@string"]
       ],
 
       comment: [
-        [/\*\//, "comment", "@pop"],
-        [/[^\/*]+$/, "comment", "@pop"],
-        [/[^\/*]+/, "comment"],
-        [/[\/*]$/, "comment", "@pop"],
-        [/[\/*]/, "comment"]
+        [/[^/*]+/, "comment"], // Match any text that is not a comment delimiter
+        [/\/\*/, "comment", "@push"], // Handle nested block comments
+        [/\*\//, "comment", "@pop"], // End of block comment
+        [/[\/*]/, "comment"] // Match remaining comment characters
       ],
 
       string: [

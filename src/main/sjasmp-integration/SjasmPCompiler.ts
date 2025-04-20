@@ -1,6 +1,3 @@
-import fs from "fs";
-
-import type { BinarySegment } from "@abstractions/CompilerInfo";
 import type {
   IKliveCompiler,
   InjectableOutput,
@@ -11,8 +8,8 @@ import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { mainStore } from "../main-store";
-import { CliRunner } from "@main/cli-integration/CliRunner";
 import { SJASMP_INSTALL_FOLDER } from "./sjasmp-config";
+import { createSjasmRunner } from "../../script-packages/sjasm/sjasm";
 
 /**
  * Wraps the SjasmPlus compiler
@@ -53,12 +50,15 @@ export class SjasmPCompiler implements IKliveCompiler {
       const outFilename = `${filename}.bin`;
       const labelFilename = `${filename}.lab`;
 
-      const args = await createCommandLineArgs(filename, outFilename, labelFilename);
-      const runner = new CliRunner();
-      runner.setErrorFilter(this.getErrorFilterDescription());
-      const result = await runner.execute(execPath, args, {
-        env: { ...process.env }
-      });
+      const options: Record<string, any> = {
+        nologo: true,
+      }
+
+      const state = mainStore.getState();
+      const cliManager = createSjasmRunner(state.project?.folderPath, options, [filename]);
+      const result = await cliManager.execute();
+      console.log(result);
+
 
       if (result.failed || result.errors?.length > 0) {
         return result;

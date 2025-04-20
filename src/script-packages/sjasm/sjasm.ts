@@ -4,7 +4,8 @@ import { CliManager } from "@main/cli-integration/CliManager";
 import {
   CmdLineOptionSet,
   CompilerResult,
-  ErrorFilterDescriptor
+  ErrorFilterDescriptor,
+  OptionResult
 } from "@main/cli-integration/CliRunner";
 import { mainStore } from "@main/main-store";
 import { SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
@@ -23,7 +24,7 @@ const SjasmOptions: CmdLineOptionSet = {
     type: "boolean"
   },
   zxnext: {
-    optionName: "zxnext",
+    optionName: "-zxnext",
     description:
       'Enable ZX Next Z80 extensions (CSpect emulator has extra "exit", ' +
       '"break", "clrbrk" and "setbrk" fake instructions)',
@@ -136,7 +137,7 @@ const SjasmOptions: CmdLineOptionSet = {
     type: "boolean"
   },
   syntax: {
-    optionName: "startupoffset",
+    optionName: "-syntax",
     description: "Adjust parsing syntax",
     type: "string"
   }
@@ -191,7 +192,7 @@ class SjasmCliManager extends CliManager {
   /**
    * Prepares the command name
    */
-  protected preperareCommand(): string {
+  protected prepareCommand(): string {
     return `${this.getRootPath()}/sjasmplus`;
   }
 
@@ -242,6 +243,17 @@ class SjasmCliManager extends CliManager {
   }
 
   /**
+   * Transform the command line arguments
+   * @param options Options to transform
+   */
+  protected transformCmdLineArgs(options: OptionResult): OptionResult {
+    if (this._files?.length) {
+      this._files.forEach((file) => options.args.push(file));
+    }
+    return options;
+  }
+
+  /**
    * Adds a file to the compilation list
    * @param file File to add to the compilation list
    */
@@ -254,13 +266,12 @@ class SjasmCliManager extends CliManager {
    */
   getErrorFilterDescription(): ErrorFilterDescriptor {
     return {
-      regex: /^(.*?)(::.*?)*:(\d+):(\d+): (warning|error): (.*)$/,
-      hasLineInfo: (match: RegExpMatchArray) => match?.[2] === undefined,
+      regex: /^(.*)\((\d+)\): (warning|error): (.*)$/,
+      hasLineInfo: (match: RegExpMatchArray) => match?.[2] !== undefined,
       filenameFilterIndex: 1,
-      lineFilterIndex: 3,
-      columnFilterIndex: 4,
-      messageFilterIndex: 6,
-      warningFilterIndex: 5
+      lineFilterIndex: 2,
+      messageFilterIndex: 4,
+      warningFilterIndex: 3
     };
   }
 }
