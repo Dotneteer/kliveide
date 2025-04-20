@@ -1,7 +1,7 @@
 import type { ScriptCallContext } from "@main/ksx-runner/MainScriptManager";
-import type { CompilerFunction } from "./Zcc";
 
 import { createZccRunner } from "./Zcc";
+import { CompilerFunction } from "@main/cli-integration/CliRunner";
 
 function createCompiler(context: ScriptCallContext): CompilerFunction {
   return async (filename, options, target) => {

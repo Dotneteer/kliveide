@@ -6,7 +6,7 @@ import type {
   InjectableOutput,
   KliveCompilerOutput
 } from "@main/compiler-integration/compiler-registry";
-import type { ErrorFilterDescriptor } from "@main/cli-integration/CliCommandRunner";
+import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
@@ -27,7 +27,7 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
-import { CliCommandRunner } from "@main/cli-integration/CliCommandRunner";
+import { CliRunner } from "@main/cli-integration/CliRunner";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler
@@ -70,7 +70,7 @@ export class ZxBasicCompiler implements IKliveCompiler {
       const labelFilename = `${filename}.lab`;
 
       const args = await createCommandLineArgs(filename, outFilename, labelFilename);
-      const runner = new CliCommandRunner();
+      const runner = new CliRunner();
       runner.setErrorFilter(this.getErrorFilterDescription());
       const result = await runner.execute(execPath, args, {
         env: pythonPath ? { ...process.env, PATH: pythonPath } : { ...process.env }

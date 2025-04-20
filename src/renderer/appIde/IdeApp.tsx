@@ -135,6 +135,7 @@ import {
   SETTING_IDE_TOOLPANEL_HEIGHT,
   SETTING_IDE_TOOLS_ON_TOP
 } from "@common/settings/setting-const";
+import { ResetSjasmPlusCommand } from "./commands/SjasmPlusCommands";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -426,4 +427,6 @@ function registerCommands(cmdSrv: IIdeCommandService): void {
 
   cmdSrv.registerCommand(new SetZ80RegisterCommand());
   cmdSrv.registerCommand(new SetMemoryContentCommand());
+
+  cmdSrv.registerCommand(new ResetSjasmPlusCommand());
 }
