@@ -68,6 +68,7 @@ import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import { getSettingValue } from "./settings-utils";
+import { SjasmPCompiler } from "./sjasmp-integration/SjasmPCompiler";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -94,6 +95,7 @@ if (!app.requestSingleInstanceLock()) {
 // --- Register available compilers
 registerCompiler(new Z80Compiler());
 registerCompiler(new ZxBasicCompiler());
+registerCompiler(new SjasmPCompiler());
 
 loadAppSettings();
 

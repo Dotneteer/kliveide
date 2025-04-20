@@ -15,7 +15,7 @@ export class ResetZ88DkCommand extends IdeCommandBase<ResetZ88DkCommandArgs> {
   readonly aliases = ["z88dkr"];
 
   readonly argumentInfo: CommandArgumentInfo = {
-    mandatory: [{ name: "z88dkPath" }]
+    optional: [{ name: "z88dkPath" }]
   };
 
   async execute(

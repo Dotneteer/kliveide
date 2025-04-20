@@ -1,12 +1,12 @@
 import type { AssemblerErrorInfo } from "@abstractions/CompilerInfo";
 
 import { ExecaSyncError, execa } from "execa";
-import { CompilerResult } from "src/script-packages/z88dk/Zcc";
+import { SimpleAssemblerOutput } from "@main/compiler-integration/compiler-registry";
 
 /**
  * This class is responsible for running the CLI commands that are passed to it.
  */
-export class CliCommandRunner {
+export class CliRunner {
   private errorFilter?: ErrorFilterDescriptor;
   private errorDetectorFn?: ErrorOutputDetectorFn;
   private errorLineSplitterFn: ErrorLineSplitterFn;
@@ -213,3 +213,36 @@ export type ErrorFilterDescriptor = {
   warningFilterIndex?: number;
   warningText?: string;
 };
+
+export type OptionResult = {
+  command: string;
+  args: string[];
+  errors: Record<string, string[]>;
+};
+
+export type CompilerResult =  SimpleAssemblerOutput & {
+  outFile?: string;
+  contents?: Uint8Array;
+  errorCount?: number;
+}
+
+export type CompilerFunction = (
+  filename: string,
+  options?: Record<string, any>,
+  target?: string
+) => Promise<CompilerResult | null>;
+
+/**
+ * Describes an option that can be passed to a utility process
+ */
+export type CmdLineOptionDescriptor = {
+  optionName?: string;  
+  description: string;
+  type: "string" | "number" | "boolean";
+  isArray?: boolean;
+};
+
+/**
+ * Describes a set of options that can be passed to a utility process
+ */
+export type CmdLineOptionSet = Record<string, CmdLineOptionDescriptor>;
