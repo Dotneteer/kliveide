@@ -79,7 +79,7 @@ export const DocumentsHeader = () => {
     (async () => {
       await mainApi.saveProject();
     })();
-  }, [activeDocIndex, openDocs, editorVersion]);
+  }, [activeDocIndex, openDocs]);
 
   // --- Refresh the changed project document
   useEffect(() => {

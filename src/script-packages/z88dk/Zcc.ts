@@ -530,7 +530,7 @@ class ZccCommandManager extends CliManager {
   /**
    * Prepares the command name
    */
-  protected preperareCommand(): string {
+  protected prepareCommand(): string {
     return `${this.getRootPath()}/bin/zcc`;
   }
 
