@@ -1,20 +1,27 @@
 import fs from "fs";
 import type {
+  DebuggableOutput,
   IKliveCompiler,
-  InjectableOutput,
   KliveCompilerOutput
 } from "@main/compiler-integration/compiler-registry";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
-import { BinarySegment, SpectrumModelType } from "@abstractions/CompilerInfo";
+import {
+  BinarySegment,
+  FileLine,
+  ListFileItem,
+  SpectrumModelType
+} from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { mainStore } from "../main-store";
 import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
 import {
   createSjasmRunner,
   SJASM_LIST_FILE,
-  SJASM_OUTPUT_FILE
+  SJASM_OUTPUT_FILE,
+  SJASM_SLD_FILE
 } from "../../script-packages/sjasm/sjasm";
+import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
 
 /**
  * Wraps the SjasmPlus compiler
@@ -65,13 +72,17 @@ export class SjasmPCompiler implements IKliveCompiler {
         return result;
       }
 
-      // --- Extract the map file
+      // --- Extract and process the list file's content
       const listFileName = `${state.project.folderPath}/${SJASM_LIST_FILE}`;
       const listContent = fs.readFileSync(listFileName, "utf-8");
       const codeSegments = extractSegmentsFromListFile(listContent);
+
+      // --- Extract the binary content
       const binaryFileName = `${state.project.folderPath}/${SJASM_OUTPUT_FILE}`;
       const binaryContent = new Uint8Array(fs.readFileSync(binaryFileName));
+      const sldFileName = `${state.project.folderPath}/${SJASM_SLD_FILE}`;
 
+      // --- Extract the segments of the binary code
       const segments: BinarySegment[] = [];
       let binIndex = 0;
       for (const segment of codeSegments) {
@@ -82,12 +93,52 @@ export class SjasmPCompiler implements IKliveCompiler {
         binIndex += segment.size;
       }
 
+      // --- Extract the SLD file content
+      const sldLines = extractSldInfo(fs.readFileSync(sldFileName, "utf-8"));
+      
+      // --- Transform the SLD file content into debug information
+      const sourceFileList: ISourceFileItem[] = [];
+      const sourceMap: Record<number, FileLine> = {};
+      const sourceFileHash: Record<string, number> = {};
+      const listFileItems: ListFileItem[] = [];
+
+      // --- Iterate through lines
+      for (let i = 0; i < sldLines.length; i++) {
+        const line = sldLines[i];
+
+        if (line.type !== "T") {
+          // --- Process only trace lines
+          continue;
+        }
+
+        // --- A new file?
+        let fileIndex = sourceFileHash[line.filename];
+        if (fileIndex === undefined) {
+          fileIndex = sourceFileList.length;
+          // --- Yes, a new file
+          sourceFileList[fileIndex] = {
+            filename: line.filename,
+            includes: []
+          };
+          sourceFileHash[line.filename] = fileIndex;
+        }
+
+        // --- Map the address
+        sourceMap[line.value] = { fileIndex, line: line.line };
+        listFileItems.push({
+          address: line.value,
+          fileIndex,
+          lineNumber: line.line
+        });
+      }
+
       // --- Remove the output files
       try {
         const keepTempFiles = settingsReader.readBooleanSetting(SJASMP_KEEP_TEMP_FILES);
         if (!keepTempFiles) {
           fs.unlinkSync(listFileName);
           fs.unlinkSync(binaryFileName);
+          fs.unlinkSync(sldFileName);
         }
       } catch {
         // --- Intentionally ignored
@@ -99,8 +150,11 @@ export class SjasmPCompiler implements IKliveCompiler {
         errors: [],
         injectOptions: { subroutine: true },
         segments,
-        modelType: SpectrumModelType.Spectrum48
-      } as InjectableOutput;
+        modelType: SpectrumModelType.Spectrum48,
+        sourceFileList,
+        sourceMap,
+        listFileItems
+      } as DebuggableOutput;
     } catch (err) {
       throw err;
     }
@@ -120,7 +174,7 @@ export class SjasmPCompiler implements IKliveCompiler {
 }
 
 export function extractSegmentsFromListFile(content: string): SegmentInfo[] {
-  const regex = /^\s*\d+\+*\s+([0-9A-Fa-f]{4})\s+((?:[0-9A-Fa-f]{2}\s*){0,4})(.*)$/;
+  const regex = /^\s*\d+\+*\s+([0-9A-Fa-f]{4})\s+((?:[0-9A-Fa-f]{2}(\s|$)){0,4})(.*)$/;
   const result: SegmentInfo[] = [];
 
   // --- Split the content into lines
@@ -145,7 +199,7 @@ export function extractSegmentsFromListFile(content: string): SegmentInfo[] {
     // Extract the address, instruction codes, and instruction
     const address = parseInt(match[1], 16); // Convert the address from hex to a number
     const instructionCodes = match[2].trim(); // Get the instruction codes
-    const instruction = match[3].trim(); // Get the instruction part
+    const instruction = match[4].trim(); // Get the instruction part
 
     // Check with a regex if the instruction starts with "org" (case-insensitive)
     const orgRegex = /:?(\s*)org\s+/i;
@@ -185,7 +239,53 @@ export function extractSegmentsFromListFile(content: string): SegmentInfo[] {
   return result;
 }
 
+export function extractSldInfo(content: string): SldLine[] {
+  // --- Split the content into lines
+  const lines = content.split(/\r?\n/);
+  const result: SldLine[] = [];
+
+  // --- Process each line except the first line
+  for (const line of lines.slice(1)) {
+    if (line.startsWith("||")) {
+      // --- Skip lines starting with "||", these lines are comments
+      continue;
+    }
+
+    // --- Split the line into parts
+    const parts = line.split("|");
+    if (parts.length < 8) {
+      // --- Skip lines that do not have enough parts
+      continue;
+    }
+
+    result.push({
+      filename: parts[0].trim(),
+      line: parseInt(parts[1].trim(), 10),
+      defFile: parts[2].trim(),
+      defLine: parseInt(parts[3].trim(), 10),
+      page: parseInt(parts[4].trim(), 10),
+      value: parseInt(parts[5].trim(), 10),
+      type: parts[6].trim(),
+      data: parts[7].trim()
+    });
+  }
+
+  // --- Done.
+  return result;
+}
+
 type SegmentInfo = {
   origin: number;
   size: number;
+};
+
+type SldLine = {
+  filename: string;
+  line: number;
+  defFile: string;
+  defLine: number;
+  page: number;
+  value: number;
+  type: string;
+  data: string;
 };

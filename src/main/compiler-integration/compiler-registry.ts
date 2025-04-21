@@ -1,4 +1,5 @@
-import type { AssemblerErrorInfo, BinarySegment, CompilerOutput } from "@abstractions/CompilerInfo";
+import type { AssemblerErrorInfo, BinarySegment, CompilerOutput, FileLine, ListFileItem } from "@abstractions/CompilerInfo";
+import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
 
 /**
  * Stores the compilers
@@ -24,10 +25,34 @@ export type InjectableOutput = SimpleAssemblerOutput & {
   sourceType?: string;
 };
 
+export type DebuggableOutput = InjectableOutput & {
+  /**
+   * The source files involved in this compilation, in
+   * their file index order
+   */
+  readonly sourceFileList: ISourceFileItem[];
+
+  /**
+   * Source map information that assigns source file info with
+   * the address
+   */
+  readonly sourceMap: Record<number, FileLine>;
+
+  /**
+   * Items of the list file
+   */
+  readonly listFileItems: ListFileItem[];
+
+};
+
 /**
  * Output of a Klive compiler
  */
-export type KliveCompilerOutput = SimpleAssemblerOutput | InjectableOutput | CompilerOutput;
+export type KliveCompilerOutput =
+  | SimpleAssemblerOutput
+  | InjectableOutput
+  | DebuggableOutput
+  | CompilerOutput;
 
 /**
  * Defines the responsibilities of a compiler that can vork directly with a build root

@@ -126,4 +126,20 @@ describe("Sjasmp list file parsing", () => {
     expect(result[1].origin).toEqual(0x8100);
     expect(result[1].size).toEqual(3);
   });
+
+  it("org #7", () => {
+    const source =
+      "2     0000    device ZXSPECTRUM48\n" +
+      "2     0000    Start org $8000\n" +
+      "3     8000 01\n" +
+      "4     8001    Cont: org $8100\n" +
+      "5     8100 01 02 03";
+    const result = extractSegmentsFromListFile(source);
+
+    expect(result.length).toEqual(2);
+    expect(result[0].origin).toEqual(0x8000);
+    expect(result[0].size).toEqual(1);
+    expect(result[1].origin).toEqual(0x8100);
+    expect(result[1].size).toEqual(3);
+  });
 });
