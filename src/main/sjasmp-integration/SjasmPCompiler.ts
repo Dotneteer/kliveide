@@ -1,3 +1,4 @@
+import fs from "fs";
 import type {
   IKliveCompiler,
   InjectableOutput,
@@ -5,11 +6,15 @@ import type {
 } from "@main/compiler-integration/compiler-registry";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
+import { BinarySegment, SpectrumModelType } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { mainStore } from "../main-store";
-import { SJASMP_INSTALL_FOLDER } from "./sjasmp-config";
-import { createSjasmRunner } from "../../script-packages/sjasm/sjasm";
+import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
+import {
+  createSjasmRunner,
+  SJASM_LIST_FILE,
+  SJASM_OUTPUT_FILE
+} from "../../script-packages/sjasm/sjasm";
 
 /**
  * Wraps the SjasmPlus compiler
@@ -47,70 +52,57 @@ export class SjasmPCompiler implements IKliveCompiler {
       }
 
       // --- Create the command line arguments
-      const outFilename = `${filename}.bin`;
-      const labelFilename = `${filename}.lab`;
-
       const options: Record<string, any> = {
         nologo: true,
-      }
+        fullpath: "on"
+      };
 
       const state = mainStore.getState();
       const cliManager = createSjasmRunner(state.project?.folderPath, options, [filename]);
       const result = await cliManager.execute();
-      console.log(result);
-
 
       if (result.failed || result.errors?.length > 0) {
         return result;
       }
 
-      // --- Extract the output
-      //   const org = settingsReader.readSetting(ZXBC_MACHINE_CODE_ORIGIN);
-      //   const machineCode = new Uint8Array(fs.readFileSync(outFilename));
+      // --- Extract the map file
+      const listFileName = `${state.project.folderPath}/${SJASM_LIST_FILE}`;
+      const listContent = fs.readFileSync(listFileName, "utf-8");
+      const codeSegments = extractSegmentsFromListFile(listContent);
+      const binaryFileName = `${state.project.folderPath}/${SJASM_OUTPUT_FILE}`;
+      const binaryContent = new Uint8Array(fs.readFileSync(binaryFileName));
 
-      //   // --- Extract the labels
-      //   const segment: BinarySegment = {
-      //     emittedCode: Array.from(machineCode),
-      //     startAddress: typeof org === "number" ? org & 0xffff : 0x8000
-      //   };
+      const segments: BinarySegment[] = [];
+      let binIndex = 0;
+      for (const segment of codeSegments) {
+        segments.push({
+          emittedCode: Array.from(binaryContent.slice(binIndex, binIndex + segment.size)),
+          startAddress: segment.origin
+        });
+        binIndex += segment.size;
+      }
 
-      //   // --- Remove the output files
-      //   try {
-      //     fs.unlinkSync(outFilename);
-      //     fs.unlinkSync(labelFilename);
-      //   } catch {
-      //     // --- Intentionally ignored
-      //   }
+      // --- Remove the output files
+      try {
+        const keepTempFiles = settingsReader.readBooleanSetting(SJASMP_KEEP_TEMP_FILES);
+        if (!keepTempFiles) {
+          fs.unlinkSync(listFileName);
+          fs.unlinkSync(binaryFileName);
+        }
+      } catch {
+        // --- Intentionally ignored
+      }
 
       // --- Done.
       return {
         traceOutput: result.traceOutput,
         errors: [],
         injectOptions: { subroutine: true },
-        // TODO: return the compiled code
-        segments: [],
+        segments,
         modelType: SpectrumModelType.Spectrum48
       } as InjectableOutput;
     } catch (err) {
       throw err;
-    }
-
-    /**
-     * Generates the command-line arguments to run ZXBC.EXE
-     * @param inputFile Source file to compile
-     * @param outputFile Output file to generate
-     * @param labelFile Lable file to generate
-     * @param rawArgs Raw arguments from the code
-     */
-    async function createCommandLineArgs(
-      inputFile: string,
-      outputFile: string,
-      labelFile: string
-    ): Promise<string[]> {
-      // TODO: implement the command line arguments  
-      const args: string[] = [];
-      const settingsReader = createSettingsReader(mainStore);
-      return args;
     }
   }
 
@@ -126,3 +118,74 @@ export class SjasmPCompiler implements IKliveCompiler {
     };
   }
 }
+
+export function extractSegmentsFromListFile(content: string): SegmentInfo[] {
+  const regex = /^\s*\d+\+*\s+([0-9A-Fa-f]{4})\s+((?:[0-9A-Fa-f]{2}\s*){0,4})(.*)$/;
+  const result: SegmentInfo[] = [];
+
+  // --- Split the content into lines
+  const lines = content.split(/\r?\n/);
+  let prevStartAddress = -1;
+  let lastAddress = -1;
+  let lastOpcodesLength = 0;
+
+  // --- Process each line
+  for (const line of lines) {
+    // --- Skip lines starting with "#"
+    if (line.startsWith("#")) {
+      continue;
+    }
+
+    // Test the line against the regex
+    const match = line.match(regex);
+    if (!match) {
+      continue; // Skip lines that do not match the expected format
+    }
+
+    // Extract the address, instruction codes, and instruction
+    const address = parseInt(match[1], 16); // Convert the address from hex to a number
+    const instructionCodes = match[2].trim(); // Get the instruction codes
+    const instruction = match[3].trim(); // Get the instruction part
+
+    // Check with a regex if the instruction starts with "org" (case-insensitive)
+    const orgRegex = /:?(\s*)org\s+/i;
+    if (orgRegex.test(instruction)) {
+      // --- Close the previous segment
+      if (prevStartAddress !== -1) {
+        const size = lastAddress - prevStartAddress;
+        if (size > 0) {
+          result.push({ origin: prevStartAddress, size });
+        }
+        prevStartAddress = -1;
+      }
+      lastAddress = -1;
+      continue;
+    }
+
+    // --- Get the number of instruction codes
+    lastOpcodesLength = instructionCodes ? instructionCodes.split(/\s+/).length : 0;
+
+    if (lastAddress === -1) {
+      // --- First address
+      lastAddress = prevStartAddress = address;
+    }
+
+    // --- Update the last address
+    lastAddress = address + lastOpcodesLength;
+  }
+
+  // --- We may have a last segment
+  if (lastAddress > prevStartAddress) {
+    const size = lastAddress - prevStartAddress;
+    if (size > 0) {
+      result.push({ origin: prevStartAddress, size });
+    }
+  }
+
+  return result;
+}
+
+type SegmentInfo = {
+  origin: number;
+  size: number;
+};
