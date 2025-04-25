@@ -766,7 +766,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       const existingBp = breakpoints.current.find(
         (bp) => bp.resource === resourceName && bp.line === lineNo
       );
-      if (!existingBp) {
+      if (!existingBp && languageInfo?.instantSyntaxCheck) {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
         const lineContent = editor.current.getModel().getLineContent(lineNo);
         const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
@@ -816,9 +816,13 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           await removeBreakpoint(messenger, existingBp);
         } else {
           // --- Check if this is a valid location for a breakpoint
-          const lineContent = editor.current.getModel().getLineContent(lineNo);
-          const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
-          if (parsedLine && !restrictedNodes.includes(parsedLine.type)) {
+          let allow = !languageInfo?.instantSyntaxCheck;
+          if (!allow) {
+            const lineContent = editor.current.getModel().getLineContent(lineNo);
+            const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
+            allow = parsedLine && !restrictedNodes.includes(parsedLine.type);
+          }
+          if (allow) {
             await addBreakpoint(messenger, {
               resource: resourceName,
               line: lineNo,

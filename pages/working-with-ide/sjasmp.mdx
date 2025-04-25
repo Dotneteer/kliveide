@@ -1,0 +1,39 @@
+import { Callout } from 'nextra/components'
+import Image from 'next/image'
+import sjasmpReset from '../../public/images/working-with-ide/sjasmp-reset.png'
+import zxbActions from '../../public/images/working-with-ide/zxb-actions.png'
+import zxbRunning from '../../public/images/working-with-ide/zxb-running.png'
+
+# SJASMPLUS Integration
+
+Klive IDE supports SJASMPLUS out-of-the-box, provided you installed the SjasmPlus Z80 assembler utility on your machine. After setting up SjasmPlus integration, you can use Klive IDE to edit, run, and debug programs created with this assembler.
+
+As Klive IDE does not know where to find the SjasmPlus compiler on your machine, you must set it up before using it.
+
+## Setting up SJASMPLUS
+
+Visit the GitHub page of [SjasmPlus](https://github.com/z00m128/sjasmplus) for details about this excellent Z80 assembler. You can read information about installing it [here](https://github.com/z00m128/sjasmplus/blob/master/INSTALL.md). Note the installation folder; you will need it to set up the integration with Klive.
+
+The IDE provides a command, `sjasmp-reset` (or shorter, `sjasmpr`), to connect Klive with SjasmPlus. You can issue this command from the Command window:
+
+<Image src={sjasmpReset} alt="SjasmpReset" width="770" height="210" style={{marginTop: 24}} />
+
+The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path. 
+
+<Callout type="info" emoji="💡">
+You can learn more about how [settings](./ide-settings) are stored.
+</Callout>
+
+## Using SJASMPLUS
+
+Klive IDE considers files with `.zxbas` extension to be ZXBASIC source files. When you open such a file in the code editor (select a file in Explorer), the IDE applies the syntax highlighting of ZXBASIC.
+
+When you create a new project, by default, the `code/code.kz80.asm` file is the build root. However, when you right-click the `code/program.zxbas` file and use the **Promote build root** command, this file becomes the new build root. From now on, you can use the commands in the document tab toolbar when the `program.zxbas` file is open.
+
+<Image src={zxbActions} alt="ZxbasActions" width="725" height="224" style={{marginTop: 24}} />
+
+You can use the toolbar buttons to compile, inject, start, or debug the code as described in [this article ](../getting-started/creating-project#build-root-commands).
+
+When you run the ZXBASIC code in the default Klive project template, you can see the result in the Emulator window:
+
+<Image src={zxbRunning} alt="ZxbRunning" width="480" height="467" style={{marginTop: 24}} />

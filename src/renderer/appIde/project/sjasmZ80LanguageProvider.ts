@@ -17,6 +17,7 @@ export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   },
   supportsBreakpoints: true,
   fullLineBreakpoints: true,
+  instantSyntaxCheck: false,
   compiler: "SjasmPCompiler",
   languageDef: {
     ignoreCase: true,

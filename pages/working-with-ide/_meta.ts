@@ -4,6 +4,7 @@ export default {
   "run-debug": "Running & Debugging Code",
   "exporting-code": "Exporting Code",
   zxb: "ZXBASIC Integration",
+  sjasmp: "SJASMPLUS Integration",
   "ide-settings": "IDE Settings",
   cpu: "The CPU View",
   ula: "The ULA View",
