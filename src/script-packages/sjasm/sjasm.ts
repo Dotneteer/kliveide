@@ -188,7 +188,7 @@ class SjasmCliManager extends CliManager {
         "SjasmPlus install folder is not set. Use the sjasm-reset command to specify it."
       );
     }
-    return this._rootPath;
+    return this._rootPath.replaceAll("\\", "/");
   }
 
   /**

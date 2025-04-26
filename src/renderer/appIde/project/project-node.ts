@@ -73,6 +73,7 @@ export function buildProjectTree(
   function toTreeNode(node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
     // --- Get the file type information
     const fileTypeEntry = getFileTypeEntry(node.name, store) ?? unknownFileType;
+    console.log("File type entry", fileTypeEntry);
     if (fileTypeEntry) {
       node.icon = fileTypeEntry.icon;
       node.iconFill = fileTypeEntry.iconFill;

@@ -39,7 +39,6 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { VStack } from "@renderer/controls/new/Panels";
-import { delay } from "@renderer/utils/timing";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";

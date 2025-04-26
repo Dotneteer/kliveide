@@ -452,6 +452,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".sjasm",
     editor: CODE_EDITOR,
     subType: "sjasmp",
+    canBeBuildRoot: true,
     icon: "@file-kz80-asm"
   },
   {
@@ -459,6 +460,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     pattern: ".asm",
     editor: CODE_EDITOR,
     subType: "kz80-asm",
+    canBeBuildRoot: true,
     icon: "@file-kz80-asm"
   },
   {
