@@ -235,6 +235,12 @@ export const pageMap = [{
       "sidebarTitle": "Run Debug"
     }
   }, {
+    name: "sjasmp",
+    route: "/working-with-ide/sjasmp",
+    frontMatter: {
+      "sidebarTitle": "Sjasmp"
+    }
+  }, {
     name: "system-vars",
     route: "/working-with-ide/system-vars",
     frontMatter: {
