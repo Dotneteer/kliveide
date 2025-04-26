@@ -98,7 +98,6 @@ export async function createKliveProject(
     project.machineType = machineId;
     project.modelId = modelId;
     project.config = getModelConfig(machineId, modelId);
-
     fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
   } catch (err) {
     return {

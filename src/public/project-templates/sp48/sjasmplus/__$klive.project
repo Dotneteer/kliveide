@@ -1,12 +1,12 @@
 {
   "builder": {
     "roots": [
-      "code/code.kz80.asm"
+      "code/code.asm"
     ]
   },
   "settings": {
     "languages": {
       "sjasmp": ".asm|.sjasm"
     }
-  },
+  }
 }
