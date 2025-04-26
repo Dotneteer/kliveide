@@ -243,7 +243,7 @@ export interface ISourceFileItem {
    * False, if the inclusion would create a circular reference,
    * or the child is already is in the list
    */
-  include(childItem: ISourceFileItem): boolean;
+  include?: (childItem: ISourceFileItem) => boolean;
 
   /**
    * Checks if this item already contains the specified child item in
@@ -251,7 +251,7 @@ export interface ISourceFileItem {
    * @param childItem Child item to check
    * @returns True, if this item contains the child item; otherwise, false
    */
-  containsInIncludeList(childItem: ISourceFileItem): boolean;
+  containsInIncludeList?: (childItem: ISourceFileItem) => boolean;
 }
 
 /**

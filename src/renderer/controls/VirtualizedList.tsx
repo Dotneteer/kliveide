@@ -14,7 +14,6 @@ export const VirtualizedList = ({ items, overscan, renderItem, apiLoaded, onScro
   const ref = useRef<VListHandle>(null);
   const [itemsCount, setItemsCount] = useState(items?.length ?? 0);
 
-
   // --- Notify the parent that the API is ready
   useEffect(() => {
     if (ref.current) {
@@ -32,8 +31,12 @@ export const VirtualizedList = ({ items, overscan, renderItem, apiLoaded, onScro
         ref={ref}
         overscan={overscan}
         onScroll={(offset) => onScroll?.(offset)}
-        count={itemsCount}>
-        {i => { return renderItem?.(i) as any;}}
+        count={itemsCount}
+      >
+        {(i) => {
+          const rendered = renderItem?.(i) as any
+          return rendered || <div key={i} style={{ height: 0 }} />;
+        }}
       </Virtualizer>
     </ScrollViewer>
   );

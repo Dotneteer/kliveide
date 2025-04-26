@@ -11,7 +11,7 @@ type ResetSjasmPlusCommandArgs = {
 export class ResetSjasmPlusCommand extends IdeCommandBase<ResetSjasmPlusCommandArgs> {
   readonly id = "sjasmp-reset";
   readonly description = "Resets SjasmPlus settings with the provided installation folder";
-  readonly usage = "sjasmp-reset <Full SjasmPlus executable path>";
+  readonly usage = "sjasmp-reset <Full path of the SjasmPlus installation folder>";
   readonly aliases = ["sjasmpr"];
 
   readonly argumentInfo: CommandArgumentInfo = {

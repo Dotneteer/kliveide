@@ -150,7 +150,7 @@ export async function processMainToIdeMessages(
           };
         } catch (err) {
           // --- Report the error
-          console.error(`Error processing message: ${err}`);
+          console.error(`Error processing message (${message.method}): ${err}`);
           return errorResponse(err.toString());
         }
       }

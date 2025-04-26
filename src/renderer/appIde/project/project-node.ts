@@ -29,9 +29,9 @@ export function getNodeDir(node: ProjectNode | string): string {
 export function getNodeFile(node: ProjectNode | string): string {
   const fullPath = typeof node === "string" ? node : node.fullPath;
   let segments = fullPath.split("/");
-  if (segments.length > 1) {
-    segments = segments.slice(0, -1);
-  }
+  // if (segments.length > 1) {
+  //   segments = segments.slice(0, -1);
+  // }
   return fullPath && segments.length > 0 ? segments[segments.length - 1] : "";
 }
 
@@ -144,7 +144,9 @@ export function compareProjectNode(a: ProjectNode, b: ProjectNode): number {
 export function getFileTypeEntry(filename: string, store: Store<AppState>): FileTypeEditor | null {
   if (!filename) return null;
 
-  // --- Get the language extensions
+  // --- Get the file name extension (up to two parts)
+  const fileParts = filename.split(".");
+  const fileExtension = fileParts.length > 0 ? fileParts.slice(1).join(".") : "";
   const reader = createSettingsReader(store);
   const languageExts = reader.readSetting(LANGUAGE_SETTINGS);
   const languageHash: Record<string, string[]> = {};
@@ -161,7 +163,7 @@ export function getFileTypeEntry(filename: string, store: Store<AppState>): File
   let languageFound = "";
   const hashes = Object.keys(languageHash);
   for (const hash of hashes) {
-    if (languageHash[hash].some((ext) => filename.endsWith(ext))) {
+    if (languageHash[hash].some((ext) => `.${fileExtension}` == ext)) {
       languageFound = hash;
       break;
     }
@@ -177,13 +179,15 @@ export function getFileTypeEntry(filename: string, store: Store<AppState>): File
         match = filename.startsWith(typeEntry.pattern);
         break;
       case "ends":
-        match = filename.endsWith(typeEntry.pattern) || languageFound === typeEntry.subType;
+        match = languageFound === typeEntry.subType || filename.endsWith(typeEntry.pattern);
         break;
       case "contains":
         match = filename.indexOf(typeEntry.pattern) >= 0;
         break;
     }
-    if (match) return typeEntry;
+    if (match) {
+      return typeEntry;
+    }
   }
   return null;
 }

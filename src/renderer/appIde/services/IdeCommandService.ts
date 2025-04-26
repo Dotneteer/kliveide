@@ -226,9 +226,15 @@ class IdeCommandService implements IIdeCommandService {
     }
     if (commandResult.success) {
       if (commandResult.finalMessage) {
-        buffer.color("bright-green");
-        buffer.writeLine(commandResult.finalMessage);
-        buffer.resetStyle();
+        if (commandResult.finalMessage.startsWith("$W:")) {
+          buffer.color("yellow");
+          buffer.writeLine(commandResult.finalMessage.substring(3));
+          buffer.resetStyle();
+        } else {
+          buffer.color("bright-green");
+          buffer.writeLine(commandResult.finalMessage);
+          buffer.resetStyle();
+        }
       }
     } else {
       buffer.color("bright-red");

@@ -502,7 +502,7 @@ type SourceFileItem = {
 /**
  * Represents a file line in the compiled assembler output
  */
-type FileLine = {
+export type FileLine = {
   fileIndex: number;
   line: number;
   startColumn?: number;
@@ -512,12 +512,12 @@ type FileLine = {
 /**
  * Represents an item in the output list
  */
-type ListFileItem = {
+export type ListFileItem = {
   fileIndex: number;
   address: number;
-  segmentIndex: number;
-  codeStartIndex: number;
-  codeLength: number;
   lineNumber: number;
-  sourceText: string;
+  segmentIndex?: number;
+  codeStartIndex?: number;
+  codeLength?: number;
+  sourceText?: string;
 };

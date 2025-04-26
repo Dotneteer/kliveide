@@ -76,6 +76,7 @@ const ScriptingHistoryPanel = () => {
               items={scripts}
               renderItem={(idx) => {
                 const script = scripts[idx];
+                if (!script) return null;
                 return (
                   <ScriptItem
                     script={script}

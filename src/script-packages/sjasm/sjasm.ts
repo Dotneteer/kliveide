@@ -10,7 +10,9 @@ import {
 import { mainStore } from "@main/main-store";
 import { SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
 
-const SJASM_OUTPUT_FILE = "_output.bin";
+export const SJASM_OUTPUT_FILE = "_output.bin";
+export const SJASM_LIST_FILE = "_output.txt";
+export const SJASM_SLD_FILE = "_output.sld.txt";
 
 const SjasmOptions: CmdLineOptionSet = {
   help: {
@@ -202,7 +204,9 @@ class SjasmCliManager extends CliManager {
   protected defaultOptions(): Record<string, any> {
     // --- Implement in a derived class
     const options: Record<string, any> = {
-      raw: SJASM_OUTPUT_FILE
+      raw: SJASM_OUTPUT_FILE,
+      lst: SJASM_LIST_FILE,
+      sld: SJASM_SLD_FILE,
     };
     Object.entries(this.defines).forEach((value, key) => {
       options[`D${key}`] = value;

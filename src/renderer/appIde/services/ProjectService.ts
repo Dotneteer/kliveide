@@ -19,6 +19,7 @@ import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { createMainApi } from "@common/messaging/MainApi";
+import { get } from "lodash";
 
 const JOB_KIND_SAVE_FILE = 21;
 
@@ -454,6 +455,7 @@ class ProjectService implements IProjectService {
     // --- Change the properties of the renamed node
     renamedNode.data.fullPath = newId;
     renamedNode.data.name = getNodeFile(newId);
+    renamedNode.data.subType = fileTypeEntry?.subType;
     renamedNode.parentNode.sortChildren((a, b) => compareProjectNode(a.data, b.data));
 
     // --- Re-index the file cache
@@ -467,6 +469,9 @@ class ProjectService implements IProjectService {
     const oldItem = this._projectItemCache.get(oldId);
     if (oldItem) {
       this._projectItemCache.delete(oldId);
+      oldItem.path = newId;
+      oldItem.name = getNodeFile(newId);
+      oldItem.language = fileTypeEntry?.subType;
       this._projectItemCache.set(newId, oldItem);
     }
 
