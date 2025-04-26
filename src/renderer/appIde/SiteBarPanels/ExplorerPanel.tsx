@@ -476,9 +476,9 @@ const ExplorerPanel = () => {
       const docId = info.node.data.fullPath;
       const renamedDoc = projectService.getDocumentById(docId);
       if (renamedDoc?.usedIn) {
-        renamedDoc.usedIn.forEach((docHub) =>
-          docHub.renameDocument(info.oldName, info.node.data.fullPath)
-        );
+        renamedDoc.usedIn.forEach((docHub) => {
+          docHub.renameDocument(info.oldName, info.node.data.fullPath);
+        });
       }
     };
 

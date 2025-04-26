@@ -203,7 +203,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const resourceName = document.node?.projectPath;
 
   // --- The language to use with Monaco editor for syntax highlighting
-  const languageInfo = customLanguagesRegistry.find((l) => l.id === document.language);
+  const [languageInfo, setLanguageInfo] = useState(
+    customLanguagesRegistry.find((l) => l.id === document.language)
+  );
 
   // --- Use these states to update editor options
   const enableAutoComplete = useGlobalSetting(SETTING_EDITOR_AUTOCOMPLETE);
@@ -277,6 +279,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       });
     }
   };
+
+  useEffect(() => {
+    setLanguageInfo(customLanguagesRegistry.find((l) => l.id === document.language));
+  }, [document.language]);
 
   // --- Update Autocomplete changes
   useEffect(() => {
@@ -718,7 +724,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
               }
             }
           }
-        } 
+        }
       }
 
       // --- Render the breakpoint according to its type and reachability
@@ -767,7 +773,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (!existingBp && languageInfo?.instantSyntaxCheck) {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
         const lineContent = editor.current.getModel().getLineContent(lineNo);
-        const allowBp = await createMainApi(messenger).canLineHaveBreakpoint(lineContent, languageInfo.id);
+        const allowBp = await createMainApi(messenger).canLineHaveBreakpoint(
+          lineContent,
+          languageInfo.id
+        );
         if (!allowBp) {
           const message = "You cannot create a breakpoint here";
           hoverDecorations.current?.clear();
@@ -817,7 +826,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           let allow = !languageInfo?.instantSyntaxCheck;
           if (!allow) {
             const lineContent = editor.current.getModel().getLineContent(lineNo);
-            allow = await createMainApi(messenger).canLineHaveBreakpoint(lineContent, languageInfo.id);
+            allow = await createMainApi(messenger).canLineHaveBreakpoint(
+              lineContent,
+              languageInfo.id
+            );
           }
           if (allow) {
             await addBreakpoint(messenger, {
