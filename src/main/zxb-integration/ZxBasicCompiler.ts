@@ -171,6 +171,15 @@ export class ZxBasicCompiler implements IKliveCompiler {
   }
 
   /**
+   * Checks if the specified file can have a breakpoint
+   * @param line The line content to check
+   */
+  async lineCanHaveBreakpoint(_line: string): Promise<boolean> {
+    return false;
+  }
+
+
+  /**
    * Gets the error filter description
    */
   getErrorFilterDescription(): ErrorFilterDescriptor {
