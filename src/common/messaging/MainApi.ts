@@ -135,6 +135,10 @@ class MainApiImpl {
     throw new Error(NO_PROXY_ERROR);
   }
 
+  async canLineHaveBreakpoint(_line: string, _language: string): Promise<boolean> {
+    throw new Error(NO_PROXY_ERROR);
+  }
+
   async showItemInFolder(_itemPath: string): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
@@ -197,10 +201,6 @@ class MainApiImpl {
   }
 
   async openWithShell(_path: string): Promise<{ path?: string; error?: string }> {
-    throw new Error(NO_PROXY_ERROR);
-  }
-
-  async parseZ80Line(_line: string): Promise<Z80AssemblyLine> {
     throw new Error(NO_PROXY_ERROR);
   }
 

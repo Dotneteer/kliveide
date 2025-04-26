@@ -975,7 +975,8 @@ async function compileCode(
   try {
     result = await context.mainApi.compileFile(fullPath, language);
   } catch (err) {
-    failedMessage = err.toString();
+    failedMessage = err.message;
+    console.log("FAIL", failedMessage);
   } finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
@@ -1093,6 +1094,16 @@ async function injectCode(
     }
 
     case "debug": {
+      // --- Check if we have debug information
+      if (result.sourceFileList.length === 0) {
+        const out = context.output;
+        out.color("yellow");
+        out.writeLine("No debug information available.");
+        out.resetStyle();
+        await context.emuApi.runCodeCommand(codeToInject, false);
+        returnMessage = `$W:Code injected and started without debugging.`;
+        break;
+      }
       await context.emuApi.runCodeCommand(codeToInject, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;

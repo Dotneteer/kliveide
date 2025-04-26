@@ -81,6 +81,12 @@ export interface IKliveCompiler {
    * @returns Output of the compilation
    */
   compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
+
+  /**
+   * Checks if the specified file can have a breakpoint
+   * @param line The line content to check
+   */
+  lineCanHaveBreakpoint(line: string): Promise<boolean>;
 }
 
 /**

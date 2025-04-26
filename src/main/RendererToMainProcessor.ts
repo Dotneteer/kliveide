@@ -38,7 +38,12 @@ import { getCompiler } from "./compiler-integration/compiler-registry";
 import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
 import { KLIVE_GITHUB_PAGES } from "./app-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE, PROJECT_TEMPLATES } from "@common/structs/project-const";
+import {
+  MEDIA_DISK_A,
+  MEDIA_DISK_B,
+  MEDIA_TAPE,
+  PROJECT_TEMPLATES
+} from "@common/structs/project-const";
 import { readDiskData } from "@emu/machines/disk/disk-readers";
 import { createDiskFile } from "@common/utils/create-disk-file";
 import { mainScriptManager } from "./ksx-runner/MainScriptManager";
@@ -277,8 +282,23 @@ class MainMessageProcessor {
   }
 
   async compileFile(filename: string, language: string, options?: CompilerOptions) {
+    console.log("Compiling file:", filename, language);
     const compiler = getCompiler(language);
+    if (!compiler) {
+      throw new Error(
+        `No compiler is registered for build root file ${filename}. ` +
+          "Are you sure you use the right file extension?"
+      );
+    }
     return (await compiler.compileFile(filename, options)) as KliveCompilerOutput;
+  }
+
+  async canLineHaveBreakpoint(line: string, language: string) {
+    const compiler = getCompiler(language);
+    if (!compiler) {
+      return false;
+    }
+    return await compiler.lineCanHaveBreakpoint(line);
   }
 
   async showItemInFolder(itemPath: string) {
@@ -362,20 +382,6 @@ class MainMessageProcessor {
   async writeSdCardSector(sectorIndex: number, data: Uint8Array) {
     const sdHandler = getSdCardHandler();
     sdHandler.writeSector(sectorIndex, data);
-  }
-
-  async parseZ80Line(line: string): Promise<Z80AssemblyLine | null> {
-    const is = new InputStream(line);
-    const ts = new TokenStream(is);
-    const parser = new Z80AsmParser(ts);
-    const parsed = await parser.parseProgram();
-    if (parser.errors.length > 0) {
-      return null;
-    }
-    if (parsed.assemblyLines.length === 0) {
-      return null;
-    }
-    return parsed.assemblyLines[0];
   }
 
   async getAppSettings(): Promise<AppSettings> {

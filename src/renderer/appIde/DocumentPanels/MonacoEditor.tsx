@@ -718,9 +718,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
               }
             }
           }
-        } else {
-          return;
-        }
+        } 
       }
 
       // --- Render the breakpoint according to its type and reachability
@@ -769,8 +767,8 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (!existingBp && languageInfo?.instantSyntaxCheck) {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
         const lineContent = editor.current.getModel().getLineContent(lineNo);
-        const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
-        if (!parsedLine || restrictedNodes.includes(parsedLine.type)) {
+        const allowBp = await createMainApi(messenger).canLineHaveBreakpoint(lineContent, languageInfo.id);
+        if (!allowBp) {
           const message = "You cannot create a breakpoint here";
           hoverDecorations.current?.clear();
           hoverDecorations.current = editor.current.createDecorationsCollection([
@@ -819,8 +817,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           let allow = !languageInfo?.instantSyntaxCheck;
           if (!allow) {
             const lineContent = editor.current.getModel().getLineContent(lineNo);
-            const parsedLine = await createMainApi(messenger).parseZ80Line(lineContent);
-            allow = parsedLine && !restrictedNodes.includes(parsedLine.type);
+            allow = await createMainApi(messenger).canLineHaveBreakpoint(lineContent, languageInfo.id);
           }
           if (allow) {
             await addBreakpoint(messenger, {

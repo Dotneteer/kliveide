@@ -3,5 +3,10 @@
     "roots": [
       "code/code.kz80.asm"
     ]
-  }
+  },
+  "settings": {
+    "languages": {
+      "sjasmp": ".asm|.sjasm"
+    }
+  },
 }

@@ -35,7 +35,7 @@ export class SjasmPCompiler implements IKliveCompiler {
   /**
    * Compiled language
    */
-  readonly language = "sjasm";
+  readonly language = "sjasmp";
 
   /**
    * Indicates if the compiler supports Klive compiler output
@@ -95,7 +95,7 @@ export class SjasmPCompiler implements IKliveCompiler {
 
       // --- Extract the SLD file content
       const sldLines = extractSldInfo(fs.readFileSync(sldFileName, "utf-8"));
-      
+
       // --- Transform the SLD file content into debug information
       const sourceFileList: ISourceFileItem[] = [];
       const sourceMap: Record<number, FileLine> = {};
@@ -158,6 +158,25 @@ export class SjasmPCompiler implements IKliveCompiler {
     } catch (err) {
       throw err;
     }
+  }
+
+  /**
+   * Checks if the specified file can have a breakpoint
+   * @param line The line content to check
+   */
+  async lineCanHaveBreakpoint(line: string): Promise<boolean> {
+    // Regular expression to match an optional label followed by the first instruction
+    const regex = /^([\._$@`A-Za-z][_@$!?\.0-9A-Za-z]*:?)?\s*([_$A-Za-z][_$0-9A-Za-z]*\+?)?\s*/;
+
+    // Test the line against the regex
+    const match = line.match(regex);
+    if (!match) {
+      return false; // No instruction found
+    }
+
+    // The third capturing group contains the first instruction
+    const keyword = match[2];
+    return !!keyword && !restrictedNodes.includes(keyword.toLowerCase());
   }
 
   /**
@@ -289,3 +308,77 @@ type SldLine = {
   type: string;
   data: string;
 };
+
+const restrictedNodes: string[] = [
+  "align",
+  "assert",
+  "binary",
+  "bplist",
+  "cspectmap",
+  "defdevice",
+  "define",
+  "defl",
+  "dephase",
+  "device",
+  "disp",
+  "display",
+  "dup",
+  "edup",
+  "emptytap",
+  "emptytrd",
+  "encoding",
+  "end",
+  "endlua",
+  "endmod",
+  "endmodule",
+  "endt",
+  "ent",
+  "equ",
+  "export",
+  "fpos",
+  "incbin",
+  "inchob",
+  "include",
+  "includelua",
+  "inctrd",
+  "insert",
+  "labelslist",
+  "lua",
+  "memorymap",
+  "mmu",
+  "module",
+  "opt",
+  "org",
+  "outend",
+  "output",
+  "page",
+  "phase",
+  "relocate_end",
+  "relocate_start",
+  "relocate_table",
+  "rept",
+  "save3dos",
+  "saveasmdos",
+  "savebin",
+  "savecdt",
+  "savepcsna",
+  "savecpr",
+  "savedev",
+  "savehob",
+  "savenex",
+  "savesna",
+  "savetap",
+  "savetrd",
+  "setbp",
+  "setbreakpoint",
+  "shellexec",
+  "size",
+  "sldopt",
+  "slot",
+  "tapend",
+  "tapout",
+  "textarea",
+  "undefine",
+  "unphase",
+  "while"
+];

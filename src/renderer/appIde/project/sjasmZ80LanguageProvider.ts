@@ -4,7 +4,7 @@ import { MonacoAwareCustomLanguageInfo } from "../../abstractions/CustomLanguage
  * Language provider for the .asm.z80 extension
  */
 export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
-  id: "sjasm",
+  id: "sjasmp",
   extensions: [".sjasm"],
   icon: "file-kz80-asm",
   depensOn: ["lua"],
@@ -17,7 +17,7 @@ export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   },
   supportsBreakpoints: true,
   fullLineBreakpoints: true,
-  instantSyntaxCheck: false,
+  instantSyntaxCheck: true,
   compiler: "SjasmPCompiler",
   languageDef: {
     ignoreCase: true,
@@ -195,6 +195,7 @@ export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       "dw",
       "dword",
       "dz",
+      "edup",
       "emptytap",
       "emptytrd",
       "encoding",
@@ -203,6 +204,7 @@ export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       "endmod",
       "endmodule",
       "endt",
+      "endw",
       "ent",
       "export",
       "fpos",
