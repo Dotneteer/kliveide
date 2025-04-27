@@ -30,7 +30,8 @@ import {
   SETTING_EDITOR_DETECT_INDENTATION,
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
-  SETTING_EMU_KEYBOARD_HEIGHT
+  SETTING_EMU_KEYBOARD_HEIGHT,
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
 } from "@common/settings/setting-const";
 
 const settingDefinitions: Setting[] = [
@@ -316,6 +317,15 @@ const settingDefinitions: Setting[] = [
     description: "Enable or disable the occurrences highlight feature in the editor.",
     type: "boolean",
     defaultValue: true,
+    saveWithIde: true,
+    saveWithProject: true
+  },
+  {
+    id: SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
+    title: "Qucik Suggestion Delay",
+    description: "Delay in milliseconds for quick suggestions.",
+    type: "number",
+    defaultValue: 100,
     saveWithIde: true,
     saveWithProject: true
   }

@@ -30,7 +30,8 @@ import {
   SETTING_EDITOR_INSERT_SPACES,
   SETTING_EDITOR_RENDER_WHITESPACE,
   SETTING_EDITOR_TABSIZE,
-  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT
+  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
 } from "@common/settings/setting-const";
 
 let monacoInitialized = false;
@@ -215,6 +216,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const detectIndentation = useGlobalSetting(SETTING_EDITOR_DETECT_INDENTATION);
   const enableSelectionHighlight = useGlobalSetting(SETTING_EDITOR_SELECTION_HIGHLIGHT);
   const enableOccurrencesHighlight = useGlobalSetting(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT);
+  const quickSuggestionDelay = useGlobalSetting(SETTING_EDITOR_QUICK_SUGGESTION_DELAY);
 
   // --- Sets the Auto complete editor option
   const updateAutoComplete = () => {
@@ -280,6 +282,16 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     }
   };
 
+  // --- Set the quick suggestion delay
+  const updateQuickSuggestionDelay = () => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        quickSuggestionsDelay: quickSuggestionDelay
+      });
+    }
+  };
+
+  // --- Update editor file language changes
   useEffect(() => {
     setLanguageInfo(customLanguagesRegistry.find((l) => l.id === document.language));
   }, [document.language]);
@@ -318,6 +330,11 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   useEffect(() => {
     updateOccurrencesHighlight();
   }, [enableOccurrencesHighlight]);
+
+  // --- Update the quick suggestion delay changes
+  useEffect(() => {
+    updateQuickSuggestionDelay();
+  }, [quickSuggestionDelay]);
 
   // --- Respond to theme changes
   useEffect(() => {

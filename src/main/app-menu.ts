@@ -68,7 +68,8 @@ import {
   SETTING_EDITOR_RENDER_WHITESPACE,
   SETTING_EDITOR_DETECT_INDENTATION,
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
-  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT
+  SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
 
@@ -109,6 +110,7 @@ const IDE_SETTINGS = "ide_settings";
 const EDITOR_OPTIONS = "editor_options";
 const EDITOR_FONT_SIZE = "editor_font_size";
 const EDITOR_TAB_SIZE = "editor_tab_size";
+const EDITOR_QUICK_SUGGESTION_DELAY = "editor_quick_suggestion_delay";
 const EDITOR_RENDER_WHITESPACE = "editor_render_whitespace";
 
 const HELP_MENU = "help_menu";
@@ -379,6 +381,42 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     };
   });
 
+  const quickSuggestionDelayOptions = [
+    {
+      label: "Instantenous",
+      value: 10
+    },
+    {
+      label: "Short (100ms)",
+      value: 100
+    },
+    {
+      label: "Medium (200ms)",
+      value: 200
+    },
+    {
+      label: "Long (500ms)",
+      value: 500
+    },
+    {
+      label: "Longest (1s)",
+      value: 1000
+    },
+  ];
+  const currentQuickSuggestionDelay = getSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY);
+  const quickSuggestionDelayMenu: MenuItemConstructorOptions[] = quickSuggestionDelayOptions.map((f, idx) => {
+    return {
+      id: `${EDITOR_QUICK_SUGGESTION_DELAY}_${idx}`,
+      label: f.label,
+      type: "checkbox",
+      checked: currentQuickSuggestionDelay === f.value,
+      click: async () => {
+        setSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY, f.value);
+      }
+    };
+  });
+
+
   // --- Machine-specific view menu items
   let specificViewMenus: MenuItemConstructorOptions[] = [];
   if (machineMenus && machineMenus.viewItems) {
@@ -495,6 +533,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           createBooleanSettingsMenu(SETTING_EDITOR_AUTOCOMPLETE),
           createBooleanSettingsMenu(SETTING_EDITOR_SELECTION_HIGHLIGHT),
           createBooleanSettingsMenu(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT),
+          {
+            id: EDITOR_QUICK_SUGGESTION_DELAY,
+            label: "Quick Suggestion Delay",
+            submenu: quickSuggestionDelayMenu
+          },
           { type: "separator" },
           createBooleanSettingsMenu(SETTING_EDITOR_DETECT_INDENTATION),
           createBooleanSettingsMenu(SETTING_EDITOR_INSERT_SPACES),

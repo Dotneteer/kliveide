@@ -28,3 +28,4 @@ export const SETTING_EDITOR_RENDER_WHITESPACE = "editorOptions.renderWhitespaces
 export const SETTING_EDITOR_DETECT_INDENTATION = "editorOptions.detectIndentation";
 export const SETTING_EDITOR_SELECTION_HIGHLIGHT = "editorOptions.enableSelectionHighlight";
 export const SETTING_EDITOR_OCCURRENCES_HIGHLIGHT = "editorOptions.enableOccurrencesHighlight";
+export const SETTING_EDITOR_QUICK_SUGGESTION_DELAY = "editorOptions.quickSuggestionDelay";
