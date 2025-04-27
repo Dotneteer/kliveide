@@ -101,7 +101,7 @@ class EmuApiImpl {
     throw new Error(NO_PROXY_ERROR);
   }
 
-  async runCodeCommand(_codeToInject: CodeToInject, _debug: boolean): Promise<void> {
+  async runCodeCommand(_codeToInject: CodeToInject, _debug: boolean, _projectDebug: boolean): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
 

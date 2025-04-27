@@ -42,6 +42,11 @@ export type ProjectDocumentState = {
   isReadOnly?: boolean;
 
   /**
+   * Is the document locked? (Similar as read-only but with different icon)
+   */
+  isLocked?: boolean;
+
+  /**
    * Optional document icon
    */
   iconName?: string;

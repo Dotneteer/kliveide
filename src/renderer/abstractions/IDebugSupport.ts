@@ -10,6 +10,8 @@ export interface IDebugSupport {
    */
   lastStartupBreakpoint?: number;
 
+  readonly breakpointDefs: Map<string, BreakpointInfo>;
+
   /**
    * The list of current execution breakpoints
    */

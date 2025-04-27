@@ -239,6 +239,11 @@ export const setDebuggingAction: ActionCreator = (flag) => ({
   payload: { flag }
 });
 
+export const setProjectDebuggingAction: ActionCreator = (flag) => ({
+  type: "SET_PROJECT_DEBUGGING",
+  payload: { flag }
+});
+
 export const applyProjectSettingAction: ActionCreator = (id, value) => ({
   type: "APPLY_PROJECT_SETTING",
   payload: { id, value }

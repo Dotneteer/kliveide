@@ -194,6 +194,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const breakpoints = useRef<BreakpointInfo[]>([]);
   const compilation = useSelector((s) => s.compilation);
   const execState = useSelector((s) => s.emulatorState?.machineState);
+  const isProjectDebugging = useSelector((s) => s.emulatorState?.isProjectDebugging ?? false);
 
   // --- Store Monaco editor decorations to display breakpoint information
   const bpDecorations = useRef<EditorDecorationsCollection>(null);
@@ -353,6 +354,15 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     setMonacoTheme(themeName);
   }, [theme, document.language]);
 
+  // --- Respond to readonly and locked document changes
+  useEffect(() => {
+    if (editor.current) {
+      editor.current.updateOptions({
+        readOnly: document.isReadOnly || (document.isLocked && isProjectDebugging)
+      });
+    }
+  }, [document.isReadOnly, document.isLocked, isProjectDebugging]);
+
   useEffect(() => {
     (async () => {
       const settings = (await mainApi.getUserSettings())?.shortcuts ?? {};
@@ -396,9 +406,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       );
     }
   }, [editor.current]);
-
-  // --- Respond to editor font size changes
-  useEffect(() => {}, [editorFontSize]);
 
   // --- Refresh breakpoints when they may change
   useEffect(() => {
@@ -602,49 +609,57 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       if (languageInfo?.supportsBreakpoints) {
         // --- Keep track of breakpoint changes
         if (e.changes.length > 0) {
-          // --- Get the text that has been deleted
-          const change = e.changes[0];
-          const deletedText = editor.current.getModel().getValueInRange(change.range);
-          const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || []).length;
+          // --- Special case: after chnaging to readonly, the editor signs
+          // --- that the entire text has been changed.
+          const currentText = editor.current.getModel().getValue();
+          if (currentText !== e.changes?.[0].text) {
+            // --- A real change has happened
+            // --- Get the text that has been deleted
+            const change = e.changes[0];
+            const deletedText = editor.current.getModel().getValueInRange(change.range);
+            const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || []).length;
 
-          // --- Have we deleted one or more EOLs?
-          if (deletedLines > 0) {
-            const lowerBound =
-              change.range.startLineNumber + (change.range.startColumn === 1 ? 0 : 1);
-            const upperBound = change.range.endLineNumber;
+            // --- Have we deleted one or more EOLs?
+            if (deletedLines > 0) {
+              const lowerBound =
+                change.range.startLineNumber + (change.range.startColumn === 1 ? 0 : 1);
+              const upperBound = change.range.endLineNumber;
 
-            // --- Yes, scroll up breakpoints
-            await createEmuApi(messenger).scrollBreakpoints(
-              {
-                resource: resourceName,
-                line: lowerBound
-              },
-              -deletedLines,
-              lowerBound,
-              upperBound
+              // --- Yes, scroll up breakpoints
+              await createEmuApi(messenger).scrollBreakpoints(
+                {
+                  resource: resourceName,
+                  line: lowerBound
+                },
+                -deletedLines,
+                lowerBound,
+                upperBound
+              );
+            }
+
+            // --- Have we inserted one or more EOLs?
+            const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || []).length;
+            if (insertedLines > 0) {
+              // --- Yes, scroll down breakpoints.
+              const lineText = editor.current
+                .getModel()
+                .getLineContent(change.range.startLineNumber);
+              const shouldShiftDown = lineText?.trim().length === 0;
+              await createEmuApi(messenger).scrollBreakpoints(
+                {
+                  resource: resourceName,
+                  line: change.range.startLineNumber + (shouldShiftDown ? 0 : 1)
+                },
+                insertedLines
+              );
+            }
+
+            // --- If changed, normalize breakpoints
+            await createEmuApi(messenger).normalizeBreakpoints(
+              resourceName,
+              editor.current.getModel()?.getLineCount() ?? -1
             );
           }
-
-          // --- Have we inserted one or more EOLs?
-          const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || []).length;
-          if (insertedLines > 0) {
-            // --- Yes, scroll down breakpoints.
-            const lineText = editor.current.getModel().getLineContent(change.range.startLineNumber);
-            const shouldShiftDown = lineText?.trim().length === 0;
-            await createEmuApi(messenger).scrollBreakpoints(
-              {
-                resource: resourceName,
-                line: change.range.startLineNumber + (shouldShiftDown ? 0 : 1)
-              },
-              insertedLines
-            );
-          }
-
-          // --- If changed, normalize breakpoints
-          await createEmuApi(messenger).normalizeBreakpoints(
-            resourceName,
-            editor.current.getModel()?.getLineCount() ?? -1
-          );
         }
       }
     }
@@ -673,7 +688,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         <Editor
           options={{
             fontSize: editorFontSize,
-            readOnly: document.isReadOnly,
+            readOnly: document.isReadOnly || (isProjectDebugging && document.isLocked),
             glyphMargin: languageInfo?.supportsBreakpoints
           }}
           loading=""

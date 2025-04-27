@@ -377,6 +377,7 @@ class EmuMessageProcessor {
     }
 
     const lastOpStart = controller.machine.opStartAddress;
+    console.log("bps", controller.debugSupport.breakpointDefs);
     const execBreakpoints = controller.debugSupport.breakpoints
       .map((bp) => ({
         ...bp
@@ -481,12 +482,12 @@ class EmuMessageProcessor {
     controller.machine.injectCodeToRun(codeToInject);
   }
 
-  runCodeCommand(codeToInject: CodeToInject, debug: boolean) {
+  runCodeCommand(codeToInject: CodeToInject, debug: boolean, projectDebug: boolean) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    controller.runCode(codeToInject, debug);
+    controller.runCode(codeToInject, debug, projectDebug);
   }
 
   resolveBreakpoints(breakpoints: ResolvedBreakpoint[]) {

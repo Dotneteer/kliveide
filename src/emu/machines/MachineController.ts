@@ -22,7 +22,11 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
-import { setDebuggingAction, setMachineStateAction } from "@state/actions";
+import {
+  setDebuggingAction,
+  setMachineStateAction,
+  setProjectDebuggingAction
+} from "@state/actions";
 import { DISK_A_CHANGES, DISK_B_CHANGES, FAST_LOAD, SAVED_TO_TAPE } from "./machine-props";
 import { delay } from "@renderer/utils/timing";
 import { machineRegistry } from "@common/machines/machine-registry";
@@ -269,10 +273,20 @@ export class MachineController implements IMachineController {
    * Runs the specified code in the virtual machine
    * @param codeToInject Code to inject into the amchine
    * @param debug Run in debug mode?
+   * @param projectDebug Run in project debug mode?
    */
-  async runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void> {
+  async runCode(
+    codeToInject: CodeToInject,
+    debug?: boolean,
+    projectDebug?: boolean
+  ): Promise<void> {
     // --- Stop the machine
     await this.stop();
+
+    // --- Adjust project debug mode
+    if (projectDebug) {
+      this.store.dispatch(setProjectDebuggingAction(true), "emu");
+    }
 
     // --- Execute the code injection flow
     const m = this.machine;

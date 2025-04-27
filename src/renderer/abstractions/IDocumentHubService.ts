@@ -55,6 +55,18 @@ export interface IDocumentHubService {
   setPermanent(id: string): void;
 
   /**
+   * Locks or unlocks the specified document
+   * @param id ID of the document
+   * @param locked Indicates if the document is locked
+   */
+  setLocked(id: string, locked: boolean): void;
+
+  /**
+   * Releases all locks on the documents
+   */
+  releaseLocks(): void;
+
+  /**
    * Tests if the specified document is open
    * @param document
    */

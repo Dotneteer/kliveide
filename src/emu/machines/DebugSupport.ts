@@ -434,6 +434,7 @@ export class DebugSupport implements IDebugSupport {
     lowerBound?: number,
     upperBound?: number
   ): void {
+    console.log("scrollBreakpoints", def, shift, lowerBound, upperBound);
     let changed = false;
     const values: BreakpointInfo[] = [];
     for (const value of this.breakpointDefs.values()) {

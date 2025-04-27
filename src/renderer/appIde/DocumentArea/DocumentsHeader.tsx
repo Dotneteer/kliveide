@@ -10,7 +10,10 @@ import {
   useDocumentHubServiceVersion
 } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
-import { incProjectViewStateVersionAction, setWorkspaceSettingsAction } from "@common/state/actions";
+import {
+  incProjectViewStateVersionAction,
+  setWorkspaceSettingsAction
+} from "@common/state/actions";
 import { PANE_ID_BUILD } from "@common/integration/constants";
 import { FileTypeEditor } from "@renderer/abstractions/FileTypePattern";
 import { getFileTypeEntry } from "../project/project-node";
@@ -29,6 +32,7 @@ export const DocumentsHeader = () => {
   const hubVersion = useDocumentHubServiceVersion();
   const handlersInitialized = useRef(false);
   const projectVersion = useSelector((s) => s.project?.projectFileVersion);
+  const isProjectDebugging = useSelector((s) => s.emulatorState?.isProjectDebugging ?? false);
   const [openDocs, setOpenDocs] = useState<ProjectDocumentState[]>(null);
   const [activeDocIndex, setActiveDocIndex] = useState<number>(null);
   const [selectedIsBuildRoot, setSelectedIsBuildRoot] = useState(false);
@@ -58,7 +62,6 @@ export const DocumentsHeader = () => {
       setSelectedIsBuildRoot(buildRoots.indexOf(openDocs[activeDocIndex]?.node?.projectPath) >= 0);
     }
     setEditorInfo(getFileTypeEntry(openDocs?.[activeDocIndex]?.node?.name, store));
-
   }, [openDocs, buildRoots, activeDocIndex, hubVersion]);
 
   // --- Make sure that the index is visible
@@ -69,10 +72,16 @@ export const DocumentsHeader = () => {
     ensureTabVisible();
     // --- Save document information to the project
     const workspace: DocumentWorkspace = {
-      documents: openDocs?.filter(d => d.id.startsWith(folderPath))?.map(d => ({ type: d.type, id: d.id, position: {
-        line: d.editPosition?.line ?? 0,
-        column: d.editPosition?.column ?? 0
-      } })),
+      documents: openDocs
+        ?.filter((d) => d.id.startsWith(folderPath))
+        ?.map((d) => ({
+          type: d.type,
+          id: d.id,
+          position: {
+            line: d.editPosition?.line ?? 0,
+            column: d.editPosition?.column ?? 0
+          }
+        })),
       activeDocumentId: openDocs?.[activeDocIndex]?.id
     };
     store.dispatch(setWorkspaceSettingsAction(DOCS_WORKSPACE, workspace), "ide");
@@ -215,6 +224,7 @@ export const DocumentsHeader = () => {
                 isActive={idx === activeDocIndex}
                 isTemporary={d.isTemporary}
                 isReadOnly={d.isReadOnly}
+                isLocked={isProjectDebugging && d.isLocked}
                 awaiting={awaiting}
                 hasChanges={dirtyStates?.[idx]}
                 tabsCount={tabsCount}
@@ -259,7 +269,6 @@ export const DocumentsHeader = () => {
           useSpace={true}
           clicked={async () => await documentHubService.closeAllDocuments()}
         />
-
       </div>
     </div>
   ) : null;
@@ -301,7 +310,10 @@ const BuildRootCommandBar = () => {
         disabled={compiling}
         clicked={async () => {
           const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const result = await ideCommandsService.executeCommand("run-build-function injectCode", buildPane);
+          const result = await ideCommandsService.executeCommand(
+            "run-build-function injectCode",
+            buildPane
+          );
           setScriptId(result?.value);
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
@@ -313,7 +325,10 @@ const BuildRootCommandBar = () => {
         disabled={compiling}
         clicked={async () => {
           const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const result = await ideCommandsService.executeCommand("run-build-function runCode", buildPane);
+          const result = await ideCommandsService.executeCommand(
+            "run-build-function runCode",
+            buildPane
+          );
           setScriptId(result?.value);
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
@@ -325,7 +340,10 @@ const BuildRootCommandBar = () => {
         disabled={compiling}
         clicked={async () => {
           const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-          const result = await ideCommandsService.executeCommand("run-build-function debugCode", buildPane);
+          const result = await ideCommandsService.executeCommand(
+            "run-build-function debugCode",
+            buildPane
+          );
           setScriptId(result?.value);
           await ideCommandsService.executeCommand(`outp ${PANE_ID_BUILD}`);
         }}
@@ -337,9 +355,7 @@ const BuildRootCommandBar = () => {
         disabled={compiling || !scriptId}
         clicked={async () => {
           if (scriptId > 0) {
-            await ideCommandsService.executeCommand(
-              `script-output ${scriptId}`
-            );
+            await ideCommandsService.executeCommand(`script-output ${scriptId}`);
           }
         }}
       />
@@ -355,10 +371,10 @@ export type SavedDocumentInfo = {
   position?: {
     line: number;
     column?: number;
-  }
-}
+  };
+};
 
 export type DocumentWorkspace = {
   documents: SavedDocumentInfo[];
   activeDocumentId: string;
-}
+};

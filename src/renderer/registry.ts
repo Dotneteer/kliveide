@@ -453,7 +453,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: CODE_EDITOR,
     subType: "sjasmp",
     canBeBuildRoot: true,
-    icon: "@file-kz80-asm"
+    icon: "@file-sjasmp"
   },
   {
     matchType: "ends",

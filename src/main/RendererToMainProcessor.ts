@@ -54,10 +54,6 @@ import { MessageBoxType } from "@common/messaging/MainApi";
 import { CompilerOptions } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { getSdCardHandler } from "./machine-menus/zx-next-menus";
-import { Z80AssemblyLine } from "./z80-compiler/assembler-tree-nodes";
-import { InputStream } from "./z80-compiler/input-stream";
-import { TokenStream } from "./z80-compiler/token-stream";
-import { Z80AsmParser } from "./z80-compiler/z80-asm-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { setSettingValue } from "./settings-utils";
 
@@ -282,7 +278,6 @@ class MainMessageProcessor {
   }
 
   async compileFile(filename: string, language: string, options?: CompilerOptions) {
-    console.log("Compiling file:", filename, language);
     const compiler = getCompiler(language);
     if (!compiler) {
       throw new Error(
@@ -502,7 +497,6 @@ async function displayOpenFileDialog(
     saveAppSettings();
   }
 
-  console.log("selectedFile:", selectedFile);
   return selectedFile;
 }
 

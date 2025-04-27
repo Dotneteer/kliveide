@@ -4,7 +4,6 @@ import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
-import { PANE_ID_EMU } from "../../common/integration/constants";
 import { ExportDialogSettings, IdeSettings } from "@main/settings";
 
 /**
@@ -61,6 +60,7 @@ export type EmulatorState = {
   machineState?: MachineControllerState;
   pcValue?: number;
   isDebugging?: boolean;
+  isProjectDebugging?: boolean;
   soundLevel?: number;
   soundMuted?: boolean;
   savedSoundLevel?: number;

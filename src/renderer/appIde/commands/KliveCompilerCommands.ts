@@ -31,6 +31,7 @@ import {
   endCompileAction,
   incBreakpointsVersionAction,
   incInjectionVersionAction,
+  setProjectDebuggingAction,
   startCompileAction
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
@@ -101,6 +102,7 @@ export class KliveRunCodeCommand extends IdeCommandBase {
   readonly noInteractiveUsage = true;
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    context.store.dispatch(setProjectDebuggingAction(false), "ide");
     const result = await injectCode(context, "run");
     return result;
   }
@@ -115,6 +117,7 @@ export class KliveDebugCodeCommand extends IdeCommandBase {
   readonly noInteractiveUsage = true;
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    context.store.dispatch(setProjectDebuggingAction(true), "ide");
     return await injectCode(context, "debug");
   }
 }
@@ -947,6 +950,9 @@ function modelTypeToMachineType(model: SpectrumModelType): string | null {
 async function compileCode(
   context: IdeCommandContext
 ): Promise<{ result?: KliveCompilerOutput; message?: string }> {
+  // --- Release the files locked by the debugger
+  context.service.projectService.getActiveDocumentHubService().releaseLocks();
+  
   // --- Shortcuts
   const out = context.output;
 
@@ -1057,6 +1063,13 @@ async function injectCode(
     }
   }
 
+  // --- Collect files affected by project debugging
+  if (operationType === "debug") {
+    result.sourceFileList?.forEach((f) => {
+      context.service.projectService.getActiveDocumentHubService().setLocked(f.filename, true)
+    });
+  }
+
   // --- Create the code to inject into the emulator
   const codeToInject: CodeToInject = {
     model: modelTypeToMachineType(result.modelType),
@@ -1088,7 +1101,7 @@ async function injectCode(
       break;
 
     case "run": {
-      await context.emuApi.runCodeCommand(codeToInject, false);
+      await context.emuApi.runCodeCommand(codeToInject, false, false);
       returnMessage = `Code injected and started.`;
       break;
     }
@@ -1100,11 +1113,11 @@ async function injectCode(
         out.color("yellow");
         out.writeLine("No debug information available.");
         out.resetStyle();
-        await context.emuApi.runCodeCommand(codeToInject, false);
+        await context.emuApi.runCodeCommand(codeToInject, false, false);
         returnMessage = `$W:Code injected and started without debugging.`;
         break;
       }
-      await context.emuApi.runCodeCommand(codeToInject, true);
+      await context.emuApi.runCodeCommand(codeToInject, true, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }

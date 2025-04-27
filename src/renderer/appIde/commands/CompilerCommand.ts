@@ -12,6 +12,7 @@ import {
   endCompileAction,
   incBreakpointsVersionAction,
   incInjectionVersionAction,
+  setProjectDebuggingAction,
   startCompileAction
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
@@ -54,6 +55,7 @@ export class RunCodeCommand extends IdeCommandBase {
   readonly requiresProject = true;
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    context.store.dispatch(setProjectDebuggingAction(false), "ide");
     return await injectCode(context, "run");
   }
 }
@@ -65,6 +67,7 @@ export class DebugCodeCommand extends IdeCommandBase {
   readonly aliases = ["rd"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    context.store.dispatch(setProjectDebuggingAction(true), "ide");
     return await injectCode(context, "debug");
   }
 }
@@ -118,8 +121,7 @@ async function compileCode(
     result = await context.mainApi.compileFile(fullPath, language);
   } catch (err) {
     failedMessage = err.message;
-  }
-  finally {
+  } finally {
     context.store.dispatch(endCompileAction(result));
     await refreshSourceCodeBreakpoints(context.store, context.messenger);
     context.store.dispatch(incBreakpointsVersionAction());
@@ -244,13 +246,23 @@ async function injectCode(
       break;
 
     case "run": {
-      await context.emuApi.runCodeCommand(codeToInject, false);
+      await context.emuApi.runCodeCommand(codeToInject, false, false);
       returnMessage = `Code injected and started.`;
       break;
     }
 
     case "debug": {
-      await context.emuApi.runCodeCommand(codeToInject, true);
+      // --- Check if we have debug information
+      if (result.sourceFileList.length === 0) {
+        const out = context.output;
+        out.color("yellow");
+        out.writeLine("No debug information available.");
+        out.resetStyle();
+        await context.emuApi.runCodeCommand(codeToInject, false, false);
+        returnMessage = `$W:Code injected and started without debugging.`;
+        break;
+      }
+      await context.emuApi.runCodeCommand(codeToInject, true, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }

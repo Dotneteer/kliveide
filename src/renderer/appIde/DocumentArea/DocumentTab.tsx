@@ -27,6 +27,7 @@ type Props = {
   iconFill?: string;
   isActive?: boolean;
   isReadOnly?: boolean;
+  isLocked?: boolean;
   isTemporary?: boolean;
   awaiting?: boolean;
   hasChanges?: boolean;
@@ -44,6 +45,7 @@ export const DocumentTab = ({
   name,
   isTemporary,
   isReadOnly = false,
+  isLocked = false,
   path,
   iconName = "file-code",
   iconFill = "--color-doc-icon",
@@ -63,6 +65,7 @@ export const DocumentTab = ({
   const ref = useRef<HTMLDivElement>(null);
   const nameRef = useTooltipRef();
   const readOnlyRef = useTooltipRef();
+  const lockedRef = useTooltipRef();
   const isWindows = !!store.getState().isWindows;
   const [pointed, setPointed] = useState(false);
 
@@ -161,6 +164,23 @@ export const DocumentTab = ({
             offsetX={-16}
             offsetY={28}
             content="This file is read-only"
+          />
+        </div>
+      )}
+      {isLocked && (
+        <div className={styles.lockedIcon} ref={lockedRef}>
+          <Icon
+            iconName="lock"
+            width={16}
+            height={16}
+            fill="--console-ansi-bright-red"
+          />
+          <TooltipFactory
+            refElement={lockedRef.current}
+            placement="right"
+            offsetX={-16}
+            offsetY={28}
+            content="This file is locked while the project is running"
           />
         </div>
       )}

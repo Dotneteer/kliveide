@@ -1,3 +1,4 @@
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { Action } from "./Action";
 import { EmulatorState } from "./AppState";
 
@@ -19,6 +20,11 @@ export function emulatorStateReducer(
       return {
         ...state,
         machineState: payload?.state,
+        isProjectDebugging:
+          payload?.state === MachineControllerState.Stopped ||
+          payload?.state === MachineControllerState.None
+            ? false
+            : state.isProjectDebugging,
         pcValue: payload?.numValue
       };
 
@@ -54,6 +60,12 @@ export function emulatorStateReducer(
       return {
         ...state,
         isDebugging: payload?.flag
+      };
+
+    case "SET_PROJECT_DEBUGGING":
+      return {
+        ...state,
+        isProjectDebugging: payload?.flag
       };
 
     case "SET_CLOCK_MULTIPLIER":

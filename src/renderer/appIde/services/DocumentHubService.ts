@@ -128,6 +128,30 @@ class DocumentHubService implements IDocumentHubService {
   }
 
   /**
+   * Locks or unlocks the specified document
+   * @param id ID of the document
+   * @param locked Indicates if the document is locked
+   */
+  setLocked(id: string, locked: boolean): void {
+    const docIndex = this._openDocs.findIndex((d) => d.id === id);
+    if (docIndex < 0) return;
+
+    const document = this._openDocs[docIndex];
+    document.isLocked = locked;
+    this.signHubStateChanged();
+  }
+
+  /**
+   * Releases all locks on the documents
+   */
+  releaseLocks(): void {
+    this._openDocs?.forEach((doc) => {
+      doc.isLocked = false;
+    });
+    this.signHubStateChanged();
+  }
+
+  /**
    * Tests if the specified document is open
    * @param id Document ID to check
    */
