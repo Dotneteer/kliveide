@@ -1670,4 +1670,22 @@ describe("Assembler - macro emit", async () => {
       0x00
     );
   });
+
+  it("Macro with no parentheses", async () => {
+    await testCodeEmit(
+      `
+      A1:
+        .macro(value)
+          ld a,$11
+        .endm
+
+      A1
+        ld a,$22
+      `,
+      0x3e,
+      0x11,
+      0x3e,
+      0x22,
+    );
+  });
 });

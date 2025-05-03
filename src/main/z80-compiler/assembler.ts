@@ -974,6 +974,22 @@ export class Z80Assembler extends ExpressionEvaluator {
         return;
       }
 
+      // --- Special case: .struct invocation without arguments
+      const structDef = this._currentModule.getStruct(asmLine.label.name);
+      if (structDef) {
+        // --- We have found a structure definition
+        this.reportAssemblyError("Z1013", asmLine, null, asmLine.label.name);
+        return;
+      }
+
+      // // --- Let's handle macro invocation
+      const macroDef = this._currentModule.getMacro(asmLine.label.name);
+      if (macroDef) {
+        // Warn about missing parentheses
+        this.reportAssemblyError("Z1014", asmLine, null, asmLine.label.name);
+        return;
+      }
+
       // --- This is a label-only line
       if (this._overflowLabelLine) {
         await this.createCurrentPointLabel(this._overflowLabelLine);

@@ -154,6 +154,8 @@ export type ErrorCodes =
   | "Z1010"
   | "Z1011"
   | "Z1012"
+  | "Z1013"
+  | "Z1014"
 
   // --- Others
   | "Z2000";
@@ -323,6 +325,8 @@ export const errorMessages: ErrorText = {
   Z1010: "Cannot pass a macro parameter template in a macro argument.",
   Z1011: "Macro parameter can only be used within a macro declaration.",
   Z1012: "Error in macro invocation",
+  Z1013: "The '{0}' label matches a structure name. If you want to invoke it, use parentheses like '{0}(...)'.",
+  Z1014: "The '{0}' label matches a macro name. If you want to invoke it, use parentheses like '{0}(...)'.",
 
   // --- Others
   Z2000: "ERROR: {0}"

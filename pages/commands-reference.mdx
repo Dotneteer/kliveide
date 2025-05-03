@@ -428,6 +428,18 @@ Available aliases: `scr`
 
 Provide the full file name (including the `.ksx` file extension) relative to the project's root folder. For example, if your script is in the `scripts` folder and named `myScript.ksx`, use the `scripts/myScript.ksx` parameter.
 
+## `sjasmp-reset`
+
+Provide the folder path of the SjasmPlus compiler.
+
+```
+sjasm-reset <SjasmPlus executable folder> [-p]
+```
+
+Available aliases: `sjasmpr`
+
+Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.
+
 ## `set`
 
 You can use this comment to set or delete a particular Klive setting.

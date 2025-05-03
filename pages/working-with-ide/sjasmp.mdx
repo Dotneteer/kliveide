@@ -24,6 +24,10 @@ The IDE provides a command, `sjasmp-reset` (or shorter, `sjasmpr`), to connect K
 
 The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path. 
 
+<Callout type="info" emoji="💡">
+Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.
+</Callout>
+
 ## Using SJASMPLUS
 
 After setting up the SjasmPlus integration, you can create Klive projects with the `sjasmplus` template: 
