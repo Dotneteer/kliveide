@@ -14,15 +14,15 @@ export const DocumentArea = () => {
   const { projectService } = useAppServices();
   const documentHubService = projectService.getActiveDocumentHubService();
   const hubVersion = useDocumentHubServiceVersion(documentHubService);
-  const projectViewStateVersion = useSelector(s => s.project?.projectViewStateVersion);
+  const projectViewStateVersion = useSelector((s) => s.project?.projectViewStateVersion);
   const [activeDoc, setActiveDoc] = useState<ProjectDocumentState>(null);
   const [viewState, setViewState] = useState<any>(null);
-  const [data, setData] = useState<string |Uint8Array>(null);
+  const [data, setData] = useState<string | Uint8Array>(null);
 
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
-    const doc = documentHubService?.getActiveDocument()
-    setActiveDoc(doc);
+    const doc = documentHubService?.getActiveDocument();
+    setActiveDoc(doc ? {...doc}: null);
     const viewState = documentHubService?.getDocumentViewState(doc?.id);
     setViewState(viewState);
     setData(doc?.contents);
@@ -34,10 +34,11 @@ export const DocumentArea = () => {
         <DocumentsHeader />
         {activeDoc && (
           <DocumentsContainer
+            key={activeDoc.id}
             document={activeDoc}
             contents={data}
             viewState={viewState}
-            apiLoaded={api => {
+            apiLoaded={(api) => {
               documentHubService.setDocumentApi(activeDoc.id, api);
             }}
           />

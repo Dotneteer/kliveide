@@ -3,4 +3,5 @@
 .documentContainer {
     @include fill-parent-flex;
     background: var(--bgcolor-docscontainer);
+    z-index: 0;
 }

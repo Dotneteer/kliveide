@@ -377,7 +377,6 @@ class EmuMessageProcessor {
     }
 
     const lastOpStart = controller.machine.opStartAddress;
-    console.log("bps", controller.debugSupport.breakpointDefs);
     const execBreakpoints = controller.debugSupport.breakpoints
       .map((bp) => ({
         ...bp
@@ -803,6 +802,15 @@ class EmuMessageProcessor {
       tacts: machine.tacts
     };
   }
+
+  async renameBreakpoints(oldResource: string, newResource: string): Promise<void> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.debugSupport.renameBreakpoints(oldResource, newResource);
+  }
+  
 }
 
 /**

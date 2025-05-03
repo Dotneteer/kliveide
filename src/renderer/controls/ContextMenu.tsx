@@ -27,11 +27,12 @@ export const ContextMenu = ({
   const [popperElement, setPopperElement] = useState(null);
   const { styles, attributes } = usePopper(state.contextRef, popperElement, {
     placement: placement as any,
+    strategy: "absolute",
     modifiers: [
       {
         name: "offset",
         options: {
-          offset: [state.contextX, state.contextY]
+          offset: [state.contextX, state.contextY],
         }
       }
     ]
@@ -49,7 +50,6 @@ export const ContextMenu = ({
               if (e.currentTarget !== e.target) {
                 return;
               }
-              console.log("prevent");
               e.preventDefault();
               e.stopPropagation();
             }}

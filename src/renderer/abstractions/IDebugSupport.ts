@@ -116,6 +116,11 @@ export interface IDebugSupport {
   resolveBreakpoint(resource: string, line: number, address: number): void;
 
   /**
+   * Renames breakpoints when the source file is renamed
+   */
+  renameBreakpoints(oldResource: string, newResource: string): void;
+
+  /**
    * Changes the list of existing breakpoints to the provided ones.
    * @param breakpoints Breakpoints to set
    */

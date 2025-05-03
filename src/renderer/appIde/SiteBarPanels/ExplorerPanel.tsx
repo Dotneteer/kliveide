@@ -39,6 +39,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { VStack } from "@renderer/controls/new/Panels";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -47,6 +48,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
+  const emuApi = useEmuApi();
+
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { projectService, ideCommandsService } = appServices;
@@ -228,6 +231,12 @@ const ExplorerPanel = () => {
         try {
           await mainApi.renameFileEntry(selectedContextNode.data.fullPath, newFullName);
           projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
+
+          // --- Rename breakpoints
+          const oldResource = selectedContextNode.data.projectPath;
+          const oldProjectPath = getNodeDir(oldResource);
+          const newResource = oldProjectPath ? `${oldProjectPath}/${newName}` : newName;
+          await emuApi.renameBreakpoints(oldResource, newResource);
 
           if (wasBuildRoot) {
             const newProjectPath = oldProjectFolder ? `${oldProjectFolder}/${newName}` : newName;
