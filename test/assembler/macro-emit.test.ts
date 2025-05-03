@@ -1671,8 +1671,22 @@ describe("Assembler - macro emit", async () => {
     );
   });
 
+  it("Struct with no parentheses", async () => {
+    await codeRaisesError(
+      `
+      A1:
+        .struct
+        .ends
+
+      A1
+        ld a,$22
+      `,
+      "Z1013"
+    );
+  });
+
   it("Macro with no parentheses", async () => {
-    await testCodeEmit(
+    await codeRaisesError(
       `
       A1:
         .macro(value)
@@ -1682,10 +1696,7 @@ describe("Assembler - macro emit", async () => {
       A1
         ld a,$22
       `,
-      0x3e,
-      0x11,
-      0x3e,
-      0x22,
+      "Z1014"
     );
   });
 });
