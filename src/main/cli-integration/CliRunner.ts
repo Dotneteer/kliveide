@@ -132,7 +132,9 @@ export class CliRunner {
   }
 
   private errorLineSplitter(error: ExecaSyncError<string>): string[] {
-    return (error.stdout + "\n" + error.stderr).split("\n");
+    // Normalize line endings to '\n' for consistent splitting
+    const normalizedOutput = (error.stdout + "\n" + error.stderr).replace(/\r\n/g, "\n");
+    return normalizedOutput.split("\n");
   }
 }
 
@@ -236,7 +238,7 @@ export type CompilerFunction = (
  * Describes an option that can be passed to a utility process
  */
 export type CmdLineOptionDescriptor = {
-  optionName?: string;  
+  optionName?: string;
   description: string;
   type: "string" | "number" | "boolean";
   isArray?: boolean;

@@ -184,10 +184,11 @@ export class SjasmPCompiler implements IKliveCompiler {
    */
   getErrorFilterDescription(): ErrorFilterDescriptor {
     return {
-      regex: /^(.*):(\d+): error: (.*)$/,
+      regex: /^(.*)\((\d+)\):\s+(warning|error):\s+(.*)$/,
       filenameFilterIndex: 1,
       lineFilterIndex: 2,
-      messageFilterIndex: 3
+      messageFilterIndex: 4,
+      warningFilterIndex: 3
     };
   }
 }
