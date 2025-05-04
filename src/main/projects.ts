@@ -16,7 +16,6 @@ import {
   setProjectBuildFileAction,
   setExportDialogInfoAction,
   setWorkspaceSettingsAction,
-  initGlobalSettingsAction
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
@@ -164,15 +163,6 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       await setMachineType(projectStruct.machineType, projectStruct.modelId, projectStruct.config);
 
       // --- Apply settings if the project is valid, merge with current state
-      const mergedGlobals = mainStore.getState().globalSettings;
-      Object.keys(KliveGlobalSettings).forEach((key) => {
-        const projSetting = get(projectStruct.globalSettings, key);
-        if (projSetting) {
-          set(mergedGlobals, key, projSetting);
-        }
-      });
-      disp(initGlobalSettingsAction(mergedGlobals));
-
       disp(setMachineSpecificAction(projectStruct.machineSpecific));
       disp(setExcludedProjectItemsAction(projectStruct.ide?.excludedProjectItems));
       disp(setBuildRootAction(projectStruct.builder?.roots, !!projectStruct.builder?.roots));
@@ -315,7 +305,7 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
   const bpResponse = await getEmuApi().listBreakpoints();
   const globalSettings: Record<string, any> = {};
   Object.keys(KliveGlobalSettings).forEach((key) => {
-    if (getSettingDefinition(key)?.saveWithProject ?? true) {
+    if (getSettingDefinition(key)?.saveWithProject ?? false) {
       set(globalSettings, key, get(state.globalSettings, key));
     }
   });
@@ -345,7 +335,6 @@ export async function getKliveProjectStructure(): Promise<KliveProjectStructure>
     settings: state.projectSettings,
     exportDialog: state.project?.exportSettings,
     workspaceSettings: state.workspaceSettings,
-    globalSettings
   };
 }
 
@@ -406,7 +395,6 @@ type KliveProjectStructure = {
   builder?: BuilderState;
   settings?: Record<string, any>;
   exportDialog?: ExportDialogSettings;
-  globalSettings?: typeof KliveGlobalSettings;
   workspaceSettings?: Record<string, any>;
 };
 
