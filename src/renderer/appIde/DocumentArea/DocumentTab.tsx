@@ -13,7 +13,6 @@ import {
 } from "@renderer/controls/ContextMenu";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
-import ContextMenu2 from "@renderer/controls/ContextMenu2";
 
 export enum CloseMode {
   All,
@@ -80,7 +79,7 @@ export const DocumentTab = ({
 
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
-    <ContextMenu state={contextMenuState} onClickAway={contextMenuApi.conceal}>
+    <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
       <ContextMenuItem
         text="Close"
         clicked={() => {
@@ -181,39 +180,7 @@ export const DocumentTab = ({
         </div>
       )}
 
-      {false && contextMenu}
-      <ContextMenu2 onClickAway={contextMenuApi.conceal}>
-        <ContextMenuItem
-          text="Close"
-          clicked={() => {
-            contextMenuApi.conceal();
-            tabCloseClicked?.(CloseMode.This);
-          }}
-        />
-        <ContextMenuItem
-          text="Close Others"
-          disabled={tabsCount < 2}
-          clicked={() => {
-            contextMenuApi.conceal();
-            tabCloseClicked?.(CloseMode.Others);
-          }}
-        />
-        <ContextMenuItem
-          text="Close All"
-          clicked={() => {
-            contextMenuApi.conceal();
-            tabCloseClicked?.(CloseMode.All);
-          }}
-        />
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
-          clicked={() => {
-            contextMenuApi.conceal();
-            mainApi.showItemInFolder(path);
-          }}
-        />
-      </ContextMenu2>
+      {contextMenu}
 
       <TabButton
         iconName={hasChanges ? "circle-filled" : "close"}

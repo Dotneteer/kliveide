@@ -8,6 +8,7 @@
   .menuItem {
     height: 20px;
     padding: 2px 12px;
+    user-select: none;
     cursor: pointer;
 
     &.dangerous {
