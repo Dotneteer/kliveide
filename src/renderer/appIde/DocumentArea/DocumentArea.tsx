@@ -22,7 +22,11 @@ export const DocumentArea = () => {
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
     const doc = documentHubService?.getActiveDocument();
-    setActiveDoc(doc ? {...doc}: null);
+    if (doc) {
+      const lockedDocs = projectService.getLockedFiles();
+      doc.isLocked = lockedDocs.includes(doc.id);
+    }
+    setActiveDoc(doc ? { ...doc } : null);
     const viewState = documentHubService?.getDocumentViewState(doc?.id);
     setViewState(viewState);
     setData(doc?.contents);

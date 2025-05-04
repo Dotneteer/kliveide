@@ -951,7 +951,7 @@ async function compileCode(
   context: IdeCommandContext
 ): Promise<{ result?: KliveCompilerOutput; message?: string }> {
   // --- Release the files locked by the debugger
-  context.service.projectService.getActiveDocumentHubService().releaseLocks();
+  context.service.projectService.releaseLocks();
   
   // --- Shortcuts
   const out = context.output;
@@ -1065,9 +1065,7 @@ async function injectCode(
 
   // --- Collect files affected by project debugging
   if (operationType === "debug") {
-    result.sourceFileList?.forEach((f) => {
-      context.service.projectService.getActiveDocumentHubService().setLocked(f.filename, true)
-    });
+    context.service.projectService.setLockedFiles(result.sourceFileList.map((f) => f.filename));
   }
 
   // --- Create the code to inject into the emulator

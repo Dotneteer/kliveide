@@ -24,6 +24,7 @@ const JOB_KIND_SAVE_FILE = 21;
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;
+  private _lockedFiles: string[] = [];
   private _oldState: AppState;
   private _projectOpened = new LiteEvent<void>();
   private _projectClosed = new LiteEvent<void>();
@@ -481,6 +482,30 @@ class ProjectService implements IProjectService {
     // --- Sign the change
     this.signProjectViewstateVersionChanged();
     this.signItemRenamed(oldId, renamedNode);
+  }
+
+  /**
+   * Set the files to be locked
+   * @param fileIds 
+   */
+  setLockedFiles(fileIds: string[]): void {
+    this._lockedFiles = fileIds;
+    this.signProjectViewstateVersionChanged();
+  }
+
+  /**
+   * Gets the files to be locked
+   */
+  getLockedFiles(): string[] {
+    return this._lockedFiles.slice(0);
+  }
+
+  /**
+   * Releases all locks on the documents
+   */
+  releaseLocks(): void {
+    this._lockedFiles = [];
+    this.signProjectViewstateVersionChanged();
   }
 
   // --- Helper methods
