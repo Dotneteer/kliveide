@@ -1255,7 +1255,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Check for already defined symbols
     const symbolInfo = lookup[symbol];
-    if (symbolInfo && symbolInfo.type === SymbolType.Label) {
+    if (symbolInfo && symbolInfo.type !== SymbolType.None) {
       this.reportAssemblyError("Z0501", line, null, symbol);
       return;
     }

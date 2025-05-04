@@ -434,7 +434,6 @@ export class DebugSupport implements IDebugSupport {
     lowerBound?: number,
     upperBound?: number
   ): void {
-    console.log("scrollBreakpoints", def, shift, lowerBound, upperBound);
     let changed = false;
     const values: BreakpointInfo[] = [];
     for (const value of this.breakpointDefs.values()) {
@@ -524,6 +523,25 @@ export class DebugSupport implements IDebugSupport {
     } else {
       this.breakpointFlags[address] &= ~DIS_EXEC_BP;
     }
+  }
+
+  /**
+   * Renames breakpoints when the source file is renamed
+   */
+  renameBreakpoints(oldResource: string, newResource: string): void {
+    const values: BreakpointInfo[] = [];
+    for (const value of this.breakpointDefs.values()) {
+      values.push(value);
+    }
+    values.forEach((bp) => {
+      if (bp.resource === oldResource) {
+        // --- Shift the breakpoint
+        const oldKey = getBreakpointKey(bp);
+        this.breakpointDefs.delete(oldKey);
+        bp.resource = newResource;
+        this.breakpointDefs.set(getBreakpointKey(bp), bp);
+      }
+    });
   }
 
   /**

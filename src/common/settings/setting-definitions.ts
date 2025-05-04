@@ -42,7 +42,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "emu"
   },
   {
@@ -52,7 +51,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "emu"
   },
   {
@@ -62,7 +60,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "emu"
   },
   {
@@ -72,7 +69,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "emu"
   },
   {
@@ -82,7 +78,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "emu"
   },
   {
@@ -92,7 +87,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "emu"
   },
   {
@@ -102,7 +96,6 @@ const settingDefinitions: Setting[] = [
     type: "string",
     defaultValue: "uk",
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "emu"
   },
   {
@@ -111,7 +104,6 @@ const settingDefinitions: Setting[] = [
     type: "string",
     defaultValue: "33%",
     saveWithIde: true,
-    saveWithProject: true,
     volatile: true
   },
   {
@@ -121,7 +113,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -131,7 +122,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -141,7 +131,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -151,7 +140,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -161,7 +149,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -171,7 +158,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -181,7 +167,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -191,7 +176,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,
-    saveWithProject: true,
     boundTo: "ide"
   },
   {
@@ -200,7 +184,6 @@ const settingDefinitions: Setting[] = [
     type: "string",
     defaultValue: "25%",
     saveWithIde: true,
-    saveWithProject: true,
     volatile: true
   },
   {
@@ -209,7 +192,6 @@ const settingDefinitions: Setting[] = [
     type: "string",
     defaultValue: "33%",
     saveWithIde: true,
-    saveWithProject: true,
     volatile: true
   },
   {
@@ -218,7 +200,6 @@ const settingDefinitions: Setting[] = [
     type: "string",
     defaultValue: "commands",
     saveWithIde: true,
-    saveWithProject: true,
     volatile: true
   },
   {
@@ -227,7 +208,6 @@ const settingDefinitions: Setting[] = [
     type: "string",
     defaultValue: PANE_ID_EMU,
     saveWithIde: true,
-    saveWithProject: true,
     volatile: true
   },
   {
@@ -236,7 +216,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: false,
     boundTo: "ide"
   },
   {
@@ -245,7 +224,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: false,
     boundTo: "ide"
   },
   {
@@ -255,7 +233,6 @@ const settingDefinitions: Setting[] = [
     type: "number",
     defaultValue: 16,
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_AUTOCOMPLETE,
@@ -264,7 +241,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_TABSIZE,
@@ -273,7 +249,6 @@ const settingDefinitions: Setting[] = [
     type: "number",
     defaultValue: 4,
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_INSERT_SPACES,
@@ -282,7 +257,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_RENDER_WHITESPACE,
@@ -291,7 +265,6 @@ const settingDefinitions: Setting[] = [
     type: "string",
     defaultValue: "none",
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_DETECT_INDENTATION,
@@ -300,7 +273,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_SELECTION_HIGHLIGHT,
@@ -309,7 +281,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
@@ -318,7 +289,6 @@ const settingDefinitions: Setting[] = [
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
-    saveWithProject: true
   },
   {
     id: SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
@@ -327,7 +297,6 @@ const settingDefinitions: Setting[] = [
     type: "number",
     defaultValue: 100,
     saveWithIde: true,
-    saveWithProject: true
   }
 ];
 

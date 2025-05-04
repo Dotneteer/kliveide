@@ -1,7 +1,7 @@
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { compareProjectNode, getFileTypeEntry, getNodeFile } from "../project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile } from "../project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -19,7 +19,6 @@ import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
 import { ProjectNode } from "@abstractions/ProjectNode";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { createMainApi } from "@common/messaging/MainApi";
-import { get } from "lodash";
 
 const JOB_KIND_SAVE_FILE = 21;
 
@@ -453,7 +452,10 @@ class ProjectService implements IProjectService {
     renamedNode.data.icon = fileTypeEntry?.icon;
 
     // --- Change the properties of the renamed node
+    const oldProjectPath = getNodeDir(renamedNode.data.projectPath);
+    const newName = getNodeFile(newId);
     renamedNode.data.fullPath = newId;
+    renamedNode.data.projectPath = oldProjectPath ? `${oldProjectPath}/${newName}` : newName;;
     renamedNode.data.name = getNodeFile(newId);
     renamedNode.data.subType = fileTypeEntry?.subType;
     renamedNode.parentNode.sortChildren((a, b) => compareProjectNode(a.data, b.data));
@@ -472,6 +474,7 @@ class ProjectService implements IProjectService {
       oldItem.path = newId;
       oldItem.name = getNodeFile(newId);
       oldItem.language = fileTypeEntry?.subType;
+      oldItem.node = renamedNode.data;
       this._projectItemCache.set(newId, oldItem);
     }
 

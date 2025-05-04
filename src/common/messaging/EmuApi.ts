@@ -190,6 +190,10 @@ class EmuApiImpl {
   async getCpuStateChunk(): Promise<CpuStateChunk> {
     throw new Error(NO_PROXY_ERROR);
   }
+
+  async renameBreakpoints(_oldResource: string, _newResource: string): Promise<void> {
+    throw new Error(NO_PROXY_ERROR);
+  }
 }
 
 // --- The response with the CPU state chunk

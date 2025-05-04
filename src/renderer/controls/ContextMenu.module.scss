@@ -3,11 +3,12 @@
   color: var(--color-context-item);
   padding: 8px 0;
   border-radius: 2px;
-  z-index: 100;
+  z-index: 1000;
 
   .menuItem {
     height: 20px;
     padding: 2px 12px;
+    user-select: none;
     cursor: pointer;
 
     &.dangerous {

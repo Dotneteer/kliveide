@@ -79,7 +79,7 @@ export const DocumentTab = ({
 
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
-    <ContextMenu state={contextMenuState} onClickAway={contextMenuApi.conceal}>
+    <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
       <ContextMenuItem
         text="Close"
         clicked={() => {
@@ -169,12 +169,7 @@ export const DocumentTab = ({
       )}
       {isLocked && (
         <div className={styles.lockedIcon} ref={lockedRef}>
-          <Icon
-            iconName="lock"
-            width={16}
-            height={16}
-            fill="--console-ansi-bright-red"
-          />
+          <Icon iconName="lock" width={16} height={16} fill="--console-ansi-bright-red" />
           <TooltipFactory
             refElement={lockedRef.current}
             placement="right"

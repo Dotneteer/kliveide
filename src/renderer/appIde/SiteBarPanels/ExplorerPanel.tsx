@@ -39,6 +39,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
 import { VStack } from "@renderer/controls/new/Panels";
+import { useEmuApi } from "@renderer/core/EmuApi";
 
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
@@ -47,6 +48,8 @@ const ExplorerPanel = () => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
+  const emuApi = useEmuApi();
+
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { projectService, ideCommandsService } = appServices;
@@ -106,12 +109,13 @@ const ExplorerPanel = () => {
   // --- Let's use this context menu when clicking a project tree node
   const [contextMenuState, contextMenuApi] = useContextMenuState();
   const contextMenu = (
-    <ContextMenu state={contextMenuState} onClickAway={contextMenuApi.conceal}>
+    <ContextMenu state={contextMenuState} onClickOutside={contextMenuApi.conceal}>
       {selectedNodeIsRoot && (
         <>
           <ContextMenuItem
             text="Refresh"
             clicked={() => {
+              contextMenuApi.conceal();
               folderCache.clear();
               store.dispatch(incExploreViewVersionAction());
             }}
@@ -123,6 +127,7 @@ const ExplorerPanel = () => {
           <ContextMenuItem
             text="New file..."
             clicked={() => {
+              contextMenuApi.conceal();
               setNewItemIsFolder(false);
               setIsNewItemDialogOpen(true);
             }}
@@ -130,6 +135,7 @@ const ExplorerPanel = () => {
           <ContextMenuItem
             text="New folder..."
             clicked={() => {
+              contextMenuApi.conceal();
               setNewItemIsFolder(true);
               setIsNewItemDialogOpen(true);
             }}
@@ -138,6 +144,7 @@ const ExplorerPanel = () => {
           <ContextMenuItem
             text="Expand all"
             clicked={() => {
+              contextMenuApi.conceal();
               selectedContextNode.expandAll();
               refreshTree();
             }}
@@ -145,6 +152,7 @@ const ExplorerPanel = () => {
           <ContextMenuItem
             text="Collapse all"
             clicked={() => {
+              contextMenuApi.conceal();
               selectedContextNode.collapseAll();
               refreshTree();
             }}
@@ -155,18 +163,25 @@ const ExplorerPanel = () => {
       <ContextMenuItem
         text={`Reveal in ${isWindows ? "File Explorer" : "Finder"}`}
         disabled={!selectedContextNode?.data.fullPath}
-        clicked={() => mainApi.showItemInFolder(selectedContextNode.data.fullPath)}
+        clicked={() => {
+          contextMenuApi.conceal();
+          mainApi.showItemInFolder(selectedContextNode.data.fullPath);
+        }}
       />
       <ContextMenuSeparator />
       <ContextMenuItem
         text="Rename..."
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
-        clicked={() => setIsRenameDialogOpen(true)}
+        clicked={() => {
+          contextMenuApi.conceal();
+          setIsRenameDialogOpen(true);
+        }}
       />
       <ContextMenuItem
         text="Exclude"
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot || !isKliveProject}
         clicked={async () => {
+          contextMenuApi.conceal();
           await ideCommandsService.executeCommand(`p:x "${selectedContextNode.data.projectPath}"`);
         }}
       />
@@ -174,7 +189,10 @@ const ExplorerPanel = () => {
         dangerous={true}
         text="Delete"
         disabled={selectedNodeIsProjectFile || selectedNodeIsRoot}
-        clicked={() => setIsDeleteDialogOpen(true)}
+        clicked={() => {
+          contextMenuApi.conceal();
+          setIsDeleteDialogOpen(true);
+        }}
       />
       {selectedContextNode?.data.canBeBuildRoot && (
         <>
@@ -182,6 +200,7 @@ const ExplorerPanel = () => {
           <ContextMenuItem
             text={selectedNodeIsBuildRoot ? "Demote from Build Root" : "Promote to Build Root"}
             clicked={async () => {
+              contextMenuApi.conceal();
               dispatch(
                 setBuildRootAction([selectedContextNode.data.projectPath], !selectedNodeIsBuildRoot)
               );
@@ -228,6 +247,12 @@ const ExplorerPanel = () => {
         try {
           await mainApi.renameFileEntry(selectedContextNode.data.fullPath, newFullName);
           projectService.renameDocument(selectedContextNode.data.fullPath, newFullName);
+
+          // --- Rename breakpoints
+          const oldResource = selectedContextNode.data.projectPath;
+          const oldProjectPath = getNodeDir(oldResource);
+          const newResource = oldProjectPath ? `${oldProjectPath}/${newName}` : newName;
+          await emuApi.renameBreakpoints(oldResource, newResource);
 
           if (wasBuildRoot) {
             const newProjectPath = oldProjectFolder ? `${oldProjectFolder}/${newName}` : newName;

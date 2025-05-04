@@ -1,6 +1,11 @@
 import { describe, it } from "vitest";
 import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
-import { codeRaisesErrorWithOptions, testCodeEmit, testCodeEmitWithOptions } from "./test-helpers";
+import {
+  codeRaisesError,
+  codeRaisesErrorWithOptions,
+  testCodeEmit,
+  testCodeEmitWithOptions
+} from "./test-helpers";
 
 describe("Assembler - labels", async () => {
   it("hanging label", async () => {
@@ -274,6 +279,30 @@ describe("Assembler - labels", async () => {
       0x09,
       0x60,
       0x78
+    );
+  });
+
+  it("Duplicate label #1", async () => {
+    await codeRaisesError(
+      `
+    Start = $
+      nop
+    Start:
+      nop
+    `,
+      "Z0501"
+    );
+  });
+
+  it("Duplicate label #2", async () => {
+    await codeRaisesError(
+      `
+    Start:
+      nop
+    Start = $
+      nop
+    `,
+      "Z0312"
     );
   });
 });

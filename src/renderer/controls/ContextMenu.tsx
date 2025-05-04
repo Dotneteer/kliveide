@@ -1,8 +1,8 @@
 import classnames from "classnames";
-import { MouseEvent, ReactNode, useState } from "react";
+import { MouseEvent, ReactNode, useEffect, useState } from "react";
 import { usePopper } from "react-popper";
-import { ClickAwayListener } from "./ClickAwayListener";
 import localStyles from "./ContextMenu.module.scss";
+import { createPortal } from "react-dom";
 
 export type ContextMenuState = {
   contextVisible: boolean;
@@ -14,19 +14,20 @@ export type ContextMenuState = {
 type Props = {
   children: ReactNode;
   state: ContextMenuState;
+  onClickOutside?: () => void;
   placement?: string;
-  onClickAway?: () => void;
 };
 
 export const ContextMenu = ({
   children,
   state,
   placement = "bottom-start",
-  onClickAway
+  onClickOutside
 }: Props) => {
   const [popperElement, setPopperElement] = useState(null);
   const { styles, attributes } = usePopper(state.contextRef, popperElement, {
     placement: placement as any,
+    strategy: "absolute",
     modifiers: [
       {
         name: "offset",
@@ -36,28 +37,40 @@ export const ContextMenu = ({
       }
     ]
   });
+  const rootElement = document.getElementById("themeRoot");
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (popperElement && !popperElement.contains(event.target as Node)) {
+        onClickOutside?.();
+      }
+    };
+
+    if (state.contextVisible) {
+      document.addEventListener("mousedown", handleOutsideClick as any);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick as any);
+    };
+  }, [state.contextVisible, popperElement, onClickOutside]);
+
   return (
     <>
-      {state.contextVisible && (
-        <ClickAwayListener mouseEvent="mousedown" onClickAway={() => onClickAway?.()}>
+      {state.contextVisible &&
+        createPortal(
           <div
             ref={setPopperElement}
+            tabIndex={-1}
+            
             className={localStyles.contextMenu}
-            style={styles.popper}
+            style={{ ...styles.popper, zIndex: 9999 }}
             {...attributes.popper}
-            onMouseDown={e => {
-              if (e.currentTarget !== e.target) {
-                return;
-              }
-              console.log("prevent");
-              e.preventDefault();
-              e.stopPropagation();
-            }}
           >
             {children}
-          </div>
-        </ClickAwayListener>
-      )}
+          </div>,
+          rootElement || document.body
+        )}
     </>
   );
 };
@@ -76,13 +89,9 @@ export const ContextMenuItem = ({ dangerous, text, disabled, clicked }: ContextM
         [localStyles.dangerous]: dangerous,
         [localStyles.disabled]: disabled
       })}
-      onMouseDown={e => {
+      onMouseDown={(e) => {
         if (!disabled) {
           if (e.button === 0) clicked?.();
-        } else {
-          console.log("prevent")
-          e.preventDefault();
-          e.stopPropagation();
         }
       }}
     >
@@ -96,36 +105,36 @@ export const ContextMenuSeparator = () => {
 };
 
 export interface IContextMenuApi {
-  show (e: MouseEvent): void;
-  conceal (): void;
+  show(e: MouseEvent): void;
+  conceal(): void;
 }
 
-export const useContextMenuState = (): [ ContextMenuState, IContextMenuApi ]  => {
+export const useContextMenuState = (): [ContextMenuState, IContextMenuApi] => {
   const [state, setState] = useState<ContextMenuState>({
     contextVisible: false,
     contextRef: null,
     contextX: 0,
-    contextY: 0,
+    contextY: 0
   });
 
   return [
     state,
     {
-      show: e => {
+      show: (e) => {
         const t = e.target as HTMLElement;
         const rc = t?.getBoundingClientRect();
         setState({
-          contextVisible:true,
+          contextVisible: true,
           contextRef: t,
           contextX: rc ? e.clientX - rc.left : 0,
           contextY: rc ? e.clientY - rc.bottom : 0
-        })
+        });
       },
       conceal: () => {
         setState({
           ...state,
           contextVisible: false
-        })
+        });
       }
     }
   ];
