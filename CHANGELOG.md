@@ -1,10 +1,15 @@
 # Klive IDE Changelog
 
-## 0.46.1: Planned private build
+## 0.47.0: Planned private build
 
-- Sjasmplus syntax highlighting
+- Issue #986
+- Issue #980
+- Issue #978
+- Issue #977
+- Issue #976
+- Issue #975
 
-## 0.34.0 - 0.46.0: Private builds
+## 0.34.0 - 0.46.5: Private builds
 
 ## 0.33.0
 
