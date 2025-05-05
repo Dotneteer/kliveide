@@ -215,4 +215,20 @@ export type IProjectService = {
    * @param newId New document ID
    */
   renameDocument(oldId: string, newId: string): void;
+
+  /**
+   * Set the files to be locked
+   * @param fileIds 
+   */
+  setLockedFiles(fileIds: string[]): void;
+
+  /**
+   * Gets the files to be locked
+   */
+  getLockedFiles(): string[];
+
+  /**
+   * Releases all locks on the documents
+   */
+  releaseLocks(): void;
 };

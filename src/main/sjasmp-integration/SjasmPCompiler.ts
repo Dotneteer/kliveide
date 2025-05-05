@@ -65,22 +65,28 @@ export class SjasmPCompiler implements IKliveCompiler {
       };
 
       const state = mainStore.getState();
-      const cliManager = createSjasmRunner(state.project?.folderPath.replaceAll("\\", "/"), options, [filename]);
+      const cliManager = createSjasmRunner(
+        state.project?.folderPath.replaceAll("\\", "/"),
+        options,
+        [filename]
+      );
       const result = await cliManager.execute();
-
-      if (result.failed || result.errors?.length > 0) {
-        return result;
-      }
 
       // --- Extract and process the list file's content
       const listFileName = `${state.project.folderPath}/${SJASM_LIST_FILE}`;
+      const binaryFileName = `${state.project.folderPath}/${SJASM_OUTPUT_FILE}`;
+      const sldFileName = `${state.project.folderPath}/${SJASM_SLD_FILE}`;
+
+      if (result.failed || result.errors?.length > 0) {
+        removeTempFiles();
+        return result;
+      }
+
       const listContent = fs.readFileSync(listFileName, "utf-8");
       const codeSegments = extractSegmentsFromListFile(listContent);
 
       // --- Extract the binary content
-      const binaryFileName = `${state.project.folderPath}/${SJASM_OUTPUT_FILE}`;
       const binaryContent = new Uint8Array(fs.readFileSync(binaryFileName));
-      const sldFileName = `${state.project.folderPath}/${SJASM_SLD_FILE}`;
 
       // --- Extract the segments of the binary code
       const segments: BinarySegment[] = [];
@@ -133,16 +139,7 @@ export class SjasmPCompiler implements IKliveCompiler {
       }
 
       // --- Remove the output files
-      try {
-        const keepTempFiles = settingsReader.readBooleanSetting(SJASMP_KEEP_TEMP_FILES);
-        if (!keepTempFiles) {
-          fs.unlinkSync(listFileName);
-          fs.unlinkSync(binaryFileName);
-          fs.unlinkSync(sldFileName);
-        }
-      } catch {
-        // --- Intentionally ignored
-      }
+      removeTempFiles();
 
       // --- Done.
       return {
@@ -155,9 +152,25 @@ export class SjasmPCompiler implements IKliveCompiler {
         sourceMap,
         listFileItems
       } as DebuggableOutput;
+
+      function removeTempFiles() {
+        // --- Remove the output files
+        try {
+          const keepTempFiles = settingsReader.readBooleanSetting(SJASMP_KEEP_TEMP_FILES);
+          if (!keepTempFiles) {
+            fs.unlinkSync(listFileName);
+            fs.unlinkSync(binaryFileName);
+            fs.unlinkSync(sldFileName);
+          }
+        } catch {
+          // --- Intentionally ignored
+        }
+      }
+  
     } catch (err) {
       throw err;
     }
+
   }
 
   /**
@@ -184,10 +197,11 @@ export class SjasmPCompiler implements IKliveCompiler {
    */
   getErrorFilterDescription(): ErrorFilterDescriptor {
     return {
-      regex: /^(.*):(\d+): error: (.*)$/,
+      regex: /^(.*)\((\d+)\):\s+(warning|error):\s+(.*)$/,
       filenameFilterIndex: 1,
       lineFilterIndex: 2,
-      messageFilterIndex: 3
+      messageFilterIndex: 4,
+      warningFilterIndex: 3
     };
   }
 }
