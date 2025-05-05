@@ -26,7 +26,7 @@ export const DocumentArea = () => {
       const lockedDocs = projectService.getLockedFiles();
       doc.isLocked = lockedDocs.includes(doc.id);
     }
-    setActiveDoc(doc ? { ...doc } : null);
+    setActiveDoc(doc);
     const viewState = documentHubService?.getDocumentViewState(doc?.id);
     setViewState(viewState);
     setData(doc?.contents);
