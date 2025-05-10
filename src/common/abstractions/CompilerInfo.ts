@@ -520,4 +520,5 @@ export type ListFileItem = {
   codeStartIndex?: number;
   codeLength?: number;
   sourceText?: string;
+  isMacroInvocation: boolean;
 };

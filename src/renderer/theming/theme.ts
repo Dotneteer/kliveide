@@ -203,6 +203,9 @@ export type ThemeProperties = {
   "--image-breakpoint-current"?: string;
   "--image-breakpoint-current-existing"?: string;
   "--image-breakpoint-current-existing-bin"?: string;
+  "--image-breakpoint-macro"?: string;
+  "--image-breakpoint-macro-existing"?: string;
+  "--image-breakpoint-macro-existing-bin"?: string;
 
   // --- Disassembly panel
   "--bgcolor-disass-even-row"?: string;
@@ -226,6 +229,7 @@ export type ThemeProperties = {
 
   // --- Debugging
   "--bgcolor-debug-active-bp"?: string;
+  "--bgcolor-debug-macro-bp"?: string;
   "--color-debug-unreachable-bp"?: string;
 
   // --- Editors

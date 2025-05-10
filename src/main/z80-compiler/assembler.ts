@@ -107,7 +107,6 @@ import {
   IEvaluationContext,
   IExpressionValue,
   IfDefinition,
-  IFileLine,
   IfSection,
   IListFileItem,
   IMacroDefinition,
@@ -964,7 +963,8 @@ export class Z80Assembler extends ExpressionEvaluator {
       segmentIndex: this._output.segments.length - 1,
       codeStartIndex: this._currentSegment.emittedCode.length,
       sourceText: asmLine.sourceText,
-      codeLength: 0
+      codeLength: 0,
+      isMacroInvocation: false,
     };
 
     // --- No parse-time issue, process the line
@@ -2421,16 +2421,15 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Create source info for the macro invocation
     const currentAddress = this.getCurrentAssemblyAddress();
+
+    // --- Create macro invocation map information
     const asmLine = macroOrStructStmt as unknown as Z80AssemblyLine;
     this._output.addToAddressMap(asmLine.fileIndex, asmLine.line, currentAddress);
-    const fileLine: IFileLine = {
-      fileIndex: asmLine.fileIndex,
-      line: asmLine.line - 1,
-      startColumn:
-        (asmLine.sourceText ?? "").length - (asmLine.sourceText ?? "").trimStart().length,
-      endColumn: asmLine.endColumn
-    };
-    this._output.sourceMap[currentAddress] = fileLine;
+
+    // --- Store the invocation line for future use
+    const macroInvocationFileItem = this._currentListFileItem;
+    macroInvocationFileItem.isMacroInvocation = true;
+    this._output.listFileItems.push(macroInvocationFileItem);
 
     // --- We store the original source file information to
     // --- assign it later with the re-parsed macro code
@@ -2522,6 +2521,18 @@ export class Z80Assembler extends ExpressionEvaluator {
     lineIndex.index = 0;
     while (lineIndex.index < visitedLines.length) {
       var macroLine = visitedLines[lineIndex.index];
+      const currentAddress = this.getCurrentAssemblyAddress();
+      this._output.listFileItems.push({
+        ...macroInvocationFileItem,
+        address: currentAddress,
+      })
+      this._output.listFileItems.push({
+          ...this._currentListFileItem, 
+          address: currentAddress,
+          fileIndex: macroLine.fileIndex,
+          lineNumber: macroLine.line,
+          isMacroInvocation: false,
+        });
       await this.emitSingleLine(allLines, visitedLines, macroLine, lineIndex, true);
 
       // --- Next line

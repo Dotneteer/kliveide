@@ -203,7 +203,9 @@ export const darkTheme: ThemeProperties = {
   "--image-breakpoint-current": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgb(245, 245, 67)"><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>')`,
   "--image-breakpoint-current-existing": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgb(245, 245, 67)"><circle cx="12" cy="12" r="4" fill="red"/><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>')`,
   "--image-breakpoint-current-existing-bin": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="rgb(245, 245, 67)"><circle cx="12" cy="12" r="4" fill="rgb(41, 184, 219)"/><path d="M21.75 10.725l-6.39-7.11-1.11-0.83H6.375L4.5 4.875v14.22l1.875 1.875h7.59l1.395-0.63 6.39-7.11v-1.065zm-7.785 8.37H6.375V4.875h7.59l6.39 7.11-6.39 7.11z"/></svg>')`,
-
+  "--image-breakpoint-macro": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" fill="rgb(120, 224, 67)"><path d="M1.5 2l-.5.5v11l.5.5H4v-1H2V3h2V2H1.5zm13 12l.5-.5v-11l-.5-.5H12v1h2v10h-2v1h2.5z"/></svg>')`,
+  "--image-breakpoint-macro-existing": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" fill="rgb(120, 224, 67)"><circle cx="8" cy="8" r="3" fill="red"/><path d="M1.5 2l-.5.5v11l.5.5H4v-1H2V3h2V2H1.5zm13 12l.5-.5v-11l-.5-.5H12v1h2v10h-2v1h2.5z"/></svg>')`,
+  "--image-breakpoint-macro-existing-bin": `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" fill="rgb(120, 224, 67)"><circle cx="8" cy="8" r="3" fill="rgb(41, 184, 219)"/><path d="M1.5 2l-.5.5v11l.5.5H4v-1H2V3h2V2H1.5zm13 12l.5-.5v-11l-.5-.5H12v1h2v10h-2v1h2.5z"/></svg>')`,
 
   // --- Disassembly panel
   "--bgcolor-disass-even-row": "#282828",
@@ -227,6 +229,7 @@ export const darkTheme: ThemeProperties = {
 
   // --- Debugging
   "--bgcolor-debug-active-bp": "#ffff0032",
+  "--bgcolor-debug-macro-bp": "#80ff0032",
   "--color-debug-unreachable-bp": "orange",
 
   // --- Editors

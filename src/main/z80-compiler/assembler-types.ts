@@ -295,6 +295,7 @@ export interface IListFileItem {
   codeLength: number;
   lineNumber: number;
   sourceText: string;
+  isMacroInvocation: boolean;
 }
 
 /**

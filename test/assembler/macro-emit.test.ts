@@ -1699,4 +1699,21 @@ describe("Assembler - macro emit", async () => {
       "Z1014"
     );
   });
+
+  // it("Macro emit exp", async () => {
+  //   await testCodeEmit(
+  //     `
+  //     A1:
+  //       .macro()
+  //         ld a,$11
+  //         ld b,a
+  //       .endm
+
+  //     A1()
+  //       ld a,$22
+  //     `,
+  //     0x00
+  //   );
+  // });
+
 });

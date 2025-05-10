@@ -19,7 +19,6 @@ import { getIsWindows } from "@renderer/os-utils";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { createMainApi } from "@common/messaging/MainApi";
-import { Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { useMainApi } from "@renderer/core/MainApi";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
@@ -921,12 +920,14 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
       );
       if (fileIndex >= 0) {
         // --- We have address information for this source code file
-        const lineInfo = compilation.result.listFileItems.find(
-          (li) => li.fileIndex === fileIndex && li.address === pc
-        );
-
         // --- Get source map information
         const sourceMapInfo = compilation.result.sourceMap[pc];
+
+        // --- Check for the active breakpoint line
+        const lineInfo = compilation.result.listFileItems.find(
+          (li) => li.fileIndex === fileIndex && li.address === pc && !li.isMacroInvocation
+        );
+
         if (lineInfo) {
           const resName = getResourceName()?.slice(1);
           const activeBp = bps.find(
@@ -937,6 +938,29 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
             createCurrentBreakpointDecoration(
               languageInfo.fullLineBreakpoints,
               lineInfo.lineNumber,
+              sourceMapInfo?.startColumn,
+              sourceMapInfo?.endColumn,
+              activeBp
+            )
+          );
+        }
+
+        // --- Check for active macro invocation line
+        const macroInvocationlineInfo = compilation.result.listFileItems.find(
+          (li) => li.fileIndex === fileIndex && li.address === pc && li.isMacroInvocation
+        );
+
+        if (macroInvocationlineInfo) {
+          const resName = getResourceName()?.slice(1);
+          const activeBp = bps.find(
+            (bp) =>
+              (bp.line === macroInvocationlineInfo.lineNumber && bp.resource === resName) ||
+              bp.address === pc
+          );
+          decorations.push(
+            createCurrentMacroInvocationBreakpointDecoration(
+              languageInfo.fullLineBreakpoints,
+              macroInvocationlineInfo.lineNumber,
               sourceMapInfo?.startColumn,
               sourceMapInfo?.endColumn,
               activeBp
@@ -1056,63 +1080,28 @@ function createCurrentBreakpointDecoration(
   };
 }
 
-const restrictedNodes: Node["type"][] = [
-  "CommentOnlyLine",
-  "LabelOnlyLine",
-  "OrgPragma",
-  "XorgPragma",
-  "EntPragma",
-  "XentPragma",
-  "DispPragma",
-  "BankPragma",
-  "EquPragma",
-  "VarPragma",
-  "InjectOptPragma",
-  "SkipPragma",
-  "ExternPragma",
-  "ModelPragma",
-  "AlignPragma",
-  "TracePragma",
-  "RndSeedPragma",
-  "ErrorPragma",
-  "IncBinPragma",
-  "CompareBinPragma",
-  "OnSuccessPragma",
-  "MacroStatement",
-  "MacroEndStatement",
-  "MacroParameter",
-  "MacroParameterLine",
-  "LoopStatement",
-  "LoopEndStatement",
-  "WhileStatement",
-  "WhileEndStatement",
-  "RepeatStatement",
-  "UntilStatement",
-  "ProcStatement",
-  "ProcEndStatement",
-  "IfStatement",
-  "IfUsedStatement",
-  "IfNUsedStatement",
-  "ElseStatement",
-  "ElseIfStatement",
-  "EndIfStatement",
-  "BreakStatement",
-  "ContinueStatement",
-  "ModuleStatement",
-  "ModuleEndStatement",
-  "StructStatement",
-  "StructEndStatement",
-  "ForStatement",
-  "NextStatement",
-  "IfDefDirective",
-  "IfNDefDirective",
-  "DefineDirective",
-  "UndefDirective",
-  "IfModDirective",
-  "IfNModDirective",
-  "EndIfDirective",
-  "ElseDirective",
-  "IfDirective",
-  "IncludeDirective",
-  "LineDirective"
-];
+/**
+ * Creates a current breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ * @returns
+ */
+function createCurrentMacroInvocationBreakpointDecoration(
+  fullLine: boolean,
+  lineNo: number,
+  startColumn?: number,
+  endColumn?: number,
+  activeBp?: BreakpointInfo
+): Decoration {
+  return {
+    range: new monacoEditor.Range(lineNo, startColumn ?? 1, lineNo, (endColumn ?? 1) + 1),
+    options: {
+      isWholeLine: fullLine,
+      className: styles.activeMacroInvocationLine,
+      glyphMarginClassName: activeBp
+        ? activeBp.address !== undefined
+          ? styles.activeMacroBinBreakpointOnExistingMargin
+          : styles.activeMacroBreakpointOnExistingMargin
+        : styles.activeMacroBreakpointMargin
+    }
+  };
+}
