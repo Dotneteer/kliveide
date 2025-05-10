@@ -72,6 +72,44 @@
   border: 1px solid var(--bgcolor-debug-active-bp);
 }
 
+.activeMacroInvocationLine {
+  background: var(--bgcolor-debug-macro-bp);
+  border: 1px solid var(--bgcolor-debug-macro-bp);
+}
+
+.activeMacroBreakpointMargin {
+  cursor: pointer;
+
+  /* Use the provided SVG as a background image */
+  background-image: var(--image-breakpoint-macro);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  background-color: transparent;
+}
+
+.activeMacroBreakpointOnExistingMargin {
+  cursor: pointer;
+  background-image: var(--image-breakpoint-macro-existing);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  background-color: transparent;
+}
+
+.activeMacroBinBreakpointOnExistingMargin {
+  cursor: pointer;
+  background-image: var(--image-breakpoint-macro-existing-bin);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+  background-color: transparent;
+}
+
+
 .unreachableBreakpointMargin {
   background: var(--color-debug-unreachable-bp);
   clip-path: circle(20%);

@@ -60,7 +60,7 @@ export async function refreshSourceCodeBreakpoints(
       );
       if (fileIndex >= 0) {
         const lineInfo = compilation.result.listFileItems.find(
-          (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
+          (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line // && !li.isMacroInvocation
         );
         if (lineInfo) {
           resolvedBp.push({
