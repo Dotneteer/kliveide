@@ -1700,20 +1700,22 @@ describe("Assembler - macro emit", async () => {
     );
   });
 
-  // it("Macro emit exp", async () => {
-  //   await testCodeEmit(
-  //     `
-  //     A1:
-  //       .macro()
-  //         ld a,$11
-  //         ld b,a
-  //       .endm
+//   it("Macro emit exp", async () => {
+//     await testCodeEmit(
+// `M1  .macro()
+//     ld a,1
+// done:
+//     .endm
 
-  //     A1()
-  //       ld a,$22
-  //     `,
-  //     0x00
-  //   );
-  // });
+//     Start:
+//     .model Spectrum48
+//     .org #8000
+
+//     M1()
+//     ld a,2
+//     ld a,3      `,
+//       0x00
+//     );
+//   });
 
 });

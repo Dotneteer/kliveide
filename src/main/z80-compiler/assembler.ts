@@ -964,7 +964,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       codeStartIndex: this._currentSegment.emittedCode.length,
       sourceText: asmLine.sourceText,
       codeLength: 0,
-      isMacroInvocation: false,
+      isMacroInvocation: false
     };
 
     // --- No parse-time issue, process the line
@@ -2522,17 +2522,19 @@ export class Z80Assembler extends ExpressionEvaluator {
     while (lineIndex.index < visitedLines.length) {
       var macroLine = visitedLines[lineIndex.index];
       const currentAddress = this.getCurrentAssemblyAddress();
-      this._output.listFileItems.push({
-        ...macroInvocationFileItem,
-        address: currentAddress,
-      })
-      this._output.listFileItems.push({
-          ...this._currentListFileItem, 
+      if (macroLine.type !== "LabelOnlyLine" && macroLine.type !== "CommentOnlyLine") {
+        this._output.listFileItems.push({
+          ...macroInvocationFileItem,
+          address: currentAddress
+        });
+        this._output.listFileItems.push({
+          ...this._currentListFileItem,
           address: currentAddress,
           fileIndex: macroLine.fileIndex,
           lineNumber: macroLine.line,
-          isMacroInvocation: false,
+          isMacroInvocation: false
         });
+      }
       await this.emitSingleLine(allLines, visitedLines, macroLine, lineIndex, true);
 
       // --- Next line
