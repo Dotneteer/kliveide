@@ -2522,11 +2522,11 @@ export class Z80Assembler extends ExpressionEvaluator {
     while (lineIndex.index < visitedLines.length) {
       var macroLine = visitedLines[lineIndex.index];
       const currentAddress = this.getCurrentAssemblyAddress();
-      this._output.listFileItems.push({
-        ...macroInvocationFileItem,
-        address: currentAddress
-      });
       if (macroLine.type !== "LabelOnlyLine" && macroLine.type !== "CommentOnlyLine") {
+        this._output.listFileItems.push({
+          ...macroInvocationFileItem,
+          address: currentAddress
+        });
         this._output.listFileItems.push({
           ...this._currentListFileItem,
           address: currentAddress,
