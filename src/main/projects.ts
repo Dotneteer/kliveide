@@ -368,6 +368,7 @@ export function setRecentProjects(projects: string[]): void {
 
 // --- Add a recent project
 export function addRecentProject(projectFolder: string): void {
+  projectFolder = projectFolder.replace(/\\/g, "/");
   if (recentProjects.includes(projectFolder)) {
     recentProjects = recentProjects.filter((p) => p !== projectFolder);
   }
