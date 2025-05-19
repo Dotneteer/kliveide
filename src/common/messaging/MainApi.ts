@@ -6,7 +6,6 @@ import { CompilerOptions } from "@abstractions/CompilerInfo";
 import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
-import { Z80AssemblyLine } from "@main/z80-compiler/assembler-tree-nodes";
 import { AppSettings } from "@main/settings";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
@@ -215,7 +214,8 @@ class MainApiImpl {
   async setGlobalSettingsValue(_settingId: string, _value: any): Promise<void> {
     throw new Error(NO_PROXY_ERROR);
   }
-}
+
+ }
 
 export type MainApi = MainApiImpl;
 

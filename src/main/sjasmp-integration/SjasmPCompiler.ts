@@ -166,11 +166,9 @@ export class SjasmPCompiler implements IKliveCompiler {
           // --- Intentionally ignored
         }
       }
-  
     } catch (err) {
       throw err;
     }
-
   }
 
   /**

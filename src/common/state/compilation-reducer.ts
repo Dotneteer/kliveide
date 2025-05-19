@@ -38,6 +38,27 @@ export function compilationReducer(
         injectionVersion: (state.injectionVersion ?? 0) + 1
       };
 
+    case "RESET_BACKGROUND_COMPILE":
+      return {
+        ...state,
+        backgroundInProgress: false,
+        backgroundResult: undefined
+      };
+
+    case "START_BACKGROUND_COMPILE":
+      return {
+        ...state,
+        backgroundInProgress: true,
+        backgroundResult: undefined
+      };
+
+    case "END_BACKGROUND_COMPILE":
+      return {
+        ...state,
+        backgroundInProgress: false,
+        backgroundResult: payload?.value
+      };
+
     default:
       return state;
   }

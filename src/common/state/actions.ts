@@ -318,3 +318,16 @@ export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any
 export const incEmuViewVersionAction: ActionCreator = () => ({
   type: "INC_EMU_VIEW_VERSION"
 });
+
+export const resetBackgroundCompileAction: ActionCreator = () => ({
+  type: "RESET_BACKGROUND_COMPILE"
+});
+
+export const startBackgroundCompileAction: ActionCreator = () => ({
+  type: "START_BACKGROUND_COMPILE"
+});
+
+export const endBackgroundCompileAction: ActionCreator = (value: any) => ({
+  type: "END_BACKGROUND_COMPILE",
+  payload: { value }
+});

@@ -5,6 +5,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { ExportDialogSettings, IdeSettings } from "@main/settings";
+import { CompilationCompleted } from "@renderer/abstractions/ILanguageService";
 
 /**
  * Represents the state of the entire application
@@ -105,6 +106,8 @@ export type CompilationState = {
   result?: KliveCompilerOutput;
   failed?: string;
   injectionVersion?: number;
+  backgroundInProgress?: boolean;
+  backgroundResult?: CompilationCompleted;
 };
 
 /**

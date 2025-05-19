@@ -72,6 +72,7 @@ import {
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
+import { BackgroundCompiler } from "./compiler-integration/backgroundRun";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -118,6 +119,8 @@ const HELP_ABOUT = "help_about";
 const HELP_HOME_PAGE = "help_home_page";
 const HELP_SHOW_WELCOME = "help_welcome";
 const KEY_MAPPING_FOLDER = "keyMappingFolder";
+
+let backgroundCompiler: BackgroundCompiler | null = null;
 
 /**
  * Creates and sets the main menu of the app
@@ -253,6 +256,40 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               }
             }
           ] as MenuItemConstructorOptions[])),
+      { type: "separator" },
+      {
+        id: "bkg_compile",
+        label: "Compile in background",
+        click: async () => {
+          backgroundCompiler = new BackgroundCompiler();
+          backgroundCompiler.on("success", (result) => {
+            dialog.showMessageBox(ideWindow, {
+              message: result
+            });
+          });
+          backgroundCompiler.on("cancelled", () => {
+            backgroundCompiler = null;
+            dialog.showErrorBox("Compilation Cancelled", "The compilation was cancelled.");
+          });
+          backgroundCompiler.on("timeout", () => {
+            backgroundCompiler = null;
+            dialog.showErrorBox("Compilation Timeout", "The compilation timed out.");
+          });
+          backgroundCompiler.on("failure", (err) => {
+            backgroundCompiler = null;
+            dialog.showErrorBox("Compilation Failed", `The compilation failed: ${err}`);
+          });
+          backgroundCompiler.compile("some.asm", 4000);
+        }
+      },
+      {
+        id: "bkg_compile_stop",
+        label: "Stop background compilation",
+        click: async () => {
+          backgroundCompiler?.terminate();
+          backgroundCompiler = null;
+        }
+      },
       ...(__DARWIN__
         ? []
         : ([{ type: "separator" }, { role: "quit" }] as MenuItemConstructorOptions[]))
@@ -334,7 +371,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       label: "16",
       value: 16
-    },
+    }
   ];
   const currentTabSize = getSettingValue(SETTING_EDITOR_TABSIZE);
   const editorTabSizeMenu: MenuItemConstructorOptions[] = tabSizeOptions.map((f, idx) => {
@@ -365,21 +402,23 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       label: "Render all whitespace characters",
       value: "all"
-    },
+    }
   ];
 
   const currentRenderWhitespace = getSettingValue(SETTING_EDITOR_RENDER_WHITESPACE);
-  const editorRenderWhitespaceMenu: MenuItemConstructorOptions[] = renderWhitespaceOptions.map((f, idx) => {
-    return {
-      id: `${EDITOR_RENDER_WHITESPACE}_${idx}`,
-      label: f.label,
-      type: "checkbox",
-      checked: currentRenderWhitespace === f.value,
-      click: async () => {
-        setSettingValue(SETTING_EDITOR_RENDER_WHITESPACE, f.value);
-      }
-    };
-  });
+  const editorRenderWhitespaceMenu: MenuItemConstructorOptions[] = renderWhitespaceOptions.map(
+    (f, idx) => {
+      return {
+        id: `${EDITOR_RENDER_WHITESPACE}_${idx}`,
+        label: f.label,
+        type: "checkbox",
+        checked: currentRenderWhitespace === f.value,
+        click: async () => {
+          setSettingValue(SETTING_EDITOR_RENDER_WHITESPACE, f.value);
+        }
+      };
+    }
+  );
 
   const quickSuggestionDelayOptions = [
     {
@@ -401,21 +440,22 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       label: "Longest (1s)",
       value: 1000
-    },
+    }
   ];
   const currentQuickSuggestionDelay = getSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY);
-  const quickSuggestionDelayMenu: MenuItemConstructorOptions[] = quickSuggestionDelayOptions.map((f, idx) => {
-    return {
-      id: `${EDITOR_QUICK_SUGGESTION_DELAY}_${idx}`,
-      label: f.label,
-      type: "checkbox",
-      checked: currentQuickSuggestionDelay === f.value,
-      click: async () => {
-        setSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY, f.value);
-      }
-    };
-  });
-
+  const quickSuggestionDelayMenu: MenuItemConstructorOptions[] = quickSuggestionDelayOptions.map(
+    (f, idx) => {
+      return {
+        id: `${EDITOR_QUICK_SUGGESTION_DELAY}_${idx}`,
+        label: f.label,
+        type: "checkbox",
+        checked: currentQuickSuggestionDelay === f.value,
+        click: async () => {
+          setSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY, f.value);
+        }
+      };
+    }
+  );
 
   // --- Machine-specific view menu items
   let specificViewMenus: MenuItemConstructorOptions[] = [];
@@ -551,7 +591,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             id: EDITOR_TAB_SIZE,
             label: "Tab Size",
             submenu: editorTabSizeMenu
-          },
+          }
         ]
       },
       { type: "separator" },

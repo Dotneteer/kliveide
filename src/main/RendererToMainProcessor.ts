@@ -56,8 +56,11 @@ import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { getSdCardHandler } from "./machine-menus/zx-next-menus";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { setSettingValue } from "./settings-utils";
+import { BackgroundCompiler } from "./compiler-integration/backgroundRun";
 
 class MainMessageProcessor {
+  private _backgroundCompiler: BackgroundCompiler | null = null;
+
   constructor(
     private readonly window: BrowserWindow,
     private readonly dispatch: Dispatch<Action>
@@ -392,6 +395,24 @@ class MainMessageProcessor {
 
   async setGlobalSettingsValue(settingId: string, value: any): Promise<void> {
     setSettingValue(settingId, value);
+  }
+
+  async startBackgroundCompilation(): Promise<void> {
+    const compilation = mainStore.getState()?.compilation;
+    if (compilation.backgroundInProgress) {
+      return;
+    }
+
+    // --- Start the background compilation
+    const bc = this._backgroundCompiler = new BackgroundCompiler();
+    bc.on("success", (result) => {
+      
+    });
+    bc.on("cancelled", () => {});
+    bc.on("failure", (err) => {
+      console.error(`Background compilation failed: ${err}`);
+    });
+    bc.on("timeout", () => {});
   }
 }
 
