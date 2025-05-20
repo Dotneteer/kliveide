@@ -26,6 +26,14 @@ import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
 import { BufferOperation, OutputSpecification } from "./ToolArea/abstractions";
 
 class IdeMessageProcessor {
+  /**
+   * Constructs the IdeMessageProcessor.
+   * @param store Redux store for app state.
+   * @param outputPaneService Service for output pane operations.
+   * @param ideCommandsService Service for IDE command execution.
+   * @param projectService Service for project operations.
+   * @param scriptService Service for script output operations.
+   */
   constructor(
     private readonly store: Store<AppState>,
     private readonly outputPaneService: IOutputPaneService,
@@ -34,7 +42,10 @@ class IdeMessageProcessor {
     private readonly scriptService: IScriptService
   ) {}
 
-  // --- Forward messages to the IDE
+  /**
+   * Displays output in the IDE output pane.
+   * @param toDisplay Output specification to display.
+   */
   displayOutput(toDisplay: OutputSpecification) {
     const buffer = this.outputPaneService.getOutputPaneBuffer(toDisplay.pane);
     if (!buffer) return;
@@ -52,10 +63,20 @@ class IdeMessageProcessor {
     }
   }
 
+  /**
+   * Sends script output to the IDE.
+   * @param id Script ID.
+   * @param operation Buffer operation to perform.
+   * @param args Optional arguments for the operation.
+   */
   scriptOutput(id: number, operation: any, args?: any[]) {
     executeScriptOutput(this.scriptService, id, operation, args);
   }
 
+  /**
+   * Shows or hides the memory panel.
+   * @param show True to show, false to hide.
+   */
   showMemory(show: boolean) {
     if (show) {
       this.ideCommandsService.executeCommand("show-memory");
@@ -64,6 +85,10 @@ class IdeMessageProcessor {
     }
   }
 
+  /**
+   * Shows or hides the disassembly panel.
+   * @param show True to show, false to hide.
+   */
   showDisassembly(show: boolean) {
     if (show) {
       this.ideCommandsService.executeCommand("show-disass");
@@ -72,6 +97,10 @@ class IdeMessageProcessor {
     }
   }
 
+  /**
+   * Shows or hides the BASIC listing panel.
+   * @param show True to show, false to hide.
+   */
   showBasic(show: boolean) {
     if (show) {
       this.projectService.getActiveDocumentHubService().openDocument(
@@ -88,6 +117,11 @@ class IdeMessageProcessor {
     }
   }
 
+  /**
+   * Executes a command in the IDE.
+   * @param commandText The command text to execute.
+   * @param scriptId Optional script ID for script context.
+   */
   async executeCommand(commandText: string, scriptId?: number) {
     const buildOutput = this.outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
     const scriptOutput = scriptId
@@ -103,10 +137,16 @@ class IdeMessageProcessor {
     );
   }
 
+  /**
+   * Saves all files before quitting the IDE.
+   */
   saveAllBeforeQuit() {
     saveAllBeforeQuit(this.store, this.projectService);
   }
 
+  /**
+   * Gets the current project structure.
+   */
   getProjectStructure() {
     return convertToProjectStructure(this.store, this.projectService.getProjectTree());
   }
