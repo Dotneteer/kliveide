@@ -25,6 +25,11 @@ import { IScriptService } from "@renderer/abstractions/IScriptService";
 import { IIdeCommandService } from "@renderer/abstractions/IIdeCommandService";
 import { BufferOperation, OutputSpecification } from "./ToolArea/abstractions";
 
+/**
+ * Handles IDE-related IPC messages and operations invoked from other processes.
+ * Provides methods for output, script output, panel visibility, command execution, and project structure.
+ * All public methods validate input and are safe for IPC exposure.
+ */
 class IdeMessageProcessor {
   /**
    * Constructs the IdeMessageProcessor.
@@ -47,6 +52,9 @@ class IdeMessageProcessor {
    * @param toDisplay Output specification to display.
    */
   displayOutput(toDisplay: OutputSpecification) {
+    // Input validation
+    if (!toDisplay || typeof toDisplay !== "object" || typeof toDisplay.pane !== "string") return;
+    // --- Input validated
     const buffer = this.outputPaneService.getOutputPaneBuffer(toDisplay.pane);
     if (!buffer) return;
     buffer.resetStyle();
@@ -70,6 +78,9 @@ class IdeMessageProcessor {
    * @param args Optional arguments for the operation.
    */
   scriptOutput(id: number, operation: any, args?: any[]) {
+    // Input validation
+    if (typeof id !== "number" || !operation) return;
+    // --- Input validated
     executeScriptOutput(this.scriptService, id, operation, args);
   }
 
@@ -78,6 +89,9 @@ class IdeMessageProcessor {
    * @param show True to show, false to hide.
    */
   showMemory(show: boolean) {
+    // Input validation
+    if (typeof show !== "boolean") return;
+    // --- Input validated
     if (show) {
       this.ideCommandsService.executeCommand("show-memory");
     } else {
@@ -90,6 +104,9 @@ class IdeMessageProcessor {
    * @param show True to show, false to hide.
    */
   showDisassembly(show: boolean) {
+    // Input validation
+    if (typeof show !== "boolean") return;
+    // --- Input validated
     if (show) {
       this.ideCommandsService.executeCommand("show-disass");
     } else {
@@ -102,6 +119,9 @@ class IdeMessageProcessor {
    * @param show True to show, false to hide.
    */
   showBasic(show: boolean) {
+    // Input validation
+    if (typeof show !== "boolean") return;
+    // --- Input validated
     if (show) {
       this.projectService.getActiveDocumentHubService().openDocument(
         {
@@ -123,6 +143,11 @@ class IdeMessageProcessor {
    * @param scriptId Optional script ID for script context.
    */
   async executeCommand(commandText: string, scriptId?: number) {
+    // Input validation
+    if (typeof commandText !== "string" || (scriptId !== undefined && typeof scriptId !== "number")) {
+      return Promise.resolve(undefined);
+    }
+    // --- Input validated
     const buildOutput = this.outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
     const scriptOutput = scriptId
       ? this.scriptService.getScriptOutputBuffer(scriptId)
@@ -140,14 +165,16 @@ class IdeMessageProcessor {
   /**
    * Saves all files before quitting the IDE.
    */
-  saveAllBeforeQuit() {
-    saveAllBeforeQuit(this.store, this.projectService);
+  async saveAllBeforeQuit() {
+    // --- No input to validate
+    await saveAllBeforeQuit(this.store, this.projectService);
   }
 
   /**
    * Gets the current project structure.
    */
   getProjectStructure() {
+    // --- No input to validate
     return convertToProjectStructure(this.store, this.projectService.getProjectTree());
   }
 }
@@ -172,7 +199,7 @@ export async function processMainToIdeMessages(
 
   switch (message.type) {
     case "ForwardAction":
-      // --- The emu sent a state change action. Replay it in the main store without formarding it
+      // --- The emu sent a state change action. Replay it in the main store without formatting it
       store.dispatch(message.action, message.sourceId);
       break;
 

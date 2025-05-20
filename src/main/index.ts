@@ -198,7 +198,11 @@ async function createAppWindows() {
   });
 
   // --- Create the IDE window
-  const showIde = ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false);
+  const disableIde = process.argv.includes("--noide");
+  const forceIde = process.argv.includes("--showide");
+  const showIde =
+    !disableIde &&
+    (forceIde || ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false));
   const maximizeIde = showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
   ideWindow = new BrowserWindow({
     title: "Ide window",
