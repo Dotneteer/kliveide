@@ -51,7 +51,7 @@ export class ZxBasicCompiler implements IKliveCompiler {
    * @returns Output of the compilation
    */
   async compileFile(filename: string): Promise<KliveCompilerOutput> {
-    const settingsReader = createSettingsReader(mainStore);
+    const settingsReader = createSettingsReader(mainStore.getState());
     try {
       // --- Obtain configuration info for ZXBC
       const execPath = settingsReader.readSetting(ZXBC_EXECUTABLE_PATH)?.toString();
@@ -117,7 +117,7 @@ export class ZxBasicCompiler implements IKliveCompiler {
       outputFile: string,
       labelFile: string
     ): Promise<string[]> {
-      const settingsReader = createSettingsReader(mainStore);
+      const settingsReader = createSettingsReader(mainStore.getState());
       const args: string[] = [inputFile, "--output", outputFile, "--mmap", labelFile];
       const arrayBaseOne = !!settingsReader.readSetting(ZXBC_ONE_AS_ARRAY_BASE_INDEX);
       if (arrayBaseOne) {

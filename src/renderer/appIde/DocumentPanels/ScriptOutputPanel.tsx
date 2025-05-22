@@ -37,7 +37,7 @@ const ScriptOutputPanel = ({ document, contents }: DocumentProps) => {
 
   // --- Line number settings
   const { store } = useRendererContext();
-  const showLineNo = !!createSettingsReader(store).readBooleanSetting(
+  const showLineNo = !!createSettingsReader(store.getState()).readBooleanSetting(
     "scriptOutput.showLineNo"
   );
 

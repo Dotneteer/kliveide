@@ -147,7 +147,7 @@ export function getFileTypeEntry(filename: string, store: Store<AppState>): File
   // --- Get the file name extension (up to two parts)
   const fileParts = filename.split(".");
   const fileExtension = fileParts.length > 0 ? fileParts.slice(1).join(".") : "";
-  const reader = createSettingsReader(store);
+  const reader = createSettingsReader(store.getState());
   const languageExts = reader.readSetting(LANGUAGE_SETTINGS);
   const languageHash: Record<string, string[]> = {};
 

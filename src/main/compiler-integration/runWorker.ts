@@ -4,13 +4,12 @@ import { AssemblerErrorInfo, CompilerOptions, KliveCompilerOutput } from "@abstr
 import { mainStore } from "@main/main-store";
 import { endBackgroundCompileAction } from "@common/state/actions";
 import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
 
 export type CompilerWorkerData = {
   filePath: string;
   language: string;
   options?: CompilerOptions;
-  store: Store<AppState>
+  state: AppState
 };
 
 export type CompilationCompleted = {

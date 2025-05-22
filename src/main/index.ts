@@ -94,7 +94,7 @@ loadAppSettings();
 mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
 
 // --- Get seeting used
-const settingsReader = createSettingsReader(mainStore);
+const settingsReader = createSettingsReader(mainStore.getState());
 const allowDevTools = !!settingsReader.readSetting("devTools.allow");
 const displayIdeDevTools = !!settingsReader.readSetting("devTools.ide") && allowDevTools;
 const displayEmuDevTools = !!settingsReader.readSetting("devTools.emu") && allowDevTools;

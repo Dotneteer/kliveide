@@ -57,7 +57,7 @@ import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
 
-const compilerRegistry = createCompilerRegistry(mainStore);
+const compilerRegistry = createCompilerRegistry(mainStore.getState());
 
 class MainMessageProcessor {
   /**
@@ -481,6 +481,8 @@ class MainMessageProcessor {
           "Are you sure you use the right file extension?"
       );
     }
+
+    compiler?.setAppState(mainStore.getState());
     return (await compiler.compileFile(filename, options)) as KliveCompilerOutput;
   }
 
@@ -507,7 +509,7 @@ class MainMessageProcessor {
     // --- The result will be sent to the store by the worker
     // --- and the store will notify the UI.
     runBackgroundCompileWorker({
-      store: mainStore,
+      state: mainStore.getState(),
       filePath: filename,
       language,
       options,

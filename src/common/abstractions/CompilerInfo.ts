@@ -1,3 +1,4 @@
+import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
 
 /**
@@ -605,4 +606,10 @@ export interface IKliveCompiler {
    * @param line The line content to check
    */
   lineCanHaveBreakpoint(line: string): Promise<boolean>;
+
+  /**
+   * Optionally forwards the current state to the compiler
+   * @param state State to forward to the compiler
+   */
+  setAppState?: (state: AppState) => void;
 }

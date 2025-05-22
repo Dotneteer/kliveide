@@ -1,10 +1,5 @@
-import type {
-  CompilerOutput,
-  IKliveCompiler,
-  KliveCompilerOutput,
-} from "@abstractions/CompilerInfo";
+import type { IKliveCompiler } from "@abstractions/CompilerInfo";
 import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
 import { SjasmPCompiler } from "@main/sjasmp-integration/SjasmPCompiler";
 import { Z80Compiler } from "@main/z80-compiler/Z80Compiler";
 import { ZxBasicCompiler } from "@main/zxb-integration/ZxBasicCompiler";
@@ -29,11 +24,10 @@ class CompilerRegistry {
   }
 }
 
-export function createCompilerRegistry(store: Store<AppState>): CompilerRegistry {
+export function createCompilerRegistry(state: AppState): CompilerRegistry {
   const registry = new CompilerRegistry();
   registry.registerCompiler(new Z80Compiler());
   registry.registerCompiler(new ZxBasicCompiler());
-  registry.registerCompiler(new SjasmPCompiler(store));
+  registry.registerCompiler(new SjasmPCompiler(state));
   return registry;
 }
-
