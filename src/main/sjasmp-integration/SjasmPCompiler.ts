@@ -1,19 +1,16 @@
 import fs from "fs";
-import type {
-  DebuggableOutput,
-  IKliveCompiler,
-  KliveCompilerOutput
-} from "@main/compiler-integration/compiler-registry";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
 import {
   BinarySegment,
+  DebuggableOutput,
   FileLine,
+  IKliveCompiler,
+  KliveCompilerOutput,
   ListFileItem,
   SpectrumModelType
 } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
-import { mainStore } from "../main-store";
 import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
 import {
   createSjasmRunner,
@@ -22,6 +19,8 @@ import {
   SJASM_SLD_FILE
 } from "../../script-packages/sjasm/sjasm";
 import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
+import { Store } from "@common/state/redux-light";
+import { AppState } from "@common/state/AppState";
 
 /**
  * Wraps the SjasmPlus compiler
@@ -42,6 +41,8 @@ export class SjasmPCompiler implements IKliveCompiler {
    */
   readonly providesKliveOutput = true;
 
+  constructor(private readonly store: Store<AppState>) {}
+
   /**
    * Compiles the Z80 Assembly code in the specified file into Z80
    * binary code.
@@ -50,10 +51,11 @@ export class SjasmPCompiler implements IKliveCompiler {
    * @returns Output of the compilation
    */
   async compileFile(filename: string): Promise<KliveCompilerOutput> {
-    const settingsReader = createSettingsReader(mainStore);
+    const settingsReader = createSettingsReader(this.store);
     try {
       // --- Obtain configuration info for ZXBC
       const execPath = settingsReader.readSetting(SJASMP_INSTALL_FOLDER)?.toString();
+      console.log("HERE", this.store.getState());
       if (!execPath || execPath.trim() === "") {
         throw new Error("SjasmPlus executable path is not set, cannot start the compiler.");
       }
@@ -64,7 +66,8 @@ export class SjasmPCompiler implements IKliveCompiler {
         fullpath: "on"
       };
 
-      const state = mainStore.getState();
+      const state = this.store.getState();
+      
       const cliManager = createSjasmRunner(
         state.project?.folderPath.replaceAll("\\", "/"),
         options,

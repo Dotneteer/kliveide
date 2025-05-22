@@ -3,9 +3,9 @@ import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
-import { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { ExportDialogSettings, IdeSettings } from "@main/settings";
-import { CompilationCompleted } from "@renderer/abstractions/ILanguageService";
+import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import { CompilationCompleted } from "@main/compiler-integration/runWorker";
 
 /**
  * Represents the state of the entire application

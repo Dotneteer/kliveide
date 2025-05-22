@@ -1,9 +1,9 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionTypes } from "./ActionTypes";
 import { SideBarPanelState } from "./AppState";
-import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { DocumentInfo } from "@abstractions/DocumentInfo";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
+import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 
 /**
  * Available action types you can use with state manangement

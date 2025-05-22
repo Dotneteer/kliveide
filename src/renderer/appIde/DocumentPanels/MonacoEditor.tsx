@@ -6,12 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
+import {
+  incBreakpointsVersionAction,
+  incEditorVersionAction,
+  startBackgroundCompileAction
+} from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -32,6 +35,10 @@ import {
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY
 } from "@common/settings/setting-const";
+import { Store } from "@common/state/redux-light";
+import { AppState } from "@common/state/AppState";
+import { getFileTypeEntry } from "../project/project-node";
+import { isDebuggableCompilerOutput } from "../utils/compiler-utils";
 
 let monacoInitialized = false;
 
@@ -217,6 +224,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const enableSelectionHighlight = useGlobalSetting(SETTING_EDITOR_SELECTION_HIGHLIGHT);
   const enableOccurrencesHighlight = useGlobalSetting(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT);
   const quickSuggestionDelay = useGlobalSetting(SETTING_EDITOR_QUICK_SUGGESTION_DELAY);
+
+  // --- Background compilation
+  const backgroundResult = useSelector((s) => s.compilation.backgroundResult);
 
   // --- Sets the Auto complete editor option
   const updateAutoComplete = () => {
@@ -416,6 +426,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     }
   }, [breakpointsVersion, compilation, execState, hubVersion]);
 
+  useEffect(() => {
+    console.log("Background compilation result", backgroundResult);
+  }, [backgroundResult]);
+
   // --- Initializes the editor when mounted
   const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
     // --- Restore the view state to display the editor is it has been left
@@ -537,6 +551,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     projectService.setPermanent(document.id);
 
     // --- Handle breakpoint redos and undos
+    console.log("event", e);
     const resourceKey = `${editor.current.getId()}-${resourceName}`;
     if (e.isUndoing) {
       // --- Undo the breakpoints
@@ -678,6 +693,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         if (reason !== "canceled") reportError(reason);
       }
     );
+
+    // --- Start background compilation
+    startBackgroundCompile(store, mainApi);
   };
 
   // --- render the editor when monaco has been initialized
@@ -1104,4 +1122,28 @@ function createCurrentMacroInvocationBreakpointDecoration(
         : styles.activeMacroBreakpointMargin
     }
   };
+}
+
+// --- Compile the current project's code
+async function startBackgroundCompile(
+  store: Store<AppState>,
+  mainApi: ReturnType<typeof createMainApi>
+): Promise<boolean> {
+  // --- Check if we have a build root to compile
+  const state = store.getState();
+  if (!state.project?.isKliveProject) {
+    return false;
+  }
+  const buildRoot = state.project.buildRoots?.[0];
+  if (!buildRoot) {
+    return false;
+  }
+  const fullPath = `${state.project.folderPath}/${buildRoot}`;
+  const language = getFileTypeEntry(fullPath, store)?.subType;
+
+  // --- Compile the build root
+  store.dispatch(startBackgroundCompileAction());
+  mainApi.startBackgroundCompile(fullPath, language);
+  console.log("Compiling", fullPath, language);
+  return true;
 }

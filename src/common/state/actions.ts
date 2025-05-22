@@ -1,9 +1,9 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
-import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ExportDialogSettings } from "@main/settings";
+import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",

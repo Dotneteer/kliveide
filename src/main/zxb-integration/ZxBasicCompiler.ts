@@ -1,11 +1,6 @@
 import fs from "fs";
 
-import type { BinarySegment } from "@abstractions/CompilerInfo";
-import type {
-  IKliveCompiler,
-  InjectableOutput,
-  KliveCompilerOutput
-} from "@main/compiler-integration/compiler-registry";
+import type { BinarySegment, IKliveCompiler, InjectableOutput, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
 import { SpectrumModelType } from "@abstractions/CompilerInfo";

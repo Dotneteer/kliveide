@@ -44,15 +44,31 @@ function noController() {
 }
 
 class EmuMessageProcessor {
+  /**
+   * Constructs the EmuMessageProcessor.
+   * @param mainMessenger Messenger for main process communication.
+   * @param machineService Service for machine operations.
+   */
   constructor(
     private readonly mainMessenger: MessengerBase,
     private readonly machineService: IMachineService
   ) {}
 
+  /**
+   * Sets the machine type and optional model/configuration.
+   * @param machineId The machine type ID.
+   * @param modelId Optional model ID.
+   * @param config Optional configuration object.
+   */
   async setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
     await this.machineService.setMachineType(machineId, modelId, config);
   }
 
+  /**
+   * Issues a machine command, optionally with a custom command string.
+   * @param command The machine command to issue.
+   * @param customCommand Optional custom command string.
+   */
   issueMachineCommand(command: MachineCommand, customCommand?: string) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -95,6 +111,13 @@ class EmuMessageProcessor {
     }
   }
 
+  /**
+   * Sets the tape file for the emulator.
+   * @param file The tape file name.
+   * @param contents The tape file contents as Uint8Array.
+   * @param confirm Optional flag to show confirmation.
+   * @param suppressError Optional flag to suppress errors.
+   */
   async setTapeFile(
     file: string,
     contents: Uint8Array,
@@ -146,6 +169,14 @@ class EmuMessageProcessor {
     }
   }
 
+  /**
+   * Sets the disk file for the specified drive.
+   * @param diskIndex The disk drive index.
+   * @param file Optional disk file name.
+   * @param contents Optional disk file contents.
+   * @param confirm Optional flag to show confirmation.
+   * @param suppressError Optional flag to suppress errors.
+   */
   async setDiskFile(
     diskIndex: number,
     file?: string,
@@ -190,12 +221,20 @@ class EmuMessageProcessor {
     }
   }
 
+  /**
+   * Sets write protection for a disk drive.
+   * @param index The disk drive index.
+   * @param protect True to enable write protection.
+   */
   setDiskWriteProtection(index: number, protect: boolean) {
     const controller = this.machineService.getMachineController();
     const propName = index ? DISK_B_WP : DISK_A_WP;
     controller.machine.setMachineProperty(propName, protect);
   }
 
+  /**
+   * Gets the current CPU state.
+   */
   getCpuState(): CpuState {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -237,6 +276,9 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Gets the current ULA state.
+   */
   getUlaState() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -286,6 +328,9 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Gets the current PSG chip state.
+   */
   getPsgState() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -296,6 +341,9 @@ class EmuMessageProcessor {
     return psgDevice.getPsgState();
   }
 
+  /**
+   * Gets the current Blink device state.
+   */
   getBlinkState() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -346,6 +394,9 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Erases all breakpoints in the emulator.
+   */
   eraseAllBreakpoints() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -354,6 +405,10 @@ class EmuMessageProcessor {
     controller.debugSupport.eraseAllBreakpoints();
   }
 
+  /**
+   * Sets a breakpoint in the emulator.
+   * @param breakpoint The breakpoint information.
+   */
   setBreakpoint(breakpoint: BreakpointInfo) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -362,6 +417,10 @@ class EmuMessageProcessor {
     return controller.debugSupport.addBreakpoint(breakpoint);
   }
 
+  /**
+   * Removes a breakpoint from the emulator.
+   * @param breakpoint The breakpoint information.
+   */
   removeBreakpoint(breakpoint: BreakpointInfo) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -370,6 +429,9 @@ class EmuMessageProcessor {
     return controller.debugSupport.removeBreakpoint(breakpoint);
   }
 
+  /**
+   * Lists all breakpoints in the emulator.
+   */
   listBreakpoints() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -420,6 +482,11 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Enables or disables a breakpoint.
+   * @param breakpoint The breakpoint information.
+   * @param enable True to enable, false to disable.
+   */
   enableBreakpoint(breakpoint: BreakpointInfo, enable: boolean) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -428,6 +495,10 @@ class EmuMessageProcessor {
     return controller.debugSupport.enableBreakpoint(breakpoint, enable);
   }
 
+  /**
+   * Gets the memory contents for the specified partition.
+   * @param partition Optional memory partition index.
+   */
   getMemoryContents(partition?: number) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -464,6 +535,9 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Gets the system variables.
+   */
   getSysVars() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -473,6 +547,10 @@ class EmuMessageProcessor {
     return (m as ZxSpectrumBase).sysVars;
   }
 
+  /**
+   * Injects code into the emulator.
+   * @param codeToInject The code to inject.
+   */
   injectCodeCommand(codeToInject: CodeToInject) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -481,6 +559,12 @@ class EmuMessageProcessor {
     controller.machine.injectCodeToRun(codeToInject);
   }
 
+  /**
+   * Runs code in the emulator, optionally in debug mode.
+   * @param codeToInject The code to run.
+   * @param debug True to run in debug mode.
+   * @param projectDebug True to use project debug mode.
+   */
   runCodeCommand(codeToInject: CodeToInject, debug: boolean, projectDebug: boolean) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -489,6 +573,10 @@ class EmuMessageProcessor {
     controller.runCode(codeToInject, debug, projectDebug);
   }
 
+  /**
+   * Resolves breakpoints in the emulator.
+   * @param breakpoints The breakpoints to resolve.
+   */
   resolveBreakpoints(breakpoints: ResolvedBreakpoint[]) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -497,6 +585,13 @@ class EmuMessageProcessor {
     controller.resolveBreakpoints(breakpoints);
   }
 
+  /**
+   * Scrolls breakpoints by a shift value within bounds.
+   * @param addr The breakpoint address info.
+   * @param shift The shift value.
+   * @param lowerBound Optional lower bound.
+   * @param upperBound Optional upper bound.
+   */
   scrollBreakpoints(addr: BreakpointInfo, shift: number, lowerBound?: number, upperBound?: number) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -505,6 +600,10 @@ class EmuMessageProcessor {
     controller.debugSupport.scrollBreakpoints(addr, shift, lowerBound, upperBound);
   }
 
+  /**
+   * Resets breakpoints to the provided set.
+   * @param bps The new set of breakpoints.
+   */
   resetBreakpointsTo(bps: BreakpointInfo[]) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -513,6 +612,9 @@ class EmuMessageProcessor {
     controller.debugSupport.resetBreakpointsTo(bps);
   }
 
+  /**
+   * Gets all breakpoints in the emulator.
+   */
   getAllBreakpoints() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -521,6 +623,11 @@ class EmuMessageProcessor {
     controller.debugSupport.breakpoints;
   }
 
+  /**
+   * Normalizes breakpoints for a resource and line count.
+   * @param resource The resource (file) name.
+   * @param lineCount The number of lines in the resource.
+   */
   normalizeBreakpoints(resource: string, lineCount: number) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -529,6 +636,9 @@ class EmuMessageProcessor {
     controller.debugSupport.normalizeBreakpoints(resource, lineCount);
   }
 
+  /**
+   * Gets the state of the NEC UPD765 floppy controller.
+   */
   getNecUpd765State() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -541,16 +651,29 @@ class EmuMessageProcessor {
     return [];
   }
 
+  /**
+   * Starts a script in the emulator.
+   * @param id The script ID.
+   * @param scriptFile The script file name.
+   * @param contents The script contents.
+   */
   startScript(id: number, scriptFile: string, contents: string) {
     const runner = getEmuScriptRunner();
     return runner.runScript(id, scriptFile, contents);
   }
 
+  /**
+   * Stops a running script in the emulator.
+   * @param id The script ID.
+   */
   stopScript(id: number) {
     const runner = getEmuScriptRunner();
     return runner.stopScript(id);
   }
 
+  /**
+   * Gets the Next register descriptors.
+   */
   getNextRegDescriptors() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -562,6 +685,9 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Gets the Next register state.
+   */
   getNextRegState() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -575,6 +701,9 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Gets the Next memory mapping state.
+   */
   getNextMemoryMapping() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -584,6 +713,10 @@ class EmuMessageProcessor {
     return machine.memoryDevice.getMemoryMappings();
   }
 
+  /**
+   * Parses a partition label.
+   * @param label The partition label to parse.
+   */
   parsePartitionLabel(label: string) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -592,6 +725,9 @@ class EmuMessageProcessor {
     return controller.machine.parsePartitionLabel(label);
   }
 
+  /**
+   * Gets all partition labels.
+   */
   getPartitionLabels() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -600,6 +736,9 @@ class EmuMessageProcessor {
     return controller.machine.getPartitionLabels();
   }
 
+  /**
+   * Gets the current call stack information.
+   */
   getCallStack() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -608,6 +747,11 @@ class EmuMessageProcessor {
     return controller.machine.getCallStack();
   }
 
+  /**
+   * Sets the key status (pressed/released) for a key.
+   * @param key The key code.
+   * @param isDown True if the key is pressed.
+   */
   setKeyStatus(key: number, isDown: boolean) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -616,6 +760,9 @@ class EmuMessageProcessor {
     controller.machine.setKeyStatus(key, isDown);
   }
 
+  /**
+   * Gets palette device information.
+   */
   getPalettedDeviceInfo() {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -640,6 +787,11 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Sets a register value in the emulator.
+   * @param register The register name.
+   * @param value The value to set.
+   */
   async setRegisterValue(register: string, value: number): Promise<void> {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -731,6 +883,13 @@ class EmuMessageProcessor {
     }
   }
 
+  /**
+   * Sets memory content at a specific address.
+   * @param address The memory address.
+   * @param value The value to set.
+   * @param size The size in bytes.
+   * @param bigEndian True for big-endian byte order.
+   */
   async setMemoryContent(
     address: number,
     value: number,
@@ -782,6 +941,9 @@ class EmuMessageProcessor {
     }
   }
 
+  /**
+   * Gets the ROM flags array.
+   */
   async getRomFlags(): Promise<boolean[]> {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -790,6 +952,9 @@ class EmuMessageProcessor {
     return controller.machine.getRomFlags();
   }
 
+  /**
+   * Gets a chunk of the CPU state.
+   */
   async getCpuStateChunk(): Promise<CpuStateChunk> {
     const controller = this.machineService.getMachineController();
     if (!controller) {
@@ -803,6 +968,11 @@ class EmuMessageProcessor {
     };
   }
 
+  /**
+   * Renames breakpoints for a resource.
+   * @param oldResource The old resource name.
+   * @param newResource The new resource name.
+   */
   async renameBreakpoints(oldResource: string, newResource: string): Promise<void> {
     const controller = this.machineService.getMachineController();
     if (!controller) {

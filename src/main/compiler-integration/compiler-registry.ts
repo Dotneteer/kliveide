@@ -1,124 +1,39 @@
-import type { AssemblerErrorInfo, BinarySegment, CompilerOutput, FileLine, ListFileItem } from "@abstractions/CompilerInfo";
-import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
+import type {
+  CompilerOutput,
+  IKliveCompiler,
+  KliveCompilerOutput,
+} from "@abstractions/CompilerInfo";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
+import { SjasmPCompiler } from "@main/sjasmp-integration/SjasmPCompiler";
+import { Z80Compiler } from "@main/z80-compiler/Z80Compiler";
+import { ZxBasicCompiler } from "@main/zxb-integration/ZxBasicCompiler";
 
-/**
- * Stores the compilers
- */
-let compilerRegistry: Record<string, IKliveCompiler> = {};
-
-/**
- * Any compiler should be able to retrieve simple error information
- */
-export type SimpleAssemblerOutput = {
-  failed?: string;
-  errors?: AssemblerErrorInfo[];
-  debugMessages?: string[];
-  traceOutput?: string[];
-};
-
-/**
- * Represents a compiler that can generate injectable code
- */
-export type InjectableOutput = SimpleAssemblerOutput & {
-  readonly segments: BinarySegment[];
-  injectOptions: Record<string, boolean>;
-  sourceType?: string;
-};
-
-export type DebuggableOutput = InjectableOutput & {
-  /**
-   * The source files involved in this compilation, in
-   * their file index order
-   */
-  readonly sourceFileList: ISourceFileItem[];
+class CompilerRegistry {
+  private _compilerRegistry: Record<string, IKliveCompiler> = {};
 
   /**
-   * Source map information that assigns source file info with
-   * the address
+   * Registers the specified compiler
+   * @param compiler Compiler to register
    */
-  readonly sourceMap: Record<number, FileLine>;
+  registerCompiler(compiler: IKliveCompiler): void {
+    this._compilerRegistry[compiler.language] = compiler;
+  }
 
   /**
-   * Items of the list file
+   * Gets the specified Klive compiler
+   * @param id Compiler ID
    */
-  readonly listFileItems: ListFileItem[];
-
-};
-
-/**
- * Output of a Klive compiler
- */
-export type KliveCompilerOutput =
-  | SimpleAssemblerOutput
-  | InjectableOutput
-  | DebuggableOutput
-  | CompilerOutput;
-
-/**
- * Defines the responsibilities of a compiler that can vork directly with a build root
- */
-export interface IKliveCompiler {
-  /**
-   * The unique ID of the compiler
-   */
-  readonly id: string;
-
-  /**
-   * Compiled language
-   */
-  readonly language: string;
-
-  /**
-   * Indicates if the compiler supports Klive compiler output
-   */
-  readonly providesKliveOutput: boolean;
-
-  /**
-   * Compiles the Z80 Assembly code in the specified file into Z80
-   * binary code.
-   * @param filename Z80 assembly source file (absolute path)
-   * @param options Compiler options. If not defined, the compiler uses the default options.
-   * @returns Output of the compilation
-   */
-  compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
-
-  /**
-   * Checks if the specified file can have a breakpoint
-   * @param line The line content to check
-   */
-  lineCanHaveBreakpoint(line: string): Promise<boolean>;
+  getCompiler(id: string): IKliveCompiler | undefined {
+    return this._compilerRegistry[id];
+  }
 }
 
-/**
- * Type guard that checks if the specified output can be used for code injection
- * @param output
- * @returns
- */
-export function isInjectableCompilerOutput(output: KliveCompilerOutput): output is CompilerOutput {
-  return (output as any)?.segments;
+export function createCompilerRegistry(store: Store<AppState>): CompilerRegistry {
+  const registry = new CompilerRegistry();
+  registry.registerCompiler(new Z80Compiler());
+  registry.registerCompiler(new ZxBasicCompiler());
+  registry.registerCompiler(new SjasmPCompiler(store));
+  return registry;
 }
 
-/**
- * Type guard that checks if the specified output can be used for code injection
- * @param output
- * @returns
- */
-export function isDebuggableCompilerOutput(output: KliveCompilerOutput): output is CompilerOutput {
-  return (output as any)?.segments && (output as any)?.sourceFileList;
-}
-
-/**
- * Registers the specified compiler
- * @param compiler Compiler to register
- */
-export function registerCompiler(compiler: IKliveCompiler): void {
-  compilerRegistry[compiler.language] = compiler;
-}
-
-/**
- * Gets the specified Klive compiler
- * @param id Compiler ID
- */
-export function getCompiler(id: string): IKliveCompiler | undefined {
-  return compilerRegistry[id];
-}

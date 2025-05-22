@@ -1,13 +1,11 @@
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import type { KliveCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { IdeCommandBase, commandError, commandSuccessWith } from "../services/ide-commands";
-import { isInjectableCompilerOutput } from "@main/compiler-integration/compiler-registry";
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
+import { KliveCompilerOutput, SpectrumModelType } from "@abstractions/CompilerInfo";
 import {
   endCompileAction,
   incBreakpointsVersionAction,
@@ -17,6 +15,7 @@ import {
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction } from "@common/utils/output-utils";
+import { isInjectableCompilerOutput } from "../utils/compiler-utils";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 

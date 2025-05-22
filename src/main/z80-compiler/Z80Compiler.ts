@@ -1,8 +1,4 @@
-import type { CompilerOptions } from "@abstractions/CompilerInfo";
-import type {
-  IKliveCompiler,
-  KliveCompilerOutput
-} from "@main/compiler-integration/compiler-registry";
+import type { CompilerOptions, IKliveCompiler, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 
 import { Z80CompilerService } from "./z80-compiler-service";
 import { InputStream } from "./input-stream";

@@ -1,8 +1,26 @@
-// src/main/runWorker.ts
 import { Worker } from "worker_threads";
-import { resolveWorkerPath } from "./resolveWorkerPath";
+import path from "path";
+import { AssemblerErrorInfo, CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import { mainStore } from "@main/main-store";
+import { endBackgroundCompileAction } from "@common/state/actions";
+import { AppState } from "@common/state/AppState";
+import { Store } from "@common/state/redux-light";
 
-export function runWorker<TInput, TResult>(input: TInput, timeoutMs = 0): Promise<TResult> {
+export type CompilerWorkerData = {
+  filePath: string;
+  language: string;
+  options?: CompilerOptions;
+  store: Store<AppState>
+};
+
+export type CompilationCompleted = {
+  success: boolean;
+  errors: AssemblerErrorInfo[];
+};
+
+export function runBackgroundCompileWorker(
+  input: CompilerWorkerData
+): Promise<CompilationCompleted> {
   return new Promise((resolve, reject) => {
     const workerPath = resolveWorkerPath("./compileWorker"); // no extension needed
 
@@ -10,29 +28,58 @@ export function runWorker<TInput, TResult>(input: TInput, timeoutMs = 0): Promis
       workerData: input
     });
 
-    let timeoutHandle: NodeJS.Timeout;
-
-    // Timeout handler: terminate worker and reject
-    timeoutHandle = setTimeout(() => {
-      reject(new Error(`Worker timed out`));
-      worker.terminate().catch((err) => {
-        reject(new Error(`Worker timed out and termination failed: ${err}`));
-      });
-    }, timeoutMs);
-
-    worker.on("message", (result: TResult) => {
-      if (timeoutHandle) clearTimeout(timeoutHandle);
-      resolve(result);
+    worker.on("message", (result: KliveCompilerOutput) => {
+      const backgroundResult =
+        (result.errors ?? []).length > 0
+          ? {
+              success: false,
+              errors: result.errors
+            }
+          : {
+              success: true,
+              errors: []
+            };
+      mainStore.dispatch(endBackgroundCompileAction(backgroundResult));
+      resolve(backgroundResult);
     });
 
     worker.on("error", (err) => {
-      if (timeoutHandle) clearTimeout(timeoutHandle);
+      mainStore.dispatch(
+        endBackgroundCompileAction({
+          success: false,
+          errors: []
+        })
+      );
       reject(err);
     });
 
     worker.on("exit", (code) => {
-      if (timeoutHandle) clearTimeout(timeoutHandle);
-      if (code !== 0) reject(new Error(`Worker exited with code ${code}`));
+      if (code !== 0) {
+        mainStore.dispatch(
+          endBackgroundCompileAction({
+            success: false,
+            errors: []
+          })
+        );
+        reject(new Error(`Worker exited with code ${code}`));
+      }
     });
   });
+}
+
+/**
+ * Resolves the absolute path to a worker script, handling platform-specific quirks.
+ * @param relativePath The relative path to the worker script (without extension)
+ * @returns The absolute path to the worker script file
+ */
+function resolveWorkerPath(relativePath: string): string {
+  // __dirname is the directory of this file (runWorker.ts)
+  // Workers are typically in the same directory or a subdirectory
+  // Try .js first (for production), then .ts (for dev)
+  const jsPath = path.resolve(__dirname, `${relativePath}.js`);
+  const tsPath = path.resolve(__dirname, `${relativePath}.ts`);
+  const fs = require("fs");
+  if (fs.existsSync(jsPath)) return jsPath;
+  if (fs.existsSync(tsPath)) return tsPath;
+  throw new Error(`Worker script not found: ${jsPath} or ${tsPath}`);
 }

@@ -1,7 +1,6 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getGlobalSetting, useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useRef } from "react";
-import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { useAppServices } from "./services/AppServicesProvider";
 import { saveProject } from "./utils/save-project";
 import { BUILD_FILE } from "@common/structs/project-const";
@@ -21,6 +20,7 @@ import {
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
+import { isDebuggableCompilerOutput } from "./utils/compiler-utils";
 
 export const TOOL_PANEL_HEIGHT = "toolPanelHeight";
 

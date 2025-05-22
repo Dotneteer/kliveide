@@ -72,7 +72,6 @@ import {
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
-import { BackgroundCompiler } from "./compiler-integration/backgroundRun";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -119,8 +118,6 @@ const HELP_ABOUT = "help_about";
 const HELP_HOME_PAGE = "help_home_page";
 const HELP_SHOW_WELCOME = "help_welcome";
 const KEY_MAPPING_FOLDER = "keyMappingFolder";
-
-let backgroundCompiler: BackgroundCompiler | null = null;
 
 /**
  * Creates and sets the main menu of the app
@@ -260,35 +257,12 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       {
         id: "bkg_compile",
         label: "Compile in background",
-        click: async () => {
-          backgroundCompiler = new BackgroundCompiler();
-          backgroundCompiler.on("success", (result) => {
-            dialog.showMessageBox(ideWindow, {
-              message: result
-            });
-          });
-          backgroundCompiler.on("cancelled", () => {
-            backgroundCompiler = null;
-            dialog.showErrorBox("Compilation Cancelled", "The compilation was cancelled.");
-          });
-          backgroundCompiler.on("timeout", () => {
-            backgroundCompiler = null;
-            dialog.showErrorBox("Compilation Timeout", "The compilation timed out.");
-          });
-          backgroundCompiler.on("failure", (err) => {
-            backgroundCompiler = null;
-            dialog.showErrorBox("Compilation Failed", `The compilation failed: ${err}`);
-          });
-          backgroundCompiler.compile("some.asm", 4000);
-        }
+        click: async () => {}
       },
       {
         id: "bkg_compile_stop",
         label: "Stop background compilation",
-        click: async () => {
-          backgroundCompiler?.terminate();
-          backgroundCompiler = null;
-        }
+        click: async () => {}
       },
       ...(__DARWIN__
         ? []
