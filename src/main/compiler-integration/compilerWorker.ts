@@ -16,10 +16,8 @@ async function compileFile(state: AppState, filename: string, language: string, 
   }
   // Add a timeout: reject if not finished in 5 seconds
 
-  console.log("Compiling file:", filename);
   compiler?.setAppState(state);
   const result = (await compiler.compileFile(filename, options)) as Promise<KliveCompilerOutput>;
-  console.log("Compilation completed:", result);
   return result;
 }
 
@@ -27,7 +25,6 @@ if (parentPort) {
   const { filePath, language, options, state } = workerData as CompilerWorkerData;
   compileFile(state, filePath, language, options)
     .then((result) => {
-      console.log("Compilation result:", result);
       parentPort.postMessage(result);
     })
     .catch((err) => {

@@ -551,7 +551,6 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     projectService.setPermanent(document.id);
 
     // --- Handle breakpoint redos and undos
-    console.log("event", e);
     const resourceKey = `${editor.current.getId()}-${resourceName}`;
     if (e.isUndoing) {
       // --- Undo the breakpoints
