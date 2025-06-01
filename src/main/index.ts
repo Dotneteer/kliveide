@@ -92,10 +92,10 @@ function createEmulatorWindow(): void {
   const windowOptions: Electron.BrowserWindowConstructorOptions = {
     width: savedWindow?.width || 800,
     height: savedWindow?.height || 600,
-    title: "Klive Emulator",
-    show: false,    autoHideMenuBar: true,
+    title: "Klive Emulator",    show: false,
+    autoHideMenuBar: true,
     ...(process.platform === "linux"
-      ? { icon: join(__dirname, "../../resources/icon.png") }
+      ? { icon: join(__dirname, "../resources/icon.png") }
       : {}),
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
@@ -143,11 +143,11 @@ function createIDEWindow(): void {
     width: savedWindow?.width || 1200,
     height: savedWindow?.height || 800,
     title: "Klive IDE",
-    show: false,
-    autoHideMenuBar: true,
+    show: false,    autoHideMenuBar: true,
     ...(process.platform === "linux"
-      ? { icon: join(__dirname, "../../resources/icon.png") }
-      : {}),    webPreferences: {
+      ? { icon: join(__dirname, "../resources/icon.png") }
+      : {}),
+    webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false,
     },
