@@ -16,6 +16,11 @@ export default defineConfig({
       }
     },
     plugins: [react()],
+    css: {
+      modules: {
+        localsConvention: 'camelCase'
+      }
+    },
     build: {
       rollupOptions: {
         input: {

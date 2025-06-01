@@ -5,6 +5,16 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  css: {
+    modules: {
+      localsConvention: 'camelCase'
+    },
+    preprocessorOptions: {
+      scss: {
+        // --- Enable SCSS processing in tests
+      }
+    }
+  },
   test: {
     globals: true,
     environment: 'jsdom',

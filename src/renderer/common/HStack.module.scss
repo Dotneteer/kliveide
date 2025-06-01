@@ -1,0 +1,14 @@
+// --- HStack SCSS styles
+// --- Static styles for the HStack component
+
+.hStack {
+  // --- Flex layout base - horizontal by default
+  display: flex;
+  flex-direction: row;
+  
+  // --- Ensure no margin interferes with layout
+  margin: 0;
+  
+  // --- Prevent overflow issues
+  box-sizing: border-box;
+}

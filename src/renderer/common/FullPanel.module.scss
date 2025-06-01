@@ -1,0 +1,17 @@
+// --- FullPanel SCSS styles
+// --- Static styles for the FullPanel component
+
+.fullPanel {
+  // --- Fill entire parent area
+  width: 100%;
+  height: 100%;
+  
+  // --- Flex layout base
+  display: flex;
+  
+  // --- Ensure no margin interferes with full sizing
+  margin: 0;
+  
+  // --- Prevent overflow issues
+  box-sizing: border-box;
+}

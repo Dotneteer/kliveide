@@ -1,0 +1,14 @@
+// --- VStack SCSS styles
+// --- Static styles for the VStack component
+
+.vStack {
+  // --- Flex layout base (vertical by default)
+  display: flex;
+  flex-direction: column;
+  
+  // --- Ensure no margin interferes with layout
+  margin: 0;
+  
+  // --- Prevent overflow issues
+  box-sizing: border-box;
+}

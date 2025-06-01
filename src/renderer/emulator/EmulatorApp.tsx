@@ -1,8 +1,17 @@
+import { FullPanel } from '../common'
+
 function EmulatorApp() {
   return (
-    <div className="emulator-app">
+    <FullPanel 
+      direction="vertical" 
+      gap="20px"
+      style={{
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}
+    >
       <h1>Klive Emulator</h1>
-    </div>
+    </FullPanel>
   )
 }
 
