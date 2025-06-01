@@ -2,13 +2,15 @@ import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
-let win: BrowserWindow | null
+let emuWindow: BrowserWindow | null = null
+let ideWindow: BrowserWindow | null = null
 
-function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+function createEmulatorWindow(): void {
+  // Create the emulator window
+  emuWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    title: 'Klive Emulator',
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon: join(__dirname, '../../resources/icon.png') } : {}),
@@ -18,24 +20,65 @@ function createWindow(): void {
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  emuWindow.on('ready-to-show', () => {
+    emuWindow?.show()
+    emuWindow?.focus() // Focus the emulator window
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  emuWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
+  // Load the renderer content
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    emuWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/emulator/`)
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    emuWindow.loadFile(join(__dirname, '../renderer/emulator.html'))
   }
 
-  win = mainWindow
+  emuWindow.on('closed', () => {
+    emuWindow = null
+  })
+}
+
+function createIDEWindow(): void {
+  // Create the IDE window
+  ideWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    title: 'Klive IDE',
+    show: false,
+    autoHideMenuBar: true,
+    ...(process.platform === 'linux' ? { icon: join(__dirname, '../../resources/icon.png') } : {}),
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+
+  ideWindow.on('ready-to-show', () => {
+    ideWindow?.show()
+  })
+
+  ideWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+  // Load the renderer content
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    ideWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/ide/`)
+  } else {
+    ideWindow.loadFile(join(__dirname, '../renderer/ide.html'))
+  }
+
+  ideWindow.on('closed', () => {
+    ideWindow = null
+  })
+}
+
+function createWindows(): void {
+  createEmulatorWindow()
+  createIDEWindow()
 }
 
 // This method will be called when Electron has finished
@@ -52,22 +95,20 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  createWindow()
+  createWindows()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
+    // On macOS it's common to re-create windows in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindows()
+    }
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
+// Quit when all windows are closed on all platforms
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  app.quit()
 })
 
 // In this file you can include the rest of your app"s specific main process

@@ -97,10 +97,13 @@ const optimizer = {
     });
   }
 };
-function createWindow() {
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+let emuWindow = null;
+let ideWindow = null;
+function createEmulatorWindow() {
+  emuWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    title: "Klive Emulator",
     show: false,
     autoHideMenuBar: true,
     ...process.platform === "linux" ? { icon: join(__dirname, "../../resources/icon.png") } : {},
@@ -109,31 +112,68 @@ function createWindow() {
       sandbox: false
     }
   });
-  mainWindow.on("ready-to-show", () => {
-    mainWindow.show();
+  emuWindow.on("ready-to-show", () => {
+    emuWindow?.show();
+    emuWindow?.focus();
   });
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  emuWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: "deny" };
   });
   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    emuWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/emulator/`);
   } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+    emuWindow.loadFile(join(__dirname, "../renderer/emulator.html"));
   }
+  emuWindow.on("closed", () => {
+    emuWindow = null;
+  });
+}
+function createIDEWindow() {
+  ideWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    title: "Klive IDE",
+    show: false,
+    autoHideMenuBar: true,
+    ...process.platform === "linux" ? { icon: join(__dirname, "../../resources/icon.png") } : {},
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.js"),
+      sandbox: false
+    }
+  });
+  ideWindow.on("ready-to-show", () => {
+    ideWindow?.show();
+  });
+  ideWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url);
+    return { action: "deny" };
+  });
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    ideWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/ide/`);
+  } else {
+    ideWindow.loadFile(join(__dirname, "../renderer/ide.html"));
+  }
+  ideWindow.on("closed", () => {
+    ideWindow = null;
+  });
+}
+function createWindows() {
+  createEmulatorWindow();
+  createIDEWindow();
 }
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.electron");
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
-  createWindow();
+  createWindows();
   app.on("activate", function() {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindows();
+    }
   });
 });
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  app.quit();
 });

@@ -1,0 +1,268 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  overflow: hidden;
+}
+
+.ide-app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ide-header {
+  background-color: #2d2d30;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.ide-title h1 {
+  margin: 0;
+  color: #569cd6;
+  font-size: 1.4rem;
+}
+
+.subtitle {
+  color: #9cdcfe;
+  font-size: 0.85rem;
+  margin-left: 1rem;
+}
+
+.ide-toolbar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toolbar-btn {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #464647;
+  border-radius: 3px;
+  background-color: #3c3c3c;
+  color: #cccccc;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.toolbar-btn:hover {
+  background-color: #464647;
+}
+
+.toolbar-btn.compile {
+  background-color: #0e639c;
+  border-color: #0e639c;
+}
+
+.toolbar-btn.compile:hover {
+  background-color: #1177bb;
+}
+
+.toolbar-btn.run {
+  background-color: #4ec9b0;
+  border-color: #4ec9b0;
+  color: #000;
+}
+
+.toolbar-btn.run:hover {
+  background-color: #5fd3c4;
+}
+
+.ide-layout {
+  flex: 1;
+  display: flex;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #252526;
+  border-right: 1px solid #3e3e42;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  padding: 1rem;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.sidebar-section h3 {
+  margin: 0 0 0.75rem 0;
+  color: #cccccc;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.file-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.file-tree li {
+  padding: 0.25rem 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.file-tree li:hover {
+  background-color: #2a2d2e;
+}
+
+.file-tree li.active {
+  background-color: #094771;
+  color: #ffffff;
+}
+
+.registers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.register {
+  padding: 0.25rem 0.5rem;
+  background-color: #3c3c3c;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-family: 'Monaco', monospace;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-bar {
+  display: flex;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background-color: transparent;
+  color: #969696;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #cccccc;
+}
+
+.tab.active {
+  color: #ffffff;
+  border-bottom-color: #007acc;
+  background-color: #1e1e1e;
+}
+
+.content-area {
+  flex: 1;
+  background-color: #1e1e1e;
+  overflow: hidden;
+}
+
+.editor-container {
+  height: 100%;
+  display: flex;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.line-numbers {
+  background-color: #1e1e1e;
+  color: #858585;
+  padding: 1rem 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  border-right: 1px solid #3e3e42;
+  min-width: 40px;
+  text-align: right;
+}
+
+.line-number {
+  height: 1.4em;
+}
+
+.code-editor {
+  flex: 1;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  border: none;
+  outline: none;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  resize: none;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.output-panel {
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.output-line {
+  margin-bottom: 0.25rem;
+  color: #cccccc;
+}
+
+.output-line.success {
+  color: #4ec9b0;
+}
+
+.memory-view {
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+}
+
+.memory-header {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #3e3e42;
+  margin-bottom: 0.5rem;
+  color: #569cd6;
+  font-weight: bold;
+}
+
+.memory-row {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+.address {
+  color: #9cdcfe;
+}
+
+.hex-values {
+  color: #d4d4d4;
+  letter-spacing: 1px;
+}
+
+.status-bar {
+  background-color: #007acc;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
