@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@renderer/*": ["src/*"]
+    }
+  },
+  "include": ["src/**/*", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
