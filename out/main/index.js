@@ -1,5 +1,7 @@
-import { app, session, ipcMain, BrowserWindow, shell } from "electron";
+import { app, session, ipcMain, BrowserWindow, screen, shell } from "electron";
 import { join } from "node:path";
+import { promises } from "node:fs";
+import { homedir } from "node:os";
 import __cjs_mod__ from "node:module";
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
@@ -99,10 +101,81 @@ const optimizer = {
 };
 let emuWindow = null;
 let ideWindow = null;
+let kliveSettings = {};
+function getKliveSettingsPath() {
+  const kliveFolder = join(homedir(), "Klive");
+  return join(kliveFolder, "klive.settings");
+}
+async function loadKliveSettings() {
+  try {
+    const settingsPath = getKliveSettingsPath();
+    const settingsData = await promises.readFile(settingsPath, "utf-8");
+    kliveSettings = JSON.parse(settingsData);
+    console.log("Klive settings loaded successfully");
+  } catch (error) {
+    console.log("No existing settings file found or error reading settings, using defaults");
+    kliveSettings = {};
+  }
+}
+async function saveKliveSettings() {
+  try {
+    if (emuWindow && !emuWindow.isDestroyed()) {
+      const bounds = emuWindow.getBounds();
+      const display = screen.getDisplayMatching(bounds);
+      if (!kliveSettings.windowStates) {
+        kliveSettings.windowStates = {};
+      }
+      kliveSettings.windowStates.emuWindow = {
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        displayBounds: {
+          x: display.bounds.x,
+          y: display.bounds.y,
+          width: display.bounds.width,
+          height: display.bounds.height
+        },
+        isFullScreen: emuWindow.isFullScreen(),
+        isMaximized: emuWindow.isMaximized()
+      };
+    }
+    if (ideWindow && !ideWindow.isDestroyed()) {
+      const bounds = ideWindow.getBounds();
+      const display = screen.getDisplayMatching(bounds);
+      if (!kliveSettings.windowStates) {
+        kliveSettings.windowStates = {};
+      }
+      kliveSettings.windowStates.ideWindow = {
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        displayBounds: {
+          x: display.bounds.x,
+          y: display.bounds.y,
+          width: display.bounds.width,
+          height: display.bounds.height
+        },
+        isFullScreen: ideWindow.isFullScreen(),
+        isMaximized: ideWindow.isMaximized()
+      };
+    }
+    const settingsPath = getKliveSettingsPath();
+    const kliveFolder = join(homedir(), "Klive");
+    await promises.mkdir(kliveFolder, { recursive: true });
+    const settingsData = JSON.stringify(kliveSettings, null, 2);
+    await promises.writeFile(settingsPath, settingsData, "utf-8");
+    console.log("Klive settings saved successfully");
+  } catch (error) {
+    console.error("Error saving Klive settings:", error);
+  }
+}
 function createEmulatorWindow() {
-  emuWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+  const savedWindow = kliveSettings.windowStates?.emuWindow;
+  const windowOptions = {
+    width: savedWindow?.width || 800,
+    height: savedWindow?.height || 600,
     title: "Klive Emulator",
     show: false,
     autoHideMenuBar: true,
@@ -111,7 +184,12 @@ function createEmulatorWindow() {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false
     }
-  });
+  };
+  if (savedWindow?.x !== void 0 && savedWindow?.y !== void 0) {
+    windowOptions.x = savedWindow.x;
+    windowOptions.y = savedWindow.y;
+  }
+  emuWindow = new BrowserWindow(windowOptions);
   emuWindow.on("ready-to-show", () => {
     emuWindow?.show();
     emuWindow?.focus();
@@ -125,7 +203,8 @@ function createEmulatorWindow() {
   } else {
     emuWindow.loadFile(join(__dirname, "../renderer/emulator.html"));
   }
-  emuWindow.on("closed", () => {
+  emuWindow.on("closed", async () => {
+    await saveKliveSettings();
     if (ideWindow && !ideWindow.isDestroyed()) {
       ideWindow.close();
     }
@@ -134,9 +213,10 @@ function createEmulatorWindow() {
   });
 }
 function createIDEWindow() {
-  ideWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+  const savedWindow = kliveSettings.windowStates?.ideWindow;
+  const windowOptions = {
+    width: savedWindow?.width || 1200,
+    height: savedWindow?.height || 800,
     title: "Klive IDE",
     show: false,
     autoHideMenuBar: true,
@@ -145,7 +225,12 @@ function createIDEWindow() {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false
     }
-  });
+  };
+  if (savedWindow?.x !== void 0 && savedWindow?.y !== void 0) {
+    windowOptions.x = savedWindow.x;
+    windowOptions.y = savedWindow.y;
+  }
+  ideWindow = new BrowserWindow(windowOptions);
   ideWindow.on("ready-to-show", () => {
     ideWindow?.show();
   });
@@ -158,7 +243,8 @@ function createIDEWindow() {
   } else {
     ideWindow.loadFile(join(__dirname, "../renderer/ide.html"));
   }
-  ideWindow.on("closed", () => {
+  ideWindow.on("closed", async () => {
+    await saveKliveSettings();
     if (emuWindow && !emuWindow.isDestroyed()) {
       emuWindow.close();
     }
@@ -170,7 +256,8 @@ function createWindows() {
   createEmulatorWindow();
   createIDEWindow();
 }
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await loadKliveSettings();
   electronApp.setAppUserModelId("com.electron");
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
@@ -182,6 +269,7 @@ app.whenReady().then(() => {
     }
   });
 });
-app.on("window-all-closed", () => {
+app.on("window-all-closed", async () => {
+  await saveKliveSettings();
   app.quit();
 });

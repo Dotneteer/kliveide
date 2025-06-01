@@ -1,15 +1,104 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, screen } from 'electron'
 import { join } from 'node:path'
+import { promises as fs } from 'node:fs'
+import { homedir } from 'node:os'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import type { KliveSettings, WindowState } from '../common/abstractions/KliveSettings'
 
 let emuWindow: BrowserWindow | null = null
 let ideWindow: BrowserWindow | null = null
+let kliveSettings: KliveSettings = {}
+
+// Get the path to the Klive settings folder and file
+function getKliveSettingsPath(): string {
+  const kliveFolder = join(homedir(), 'Klive')
+  return join(kliveFolder, 'klive.settings')
+}
+
+// Load Klive settings from the settings file
+async function loadKliveSettings(): Promise<void> {
+  try {
+    const settingsPath = getKliveSettingsPath()
+    const settingsData = await fs.readFile(settingsPath, 'utf-8')
+    kliveSettings = JSON.parse(settingsData) as KliveSettings
+    console.log('Klive settings loaded successfully')
+  } catch (error) {
+    console.log('No existing settings file found or error reading settings, using defaults')
+    kliveSettings = {}
+  }
+}
+
+// Save Klive settings to the settings file
+async function saveKliveSettings(): Promise<void> {
+  try {    // Update window states before saving
+    if (emuWindow && !emuWindow.isDestroyed()) {
+      const bounds = emuWindow.getBounds()
+      const display = screen.getDisplayMatching(bounds)
+      
+      if (!kliveSettings.windowStates) {
+        kliveSettings.windowStates = {}
+      }
+      
+      kliveSettings.windowStates.emuWindow = {
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        displayBounds: {
+          x: display.bounds.x,
+          y: display.bounds.y,
+          width: display.bounds.width,
+          height: display.bounds.height
+        },
+        isFullScreen: emuWindow.isFullScreen(),
+        isMaximized: emuWindow.isMaximized()
+      }
+    }
+      if (ideWindow && !ideWindow.isDestroyed()) {
+      const bounds = ideWindow.getBounds()
+      const display = screen.getDisplayMatching(bounds)
+      
+      if (!kliveSettings.windowStates) {
+        kliveSettings.windowStates = {}
+      }
+      
+      kliveSettings.windowStates.ideWindow = {
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        displayBounds: {
+          x: display.bounds.x,
+          y: display.bounds.y,
+          width: display.bounds.width,
+          height: display.bounds.height
+        },
+        isFullScreen: ideWindow.isFullScreen(),
+        isMaximized: ideWindow.isMaximized()
+      }
+    }
+    
+    const settingsPath = getKliveSettingsPath()
+    const kliveFolder = join(homedir(), 'Klive')
+    
+    // Ensure the Klive folder exists
+    await fs.mkdir(kliveFolder, { recursive: true })
+    
+    // Save the settings
+    const settingsData = JSON.stringify(kliveSettings, null, 2)
+    await fs.writeFile(settingsPath, settingsData, 'utf-8')
+    console.log('Klive settings saved successfully')
+  } catch (error) {
+    console.error('Error saving Klive settings:', error)
+  }
+}
 
 function createEmulatorWindow(): void {
-  // Create the emulator window
-  emuWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+  // Get saved window state or use defaults
+  const savedWindow = kliveSettings.windowStates?.emuWindow
+  const windowOptions: Electron.BrowserWindowConstructorOptions = {
+    width: savedWindow?.width || 800,
+    height: savedWindow?.height || 600,
     title: 'Klive Emulator',
     show: false,
     autoHideMenuBar: true,
@@ -18,7 +107,16 @@ function createEmulatorWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
-  })
+  }
+  
+  // Set position if saved
+  if (savedWindow?.x !== undefined && savedWindow?.y !== undefined) {
+    windowOptions.x = savedWindow.x
+    windowOptions.y = savedWindow.y
+  }
+  
+  // Create the emulator window
+  emuWindow = new BrowserWindow(windowOptions)
 
   emuWindow.on('ready-to-show', () => {
     emuWindow?.show()
@@ -34,9 +132,9 @@ function createEmulatorWindow(): void {
     emuWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/emulator/`)
   } else {
     emuWindow.loadFile(join(__dirname, '../renderer/emulator.html'))
-  }
-  emuWindow.on('closed', () => {
-    // When emulator window is closed, close IDE window and quit app
+  }  emuWindow.on('closed', async () => {
+    // When emulator window is closed, save settings, close IDE window and quit app
+    await saveKliveSettings()
     if (ideWindow && !ideWindow.isDestroyed()) {
       ideWindow.close()
     }
@@ -46,10 +144,11 @@ function createEmulatorWindow(): void {
 }
 
 function createIDEWindow(): void {
-  // Create the IDE window
-  ideWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+  // Get saved window state or use defaults
+  const savedWindow = kliveSettings.windowStates?.ideWindow
+  const windowOptions: Electron.BrowserWindowConstructorOptions = {
+    width: savedWindow?.width || 1200,
+    height: savedWindow?.height || 800,
     title: 'Klive IDE',
     show: false,
     autoHideMenuBar: true,
@@ -58,7 +157,16 @@ function createIDEWindow(): void {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
     }
-  })
+  }
+  
+  // Set position if saved
+  if (savedWindow?.x !== undefined && savedWindow?.y !== undefined) {
+    windowOptions.x = savedWindow.x
+    windowOptions.y = savedWindow.y
+  }
+  
+  // Create the IDE window
+  ideWindow = new BrowserWindow(windowOptions)
 
   ideWindow.on('ready-to-show', () => {
     ideWindow?.show()
@@ -73,9 +181,9 @@ function createIDEWindow(): void {
     ideWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/ide/`)
   } else {
     ideWindow.loadFile(join(__dirname, '../renderer/ide.html'))
-  }
-  ideWindow.on('closed', () => {
-    // When IDE window is closed, close emulator window and quit app
+  }  ideWindow.on('closed', async () => {
+    // When IDE window is closed, save settings, close emulator window and quit app
+    await saveKliveSettings()
     if (emuWindow && !emuWindow.isDestroyed()) {
       emuWindow.close()
     }
@@ -92,7 +200,10 @@ function createWindows(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Load Klive settings first
+  await loadKliveSettings()
+  
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -115,7 +226,8 @@ app.whenReady().then(() => {
 })
 
 // Quit when all windows are closed on all platforms
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
+  await saveKliveSettings()
   app.quit()
 })
 
