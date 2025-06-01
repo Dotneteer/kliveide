@@ -20,6 +20,7 @@ test/
 ├── EmulatorApp.test.tsx       # Tests for Emulator component
 ├── IdeApp.test.tsx           # Tests for IDE component
 ├── KliveSettings.test.ts     # Tests for TypeScript types
+├── FullPanel.test.tsx        # Tests for shared flex panel component
 └── ReactInteraction.test.tsx # Example of user interaction testing
 ```
 
@@ -28,6 +29,7 @@ test/
 ### React Components
 - **EmulatorApp**: Renders the "Klive Emulator" title correctly
 - **IdeApp**: Renders the "Klive IDE" title correctly
+- **FullPanel**: Tests flex layout container with full-area stretching and layout options
 - **ReactInteraction**: Example component testing user interactions
 
 ### TypeScript Types
@@ -76,3 +78,28 @@ describe('MyComponent', () => {
   })
 })
 \`\`\`
+
+## Testing Shared Components
+
+Shared components in `/src/renderer/common/` should be tested to ensure they work correctly across both Emulator and IDE windows:
+
+1. **Import from common**: Use `import { FullPanel } from '../src/renderer/common'`
+2. **Test all variants**: Test different props, states, and interactions
+3. **Test accessibility**: Ensure proper ARIA attributes and keyboard navigation
+4. **Test styling**: Verify CSS classes are applied correctly
+
+Example shared component test:
+```typescript
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { FullPanel } from '../src/renderer/common'
+
+describe('FullPanel', () => {
+  it('applies default flex styles', () => {
+    render(<FullPanel data-testid="panel">Content</FullPanel>)
+    
+    const panel = screen.getByTestId('panel')
+    expect(panel).toHaveStyle({ display: 'flex' })
+  })
+})
+```
