@@ -1,5 +1,3 @@
-import './ide.css'
-
 function IdeApp() {
   return (
     <div className="ide-app">

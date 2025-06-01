@@ -1,5 +1,3 @@
-import './emulator.css'
-
 function EmulatorApp() {
   return (
     <div className="emulator-app">

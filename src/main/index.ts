@@ -35,9 +35,13 @@ function createEmulatorWindow(): void {
   } else {
     emuWindow.loadFile(join(__dirname, '../renderer/emulator.html'))
   }
-
   emuWindow.on('closed', () => {
+    // When emulator window is closed, close IDE window and quit app
+    if (ideWindow && !ideWindow.isDestroyed()) {
+      ideWindow.close()
+    }
     emuWindow = null
+    app.quit()
   })
 }
 
@@ -70,9 +74,13 @@ function createIDEWindow(): void {
   } else {
     ideWindow.loadFile(join(__dirname, '../renderer/ide.html'))
   }
-
   ideWindow.on('closed', () => {
+    // When IDE window is closed, close emulator window and quit app
+    if (emuWindow && !emuWindow.isDestroyed()) {
+      emuWindow.close()
+    }
     ideWindow = null
+    app.quit()
   })
 }
 

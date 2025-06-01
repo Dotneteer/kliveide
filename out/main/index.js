@@ -126,7 +126,11 @@ function createEmulatorWindow() {
     emuWindow.loadFile(join(__dirname, "../renderer/emulator.html"));
   }
   emuWindow.on("closed", () => {
+    if (ideWindow && !ideWindow.isDestroyed()) {
+      ideWindow.close();
+    }
     emuWindow = null;
+    app.quit();
   });
 }
 function createIDEWindow() {
@@ -155,7 +159,11 @@ function createIDEWindow() {
     ideWindow.loadFile(join(__dirname, "../renderer/ide.html"));
   }
   ideWindow.on("closed", () => {
+    if (emuWindow && !emuWindow.isDestroyed()) {
+      emuWindow.close();
+    }
     ideWindow = null;
+    app.quit();
   });
 }
 function createWindows() {
