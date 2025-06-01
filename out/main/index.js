@@ -1,4 +1,4 @@
-import { app, session, ipcMain, BrowserWindow, screen, shell } from "electron";
+import { app, session, ipcMain, BrowserWindow, shell, screen } from "electron";
 import { join } from "node:path";
 import { promises } from "node:fs";
 import { homedir } from "node:os";
@@ -113,53 +113,42 @@ async function loadKliveSettings() {
     kliveSettings = JSON.parse(settingsData);
     console.log("Klive settings loaded successfully");
   } catch (error) {
-    console.log("No existing settings file found or error reading settings, using defaults");
+    console.log(
+      "No existing settings file found or error reading settings, using defaults"
+    );
     kliveSettings = {};
+  }
+}
+function saveWindowState(window, windowKey) {
+  if (window && !window.isDestroyed()) {
+    const bounds = window.getBounds();
+    const display = screen.getDisplayMatching(bounds);
+    if (!kliveSettings.windowStates) {
+      kliveSettings.windowStates = {};
+    }
+    kliveSettings.windowStates[windowKey] = {
+      width: bounds.width,
+      height: bounds.height,
+      x: bounds.x,
+      y: bounds.y,
+      displayBounds: {
+        x: display.bounds.x,
+        y: display.bounds.y,
+        width: display.bounds.width,
+        height: display.bounds.height
+      },
+      isFullScreen: window.isFullScreen(),
+      isMaximized: window.isMaximized()
+    };
   }
 }
 async function saveKliveSettings() {
   try {
     if (emuWindow && !emuWindow.isDestroyed()) {
-      const bounds = emuWindow.getBounds();
-      const display = screen.getDisplayMatching(bounds);
-      if (!kliveSettings.windowStates) {
-        kliveSettings.windowStates = {};
-      }
-      kliveSettings.windowStates.emuWindow = {
-        width: bounds.width,
-        height: bounds.height,
-        x: bounds.x,
-        y: bounds.y,
-        displayBounds: {
-          x: display.bounds.x,
-          y: display.bounds.y,
-          width: display.bounds.width,
-          height: display.bounds.height
-        },
-        isFullScreen: emuWindow.isFullScreen(),
-        isMaximized: emuWindow.isMaximized()
-      };
+      saveWindowState(emuWindow, "emuWindow");
     }
     if (ideWindow && !ideWindow.isDestroyed()) {
-      const bounds = ideWindow.getBounds();
-      const display = screen.getDisplayMatching(bounds);
-      if (!kliveSettings.windowStates) {
-        kliveSettings.windowStates = {};
-      }
-      kliveSettings.windowStates.ideWindow = {
-        width: bounds.width,
-        height: bounds.height,
-        x: bounds.x,
-        y: bounds.y,
-        displayBounds: {
-          x: display.bounds.x,
-          y: display.bounds.y,
-          width: display.bounds.width,
-          height: display.bounds.height
-        },
-        isFullScreen: ideWindow.isFullScreen(),
-        isMaximized: ideWindow.isMaximized()
-      };
+      saveWindowState(ideWindow, "ideWindow");
     }
     const settingsPath = getKliveSettingsPath();
     const kliveFolder = join(homedir(), "Klive");
