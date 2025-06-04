@@ -1,5 +1,6 @@
 import React from 'react'
 import classNames from 'classnames'
+import { getCssPropertyValue } from './cssUtils'
 
 /** Base properties shared by all stack components */
 export interface BaseStackProps {
@@ -71,17 +72,17 @@ export const FlexStack: React.FC<FlexStackProps> = ({
     flexDirection: getFlexDirection(),
     gap,
     // --- Color and background styling
-    ...(color && { color }),
-    ...(backgroundColor && { backgroundColor }),
+    ...(color && { color: getCssPropertyValue(color) }),
+    ...(backgroundColor && { backgroundColor: getCssPropertyValue(backgroundColor) }),
     // --- Padding properties (specific overrides general)
-    ...(padding && { padding }),
+    ...(padding && { padding: getCssPropertyValue(padding) }),
     ...(paddingVertical && { 
-      paddingTop: paddingVertical, 
-      paddingBottom: paddingVertical 
+      paddingTop: getCssPropertyValue(paddingVertical), 
+      paddingBottom: getCssPropertyValue(paddingVertical) 
     }),
     ...(paddingHorizontal && { 
-      paddingLeft: paddingHorizontal, 
-      paddingRight: paddingHorizontal 
+      paddingLeft: getCssPropertyValue(paddingHorizontal), 
+      paddingRight: getCssPropertyValue(paddingHorizontal) 
     }),
     // --- User provided styles override defaults
     ...style

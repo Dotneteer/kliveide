@@ -6,6 +6,9 @@ export { default as HStack } from './HStack'
 export { default as VStack } from './VStack'
 export { FlexStack } from './FlexStack'
 
+// --- Utilities
+export { getCssPropertyValue } from './cssUtils'
+
 // --- Types
 export * from './types'
 export type { BaseStackProps } from './FlexStack'
