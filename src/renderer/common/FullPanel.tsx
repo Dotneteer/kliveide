@@ -2,30 +2,11 @@ import React from 'react'
 import classNames from 'classnames'
 import styles from './FullPanel.module.scss'
 import { getCssPropertyValue } from './cssUtils'
+import { BasePanelProps } from './types'
 
-interface FullPanelProps {
-  /** React children */
-  children?: React.ReactNode
-  /** CSS class name */
-  className?: string
+interface FullPanelProps extends BasePanelProps {
   /** Layout direction */
   direction?: 'horizontal' | 'vertical'
-  /** Whether to reverse the direction */
-  reverse?: boolean
-  /** Gap between flex items */
-  gap?: string | number
-  /** Text color */
-  color?: string
-  /** Background color */
-  backgroundColor?: string
-  /** Padding on all sides */
-  padding?: string | number
-  /** Padding on top and bottom */
-  paddingVertical?: string | number
-  /** Padding on left and right */
-  paddingHorizontal?: string | number
-  /** Additional styles */
-  style?: React.CSSProperties
 }
 
 /**
@@ -60,17 +41,17 @@ const FullPanel: React.FC<FullPanelProps> = ({
   const panelStyle: React.CSSProperties = {
     // --- Dynamic flex layout properties
     flexDirection: getFlexDirection(),
-    gap,
+    gap: getCssPropertyValue(gap),
     // --- Color and background styling
     ...(color && { color: getCssPropertyValue(color) }),
     ...(backgroundColor && { backgroundColor: getCssPropertyValue(backgroundColor) }),
     // --- Padding properties (specific overrides general)
-    ...(padding && { padding: getCssPropertyValue(padding) }),
-    ...(paddingVertical && { 
+    ...(padding !== undefined && padding !== null && { padding: getCssPropertyValue(padding) }),
+    ...(paddingVertical !== undefined && paddingVertical !== null && { 
       paddingTop: getCssPropertyValue(paddingVertical), 
       paddingBottom: getCssPropertyValue(paddingVertical) 
     }),
-    ...(paddingHorizontal && { 
+    ...(paddingHorizontal !== undefined && paddingHorizontal !== null && { 
       paddingLeft: getCssPropertyValue(paddingHorizontal), 
       paddingRight: getCssPropertyValue(paddingHorizontal) 
     }),

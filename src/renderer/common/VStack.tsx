@@ -1,5 +1,6 @@
 import React from 'react'
-import { FlexStack, BaseStackProps } from './FlexStack'
+import classNames from 'classnames'
+import { Stack, BaseStackProps } from './Stack'
 import styles from './VStack.module.scss'
 
 interface VStackProps extends BaseStackProps {}
@@ -11,12 +12,11 @@ interface VStackProps extends BaseStackProps {}
  * in a column. Perfect for creating vertical layouts like navigation menus, form fields,
  * or top-to-bottom content arrangements.
  */
-const VStack: React.FC<VStackProps> = (props) => {
+const VStack: React.FC<VStackProps> = ({ className, ...props }) => {
   return (
-    <FlexStack
+    <Stack
       {...props}
-      moduleStyles={styles}
-      moduleClassName="vStack"
+      className={classNames(styles.vStack, className)}
       baseDirection="column"
     />
   )
