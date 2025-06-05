@@ -1,9 +1,18 @@
+import FullPanel from "../common/FullPanel";
+
 function IdeApp() {
   return (
-    <div className="ide-app">
+    <FullPanel
+      direction="vertical"
+      gap="20px"
+      style={{
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
       <h1>Klive IDE</h1>
-    </div>
-  )
+    </FullPanel>
+  );
 }
 
 export default IdeApp

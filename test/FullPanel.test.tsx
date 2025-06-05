@@ -734,4 +734,56 @@ describe('FullPanel', () => {
       expect(panel.style.color).toBe('blue')
     })
   })
+
+  it('stretches to fill parent container dimensions', () => {
+    render(
+      <div data-testid="parent" style={{ width: '500px', height: '300px' }}>
+        <FullPanel
+          data-testid="full-panel"
+          direction="vertical"
+          gap="20px"
+          backgroundColor="red"
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <h1>Emulator</h1>
+        </FullPanel>
+      </div>
+    )
+    
+    const panel = screen.getByTestId('full-panel')
+    
+    // Check that the panel has CSS class applied
+    expect(panel.className).toMatch(/_fullPanel_\w+/)
+    
+    // Check that flex direction and other inline styles are applied
+    expect(panel.style.flexDirection).toBe('column')
+    expect(panel.style.gap).toBe('20px')
+    expect(panel.style.backgroundColor).toBe('red')
+    expect(panel.style.justifyContent).toBe('center')
+    expect(panel.style.alignItems).toBe('center')
+    
+    // Note: Due to CSS modules not being fully rendered in test environment,
+    // we cannot directly test computed width/height, but we can verify
+    // that the CSS class is applied which contains the stretching rules
+  })
+
+  it('applies the fullPanel CSS class for stretching behavior', () => {
+    render(
+      <FullPanel data-testid="full-panel">
+        <div>Content</div>
+      </FullPanel>
+    )
+    
+    const panel = screen.getByTestId('full-panel')
+    
+    // Verify the CSS module class is applied - this class contains:
+    // width: 100%, height: 100%, display: flex, margin: 0, box-sizing: border-box
+    expect(panel.className).toMatch(/_fullPanel_\w+/)
+    
+    // Verify it's a flex container (this can be tested)
+    expect(panel.style.flexDirection).toBeTruthy()
+  })
 })

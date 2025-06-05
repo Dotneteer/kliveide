@@ -1,18 +1,18 @@
-import { FullPanel } from '../common'
+import { FullPanel, SplitPanel } from "../common";
 
 function EmulatorApp() {
   return (
-    <FullPanel 
-      direction="vertical" 
+    <FullPanel
+      direction="vertical"
       gap="20px"
       style={{
-        justifyContent: 'center',
-        alignItems: 'center'
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       <h1>Klive Emulator</h1>
     </FullPanel>
-  )
+  );
 }
 
-export default EmulatorApp
+export default EmulatorApp;

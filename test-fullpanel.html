@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FullPanel Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-container {
+            width: 500px;
+            height: 300px;
+            border: 2px solid blue;
+            position: relative;
+        }
+        .manual-full-panel {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            box-sizing: border-box;
+            background-color: red;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Manual Test: FullPanel CSS</h2>
+    <p>This should fill the blue container completely:</p>
+    
+    <div class="test-container">
+        <div class="manual-full-panel">
+            <h1>Emulator</h1>
+        </div>
+    </div>
+</body>
+</html>

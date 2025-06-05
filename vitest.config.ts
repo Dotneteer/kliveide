@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [react()],
   css: {
     modules: {
-      localsConvention: 'camelCase'
+      localsConvention: 'camelCase',
+      generateScopedName: '[local]' // Use original class names in tests
     },
     preprocessorOptions: {
       scss: {

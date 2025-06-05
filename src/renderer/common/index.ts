@@ -4,6 +4,7 @@
 export { default as FullPanel } from './FullPanel'
 export { default as HStack } from './HStack'
 export { default as VStack } from './VStack'
+export { default as SplitPanel } from './SplitPanel'
 export { Stack } from './Stack'
 
 // --- Utilities
