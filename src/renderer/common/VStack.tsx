@@ -18,6 +18,7 @@ const VStack: React.FC<VStackProps> = ({ className, ...props }) => {
       {...props}
       className={classNames(styles.vStack, className)}
       baseDirection="column"
+      data-testid="_$_VStack"
     />
   )
 }

@@ -65,6 +65,7 @@ export const Stack: React.FC<StackProps> = ({
     <div 
       className={className}
       style={stackStyle}
+      data-testid="_$_Stack"
       {...props}
     >
       {children}

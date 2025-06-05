@@ -27,54 +27,24 @@
   z-index: 1000;
   
   &:hover {
-    background-color: rgba(0, 123, 255, 0.1);
+    background-color: rgba(0, 123, 255, 0.66);
   }
   
   &.dragging {
-    background-color: rgba(0, 123, 255, 0.2);
+    background-color: rgba(0, 123, 255, 0.8);
   }
 }
 
 // --- Horizontal splitter (for left/right primary locations)
 .splitter.horizontal {
-  width: 4px;
-  height: 100%;
   cursor: col-resize;
   top: 0;
-  
-  &:hover::after,
-  &.dragging::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 2px;
-    height: 24px;
-    background-color: #007bff;
-    border-radius: 1px;
-  }
 }
 
 // --- Vertical splitter (for top/bottom primary locations)
 .splitter.vertical {
-  height: 4px;
-  width: 100%;
   cursor: row-resize;
   left: 0;
-  
-  &:hover::after,
-  &.dragging::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 24px;
-    height: 2px;
-    background-color: #007bff;
-    border-radius: 1px;
-  }
 }
 
 // --- Hide splitter when dragging to prevent flickering

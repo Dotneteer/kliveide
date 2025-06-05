@@ -5,7 +5,7 @@ import { VStack } from '../src/renderer/common'
 describe('VStack', () => {
   it('renders children correctly', () => {
     render(
-      <VStack data-testid="v-stack">
+      <VStack >
         <div>Child 1</div>
         <div>Child 2</div>
       </VStack>
@@ -17,12 +17,12 @@ describe('VStack', () => {
 
   it('applies default vertical flex styles', () => {
     render(
-      <VStack data-testid="v-stack">
+      <VStack >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     
     // Check that the CSS module class is applied
     expect(stack.className).toMatch(/_vStack_\w+/)
@@ -34,56 +34,56 @@ describe('VStack', () => {
 
   it('applies reverse direction', () => {
     render(
-      <VStack reverse={true} data-testid="v-stack">
+      <VStack reverse={true} >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.flexDirection).toBe('column-reverse')
   })
 
   it('does not reverse when reverse is false', () => {
     render(
-      <VStack reverse={false} data-testid="v-stack">
+      <VStack reverse={false} >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.flexDirection).toBe('column')
   })
 
   it('applies custom gap', () => {
     render(
-      <VStack gap="20px" data-testid="v-stack">
+      <VStack gap="20px" >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.gap).toBe('20px')
   })
 
   it('applies numeric gap', () => {
     render(
-      <VStack gap={15} data-testid="v-stack">
+      <VStack gap={15} >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.gap).toBe('15px')
   })
 
   it('applies custom className while preserving CSS module class', () => {
     render(
-      <VStack className="custom-class" data-testid="v-stack">
+      <VStack className="custom-class" >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack).toHaveClass('custom-class')
     expect(stack.className).toMatch(/_vStack_\w+/)
   })
@@ -92,70 +92,70 @@ describe('VStack', () => {
     render(
       <VStack 
         style={{ border: '1px solid red', margin: '10px' }}
-        data-testid="v-stack"
+        
       >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.border).toBe('1px solid red')
     expect(stack.style.margin).toBe('10px')
   })
 
   it('applies color property', () => {
     render(
-      <VStack color="blue" data-testid="v-stack">
+      <VStack color="blue" >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.color).toBe('blue')
   })
 
   it('applies backgroundColor property', () => {
     render(
-      <VStack backgroundColor="rgb(255, 0, 0)" data-testid="v-stack">
+      <VStack backgroundColor="rgb(255, 0, 0)" >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.backgroundColor).toBe('rgb(255, 0, 0)')
   })
 
   it('applies padding property', () => {
     render(
-      <VStack padding="20px" data-testid="v-stack">
+      <VStack padding="20px" >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.padding).toBe('20px')
   })
 
   it('applies paddingVertical property', () => {
     render(
-      <VStack paddingVertical="15px" data-testid="v-stack">
+      <VStack paddingVertical="15px" >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.paddingTop).toBe('15px')
     expect(stack.style.paddingBottom).toBe('15px')
   })
 
   it('applies paddingHorizontal property', () => {
     render(
-      <VStack paddingHorizontal="25px" data-testid="v-stack">
+      <VStack paddingHorizontal="25px" >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.paddingLeft).toBe('25px')
     expect(stack.style.paddingRight).toBe('25px')
   })
@@ -166,13 +166,13 @@ describe('VStack', () => {
         padding="10px" 
         paddingVertical="20px" 
         paddingHorizontal="30px" 
-        data-testid="v-stack"
+        
       >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     
     // Specific padding should override general padding
     expect(stack.style.paddingTop).toBe('20px')
@@ -189,13 +189,13 @@ describe('VStack', () => {
         gap="5px"
         paddingVertical="10px"
         paddingHorizontal="20px"
-        data-testid="v-stack"
+        
       >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     
     expect(stack.style.flexDirection).toBe('column')
     expect(stack.style.gap).toBe('5px')
@@ -212,13 +212,13 @@ describe('VStack', () => {
       <VStack 
         padding="5px" 
         paddingVertical="15px" 
-        data-testid="v-stack"
+        
       >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     
     expect(stack.style.paddingTop).toBe('15px')
     expect(stack.style.paddingBottom).toBe('15px')
@@ -231,13 +231,13 @@ describe('VStack', () => {
       <VStack 
         padding="8px" 
         paddingHorizontal="25px" 
-        data-testid="v-stack"
+        
       >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     
     expect(stack.style.paddingTop).toBe('8px')
     expect(stack.style.paddingBottom).toBe('8px')
@@ -251,13 +251,13 @@ describe('VStack', () => {
         padding="12px" 
         paddingVertical="6px" 
         paddingHorizontal="18px" 
-        data-testid="v-stack"
+        
       >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     
     expect(stack.style.paddingTop).toBe('6px')
     expect(stack.style.paddingBottom).toBe('6px')
@@ -271,13 +271,13 @@ describe('VStack', () => {
         padding={10} 
         paddingVertical={20} 
         paddingHorizontal={30} 
-        data-testid="v-stack"
+        
       >
         <div>Content</div>
       </VStack>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     
     expect(stack.style.paddingTop).toBe('20px')
     expect(stack.style.paddingBottom).toBe('20px')
@@ -291,14 +291,14 @@ describe('VStack', () => {
       <div style={{ '--custom-color': '#ff0000' } as React.CSSProperties}>
         <VStack 
           color="--custom-color" 
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       </div>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.color).toBe('var(--custom-color)')
   })
 
@@ -307,14 +307,14 @@ describe('VStack', () => {
       <div style={{ '--custom-bg': '#00ff00' } as React.CSSProperties}>
         <VStack 
           backgroundColor="--custom-bg" 
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       </div>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.backgroundColor).toBe('var(--custom-bg)')
   })
 
@@ -323,14 +323,14 @@ describe('VStack', () => {
       <div style={{ '--custom-gap': '12px' } as React.CSSProperties}>
         <VStack 
           gap="--custom-gap" 
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       </div>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.gap).toBe('var(--custom-gap)')
   })
 
@@ -339,14 +339,14 @@ describe('VStack', () => {
       <div style={{ '--custom-padding': '16px' } as React.CSSProperties}>
         <VStack 
           padding="--custom-padding" 
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       </div>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     // Verify component renders successfully (CSS variables are filtered in jsdom)
     expect(stack.style.flexDirection).toBe('column')
     expect(stack).toBeInTheDocument()
@@ -363,14 +363,14 @@ describe('VStack', () => {
           color="--theme-color"
           backgroundColor="--theme-bg"
           padding="--theme-spacing"
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       </div>
     )
     
-    const stack = screen.getByTestId('v-stack')
+    const stack = screen.getByTestId('_$_VStack')
     expect(stack.style.color).toBe('var(--theme-color)')
     expect(stack.style.backgroundColor).toBe('var(--theme-bg)')
     expect(stack.style.flexDirection).toBe('column')
@@ -390,14 +390,14 @@ describe('VStack', () => {
             backgroundColor="blue"
             gap="--custom-gap"
             padding="10px"
-            data-testid="v-stack"
+            
           >
             <div>Content</div>
           </VStack>
         </div>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack.style.color).toBe('var(--custom-color)')
       expect(stack.style.backgroundColor).toBe('blue')
       expect(stack.style.gap).toBe('var(--custom-gap)')
@@ -411,14 +411,14 @@ describe('VStack', () => {
           <VStack 
             reverse={true}
             color="--theme-color"
-            data-testid="v-stack"
+            
           >
             <div>Content</div>
           </VStack>
         </div>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack.style.flexDirection).toBe('column-reverse')
       expect(stack.style.color).toBe('var(--theme-color)')
     })
@@ -433,13 +433,13 @@ describe('VStack', () => {
           backgroundColor={undefined}
           padding={null as any}
           gap=""
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack).toBeInTheDocument()
       expect(stack.style.flexDirection).toBe('column')
     })
@@ -449,13 +449,13 @@ describe('VStack', () => {
         <VStack 
           gap={0}
           padding={0}
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack.style.gap).toBe('0')
       expect(stack.style.padding).toBe('0px')
     })
@@ -465,13 +465,13 @@ describe('VStack', () => {
         <VStack 
           gap="0"
           padding="0px"
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack.style.gap).toBe('0')
       expect(stack.style.padding).toBe('0px')
     })
@@ -481,13 +481,13 @@ describe('VStack', () => {
         <VStack 
           color="red"
           style={{ fontSize: '16px', fontWeight: 'bold' }}
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack.style.color).toBe('red')
       expect(stack.style.fontSize).toBe('16px')
       expect(stack.style.fontWeight).toBe('bold')
@@ -498,26 +498,26 @@ describe('VStack', () => {
         <VStack 
           color="red"
           style={{ color: 'blue' }}
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack.style.color).toBe('blue')
     })
 
     it('maintains vertical layout with multiple children', () => {
       render(
-        <VStack data-testid="v-stack">
+        <VStack >
           <div data-testid="child-1">Child 1</div>
           <div data-testid="child-2">Child 2</div>
           <div data-testid="child-3">Child 3</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       const child1 = screen.getByTestId('child-1')
       const child2 = screen.getByTestId('child-2')
       const child3 = screen.getByTestId('child-3')
@@ -532,13 +532,13 @@ describe('VStack', () => {
       render(
         <VStack 
           className="custom-class another-class"
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       expect(stack).toHaveClass('custom-class')
       expect(stack).toHaveClass('another-class')
       expect(stack.className).toMatch(/_vStack_\w+/)
@@ -549,13 +549,13 @@ describe('VStack', () => {
         <VStack 
           padding="10px 15px 20px 25px" 
           paddingVertical="5px" 
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       
       // paddingVertical should only overwrite top and bottom
       expect(stack.style.paddingTop).toBe('5px')
@@ -569,13 +569,13 @@ describe('VStack', () => {
         <VStack 
           padding="10px 15px 20px 25px" 
           paddingHorizontal="35px" 
-          data-testid="v-stack"
+          
         >
           <div>Content</div>
         </VStack>
       )
       
-      const stack = screen.getByTestId('v-stack')
+      const stack = screen.getByTestId('_$_VStack')
       
       // paddingHorizontal should only overwrite left and right
       expect(stack.style.paddingTop).toBe('10px')

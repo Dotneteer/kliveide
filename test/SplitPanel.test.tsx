@@ -164,7 +164,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const primaryPanel = container.querySelector('[data-testid="primary-panel"]') as HTMLElement
+      const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
       expect(primaryPanel?.style.display).not.toBe('none')
     })
 
@@ -214,7 +214,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       expect(splitter?.style.display).not.toBe('none')
     })
 
@@ -226,7 +226,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       expect(splitter?.style.display).toBe('none')
     })
 
@@ -238,7 +238,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       expect(splitter?.style.display).toBe('none')
     })
 
@@ -250,8 +250,187 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       expect(splitter?.style.display).toBe('none')
+    })
+  })
+
+  describe('Splitter Sizing', () => {
+    it('uses default splitter size of 4px', () => {
+      mockContainerSize(800, 600)
+      
+      const { container } = render(
+        <SplitPanel primaryLocation="left" data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      expect(splitter?.style.width).toBe('4px')
+    })
+
+    it('applies custom splitter size for horizontal orientation', () => {
+      mockContainerSize(800, 600)
+      
+      const { container } = render(
+        <SplitPanel primaryLocation="left" splitterSize={8} data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      expect(splitter?.style.width).toBe('8px')
+      expect(splitter?.style.height).toBe('100%')
+    })
+
+    it('applies custom splitter size for vertical orientation', () => {
+      mockContainerSize(800, 600)
+      
+      const { container } = render(
+        <SplitPanel primaryLocation="top" splitterSize={12} data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      expect(splitter?.style.height).toBe('12px')
+      expect(splitter?.style.width).toBe('100%')
+    })
+
+    it('positions splitter correctly with custom size', async () => {
+      mockContainerSize(800, 600)
+      
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          splitterSize={10} 
+          initialPrimarySize={300}
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+        // Splitter should be positioned at primarySize - halfSplitterSize = 300 - 5 = 295px
+        expect(splitter?.style.left).toBe('295px')
+        expect(splitter?.style.width).toBe('10px')
+      })
+    })
+  })
+
+  describe('Primary Size Constraints', () => {
+    it('applies default minimum primary size of 10%', async () => {
+      mockContainerSize(1000, 600)
+      
+      const { container } = render(
+        <SplitPanel primaryLocation="left" initialPrimarySize={5} data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
+        // Should clamp to 10% of 1000px = 100px, not 5px
+        expect(primaryPanel?.style.width).toBe('100px')
+      })
+    })
+
+    it('applies default maximum primary size of 90%', async () => {
+      mockContainerSize(1000, 600)
+      
+      const { container } = render(
+        <SplitPanel primaryLocation="left" initialPrimarySize={950} data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
+        // Should clamp to 90% of 1000px = 900px, not 950px
+        expect(primaryPanel?.style.width).toBe('900px')
+      })
+    })
+
+    it('applies custom minimum primary size', async () => {
+      mockContainerSize(1000, 600)
+      
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          initialPrimarySize={50} 
+          minPrimarySize="20%"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
+        // Should clamp to 20% of 1000px = 200px, not 50px
+        expect(primaryPanel?.style.width).toBe('200px')
+      })
+    })
+
+    it('applies custom maximum primary size', async () => {
+      mockContainerSize(1000, 600)
+      
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          initialPrimarySize={800} 
+          maxPrimarySize="70%"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
+        // Should clamp to 70% of 1000px = 700px, not 800px
+        expect(primaryPanel?.style.width).toBe('700px')
+      })
+    })
+
+    it('respects both min and max constraints during dragging', async () => {
+      mockContainerSize(1000, 600)
+      
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          minPrimarySize="20%" 
+          maxPrimarySize="80%"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+        expect(splitter).toBeInTheDocument()
+        
+        // Try to drag beyond max constraint
+        fireEvent.mouseDown(splitter, { clientX: 500 })
+        fireEvent.mouseMove(document, { clientX: 900 }) // Try to make primary 900px (90%)
+        fireEvent.mouseUp(document)
+        
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
+        // Should be clamped to 80% = 800px maximum
+        expect(parseInt(primaryPanel?.style.width || '0')).toBeLessThanOrEqual(800)
+      })
     })
   })
 
@@ -267,7 +446,7 @@ describe('SplitPanel', () => {
       )
       
       await waitFor(() => {
-        const primaryPanel = container.querySelector('[data-testid="primary-panel"]') as HTMLElement
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
         expect(primaryPanel?.style.width).toBe('240px') // 30% of 800px
       })
     })
@@ -283,7 +462,7 @@ describe('SplitPanel', () => {
       )
       
       await waitFor(() => {
-        const primaryPanel = container.querySelector('[data-testid="primary-panel"]') as HTMLElement
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
         expect(primaryPanel?.style.width).toBe('200px')
       })
     })
@@ -299,7 +478,7 @@ describe('SplitPanel', () => {
       )
       
       await waitFor(() => {
-        const primaryPanel = container.querySelector('[data-testid="primary-panel"]') as HTMLElement
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
         expect(primaryPanel?.style.width).toBe('300px')
       })
     })
@@ -321,7 +500,7 @@ describe('SplitPanel', () => {
       )
       
       await waitFor(() => {
-        const primaryPanel = container.querySelector('[data-testid="primary-panel"]') as HTMLElement
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
         expect(primaryPanel?.style.width).toBe('100px') // Clamped to minimum
       })
     })
@@ -341,7 +520,7 @@ describe('SplitPanel', () => {
       )
       
       await waitFor(() => {
-        const primaryPanel = container.querySelector('[data-testid="primary-panel"]') as HTMLElement
+        const primaryPanel = container.querySelector('[data-testid="_$_SplitPanel-primary-panel"]') as HTMLElement
         expect(primaryPanel?.style.width).toBe('700px') // 800 - 100 (min secondary)
       })
     })
@@ -361,7 +540,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       
       fireEvent.mouseDown(splitter, { clientX: 400 })
       fireEvent.mouseMove(document, { clientX: 450 })
@@ -382,7 +561,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       
       fireEvent.mouseDown(splitter, { clientX: 400 })
       fireEvent.mouseMove(document, { clientX: 450 })
@@ -399,7 +578,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
       
       // Start dragging
@@ -425,7 +604,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       expect(splitter.className).toMatch(/_horizontal_\w+/)
     })
 
@@ -437,7 +616,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       expect(splitter.className).toMatch(/_vertical_\w+/)
     })
   })
@@ -451,7 +630,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const panels = container.querySelectorAll('[data-testid="primary-panel"], [data-testid="secondary-panel"]')
+      const panels = container.querySelectorAll('[data-testid="_$_SplitPanel-primary-panel"], [data-testid="_$_SplitPanel-secondary-panel"]')
       const firstPanel = panels[0]
       expect(firstPanel.querySelector('[data-testid="primary"]')).toBeInTheDocument()
     })
@@ -464,7 +643,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const panels = container.querySelectorAll('[data-testid="primary-panel"], [data-testid="secondary-panel"]')
+      const panels = container.querySelectorAll('[data-testid="_$_SplitPanel-primary-panel"], [data-testid="_$_SplitPanel-secondary-panel"]')
       const firstPanel = panels[0]
       expect(firstPanel.querySelector('[data-testid="primary"]')).toBeInTheDocument()
     })
@@ -477,7 +656,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const panels = container.querySelectorAll('[data-testid="primary-panel"], [data-testid="secondary-panel"]')
+      const panels = container.querySelectorAll('[data-testid="_$_SplitPanel-primary-panel"], [data-testid="_$_SplitPanel-secondary-panel"]')
       const firstPanel = panels[0]
       expect(firstPanel.querySelector('[data-testid="secondary"]')).toBeInTheDocument()
     })
@@ -490,7 +669,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const panels = container.querySelectorAll('[data-testid="primary-panel"], [data-testid="secondary-panel"]')
+      const panels = container.querySelectorAll('[data-testid="_$_SplitPanel-primary-panel"], [data-testid="_$_SplitPanel-secondary-panel"]')
       const firstPanel = panels[0]
       expect(firstPanel.querySelector('[data-testid="secondary"]')).toBeInTheDocument()
     })
@@ -526,7 +705,7 @@ describe('SplitPanel', () => {
         </SplitPanel>
       )
       
-      const splitter = container.querySelector('[data-testid="splitter"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
       const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
       const preventDefault = vi.spyOn(event, 'preventDefault')
       

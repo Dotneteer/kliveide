@@ -63,6 +63,7 @@ const FullPanel: React.FC<FullPanelProps> = ({
     <div 
       className={classNames(styles.fullPanel, className)}
       style={panelStyle}
+      data-testid="_$_FullPanel"
       {...props}
     >
       {children}

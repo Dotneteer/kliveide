@@ -11,6 +11,10 @@ function EmulatorApp() {
       }}
     >
       <h1>Klive Emulator</h1>
+      <SplitPanel primaryLocation="top" splitterSize={20}>
+        <FullPanel backgroundColor="red"></FullPanel>
+        <FullPanel backgroundColor="green"></FullPanel>
+      </SplitPanel>
     </FullPanel>
   );
 }

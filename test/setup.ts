@@ -1,5 +1,12 @@
 import '@testing-library/jest-dom'
 
+// --- Mock ResizeObserver for SplitPanel component
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  disconnect: vi.fn(),
+  unobserve: vi.fn(),
+}))
+
 // --- Mock Electron APIs for testing
 Object.defineProperty(window, 'electron', {
   value: {
