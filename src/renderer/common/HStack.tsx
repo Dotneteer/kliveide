@@ -1,5 +1,6 @@
 import React from 'react'
-import { FlexStack, BaseStackProps } from './FlexStack'
+import classNames from 'classnames'
+import { Stack, BaseStackProps } from './Stack'
 import styles from './HStack.module.scss'
 
 interface HStackProps extends BaseStackProps {}
@@ -11,12 +12,11 @@ interface HStackProps extends BaseStackProps {}
  * in a row. Perfect for creating horizontal layouts like toolbars, button groups, or
  * side-by-side content arrangements.
  */
-const HStack: React.FC<HStackProps> = (props) => {
+const HStack: React.FC<HStackProps> = ({ className, ...props }) => {
   return (
-    <FlexStack
+    <Stack
       {...props}
-      moduleStyles={styles}
-      moduleClassName="hStack"
+      className={classNames(styles.hStack, className)}
       baseDirection="row"
     />
   )

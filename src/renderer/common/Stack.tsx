@@ -1,24 +1,25 @@
 import React from 'react'
-import classNames from 'classnames'
-import styles from './FullPanel.module.scss'
 import { getCssPropertyValue } from './cssUtils'
 import { BasePanelProps } from './types'
 
-interface FullPanelProps extends BasePanelProps {
-  /** Layout direction */
-  direction?: 'horizontal' | 'vertical'
+/** Base properties shared by all stack components */
+export interface BaseStackProps extends BasePanelProps {}
+
+/** Internal props for the Stack component */
+interface StackProps extends BaseStackProps {
+  /** Base flex direction (row or column) */
+  baseDirection: 'row' | 'column'
 }
 
 /**
- * FullPanel - A flex container that stretches to fill the entire available client area
+ * Stack - Base component for horizontal and vertical stack layouts
  * 
- * This component creates a flex layout container that automatically fills its parent's
- * dimensions. Perfect for creating main layout containers in Electron windows.
+ * This is an internal component that provides the common logic for HStack and VStack.
+ * It handles all the styling properties and flex layout logic.
  */
-const FullPanel: React.FC<FullPanelProps> = ({
+export const Stack: React.FC<StackProps> = ({
   children,
   className = '',
-  direction = 'vertical',
   reverse = false,
   gap = 0,
   color,
@@ -27,18 +28,19 @@ const FullPanel: React.FC<FullPanelProps> = ({
   paddingVertical,
   paddingHorizontal,
   style = {},
+  baseDirection,
   ...props
 }) => {
   // --- Convert direction and reverse to CSS flexDirection
   const getFlexDirection = (): React.CSSProperties['flexDirection'] => {
-    if (direction === 'horizontal') {
+    if (baseDirection === 'row') {
       return reverse ? 'row-reverse' : 'row'
     } else {
       return reverse ? 'column-reverse' : 'column'
     }
   }
 
-  const panelStyle: React.CSSProperties = {
+  const stackStyle: React.CSSProperties = {
     // --- Dynamic flex layout properties
     flexDirection: getFlexDirection(),
     gap: getCssPropertyValue(gap),
@@ -61,13 +63,11 @@ const FullPanel: React.FC<FullPanelProps> = ({
 
   return (
     <div 
-      className={classNames(styles.fullPanel, className)}
-      style={panelStyle}
+      className={className}
+      style={stackStyle}
       {...props}
     >
       {children}
     </div>
   )
 }
-
-export default FullPanel
