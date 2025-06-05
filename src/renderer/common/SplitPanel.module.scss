@@ -39,12 +39,30 @@
 .splitter.horizontal {
   cursor: col-resize;
   top: 0;
+  
+  // --- Constrained resize cursors for horizontal splitters
+  &.constrainedLeft {
+    cursor: e-resize; // Can only resize to the right
+  }
+  
+  &.constrainedRight {
+    cursor: w-resize; // Can only resize to the left
+  }
 }
 
 // --- Vertical splitter (for top/bottom primary locations)
 .splitter.vertical {
   cursor: row-resize;
   left: 0;
+  
+  // --- Constrained resize cursors for vertical splitters
+  &.constrainedUp {
+    cursor: s-resize; // Can only resize downward
+  }
+  
+  &.constrainedDown {
+    cursor: n-resize; // Can only resize upward
+  }
 }
 
 // --- Hide splitter when dragging to prevent flickering
@@ -58,5 +76,63 @@
   
   .splitter {
     pointer-events: auto;
+  }
+}
+
+// --- Global dragging state - applies cursor to entire viewport
+.splitPanel.globalDragging {
+  // This class can be used for additional styling during global drag
+  
+  .splitter {
+    background-color: rgba(0, 123, 255, 0.8);
+  }
+}
+
+// --- Persistent cursor classes for the entire panel after drag ends
+.splitPanel.persistentColResize {
+  cursor: col-resize !important;
+  
+  * {
+    cursor: col-resize !important;
+  }
+}
+
+.splitPanel.persistentRowResize {
+  cursor: row-resize !important;
+  
+  * {
+    cursor: row-resize !important;
+  }
+}
+
+.splitPanel.persistentEResize {
+  cursor: e-resize !important;
+  
+  * {
+    cursor: e-resize !important;
+  }
+}
+
+.splitPanel.persistentWResize {
+  cursor: w-resize !important;
+  
+  * {
+    cursor: w-resize !important;
+  }
+}
+
+.splitPanel.persistentSResize {
+  cursor: s-resize !important;
+  
+  * {
+    cursor: s-resize !important;
+  }
+}
+
+.splitPanel.persistentNResize {
+  cursor: n-resize !important;
+  
+  * {
+    cursor: n-resize !important;
   }
 }

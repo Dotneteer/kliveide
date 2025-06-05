@@ -1,15 +1,26 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { SplitPanel } from '../src/renderer/common'
 
 // --- Mock ResizeObserver
 class MockResizeObserver {
+  callback: ResizeObserverCallback
+  
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback
+  }
+  
   observe = vi.fn()
   unobserve = vi.fn()
   disconnect = vi.fn()
+  
+  // Manual trigger for testing
+  trigger(entries: ResizeObserverEntry[]) {
+    this.callback(entries, this)
+  }
 }
 
-global.ResizeObserver = MockResizeObserver
+global.ResizeObserver = MockResizeObserver as any
 
 // --- Helper to simulate container size
 const mockContainerSize = (width: number, height: number) => {
@@ -713,5 +724,674 @@ describe('SplitPanel', () => {
       
       expect(preventDefault).toHaveBeenCalled()
     })
+  })
+
+  describe('Cursor constraint behavior', () => {
+    it('applies constrainedLeft class when left primary panel is at minimum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="left" 
+          minPrimarySize="100px"
+          initialPrimarySize="100px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedLeft/)
+      })
+    })
+
+    it('applies constrainedRight class when left primary panel is at maximum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="left" 
+          maxPrimarySize="700px"
+          initialPrimarySize="700px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedRight/)
+      })
+    })
+
+    it('applies constrainedRight class when right primary panel is at minimum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="right" 
+          minPrimarySize="100px"
+          initialPrimarySize="100px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedRight/)
+      })
+    })
+
+    it('applies constrainedLeft class when right primary panel is at maximum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="right" 
+          maxPrimarySize="700px"
+          initialPrimarySize="700px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedLeft/)
+      })
+    })
+
+    it('applies constrainedUp class when top primary panel is at minimum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="top" 
+          minPrimarySize="100px"
+          initialPrimarySize="100px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedUp/)
+      })
+    })
+
+    it('applies constrainedDown class when top primary panel is at maximum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="top" 
+          maxPrimarySize="500px"
+          initialPrimarySize="500px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedDown/)
+      })
+    })
+
+    it('applies constrainedDown class when bottom primary panel is at minimum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="bottom" 
+          minPrimarySize="100px"
+          initialPrimarySize="100px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedDown/)
+      })
+    })
+
+    it('applies constrainedUp class when bottom primary panel is at maximum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="bottom" 
+          maxPrimarySize="500px"
+          initialPrimarySize="500px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedUp/)
+      })
+    })
+
+    it('applies constraint when secondary panel reaches minimum size', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="left" 
+          minSecondarySize="100px"
+          initialPrimarySize="700px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedLeft/)
+      })
+    })
+
+    it('does not apply constraint classes when panel can resize freely', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="left" 
+          minPrimarySize="100px"
+          maxPrimarySize="600px"
+          initialPrimarySize="300px"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).not.toMatch(/constrainedLeft/)
+        expect(splitter.className).not.toMatch(/constrainedRight/)
+        expect(splitter.className).not.toMatch(/constrainedUp/)
+        expect(splitter.className).not.toMatch(/constrainedDown/)
+      })
+    })
+
+    it('handles percentage-based constraints correctly', async () => {
+      mockContainerSize(800, 600)
+      
+      render(
+        <SplitPanel 
+          primaryLocation="left" 
+          minPrimarySize="10%"
+          maxPrimarySize="90%"
+          minSecondarySize="5%" // Lower minimum for secondary to test primary max
+          initialPrimarySize="90%"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      await waitFor(() => {
+        const splitter = screen.getByTestId('_$_SplitPanel-splitter')
+        expect(splitter.className).toMatch(/constrainedRight/)
+      })
+    })
+
+  })
+
+  describe('Cursor persistence behavior', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('applies persistent cursor after drag ends for unconstrained horizontal splitter', () => {
+      const { container } = render(
+        <SplitPanel primaryLocation="left" data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Check initial state
+      expect(panel.className).not.toMatch(/persistent/)
+      
+      // Start and end drag
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 400 })
+        fireEvent.mouseUp(document)
+      })
+      
+      // Should apply persistent col-resize cursor
+      expect(panel.className).toMatch(/_persistentColResize_\w+/)
+      
+      // Should clear after timeout
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(panel.className).not.toMatch(/_persistentColResize_\w+/)
+    })
+
+    it('applies persistent cursor after drag ends for unconstrained vertical splitter', () => {
+      const { container } = render(
+        <SplitPanel primaryLocation="top" data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Start and end drag
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientY: 400 })
+        fireEvent.mouseUp(document)
+      })
+      
+      // Should apply persistent row-resize cursor
+      expect(panel.className).toMatch(/_persistentRowResize_\w+/)
+      
+      // Should clear after timeout
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(panel.className).not.toMatch(/_persistentRowResize_\w+/)
+    })
+
+    it('applies persistent constrained cursor after drag ends for left-constrained splitter', () => {
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          minPrimarySize="300px"
+          initialPrimarySize="300px"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Start and end drag
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 400 })
+        fireEvent.mouseUp(document)
+      })
+      
+      // Should apply persistent e-resize cursor for constrained left
+      expect(panel.className).toMatch(/_persistentEResize_\w+/)
+      
+      // Should clear after timeout
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(panel.className).not.toMatch(/_persistentEResize_\w+/)
+    })
+
+    it('applies persistent constrained cursor after drag ends for right-constrained splitter', () => {
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          maxPrimarySize="100px"
+          initialPrimarySize="100px"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Start and end drag
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 400 })
+        fireEvent.mouseUp(document)
+      })
+      
+      // Should apply persistent w-resize cursor for constrained right
+      expect(panel.className).toMatch(/_persistentWResize_\w+/)
+      
+      // Should clear after timeout
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(panel.className).not.toMatch(/_persistentWResize_\w+/)
+    })
+
+    it('does not apply persistent cursor without drag interaction', () => {
+      const { container } = render(
+        <SplitPanel primaryLocation="left" data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      
+      // Should not have any persistent cursor classes initially
+      expect(panel.className).not.toMatch(/_persistent\w+Resize_\w+/)
+    })
+  })
+
+  describe('Global cursor during dragging', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      // Cleanup any global styles that might have been set
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    })
+
+    it('should set global cursor during horizontal drag', () => {
+      const { container } = render(
+        <SplitPanel primaryLocation="left" data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Initially no global cursor
+      expect(document.body.style.cursor).toBe('')
+      expect(panel.className).not.toMatch(/_globalDragging_\w+/)
+      
+      // Start drag
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 250 })
+      })
+      
+      // Should set global cursor and add globalDragging class
+      expect(document.body.style.cursor).toBe('col-resize')
+      expect(document.body.style.userSelect).toBe('none')
+      expect(panel.className).toMatch(/_globalDragging_\w+/)
+      
+      // End drag
+      act(() => {
+        fireEvent.mouseUp(document)
+      })
+      
+      // Should clear global cursor but keep globalDragging class cleared
+      expect(document.body.style.cursor).toBe('')
+      expect(document.body.style.userSelect).toBe('')
+      expect(panel.className).not.toMatch(/_globalDragging_\w+/)
+    })
+
+    it('should set global cursor during vertical drag', () => {
+      const { container } = render(
+        <SplitPanel primaryLocation="top" data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Start drag
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientY: 150 })
+      })
+      
+      // Should set global row-resize cursor
+      expect(document.body.style.cursor).toBe('row-resize')
+      expect(document.body.style.userSelect).toBe('none')
+      
+      // End drag
+      act(() => {
+        fireEvent.mouseUp(document)
+      })
+      
+      // Should clear global cursor
+      expect(document.body.style.cursor).toBe('')
+      expect(document.body.style.userSelect).toBe('')
+    })
+
+    it('should set constrained global cursor when at limits', () => {
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          initialPrimarySize="10%" 
+          minPrimarySize="10%"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Start drag when at minimum
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 50 })
+      })
+      
+      // Should set constrained cursor (can only resize right)
+      expect(document.body.style.cursor).toBe('e-resize')
+      
+      // End drag
+      act(() => {
+        fireEvent.mouseUp(document)
+      })
+      
+      expect(document.body.style.cursor).toBe('')
+    })
+
+    it('should clean up global cursor on component unmount during drag', () => {
+      const { container, unmount } = render(
+        <SplitPanel primaryLocation="left" data-testid="split-panel">
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Start drag
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 250 })
+      })
+      
+      expect(document.body.style.cursor).toBe('col-resize')
+      
+      // Unmount component during drag
+      act(() => {
+        unmount()
+      })
+      
+      // Should clean up global cursor
+      expect(document.body.style.cursor).toBe('')
+      expect(document.body.style.userSelect).toBe('')
+    })
+  })
+
+  describe('Spatial cursor logic during dragging', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    })
+
+    it('should show s-resize when mouse is above splitter and primary is at minimum (top layout)', () => {
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="top" 
+          initialPrimarySize="10%" 
+          minPrimarySize="10%"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Mock getBoundingClientRect to simulate panel dimensions
+      const mockGetBoundingClientRect = vi.fn().mockReturnValue({
+        left: 0,
+        top: 0,
+        width: 600,
+        height: 300,
+      })
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      panel.getBoundingClientRect = mockGetBoundingClientRect
+      
+      // Start drag with mouse above the splitter (simulating mouse outside panel area)
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 300, clientY: 10 }) // Y=10 is above splitter
+      })
+      
+      // Should show s-resize (can only move down)
+      expect(document.body.style.cursor).toBe('s-resize')
+      
+      act(() => {
+        fireEvent.mouseUp(document)
+      })
+    })
+
+    it('should show e-resize when mouse is left of splitter and primary is at minimum (left layout)', () => {
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          initialPrimarySize="10%" 
+          minPrimarySize="10%"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Mock getBoundingClientRect
+      const mockGetBoundingClientRect = vi.fn().mockReturnValue({
+        left: 0,
+        top: 0,
+        width: 600,
+        height: 300,
+      })
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      panel.getBoundingClientRect = mockGetBoundingClientRect
+      
+      // Start drag with mouse left of the splitter
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 30, clientY: 150 }) // X=30 is left of splitter
+      })
+      
+      // Should show e-resize (can only move right)
+      expect(document.body.style.cursor).toBe('e-resize')
+      
+      act(() => {
+        fireEvent.mouseUp(document)
+      })
+    })
+
+    it('should show w-resize when mouse is right of splitter and primary is at maximum (left layout)', () => {
+      const { container } = render(
+        <SplitPanel 
+          primaryLocation="left" 
+          initialPrimarySize="720px" // Explicitly set to pixels for more predictable test
+          maxPrimarySize="720px"
+          data-testid="split-panel"
+        >
+          <div>Primary</div>
+          <div>Secondary</div>
+        </SplitPanel>
+      )
+      
+      const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+      
+      // Mock getBoundingClientRect with a fixed pixel width for more consistent testing
+      const mockGetBoundingClientRect = vi.fn().mockReturnValue({
+        left: 0,
+        top: 0,
+        width: 800, // Use 800 to make percentage math simpler
+        height: 300,
+      })
+      
+      const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
+      panel.getBoundingClientRect = mockGetBoundingClientRect
+      
+      // Mock ResizeObserver to force size initialization
+      const resizeObserverMock = vi.fn().mockImplementation((cb) => {
+        // Immediately trigger with mock dimensions
+        setTimeout(() => {
+          cb([{
+            contentRect: { width: 800, height: 300 },
+            target: panel,
+            contentBoxSize: [],
+            borderBoxSize: [],
+            devicePixelContentBoxSize: []
+          }]);
+        }, 0);
+        return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
+      });
+      
+      // @ts-ignore - Mock ResizeObserver
+      global.ResizeObserver = resizeObserverMock;
+      
+      // Advance timers to ensure ResizeObserver fires
+      act(() => {
+        vi.advanceTimersByTime(10);
+      });
+      
+      // Force the splitter to appear at the correct position
+      splitter.style.left = '720px';
+      
+      console.log('TEST: Splitter at position:', splitter.style.left);
+      
+      // Start drag with mouse right of the splitter (770 > 720)
+      act(() => {
+        fireEvent.mouseDown(splitter, { clientX: 770, clientY: 150 }) 
+      })
+      
+      // Should show w-resize (can only move left)
+      expect(document.body.style.cursor).toBe('w-resize')
+      
+      act(() => {
+        fireEvent.mouseUp(document)
+      })
+    })
+
+    
   })
 })

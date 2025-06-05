@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SplitPanel Cursor Constraints Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-container {
+            width: 600px;
+            height: 300px;
+            border: 2px solid #333;
+            margin: 20px 0;
+            background: white;
+            position: relative;
+        }
+        
+        .test-description {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .constraint-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4f8;
+            border-left: 4px solid #2196F3;
+            font-size: 14px;
+        }
+        
+        .cursor-persistence-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .cursor-demo {
+            margin-top: 10px;
+            padding: 10px;
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            font-size: 14px;
+            color: #0c5460;
+        }
+        
+        /* Simulated SplitPanel styles */
+        .split-panel {
+            position: relative;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .horizontal {
+            flex-direction: row;
+        }
+        
+        .vertical {
+            flex-direction: column;
+        }
+        
+        .panel {
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .primary { background: #e3f2fd; }
+        .secondary { background: #f3e5f5; }
+        
+        .splitter {
+            position: absolute;
+            background-color: transparent;
+            z-index: 1000;
+            transition: background-color 0.2s;
+        }
+        
+        .splitter:hover {
+            background-color: rgba(0, 123, 255, 0.66);
+        }
+        
+        /* Horizontal splitter cursors */
+        .splitter.horizontal {
+            cursor: col-resize;
+            top: 0;
+        }
+        
+        .splitter.horizontal.constrainedLeft {
+            cursor: e-resize; /* Can only resize to the right */
+            background-color: rgba(255, 193, 7, 0.3);
+        }
+        
+        .splitter.horizontal.constrainedRight {
+            cursor: w-resize; /* Can only resize to the left */
+            background-color: rgba(255, 193, 7, 0.3);
+        }
+        
+        /* Vertical splitter cursors */
+        .splitter.vertical {
+            cursor: row-resize;
+            left: 0;
+        }
+        
+        .splitter.vertical.constrainedUp {
+            cursor: s-resize; /* Can only resize downward */
+            background-color: rgba(255, 193, 7, 0.3);
+        }
+        
+        .splitter.vertical.constrainedDown {
+            cursor: n-resize; /* Can only resize upward */
+            background-color: rgba(255, 193, 7, 0.3);
+        }
+        
+        /* Persistent cursor classes for the entire panel after drag ends */
+        .persistent-col-resize {
+            cursor: col-resize !important;
+        }
+        
+        .persistent-col-resize * {
+            cursor: col-resize !important;
+        }
+        
+        .persistent-row-resize {
+            cursor: row-resize !important;
+        }
+        
+        .persistent-row-resize * {
+            cursor: row-resize !important;
+        }
+        
+        .persistent-e-resize {
+            cursor: e-resize !important;
+        }
+        
+        .persistent-e-resize * {
+            cursor: e-resize !important;
+        }
+        
+        .persistent-w-resize {
+            cursor: w-resize !important;
+        }
+        
+        .persistent-w-resize * {
+            cursor: w-resize !important;
+        }
+        
+        .persistent-s-resize {
+            cursor: s-resize !important;
+        }
+        
+        .persistent-s-resize * {
+            cursor: s-resize !important;
+        }
+        
+        .persistent-n-resize {
+            cursor: n-resize !important;
+        }
+        
+        .persistent-n-resize * {
+            cursor: n-resize !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>SplitPanel Cursor Constraints Test</h1>
+    <p>This page demonstrates the different cursor states when splitters reach their size constraints.</p>
+    
+    <div class="test-description">1. Left Primary at Minimum Size (constrainedLeft - e-resize cursor)</div>
+    <div class="test-container">
+        <div class="split-panel horizontal">
+            <div class="panel primary" style="width: 100px; height: 100%;">Primary (100px min)</div>
+            <div class="panel secondary" style="width: 500px; height: 100%;">Secondary</div>
+            <div class="splitter horizontal constrainedLeft" style="left: 98px; width: 4px; height: 100%;"></div>
+        </div>
+    </div>
+    <div class="constraint-info">
+        🡲 Cursor shows "e-resize" (single arrow right) - can only grow primary panel to the right
+    </div>
+    
+    <div class="test-description">2. Left Primary at Maximum Size (constrainedRight - w-resize cursor)</div>
+    <div class="test-container">
+        <div class="split-panel horizontal">
+            <div class="panel primary" style="width: 500px; height: 100%;">Primary (500px max)</div>
+            <div class="panel secondary" style="width: 100px; height: 100%;">Secondary</div>
+            <div class="splitter horizontal constrainedRight" style="left: 498px; width: 4px; height: 100%;"></div>
+        </div>
+    </div>
+    <div class="constraint-info">
+        🡰 Cursor shows "w-resize" (single arrow left) - can only shrink primary panel to the left
+    </div>
+    
+    <div class="test-description">3. Top Primary at Minimum Size (constrainedUp - s-resize cursor)</div>
+    <div class="test-container">
+        <div class="split-panel vertical">
+            <div class="panel primary" style="height: 100px; width: 100%;">Primary (100px min)</div>
+            <div class="panel secondary" style="height: 200px; width: 100%;">Secondary</div>
+            <div class="splitter vertical constrainedUp" style="top: 98px; height: 4px; width: 100%;"></div>
+        </div>
+    </div>
+    <div class="constraint-info">
+        🡳 Cursor shows "s-resize" (single arrow down) - can only grow primary panel downward
+    </div>
+    
+    <div class="test-description">4. Top Primary at Maximum Size (constrainedDown - n-resize cursor)</div>
+    <div class="test-container">
+        <div class="split-panel vertical">
+            <div class="panel primary" style="height: 200px; width: 100%;">Primary (200px max)</div>
+            <div class="panel secondary" style="height: 100px; width: 100%;">Secondary</div>
+            <div class="splitter vertical constrainedDown" style="top: 198px; height: 4px; width: 100%;"></div>
+        </div>
+    </div>
+    <div class="constraint-info">
+        🡱 Cursor shows "n-resize" (single arrow up) - can only shrink primary panel upward
+    </div>
+    
+    <div class="test-description">5. Normal Resize (no constraints - standard resize cursors)</div>
+    <div class="test-container">
+        <div class="split-panel horizontal">
+            <div class="panel primary" style="width: 300px; height: 100%;">Primary (can resize)</div>
+            <div class="panel secondary" style="width: 300px; height: 100%;">Secondary</div>
+            <div class="splitter horizontal" style="left: 298px; width: 4px; height: 100%;"></div>
+        </div>
+    </div>
+    <div class="constraint-info">
+        ↔ Cursor shows "col-resize" (double arrow) - can resize in both directions
+    </div>
+    
+    <hr style="margin: 40px 0;">
+    
+    <h2>Cursor Types Summary</h2>
+    <ul>
+        <li><strong>col-resize (↔):</strong> Normal horizontal resizing - can move left or right</li>
+        <li><strong>e-resize (🡲):</strong> Constrained to right - can only increase primary size</li>
+        <li><strong>w-resize (🡰):</strong> Constrained to left - can only decrease primary size</li>
+        <li><strong>row-resize (↕):</strong> Normal vertical resizing - can move up or down</li>
+        <li><strong>s-resize (🡳):</strong> Constrained to down - can only increase primary size</li>
+        <li><strong>n-resize (🡱):</strong> Constrained to up - can only decrease primary size</li>
+    </ul>
+    
+    <h3>🆕 Global Cursor During Dragging</h3>
+    <ul>
+        <li><strong>Mouse Capture Effect:</strong> During dragging, the resize cursor is applied globally to the entire document body</li>
+        <li><strong>Visual Consistency:</strong> The cursor remains visible even when the mouse moves outside the SplitPanel area</li>
+        <li><strong>Prevents Cursor Flicker:</strong> No more cursor changes when dragging over different UI elements</li>
+        <li><strong>Auto Cleanup:</strong> Global cursor is automatically cleared when the drag operation ends</li>
+    </ul>
+    
+    <h3>🆕 Cursor Persistence Feature</h3>
+    <ul>
+        <li><strong>Persistent Display:</strong> After releasing the mouse button during a drag, the appropriate resize cursor persists for 1 second across the entire panel area</li>
+        <li><strong>Visual Feedback:</strong> Users can see which direction the panel can be resized even after ending the drag interaction</li>
+        <li><strong>Smart Detection:</strong> The persistent cursor automatically matches the constraint state (normal resize vs. constrained resize)</li>
+        <li><strong>Automatic Cleanup:</strong> The persistent cursor clears after 1 second to return to normal cursor behavior</li>
+    </ul>
+    
+    <p><em>Hover over the splitters above to see the different cursor types, and try the interactive cursor persistence demo!</em></p>
+    
+    <hr style="margin: 40px 0;">
+    
+    <h2>✨ NEW: Cursor Persistence After Drag</h2>
+    <p>The SplitPanel now maintains the resize cursor for 1 second after releasing the mouse button, making it easier to see which direction the panel can be resized.</p>
+    
+    <div class="test-description">Cursor Persistence Demo - Click and drag, then release</div>
+    <div class="test-container">
+        <div class="split-panel horizontal" id="persistence-demo">
+            <div class="panel primary" style="width: 150px; height: 100%;">Primary (at min)</div>
+            <div class="panel secondary" style="width: 450px; height: 100%;">Secondary</div>
+            <div class="splitter horizontal constrainedLeft" style="left: 148px; width: 4px; height: 100%;"></div>
+        </div>
+    </div>
+    <div class="cursor-persistence-info">
+        🎯 <strong>Try it:</strong> Click and drag the splitter, then release the mouse. The cursor will persist for 1 second showing "e-resize" (→).
+    </div>
+    <div class="cursor-demo">
+        <strong>Demo Controls:</strong>
+        <button onclick="simulatePersistentCursor('col-resize')">Show col-resize persistence</button>
+        <button onclick="simulatePersistentCursor('e-resize')">Show e-resize persistence</button>
+        <button onclick="simulatePersistentCursor('w-resize')">Show w-resize persistence</button>
+        <button onclick="clearPersistentCursor()">Clear cursor</button>
+    </div>
+    
+    <script>
+        let persistenceTimeout;
+        
+        function simulatePersistentCursor(cursorType) {
+            const panel = document.getElementById('persistence-demo');
+            
+            // Clear any existing timeout
+            if (persistenceTimeout) {
+                clearTimeout(persistenceTimeout);
+            }
+            
+            // Remove any existing persistent cursor classes
+            panel.className = panel.className.replace(/persistent-\w+-resize/g, '').trim();
+            
+            // Add the new persistent cursor class
+            panel.classList.add(`persistent-${cursorType.replace('-', '-')}`);
+            
+            // Set timeout to clear after 1 second
+            persistenceTimeout = setTimeout(() => {
+                clearPersistentCursor();
+            }, 1000);
+            
+            // Update demo info
+            const info = panel.nextElementSibling;
+            info.innerHTML = `🎯 <strong>Persistent cursor active:</strong> The entire panel now shows "${cursorType}" cursor for 1 second. Try moving your mouse around the panel area!`;
+        }
+        
+        function clearPersistentCursor() {
+            const panel = document.getElementById('persistence-demo');
+            panel.className = panel.className.replace(/persistent-\w+-resize/g, '').trim();
+            
+            const info = panel.nextElementSibling;
+            info.innerHTML = `🎯 <strong>Try it:</strong> Click and drag the splitter, then release the mouse. The cursor will persist for 1 second showing "e-resize" (→).`;
+            
+            if (persistenceTimeout) {
+                clearTimeout(persistenceTimeout);
+                persistenceTimeout = null;
+            }
+        }
+    </script>
+
+    <hr style="margin: 40px 0;">
+</body>
+</html>
