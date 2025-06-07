@@ -5,7 +5,7 @@ import { Stack } from '../src/renderer/common/Stack'
 describe('Stack', () => {
   it('renders children correctly', () => {
     render(
-      <Stack baseDirection="column" data-testid="stack">
+      <Stack baseDirection="column">
         <div>Child 1</div>
         <div>Child 2</div>
       </Stack>
@@ -17,90 +17,90 @@ describe('Stack', () => {
 
   it('applies default flex styles with column direction', () => {
     render(
-      <Stack baseDirection="column" data-testid="stack">
+      <Stack baseDirection="column">
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.flexDirection).toBe('column')
     expect(stack.style.gap).toBe('0')
   })
 
   it('applies row direction correctly', () => {
     render(
-      <Stack baseDirection="row" data-testid="stack">
+      <Stack baseDirection="row">
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.flexDirection).toBe('row')
   })
 
   it('applies reverse for row direction', () => {
     render(
-      <Stack baseDirection="row" reverse={true} data-testid="stack">
+      <Stack baseDirection="row" reverse={true} >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.flexDirection).toBe('row-reverse')
   })
 
   it('applies reverse for column direction', () => {
     render(
-      <Stack baseDirection="column" reverse={true} data-testid="stack">
+      <Stack baseDirection="column" reverse={true} >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.flexDirection).toBe('column-reverse')
   })
 
   it('does not reverse when reverse is false', () => {
     render(
-      <Stack baseDirection="row" reverse={false} data-testid="stack">
+      <Stack baseDirection="row" reverse={false} >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.flexDirection).toBe('row')
   })
 
   it('applies custom gap', () => {
     render(
-      <Stack baseDirection="column" gap="20px" data-testid="stack">
+      <Stack baseDirection="column" gap="20px" >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.gap).toBe('20px')
   })
 
   it('applies numeric gap', () => {
     render(
-      <Stack baseDirection="column" gap={15} data-testid="stack">
+      <Stack baseDirection="column" gap={15} >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.gap).toBe('15px')
   })
 
   it('applies custom className', () => {
     render(
-      <Stack baseDirection="column" className="custom-class" data-testid="stack">
+      <Stack baseDirection="column" className="custom-class" >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack).toHaveClass('custom-class')
   })
 
@@ -109,58 +109,58 @@ describe('Stack', () => {
       <Stack 
         baseDirection="column" 
         style={{ border: '1px solid red', margin: '10px' }}
-        data-testid="stack"
+        
       >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.border).toBe('1px solid red')
     expect(stack.style.margin).toBe('10px')
   })
 
   it('applies color property', () => {
     render(
-      <Stack baseDirection="column" color="blue" data-testid="stack">
+      <Stack baseDirection="column" color="blue" >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.color).toBe('blue')
   })
 
   it('applies backgroundColor property', () => {
     render(
-      <Stack baseDirection="column" backgroundColor="red" data-testid="stack">
+      <Stack baseDirection="column" backgroundColor="red" >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.backgroundColor).toBe('red')
   })
 
   it('applies padding property', () => {
     render(
-      <Stack baseDirection="column" padding="10px" data-testid="stack">
+      <Stack baseDirection="column" padding="10px" >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.padding).toBe('10px')
   })
 
   it('applies paddingVertical property', () => {
     render(
-      <Stack baseDirection="column" paddingVertical="15px" data-testid="stack">
+      <Stack baseDirection="column" paddingVertical="15px" >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(styles.paddingTop).toBe('15px')
@@ -169,12 +169,12 @@ describe('Stack', () => {
 
   it('applies paddingHorizontal property', () => {
     render(
-      <Stack baseDirection="column" paddingHorizontal="25px" data-testid="stack">
+      <Stack baseDirection="column" paddingHorizontal="25px" >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(styles.paddingLeft).toBe('25px')
@@ -188,13 +188,13 @@ describe('Stack', () => {
         padding="10px" 
         paddingVertical="20px" 
         paddingHorizontal="30px" 
-        data-testid="stack"
+        
       >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(styles.paddingTop).toBe('20px')
@@ -212,13 +212,13 @@ describe('Stack', () => {
         paddingVertical="10px"
         paddingHorizontal="20px"
         gap="5px"
-        data-testid="stack"
+        
       >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(stack.style.flexDirection).toBe('row')
@@ -237,13 +237,13 @@ describe('Stack', () => {
         baseDirection="column"
         padding="5px" 
         paddingVertical="15px" 
-        data-testid="stack"
+        
       >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(styles.paddingTop).toBe('15px')
@@ -258,13 +258,13 @@ describe('Stack', () => {
         baseDirection="column"
         padding="8px" 
         paddingHorizontal="25px" 
-        data-testid="stack"
+        
       >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(styles.paddingTop).toBe('8px')
@@ -280,13 +280,13 @@ describe('Stack', () => {
         padding="12px" 
         paddingVertical="6px" 
         paddingHorizontal="18px" 
-        data-testid="stack"
+        
       >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(styles.paddingTop).toBe('6px')
@@ -302,13 +302,13 @@ describe('Stack', () => {
         padding={10} 
         paddingVertical={20} 
         paddingHorizontal={30} 
-        data-testid="stack"
+        
       >
         <div>Content</div>
       </Stack>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     const styles = window.getComputedStyle(stack)
     
     expect(styles.paddingTop).toBe('20px')
@@ -324,14 +324,14 @@ describe('Stack', () => {
         <Stack 
           baseDirection="column"
           color="--custom-color" 
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       </div>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.color).toBe('var(--custom-color)')
   })
 
@@ -341,14 +341,14 @@ describe('Stack', () => {
         <Stack 
           baseDirection="column"
           backgroundColor="--custom-bg" 
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       </div>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.backgroundColor).toBe('var(--custom-bg)')
   })
 
@@ -358,14 +358,14 @@ describe('Stack', () => {
         <Stack 
           baseDirection="column"
           gap="--custom-gap" 
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       </div>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.gap).toBe('var(--custom-gap)')
   })
 
@@ -375,14 +375,14 @@ describe('Stack', () => {
         <Stack 
           baseDirection="column"
           padding="--custom-padding" 
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       </div>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     // Verify component renders successfully (CSS variables are filtered in jsdom)
     expect(stack.style.flexDirection).toBe('column')
     expect(stack).toBeInTheDocument()
@@ -400,14 +400,14 @@ describe('Stack', () => {
           color="--theme-color"
           backgroundColor="--theme-bg"
           padding="--theme-spacing"
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       </div>
     )
     
-    const stack = screen.getByTestId('stack')
+    const stack = screen.getByTestId('_$_Stack')
     expect(stack.style.color).toBe('var(--theme-color)')
     expect(stack.style.backgroundColor).toBe('var(--theme-bg)')
     expect(stack.style.flexDirection).toBe('row')
@@ -428,14 +428,14 @@ describe('Stack', () => {
             backgroundColor="blue"
             gap="--custom-gap"
             padding="10px"
-            data-testid="stack"
+            
           >
             <div>Content</div>
           </Stack>
         </div>
       )
       
-      const stack = screen.getByTestId('stack')
+      const stack = screen.getByTestId('_$_Stack')
       expect(stack.style.color).toBe('var(--custom-color)')
       expect(stack.style.backgroundColor).toBe('blue')
       expect(stack.style.gap).toBe('var(--custom-gap)')
@@ -450,14 +450,14 @@ describe('Stack', () => {
             baseDirection="row"
             reverse={true}
             color="--theme-color"
-            data-testid="stack"
+            
           >
             <div>Content</div>
           </Stack>
         </div>
       )
       
-      const stack = screen.getByTestId('stack')
+      const stack = screen.getByTestId('_$_Stack')
       expect(stack.style.flexDirection).toBe('row-reverse')
       expect(stack.style.color).toBe('var(--theme-color)')
     })
@@ -473,13 +473,13 @@ describe('Stack', () => {
           backgroundColor={undefined}
           padding={null as any}
           gap=""
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       )
       
-      const stack = screen.getByTestId('stack')
+      const stack = screen.getByTestId('_$_Stack')
       expect(stack).toBeInTheDocument()
       expect(stack.style.flexDirection).toBe('column')
     })
@@ -490,13 +490,13 @@ describe('Stack', () => {
           baseDirection="column"
           gap={0}
           padding={0}
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       )
       
-      const stack = screen.getByTestId('stack')
+      const stack = screen.getByTestId('_$_Stack')
       expect(stack.style.gap).toBe('0')
       expect(stack.style.padding).toBe('0px')
     })
@@ -507,13 +507,13 @@ describe('Stack', () => {
           baseDirection="column"
           gap="0"
           padding="0px"
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       )
       
-      const stack = screen.getByTestId('stack')
+      const stack = screen.getByTestId('_$_Stack')
       expect(stack.style.gap).toBe('0')
       expect(stack.style.padding).toBe('0px')
     })
@@ -524,13 +524,13 @@ describe('Stack', () => {
           baseDirection="column"
           color="red"
           style={{ fontSize: '16px', fontWeight: 'bold' }}
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       )
       
-      const stack = screen.getByTestId('stack')
+      const stack = screen.getByTestId('_$_Stack')
       expect(stack.style.color).toBe('red')
       expect(stack.style.fontSize).toBe('16px')
       expect(stack.style.fontWeight).toBe('bold')
@@ -542,13 +542,13 @@ describe('Stack', () => {
           baseDirection="column"
           color="red"
           style={{ color: 'blue' }}
-          data-testid="stack"
+          
         >
           <div>Content</div>
         </Stack>
       )
       
-      const stack = screen.getByTestId('stack')
+      const stack = screen.getByTestId('_$_Stack')
       expect(stack.style.color).toBe('blue')
     })
 
@@ -565,21 +565,21 @@ describe('Stack', () => {
 
     it('handles both baseDirection options', () => {
       const { rerender } = render(
-        <Stack baseDirection="column" data-testid="stack">
+        <Stack baseDirection="column" >
           <div>Content</div>
         </Stack>
       )
       
-      let stack = screen.getByTestId('stack')
+      let stack = screen.getByTestId('_$_Stack')
       expect(stack.style.flexDirection).toBe('column')
       
       rerender(
-        <Stack baseDirection="row" data-testid="stack">
+        <Stack baseDirection="row" >
           <div>Content</div>
         </Stack>
       )
       
-      stack = screen.getByTestId('stack')
+      stack = screen.getByTestId('_$_Stack')
       expect(stack.style.flexDirection).toBe('row')
     })
   })

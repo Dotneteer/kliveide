@@ -10,7 +10,7 @@ const getCssPropertyValue = (element: HTMLElement, property: string): string => 
 describe('HStack', () => {
   it('renders children correctly', () => {
     render(
-      <HStack data-testid="h-stack">
+      <HStack >
         <div>Child 1</div>
         <div>Child 2</div>
       </HStack>
@@ -22,12 +22,12 @@ describe('HStack', () => {
 
   it('applies default horizontal flex styles', () => {
     render(
-      <HStack data-testid="h-stack">
+      <HStack >
         <div>Content</div>
       </HStack>
     )
     
-    const stack = screen.getByTestId('h-stack')
+    const stack = screen.getByTestId('_$_HStack')
     
     // Check that the CSS module class is applied
     expect(stack.className).toMatch(/_hStack_\w+/)
@@ -39,56 +39,56 @@ describe('HStack', () => {
 
   it('applies reverse direction', () => {
     render(
-      <HStack reverse={true} data-testid="h-stack">
+      <HStack reverse={true} >
         <div>Content</div>
       </HStack>
     )
     
-    const stack = screen.getByTestId('h-stack')
+    const stack = screen.getByTestId('_$_HStack')
     expect(stack.style.flexDirection).toBe('row-reverse')
   })
 
   it('does not reverse when reverse is false', () => {
     render(
-      <HStack reverse={false} data-testid="h-stack">
+      <HStack reverse={false} >
         <div>Content</div>
       </HStack>
     )
     
-    const stack = screen.getByTestId('h-stack')
+    const stack = screen.getByTestId('_$_HStack')
     expect(stack.style.flexDirection).toBe('row')
   })
 
   it('applies custom gap', () => {
     render(
-      <HStack gap="20px" data-testid="h-stack">
+      <HStack gap="20px" >
         <div>Content</div>
       </HStack>
     )
     
-    const stack = screen.getByTestId('h-stack')
+    const stack = screen.getByTestId('_$_HStack')
     expect(stack.style.gap).toBe('20px')
   })
 
   it('applies numeric gap', () => {
     render(
-      <HStack gap={15} data-testid="h-stack">
+      <HStack gap={15} >
         <div>Content</div>
       </HStack>
     )
     
-    const stack = screen.getByTestId('h-stack')
+    const stack = screen.getByTestId('_$_HStack')
     expect(stack.style.gap).toBe('15px')
   })
 
   it('applies custom className while preserving CSS module class', () => {
     render(
-      <HStack className="custom-class" data-testid="h-stack">
+      <HStack className="custom-class" >
         <div>Content</div>
       </HStack>
     )
     
-    const stack = screen.getByTestId('h-stack')
+    const stack = screen.getByTestId('_$_HStack')
     expect(stack).toHaveClass('custom-class')
     expect(stack.className).toMatch(/_hStack_\w+/)
   })
@@ -97,13 +97,13 @@ describe('HStack', () => {
     render(
       <HStack 
         style={{ border: '1px solid red', margin: '10px' }}
-        data-testid="h-stack"
+        
       >
         <div>Content</div>
       </HStack>
     )
     
-    const stack = screen.getByTestId('h-stack')
+    const stack = screen.getByTestId('_$_HStack')
     expect(stack.style.border).toBe('1px solid red')
     expect(stack.style.margin).toBe('10px')
   })
@@ -111,34 +111,34 @@ describe('HStack', () => {
   describe('CSS Variables - Color', () => {
     it('applies color from CSS variable', () => {
       render(
-        <HStack color="var(--primary-color)" data-testid="h-stack">
+        <HStack color="var(--primary-color)" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('var(--primary-color)')
     })
 
     it('applies color from regular value', () => {
       render(
-        <HStack color="red" data-testid="h-stack">
+        <HStack color="red" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('red')
     })
 
     it('applies color from hex value', () => {
       render(
-        <HStack color="#ff0000" data-testid="h-stack">
+        <HStack color="#ff0000" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('rgb(255, 0, 0)')
     })
   })
@@ -146,34 +146,34 @@ describe('HStack', () => {
   describe('CSS Variables - Background Color', () => {
     it('applies backgroundColor from CSS variable', () => {
       render(
-        <HStack backgroundColor="var(--bg-color)" data-testid="h-stack">
+        <HStack backgroundColor="var(--bg-color)" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.backgroundColor).toBe('var(--bg-color)')
     })
 
     it('applies backgroundColor from regular value', () => {
       render(
-        <HStack backgroundColor="blue" data-testid="h-stack">
+        <HStack backgroundColor="blue" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.backgroundColor).toBe('blue')
     })
 
     it('applies backgroundColor from rgba value', () => {
       render(
-        <HStack backgroundColor="rgba(255, 0, 0, 0.5)" data-testid="h-stack">
+        <HStack backgroundColor="rgba(255, 0, 0, 0.5)" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.backgroundColor).toBe('rgba(255, 0, 0, 0.5)')
     })
   })
@@ -181,34 +181,34 @@ describe('HStack', () => {
   describe('CSS Variables - Gap', () => {
     it('applies gap from CSS variable', () => {
       render(
-        <HStack gap="var(--spacing-medium)" data-testid="h-stack">
+        <HStack gap="var(--spacing-medium)" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.gap).toBe('var(--spacing-medium)')
     })
 
     it('applies gap from numeric value', () => {
       render(
-        <HStack gap={20} data-testid="h-stack">
+        <HStack gap={20} >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.gap).toBe('20px')
     })
 
     it('applies gap from string value', () => {
       render(
-        <HStack gap="1.5rem" data-testid="h-stack">
+        <HStack gap="1.5rem" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.gap).toBe('1.5rem')
     })
   })
@@ -220,13 +220,13 @@ describe('HStack', () => {
           color="var(--text-color)"
           backgroundColor="var(--bg-color)"
           gap="var(--spacing-large)"
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('var(--text-color)')
       expect(stack.style.backgroundColor).toBe('var(--bg-color)')
       expect(stack.style.gap).toBe('var(--spacing-large)')
@@ -238,13 +238,13 @@ describe('HStack', () => {
           color="var(--primary-color)"
           backgroundColor="white"
           gap={16}
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('var(--primary-color)')
       expect(stack.style.backgroundColor).toBe('white')
       expect(stack.style.gap).toBe('16px')
@@ -254,59 +254,59 @@ describe('HStack', () => {
   describe('Padding Properties', () => {
     it('applies padding shorthand', () => {
       render(
-        <HStack padding="10px 20px" data-testid="h-stack">
+        <HStack padding="10px 20px" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.padding).toBe('10px 20px')
     })
 
     it('applies padding from CSS variable', () => {
       render(
-        <HStack padding="var(--padding-medium)" data-testid="h-stack">
+        <HStack padding="var(--padding-medium)" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       // CSS variables for padding shorthand are not preserved in individual padding properties
       expect(stack.style.padding).toBe('')
     })
 
     it('applies paddingHorizontal', () => {
       render(
-        <HStack paddingHorizontal="15px" data-testid="h-stack">
+        <HStack paddingHorizontal="15px" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.paddingLeft).toBe('15px')
       expect(stack.style.paddingRight).toBe('15px')
     })
 
     it('applies paddingVertical', () => {
       render(
-        <HStack paddingVertical="12px" data-testid="h-stack">
+        <HStack paddingVertical="12px" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.paddingTop).toBe('12px')
       expect(stack.style.paddingBottom).toBe('12px')
     })
 
     it('applies paddingHorizontal from CSS variable', () => {
       render(
-        <HStack paddingHorizontal="var(--horizontal-padding)" data-testid="h-stack">
+        <HStack paddingHorizontal="var(--horizontal-padding)" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       // CSS variables are not preserved when applied to individual padding properties
       expect(stack.style.paddingLeft).toBe('')
       expect(stack.style.paddingRight).toBe('')
@@ -314,12 +314,12 @@ describe('HStack', () => {
 
     it('applies paddingVertical from CSS variable', () => {
       render(
-        <HStack paddingVertical="var(--vertical-padding)" data-testid="h-stack">
+        <HStack paddingVertical="var(--vertical-padding)" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       // CSS variables are not preserved when applied to individual padding properties
       expect(stack.style.paddingTop).toBe('')
       expect(stack.style.paddingBottom).toBe('')
@@ -329,45 +329,45 @@ describe('HStack', () => {
   describe('Edge Cases', () => {
     it('handles undefined color', () => {
       render(
-        <HStack color={undefined} data-testid="h-stack">
+        <HStack color={undefined} >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('')
     })
 
     it('handles empty string color', () => {
       render(
-        <HStack color="" data-testid="h-stack">
+        <HStack color="" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('')
     })
 
     it('handles zero gap', () => {
       render(
-        <HStack gap={0} data-testid="h-stack">
+        <HStack gap={0} >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.gap).toBe('0')
     })
 
     it('handles zero string gap', () => {
       render(
-        <HStack gap="0" data-testid="h-stack">
+        <HStack gap="0" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.gap).toBe('0')
     })
   })
@@ -378,13 +378,13 @@ describe('HStack', () => {
         <HStack 
           gap={10}
           style={{ gap: '25px', color: 'purple' }}
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.gap).toBe('25px') // User style wins
       expect(stack.style.color).toBe('purple')
     })
@@ -395,13 +395,13 @@ describe('HStack', () => {
           color="red"
           backgroundColor="blue"
           style={{ margin: '10px', border: '1px solid black' }}
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.color).toBe('red') // Component style
       expect(stack.style.backgroundColor).toBe('blue') // Component style
       expect(stack.style.margin).toBe('10px') // User style
@@ -412,13 +412,13 @@ describe('HStack', () => {
   describe('Layout Specific', () => {
     it('maintains horizontal layout with reverse', () => {
       render(
-        <HStack reverse={true} data-testid="h-stack">
+        <HStack reverse={true} >
           <div data-testid="first">First</div>
           <div data-testid="second">Second</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.flexDirection).toBe('row-reverse')
       
       // Children should still be present
@@ -428,12 +428,12 @@ describe('HStack', () => {
 
     it('works with CSS modules', () => {
       render(
-        <HStack className="custom-stack" data-testid="h-stack">
+        <HStack className="custom-stack" >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       // Should have both the CSS module class and custom class
       expect(stack.className).toMatch(/_hStack_\w+/)
       expect(stack).toHaveClass('custom-stack')
@@ -446,13 +446,13 @@ describe('HStack', () => {
         <HStack 
           paddingHorizontal="20px" 
           paddingVertical="10px" 
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       expect(stack.style.paddingLeft).toBe('20px')
       expect(stack.style.paddingRight).toBe('20px')
       expect(stack.style.paddingTop).toBe('10px')
@@ -465,13 +465,13 @@ describe('HStack', () => {
           padding="15px" 
           paddingHorizontal="25px" 
           paddingVertical="5px" 
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       
       // Specific padding values should override the shorthand
       expect(stack.style.paddingTop).toBe('5px')
@@ -486,13 +486,13 @@ describe('HStack', () => {
           padding="10px 15px 20px 25px" 
           paddingHorizontal="35px" 
           paddingVertical="5px" 
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       
       // paddingHorizontal and paddingVertical should override specific sides
       expect(stack.style.paddingTop).toBe('5px')
@@ -506,13 +506,13 @@ describe('HStack', () => {
         <HStack 
           padding="10px 15px 20px 25px" 
           paddingVertical="5px" 
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       
       // paddingVertical should only overwrite top and bottom
       expect(stack.style.paddingTop).toBe('5px')
@@ -526,13 +526,13 @@ describe('HStack', () => {
         <HStack 
           padding="10px 15px 20px 25px" 
           paddingHorizontal="35px" 
-          data-testid="h-stack"
+          
         >
           <div>Content</div>
         </HStack>
       )
       
-      const stack = screen.getByTestId('h-stack')
+      const stack = screen.getByTestId('_$_HStack')
       
       // paddingHorizontal should only overwrite left and right
       expect(stack.style.paddingTop).toBe('10px')

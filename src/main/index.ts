@@ -114,6 +114,7 @@ function createEmulatorWindow(): void {
   emuWindow.on("ready-to-show", () => {
     emuWindow?.show();
     emuWindow?.focus(); // --- Focus the emulator window
+    emuWindow?.webContents.openDevTools(); // --- Open dev tools
   });
   emuWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
