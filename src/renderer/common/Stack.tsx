@@ -1,6 +1,6 @@
 import React from 'react'
 import { getCssPropertyValue } from './cssUtils'
-import { BasePanelProps } from './types'
+import type { BasePanelProps, StackDirection } from '../abstractions'
 
 /** Base properties shared by all stack components */
 export interface BaseStackProps extends BasePanelProps {}
@@ -8,7 +8,7 @@ export interface BaseStackProps extends BasePanelProps {}
 /** Internal props for the Stack component */
 interface StackProps extends BaseStackProps {
   /** Base flex direction (row or column) */
-  baseDirection: 'row' | 'column'
+  baseDirection: StackDirection
 }
 
 /**

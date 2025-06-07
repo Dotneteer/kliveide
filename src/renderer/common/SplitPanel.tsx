@@ -2,21 +2,9 @@ import React, { memo, useEffect, useMemo, useReducer, useRef } from "react";
 import classNames from "classnames";
 import styles from "./SplitPanel.module.scss";
 import { useDrag } from "./utils/useDrag";
-
-/**
- * Primary panel location within the split panel
- */
-export type PanelLocation = "left" | "right" | "top" | "bottom";
-
-/**
- * Panel type within a SplitPanel
- */
-type PanelType = "primary" | "secondary";
-
-/**
- * Size specification that can be a number (in pixels) or a string (e.g., "50%", "100px")
- */
-export type SizeSpec = string | number;
+import type { PanelLocation } from "../abstractions/PanelLocation";
+import type { PanelType } from "../abstractions/PanelType";
+import type { SizeSpec } from "../abstractions/SizeSpec";
 
 /**
  * Utility functions for SplitPanel component
