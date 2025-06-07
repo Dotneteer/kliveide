@@ -1,3 +1,4 @@
+import Icon from "../common/Icon";
 import { FullPanel, SplitPanel } from "../common";
 
 function EmulatorApp() {
@@ -31,11 +32,7 @@ function EmulatorApp() {
               fontWeight: "bold"
             }}
           >
-            Primary Panel (Top)
-            <br />
-            Min: 100px, Max: 400px
-            <br />
-            <small>Try dragging the splitter!</small>
+            <Icon name="play" />
           </FullPanel>
           <FullPanel 
             backgroundColor="green"

@@ -17,7 +17,7 @@ const HStack: React.FC<HStackProps> = ({ className, ...props }) => {
     <Stack
       {...props}
       className={classNames(styles.hStack, className)}
-      baseDirection="row"
+      orientation="horizontal"
       data-testid="_$_HStack"
     />
   )

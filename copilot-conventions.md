@@ -111,6 +111,7 @@ The `renderer/common` folder contains reusable UI components:
 - The conventions outlined here should be maintained across all coding sessions
 - When starting a new session, reference this file first to ensure consistency with project standards
 - When adding new code or refactoring, make sure to follow these conventions
+- After any code changes made by Copilot display only a concise summary, avoid verbose output
 
 ### Component Example
 

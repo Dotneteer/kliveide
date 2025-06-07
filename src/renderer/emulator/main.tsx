@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import EmulatorApp from './EmulatorApp.tsx'
+import EmulatorApp from './EmulatorApp'
 import '../index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

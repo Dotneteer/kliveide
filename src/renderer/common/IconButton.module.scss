@@ -1,0 +1,36 @@
+.iconButton {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.noPadding {
+  padding: 0;
+}
+
+.iconButton:hover:not(.disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.iconButton:active:not(.disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.selected {
+  border-color: var(--vscode-focusBorder, #1ea7fd);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}

@@ -1,14 +1,14 @@
 import React from 'react'
 import { getCssPropertyValue } from './cssUtils'
-import type { BasePanelProps, StackDirection } from '../abstractions'
+import type { BasePanelProps, Direction } from '../abstractions'
 
 /** Base properties shared by all stack components */
 export interface BaseStackProps extends BasePanelProps {}
 
 /** Internal props for the Stack component */
 interface StackProps extends BaseStackProps {
-  /** Base flex direction (row or column) */
-  baseDirection: StackDirection
+  /** Layout orientation (horizontal or vertical) */
+  orientation: Direction
 }
 
 /**
@@ -28,12 +28,12 @@ export const Stack: React.FC<StackProps> = ({
   paddingVertical,
   paddingHorizontal,
   style = {},
-  baseDirection,
+  orientation,
   ...props
 }) => {
-  // --- Convert direction and reverse to CSS flexDirection
+  // --- Convert orientation and reverse to CSS flexDirection
   const getFlexDirection = (): React.CSSProperties['flexDirection'] => {
-    if (baseDirection === 'row') {
+    if (orientation === 'horizontal') {
       return reverse ? 'row-reverse' : 'row'
     } else {
       return reverse ? 'column-reverse' : 'column'

@@ -5,7 +5,7 @@ import { Stack } from '../src/renderer/common/Stack'
 describe('Stack', () => {
   it('renders children correctly', () => {
     render(
-      <Stack baseDirection="column">
+      <Stack orientation="vertical">
         <div>Child 1</div>
         <div>Child 2</div>
       </Stack>
@@ -17,7 +17,7 @@ describe('Stack', () => {
 
   it('applies default flex styles with column direction', () => {
     render(
-      <Stack baseDirection="column">
+      <Stack orientation="vertical">
         <div>Content</div>
       </Stack>
     )
@@ -29,7 +29,7 @@ describe('Stack', () => {
 
   it('applies row direction correctly', () => {
     render(
-      <Stack baseDirection="row">
+      <Stack orientation="horizontal">
         <div>Content</div>
       </Stack>
     )
@@ -40,7 +40,7 @@ describe('Stack', () => {
 
   it('applies reverse for row direction', () => {
     render(
-      <Stack baseDirection="row" reverse={true} >
+      <Stack orientation="horizontal" reverse={true} >
         <div>Content</div>
       </Stack>
     )
@@ -51,7 +51,7 @@ describe('Stack', () => {
 
   it('applies reverse for column direction', () => {
     render(
-      <Stack baseDirection="column" reverse={true} >
+      <Stack orientation="vertical" reverse={true} >
         <div>Content</div>
       </Stack>
     )
@@ -62,7 +62,7 @@ describe('Stack', () => {
 
   it('does not reverse when reverse is false', () => {
     render(
-      <Stack baseDirection="row" reverse={false} >
+      <Stack orientation="horizontal" reverse={false} >
         <div>Content</div>
       </Stack>
     )
@@ -73,7 +73,7 @@ describe('Stack', () => {
 
   it('applies custom gap', () => {
     render(
-      <Stack baseDirection="column" gap="20px" >
+      <Stack orientation="vertical" gap="20px" >
         <div>Content</div>
       </Stack>
     )
@@ -84,7 +84,7 @@ describe('Stack', () => {
 
   it('applies numeric gap', () => {
     render(
-      <Stack baseDirection="column" gap={15} >
+      <Stack orientation="vertical" gap={15} >
         <div>Content</div>
       </Stack>
     )
@@ -95,7 +95,7 @@ describe('Stack', () => {
 
   it('applies custom className', () => {
     render(
-      <Stack baseDirection="column" className="custom-class" >
+      <Stack orientation="vertical" className="custom-class" >
         <div>Content</div>
       </Stack>
     )
@@ -107,7 +107,7 @@ describe('Stack', () => {
   it('applies custom styles', () => {
     render(
       <Stack 
-        baseDirection="column" 
+        orientation="vertical" 
         style={{ border: '1px solid red', margin: '10px' }}
         
       >
@@ -122,7 +122,7 @@ describe('Stack', () => {
 
   it('applies color property', () => {
     render(
-      <Stack baseDirection="column" color="blue" >
+      <Stack orientation="vertical" color="blue" >
         <div>Content</div>
       </Stack>
     )
@@ -133,7 +133,7 @@ describe('Stack', () => {
 
   it('applies backgroundColor property', () => {
     render(
-      <Stack baseDirection="column" backgroundColor="red" >
+      <Stack orientation="vertical" backgroundColor="red" >
         <div>Content</div>
       </Stack>
     )
@@ -144,7 +144,7 @@ describe('Stack', () => {
 
   it('applies padding property', () => {
     render(
-      <Stack baseDirection="column" padding="10px" >
+      <Stack orientation="vertical" padding="10px" >
         <div>Content</div>
       </Stack>
     )
@@ -155,7 +155,7 @@ describe('Stack', () => {
 
   it('applies paddingVertical property', () => {
     render(
-      <Stack baseDirection="column" paddingVertical="15px" >
+      <Stack orientation="vertical" paddingVertical="15px" >
         <div>Content</div>
       </Stack>
     )
@@ -169,7 +169,7 @@ describe('Stack', () => {
 
   it('applies paddingHorizontal property', () => {
     render(
-      <Stack baseDirection="column" paddingHorizontal="25px" >
+      <Stack orientation="vertical" paddingHorizontal="25px" >
         <div>Content</div>
       </Stack>
     )
@@ -184,7 +184,7 @@ describe('Stack', () => {
   it('applies specific padding properties over general padding', () => {
     render(
       <Stack 
-        baseDirection="column"
+        orientation="vertical"
         padding="10px" 
         paddingVertical="20px" 
         paddingHorizontal="30px" 
@@ -206,7 +206,7 @@ describe('Stack', () => {
   it('combines multiple styling properties', () => {
     render(
       <Stack 
-        baseDirection="row"
+        orientation="horizontal"
         color="white"
         backgroundColor="rgb(0, 0, 255)"
         paddingVertical="10px"
@@ -234,7 +234,7 @@ describe('Stack', () => {
   it('paddingVertical overwrites padding for top and bottom', () => {
     render(
       <Stack 
-        baseDirection="column"
+        orientation="vertical"
         padding="5px" 
         paddingVertical="15px" 
         
@@ -255,7 +255,7 @@ describe('Stack', () => {
   it('paddingHorizontal overwrites padding for left and right', () => {
     render(
       <Stack 
-        baseDirection="column"
+        orientation="vertical"
         padding="8px" 
         paddingHorizontal="25px" 
         
@@ -276,7 +276,7 @@ describe('Stack', () => {
   it('both paddingVertical and paddingHorizontal overwrite all padding values', () => {
     render(
       <Stack 
-        baseDirection="column"
+        orientation="vertical"
         padding="12px" 
         paddingVertical="6px" 
         paddingHorizontal="18px" 
@@ -298,7 +298,7 @@ describe('Stack', () => {
   it('specific padding properties work with numeric values', () => {
     render(
       <Stack 
-        baseDirection="column"
+        orientation="vertical"
         padding={10} 
         paddingVertical={20} 
         paddingHorizontal={30} 
@@ -322,7 +322,7 @@ describe('Stack', () => {
     render(
       <div style={{ '--custom-color': '#ff0000' } as React.CSSProperties}>
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           color="--custom-color" 
           
         >
@@ -339,7 +339,7 @@ describe('Stack', () => {
     render(
       <div style={{ '--custom-bg': '#00ff00' } as React.CSSProperties}>
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           backgroundColor="--custom-bg" 
           
         >
@@ -356,7 +356,7 @@ describe('Stack', () => {
     render(
       <div style={{ '--custom-gap': '12px' } as React.CSSProperties}>
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           gap="--custom-gap" 
           
         >
@@ -373,7 +373,7 @@ describe('Stack', () => {
     render(
       <div style={{ '--custom-padding': '16px' } as React.CSSProperties}>
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           padding="--custom-padding" 
           
         >
@@ -396,7 +396,7 @@ describe('Stack', () => {
         '--theme-spacing': '24px'
       } as React.CSSProperties}>
         <Stack 
-          baseDirection="row"
+          orientation="horizontal"
           color="--theme-color"
           backgroundColor="--theme-bg"
           padding="--theme-spacing"
@@ -423,7 +423,7 @@ describe('Stack', () => {
           '--custom-gap': '20px'
         } as React.CSSProperties}>
           <Stack 
-            baseDirection="row"
+            orientation="horizontal"
             color="--custom-color"
             backgroundColor="blue"
             gap="--custom-gap"
@@ -447,7 +447,7 @@ describe('Stack', () => {
       render(
         <div style={{ '--theme-color': '#00ff00' } as React.CSSProperties}>
           <Stack 
-            baseDirection="row"
+            orientation="horizontal"
             reverse={true}
             color="--theme-color"
             
@@ -468,7 +468,7 @@ describe('Stack', () => {
     it('handles empty and undefined values gracefully', () => {
       render(
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           color=""
           backgroundColor={undefined}
           padding={null as any}
@@ -487,7 +487,7 @@ describe('Stack', () => {
     it('handles zero values correctly', () => {
       render(
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           gap={0}
           padding={0}
           
@@ -504,7 +504,7 @@ describe('Stack', () => {
     it('handles string zero values', () => {
       render(
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           gap="0"
           padding="0px"
           
@@ -521,7 +521,7 @@ describe('Stack', () => {
     it('preserves user custom styles with style prop', () => {
       render(
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           color="red"
           style={{ fontSize: '16px', fontWeight: 'bold' }}
           
@@ -539,7 +539,7 @@ describe('Stack', () => {
     it('allows user styles to override component styles', () => {
       render(
         <Stack 
-          baseDirection="column"
+          orientation="vertical"
           color="red"
           style={{ color: 'blue' }}
           
@@ -552,9 +552,9 @@ describe('Stack', () => {
       expect(stack.style.color).toBe('blue')
     })
 
-    it('handles baseDirection prop correctly', () => {
+    it('handles orientation prop correctly', () => {
       render(
-        <Stack baseDirection="row" data-testid="stack-row">
+        <Stack orientation="horizontal" data-testid="stack-row">
           <div>Content</div>
         </Stack>
       )
@@ -563,9 +563,9 @@ describe('Stack', () => {
       expect(stackRow.style.flexDirection).toBe('row')
     })
 
-    it('handles both baseDirection options', () => {
+    it('handles both orientation options', () => {
       const { rerender } = render(
-        <Stack baseDirection="column" >
+        <Stack orientation="vertical" >
           <div>Content</div>
         </Stack>
       )
@@ -574,7 +574,7 @@ describe('Stack', () => {
       expect(stack.style.flexDirection).toBe('column')
       
       rerender(
-        <Stack baseDirection="row" >
+        <Stack orientation="horizontal" >
           <div>Content</div>
         </Stack>
       )
