@@ -1,4 +1,4 @@
-// Test to validate spatial cursor logic
+// Test to validate standard resize cursor behavior
 import { render, fireEvent, act } from '@testing-library/react'
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest'
 import SplitPanel from '../src/renderer/common/SplitPanel'
@@ -34,7 +34,7 @@ class MockResizeObserver {
 
 global.ResizeObserver = MockResizeObserver as any
 
-describe('Spatial Cursor Logic Validation', () => {
+describe('Standard Resize Cursor Validation', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     
@@ -61,55 +61,14 @@ describe('Spatial Cursor Logic Validation', () => {
     document.body.style.userSelect = ''
   })
 
-  it('validates enhanced spatial cursor behavior for top primary layout', () => {
+  it('shows row-resize cursor for horizontal orientation (top/bottom)', () => {
     const { container } = render(
       <SplitPanel 
         primaryLocation="top" 
-        initialPrimarySize="150px" // Start well within normal range 
-        minPrimarySize="50px"     // Lower minimum
-        maxPrimarySize="350px"    // Higher maximum
-        minSecondarySize="50px"   // Lower minimum
-        data-testid="split-panel"
-      >
-        <div>Primary</div>
-        <div>Secondary</div>
-      </SplitPanel>
-    )
-    
-    // Force dimensions update by advancing timers
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
-    
-    const panel = container.querySelector('[data-testid="split-panel"]') as HTMLElement
-    const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
-    
-    console.log('🔍 Testing spatial cursor logic...')
-    
-    // Test 1: Normal resizing when not at constraints
-    console.log('Test 1: Normal resizing when not at constraints (150px primary, 250px secondary)')
-    act(() => {
-      fireEvent.mouseDown(splitter, { clientX: 300, clientY: 150 }) // At the splitter position
-    })
-    
-    console.log(`Global cursor: ${document.body.style.cursor}`)
-    expect(document.body.style.cursor).toBe('row-resize') // Normal vertical resize
-    
-    act(() => {
-      fireEvent.mouseUp(document)
-    })
-    
-    console.log('✅ Spatial cursor logic validation complete!')
-  })
-  
-  it('shows s-resize when mouse is above splitter and primary is at minimum size', () => {
-    const { container } = render(
-      <SplitPanel 
-        primaryLocation="top" 
-        initialPrimarySize="50px"  // Start at minimum
-        minPrimarySize="50px"      // Minimum size
-        maxPrimarySize="350px"     // Maximum size 
-        minSecondarySize="50px"    // Minimum secondary size
+        initialPrimarySize="150px" 
+        minPrimarySize="50px"
+        maxPrimarySize="350px"
+        minSecondarySize="50px"
         data-testid="split-panel"
       >
         <div>Primary</div>
@@ -124,62 +83,25 @@ describe('Spatial Cursor Logic Validation', () => {
     
     const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
     
-    // Mouse is above the splitter (y=25) when primary is at minimum (50px)
     act(() => {
-      fireEvent.mouseDown(splitter, { clientX: 300, clientY: 25 })
+      fireEvent.mouseDown(splitter, { clientX: 300, clientY: 150 })
     })
     
-    // Should show s-resize (can only move down)
-    expect(document.body.style.cursor).toBe('s-resize')
+    expect(document.body.style.cursor).toBe('row-resize')
     
     act(() => {
       fireEvent.mouseUp(document)
     })
   })
   
-  it('shows n-resize when mouse is below splitter and primary is at maximum size', () => {
-    const { container } = render(
-      <SplitPanel 
-        primaryLocation="top" 
-        initialPrimarySize="350px"  // Start at maximum
-        minPrimarySize="50px"       // Minimum size
-        maxPrimarySize="350px"      // Maximum size
-        minSecondarySize="50px"     // Minimum secondary size
-        data-testid="split-panel"
-      >
-        <div>Primary</div>
-        <div>Secondary</div>
-      </SplitPanel>
-    )
-    
-    // Force dimensions update by advancing timers
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
-    
-    const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
-    
-    // Mouse is below the splitter (y=370) when primary is at maximum (350px)
-    act(() => {
-      fireEvent.mouseDown(splitter, { clientX: 300, clientY: 370 })
-    })
-    
-    // Should show n-resize (can only move up)
-    expect(document.body.style.cursor).toBe('n-resize')
-    
-    act(() => {
-      fireEvent.mouseUp(document)
-    })
-  })
-  
-  it('shows e-resize when mouse is left of splitter and primary is at minimum (left layout)', () => {
+  it('shows col-resize cursor for vertical orientation (left/right)', () => {
     const { container } = render(
       <SplitPanel 
         primaryLocation="left" 
-        initialPrimarySize="50px"  // Start at minimum
-        minPrimarySize="50px"      // Minimum size
-        maxPrimarySize="350px"     // Maximum size
-        minSecondarySize="50px"    // Minimum secondary size
+        initialPrimarySize="150px"
+        minPrimarySize="50px"
+        maxPrimarySize="350px"
+        minSecondarySize="50px"
         data-testid="split-panel"
       >
         <div>Primary</div>
@@ -194,13 +116,44 @@ describe('Spatial Cursor Logic Validation', () => {
     
     const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
     
-    // Mouse is left of the splitter (x=25) when primary is at minimum (50px)
     act(() => {
-      fireEvent.mouseDown(splitter, { clientX: 25, clientY: 200 })
+      fireEvent.mouseDown(splitter, { clientX: 150, clientY: 200 })
     })
     
-    // Should show e-resize (can only move right)
-    expect(document.body.style.cursor).toBe('e-resize')
+    expect(document.body.style.cursor).toBe('col-resize')
+    
+    act(() => {
+      fireEvent.mouseUp(document)
+    })
+  })
+  
+  it('uses standard resize cursor even at minimum size', () => {
+    const { container } = render(
+      <SplitPanel 
+        primaryLocation="top" 
+        initialPrimarySize="50px"  // Start at minimum
+        minPrimarySize="50px"
+        maxPrimarySize="350px"
+        minSecondarySize="50px"
+        data-testid="split-panel"
+      >
+        <div>Primary</div>
+        <div>Secondary</div>
+      </SplitPanel>
+    )
+    
+    // Force dimensions update by advancing timers
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    
+    const splitter = container.querySelector('[data-testid="_$_SplitPanel-splitter"]') as HTMLElement
+    
+    act(() => {
+      fireEvent.mouseDown(splitter, { clientX: 300, clientY: 50 })
+    })
+    
+    expect(document.body.style.cursor).toBe('row-resize')
     
     act(() => {
       fireEvent.mouseUp(document)

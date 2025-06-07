@@ -1,14 +1,305 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { memo, useEffect, useMemo, useReducer, useRef } from "react";
 import classNames from "classnames";
 import styles from "./SplitPanel.module.scss";
+import { useDrag } from "./utils/useDrag";
 
-// --- SplitPanel component types
+/**
+ * Primary panel location within the split panel
+ */
+export type PanelLocation = "left" | "right" | "top" | "bottom";
+
+/**
+ * Panel type within a SplitPanel
+ */
+type PanelType = "primary" | "secondary";
+
+/**
+ * Size specification that can be a number (in pixels) or a string (e.g., "50%", "100px")
+ */
+export type SizeSpec = string | number;
+
+/**
+ * Utility functions for SplitPanel component
+ */
+
+/**
+ * Parse size value from string or number into pixels
+ * 
+ * Converts percentage values to pixels based on container size,
+ * handles explicit pixel values, and plain numbers as direct pixel values.
+ * 
+ * @param size - Size value as string (e.g. "50%", "100px") or number in pixels
+ * @param containerSize - Container size in pixels
+ * @returns - Calculated size in pixels
+ */
+const parseSize = (
+  size: SizeSpec | undefined,
+  containerSize: number
+): number => {
+  if (size === undefined) return 0;
+  
+  if (typeof size === "number") {
+    return size;
+  }
+  
+  if (typeof size === "string") {
+    if (size.endsWith("%")) {
+      const percentage = parseFloat(size.slice(0, -1));
+      return (percentage / 100) * containerSize;
+    }
+    
+    if (size.endsWith("px")) {
+      return parseFloat(size.slice(0, -2));
+    }
+    
+    return parseFloat(size);
+  }
+  
+  return 0;
+};
+
+/**
+ * Format size value as pixel string
+ * 
+ * @param size - Size in pixels
+ * @returns - Formatted CSS pixel string (e.g. "100px")
+ */
+const formatSize = (size: number): string => `${size}px`;
+
+/**
+ * Calculate clamped panel size based on constraints
+ * 
+ * Takes a proposed size and ensures it falls within the allowed range:
+ * - Not smaller than minimum size
+ * - Not larger than maximum size
+ * - Leaves enough space for the other panel's minimum size
+ * 
+ * @param newSize - Proposed new panel size
+ * @param minSize - Minimum allowed size for this panel
+ * @param maxSize - Maximum allowed size for this panel
+ * @param containerSize - Total container size
+ * @param minOtherSize - Minimum required size for the other panel
+ * @returns - Final size value after applying all constraints
+ */
+const clampSize = (
+  newSize: number,
+  minSize: number,
+  maxSize: number,
+  containerSize: number,
+  minOtherSize: number
+): number => {
+  // First ensure we don't exceed maximum size or leave less than required for other panel
+  const upperLimit = Math.min(maxSize, containerSize - minOtherSize);
+  
+  // Then ensure we're not below minimum size, and not above upper limit
+  return Math.max(minSize, Math.min(newSize, upperLimit));
+};
+
+/**
+ * Calculate splitter position based on panel configuration
+ * 
+ * @param isPrimaryFirst - Whether the primary panel is rendered first
+ * @param primarySize - Size of primary panel in pixels
+ * @param containerSize - Total container size in pixels
+ * @returns - Position of the splitter in pixels from the start edge
+ */
+const calculateSplitterPosition = (
+  isPrimaryFirst: boolean,
+  primarySize: number,
+  containerSize: number
+): number => {
+  return isPrimaryFirst ? primarySize : containerSize - primarySize;
+};
+
+/**
+ * Calculate styles for panels
+ * 
+ * @param isHorizontal - Whether orientation is horizontal (true) or vertical (false)
+ * @param size - Panel size in pixels
+ * @param isVisible - Whether panel is visible
+ * @returns - CSS styles object for the panel
+ */
+const getPanelStyle = (
+  isHorizontal: boolean,
+  size: number,
+  isVisible: boolean
+): React.CSSProperties => {
+  return {
+    display: isVisible ? "block" : "none",
+    [isHorizontal ? "width" : "height"]: formatSize(size),
+    [isHorizontal ? "height" : "width"]: "100%",
+  };
+};
+
+/**
+ * Calculate splitter style
+ * 
+ * @param isHorizontal - Whether orientation is horizontal (true) or vertical (false)
+ * @param position - Position of splitter center in pixels
+ * @param splitterSize - Size of splitter handle in pixels 
+ * @param isVisible - Whether splitter is visible
+ * @returns - CSS styles object for the splitter
+ */
+const getSplitterStyle = (
+  isHorizontal: boolean,
+  position: number,
+  splitterSize: number,
+  isVisible: boolean
+): React.CSSProperties => {
+  const halfSplitterSize = splitterSize / 2;
+  return {
+    // Center the splitter on the split position by offsetting by half its size
+    [isHorizontal ? "left" : "top"]: formatSize(position - halfSplitterSize),
+    [isHorizontal ? "width" : "height"]: formatSize(splitterSize),
+    [isHorizontal ? "height" : "width"]: "100%",
+    display: isVisible ? "block" : "none",
+  };
+};
+
+/**
+ * State for SplitPanel component
+ */
+export interface SplitPanelState {
+  containerSize: { width: number; height: number };
+  primarySize: number;
+  isInitialized: boolean;
+}
+
+/**
+ * Actions for SplitPanel state management
+ */
+export type SplitPanelAction =
+  | { type: 'SET_CONTAINER_SIZE'; payload: { width: number; height: number } }
+  | { type: 'SET_PRIMARY_SIZE'; payload: number }
+  | { type: 'INITIALIZE'; payload: number };
+
+/**
+ * Reducer function for SplitPanel state
+ */
+const splitPanelReducer = (
+  state: SplitPanelState,
+  action: SplitPanelAction
+): SplitPanelState => {
+  switch (action.type) {
+    case 'SET_CONTAINER_SIZE':
+      return {
+        ...state,
+        containerSize: action.payload,
+      };
+
+    case 'SET_PRIMARY_SIZE':
+      return {
+        ...state,
+        primarySize: action.payload,
+      };
+
+    case 'INITIALIZE':
+      return {
+        ...state,
+        primarySize: action.payload,
+        isInitialized: true,
+      };
+
+    default:
+      return state;
+  }
+};
+
+/**
+ * Initial state for SplitPanel
+ */
+const initialSplitPanelState: SplitPanelState = {
+  containerSize: { width: 0, height: 0 },
+  primarySize: 0,
+  isInitialized: false,
+};
+
+/**
+ * Props for the Panel component
+ */
+interface PanelProps {
+  /** Type of panel (primary or secondary) */
+  type: PanelType;
+  /** CSS styles for the panel */
+  style: React.CSSProperties;
+  /** Panel content */
+  children: React.ReactNode;
+  /** Test ID for the panel */
+  "data-testid"?: string;
+}
+
+/**
+ * Props for the Splitter component
+ */
+interface SplitterProps {
+  /** Whether the splitter is horizontal */
+  isHorizontal: boolean;
+  /** Whether dragging is in progress */
+  isDragging: boolean;
+  /** CSS styles for the splitter */
+  style: React.CSSProperties;
+  /** Handler for mouse down event */
+  onMouseDown: (e: React.MouseEvent) => void;
+  /** Test ID for the splitter */
+  "data-testid"?: string;
+}
+
+/**
+ * Panel component for SplitPanel
+ * 
+ * Renders either the primary or secondary panel with the correct styling
+ */
+const Panel = memo(({ 
+  type, 
+  style, 
+  children, 
+  "data-testid": dataTestId 
+}: PanelProps) => {
+  return (
+    <div
+      key={type}
+      className={styles[`${type}Panel`]}
+      style={style}
+      data-testid={dataTestId || `_$_SplitPanel-${type}-panel`}
+    >
+      {children}
+    </div>
+  );
+});
+
+Panel.displayName = "Panel";
+
+/**
+ * Splitter component for SplitPanel
+ * 
+ * Renders the draggable splitter that separates the panels
+ */
+const Splitter = memo(({
+  isHorizontal,
+  isDragging,
+  style,
+  onMouseDown,
+  "data-testid": dataTestId,
+}: SplitterProps) => {
+  return (
+    <div
+      className={classNames(styles.splitter, {
+        [styles.horizontal]: isHorizontal,
+        [styles.vertical]: !isHorizontal,
+        [styles.dragging]: isDragging,
+      })}
+      style={style}
+      onMouseDown={onMouseDown}
+      data-testid={dataTestId || "_$_SplitPanel-splitter"}
+    />
+  );
+});
+
+Splitter.displayName = "Splitter";
+
+/**
+ * SplitPanel component props
+ */
 interface SplitPanelProps {
   /** React children - only first two children are used */
   children?: React.ReactNode;
@@ -17,19 +308,19 @@ interface SplitPanelProps {
   /** Test ID for testing purposes */
   "data-testid"?: string;
   /** Location of the primary panel */
-  primaryLocation: "left" | "right" | "top" | "bottom";
+  primaryLocation: PanelLocation;
   /** Whether the primary panel is visible */
   primaryVisible?: boolean;
   /** Whether the secondary panel is visible */
   secondaryVisible?: boolean;
   /** Initial size of the primary panel in pixels or percentage */
-  initialPrimarySize?: string | number;
+  initialPrimarySize?: SizeSpec;
   /** Minimum size of the primary panel in pixels or percentage */
-  minPrimarySize?: string | number;
+  minPrimarySize?: SizeSpec;
   /** Maximum size of the primary panel in pixels or percentage */
-  maxPrimarySize?: string | number;
+  maxPrimarySize?: SizeSpec;
   /** Minimum size of the secondary panel in pixels or percentage */
-  minSecondarySize?: string | number;
+  minSecondarySize?: SizeSpec;
   /** Size of the splitter handle in pixels (default: 4) */
   splitterSize?: number;
   /** Callback when the primary panel size changes during dragging */
@@ -39,28 +330,6 @@ interface SplitPanelProps {
   /** Additional styles */
   style?: React.CSSProperties;
 }
-
-// --- Helper functions for size calculations
-const parseSize = (
-  size: string | number | undefined,
-  containerSize: number
-): number => {
-  if (size === undefined) return 0;
-  if (typeof size === "number") return size;
-  if (typeof size === "string") {
-    if (size.endsWith("%")) {
-      const percentage = parseFloat(size.slice(0, -1));
-      return (percentage / 100) * containerSize;
-    }
-    if (size.endsWith("px")) {
-      return parseFloat(size.slice(0, -2));
-    }
-    return parseFloat(size);
-  }
-  return 0;
-};
-
-const formatSize = (size: number): string => `${size}px`;
 
 const SplitPanel: React.FC<SplitPanelProps> = ({
   children,
@@ -78,19 +347,14 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
   onPrimarySizeUpdateCompleted,
   style,
 }) => {
-  // --- Component state
+  // --- Component state using reducer
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [persistentCursor, setPersistentCursor] = useState<string | null>(null);
-  const persistentCursorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [globalCursor, setGlobalCursor] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(splitPanelReducer, initialSplitPanelState);
+  const { containerSize, primarySize } = state;
 
-  // --- Determine orientation and calculations
-  const isHorizontal =
-    primaryLocation === "left" || primaryLocation === "right";
-  const isPrimaryFirst =
-    primaryLocation === "left" || primaryLocation === "top";
+  // --- Determine orientation and layout
+  const isHorizontal = primaryLocation === "left" || primaryLocation === "right";
+  const isPrimaryFirst = primaryLocation === "left" || primaryLocation === "top";
 
   // --- Calculate effective sizes
   const relevantContainerSize = isHorizontal
@@ -100,21 +364,18 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
   const maxPrimarySizePx = parseSize(maxPrimarySize, relevantContainerSize);
   const minSecondarySizePx = parseSize(minSecondarySize, relevantContainerSize);
 
-  // --- Primary panel size state (initialized to 0, will be set in useEffect)
-  const [primarySize, setPrimarySize] = useState(0);
-
-  // --- Initialize primary size
+  // --- Initialize primary size when container size is available
   useEffect(() => {
-    if (relevantContainerSize > 0 && primarySize === 0) {
+    if (relevantContainerSize > 0 && !state.isInitialized) {
       const initialSize = parseSize(initialPrimarySize, relevantContainerSize);
-      const clampedSize = Math.max(
+      const clampedSize = clampSize(
+        initialSize,
         minPrimarySizePx,
-        Math.min(
-          initialSize,
-          Math.min(maxPrimarySizePx, relevantContainerSize - minSecondarySizePx)
-        )
+        maxPrimarySizePx,
+        relevantContainerSize,
+        minSecondarySizePx
       );
-      setPrimarySize(clampedSize);
+      dispatch({ type: 'INITIALIZE', payload: clampedSize });
     }
   }, [
     relevantContainerSize,
@@ -122,15 +383,64 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
     minPrimarySizePx,
     maxPrimarySizePx,
     minSecondarySizePx,
-    primarySize,
+    state.isInitialized,
   ]);
+
+  // --- Prepare useDrag options
+  const dragOptions = useMemo(() => ({
+    isHorizontal,
+    isPrimaryFirst,
+    initialSize: primarySize,
+    minSize: minPrimarySizePx,
+    maxSize: maxPrimarySizePx,
+    containerSize: relevantContainerSize,
+    minSecondarySize: minSecondarySizePx,
+    onSizeChange: (size: number) => {
+      dispatch({ type: 'SET_PRIMARY_SIZE', payload: size });
+      onUpdatePrimarySize?.(size);
+    },
+    onSizeChangeComplete: onPrimarySizeUpdateCompleted,
+  }), [
+    isHorizontal,
+    isPrimaryFirst,
+    primarySize,
+    minPrimarySizePx,
+    maxPrimarySizePx,
+    relevantContainerSize,
+    minSecondarySizePx,
+    onUpdatePrimarySize,
+    onPrimarySizeUpdateCompleted,
+  ]);
+
+  // --- Use drag hook for handling resize interactions
+  const { isDragging, globalCursor, handleMouseDown } = useDrag(dragOptions);
+
+  // --- Manage global cursor during dragging
+  useEffect(() => {
+    if (globalCursor) {
+      document.body.style.cursor = globalCursor;
+      document.body.style.userSelect = 'none';
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      // Cleanup on unmount
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [globalCursor]);
 
   // --- Update container size on resize
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ width: rect.width, height: rect.height });
+        dispatch({ 
+          type: 'SET_CONTAINER_SIZE', 
+          payload: { width: rect.width, height: rect.height } 
+        });
       }
     };
 
@@ -146,7 +456,7 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
   // --- Calculate splitter position
   const splitterPosition = useMemo(() => {
     if (!primaryVisible || !secondaryVisible) return 0;
-    return isPrimaryFirst ? primarySize : relevantContainerSize - primarySize;
+    return calculateSplitterPosition(isPrimaryFirst, primarySize, relevantContainerSize);
   }, [
     primaryVisible,
     secondaryVisible,
@@ -154,339 +464,6 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
     primarySize,
     relevantContainerSize,
   ]);
-
-  // --- Calculate constraint states for cursor styling
-  const constraintState = useMemo(() => {
-    if (!primaryVisible || !secondaryVisible) return null;
-    
-    const tolerance = 1; // Allow 1px tolerance for floating point calculations
-    const isAtMinPrimary = primarySize <= minPrimarySizePx + tolerance;
-    const isAtMaxPrimary = primarySize >= maxPrimarySizePx - tolerance;
-    const secondarySize = relevantContainerSize - primarySize;
-    const isAtMinSecondary = secondarySize <= minSecondarySizePx + tolerance;
-    
-    // --- Determine constraint direction based on panel location and constraints
-    if (isHorizontal) {
-      if (primaryLocation === "left") {
-        // Primary is on left, splitter moves left/right
-        if (isAtMinPrimary || isAtMinSecondary) return "constrainedLeft"; // Can only grow right
-        if (isAtMaxPrimary) return "constrainedRight"; // Can only shrink left
-      } else {
-        // Primary is on right, splitter moves left/right
-        if (isAtMinPrimary || isAtMinSecondary) return "constrainedRight"; // Can only grow left
-        if (isAtMaxPrimary) return "constrainedLeft"; // Can only shrink right
-      }
-    } else {
-      if (primaryLocation === "top") {
-        // Primary is on top, splitter moves up/down
-        if (isAtMinPrimary || isAtMinSecondary) return "constrainedUp"; // Can only grow down
-        if (isAtMaxPrimary) return "constrainedDown"; // Can only shrink up
-      } else {
-        // Primary is on bottom, splitter moves up/down
-        if (isAtMinPrimary || isAtMinSecondary) return "constrainedDown"; // Can only grow up
-        if (isAtMaxPrimary) return "constrainedUp"; // Can only shrink down
-      }
-    }
-    
-    return null; // No constraints, normal resize
-  }, [
-    primaryVisible,
-    secondaryVisible,
-    primarySize,
-    minPrimarySizePx,
-    maxPrimarySizePx,
-    minSecondarySizePx,
-    relevantContainerSize,
-    isHorizontal,
-    primaryLocation,
-  ]);
-
-  // --- Determine appropriate cursor type for any position (used during dragging)
-  const getCursorType = useCallback((mousePosition?: { x: number, y: number }) => {
-    if (!primaryVisible || !secondaryVisible) {
-      return isHorizontal ? "col-resize" : "row-resize";
-    }
-
-    // Ensure we have a valid container size before calculating constraints
-    if (relevantContainerSize <= 0) {
-      return isHorizontal ? "col-resize" : "row-resize";
-    }
-
-    const tolerance = 1;
-    const isAtMinPrimary = primarySize <= minPrimarySizePx + tolerance;
-    const isAtMaxPrimary = primarySize >= maxPrimarySizePx - tolerance;
-    const secondarySize = relevantContainerSize - primarySize;
-    const isAtMinSecondary = secondarySize <= minSecondarySizePx + tolerance;
-
-    // --- Check if we have any constraints at all
-    const hasConstraints = (isAtMinPrimary || isAtMaxPrimary || isAtMinSecondary) && 
-                           // Only apply constraint if we have a valid primary size
-                           primarySize > 0;
-
-    // --- Debug logging (remove in production)
-    if (process.env.NODE_ENV === 'test') {
-      console.log('DEBUG getCursorType:', {
-        primarySize,
-        minPrimarySizePx,
-        maxPrimarySizePx,
-        secondarySize,
-        minSecondarySizePx,
-        relevantContainerSize,
-        isAtMinPrimary,
-        isAtMaxPrimary,
-        isAtMinSecondary,
-        hasConstraints,
-        mousePosition
-      });
-    }
-
-    // --- If we have a mouse position, consider spatial constraints
-    if (mousePosition && containerRef.current && hasConstraints) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const relativeX = mousePosition.x - rect.left;
-      const relativeY = mousePosition.y - rect.top;
-      
-      // Calculate the splitter position
-      const splitterX = isPrimaryFirst ? primarySize : relevantContainerSize - primarySize;
-      const splitterY = isPrimaryFirst ? primarySize : relevantContainerSize - primarySize;
-      
-      // Debug info for testing
-      if (process.env.NODE_ENV === 'test') {
-        console.log('DEBUG spatial position:', {
-          relativeX, 
-          relativeY,
-          splitterX,
-          splitterY,
-          isPrimaryFirst,
-          primaryLocation,
-          isHorizontal,
-          isAtMaxPrimary,
-          isAtMinSecondary
-        });
-      }
-      
-      if (isHorizontal) {
-        if (primaryLocation === "left") {
-          // LEFT PRIMARY LOCATION
-          
-          // Special case: When at min secondary or max primary for left primary
-          if (isAtMaxPrimary || isAtMinSecondary) {
-            // If mouse is to right of splitter, can only resize left
-            if (relativeX > splitterX) {
-              if (process.env.NODE_ENV === 'test') {
-                console.log('LEFT PRIMARY - RIGHT of splitter, at max primary. Using W-RESIZE');
-              }
-              return "w-resize";
-            }
-          }
-          
-          // If at min primary and mouse left of splitter, can only resize right
-          if (isAtMinPrimary && relativeX < splitterX) {
-            return "e-resize";
-          }
-          
-        } else { // primaryLocation === "right"
-          // RIGHT PRIMARY LOCATION
-          
-          // Special case: When at min secondary or max primary for right primary
-          if (isAtMaxPrimary || isAtMinSecondary) {
-            // If mouse is to left of splitter, can only resize right
-            if (relativeX < splitterX) {
-              return "e-resize";
-            }
-          }
-          
-          // If at min primary and mouse right of splitter, can only resize left
-          if (isAtMinPrimary && relativeX > splitterX) {
-            return "w-resize";
-          }
-        }
-      } else { // vertical
-        const splitterY = isPrimaryFirst ? primarySize : relevantContainerSize - primarySize;
-        
-        if (primaryLocation === "top") {
-          // Mouse is above the splitter and primary is at minimum
-          if (relativeY < splitterY && (isAtMinPrimary || isAtMinSecondary)) {
-            if (process.env.NODE_ENV === 'test') {
-              console.log('DEBUG: Mouse above splitter, constrained to s-resize');
-            }
-            return "s-resize"; // Can only move down
-          }
-          // Mouse is below the splitter and primary is at maximum
-          if (relativeY > splitterY && isAtMaxPrimary) {
-            if (process.env.NODE_ENV === 'test') {
-              console.log('DEBUG: Mouse below splitter, constrained to n-resize');
-            }
-            return "n-resize"; // Can only move up
-          }
-        } else { // primaryLocation === "bottom"
-          // Mouse is below the splitter and primary is at minimum
-          if (relativeY > splitterY && (isAtMinPrimary || isAtMinSecondary)) {
-            return "n-resize"; // Can only move up
-          }
-          // Mouse is above the splitter and primary is at maximum
-          if (relativeY < splitterY && isAtMaxPrimary) {
-            return "s-resize"; // Can only move down
-          }
-        }
-      }
-    }
-
-    // --- Fallback to constraint state if no spatial information or no constraints found
-    if (constraintState) {
-      switch (constraintState) {
-        case "constrainedLeft": return "e-resize";
-        case "constrainedRight": return "w-resize";
-        case "constrainedUp": return "s-resize";
-        case "constrainedDown": return "n-resize";
-      }
-    }
-
-    // --- Default to normal resize cursors
-    return isHorizontal ? "col-resize" : "row-resize";
-  }, [
-    primaryVisible,
-    secondaryVisible,
-    primarySize,
-    minPrimarySizePx,
-    maxPrimarySizePx,
-    minSecondarySizePx,
-    relevantContainerSize,
-    isHorizontal,
-    primaryLocation,
-    isPrimaryFirst,
-    constraintState,
-  ]);
-
-  // --- Calculate half splitter size for positioning
-  const halfSplitterSize = splitterSize / 2;
-
-  // --- Manage persistent cursor state
-  const setPersistentCursorWithTimeout = useCallback((cursorType: string | null, duration: number = 1000) => {
-    // Clear any existing timeout
-    if (persistentCursorTimeoutRef.current) {
-      clearTimeout(persistentCursorTimeoutRef.current);
-      persistentCursorTimeoutRef.current = null;
-    }
-
-    // Set the new cursor state
-    setPersistentCursor(cursorType);
-
-    // Set timeout to clear the cursor if a duration is specified and cursor is not null
-    if (cursorType && duration > 0) {
-      persistentCursorTimeoutRef.current = setTimeout(() => {
-        setPersistentCursor(null);
-        persistentCursorTimeoutRef.current = null;
-      }, duration);
-    }
-  }, []);
-
-  // --- Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (persistentCursorTimeoutRef.current) {
-        clearTimeout(persistentCursorTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // --- Manage global cursor during dragging
-  useEffect(() => {
-    if (globalCursor) {
-      document.body.style.cursor = globalCursor;
-      // Disable text selection globally during dragging
-      document.body.style.userSelect = 'none';
-    } else {
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
-
-    return () => {
-      // Cleanup on unmount or when globalCursor changes
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [globalCursor]);
-
-  // --- Handle mouse down on splitter
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-
-      const startPosition = isHorizontal ? e.clientX : e.clientY;
-      const startSize = primarySize;
-
-      // --- Determine cursor type using enhanced logic
-      const cursorType = getCursorType({ x: e.clientX, y: e.clientY });
-      
-      // --- Set global cursor for mouse capture effect
-      setGlobalCursor(cursorType);
-
-      const handleMouseMove = (e: MouseEvent) => {
-        e.preventDefault();
-
-        const currentPosition = isHorizontal ? e.clientX : e.clientY;
-        const delta = currentPosition - startPosition;
-
-        let newSize: number;
-        if (isPrimaryFirst) {
-          newSize = startSize + delta;
-        } else {
-          newSize = startSize - delta;
-        }
-
-        // --- Clamp size to constraints
-        const clampedSize = Math.max(
-          minPrimarySizePx,
-          Math.min(
-            newSize,
-            Math.min(
-              maxPrimarySizePx,
-              relevantContainerSize - minSecondarySizePx
-            )
-          )
-        );
-
-        setPrimarySize(clampedSize);
-        onUpdatePrimarySize?.(clampedSize);
-
-        // --- Update global cursor based on current mouse position during drag
-        const updatedCursorType = getCursorType({ x: e.clientX, y: e.clientY });
-        if (updatedCursorType !== cursorType) {
-          setGlobalCursor(updatedCursorType);
-        }
-      };
-
-      const handleMouseUp = () => {
-        setIsDragging(false);
-        setGlobalCursor(null); // Clear global cursor
-        onPrimarySizeUpdateCompleted?.(primarySize);
-        
-        // --- Set persistent cursor after drag ends
-        setPersistentCursorWithTimeout(cursorType, 1000); // Show cursor for 1 second after release
-        
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-      };
-
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-    },
-    [
-      isHorizontal,
-      isPrimaryFirst,
-      primarySize,
-      minPrimarySizePx,
-      maxPrimarySizePx,
-      minSecondarySizePx,
-      relevantContainerSize,
-      onUpdatePrimarySize,
-      onPrimarySizeUpdateCompleted,
-      getCursorType,
-      setPersistentCursorWithTimeout,
-    ]
-  );
 
   // --- Get children
   const childrenArray = React.Children.toArray(children);
@@ -494,77 +471,79 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
   const secondaryChild = childrenArray[1];
 
   // --- Calculate panel styles
-  const primaryPanelStyle: React.CSSProperties = {
-    display: primaryVisible ? "block" : "none",
-    [isHorizontal ? "width" : "height"]: formatSize(primarySize),
-    [isHorizontal ? "height" : "width"]: "100%",
-  };
+  const primaryPanelStyle = useMemo(() => 
+    getPanelStyle(isHorizontal, primarySize, primaryVisible),
+    [isHorizontal, primarySize, primaryVisible]
+  );
 
-  const secondaryPanelStyle: React.CSSProperties = {
-    display: secondaryVisible ? "block" : "none",
-    [isHorizontal ? "width" : "height"]: formatSize(
-      relevantContainerSize - primarySize
-    ),
-    [isHorizontal ? "height" : "width"]: "100%",
-  };
+  const secondaryPanelStyle = useMemo(() => 
+    getPanelStyle(isHorizontal, relevantContainerSize - primarySize, secondaryVisible),
+    [isHorizontal, relevantContainerSize, primarySize, secondaryVisible]
+  );
 
   // --- Calculate splitter style
   const shouldShowSplitter = primaryVisible && secondaryVisible;
-  const splitterStyle: React.CSSProperties = {
-    [isHorizontal ? "left" : "top"]: formatSize(
-      splitterPosition - halfSplitterSize
-    ),
-    [isHorizontal ? "width" : "height"]: formatSize(splitterSize),
-    [isHorizontal ? "height" : "width"]: "100%",
-    display: shouldShowSplitter ? "block" : "none",
-  };
+  const splitterStyle = useMemo(() => 
+    getSplitterStyle(isHorizontal, splitterPosition, splitterSize, shouldShowSplitter),
+    [isHorizontal, splitterPosition, splitterSize, shouldShowSplitter]
+  );
 
   // --- Render panels in correct order
-  const panels = isPrimaryFirst
-    ? [
-        primaryChild && (
-          <div
-            key="primary"
-            className={styles.primaryPanel}
-            style={primaryPanelStyle}
-            data-testid="_$_SplitPanel-primary-panel"
-          >
-            {primaryChild}
-          </div>
-        ),
-        secondaryChild && (
-          <div
-            key="secondary"
-            className={styles.secondaryPanel}
+  const panels = useMemo(() => {
+    if (isPrimaryFirst) {
+      return (
+        <>
+          {primaryChild && (
+            <Panel
+              type="primary"
+              style={primaryPanelStyle}
+              data-testid="_$_SplitPanel-primary-panel"
+            >
+              {primaryChild}
+            </Panel>
+          )}
+          {secondaryChild && (
+            <Panel
+              type="secondary"
+              style={secondaryPanelStyle}
+              data-testid="_$_SplitPanel-secondary-panel"
+            >
+              {secondaryChild}
+            </Panel>
+          )}
+        </>
+      );
+    }
+
+    return (
+      <>
+        {secondaryChild && (
+          <Panel
+            type="secondary"
             style={secondaryPanelStyle}
             data-testid="_$_SplitPanel-secondary-panel"
           >
             {secondaryChild}
-          </div>
-        ),
-      ]
-    : [
-        secondaryChild && (
-          <div
-            key="secondary"
-            className={styles.secondaryPanel}
-            style={secondaryPanelStyle}
-            data-testid="_$_SplitPanel-secondary-panel"
-          >
-            {secondaryChild}
-          </div>
-        ),
-        primaryChild && (
-          <div
-            key="primary"
-            className={styles.primaryPanel}
+          </Panel>
+        )}
+        {primaryChild && (
+          <Panel
+            type="primary"
             style={primaryPanelStyle}
             data-testid="_$_SplitPanel-primary-panel"
           >
             {primaryChild}
-          </div>
-        ),
-      ];
+          </Panel>
+        )}
+      </>
+    );
+  }, [
+    isPrimaryFirst, 
+    primaryChild, 
+    secondaryChild, 
+    primaryPanelStyle, 
+    secondaryPanelStyle
+  ]);
 
   return (
     <div
@@ -576,12 +555,6 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
           [styles.vertical]: !isHorizontal,
           [styles.userSelecting]: isDragging,
           [styles.globalDragging]: globalCursor !== null,
-          [styles.persistentColResize]: persistentCursor === "col-resize",
-          [styles.persistentRowResize]: persistentCursor === "row-resize",
-          [styles.persistentEResize]: persistentCursor === "e-resize",
-          [styles.persistentWResize]: persistentCursor === "w-resize",
-          [styles.persistentSResize]: persistentCursor === "s-resize",
-          [styles.persistentNResize]: persistentCursor === "n-resize",
         },
         className
       )}
@@ -589,19 +562,11 @@ const SplitPanel: React.FC<SplitPanelProps> = ({
       data-testid={dataTestId}
     >
       {panels}
-      <div
-        className={classNames(styles.splitter, {
-          [styles.horizontal]: isHorizontal,
-          [styles.vertical]: !isHorizontal,
-          [styles.dragging]: isDragging,
-          [styles.constrainedLeft]: constraintState === "constrainedLeft",
-          [styles.constrainedRight]: constraintState === "constrainedRight",
-          [styles.constrainedUp]: constraintState === "constrainedUp",
-          [styles.constrainedDown]: constraintState === "constrainedDown",
-        })}
+      <Splitter
+        isHorizontal={isHorizontal}
+        isDragging={isDragging}
         style={splitterStyle}
         onMouseDown={handleMouseDown}
-        data-testid="_$_SplitPanel-splitter"
       />
     </div>
   );
