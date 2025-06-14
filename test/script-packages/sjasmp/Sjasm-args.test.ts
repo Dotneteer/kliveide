@@ -42,7 +42,7 @@ describe("Sjasm - Arguments", () => {
   validArgCases.forEach((c, idx) =>
     it(`Sjasm args #${idx + 1}`, () => {
       // --- Arrange
-      const sajsmp = createSjasmRunner("", c.opts, ["file.c"]);
+      const sajsmp = createSjasmRunner({}, "", c.opts, ["file.c"]);
 
       // --- Act
       const options = sajsmp.composeCmdLineArgs();
@@ -66,7 +66,7 @@ describe("Sjasm - Arguments", () => {
 
   it("Sjasm with unknown option fails #1", () => {
     // --- Arrange
-    const sjasm = createSjasmRunner("", { unknown: true }, ["file.c"]);
+    const sjasm = createSjasmRunner({}, "", { unknown: true }, ["file.c"]);
 
     // --- Act
     const cmdLine = sjasm.composeCmdLineArgs();
@@ -80,7 +80,7 @@ describe("Sjasm - Arguments", () => {
 
   it("Sjasm with unknown option fails #2", () => {
     // --- Arrange
-    const sjasm = createSjasmRunner("", { unknown1: true, other: false }, ["file.c"]);
+    const sjasm = createSjasmRunner({}, "", { unknown1: true, other: false }, ["file.c"]);
 
     // --- Act
     const cmdLine = sjasm.composeCmdLineArgs();
@@ -97,7 +97,7 @@ describe("Sjasm - Arguments", () => {
 
   it("bool option fails with number", () => {
     // --- Arrange
-    const sjasm = createSjasmRunner("", { i8080: 123 }, ["file.c"]);
+    const sjasm = createSjasmRunner({}, "", { i8080: 123 }, ["file.c"]);
 
     // --- Act
     const cmdLine = sjasm.composeCmdLineArgs();
@@ -112,7 +112,7 @@ describe("Sjasm - Arguments", () => {
 
   it("bool option fails with string", () => {
     // --- Arrange
-    const sjasm = createSjasmRunner("", { i8080: "123" }, ["file.c"]);
+    const sjasm = createSjasmRunner({}, "", { i8080: "123" }, ["file.c"]);
 
     // --- Act
     const cmdLine = sjasm.composeCmdLineArgs();

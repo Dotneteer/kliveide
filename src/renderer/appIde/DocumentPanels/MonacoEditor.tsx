@@ -206,6 +206,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const bpDecorations = useRef<EditorDecorationsCollection>(null);
   const hoverDecorations = useRef<EditorDecorationsCollection>(null);
   const execPointDecoration = useRef<EditorDecorationsCollection>(null);
+  const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
 
   // --- The name of the resource this editor displays
   const resourceName = document.node?.projectPath;
@@ -428,7 +429,90 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
   useEffect(() => {
     console.log("Background compilation result", backgroundResult);
-  }, [backgroundResult]);
+    
+    // Clear previous decorations
+    errorWarningDecorations.current?.clear();
+    
+    // Don't proceed if no editor or no background result
+    if (!editor.current || !backgroundResult) {
+      return;
+    }
+    
+    // Don't proceed if successful compilation or no errors
+    if (backgroundResult.success || !backgroundResult.errors || backgroundResult.errors.length === 0) {
+      return;
+    }
+    
+    // Get the current file path
+    const currentFile = document.node?.projectPath;
+    if (!currentFile) return;
+    
+    console.log("Current file:", currentFile, backgroundResult);
+    
+    // Filter errors for the current file - try different matching approaches
+    let fileErrors = backgroundResult.errors.filter((err) => err.filename.endsWith(currentFile));
+    
+    if (fileErrors.length === 0) {
+      return;
+    }
+    
+    // Create decorations for errors and warnings
+    const decorations = fileErrors.map(err => {
+      // Ensure we have valid line/column information
+      const lineNo = err.line || 1;
+      
+      // Determine startCol - use first non-whitespace character if not defined
+      let startCol = err.startColumn;
+      if (!startCol && editor.current) {
+        const model = editor.current.getModel();
+        if (model && lineNo <= model.getLineCount()) {
+          const lineContent = model.getLineContent(lineNo);
+          // Find position of first non-whitespace character in the line
+          const match = lineContent.match(/\S/);
+          if (match) {
+            startCol = match.index + 1; // Convert to 1-based index
+          } else {
+            startCol = 1; // Default to beginning of line if it's all whitespace
+          }
+        } else {
+          startCol = 1; // Default fallback
+        }
+      } else if (!startCol) {
+        startCol = 1; // Default if no editor or model
+      }
+      
+      // Calculate endCol from the current line's length if not provided
+      let endCol = err.endColumn;
+      if (!endCol && editor.current) {
+        const model = editor.current.getModel();
+        if (model && lineNo <= model.getLineCount()) {
+          // Use the line length as the end column, or startCol + 10 as fallback
+          endCol = model.getLineLength(lineNo) + 1;
+        } else {
+          endCol = startCol + 10; // Default fallback
+        }
+      }
+      
+      // Create the decoration
+      return {
+        range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
+        options: {
+          className: err.isWarning ? styles.warningDecoration : styles.errorDecoration,
+          after: {
+            content: err.message || "Issue detected",
+            inlineClassName: err.isWarning ? styles.warningIcon : styles.errorIcon
+          },
+          isWholeLine: false
+        }
+      };
+    });
+    
+    // Apply decorations
+    if (decorations.length > 0) {
+      errorWarningDecorations.current = editor.current.createDecorationsCollection(decorations);
+      console.log(`Applied ${decorations.length} error/warning decorations`);
+    }
+  }, [backgroundResult, document.node?.projectPath]);
 
   // --- Initializes the editor when mounted
   const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
@@ -538,8 +622,12 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
 
     mounted.current = true;
 
+    // --- Start background compilation
+    startBackgroundCompile(store, mainApi);
+
     // --- Show breakpoinst and other decorations when initially displaying the editor
     (async () => {
+    startBackgroundCompile(store, mainApi);
       const bps = await refreshBreakpoints();
       await refreshCurrentBreakpoint(bps);
     })();
