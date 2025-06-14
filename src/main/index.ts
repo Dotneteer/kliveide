@@ -58,17 +58,13 @@ import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
-import { registerCompiler } from "./compiler-integration/compiler-registry";
-import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 import { setMachineType } from "./registeredMachines";
-import { ZxBasicCompiler } from "./zxb-integration/ZxBasicCompiler";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import { getSettingValue } from "./settings-utils";
-import { SjasmPCompiler } from "./sjasmp-integration/SjasmPCompiler";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -92,18 +88,13 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-// --- Register available compilers
-registerCompiler(new Z80Compiler());
-registerCompiler(new ZxBasicCompiler());
-registerCompiler(new SjasmPCompiler());
-
 loadAppSettings();
 
 // --- Store initial user settings
 mainStore.dispatch(saveUserSettingAction(appSettings.userSettings));
 
 // --- Get seeting used
-const settingsReader = createSettingsReader(mainStore);
+const settingsReader = createSettingsReader(mainStore.getState());
 const allowDevTools = !!settingsReader.readSetting("devTools.allow");
 const displayIdeDevTools = !!settingsReader.readSetting("devTools.ide") && allowDevTools;
 const displayEmuDevTools = !!settingsReader.readSetting("devTools.emu") && allowDevTools;
@@ -198,7 +189,11 @@ async function createAppWindows() {
   });
 
   // --- Create the IDE window
-  const showIde = ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false);
+  const disableIde = process.argv.includes("--noide");
+  const forceIde = process.argv.includes("--showide");
+  const showIde =
+    !disableIde &&
+    (forceIde || ideVisibleOnClose || (appSettings?.windowStates?.showIdeOnStartup ?? false));
   const maximizeIde = showIde && (appSettings?.windowStates?.ideWindow?.isMaximized ?? false);
   ideWindow = new BrowserWindow({
     title: "Ide window",

@@ -103,7 +103,7 @@ const EmuApp = () => {
 
 
   return (
-    <FullPanel id='appMain'>
+    <FullPanel id='appMain' data-testid='emu-app'>
       {showToolbar && (
         <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />
       )}

@@ -1,7 +1,6 @@
-import type { AssemblerErrorInfo } from "@abstractions/CompilerInfo";
+import type { AssemblerErrorInfo, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
 
 import { ExecaSyncError, execa } from "execa";
-import { SimpleAssemblerOutput } from "@main/compiler-integration/compiler-registry";
 
 /**
  * This class is responsible for running the CLI commands that are passed to it.

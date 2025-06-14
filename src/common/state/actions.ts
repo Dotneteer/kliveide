@@ -1,9 +1,9 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
-import { KliveCompilerOutput } from "../../main/compiler-integration/compiler-registry";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ExportDialogSettings } from "@main/settings";
+import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -317,4 +317,17 @@ export const setWorkspaceSettingsAction: ActionCreator = (id: string, value: any
 
 export const incEmuViewVersionAction: ActionCreator = () => ({
   type: "INC_EMU_VIEW_VERSION"
+});
+
+export const resetBackgroundCompileAction: ActionCreator = () => ({
+  type: "RESET_BACKGROUND_COMPILE"
+});
+
+export const startBackgroundCompileAction: ActionCreator = () => ({
+  type: "START_BACKGROUND_COMPILE"
+});
+
+export const endBackgroundCompileAction: ActionCreator = (value: any) => ({
+  type: "END_BACKGROUND_COMPILE",
+  payload: { value }
 });

@@ -3,13 +3,12 @@ import { AppState } from "../state/AppState";
 import { Store } from "../state/redux-light";
 
 class SettingsReader {
-  constructor (public readonly store: Store<AppState>) {}
+  constructor (public readonly state: AppState) {}
 
   readSetting (key: string): any {
-    const state = this.store.getState();
     const mergedSettings = {
-      ...(state?.userSettings ?? {}),
-      ...(state?.projectSettings ?? {})
+      ...(this.state?.userSettings ?? {}),
+      ...(this.state?.projectSettings ?? {})
     };
     return _.get(mergedSettings, key);
   }
@@ -34,6 +33,6 @@ class SettingsReader {
  * @param store
  * @returns
  */
-export function createSettingsReader (store: Store<AppState>): SettingsReader {
-  return new SettingsReader(store);
+export function createSettingsReader (state: AppState): SettingsReader {
+  return new SettingsReader(state);
 }

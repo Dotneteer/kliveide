@@ -4,9 +4,9 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
+import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 
 export function getBreakpointKey(
   bp: BreakpointInfo,

@@ -9,6 +9,7 @@ import {
 } from "@main/cli-integration/CliRunner";
 import { mainStore } from "@main/main-store";
 import { SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
+import { AppState } from "@common/state/AppState";
 
 export const SJASM_OUTPUT_FILE = "_output.bin";
 export const SJASM_LIST_FILE = "_output.txt";
@@ -161,12 +162,14 @@ class SjasmCliManager extends CliManager {
 
   /**
    * Creates a new ZCC instance
+   * @param state Application state
    * @param cwd Current working directory
    * @param options Compiler options
    * @param files Files to compile
    * @param overwriteOptions Should the options overwrite the default ones?
    */
   constructor(
+    private readonly state: AppState,
     cwd: string,
     options: Record<string, any> = {},
     files: string[] = [],
@@ -180,7 +183,7 @@ class SjasmCliManager extends CliManager {
 
   private getRootPath(): string {
     if (!this._rootPath) {
-      const settingsReader = createSettingsReader(mainStore);
+      const settingsReader = createSettingsReader(this.state);
       this._rootPath = settingsReader.readSetting(SJASMP_INSTALL_FOLDER);
     }
     if (!this._rootPath) {
@@ -282,8 +285,9 @@ class SjasmCliManager extends CliManager {
 
 // --- The result of option composition
 export const createSjasmRunner = (
+  state: AppState,
   cwd: string,
   options: Record<string, any> = {},
   files: string[] = [],
   overwriteOptions = false
-) => new SjasmCliManager(cwd, options, files, overwriteOptions);
+) => new SjasmCliManager(state, cwd, options, files, overwriteOptions);

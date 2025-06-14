@@ -6,12 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
-import { isDebuggableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { incBreakpointsVersionAction, incEditorVersionAction } from "@common/state/actions";
+import {
+  incBreakpointsVersionAction,
+  incEditorVersionAction,
+  startBackgroundCompileAction
+} from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -30,8 +33,13 @@ import {
   SETTING_EDITOR_RENDER_WHITESPACE,
   SETTING_EDITOR_TABSIZE,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
-  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
+import { Store } from "@common/state/redux-light";
+import { AppState } from "@common/state/AppState";
+import { getFileTypeEntry } from "../project/project-node";
+import { isDebuggableCompilerOutput } from "../utils/compiler-utils";
 
 let monacoInitialized = false;
 
@@ -199,6 +207,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const bpDecorations = useRef<EditorDecorationsCollection>(null);
   const hoverDecorations = useRef<EditorDecorationsCollection>(null);
   const execPointDecoration = useRef<EditorDecorationsCollection>(null);
+  const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
 
   // --- The name of the resource this editor displays
   const resourceName = document.node?.projectPath;
@@ -217,6 +226,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const enableSelectionHighlight = useGlobalSetting(SETTING_EDITOR_SELECTION_HIGHLIGHT);
   const enableOccurrencesHighlight = useGlobalSetting(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT);
   const quickSuggestionDelay = useGlobalSetting(SETTING_EDITOR_QUICK_SUGGESTION_DELAY);
+  const allowBackgroundCompile = useGlobalSetting(SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE);
+
+  // --- Background compilation
+  const backgroundResult = useSelector((s) => s.compilation.backgroundResult);
 
   // --- Sets the Auto complete editor option
   const updateAutoComplete = () => {
@@ -416,6 +429,102 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     }
   }, [breakpointsVersion, compilation, execState, hubVersion]);
 
+  useEffect(() => {
+    // Clear previous decorations
+    errorWarningDecorations.current?.clear();
+
+    // Don't proceed if no editor or no background result or if background compilation is disabled
+    if (!editor.current || !backgroundResult || !allowBackgroundCompile) {
+      return;
+    }
+
+    // Don't proceed if successful compilation or no errors
+    if (
+      backgroundResult.success ||
+      !backgroundResult.errors ||
+      backgroundResult.errors.length === 0
+    ) {
+      return;
+    }
+
+    // Get the current file path
+    const currentFile = document.node?.projectPath;
+    if (!currentFile) return;
+
+    // Filter errors for the current file - try different matching approaches
+    let fileErrors = backgroundResult.errors.filter((err) => err.filename.endsWith(currentFile));
+
+    if (fileErrors.length === 0) {
+      return;
+    }
+
+    console.log("Errors", fileErrors);
+
+    // Create decorations for errors and warnings
+    const decorations: Decoration[] = [];
+    fileErrors.forEach((err) => {
+      // Ensure we have valid line/column information
+      const lineNo = err.line || 1;
+
+      // Determine startCol - use first non-whitespace character if not defined
+      let startCol = err.startColumn;
+      if (editor.current) {
+        const model = editor.current.getModel();
+        if (model && lineNo <= model.getLineCount()) {
+          const lineContent = model.getLineContent(lineNo);
+          // Find position of first non-whitespace character in the line
+          const match = lineContent.match(/\S/);
+          if (match) {
+            startCol = match.index + 1; // Convert to 1-based index
+          } else {
+            startCol = 1; // Default to beginning of line if it's all whitespace
+          }
+        } else {
+          startCol = 1; // Default fallback
+        }
+      } else {
+        startCol = 1; // Default if no editor or model
+      }
+
+      // Calculate endCol from the current line's length if not provided
+      let endCol = err.endColumn;
+      if (editor.current) {
+        const model = editor.current.getModel();
+        if (model && lineNo <= model.getLineCount()) {
+          // Use the line length as the end column, or startCol + 10 as fallback
+          endCol = model.getLineLength(lineNo) + 1;
+        } else {
+          endCol = startCol + 10; // Default fallback
+        }
+      }
+
+      // Create the decoration
+      decorations.push({
+        range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
+        options: {
+          className: err.isWarning ? styles.warningDecoration : styles.errorDecoration,
+          after: {
+            content: err.message || "Issue detected",
+            inlineClassName: err.isWarning ? styles.warningIcon : styles.errorIcon
+          },
+          isWholeLine: false
+        }
+      });
+    });
+
+    // Apply decorations
+    if (decorations.length > 0) {
+      errorWarningDecorations.current = editor.current.createDecorationsCollection(decorations);
+      console.log("Decorations applied:", decorations);
+    }
+  }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile]);
+
+  useEffect(() => {
+    if (store && mainApi && allowBackgroundCompile) {
+      startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+    }
+  }, [store, mainApi, allowBackgroundCompile]);
+
   // --- Initializes the editor when mounted
   const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
     // --- Restore the view state to display the editor is it has been left
@@ -523,6 +632,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     });
 
     mounted.current = true;
+
+    // --- Start background compilation
+    startBackgroundCompile(store, mainApi, allowBackgroundCompile);
 
     // --- Show breakpoinst and other decorations when initially displaying the editor
     (async () => {
@@ -678,6 +790,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         if (reason !== "canceled") reportError(reason);
       }
     );
+
+    // --- Start background compilation
+    startBackgroundCompile(store, mainApi, allowBackgroundCompile);
   };
 
   // --- render the editor when monaco has been initialized
@@ -1104,4 +1219,33 @@ function createCurrentMacroInvocationBreakpointDecoration(
         : styles.activeMacroBreakpointMargin
     }
   };
+}
+
+// --- Compile the current project's code
+async function startBackgroundCompile(
+  store: Store<AppState>,
+  mainApi: ReturnType<typeof createMainApi>,
+  allowCompile: boolean = true
+): Promise<boolean> {
+  // --- Check if background compilation is allowed
+  if (!allowCompile) {
+    return false;
+  }
+
+  // --- Check if we have a build root to compile
+  const state = store.getState();
+  if (!state.project?.isKliveProject) {
+    return false;
+  }
+  const buildRoot = state.project.buildRoots?.[0];
+  if (!buildRoot) {
+    return false;
+  }
+  const fullPath = `${state.project.folderPath}/${buildRoot}`;
+  const language = getFileTypeEntry(fullPath, store)?.subType;
+
+  // --- Compile the build root
+  store.dispatch(startBackgroundCompileAction());
+  mainApi.startBackgroundCompile(fullPath, language);
+  return true;
 }

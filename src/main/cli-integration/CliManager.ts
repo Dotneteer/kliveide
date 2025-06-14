@@ -30,7 +30,7 @@ export abstract class CliManager {
     overwriteOptions = false
   ) {
     this._options = options;
-    this.cwd = this.cwd.replaceAll("\\", "/");
+    this.cwd = typeof this.cwd === "string" ? this.cwd.replaceAll("\\", "/") : "";
     this._overwriteOptions = overwriteOptions;
     this._optionTemplate = this.cloneOptions(optionSet);
   }

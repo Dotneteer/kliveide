@@ -69,7 +69,8 @@ import {
   SETTING_EDITOR_DETECT_INDENTATION,
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
-  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
 
@@ -148,7 +149,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const machineMenus = machineMenuRegistry[machineId];
   const ideFocus = appState?.ideFocused;
 
-  const settingsReader = createSettingsReader(mainStore);
+  const settingsReader = createSettingsReader(mainStore.getState());
   const devToolsValue = settingsReader.readSetting("devTools.allow");
   const allowDevTools = devToolsValue === "1" || devToolsValue === "true";
   const fullScreenShortcut = settingsReader.readSetting("shortcuts.fullScreen") ?? "Ctrl+Shift+F9";
@@ -253,6 +254,17 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               }
             }
           ] as MenuItemConstructorOptions[])),
+      { type: "separator" },
+      {
+        id: "bkg_compile",
+        label: "Compile in background",
+        click: async () => {}
+      },
+      {
+        id: "bkg_compile_stop",
+        label: "Stop background compilation",
+        click: async () => {}
+      },
       ...(__DARWIN__
         ? []
         : ([{ type: "separator" }, { role: "quit" }] as MenuItemConstructorOptions[]))
@@ -334,7 +346,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       label: "16",
       value: 16
-    },
+    }
   ];
   const currentTabSize = getSettingValue(SETTING_EDITOR_TABSIZE);
   const editorTabSizeMenu: MenuItemConstructorOptions[] = tabSizeOptions.map((f, idx) => {
@@ -365,21 +377,23 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       label: "Render all whitespace characters",
       value: "all"
-    },
+    }
   ];
 
   const currentRenderWhitespace = getSettingValue(SETTING_EDITOR_RENDER_WHITESPACE);
-  const editorRenderWhitespaceMenu: MenuItemConstructorOptions[] = renderWhitespaceOptions.map((f, idx) => {
-    return {
-      id: `${EDITOR_RENDER_WHITESPACE}_${idx}`,
-      label: f.label,
-      type: "checkbox",
-      checked: currentRenderWhitespace === f.value,
-      click: async () => {
-        setSettingValue(SETTING_EDITOR_RENDER_WHITESPACE, f.value);
-      }
-    };
-  });
+  const editorRenderWhitespaceMenu: MenuItemConstructorOptions[] = renderWhitespaceOptions.map(
+    (f, idx) => {
+      return {
+        id: `${EDITOR_RENDER_WHITESPACE}_${idx}`,
+        label: f.label,
+        type: "checkbox",
+        checked: currentRenderWhitespace === f.value,
+        click: async () => {
+          setSettingValue(SETTING_EDITOR_RENDER_WHITESPACE, f.value);
+        }
+      };
+    }
+  );
 
   const quickSuggestionDelayOptions = [
     {
@@ -401,21 +415,22 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       label: "Longest (1s)",
       value: 1000
-    },
+    }
   ];
   const currentQuickSuggestionDelay = getSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY);
-  const quickSuggestionDelayMenu: MenuItemConstructorOptions[] = quickSuggestionDelayOptions.map((f, idx) => {
-    return {
-      id: `${EDITOR_QUICK_SUGGESTION_DELAY}_${idx}`,
-      label: f.label,
-      type: "checkbox",
-      checked: currentQuickSuggestionDelay === f.value,
-      click: async () => {
-        setSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY, f.value);
-      }
-    };
-  });
-
+  const quickSuggestionDelayMenu: MenuItemConstructorOptions[] = quickSuggestionDelayOptions.map(
+    (f, idx) => {
+      return {
+        id: `${EDITOR_QUICK_SUGGESTION_DELAY}_${idx}`,
+        label: f.label,
+        type: "checkbox",
+        checked: currentQuickSuggestionDelay === f.value,
+        click: async () => {
+          setSettingValue(SETTING_EDITOR_QUICK_SUGGESTION_DELAY, f.value);
+        }
+      };
+    }
+  );
 
   // --- Machine-specific view menu items
   let specificViewMenus: MenuItemConstructorOptions[] = [];
@@ -552,6 +567,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             label: "Tab Size",
             submenu: editorTabSizeMenu
           },
+          { type: "separator" },
+          createBooleanSettingsMenu(SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE)
         ]
       },
       { type: "separator" },

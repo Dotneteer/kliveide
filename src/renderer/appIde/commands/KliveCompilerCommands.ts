@@ -1,10 +1,6 @@
-import type { BinarySegment, CompilerOutput } from "@abstractions/CompilerInfo";
+import type { BinarySegment, CompilerOutput, InjectableOutput, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import type {
-  InjectableOutput,
-  KliveCompilerOutput
-} from "@main/compiler-integration/compiler-registry";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
@@ -17,7 +13,6 @@ import {
   toHexa2,
   toHexa4
 } from "@renderer/appIde/services/ide-commands";
-import { isInjectableCompilerOutput } from "@main/compiler-integration/compiler-registry";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { BinaryReader } from "@utils/BinaryReader";
@@ -37,6 +32,7 @@ import {
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { isInjectableCompilerOutput } from "../utils/compiler-utils";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 

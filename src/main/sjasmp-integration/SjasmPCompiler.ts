@@ -1,19 +1,16 @@
 import fs from "fs";
-import type {
-  DebuggableOutput,
-  IKliveCompiler,
-  KliveCompilerOutput
-} from "@main/compiler-integration/compiler-registry";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
 import {
   BinarySegment,
+  DebuggableOutput,
   FileLine,
+  IKliveCompiler,
+  KliveCompilerOutput,
   ListFileItem,
   SpectrumModelType
 } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
-import { mainStore } from "../main-store";
 import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
 import {
   createSjasmRunner,
@@ -22,11 +19,14 @@ import {
   SJASM_SLD_FILE
 } from "../../script-packages/sjasm/sjasm";
 import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
+import { AppState } from "@common/state/AppState";
 
 /**
  * Wraps the SjasmPlus compiler
  */
 export class SjasmPCompiler implements IKliveCompiler {
+  private state: AppState;
+
   /**
    * The unique ID of the compiler
    */
@@ -43,6 +43,14 @@ export class SjasmPCompiler implements IKliveCompiler {
   readonly providesKliveOutput = true;
 
   /**
+   * Optionally forwards the current state to the compiler
+   * @param state State to forward to the compiler
+   */
+  setAppState(state: AppState): void {
+    this.state = state;
+  }
+
+  /**
    * Compiles the Z80 Assembly code in the specified file into Z80
    * binary code.
    * @param filename Z80 assembly source file (absolute path)
@@ -50,9 +58,9 @@ export class SjasmPCompiler implements IKliveCompiler {
    * @returns Output of the compilation
    */
   async compileFile(filename: string): Promise<KliveCompilerOutput> {
-    const settingsReader = createSettingsReader(mainStore);
+    const settingsReader = createSettingsReader(this.state);
     try {
-      // --- Obtain configuration info for ZXBC
+      // --- Obtain configuration info for SjasmPlus
       const execPath = settingsReader.readSetting(SJASMP_INSTALL_FOLDER)?.toString();
       if (!execPath || execPath.trim() === "") {
         throw new Error("SjasmPlus executable path is not set, cannot start the compiler.");
@@ -64,8 +72,10 @@ export class SjasmPCompiler implements IKliveCompiler {
         fullpath: "on"
       };
 
-      const state = mainStore.getState();
+      const state = this.state;
+
       const cliManager = createSjasmRunner(
+        state,
         state.project?.folderPath.replaceAll("\\", "/"),
         options,
         [filename]
@@ -166,11 +176,9 @@ export class SjasmPCompiler implements IKliveCompiler {
           // --- Intentionally ignored
         }
       }
-  
     } catch (err) {
       throw err;
     }
-
   }
 
   /**

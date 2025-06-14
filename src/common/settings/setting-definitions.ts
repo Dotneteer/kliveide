@@ -31,7 +31,8 @@ import {
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EMU_KEYBOARD_HEIGHT,
-  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
 
 const settingDefinitions: Setting[] = [
@@ -292,10 +293,18 @@ const settingDefinitions: Setting[] = [
   },
   {
     id: SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-    title: "Qucik Suggestion Delay",
+    title: "Quick Suggestion Delay",
     description: "Delay in milliseconds for quick suggestions.",
     type: "number",
     defaultValue: 100,
+    saveWithIde: true,
+  },
+  {
+    id: SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
+    title: "Allow Background Compile",
+    description: "Enable or disable background compilation in the editor.",
+    type: "boolean",
+    defaultValue: false,
     saveWithIde: true,
   }
 ];
