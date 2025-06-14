@@ -69,7 +69,8 @@ import {
   SETTING_EDITOR_DETECT_INDENTATION,
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
-  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
 
@@ -565,7 +566,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             id: EDITOR_TAB_SIZE,
             label: "Tab Size",
             submenu: editorTabSizeMenu
-          }
+          },
+          { type: "separator" },
+          createBooleanSettingsMenu(SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE)
         ]
       },
       { type: "separator" },

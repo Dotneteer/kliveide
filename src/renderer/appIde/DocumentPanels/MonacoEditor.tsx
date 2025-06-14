@@ -33,7 +33,8 @@ import {
   SETTING_EDITOR_RENDER_WHITESPACE,
   SETTING_EDITOR_TABSIZE,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
-  SETTING_EDITOR_QUICK_SUGGESTION_DELAY
+  SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
@@ -225,6 +226,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   const enableSelectionHighlight = useGlobalSetting(SETTING_EDITOR_SELECTION_HIGHLIGHT);
   const enableOccurrencesHighlight = useGlobalSetting(SETTING_EDITOR_OCCURRENCES_HIGHLIGHT);
   const quickSuggestionDelay = useGlobalSetting(SETTING_EDITOR_QUICK_SUGGESTION_DELAY);
+  const allowBackgroundCompile = useGlobalSetting(SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE);
 
   // --- Background compilation
   const backgroundResult = useSelector((s) => s.compilation.backgroundResult);
@@ -428,42 +430,45 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
   }, [breakpointsVersion, compilation, execState, hubVersion]);
 
   useEffect(() => {
-    console.log("Background compilation result", backgroundResult);
-    
     // Clear previous decorations
     errorWarningDecorations.current?.clear();
-    
-    // Don't proceed if no editor or no background result
-    if (!editor.current || !backgroundResult) {
+
+    // Don't proceed if no editor or no background result or if background compilation is disabled
+    if (!editor.current || !backgroundResult || !allowBackgroundCompile) {
       return;
     }
-    
+
     // Don't proceed if successful compilation or no errors
-    if (backgroundResult.success || !backgroundResult.errors || backgroundResult.errors.length === 0) {
+    if (
+      backgroundResult.success ||
+      !backgroundResult.errors ||
+      backgroundResult.errors.length === 0
+    ) {
       return;
     }
-    
+
     // Get the current file path
     const currentFile = document.node?.projectPath;
     if (!currentFile) return;
-    
-    console.log("Current file:", currentFile, backgroundResult);
-    
+
     // Filter errors for the current file - try different matching approaches
     let fileErrors = backgroundResult.errors.filter((err) => err.filename.endsWith(currentFile));
-    
+
     if (fileErrors.length === 0) {
       return;
     }
-    
+
+    console.log("Errors", fileErrors);
+
     // Create decorations for errors and warnings
-    const decorations = fileErrors.map(err => {
+    const decorations: Decoration[] = [];
+    fileErrors.forEach((err) => {
       // Ensure we have valid line/column information
       const lineNo = err.line || 1;
-      
+
       // Determine startCol - use first non-whitespace character if not defined
       let startCol = err.startColumn;
-      if (!startCol && editor.current) {
+      if (editor.current) {
         const model = editor.current.getModel();
         if (model && lineNo <= model.getLineCount()) {
           const lineContent = model.getLineContent(lineNo);
@@ -477,13 +482,13 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         } else {
           startCol = 1; // Default fallback
         }
-      } else if (!startCol) {
+      } else {
         startCol = 1; // Default if no editor or model
       }
-      
+
       // Calculate endCol from the current line's length if not provided
       let endCol = err.endColumn;
-      if (!endCol && editor.current) {
+      if (editor.current) {
         const model = editor.current.getModel();
         if (model && lineNo <= model.getLineCount()) {
           // Use the line length as the end column, or startCol + 10 as fallback
@@ -492,9 +497,9 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           endCol = startCol + 10; // Default fallback
         }
       }
-      
+
       // Create the decoration
-      return {
+      decorations.push({
         range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
         options: {
           className: err.isWarning ? styles.warningDecoration : styles.errorDecoration,
@@ -504,15 +509,21 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           },
           isWholeLine: false
         }
-      };
+      });
     });
-    
+
     // Apply decorations
     if (decorations.length > 0) {
       errorWarningDecorations.current = editor.current.createDecorationsCollection(decorations);
-      console.log(`Applied ${decorations.length} error/warning decorations`);
+      console.log("Decorations applied:", decorations);
     }
-  }, [backgroundResult, document.node?.projectPath]);
+  }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile]);
+
+  useEffect(() => {
+    if (store && mainApi && allowBackgroundCompile) {
+      startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+    }
+  }, [store, mainApi, allowBackgroundCompile]);
 
   // --- Initializes the editor when mounted
   const onMount = (ed: monacoEditor.editor.IStandaloneCodeEditor, _: typeof monacoEditor): void => {
@@ -623,11 +634,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     mounted.current = true;
 
     // --- Start background compilation
-    startBackgroundCompile(store, mainApi);
+    startBackgroundCompile(store, mainApi, allowBackgroundCompile);
 
     // --- Show breakpoinst and other decorations when initially displaying the editor
     (async () => {
-    startBackgroundCompile(store, mainApi);
       const bps = await refreshBreakpoints();
       await refreshCurrentBreakpoint(bps);
     })();
@@ -782,7 +792,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
     );
 
     // --- Start background compilation
-    startBackgroundCompile(store, mainApi);
+    startBackgroundCompile(store, mainApi, allowBackgroundCompile);
   };
 
   // --- render the editor when monaco has been initialized
@@ -1214,8 +1224,14 @@ function createCurrentMacroInvocationBreakpointDecoration(
 // --- Compile the current project's code
 async function startBackgroundCompile(
   store: Store<AppState>,
-  mainApi: ReturnType<typeof createMainApi>
+  mainApi: ReturnType<typeof createMainApi>,
+  allowCompile: boolean = true
 ): Promise<boolean> {
+  // --- Check if background compilation is allowed
+  if (!allowCompile) {
+    return false;
+  }
+
   // --- Check if we have a build root to compile
   const state = store.getState();
   if (!state.project?.isKliveProject) {
@@ -1231,6 +1247,5 @@ async function startBackgroundCompile(
   // --- Compile the build root
   store.dispatch(startBackgroundCompileAction());
   mainApi.startBackgroundCompile(fullPath, language);
-  console.log("Compiling", fullPath, language);
   return true;
 }

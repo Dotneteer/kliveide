@@ -5550,7 +5550,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const lines = this._macroInvocations
         .map((mi) => (mi as unknown as Z80AssemblyLine).line)
         .join(", ");
-      errorText = `(from macro invocation through ${lines})` + errorText;
+      errorText = `(from macro invocation through ${lines}) ` + errorText;
     }
 
     const errorInfo = new AssemblerErrorInfo(

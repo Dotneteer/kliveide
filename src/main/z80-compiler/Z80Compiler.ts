@@ -1,15 +1,22 @@
-import type { CompilerOptions, IKliveCompiler, KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import type {
+  CompilerOptions,
+  IKliveCompiler,
+  KliveCompilerOutput
+} from "@abstractions/CompilerInfo";
 
 import { Z80CompilerService } from "./z80-compiler-service";
 import { InputStream } from "./input-stream";
 import { TokenStream } from "./token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { Node } from "@main/z80-compiler/assembler-tree-nodes";
+import { AppState } from "@common/state/AppState";
 
 /**
  * Wraps the built-in Klive Z80 Compiler
  */
 export class Z80Compiler implements IKliveCompiler {
+  private state: AppState;
+
   /**
    * The unique ID of the compiler
    */
@@ -54,6 +61,14 @@ export class Z80Compiler implements IKliveCompiler {
     }
     const parsedLine = parsed.assemblyLines[0];
     return parsedLine && !restrictedNodes.includes(parsedLine.type);
+  }
+
+  /**
+   * Optionally forwards the current state to the compiler
+   * @param state State to forward to the compiler
+   */
+  setAppState(state: AppState): void {
+    this.state = state;
   }
 }
 

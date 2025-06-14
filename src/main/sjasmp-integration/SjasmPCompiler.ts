@@ -42,7 +42,7 @@ export class SjasmPCompiler implements IKliveCompiler {
    */
   readonly providesKliveOutput = true;
 
-    /**
+  /**
    * Optionally forwards the current state to the compiler
    * @param state State to forward to the compiler
    */
@@ -73,7 +73,7 @@ export class SjasmPCompiler implements IKliveCompiler {
       };
 
       const state = this.state;
-      
+
       const cliManager = createSjasmRunner(
         state,
         state.project?.folderPath.replaceAll("\\", "/"),
