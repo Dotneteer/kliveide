@@ -1,11 +1,15 @@
 import fs from "fs";
 
-import type { BinarySegment, IKliveCompiler, InjectableOutput, KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import type {
+  BinarySegment,
+  IKliveCompiler,
+  InjectableOutput,
+  KliveCompilerOutput
+} from "@abstractions/CompilerInfo";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
-import { mainStore } from "../main-store";
 import {
   ZXBC_DEBUG_ARRAY,
   ZXBC_DEBUG_MEMORY,
@@ -22,12 +26,15 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
+import { AppState } from "@common/state/AppState";
 import { CliRunner } from "@main/cli-integration/CliRunner";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler
  */
 export class ZxBasicCompiler implements IKliveCompiler {
+  private state: AppState;
+
   /**
    * The unique ID of the compiler
    */
@@ -51,7 +58,7 @@ export class ZxBasicCompiler implements IKliveCompiler {
    * @returns Output of the compilation
    */
   async compileFile(filename: string): Promise<KliveCompilerOutput> {
-    const settingsReader = createSettingsReader(mainStore.getState());
+    const settingsReader = createSettingsReader(this.state);
     try {
       // --- Obtain configuration info for ZXBC
       const execPath = settingsReader.readSetting(ZXBC_EXECUTABLE_PATH)?.toString();
@@ -95,7 +102,7 @@ export class ZxBasicCompiler implements IKliveCompiler {
 
       // --- Done.
       return {
-        traceOutput: result.traceOutput,
+        traceOutput: null, //result.traceOutput,
         errors: [],
         injectOptions: { subroutine: true },
         segments: [segment],
@@ -117,7 +124,7 @@ export class ZxBasicCompiler implements IKliveCompiler {
       outputFile: string,
       labelFile: string
     ): Promise<string[]> {
-      const settingsReader = createSettingsReader(mainStore.getState());
+      const settingsReader = createSettingsReader(this.state);
       const args: string[] = [inputFile, "--output", outputFile, "--mmap", labelFile];
       const arrayBaseOne = !!settingsReader.readSetting(ZXBC_ONE_AS_ARRAY_BASE_INDEX);
       if (arrayBaseOne) {
@@ -173,6 +180,13 @@ export class ZxBasicCompiler implements IKliveCompiler {
     return false;
   }
 
+    /**
+   * Optionally forwards the current state to the compiler
+   * @param state State to forward to the compiler
+   */
+  setAppState(state: AppState): void {
+    this.state = state;
+  }
 
   /**
    * Gets the error filter description

@@ -23,7 +23,7 @@ import {
   resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
-import { AppSettings, appSettings, KLIVE_HOME_FOLDER, saveAppSettings } from "./settings";
+import { AppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
@@ -54,10 +54,10 @@ import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { getSdCardHandler } from "./machine-menus/zx-next-menus";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
-import { setSettingValue } from "./settings-utils";
+import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
 
-const compilerRegistry = createCompilerRegistry(mainStore.getState());
+const compilerRegistry = createCompilerRegistry();
 
 class MainMessageProcessor {
   /**
@@ -508,7 +508,7 @@ class MainMessageProcessor {
     // --- We start the background compilation in a fire-and-forget way.
     // --- The result will be sent to the store by the worker
     // --- and the store will notify the UI.
-    runBackgroundCompileWorker(path.join(app.getPath("home"), KLIVE_HOME_FOLDER), {
+    runBackgroundCompileWorker({
       state: mainStore.getState(),
       filePath: filename,
       language,

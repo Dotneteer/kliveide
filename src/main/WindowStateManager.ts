@@ -1,9 +1,10 @@
+import { WindowState } from "@abstractions/WindowState";
 import { BrowserWindow, Rectangle } from "electron";
 import { screen } from "electron";
 
 const EVENT_HANDLING_DELAY = 100;
 
-export interface IWindowStateManager {
+interface IWindowStateManager {
   get x(): number;
   get y(): number;
   get width(): number;
@@ -17,7 +18,7 @@ export interface IWindowStateManager {
   resetStateToDefault: () => void;
 }
 
-export type ManageOptions = {
+type ManageOptions = {
   defaultWidth?: number;
   defaultHeight?: number;
   maximize?: boolean;
@@ -25,17 +26,7 @@ export type ManageOptions = {
   stateSaver?: (state: WindowState) => void;
 };
 
-export type WindowState = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  isMaximized: boolean;
-  isFullScreen: boolean;
-  displayBounds: Rectangle;
-};
-
-export function createWindowStateManager (
+export function createWindowStateManager(
   storedState: WindowState,
   options: ManageOptions
 ): IWindowStateManager {
@@ -54,25 +45,25 @@ export function createWindowStateManager (
   };
 
   return {
-    get x (): number {
+    get x(): number {
       return state.x;
     },
-    get y (): number {
+    get y(): number {
       return state.y;
     },
-    get width (): number {
+    get width(): number {
       return state.width;
     },
-    get height (): number {
+    get height(): number {
       return state.height;
     },
-    get displayBounds (): Rectangle {
+    get displayBounds(): Rectangle {
       return state.displayBounds;
     },
-    get isMaximized (): boolean {
+    get isMaximized(): boolean {
       return state.isMaximized;
     },
-    get isFullScreen (): boolean {
+    get isFullScreen(): boolean {
       return state.isFullScreen;
     },
     saveState,
@@ -82,14 +73,12 @@ export function createWindowStateManager (
   };
 
   // --- Tests if the window is in normal state
-  function isNormal (win: BrowserWindow) {
-    return (
-      !win.isMaximized() && !win.isMinimized() && !win.isFullScreen()
-    );
+  function isNormal(win: BrowserWindow) {
+    return !win.isMaximized() && !win.isMinimized() && !win.isFullScreen();
   }
 
   // --- Tests if the current state has bounds
-  function hasBounds (): boolean {
+  function hasBounds(): boolean {
     return (
       state &&
       Number.isInteger(state.x) &&
@@ -102,7 +91,7 @@ export function createWindowStateManager (
   }
 
   // --- Resets the screen state to its default values
-  function resetStateToDefault (): void {
+  function resetStateToDefault(): void {
     const displayBounds = screen.getPrimaryDisplay().bounds;
 
     // Reset state to default values on the primary display
@@ -118,7 +107,7 @@ export function createWindowStateManager (
   }
 
   // --- Tests if the current window is within the specified bounds
-  function windowWithinBounds (bounds: Rectangle): boolean {
+  function windowWithinBounds(bounds: Rectangle): boolean {
     return (
       state.x >= bounds.x &&
       state.y >= bounds.y &&
@@ -128,9 +117,8 @@ export function createWindowStateManager (
   }
 
   // --- Do not allow the window an invalid state
-  function validateState () {
-    const isValid =
-      state && (hasBounds() || state.isMaximized || state.isFullScreen);
+  function validateState() {
+    const isValid = state && (hasBounds() || state.isMaximized || state.isFullScreen);
     if (!isValid) {
       state = null;
       return;
@@ -142,7 +130,7 @@ export function createWindowStateManager (
   }
 
   // --- Update the managed windiw's state
-  function updateState (win?: BrowserWindow): void {
+  function updateState(win?: BrowserWindow): void {
     win ||= winRef;
     if (!win) {
       return;
@@ -162,7 +150,7 @@ export function createWindowStateManager (
     } catch (err) {}
   }
 
-  function saveState (win?: BrowserWindow) {
+  function saveState(win?: BrowserWindow) {
     // --- Update window state
     updateState(win);
 
@@ -175,8 +163,8 @@ export function createWindowStateManager (
   }
 
   // --- Ensure the window is visible
-  function ensureWindowVisibleOnSomeDisplay () {
-    const visible = screen.getAllDisplays().some(display => {
+  function ensureWindowVisibleOnSomeDisplay() {
+    const visible = screen.getAllDisplays().some((display) => {
       return windowWithinBounds(display.bounds);
     });
 
@@ -187,22 +175,22 @@ export function createWindowStateManager (
   }
 
   // --- Handle window state changes
-  function stateChangeHandler () {
+  function stateChangeHandler() {
     clearTimeout(stateChangeTimer);
     stateChangeTimer = setTimeout(updateState, EVENT_HANDLING_DELAY);
   }
 
-  function closeHandler () {
+  function closeHandler() {
     updateState();
   }
 
-  function closedHandler () {
+  function closedHandler() {
     // Unregister listeners and save state
     unmanage();
     saveState();
   }
 
-  function manage (win: BrowserWindow) {
+  function manage(win: BrowserWindow) {
     if (options.maximize && state.isMaximized) {
       win.maximize();
     }
@@ -216,7 +204,7 @@ export function createWindowStateManager (
     winRef = win;
   }
 
-  function unmanage () {
+  function unmanage() {
     if (winRef) {
       winRef.removeListener("resize", stateChangeHandler);
       winRef.removeListener("move", stateChangeHandler);

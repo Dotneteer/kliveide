@@ -26,21 +26,15 @@ export type CompilationCompleted = {
 };
 
 export function runBackgroundCompileWorker(
-  workerFilePath: string,
   input: CompilerWorkerData
 ): Promise<CompilationCompleted> {
   return new Promise((resolve, reject) => {
-    const workerPath = resolveWorkerPath(workerFilePath); // match the actual filename
+    const workerPath = resolveWorkerPath(); // match the actual filename
     const worker = new Worker(workerPath, {
       workerData: input
     });
 
-    const errorFile = "/Users/dotneteer/klive-error.txt";
-    fs.writeFileSync(errorFile, `Worker created with path: ${workerPath}\n`);
-
     worker.on("message", (result: KliveCompilerOutput) => {
-      const errorFile = "/Users/dotneteer/klive-error.txt";
-      fs.writeFileSync(errorFile, `Worker message arrived.`);
       const backgroundResult =
         (result.errors ?? []).length > 0
           ? {
@@ -56,8 +50,6 @@ export function runBackgroundCompileWorker(
     });
 
     worker.on("error", (err) => {
-      const errorFile = "/Users/dotneteer/klive-error.txt";
-      fs.writeFileSync(errorFile, `Worker error: ${JSON.stringify(err)}`);
       mainStore.dispatch(
         endBackgroundCompileAction({
           success: false,
@@ -86,7 +78,7 @@ export function runBackgroundCompileWorker(
  * @param workerPath The relative path to the worker script (without extension)
  * @returns The absolute path to the worker script file
  */
-function resolveWorkerPath(workerPath: string): string {
+function resolveWorkerPath(): string {
   // __dirname is the directory of this file (runWorker.ts)
   // Workers are typically in the same directory or a subdirectory
 
@@ -96,8 +88,6 @@ function resolveWorkerPath(workerPath: string): string {
   const tsPath = path.resolve(__dirname, `${COMPILER_WORKER_FILE}.ts`);
   if (fs.existsSync(tsPath)) return tsPath;
   jsPath = path.resolve(__dirname, `${COMPILER_WORKER_FILE}.js`);
-  const errorFile = "/Users/dotneteer/klive-error.txt";
-  fs.writeFileSync(errorFile, `Worker path: ${jsPath}\n`);
   if (fs.existsSync(jsPath)) return jsPath;
 
   throw new Error(`Worker script not found: ${jsPath} or ${tsPath}`);

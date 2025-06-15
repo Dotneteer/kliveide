@@ -1,5 +1,4 @@
 import type { IKliveCompiler } from "@abstractions/CompilerInfo";
-import { AppState } from "@common/state/AppState";
 import { SjasmPCompiler } from "@main/sjasmp-integration/SjasmPCompiler";
 import { Z80Compiler } from "@main/z80-compiler/Z80Compiler";
 import { ZxBasicCompiler } from "@main/zxb-integration/ZxBasicCompiler";
@@ -24,10 +23,10 @@ class CompilerRegistry {
   }
 }
 
-export function createCompilerRegistry(state: AppState): CompilerRegistry {
+export function createCompilerRegistry(): CompilerRegistry {
   const registry = new CompilerRegistry();
   registry.registerCompiler(new Z80Compiler());
   registry.registerCompiler(new ZxBasicCompiler());
-  registry.registerCompiler(new SjasmPCompiler(state));
+  registry.registerCompiler(new SjasmPCompiler());
   return registry;
 }

@@ -19,7 +19,6 @@
 import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
 
 import fs from "fs";
-import path from "path";
 import { release } from "os";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
@@ -57,7 +56,6 @@ import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
-import { appSettings, KLIVE_HOME_FOLDER, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
@@ -65,8 +63,7 @@ import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
-import { getSettingValue } from "./settings-utils";
-import { COMPILER_WORKER_FILE } from "./compiler-integration/runWorker";
+import { appSettings, getSettingValue, loadAppSettings, saveAppSettings } from "./settings-utils";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display

@@ -26,7 +26,6 @@ import {
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import { appSettings, saveAppSettings } from "./settings";
 import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
 import {
   NEW_PROJECT_DIALOG,
@@ -44,7 +43,7 @@ import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import { getSettingDefinition, getSettingValue, setSettingValue } from "./settings-utils";
+import { appSettings, getSettingDefinition, getSettingValue, saveAppSettings, setSettingValue } from "./settings-utils";
 import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,

@@ -73,7 +73,6 @@ export class SjasmPCompiler implements IKliveCompiler {
       };
 
       const state = this.state;
-
       const cliManager = createSjasmRunner(
         state,
         state.project?.folderPath.replaceAll("\\", "/"),

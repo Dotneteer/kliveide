@@ -6,7 +6,7 @@ import { CompilerWorkerData } from "./runWorker";
 import { AppState } from "@common/state/AppState";
 
 async function compileFile(state: AppState, filename: string, language: string, options?: CompilerOptions) {
-  const registry = createCompilerRegistry(state);
+  const registry = createCompilerRegistry();
   const compiler = registry.getCompiler(language);
   if (!compiler) {
     throw new Error(
@@ -14,7 +14,6 @@ async function compileFile(state: AppState, filename: string, language: string, 
         "Are you sure you use the right file extension?"
     );
   }
-  // Add a timeout: reject if not finished in 5 seconds
 
   compiler?.setAppState(state);
   const result = (await compiler.compileFile(filename, options)) as Promise<KliveCompilerOutput>;
