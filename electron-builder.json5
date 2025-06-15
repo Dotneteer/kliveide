@@ -6,6 +6,10 @@
   productName: "Klive IDE",
   copyright: "Copyright © 2019-2023 ${author}",
   asar: true,
+  asarUnpack: [
+    "dist-electron/compilerWorker.js",
+    "dist-electron/compilerWorker.js.map"
+  ],
   directories: {
     output: "release/${version}",
     buildResources: "src/electron/resources",

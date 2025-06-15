@@ -5,8 +5,8 @@ import type { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
 
 import { app } from "electron";
 import { getKliveProjectStructure } from "./projects";
-import { appSettings } from "./settings";
 import { pathStartsWith } from "@common/utils/path-utils";
+import { appSettings } from "./settings-utils";
 
 type DirectoryContentFilter = (p: string) => boolean;
 

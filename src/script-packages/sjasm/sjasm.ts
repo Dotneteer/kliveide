@@ -7,7 +7,6 @@ import {
   ErrorFilterDescriptor,
   OptionResult
 } from "@main/cli-integration/CliRunner";
-import { mainStore } from "@main/main-store";
 import { SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
 import { AppState } from "@common/state/AppState";
 

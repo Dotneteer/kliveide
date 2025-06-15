@@ -19,7 +19,7 @@ import {
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
-import { ExportDialogSettings, KLIVE_HOME_FOLDER, appSettings, saveAppSettings } from "./settings";
+import { ExportDialogSettings, KLIVE_HOME_FOLDER } from "./settings";
 import {
   PROJECT_TEMPLATES,
   PROJECT_FILE,
@@ -36,7 +36,7 @@ import { getModelConfig } from "@common/machines/machine-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
 import { KliveGlobalSettings } from "@common/settings/setting-definitions";
-import { getSettingDefinition } from "./settings-utils";
+import { appSettings, getSettingDefinition, saveAppSettings } from "./settings-utils";
 import { get, set } from "lodash";
 
 type ProjectCreationResult = {
@@ -213,7 +213,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
  * @param source Source file
  * @param target Target file
  */
-export function copyFileSync(source: string, target: string) {
+function copyFileSync(source: string, target: string) {
   var targetFile = target;
   if (fs.existsSync(target)) {
     if (fs.lstatSync(target).isDirectory()) {
@@ -228,7 +228,7 @@ export function copyFileSync(source: string, target: string) {
  * @param source Source folder
  * @param target Target folder
  */
-export function copyFolderSync(source: string, target: string, copyRoot = true) {
+function copyFolderSync(source: string, target: string, copyRoot = true) {
   var files = [];
 
   // --- Check if folder needs to be created or integrated
@@ -367,7 +367,7 @@ export function setRecentProjects(projects: string[]): void {
 }
 
 // --- Add a recent project
-export function addRecentProject(projectFolder: string): void {
+function addRecentProject(projectFolder: string): void {
   projectFolder = projectFolder.replace(/\\/g, "/");
   if (recentProjects.includes(projectFolder)) {
     recentProjects = recentProjects.filter((p) => p !== projectFolder);

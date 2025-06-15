@@ -1,6 +1,5 @@
 import { resolve } from "path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
-
 import react from "@vitejs/plugin-react";
 
 const alias = {
@@ -25,7 +24,24 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, "src/main/index.ts"),
-          compileWorker: resolve(__dirname, "src/main/compiler-integration/compilerWorker.ts") // ✅
+          compilerWorker: resolve(__dirname, "src/main/compiler-integration/compilerWorker.ts") // Updated to match actual filename
+        },
+        // Created separate entry-specific externals
+        external: (id, parentId) => {
+          // Only externalize execa for the compiler worker
+          if (id === 'execa') {
+            return parentId ? parentId.includes('compilerWorker') : false;
+          }
+          
+          // Default electron-vite externalization behavior
+          const electron = ['electron', 'electron/main', 'electron/common', 'electron/renderer'];
+          if (electron.includes(id)) return true;
+          
+          // Add any other default externals here
+          const patterns = [
+            /^node:.*/,  // Node.js built-ins
+          ];
+          return patterns.some(pattern => pattern.test(id));
         }
       }
     }

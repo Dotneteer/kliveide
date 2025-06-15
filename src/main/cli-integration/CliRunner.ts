@@ -1,6 +1,5 @@
-import type { AssemblerErrorInfo, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
-
 import { ExecaSyncError, execa } from "execa";
+import type { AssemblerErrorInfo, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
 
 /**
  * This class is responsible for running the CLI commands that are passed to it.
@@ -58,7 +57,7 @@ export class CliRunner {
       };
     } catch (error: any) {
       if ("exitCode" in error) {
-        let errorInfo = error as ExecaSyncError<string>;
+        let errorInfo = error as any;
         const traceOutput = [`Executing ${errorInfo.command}`];
         const hasErrorOutput = this.errorDetectorFn(errorInfo);
         if (!hasErrorOutput) {
@@ -87,7 +86,7 @@ export class CliRunner {
   }
 
   // --- Default error detector
-  private errorDetector(error: ExecaSyncError<string>): boolean {
+  private errorDetector(error: ExecaSyncError): boolean {
     return !!(error.failed || error.exitCode !== 0 || error.stderr);
   }
 
@@ -130,7 +129,7 @@ export class CliRunner {
       : null;
   }
 
-  private errorLineSplitter(error: ExecaSyncError<string>): string[] {
+  private errorLineSplitter(error: ExecaSyncError): string[] {
     // Normalize line endings to '\n' for consistent splitting
     const normalizedOutput = (error.stdout + "\n" + error.stderr).replace(/\r\n/g, "\n");
     return normalizedOutput.split("\n");
@@ -193,12 +192,12 @@ export type RunnerOptions = {
 /**
  * Represents a function that can detect error output
  */
-export type ErrorOutputDetectorFn = (err: ExecaSyncError<string>) => boolean;
+export type ErrorOutputDetectorFn = (err: any) => boolean;
 
 /**
  * Represents a function that can split error output into lines
  */
-export type ErrorLineSplitterFn = (err: ExecaSyncError<string>) => string[];
+export type ErrorLineSplitterFn = (err: any) => string[];
 
 /**
  * Represents a filter descriptor for an error output line
@@ -221,11 +220,11 @@ export type OptionResult = {
   errors: Record<string, string[]>;
 };
 
-export type CompilerResult =  SimpleAssemblerOutput & {
+export type CompilerResult = SimpleAssemblerOutput & {
   outFile?: string;
   contents?: Uint8Array;
   errorCount?: number;
-}
+};
 
 export type CompilerFunction = (
   filename: string,

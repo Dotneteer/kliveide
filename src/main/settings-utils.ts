@@ -1,9 +1,12 @@
+import path from "path";
+import fs from "fs";
 import { Setting } from "@abstractions/Setting";
 import { mainStore } from "@main/main-store";
 import { get } from "lodash";
 import { KliveGlobalSettings } from "../common/settings/setting-definitions";
-import { saveAppSettings } from "./settings";
-import { saveKliveProject } from "./projects";
+import { getRecentProjects, saveKliveProject, setRecentProjects } from "./projects";
+import { app } from "electron";
+import { AppSettings, KLIVE_HOME_FOLDER, SETTINGS_FILE_NAME } from "./settings";
 
 /**
  * Get the specified seeting definition.
@@ -90,4 +93,54 @@ export function setSettingValue(id: string, value: any): void {
   if (setting.saveWithProject) {
     saveKliveProject();
   }
+}
+
+export let appSettings: AppSettings = {};
+
+export function saveAppSettings(): void {
+  const filename = getSettingsFilePath();
+  const filePath = path.dirname(filename);
+  if (!fs.existsSync(filePath)) {
+    fs.mkdirSync(filePath);
+  }
+
+  // --- Do not refresh state after the final save
+  // --- Get settings from the current state
+  const state = mainStore.getState();
+  appSettings.startScreenDisplayed = state.startScreenDisplayed;
+  appSettings.theme = state.theme;
+  appSettings.globalSettings = state.globalSettings;
+  appSettings.ideSettings = state.ideSettings;
+  appSettings.machineId = state.emulatorState?.machineId;
+  appSettings.modelId = state.emulatorState?.modelId;
+  appSettings.config = state.emulatorState?.config;
+  appSettings.machineSpecific = state.emulatorState?.machineSpecific;
+  appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
+  appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
+  appSettings.media = state.media ?? {};
+  appSettings.keyMappingFile = state.keyMappingFile;
+  appSettings.project = { folderPath: state.project?.folderPath };
+  appSettings.recentProjects = getRecentProjects();
+
+  // --- Save to the settings file
+  fs.writeFileSync(getSettingsFilePath(), JSON.stringify(appSettings, null, 2), {
+    encoding: "utf8",
+    flag: "w"
+  });
+}
+
+export function loadAppSettings(): void {
+  try {
+    const contents = fs.readFileSync(getSettingsFilePath(), "utf8");
+    appSettings = JSON.parse(contents) as AppSettings;
+
+    // --- Apply settings to the current main-only state
+    setRecentProjects(appSettings.recentProjects ?? []);
+  } catch {
+    appSettings = {};
+  }
+}
+
+function getSettingsFilePath(): string {
+  return path.join(app.getPath("home"), KLIVE_HOME_FOLDER, SETTINGS_FILE_NAME);
 }

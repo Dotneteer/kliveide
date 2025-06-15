@@ -23,7 +23,7 @@ import {
   resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
-import { AppSettings, appSettings, saveAppSettings } from "./settings";
+import { AppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
@@ -54,10 +54,10 @@ import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { getSdCardHandler } from "./machine-menus/zx-next-menus";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
-import { setSettingValue } from "./settings-utils";
+import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
 
-const compilerRegistry = createCompilerRegistry(mainStore.getState());
+const compilerRegistry = createCompilerRegistry();
 
 class MainMessageProcessor {
   /**
@@ -498,7 +498,7 @@ class MainMessageProcessor {
   async startBackgroundCompile(
     filename: string,
     language: string,
-    options?: CompilerOptions,
+    options?: CompilerOptions
   ): Promise<boolean> {
     // --- Do not strat,if already in progress
     if (mainStore.getState().compilation?.backgroundInProgress) {
@@ -512,7 +512,7 @@ class MainMessageProcessor {
       state: mainStore.getState(),
       filePath: filename,
       language,
-      options,
+      options
     });
     return true;
   }

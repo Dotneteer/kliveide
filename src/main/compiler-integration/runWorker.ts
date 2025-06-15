@@ -1,15 +1,23 @@
 import { Worker } from "worker_threads";
 import path from "path";
-import { AssemblerErrorInfo, CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import fs from "fs";
+import {
+  AssemblerErrorInfo,
+  CompilerOptions,
+  KliveCompilerOutput
+} from "@abstractions/CompilerInfo";
 import { mainStore } from "@main/main-store";
 import { endBackgroundCompileAction } from "@common/state/actions";
 import { AppState } from "@common/state/AppState";
+import { __DARWIN__ } from "@main/electron-utils";
+
+export const COMPILER_WORKER_FILE = "compilerWorker";
 
 export type CompilerWorkerData = {
   filePath: string;
   language: string;
   options?: CompilerOptions;
-  state: AppState
+  state: AppState;
 };
 
 export type CompilationCompleted = {
@@ -21,8 +29,7 @@ export function runBackgroundCompileWorker(
   input: CompilerWorkerData
 ): Promise<CompilationCompleted> {
   return new Promise((resolve, reject) => {
-    const workerPath = resolveWorkerPath("./compileWorker"); // no extension needed
-
+    const workerPath = resolveWorkerPath(); // match the actual filename
     const worker = new Worker(workerPath, {
       workerData: input
     });
@@ -68,17 +75,20 @@ export function runBackgroundCompileWorker(
 
 /**
  * Resolves the absolute path to a worker script, handling platform-specific quirks.
- * @param relativePath The relative path to the worker script (without extension)
+ * @param workerPath The relative path to the worker script (without extension)
  * @returns The absolute path to the worker script file
  */
-function resolveWorkerPath(relativePath: string): string {
+function resolveWorkerPath(): string {
   // __dirname is the directory of this file (runWorker.ts)
   // Workers are typically in the same directory or a subdirectory
-  // Try .js first (for production), then .ts (for dev)
-  const jsPath = path.resolve(__dirname, `${relativePath}.js`);
-  const tsPath = path.resolve(__dirname, `${relativePath}.ts`);
-  const fs = require("fs");
+
+  // For production build
+  let jsPath = path.resolve(__dirname, `${COMPILER_WORKER_FILE}.js`);
   if (fs.existsSync(jsPath)) return jsPath;
+  const tsPath = path.resolve(__dirname, `${COMPILER_WORKER_FILE}.ts`);
   if (fs.existsSync(tsPath)) return tsPath;
+  jsPath = path.resolve(__dirname, `${COMPILER_WORKER_FILE}.js`);
+  if (fs.existsSync(jsPath)) return jsPath;
+
   throw new Error(`Worker script not found: ${jsPath} or ${tsPath}`);
 }

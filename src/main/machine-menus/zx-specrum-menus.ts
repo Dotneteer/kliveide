@@ -12,12 +12,12 @@ import { BASIC_PANEL_ID } from "@state/common-ids";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { logEmuEvent } from "@main/registeredMachines";
-import { appSettings } from "@main/settings";
 import { dialog, BrowserWindow, app } from "electron";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 import { createBooleanSettingsMenu } from "@main/app-menu";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
+import { appSettings } from "@main/settings-utils";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 
