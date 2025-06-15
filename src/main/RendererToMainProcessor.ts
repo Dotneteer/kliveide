@@ -23,7 +23,7 @@ import {
   resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
-import { AppSettings, appSettings, saveAppSettings } from "./settings";
+import { AppSettings, appSettings, KLIVE_HOME_FOLDER, saveAppSettings } from "./settings";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
@@ -498,7 +498,7 @@ class MainMessageProcessor {
   async startBackgroundCompile(
     filename: string,
     language: string,
-    options?: CompilerOptions,
+    options?: CompilerOptions
   ): Promise<boolean> {
     // --- Do not strat,if already in progress
     if (mainStore.getState().compilation?.backgroundInProgress) {
@@ -508,11 +508,11 @@ class MainMessageProcessor {
     // --- We start the background compilation in a fire-and-forget way.
     // --- The result will be sent to the store by the worker
     // --- and the store will notify the UI.
-    runBackgroundCompileWorker({
+    runBackgroundCompileWorker(path.join(app.getPath("home"), KLIVE_HOME_FOLDER), {
       state: mainStore.getState(),
       filePath: filename,
       language,
-      options,
+      options
     });
     return true;
   }

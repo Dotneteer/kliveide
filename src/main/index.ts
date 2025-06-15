@@ -19,6 +19,7 @@
 import { app, shell, BrowserWindow, ipcMain, Menu } from "electron";
 
 import fs from "fs";
+import path from "path";
 import { release } from "os";
 import { join } from "path";
 import { is } from "@electron-toolkit/utils";
@@ -56,7 +57,7 @@ import { setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
-import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
+import { appSettings, KLIVE_HOME_FOLDER, loadAppSettings, saveAppSettings } from "./settings";
 import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
@@ -65,6 +66,7 @@ import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import { getSettingValue } from "./settings-utils";
+import { COMPILER_WORKER_FILE } from "./compiler-integration/runWorker";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -98,6 +100,38 @@ const settingsReader = createSettingsReader(mainStore.getState());
 const allowDevTools = !!settingsReader.readSetting("devTools.allow");
 const displayIdeDevTools = !!settingsReader.readSetting("devTools.ide") && allowDevTools;
 const displayEmuDevTools = !!settingsReader.readSetting("devTools.emu") && allowDevTools;
+
+// --- Copy workers to the public Klive folder
+// const workerDestFolder = path.join(app.getPath("home"), KLIVE_HOME_FOLDER);
+// if (!fs.existsSync(workerDestFolder)) {
+//   fs.mkdirSync(workerDestFolder, { recursive: true });
+// }
+// const workerFile = path.join(workerDestFolder, COMPILER_WORKER_FILE + ".js");
+// if (fs.existsSync(workerFile)) {
+//   fs.unlinkSync(workerFile); // Remove the file if it exists
+// }
+// // --- Copy the Worker file from the public resources
+// const sourceWorkerFile = path.join(process.env.PUBLIC, "workers", COMPILER_WORKER_FILE + ".js");
+// if (fs.existsSync(sourceWorkerFile) && fs.statSync(sourceWorkerFile).isFile()) {
+//   fs.copyFileSync(sourceWorkerFile, workerFile);
+// }
+
+// --- Remove the chunck folder, if it exists
+// const chunkFolder = path.join(workerDestFolder, "chunks");
+// if (fs.existsSync(chunkFolder) && fs.statSync(chunkFolder).isDirectory()) {
+//   fs.rmSync(chunkFolder, { recursive: true, force: true });
+// }
+// const sourceChunksFolder = path.join(process.env.PUBLIC, "workers", "chunks");
+// if (fs.existsSync(sourceChunksFolder) && fs.statSync(sourceChunksFolder).isDirectory()) {
+//   // --- Copy all files from the source chunks folder
+//   fs.readdirSync(sourceChunksFolder).forEach((file) => {
+//     const sourceFile = path.join(sourceChunksFolder, file);
+//     const destFile = path.join(workerDestFolder, "chunks", file);
+//     if (fs.statSync(sourceFile).isFile()) {
+//       fs.copyFileSync(sourceFile, destFile);
+//     }
+//   });
+// }
 
 // --- Hold references to the renderer windows
 let ideWindow: BrowserWindow | null = null;
