@@ -1,4 +1,3 @@
-import fs from "fs";
 import { ExecaSyncError, execa } from "execa";
 import type { AssemblerErrorInfo, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
 
@@ -87,7 +86,7 @@ export class CliRunner {
   }
 
   // --- Default error detector
-  private errorDetector(error: any): boolean {
+  private errorDetector(error: ExecaSyncError): boolean {
     return !!(error.failed || error.exitCode !== 0 || error.stderr);
   }
 
@@ -130,7 +129,7 @@ export class CliRunner {
       : null;
   }
 
-  private errorLineSplitter(error: any): string[] {
+  private errorLineSplitter(error: ExecaSyncError): string[] {
     // Normalize line endings to '\n' for consistent splitting
     const normalizedOutput = (error.stdout + "\n" + error.stderr).replace(/\r\n/g, "\n");
     return normalizedOutput.split("\n");

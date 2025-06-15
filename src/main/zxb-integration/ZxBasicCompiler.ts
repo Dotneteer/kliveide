@@ -180,7 +180,7 @@ export class ZxBasicCompiler implements IKliveCompiler {
     return false;
   }
 
-    /**
+  /**
    * Optionally forwards the current state to the compiler
    * @param state State to forward to the compiler
    */

@@ -1232,8 +1232,6 @@ async function startBackgroundCompile(
     return false;
   }
 
-  console.log("Starting background compilation...");
-
   // --- Check if we have a build root to compile
   const state = store.getState();
   if (!state.project?.isKliveProject) {
