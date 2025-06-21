@@ -9,32 +9,27 @@ const MAX_STEP_OUT_STACK_SIZE = 256;
  * This class implements the emulation of the Z80 CPU
  */
 export class Z80Cpu implements IZ80Cpu {
-  // --- Register variable
+  // --- Register variables using TypedArrays
   private _regBuffer = new ArrayBuffer(16);
-  private _viewA = new DataView(this._regBuffer, 0, 1);
-  private _viewF = new DataView(this._regBuffer, 1, 1);
-  private _viewAF = new DataView(this._regBuffer, 0, 2);
-  private _viewB = new DataView(this._regBuffer, 2, 1);
-  private _viewC = new DataView(this._regBuffer, 3, 1);
-  private _viewBC = new DataView(this._regBuffer, 2, 2);
-  private _viewD = new DataView(this._regBuffer, 4, 1);
-  private _viewE = new DataView(this._regBuffer, 5, 1);
-  private _viewDE = new DataView(this._regBuffer, 4, 2);
-  private _viewH = new DataView(this._regBuffer, 6, 1);
-  private _viewL = new DataView(this._regBuffer, 7, 1);
-  private _viewHL = new DataView(this._regBuffer, 6, 2);
-  private _viewXH = new DataView(this._regBuffer, 8, 1);
-  private _viewXL = new DataView(this._regBuffer, 9, 1);
-  private _viewIX = new DataView(this._regBuffer, 8, 2);
-  private _viewYH = new DataView(this._regBuffer, 10, 1);
-  private _viewYL = new DataView(this._regBuffer, 11, 1);
-  private _viewIY = new DataView(this._regBuffer, 10, 2);
-  private _viewI = new DataView(this._regBuffer, 12, 1);
-  private _viewR = new DataView(this._regBuffer, 13, 1);
-  private _viewIR = new DataView(this._regBuffer, 12, 2);
-  private _viewWH = new DataView(this._regBuffer, 14, 1);
-  private _viewWL = new DataView(this._regBuffer, 15, 1);
-  private _viewWZ = new DataView(this._regBuffer, 14, 2);
+  private _r8 = new Uint8Array(this._regBuffer);  // 8-bit registers
+  
+  // Register offsets in the buffer
+  private static REG_A = 0;
+  private static REG_F = 1;
+  private static REG_B = 2;
+  private static REG_C = 3;
+  private static REG_D = 4;
+  private static REG_E = 5;
+  private static REG_H = 6;
+  private static REG_L = 7;
+  private static REG_XH = 8;
+  private static REG_XL = 9;
+  private static REG_YH = 10;
+  private static REG_YL = 11;
+  private static REG_I = 12;
+  private static REG_R = 13;
+  private static REG_WH = 14;
+  private static REG_WL = 15;
 
   private _af_: number;
   private _bc_ = 0xffff;
@@ -54,120 +49,125 @@ export class Z80Cpu implements IZ80Cpu {
    * The A register
    */
   get a(): number {
-    return this._viewA.getUint8(0);
+    return this._r8[Z80Cpu.REG_A];
   }
   set a(value: number) {
-    this._viewA.setUint8(0, value);
+    this._r8[Z80Cpu.REG_A] = value;
   }
 
   /**
    * The F register
    */
   get f(): number {
-    return this._viewF.getUint8(0);
+    return this._r8[Z80Cpu.REG_F];
   }
   set f(value: number) {
-    this._viewF.setUint8(0, value);
+    this._r8[Z80Cpu.REG_F] = value;
   }
 
   /**
    * The AF register pair
    */
   get af(): number {
-    return this._viewAF.getUint16(0);
+    // Z80 is big-endian for register pairs: A is high byte, F is low byte
+    return (this._r8[Z80Cpu.REG_A] << 8) | this._r8[Z80Cpu.REG_F];
   }
   set af(value: number) {
-    this._viewAF.setUint16(0, value);
+    this._r8[Z80Cpu.REG_A] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_F] = value & 0xFF;
   }
 
   /**
    * The B register
    */
   get b(): number {
-    return this._viewB.getUint8(0);
+    return this._r8[Z80Cpu.REG_B];
   }
   set b(value: number) {
-    this._viewB.setUint8(0, value);
+    this._r8[Z80Cpu.REG_B] = value;
   }
 
   /**
    * The C register
    */
   get c(): number {
-    return this._viewC.getUint8(0);
+    return this._r8[Z80Cpu.REG_C];
   }
   set c(value: number) {
-    this._viewC.setUint8(0, value);
+    this._r8[Z80Cpu.REG_C] = value;
   }
 
   /**
    * The BC register pair
    */
   get bc(): number {
-    return this._viewBC.getUint16(0);
+    return (this._r8[Z80Cpu.REG_B] << 8) | this._r8[Z80Cpu.REG_C];
   }
   set bc(value: number) {
-    this._viewBC.setUint16(0, value);
+    this._r8[Z80Cpu.REG_B] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_C] = value & 0xFF;
   }
 
   /**
    * The D register
    */
   get d(): number {
-    return this._viewD.getUint8(0);
+    return this._r8[Z80Cpu.REG_D];
   }
   set d(value: number) {
-    this._viewD.setUint8(0, value);
+    this._r8[Z80Cpu.REG_D] = value;
   }
 
   /**
    * The E register
    */
   get e(): number {
-    return this._viewE.getUint8(0);
+    return this._r8[Z80Cpu.REG_E];
   }
   set e(value: number) {
-    this._viewE.setUint8(0, value);
+    this._r8[Z80Cpu.REG_E] = value;
   }
 
   /**
    * The DE register pair
    */
   get de(): number {
-    return this._viewDE.getUint16(0);
+    return (this._r8[Z80Cpu.REG_D] << 8) | this._r8[Z80Cpu.REG_E];
   }
   set de(value: number) {
-    this._viewDE.setUint16(0, value);
+    this._r8[Z80Cpu.REG_D] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_E] = value & 0xFF;
   }
 
   /**
    * The H register
    */
   get h(): number {
-    return this._viewH.getUint8(0);
+    return this._r8[Z80Cpu.REG_H];
   }
   set h(value: number) {
-    this._viewH.setUint8(0, value);
+    this._r8[Z80Cpu.REG_H] = value;
   }
 
   /**
    * The L register
    */
   get l(): number {
-    return this._viewL.getUint8(0);
+    return this._r8[Z80Cpu.REG_L];
   }
   set l(value: number) {
-    this._viewL.setUint8(0, value);
+    this._r8[Z80Cpu.REG_L] = value;
   }
 
   /**
    * The HL register pair
    */
   get hl(): number {
-    return this._viewHL.getUint16(0);
+    return (this._r8[Z80Cpu.REG_H] << 8) | this._r8[Z80Cpu.REG_L];
   }
   set hl(value: number) {
-    this._viewHL.setUint16(0, value);
+    this._r8[Z80Cpu.REG_H] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_L] = value & 0xFF;
   }
 
   /**
@@ -214,90 +214,93 @@ export class Z80Cpu implements IZ80Cpu {
    * The higher 8 bits of the IX register pair
    */
   get xh(): number {
-    return this._viewXH.getUint8(0);
+    return this._r8[Z80Cpu.REG_XH];
   }
   set xh(value: number) {
-    this._viewXH.setUint8(0, value);
+    this._r8[Z80Cpu.REG_XH] = value;
   }
 
   /**
    * The lower 8 bits of the IX register pair
    */
   get xl(): number {
-    return this._viewXL.getUint8(0);
+    return this._r8[Z80Cpu.REG_XL];
   }
   set xl(value: number) {
-    this._viewXL.setUint8(0, value);
+    this._r8[Z80Cpu.REG_XL] = value;
   }
 
   /**
    * The IX register pair
    */
   get ix(): number {
-    return this._viewIX.getUint16(0);
+    return (this._r8[Z80Cpu.REG_XH] << 8) | this._r8[Z80Cpu.REG_XL];
   }
   set ix(value: number) {
-    this._viewIX.setUint16(0, value);
+    this._r8[Z80Cpu.REG_XH] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_XL] = value & 0xFF;
   }
 
   /**
    * The higher 8 bits of the IY register pair
    */
   get yh(): number {
-    return this._viewYH.getUint8(0);
+    return this._r8[Z80Cpu.REG_YH];
   }
   set yh(value: number) {
-    this._viewYH.setUint8(0, value);
+    this._r8[Z80Cpu.REG_YH] = value;
   }
 
   /**
    * The lower 8 bits of the IY register pair
    */
   get yl(): number {
-    return this._viewYL.getUint8(0);
+    return this._r8[Z80Cpu.REG_YL];
   }
   set yl(value: number) {
-    this._viewYL.setUint8(0, value);
+    this._r8[Z80Cpu.REG_YL] = value;
   }
 
   /**
    * The IY register pair
    */
   get iy(): number {
-    return this._viewIY.getUint16(0);
+    return (this._r8[Z80Cpu.REG_YH] << 8) | this._r8[Z80Cpu.REG_YL];
   }
   set iy(value: number) {
-    this._viewIY.setUint16(0, value);
+    this._r8[Z80Cpu.REG_YH] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_YL] = value & 0xFF;
   }
 
   /**
    * The I (interrupt vector) register
    */
   get i(): number {
-    return this._viewI.getUint8(0);
+    return this._r8[Z80Cpu.REG_I];
   }
   set i(value: number) {
-    this._viewI.setUint8(0, value);
+    this._r8[Z80Cpu.REG_I] = value;
   }
 
   /**
    * The R (refresh) register
    */
   get r(): number {
-    return this._viewR.getUint8(0);
+    return this._r8[Z80Cpu.REG_R];
   }
   set r(value: number) {
-    this._viewR.setUint8(0, value);
+    this._r8[Z80Cpu.REG_R] = value;
   }
 
   /**
    * The IR register pair
    */
   get ir(): number {
-    return this._viewIR.getUint16(0);
+    return (this._r8[Z80Cpu.REG_I] << 8) | this._r8[Z80Cpu.REG_R];
   }
   set ir(value: number) {
-    this._viewIR.setUint16(0, value);
+    this._r8[Z80Cpu.REG_I] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_R] = value & 0xFF;
   }
 
   /**
@@ -324,30 +327,31 @@ export class Z80Cpu implements IZ80Cpu {
    * The higher 8 bits of the WZ register pair
    */
   get wh(): number {
-    return this._viewWH.getUint8(0);
+    return this._r8[Z80Cpu.REG_WH];
   }
   set wh(value: number) {
-    this._viewWH.setUint8(0, value);
+    this._r8[Z80Cpu.REG_WH] = value;
   }
 
   /**
    * The lower 8 bits of the WZ register pair
    */
   get wl(): number {
-    return this._viewWL.getUint8(0);
+    return this._r8[Z80Cpu.REG_WL];
   }
   set wl(value: number) {
-    this._viewWL.setUint8(0, value);
+    this._r8[Z80Cpu.REG_WL] = value;
   }
 
   /**
    * The WZ (MEMPTR) register pair
    */
   get wz(): number {
-    return this._viewWZ.getUint16(0);
+    return (this._r8[Z80Cpu.REG_WH] << 8) | this._r8[Z80Cpu.REG_WL];
   }
   set wz(value: number) {
-    this._viewWZ.setUint16(0, value);
+    this._r8[Z80Cpu.REG_WH] = (value >> 8) & 0xFF;
+    this._r8[Z80Cpu.REG_WL] = value & 0xFF;
   }
 
   /**
@@ -870,7 +874,66 @@ export class Z80Cpu implements IZ80Cpu {
             this.prefix = OpCodePrefix.FD;
             break;
           default:
-            this.standardOps[this.opCode](this);
+            // --- Fast path for the most common instructions to minimize function call overhead
+            switch (this.opCode) {
+              // 0x00: NOP - most common instruction
+              case 0x00:
+                break;
+                
+              // 0x3E: LD A,N - very common for loading immediate values
+              case 0x3E:
+                this.a = this.fetchCodeByte();
+                break;
+                
+              // 0xAF: XOR A - commonly used to clear A register
+              case 0xAF:
+                this.a = 0;
+                this.f = sz53pvTable[0];
+                break;
+                
+              // 0x04: INC B - common in loops
+              case 0x04:
+                this.f = incFlags[this.b++] | this.flagCValue;
+                break;
+                
+              // 0x05: DEC B - common in loops
+              case 0x05:
+                this.f = decFlags[this.b--] | this.flagCValue;
+                break;
+                
+              // 0x23: INC HL - common in memory operations
+              case 0x23:
+                this.hl++;
+                this.tactPlus2WithAddress(this.ir);
+                break;
+                
+              // 0x2B: DEC HL - common in memory operations
+              case 0x2B:
+                this.hl--;
+                this.tactPlus2WithAddress(this.ir);
+                break;
+                
+              // 0xC3: JP nn - common jump instruction
+              case 0xC3:
+                const addr = this.fetchCodeByte();
+                this.pc = addr | (this.fetchCodeByte() << 8);
+                break;
+                
+              // 0x7E: LD A,(HL) - common memory read
+              case 0x7E:
+                this.a = this.readMemory(this.hl);
+                break;
+                
+              // 0x77: LD (HL),A - common memory write
+              case 0x77:
+                this.writeMemory(this.hl, this.a);
+                break;
+                
+              // Use the function table for all other operations
+              default:
+                this.standardOps[this.opCode](this);
+                break;
+            }
             this.prefix = OpCodePrefix.None;
             break;
         }
@@ -878,14 +941,225 @@ export class Z80Cpu implements IZ80Cpu {
 
       // --- Bit instructions
       case OpCodePrefix.CB:
-        this.bitOps[this.opCode](this);
+        // --- Fast path for common bit test instructions
+        if ((this.opCode & 0xC0) === 0x40) {
+          // BIT instructions (0x40-0x7F)
+          const bitIndex = (this.opCode & 0x38) >> 3;
+          const mask = 1 << bitIndex;
+          
+          switch (this.opCode & 0x07) {
+            // BIT b,A
+            case 0x07:
+              this.f = (this.f & FlagsSetMask.C) | FlagsSetMask.H | 
+                ((this.a & mask) === 0 ? FlagsSetMask.Z | FlagsSetMask.PV : 0) |
+                (bitIndex === 7 && (this.a & 0x80) !== 0 ? FlagsSetMask.S : 0);
+              break;
+            default:
+              this.bitOps[this.opCode](this);
+              break;
+          }
+        } else {
+          this.bitOps[this.opCode](this);
+        }
         this.tactPlus1();
         this.prefix = OpCodePrefix.None;
         break;
 
       // --- Extended instructions
       case OpCodePrefix.ED:
-        this.getExtendedOpsTable()[this.opCode](this);
+        // --- Fast path for common I/O and block instructions
+        switch (this.opCode) {
+          // 0x44: NEG - negate accumulator
+          case 0x44:
+            const oldA = this.a;
+            this.a = 0;
+            this.sub8(oldA);
+            break;
+
+          // 0x45: RETN - return from non-maskable interrupt
+          case 0x45:
+            this.iff1 = this.iff2;
+            this.retExecuted = true;
+            this.wz = this.readMemory(this.sp);
+            this.sp++;
+            this.wh = this.readMemory(this.sp);
+            this.sp++;
+            this.pc = this.wz | (this.wh << 8);
+            break;
+
+          // 0x46: IM 0 - set interrupt mode 0
+          case 0x46:
+            this.interruptMode = 0;
+            break;
+
+          // 0x4D: RETI - return from interrupt
+          case 0x4D:
+            this.retExecuted = true;
+            this.wz = this.readMemory(this.sp);
+            this.sp++;
+            this.wh = this.readMemory(this.sp);
+            this.sp++;
+            this.pc = this.wz | (this.wh << 8);
+            break;
+            
+          // 0x56: IM 1 - set interrupt mode 1
+          case 0x56:
+            this.interruptMode = 1;
+            break;
+            
+          // 0x5E: IM 2 - set interrupt mode 2
+          case 0x5E:
+            this.interruptMode = 2;
+            break;
+            
+          // 0x4A: ADC HL,BC
+          case 0x4A:
+            this.tactPlus7WithAddress(this.ir);
+            this.adc16(this.bc);
+            break;
+            
+          // 0x5A: ADC HL,DE
+          case 0x5A:
+            this.tactPlus7WithAddress(this.ir);
+            this.adc16(this.de);
+            break;
+            
+          // 0x6A: ADC HL,HL
+          case 0x6A:
+            this.tactPlus7WithAddress(this.ir);
+            this.adc16(this.hl);
+            break;
+            
+          // 0x7A: ADC HL,SP
+          case 0x7A:
+            this.tactPlus7WithAddress(this.ir);
+            this.adc16(this.sp);
+            break;
+            
+          // 0x47: LD I,A
+          case 0x47:
+            this.tactPlus1();
+            this.i = this.a;
+            break;
+            
+          // 0x4F: LD R,A
+          case 0x4F:
+            this.tactPlus1();
+            this.r = this.a;
+            break;
+            
+          // 0x57: LD A,I
+          case 0x57:
+            this.tactPlus1();
+            this.a = this.i;
+            this.f = (this.f & FlagsSetMask.C) | sz53Table[this.a] | (this.iff2 ? FlagsSetMask.PV : 0);
+            break;
+            
+          // 0x5F: LD A,R
+          case 0x5F:
+            this.tactPlus1();
+            this.a = this.r;
+            this.f = (this.f & FlagsSetMask.C) | sz53Table[this.a] | (this.iff2 ? FlagsSetMask.PV : 0);
+            break;
+            
+          // 0xA0: LDI - common block transfer instruction
+          case 0xA0:
+            const value = this.readMemory(this.hl);
+            this.writeMemory(this.de, value);
+            this.hl++;
+            this.de++;
+            this.bc--;
+            const temp = value + this.a;
+            this.f = (this.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+              (this.bc !== 0 ? FlagsSetMask.PV : 0) | 
+              (temp & FlagsSetMask.R3) | ((temp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+            this.tactPlusN(2); // Add 2 more tacts to reach the total of 16
+            break;
+
+          // 0xA8: LDD - load and decrement
+          case 0xA8:
+            const lddValue = this.readMemory(this.hl);
+            this.writeMemory(this.de, lddValue);
+            this.hl--;
+            this.de--;
+            this.bc--;
+            const lddTemp = lddValue + this.a;
+            this.f = (this.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+              (this.bc !== 0 ? FlagsSetMask.PV : 0) | 
+              (lddTemp & FlagsSetMask.R3) | ((lddTemp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+            this.tactPlusN(2);
+            break;
+            
+          // 0xB0: LDIR - load, increment, repeat
+          case 0xB0:
+            // Using the standard implementation without batching to preserve debugging capabilities
+            let ldiValue = this.readMemory(this.hl);
+            this.writeMemory(this.de, ldiValue);
+            this.tactPlus2WithAddress(this.de);
+            this.bc--;
+            ldiValue += this.a;
+            this.f = (this.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+              (this.bc !== 0 ? FlagsSetMask.PV : 0) |
+              (ldiValue & FlagsSetMask.R3) |
+              ((ldiValue & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+            if (this.bc !== 0) {
+              this.tactPlus5WithAddress(this.de);
+              this.pc -= 2;
+              this.wz = this.pc + 1;
+            }
+            this.hl++;
+            this.de++;
+            break;
+            
+          // 0xB8: LDDR - load, decrement, repeat
+          case 0xB8:
+            // Using the standard implementation without batching
+            let lddValue2 = this.readMemory(this.hl);
+            this.writeMemory(this.de, lddValue2);
+            this.tactPlus2WithAddress(this.de);
+            this.bc--;
+            lddValue2 += this.a;
+            this.f = (this.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+              (this.bc !== 0 ? FlagsSetMask.PV : 0) |
+              (lddValue2 & FlagsSetMask.R3) |
+              ((lddValue2 & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+            if (this.bc !== 0) {
+              this.tactPlus5WithAddress(this.de);
+              this.pc -= 2;
+              this.wz = this.pc + 1;
+            }
+            this.hl--;
+            this.de--;
+            break;
+            
+          // 0x42: SBC HL,BC
+          case 0x42:
+            this.tactPlus7WithAddress(this.ir);
+            this.sbc16(this.bc);
+            break;
+            
+          // 0x52: SBC HL,DE
+          case 0x52:
+            this.tactPlus7WithAddress(this.ir);
+            this.sbc16(this.de);
+            break;
+            
+          // 0x62: SBC HL,HL
+          case 0x62:
+            this.tactPlus7WithAddress(this.ir);
+            this.sbc16(this.hl);
+            break;
+            
+          // 0x72: SBC HL,SP
+          case 0x72:
+            this.tactPlus7WithAddress(this.ir);
+            this.sbc16(this.sp);
+            break;
+            
+          default:
+            this.getExtendedOpsTable()[this.opCode](this);
+            break;
+        }
         this.tactPlus1();
         this.prefix = OpCodePrefix.None;
         break;
@@ -900,7 +1174,44 @@ export class Z80Cpu implements IZ80Cpu {
         } else if (this.opCode == 0xcb) {
           this.prefix = this.prefix == OpCodePrefix.DD ? OpCodePrefix.DDCB : OpCodePrefix.FDCB;
         } else {
-          this.indexedOps[this.opCode](this);
+          // --- Fast path for the most common indexed instructions
+          switch (this.opCode) {
+            // 0x21: LD IX/IY,nn - common for loading immediate values to index registers
+            case 0x21:
+              const lsb = this.fetchCodeByte();
+              const msb = this.fetchCodeByte();
+              this.indexReg = (msb << 8) | lsb;
+              break;
+              
+            // 0x46: LD B,(IX/IY+d) - common indexed memory access
+            case 0x46:
+              const displacement1 = this.fetchCodeByte();
+              const address1 = (this.indexReg + sbyte(displacement1)) & 0xFFFF;
+              this.tactPlus5WithAddress(address1);
+              this.b = this.readMemory(address1);
+              break;
+              
+            // 0x7E: LD A,(IX/IY+d) - very common indexed memory read
+            case 0x7E:
+              const displacement5 = this.fetchCodeByte();
+              const address5 = (this.indexReg + sbyte(displacement5)) & 0xFFFF;
+              this.tactPlus5WithAddress(address5);
+              this.a = this.readMemory(address5);
+              break;
+              
+            // 0x77: LD (IX/IY+d),A - very common indexed memory write
+            case 0x77:
+              const displacement6 = this.fetchCodeByte();
+              const address6 = (this.indexReg + sbyte(displacement6)) & 0xFFFF;
+              this.tactPlus5WithAddress(address6);
+              this.writeMemory(address6, this.a);
+              break;
+              
+            // Use the function table for other operations
+            default:
+              this.indexedOps[this.opCode](this);
+              break;
+          }
           this.tactPlus1();
           this.prefix = OpCodePrefix.None;
         }
@@ -914,7 +1225,29 @@ export class Z80Cpu implements IZ80Cpu {
         this.opCode = this.readMemory(this.pc);
         this.tactPlus2WithAddress(this.pc);
         this.pc++;
-        this.indexedBitOps[this.opCode](this);
+        
+        // --- Fast path for common BIT instructions with indexed addressing
+        if ((this.opCode & 0xC0) === 0x40) {
+          // BIT instructions (0x40-0x7F)
+          const bitIndex = (this.opCode & 0x38) >> 3;
+          const mask = 1 << bitIndex;
+          const memValue = this.readMemory(this.wz);
+          
+          // For BIT instructions, set the flags and don't modify memory
+          this.f = (this.f & FlagsSetMask.C) | FlagsSetMask.H | 
+            ((memValue & mask) === 0 ? FlagsSetMask.Z | FlagsSetMask.PV : 0) |
+            (bitIndex === 7 && (memValue & 0x80) !== 0 ? FlagsSetMask.S : 0);
+            
+          // Undocumented: bits 3 and 5 of flags reflect bit 3 and 5 of the memory address
+          this.f = (this.f & ~(FlagsSetMask.R3 | FlagsSetMask.R5)) | 
+            (this.wz & (FlagsSetMask.R3 | FlagsSetMask.R5));
+          
+          // Add an extra tact to make timing correct (total should be 20)
+          this.tactPlusN(1);
+        } else {
+          this.indexedBitOps[this.opCode](this);
+        }
+        
         this.tactPlus1();
         this.prefix = OpCodePrefix.None;
         break;
@@ -1201,15 +1534,9 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sub8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
-    this.f =
-      ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
-      FlagsSetMask.N |
-      halfCarrySubFlags[lookup & 0x07] |
-      overflowSubFlags[lookup >>> 4] |
-      sz53Table[this.a];
+    const oldA = this.a;
+    this.a = (oldA - value) & 0xFF;
+    this.f = subFlagTable[oldA][value];
   }
 
   /**
@@ -1217,9 +1544,13 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sbc8(value: number): void {
-    const tmp = this.a - value - this.flagCValue;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
+    const oldA = this.a;
+    const carry = this.flagCValue;
+    this.a = (oldA - value - carry) & 0xFF;
+    // SBC flags are similar to SUB flags but need to account for the carry
+    // We'll continue to use the existing calculation for now as we don't have a dedicated table for SBC
+    const tmp = oldA - value - carry;
+    const lookup = ((oldA & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
     this.f =
       ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
       FlagsSetMask.N |
@@ -1233,14 +1564,9 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to add to A
    */
   add8(value: number): void {
-    const tmp = this.a + value;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
-    this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
-      halfCarryAddFlags[lookup & 0x07] |
-      overflowAddFlags[lookup >> 4] |
-      sz53Table[this.a];
+    const oldA = this.a;
+    this.a = (oldA + value) & 0xFF;
+    this.f = addFlagTable[oldA][value];
   }
 
   /**
@@ -1248,9 +1574,13 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to add to A
    */
   adc8(value: number): void {
-    const tmp = this.a + value + this.flagCValue;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
+    const oldA = this.a;
+    const carry = this.flagCValue;
+    this.a = (oldA + value + carry) & 0xFF;
+    // ADC flags are similar to ADD flags but need to account for the carry
+    // We'll continue to use the existing calculation for now as we don't have a dedicated table for ADC
+    const tmp = oldA + value + carry;
+    var lookup = ((oldA & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
     this.f =
       ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
       halfCarryAddFlags[lookup & 0x07] |
@@ -1290,16 +1620,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to compare with A
    */
   cp8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
-      (tmp != 0 ? 0 : FlagsSetMask.Z) |
-      FlagsSetMask.N |
-      halfCarrySubFlags[lookup & 0x07] |
-      overflowSubFlags[lookup >>> 4] |
-      (value & FlagsSetMask.R3R5) |
-      (tmp & FlagsSetMask.S);
+    this.f = cpFlagTable[this.a][value];
   }
 
   /**
@@ -1401,12 +1722,7 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    */
   bit8(bit: number, oper: number): void {
-    this.f = this.flagCValue | FlagsSetMask.H | (oper & FlagsSetMask.R3R5);
-    const bitVal = oper & (0x01 << bit);
-    if (bitVal === 0) {
-      this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
-    }
-    this.f |= bitVal & FlagsSetMask.S;
+    this.f = (this.f & FlagsSetMask.C) | bitFlagTable[bit][oper];
   }
 
   /**
@@ -3045,6 +3361,23 @@ export const parityTable: number[] = [];
 export const sz53Table: number[] = [];
 export const sz53pvTable: number[] = [];
 
+// --- Rotate and shift operation flag lookup tables
+const rlcFlagTable: number[] = [];  // RLC flags for each possible value
+const rrcFlagTable: number[] = [];  // RRC flags for each possible value
+const rlFlagTable: number[] = [];   // RL flags for each possible value + carry
+const rrFlagTable: number[] = [];   // RR flags for each possible value + carry
+
+// --- Bit operation flag lookup tables
+const bitFlagTable: number[][] = Array.from({ length: 8 }, () => []);  // BIT n,r flags per bit index
+
+// --- 8-bit arithmetic flags lookup tables
+const addFlagTable: number[][] = Array.from({ length: 0x100 }, () => []);  // ADD flags
+const subFlagTable: number[][] = Array.from({ length: 0x100 }, () => []);  // SUB flags
+const cpFlagTable: number[][] = Array.from({ length: 0x100 }, () => []);   // CP flags
+
+// --- Block instruction flag lookup tables
+const ldiLddrFlagTable: number[] = [];  // Flags for LDI/LDDR block operations
+
 /**
  * Converts an unsigned byte value to a signed byte value
  */
@@ -3105,6 +3438,117 @@ function sbyte(dist: number): number {
   }
   sz53Table[0] |= FlagsSetMask.Z;
   sz53pvTable[0] |= FlagsSetMask.Z;
+  
+  // --- Initialize RLC flag table
+  for (let i = 0; i < 0x100; i++) {
+    const c = (i & 0x80) !== 0;
+    // Only set C flag, preserve S/Z from original implementation
+    rlcFlagTable[i] = (c ? FlagsSetMask.C : 0);
+  }
+  
+  // --- Initialize RRC flag table
+  for (let i = 0; i < 0x100; i++) {
+    const c = (i & 0x01) !== 0;
+    // Only set C flag, preserve S/Z from original implementation
+    rrcFlagTable[i] = (c ? FlagsSetMask.C : 0);
+  }
+  
+  // --- Initialize RL flag table (for each possible value + carry)
+  for (let i = 0; i < 0x100; i++) {
+    // Without carry
+    const cOff = (i & 0x80) !== 0;
+    // Only set C flag, preserve S/Z from original implementation
+    rlFlagTable[i] = (cOff ? FlagsSetMask.C : 0);
+    
+    // With carry
+    rlFlagTable[i + 0x100] = (cOff ? FlagsSetMask.C : 0);
+  }
+  
+  // --- Initialize RR flag table (for each possible value + carry)
+  for (let i = 0; i < 0x100; i++) {
+    // Without carry
+    const cOff = (i & 0x01) !== 0;
+    // Only set C flag, preserve S/Z from original implementation
+    rrFlagTable[i] = (cOff ? FlagsSetMask.C : 0);
+    
+    // With carry
+    rrFlagTable[i + 0x100] = (cOff ? FlagsSetMask.C : 0);
+  }
+  
+  // --- Initialize BIT instruction flag tables (for each bit position)
+  for (let bit = 0; bit < 8; bit++) {
+    const mask = 1 << bit;
+    for (let i = 0; i < 0x100; i++) {
+      bitFlagTable[bit][i] = (
+        FlagsSetMask.H |
+        ((i & mask) === 0 ? FlagsSetMask.Z | FlagsSetMask.PV : 0) |
+        (bit === 7 && (i & 0x80) !== 0 ? FlagsSetMask.S : 0) |
+        (i & (FlagsSetMask.R3 | FlagsSetMask.R5))
+      );
+    }
+  }
+  
+  // --- Initialize ADD flag table
+  for (let a = 0; a < 0x100; a++) {
+    for (let b = 0; b < 0x100; b++) {
+      const result = a + b;
+      const carryBit = result & 0x100;
+      const halfCarryBit = ((a & 0x0F) + (b & 0x0F)) & 0x10;
+      const overflow = ((a & 0x80) === (b & 0x80)) && ((result & 0x80) !== (a & 0x80));
+      
+      addFlagTable[a][b] = (
+        (result & 0xFF ? 0 : FlagsSetMask.Z) |
+        (result & FlagsSetMask.S) |
+        (halfCarryBit ? FlagsSetMask.H : 0) |
+        (overflow ? FlagsSetMask.PV : 0) |
+        (carryBit ? FlagsSetMask.C : 0) |
+        ((result & 0xFF) & (FlagsSetMask.R3 | FlagsSetMask.R5))
+      );
+    }
+  }
+  
+  // --- Initialize SUB flag table
+  for (let a = 0; a < 0x100; a++) {
+    for (let b = 0; b < 0x100; b++) {
+      const result = a - b;
+      const carryBit = result & 0x100;
+      const halfCarryBit = ((a & 0x0F) - (b & 0x0F)) & 0x10;
+      const overflow = ((a & 0x80) !== (b & 0x80)) && ((result & 0x80) !== (a & 0x80));
+      
+      subFlagTable[a][b] = (
+        FlagsSetMask.N |
+        (result & 0xFF ? 0 : FlagsSetMask.Z) |
+        (result & FlagsSetMask.S) |
+        (halfCarryBit ? FlagsSetMask.H : 0) |
+        (overflow ? FlagsSetMask.PV : 0) |
+        (carryBit ? FlagsSetMask.C : 0) |
+        ((result & 0xFF) & (FlagsSetMask.R3 | FlagsSetMask.R5))
+      );
+      
+      // CP flags are same as SUB but with different R3/R5 handling
+      cpFlagTable[a][b] = (
+        FlagsSetMask.N |
+        (result & 0xFF ? 0 : FlagsSetMask.Z) |
+        (result & FlagsSetMask.S) |
+        (halfCarryBit ? FlagsSetMask.H : 0) |
+        (overflow ? FlagsSetMask.PV : 0) |
+        (carryBit ? FlagsSetMask.C : 0) |
+        (b & (FlagsSetMask.R3 | FlagsSetMask.R5))
+      );
+    }
+  }
+  
+  // --- Initialize LDI/LDDR flag table
+  for (let i = 0; i < 0x100; i++) {
+    for (let bc = 0; bc < 0x10; bc++) { // We just need a few BC values for PV flag
+      const pv = bc !== 0 ? FlagsSetMask.PV : 0;
+      ldiLddrFlagTable[(bc << 8) | i] = (
+        pv |
+        (i & FlagsSetMask.R3) |
+        ((i & 0x02) !== 0 ? FlagsSetMask.R5 : 0)
+      );
+    }
+  }
 })();
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -3151,16 +3595,15 @@ function ldBN(cpu: Z80Cpu) {
   cpu.b = cpu.fetchCodeByte();
 }
 
-// 0x07: RLCA
+// 0x07: RLCA - Using lookup table
 function rlca(cpu: Z80Cpu) {
-  let rlcaVal = cpu.a;
-  rlcaVal = rlcaVal << 1;
-  const cf = (rlcaVal & 0x100) !== 0 ? FlagsSetMask.C : 0;
-  if (cf !== 0) {
-    rlcaVal = (rlcaVal | 0x01) & 0xff;
-  }
-  cpu.a = rlcaVal;
-  cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  const result = ((cpu.a << 1) | (cpu.a >> 7)) & 0xff;
+  // Keep S and Z flags from previous value, use lookup table for C flag
+  cpu.f = (cpu.f & (FlagsSetMask.S | FlagsSetMask.Z)) | 
+          rlcFlagTable[cpu.a] | 
+          cpu.flagsSZPVValue | 
+          (result & FlagsSetMask.R3R5);
+  cpu.a = result;
 }
 
 // 0x08: EX AF,AF'
@@ -3203,17 +3646,15 @@ function ldCN(cpu: Z80Cpu) {
   cpu.c = cpu.fetchCodeByte();
 }
 
-// 0x0f: RRCA
+// 0x0f: RRCA - Using lookup table
 function rrca(cpu: Z80Cpu) {
-  let rrcaVal = cpu.a;
-  const cf = (rrcaVal & 0x01) !== 0 ? FlagsSetMask.C : 0;
-  if ((rrcaVal & 0x01) !== 0) {
-    rrcaVal = (rrcaVal >>> 1) | 0x80;
-  } else {
-    rrcaVal = rrcaVal >>> 1;
-  }
-  cpu.a = rrcaVal;
-  cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  const result = ((cpu.a >> 1) | (cpu.a << 7)) & 0xff;
+  // Keep S and Z flags from previous value, use lookup table for C flag
+  cpu.f = (cpu.f & (FlagsSetMask.S | FlagsSetMask.Z)) | 
+          rrcFlagTable[cpu.a] | 
+          cpu.flagsSZPVValue | 
+          (result & FlagsSetMask.R3R5);
+  cpu.a = result;
 }
 
 // 0x10: DJNZ d
@@ -3258,16 +3699,17 @@ function ldDN(cpu: Z80Cpu) {
   cpu.d = cpu.fetchCodeByte();
 }
 
-// 0x17: RLA
+// 0x17: RLA - Using lookup table
 function rla(cpu: Z80Cpu) {
-  let rlaVal = cpu.a;
-  const newCF = (rlaVal & 0x80) !== 0 ? FlagsSetMask.C : 0;
-  rlaVal = rlaVal << 1;
-  if (cpu.isCFlagSet()) {
-    rlaVal |= 0x01;
-  }
-  cpu.a = rlaVal;
-  cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  // Get table offset based on current carry flag state
+  const tableOffset = cpu.isCFlagSet() ? 0x100 : 0;
+  const result = ((cpu.a << 1) | (cpu.isCFlagSet() ? 1 : 0)) & 0xff;
+  // Keep S and Z flags from previous value, use lookup table for C flag
+  cpu.f = (cpu.f & (FlagsSetMask.S | FlagsSetMask.Z)) | 
+          rlFlagTable[cpu.a + tableOffset] | 
+          cpu.flagsSZPVValue | 
+          (result & FlagsSetMask.R3R5);
+  cpu.a = result;
 }
 
 // 0x18: JR e
@@ -3308,16 +3750,17 @@ function ldEN(cpu: Z80Cpu) {
   cpu.e = cpu.fetchCodeByte();
 }
 
-// 0x1f: RRA
+// 0x1f: RRA - Using lookup table
 function rra(cpu: Z80Cpu) {
-  let rraVal = cpu.a;
-  const newCF = (rraVal & 0x01) !== 0 ? FlagsSetMask.C : 0;
-  rraVal = rraVal >>> 1;
-  if (cpu.isCFlagSet()) {
-    rraVal |= 0x80;
-  }
-  cpu.a = rraVal;
-  cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  // Get table offset based on current carry flag state
+  const tableOffset = cpu.isCFlagSet() ? 0x100 : 0;
+  const result = ((cpu.a >> 1) | (cpu.isCFlagSet() ? 0x80 : 0)) & 0xff;
+  // Keep S and Z flags from previous value, use lookup table for C flag
+  cpu.f = (cpu.f & (FlagsSetMask.S | FlagsSetMask.Z)) | 
+          rrFlagTable[cpu.a + tableOffset] | 
+          cpu.flagsSZPVValue | 
+          (result & FlagsSetMask.R3R5);
+  cpu.a = result;
 }
 
 // 0x20: JR NZ,e
@@ -8198,11 +8641,9 @@ function ldi(cpu: Z80Cpu) {
   cpu.de++;
   cpu.hl++;
   tmp += cpu.a;
-  cpu.f =
-    (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
-    (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
-    (tmp & FlagsSetMask.R3) |
-    ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+  // Preserve C, Z, S flags and use lookup table for PV, R3, R5 flags
+  cpu.f = (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) | 
+          ldiLddrFlagTable[(cpu.bc << 8) | tmp];
 }
 
 // 0xA1: CPI
@@ -8267,11 +8708,9 @@ function ldd(cpu: Z80Cpu) {
   cpu.de--;
   cpu.hl--;
   tmp += cpu.a;
-  cpu.f =
-    (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
-    (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
-    (tmp & FlagsSetMask.R3) |
-    ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+  // Preserve C, Z, S flags and use lookup table for PV, R3, R5 flags
+  cpu.f = (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) | 
+          ldiLddrFlagTable[(cpu.bc << 8) | tmp];
 }
 
 // 0xA9: CPD
