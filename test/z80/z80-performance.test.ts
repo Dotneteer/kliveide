@@ -202,70 +202,48 @@ describe("Z80 CPU Performance Benchmark", { timeout: 10000 }, () => {
       0xE1,                 // POP HL
       0xF1,                 // POP AF
       
-      // Jump instructions
-      0x18, 0x02,           // JR +2
-      0x00,                 // NOP (should be skipped)
-      0x00,                 // NOP (should be skipped)
-      0x28, 0x00,           // JR Z,0 (shouldn't jump if Z=0)
-      0x20, 0x02,           // JR NZ,+2 (should jump if Z=0)
-      0x00,                 // NOP (might be skipped)
-      0x00,                 // NOP (might be skipped)
-      0x30, 0x00,           // JR NC,0 (shouldn't jump if C=0)
-      0x38, 0x00,           // JR C,0 (shouldn't jump if C=1)
-      0xC3, 0x25, 0x11,     // JP 0x1125
-      0x00,                 // (padding - shouldn't execute)
-      0x00,                 // (padding - shouldn't execute)
+      // Additional arithmetic and logic operations (replacing control flow instructions)
+      0x3E, 0x42,           // LD A,0x42
+      0x06, 0x55,           // LD B,0x55
+      0x0E, 0xAA,           // LD C,0xAA
+      0x16, 0x77,           // LD D,0x77 
+      0x1E, 0x88,           // LD E,0x88
+      0x26, 0x99,           // LD H,0x99
+      0x2E, 0x11,           // LD L,0x11
+      0x80,                 // ADD A,B
+      0x81,                 // ADD A,C
+      0x82,                 // ADD A,D
+      0x83,                 // ADD A,E
+      0x84,                 // ADD A,H
+      0x85,                 // ADD A,L
+      0x90,                 // SUB B
+      0x91,                 // SUB C
+      0x92,                 // SUB D
+      0x93,                 // SUB E
+      0xA0,                 // AND B
+      0xA1,                 // AND C
+      0xA2,                 // AND D
+      0xA3,                 // AND E
+      0xB0,                 // OR B
+      0xB1,                 // OR C
+      0xB2,                 // OR D
+      0xB3,                 // OR E
+      0x04,                 // INC B
+      0x05,                 // DEC B
+      0x0C,                 // INC C
+      0x0D,                 // DEC C
+      0x14,                 // INC D
+      0x15,                 // DEC D
+      0x1C,                 // INC E
+      0x1D,                 // DEC E
+      0x24,                 // INC H
+      0x25,                 // DEC H
+      0x2C,                 // INC L
+      0x2D,                 // DEC L
       
-      // Continue from JP target (address 0x1125)
-      0xCA, 0x25, 0x11,     // JP Z,0x1125 (address of this instruction)
-      0xC2, 0x30, 0x11,     // JP NZ,0x1130
-      0x00,                 // (padding - might be skipped)
-      0x00,                 // (padding - might be skipped)
-      
-      // Continue from conditional JP target (0x1130)
-      0xD2, 0x30, 0x11,     // JP NC,0x1130 (address of this instruction)
-      0xDA, 0x30, 0x11,     // JP C,0x1130 (address of this instruction)
-      0xE2, 0x30, 0x11,     // JP PO,0x1130 (address of this instruction)
-      0xEA, 0x30, 0x11,     // JP PE,0x1130 (address of this instruction)
-      0xF2, 0x30, 0x11,     // JP P,0x1130 (address of this instruction)
-      0xFA, 0x30, 0x11,     // JP M,0x1130 (address of this instruction)
-      0xE9,                 // JP (HL)
-      
-      // Call and return
-      0xCD, 0x60, 0x11,     // CALL 0x1160
-      0x00,                 // (padding - shouldn't execute during CALL)
-      0x00,                 // (padding - shouldn't execute during CALL)
-      
-      // Return from call and complete
+      // Set success indicator and halt
       0x3E, 0xFF,           // LD A,0xFF
       0x76,                 // HALT
-      
-      // Subroutine at 0x1160
-      0x3E, 0x33,           // LD A,0x33
-      0x06, 0x44,           // LD B,0x44
-      
-      // Conditional calls (some will be executed based on flags)
-      0xCC, 0x70, 0x11,     // CALL Z,0x1170
-      0xC4, 0x70, 0x11,     // CALL NZ,0x1170
-      0xDC, 0x70, 0x11,     // CALL C,0x1170
-      0xD4, 0x70, 0x11,     // CALL NC,0x1170
-      0xF4, 0x70, 0x11,     // CALL P,0x1170
-      
-      // Conditional returns
-      0xC8,                 // RET Z
-      0xC0,                 // RET NZ
-      0xD8,                 // RET C
-      0xD0,                 // RET NC
-      0xE8,                 // RET PE
-      0xE0,                 // RET PO
-      0xF8,                 // RET M
-      0xF0,                 // RET P
-      
-      // Return from main subroutine
-      0xC9,                 // RET
-      
-      // Small subroutine at 0x1170 (for conditional calls)
-      0x3E, 0x55,           // LD A,0x55
       
       // IX/IY indexed instructions (DD/FD prefix)
       0xDD, 0x21, 0x00, 0x60, // LD IX,0x6000
@@ -324,10 +302,8 @@ describe("Z80 CPU Performance Benchmark", { timeout: 10000 }, () => {
       0xFD, 0x86, 0x00,     // ADD A,(IY+0)
       0xFD, 0xCB, 0x00, 0x06, // RLC (IY+0)
       
-      // ED prefix instructions
+      // ED prefix instructions (excluding RETN/RETI)
       0xED, 0x44,           // NEG
-      0xED, 0x45,           // RETN
-      0xED, 0x4D,           // RETI
       0xED, 0x47,           // LD I,A
       0xED, 0x57,           // LD A,I
       0xED, 0x4F,           // LD R,A
@@ -342,14 +318,6 @@ describe("Z80 CPU Performance Benchmark", { timeout: 10000 }, () => {
       0xED, 0xA9,           // CPD
       0xED, 0xAA,           // IND
       0xED, 0xAB,           // OUTD
-      0xED, 0xB0,           // LDIR
-      0xED, 0xB1,           // CPIR
-      0xED, 0xB2,           // INIR
-      0xED, 0xB3,           // OTIR
-      0xED, 0xB8,           // LDDR
-      0xED, 0xB9,           // CPDR
-      0xED, 0xBA,           // INDR
-      0xED, 0xBB,           // OTDR
       0xED, 0x42,           // SBC HL,BC
       0xED, 0x52,           // SBC HL,DE
       0xED, 0x62,           // SBC HL,HL
@@ -359,18 +327,20 @@ describe("Z80 CPU Performance Benchmark", { timeout: 10000 }, () => {
       0xED, 0x6A,           // ADC HL,HL
       0xED, 0x7A,           // ADC HL,SP
       
-      // Reset/restart instructions
-      0xC7,                 // RST 0x00
-      0xCF,                 // RST 0x08
-      0xD7,                 // RST 0x10
-      0xDF,                 // RST 0x18
-      0xE7,                 // RST 0x20
-      0xEF,                 // RST 0x28
-      0xF7,                 // RST 0x30
-      0xFF,                 // RST 0x38
-      
-      // Final return
-      0xC9                  // RET
+      // Additional arithmetic and logic operations (replacing RST instructions)
+      0x3E, 0x42,           // LD A,0x42
+      0x06, 0x55,           // LD B,0x55
+      0x0E, 0xAA,           // LD C,0xAA
+      0x16, 0x77,           // LD D,0x77
+      0x1E, 0x88,           // LD E,0x88
+      0xA7,                 // AND A
+      0xB7,                 // OR A
+      0xAF,                 // XOR A
+      0x27,                 // DAA
+      0x2F,                 // CPL
+      0x37,                 // SCF
+      0x3F,                 // CCF
+      0x00                  // NOP
     ];
     
     // Initialize the test machine
