@@ -10,9 +10,10 @@ const config = {
 
     /**
      * A default timeout of 5000ms is sometimes not enough for playwright.
+     * For performance tests, we need even longer timeouts.
      */
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
+    testTimeout: 90_000,
+    hookTimeout: 90_000,
     alias: {
       "@styles": resolve("src/renderer/assets/styles"),
       "@common": resolve("src/common"),
