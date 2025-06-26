@@ -9,32 +9,23 @@ const MAX_STEP_OUT_STACK_SIZE = 256;
  * This class implements the emulation of the Z80 CPU
  */
 export class Z80CpuNew implements IZ80Cpu {
-  // --- Register variable
-  private _regBuffer = new ArrayBuffer(16);
-  private _viewA = new DataView(this._regBuffer, 0, 1);
-  private _viewF = new DataView(this._regBuffer, 1, 1);
-  private _viewAF = new DataView(this._regBuffer, 0, 2);
-  private _viewB = new DataView(this._regBuffer, 2, 1);
-  private _viewC = new DataView(this._regBuffer, 3, 1);
-  private _viewBC = new DataView(this._regBuffer, 2, 2);
-  private _viewD = new DataView(this._regBuffer, 4, 1);
-  private _viewE = new DataView(this._regBuffer, 5, 1);
-  private _viewDE = new DataView(this._regBuffer, 4, 2);
-  private _viewH = new DataView(this._regBuffer, 6, 1);
-  private _viewL = new DataView(this._regBuffer, 7, 1);
-  private _viewHL = new DataView(this._regBuffer, 6, 2);
-  private _viewXH = new DataView(this._regBuffer, 8, 1);
-  private _viewXL = new DataView(this._regBuffer, 9, 1);
-  private _viewIX = new DataView(this._regBuffer, 8, 2);
-  private _viewYH = new DataView(this._regBuffer, 10, 1);
-  private _viewYL = new DataView(this._regBuffer, 11, 1);
-  private _viewIY = new DataView(this._regBuffer, 10, 2);
-  private _viewI = new DataView(this._regBuffer, 12, 1);
-  private _viewR = new DataView(this._regBuffer, 13, 1);
-  private _viewIR = new DataView(this._regBuffer, 12, 2);
-  private _viewWH = new DataView(this._regBuffer, 14, 1);
-  private _viewWL = new DataView(this._regBuffer, 15, 1);
-  private _viewWZ = new DataView(this._regBuffer, 14, 2);
+  // --- Register variables (optimized direct access)
+  private _a = 0;
+  private _f = 0;
+  private _b = 0;
+  private _c = 0;
+  private _d = 0;
+  private _e = 0;
+  private _h = 0;
+  private _l = 0;
+  private _xh = 0;
+  private _xl = 0;
+  private _yh = 0;
+  private _yl = 0;
+  private _i = 0;
+  private _r = 0;
+  private _wh = 0;
+  private _wl = 0;
 
   private _af_: number;
   private _bc_ = 0xffff;
@@ -54,120 +45,124 @@ export class Z80CpuNew implements IZ80Cpu {
    * The A register
    */
   get a(): number {
-    return this._viewA.getUint8(0);
+    return this._a;
   }
   set a(value: number) {
-    this._viewA.setUint8(0, value);
+    this._a = value & 0xff;
   }
 
   /**
    * The F register
    */
   get f(): number {
-    return this._viewF.getUint8(0);
+    return this._f;
   }
   set f(value: number) {
-    this._viewF.setUint8(0, value);
+    this._f = value & 0xff;
   }
 
   /**
    * The AF register pair
    */
   get af(): number {
-    return this._viewAF.getUint16(0);
+    return (this._a << 8) | this._f;
   }
   set af(value: number) {
-    this._viewAF.setUint16(0, value);
+    this._a = (value >>> 8) & 0xff;
+    this._f = value & 0xff;
   }
 
   /**
    * The B register
    */
   get b(): number {
-    return this._viewB.getUint8(0);
+    return this._b;
   }
   set b(value: number) {
-    this._viewB.setUint8(0, value);
+    this._b = value & 0xff;
   }
 
   /**
    * The C register
    */
   get c(): number {
-    return this._viewC.getUint8(0);
+    return this._c;
   }
   set c(value: number) {
-    this._viewC.setUint8(0, value);
+    this._c = value & 0xff;
   }
 
   /**
    * The BC register pair
    */
   get bc(): number {
-    return this._viewBC.getUint16(0);
+    return (this._b << 8) | this._c;
   }
   set bc(value: number) {
-    this._viewBC.setUint16(0, value);
+    this._b = (value >>> 8) & 0xff;
+    this._c = value & 0xff;
   }
 
   /**
    * The D register
    */
   get d(): number {
-    return this._viewD.getUint8(0);
+    return this._d;
   }
   set d(value: number) {
-    this._viewD.setUint8(0, value);
+    this._d = value & 0xff;
   }
 
   /**
    * The E register
    */
   get e(): number {
-    return this._viewE.getUint8(0);
+    return this._e;
   }
   set e(value: number) {
-    this._viewE.setUint8(0, value);
+    this._e = value & 0xff;
   }
 
   /**
    * The DE register pair
    */
   get de(): number {
-    return this._viewDE.getUint16(0);
+    return (this._d << 8) | this._e;
   }
   set de(value: number) {
-    this._viewDE.setUint16(0, value);
+    this._d = (value >>> 8) & 0xff;
+    this._e = value & 0xff;
   }
 
   /**
    * The H register
    */
   get h(): number {
-    return this._viewH.getUint8(0);
+    return this._h;
   }
   set h(value: number) {
-    this._viewH.setUint8(0, value);
+    this._h = value & 0xff;
   }
 
   /**
    * The L register
    */
   get l(): number {
-    return this._viewL.getUint8(0);
+    return this._l;
   }
   set l(value: number) {
-    this._viewL.setUint8(0, value);
+    this._l = value & 0xff;
   }
 
   /**
    * The HL register pair
    */
   get hl(): number {
-    return this._viewHL.getUint16(0);
+    return (this._h << 8) | this._l;
   }
   set hl(value: number) {
-    this._viewHL.setUint16(0, value);
+    this._h = (value >>> 8) & 0xff;
+    this._l = value & 0xff;
   }
 
   /**
@@ -214,90 +209,93 @@ export class Z80CpuNew implements IZ80Cpu {
    * The higher 8 bits of the IX register pair
    */
   get xh(): number {
-    return this._viewXH.getUint8(0);
+    return this._xh;
   }
   set xh(value: number) {
-    this._viewXH.setUint8(0, value);
+    this._xh = value & 0xff;
   }
 
   /**
    * The lower 8 bits of the IX register pair
    */
   get xl(): number {
-    return this._viewXL.getUint8(0);
+    return this._xl;
   }
   set xl(value: number) {
-    this._viewXL.setUint8(0, value);
+    this._xl = value & 0xff;
   }
 
   /**
    * The IX register pair
    */
   get ix(): number {
-    return this._viewIX.getUint16(0);
+    return (this._xh << 8) | this._xl;
   }
   set ix(value: number) {
-    this._viewIX.setUint16(0, value);
+    this._xh = (value >>> 8) & 0xff;
+    this._xl = value & 0xff;
   }
 
   /**
    * The higher 8 bits of the IY register pair
    */
   get yh(): number {
-    return this._viewYH.getUint8(0);
+    return this._yh;
   }
   set yh(value: number) {
-    this._viewYH.setUint8(0, value);
+    this._yh = value & 0xff;
   }
 
   /**
    * The lower 8 bits of the IY register pair
    */
   get yl(): number {
-    return this._viewYL.getUint8(0);
+    return this._yl;
   }
   set yl(value: number) {
-    this._viewYL.setUint8(0, value);
+    this._yl = value & 0xff;
   }
 
   /**
    * The IY register pair
    */
   get iy(): number {
-    return this._viewIY.getUint16(0);
+    return (this._yh << 8) | this._yl;
   }
   set iy(value: number) {
-    this._viewIY.setUint16(0, value);
+    this._yh = (value >>> 8) & 0xff;
+    this._yl = value & 0xff;
   }
 
   /**
    * The I (interrupt vector) register
    */
   get i(): number {
-    return this._viewI.getUint8(0);
+    return this._i;
   }
   set i(value: number) {
-    this._viewI.setUint8(0, value);
+    this._i = value & 0xff;
   }
 
   /**
    * The R (refresh) register
    */
   get r(): number {
-    return this._viewR.getUint8(0);
+    return this._r;
   }
   set r(value: number) {
-    this._viewR.setUint8(0, value);
+    this._r = value & 0xff;
   }
 
   /**
    * The IR register pair
    */
   get ir(): number {
-    return this._viewIR.getUint16(0);
+    return (this._i << 8) | this._r;
   }
   set ir(value: number) {
-    this._viewIR.setUint16(0, value);
+    this._i = (value >>> 8) & 0xff;
+    this._r = value & 0xff;
   }
 
   /**
@@ -324,43 +322,48 @@ export class Z80CpuNew implements IZ80Cpu {
    * The higher 8 bits of the WZ register pair
    */
   get wh(): number {
-    return this._viewWH.getUint8(0);
+    return this._wh;
   }
   set wh(value: number) {
-    this._viewWH.setUint8(0, value);
+    this._wh = value & 0xff;
   }
 
   /**
    * The lower 8 bits of the WZ register pair
    */
   get wl(): number {
-    return this._viewWL.getUint8(0);
+    return this._wl;
   }
   set wl(value: number) {
-    this._viewWL.setUint8(0, value);
+    this._wl = value & 0xff;
   }
 
   /**
    * The WZ (MEMPTR) register pair
    */
   get wz(): number {
-    return this._viewWZ.getUint16(0);
+    return (this._wh << 8) | this._wl;
   }
   set wz(value: number) {
-    this._viewWZ.setUint16(0, value);
+    this._wh = (value >>> 8) & 0xff;
+    this._wl = value & 0xff;
   }
 
   /**
    * Get or set the value of the current index register
    */
   get indexReg(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.ix : this.iy;
+    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB 
+      ? (this._xh << 8) | this._xl 
+      : (this._yh << 8) | this._yl;
   }
   set indexReg(value: number) {
     if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.ix = value;
+      this._xh = (value >>> 8) & 0xff;
+      this._xl = value & 0xff;
     } else {
-      this.iy = value;
+      this._yh = (value >>> 8) & 0xff;
+      this._yl = value & 0xff;
     }
   }
 
@@ -368,13 +371,13 @@ export class Z80CpuNew implements IZ80Cpu {
    * Get or set the LSB value of the current index register
    */
   get indexL(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xl : this.yl;
+    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this._xl : this._yl;
   }
   set indexL(value: number) {
     if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.xl = value;
+      this._xl = value & 0xff;
     } else {
-      this.yl = value;
+      this._yl = value & 0xff;
     }
   }
 
@@ -382,13 +385,13 @@ export class Z80CpuNew implements IZ80Cpu {
    * Get or set the MSB value of the current index register
    */
   get indexH(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xh : this.yh;
+    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this._xh : this._yh;
   }
   set indexH(value: number) {
     if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.xh = value;
+      this._xh = value & 0xff;
     } else {
-      this.yh = value;
+      this._yh = value & 0xff;
     }
   }
 
@@ -396,14 +399,14 @@ export class Z80CpuNew implements IZ80Cpu {
    * Gets the value of the Carry flag
    */
   get flagCValue(): number {
-    return this.f & FlagsSetMask.C;
+    return this._f & FlagsSetMask.C;
   }
 
   /**
    * Gets the bits that represent the value of SZPV flag group
    */
   get flagsSZPVValue(): number {
-    return this.f & FlagsSetMask.SZPV;
+    return this._f & FlagsSetMask.SZPV;
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -630,20 +633,28 @@ export class Z80CpuNew implements IZ80Cpu {
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
   hardReset(): void {
-    this.af = 0xffff;
+    this._a = 0xff;
+    this._f = 0xff;
     this.af_ = 0xffff;
-    this.bc = 0x0000;
+    this._b = 0x00;
+    this._c = 0x00;
     this.bc_ = 0x0000;
-    this.de = 0x0000;
+    this._d = 0x00;
+    this._e = 0x00;
     this.de_ = 0x0000;
-    this.hl = 0x0000;
+    this._h = 0x00;
+    this._l = 0x00;
     this.hl_ = 0x0000;
-    this.ix = 0x0000;
-    this.iy = 0x0000;
-    this.ir = 0x0000;
+    this._xh = 0x00;
+    this._xl = 0x00;
+    this._yh = 0x00;
+    this._yl = 0x00;
+    this._i = 0x00;
+    this._r = 0x00;
     this.pc = 0x0000;
     this.sp = 0xffff;
-    this.wz = 0x0000;
+    this._wh = 0x00;
+    this._wl = 0x00;
 
     this.sigINT = false;
     this.sigNMI = false;
@@ -680,12 +691,15 @@ export class Z80CpuNew implements IZ80Cpu {
    * Handles the active RESET signal of the CPU.
    */
   reset(): void {
-    this.af = 0xffff;
+    this._a = 0xff;
+    this._f = 0xff;
     this.af_ = 0xffff;
-    this.ir = 0x0000;
+    this._i = 0x00;
+    this._r = 0x00;
     this.pc = 0x0000;
     this.sp = 0xffff;
-    this.wz = 0x0000;
+    this._wh = 0x00;
+    this._wl = 0x00;
 
     this.sigINT = false;
     this.sigNMI = false;
@@ -746,7 +760,14 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   onSnooze(): void {
     // --- Emulate 4 NOPs
-    this.tactPlusN(16);
+    this.tacts += 16;
+    this.frameTacts += 16;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -825,7 +846,15 @@ export class Z80CpuNew implements IZ80Cpu {
       // --- While in halted state, the CPU does not execute any instructions. It just refreshes the memory
       // --- page pointed by R and waits for four T-states.
       this.refreshMemory();
-      this.tactPlus4();
+      // --- Inline timing: tactPlus4()
+      this.tacts += 4;
+      this.frameTacts += 4;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
       return;
     }
 
@@ -844,7 +873,14 @@ export class Z80CpuNew implements IZ80Cpu {
     this.opCode = this.readMemory(this.pc);
     if (m1Active) {
       this.refreshMemory();
-      this.tactPlus1();
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
 
       // --- After the M1 refresh cycle, DivMMC may page out memory banks
       this.afterOpcodeFetch();
@@ -879,14 +915,30 @@ export class Z80CpuNew implements IZ80Cpu {
       // --- Bit instructions
       case OpCodePrefix.CB:
         this.bitOps[this.opCode](this);
-        this.tactPlus1();
+        // --- Inline timing: tactPlusN(1)
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
         this.prefix = OpCodePrefix.None;
         break;
 
       // --- Extended instructions
       case OpCodePrefix.ED:
         this.getExtendedOpsTable()[this.opCode](this);
-        this.tactPlus1();
+        // --- Inline timing: tactPlusN(1)
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
         this.prefix = OpCodePrefix.None;
         break;
 
@@ -901,7 +953,15 @@ export class Z80CpuNew implements IZ80Cpu {
           this.prefix = this.prefix == OpCodePrefix.DD ? OpCodePrefix.DDCB : OpCodePrefix.FDCB;
         } else {
           this.indexedOps[this.opCode](this);
-          this.tactPlus1();
+          // --- Inline timing: tactPlusN(1)
+          this.tacts += 1;
+          this.frameTacts += 1;
+          if (this.frameTacts >= this.tactsInCurrentFrame) {
+            this.frames++;
+            this.frameTacts -= this.tactsInCurrentFrame;
+          }
+          this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+          this.onTactIncremented();
           this.prefix = OpCodePrefix.None;
         }
         break;
@@ -910,12 +970,23 @@ export class Z80CpuNew implements IZ80Cpu {
       case OpCodePrefix.DDCB:
       case OpCodePrefix.FDCB:
         // --- OpCode is the distance
-        this.wz = this.indexReg + sbyte(this.opCode);
+        const indexRegValue = this.indexReg;
+        const wzValue = indexRegValue + sbyte(this.opCode);
+        this._wh = (wzValue >>> 8) & 0xff;
+        this._wl = wzValue & 0xff;
         this.opCode = this.readMemory(this.pc);
-        this.tactPlus2WithAddress(this.pc);
+        this.tactPlus2WithPC();
         this.pc++;
         this.indexedBitOps[this.opCode](this);
-        this.tactPlus1();
+        // --- Inline timing: tactPlusN(1)
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
         this.prefix = OpCodePrefix.None;
         break;
     }
@@ -940,7 +1011,15 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   private processNmi(): void {
     // --- Acknowledge the NMI
-    this.tactPlus4();
+    // --- Inline timing: tactPlus4()
+    this.tacts += 4;
+    this.frameTacts += 4;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
 
     this.removeFromHaltedState();
 
@@ -965,7 +1044,14 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   private processInt(): void {
     // --- It takes six T-states to acknowledge the interrupt
-    this.tactPlusN(6);
+    this.tacts += 6;
+    this.frameTacts += 6;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
 
     this.removeFromHaltedState();
 
@@ -991,19 +1077,20 @@ export class Z80CpuNew implements IZ80Cpu {
       // --- routine starting address; addresses must always start in even locations."
       // --- However, this article shows that we need to reset the least significant bit of:
       // --- http://www.z80.info/interrup2.htm
-      var addr = (this.i << 8) + 0xff;
-      this.wl = this.readMemory(addr++);
-      this.wh = this.readMemory(addr);
+      var addr = (this._i << 8) + 0xff;
+      this._wl = this.readMemory(addr++);
+      this._wh = this.readMemory(addr);
     } else {
       // --- On ZX Spectrum, Interrupt Mode 0 and 1 result in the same behavior, as no peripheral device would put
       // --- an instruction on the data bus. In Interrupt Mode 0, the CPU would read a $FF value from the bus, the
       // --- opcode for the RST $38 instruction. In Interrupt Mode 1, the CPU responds to an interrupt by executing
       // --- an RST $38 instruction.
-      this.wz = 0x0038;
+      this._wh = 0x00;
+      this._wl = 0x38;
     }
 
     // --- Observe that the interrupt handler routine address is first assembled in WZ and moved to PC.
-    this.pc = this.wz;
+    this.pc = (this._wh << 8) | this._wl;
   }
 
   /**
@@ -1020,56 +1107,56 @@ export class Z80CpuNew implements IZ80Cpu {
    * Test the Sign flag
    */
   isSFlagSet(): boolean {
-    return (this.f & FlagsSetMask.S) !== 0;
+    return (this._f & FlagsSetMask.S) !== 0;
   }
 
   /**
    * Test the Zero flag
    */
   isZFlagSet(): boolean {
-    return (this.f & FlagsSetMask.Z) !== 0;
+    return (this._f & FlagsSetMask.Z) !== 0;
   }
 
   /**
    * Test the R5 flag
    */
   isR5FlagSet(): boolean {
-    return (this.f & FlagsSetMask.R5) !== 0;
+    return (this._f & FlagsSetMask.R5) !== 0;
   }
 
   /**
    * Test the Half Carry flag
    */
   isHFlagSet(): boolean {
-    return (this.f & FlagsSetMask.H) !== 0;
+    return (this._f & FlagsSetMask.H) !== 0;
   }
 
   /**
    * Test the R3 flag
    */
   isR3FlagSet(): boolean {
-    return (this.f & FlagsSetMask.R3) !== 0;
+    return (this._f & FlagsSetMask.R3) !== 0;
   }
 
   /**
    * Test the Parity/overflow flag
    */
   isPvFlagSet(): boolean {
-    return (this.f & FlagsSetMask.PV) !== 0;
+    return (this._f & FlagsSetMask.PV) !== 0;
   }
 
   /**
    * Test the Subtract flag
    */
   isNFlagSet(): boolean {
-    return (this.f & FlagsSetMask.N) !== 0;
+    return (this._f & FlagsSetMask.N) !== 0;
   }
 
   /**
    * Test the Carry flag
    */
   isCFlagSet(): boolean {
-    return (this.f & FlagsSetMask.C) !== 0;
+    return (this._f & FlagsSetMask.C) !== 0;
   }
 
   /**
@@ -1077,7 +1164,15 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   pushPC(): void {
     this.sp--;
-    this.tactPlus1();
+    // --- Inline timing: tactPlusN(1)
+    this.tacts += 1;
+    this.frameTacts += 1;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
     this.writeMemory(this.sp, this.pc & 0xff);
@@ -1088,8 +1183,11 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param e 8-bit signed distance
    */
   relativeJump(e: number): void {
-    this.tactPlus5WithAddress(this.pc);
-    this.pc = this.wz = this.pc + sbyte(e);
+    this.tactPlus5WithPC();
+    const newPc = this.pc + sbyte(e);
+    this.pc = newPc;
+    this._wh = (newPc >>> 8) & 0xff;
+    this._wl = newPc & 0xff;
   }
 
   /**
@@ -1097,12 +1195,12 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   callCore(): void {
     this.pushToStepOutStack(this.pc);
-    this.tactPlus1WithAddress(this.pc);
+    this.tactPlus1WithPC();
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
     this.writeMemory(this.sp, this.pc);
-    this.pc = this.wz;
+    this.pc = (this._wh << 8) | this._wl;
   }
 
   /**
@@ -1111,12 +1209,14 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   rstCore(addr: number): void {
     this.pushToStepOutStack(this.pc);
-    this.tactPlus1WithAddress(this.ir);
+    this.tactPlus1WithIR();
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
     this.writeMemory(this.sp, this.pc);
-    this.pc = this.wz = addr;
+    this.pc = addr;
+    this._wh = (addr >>> 8) & 0xff;
+    this._wl = addr & 0xff;
   }
 
   pushToStepOutStack(returnAddress: number): void {
@@ -1136,9 +1236,10 @@ export class Z80CpuNew implements IZ80Cpu {
     const tmpVal = regHl + regOther;
     const lookup =
       ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
-    this.wz = regHl + 1;
-    this.f =
-      this.flagsSZPVValue |
+    this._wh = ((regHl + 1) >>> 8) & 0xff;
+    this._wl = (regHl + 1) & 0xff;
+    this._f =
+      (this._f & FlagsSetMask.SZPV) |
       ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0x00) |
       ((tmpVal >>> 8) & FlagsSetMask.R3R5) |
       halfCarryAddFlags[lookup];
@@ -1150,17 +1251,20 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   adc16(value: number): void {
-    const tmpVal = this.hl + value + this.flagCValue;
+    const hlValue = (this._h << 8) | this._l;
+    const tmpVal = hlValue + value + (this._f & FlagsSetMask.C);
     const lookup =
-      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    this.wz = this.hl + 1;
-    this.hl = tmpVal;
-    this.f =
+      ((hlValue & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
+    this._wh = ((hlValue + 1) >>> 8) & 0xff;
+    this._wl = (hlValue + 1) & 0xff;
+    this._h = (tmpVal >>> 8) & 0xff;
+    this._l = tmpVal & 0xff;
+    this._f =
       ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0) |
       overflowAddFlags[lookup >>> 4] |
-      (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
+      (this._h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
       halfCarryAddFlags[lookup & 0x07] |
-      (this.hl !== 0 ? 0 : FlagsSetMask.Z);
+      (((this._h << 8) | this._l) !== 0 ? 0 : FlagsSetMask.Z);
   }
 
   /**
@@ -1168,18 +1272,21 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   sbc16(value: number): void {
-    const tmpVal = this.hl - value - this.flagCValue;
+    const hlValue = (this._h << 8) | this._l;
+    const tmpVal = hlValue - value - (this._f & FlagsSetMask.C);
     var lookup =
-      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    this.wz = this.hl + 1;
-    this.hl = tmpVal;
-    this.f =
+      ((hlValue & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
+    this._wh = ((hlValue + 1) >>> 8) & 0xff;
+    this._wl = (hlValue + 1) & 0xff;
+    this._h = (tmpVal >>> 8) & 0xff;
+    this._l = tmpVal & 0xff;
+    this._f =
       ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0) |
       FlagsSetMask.N |
       overflowSubFlags[lookup >>> 4] |
-      (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
+      (this._h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
       halfCarrySubFlags[lookup & 0x07] |
-      (this.hl !== 0 ? 0 : FlagsSetMask.Z);
+      (((this._h << 8) | this._l) !== 0 ? 0 : FlagsSetMask.Z);
   }
 
   /**
@@ -1192,7 +1299,8 @@ export class Z80CpuNew implements IZ80Cpu {
     tmp += this.fetchCodeByte() << 8;
     this.writeMemory(tmp, low);
     tmp += 1;
-    this.wz = tmp;
+    this._wh = (tmp >>> 8) & 0xff;
+    this._wl = tmp & 0xff;
     this.writeMemory(tmp, high);
   }
 
@@ -1201,15 +1309,15 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sub8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
-    this.f =
+    const tmp = this._a - value;
+    const lookup = ((this._a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    this._a = tmp & 0xff;
+    this._f =
       ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[this._a];
   }
 
   /**
@@ -1217,15 +1325,15 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sbc8(value: number): void {
-    const tmp = this.a - value - this.flagCValue;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
-    this.f =
+    const tmp = this._a - value - (this._f & FlagsSetMask.C);
+    const lookup = ((this._a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    this._a = tmp & 0xff;
+    this._f =
       ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[this._a];
   }
 
   /**
@@ -1233,14 +1341,14 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to add to A
    */
   add8(value: number): void {
-    const tmp = this.a + value;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
-    this.f =
+    const tmp = this._a + value;
+    var lookup = ((this._a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    this._a = tmp & 0xff;
+    this._f =
       ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
       halfCarryAddFlags[lookup & 0x07] |
       overflowAddFlags[lookup >> 4] |
-      sz53Table[this.a];
+      sz53Table[this._a];
   }
 
   /**
@@ -1248,14 +1356,14 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to add to A
    */
   adc8(value: number): void {
-    const tmp = this.a + value + this.flagCValue;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.a = tmp;
-    this.f =
+    const tmp = this._a + value + (this._f & FlagsSetMask.C);
+    var lookup = ((this._a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    this._a = tmp & 0xff;
+    this._f =
       ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
       halfCarryAddFlags[lookup & 0x07] |
       overflowAddFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[this._a];
   }
 
   /**
@@ -1263,8 +1371,8 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to AND with A
    */
   and8(value: number): void {
-    this.a &= value;
-    this.f = FlagsSetMask.H | sz53pvTable[this.a];
+    this._a &= value;
+    this._f = FlagsSetMask.H | sz53pvTable[this._a];
   }
 
   /**
@@ -1272,8 +1380,8 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to XOR with A
    */
   xor8(value: number): void {
-    this.a ^= value;
-    this.f = sz53pvTable[this.a];
+    this._a ^= value;
+    this._f = sz53pvTable[this._a];
   }
 
   /**
@@ -1281,8 +1389,8 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to OR with A
    */
   or8(value: number): void {
-    this.a |= value;
-    this.f = sz53pvTable[this.a];
+    this._a |= value;
+    this._f = sz53pvTable[this._a];
   }
 
   /**
@@ -1290,9 +1398,9 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param value Value to compare with A
    */
   cp8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    this.f =
+    const tmp = this._a - value;
+    const lookup = ((this._a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    this._f =
       ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
       (tmp != 0 ? 0 : FlagsSetMask.Z) |
       FlagsSetMask.N |
@@ -1309,7 +1417,7 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   rlc8(oper: number): number {
     const result = ((oper << 1) | (oper >>> 7)) & 0xff;
-    this.f = (result & FlagsSetMask.C) | sz53pvTable[result];
+    this._f = (result & FlagsSetMask.C) | sz53pvTable[result];
     return result;
   }
 
@@ -1319,9 +1427,9 @@ export class Z80CpuNew implements IZ80Cpu {
    * @returns Operation result
    */
   rrc8(oper: number): number {
-    this.f = oper & FlagsSetMask.C;
+    this._f = oper & FlagsSetMask.C;
     const result = ((oper >>> 1) | (oper << 7)) & 0xff;
-    this.f |= sz53pvTable[result];
+    this._f |= sz53pvTable[result];
     return result;
   }
 
@@ -1331,8 +1439,8 @@ export class Z80CpuNew implements IZ80Cpu {
    * @returns Operation result
    */
   rl8(oper: number): number {
-    const result = ((oper << 1) | this.flagCValue) & 0xff;
-    this.f = (oper >>> 7) | sz53pvTable[result];
+    const result = ((oper << 1) | (this._f & FlagsSetMask.C)) & 0xff;
+    this._f = (oper >>> 7) | sz53pvTable[result];
     return result;
   }
 
@@ -1342,8 +1450,8 @@ export class Z80CpuNew implements IZ80Cpu {
    * @returns Operation result
    */
   rr8(oper: number): number {
-    const result = ((oper >>> 1) | (this.f << 7)) & 0xff;
-    this.f = (oper & FlagsSetMask.C) | sz53pvTable[result];
+    const result = ((oper >>> 1) | (this._f << 7)) & 0xff;
+    this._f = (oper & FlagsSetMask.C) | sz53pvTable[result];
     return result;
   }
 
@@ -1353,9 +1461,9 @@ export class Z80CpuNew implements IZ80Cpu {
    * @returns Operation result
    */
   sla8(oper: number): number {
-    this.f = oper >>> 7;
+    this._f = oper >>> 7;
     const result = (oper << 1) & 0xff;
-    this.f |= sz53pvTable[result];
+    this._f |= sz53pvTable[result];
     return result;
   }
 
@@ -1365,9 +1473,9 @@ export class Z80CpuNew implements IZ80Cpu {
    * @returns Operation result
    */
   sra8(oper: number): number {
-    this.f = oper & FlagsSetMask.C;
+    this._f = oper & FlagsSetMask.C;
     const result = ((oper & 0x80) | (oper >> 1)) & 0xff;
-    this.f |= sz53pvTable[result];
+    this._f |= sz53pvTable[result];
     return result;
   }
 
@@ -1377,9 +1485,9 @@ export class Z80CpuNew implements IZ80Cpu {
    * @returns Operation result
    */
   sll8(oper: number): number {
-    this.f = oper >>> 7;
+    this._f = oper >>> 7;
     const result = ((oper << 1) | 0x01) & 0xff;
-    this.f |= sz53pvTable[result];
+    this._f |= sz53pvTable[result];
     return result;
   }
 
@@ -1389,9 +1497,9 @@ export class Z80CpuNew implements IZ80Cpu {
    * @returns Operation result
    */
   srl8(oper: number): number {
-    this.f = oper & FlagsSetMask.C;
+    this._f = oper & FlagsSetMask.C;
     const result = oper >>> 1;
-    this.f |= sz53pvTable[result];
+    this._f |= sz53pvTable[result];
     return result;
   }
 
@@ -1401,12 +1509,12 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param oper Operand
    */
   bit8(bit: number, oper: number): void {
-    this.f = this.flagCValue | FlagsSetMask.H | (oper & FlagsSetMask.R3R5);
+    this._f = (this._f & FlagsSetMask.C) | FlagsSetMask.H | (oper & FlagsSetMask.R3R5);
     const bitVal = oper & (0x01 << bit);
     if (bitVal === 0) {
-      this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
+      this._f |= FlagsSetMask.PV | FlagsSetMask.Z;
     }
-    this.f |= bitVal & FlagsSetMask.S;
+    this._f |= bitVal & FlagsSetMask.S;
   }
 
   /**
@@ -1415,12 +1523,12 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param oper Operand
    */
   bit8W(bit: number, oper: number): void {
-    this.f = this.flagCValue | FlagsSetMask.H | (this.wh & FlagsSetMask.R3R5);
+    this._f = (this._f & FlagsSetMask.C) | FlagsSetMask.H | (this._wh & FlagsSetMask.R3R5);
     const bitVal = oper & (0x01 << bit);
     if (bitVal === 0) {
-      this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
+      this._f |= FlagsSetMask.PV | FlagsSetMask.Z;
     }
-    this.f |= bitVal & FlagsSetMask.S;
+    this._f |= bitVal & FlagsSetMask.S;
   }
 
   // --------------------------------------------------------------------------------------------------------------
@@ -1479,7 +1587,15 @@ export class Z80CpuNew implements IZ80Cpu {
    * the CPU tacts at least with 3 T-states!
    */
   delayMemoryRead(_address: number): void {
-    this.tactPlus3();
+    // --- Inline timing: tactPlus3()
+    this.tacts += 3;
+    this.frameTacts += 3;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -1500,7 +1616,15 @@ export class Z80CpuNew implements IZ80Cpu {
    * the CPU tacts at least with 3 T-states!
    */
   delayMemoryWrite(_address: number): void {
-    this.tactPlus3();
+    // --- Inline timing: tactPlus3()
+    this.tacts += 3;
+    this.frameTacts += 3;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -1565,7 +1689,15 @@ export class Z80CpuNew implements IZ80Cpu {
    * the CPU tacts at least with 4 T-states!
    */
   delayPortRead(_address: number): void {
-    this.tactPlus4();
+    // --- Inline timing: tactPlus4()
+    this.tacts += 4;
+    this.frameTacts += 4;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -1587,7 +1719,15 @@ export class Z80CpuNew implements IZ80Cpu {
    * the CPU tacts at least with 4 T-states!
    */
   delayPortWrite(_address: number): void {
-    this.tactPlus4();
+    // --- Inline timing: tactPlus4()
+    this.tacts += 4;
+    this.frameTacts += 4;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -1612,7 +1752,14 @@ export class Z80CpuNew implements IZ80Cpu {
    * This method increments the current CPU tacts by one.
    */
   tactPlus1(): void {
-    this.tactPlusN(1);
+    this.tacts += 1;
+    this.frameTacts += 1;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -1621,7 +1768,14 @@ export class Z80CpuNew implements IZ80Cpu {
    */
   tactPlus1WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tacts += 1;
+    this.frameTacts += 1;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -1629,24 +1783,64 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param address
    */
   tactPlus2WithAddress(address: number): void {
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    if (this.delayedAddressBus) {
+      this.delayAddressBusAccess(address);
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+      
+      this.delayAddressBusAccess(address);
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    } else {
+      this.tacts += 2;
+      this.frameTacts += 2;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
   }
 
   /**
    * This method increments the current CPU tacts by three.
    */
   tactPlus3(): void {
-    this.tactPlusN(3);
+    this.tacts += 3;
+    this.frameTacts += 3;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
    * This method increments the current CPU tacts by four.
    */
   tactPlus4(): void {
-    this.tactPlusN(4);
+    this.tacts += 4;
+    this.frameTacts += 4;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
   }
 
   /**
@@ -1654,14 +1848,30 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param address
    */
   tactPlus4WithAddress(address: number): void {
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      for (let i = 0; i < 4; i++) {
+        this.delayAddressBusAccess(address);
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
+      }
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 4;
+      this.frameTacts += 4;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
   }
 
   /**
@@ -1669,16 +1879,30 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param address
    */
   tactPlus5WithAddress(address: number): void {
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      for (let i = 0; i < 5; i++) {
+        this.delayAddressBusAccess(address);
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
+      }
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 5;
+      this.frameTacts += 5;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
   }
 
   /**
@@ -1686,20 +1910,30 @@ export class Z80CpuNew implements IZ80Cpu {
    * @param address
    */
   tactPlus7WithAddress(address: number): void {
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-    if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      for (let i = 0; i < 7; i++) {
+        this.delayAddressBusAccess(address);
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
+      }
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 7;
+      this.frameTacts += 7;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
   }
 
   /**
@@ -1715,6 +1949,217 @@ export class Z80CpuNew implements IZ80Cpu {
     }
     this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
     this.onTactIncremented();
+  }
+
+  // ----------------------------------------------------------------------------------------------------------------
+  // Specialized timing functions for common patterns
+
+  /**
+   * Specialized timing function for tactPlus1WithAddress(this.ir) - very common in I/O operations
+   */
+  tactPlus1WithIR(): void {
+    const irAddress = (this._i << 8) | this._r;
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      this.delayAddressBusAccess(irAddress);
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
+  }
+
+  /**
+   * Specialized timing function for tactPlus2WithAddress(this.ir) - common in ED prefix operations
+   */
+  tactPlus2WithIR(): void {
+    const irAddress = (this._i << 8) | this._r;
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      for (let i = 0; i < 2; i++) {
+        this.delayAddressBusAccess(irAddress);
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
+      }
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 2;
+      this.frameTacts += 2;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
+  }
+
+  /**
+   * Specialized timing function for tactPlus5WithAddress(this.pc) - common in PC-relative operations
+   */
+  tactPlus5WithPC(): void {
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      for (let i = 0; i < 5; i++) {
+        this.delayAddressBusAccess(this.pc);
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
+      }
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 5;
+      this.frameTacts += 5;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
+  }
+
+  /**
+   * Specialized timing function for tactPlus7WithAddress(this.ir) - common in 16-bit operations
+   */
+  tactPlus7WithIR(): void {
+    const irAddress = (this._i << 8) | this._r;
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      for (let i = 0; i < 7; i++) {
+        this.delayAddressBusAccess(irAddress);
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
+      }
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 7;
+      this.frameTacts += 7;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
+  }
+
+  /**
+   * Specialized timing function for tactPlus1WithAddress(HL) operations - very common in bit operations
+   */
+  tactPlus1WithHL(): void {
+    const hlAddress = this.hl;
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      this.delayAddressBusAccess(hlAddress);
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
+  }
+
+  /**
+   * Specialized timing function for tactPlus1WithAddress(this.pc) operations
+   */
+  tactPlus1WithPC(): void {
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      this.delayAddressBusAccess(this.pc);
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 1;
+      this.frameTacts += 1;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
+  }
+
+  /**
+   * Specialized timing function for tactPlus2WithAddress(this.pc) operations
+   */
+  tactPlus2WithPC(): void {
+    if (this.delayedAddressBus) {
+      // Slow path with address bus delay
+      for (let i = 0; i < 2; i++) {
+        this.delayAddressBusAccess(this.pc);
+        this.tacts += 1;
+        this.frameTacts += 1;
+        if (this.frameTacts >= this.tactsInCurrentFrame) {
+          this.frames++;
+          this.frameTacts -= this.tactsInCurrentFrame;
+        }
+        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.onTactIncremented();
+      }
+    } else {
+      // Fast path without address bus delay
+      this.tacts += 2;
+      this.frameTacts += 2;
+      if (this.frameTacts >= this.tactsInCurrentFrame) {
+        this.frames++;
+        this.frameTacts -= this.tactsInCurrentFrame;
+      }
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.onTactIncremented();
+    }
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -3133,7 +3578,7 @@ function ldBciA(cpu: Z80CpuNew) {
 // 0x03: INC BC
 function incBc(cpu: Z80CpuNew) {
   cpu.bc++;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x04: INC B
@@ -3160,7 +3605,7 @@ function rlca(cpu: Z80CpuNew) {
     rlcaVal = (rlcaVal | 0x01) & 0xff;
   }
   cpu.a = rlcaVal;
-  cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  cpu.f = cf | cpu.flagsSZPVValue | (rlcaVal & FlagsSetMask.R3R5);
 }
 
 // 0x08: EX AF,AF'
@@ -3172,7 +3617,7 @@ function exAf(cpu: Z80CpuNew) {
 
 // 0x09: ADD HL,BC
 function addHlBc(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.hl = cpu.add16(cpu.hl, cpu.bc);
 }
 
@@ -3185,7 +3630,7 @@ function ldABci(cpu: Z80CpuNew) {
 // 0x0b: DEC BC
 function decBc(cpu: Z80CpuNew) {
   cpu.bc--;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x0c: INC C
@@ -3213,12 +3658,12 @@ function rrca(cpu: Z80CpuNew) {
     rrcaVal = rrcaVal >>> 1;
   }
   cpu.a = rrcaVal;
-  cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  cpu.f = cf | cpu.flagsSZPVValue | (rrcaVal & FlagsSetMask.R3R5);
 }
 
 // 0x10: DJNZ d
 function djnz(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const e = cpu.fetchCodeByte();
   if (--cpu.b !== 0) {
     cpu.relativeJump(e);
@@ -3240,7 +3685,7 @@ function ldDeiA(cpu: Z80CpuNew) {
 // 0x13: INC DE
 function incDe(cpu: Z80CpuNew) {
   cpu.de++;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x14: INC D
@@ -3267,7 +3712,7 @@ function rla(cpu: Z80CpuNew) {
     rlaVal |= 0x01;
   }
   cpu.a = rlaVal;
-  cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  cpu.f = newCF | cpu.flagsSZPVValue | (rlaVal & FlagsSetMask.R3R5);
 }
 
 // 0x18: JR e
@@ -3277,7 +3722,7 @@ function jr(cpu: Z80CpuNew) {
 
 // 0x19: ADD HL,DE
 function addHlDe(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.hl = cpu.add16(cpu.hl, cpu.de);
 }
 
@@ -3290,7 +3735,7 @@ function ldADei(cpu: Z80CpuNew) {
 // 0x1b: DEC DE
 function decDe(cpu: Z80CpuNew) {
   cpu.de--;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x1c: INC E
@@ -3317,7 +3762,7 @@ function rra(cpu: Z80CpuNew) {
     rraVal |= 0x80;
   }
   cpu.a = rraVal;
-  cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+  cpu.f = newCF | cpu.flagsSZPVValue | (rraVal & FlagsSetMask.R3R5);
 }
 
 // 0x20: JR NZ,e
@@ -3342,7 +3787,7 @@ function ldNNiHl(cpu: Z80CpuNew) {
 // 0x23: INC HL
 function incHl(cpu: Z80CpuNew) {
   cpu.hl++;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x24: INC H
@@ -3392,8 +3837,9 @@ function jrz(cpu: Z80CpuNew) {
 
 // 0x29: ADD HL,HL
 function addHlHl(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
-  cpu.hl = cpu.add16(cpu.hl, cpu.hl);
+  cpu.tactPlus7WithIR();
+  const hlValue = cpu.hl;
+  cpu.hl = cpu.add16(hlValue, hlValue);
 }
 
 // 0x2a: LD HL,(nn)
@@ -3409,7 +3855,7 @@ function ldHlNNi(cpu: Z80CpuNew) {
 // 0x2b: DEC HL
 function decHl(cpu: Z80CpuNew) {
   cpu.hl--;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x2c: INC L
@@ -3464,23 +3910,25 @@ function ldNNiA(cpu: Z80CpuNew) {
 // 0x33: INC SP
 function incSp(cpu: Z80CpuNew) {
   cpu.sp++;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x34: INC (HL)
 function incHli(cpu: Z80CpuNew) {
-  let memValue = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  let memValue = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.f = incFlags[memValue++] | cpu.flagCValue;
-  cpu.writeMemory(cpu.hl, memValue);
+  cpu.writeMemory(hlAddress, memValue);
 }
 
 // 0x35: DEC (HL)
 function decHli(cpu: Z80CpuNew) {
-  let memValue = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  let memValue = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.f = decFlags[memValue--] | cpu.flagCValue;
-  cpu.writeMemory(cpu.hl, memValue);
+  cpu.writeMemory(hlAddress, memValue);
 }
 
 // 0x36: LD (HL),n
@@ -3504,7 +3952,7 @@ function jrc(cpu: Z80CpuNew) {
 
 // 0x39: ADD HL,SP
 function addHlSp(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.hl = cpu.add16(cpu.hl, cpu.sp);
 }
 
@@ -3519,7 +3967,7 @@ function ldANNi(cpu: Z80CpuNew) {
 // 0x3b: DEC SP
 function decSp(cpu: Z80CpuNew) {
   cpu.sp--;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x3c: INC A
@@ -4150,7 +4598,7 @@ function cpA(cpu: Z80CpuNew) {
 
 // 0xc0: RET NZ
 function retNz(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (!cpu.isZFlagSet()) {
     ret(cpu);
   }
@@ -4191,7 +4639,7 @@ function callNz(cpu: Z80CpuNew) {
 
 // 0xc5: PUSH BC
 function pushBc(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.b);
   cpu.sp--;
@@ -4210,7 +4658,7 @@ function rst00(cpu: Z80CpuNew) {
 
 // 0xc8: RET Z
 function retZ(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (cpu.isZFlagSet()) {
     ret(cpu);
   }
@@ -4263,7 +4711,7 @@ function rst08(cpu: Z80CpuNew) {
 
 // 0xd0: RET NC
 function retNc(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (!cpu.isCFlagSet()) {
     ret(cpu);
   }
@@ -4306,7 +4754,7 @@ function callNc(cpu: Z80CpuNew) {
 
 // 0xd5: PUSH DE
 function pushDe(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.d);
   cpu.sp--;
@@ -4325,7 +4773,7 @@ function rst10(cpu: Z80CpuNew) {
 
 // 0xd8: RET C
 function retC(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (cpu.isCFlagSet()) {
     ret(cpu);
   }
@@ -4381,7 +4829,7 @@ function rst18(cpu: Z80CpuNew) {
 
 // 0xe0: RET PO
 function retPo(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (!cpu.isPvFlagSet()) {
     ret(cpu);
   }
@@ -4429,7 +4877,7 @@ function callPo(cpu: Z80CpuNew) {
 
 // 0xe5: PUSH HL
 function pushHl(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.h);
   cpu.sp--;
@@ -4448,7 +4896,7 @@ function rst20(cpu: Z80CpuNew) {
 
 // 0xe8: RET PE
 function retPe(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (cpu.isPvFlagSet()) {
     ret(cpu);
   }
@@ -4496,7 +4944,7 @@ function rst28(cpu: Z80CpuNew) {
 
 // 0xf0: RET P
 function retP(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (!cpu.isSFlagSet()) {
     ret(cpu);
   }
@@ -4535,7 +4983,7 @@ function callP(cpu: Z80CpuNew) {
 
 // 0xf5: PUSH AF
 function pushAf(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.a);
   cpu.sp--;
@@ -4554,7 +5002,7 @@ function rst30(cpu: Z80CpuNew) {
 
 // 0xf8: RET M
 function retM(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   if (cpu.isSFlagSet()) {
     ret(cpu);
   }
@@ -4562,7 +5010,7 @@ function retM(cpu: Z80CpuNew) {
 
 // 0xf9: LD SP,HL
 function ldSpHl(cpu: Z80CpuNew) {
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
   cpu.sp = cpu.hl;
 }
 
@@ -4635,9 +5083,10 @@ function rlcL(cpu: Z80CpuNew) {
 
 // 0x06: RLC (HL)
 function rlcHli(cpu: Z80CpuNew) {
-  const tmp = cpu.rlc8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.rlc8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x07: RLC A
@@ -4677,9 +5126,10 @@ function rrcL(cpu: Z80CpuNew) {
 
 // 0x0e: RRC (HL)
 function rrcHli(cpu: Z80CpuNew) {
-  const tmp = cpu.rrc8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.rrc8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x0f: RRC A
@@ -4719,9 +5169,10 @@ function rlL(cpu: Z80CpuNew) {
 
 // 0x16: RL (HL)
 function rlHli(cpu: Z80CpuNew) {
-  const tmp = cpu.rl8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.rl8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x17: RL A
@@ -4761,9 +5212,10 @@ function rrL(cpu: Z80CpuNew) {
 
 // 0x1e: RR (HL)
 function rrHli(cpu: Z80CpuNew) {
-  const tmp = cpu.rr8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.rr8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x1f: RR A
@@ -4803,9 +5255,10 @@ function slaL(cpu: Z80CpuNew) {
 
 // 0x26: SLA (HL)
 function slaHli(cpu: Z80CpuNew) {
-  const tmp = cpu.sla8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.sla8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x27: SLA A
@@ -4843,11 +5296,12 @@ function sraL(cpu: Z80CpuNew) {
   cpu.l = cpu.sra8(cpu.l);
 }
 
-// 0x2E: SLA (HL)
+// 0x2E: SRA (HL)
 function sraHli(cpu: Z80CpuNew) {
-  const tmp = cpu.sra8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.sra8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x2F: SRA A
@@ -4887,9 +5341,10 @@ function sllL(cpu: Z80CpuNew) {
 
 // 0x36: SLL (HL)
 function sllHli(cpu: Z80CpuNew) {
-  const tmp = cpu.sll8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.sll8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x37: SLL A
@@ -4929,9 +5384,10 @@ function srlL(cpu: Z80CpuNew) {
 
 // 0x3E: SRL (HL)
 function srlHli(cpu: Z80CpuNew) {
-  const tmp = cpu.srl8(cpu.readMemory(cpu.hl));
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.srl8(cpu.readMemory(hlAddress));
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x3F: SRL A
@@ -4971,8 +5427,9 @@ function bit0L(cpu: Z80CpuNew) {
 
 // 0x46: BIT 0,(HL)
 function bit0Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(0, tmp);
 }
 
@@ -5013,8 +5470,9 @@ function bit1L(cpu: Z80CpuNew) {
 
 // 0x4E: BIT 1,(HL)
 function bit1Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(1, tmp);
 }
 
@@ -5055,8 +5513,9 @@ function bit2L(cpu: Z80CpuNew) {
 
 // 0x56: BIT 2,(HL)
 function bit2Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(2, tmp);
 }
 
@@ -5097,8 +5556,9 @@ function bit3L(cpu: Z80CpuNew) {
 
 // 0x5E: BIT 3,(HL)
 function bit3Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(3, tmp);
 }
 
@@ -5139,8 +5599,9 @@ function bit4L(cpu: Z80CpuNew) {
 
 // 0x66: BIT 4,(HL)
 function bit4Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(4, tmp);
 }
 
@@ -5181,8 +5642,9 @@ function bit5L(cpu: Z80CpuNew) {
 
 // 0x6E: BIT 5,(HL)
 function bit5Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(5, tmp);
 }
 
@@ -5223,8 +5685,9 @@ function bit6L(cpu: Z80CpuNew) {
 
 // 0x76: BIT 6,(HL)
 function bit6Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(6, tmp);
 }
 
@@ -5265,8 +5728,9 @@ function bit7L(cpu: Z80CpuNew) {
 
 // 0x7E: BIT 7,(HL)
 function bit7Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl);
-  cpu.tactPlus1WithAddress(cpu.hl);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress);
+  cpu.tactPlus1WithHL();
   cpu.bit8W(7, tmp);
 }
 
@@ -5307,9 +5771,10 @@ function res0L(cpu: Z80CpuNew) {
 
 // 0x86: RES 0,(HL)
 function res0Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl) & 0xfe;
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress) & 0xfe;
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0x87: RES 0,A
@@ -5350,7 +5815,7 @@ function res1L(cpu: Z80CpuNew) {
 // 0x8E: RES 1,(HL)
 function res1Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) & 0xfd;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5392,7 +5857,7 @@ function res2L(cpu: Z80CpuNew) {
 // 0x96: RES 2,(HL)
 function res2Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) & 0xfb;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5434,7 +5899,7 @@ function res3L(cpu: Z80CpuNew) {
 // 0x9E: RES 3,(HL)
 function res3Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) & 0xf7;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5476,7 +5941,7 @@ function res4L(cpu: Z80CpuNew) {
 // 0xA6: RES 4,(HL)
 function res4Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) & 0xef;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5518,7 +5983,7 @@ function res5L(cpu: Z80CpuNew) {
 // 0xAE: RES 5,(HL)
 function res5Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) & 0xdf;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5560,7 +6025,7 @@ function res6L(cpu: Z80CpuNew) {
 // 0xB6: RES 6,(HL)
 function res6Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) & 0xbf;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5602,7 +6067,7 @@ function res7L(cpu: Z80CpuNew) {
 // 0xBE: RES 7,(HL)
 function res7Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) & 0x7f;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5643,9 +6108,10 @@ function set0L(cpu: Z80CpuNew) {
 
 // 0xC6: SET 0,(HL)
 function set0Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl) | 0x1;
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress) | 0x1;
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0xC7: SET 0,A
@@ -5685,9 +6151,10 @@ function set1L(cpu: Z80CpuNew) {
 
 // 0xCE: SET 1,(HL)
 function set1Hli(cpu: Z80CpuNew) {
-  const tmp = cpu.readMemory(cpu.hl) | 0x2;
-  cpu.tactPlus1WithAddress(cpu.hl);
-  cpu.writeMemory(cpu.hl, tmp);
+  const hlAddress = cpu.hl;
+  const tmp = cpu.readMemory(hlAddress) | 0x2;
+  cpu.tactPlus1WithHL();
+  cpu.writeMemory(hlAddress, tmp);
 }
 
 // 0xCF: SET 1,A
@@ -5728,7 +6195,7 @@ function set2L(cpu: Z80CpuNew) {
 // 0xD6: SET 2,(HL)
 function set2Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) | 0x4;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5770,7 +6237,7 @@ function set3L(cpu: Z80CpuNew) {
 // 0xDE: SET 3,(HL)
 function set3Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) | 0x8;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5812,7 +6279,7 @@ function set4L(cpu: Z80CpuNew) {
 // 0xE6: SET 4,(HL)
 function set4Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) | 0x10;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5854,7 +6321,7 @@ function set5L(cpu: Z80CpuNew) {
 // 0xEE: SET 5,(HL)
 function set5Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) | 0x20;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5896,7 +6363,7 @@ function set6L(cpu: Z80CpuNew) {
 // 0xF6: SET 6,(HL)
 function set6Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) | 0x40;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -5938,7 +6405,7 @@ function set7L(cpu: Z80CpuNew) {
 // 0xFE: SET 7,(HL)
 function set7Hli(cpu: Z80CpuNew) {
   const tmp = cpu.readMemory(cpu.hl) | 0x80;
-  cpu.tactPlus1WithAddress(cpu.hl);
+  cpu.tactPlus1WithHL();
   cpu.writeMemory(cpu.hl, tmp);
 }
 
@@ -7355,13 +7822,13 @@ function xset7A(cpu: Z80CpuNew) {
 
 // 0x09: ADD IX,BC
 function addXBc(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.bc);
 }
 
 // 0x19: ADD IX,DE
 function addXDe(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.de);
 }
 
@@ -7379,7 +7846,7 @@ function ldNNiX(cpu: Z80CpuNew) {
 // 0x23: INC IX
 function incX(cpu: Z80CpuNew) {
   cpu.indexReg++;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x24: INC XH
@@ -7399,7 +7866,7 @@ function ldXhN(cpu: Z80CpuNew) {
 
 // 0x29: ADD IX,IX
 function addXX(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.indexReg);
 }
 
@@ -7414,7 +7881,7 @@ function ldXNNi(cpu: Z80CpuNew) {
 // 0x2B: DEC IX
 function decX(cpu: Z80CpuNew) {
   cpu.indexReg--;
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
 }
 
 // 0x2C: INC XL
@@ -7435,7 +7902,7 @@ function ldXlN(cpu: Z80CpuNew) {
 // 0x34: INC (IX+d)
 function incXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   let tmp = cpu.readMemory(cpu.wz);
@@ -7447,7 +7914,7 @@ function incXi(cpu: Z80CpuNew) {
 // 0x35: DEC (IX+d)
 function decXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   let tmp = cpu.readMemory(cpu.wz);
@@ -7467,7 +7934,7 @@ function ldXiN(cpu: Z80CpuNew) {
 
 // 0x39: ADD IX,SP
 function addXSp(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.indexReg = cpu.add16(cpu.indexReg, cpu.sp);
 }
 
@@ -7484,7 +7951,7 @@ function ldBXl(cpu: Z80CpuNew) {
 // 0x46: LD B,(IX+d)
 function ldBXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.b = cpu.readMemory(cpu.wz);
@@ -7503,7 +7970,7 @@ function ldCXl(cpu: Z80CpuNew) {
 // 0x4E: LD C,(IX+d)
 function ldCXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.c = cpu.readMemory(cpu.wz);
@@ -7521,7 +7988,7 @@ function ldDXl(cpu: Z80CpuNew) {
 // 0x56: LD D,(IX+d)
 function ldDXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.d = cpu.readMemory(cpu.wz);
@@ -7540,7 +8007,7 @@ function ldEXl(cpu: Z80CpuNew) {
 // 0x5E: LD E,(IX+d)
 function ldEXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.e = cpu.readMemory(cpu.wz);
@@ -7574,7 +8041,7 @@ function ldXhXl(cpu: Z80CpuNew) {
 // 0x66: LD H,(IX+d)
 function ldHXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.h = cpu.readMemory(cpu.wz);
@@ -7613,7 +8080,7 @@ function ldXlXh(cpu: Z80CpuNew) {
 // 0x6E: LD L,(IX+d)
 function ldLXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.l = cpu.readMemory(cpu.wz);
@@ -7627,7 +8094,7 @@ function ldXlA(cpu: Z80CpuNew) {
 // 0x70: LD (IX+d),B
 function ldXiB(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.writeMemory(cpu.wz, cpu.b);
@@ -7636,7 +8103,7 @@ function ldXiB(cpu: Z80CpuNew) {
 // 0x71: LD (IX+d),C
 function ldXiC(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.writeMemory(cpu.wz, cpu.c);
@@ -7645,7 +8112,7 @@ function ldXiC(cpu: Z80CpuNew) {
 // 0x72: LD (IX+d),D
 function ldXiD(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.writeMemory(cpu.wz, cpu.d);
@@ -7654,7 +8121,7 @@ function ldXiD(cpu: Z80CpuNew) {
 // 0x73: LD (IX+d),E
 function ldXiE(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.writeMemory(cpu.wz, cpu.e);
@@ -7663,7 +8130,7 @@ function ldXiE(cpu: Z80CpuNew) {
 // 0x74: LD (IX+d),H
 function ldXiH(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.writeMemory(cpu.wz, cpu.h);
@@ -7672,7 +8139,7 @@ function ldXiH(cpu: Z80CpuNew) {
 // 0x75: LD (IX+d),L
 function ldXiL(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.writeMemory(cpu.wz, cpu.l);
@@ -7681,7 +8148,7 @@ function ldXiL(cpu: Z80CpuNew) {
 // 0x77: LD (IX+d),A
 function ldXiA(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.writeMemory(cpu.wz, cpu.a);
@@ -7700,7 +8167,7 @@ function ldAXl(cpu: Z80CpuNew) {
 // 0x7E: LD A,(IX+d)
 function ldAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.a = cpu.readMemory(cpu.wz);
@@ -7719,7 +8186,7 @@ function addAXl(cpu: Z80CpuNew) {
 // 0x86: ADD A,(IX+d)
 function addAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.add8(cpu.readMemory(cpu.wz));
@@ -7738,7 +8205,7 @@ function adcAXl(cpu: Z80CpuNew) {
 // 0x8E: ADC A,(IX+d)
 function adcAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.adc8(cpu.readMemory(cpu.wz));
@@ -7757,7 +8224,7 @@ function subAXl(cpu: Z80CpuNew) {
 // 0x96: SUB A,(IX+d)
 function subAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.sub8(cpu.readMemory(cpu.wz));
@@ -7776,7 +8243,7 @@ function sbcAXl(cpu: Z80CpuNew) {
 // 0x9E: SBC A,(IX+d)
 function sbcAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.sbc8(cpu.readMemory(cpu.wz));
@@ -7795,7 +8262,7 @@ function andAXl(cpu: Z80CpuNew) {
 // 0xA6: AND A,(IX+d)
 function andAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.and8(cpu.readMemory(cpu.wz));
@@ -7814,7 +8281,7 @@ function xorAXl(cpu: Z80CpuNew) {
 // 0xAE: XOR A,(IX+d)
 function xorAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.xor8(cpu.readMemory(cpu.wz));
@@ -7833,7 +8300,7 @@ function orAXl(cpu: Z80CpuNew) {
 // 0xB6: OR A,(IX+d)
 function orAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.or8(cpu.readMemory(cpu.wz));
@@ -7852,7 +8319,7 @@ function cpAXl(cpu: Z80CpuNew) {
 // 0xBE: CP (IX+d)
 function cpAXi(cpu: Z80CpuNew) {
   const dist = cpu.readMemory(cpu.pc);
-  cpu.tactPlus5WithAddress(cpu.pc);
+  cpu.tactPlus5WithPC();
   cpu.pc++;
   cpu.wz = cpu.indexReg + sbyte(dist);
   cpu.cp8(cpu.readMemory(cpu.wz));
@@ -7882,7 +8349,7 @@ function exSpiX(cpu: Z80CpuNew) {
 
 // 0xe5: PUSH IX
 function pushX(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.indexH);
   cpu.sp--;
@@ -7896,7 +8363,7 @@ function jpX(cpu: Z80CpuNew) {
 
 // 0xf9: LD SP,IX
 function ldSpX(cpu: Z80CpuNew) {
-  cpu.tactPlus2WithAddress(cpu.ir);
+  cpu.tactPlus2WithIR();
   cpu.sp = cpu.indexReg;
 }
 
@@ -7918,7 +8385,7 @@ function outCB(cpu: Z80CpuNew) {
 
 // 0x42: SBC HL,BC
 function sbcHlBc(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.sbc16(cpu.bc);
 }
 
@@ -7947,7 +8414,7 @@ function im0(cpu: Z80CpuNew) {
 
 // 0x47: LD I,A
 function ldIA(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.i = cpu.a;
 }
 
@@ -7966,7 +8433,7 @@ function outCC(cpu: Z80CpuNew) {
 
 // 0x4A: ADC HL,BC
 function adcHlBc(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.adc16(cpu.bc);
 }
 
@@ -7982,7 +8449,7 @@ function ldBcNni(cpu: Z80CpuNew) {
 
 // 0x4F: LD R,A
 function ldRA(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.r = cpu.a;
 }
 
@@ -8001,7 +8468,7 @@ function outCD(cpu: Z80CpuNew) {
 
 // 0x52: SBC HL,DE
 function sbcHlDe(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.sbc16(cpu.de);
 }
 
@@ -8017,7 +8484,7 @@ function im1(cpu: Z80CpuNew) {
 
 // 0x57: LD A,I
 function ldAI(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.a = cpu.i;
   cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
 }
@@ -8037,7 +8504,7 @@ function outCE(cpu: Z80CpuNew) {
 
 // 0x5A: ADC HL,DE
 function adcHlDe(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.adc16(cpu.de);
 }
 
@@ -8058,7 +8525,7 @@ function im2(cpu: Z80CpuNew) {
 
 // 0x5F: LD A,R
 function ldAR(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   cpu.a = cpu.r;
   cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
 }
@@ -8078,7 +8545,7 @@ function outCH(cpu: Z80CpuNew) {
 
 // 0x62: SBC HL,HL
 function sbcHlHl(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.sbc16(cpu.hl);
 }
 
@@ -8112,7 +8579,7 @@ function outCL(cpu: Z80CpuNew) {
 
 // 0x6A: ADC HL,HL
 function adcHlHl(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.adc16(cpu.hl);
 }
 
@@ -8151,7 +8618,7 @@ function outC0(cpu: Z80CpuNew) {
 
 // 0x72: SBC HL,SP
 function sbcHlSp(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.sbc16(cpu.sp);
 }
 
@@ -8175,7 +8642,7 @@ function outCA(cpu: Z80CpuNew) {
 
 // 0x7A: ADC HL,SP
 function adcHlSp(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithAddress(cpu.ir);
+  cpu.tactPlus7WithIR();
   cpu.adc16(cpu.sp);
 }
 
@@ -8228,7 +8695,7 @@ function cpi(cpu: Z80CpuNew) {
 
 // 0xA2: INI
 function ini(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
   cpu.wz = cpu.bc + 1;
@@ -8244,7 +8711,7 @@ function ini(cpu: Z80CpuNew) {
 
 // 0xA3: OUTI
 function outi(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;
   cpu.wz = cpu.bc + 1;
@@ -8297,7 +8764,7 @@ function cpd(cpu: Z80CpuNew) {
 
 // 0xAA: IND
 function ind(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
   cpu.wz = cpu.bc - 1;
@@ -8313,7 +8780,7 @@ function ind(cpu: Z80CpuNew) {
 
 // 0xAB: OUTD
 function outd(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;
   cpu.wz = cpu.bc - 1;
@@ -8377,7 +8844,7 @@ function cpir(cpu: Z80CpuNew) {
 
 // 0xB2: INIR
 function inir(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
   cpu.wz = cpu.bc + 1;
@@ -8397,7 +8864,7 @@ function inir(cpu: Z80CpuNew) {
 
 // 0xB3: OTIR
 function otir(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;
   cpu.wz = cpu.bc + 1;
@@ -8464,7 +8931,7 @@ function cpdr(cpu: Z80CpuNew) {
 
 // 0xBA: INDR
 function indr(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readPort(cpu.bc);
   cpu.writeMemory(cpu.hl, tmp);
   cpu.wz = cpu.bc - 1;
@@ -8485,7 +8952,7 @@ function indr(cpu: Z80CpuNew) {
 
 // 0xBB: OTDR
 function otdr(cpu: Z80CpuNew) {
-  cpu.tactPlus1WithAddress(cpu.ir);
+  cpu.tactPlus1WithIR();
   const tmp = cpu.readMemory(cpu.hl);
   cpu.b--;
   cpu.wz = cpu.bc - 1;
