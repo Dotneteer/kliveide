@@ -906,7 +906,266 @@ export class Z80CpuNew implements IZ80Cpu {
             this.prefix = OpCodePrefix.FD;
             break;
           default:
-            this.standardOps[this.opCode](this);
+            // --- Optimized inline dispatch for most common instructions
+            switch (this.opCode) {
+              // --- NOP (0x00) - most common instruction
+              case 0x00:
+                // nop() - empty function, no operation needed
+                break;
+                
+              // --- LD r,n instructions (0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x3E)
+              case 0x06: // LD B,n
+                this._b = this.fetchCodeByte();
+                break;
+              case 0x0e: // LD C,n  
+                this._c = this.fetchCodeByte();
+                break;
+              case 0x16: // LD D,n
+                this._d = this.fetchCodeByte();
+                break;
+              case 0x1e: // LD E,n
+                this._e = this.fetchCodeByte();
+                break;
+              case 0x26: // LD H,n
+                this._h = this.fetchCodeByte();
+                break;
+              case 0x2e: // LD L,n
+                this._l = this.fetchCodeByte();
+                break;
+              case 0x3e: // LD A,n
+                this._a = this.fetchCodeByte();
+                break;
+                
+              // --- INC r instructions (0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x3C)
+              case 0x04: // INC B
+                this._f = incFlags[this._b] | this.flagCValue;
+                this._b = (this._b + 1) & 0xff;
+                break;
+              case 0x0c: // INC C
+                this._f = incFlags[this._c] | this.flagCValue;
+                this._c = (this._c + 1) & 0xff;
+                break;
+              case 0x14: // INC D
+                this._f = incFlags[this._d] | this.flagCValue;
+                this._d = (this._d + 1) & 0xff;
+                break;
+              case 0x1c: // INC E
+                this._f = incFlags[this._e] | this.flagCValue;
+                this._e = (this._e + 1) & 0xff;
+                break;
+              case 0x24: // INC H
+                this._f = incFlags[this._h] | this.flagCValue;
+                this._h = (this._h + 1) & 0xff;
+                break;
+              case 0x2c: // INC L
+                this._f = incFlags[this._l] | this.flagCValue;
+                this._l = (this._l + 1) & 0xff;
+                break;
+              case 0x3c: // INC A
+                this._f = incFlags[this._a] | this.flagCValue;
+                this._a = (this._a + 1) & 0xff;
+                break;
+                
+              // --- DEC r instructions (0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D, 0x3D)
+              case 0x05: // DEC B
+                this._f = decFlags[this._b] | this.flagCValue;
+                this._b = (this._b - 1) & 0xff;
+                break;
+              case 0x0d: // DEC C
+                this._f = decFlags[this._c] | this.flagCValue;
+                this._c = (this._c - 1) & 0xff;
+                break;
+              case 0x15: // DEC D
+                this._f = decFlags[this._d] | this.flagCValue;
+                this._d = (this._d - 1) & 0xff;
+                break;
+              case 0x1d: // DEC E
+                this._f = decFlags[this._e] | this.flagCValue;
+                this._e = (this._e - 1) & 0xff;
+                break;
+              case 0x25: // DEC H
+                this._f = decFlags[this._h] | this.flagCValue;
+                this._h = (this._h - 1) & 0xff;
+                break;
+              case 0x2d: // DEC L
+                this._f = decFlags[this._l] | this.flagCValue;
+                this._l = (this._l - 1) & 0xff;
+                break;
+              case 0x3d: // DEC A
+                this._f = decFlags[this._a] | this.flagCValue;
+                this._a = (this._a - 1) & 0xff;
+                break;
+                
+              // --- Common LD r,r instructions (most frequent ones)
+              case 0x40: // LD B,B - NOP equivalent but still occurs
+                break;
+              case 0x41: // LD B,C
+                this._b = this._c;
+                break;
+              case 0x42: // LD B,D
+                this._b = this._d;
+                break;
+              case 0x43: // LD B,E
+                this._b = this._e;
+                break;
+              case 0x44: // LD B,H
+                this._b = this._h;
+                break;
+              case 0x45: // LD B,L
+                this._b = this._l;
+                break;
+              case 0x47: // LD B,A
+                this._b = this._a;
+                break;
+              case 0x48: // LD C,B
+                this._c = this._b;
+                break;
+              case 0x49: // LD C,C - NOP equivalent
+                break;
+              case 0x4a: // LD C,D
+                this._c = this._d;
+                break;
+              case 0x4b: // LD C,E
+                this._c = this._e;
+                break;
+              case 0x4c: // LD C,H
+                this._c = this._h;
+                break;
+              case 0x4d: // LD C,L
+                this._c = this._l;
+                break;
+              case 0x4f: // LD C,A
+                this._c = this._a;
+                break;
+              case 0x50: // LD D,B
+                this._d = this._b;
+                break;
+              case 0x51: // LD D,C
+                this._d = this._c;
+                break;
+              case 0x52: // LD D,D - NOP equivalent
+                break;
+              case 0x53: // LD D,E
+                this._d = this._e;
+                break;
+              case 0x54: // LD D,H
+                this._d = this._h;
+                break;
+              case 0x55: // LD D,L
+                this._d = this._l;
+                break;
+              case 0x57: // LD D,A
+                this._d = this._a;
+                break;
+              case 0x58: // LD E,B
+                this._e = this._b;
+                break;
+              case 0x59: // LD E,C
+                this._e = this._c;
+                break;
+              case 0x5a: // LD E,D
+                this._e = this._d;
+                break;
+              case 0x5b: // LD E,E - NOP equivalent
+                break;
+              case 0x5c: // LD E,H
+                this._e = this._h;
+                break;
+              case 0x5d: // LD E,L
+                this._e = this._l;
+                break;
+              case 0x5f: // LD E,A
+                this._e = this._a;
+                break;
+              case 0x60: // LD H,B
+                this._h = this._b;
+                break;
+              case 0x61: // LD H,C
+                this._h = this._c;
+                break;
+              case 0x62: // LD H,D
+                this._h = this._d;
+                break;
+              case 0x63: // LD H,E
+                this._h = this._e;
+                break;
+              case 0x64: // LD H,H - NOP equivalent
+                break;
+              case 0x65: // LD H,L
+                this._h = this._l;
+                break;
+              case 0x67: // LD H,A
+                this._h = this._a;
+                break;
+              case 0x68: // LD L,B
+                this._l = this._b;
+                break;
+              case 0x69: // LD L,C
+                this._l = this._c;
+                break;
+              case 0x6a: // LD L,D
+                this._l = this._d;
+                break;
+              case 0x6b: // LD L,E
+                this._l = this._e;
+                break;
+              case 0x6c: // LD L,H
+                this._l = this._h;
+                break;
+              case 0x6d: // LD L,L - NOP equivalent
+                break;
+              case 0x6f: // LD L,A
+                this._l = this._a;
+                break;
+              case 0x78: // LD A,B
+                this._a = this._b;
+                break;
+              case 0x79: // LD A,C
+                this._a = this._c;
+                break;
+              case 0x7a: // LD A,D
+                this._a = this._d;
+                break;
+              case 0x7b: // LD A,E
+                this._a = this._e;
+                break;
+              case 0x7c: // LD A,H
+                this._a = this._h;
+                break;
+              case 0x7d: // LD A,L
+                this._a = this._l;
+                break;
+              case 0x7f: // LD A,A - NOP equivalent
+                break;
+                
+              // --- Jump/Branch instructions
+              case 0x18: // JR d
+                this.relativeJump(this.fetchCodeByte());
+                break;
+              case 0xc3: // JP nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                this.pc = this.wz;
+                break;
+              case 0xc9: // RET
+                this._wl = this.readMemory(this.sp);
+                this.sp++;
+                this._wh = this.readMemory(this.sp);
+                this.sp++;
+                this.pc = this.wz;
+                this.retExecuted = true;
+                break;
+              case 0xcd: // CALL nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                this.callCore();
+                break;
+                
+              // --- Fall back to function array for unoptimized instructions
+              default:
+                this.standardOps[this.opCode](this);
+                break;
+            }
             this.prefix = OpCodePrefix.None;
             break;
         }
