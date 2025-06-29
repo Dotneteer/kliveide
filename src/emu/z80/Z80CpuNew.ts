@@ -458,7 +458,28 @@ export class Z80CpuNew implements IZ80Cpu {
    * By default, the CPU works with its regular (base) clock frequency; however, you can use an integer clock
    * frequency multiplier to emulate a faster CPU.
    */
-  clockMultiplier: number;
+  private _clockMultiplier: number = 1;
+
+  get clockMultiplier(): number {
+    return this._clockMultiplier;
+  }
+
+  set clockMultiplier(value: number) {
+    this._clockMultiplier = value;
+    this.initializeClockOptimization();
+  }
+
+  /**
+   * Optimization: Pre-calculated shift amount for bitwise division when clockMultiplier is power of 2
+   * @private
+   */
+  private clockMultiplierShift: number;
+
+  /**
+   * Optimization: Flag indicating whether to use bitwise division for clockMultiplier operations
+   * @private
+   */
+  private useBitwiseClockDivision: boolean;
 
   /**
    * The number of T-states (clock cycles) elapsed since the last reset
@@ -664,6 +685,7 @@ export class Z80CpuNew implements IZ80Cpu {
     this.iff1 = false;
     this.iff2 = false;
     this.clockMultiplier = 1;
+    this.initializeClockOptimization();
 
     this.opCode = 0;
     this.prefix = OpCodePrefix.None;
@@ -688,6 +710,35 @@ export class Z80CpuNew implements IZ80Cpu {
   }
 
   /**
+   * Initializes the clock optimization flags based on the current clockMultiplier value.
+   * If clockMultiplier is a power of 2, enables bitwise division optimization.
+   * @private
+   */
+  private initializeClockOptimization(): void {
+    // Check if clockMultiplier is a power of 2
+    if (this.clockMultiplier > 0 && (this.clockMultiplier & (this.clockMultiplier - 1)) === 0) {
+      this.useBitwiseClockDivision = true;
+      // Calculate the shift amount (log2 of clockMultiplier)
+      this.clockMultiplierShift = Math.log2(this.clockMultiplier);
+    } else {
+      this.useBitwiseClockDivision = false;
+      this.clockMultiplierShift = 0;
+    }
+  }
+
+  /**
+   * Optimized calculation and assignment of current frame tact using bitwise operations when possible.
+   * @private
+   */
+  private calculateCurrentFrameTact(): void {
+    if (this.useBitwiseClockDivision) {
+      this.currentFrameTact = this.frameTacts >> this.clockMultiplierShift;
+    } else {
+      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    }
+  }
+
+  /**
    * Handles the active RESET signal of the CPU.
    */
   reset(): void {
@@ -709,6 +760,7 @@ export class Z80CpuNew implements IZ80Cpu {
     this.iff1 = false;
     this.iff2 = false;
     this.clockMultiplier = 1;
+    this.initializeClockOptimization();
 
     this.opCode = 0;
     this.prefix = OpCodePrefix.None;
@@ -766,7 +818,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -853,7 +905,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
       return;
     }
@@ -879,7 +931,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
 
       // --- After the M1 refresh cycle, DivMMC may page out memory banks
@@ -1160,6 +1212,523 @@ export class Z80CpuNew implements IZ80Cpu {
                 this._wh = this.fetchCodeByte();
                 this.callCore();
                 break;
+
+              // --- Rotate and shift instructions (common in Z80 code)
+              case 0x07: // RLCA
+                this._f = (this._a >>> 7) | (this.flagsSZPVValue & 0xFE);
+                this._a = ((this._a << 1) | (this._a >>> 7)) & 0xff;
+                break;
+              case 0x0f: // RRCA
+                this._f = (this._a & 0x01) | (this.flagsSZPVValue & 0xFE);
+                this._a = ((this._a >>> 1) | (this._a << 7)) & 0xff;
+                break;
+              case 0x17: // RLA
+                const oldCarry = this.flagCValue;
+                this._f = (this._a >>> 7) | (this.flagsSZPVValue & 0xFE);
+                this._a = ((this._a << 1) | oldCarry) & 0xff;
+                break;
+              case 0x1f: // RRA
+                const oldCarry2 = this.flagCValue;
+                this._f = (this._a & 0x01) | (this.flagsSZPVValue & 0xFE);
+                this._a = ((this._a >>> 1) | (oldCarry2 << 7)) & 0xff;
+                break;
+
+              // --- Logical operations AND
+              case 0xa0: // AND B
+                this.and8(this._b);
+                break;
+              case 0xa1: // AND C
+                this.and8(this._c);
+                break;
+              case 0xa2: // AND D
+                this.and8(this._d);
+                break;
+              case 0xa3: // AND E
+                this.and8(this._e);
+                break;
+              case 0xa4: // AND H
+                this.and8(this._h);
+                break;
+              case 0xa5: // AND L
+                this.and8(this._l);
+                break;
+              case 0xa7: // AND A
+                this.and8(this._a);
+                break;
+              case 0xe6: // AND n
+                this.and8(this.fetchCodeByte());
+                break;
+
+              // --- Logical operations OR
+              case 0xb0: // OR B
+                this.or8(this._b);
+                break;
+              case 0xb1: // OR C
+                this.or8(this._c);
+                break;
+              case 0xb2: // OR D
+                this.or8(this._d);
+                break;
+              case 0xb3: // OR E
+                this.or8(this._e);
+                break;
+              case 0xb4: // OR H
+                this.or8(this._h);
+                break;
+              case 0xb5: // OR L
+                this.or8(this._l);
+                break;
+              case 0xb7: // OR A
+                this.or8(this._a);
+                break;
+              case 0xf6: // OR n
+                this.or8(this.fetchCodeByte());
+                break;
+
+              // --- Logical operations XOR
+              case 0xa8: // XOR B
+                this.xor8(this._b);
+                break;
+              case 0xa9: // XOR C
+                this.xor8(this._c);
+                break;
+              case 0xaa: // XOR D
+                this.xor8(this._d);
+                break;
+              case 0xab: // XOR E
+                this.xor8(this._e);
+                break;
+              case 0xac: // XOR H
+                this.xor8(this._h);
+                break;
+              case 0xad: // XOR L
+                this.xor8(this._l);
+                break;
+              case 0xaf: // XOR A
+                this.xor8(this._a);
+                break;
+              case 0xee: // XOR n
+                this.xor8(this.fetchCodeByte());
+                break;
+
+              // --- ADC (Add with Carry) instructions
+              case 0x88: // ADC A,B
+                this.adc8(this._b);
+                break;
+              case 0x89: // ADC A,C
+                this.adc8(this._c);
+                break;
+              case 0x8a: // ADC A,D
+                this.adc8(this._d);
+                break;
+              case 0x8b: // ADC A,E
+                this.adc8(this._e);
+                break;
+              case 0x8c: // ADC A,H
+                this.adc8(this._h);
+                break;
+              case 0x8d: // ADC A,L
+                this.adc8(this._l);
+                break;
+              case 0x8f: // ADC A,A
+                this.adc8(this._a);
+                break;
+              case 0xce: // ADC A,n
+                this.adc8(this.fetchCodeByte());
+                break;
+
+              // --- SBC (Subtract with Carry) instructions
+              case 0x98: // SBC A,B
+                this.sbc8(this._b);
+                break;
+              case 0x99: // SBC A,C
+                this.sbc8(this._c);
+                break;
+              case 0x9a: // SBC A,D
+                this.sbc8(this._d);
+                break;
+              case 0x9b: // SBC A,E
+                this.sbc8(this._e);
+                break;
+              case 0x9c: // SBC A,H
+                this.sbc8(this._h);
+                break;
+              case 0x9d: // SBC A,L
+                this.sbc8(this._l);
+                break;
+              case 0x9f: // SBC A,A
+                this.sbc8(this._a);
+                break;
+
+              // --- Conditional relative jumps (very common in Z80 code)
+              case 0x20: // JR NZ,d
+                if (!this.isZFlagSet()) {
+                  this.relativeJump(this.fetchCodeByte());
+                } else {
+                  this.pc++; // Skip displacement byte
+                  this.tactPlus3();
+                }
+                break;
+              case 0x28: // JR Z,d
+                if (this.isZFlagSet()) {
+                  this.relativeJump(this.fetchCodeByte());
+                } else {
+                  this.pc++; // Skip displacement byte
+                  this.tactPlus3();
+                }
+                break;
+              case 0x30: // JR NC,d
+                if (!this.flagCValue) {
+                  this.relativeJump(this.fetchCodeByte());
+                } else {
+                  this.pc++; // Skip displacement byte
+                  this.tactPlus3();
+                }
+                break;
+              case 0x38: // JR C,d
+                if (this.flagCValue) {
+                  this.relativeJump(this.fetchCodeByte());
+                } else {
+                  this.pc++; // Skip displacement byte
+                  this.tactPlus3();
+                }
+                break;
+
+              // --- Conditional absolute jumps
+              case 0xc2: // JP NZ,nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                if (!this.isZFlagSet()) {
+                  this.pc = this.wz;
+                }
+                break;
+              case 0xca: // JP Z,nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                if (this.isZFlagSet()) {
+                  this.pc = this.wz;
+                }
+                break;
+              case 0xd2: // JP NC,nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                if (!this.flagCValue) {
+                  this.pc = this.wz;
+                }
+                break;
+              case 0xda: // JP C,nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                if (this.flagCValue) {
+                  this.pc = this.wz;
+                }
+                break;
+
+              // --- Conditional calls
+              case 0xc4: // CALL NZ,nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                if (!this.isZFlagSet()) {
+                  this.callCore();
+                }
+                break;
+              case 0xcc: // CALL Z,nn
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                if (this.isZFlagSet()) {
+                  this.callCore();
+                }
+                break;
+
+              // --- Conditional returns
+              case 0xc0: // RET NZ
+                this.tactPlus1WithIR();
+                if (!this.isZFlagSet()) {
+                  this._wl = this.readMemory(this.sp);
+                  this.sp++;
+                  this._wh = this.readMemory(this.sp);
+                  this.sp++;
+                  this.pc = this.wz;
+                  this.retExecuted = true;
+                }
+                break;
+              case 0xc8: // RET Z
+                this.tactPlus1WithIR();
+                if (this.isZFlagSet()) {
+                  this._wl = this.readMemory(this.sp);
+                  this.sp++;
+                  this._wh = this.readMemory(this.sp);
+                  this.sp++;
+                  this.pc = this.wz;
+                  this.retExecuted = true;
+                }
+                break;
+
+              // --- RST instructions (restart - common for system calls)
+              case 0xc7: // RST 00
+                this.rstCore(0x00);
+                break;
+              case 0xcf: // RST 08
+                this.rstCore(0x08);
+                break;
+              case 0xd7: // RST 10
+                this.rstCore(0x10);
+                break;
+              case 0xdf: // RST 18
+                this.rstCore(0x18);
+                break;
+              case 0xe7: // RST 20
+                this.rstCore(0x20);
+                break;
+              case 0xef: // RST 28
+                this.rstCore(0x28);
+                break;
+              case 0xf7: // RST 30
+                this.rstCore(0x30);
+                break;
+              case 0xff: // RST 38
+                this.rstCore(0x38);
+                break;
+
+              // --- More memory operations with arithmetic
+              case 0x86: // ADD A,(HL)
+                this.add8(this.readMemory(this.hl));
+                break;
+              case 0x8e: // ADC A,(HL)
+                this.adc8(this.readMemory(this.hl));
+                break;
+              case 0x96: // SUB (HL)
+                this.sub8(this.readMemory(this.hl));
+                break;
+              case 0x9e: // SBC A,(HL)
+                this.sbc8(this.readMemory(this.hl));
+                break;
+              case 0xa6: // AND (HL)
+                this.and8(this.readMemory(this.hl));
+                break;
+              case 0xae: // XOR (HL)
+                this.xor8(this.readMemory(this.hl));
+                break;
+              case 0xb6: // OR (HL)
+                this.or8(this.readMemory(this.hl));
+                break;
+              case 0xbe: // CP (HL)
+                this.cp8(this.readMemory(this.hl));
+                break;
+
+              // --- 16-bit load immediate
+              case 0x01: // LD BC,nn
+                this._c = this.fetchCodeByte();
+                this._b = this.fetchCodeByte();
+                break;
+              case 0x11: // LD DE,nn
+                this._e = this.fetchCodeByte();
+                this._d = this.fetchCodeByte();
+                break;
+              case 0x21: // LD HL,nn
+                this._l = this.fetchCodeByte();
+                this._h = this.fetchCodeByte();
+                break;
+              case 0x31: // LD SP,nn
+                this.sp = this.fetchCodeByte() | (this.fetchCodeByte() << 8);
+                break;
+
+              // --- 16-bit increment/decrement
+              case 0x03: // INC BC
+                this.bc = (this.bc + 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+              case 0x13: // INC DE
+                this.de = (this.de + 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+              case 0x23: // INC HL
+                this.hl = (this.hl + 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+              case 0x33: // INC SP
+                this.sp = (this.sp + 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+              case 0x0b: // DEC BC
+                this.bc = (this.bc - 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+              case 0x1b: // DEC DE
+                this.de = (this.de - 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+              case 0x2b: // DEC HL
+                this.hl = (this.hl - 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+              case 0x3b: // DEC SP
+                this.sp = (this.sp - 1) & 0xffff;
+                this.tactPlus2WithIR();
+                break;
+
+              // --- 16-bit arithmetic
+              case 0x09: // ADD HL,BC
+                this.tactPlus7WithIR();
+                this.hl = this.add16(this.hl, this.bc);
+                break;
+              case 0x19: // ADD HL,DE
+                this.tactPlus7WithIR();
+                this.hl = this.add16(this.hl, this.de);
+                break;
+              case 0x29: // ADD HL,HL
+                this.tactPlus7WithIR();
+                this.hl = this.add16(this.hl, this.hl);
+                break;
+              case 0x39: // ADD HL,SP
+                this.tactPlus7WithIR();
+                this.hl = this.add16(this.hl, this.sp);
+                break;
+
+              // --- Memory loads with BC and DE
+              case 0x0a: // LD A,(BC)
+                this.wz = this.bc + 1;
+                this._a = this.readMemory(this.bc);
+                break;
+              case 0x1a: // LD A,(DE)
+                this.wz = this.de + 1;
+                this._a = this.readMemory(this.de);
+                break;
+              case 0x02: // LD (BC),A
+                this.writeMemory(this.bc, this._a);
+                this._wh = this._a;
+                break;
+              case 0x12: // LD (DE),A
+                this.writeMemory(this.de, this._a);
+                break;
+
+              // --- Memory operations with immediate addresses
+              case 0x32: // LD (nn),A
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                this.writeMemory(this.wz, this._a);
+                break;
+              case 0x3a: // LD A,(nn)
+                this._wl = this.fetchCodeByte();
+                this._wh = this.fetchCodeByte();
+                this._a = this.readMemory(this.wz);
+                break;
+
+              // --- Memory increment/decrement
+              case 0x34: // INC (HL)
+                const hlAddr = this.hl;
+                let memVal = this.readMemory(hlAddr);
+                this.tactPlus1WithHL();
+                this._f = incFlags[memVal] | this.flagCValue;
+                memVal = (memVal + 1) & 0xff;
+                this.writeMemory(hlAddr, memVal);
+                break;
+              case 0x35: // DEC (HL)
+                const hlAddr2 = this.hl;
+                let memVal2 = this.readMemory(hlAddr2);
+                this.tactPlus1WithHL();
+                this._f = decFlags[memVal2] | this.flagCValue;
+                memVal2 = (memVal2 - 1) & 0xff;
+                this.writeMemory(hlAddr2, memVal2);
+                break;
+
+              // --- HALT instruction
+              case 0x76:
+                this.halted = true;
+                this.pc--;
+                break;
+
+              // --- Common miscellaneous instructions
+              case 0x27: // DAA
+                daa(this);
+                break;
+              case 0x2f: // CPL
+                this._a = (~this._a) & 0xff;
+                this._f = (this._f & (0x80 | 0x40 | 0x04 | 0x01)) | 0x10 | 0x02 | (this._a & 0x28);
+                break;
+              case 0x37: // SCF
+                this._f = (this._f & (0x80 | 0x40 | 0x04)) | 0x01 | (this._a & 0x28);
+                break;
+              case 0x3f: // CCF
+                this._f = this.flagsSZPVValue | (this.isCFlagSet() ? 0x10 : 0x01);
+                this._f = (this._f & ~0x28) | (this._a & 0x28);
+                break;
+
+              // --- Exchange instructions
+              case 0x08: // EX AF,AF'
+                const tempAF = this.af;
+                this.af = this._af_;
+                this._af_ = tempAF;
+                break;
+              case 0xeb: // EX DE,HL
+                const tempDE = this.de;
+                this.de = this.hl;
+                this.hl = tempDE;
+                break;
+
+              // --- DJNZ instruction (very common in loops)
+              case 0x10: // DJNZ d
+                this.tactPlus1WithIR();
+                this._b = (this._b - 1) & 0xff;
+                if (this._b !== 0) {
+                  this.relativeJump(this.fetchCodeByte());
+                } else {
+                  this.pc++; // Skip displacement byte
+                  this.tactPlus3();
+                }
+                break;
+
+              // --- More arithmetic with immediate values
+              case 0xd6: // SUB n
+                this.sub8(this.fetchCodeByte());
+                break;
+              case 0xde: // SBC A,n
+                this.sbc8(this.fetchCodeByte());
+                break;
+
+              // --- More conditional returns
+              case 0xd0: // RET NC
+                this.tactPlus1WithIR();
+                if (!this.flagCValue) {
+                  this._wl = this.readMemory(this.sp);
+                  this.sp++;
+                  this._wh = this.readMemory(this.sp);
+                  this.sp++;
+                  this.pc = this.wz;
+                  this.retExecuted = true;
+                }
+                break;
+              case 0xd8: // RET C
+                this.tactPlus1WithIR();
+                if (this.flagCValue) {
+                  this._wl = this.readMemory(this.sp);
+                  this.sp++;
+                  this._wh = this.readMemory(this.sp);
+                  this.sp++;
+                  this.pc = this.wz;
+                  this.retExecuted = true;
+                }
+                break;
+
+              // --- Load SP from HL
+              case 0xf9: // LD SP,HL
+                this.tactPlus2WithIR();
+                this.sp = this.hl;
+                break;
+
+              // --- I/O instructions (if commonly used)
+              case 0xdb: // IN A,(n)
+                const inTemp = this.fetchCodeByte() | (this._a << 8);
+                this._a = this.readPort(inTemp);
+                this.wz = inTemp + 1;
+                break;
+              case 0xd3: // OUT (n),A
+                const nn = this.fetchCodeByte();
+                const outPort = nn | (this._a << 8);
+                this._wh = this._a;
+                this._wl = nn + 1;
+                this.writePort(outPort, this._a);
+                break;
                 
               // --- Fall back to function array for unoptimized instructions
               default:
@@ -1181,7 +1750,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
         this.prefix = OpCodePrefix.None;
         break;
@@ -1196,7 +1765,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
         this.prefix = OpCodePrefix.None;
         break;
@@ -1219,7 +1788,7 @@ export class Z80CpuNew implements IZ80Cpu {
             this.frames++;
             this.frameTacts -= this.tactsInCurrentFrame;
           }
-          this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+          this.calculateCurrentFrameTact();
           this.onTactIncremented();
           this.prefix = OpCodePrefix.None;
         }
@@ -1244,7 +1813,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
         this.prefix = OpCodePrefix.None;
         break;
@@ -1277,7 +1846,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
 
     this.removeFromHaltedState();
@@ -1309,7 +1878,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
 
     this.removeFromHaltedState();
@@ -1430,7 +1999,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
@@ -1853,7 +2422,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -1882,7 +2451,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -1955,7 +2524,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -1985,7 +2554,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -2017,7 +2586,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -2033,7 +2602,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -2050,7 +2619,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
       
       this.delayAddressBusAccess(address);
@@ -2060,7 +2629,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     } else {
       this.tacts += 2;
@@ -2069,7 +2638,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2084,7 +2653,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -2098,7 +2667,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -2117,7 +2686,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
       }
     } else {
@@ -2128,7 +2697,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2148,7 +2717,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
       }
     } else {
@@ -2159,7 +2728,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2179,7 +2748,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
       }
     } else {
@@ -2190,7 +2759,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2206,7 +2775,7 @@ export class Z80CpuNew implements IZ80Cpu {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.calculateCurrentFrameTact();
     this.onTactIncremented();
   }
 
@@ -2227,7 +2796,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     } else {
       // Fast path without address bus delay
@@ -2237,7 +2806,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2257,7 +2826,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
       }
     } else {
@@ -2268,7 +2837,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2287,7 +2856,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
       }
     } else {
@@ -2298,7 +2867,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2318,7 +2887,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
       }
     } else {
@@ -2329,7 +2898,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2348,7 +2917,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     } else {
       // Fast path without address bus delay
@@ -2358,7 +2927,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2376,7 +2945,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     } else {
       // Fast path without address bus delay
@@ -2386,7 +2955,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2405,7 +2974,7 @@ export class Z80CpuNew implements IZ80Cpu {
           this.frames++;
           this.frameTacts -= this.tactsInCurrentFrame;
         }
-        this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+        this.calculateCurrentFrameTact();
         this.onTactIncremented();
       }
     } else {
@@ -2416,7 +2985,7 @@ export class Z80CpuNew implements IZ80Cpu {
         this.frames++;
         this.frameTacts -= this.tactsInCurrentFrame;
       }
-      this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+      this.calculateCurrentFrameTact();
       this.onTactIncremented();
     }
   }
@@ -2425,135 +2994,135 @@ export class Z80CpuNew implements IZ80Cpu {
   // Z80 operation tables
 
   readonly standardOps: Z80Operation[] = [
-    nop,
-    ldBcNN,
+    inlined, // 0x00: NOP - inlined
+    inlined, // 0x01: LD BC,nn - inlined
     ldBciA,
-    incBc,
-    incB,
-    decB,
-    ldBN,
-    rlca, // 00-07
-    exAf,
-    addHlBc,
-    ldABci,
-    decBc,
-    incC,
-    decC,
-    ldCN,
-    rrca, // 08-0f
-    djnz,
-    ldDeNN,
-    ldDeiA,
-    incDe,
-    incD,
-    decD,
-    ldDN,
-    rla, // 10-17
-    jr,
-    addHlDe,
-    ldADei,
-    decDe,
-    incE,
-    decE,
-    ldEN,
-    rra, // 18-1f
-    jrnz,
-    ldHlNN,
+    inlined, // 0x03: INC BC - inlined
+    inlined, // 0x04: INC B - inlined
+    inlined, // 0x05: DEC B - inlined
+    inlined, // 0x06: LD B,n - inlined
+    inlined, // 0x07: RLCA - inlined
+    inlined, // 0x08: EX AF,AF' - inlined
+    inlined, // 0x09: ADD HL,BC - inlined
+    inlined, // 0x0A: LD A,(BC) - inlined
+    inlined, // 0x0B: DEC BC - inlined
+    inlined, // 0x0C: INC C - inlined
+    inlined, // 0x0D: DEC C - inlined
+    inlined, // 0x0E: LD C,n - inlined
+    inlined, // 0x0F: RRCA - inlined
+    inlined, // 0x10: DJNZ - inlined
+    inlined, // 0x11: LD DE,nn - inlined
+    inlined, // 0x12: LD (DE),A - inlined
+    inlined, // 0x13: INC DE - inlined
+    inlined, // 0x14: INC D - inlined
+    inlined, // 0x15: DEC D - inlined
+    inlined, // 0x16: LD D,n - inlined
+    inlined, // 0x17: RLA - inlined
+    inlined, // 0x18: JR - inlined
+    inlined, // 0x19: ADD HL,DE - inlined
+    inlined, // 0x1A: LD A,(DE) - inlined
+    inlined, // 0x1B: DEC DE - inlined
+    inlined, // 0x1C: INC E - inlined
+    inlined, // 0x1D: DEC E - inlined
+    inlined, // 0x1E: LD E,n - inlined
+    inlined, // 0x1F: RRA - inlined
+    inlined, // 0x20: JR NZ - inlined
+    inlined, // 0x21: LD HL,nn - inlined
     ldNNiHl,
-    incHl,
-    incH,
-    decH,
-    ldHN,
-    daa, // 20-27
-    jrz,
-    addHlHl,
+    inlined, // 0x23: INC HL - inlined
+    inlined, // 0x24: INC H - inlined
+    inlined, // 0x25: DEC H - inlined
+    inlined, // 0x26: LD H,n - inlined
+    inlined, // 0x27: DAA - inlined
+    inlined, // 0x28: JR Z - inlined
+    inlined, // 0x29: ADD HL,HL - inlined
     ldHlNNi,
-    decHl,
-    incL,
-    decL,
-    ldLN,
-    cpl, // 28-2f
-    jrnc,
-    ldSpNN,
-    ldNNiA,
-    incSp,
-    incHli,
-    decHli,
+    inlined, // 0x2B: DEC HL - inlined
+    inlined, // 0x2C: INC L - inlined
+    inlined, // 0x2D: DEC L - inlined
+    inlined, // 0x2E: LD L,n - inlined
+    inlined, // 0x2F: CPL - inlined
+    inlined, // 0x30: JR NC - inlined
+    inlined, // 0x31: LD SP,nn - inlined
+    inlined, // 0x32: LD (nn),A - inlined
+    inlined, // 0x33: INC SP - inlined
+    inlined, // 0x34: INC (HL) - inlined
+    inlined, // 0x35: DEC (HL) - inlined
     ldHliN,
-    scf, // 30-37
-    jrc,
-    addHlSp,
-    ldANNi,
-    decSp,
-    incA,
-    decA,
-    ldAN,
-    ccf, // 38-3f
+    inlined, // 0x37: SCF - inlined
+    inlined, // 0x38: JR C - inlined
+    inlined, // 0x39: ADD HL,SP - inlined
+    inlined, // 0x3A: LD A,(nn) - inlined
+    inlined, // 0x3B: DEC SP - inlined
+    inlined, // 0x3C: INC A - inlined
+    inlined, // 0x3D: DEC A - inlined
+    inlined, // 0x3E: LD A,n - inlined
+    inlined, // 0x3F: CCF - inlined
 
-    nop,
-    ldBC,
-    ldBD,
-    ldBE,
-    ldBH,
-    ldBL,
+    inlined, // 0x40: LD B,B - inlined
+    inlined, // 0x41: LD B,C - inlined
+    inlined, // 0x42: LD B,D - inlined
+    inlined, // 0x43: LD B,E - inlined
+    inlined, // 0x44: LD B,H - inlined
+    inlined, // 0x45: LD B,L - inlined
     ldBHli,
-    ldBA, // 40-47
-    ldCB,
-    nop,
-    ldCD,
-    ldCE,
-    ldCH,
-    ldCL,
+    inlined, // 0x47: LD B,A - inlined
+    inlined, // 0x48: LD C,B - inlined
+    inlined, // 0x49: LD C,C - inlined
+    inlined, // 0x4A: LD C,D - inlined
+    inlined, // 0x4B: LD C,E - inlined
+    inlined, // 0x4C: LD C,H - inlined
+    inlined, // 0x4D: LD C,L - inlined
     ldCHli,
-    ldCA, // 48-4f
-    ldDB,
-    ldDC,
-    nop,
-    ldDE,
-    ldDH,
-    ldDL,
+    inlined, // 0x4F: LD C,A - inlined
+    inlined, // 0x50: LD D,B - inlined
+    inlined, // 0x51: LD D,C - inlined
+    inlined, // 0x52: LD D,D - inlined
+    inlined, // 0x53: LD D,E - inlined
+    inlined, // 0x54: LD D,H - inlined
+    inlined, // 0x55: LD D,L - inlined
     ldDHli,
-    ldDA, // 50-57
-    ldEB,
-    ldEC,
-    ldED,
-    nop,
-    ldEH,
-    ldEL,
+    inlined, // 0x57: LD D,A - inlined
+    inlined, // 0x58: LD E,B - inlined
+    inlined, // 0x59: LD E,C - inlined
+    inlined, // 0x5A: LD E,D - inlined
+    inlined, // 0x5B: LD E,E - inlined
+    inlined, // 0x5C: LD E,H - inlined
+    inlined, // 0x5D: LD E,L - inlined
     ldEHli,
-    ldEA, // 58-5f
-    ldHB,
-    ldHC,
-    ldHD,
-    ldHE,
-    nop,
-    ldHL,
+    inlined, // 0x5F: LD E,A - inlined
+    inlined, // 0x60: LD H,B - inlined
+    inlined, // 0x61: LD H,C - inlined
+    inlined, // 0x62: LD H,D - inlined
+    inlined, // 0x63: LD H,E - inlined
+    inlined, // 0x64: LD H,H - inlined
+    inlined, // 0x65: LD H,L - inlined
     ldHHli,
-    ldHA, // 60-67
-    ldLB,
-    ldLC,
-    ldLD,
-    ldLE,
-    ldLH,
-    nop,
+    inlined, // 0x67: LD H,A - inlined
+    inlined, // 0x68: LD L,B - inlined
+    inlined, // 0x69: LD L,C - inlined
+    inlined, // 0x6A: LD L,D - inlined
+    inlined, // 0x6B: LD L,E - inlined
+    inlined, // 0x6C: LD L,H - inlined
+    inlined, // 0x6D: LD L,L - inlined
     ldLHli,
-    ldLA, // 68-6f
+    inlined, // 0x6F: LD L,A - inlined
     ldHliB,
     ldHliC,
     ldHliD,
     ldHliE,
     ldHliH,
     ldHliL,
-    halt,
+    inlined, // 0x76: HALT - inlined
     ldHliA, // 70-77
-    ldAB,
-    ldAC,
-    ldAD,
-    ldAE,
-    ldAH,
-    ldAL,
+    inlined, // 0x78: LD A,B - inlined
+    inlined, // 0x79: LD A,C - inlined
+    inlined, // 0x7A: LD A,D - inlined
+    inlined, // 0x7B: LD A,E - inlined
+    inlined, // 0x7C: LD A,H - inlined
+    inlined, // 0x7D: LD A,L - inlined
     ldAHli,
-    nop, // 78-7f
+    inlined, // 0x7F: LD A,A - inlined
 
     addAB,
     addAC,
@@ -2561,7 +3130,7 @@ export class Z80CpuNew implements IZ80Cpu {
     addAE,
     addAH,
     addAL,
-    addAHli,
+    inlined, // 0x86: ADD A,(HL) - inlined
     addAA, // 80-87
     adcAB,
     adcAC,
@@ -2569,7 +3138,7 @@ export class Z80CpuNew implements IZ80Cpu {
     adcAE,
     adcAH,
     adcAL,
-    adcAHli,
+    inlined, // 0x8E: ADC A,(HL) - inlined
     adcAA, // 88-8f
     subAB,
     subAC,
@@ -2577,7 +3146,7 @@ export class Z80CpuNew implements IZ80Cpu {
     subAE,
     subAH,
     subAL,
-    subAHli,
+    inlined, // 0x96: SUB (HL) - inlined
     subAA, // 90-97
     sbcAB,
     sbcAC,
@@ -2585,105 +3154,105 @@ export class Z80CpuNew implements IZ80Cpu {
     sbcAE,
     sbcAH,
     sbcAL,
-    sbcAHli,
+    inlined, // 0x9E: SBC A,(HL) - inlined
     sbcAA, // 98-9f
-    andAB,
-    andAC,
-    andAD,
-    andAE,
-    andAH,
-    andAL,
-    andAHli,
-    andAA, // a0-a7
-    xorAB,
-    xorAC,
-    xorAD,
-    xorAE,
-    xorAH,
-    xorAL,
-    xorAHli,
-    xorAA, // a8-af
-    orAB,
-    orAC,
-    orAD,
-    orAE,
-    orAH,
-    orAL,
-    orAHli,
-    orAA, // b0-b7
+    inlined, // 0xA0: AND B - inlined
+    inlined, // 0xA1: AND C - inlined
+    inlined, // 0xA2: AND D - inlined
+    inlined, // 0xA3: AND E - inlined
+    inlined, // 0xA4: AND H - inlined
+    inlined, // 0xA5: AND L - inlined
+    inlined, // 0xA6: AND (HL) - inlined
+    inlined, // 0xA7: AND A - inlined
+    inlined, // 0xA8: XOR B - inlined
+    inlined, // 0xA9: XOR C - inlined
+    inlined, // 0xAA: XOR D - inlined
+    inlined, // 0xAB: XOR E - inlined
+    inlined, // 0xAC: XOR H - inlined
+    inlined, // 0xAD: XOR L - inlined
+    inlined, // 0xAE: XOR (HL) - inlined
+    inlined, // 0xAF: XOR A - inlined
+    inlined, // 0xB0: OR B - inlined
+    inlined, // 0xB1: OR C - inlined
+    inlined, // 0xB2: OR D - inlined
+    inlined, // 0xB3: OR E - inlined
+    inlined, // 0xB4: OR H - inlined
+    inlined, // 0xB5: OR L - inlined
+    inlined, // 0xB6: OR (HL) - inlined
+    inlined, // 0xB7: OR A - inlined
     cpB,
     cpC,
     cpD,
     cpE,
     cpH,
     cpL,
-    cpHli,
+    inlined, // 0xBE: CP (HL) - inlined
     cpA, // b8-bf
 
-    retNz,
+    inlined, // 0xC0: RET NZ - inlined
     popBc,
-    jpNz,
-    jp,
-    callNz,
+    inlined, // 0xC2: JP NZ,nn - inlined
+    inlined, // 0xC3: JP nn - inlined
+    inlined, // 0xC4: CALL NZ,nn - inlined
     pushBc,
     addAN,
-    rst00, // c0-c7
-    retZ,
-    ret,
-    jpZ,
+    inlined, // 0xC7: RST 00 - inlined
+    inlined, // 0xC8: RET Z - inlined
+    inlined, // 0xC9: RET - inlined
+    inlined, // 0xCA: JP Z,nn - inlined
     nop,
-    callZ,
-    call,
+    inlined, // 0xCC: CALL Z,nn - inlined
+    inlined, // 0xCD: CALL nn - inlined
     adcAN,
-    rst08, // c8-cf
-    retNc,
+    inlined, // 0xCF: RST 08 - inlined
+    inlined, // 0xD0: RET NC - inlined
     popDe,
     jpNc,
-    outNA,
+    inlined, // 0xD3: OUT (n),A - inlined
     callNc,
     pushDe,
-    subAN,
-    rst10, // d0-d7
-    retC,
+    inlined, // 0xD6: SUB n - inlined
+    inlined, // 0xD7: RST 10 - inlined
+    inlined, // 0xD8: RET C - inlined
     exx,
     jpC,
-    inAN,
+    inlined, // 0xDB: IN A,(n) - inlined
     callC,
     nop,
-    sbcAN,
-    rst18, // d8-df
+    inlined, // 0xDE: SBC A,n - inlined
+    inlined, // 0xDF: RST 18 - inlined
     retPo,
     popHl,
     jpPo,
     exSpiHl,
     callPo,
     pushHl,
-    andAN,
-    rst20, // e0-e7
+    inlined, // 0xE6: AND n - inlined
+    inlined, // 0xE7: RST 20 - inlined
     retPe,
     jpHl,
     jpPe,
-    exDeHl,
+    inlined, // 0xEB: EX DE,HL - inlined
     callPe,
     nop,
-    xorAN,
-    rst28, // e8-ef
+    inlined, // 0xEE: XOR n - inlined
+    inlined, // 0xEF: RST 28 - inlined
     retP,
     popAf,
     jpP,
     di,
     callP,
     pushAf,
-    orAN,
-    rst30, // f0-f7
+    inlined, // 0xF6: OR n - inlined
+    inlined, // 0xF7: RST 30 - inlined
     retM,
-    ldSpHl,
+    inlined, // 0xF9: LD SP,HL - inlined
     jpM,
     ei,
     callM,
     nop,
     cpAN,
-    rst38 // f8-ff
+    inlined // 0xFF: RST 38 - inlined
   ];
 
   readonly bitOps: Z80Operation[] = [
@@ -3822,7 +4391,13 @@ export type Z80Operation = (cpu: Z80CpuNew) => void;
 // 0x00: NOP
 function nop(_cpu: Z80CpuNew) {}
 
-// 0x01: LD BC,nn
+// No-operation function for instructions that are inlined in the switch statement
+function inlined(_cpu: Z80CpuNew) {
+  // This function should never be called as the instruction is handled inline
+  throw new Error("Inlined instruction function called - this indicates a bug in the dispatch logic");
+}
+
+// 0x01: LD BC,nn  
 function ldBcNN(cpu: Z80CpuNew) {
   cpu.c = cpu.fetchCodeByte();
   cpu.b = cpu.fetchCodeByte();
@@ -3840,7 +4415,7 @@ function incBc(cpu: Z80CpuNew) {
   cpu.tactPlus2WithIR();
 }
 
-// 0x04: INC B
+// 0x04: INC B  
 function incB(cpu: Z80CpuNew) {
   cpu.f = incFlags[cpu.b++] | cpu.flagCValue;
 }
@@ -3874,11 +4449,7 @@ function exAf(cpu: Z80CpuNew) {
   cpu.af_ = tmp;
 }
 
-// 0x09: ADD HL,BC
-function addHlBc(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithIR();
-  cpu.hl = cpu.add16(cpu.hl, cpu.bc);
-}
+
 
 // 0x0a: LD A,(BC)
 function ldABci(cpu: Z80CpuNew) {
@@ -3979,11 +4550,7 @@ function jr(cpu: Z80CpuNew) {
   cpu.relativeJump(cpu.fetchCodeByte());
 }
 
-// 0x19: ADD HL,DE
-function addHlDe(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithIR();
-  cpu.hl = cpu.add16(cpu.hl, cpu.de);
-}
+
 
 // 0x1a: LD A,(DE)
 function ldADei(cpu: Z80CpuNew) {
@@ -4032,37 +4599,16 @@ function jrnz(cpu: Z80CpuNew) {
   }
 }
 
-// 0x21: LD HL,nn
-function ldHlNN(cpu: Z80CpuNew) {
-  cpu.l = cpu.fetchCodeByte();
-  cpu.h = cpu.fetchCodeByte();
-}
+
+
+
 
 // 0x22: LD (nn),HL
 function ldNNiHl(cpu: Z80CpuNew) {
   cpu.store16(cpu.l, cpu.h);
 }
 
-// 0x23: INC HL
-function incHl(cpu: Z80CpuNew) {
-  cpu.hl++;
-  cpu.tactPlus2WithIR();
-}
 
-// 0x24: INC H
-function incH(cpu: Z80CpuNew) {
-  cpu.f = incFlags[cpu.h++] | cpu.flagCValue;
-}
-
-// 0x25: DEC H
-function decH(cpu: Z80CpuNew) {
-  cpu.f = decFlags[cpu.h--] | cpu.flagCValue;
-}
-
-// 0x26: LD H,n
-function ldHN(cpu: Z80CpuNew) {
-  cpu.h = cpu.fetchCodeByte();
-}
 
 // 0x27: DAA
 function daa(cpu: Z80CpuNew) {
@@ -4094,11 +4640,16 @@ function jrz(cpu: Z80CpuNew) {
   }
 }
 
-// 0x29: ADD HL,HL
-function addHlHl(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithIR();
-  const hlValue = cpu.hl;
-  cpu.hl = cpu.add16(hlValue, hlValue);
+
+
+// 0x2f: CPL
+function cpl(cpu: Z80CpuNew) {
+  cpu.a ^= 0xff;
+  cpu.f =
+    (cpu.f & (FlagsSetMask.C | FlagsSetMask.PV | FlagsSetMask.Z | FlagsSetMask.S)) |
+    (cpu.a & FlagsSetMask.R3R5) |
+    FlagsSetMask.N |
+    FlagsSetMask.H;
 }
 
 // 0x2a: LD HL,(nn)
@@ -4109,37 +4660,6 @@ function ldHlNNi(cpu: Z80CpuNew) {
   let val = cpu.readMemory(adr);
   val += cpu.readMemory(cpu.wz) << 8;
   cpu.hl = val;
-}
-
-// 0x2b: DEC HL
-function decHl(cpu: Z80CpuNew) {
-  cpu.hl--;
-  cpu.tactPlus2WithIR();
-}
-
-// 0x2c: INC L
-function incL(cpu: Z80CpuNew) {
-  cpu.f = incFlags[cpu.l++] | cpu.flagCValue;
-}
-
-// 0x2d: DEC L
-function decL(cpu: Z80CpuNew) {
-  cpu.f = decFlags[cpu.l--] | cpu.flagCValue;
-}
-
-// 0x2e: LD L,n
-function ldLN(cpu: Z80CpuNew) {
-  cpu.l = cpu.fetchCodeByte();
-}
-
-// 0x2f: CPL
-function cpl(cpu: Z80CpuNew) {
-  cpu.a ^= 0xff;
-  cpu.f =
-    (cpu.f & (FlagsSetMask.C | FlagsSetMask.PV | FlagsSetMask.Z | FlagsSetMask.S)) |
-    (cpu.a & FlagsSetMask.R3R5) |
-    FlagsSetMask.N |
-    FlagsSetMask.H;
 }
 
 // 0x30: JR NC,e
@@ -4172,33 +4692,17 @@ function incSp(cpu: Z80CpuNew) {
   cpu.tactPlus2WithIR();
 }
 
-// 0x34: INC (HL)
-function incHli(cpu: Z80CpuNew) {
-  const hlAddress = cpu.hl;
-  let memValue = cpu.readMemory(hlAddress);
-  cpu.tactPlus1WithHL();
-  cpu.f = incFlags[memValue++] | cpu.flagCValue;
-  cpu.writeMemory(hlAddress, memValue);
-}
 
-// 0x35: DEC (HL)
-function decHli(cpu: Z80CpuNew) {
-  const hlAddress = cpu.hl;
-  let memValue = cpu.readMemory(hlAddress);
-  cpu.tactPlus1WithHL();
-  cpu.f = decFlags[memValue--] | cpu.flagCValue;
-  cpu.writeMemory(hlAddress, memValue);
-}
-
-// 0x36: LD (HL),n
-function ldHliN(cpu: Z80CpuNew) {
-  cpu.writeMemory(cpu.hl, cpu.fetchCodeByte());
-}
 
 // 0x37: SCF
 function scf(cpu: Z80CpuNew) {
   cpu.f = cpu.flagsSZPVValue | FlagsSetMask.C;
   cpu.f = (cpu.f & ~FlagsSetMask.R3R5) | (cpu.a & FlagsSetMask.R3R5);
+}
+
+// 0x36: LD (HL),n
+function ldHliN(cpu: Z80CpuNew) {
+  cpu.writeMemory(cpu.hl, cpu.fetchCodeByte());
 }
 
 // 0x38: JR C,e
@@ -4209,11 +4713,7 @@ function jrc(cpu: Z80CpuNew) {
   }
 }
 
-// 0x39: ADD HL,SP
-function addHlSp(cpu: Z80CpuNew) {
-  cpu.tactPlus7WithIR();
-  cpu.hl = cpu.add16(cpu.hl, cpu.sp);
-}
+
 
 // 0x3a: LD A,(nn)
 function ldANNi(cpu: Z80CpuNew) {
@@ -4265,15 +4765,7 @@ function ldBE(cpu: Z80CpuNew) {
   cpu.b = cpu.e;
 }
 
-// 0x44: LD B,H
-function ldBH(cpu: Z80CpuNew) {
-  cpu.b = cpu.h;
-}
 
-// 0x45: LD B,L
-function ldBL(cpu: Z80CpuNew) {
-  cpu.b = cpu.l;
-}
 
 // 0x46: LD B,(HL)
 function ldBHli(cpu: Z80CpuNew) {
@@ -4300,15 +4792,7 @@ function ldCE(cpu: Z80CpuNew) {
   cpu.c = cpu.e;
 }
 
-// 0x4c: LD C,H
-function ldCH(cpu: Z80CpuNew) {
-  cpu.c = cpu.h;
-}
 
-// 0x4d: LD C,L
-function ldCL(cpu: Z80CpuNew) {
-  cpu.c = cpu.l;
-}
 
 // 0x4e: LD C,(HL)
 function ldCHli(cpu: Z80CpuNew) {
@@ -4335,15 +4819,7 @@ function ldDE(cpu: Z80CpuNew) {
   cpu.d = cpu.e;
 }
 
-// 0x54: LD D,H
-function ldDH(cpu: Z80CpuNew) {
-  cpu.d = cpu.h;
-}
 
-// 0x55: LD D,L
-function ldDL(cpu: Z80CpuNew) {
-  cpu.d = cpu.l;
-}
 
 // 0x56: LD D,(HL)
 function ldDHli(cpu: Z80CpuNew) {
@@ -4370,15 +4846,7 @@ function ldED(cpu: Z80CpuNew) {
   cpu.e = cpu.d;
 }
 
-// 0x5c: LD E,H
-function ldEH(cpu: Z80CpuNew) {
-  cpu.e = cpu.h;
-}
 
-// 0x5d: LD E,L
-function ldEL(cpu: Z80CpuNew) {
-  cpu.e = cpu.l;
-}
 
 // 0x5e: LD E,(HL)
 function ldEHli(cpu: Z80CpuNew) {
@@ -4390,75 +4858,21 @@ function ldEA(cpu: Z80CpuNew) {
   cpu.e = cpu.a;
 }
 
-// 0x60: LD H,B
-function ldHB(cpu: Z80CpuNew) {
-  cpu.h = cpu.b;
-}
 
-// 0x61: LD H,C
-function ldHC(cpu: Z80CpuNew) {
-  cpu.h = cpu.c;
-}
-
-// 0x62: LD H,D
-function ldHD(cpu: Z80CpuNew) {
-  cpu.h = cpu.d;
-}
-
-// 0x63: LD H,E
-function ldHE(cpu: Z80CpuNew) {
-  cpu.h = cpu.e;
-}
-
-// 0x65: LD H,L
-function ldHL(cpu: Z80CpuNew) {
-  cpu.h = cpu.l;
-}
 
 // 0x66: LD H,(HL)
 function ldHHli(cpu: Z80CpuNew) {
   cpu.h = cpu.readMemory(cpu.hl);
 }
 
-// 0x67: LD H,A
-function ldHA(cpu: Z80CpuNew) {
-  cpu.h = cpu.a;
-}
 
-// 0x68: LD L,B
-function ldLB(cpu: Z80CpuNew) {
-  cpu.l = cpu.b;
-}
-
-// 0x69: LD L,C
-function ldLC(cpu: Z80CpuNew) {
-  cpu.l = cpu.c;
-}
-
-// 0x6a: LD L,D
-function ldLD(cpu: Z80CpuNew) {
-  cpu.l = cpu.d;
-}
-
-// 0x6b: LD L,E
-function ldLE(cpu: Z80CpuNew) {
-  cpu.l = cpu.e;
-}
-
-// 0x6c: LD L,H
-function ldLH(cpu: Z80CpuNew) {
-  cpu.l = cpu.h;
-}
 
 // 0x6e: LD L,(HL)
 function ldLHli(cpu: Z80CpuNew) {
   cpu.l = cpu.readMemory(cpu.hl);
 }
 
-// 0x6f: LD L,A
-function ldLA(cpu: Z80CpuNew) {
-  cpu.l = cpu.a;
-}
+
 
 // 0x70: LD (HL),B
 function ldHliB(cpu: Z80CpuNew) {
@@ -4522,14 +4936,7 @@ function ldAE(cpu: Z80CpuNew) {
 }
 
 // 0x7C: LD A,H
-function ldAH(cpu: Z80CpuNew) {
-  cpu.a = cpu.h;
-}
 
-// 0x7D: LD A,L
-function ldAL(cpu: Z80CpuNew) {
-  cpu.a = cpu.l;
-}
 
 // 0x7E: LD A,(HL)
 function ldAHli(cpu: Z80CpuNew) {
@@ -4566,10 +4973,7 @@ function addAL(cpu: Z80CpuNew) {
   cpu.add8(cpu.l);
 }
 
-// 0x86: ADD A,(HL)
-function addAHli(cpu: Z80CpuNew) {
-  cpu.add8(cpu.readMemory(cpu.hl));
-}
+
 
 // 0x87: ADD A,A
 function addAA(cpu: Z80CpuNew) {
@@ -4606,10 +5010,7 @@ function adcAL(cpu: Z80CpuNew) {
   cpu.adc8(cpu.l);
 }
 
-// 0x8E: ADC A,(HL)
-function adcAHli(cpu: Z80CpuNew) {
-  cpu.adc8(cpu.readMemory(cpu.hl));
-}
+
 
 // 0x8F: ADC A,A
 function adcAA(cpu: Z80CpuNew) {
@@ -4646,10 +5047,7 @@ function subAL(cpu: Z80CpuNew) {
   cpu.sub8(cpu.l);
 }
 
-// 0x96: SUB A,(HL)
-function subAHli(cpu: Z80CpuNew) {
-  cpu.sub8(cpu.readMemory(cpu.hl));
-}
+
 
 // 0x97: SUB A,A
 function subAA(cpu: Z80CpuNew) {
@@ -4686,10 +5084,7 @@ function sbcAL(cpu: Z80CpuNew) {
   cpu.sbc8(cpu.l);
 }
 
-// 0x9E: SBC A,(HL)
-function sbcAHli(cpu: Z80CpuNew) {
-  cpu.sbc8(cpu.readMemory(cpu.hl));
-}
+
 
 // 0x9f: SBC A,A
 function sbcAA(cpu: Z80CpuNew) {
@@ -4716,20 +5111,7 @@ function andAE(cpu: Z80CpuNew) {
   cpu.and8(cpu.e);
 }
 
-// 0xa4: AND A,H
-function andAH(cpu: Z80CpuNew) {
-  cpu.and8(cpu.h);
-}
 
-// 0xa5: AND A,L
-function andAL(cpu: Z80CpuNew) {
-  cpu.and8(cpu.l);
-}
-
-// 0xa6: AND A,(HL)
-function andAHli(cpu: Z80CpuNew) {
-  cpu.and8(cpu.readMemory(cpu.hl));
-}
 
 // 0xa7: AND A,A
 function andAA(cpu: Z80CpuNew) {
@@ -4755,20 +5137,7 @@ function xorAE(cpu: Z80CpuNew) {
   cpu.xor8(cpu.e);
 }
 
-// 0xac: XOR A,H
-function xorAH(cpu: Z80CpuNew) {
-  cpu.xor8(cpu.h);
-}
 
-// 0xad: XOR A,L
-function xorAL(cpu: Z80CpuNew) {
-  cpu.xor8(cpu.l);
-}
-
-// 0xae: XOR A,(HL)
-function xorAHli(cpu: Z80CpuNew) {
-  cpu.xor8(cpu.readMemory(cpu.hl));
-}
 
 // 0xaf: XOR A,A
 function xorAA(cpu: Z80CpuNew) {
@@ -4795,20 +5164,7 @@ function orAE(cpu: Z80CpuNew) {
   cpu.or8(cpu.e);
 }
 
-// 0xb4: OR A,H
-function orAH(cpu: Z80CpuNew) {
-  cpu.or8(cpu.h);
-}
 
-// 0xb5: OR A,L
-function orAL(cpu: Z80CpuNew) {
-  cpu.or8(cpu.l);
-}
-
-// 0xb6: OR A,(HL)
-function orAHli(cpu: Z80CpuNew) {
-  cpu.or8(cpu.readMemory(cpu.hl));
-}
 
 // 0xb7: OR A,A
 function orAA(cpu: Z80CpuNew) {
@@ -4845,10 +5201,7 @@ function cpL(cpu: Z80CpuNew) {
   cpu.cp8(cpu.l);
 }
 
-// 0xbe: CP (HL)
-function cpHli(cpu: Z80CpuNew) {
-  cpu.cp8(cpu.readMemory(cpu.hl));
-}
+
 
 // 0xbf: CP A
 function cpA(cpu: Z80CpuNew) {
@@ -5267,11 +5620,7 @@ function retM(cpu: Z80CpuNew) {
   }
 }
 
-// 0xf9: LD SP,HL
-function ldSpHl(cpu: Z80CpuNew) {
-  cpu.tactPlus2WithIR();
-  cpu.sp = cpu.hl;
-}
+
 
 // 0xfa: JP M,nn
 function jpM(cpu: Z80CpuNew) {
