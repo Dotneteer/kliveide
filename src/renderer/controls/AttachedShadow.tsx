@@ -1,26 +1,70 @@
 import styles from "./AttachedShadow.module.scss";
 import classnames from "classnames";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-type Props = {
+/**
+ * Props for the AttachedShadow component
+ */
+export interface AttachedShadowProps {
+  /** The HTML element to attach the shadow to */
   parentElement: HTMLElement;
+  /** Controls whether the shadow is visible */
   visible: boolean;
-};
+}
 
-export const AttachedShadow = ({ parentElement, visible }: Props) => {
-  const [top, setTop] = useState(0);
-  const [left, setLeft] = useState(0);
-  const [width, setWidth] = useState(0);
+/**
+ * Position state interface for tracking element position and dimensions
+ */
+interface PositionState {
+  top: number;
+  left: number;
+  width: number;
+}
+
+/**
+ * A component that adds a shadow effect to a parent element,
+ * automatically adjusting its position and size when the parent changes
+ */
+export const AttachedShadow = React.memo(({ parentElement, visible }: AttachedShadowProps): JSX.Element => {
+  // Consolidate position state into a single object
+  const [position, setPosition] = useState<PositionState>({
+    top: 0,
+    left: 0,
+    width: 0
+  });
 
   // --- Check for parent element size changes
   const observer = useRef<ResizeObserver>();
 
+  // Memoize class names calculation
+  const shadowClasses = useMemo(
+    () => classnames(styles.attachedShadow, { [styles.show]: visible }),
+    [visible]
+  );
+
+  // Memoize style object
+  const shadowStyle = useMemo(
+    () => ({
+      top: position.top,
+      left: position.left,
+      width: position.width
+    }),
+    [position.top, position.left, position.width]
+  );
+
   useEffect(() => {
     const resizer = () => {
-      setTop(parentElement?.offsetTop ?? 0);
-      setLeft(parentElement?.offsetLeft ?? 0);
-      setWidth(parentElement?.offsetWidth ?? 0);
+      if (parentElement) {
+        setPosition({
+          top: parentElement.offsetTop ?? 0,
+          left: parentElement.offsetLeft ?? 0,
+          width: parentElement.offsetWidth ?? 0
+        });
+      }
     };
+
+    // Run initial sizing
+    resizer();
 
     // --- We are already observing old element
     if (observer?.current && parentElement) {
@@ -30,16 +74,21 @@ export const AttachedShadow = ({ parentElement, visible }: Props) => {
     if (parentElement && observer.current) {
       observer.current.observe(parentElement);
     }
+
+    // Cleanup function for useEffect
+    return () => {
+      if (observer?.current && parentElement) {
+        observer.current.unobserve(parentElement);
+        observer.current.disconnect();
+      }
+    };
   }, [parentElement]);
 
   return (
     <div
-      className={classnames(styles.attachedShadow, { [styles.show]: visible })}
-      style={{
-        top,
-        left,
-        width
-      }}
+      className={shadowClasses}
+      style={shadowStyle}
+      role="presentation"
     />
   );
-};
+});
