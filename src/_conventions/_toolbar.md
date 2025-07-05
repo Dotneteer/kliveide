@@ -18,19 +18,10 @@ This document lists potential optimization options for the Toolbar component. As
 
 ## Code Structure Optimizations
 
-- [x] **Extract reusable logic** - Move common button enabling logic to helper functions
-- [x] **Create custom hooks** - Wrap service dependencies in custom hooks
-- [x] **Replace inline styles** - Move inline dropdown styles to CSS module
-- [x] **Optimize conditional rendering** - Use early returns or optimize large conditional blocks
-- [x] **Remove spread in dropdown options** - Replace `[...startOptions]` with just `startOptions`
-
-## Event Handler Optimizations
-
-- [x] **Debounce rapid click actions** - Add debouncing for settings and API calls
-- [x] **Batch related state updates** - Use functional updates to batch state changes
-- [x] **Improve async operation handling** - Add error handling for async operations
-
-## Documentation
-
-- [x] **Add component documentation** - Document the component's purpose and key behaviors
-- [x] **Type improvements** - Add more specific types for state and props
+- [x] **Extract reusable logic to custom hooks** - Create `useButtonAvailability`, `useEmulatorSettings` etc.
+- [x] **Move inline styles to CSS modules** - Replace inline styles with className references
+- [x] **Add proper TypeScript typing** - Add comprehensive type definitions for props and state
+- [x] **Add JSDoc documentation** - Add documentation for component, props, and functions
+- [x] **Implement error boundaries** - Add error handling for async operations
+- [x] **Implement debounce handlers** - Add debouncing for handlers like speedChange
+- [x] **Batch state updates** - Use batch updates with dispatch functions
