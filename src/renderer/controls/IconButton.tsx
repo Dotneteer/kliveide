@@ -52,10 +52,11 @@ export const IconButton = memo(({
   const [keyDown, setKeyDown] = useState(false);
   const [hover, setHover] = useState(false);
 
-  // Reset keyDown state when reference changes
+  // Reset keyDown state when the component mounts
   useEffect(() => {
     setKeyDown(false);
-  }, [ref.current]);
+    // No dependencies needed - only run once on mount
+  }, []);
 
   // Memoize event handlers to prevent recreation on each render
   const handleMouseEnter = useCallback(() => setHover(true), []);
@@ -132,7 +133,7 @@ export const IconButton = memo(({
       onKeyUp={handleKeyUp}
     >
       <div className={iconWrapperClassName}>
-        {title && (
+        {title && ref.current && (
           <TooltipFactory
             refElement={ref.current}
             placement="right"

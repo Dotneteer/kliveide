@@ -7,8 +7,17 @@
 }
 
 .toolbarDropdownContainer {
-    display:flex;
-    justify-content:center;
-    align-items:center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin: 0 4px;
+}
+
+.toolbarDropdownDisabled {
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+.dropdownWidth {
+    width: 184px;
 }

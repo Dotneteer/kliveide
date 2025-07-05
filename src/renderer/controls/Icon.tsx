@@ -46,36 +46,75 @@ export const Icon = memo(({
   "data-testid": dataTestId = "icon"
 }: IconProps) => {
   const theme = useTheme();
+  
+  // Calculate all values needed for both rendering paths
+  const isValid = !!iconName;
+  const isImageIcon = isValid && iconName.startsWith("@");
+  
+  // Calculate common style properties
+  const commonStyle = useMemo(() => ({
+    width: `${width}px`,
+    height: `${height}px`,
+    opacity,
+    flexShrink: 0,
+    flexGrow: 0,
+    ...style
+  }), [width, height, opacity, style]);
+  
+  // Get image information if it's an image icon
+  const imageData = useMemo(() => {
+    if (!isValid || !isImageIcon) return { imageName: "", imageInfo: null, imageSrc: "" };
+    
+    const imageName = iconName.substring(1) + 
+      (theme.theme.tone === "light" ? "-light" : "");
+    const imageInfo = theme.getImage(imageName);
+    const imageSrc = `data:image/${imageInfo.type};base64,${imageInfo.data}`;
+    
+    return { imageName, imageInfo, imageSrc };
+  }, [isValid, isImageIcon, iconName, theme]);
+  
+  // Get SVG information if it's an SVG icon
+  const svgData = useMemo(() => {
+    if (!isValid || isImageIcon) return { 
+      iconInfo: { width: 24, height: 24, path: "", fill: "white", "fill-rule": "nonzero" as FillRule },
+      viewBox: "0 0 24 24"
+    };
+    
+    const iconInfo = theme.getIcon(iconName);
+    const viewBox = `0 0 ${iconInfo.width} ${iconInfo.height}`;
+    
+    return { iconInfo, viewBox };
+  }, [isValid, isImageIcon, iconName, theme]);
+  
+  // Calculate fill value for SVG icons
+  const fillValue = useMemo(() => {
+    if (!isValid || isImageIcon) return "white";
+    
+    if (fill === null || fill === undefined) {
+      return svgData.iconInfo.fill ?? "white";
+    }
+    
+    return fill.startsWith("--") 
+      ? theme.getThemeProperty(fill) 
+      : fill;
+  }, [isValid, isImageIcon, fill, svgData.iconInfo.fill, theme]);
 
   // Early return for invalid icon name
-  if (!iconName) {
+  if (!isValid) {
     return null;
   }
 
-  // Handle image-based icons (prefixed with @)
-  if (iconName.startsWith("@")) {
-    // Get image info from the theme
-    const imageNameWithTone = iconName.substring(1) + 
-      (theme.theme.tone === "light" ? "-light" : "");
-    const imageInfo = theme.getImage(imageNameWithTone);
-    
-    // Memoize style calculation
-    const imageStyle = useMemo(() => ({
-      width: `${width}px`,
-      height: `${height}px`,
-      opacity,
-      transform: rotate ? `rotate(${rotate}deg)` : undefined,
-      flexShrink: 0,
-      flexGrow: 0,
-      ...style
-    }), [width, height, opacity, rotate, style]);
-
-    const imageSrc = `data:image/${imageInfo.type};base64,${imageInfo.data}`;
+  // Render image-based icons
+  if (isImageIcon) {
+    const imageStyle = {
+      ...commonStyle,
+      transform: rotate ? `rotate(${rotate}deg)` : undefined
+    };
     
     return (
       <img
         className={xclass}
-        src={imageSrc}
+        src={imageData.imageSrc}
         alt={alt}
         style={imageStyle}
         data-testid={dataTestId}
@@ -83,53 +122,29 @@ export const Icon = memo(({
     );
   }
 
-  // Handle SVG icons
-  const iconInfo = theme.getIcon(iconName);
-  
-  // Compute fill value based on priority: 
-  // 1. Provided fill (theme variable or direct color)
-  // 2. Icon's default fill
-  // 3. Fallback to white
-  const fillValue = useMemo(() => {
-    if (fill === null || fill === undefined) {
-      return iconInfo.fill ?? "white";
-    }
-    
-    return fill.startsWith("--") 
-      ? theme.getThemeProperty(fill) 
-      : fill;
-  }, [fill, iconInfo.fill, theme]);
-  
-  // Memoize style calculation
-  const svgStyle = useMemo(() => ({
-    width: `${width}px`,
-    height: `${height}px`,
+  // Render SVG icons
+  const svgStyle = {
+    ...commonStyle,
     fill: fillValue,
     fillOpacity: opacity,
-    transform: `rotate(${rotate ?? 0}deg)`,
-    flexShrink: 0,
-    flexGrow: 0,
-    ...style
-  }), [width, height, fillValue, opacity, rotate, style]);
-
-  // Viewbox dimensions based on icon info
-  const viewBox = `0 0 ${iconInfo.width} ${iconInfo.height}`;
+    transform: `rotate(${rotate ?? 0}deg)`
+  };
   
   return (
     <svg
       className={xclass}
       xmlns="http://www.w3.org/2000/svg"
       style={svgStyle}
-      viewBox={viewBox}
+      viewBox={svgData.viewBox}
       role="img"
       aria-hidden={!alt}
       aria-label={alt || undefined}
       data-testid={dataTestId}
     >
       <path
-        d={iconInfo.path}
-        fillRule={iconInfo["fill-rule"] as FillRule}
-        clipRule={iconInfo["clip-rule"]}
+        d={svgData.iconInfo.path}
+        fillRule={svgData.iconInfo["fill-rule"] as FillRule}
+        clipRule={svgData.iconInfo["clip-rule"]}
       />
     </svg>
   );

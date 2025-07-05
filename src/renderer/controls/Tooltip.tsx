@@ -196,11 +196,12 @@ export function useTooltipRef<T = HTMLElement>(...deps: any[]) {
   const ref = useRef<T | null>(null);
   // We still need to track version changes even though we don't use the value directly
   const [, setVersion] = useState(0);
-
+  
+  // This effect should only depend on explicitly provided deps, not ref.current
   useEffect(() => {
-    // Use functional update to avoid dependency on version
+    // Update version when dependencies change
     setVersion(prev => prev + 1);
-  }, [ref.current, ...deps]);
+  }, deps);
 
   return ref;
 }
