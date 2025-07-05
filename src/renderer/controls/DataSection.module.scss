@@ -21,6 +21,14 @@
   padding: 0 4px;
   background: var(--bgcolor-disass-even-row);
   color: var(--color-label);
+  width: 100%;
+  text-align: left;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: inherit;
 }
 
 .headerText {
