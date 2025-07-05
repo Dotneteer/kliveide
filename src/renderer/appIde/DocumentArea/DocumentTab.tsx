@@ -63,9 +63,9 @@ export const DocumentTab = ({
   const mainApi = useMainApi();
 
   const ref = useRef<HTMLDivElement>(null);
-  const nameRef = useTooltipRef();
-  const readOnlyRef = useTooltipRef();
-  const lockedRef = useTooltipRef();
+  const nameRef = useTooltipRef<HTMLDivElement>();
+  const readOnlyRef = useTooltipRef<HTMLDivElement>();
+  const lockedRef = useTooltipRef<HTMLDivElement>();
   const isWindows = !!store.getState().isWindows;
   const [pointed, setPointed] = useState(false);
 
@@ -185,7 +185,7 @@ export const DocumentTab = ({
       <TabButton
         iconName={hasChanges ? "circle-filled" : "close"}
         hide={!pointed && !isActive}
-        fill={"--color-tabbutton-fill-" + (isActive ? "active" : "inactive")}
+        fill={isActive ? "--color-active-tab-icon" : "--color-tabbutton-fill-inactive"}
         clicked={() => tabCloseClicked?.(CloseMode.This)}
       />
     </div>

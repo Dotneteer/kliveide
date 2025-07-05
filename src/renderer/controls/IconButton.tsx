@@ -1,13 +1,14 @@
-import { useEffect, useState, useCallback, useMemo, memo, KeyboardEvent } from "react";
+import { useMemo, memo, CSSProperties, useState, useCallback } from "react";
 import { Icon } from "./Icon";
-import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
 import styles from "./IconButton.module.scss";
+import { BaseButton, BaseButtonProps } from "./BaseButton";
+import { useButtonState } from "./hooks/useButtonState";
 
 /**
  * Props for the IconButton component
  */
-interface IconButtonProps {
+interface IconButtonProps extends Omit<BaseButtonProps, "onClick"> {
   /** Name of the icon to display */
   iconName: string;
   /** Size of the icon in pixels (default: 24) */
@@ -16,20 +17,16 @@ interface IconButtonProps {
   buttonWidth?: number;
   /** Height of the button in pixels (default: 34) */
   buttonHeight?: number;
-  /** Tooltip text to display on hover */
-  title?: string;
   /** Fill color for the icon */
   fill?: string;
   /** Whether the button is enabled (default: true) */
   enable?: boolean;
   /** Whether the button appears in selected state */
   selected?: boolean;
-  /** Click handler function */
+  /** Click handler function - legacy name */
   clicked?: () => void;
   /** Remove default padding when true */
   noPadding?: boolean;
-  /** For testing purposes */
-  "data-testid"?: string;
 }
 
 /**
@@ -48,131 +45,74 @@ export const IconButton = memo(({
   noPadding,
   "data-testid": dataTestId = "icon-button"
 }: IconButtonProps) => {
-  const ref = useTooltipRef<HTMLDivElement>();
-  const [keyDown, setKeyDown] = useState(false);
+  // Convert enable prop to disabled for compatibility with BaseButton
+  const disabled = !enable;
+  
+  // Track hover state for styling
   const [hover, setHover] = useState(false);
-
-  // Reset keyDown state when the component mounts
-  useEffect(() => {
-    setKeyDown(false);
-    // No dependencies needed - only run once on mount
-  }, []);
-
-  // Memoize event handlers to prevent recreation on each render
+  
+  // Memoize event handlers
   const handleMouseEnter = useCallback(() => setHover(true), []);
-  
-  const handleMouseDown = useCallback(() => setKeyDown(true), []);
-  
   const handleMouseLeave = useCallback(() => {
-    setKeyDown(false);
     setHover(false);
   }, []);
   
-  const handleClick = useCallback(() => {
-    if (enable && clicked) {
-      clicked();
-    }
-    setKeyDown(false);
-  }, [enable, clicked]);
-
-  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    // Handle Space and Enter keys for accessibility
-    if (enable && (event.key === 'Enter' || event.key === ' ')) {
-      setKeyDown(true);
-      event.preventDefault();
-    }
-  }, [enable]);
-
-  const handleKeyUp = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    if (enable && (event.key === 'Enter' || event.key === ' ')) {
-      setKeyDown(false);
-      clicked?.();
-      event.preventDefault();
-    }
-  }, [enable, clicked]);
-
+  // Use the state from our hook
+  const { isPressed } = useButtonState({ disabled, onClick: clicked });
+  
   // Memoize styles to prevent recreation on each render
-  const buttonStyle = useMemo(() => ({
+  const buttonStyle = useMemo<CSSProperties>(() => ({
     width: buttonWidth + (noPadding ? 0 : 4),
     height: buttonHeight,
-    backgroundColor: hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
-  }), [buttonWidth, buttonHeight, noPadding, hover, enable]);
-
-  // Memoize class names
-  const buttonClassName = useMemo(() => 
-    classnames(styles.iconButton, {
-      [styles.enabled]: enable,
-      [styles.noPadding]: noPadding
-    }),
-    [enable, noPadding]
-  );
-
-  const iconWrapperClassName = useMemo(() =>
+    backgroundColor: hover && !disabled ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
+  }), [buttonWidth, buttonHeight, noPadding, hover, disabled]);
+  
+  // Memoize classnames
+  const wrapperClassName = useMemo(() =>
     classnames(styles.iconWrapper, {
-      [styles.keyDown]: keyDown && enable,
+      [styles.keyDown]: isPressed && !disabled,
       [styles.selected]: selected
     }),
-    [keyDown, enable, selected]
+    [isPressed, disabled, selected]
+  );
+  
+  const buttonClassName = useMemo(() => 
+    classnames(styles.iconButton, {
+      [styles.enabled]: !disabled,
+      [styles.noPadding]: noPadding
+    }),
+    [disabled, noPadding]
   );
 
   return (
-    <div
-      ref={ref}
-      role="button"
-      tabIndex={enable ? 0 : -1}
-      aria-disabled={!enable}
-      aria-pressed={selected}
+    <BaseButton
+      title={title}
+      disabled={disabled}
+      onClick={clicked}
       className={buttonClassName}
-      style={buttonStyle}
       data-testid={dataTestId}
       onMouseEnter={handleMouseEnter}
-      onMouseDown={handleMouseDown}
       onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      onKeyUp={handleKeyUp}
+      style={buttonStyle}
     >
-      <div className={iconWrapperClassName}>
-        {title && ref.current && (
-          <TooltipFactory
-            refElement={ref.current}
-            placement="right"
-            offsetX={-12}
-            offsetY={28}
-            content={title}
-          />
-        )}
+      <div className={wrapperClassName}>
         <Icon
           iconName={iconName}
-          fill={enable ? fill : "--bgcolor-toolbarbutton-disabled"}
+          fill={!disabled ? fill : "--bgcolor-toolbarbutton-disabled"}
           width={size}
           height={size}
-          opacity={enable ? 1.0 : 0.5}
+          opacity={!disabled ? 1.0 : 0.5}
           data-testid={`${dataTestId}-icon`}
         />
       </div>
-    </div>
+    </BaseButton>
   );
 });
 
 /**
  * Props for the SmallIconButton component
  */
-interface SmallIconButtonProps {
-  /** Name of the icon to display */
-  iconName: string;
-  /** Tooltip text to display on hover */
-  title?: string;
-  /** Whether the button is enabled */
-  enable?: boolean;
-  /** Whether the button appears in selected state */
-  selected?: boolean;
-  /** Fill color for the icon */
-  fill?: string;
-  /** Click handler function */
-  clicked?: () => void;
-  /** For testing purposes */
-  "data-testid"?: string;
+interface SmallIconButtonProps extends Omit<IconButtonProps, "iconSize" | "buttonHeight" | "buttonWidth"> {
 }
 
 /**
@@ -185,7 +125,8 @@ export const SmallIconButton = memo(({
   selected,
   fill = "--color-command-icon",
   clicked,
-  "data-testid": dataTestId = "small-icon-button"
+  "data-testid": dataTestId = "small-icon-button",
+  ...rest
 }: SmallIconButtonProps) => {
   return (
     <IconButton
@@ -199,6 +140,7 @@ export const SmallIconButton = memo(({
       clicked={clicked}
       fill={fill}
       data-testid={dataTestId}
+      {...rest}
     />
   );
 });

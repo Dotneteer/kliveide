@@ -179,8 +179,11 @@ export type ThemeProperties = {
   "--bgcolor-docscontainer"?: string;
   "--color-tabbutton-fill-inactive"?: string;
   "--color-tabbutton-fill-active"?: string;
+  "--color-active-tab-icon"?: string;
   "--bgcolor-tabbutton-pointed"?: string;
   "--bgcolor-tabbutton-down"?: string;
+  "--bgcolor-tabbutton-active"?: string;
+  "--bgcolor-tabbutton-active-hover"?: string;
   "--color-readonly-icon-active"?: string;
   "--color-readonly-icon-inactive"?: string;
   "--color-button-separator"?: string;

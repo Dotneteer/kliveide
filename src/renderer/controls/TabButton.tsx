@@ -1,81 +1,101 @@
-import { useEffect, useState } from "react";
+import { memo, useMemo } from "react";
 import { Icon } from "./Icon";
 import classnames from "classnames";
 import styles from "./TabButton.module.scss";
-import { TooltipFactory, useTooltipRef } from "./Tooltip";
+import { BaseButton, BaseButtonProps } from "./BaseButton";
+import { useButtonState } from "./hooks/useButtonState";
 
-type Props = {
+/**
+ * Props for the TabButton component
+ */
+interface TabButtonProps extends Omit<BaseButtonProps, "onClick" | "className"> {
+  /** Whether to hide the button content and show a placeholder */
   hide?: boolean;
+  /** Color fill for the icon */
   fill?: string;
+  /** Whether the tab button is in active state */
+  isActive?: boolean;
+  /** Rotation angle in degrees for the icon */
   rotate?: number;
+  /** Name of the icon to display */
   iconName: string;
+  /** Whether to add spacing after the button */
   useSpace?: boolean;
-  title?: string;
-  disabled?: boolean;
+  /** Click handler function (legacy name) */
   clicked?: () => void;
-};
+}
 
-export function TabButton ({
+/**
+ * A button component displayed in tab panels with an icon and optional tooltip.
+ * Supports disabled state, hover/click interactions, and custom icon styling.
+ */
+export const TabButton = memo(({
   hide,
   fill = "--color-command-icon",
+  isActive,
   rotate = 0,
   iconName,
   useSpace = false,
   title,
   disabled,
-  clicked
-}: Props) {
-  const ref = useTooltipRef();
-  const [keyDown, setKeyDown] = useState(null);
+  clicked,
+  "data-testid": dataTestId = "tab-button",
+  ...rest
+}: TabButtonProps): JSX.Element => {
+  // Get button state for styling
+  const { isPressed } = useButtonState({ disabled });
   
-  useEffect(() => {
-    setKeyDown(false);
-  }, [ref.current]);
+  // Memoize classnames to prevent recalculation on each render
+  const buttonClassName = useMemo(() => 
+    classnames(styles.tabButton, {
+      [styles.keyDown]: isPressed,
+      [styles.disabled]: disabled,
+      [styles.active]: isActive
+    }),
+    [isPressed, disabled, isActive]
+  );
+
   return (
     <>
-      <div
-        ref={ref}
-        className={classnames(styles.tabButton, {
-          [styles.keyDown]: keyDown,
-          [styles.disabled]: disabled
-        })}
-        onMouseDown={() => setKeyDown(true)}
-        onMouseLeave={() => setKeyDown(false)}
-        onClick={(e) => {
-          if (!disabled) {
-            e.stopPropagation();
-            clicked?.();
-            setKeyDown(false);
-          }
-        }}
+      <BaseButton
+        title={title}
+        disabled={disabled}
+        onClick={clicked}
+        className={buttonClassName}
+        data-testid={dataTestId}
+        {...rest}
       >
-        {title && (
-          <TooltipFactory
-            refElement={ref.current}
-            placement='right'
-            offsetX={8}
-            offsetY={32}
-            content={title}
-          />
-        )}
-
         {hide && <div className={styles.placeholder}></div>}
         {!hide && (
           <Icon
             iconName={iconName}
-            fill={disabled ? "--color-command-icon-disabled" : fill}
+            fill={disabled 
+              ? "--color-command-icon-disabled" 
+              : isActive 
+                ? "--color-active-tab-icon" 
+                : fill}
             width={20}
             height={20}
             rotate={rotate}
+            data-testid={`${dataTestId}-icon`}
           />
         )}
-      </div>
+      </BaseButton>
       {useSpace && <TabButtonSpace />}
     </>
   );
-}
+});
 
+/**
+ * Adds horizontal spacing after a tab button
+ */
+export const TabButtonSpace = memo((): JSX.Element => (
+  <div className={styles.tabButtonSpace} />
+));
 
-export const TabButtonSpace = () => <div style={{ paddingRight: 8 }} />;
-
-export const TabButtonSeparator = () => <div className={styles.separator}></div>
+/**
+ * Renders a separator between tab buttons
+ */
+export const TabButtonSeparator = memo((): JSX.Element => (
+  <div className={styles.separator} />
+));

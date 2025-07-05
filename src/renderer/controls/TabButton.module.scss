@@ -19,6 +19,14 @@
   background: var(--bgcolor-tabbutton-down);
 }
 
+.active {
+  background: var(--bgcolor-tabbutton-active);
+
+  &:hover {
+    background: var(--bgcolor-tabbutton-active-hover);
+  }
+}
+
 .disabled,
 .disabled:hover {
   background: transparent;
@@ -35,4 +43,8 @@
     margin: 8px 10px;
     width: 0px;
     height: calc(100% - 12px);
+}
+
+.tabButtonSpace {
+    padding-right: 8px;
 }
