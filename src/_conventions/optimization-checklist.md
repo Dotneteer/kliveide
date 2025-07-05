@@ -5,6 +5,9 @@ Use this checklist when optimizing React components in this project. Check off e
 ## Optimization Workflow
 
 1. **Analysis Phase**: When asked to optimize a component, review it and create a tracking file (e.g., `_ComponentName.md`) with notes following this checklist without making actual changes.
+   - Include only relevant optimizations in the tracking file
+   - Don't list items that are Not Applicable (N/A) to the component
+   - Focus on identifying concrete issues that need to be addressed
 2. **Implementation Phase**: Wait for explicit instructions on which optimizations to implement, then execute them as requested.
 3. **Status Update**: After implementing optimizations, update the status in the tracking file.
 4. **Completion**: When all optimizations are complete and confirmed, remove the tracking file.

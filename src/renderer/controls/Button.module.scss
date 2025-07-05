@@ -41,4 +41,7 @@
       color: var(--color-button-pointed);
     }
   }
+  
+  // Note: We're keeping the margin values dynamic through inline styles,
+  // but adding these marker classes for better styling extensibility in the future
 }
