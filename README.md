@@ -3,23 +3,29 @@
 Quick links:
 - [What Klive IDE Is](#what-klive-ide-is)
 - [Klive Documentation](https://dotneteer.github.io/kliveide/)
-- [Release v0.32.3](https://github.com/Dotneteer/kliveide/releases/tag/v0.32.3)
+- [Release v0.49.0](https://github.com/Dotneteer/kliveide/releases/tag/v0.49.0)
 
 ## How You Can Contribute
 
-I run this project for fun (my first computer was a ZX 81, and then I got a ZX Spectrum 48K). I never plan to earn money from this project; however, I am looking for networking opportunities and collaboration with Sinclair computer fans.
+This project is a passion project—born from a love of retro computing. My first computer was a ZX81, followed by a ZX Spectrum 48K. Klive is my way of honoring that legacy, not for profit, but for the joy of creation and connection. I'm always open to collaboration and would love to meet fellow Sinclair enthusiasts.
 
-Klive is entirely written in TypeScript (using the Electron Shell and React). I'd be happy if you could contribute to the project, whether just mending documentation or other text typos, making small changes, fixing bugs, or even adding new features.
+Klive is entirely written in TypeScript using Electron and React. Whether you're up for fixing a typo, improving documentation, squashing bugs, or adding new features—every contribution is welcome and appreciated.
 
-If you're interested, contact me through dotneteer@hotmail.com!
+If this resonates with you, feel free to reach out: dotneteer@hotmail.com
+
+A heartfelt thanks to these amazing contributors:
+
+- bits4fun – for inspiring the project and helping bring Cambridge Z88 emulation to life
+- vrishe – for new IDE features and bug-squashing wizardry
+- TheStruggleForAntiSpaghetti, Pete-L-72 – for thoughtful suggestions, testing, and helping to shape a more stable IDE
 
 ## What Klive IDE Is
 
-**Klive IDE is a Sinclair retro computer emulator and Integrated Development Environment running on Mac, Linux and Windows.**
+**Klive IDE is a cross-platform emulator and Integrated Development Environment for Sinclair Z80-based computers—built for retro enthusiasts, hobbyists, and developers alike.**
 
-Klive offers not only the emulators but also debugging views, a multi-pane code editor, interactive commands, and other tools to create your Z80 Assembly and ZX BASIC (Boriel's Basic) programs.
+It runs on Mac, Linux, and Windows, providing not just emulation, but also powerful development tools: debugging views, a multi-pane code editor, interactive commands, and much more for your Z80 Assembly or ZX BASIC (Boriel's Basic) programming needs.
 
-Klive IDE supports dual monitor mode to place the Emulator and IDE on different monitors while working with code.
+With support for dual-monitor setups, you can keep the emulator and IDE side-by-side for a seamless coding experience.
 
 ![Intro](/public/images/intro/klive-ide-intro.png)
 

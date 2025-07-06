@@ -1,15 +1,18 @@
 # Klive IDE Changelog
 
-## 0.47.0: Planned private build
+## 0.49.1
 
-- Issue #986
-- Issue #980
-- Issue #978
-- Issue #977
-- Issue #976
-- Issue #975
+### Features
 
-## 0.34.0 - 0.46.5: Private builds
+- SjasmPlus Z80 Assembler integration
+- New IDE options
+- New Editor options
+
+### Fixes
+
+- Dozens of helpful fixes
+
+## 0.34.0 - 0.49.0: Private builds
 
 ## 0.33.0
 
