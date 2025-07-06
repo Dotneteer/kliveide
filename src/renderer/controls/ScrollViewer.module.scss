@@ -1,11 +1,27 @@
+/**
+ * ScrollViewer component styles
+ * Uses theme variables for customization
+ */
 .scrollViewer {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   height: 100%;
   overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  
+  // Theme variables (fallback to default values)
+  --scrollviewer-bg: transparent;
+  --scrollviewer-padding: 0;
+  --scrollviewer-border-radius: 0;
+  
+  background-color: var(--scrollviewer-bg);
+  padding: var(--scrollviewer-padding);
+  border-radius: var(--scrollviewer-border-radius);
 
-  .horizontal {
+  // Horizontal layout
+  &.horizontal {
     flex-direction: row;
   }
 }

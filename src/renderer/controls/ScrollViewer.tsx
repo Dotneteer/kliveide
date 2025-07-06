@@ -1,29 +1,61 @@
 import styles from "./ScrollViewer.module.scss";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from "overlayscrollbars-react";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { AttachedShadow } from "./AttachedShadow";
 import classnames from "classnames";
 
+/**
+ * API exposed by the ScrollViewer component for programmatic control
+ */
 export type ScrollViewerApi = {
+  /** Get the current vertical scroll position */
   getScrollTop: () => number;
+  
+  /** Get the current horizontal scroll position */
   getScrollLeft: () => number;
+  
+  /** Scroll to a specific vertical position */
   scrollToVertical: (pos: number) => void;
+  
+  /** Scroll to a specific horizontal position */
   scrollToHorizontal: (pos: number) => void;
 };
 
-interface Props {
+/**
+ * Props for the ScrollViewer component
+ */
+interface ScrollViewerProps {
+  /** Content to be scrolled */
   children: React.ReactNode;
+  
+  /** Whether to use a thin scrollbar design */
   thinScrollBar?: boolean;
+  
+  /** Whether to enable horizontal scrolling */
   allowHorizontal?: boolean;
+  
+  /** Whether to enable vertical scrolling */
   allowVertical?: boolean;
+  
+  /** Custom CSS styles */
   style?: React.CSSProperties;
+  
+  /** Custom CSS class name */
   className?: string;
+  
+  /** Callback fired when the API is ready */
   apiLoaded?: (api: ScrollViewerApi) => void;
+  
+  /** Callback fired when content is scrolled, providing the current scroll position */
   onScrolled?: (pos: number) => void;
 }
 
-const ScrollViewer: React.FC<Props> = ({
+/**
+ * ScrollViewer component provides custom scrolling functionality 
+ * with theming support and scroll position tracking.
+ */
+const ScrollViewer: React.FC<ScrollViewerProps> = ({
   children,
   style,
   allowHorizontal = true,
@@ -33,68 +65,102 @@ const ScrollViewer: React.FC<Props> = ({
   apiLoaded,
   onScrolled
 }) => {
-  const [pointed, setPointed] = useState(false);
-  const [customTheme, setCustomTheme] = useState("");
-  const [isScrolled, setIsScrolled] = useState(false);
-  const themeService = useTheme();
+  // Component state
+  const [scrollState, setScrollState] = useState({
+    pointed: false,
+    isScrolled: false
+  });
+  
+  // Refs
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
-  const parentElement = useRef(null);
-
+  const parentElement = useRef<HTMLDivElement>(null);
+  
+  // Theme service
+  const themeService = useTheme();
+  
+  // Derived values
+  const customTheme = useMemo(() => {
+    return themeService.theme.tone === "dark"
+      ? thinScrollBar
+        ? "os-theme-dark-small"
+        : "os-theme-dark"
+      : thinScrollBar
+        ? "os-theme-light-small"
+        : "os-theme-light";
+  }, [themeService.theme.tone, thinScrollBar]);
+  
+  // Create and expose the API
   useEffect(() => {
-    setCustomTheme(
-      themeService.theme.tone === "dark"
-        ? thinScrollBar
-          ? "os-theme-dark-small"
-          : "os-theme-dark"
-        : thinScrollBar
-          ? "os-theme-light-small"
-          : "os-theme-light"
-    );
-  }, [themeService.theme]);
+    const osInstance = osRef.current?.osInstance?.();
+    if (!osInstance) return;
+    
+    const api: ScrollViewerApi = {
+      getScrollTop: () => osInstance.elements()?.scrollOffsetElement.scrollTop,
+      getScrollLeft: () => osInstance.elements()?.scrollOffsetElement.scrollLeft,
+      scrollToVertical: (pos: number) => 
+        osInstance.elements().scrollOffsetElement.scrollTo({ top: pos }),
+      scrollToHorizontal: (pos: number) => 
+        osInstance.elements().scrollOffsetElement.scrollTo({ left: pos })
+    };
+    
+    apiLoaded?.(api);
+  }, [apiLoaded]);
 
-  useEffect(() => {
-    if (osRef.current?.osInstance?.()) {
-      const api: ScrollViewerApi = {
-        getScrollTop: () => osRef.current?.osInstance()?.elements()?.scrollOffsetElement.scrollTop,
-        getScrollLeft: () =>
-          osRef.current?.osInstance()?.elements()?.scrollOffsetElement.scrollLeft,
-        scrollToVertical: (pos: number) =>
-          osRef.current?.osInstance()?.elements().scrollOffsetElement.scrollTo({ top: pos }),
-        scrollToHorizontal: (pos: number) =>
-          osRef.current?.osInstance()?.elements().scrollOffsetElement.scrollTo({ left: pos })
-      };
-      apiLoaded?.(api);
-    }
-  }, [parentElement.current, osRef.current?.osInstance?.()]);
-
-  const handleScroll = () => {
-    const element = osRef.current?.osInstance().elements();
+  // Handle scroll events
+  const handleScroll = useCallback(() => {
+    const element = osRef.current?.osInstance()?.elements();
     if (element) {
-      setIsScrolled(element.scrollOffsetElement.scrollTop > 0);
-      onScrolled?.(element.scrollOffsetElement.scrollTop);
+      const scrollTop = element.scrollOffsetElement.scrollTop;
+      setScrollState(prev => ({
+        ...prev,
+        isScrolled: scrollTop > 0
+      }));
+      onScrolled?.(scrollTop);
     }
-  };
+  }, [onScrolled]);
+
+  // Mouse event handlers for showing/hiding scrollbars
+  const handleMousePointerPresent = useCallback(() => {
+    setScrollState(prev => ({
+      ...prev,
+      pointed: true
+    }));
+  }, []);
+  
+  const handleMousePointerLeave = useCallback(() => {
+    setScrollState(prev => ({
+      ...prev,
+      pointed: false
+    }));
+  }, []);
+
+  // Scroll options
+  const scrollOptions = useMemo(() => ({
+    scrollbars: { 
+      theme: scrollState.pointed ? customTheme : "os-theme-not-hovered" 
+    },
+    overflow: {
+      x: allowHorizontal ? "scroll" as const : "hidden" as const,
+      y: allowVertical ? "scroll" as const : "hidden" as const
+    }
+  }), [scrollState.pointed, customTheme, allowHorizontal, allowVertical]);
 
   return (
     <div
       ref={parentElement}
       className={classnames(styles.scrollViewer, className)}
       style={style}
-      onMouseDown={() => setPointed(true)}
-      onMouseMove={() => setPointed(true)}
-      onMouseEnter={() => setPointed(true)}
-      onMouseLeave={() => setPointed(false)}
+      onMouseDown={handleMousePointerPresent}
+      onMouseMove={handleMousePointerPresent}
+      onMouseEnter={handleMousePointerPresent}
+      onMouseLeave={handleMousePointerLeave}
+      role="region"
+      aria-label="Scrollable content"
     >
       <OverlayScrollbarsComponent
         ref={osRef}
         style={{ height: "100%" }}
-        options={{
-          scrollbars: { theme: pointed ? customTheme : "os-theme-not-hovered" },
-          overflow: {
-            x: allowHorizontal ? "scroll" : "hidden",
-            y: allowVertical ? "scroll" : "hidden"
-          }
-        }}
+        options={scrollOptions}
         events={{
           scroll: handleScroll
         }}
@@ -102,7 +168,10 @@ const ScrollViewer: React.FC<Props> = ({
       >
         {children}
       </OverlayScrollbarsComponent>
-      <AttachedShadow parentElement={parentElement.current} visible={isScrolled} />
+      <AttachedShadow 
+        parentElement={parentElement.current} 
+        visible={scrollState.isScrolled} 
+      />
     </div>
   );
 };
