@@ -1,16 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Virtualizer, VListHandle } from "virtua";
 import ScrollViewer from "./ScrollViewer";
+import React from "react";
 
-type Props = {
-  items: any[];
+// Generic type for the list items
+type Props<T> = {
+  items: T[];
   overscan?: number;
   renderItem?: (index: number) => React.ReactNode;
   apiLoaded?: (api: VListHandle) => void;
   onScroll?: (offset: number) => void;
 };
 
-export const VirtualizedList = ({ items, overscan, renderItem, apiLoaded, onScroll }: Props) => {
+export const VirtualizedList = <T,>({ 
+  items, 
+  overscan, 
+  renderItem, 
+  apiLoaded, 
+  onScroll 
+}: Props<T>) => {
   const ref = useRef<VListHandle>(null);
   const [itemsCount, setItemsCount] = useState(items?.length ?? 0);
 
@@ -19,23 +27,37 @@ export const VirtualizedList = ({ items, overscan, renderItem, apiLoaded, onScro
     if (ref.current) {
       apiLoaded?.(ref.current);
     }
-  }, [ref.current]);
+  }, [apiLoaded, ref]);
 
   useEffect(() => {
     setItemsCount(items?.length ?? 0);
   }, [items]);
+
+  // Memoize the onScroll handler
+  const handleScroll = useCallback((offset: number) => {
+    onScroll?.(offset);
+  }, [onScroll]);
+
+  // Return to the original pattern but with memoization
+  const renderVirtualItem = useCallback((i: number) => {
+    return (
+      <>
+        {renderItem ? renderItem(i) : <div key={`empty-${i}`} style={{ height: 0 }} />}
+      </>
+    );
+  }, [renderItem]);
 
   return (
     <ScrollViewer>
       <Virtualizer
         ref={ref}
         overscan={overscan}
-        onScroll={(offset) => onScroll?.(offset)}
+        onScroll={handleScroll}
         count={itemsCount}
       >
         {(i) => {
-          const rendered = renderItem?.(i) as any
-          return rendered || <div key={i} style={{ height: 0 }} />;
+          // Use the memoized function but inline
+          return renderVirtualItem(i);
         }}
       </Virtualizer>
     </ScrollViewer>
