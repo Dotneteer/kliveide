@@ -3,7 +3,7 @@
 Quick links:
 - [What Klive IDE Is](#what-klive-ide-is)
 - [Klive Documentation](https://dotneteer.github.io/kliveide/)
-- [Release v0.49.0](https://github.com/Dotneteer/kliveide/releases/tag/v0.49.0)
+- [Release v0.49.1](https://github.com/Dotneteer/kliveide/releases/tag/v0.49.1)
 
 ## How You Can Contribute
 
@@ -15,9 +15,9 @@ If this resonates with you, feel free to reach out: dotneteer@hotmail.com
 
 A heartfelt thanks to these amazing contributors:
 
-- bits4fun – for inspiring the project and helping bring Cambridge Z88 emulation to life
-- vrishe – for new IDE features and bug-squashing wizardry
-- TheStruggleForAntiSpaghetti, Pete-L-72 – for thoughtful suggestions, testing, and helping to shape a more stable IDE
+- [bits4fun](https://github.com/bits4fun) – for inspiring the project and helping bring Cambridge Z88 emulation to life
+- [vrishe](https://github.com/vrishe) – for new IDE features and bug-squashing wizardry
+- [TheStruggleForAntiSpaghetti](https://github.com/TheStruggleForAntiSpaghetti), [Pete-L-72](https://github.com/Pete-L-72) – for thoughtful suggestions, testing, and helping to shape a more stable IDE
 
 ## What Klive IDE Is
 
