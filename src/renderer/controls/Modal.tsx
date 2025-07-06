@@ -4,7 +4,9 @@ import { dimMenuAction } from "@state/actions";
 import {
   MouseEventHandler,
   ReactNode,
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState
 } from "react";
@@ -13,14 +15,16 @@ import { Button } from "./Button";
 import { Icon } from "./Icon";
 import styles from "./Modal.module.scss";
 
+export type DialogResultType = any;
+
 export interface ModalApi {
   enablePrimaryButton: (flag: boolean) => void;
   enableSecondaryButton: (flag: boolean) => void;
   enableCancel: (flag: boolean) => void;
-  setDialogResult: (result?: any) => void;
-  triggerPrimary: (result?: any) => void;
-  triggerSecondary: (result?: any) => void;
-  triggerCancel: (result?: any) => void;
+  setDialogResult: (result?: DialogResultType) => void;
+  triggerPrimary: (result?: DialogResultType) => void;
+  triggerSecondary: (result?: DialogResultType) => void;
+  triggerCancel: (result?: DialogResultType) => void;
   triggerClose: () => void;
 }
 
@@ -45,10 +49,10 @@ export type ModalProps = {
   cancelVisible?: boolean;
   initialFocus?: "none" | "primary" | "secondary" | "cancel";
   onApiLoaded?: (api: ModalApi) => void;
-  onClose: (result?: any) => any;
-  onPrimaryClicked?: (result?: any) => Promise<boolean>;
-  onSecondaryClicked?: (result?: any) => Promise<boolean>;
-  onCancelClicked?: (result?: any) => Promise<boolean>;
+  onClose: (result?: DialogResultType) => any;
+  onPrimaryClicked?: (result?: DialogResultType) => Promise<boolean>;
+  onSecondaryClicked?: (result?: DialogResultType) => Promise<boolean>;
+  onCancelClicked?: (result?: DialogResultType) => Promise<boolean>;
 };
 
 export const Modal = ({
@@ -81,66 +85,80 @@ export const Modal = ({
   const [button1Enabled, setButton1Enabled] = useState(primaryEnabled);
   const [button2Enabled, setButton2Enabled] = useState(secondaryEnabled);
   const [cancelButtonEnabled, setCancelButtonEnabled] = useState(cancelEnabled);
-  const [dialogResult, setDialogResult] = useState<any>();
+  const [dialogResult, setDialogResult] = useState<DialogResultType>(undefined);
 
-  const doClose = () => {
+  const doClose = useCallback(() => {
     store.dispatch(dimMenuAction(false), messageSource);
     onClose?.();
-  };
+  }, [store, messageSource, onClose]);
 
-  const handleKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyboard = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.code === "Escape") {
       doClose();
     }
-  };
+  }, [doClose]);
 
   const [closeStarted, setCloseStarted] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // --- Define button click handlers
-  const primaryClickHandler = async (result?: any) => {
+  // --- Define button click handlers with useCallback
+  const primaryClickHandler = useCallback(async (result?: DialogResultType) => {
     const close = await onPrimaryClicked?.(result ?? dialogResult);
     if (!close) {
       doClose();
     }
-  };
-  const secondaryClickHandler = async (result?: any) => {
+  }, [onPrimaryClicked, dialogResult, doClose]);
+  
+  const secondaryClickHandler = useCallback(async (result?: DialogResultType) => {
     const close = await onSecondaryClicked?.(result ?? dialogResult);
     if (!close) {
       doClose();
     }
-  };
-  const cancelClickHandler = async (result?: any) => {
+  }, [onSecondaryClicked, dialogResult, doClose]);
+  
+  const cancelClickHandler = useCallback(async (result?: DialogResultType) => {
     const close = await onCancelClicked?.(result);
     if (!close) {
       doClose();
     }
-  };
+  }, [onCancelClicked, doClose]);
 
   useEffect(() => {
     setButton1Enabled(primaryEnabled);
     setButton2Enabled(secondaryEnabled);
-    setCancelButtonEnabled(cancelButtonEnabled);
+    setCancelButtonEnabled(cancelEnabled);
   },
-  [primaryEnabled, secondaryEnabled, cancelButtonEnabled]);
+  [primaryEnabled, secondaryEnabled, cancelEnabled]);
+
+  // Memoize the API object to prevent recreation on every render
+  const modalApi = useMemo<ModalApi>(() => ({
+    enablePrimaryButton: (flag: boolean) => setButton1Enabled(flag),
+    enableSecondaryButton: (flag: boolean) => setButton2Enabled(flag),
+    enableCancel: (flag: boolean) => setCancelButtonEnabled(flag),
+    setDialogResult: (result?: DialogResultType) => setDialogResult(result),
+    triggerPrimary: (result?: DialogResultType) => primaryClickHandler(result),
+    triggerSecondary: (result?: DialogResultType) => secondaryClickHandler(result),
+    triggerCancel: (result?: DialogResultType) => cancelClickHandler(result),
+    triggerClose: (result?: DialogResultType) => onClose(result)
+  }), [
+    setButton1Enabled,
+    setButton2Enabled,
+    setCancelButtonEnabled,
+    setDialogResult,
+    primaryClickHandler,
+    secondaryClickHandler,
+    cancelClickHandler,
+    onClose
+  ]);
 
   useEffect(() => {
-    onApiLoaded?.({
-      enablePrimaryButton: (flag: boolean) => setButton1Enabled(flag),
-      enableSecondaryButton: (flag: boolean) => setButton2Enabled(flag),
-      enableCancel: (flag: boolean) => setCancelButtonEnabled(flag),
-      setDialogResult: (result?: any) => setDialogResult(result),
-      triggerPrimary: (result?: any) => primaryClickHandler(result),
-      triggerSecondary: (result?: any) => primaryClickHandler(result),
-      triggerCancel: (result?: any) => primaryClickHandler(result),
-      triggerClose: (result?: any) => onClose(result)
-    });
-  }, [modalRef.current]);
+    onApiLoaded?.(modalApi);
+  }, [onApiLoaded, modalApi]);
 
   useEffect(() => {
     store.dispatch(dimMenuAction(isOpen), messageSource);
-  });
+  }, [store, isOpen, messageSource]);
 
   useEffect(() => {
     if (isOpen) {
@@ -148,11 +166,11 @@ export const Modal = ({
     }
   }, [isOpen]);
 
-  const onMouseDownHandler: MouseEventHandler<HTMLDivElement> = e => {
+  const onMouseDownHandler = useCallback<MouseEventHandler<HTMLDivElement>>(e => {
     setCloseStarted(!!(modalRef?.current && modalRef?.current === e.target));
-  };
+  }, [modalRef]);
 
-  const onMouseUpHandler: MouseEventHandler<HTMLDivElement> = e => {
+  const onMouseUpHandler = useCallback<MouseEventHandler<HTMLDivElement>>(e => {
     if (modalRef?.current && modalRef?.current !== e.target) {
       return;
     }
@@ -163,7 +181,7 @@ export const Modal = ({
       doClose();
     }
     setCloseStarted(false);
-  };
+  }, [modalRef, closeStarted, doClose]);
 
   return (
     <>
@@ -191,23 +209,11 @@ export const Modal = ({
               })}
               style={{ width, transform: `translateY(${translateY}px)` }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  position: "relative"
-                }}
-              >
+              <div className={styles.headerContainer}>
                 <header className={styles.dialogTitle}>{title}</header>
               </div>
 
-              <div
-                style={{
-                  position: "absolute",
-                  right: "0.5rem",
-                  top: "0.5rem"
-                }}
-              >
+              <div className={styles.closeButtonContainer}>
                 <button
                   type='button'
                   className={styles.closeButton}

@@ -115,3 +115,15 @@
   flex-direction: row-reverse;
   padding: 8px;
 }
+
+.headerContainer {
+  display: flex;
+  flex-direction: row;
+  position: relative;
+}
+
+.closeButtonContainer {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+}
