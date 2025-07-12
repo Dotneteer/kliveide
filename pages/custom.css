@@ -1,3 +1,8 @@
 ul li ul {
   margin-top: 0px;
 }
+
+/* Remove any bottom branding area completely */
+div[data-next-badge] {
+  display: none !important;
+}

@@ -12,7 +12,7 @@ Each line of the source code is a declaration unit and is parsed in its context.
 
 The assembler language uses a unique way of case sensitivity. You can write reserved words (such as assembly instructions, pragmas, or directives) with lowercase or uppercase letters, but you cannot mix these cases. For example, these instructions use the proper syntax:
 
-```
+```z80-klive
 LD c,A
 JP #12ac
 ldir
@@ -21,7 +21,7 @@ djnz MyLabel
 
 However, in these samples, character cases are mixed, and the compiler will refuse them:
 
-```
+```z80-klive
 Ld c,A
 Jp #12ac
 ldIR
@@ -30,7 +30,7 @@ djNZ MyLabel
 
 In symbolic names (labels, identifiers, etc.), you can mix lowercase and uppercase letters. Nonetheless, the compiler applies case-insensitive comparison when matching symbolic names. So, these statement pairs are equivalent to each other:
 
-```
+```z80-klive
 jp MainEx
 jp MAINEX
 
@@ -47,15 +47,15 @@ The language supports two types of comments: _end-of-line_ and _block_ comments.
 
 En-of-line comments start with a semicolon (```;```) or double forward slash (`//`). The compiler takes the rest of the line into account as the body of the comment. This sample illustrates this concept:
 
-```
+```z80-klive
 ; This line is a comment-only line
 Wait:   ld b,8     ; Set the counter
 Wait1:  djnz Wait1 // wait while the counter reaches zero
 ```
 
 Block comments can be put anywhere within an instruction line between `/*` and `*/` tokens until they do not break other tokens. Nonetheless, block comments cannot span multiple lines; they must start and end within the same source code line. All of the block comments in this code snippet are correct:
-```
 
+```z80-klive
 SetAttr:
 	ld b,32
 fill:
@@ -68,7 +68,7 @@ fill:
 
 However, this will result in a syntax error:
 
-```
+```z80-klive
 /* 
   This block comment spans multiple lines,
   and thus, it is invalid
@@ -87,7 +87,7 @@ The language syntax provides these types of literals:
 - **Decimal numbers.** You can use up to 5 digits (0..9) to declare a decimal number. For example: `16`, `32768`, `2354`.
 - **Floating point numbers.** You can use the same notation for floating point numbers as in C/C++/Java/C#. Here are a few samples:
 
-```
+```z80-klive
 .25
 123.456
 12.45E34
@@ -97,7 +97,7 @@ The language syntax provides these types of literals:
 
 - **Hexadecimal numbers.** You can use up to 4 hexadecimal digits (0..9, a..f or A..F) to declare a hexadecimal literal. The compiler looks for a `#`, `0x`, or `$` prefix or one of the `h` or `H` suffixes to recognize them as hexadecimal. If you use the `h` or `H` suffixes, the hexadecimal number should start with a decimal digit `0`...`9`; otherwise, the assembler interprets it as an identifier (label). Here are a few samples:
 
-```
+```z80-klive
 #12AC
 0x12ac
 $12Ac
@@ -108,7 +108,7 @@ $12Ac
 
 - **Binary numbers.** Literals starting with one of the `%`, or `0b` prefixes (or with the `b` or `B` suffix) are considered binary literals. You can follow the prefix with up to 16 `0` or `1` digits. To make them more readable, you can separate adjacent digits with the underscore (`_`) or single quote (`'`) character. These are all valid binary literals:
 
-```
+```z80-klive
 %01011111
 0b01011111
 0b_0101_1111
@@ -161,7 +161,7 @@ FirstLevelModule.NestedModule.ClearScreen
 
 You have already learned that you can utilize character and string literals (wrapped into single or double quotes, respectively), such as in these samples:
 
-```
+```z80-klive
 "This is a string. The next sample is a single character:"
 'c'
 ```
@@ -191,7 +191,7 @@ To declare a character by its binary code, you can use the `\xH` or
 `\xHH` sequences (`H` is a hexadecimal digit). For example, these
 escape sequence pairs are equivalent:
 
-```
+```z80-klive
 "\i"
 "\x10"
 
@@ -207,19 +207,19 @@ From now on, I will mention "label" for both constructs and do otherwise only wh
 
 When you write a Klive Assembly instruction, you can start the line with a label:
 
-```
+```z80-klive
 MyStart: ld hl,0
 ```
 
 Here, in this sample, `MyStart` is a label. The assembler allows you to omit the colon after the label name, so this line is valid:
 
-```
+```z80-klive
 MyStart ld hl,0
 ```
 
 Some developers like to put a label in a separate line from the instruction to which it belongs. You can use the same hanging label style within Klive. In this case, the label should go _before_ its instruction. Take a look at this code snippet:
 
-```
+```z80-klive
 MyStart:
   ld hl,0
 MyNext
@@ -233,7 +233,7 @@ This code is entirely correct. Note the `ld b,32` instruction belongs to the `My
 
 As you will learn later, you can define symbols with the `.EQU` or `.VAR` pragmas. While `.EQU` allows you to assign a constant value to a symbol, it cannot change its value after the declaration. `.VAR` lets you re-assign the initial value.
 
-Klive supports the idea of lexical scopes. When you create the program, it starts with a global (outermost) lexical scope. Particular language elements, such a _statements_ create their nested lexical scope. Labels and symbols are always created within the current lexical scope. Nonetheless, when resolving them, the assembler starts with the innermost scope and goes through all outer scopes until it finds the label declaration.
+Klive supports the idea of lexical scopes. When you create the program, it starts with a global (outermost) lexical scope. Particular language elements, such as _statements_ create their nested lexical scope. Labels and symbols are always created within the current lexical scope. Nonetheless, when resolving them, the assembler starts with the innermost scope and goes through all outer scopes until it finds the label declaration.
 
 This mechanism means that you can declare labels within a nested scope so that those hide labels and symbols in outer scopes.
 
@@ -245,7 +245,7 @@ The assembler considers labels that start with a backtick (`) character as tempo
 
 This code snippet demonstrates this concept:
 
-```
+```z80-klive
 SetPixels:        ; Persistent label
   ld hl, #4000
   ld a,#AA

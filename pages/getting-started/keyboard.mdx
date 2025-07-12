@@ -1,13 +1,6 @@
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import mainKey from '../../public//images/getting-started/main-key.png'
-import symbolKey from '../../public//images/getting-started/symbol-key.png'
-import aboveKey from '../../public//images/getting-started/above-key.png'
-import belowKey from '../../public//images/getting-started/below-key.png'
-import glyphKey from '../../public//images/getting-started/glyph-key.png'
-import sizingStart from '../../public//images/getting-started/sizing-start.png'
-import sizingEnd from '../../public//images/getting-started/sizing-end.png'
- 
+import { ClickableImage } from '../../page-components'
+
 # Using the Keyboard
 
 You can use the computer's physical keyboard or a virtual keyboard to emulate keystrokes. To let the Emulator process the computer's keyboard, the Emulator should have the focus. When you change the current window to the Emulator with your machine's keys or click it with the mouse, it is ready to receive keystrokes.
@@ -21,11 +14,11 @@ If you do not find it easy to use the computer's physical keyboard, you can use 
 - Click the **View | Show the Virtual Keyboard** menu command while in the Emulator window
 - Click the **Keyboard** icon in the Emulator's toolbar
 
-When the keyboard is to show, Klive displays it according to the selected machine's type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128L/+2E/+3E keyboard.
+When the keyboard is shown, Klive displays it according to the selected machine's type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128K/+2E/+3E keyboard.
 
-![ZX Spectrum 48 Keyboard](/images/getting-started/sp48-keyboard.png)
+<ClickableImage src="/images/getting-started/sp48-keyboard.png" />
 
-![ZX Spectrum 128 Keyboard](/images/getting-started/sp128-keyboard.png)
+<ClickableImage src="/images/getting-started/sp128-keyboard.png" />
 
 <Callout type="info" emoji="💡">
 Klive has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next computers, too.
@@ -33,7 +26,7 @@ Klive has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next comput
 
 To press a key, move the mouse over the particular virtual key and click it. If you keep the mouse button down, it's just like keeping the button pressed. Releasing the mouse button behaves as you released the real key.
 
-When you move the button slowly over a particular key, it will highlight the part of the button with the symbol shift-related and extended mode-related keys. When you click the mouse, it will automatically "press" the symbol shift or extended mode keys. 
+When you move the mouse slowly over a particular key, it will highlight the part of the button with the symbol shift-related and extended mode-related keys. When you click the mouse, it will automatically "press" the symbol shift or extended mode keys. 
 
 You can use both the left and right mouse buttons. However, when using the right mouse button with normal buttons, the key behaves as if you pressed the **CAPS SHIFT** button simultaneously.
 
@@ -41,21 +34,21 @@ This table shows a few examples:
 
 | Example | Description
 |-|:-|
-| <Image src={mainKey} alt="Hello" width="64" height="77" /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
-| <Image src={symbolKey} width="64" height="77" /> | The click will result in `AT` regardless of which mouse button you click. |
-| <Image src={aboveKey} width="64" height="77" /> | The click will show `CODE` regardless of which mouse button you click.. |
-| <Image src={belowKey} width="64" height="90" /> | The click will display `IN` regardless of which mouse button you click. |
-| <Image src={glyphKey} width="64" height="77" /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
+| <ClickableImage src="/images/getting-started/main-key.png" width="64" /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
+| <ClickableImage src="/images/getting-started/symbol-key.png" width="64" /> | The click will result in `AT` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/above-key.png" width="64" /> | The click will show `CODE` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/below-key.png" width="64" /> | The click will display `IN` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/glyph-key.png" width="64" /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
 
 ## Resizing the Virtual Keyboard
 
 When you move the mouse to the top border of the virtual keyboard, a sizing splitter bar appears:
 
-<Image src={sizingStart} width="550" height="390" style={{marginTop: 20}} />
+<ClickableImage src="/images/getting-started/sizing-start.png" />
 
-Hold down the mouse key while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:
+Hold down the mouse button while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:
 
-<Image src={sizingEnd} width="550" height="390" style={{marginTop: 20}} />
+<ClickableImage src="/images/getting-started/sizing-end.png" />
 
 When you reach the desired size, release the mouse button.
 

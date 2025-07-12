@@ -1,20 +1,9 @@
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import newProject from '../../public/images/getting-started/new-klive-project.png'
-import projectInExplorer from '../../public/images/getting-started/project-in-explorer.png'
-import nonKliveProject from '../../public/images/getting-started/non-klive-project.png'
-import buildRootSign from '../../public/images/getting-started/build-root-sign.png'
-import promoteBuildRoot from '../../public/images/getting-started/promote-build-root.png'
-import buildRootIcons from '../../public/images/getting-started/build-root-icons.png'
-import compile from '../../public/images/getting-started/compile.png'
-import inject from '../../public/images/getting-started/inject.png'
-import start from '../../public/images/getting-started/start.png'
-import debug from '../../public/images/getting-started/debug.png'
-import kliveProjectInEditor from '../../public/images/getting-started/klive-project-in-editor.png'
+import { ClickableImage } from '../../page-components'
 
 # Creating a Klive Project
 
-The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display it. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
+The IDE supports developing applications with a *Klive project*. With the **File | Open folder** command, you can open the contents of a particular folder and display them. The IDE considers folders with a well-formed `klive.project` file within them a *Klive project*.
 
 <Callout type="info" emoji="💡">
 In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process customization. At the end of this article, you will find a section about updating your old Klive projects to leverage the new build system.
@@ -24,7 +13,7 @@ In Klive v0.32.0, a new file, `build.ksx`, was introduced to allow build process
 
 With the **File | New project** menu command, you can create a new Klive project:
 
-<Image src={newProject} alt="NewProject" width="502" height="326" style={{marginTop: 24}} />
+<ClickableImage src="/images/getting-started/new-klive-project.png" width="502" />
 
 - You can select the machine type to use in the project (you can change it any time when the project is open).
 - The IDE offers you a few project templates depending on the machine type.
@@ -37,29 +26,29 @@ When you click Create, the IDE creates the new project folder and opens it.
 
 A Klive project is a folder with a `klive.project` file in it. The file is a JSON file that describes the project's properties. The IDE creates the following structure for a new project:
 
-<Image src={projectInExplorer} alt="ProjectInExplorer" width="248" height="200" style={{marginTop: 24}} />
+<ClickableImage src="/images/getting-started/project-in-explorer.png" width="248" />
 
 The little home icon to the left of the root folder name (`MyFirstKliveProject`) indicates that the open folder is a Klive project. The last two files contain essential information related to the current project.
 
 - `klive.project` is the file that stores project settings, including the machine type, IDE options, breakpoints, etc. Klive IDE does not allow editing it in its code editor.
-- `build.tsx` is a script file that executes within the IDE. It contains functions representing build commands.
+- `build.ksx` is a script file that executes within the IDE. It contains functions representing build commands.
 
-By changing the functions' body, you can customize the build (and create new build-related commands).
+By changing the functions' body, you can customize the build process (and create new build-related commands).
 
 
 When you open a folder that is not a Klive project (does not have a valid `klive.project` file), you cannot see the home icon:
 
-<Image src={nonKliveProject} alt="NonKliveProject" width="247" height="194" style={{marginTop: 24}} />
+<ClickableImage src="/images/getting-started/non-klive-project.png" width="248" />
 
 ## The Build Root
 
-When you develop your code, you may work with multiple files — Klive needs to know the main file to compile it to machine code. The *build root* designates this main file. When you create a new project, Klive automatically assigns a file as the build root. In the Explorer, the "combine" icon to the right of the file name indicates this:
+When you develop your code, you may work with multiple files — Klive needs to know the main file to compile into machine code. The *build root* designates this main file. When you create a new project, Klive automatically assigns a file as the build root. In the Explorer, the "combine" icon to the right of the file name indicates this:
 
-<Image src={buildRootSign} alt="BuildRootSign" width="248" height="200" style={{marginTop: 24}} />
+<ClickableImage src="/images/getting-started/build-root-sign.png" width="248" />
 
-You can change the build root any time by right-clicking on a file and selecting the **Promote to Build Root** command.
+You can change the build root at any time by right-clicking on a file and selecting the **Promote to Build Root** command.
 
-<Image src={promoteBuildRoot} alt="BuildRootSign" width="320" height="277" style={{marginTop: 24}} />
+<ClickableImage src="/public/images/getting-started/promote-build-root.png" width="320" />
 
 <Callout type="info" emoji="💡">
 The Promote to Build Root command is available only for particular file types Klive supports.
@@ -69,16 +58,16 @@ The Promote to Build Root command is available only for particular file types Kl
 
 When you select the build root in the Explorer, the content of the file opens in the code editor, and it displays four icons at the right side of the document tab bar:
 
-<Image src={buildRootIcons} alt="BuildRootIcons" width="675" height="310" style={{marginTop: 24}} />
+<ClickableImage src="/images/getting-started/build-root-icons.png" width="675" />
 
 Each of these icons carries out a particular operation:
 
 | Icon | Operation |
 | ---- | --------- |
-| <Image src={compile} alt="Compile" width="50" height="50" /> | This command compiles the project using the build root file as the main file. This operation lets you check whether your code is free from compilation errors. |
-| <Image src={inject} alt="Inject" width="50" height="50" /> | This command compiles the project. If the compilation is successful, it immediately injects the binary code into the memory of the paused machine. After the operation, you can resume the machine and execute the code (for example, with the `RANDOMIZE USR(<address>)` command). |
-| <Image src={start} alt="Start" width="50" height="50" /> | With this command, you can start the compiled code. |
-| <Image src={debug} alt="Debug" width="50" height="50" /> | With this command, you can start the compiled code in debug mode. |
+| <ClickableImage src="/images/getting-started/compile.png" width="50" /> | This command compiles the project using the build root file as the main file. This operation lets you check whether your code is free from compilation errors. |
+| <ClickableImage src="/images/getting-started/inject.png" width="50" /> | This command compiles the project. If the compilation is successful, it immediately injects the binary code into the memory of the paused machine. After the operation, you can resume the machine and execute the code (for example, with the `RANDOMIZE USR(<address>)` command). |
+| <ClickableImage src="/images/getting-started/start.png" width="50" /> | With this command, you can start the compiled code. |
+| <ClickableImage src="/images/getting-started/debug.png" width="50" /> | With this command, you can start the compiled code in debug mode. |
 
 When you start the code, Klive executes several steps to ensure a one-click user experience to run or debug the code:
 
@@ -94,7 +83,7 @@ The `klive.project` file encapsulates information about the current project, inc
 
 The project file uses JSON format. When you click it in the Explorer, you can look at its content within the code editor. However, the IDE considers this file read-only; thus, it does not allow you to edit it directly. The little shield icon to the right of the filename indicates this read-only state.
 
-<Image src={kliveProjectInEditor} alt="KliveProjectInEditor" width="675" height="310" style={{marginTop: 24}} />
+<ClickableImage src="/images/getting-started/klive-project-in-editor.png" width="675" />
 
 <Callout type="info" emoji="💡">
 Though you cannot edit this file with the IDE, you can modify it outside. Such modifications may lead to the loss of the project file if the IDE cannot parse `klive.project` while opening the project folder. If you ever decide to modify `klive.project` manually, make sure that particular project is not open in the IDE.

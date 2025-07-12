@@ -9,7 +9,7 @@ You can use this directive for conditional compilation. The argument of the dire
 conditional expression, and it determines on which branch the compilation goes on. __#IF__
 works in concert with `#ELSE` and `#ENDIF`:
 
-```
+```z80-klive
 ; Block #1
 #if 2 > 3
     ld a,b
@@ -40,7 +40,7 @@ These directives work similarly to #IF. However, they check if a particular symb
 
 These directives work similarly to `#IF`. However, these check if the code's current model is specified with the identifier following the `IFMOD` or `IFNMOD` pragma. Here is a short sample of using this directive:
 
-```
+```z80-klive
     .model Spectrum48
 
 #ifmod Spectrum128
@@ -65,7 +65,7 @@ You can use only these identifiers with this pragma (case-insensitively): `SPECT
 
 You can explicitly define a symbol with the `#DEFINE` directive. Such a symbol has no concrete value, just its existence. With `#UNDEF`, you may declare a symbol undefined.
 
-```
+```z80-klive
 #define SYMB
 
 ; Block #1
@@ -93,7 +93,7 @@ You can use this directive to load and process a source file from within another
 
 Assume that this code is in the `C:\Work` folder:
 
-```
+```z80-klive
 #include "Symbol.z80asm"
 #include "./MyRules.z80asm"
 #include "/Common/scroll.z80asm"

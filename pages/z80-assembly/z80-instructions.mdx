@@ -4,7 +4,7 @@ The Klive Assembler implements every officially documented Z80 instruction as we
 
 Z80 instructions may start with a label. Labels are identifiers that can be terminated by an optional colon (`:`). The compiler accepts both labels in these samples:
 
-```
+```z80-klive
 Start: ld b,#f0
 Wait   djnz Wait
 ```
@@ -39,7 +39,7 @@ Zilog Z80 documentation:
 
 Z80 assemblers use two different syntax constructs for the indirect `JP` statements:
 
-```
+```z80-klive
 ; Notation #1
 jp hl
 jp ix
@@ -57,7 +57,7 @@ The Klive Assembler accepts both notations.
 Three standard ALU operations between `A` and other operands (`ADD`, `ADC`, and `SBC`) sign `A`
 as their first operand:
 
-```
+```z80-klive
 add a,b
 adc a,(hl)
 sbc a,e
@@ -66,7 +66,7 @@ sbc a,e
 However, the five other standard ALU operations between `A` and other operands (`SUB`, `AND`, `XOR`, 
 `OR`, and `CP`) omit `A` from their notation:
 
-```
+```z80-klive
 sub e
 and (hl)
 xor e
@@ -76,7 +76,7 @@ cp b
 
 The __Klive__ compiler accepts the second group of ALU operations using the explicit `A` operand, too:
 
-```
+```z80-klive
 sub a,e
 and a,(hl)
 xor a,e

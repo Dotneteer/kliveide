@@ -13,7 +13,7 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase: "https://github.com/dotneteer/klive",
   footer: {
-    content: "KliveIDE Documentation © 2025"
+    content: null
   },
   head: (
     <>
