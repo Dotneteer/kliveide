@@ -1,0 +1,16 @@
+# Hexadecimal Number Test
+
+Testing hexadecimal number recognition:
+
+```z80-klive
+LD c,A
+JP #12ac
+ldir
+djnz MyLabel
+```
+
+## All supported hex formats:
+- `#12ac` - Hash prefix
+- `$8000` - Dollar prefix  
+- `0x1234` - C-style prefix
+- `0ABCDh` - Intel style suffix

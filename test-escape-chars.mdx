@@ -1,0 +1,31 @@
+# Test Escape Characters
+
+Testing escape character recognition in strings:
+
+```z80-assembly
+; These escape characters should be highlighted:
+"Hello \i world"          ; \i
+"Press \p key"            ; \p  
+"Form \f feed"            ; \f
+"Back \b space"           ; \b
+"Inverse \I text"         ; \I
+"Output \o here"          ; \o
+"Alert \a sound"          ; \a
+"Tab \t character"        ; \t
+"Paper \P mode"           ; \P
+"Clear \C screen"         ; \C
+"Backslash \\ character"  ; \\
+"Single \' quote"         ; \'
+"Double \" quote"         ; \"
+"Null \0 terminator"      ; \0
+
+; Hexadecimal escape sequences:
+"Single hex \xA"          ; \xH
+"Double hex \xFF"         ; \xHH
+"Lower case \xab"         ; \xhh
+"Mixed case \xCd"         ; \xHh
+
+; Invalid escape sequences (should not be highlighted as escapes):
+"Invalid \z sequence"     ; \z should not be highlighted
+"Not hex \xGH"           ; \xGH should not be highlighted
+```

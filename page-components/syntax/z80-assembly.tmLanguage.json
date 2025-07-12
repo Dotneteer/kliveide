@@ -4,18 +4,19 @@
   "patterns": [
     { "include": "#comment" },
     { "include": "#string" },
-    { "include": "#number" },
-    { "include": "#keyword" },
-    { "include": "#statement" },
     { "include": "#pragma" },
     { "include": "#directive" },
-    { "include": "#register" },
-    { "include": "#condition" },
+    { "include": "#number" },
+    { "include": "#statement" },
+    { "include": "#keyword" },
     { "include": "#function" },
     { "include": "#boolean" },
-    { "include": "#operator" },
+    { "include": "#register" },
+    { "include": "#condition" },
     { "include": "#label" },
-    { "include": "#macroparam" }
+    { "include": "#macroparam" },
+    { "include": "#identifier" },
+    { "include": "#operator" }
   ],
   "repository": {
     "comment": {
@@ -29,6 +30,14 @@
         }
       ]
     },
+    "keyword": {
+      "name": "keyword.control.z80-klive",
+      "match": "(?i)\\b(nop|rlca|rrca|rla|rra|daa|cpl|scf|ccf|halt|exx|di|ei|neg|retn|reti|rld|rrd|ldi|cpi|ini|outi|ldd|cpd|ind|outd|ldir|cpir|inir|otir|lddr|cpdr|indr|otdr|ld|inc|dec|ex|add|adc|sub|sbc|and|xor|or|cp|djnz|jr|jp|call|ret|rst|push|pop|in|out|im|rlc|rrc|rl|rr|sla|sra|sll|srl|bit|res|set|ldix|ldws|ldirx|lirx|lddx|lddrx|ldrx|ldpirx|lprx|outinb|otib|mul|swapnib|swap|mirror|mirr|nextreg|nreg|pixeldn|pxdn|pixelad|pxad|setae|stae|test|bsla|bsra|bsrl|bsrf|brlc)\\b"
+    },
+    "pragma": {
+      "name": "keyword.control.pragma.z80-klive",
+      "match": "(?i)(\\.org|\\.bank|\\.xorg|\\.ent|\\.xent|\\.equ|\\.var|\\.disp|\\.defb|\\.db|\\.defw|\\.dw|\\.defm|\\.dm|\\.defn|\\.dn|\\.defh|\\.dh|\\.defs|\\.ds|\\.defc|\\.dc|\\.defg|\\.dg|\\.defgx|\\.dgx|\\.skip|\\.extern|\\.fillb|\\.fillw|\\.model|\\.injectopt|\\.align|\\.trace|\\.tracehex|\\.rndseed|\\.error|\\.includebin|\\.include_bin|\\.incbin|\\.comparebin|\\.zxbasic|\\.onsuccess)\\b|\\b(org|bank|xorg|ent|xent|equ|var|disp|defb|db|defw|dw|defm|dm|defn|dn|defh|dh|defs|ds|defc|dc|defg|dg|defgx|dgx|skip|extern|fillb|fillw|model|injectopt|align|trace|tracehex|rndseed|error|includebin|include_bin|incbin|comparebin|zxbasic|onsuccess)\\b"
+    },
     "string": {
       "patterns": [
         { "name": "string.quoted.single.z80-klive", "match": "'.'"},
@@ -37,35 +46,27 @@
           "begin": "\"",
           "end": "\"",
           "patterns": [
-            { "name": "constant.character.escape.z80-klive", "match": "\\\\." }
+            { "name": "constant.character.escape.z80-klive", "match": "\\\\([ipfbIoatPC\\\\'\"0]|x[0-9a-fA-F]{1,2})" }
           ]
         }
       ]
     },
     "number": {
       "patterns": [
-        { "name": "constant.numeric.hexadecimal.z80-klive", "match": "\\b(0x[0-9a-fA-F]+|\\$[0-9a-fA-F]+|[0-9a-fA-F]+[hH])\\b" },
-        { "name": "constant.numeric.binary.z80-klive", "match": "\\b(%[01_]+|[01_]+[bB])\\b" },
+        { "name": "constant.numeric.hexadecimal.z80-klive", "match": "(#[0-9a-fA-F]*[0-9][0-9a-fA-F]*)|(\\b0x[0-9a-fA-F]+\\b)|(\\$[0-9a-fA-F]+)|(\\b[0-9a-fA-F]+[hH]\\b)" },
+        { "name": "constant.numeric.binary.z80-klive", "match": "(%[01_]+)|(\\b0b[01_]+\\b)|(\\b[01_]+[bB]\\b)" },
         { "name": "constant.numeric.octal.z80-klive", "match": "\\b([0-7]+[oOqQ])\\b" },
-        { "name": "constant.numeric.decimal.z80-klive", "match": "\\b[0-9]+\\b" },
-        { "name": "constant.numeric.real.z80-klive", "match": "\\b[0-9]*(\\.[0-9]+)([eE][+-]?[0-9]+)?\\b" }
+        { "name": "constant.numeric.real.z80-klive", "match": "\\b[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?\\b|\\.[0-9]+([eE][+-]?[0-9]+)?\\b|\\b[0-9]+[eE][+-]?[0-9]+\\b" },
+        { "name": "constant.numeric.decimal.z80-klive", "match": "\\b[0-9]+\\b" }
       ]
-    },
-    "keyword": {
-      "name": "keyword.control.z80-klive",
-      "match": "(?i)\\b(nop|rlca|rrca|rla|rra|daa|cpl|scf|ccf|halt|exx|di|ei|neg|retn|reti|rld|rrd|ldi|cpi|ini|outi|ldd|cpd|ind|outd|ldir|cpir|inir|otir|lddr|cpdr|indr|otdr|ld|inc|dec|ex|add|adc|sub|sbc|and|xor|or|cp|djnz|jr|jp|call|ret|rst|push|pop|in|out|im|rlc|rrc|rl|rr|sla|sra|sll|srl|bit|res|set|ldix|ldws|ldirx|lirx|lddx|lddrx|ldrx|ldpirx|lprx|outinb|otib|mul|swapnib|swap|mirror|mirr|nextreg|nreg|pixeldn|pxdn|pixelad|pxad|setae|stae|test|bsla|bsra|bsrl|bsrf|brlc)\\b"
     },
     "statement": {
       "name": "keyword.control.statement.z80-klive",
-      "match": "(?i)\\b(\\.macro|macro|\\.mend|mend|\\.proc|proc|\\.endp|endp|\\.pend|pend|\\.loop|loop|\\.endl|endl|\\.lend|lend|\\.repeat|repeat|\\.until|until|\\.while|while|\\.endw|endw|\\.wend|wend|\\.ifused|ifused|\\.ifnused|ifnused|\\.if|if|\\.elif|elif|\\.else|else|\\.endif|endif|\\.for|for|\\.to|to|\\.step|step|\\.next|next|\\.break|break|\\.continue|continue|\\.endmodule|endmodule|\\.endscope|endscope|\\.moduleend|moduleend|\\.scopeend|scopeend|\\.struct|struct|\\.ends|ends|\\.local|local|\\.endm|endm|\\.module|module|\\.scope|scope)\\b"
-    },
-    "pragma": {
-      "name": "keyword.control.pragma.z80-klive",
-      "match": "(?i)\\b(\\.org|org|\\.bank|bank|\\.xorg|xorg|\\.ent|ent|\\.xent|xent|\\.equ|equ|\\.var|var|\\.disp|disp|\\.defb|defb|\\.db|db|\\.defw|defw|\\.dw|dw|\\.defm|defm|\\.dm|dm|\\.defn|defn|\\.dn|dn|\\.defh|defh|\\.dh|dh|\\.defs|defs|\\.ds|ds|\\.defc|defc|\\.dc|dc|\\.defg|defg|\\.dg|dg|\\.defgx|defgx|\\.dgx|dgx|\\.skip|skip|\\.extern|extern|\\.fillb|fillb|\\.fillw|fillw|\\.model|model|\\.injectopt|injectopt|\\.align|align|\\.trace|trace|\\.tracehex|tracehex|\\.rndseed|rndseed|\\.error|error|\\.includebin|includebin|\\.include_bin|include_bin|\\.incbin|incbin|\\.comparebin|comparebin|\\.zxbasic|zxbasic|\\.onsuccess|onsuccess)\\b"
+      "match": "(?i)(\\.macro|\\.mend|\\.proc|\\.endp|\\.pend|\\.loop|\\.endl|\\.lend|\\.repeat|\\.until|\\.while|\\.endw|\\.wend|\\.ifused|\\.ifnused|\\.if|\\.elif|\\.else|\\.endif|\\.for|\\.to|\\.step|\\.next|\\.break|\\.continue|\\.endmodule|\\.endscope|\\.moduleend|\\.scopeend|\\.struct|\\.ends|\\.local|\\.endm|\\.module|\\.scope)\\b|\\b(macro|mend|proc|endp|pend|loop|endl|lend|repeat|until|while|endw|wend|ifused|ifnused|if|elif|else|endif|for|to|step|next|break|continue|endmodule|endscope|moduleend|scopeend|struct|ends|local|endm|module|scope)\\b"
     },
     "directive": {
       "name": "keyword.control.directive.z80-klive",
-      "match": "(?i)(#ifdef|#ifndef|#define|#undef|#ifmod|#ifnmod|#endif|#else|#if|#include|#line)"
+      "match": "(?i)(#ifdef|#ifndef|#define|#undef|#ifmod|#ifnmod|#endif|#else|#if|#include|#line)\\b"
     },
     "register": {
       "name": "variable.language.register.z80-klive",
@@ -87,10 +88,6 @@
       "name": "keyword.operator.z80-klive",
       "match": "::|:=|==|===|!=|!==|<=|>=|<<|<\\?|>>|>\\?|:|\\?|\\+|-|\\*|/|\\||\\^|!|~|%|&|<|>"
     },
-    "label": {
-      "name": "entity.name.function.z80-klive",
-      "match": "^\\s*([A-Za-z_][A-Za-z0-9_]*):"
-    },
     "macroparam": {
       "name": "variable.parameter.macro.z80-klive",
       "begin": "{{",
@@ -98,6 +95,10 @@
       "patterns": [
         { "match": "[\\._@`a-zA-Z][_@!?\\.0-9A-Za-z]*" }
       ]
+    },
+    "identifier": {
+      "name": "variable.other.identifier.z80-klive",
+      "match": "(\\.(?![0-9])[_@!?\\.0-9A-Za-z]*)|([_@`A-Za-z][_@!?\\.0-9A-Za-z]*)"
     }
   }
 }

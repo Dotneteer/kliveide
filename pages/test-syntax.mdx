@@ -1,0 +1,50 @@
+# Z80 Assembly Syntax Test
+
+This page tests the Z80 assembly syntax highlighting.
+
+## Pragma Test
+
+```z80-klive
+.org $8000          ; Set origin to $8000
+.equ MYCONST, 42    ; Define constant
+.db $FF, $00        ; Define bytes
+.defb 'Hello'       ; Define string bytes
+```
+
+## Statement Test
+
+```z80-klive
+.macro MYMACRO
+    ld a, {{param}}
+.endm
+
+.if MYCONST > 0
+    .for i, 1, 10
+        .db i
+    .next
+.endif
+```
+
+## Instruction Test
+
+```z80-klive
+main:
+    ld a, $FF       ; Load 255 into A
+    ld hl, $8000    ; Load address into HL
+    ld (hl), a      ; Store A at HL
+    inc a           ; Increment A
+    jr main         ; Jump to main
+```
+
+## Mixed Test
+
+```z80-klive
+; This is a comment
+.org $C000          ; Pragma with dot
+Start:              ; Label
+    ld a, 100       ; Z80 instruction
+    .if a > 50      ; Statement with dot
+        nop         ; Another instruction
+    .endif          ; Statement end
+    ret             ; Return
+```

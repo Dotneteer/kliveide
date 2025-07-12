@@ -1,0 +1,34 @@
+# Binary Literal Test
+
+Testing various binary number formats:
+
+```z80-klive
+; Percent prefix binary literals (Z80 style)
+%01011111        ; Should be highlighted as binary
+%10101010        ; Should be highlighted as binary  
+%1111_0000       ; Should be highlighted as binary (with underscores)
+%_1010_1010_     ; Should be highlighted as binary (leading/trailing underscores)
+
+; C-style binary literals (0b prefix)
+0b01011111       ; Should be highlighted as binary
+0b10101010       ; Should be highlighted as binary
+0b1111_0000      ; Should be highlighted as binary (with underscores)
+0b_1010_1010_    ; Should be highlighted as binary (leading/trailing underscores)
+
+; Suffix-style binary literals
+01011111b        ; Should be highlighted as binary
+10101010B        ; Should be highlighted as binary (uppercase)
+1111_0000b       ; Should be highlighted as binary (with underscores)
+
+; Mixed with other tokens
+ld a, %11111111  ; Z80 instruction + binary literal
+.db %01010101    ; pragma + binary literal
+value = 0b1100   ; assignment with binary
+```
+
+## All supported binary formats:
+- `%01011111` - Percent prefix (Z80 style)
+- `0b01011111` - C-style prefix
+- `01011111b` - Suffix style (lowercase)
+- `01011111B` - Suffix style (uppercase)
+- All formats support underscores for readability

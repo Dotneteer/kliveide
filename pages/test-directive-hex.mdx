@@ -1,0 +1,29 @@
+# Directive vs Hex Test
+
+Testing directive recognition vs hexadecimal:
+
+```z80-klive
+; Directives should be highlighted as directives, not split
+#ifdef DEBUG
+#ifndef RELEASE
+#define MYCONST 42
+#undef OLDCONST
+#endif
+#else
+#include "myfile.asm"
+#line 100
+#if 1
+#ifmod
+#ifnmod
+#endif
+
+; These should be highlighted as hex numbers
+#1234          ; Valid hex (starts with digit)
+#ABCD          ; Should NOT be hex (no digits)
+#12AC          ; Valid hex (contains digits)
+#FF00          ; Valid hex (contains digits)
+
+; Mixed cases
+ld a, #12AC    ; hex number
+#ifdef TEST    ; directive
+```

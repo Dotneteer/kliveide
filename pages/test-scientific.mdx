@@ -1,0 +1,31 @@
+# Scientific Notation Test
+
+Testing various real number formats:
+
+```z80-klive
+; Scientific notation without decimal point
+value1 = 3e+4        ; Should be highlighted as real number
+value2 = 2e-5        ; Should be highlighted as real number
+value3 = 1E+10       ; Should be highlighted as real number
+value4 = 5E-3        ; Should be highlighted as real number
+
+; Scientific notation with decimal point
+value5 = 3.14e+2     ; Should be highlighted as real number
+value6 = 2.5e-1      ; Should be highlighted as real number
+value7 = 1.0E+5      ; Should be highlighted as real number
+
+; Regular decimal numbers
+value8 = 3.14        ; Should be highlighted as real number
+value9 = 0.5         ; Should be highlighted as real number
+value10 = 42.0       ; Should be highlighted as real number
+
+; Regular integers
+value11 = 42         ; Should be highlighted as decimal number
+value12 = 100        ; Should be highlighted as decimal number
+```
+
+## All supported real number formats:
+- `3e+4` - Scientific notation (integer + exponent)
+- `3.14e+2` - Scientific notation (decimal + exponent)  
+- `3.14` - Regular decimal number
+- `.5` - Decimal starting with dot

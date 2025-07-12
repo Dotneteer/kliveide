@@ -131,7 +131,7 @@ $12Ac
 
 You can use identifiers to refer to labels and other constants. Identifiers must start with a letter (a...z or A...Z) or with one of these characters: `` ` `` (backtick), `_` (underscore), `@`, `!`, `?`, or `#`. The subsequent ones can be digits and any start characters except backtick. Here are a few examples:
 
-```
+```z80-klive
 MyCycle
 ERR_NO
 Cycle_4_Wait
@@ -151,7 +151,7 @@ As you will later learn, the Klive Assembler supports modules like namespaces in
 
 The optional `::` token means the name should start in the outermost (global) scope. The module and identifier segments are separated with a dot. Examples:
 
-```
+```z80-klive
 ::FirstLevelModule.Routine1
 NestedModule.ClearScreen
 FirstLevelModule.NestedModule.ClearScreen
