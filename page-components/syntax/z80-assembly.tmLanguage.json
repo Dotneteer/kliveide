@@ -27,6 +27,11 @@
           "name": "comment.block.z80-klive",
           "begin": "/\\*\\*",
           "end": "\\*\\*/"
+        },
+        {
+          "name": "comment.block.z80-klive",
+          "begin": "/\\*(?!\\*)",
+          "end": "\\*/"
         }
       ]
     },

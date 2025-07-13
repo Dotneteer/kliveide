@@ -1,0 +1,105 @@
+/* Z80 Assembly Syntax Highlighting - Theme Override */
+
+/* Dark theme is default - these match our customDarkTheme */
+:root {
+  --z80-comment: #6a9955;
+  --z80-string: #cd3131;
+  --z80-escape: #ff6000;
+  --z80-number: #B5CEA8;
+  --z80-keyword: #569cd6;
+  --z80-statement: #c586c0;
+  --z80-pragma: #c586c0;
+  --z80-directive: #569cd6;
+  --z80-register: #9CDCFE;
+  --z80-function: #4fc1ff;
+  --z80-operator: #a4a4a4;
+  --z80-identifier: #dcdcaa;
+  --z80-macro: #c586c0;
+}
+
+/* Light theme overrides */
+html[data-theme="light"] {
+  --z80-comment: #008000;
+  --z80-string: #8B0000;
+  --z80-escape: #FF8C00;
+  --z80-number: #098658;
+  --z80-keyword: #0000FF;
+  --z80-statement: #AF00DB;
+  --z80-pragma: #AF00DB;
+  --z80-directive: #0000FF;
+  --z80-register: #267f99;
+  --z80-function: #795E26;
+  --z80-operator: #000000;
+  --z80-identifier: #001080;
+  --z80-macro: #AF00DB;
+}
+
+/* Target all code blocks containing Z80 assembly */
+pre[data-language*="z80"] span[style*="color"] {
+  color: var(--z80-identifier) !important;
+}
+
+/* Comments - override green colors */
+pre[data-language*="z80"] span[style*="color:#6A9955"],
+pre[data-language*="z80"] span[style*="color:#6a9955"],
+pre[data-language*="z80"] span[style*="color:#008000"],
+pre[data-language*="z80"] span[style*="color:#6B6B6B"],
+pre[data-language*="z80"] span[style*="color:#6b6b6b"] {
+  color: var(--z80-comment) !important;
+}
+
+/* Strings - override red/orange colors */
+pre[data-language*="z80"] span[style*="color:#CE9178"],
+pre[data-language*="z80"] span[style*="color:#ce9178"],
+pre[data-language*="z80"] span[style*="color:#A31515"],
+pre[data-language*="z80"] span[style*="color:#a31515"],
+pre[data-language*="z80"] span[style*="color:#D69E2E"],
+pre[data-language*="z80"] span[style*="color:#d69e2e"] {
+  color: var(--z80-string) !important;
+}
+
+/* Numbers - override number colors */
+pre[data-language*="z80"] span[style*="color:#B5CEA8"],
+pre[data-language*="z80"] span[style*="color:#b5cea8"],
+pre[data-language*="z80"] span[style*="color:#098658"],
+pre[data-language*="z80"] span[style*="color:#09AA7A"],
+pre[data-language*="z80"] span[style*="color:#09aa7a"] {
+  color: var(--z80-number) !important;
+}
+
+/* Keywords - override blue colors */
+pre[data-language*="z80"] span[style*="color:#569CD6"],
+pre[data-language*="z80"] span[style*="color:#569cd6"],
+pre[data-language*="z80"] span[style*="color:#0000FF"],
+pre[data-language*="z80"] span[style*="color:#0066CC"],
+pre[data-language*="z80"] span[style*="color:#0066cc"],
+pre[data-language*="z80"] span[style*="color:#C586C0"],
+pre[data-language*="z80"] span[style*="color:#c586c0"] {
+  color: var(--z80-keyword) !important;
+}
+
+/* Registers/Variables - override identifier colors */
+pre[data-language*="z80"] span[style*="color:#9CDCFE"],
+pre[data-language*="z80"] span[style*="color:#9cdcfe"],
+pre[data-language*="z80"] span[style*="color:#DCDCAA"],
+pre[data-language*="z80"] span[style*="color:#dcdcaa"],
+pre[data-language*="z80"] span[style*="color:#001080"],
+pre[data-language*="z80"] span[style*="color:#4FC1FF"],
+pre[data-language*="z80"] span[style*="color:#4fc1ff"] {
+  color: var(--z80-identifier) !important;
+}
+
+/* Functions */
+pre[data-language*="z80"] span[style*="color:#4EC9B0"],
+pre[data-language*="z80"] span[style*="color:#4ec9b0"],
+pre[data-language*="z80"] span[style*="color:#795E26"],
+pre[data-language*="z80"] span[style*="color:#795e26"] {
+  color: var(--z80-function) !important;
+}
+
+/* Operators */
+pre[data-language*="z80"] span[style*="color:#A4A4A4"],
+pre[data-language*="z80"] span[style*="color:#a4a4a4"],
+pre[data-language*="z80"] span[style*="color:#000000"] {
+  color: var(--z80-operator) !important;
+}
