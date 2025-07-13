@@ -13,7 +13,7 @@ const z80Language = JSON.parse(
   )
 );
 
-const customDarkTheme = {
+const customTheme = {
   colors: {
     "editor.background": "#1E1E1E",
     "editor.foreground": "#a4a4a4"
@@ -40,7 +40,7 @@ const customDarkTheme = {
     {
       scope: ["constant.numeric", "constant.language.boolean"],
       settings: {
-        foreground: "#B5CEA8"
+        foreground: "#4D8061"
       }
     },
     {
@@ -74,7 +74,7 @@ const customDarkTheme = {
     {
       scope: ["variable.language.register.z80klive", "variable.language.condition.z80klive"],
       settings: {
-        foreground: "#9CDCFE"
+        foreground: "#2B7CB3"
       }
     },
     {
@@ -105,7 +105,7 @@ const customDarkTheme = {
     {
       scope: ["variable.other.identifier.z80klive"],
       settings: {
-        foreground: "#dcdcaa"
+        foreground: "#B5890F"
       }
     },
     // JavaScript and general syntax highlighting
@@ -143,155 +143,13 @@ const customDarkTheme = {
     {
       scope: ["variable.parameter", "variable.other.readwrite"],
       settings: {
-        foreground: "#9CDCFE"
+        foreground: "#2B7CB3"
       }
     },
     {
       scope: ["punctuation.definition.template-expression"],
       settings: {
         foreground: "#4A9EFF"
-      }
-    }
-  ]
-};
-
-const customLightTheme = {
-  colors: {
-    "editor.background": "#FFFFFF",
-    "editor.foreground": "#000000"
-  },
-  settings: [
-    {
-      scope: ["comment"],
-      settings: {
-        foreground: "#008000"
-      }
-    },
-    {
-      scope: ["string"],
-      settings: {
-        foreground: "#8B0000"
-      }
-    },
-    {
-      scope: ["constant.character.escape.z80klive"],
-      settings: {
-        foreground: "#FF8C00"
-      }
-    },
-    {
-      scope: ["constant.numeric", "constant.language.boolean"],
-      settings: {
-        foreground: "#098658"
-      }
-    },
-    {
-      scope: ["keyword.control.z80klive"],
-      settings: {
-        foreground: "#0000FF",
-        fontStyle: "bold"
-      }
-    },
-    {
-      scope: ["keyword.control.statement.z80klive"],
-      settings: {
-        foreground: "#AF00DB",
-        fontStyle: "bold"
-      }
-    },
-    {
-      scope: ["keyword.control.pragma.z80klive"],
-      settings: {
-        foreground: "#AF00DB",
-        fontStyle: "normal"
-      }
-    },
-    {
-      scope: ["keyword.control.directive.z80klive"],
-      settings: {
-        foreground: "#0000FF",
-        fontStyle: "normal"
-      }
-    },
-    {
-      scope: ["variable.language.register.z80klive", "variable.language.condition.z80klive"],
-      settings: {
-        foreground: "#267f99"
-      }
-    },
-    {
-      scope: ["support.function.z80klive"],
-      settings: {
-        foreground: "#795E26"
-      }
-    },
-    {
-      scope: ["keyword.operator.z80klive"],
-      settings: {
-        foreground: "#000000"
-      }
-    },
-    {
-      scope: ["entity.name.function.z80klive"],
-      settings: {
-        foreground: "#795E26"
-      }
-    },
-    {
-      scope: ["variable.parameter.macro.z80klive"],
-      settings: {
-        foreground: "#AF00DB",
-        fontStyle: "italic"
-      }
-    },
-    {
-      scope: ["variable.other.identifier.z80klive"],
-      settings: {
-        foreground: "#001080"
-      }
-    },
-    // JavaScript and general syntax highlighting
-    {
-      scope: [
-        "keyword.control",
-        "keyword.operator",
-        "keyword.other",
-        "keyword.declaration",
-        "storage.type"
-      ],
-      settings: {
-        foreground: "#7C3AED",
-        fontStyle: "bold"
-      }
-    },
-    {
-      scope: ["variable.language", "variable.other.constant"],
-      settings: {
-        foreground: "#0066CC"
-      }
-    },
-    {
-      scope: ["entity.name.function", "support.function"],
-      settings: {
-        foreground: "#D2691E"
-      }
-    },
-    {
-      scope: ["entity.name.type", "entity.name.class"],
-      settings: {
-        foreground: "#267f99"
-      }
-    },
-    {
-      scope: ["variable.parameter", "variable.other.readwrite"],
-      settings: {
-        foreground: "#001080"
-      }
-    },
-    {
-      scope: ["punctuation.definition.template-expression"],
-      settings: {
-        foreground: "#7C3AED"
       }
     }
   ]
@@ -305,22 +163,7 @@ const withNextra = nextra({
     rehypePlugins: [],
     rehypePrettyCodeOptions: {
       theme: {
-        dark: customDarkTheme,
-        light: customLightTheme
-      },
-      onVisitLine(node) {
-        // Prevent lines from collapsing in `display: grid` mode, and allow empty
-        // lines to be copy/pasted
-        if (node.children.length === 0) {
-          node.children = [{ type: "text", value: " " }];
-        }
-        node.properties.className = node.properties.className || [];
-      },
-      onVisitHighlightedLine(node) {
-        node.properties.className.push("highlighted");
-      },
-      onVisitHighlightedWord(node) {
-        node.properties.className = ["highlighted", "word"];
+        myTheme: customTheme,
       },
       getHighlighter: async (options) => {
         const { getHighlighter } = await import("shiki");
@@ -330,9 +173,7 @@ const withNextra = nextra({
             "javascript",
             "typescript",
             "json",
-            "markdown",
             "html",
-            "css",
             "bash",
             {
               id: "z80klive",
