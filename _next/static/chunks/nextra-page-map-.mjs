@@ -120,6 +120,12 @@ export const pageMap = [{
     frontMatter: {
       "sidebarTitle": "Shortcuts"
     }
+  }, {
+    name: "using-clickable-image",
+    route: "/howto/using-clickable-image",
+    frontMatter: {
+      "sidebarTitle": "Using Clickable Image"
+    }
   }]
 }, {
   name: "index",
