@@ -1,17 +1,160 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import nextra from "nextra";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const z80Language = JSON.parse(
-  fs.readFileSync(
-    path.resolve(__dirname, "page-components/syntax/z80-assembly.tmLanguage.json"),
-    "utf8"
-  )
-);
+// Z80 assembly language grammar embedded directly to avoid file system operations
+const z80Language = {
+  "name": "Z80 Assembly",
+  "scopeName": "source.z80klive",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#string" },
+    { "include": "#pragma" },
+    { "include": "#directive" },
+    { "include": "#number" },
+    { "include": "#statement" },
+    { "include": "#instruction" },
+    { "include": "#label" },
+    { "include": "#operator" },
+    { "include": "#register" },
+    { "include": "#identifier" }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.z80klive",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.line.semicolon.z80klive",
+          "match": ";.*$"
+        },
+        {
+          "name": "comment.block.z80klive",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "string": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.z80klive",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.z80klive",
+              "match": "\\\\[\"'\\\\aAbBfFiIoOpPtT0xX]"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.z80klive",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.z80klive",
+              "match": "\\\\[\"'\\\\aAbBfFiIoOpPtT0xX]"
+            }
+          ]
+        }
+      ]
+    },
+    "pragma": {
+      "patterns": [
+        {
+          "name": "keyword.control.pragma.z80klive",
+          "match": "\\.(?i:org|defb|defw|defm|defn|equ|var|disp|include|repeat|until|loop|align|defgx|defg|defh|skip|fillb|defs|defc|extern|global|model|bank|segment|trace|cleartrace)"
+        }
+      ]
+    },
+    "directive": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.z80klive",
+          "match": "#(?i:include|if|ifdef|ifndef|else|elif|endif|define|undef|line|error)"
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.z80klive",
+          "match": "(?i:#[0-9a-f]+|\\$[0-9a-f]+|0x[0-9a-f]+|[0-9][0-9a-f]*h)"
+        },
+        {
+          "name": "constant.numeric.binary.z80klive",
+          "match": "(?i:%[01]+|0b[01]+|[01]+b)"
+        },
+        {
+          "name": "constant.numeric.decimal.z80klive",
+          "match": "[0-9]+"
+        },
+        {
+          "name": "constant.numeric.octal.z80klive",
+          "match": "(?i:[0-7]+[oqOQ])"
+        },
+        {
+          "name": "constant.language.boolean.z80klive",
+          "match": "(?i:\\.false|\\.true|false|true)"
+        }
+      ]
+    },
+    "statement": {
+      "patterns": [
+        {
+          "name": "keyword.control.statement.z80klive",
+          "match": "\\.(?i:if|else|elif|endif|proc|endp|macro|endm|while|endw|repeat|until|loop|break|continue|goto|for|next)"
+        }
+      ]
+    },
+    "instruction": {
+      "patterns": [
+        {
+          "name": "support.function.z80klive",
+          "match": "(?i:adc|add|and|bit|call|ccf|cp|cpd|cpdr|cpi|cpir|cpl|daa|dec|di|djnz|ei|ex|exx|halt|im|in|inc|ind|indr|ini|inir|jp|jr|ld|ldd|lddr|ldi|ldir|neg|nop|or|otdr|otir|out|outd|outi|pop|push|res|ret|reti|retn|rl|rla|rlc|rlca|rld|rr|rra|rrc|rrca|rrd|rst|sbc|scf|set|sl1|sla|sll|sli|sra|srl|sub|xor)"
+        }
+      ]
+    },
+    "label": {
+      "patterns": [
+        {
+          "name": "entity.name.function.z80klive",
+          "match": "^\\s*[A-Za-z_@#$?][A-Za-z0-9_@#$?]*:"
+        }
+      ]
+    },
+    "operator": {
+      "patterns": [
+        {
+          "name": "keyword.operator.z80klive",
+          "match": "[\\+\\-\\*/%&|\\^~<>!=]"
+        }
+      ]
+    },
+    "register": {
+      "patterns": [
+        {
+          "name": "variable.language.register.z80klive",
+          "match": "(?i:a|b|c|d|e|h|l|i|r|ixh|ixl|iyh|iyl|af|bc|de|hl|ix|iy|sp|af')"
+        },
+        {
+          "name": "variable.language.condition.z80klive",
+          "match": "(?i:nz|z|nc|c|po|pe|p|m)"
+        }
+      ]
+    },
+    "identifier": {
+      "patterns": [
+        {
+          "name": "variable.other.identifier.z80klive",
+          "match": "[A-Za-z_@#$?][A-Za-z0-9_@#$?]*"
+        }
+      ]
+    }
+  }
+};
 
 const customTheme = {
   colors: {
@@ -198,6 +341,13 @@ export default withNextra({
   trailingSlash: true,
   images: {
     unoptimized: true
+  },
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.tmLanguage\.json$/,
+      type: "json",
+    });
+    return config;
   },
   basePath: process.env.NODE_ENV === "production" ? "/kliveide" : "",
   assetPrefix: process.env.NODE_ENV === "production" ? "/kliveide/" : ""
