@@ -1,5 +1,3 @@
-@import './syntax-override.css';
-
 ul li ul {
   margin-top: 0px;
 }
