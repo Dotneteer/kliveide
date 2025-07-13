@@ -32,7 +32,7 @@ const customDarkTheme = {
       }
     },
     {
-      scope: ["constant.character.escape.z80-klive"],
+      scope: ["constant.character.escape.z80klive"],
       settings: {
         foreground: "#ff6000"
       }
@@ -44,66 +44,66 @@ const customDarkTheme = {
       }
     },
     {
-      scope: ["keyword.control.z80-klive"],
+      scope: ["keyword.control.z80klive"],
       settings: {
         foreground: "#569cd6",
         fontStyle: "bold"
       }
     },
     {
-      scope: ["keyword.control.statement.z80-klive"],
+      scope: ["keyword.control.statement.z80klive"],
       settings: {
         foreground: "#c586c0",
         fontStyle: "bold"
       }
     },
     {
-      scope: ["keyword.control.pragma.z80-klive"],
+      scope: ["keyword.control.pragma.z80klive"],
       settings: {
         foreground: "#c586c0",
         fontStyle: "normal"
       }
     },
     {
-      scope: ["keyword.control.directive.z80-klive"],
+      scope: ["keyword.control.directive.z80klive"],
       settings: {
         foreground: "#569cd6",
         fontStyle: "normal"
       }
     },
     {
-      scope: ["variable.language.register.z80-klive", "variable.language.condition.z80-klive"],
+      scope: ["variable.language.register.z80klive", "variable.language.condition.z80klive"],
       settings: {
         foreground: "#9CDCFE"
       }
     },
     {
-      scope: ["support.function.z80-klive"],
+      scope: ["support.function.z80klive"],
       settings: {
         foreground: "#4fc1ff"
       }
     },
     {
-      scope: ["keyword.operator.z80-klive"],
+      scope: ["keyword.operator.z80klive"],
       settings: {
         foreground: "#a4a4a4"
       }
     },
     {
-      scope: ["entity.name.function.z80-klive"],
+      scope: ["entity.name.function.z80klive"],
       settings: {
         foreground: "#4EC9B0"
       }
     },
     {
-      scope: ["variable.parameter.macro.z80-klive"],
+      scope: ["variable.parameter.macro.z80klive"],
       settings: {
         foreground: "#c586c0",
         fontStyle: "italic"
       }
     },
     {
-      scope: ["variable.other.identifier.z80-klive"],
+      scope: ["variable.other.identifier.z80klive"],
       settings: {
         foreground: "#dcdcaa"
       }
@@ -174,7 +174,7 @@ const customLightTheme = {
       }
     },
     {
-      scope: ["constant.character.escape.z80-klive"],
+      scope: ["constant.character.escape.z80klive"],
       settings: {
         foreground: "#FF8C00"
       }
@@ -186,66 +186,66 @@ const customLightTheme = {
       }
     },
     {
-      scope: ["keyword.control.z80-klive"],
+      scope: ["keyword.control.z80klive"],
       settings: {
         foreground: "#0000FF",
         fontStyle: "bold"
       }
     },
     {
-      scope: ["keyword.control.statement.z80-klive"],
+      scope: ["keyword.control.statement.z80klive"],
       settings: {
         foreground: "#AF00DB",
         fontStyle: "bold"
       }
     },
     {
-      scope: ["keyword.control.pragma.z80-klive"],
+      scope: ["keyword.control.pragma.z80klive"],
       settings: {
         foreground: "#AF00DB",
         fontStyle: "normal"
       }
     },
     {
-      scope: ["keyword.control.directive.z80-klive"],
+      scope: ["keyword.control.directive.z80klive"],
       settings: {
         foreground: "#0000FF",
         fontStyle: "normal"
       }
     },
     {
-      scope: ["variable.language.register.z80-klive", "variable.language.condition.z80-klive"],
+      scope: ["variable.language.register.z80klive", "variable.language.condition.z80klive"],
       settings: {
         foreground: "#267f99"
       }
     },
     {
-      scope: ["support.function.z80-klive"],
+      scope: ["support.function.z80klive"],
       settings: {
         foreground: "#795E26"
       }
     },
     {
-      scope: ["keyword.operator.z80-klive"],
+      scope: ["keyword.operator.z80klive"],
       settings: {
         foreground: "#000000"
       }
     },
     {
-      scope: ["entity.name.function.z80-klive"],
+      scope: ["entity.name.function.z80klive"],
       settings: {
         foreground: "#795E26"
       }
     },
     {
-      scope: ["variable.parameter.macro.z80-klive"],
+      scope: ["variable.parameter.macro.z80klive"],
       settings: {
         foreground: "#AF00DB",
         fontStyle: "italic"
       }
     },
     {
-      scope: ["variable.other.identifier.z80-klive"],
+      scope: ["variable.other.identifier.z80klive"],
       settings: {
         foreground: "#001080"
       }
@@ -308,6 +308,20 @@ const withNextra = nextra({
         dark: customDarkTheme,
         light: customLightTheme
       },
+      onVisitLine(node) {
+        // Prevent lines from collapsing in `display: grid` mode, and allow empty
+        // lines to be copy/pasted
+        if (node.children.length === 0) {
+          node.children = [{ type: "text", value: " " }];
+        }
+        node.properties.className = node.properties.className || [];
+      },
+      onVisitHighlightedLine(node) {
+        node.properties.className.push("highlighted");
+      },
+      onVisitHighlightedWord(node) {
+        node.properties.className = ["highlighted", "word"];
+      },
       getHighlighter: async (options) => {
         const { getHighlighter } = await import("shiki");
         return await getHighlighter({
@@ -321,8 +335,8 @@ const withNextra = nextra({
             "css",
             "bash",
             {
-              id: "z80-klive",
-              scopeName: "source.z80-klive",
+              id: "z80klive",
+              scopeName: "source.z80klive",
               grammar: z80Language,
               aliases: ["z80-assembly"]
             }
