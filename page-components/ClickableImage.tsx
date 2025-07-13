@@ -20,6 +20,34 @@ interface ClickableImageProps {
   style?: React.CSSProperties
 }
 
+// Helper function to handle base path for images
+const getAdjustedPath = (path: string): string => {
+  // Early return if the path is an absolute URL or data URL
+  if (path.startsWith('http') || path.startsWith('data:')) {
+    return path
+  }
+
+  // Try to detect if we're in a production environment
+  // This works in both browser and during static generation
+  const isProduction = process.env.NODE_ENV === 'production'
+  
+  // Use the basePath from Next.js config
+  const basePath = isProduction ? '/kliveide' : ''
+  
+  // If the path already starts with the base path, return it as is
+  if (path.startsWith(basePath)) {
+    return path
+  }
+  
+  // If path starts with '/', make sure it's properly combined with base path
+  if (path.startsWith('/')) {
+    return `${basePath}${path}`
+  }
+  
+  // Otherwise, ensure there's a leading slash
+  return `${basePath}/${path}`
+}
+
 export const ClickableImage: React.FC<ClickableImageProps> = ({
   src,
   alt,
@@ -46,11 +74,14 @@ export const ClickableImage: React.FC<ClickableImageProps> = ({
     ...style
   }
 
+  // Adjust image paths for both the link and image src
+  const adjustedSrc = getAdjustedPath(src)
+
   return (
     <div className={styles.container}>
-      <a href={src} target="_blank" rel="noopener noreferrer" className={styles.imageLink}>
+      <a href={adjustedSrc} target="_blank" rel="noopener noreferrer" className={styles.imageLink}>
         <img
-          src={src}
+          src={adjustedSrc}
           alt={alt}
           className={imageClasses}
           style={customStyle}

@@ -59,6 +59,26 @@ The ClickableImage component is ideal for:
 2. **Diagrams** - For technical diagrams where details matter
 3. **Architecture Images** - For complex architecture images that benefit from being viewed in full size
 
+## Path Configuration Examples
+
+Here are some examples of how to specify image paths:
+
+```jsx
+// Images in the public/images folder
+<ClickableImage 
+  src="/images/intro/klive-ide-intro.png" 
+  alt="Image from public folder" 
+/>
+
+// Images in a different location
+<ClickableImage 
+  src="/assets/diagrams/architecture.png" 
+  alt="Architecture diagram" 
+/>
+```
+
+The component will automatically handle the base path adjustment when deployed.
+
 ## Implementation Details
 
 The component automatically:
@@ -68,3 +88,13 @@ The component automatically:
 - Adds a hover effect to indicate clickability
 - Opens the image in a new tab when clicked
 - Handles responsive sizing
+- **Automatically adjusts image paths** for both development and production environments
+
+### Path Handling
+
+The component handles image paths automatically to work in both development and production:
+
+- In development: Paths are used as provided (`/images/example.png`)
+- In production: Paths are prefixed with the base path (`/kliveide/images/example.png`)
+
+This ensures images display correctly both locally and when deployed to GitHub Pages.
