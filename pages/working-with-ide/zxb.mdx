@@ -1,5 +1,8 @@
-import { ClickableImage } from '../../page-components'
 import { Callout } from 'nextra/components'
+import Image from 'next/image'
+import zxbReset from '../../public/images/working-with-ide/zxb-reset.png'
+import zxbActions from '../../public/images/working-with-ide/zxb-actions.png'
+import zxbRunning from '../../public/images/working-with-ide/zxb-running.png'
 
 # ZXBASIC Integration
 
@@ -17,7 +20,7 @@ You need to download and install [ZXBASIC](https://zxbasic.readthedocs.io/en/lat
 
 The IDE provides a command, `zxb-reset` (or shorter, `zxbr`), to connect Klive with ZXBASIC. You can issue this command from the Command window:
 
-<ClickableImage src="/images/working-with-ide/zxb-reset.png" width="770" />
+<Image src={zxbReset} alt="ZxbReset" width="770" height="210" style={{marginTop: 24}} />
 
 The command expects one to three parameters:
 - The path to the ZXBASIC compiler (required)
@@ -52,9 +55,9 @@ When you have a space anywhere in the path, wrap the path into double quotes:
 zxb-reset "C:\My folder with spaces\zxbasic\zxbc.exe"
 ```
 
-### macOS Integration
+### MacOS Integration
 
-On macOS, use the `zxb-reset` command with a full path to the `zxbc.py` file, like in this example:
+On MacOS, use the `zxb-reset` command with a full path to the `zxbc.py` file, like in this example:
 
 ```text
 zxb-reset /Users/joe/zxbasic/zxbc.py
@@ -74,7 +77,7 @@ You can find the path of the Python installation with the `which python3` comman
 
 *Thanks to [@pennyarcade](https://github.com/pennyarcade) for providing the following description.*
 
-Integration works the same on Linux as on macOS since the latter is derived from Linux.
+Integration works the same on Linux as on Mac OS since the latter is derived from Linux.
 
 - Download the appropriate ZXBasic for your architecture ARM/X86.
 - It comes with a packaged Python runtime and shell scripts for easy usage.
@@ -88,10 +91,10 @@ Klive IDE considers files with `.zxbas` extension to be ZXBASIC source files. Wh
 
 When you create a new project, by default, the `code/code.kz80.asm` file is the build root. However, when you right-click the `code/program.zxbas` file and use the **Promote build root** command, this file becomes the new build root. From now on, you can use the commands in the document tab toolbar when the `program.zxbas` file is open.
 
-<ClickableImage src="/images/working-with-ide/zxb-actions.png" width="725" />
+<Image src={zxbActions} alt="ZxbasActions" width="725" height="224" style={{marginTop: 24}} />
 
 You can use the toolbar buttons to compile, inject, start, or debug the code as described in [this article ](../getting-started/creating-project#build-root-commands).
 
 When you run the ZXBASIC code in the default Klive project template, you can see the result in the Emulator window:
 
-<ClickableImage src="/images/working-with-ide/zxb-running.png" width="480" />
+<Image src={zxbRunning} alt="ZxbRunning" width="480" height="467" style={{marginTop: 24}} />

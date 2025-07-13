@@ -1,4 +1,10 @@
-import { ClickableImage } from '../../page-components'
+import Image from 'next/image'
+import emptyScript from '../../public/images/scripting/empty-script-file.png'
+import scriptWithIcons from '../../public/images/scripting/script-with-icons.png'
+import scriptOutput from '../../public/images/scripting/script-output.png'
+import outputPane from '../../public/images/scripting/script-output-pane.png'
+import outputProgress from '../../public/images/scripting/script-output-progress.png'
+import scriptingHistory from '../../public/images/scripting/scripting-history.png'
 
 # Overview
 
@@ -12,7 +18,7 @@ Get acquainted with the scripting system! Follow these steps to create and run y
 2. With the **New file** context menu, add a new script file, `myScript.ksx`, to the project's root.
 3. After you add it, Klive displays the empty file in the code editor:
 
-<ClickableImage src="/images/scripting/empty-script-file.png" width="780" />
+<Image src={emptyScript} alt="EmptyScript" width="780" height="202" style={{marginTop: 24}} />
 
 4. Type this code into the editor:
 
@@ -22,11 +28,11 @@ Output.writeLine("Hello from Klive IDE!");
 
 5. The script window's header has two icons, as the following figure shows. Click the first one (Run this script file) to start the script.
 
-<ClickableImage src="/images/scripting/script-with-icons.png" width="780" />
+<Image src={scriptWithIcons} alt="ScriptWithIcons" width="780" height="202" style={{marginTop: 24}} />
 
 6. It starts the script and displays its output in a new document, the script output window:
 
-<ClickableImage src="/images/scripting/script-output.png" width="780" />
+<Image src={scriptOutput} alt="ScriptOutput" width="780" height="202" style={{marginTop: 24}} />
 
 ## Running the Script
 
@@ -50,7 +56,7 @@ Output.writeLine("Hello from Klive IDE!");
 
 The scripting engine has an output pane in the Tool panel. This pane displays messages related to running scripts, such as starting and completing them. If compiling a script results in an error, the error is displayed here, too:
 
-<ClickableImage src="/images/scripting/script-output-pane.png" width="795" />
+<Image src={outputPane} alt="ScriptOutputPane" width="795" height="215" style={{marginTop: 24}} />
 
 Each script has a pane displaying its output. When you start a script, the IDE immediately shows its output pane and refreshes it according to the script's output. If you run a script multiple times, each run has its separate output pane.
 
@@ -65,7 +71,7 @@ for (let i = 0; i < 1000; i++) {
 
 The script output refreshes the pane as the for-loop generates new output items. In the header, it displays the number of output lines and the status of the script (Running):
 
-<ClickableImage src="/images/scripting/script-output-progress.png" width="795" />
+<Image src={outputProgress} alt="ScriptOutputProgress" width="795" height="291" style={{marginTop: 24}} />
 
 You can click the icon buttons in the header to execute a particular task. These icons from the left to right provide these functions:
 - **Stop**. You can cancel a running script. The script's state changes to "Stopped".
@@ -78,7 +84,7 @@ You can click the icon buttons in the header to execute a particular task. These
 
 The IDE sidebar contains a Scripting tab where you can expand the Scripting History panel to list the scripts run since the IDE started:
 
-<ClickableImage src="/images/scripting/scripting-history.png" width="304" />
+<Image src={scriptingHistory} alt="ScriptingHistory" width="304" height="428" style={{marginTop: 24}} />
 
 Each item represents a run. The first icon indicates the host (the tool icon represents scripts running in the IDE, and the display icon refers to the emulator-hosted scripts). The second icon tells you the status of a particular script.
 

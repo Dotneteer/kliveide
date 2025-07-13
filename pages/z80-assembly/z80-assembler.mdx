@@ -1,6 +1,6 @@
 # The Klive Z80 Assembler
 
-The original goal of the Klive Assembler was to have a simple tool that allows you to compile Z80 assembly code and inject it into the ZX Spectrum virtual machine. As the community has started using it, I've been receiving feature requests to add some helpful capabilities to the assembler.
+The original goal of the Klive Assembler was to have a simple tool that allows you to compile Z80 assembly code and inject it into the ZX Spectrum virtual machine. As the community has started using it, I've been receiving feature requests to add some helpful capabilities to the Assembler.
 
 ## Main Features
 
@@ -15,8 +15,8 @@ you can use powerful macros, too. Nonetheless, they are not preprocessor constru
 - **Fast compilation**. Of course, it depends on the code, but the compiler can emit code for about ten thousand source code lines per second (MacBook Pro).
 - **Rich expressions**. The compiler can handle most arithmetic and logic operators in C, C++, C#, Java, and JavaScript. You can use integer, float, and string expressions. The language supports more than 40 functions that you can use in the expressions (e.g., `Amp * sin($cnt * Pi() / 16)`)
 - **Rich literal formats**. Decimal, float, hexadecimal, binary, and string literals are available.
-You can use multiple variants for hexadecimal numbers (`$12ae`, `#12AE`, `0x12AE`, `12AEh`), and binary numbers
-(`0b00111100`, `%00111100`, `%0011_1100`). In strings, you can use ZX Spectrum-specific escape codes, for example, `\i` for INK, `\P` for the pound sign, and many others.
+You can use multiple variants for hexadecimal numbers (`$12ae`, #12AE, 0x12AE, 12AEh), and binary numbers
+(0b00111100, %00111100, %0011_1100). In strings, you can use ZX Spectrum-specific escape codes, for example, `\i` for INK, `\P` for the pound sign, and many others.
 - **Assembler control flow statements**. You can use loops (`loop`, `repeat`..`until`, `while`..`wend`, `for`..`next`) and conditional statements (`if`) to create an assembler control flow. These constructs 
 can be nested and provide local scope for labels, symbols, and variables.
 - **Powerful dynamic macros**. You can create macros with arguments. In the macro bodies, the current values of arguments can replace entire instructions, operands, or parts of expressions. Moreover, through arguments, you can inject multiline instructions and statements into macro declarations.

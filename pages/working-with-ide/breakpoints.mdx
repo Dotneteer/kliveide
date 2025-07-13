@@ -1,10 +1,15 @@
-import { ClickableImage } from '../../page-components'
+import Image from 'next/image'
+import bpView from '../../public/images/working-with-ide/bp-view.png'
+import bpExplain from '../../public/images/working-with-ide/bp-explain.png'
+import bpNotResolved from '../../public/images/working-with-ide/bp-not-resolved.png'
+import bpResolved from '../../public/images/working-with-ide/bp-resolved.png'
+import bpTypes from '../../public/images/working-with-ide/bp-types.png'
 
 # The Breakpoints View
 
 With this view, you can overview and manage the breakpoints used for debugging. You can find this view in the Debug activity tag with the **BreakPoints** header:
 
-<ClickableImage src="/images/working-with-ide/bp-view.png" width="384" />
+<Image src={bpView} alt="Breakpoints" width={384} style={{marginTop: 24}} />
 
 This view displays all breakpoints you created with interactive commands or in the source code. Each line represents a particular breakpoint with this information:
 - A checkbox shows if the current breakpoint is enabled or disabled. You can set this status by toggling the checkbox.
@@ -21,7 +26,7 @@ This view displays all breakpoints you created with interactive commands or in t
 
 When you hover the mouse over the first two icons, they display additional information:
 
-<ClickableImage src="/images/working-with-ide/bp-explain.png" width="384" />
+<Image src={bpExplain} alt="Breakpoints explained" width={384} style={{marginTop: 24}} />
 
 With the right mouse button, you can remove an existing breakpoint. If you want to deactivate a breakpoint temporarily, disable it by clearing the checkbox on its left.
 
@@ -29,17 +34,17 @@ With the right mouse button, you can remove an existing breakpoint. If you want 
 
 When you open a project or modify an assembly source code file, the source code breakpoint addresses are not resolved to an actual physical address. The orange color of a source code breakpoint indicates this status:
 
-<ClickableImage src="/images/working-with-ide/bp-not-resolved.png" width="384" />
+<Image src={bpNotResolved} alt="Breakpoints not resolved" width={384} style={{marginTop: 24}} />
 
 Source code breakpoints are resolved to a CPU address after compilation, and this address is displayed with the breakpoint. The following figure shows that the last two source code breakpoints display their resolved CPU address after the compilation.
 
-<ClickableImage src="/images/working-with-ide/bp-resolved.png" width="384" />
+<Image src={bpResolved} alt="Breakpoints resolved" width={384} style={{marginTop: 24}} />
 
 ## Breakpoint Types
 
 The second icon of the breakpoint item displays its type. There are five types of breakpoints (depending on the operation triggering the machine to pause), as the following figure shows:
 
-<ClickableImage src="/images/working-with-ide/bp-types.png" width="128" />
+<Image src={bpTypes} alt="Breakpoints types" width={128} style={{marginTop: 24}} />
 
 These are the available breakpoint types (from top to bottom in the figure):
 - **I/O read**. This breakpoint is triggered when a particular I/O port has been read. The displayed address is the 16-bit I/O port address.

@@ -1,24 +1,28 @@
-import { ClickableImage } from '../../page-components'
 import { Callout } from 'nextra/components'
+import Image from 'next/image'
+import memView from '../../public/images/working-with-ide/mem-view.png'
+import bankedMemView from '../../public/images/working-with-ide/banked-mem-view.png'
+import nextMemView from '../../public/images/working-with-ide/next-mem-view.png'
+import editMemory from '../../public/images/working-with-ide/edit-memory.png'
 
 # Displaying the Memory Contents
 
 You can view the contents of the memory with the **IDE | Show Machine Memory** menu command that displays the contents of the full 64K memory addressable by Z80:
 
-<ClickableImage src="/images/working-with-ide/mem-view.png" width="512" />
+<Image src={memView} alt="Memory view" width={512} style={{marginTop: 24}} />
 
 While the ZX Spectrum 48K does not support paging, other models do. When you use them, you can choose to show only the contents of a particular bank:
 
-<ClickableImage src="/images/working-with-ide/banked-mem-view.png" width="512" />
+<Image src={bankedMemView} alt="Banked memory view" width={512} style={{marginTop: 24}} />
 
 Some models (such as ZX Spectrum Next or Cambridge Z88) offer you many banks to choose from:
 
-<ClickableImage src="/images/working-with-ide/next-mem-view.png" width="512" />
+<Image src={nextMemView} alt="Next memory view" width={512} style={{marginTop: 24}} />
 
 ## Display Options
 
 The Memory View provides a few options to display and navigate the memory contents:
-- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses and content are displayed with hexadecimal numbers; otherwise, they are decimal.
+- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses and content are displayed with decimal numbers; otherwise, they are hexadecimal.
 - **2 Columns**: Depending on this option, you can display one or two columns in a single row (two columns by default).
 - **Chars**: This toggles the display of the character view for a particular memory section (on, by default).
 - **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
@@ -32,7 +36,7 @@ A new switch, **64K View**, is displayed in the second header row when your mode
 
 When you hover the mouse over a memory address that represents RAM, you can edit its content by right-clicking it:
 
-<ClickableImage src="/images/working-with-ide/edit-memory.png" width="256" />
+<Image src={editMemory} alt="Edit memory" width={256} style={{marginTop: 24}} />
 
 You can specify the new value with decimal numbers, hexadecimal numbers (use the `$` prefix), or binary numbers (use the `%` prefix). You can use spaces to group digits; the IDE will remove them.
 

@@ -1,5 +1,6 @@
-import { ClickableImage } from '../../page-components'
 import { Callout } from 'nextra/components'
+import Image from 'next/image'
+import instantScreen from '../../public/images/howto/instant-screen-in-toolbar.png'
 
 # Using the Instant Screen
 
@@ -11,7 +12,7 @@ The **Instant Screen** feature of Klive allows you to check how the screen looks
 
 You can turn this feature on or off with the highlighted toolbar button:
 
-<ClickableImage src="/images/howto/instant-screen-in-toolbar.png" width="640" />
+<Image src={instantScreen} alt="NewProject" width="640" style={{marginTop: 24}} />
 
 When the Instant Screen is on, the screen rendering is not paused when the debugging is paused. This way, you can see the screen as it would look if the screen rendering was not paused.
 
