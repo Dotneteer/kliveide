@@ -301,7 +301,7 @@ You can specify an optional `line` and `column` argument to jump to the specifie
 
 ## `newp`
 
-This project creates a new Klive project and optionally opens it.
+This command creates a new Klive project and optionally opens it.
 
 ```
 newp <machine-id> <project-name> [<template>] [-p <project-folder>] [-o]
@@ -493,7 +493,7 @@ The `-b8` (default), `-b16`, `-b24`, and `-b32` options determine the data size 
 
 The `-be` option specifies the big-endian mode; the most significant byte of the value is written to the address specified in the command.
 
-Lets assume you execute this command: 
+Let's assume you execute this command: 
 
 ```text
 setmem $4000 $010203 -b24
@@ -510,7 +510,7 @@ Will reverse the order of bytes: It will store $01 at address $4000, $02 at $400
 ## `setz80Reg`
 
 Use this command to set one of these Z80 registers: 
-- 8-bit: `A`, `F`, `B`, `C`, `D`, `E`, `H`, `L˙, `XH`, `XL`, `YH`, `YL`, `I`, and `R`
+- 8-bit: `A`, `F`, `B`, `C`, `D`, `E`, `H`, `L`, `XH`, `XL`, `YH`, `YL`, `I`, and `R`
 - 16-bit: `AF`, `BC`, `DE`, `HL`, `AF'`, `BC'`, `DE'`, `HL'`, `IX`, `IY`, `PC`, `SP`, and `WZ` (memptr).
 
 ```

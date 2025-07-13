@@ -6,7 +6,7 @@ Klive allows you to use structure definitions and placements in your Z80 program
 
 In Klive Assembler, a structure definition is a placeholder that defines a byte pattern like this:
 
-```
+```z80klive
 Object2D: .struct
     .defw 0
     .defw 0
@@ -17,13 +17,13 @@ Object2D: .struct
 
 This definition says that `Object2D` is a structure of six bytes (two 16-bit words and two 8-bit bytes) with the following bytes emitted: #00, #00, #00, #00, #01, #01. Whenever you place a structure declaration in a program, just like in this sample, the assembler will emit the bytes you specified in the `.struct` definition:
 
-```
+```z80klive
   Object2D() ; emits #00, #00, #00, #00, #01, #01
 ```
 
 As you can see, six subsequent bytes do not tell enough about the semantics of `Object2D`. When we created this structure, the original concept was to use two 16-bit numbers to specify the X and Y coordinates of the object, plus two 8-bit numbers to describe its horizontal and vertical velocity. With _field definitions_ (see `X`, `Y`, `DX`, and `DY`), the meaning of `Object2D` is more straightforward than it was before:
 
-```
+```z80klive
 Object2D: .struct
     X: .defw 0
     Y: .defw 0
@@ -34,7 +34,7 @@ Object2D: .struct
 
 Of course, we would like to initialize objects with different states. With _field initializers_, we can define structures with initial states that are different from the `.struct` definition:
 
-```
+```z80klive
 Apple: Object2D()
   X -> .defw 100
   Y -> .defw 100
@@ -52,7 +52,7 @@ In this sample, the `Apple` label (that the code later loads into __HL__) points
 
 The Assembler allows you to initialize structures with any pragma that emits bytes to the assembly output. For example, the following code snippet sets a new `Object2D` structure in a particular way:
 
-```
+```z80klive
 Banana: Object2D()
   -> .defb 10, 1
   -> .defb 12, 2
@@ -65,7 +65,7 @@ The first `.defb` pragma (right after the first `->`) emits two bytes, 10 and 1,
 
 You can define structure between the `.struct` and `.ends`  statements. Each structure must have a unique name to declare with a label. The compiler accepts all of these definitions:
 
-```
+```z80klive
 ; Version #1
 MyStruct .struct
   ; ...
@@ -92,7 +92,7 @@ MyStruct:
 
 Nonetheless, it raises an error if you do not name the structure:
 
-```
+```z80klive
 .struct ; ERROR: .struct must have a name
 ; ...
 .ends
@@ -104,7 +104,7 @@ In the body of the structure, you can use only one of these byte-emitter pragmas
 
 As you saw earlier, you can specify field labels within the structure body. The assembler is flexible: you can omit field labels or even use multiple labels for a single field:
 
-```
+```z80klive
 Object2D_A: .struct
   Coords:
     X: .defw 0
@@ -121,7 +121,7 @@ Here, `Object2D_A` has two field name for the first `.defw` field, `Coords`, and
 
 The label assigned to the `.struct` definition has a dual role. When used in a structure initialization (for example, as `Object2D` is utilized in the `Object2D()` initializer), it identifies the structure. Nonetheless, you can use the label name in Z80 instructions, too. In this case, the label's value is the size of the structure. For example, these instructions are equivalent, as the size of the `Object2D` structure is six bytes:
 
-```
+```z80klive
 ld a,Object2D ; Size of Object2D
 ; ...
 ld a,6 ; 
@@ -129,7 +129,7 @@ ld a,6 ;
 
 You can allocate a memory block for 100 uninitialized instances of `Object2D` with this pragma:
 
-```
+```z80klive
 My100Objects:
   .defs 100 * Object2D
 ```
@@ -138,7 +138,7 @@ My100Objects:
 
 Labels assigned to the body of the `.struct` definition are used as field names. You can use them only with the structure name:
 
-```
+```z80klive
 Object2D: .struct
     X: .defw 0
     Y: .defw 0
@@ -167,7 +167,7 @@ Object2D.DY: 5
 
 The `.struct` definition does not emit any code; it just tells the compiler the layout and initial contents of a structure. To allocate space for a particular structure, you need to initialize it with the name of the structure plus a pair of opening and closing parentheses, just like these samples show:
 
-```
+```z80klive
 ; Initalize an Object2D
 MyObject: Object2D()
 
@@ -177,7 +177,7 @@ OtherObject: Object2D()
 
 When you add a label to the structure initialization, that label's value points to the beginning of the structure in the memory.
 
-```
+```z80klive
 start: .org #8000
 
 DistanceEntry:
@@ -198,7 +198,7 @@ Entry3:	DistanceEntry()
 
 The compiler emits the initialization code for `Entry1`, `Entry2`, and `Entry3` as if you wrote this:
 
-```
+```z80klive
 Data .org #9000
 Entry1:
   .defw #9000
@@ -223,7 +223,7 @@ For a moment, let's forget that _identifier_ is optional. When you use it, it mu
 
 You can apply field initializer statements right after the structure initialization. Any other Z80 instruction, pragma, statement, or directive signs the end of the structure initialization. This code snippet shows two examples of setting up `Object2D` structures. The first is correct; however, the second one raises an error:
 
-```
+```z80klive
 Object2D: .struct
     X: .defw 0
     Y: .defw 0
@@ -245,14 +245,14 @@ Obj2: Object2D()
 
 The compiler does not care how you initialize fields. For example, even if you have created the `X` field of `Object2D` with a `.defw` pragma, you can set its value with `.defb`, like in this example:
 
-```
+```z80klive
 Obj3: Object2D()
   X -> .defb 100, 0
 ```
 
 You can even initialize two fields with a simple initializer statement. For example, `DX` and `DY` are one byte each. You can initialize both of these fields in a single step, as these code snippet shows:
 
-```
+```z80klive
 Obj4: Object2D()
   DX -> .defb 2,2
 
@@ -262,7 +262,7 @@ Obj5: Object2D()
 
 The order of fields is unimportant; you can initialize them in any order:
 
-```
+```z80klive
 Obj6: Object2D()
   DX -> .defb 1
   X -> .defw 100
@@ -274,7 +274,7 @@ Obj6: Object2D()
 
 The assembler allows flexible initialization, where you do not use field names. The compiler emits bytes as the byte emitter pragmas would do if you were not within a structure initialization. Let's assume you initialize an `Object2D` this way:
 
-```
+```z80klive
 Obj7: Object2D()
   -> .defb 1, 0
   DX -> defw #0303
@@ -282,7 +282,7 @@ Obj7: Object2D()
 
 Without the field initializers, the structure would contain these six bytes:
 
-\#00, #00, #00, #00, #01, #01
+`#00, #00, #00, #00, #01, #01`
 
 However, the field initializers overwrote the default bytes with the ones displayed in boldface:
 
@@ -290,7 +290,7 @@ __#01__, __#00__, #00, #00, __#03__, __#03__
 
 You can choose your preferred way to initialize a structure using a field or unnamed initializers. The compiler does not care how you assemble the set of bytes within the structure. However, it does not allow you to overflow the structure boundaries. This sample shows you two initializations of `Object2D`. The first is correct, as it emits exactly six bytes. However, the second raises an error since the initialization tries to put eight bytes into the structure:
 
-```
+```z80klive
 Obj8: Object2D()
   -> .defm "012345"
 

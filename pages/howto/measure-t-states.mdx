@@ -1,7 +1,5 @@
+import { ClickableImage } from '../../page-components'
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import tstate1 from '../../public/images/howto/tstate-1.png'
-import tstate2 from '../../public/images/howto/tstate-2.png'
 
 # Measuring T-States
 
@@ -11,7 +9,7 @@ Klive makes measuring the number of T-states (clock cycles) a current piece of c
 
 Take a look at the following code (use the ZX Spectrum 48K model):
 
-```z80
+```z80klive
 Start:
     .model Spectrum48
     .org #8000
@@ -42,11 +40,11 @@ Message:
 
 Add two breakpoints to the lines marked with **(START)** and **(END)**. Now, run the code in the debugger. When the code execution stops at the first breakpoint, **(START)**, check **TSP** at the CPU panel:
 
-<Image src={tstate1} alt="T-states 1" width={256} style={{marginTop: 24}} />
+<ClickableImage src="/images/howto/tstate-1.png" width="256" />
 
 Click continue and let your code access the second breakpoint, **(END)**. The **TSP** value shows the number of T-states that have elapsed since continuing from **(START)**:
 
-<Image src={tstate2} alt="T-states 2" width={256} style={{marginTop: 24}} />
+<ClickableImage src="/images/howto/tstate-2.png" width="256" />
 
 <Callout type="info" emoji="💡">
 Now you can see how many T-states your code consumes between two breakpoints. This feature is handy when you want to optimize your code for speed.
