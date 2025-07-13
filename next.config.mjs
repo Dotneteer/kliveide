@@ -11,32 +11,44 @@ const z80Language = {
     { "include": "#directive" },
     { "include": "#number" },
     { "include": "#statement" },
-    { "include": "#instruction" },
-    { "include": "#label" },
-    { "include": "#operator" },
+    { "include": "#keyword" },
+    { "include": "#function" },
+    { "include": "#boolean" },
     { "include": "#register" },
-    { "include": "#identifier" }
+    { "include": "#condition" },
+    { "include": "#label" },
+    { "include": "#macroparam" },
+    { "include": "#identifier" },
+    { "include": "#operator" }
   ],
   "repository": {
     "comment": {
       "patterns": [
+        { "name": "comment.line.semicolon.z80klive", "match": ";.*" },
+        { "name": "comment.line.double-slash.z80klive", "match": "//.*" },
         {
-          "name": "comment.line.double-slash.z80klive",
-          "match": "//.*$"
-        },
-        {
-          "name": "comment.line.semicolon.z80klive",
-          "match": ";.*$"
+          "name": "comment.block.z80klive",
+          "begin": "/\\*\\*",
+          "end": "\\*\\*/"
         },
         {
           "name": "comment.block.z80klive",
-          "begin": "/\\*",
+          "begin": "/\\*(?!\\*)",
           "end": "\\*/"
         }
       ]
     },
+    "keyword": {
+      "name": "keyword.control.z80klive",
+      "match": "(?i)\\b(nop|rlca|rrca|rla|rra|daa|cpl|scf|ccf|halt|exx|di|ei|neg|retn|reti|rld|rrd|ldi|cpi|ini|outi|ldd|cpd|ind|outd|ldir|cpir|inir|otir|lddr|cpdr|indr|otdr|ld|inc|dec|ex|add|adc|sub|sbc|and|xor|or|cp|djnz|jr|jp|call|ret|rst|push|pop|in|out|im|rlc|rrc|rl|rr|sla|sra|sll|srl|bit|res|set|ldix|ldws|ldirx|lirx|lddx|lddrx|ldrx|ldpirx|lprx|outinb|otib|mul|swapnib|swap|mirror|mirr|nextreg|nreg|pixeldn|pxdn|pixelad|pxad|setae|stae|test|bsla|bsra|bsrl|bsrf|brlc)\\b"
+    },
+    "pragma": {
+      "name": "keyword.control.pragma.z80klive",
+      "match": "(?i)(\\.org|\\.bank|\\.xorg|\\.ent|\\.xent|\\.equ|\\.var|\\.disp|\\.defb|\\.db|\\.defw|\\.dw|\\.defm|\\.dm|\\.defn|\\.dn|\\.defh|\\.dh|\\.defs|\\.ds|\\.defc|\\.dc|\\.defg|\\.dg|\\.defgx|\\.dgx|\\.skip|\\.extern|\\.fillb|\\.fillw|\\.model|\\.injectopt|\\.align|\\.trace|\\.tracehex|\\.rndseed|\\.error|\\.includebin|\\.include_bin|\\.incbin|\\.comparebin|\\.zxbasic|\\.onsuccess)\\b|\\b(org|bank|xorg|ent|xent|equ|var|disp|defb|db|defw|dw|defm|dm|defn|dn|defh|dh|defs|ds|defc|dc|defg|dg|defgx|dgx|skip|extern|fillb|fillw|model|injectopt|align|trace|tracehex|rndseed|error|includebin|include_bin|incbin|comparebin|zxbasic|onsuccess)\\b"
+    },
     "string": {
       "patterns": [
+        { "name": "string.quoted.single.z80klive", "match": "'.'" },
         {
           "name": "string.quoted.double.z80klive",
           "begin": "\"",
@@ -44,114 +56,67 @@ const z80Language = {
           "patterns": [
             {
               "name": "constant.character.escape.z80klive",
-              "match": "\\\\[\"'\\\\aAbBfFiIoOpPtT0xX]"
+              "match": "\\\\([ipfbIoatPC\\\\'\"0]|x[0-9a-fA-F]{1,2})"
             }
           ]
-        },
-        {
-          "name": "string.quoted.single.z80klive",
-          "begin": "'",
-          "end": "'",
-          "patterns": [
-            {
-              "name": "constant.character.escape.z80klive",
-              "match": "\\\\[\"'\\\\aAbBfFiIoOpPtT0xX]"
-            }
-          ]
-        }
-      ]
-    },
-    "pragma": {
-      "patterns": [
-        {
-          "name": "keyword.control.pragma.z80klive",
-          "match": "\\.(?i:org|defb|defw|defm|defn|equ|var|disp|include|repeat|until|loop|align|defgx|defg|defh|skip|fillb|defs|defc|extern|global|model|bank|segment|trace|cleartrace)"
-        }
-      ]
-    },
-    "directive": {
-      "patterns": [
-        {
-          "name": "keyword.control.directive.z80klive",
-          "match": "#(?i:include|if|ifdef|ifndef|else|elif|endif|define|undef|line|error)"
         }
       ]
     },
     "number": {
       "patterns": [
         {
-          "name": "constant.numeric.hex.z80klive",
-          "match": "(?i:#[0-9a-f]+|\\$[0-9a-f]+|0x[0-9a-f]+|[0-9][0-9a-f]*h)"
+          "name": "constant.numeric.hexadecimal.z80klive",
+          "match": "(#[0-9a-fA-F]*[0-9][0-9a-fA-F]*)|(\\b0x[0-9a-fA-F]+\\b)|(\\$[0-9a-fA-F]+)|(\\b[0-9a-fA-F]+[hH]\\b)"
         },
         {
           "name": "constant.numeric.binary.z80klive",
-          "match": "(?i:%[01]+|0b[01]+|[01]+b)"
+          "match": "(%[01_]+)|(\\b0b[01_]+\\b)|(\\b[01_]+[bB]\\b)"
         },
+        { "name": "constant.numeric.octal.z80klive", "match": "\\b([0-7]+[oOqQ])\\b" },
         {
-          "name": "constant.numeric.decimal.z80klive",
-          "match": "[0-9]+"
+          "name": "constant.numeric.real.z80klive",
+          "match": "\\b[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?\\b|\\.[0-9]+([eE][+-]?[0-9]+)?\\b|\\b[0-9]+[eE][+-]?[0-9]+\\b"
         },
-        {
-          "name": "constant.numeric.octal.z80klive",
-          "match": "(?i:[0-7]+[oqOQ])"
-        },
-        {
-          "name": "constant.language.boolean.z80klive",
-          "match": "(?i:\\.false|\\.true|false|true)"
-        }
+        { "name": "constant.numeric.decimal.z80klive", "match": "\\b[0-9]+\\b" }
       ]
     },
     "statement": {
-      "patterns": [
-        {
-          "name": "keyword.control.statement.z80klive",
-          "match": "\\.(?i:if|else|elif|endif|proc|endp|macro|endm|while|endw|repeat|until|loop|break|continue|goto|for|next)"
-        }
-      ]
+      "name": "keyword.control.statement.z80klive",
+      "match": "(?i)(\\.macro|\\.mend|\\.proc|\\.endp|\\.pend|\\.loop|\\.endl|\\.lend|\\.repeat|\\.until|\\.while|\\.endw|\\.wend|\\.ifused|\\.ifnused|\\.if|\\.elif|\\.else|\\.endif|\\.for|\\.to|\\.step|\\.next|\\.break|\\.continue|\\.endmodule|\\.endscope|\\.moduleend|\\.scopeend|\\.struct|\\.ends|\\.local|\\.endm|\\.module|\\.scope)\\b|\\b(macro|mend|proc|endp|pend|loop|endl|lend|repeat|until|while|endw|wend|ifused|ifnused|if|elif|else|endif|for|to|step|next|break|continue|endmodule|endscope|moduleend|scopeend|struct|ends|local|endm|module|scope)\\b"
     },
-    "instruction": {
-      "patterns": [
-        {
-          "name": "support.function.z80klive",
-          "match": "(?i:adc|add|and|bit|call|ccf|cp|cpd|cpdr|cpi|cpir|cpl|daa|dec|di|djnz|ei|ex|exx|halt|im|in|inc|ind|indr|ini|inir|jp|jr|ld|ldd|lddr|ldi|ldir|neg|nop|or|otdr|otir|out|outd|outi|pop|push|res|ret|reti|retn|rl|rla|rlc|rlca|rld|rr|rra|rrc|rrca|rrd|rst|sbc|scf|set|sl1|sla|sll|sli|sra|srl|sub|xor)"
-        }
-      ]
-    },
-    "label": {
-      "patterns": [
-        {
-          "name": "entity.name.function.z80klive",
-          "match": "^\\s*[A-Za-z_@#$?][A-Za-z0-9_@#$?]*:"
-        }
-      ]
-    },
-    "operator": {
-      "patterns": [
-        {
-          "name": "keyword.operator.z80klive",
-          "match": "[\\+\\-\\*/%&|\\^~<>!=]"
-        }
-      ]
+    "directive": {
+      "name": "keyword.control.directive.z80klive",
+      "match": "(?i)(#ifdef|#ifndef|#define|#undef|#ifmod|#ifnmod|#endif|#else|#if|#include|#line)\\b"
     },
     "register": {
-      "patterns": [
-        {
-          "name": "variable.language.register.z80klive",
-          "match": "(?i:a|b|c|d|e|h|l|i|r|ixh|ixl|iyh|iyl|af|bc|de|hl|ix|iy|sp|af')"
-        },
-        {
-          "name": "variable.language.condition.z80klive",
-          "match": "(?i:nz|z|nc|c|po|pe|p|m)"
-        }
-      ]
+      "name": "variable.language.register.z80klive",
+      "match": "(?i)\\b(af'|af|a|f|bc|b|c|de|d|e|hl|h|l|i|r|sp|ixh|ixl|ix|iyh|iyl|iy|xh|xl|yh|yl)\\b"
+    },
+    "condition": {
+      "name": "variable.language.condition.z80klive",
+      "match": "(?i)\\b(z|nz|c|nc|po|pe|p|m)\\b"
+    },
+    "function": {
+      "name": "support.function.z80klive",
+      "match": "(?i)\\b(textof|ltextof|hreg|lreg|def|isreg8|isreg8std|isreg8spec|isreg8idx|isreg16|isreg16std|isreg16idx|isregindirect|iscport|isindexedaddr|iscondition|isexpr|isregaf|isrega|isregbc|isregb|isregc|isregde|isregd|isrege|isreghl|isregh|isregl|isregi|isregr|isregsp|isregxh|isregxl|isregix|isregyh|isregyl|isregiy|\\.cnt|\\$cnt)\\b"
+    },
+    "boolean": {
+      "name": "constant.language.boolean.z80klive",
+      "match": "(?i)\\b(true|false|\\.true|\\.false)\\b"
+    },
+    "operator": {
+      "name": "keyword.operator.z80klive",
+      "match": "::|:=|==|===|!=|!==|<=|>=|<<|<\\?|>>|>\\?|:|\\?|\\+|-|\\*|/|\\||\\^|!|~|%|&|<|>"
+    },
+    "macroparam": {
+      "name": "variable.parameter.macro.z80klive",
+      "begin": "{{",
+      "end": "}}",
+      "patterns": [{ "match": "[\\._@`a-zA-Z][_@!?\\.0-9A-Za-z]*" }]
     },
     "identifier": {
-      "patterns": [
-        {
-          "name": "variable.other.identifier.z80klive",
-          "match": "[A-Za-z_@#$?][A-Za-z0-9_@#$?]*"
-        }
-      ]
+      "name": "variable.other.identifier.z80klive",
+      "match": "(\\.(?![0-9])[_@!?\\.0-9A-Za-z]*)|([_@`A-Za-z][_@!?\\.0-9A-Za-z]*)"
     }
   }
 };
