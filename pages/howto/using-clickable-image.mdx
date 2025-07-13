@@ -1,0 +1,70 @@
+# Using ClickableImage Component
+
+import ClickableImage from '../../page-components/ClickableImage'
+
+The `ClickableImage` component provides an enhanced image experience in your documentation. When used, images become clickable and open in a new tab with a subtle hover effect.
+
+## Basic Usage
+
+To use the ClickableImage component in your MDX files, import it at the top of your MDX file:
+
+```jsx
+import ClickableImage from '../../page-components/ClickableImage'
+```
+
+Then use it like any other React component:
+
+<ClickableImage 
+  src="/images/intro/klive-ide-intro.png" 
+  alt="Klive IDE Interface" 
+/>
+
+## Customizing Size
+
+You can specify the width and height of the image:
+
+<ClickableImage 
+  src="/images/intro/klive-ide-intro.png" 
+  alt="Klive IDE Interface"
+  width={600}
+  height="auto"
+/>
+
+## Custom Styling
+
+You can apply custom CSS classes or inline styles:
+
+<ClickableImage 
+  src="/images/intro/klive-ide-intro.png" 
+  alt="Klive IDE Interface"
+  style={{ border: '2px solid #0070f3', borderRadius: '8px' }}
+/>
+
+## Component Props
+
+| Prop | Type | Description | Default |
+|------|------|-------------|---------|
+| src | string | The image source URL (required) | - |
+| alt | string | Alternative text for the image (required) | - |
+| width | string \| number | Width of the image | auto |
+| height | string \| number | Height of the image | auto |
+| className | string | Additional CSS class names | '' |
+| style | object | Inline CSS styles | {} |
+
+## When to Use
+
+The ClickableImage component is ideal for:
+
+1. **Screenshots** - When you want to show a screenshot that users might want to see in full size
+2. **Diagrams** - For technical diagrams where details matter
+3. **Architecture Images** - For complex architecture images that benefit from being viewed in full size
+
+## Implementation Details
+
+The component automatically:
+
+- Centers the image in its container
+- Applies a subtle shadow effect
+- Adds a hover effect to indicate clickability
+- Opens the image in a new tab when clicked
+- Handles responsive sizing
