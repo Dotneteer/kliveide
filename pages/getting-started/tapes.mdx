@@ -22,9 +22,9 @@ You can change the Fast Load mode even while loading a game. However, the change
 By default, fast load is turned on.
 </Callout>
 
-## Rewinding the Tape
+## Revinding the Tape
 
-When the loading completes or gets interrupted, the tape position stays as if you stopped the physical tape player. When you issue the `LOAD` command again, the load operation starts searching for the next file header from the position where it was stopped.
+When the loading completes or gets interrupted, the tape position stays as if you stopped the physical tape player. When you issue the `LOAD` command again, the load operation starts searching the following file header from the position where it has been stopped.
 
 You can rewind the tape to its beginning just as you can do it with a physical tape cassette. Click the **Rewind** icon in the toolbar (the one to the right of the rocket icon) or execute the **Machine | Rewind Tape** command.
 
@@ -38,6 +38,6 @@ The Fast Load mode applies a powerful technique: ROM hooking. While the emulator
 
 When the execution reaches the load routine, the Fast Load mechanism suspends the machine and injects the data from the tape file directly into the memory. While doing this, the algorithm sets the Z80 registers (including the flags) in the same way as the algorithm in the ROM.
 
-When the data is loaded, the mechanism sets the current value of the `PC` register to the exit point of the load routine as if the CPU had executed that routine and exits the fast mode.
+When the data is loaded, the mechanism sets the current value of the `PC` register to the exit point of the load routine as if the CPU has executed that and exits the fast mode.
 
-If there is an error during the load, the fast load mechanism sets `PC` to the beginning of the method that reports tape error.
+If there is some error during the load, the fast load mechanism sets `PC` to the beginning of the method that reports tape error.

@@ -1,9 +1,19 @@
 import { Callout } from 'nextra/components'
-import { ClickableImage } from '../../page-components'
+import Image from 'next/image'
+import warning1 from '/public/images/getting-started/warning1.png'
+import privacyAndSecurity from '/public/images/getting-started/privacy-and-security.png'
+import warning2 from '/public/images/getting-started/warning2.png'
+import installStep1 from '/public/images/getting-started/install-step-1.png'
+import installStep2 from '/public/images/getting-started/install-step-2.png'
+import installStep3 from '/public/images/getting-started/install-step-3.png'
+import installStep4 from '/public/images/getting-started/install-step-4.png'
+import appsInFinder from '/public/images/getting-started/apps-in-finder.png'
+import kliveInSearch from '/public/images/getting-started/klive-in-search.png'
+import ubuntuPermission from '/public/images/getting-started/ubuntu-permission.png'
 
 # Installing Klive
 
-Visit the project [release page](https://github.com/Dotneteer/kliveide/releases) to get the installation kits for Klive. You will find the latest release at the top of the page. When you expand the Assets tab, it will list five files, including the three installation kits:
+Visit the project [release page](https://github.com/Dotneteer/kliveide/releases) to get the install kits for Klive. You find the latest release at the top of the page. When you expand the Assets tab, it will list five files, including the three installation kits:
 
 - `KliveIdeSetup-{version}-{arch}.AppImage`: The Linux AppImage format to install Klive IDE on Linux without requiring an admin privilege to run
 - `KliveIdeSetup-{version}-{arch}.exe`: Self-extracting executable to install Klive IDE on Windows x64
@@ -16,17 +26,17 @@ Visit the project [release page](https://github.com/Dotneteer/kliveide/releases)
 Windows currently supports only the x64 architecture.
 </Callout>
 
-Download the file according to the operating system and architecture you want to use, and follow the sections of this article.
+Download the file according to the operating system and architecture to use, and follow the sections of this article.
 
-## macOS Installation
+## MacOS Installation
 
 Open the downloaded `.pkg` file. As the file comes from an untrusted source, the OS cannot install it directly. Click the OK button to close the message.
 
-<ClickableImage src="/images/getting-started/warning1.png" width="173" />
+<Image src={warning1} alt="Warning1" width="173" height="195" style={{ marginTop: 24 }} />
 
-Now, open the System Settings panel and navigate to the Privacy & Security tab. As you scroll down, you can see the message with the blocked filename and the Open Anyway button. Click the button to indicate that you intend to run the installation kit.
+Now, open the System Settings panel and navigate the Privacy & Security tab. As you scroll down, you can see the message with the blocked filename and the Open Anyway button. Click the button to sign that you intend to run the install kit.
 
-<ClickableImage src="/images/getting-started/privacy-and-security.png" width="477" />
+<Image src={privacyAndSecurity} alt="PrivacyAndSecurity" width="477" height="398" style={{ marginTop: 24 }} />
 
 Open the `.pkg` file again and select the Open button in the security dialog on the screen.
 
@@ -34,40 +44,40 @@ Open the `.pkg` file again and select the Open button in the security dialog on 
 The OS may ask for your password to confirm the installation.
 </Callout>
 
-<ClickableImage src="/images/getting-started/warning2.png" width="173" />
+<Image src={warning2} alt="Warning2" width="173" height="233" style={{ marginTop: 24 }} />
 
 Click Open to allow the installer to run. Follow the screenshots (use Continue) to complete the installation.
 
-<ClickableImage src="/images/getting-started/install-step-1.png" width="296" />
+<Image src={installStep1} alt="Step1" width="413" height="296" style={{ marginTop: 24 }} />
 
-<ClickableImage src="/images/getting-started/install-step-2.png" width="296" />
+<Image src={installStep2} alt="Step2" width="413" height="296" style={{ marginTop: 24 }} />
 
-<ClickableImage src="/images/getting-started/install-step-3.png" width="296" />
+<Image src={installStep3} alt="Step3" width="413" height="296" style={{ marginTop: 24 }} />
 
-<ClickableImage src="/images/getting-started/install-step-4.png" width="296" />
+<Image src={installStep4} alt="Step4" width="413" height="296" style={{ marginTop: 24 }} />
 
 <Callout type="info" emoji="💡">
-The installer will create a KliveIDE folder in the Applications folder and copy the required files into it. It will also create a shortcut in the Launchpad. When you complete the installation, macOS may ask you for access to your Downloads folder to optionally recycle the installation kit.
+The installer will create a Klive IDE folder in the Applications folder and copy the required files into it. It will also create a shortcut in the Launchpad. When you complete the installation, MacOS may ask you for access to your Downloads folder to recycle the install set optionally.
 </Callout>
 
-After the successful installation, you can find KliveIDE in your Applications folder.
+After the successful installation, you can find Klive IDE in your Applications folder.
 
-<ClickableImage src="/images/getting-started/apps-in-finder.png" width="441" />
+<Image src={appsInFinder} alt="AppsInFinder" width="441" height="198" style={{ marginTop: 24 }} />
 
 ## Windows Installation
 
-The setup file is a self-extracting executable. Open it, and it will automatically extract itself and copy the executable files into the Programs directory (within your user home's `AppData/Local/Programs/klive-ide` folder).
+The setup file is a self-extracting executable. Open it, and it will automatically extract itself and copy the executable files into the Programs (within your user home's`AppData/Local/Programs/klive-ide`) directory.
 
-The setup kit will start KliveIDE after completion. Later, you can start KliveIDE again:
+The setup kit will start Klive IDE after completion. Later, you can start Klive IDE again:
 
 Use the search in the Windows taskbar and type "Klive". The newly installed app shows up in the search results:
 
-<ClickableImage src="/images/getting-started/klive-in-search.png" width="213" />
+<Image src={kliveInSearch} alt="KliveInSearch" width="213" height="111" style={{ marginTop: 24 }} />
 
-Click on KliveIDE to start it.
+Click on Klive IDE to start it.
 
 <Callout type="info" emoji="💡">
-When KliveIDE is selected in the search result list, the right pane shows the Pin to taskbar command. Use this to add the IDE to the taskbar; later, you can run it with a single click on the KliveIDE icon.
+When Klive IDE is selected in the search result list, the right pane shows the Pin to taskbar command. Use this to add the IDE to the taskbar; later, you can run it with a single click on the Klive IDE icon.
 </Callout>
 
 ## Linux Installation
@@ -86,7 +96,7 @@ chmod +x KliveIdeSetup-{version}-{arch}.AppImage
 
 Alternatively, you can right-click on the file in the file manager and select the Properties command. In the Permissions tab, check the Allow executing file as program checkbox:
 
-<ClickableImage src="/images/getting-started/ubuntu-permission.png" width="296" />
+<Image src={ubuntuPermission} alt="UbuntuPermission" width="296" height="290" style={{ marginTop: 24 }} />
 
-Now, you can run KliveIDE by double-clicking the setup kit's icon or using the Run command from its context menu.
+Now, you can run Klive IDE by double-clicking the setup kit's icon or using the Run command from its context menu.
 

@@ -1,15 +1,18 @@
-import { ClickableImage } from '../../page-components'
 import { Callout } from 'nextra/components'
+import Image from 'next/image'
+import disassView from '../../public/images/working-with-ide/disass-view.png'
+import bpMessage from '../../public/images/working-with-ide/disassembly-breakpoint-message.png'
+import bankedDisassView from '../../public/images/working-with-ide/banked-disass-view.png'
 
 # The Disassembly View
 
 You can view the Z80 disassembly of the memory with the **IDE | Show Z80 Disassembly** menu command:
 
-<ClickableImage src="/images/working-with-ide/disass-view.png" width="512" />
+<Image src={disassView} alt="Memory view" width={512} style={{marginTop: 24}} />
 
 Besides viewing the disassembly, you can add breakpoints by clicking with the right mouse button to the left of the line address (see address line `0007`):
 
-<ClickableImage src="/images/working-with-ide/disassembly-breakpoint-message.png" width="512" />
+<Image src={bpMessage} alt="Breakpoint message" width={512} style={{marginTop: 24}} />
 
 When you click an existing breakpoint with the right mouse button, the IDE removes it.
 
@@ -21,14 +24,14 @@ By default, when you display the Z80 disassembly, it uses the current value of t
 
 Turn off the **Follow PC** option to disassemble the entire memory (or a selected bank). With this option turned off, models supporting memory paging display a second row of options:
 
-<ClickableImage src="/images/working-with-ide/banked-disass-view.png" width="512" />
+<Image src={bankedDisassView} alt="Memory view" width={512} style={{marginTop: 24}} />
 
 ## Display Options
 
 The Z80 Disassembly View provides a few options to display and navigate the memory contents:
-- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with hexadecimal numbers; otherwise, they are decimal.
+- **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
 - **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
-- **Screen**: This option (off, by default) lets you disassemble the screen memory's (`$4000`-`$5AFF`) contents.
+- **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
 - **Bank**: This option (on, by default) allows you to turn the display of bank labels on or off in front of memory addresses. This option is available only for models that support memory paging.
 - **Go To**: Type an address into this box and press Enter to jump to the particular address. If the particular address is not at a disassembled instruction's boundary, it will settle at the next instruction. In decimal mode, you can type decimal addresses; otherwise, use hexadecimal addresses.
 

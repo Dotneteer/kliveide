@@ -20,7 +20,7 @@ You can use operands and operators just like in most programming languages. Neve
 - Besides the parentheses &mdash; `(` and `)` &mdash; you can use square brackets 
 &mdash; `[` and `]` &mdash; to group operations and change operator precedence.
 
-```z80klive
+```
 ; This is valid
 ld hl,(Offset+#20)*2+BaseAddr
 
@@ -32,7 +32,7 @@ ld hl,[Offset+#20]*2+BaseAddr
 
 Depending on the context in which an expression is used, the compiler evaluates it instantly or decides to postpone the evaluation. For example, when you use the `.org` pragma, the compiler applies immediate evaluation. Let's assume this is your code:
 
-```z80klive
+```
 Start: .org #8000 + Later
 ; code body (omitted)
 Later: .db #ff
@@ -42,7 +42,7 @@ The value of `Later` depends on the address in `.org`, and the `.org` address de
 
 For most Z80 instructions, the compiler uses late evaluation:
 
-```z80klive
+```
 Start: .org #6000
     ld hl,(MyVar)
     ; code body omitted
@@ -123,14 +123,14 @@ Operator token | Precedence | Description
 `/` | 8 | Division
 `%` | 8 | Modulo calculation
 
-# Min-Max Operators
+# Min-Max operators
 
 Operator token | Precedence | Description
 ---------------|------------|------------
 `<?` | 9 | Minimum of the left and right operand
 `>?` | 9 | Maximum of the left and right operand
 
-### Unary Operators
+### Unary operators
 
 Operator token | Precedence | Description
 ---------------|------------|------------
@@ -144,12 +144,12 @@ Operator token | Precedence | Description
 ## Functions
 
 The Z80 assembler provides a number of functions that can have zero, one, or more arguments. 
-Several functions (for example `rnd()`) have overloads with different signatures. Each 
+Several functions (for example as `rnd()`) have overloads with different signatures. Each 
 function has a name and a parameter list wrapped into parentheses, the parameters are separated
 by a comma. Of course, parameters can be expressions, and they may invoke other functions, too.
 Here are a few samples:
 
-```z80klive
+```
 length("Hello" + " world")
 max(value1, value2)
 sin(pi()/2)
@@ -230,7 +230,7 @@ The compiler provides a construct, *parse time functions*. These functions can r
 These functions accept a 16-bit register pair token (__BC__, __DE__, __HL__, __IX__, or __IY__) and retrieve the lower
 or higher 8-bit register half of their input. Here is a sample code snippet:
 
-```z80klive
+```
 ld a,lreg(bc)
 ld c,hreg(hl)
 ld a,lreg(ix)
@@ -239,7 +239,7 @@ ld l,hreg(de)
 
 The compiler sees as if you wrote this:
 
-```z80klive
+```
 ld a,c
 ld c,h
 ld a,ixl
@@ -251,7 +251,7 @@ ld l,d
 You can use `textof()`, which accepts these kinds of tokens: mnemonic, register, register indirection, C port, or condition. This function translates these tokens into uppercase string constants that represent them.
 Here is a sample:
 
-```z80klive
+```
 .dm textof(ldir)
 .dm textof(bc)
 .dm textof((de))
@@ -261,7 +261,7 @@ Here is a sample:
 
 The compiler sees as if you wrote this code:
 
-```z80klive
+```
 .dm "LDIR"
 .dm "BC"
 .dm "(DE)"
