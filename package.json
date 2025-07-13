@@ -128,7 +128,7 @@
       "!.vscode",
       "!_input",
       "!CHANGELOG.md",
-      "!next.config.js",
+      "!next.config.mjs",
       "!_docs",
       "!docs-out",
       "!pages",
