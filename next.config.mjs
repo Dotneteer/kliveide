@@ -1,4 +1,5 @@
 import nextra from "nextra";
+import { getHighlighter } from "shiki";
 
 // Z80 assembly language grammar embedded directly to avoid file system operations
 const z80Language = {
@@ -274,7 +275,6 @@ const withNextra = nextra({
         myTheme: customTheme,
       },
       getHighlighter: async (options) => {
-        const { getHighlighter } = await import("shiki");
         return await getHighlighter({
           ...options,
           langs: [
