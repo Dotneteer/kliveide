@@ -1,10 +1,5 @@
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import emuToolbar from '../../public/images/working-with-ide/emu-toolbar-startup.png'
-import selectStartMode from '../../public/images/working-with-ide/select-start-mode.png'
-import machineRunning from '../../public/images/working-with-ide/machine-running.png'
-import machinePaused from '../../public/images/working-with-ide/machine-paused.png'
-
+import ClickableImage from '../../page-components/ClickableImage'
 
 # Running and Debugging code
 
@@ -12,13 +7,13 @@ Klive displays a toolbar at the top of the screen in the Emulator window and ano
 
 This screen shows these controls in the emulator:
 
-<Image src={emuToolbar} alt="Emulator toolbar" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/emu-toolbar-startup.png" width={512} />
 
 Move the mouse over a particular control; it displays a tooltip to let you know its function.
 
 The leftmost button starts the machine in the selected mode (running with or without debugging). The dropdown next to the start button lets you select this mode:
 
-<Image src={selectStartMode} alt="Emulator toolbar" width={256} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/select-start-mode.png" width={256} />
 
 <Callout type="info" emoji="💡">
 The IDE displays **Run Project (F5)** and **Debug Project (Ctrl+F5)** options.
@@ -32,13 +27,13 @@ Klive provides views (memory, disassembly, BASIC listing, and many more) that al
 
 When the machine is running, you can use any of the windows to control it (pause, stop, or restart)
 
-<Image src={machineRunning} alt="Emulator toolbar" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/machine-running.png" width={512} />
 
 - **Pause**: Klive pauses the machine at the current execution point. Soon, you will learn what you can do with the machine in this mode.
 - **Stop**: This stops the machine (like turning off the hardware). Though the machine is stopped, you can still examine its memory contents and state when turning it off.
 - **Restart**: This function stops the machine and then starts it again. When you restart the machine in the IDE with a project loaded, it restarts your code and not just the machine.
 
-<Image src={machinePaused} alt="Emulator toolbar" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/machine-paused.png" width={512} />
 
 In the paused state of a machine, you can use these actions:
 - **Continue**. Go on running the machine.

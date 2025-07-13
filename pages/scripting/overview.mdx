@@ -1,93 +1,57 @@
-import Image from 'next/image'
-import emptyScript from '../../public/images/scripting/empty-script-file.png'
-import scriptWithIcons from '../../public/images/scripting/script-with-icons.png'
-import scriptOutput from '../../public/images/scripting/script-output.png'
-import outputPane from '../../public/images/scripting/script-output-pane.png'
-import outputProgress from '../../public/images/scripting/script-output-progress.png'
+import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
 import scriptingHistory from '../../public/images/scripting/scripting-history.png'
 
-# Overview
+# Scripting Overview
 
-Klive IDE has a scripting system with a JavaScript-like syntax. When you create files with the `.ksx` extension, the IDE considers them script files and allows you to run them.
+The Klive IDE offers a simple but powerful way to automate tasks with a scripting facility. When you create a new Klive project (or open a folder containing a project), you can create script files with the `.ksx` file extension.
 
-> **Note**: The scripting system is new in the IDE and will evolve with every release. Though Klive strives to maintain compatibility with older versions, you may find some breaking changes.
+## `.ksx` Files
 
-Get acquainted with the scripting system! Follow these steps to create and run your first script:
+When you add a new `.ksx` file to your project, the code editor recognizes that and creates a source file using the scripting language. This example shows an empty scripting file:
 
-1. Open an existing Klive project, or create a new one.
-2. With the **New file** context menu, add a new script file, `myScript.ksx`, to the project's root.
-3. After you add it, Klive displays the empty file in the code editor:
+<ClickableImage src="/images/scripting/empty-script-file.png" width={780} />
 
-<Image src={emptyScript} alt="EmptyScript" width="780" height="202" style={{marginTop: 24}} />
+When you create a simple script, two icons appear in the document tab bar:
 
-4. Type this code into the editor:
+<ClickableImage src="/images/scripting/script-with-icons.png" width={780} />
 
-```javascript
-Output.writeLine("Hello from Klive IDE!");
-```
+The first icon executes the script, the second one starts a new Klive instance and starts script execution in debug mode (so that you can debug your script with breakpoints).
 
-5. The script window's header has two icons, as the following figure shows. Click the first one (Run this script file) to start the script.
+When running the script, Klive displays a notification bar at the top of the code editor window:
 
-<Image src={scriptWithIcons} alt="ScriptWithIcons" width="780" height="202" style={{marginTop: 24}} />
+<ClickableImage src="/images/scripting/script-output.png" alt="ScriptOutput" width={780} height={202} />
 
-6. It starts the script and displays its output in a new document, the script output window:
+## The Output Pane
 
-<Image src={scriptOutput} alt="ScriptOutput" width="780" height="202" style={{marginTop: 24}} />
+As the script executes, it may display output, including information, errors, and warnings. All of these are displayed in a dedicated Output Pane below the code editor. The script execution keeps track of its output, so that you can see information from any script execution.
 
-## Running the Script
+If you use the `$log()` API in your script, you can output information to the Output Pane:
 
-The scripting system uses a compiler to convert the script into an internal format, and then the scripting engine runs the code. The code runs asynchronously, so you can cancel the run even if you create an infinite loop.
+<ClickableImage src="/images/scripting/script-output-pane.png" width={795} />
 
-A script can run in one of these locations:
+<Callout type="info" emoji="💡">
+You can clear the content of the Output Pane with `Ctrl+L`.
+</Callout>
 
-- **The IDE process**. Scripts running here access the IDE infrastructure through built-in objects; they can execute complex tasks (such as building the project) that require accessing the project system.
-- **The Emulator process**. These scripts can control the emulator and automate it through objects. For example, you can execute the next Z80 instruction, pause, and examine the Z80 register values to search for a particular condition. According to this condition, your script can decide how to go on.
+## Execution Progress
 
-By default, the script runs in the IDE process. You can change the host to the emulator by adding the `"emu"` string literal at the top of the script. For example, the following code will run in the emulator:
+Sometimes, you may run a script that takes a long time to complete. Your script can display progress information with a progress bar and a descriptive text. Use the `$progress()` function:
 
-```javascript
-"emu";
-Output.writeLine("Hello from Klive IDE!");
-```
+<ClickableImage src="/images/scripting/script-output-progress.png" width={795} />
 
-> **Note**: Though the script runs in the emulator, it forwards its output to the IDE. You can display and examine the script output in the IDE window.
-
-## Script Output
-
-The scripting engine has an output pane in the Tool panel. This pane displays messages related to running scripts, such as starting and completing them. If compiling a script results in an error, the error is displayed here, too:
-
-<Image src={outputPane} alt="ScriptOutputPane" width="795" height="215" style={{marginTop: 24}} />
-
-Each script has a pane displaying its output. When you start a script, the IDE immediately shows its output pane and refreshes it according to the script's output. If you run a script multiple times, each run has its separate output pane.
-
-Let's assume you run this script:
-
-```javascript
-for (let i = 0; i < 1000; i++) {
-  Output.writeLine("Message item #" + i);
-  delay(100);
-}
-```
-
-The script output refreshes the pane as the for-loop generates new output items. In the header, it displays the number of output lines and the status of the script (Running):
-
-<Image src={outputProgress} alt="ScriptOutputProgress" width="795" height="291" style={{marginTop: 24}} />
-
-You can click the icon buttons in the header to execute a particular task. These icons from the left to right provide these functions:
-- **Stop**. You can cancel a running script. The script's state changes to "Stopped".
-- **Open Script File**. Clicking this button opens the script file in the code editor.
-- **Clear script output**. You can immediately clear the script's output (even if it is still running).
-- **Copy to clipboard**. The current script output (plain text) is copied to the clipboard; you can paste it into other apps.
-- **Turn on/off autoscrolling**. As the script output appends, the pane scrolls automatically to the bottom. You can use this button to turn this behavior on or off.
+<Callout type="info" emoji="💡">
+If your script takes too long to complete or enters an infinite loop, the UI hangs too. Be mindful of your script's execution time and handle errors appropriately.
+</Callout>
 
 ## Scripting History
 
-The IDE sidebar contains a Scripting tab where you can expand the Scripting History panel to list the scripts run since the IDE started:
+The Klive IDE automatically keeps track of the scripts you have executed. The latest 50 scripts are displayed in the Scripting History panel. To see it, select the **View | Show Scripting History** menu command:
 
-<Image src={scriptingHistory} alt="ScriptingHistory" width="304" height="428" style={{marginTop: 24}} />
+<ClickableImage src="/images/scripting/scripting-history.png" width={304} />
 
-Each item represents a run. The first icon indicates the host (the tool icon represents scripts running in the IDE, and the display icon refers to the emulator-hosted scripts). The second icon tells you the status of a particular script.
+<Callout type="info" emoji="💡">
+When you move your mouse over a script file name in the history, a tooltip shows you the entire path to that file.
+</Callout>
 
-The script file's name is followed by its running time; the IDE refreshes this information automatically.
-
-When you click an item, the IDE opens the related script output.
+You can click any item in the history to run that script again.

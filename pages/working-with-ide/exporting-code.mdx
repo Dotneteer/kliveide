@@ -1,4 +1,5 @@
-import Image from 'next/image'
+import ClickableImage from '../../page-components/ClickableImage'
+
 import exportDialog1 from '../../public/images/working-with-ide/export-dialog-1.png'
 import exportDialog2 from '../../public/images/working-with-ide/export-dialog-2.png'
 
@@ -6,7 +7,7 @@ import exportDialog2 from '../../public/images/working-with-ide/export-dialog-2.
 
 When your code is ready to be tested on actual hardware or with another emulator, you can export it with the **Build | Export code** menu command. This command pops up a dialog:
 
-<Image src={exportDialog1} alt="Export code 1" width={384} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/export-dialog-1.png" width={384} />
 
 ## The Export Dialog
 
@@ -22,7 +23,7 @@ Before exporting the code, you can specify several parameters:
 
 If you are about to export the code with a BASIC loader, you can set other options:
 
-<Image src={exportDialog2} alt="Export code 2" width={384} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/export-dialog-2.png" width={384} />
 
 
 - **Add CLEAR**. Adds a `CLEAR` statement to the loader.

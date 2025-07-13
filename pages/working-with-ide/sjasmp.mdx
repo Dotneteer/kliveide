@@ -1,8 +1,5 @@
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import sjasmpReset from '../../public/images/working-with-ide/sjasmp-reset.png'
-import sjasmProject from '../../public/images/working-with-ide/new-sjasmp-project.png'
-import sjasmRunning from '../../public/images/working-with-ide/running-sjasmp-code.png'
+import ClickableImage from '../../page-components/ClickableImage'
 
 # SJASMPLUS Integration
 
@@ -20,7 +17,7 @@ Visit the GitHub page of [SjasmPlus](https://github.com/z00m128/sjasmplus) for d
 
 The IDE provides a command, `sjasmp-reset` (or shorter, `sjasmpr`), to connect Klive with SjasmPlus. You can issue this command from the Command window:
 
-<Image src={sjasmpReset} alt="SjasmpReset" width="770" style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/sjasmp-reset.png" width={770} />
 
 The command expects a single parameter: the path of the SjasmPlus installation folder. When Klive invokes the assembler, the SjasmPlus executable name is added to this path. 
 
@@ -32,7 +29,7 @@ Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to 
 
 After setting up the SjasmPlus integration, you can create Klive projects with the `sjasmplus` template: 
 
-<Image src={sjasmProject} alt="SJASMPLUS project" width="512" style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/new-sjasmp-project.png" width={512} />
 
 This template creates a project with a `code.asm` file as the build root and associates the `.asm` and `.sjasm` file extensions with the SjasmPlus compiler.
 
@@ -40,4 +37,4 @@ If you start with an existing project, you can create source code files with the
 
 When you run the SjasmPlus code in the default Klive project template, you can see the result in the Emulator window:
 
-<Image src={sjasmRunning} alt="ZxbRunning" width="480" height="467" style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/running-sjasmp-code.png" width={480} />

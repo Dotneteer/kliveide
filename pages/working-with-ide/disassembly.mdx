@@ -1,18 +1,15 @@
+import ClickableImage from '../../page-components/ClickableImage'
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import disassView from '../../public/images/working-with-ide/disass-view.png'
-import bpMessage from '../../public/images/working-with-ide/disassembly-breakpoint-message.png'
-import bankedDisassView from '../../public/images/working-with-ide/banked-disass-view.png'
 
 # The Disassembly View
 
 You can view the Z80 disassembly of the memory with the **IDE | Show Z80 Disassembly** menu command:
 
-<Image src={disassView} alt="Memory view" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/disass-view.png" width={512} />
 
 Besides viewing the disassembly, you can add breakpoints by clicking with the right mouse button to the left of the line address (see address line `0007`):
 
-<Image src={bpMessage} alt="Breakpoint message" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/disassembly-breakpoint-message.png" width={512} />
 
 When you click an existing breakpoint with the right mouse button, the IDE removes it.
 
@@ -24,7 +21,7 @@ By default, when you display the Z80 disassembly, it uses the current value of t
 
 Turn off the **Follow PC** option to disassemble the entire memory (or a selected bank). With this option turned off, models supporting memory paging display a second row of options:
 
-<Image src={bankedDisassView} alt="Memory view" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/banked-disass-view.png" width={512} />
 
 ## Display Options
 

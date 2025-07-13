@@ -1,3 +1,5 @@
+import ClickableImage from '../../page-components/ClickableImage'
+
 # Improve the Documentation
 
 Though we strive to maintain high-quality documentation, you may find typos, grammar issues, clumsy explanations, out-of-date information, and other problems.
@@ -37,20 +39,19 @@ You can add images following these steps:
 
 1. Add the following line to the top of the `.mdx` file:
 ```js
-import Image from 'next/image'
+import ClickableImage from '../../page-components/ClickableImage'
 ```
 
 2. Copy the image to add into the right folder within `public/images` (under the project's root folder).
-Import the image from that folder into your `.mdx` file like in this sample:
 
-```js
-import memView from '../../public/images/working-with-ide/mem-view.png'
+3. Use the `<ClickableImage>` component to place your image in an article:
+
+```jsx
+<ClickableImage 
+  src="/images/working-with-ide/mem-view.png" 
+  alt="Memory view" 
+  width={512} 
+/>
 ```
 
-3. Use the `<Image>` tag to place your image in an article:
-
-```xml
-<Image src={memView} alt="Memory view" width={512} style={{marginTop: 24}} />
-```
-
-If you want to change the default 24px margin, update the `style` attribute accordingly. To set the image's display dimensions, use the `width` or `height` (or both) attributes.
+To set the image's display dimensions, use the `width` attribute. The `ClickableImage` component will handle proper path resolution for both development and production environments.
