@@ -37,11 +37,47 @@ jobs:
       - name: Build my App
         run: NODE_ENV=production npm run doc:build
         
+      - name: Check output directory structure
+        run: |
+          echo "Checking docs-out directory structure:"
+          find docs-out -type f | sort | head -n 20
+          
       - name: Create .nojekyll file
         run: |
           mkdir -p docs-out
           touch docs-out/.nojekyll
+          
+      - name: Create index.html if missing
+        run: |
+          if [ ! -f docs-out/index.html ]; then
+            echo "index.html not found in root, checking subdirectories..."
+            if [ -f docs-out/kliveide/index.html ]; then
+              echo "Found in /kliveide subdirectory, copying to root"
+              cp -r docs-out/kliveide/* docs-out/
+            else
+              echo "Creating basic index.html with redirect"
+              echo '<meta http-equiv="refresh" content="0;url=/kliveide/" />' > docs-out/index.html
+            fi
+          fi
 
+      - name: Configure GitHub Pages
+        run: |
+          echo "Making sure deployment branch exists"
+          git fetch || true
+          git branch -a || true
+          if ! git show-ref --quiet refs/remotes/origin/gh-pages; then
+            echo "Creating gh-pages branch as it doesn't exist"
+            git checkout --orphan gh-pages
+            git rm -rf .
+            echo "# GitHub Pages Branch" > README.md
+            git add README.md
+            git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "GitHub Actions"
+            git commit -m "Initial gh-pages commit"
+            git push origin gh-pages
+            git checkout ${GITHUB_REF#refs/heads/}
+          fi
+          
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.4.3
         with:
@@ -51,3 +87,11 @@ jobs:
           branch: gh-pages # The branch the action will deploy to
           folder: docs-out # The folder the action will deploy to
           clean: true # Automatically remove deleted files from the deploy branch
+          
+      - name: Verify GitHub Pages settings
+        run: |
+          echo "🔍 NOTE: Please verify your GitHub Pages settings"
+          echo "1. Go to your repository Settings > Pages"
+          echo "2. Ensure 'Source' is set to 'Deploy from a branch'"
+          echo "3. Ensure 'Branch' is set to 'gh-pages' and folder is '/ (root)'"
+          echo "4. The site should be available at https://dotneteer.github.io/kliveide/"
