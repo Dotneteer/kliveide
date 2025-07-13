@@ -4,7 +4,7 @@ import type { DocsThemeConfig } from "nextra-theme-docs";
 const config: DocsThemeConfig = {
   logo: (
     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-      <img src="/images/klive-logo.svg" alt="KliveIDE" width="50px" height="50px" />
+      <img src={process.env.NODE_ENV === "production" ? "/kliveide/images/klive-logo.svg" : "/images/klive-logo.svg"} alt="KliveIDE" width="50px" height="50px" />
       <span style={{ fontWeight: "bold", fontSize: "2em" }}>Klive IDE</span>
     </div>
   ),
