@@ -1,23 +1,19 @@
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import memView from '../../public/images/working-with-ide/mem-view.png'
-import bankedMemView from '../../public/images/working-with-ide/banked-mem-view.png'
-import nextMemView from '../../public/images/working-with-ide/next-mem-view.png'
-import editMemory from '../../public/images/working-with-ide/edit-memory.png'
+import ClickableImage from '../../page-components/ClickableImage'
 
 # Displaying the Memory Contents
 
 You can view the contents of the memory with the **IDE | Show Machine Memory** menu command that displays the contents of the full 64K memory addressable by Z80:
 
-<Image src={memView} alt="Memory view" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/mem-view.png" width={512} />
 
 While the ZX Spectrum 48K does not support paging, other models do. When you use them, you can choose to show only the contents of a particular bank:
 
-<Image src={bankedMemView} alt="Banked memory view" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/banked-mem-view.png" width={512} />
 
 Some models (such as ZX Spectrum Next or Cambridge Z88) offer you many banks to choose from:
 
-<Image src={nextMemView} alt="Next memory view" width={512} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/next-mem-view.png" width={512} />
 
 ## Display Options
 
@@ -36,7 +32,7 @@ A new switch, **64K View**, is displayed in the second header row when your mode
 
 When you hover the mouse over a memory address that represents RAM, you can edit its content by right-clicking it:
 
-<Image src={editMemory} alt="Edit memory" width={256} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/edit-memory.png" width={256} />
 
 You can specify the new value with decimal numbers, hexadecimal numbers (use the `$` prefix), or binary numbers (use the `%` prefix). You can use spaces to group digits; the IDE will remove them.
 

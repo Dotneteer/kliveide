@@ -1,7 +1,4 @@
-import Image from 'next/image'
-import ulaView from '../../public/images/working-with-ide/ula-view.png'
-import keyline from '../../public/images/working-with-ide/keyline-value.png'
-import toggleKeyline from '../../public/images/working-with-ide/toggle-keyline.png'
+import ClickableImage from '../../page-components/ClickableImage'
 
 # The ULA View
 
@@ -9,8 +6,7 @@ Most of the ZX Spectrum family of computers contains a ULA (Uncommitted Logic Ar
 
 You can find this view in the Debug activity tag with the **ULA & I/O** header: 
 
-<Image src={ulaView} alt="ULA view" width={256} style={{marginTop: 24}} />
-
+<ClickableImage src="/images/working-with-ide/ula-view.png" width={256} />
 
 ## ULA Information
 
@@ -43,11 +39,11 @@ You can read this information in this panel:
 
 You can view the keyboard state, which is listed by the flags in the **`KL0`**, ..., **`KL7`** lines. Each flag represents a key's state. The active value (filled circle) is for the pressed-down state. The tooltip shows the associated key's name when you hover the mouse over a particular flag. For example, the following figure demonstrates that the rightmost flag in `KL0` (the first key line) represents the Caps Shift key.
 
-<Image src={keyline} alt="ULA view" width={256} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/keyline-value.png" width={256} />
 
 By clicking a particular key flag, you can toggle its state from pressed to released (and back). This feature is handy during debugging. After clicking the Enter key (the rightmost key in line 6), its state indicates that you have just toggled it.
 
-<Image src={toggleKeyline} alt="ULA view" width={256} style={{marginTop: 24}} />
+<ClickableImage src="/images/working-with-ide/toggle-keyline.png" width={256} />
 
 The individual key lines represent these keyboard keys:
 - **`KL0`**: `V`, `C`, `X`, `Z`, and `Caps Shift`.

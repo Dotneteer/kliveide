@@ -1,12 +1,5 @@
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import mainKey from '../../public/images/getting-started/main-key.png'
-import symbolKey from '../../public/images/getting-started/symbol-key.png'
-import aboveKey from '../../public/images/getting-started/above-key.png'
-import belowKey from '../../public/images/getting-started/below-key.png'
-import glyphKey from '../../public/images/getting-started/glyph-key.png'
-import sizingStart from '../../public/images/getting-started/sizing-start.png'
-import sizingEnd from '../../public/images/getting-started/sizing-end.png'
+import ClickableImage from '../../page-components/ClickableImage'
  
 # Using the Keyboard
 
@@ -23,9 +16,9 @@ If you do not find it easy to use the computer's physical keyboard, you can use 
 
 When the keyboard is to show, Klive displays it according to the selected machine's type. These figures show the ZX Spectrum 48K keyboard and the ZX Spectrum 128L/+2E/+3E keyboard.
 
-![ZX Spectrum 48 Keyboard](/images/getting-started/sp48-keyboard.png)
+<ClickableImage src="/images/getting-started/sp48-keyboard.png" width={650} />
 
-![ZX Spectrum 128 Keyboard](/images/getting-started/sp128-keyboard.png)
+<ClickableImage src="/images/getting-started/sp128-keyboard.png" alt="ZX Spectrum 128 Keyboard" width={650} />
 
 <Callout type="info" emoji="💡">
 Klive also has custom keyboards for the Cambridge Z88 and the ZX Spectrum Next computers.
@@ -41,21 +34,29 @@ This table shows a few examples:
 
 | Example | Description
 |-|:-|
-| <Image src={mainKey} alt="Hello" width="64" height="77" /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
-| <Image src={symbolKey} width="64" height="77" /> | The click will result in `AT` regardless of which mouse button you click. |
-| <Image src={aboveKey} width="64" height="77" /> | The click will show `CODE` regardless of which mouse button you click. |
-| <Image src={belowKey} width="64" height="90" /> | The click will display `IN` regardless of which mouse button you click. |
-| <Image src={glyphKey} width="64" height="77" /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
+| <ClickableImage src="/images/getting-started/main-key.png" alt="Main Key" width={64} /> | The click will display `INPUT` (`i`) when you use the left mouse button or `INPUT` (`I`) with the right mouse button, depending on the current ZX Spectrum cursor mode. |
+| <ClickableImage src="/images/getting-started/symbol-key.png" alt="Symbol Key" width={64} /> | The click will result in `AT` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/above-key.png" alt="Above Key" width={64} /> | The click will show `CODE` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/below-key.png" alt="Below Key" width={64} /> | The click will display `IN` regardless of which mouse button you click. |
+| <ClickableImage src="/images/getting-started/glyph-key.png" alt="Glyph Key" width={64} /> | The click will display a glyph with its top-left corner set if you click the left mouse button and the inverse of that glyph when you use the right mouse button. |
 
 ## Resizing the Virtual Keyboard
 
 When you move the mouse to the top border of the virtual keyboard, a sizing splitter bar appears:
 
-<Image src={sizingStart} width="550" height="390" style={{marginTop: 20}} />
+<ClickableImage 
+  src="/images/getting-started/sizing-start.png"
+  alt="Sizing Start" 
+  width={550}
+/>
 
 Hold down the mouse key while over the splitter, and move it. As you move, Klive changes the keyboard size and resizes the emulator display accordingly:
 
-<Image src={sizingEnd} width="550" height="390" style={{marginTop: 20}} />
+<ClickableImage 
+  src="/images/getting-started/sizing-end.png"
+  alt="Sizing End" 
+  width={550}
+/>
 
 When you reach the desired size, release the mouse button.
 

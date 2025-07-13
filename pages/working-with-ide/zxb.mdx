@@ -1,100 +1,44 @@
 import { Callout } from 'nextra/components'
-import Image from 'next/image'
-import zxbReset from '../../public/images/working-with-ide/zxb-reset.png'
-import zxbActions from '../../public/images/working-with-ide/zxb-actions.png'
+import ClickableImage from '../../page-components/ClickableImage'
+
 import zxbRunning from '../../public/images/working-with-ide/zxb-running.png'
 
-# ZXBASIC Integration
+# Using ZX BASIC
 
-Klive IDE supports ZXBASIC out-of-the-box. After setting up ZXBASIC integration, you can use Klive IDE to edit and run ZXBASIC programs.
+The ZX Spectrum was famous for its BASIC interpreter, which was significantly faster than other home computers' BASIC variants in 1982. However, the compiled variants that emerged later were much faster. BASIC became a viable alternative to writing games and applications in assembly language.
 
-<Callout type="info" emoji="💡">
-The current version of ZXBASIC does not provide debug information, so source code debugging is not available with the IDE yet.
-</Callout>
+With the ZX BASIC extensions, including graphics utilities, user-defined functions, and a powerful array handling facility, developers could create useful programs, including animation and sound effects.
 
-As Klive IDE does not know where to find the ZXBASIC compiler on your machine, you must set it up before using it.
+However, BASIC still ran as an interpreted language, which means the computer had to process the source code line by line, which limited the execution speed of BASIC programs. This issue, and the emergence of BASIC compilers, including HiSoft BASIC, gave birth to new possibilities.
 
-## Setting up ZXBASIC
+Boriel's ZX BASIC (you can find it [here](https://zxbasic.readthedocs.io/en/docs/)) is a BASIC dialect similar to the original Sinclair BASIC. It fixes many issues found in the original language, such as proper subroutine handling and local variables. It compiles BASIC source code to Z80 binary code, which runs much faster than interpreted BASIC.
 
-You need to download and install [ZXBASIC](https://zxbasic.readthedocs.io/en/latest/archive/). Note the installation folder; you will need it to set up the integration with Klive.
+Klive supports Boriel's ZX BASIC with an extension that allows you to write BASIC source code and create ZX Spectrum executables.
 
-The IDE provides a command, `zxb-reset` (or shorter, `zxbr`), to connect Klive with ZXBASIC. You can issue this command from the Command window:
+## ZX BASIC Files
 
-<Image src={zxbReset} alt="ZxbReset" width="770" height="210" style={{marginTop: 24}} />
+Files with the `.bas` extension are automatically recognized as ZX BASIC files. You can open a Klive project and create a new ZX BASIC source file:
 
-The command expects one to three parameters:
-- The path to the ZXBASIC compiler (required)
-- The path to access the Python interpreter (optional; you may need it on Mac and Linux)
-- The machine code origin address (optional, `$8000`, if omitted)
+<ClickableImage src="/images/working-with-ide/zxb-reset.png" width={770} />
 
-<Callout type="info" emoji="💡">
-The ZXBASIC compiler is a Python script, so you need to have Python installed on your machine. On Windows, the IDE can find the Python interpreter automatically. On Mac and Linux, you must provide the path to the Python interpreter.
-</Callout>
+## Using ZX BASIC
 
-<Callout type="info" emoji="💡">
-You can learn more about how [settings](./ide-settings) are stored.
-</Callout>
+When you create a ZX BASIC file, you can write your source code using ZX BASIC syntax. When you open a `.bas` file, you can see four build-related icons in the document tab bar:
 
-### Windows Integration
+<ClickableImage src="/images/working-with-ide/zxb-actions.png" width={725} />
 
-Windows 10 and 11 usually install Python with the OS. If not, you can install Python from [here](https://www.python.org/downloads/). ZXBASIC requires Python 3.10 or higher. The installer adds its folder to the `PATH` environment variable, so you can use `zxb-reset` with a single command parameter:
+Click the rightmost icon (with the "play" sign) to compile and run the code:
 
-```text
-zxb-reset <full path to zxbc.exe>
-```
-
-When you define the path, you should provide the reference for the `zxbc.exe` file within the folder. For example, if you installed ZXBASIC into the `C:\Users\joe\zxbasic` folder, use this command:
-
-```text
-zxb-reset C:\Users\joe\zxbasic\zxbc.exe
-```
-
-When you have a space anywhere in the path, wrap the path into double quotes:
-
-```text
-zxb-reset "C:\My folder with spaces\zxbasic\zxbc.exe"
-```
-
-### MacOS Integration
-
-On MacOS, use the `zxb-reset` command with a full path to the `zxbc.py` file, like in this example:
-
-```text
-zxb-reset /Users/joe/zxbasic/zxbc.py
-```
-
-Most of the time, you must also specify the Python interpreter path:
-
-```text
-zxb-reset /Users/joe/zxbasic/zxbc.py /opt/homebrew/bin
-```
+<ClickableImage src="/images/working-with-ide/zxb-running.png" width={480} />
 
 <Callout type="info" emoji="💡">
-You can find the path of the Python installation with the `which python3` command. Do not forget that the last segment is the `python3` executable; you should omit it from the path specification.
+You can also try keyboard shortcuts to trigger these actions: `F7` to compile, `Ctrl+F7` to inject code into memory, `Shift+F7` to run the code, and `Ctrl+Shift+F7` to run it in debug mode.
 </Callout>
 
-### Linux Integration
+## Handling Errors
 
-*Thanks to [@pennyarcade](https://github.com/pennyarcade) for providing the following description.*
+When you run the code, the compiler checks the syntax. If there are any errors, the IDE displays them in a list in the Output panel. You can click an error to navigate to its location in the source code.
 
-Integration works the same on Linux as on Mac OS since the latter is derived from Linux.
+## Debugging
 
-- Download the appropriate ZXBasic for your architecture ARM/X86.
-- It comes with a packaged Python runtime and shell scripts for easy usage.
-- You can use the platform-independent package. In this case, you must provide the path to your system's Python interpreter.
-- Extract the content to any folder of your choice.
-- Use the `zxb-reset` command as you would do on MacOS.
-
-## Using ZXBASIC
-
-Klive IDE considers files with `.zxbas` extension to be ZXBASIC source files. When you open such a file in the code editor (select a file in Explorer), the IDE applies the syntax highlighting of ZXBASIC.
-
-When you create a new project, by default, the `code/code.kz80.asm` file is the build root. However, when you right-click the `code/program.zxbas` file and use the **Promote build root** command, this file becomes the new build root. From now on, you can use the commands in the document tab toolbar when the `program.zxbas` file is open.
-
-<Image src={zxbActions} alt="ZxbasActions" width="725" height="224" style={{marginTop: 24}} />
-
-You can use the toolbar buttons to compile, inject, start, or debug the code as described in [this article ](../getting-started/creating-project#build-root-commands).
-
-When you run the ZXBASIC code in the default Klive project template, you can see the result in the Emulator window:
-
-<Image src={zxbRunning} alt="ZxbRunning" width="480" height="467" style={{marginTop: 24}} />
+You can run your code in debug mode by clicking the last icon in the document tab bar or pressing `Ctrl+Shift+F7`. In debug mode, the IDE will stop at any breakpoints you set in your code.
