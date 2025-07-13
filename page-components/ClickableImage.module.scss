@@ -1,0 +1,37 @@
+// ClickableImage SCSS Module
+.container {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.imageLink {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.image {
+  max-width: 100%;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  
+  // Default styling
+  &.default {
+    box-shadow: 0 8px 20px -2px rgb(0 0 0 / 0.3);
+  }
+
+  &:hover {
+    box-shadow: 0 14px 32px -5px rgb(0 0 0 / 0.5);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .container {
+    margin: 15px 0;
+  }
+  
+  .image {
+    border-radius: 8px;
+  }
+}

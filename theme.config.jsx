@@ -1,4 +1,5 @@
 import { Logo } from "./src/renderer/controls/Logo";
+import ClickableImage from './page-components/ClickableImage';
 
 export default {
   logo: <div style={{display: "flex", alignItems: "center"}}><Logo />
@@ -9,6 +10,9 @@ export default {
   editLink: false,
   feedback: {
     content: null
+  },
+  components: {
+    ClickableImage
   },
   project: {
     link: "https://github.com/dotneteer/kliveide"

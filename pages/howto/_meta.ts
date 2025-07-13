@@ -6,4 +6,5 @@ export default {
   "instant-screen": "Using the Instant Screen",
   "always-on-top": "Keeping the Emulator always on top",
   "measure-t-states": "Measuring T-states",
+  "using-clickable-image": "Using ClickableImage Component",
 };
