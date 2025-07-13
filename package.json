@@ -34,13 +34,13 @@
     "test:e2e": "playwright test test-e2e",
     "doc:dev": "next",
     "doc:build": "next build",
-    "doc:start": "next start",
     "bootstrap:ci": "npm ci"
   },
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
   },
   "devDependencies": {
+    "shiki": "^0.14.7",
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",
     "@electron-toolkit/eslint-config-ts": "^2.0.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
