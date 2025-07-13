@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Build my App
-        run: npm run doc:build && touch docs-out/.nojekyll
+        run: npm run doc:build && touch .next/.nojekyll
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4.4.3
