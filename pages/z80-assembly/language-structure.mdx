@@ -1,6 +1,6 @@
 # Klive Z80 Assembly Language Structure
 
-Each line of the source code is a declaration unit and is parsed in its context. Such a source code line can be one of these constructs:
+Each line of the source code is a declaration unit and is parsed within its context. Such a source code line can be one of these constructs:
 
 - A Z80 *instruction*, which can be directly compiled to binary code (such as ```ld bc,#12AC```)
 - A *directive* that is used by the compiler's preprocessor (e.g. ```#include```, ```#if```, etc.)
@@ -10,7 +10,7 @@ Each line of the source code is a declaration unit and is parsed in its context.
 
 ## Syntax Basics
 
-The assembler language uses a unique way of case sensitivity. You can write reserved words (such as assembly instructions, pragmas, or directives) with lowercase or uppercase letters, but you cannot mix these cases. For example, these instructions use the proper syntax:
+The assembler language has specific case sensitivity rules. You can write reserved words (such as assembly instructions, pragmas, or directives) with lowercase or uppercase letters, but you cannot mix these cases. For example, these instructions use the proper syntax:
 
 ```
 LD c,A
@@ -45,7 +45,7 @@ ld hl,errNo
 
 The language supports two types of comments: _end-of-line_ and _block_ comments.
 
-En-of-line comments start with a semicolon (```;```) or double forward slash (`//`). The compiler takes the rest of the line into account as the body of the comment. This sample illustrates this concept:
+End-of-line comments start with a semicolon (```;```) or double forward slash (`//`). The compiler takes the rest of the line into account as the body of the comment. This sample illustrates this concept:
 
 ```
 ; This line is a comment-only line

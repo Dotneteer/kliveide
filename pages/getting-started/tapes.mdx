@@ -2,7 +2,7 @@ import { Callout } from 'nextra/components'
 
 # Loading from Tape
 
-Klive can emulate playing back tape files with `.tap` and `.tzx` extensions. Before utilizing them with the `LOAD` Basic command, select them with the **Machine | Select Tape File** function. This command opens a file selection dialog where you can select a `.tap` or `.tzx` file. You can select files with other extensions. In that case, the Emulator tries to read them as tape files, trying to parse them.
+Klive can emulate playing back tape files with `.tap` and `.tzx` extensions. To use them with the `LOAD` Basic command, first select a tape file using the **Machine | Select Tape File** function. This command opens a file selection dialog where you can select a `.tap` or `.tzx` file. You can also select files with other extensions. In that case, the Emulator tries to read them as tape files by attempting to parse them.
 
 On successful read, you can issue a `LOAD` Basic command (or use the Tape Loader from the startup menu of ZX Spectrum 128/+2E/+3E). The running `LOAD` command will playback the selected file.
 
