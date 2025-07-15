@@ -10,7 +10,7 @@ Each statement can be written with a leading dot or without it, and the compiler
 
 With the LOOP block, you can organize a cycle to emit code. Here is a sample that tells the gist:
 
-```
+```z80klive
 .loop 6
   add hl,hl 
 .endl
@@ -18,7 +18,7 @@ With the LOOP block, you can organize a cycle to emit code. Here is a sample tha
 
 This construct is a shorter way to multiply __HL__ with 64. It is equivalent to the following code:
 
-```
+```z80klive
   add hl,hl
   add hl,hl
   add hl,hl
@@ -34,7 +34,7 @@ loop's body according to the value of the expression. The `.endl` statement mark
 
 Look at this code:
 
-```
+```z80klive
 counter .equ 2
 ; do something (code omitted)
 .loop counter + 1
@@ -44,7 +44,7 @@ counter .equ 2
 
 This code is as if you wrote this:
 
-```
+```z80klive
   .db #80, #00
   .db #80, #00
   .db #80, #00
@@ -57,7 +57,7 @@ the outer scope, and goes on with the resolution.
 
 Check this code:
 
-```
+```z80klive
 value .equ 2
 ; do something (code omitted)
 .loop 2
@@ -68,7 +68,7 @@ value .equ 2
 
 The compiler takes it into account as if you wrote this:
 
-```
+```z80klive
     ld a,5
     ld a,5
 ```
@@ -77,7 +77,7 @@ The `value` symbol declared within the loop overrides `value` in the outer scope
 
 Nonetheless, when you utilize a different construct, it seems a bit strange at first:
 
-```
+```z80klive
 value .equ 2
 ; do something (code omitted)
 .loop 2
@@ -89,7 +89,7 @@ value .equ 2
 
 The strange thing is that the compiler creates this:
 
-```
+```z80klive
     ld a,2
     ld b,5
     ld a,2
@@ -104,7 +104,7 @@ Unlike symbols that work as constant values, variables (declared with the `.var`
 
 Take a look at this code:
 
-```
+```z80klive
 counter = 4
 .loop 3
     innercounter = 4
@@ -115,7 +115,7 @@ counter = 4
 
 Here, the `counter` variable is defined in the global scope (out of the loop's scope), while `innercounter` in the local scope of the loop. When evaluating the `counter = counter + 1` statement, the compiler finds `counter` in the outer scope, so it uses that variable to increment its value. This code emits machine code for this source:
 
-```
+```z80klive
 ld a,#08
 ld a,#09
 ld a,#0A
@@ -123,7 +123,7 @@ ld a,#0A
 
 Now, add a single line to the loop's code:
 
-```
+```z80klive
 counter = 4
 .loop 3
     innercounter = 4
@@ -141,7 +141,7 @@ available.
 Labels behave like symbols, and they work similarly. When you create a label within a loop, that label is created in
 the local scope of the loop. The following code helps you understand which labels are part of the global scope and which are created in the loop's scope:
 
-```
+```z80klive
 .org #8000
 MyLoop: .loop 2
     ld bc,MyLoop
@@ -158,7 +158,7 @@ The label of the `.loop` statement is part of the outer (global) scope, just lik
 
 Thus, the compiler translates the code above into this one:
 
-```
+```z80klive
          (#8000): ld bc,#8000 (MyLoop)
 Inner_1  (#8003): ld de,#800D (MyEnd_1)
          (#8006): ld hl,#8003 (Inner_1)
@@ -177,7 +177,7 @@ Here, `Inner_1`, `Inner_2`, `MyEnd_1`, and `MyEnd_2` represent the labels create
 
 Of course, you can nest loops, such as in this code:
 
-```
+```z80klive
 .loop 3
   nop
   .loop 2
@@ -189,7 +189,7 @@ Of course, you can nest loops, such as in this code:
 
 This code snippet translates to this:
 
-```
+```z80klive
 nop
 ld a,b
 ld a,b
@@ -210,7 +210,7 @@ When you nest loops, each loop has its separate scope.
 
 It is handy to use the `$cnt` value that represents the current loop counter. It starts from 1 and increments to the maximum number of loops. This sample demonstrates how you can use it:
 
-```
+```z80klive
 .loop 2
   outerCount = $cnt
   .loop 3
@@ -221,7 +221,7 @@ It is handy to use the `$cnt` value that represents the current loop counter. It
 
 This code translates to this:
 
-```
+```z80klive
 .db #11
 .db #12
 .db #13
@@ -238,7 +238,7 @@ You can observe that each loop has its separate `$cnt` value.
 
 In the previous section, you could understand how labels and scopes work for the `.loop` statement. You can utilize this scoping mechanism with the help of the `.proc`..`.endp` statement. This sample code demonstrates the concepts (just as you learned earlier):
 
-```
+```z80klive
 .org #8000
 MyLabel:
   ld de,Outer
@@ -264,7 +264,7 @@ within the procedure.
 
 The assembler emits this code:
 
-```
+```z80klive
 MyLabel  (#8000): ld de,#8018 (Outer)
          (#8003): ld hl,#8000 (MyLabel)
          (#8006): call #800A (MyProc)
@@ -288,7 +288,7 @@ You can nest `PROC` blocks just as `LOOP` blocks. Each `PROC` block has its priv
 
 While the `.loop` statement works with an expression that specifies the loop counter, the `.repeat`..`.until` block uses an exit condition to create more flexible loops. Here is a sample:
 
-```
+```z80klive
 counter = 0
 .repeat 
     .db counter
@@ -300,7 +300,7 @@ The `counter % 7 == 0` condition specifies when *to exit* the loop. Because the 
 
 The sample above translates to this:
 
-```
+```z80klive
 .db 0
 .db 3
 .db 6
@@ -314,7 +314,7 @@ The `.repeat` block uses the same approach to handle its local scope, symbols, l
 
 This sample demonstrates the `.repeat` block in action:
 
-```
+```z80klive
 .org #8000
 counter = 0
 .repeat 
@@ -325,7 +325,7 @@ EndLabel: .until counter % 7 == 0
 
 The compiler translates the code to this:
 
-```
+```z80klive
 .db #03, #80, #01
 .db #06, #80, #02
 .db #09, #80, #03
@@ -339,7 +339,7 @@ The compiler translates the code to this:
 
 With `.while` loop, you can create another kind of block, which uses an entry condition. For example, the following code snippet generates instructions to create the sum of numbers from 1 to 9:
 
-```
+```z80klive
 counter = 1
     ld a,0
 .while counter < 10
@@ -353,7 +353,7 @@ until it reaches the `.endw` statement. The body of the loop may never be reache
 
 The compiler translates the code snippet above to the following:
 
-```
+```z80klive
 ld a,0
 add a,1
 add a,2
@@ -370,7 +370,7 @@ Like the `.loop` and the `.repeat` blocks, `.while` uses the same approach to ha
 
 This code demonstrates the `.while` block with labels and using the `$cnt` value:
 
-```
+```z80klive
 counter = 0
 .while counter < 21 
     .db low(EndLabel), high(Endlabel), $cnt
@@ -380,7 +380,7 @@ EndLabel: .endw
 
 The compiler translates the code to this:
 
-```
+```z80klive
 .db #03, #80, #01
 .db #06, #80, #02
 .db #09, #80, #03
@@ -396,7 +396,7 @@ The compiler translates the code to this:
 
 You can use the traditional `.for`..`.next` loop to create a loop:
 
-```
+```z80klive
 .for myVar = 2 .to 5
   .db 1 << int(myVar)
 .next
@@ -404,7 +404,7 @@ You can use the traditional `.for`..`.next` loop to create a loop:
 
 This loop uses the `myVar` variable as its *iteration variable*, which iterates from 1 to 4. As you expect, the compiler translates the for-loop into this:
 
-```
+```z80klive
 .db #04
 .db #08
 .db #10
@@ -413,7 +413,7 @@ This loop uses the `myVar` variable as its *iteration variable*, which iterates 
 
 You can specify a `.step` close to change the loop increment value:
 
-```
+```z80klive
 .for myVar = 1 .to 7 .step 2
   .db 1 << int(myVar)
 .next
@@ -421,7 +421,7 @@ You can specify a `.step` close to change the loop increment value:
 
 Now, the code translates to this:
 
-```
+```z80klive
 .db #02
 .db #08
 .db #20
@@ -430,7 +430,7 @@ Now, the code translates to this:
 
 You can create a loop with decrementing iteration variable value:
 
-```
+```z80klive
 .for myVar = 7 .to 1 .step -2
   .db 1 << int(myVar)
 .next
@@ -438,7 +438,7 @@ You can create a loop with decrementing iteration variable value:
 
 As you expect, now you get this translation:
 
-```
+```z80klive
 .db #80
 .db #20
 .db #08
@@ -451,7 +451,7 @@ The for-loop can do the same stunts as the other loops; it handles labels, symbo
 
 So, both cases in this code raise an error:
 
-```
+```z80klive
 myVar = 0
 .for myVar = 1 .to 4 ; ERROR: Variable myVar is already declared
   ; ...
@@ -470,7 +470,7 @@ The for-loop works with both integer and float variables. If the initial value, 
 
 This code snippet demonstrates the difference:
 
-```
+```z80klive
 .for myVar = 1 .to 4 .step 1
   .db 1 << myVar
 .next
@@ -482,7 +482,7 @@ This code snippet demonstrates the difference:
 
 Nonetheless, you can solve this issue by applying the `int()` function:
 
-```
+```z80klive
 .for myVar = 1 .to 4 .step 1.4
   .db 1 << int(myVar) ; Now, it's OK.
 .next
@@ -494,7 +494,7 @@ Nonetheless, you can solve this issue by applying the `int()` function:
 
 It's pretty easy to create an infinite (or at least a very long) loop. For example, these loops are infinite ones:
 
-```
+```z80klive
 .repeat
 .until false
 
@@ -508,7 +508,7 @@ The assembler checks the loop counter during compilation. Whenever it exceeds #F
 
 You can use the `.if` statement to create branches with conditions. For example, this code emits `inc b` or `inc c` statement depending on whether the value of `branch` is even or odd:
 
-```
+```z80klive
 .if branch % 2 == 0
   inc b
 .else
@@ -518,7 +518,7 @@ You can use the `.if` statement to create branches with conditions. For example,
 
 You do not have to specify an `.else` branch, so this statement is entirely valid:
 
-```
+```z80klive
 .if branch % 2 == 0
   inc b
 .endif
@@ -526,7 +526,7 @@ You do not have to specify an `.else` branch, so this statement is entirely vali
 
 You can nest if statements like this to manage four different code branches according to the value of `branch`:
 
-```
+```z80klive
 .if branch == 1
   inc b
 .else
@@ -544,7 +544,7 @@ You can nest if statements like this to manage four different code branches acco
 
 Nonetheless, you can use the `.elif` statement to create the code snippet above more clearly:
 
-```
+```z80klive
 .if branch == 1
   inc b
 .elif branch == 2
@@ -561,7 +561,7 @@ Nonetheless, you can use the `.elif` statement to create the code snippet above 
 Unlike the loop statements, `.if` does not provide its local scope. Whenever you create a symbol, a label, or a variable, those get into the current scope. This code defines a label with the same name in each branch. Because the compiler evaluates the `.if` branches from top to down, it either compiles one of the `.elif` branches &mdash;
 the first with a matching condition &mdash; or the else branch. Thus, this code does not define `MyLabel` twice:
 
-```
+```z80klive
 branch = 4 ; Try to set up a different value
 ; Do something (omitted from code)
     ld hl,MyLabel
@@ -582,7 +582,7 @@ branch = 4 ; Try to set up a different value
 
 Generally, you can decorate any statement with labels. The `.elif` and `.else` statements are exceptions. If you do so, the compiler raises an error:
 
-```
+```z80klive
 .if branch == 1
   inc b
   MyLabel ld a,20
@@ -602,7 +602,7 @@ Another .else          ; ERROR: ELSE section cannot have a label
 
 When you nest `.if` statements, ensure each has a corresponding `.endif`. Whenever the compiler finds an `.endif`, it associates it with the closest `.if` statement before `.endif`. Use indentation to make the structure more straightforward, as the following code snippet shows:
 
-```
+```z80klive
 row = 2
 col = 2
 ; Change row and col (omitted from code)
@@ -647,7 +647,7 @@ Klive offers a similar construct to IF..ELIF..ELSE..ENDIF, using the IFUSED or I
 
 Here are a few examples:
 
-```
+```z80klive
 MyProc:
   ld hl,#5800
   ld (hl),a
@@ -668,7 +668,7 @@ Here, the `.ifused` statement will set the string the `MyMsg` label point to acc
 
 Should you call `MyProc` before `.ifused`, __HL__ would point to the other message, "MyProc is used":
 
-```
+```z80klive
 MyProc:
   ld hl,#5800
   ld (hl),a
@@ -693,7 +693,7 @@ The `.ifnused` statement is the complement of `.ifused`. It is evaluated to a tr
 
 You must specify a symbol after the `.ifused`  or `.ifnused` keywords. These symbols must follow the syntax of identifiers. They can be compound names used for modules and structures. So, all of these symbol names are correct:
 
-```
+```z80klive
 MyLabel
 MyStruct
 MyStruct.FieldX
@@ -712,7 +712,7 @@ The Klive Assembler accepts any `.ifused` and `.ifnused` statements until they a
 
 These statements do not support the look-ahead in the code. This behavior could lead to paradoxical situations, like in this example:
 
-```
+```z80klive
 MyFlag = true
 MyValue: .equ #1234
   ; some other code that does not use MyValue
@@ -742,7 +742,7 @@ When the compiler finds a closing statement (such as `.endw`, `.endl`, `.until`,
 
 You can exit the loop &mdash; independently of the loop's exit condition &mdash; with the `.break` statement:
 
-```
+```z80klive
 ; LOOP sample
 .loop 5
   .if $cnt == 4
@@ -778,7 +778,7 @@ You can exit the loop &mdash; independently of the loop's exit condition &mdash;
 
 Because all these loops are exited at the beginning of the 4th iteration, they produce this output:
 
-```
+```z80klive
 .db #01
 .db #02
 .db #03
@@ -790,7 +790,7 @@ Because all these loops are exited at the beginning of the 4th iteration, they p
 
 You can interrupt the current iteration of the loop and carry on the next iteration with the `.continue` statement:
 
-```
+```z80klive
 ; LOOP sample
 .loop 5
   .if $cnt == 4
@@ -826,7 +826,7 @@ You can interrupt the current iteration of the loop and carry on the next iterat
 
 Because all these loops skip the 4th iteration, they produce this output:
 
-```
+```z80klive
 .db #01
 .db #02
 .db #03
