@@ -10,7 +10,7 @@ With the __ORG__ pragma, you define where to place the compiled Z80 code when yo
 
 For example, the following line sets this location to the 0x6000 address:
 
-```
+```z80klive
 .org #6000
 ```
 
@@ -18,7 +18,7 @@ If you do not use __ORG__, the default address is 0x8000.
 
 You can apply multiple __ORG__ pragmas in your source code. Each usage creates a new segment in the assembler output. Take a look at this code:
 
-```
+```z80klive
 ld h,a
 .org #8100
 ld d,a
@@ -34,14 +34,14 @@ With the __XORG__ pragma, you define the start address of a specific code sectio
 
 For example, the following line sets this location to the 0x0000 address; however, the code section starts at 0x6000.
 
-```
+```z80klive
 .org #6000
 .xorg #0
 ```
 
 If you try to use multiple `.XORG` within a code section, the assembler raises an error:
 
-```
+```z80klive
 .org #6000
 .xorg #0
     ld a,b
@@ -53,7 +53,7 @@ If you try to use multiple `.XORG` within a code section, the assembler raises a
 
 The __ENT__ pragma defines the entry code of the program when you start it. If you do not apply __ENT__ in your code, the entry point will be the first address of the very first output code segment. Here's a sample:
 
-```
+```z80klive
 .org #6200
 ld hl,#4000
 .ent $
@@ -70,9 +70,9 @@ The `.ent $` pragma will sign the address of the `jp #6100` instruction as the e
 
 The IDE provides a command, __Export Code__, which allows you to create a LOAD block that automatically starts the code. When you run the code from the IDE, the address specified with the __ENT__ pragma is used. However, the auto LOAD block uses the __`RANDOMIZE USR address`__ pattern, and you may need to define a different entry address that can be closed with a __`RET`__ statement. The __XENT__ pragma sets this address.
 
- Here's a sample:
+Here's a sample:
 
-```
+```z80klive
 start: 
 	.org #8000
 	.ent #8000
@@ -91,7 +91,7 @@ The IDE will use #8000 &mdash; according to the `.ent #8000` pragma &mdash; when
 
 The __DISP__ pragma allows you to define a displacement for the code. The value affects the `$` token representing the current assembly address. Your code is placed according to the __ORG__ of the particular output segment, but the assembly address is always displaced with the value according to __DISP__. Take a look at this sample:
 
-```
+```z80klive
 .org #6000
 .disp #1000
 ld hl,$
@@ -116,7 +116,7 @@ The __BANK__ pragma accepts two parameters. The first is the bank number (so it 
 
 Let's assume you have this code:
 
-```
+```z80klive
 .model Spectrum128
 ; ...
 .bank 3
@@ -130,7 +130,7 @@ yellow:
 
 The compiler emits this code (and later, the loader takes care that it goes to bank #3):
 
-```
+```z80klive
 0000: call #C004  ; yellow
 0003: ret
 0004: ld a,#06    ; this is yellow (#C004)
@@ -143,7 +143,7 @@ The offset values at the beginning of the lines show the byte offset within the 
 
 Let's modify the previous code by adding an offset value:
 
-```
+```z80klive
 .model Spectrum128
 ; ...
 .bank 3, #100
@@ -157,7 +157,7 @@ yellow:
 
 Now, the compiler emits similar code, but its start address is #C100 (#100 away from the default #C000):
 
-```
+```z80klive
 0100: call #C104  ; yellow
 0103: ret
 0104: ld a,#06    ; this is yellow (#C104)
@@ -171,7 +171,7 @@ Though we're wasting the first 256 bytes of the page, the __Export__ command doe
 Though the default address to compile the code is #C000, you can change it. For example, Bank #2 is paged into the #8000-#BFFF
 memory range (slot 2), so it seems natural to use the #8000 address like this:
 
-```
+```z80klive
 .model Spectrum128
 ; ...
 .bank 2
@@ -186,7 +186,7 @@ yellow:
 
 As you expect, this is the output:
 
-```
+```z80klive
 0000: call #8004  ; yellow
 0003: ret
 0004: ld a,#06    ; this is yellow (#8004)
@@ -197,7 +197,7 @@ As you expect, this is the output:
 
 You can combine the offset of the bank with ORG:
 
-```
+```z80klive
 .bank 2, #100
 .org #8000
   call yellow
@@ -210,7 +210,7 @@ yellow:
 
 The output is probably different from the one you expect:
 
-```
+```z80klive
 0100: call #8004  ; yellow
 0103: ret
 0104: ld a,#06    ; this is yellow (#8004)
@@ -223,7 +223,7 @@ As you can see, the code stream is the same as in the previous case; however, he
 
 As you may need multiple memory banks in your program, you can use multiple `BANK` pragmas, like in this example:
 
-```
+```z80klive
 .bank 1
 ; Here is the code for bank #1
 ; ...
@@ -241,7 +241,7 @@ As you may need multiple memory banks in your program, you can use multiple `BAN
 - You can use the `BANK` pragma for a particular bank page only once, so, for example, the following code raises
 an error message:
 
-```
+```z80klive
 .bank 1
 ; ...
 
@@ -258,7 +258,7 @@ an error message:
 
 The __EQU__ pragma allows you to assign a value to an identifier. The label before __EQU__ is the name of the identifier (or symbol), and the expression used in __EQU__ is the variable's value. Here is a short example:
 
-```
+```z80klive
       .org #6200
       ld hl,Sym1
 Sym1: .equ #4000
@@ -268,7 +268,7 @@ Sym2: .equ $+4
 
 This sample is equivalent to this one:
 
-```
+```z80klive
 .org #6200
 ld hl,#4000 ; Sym1 <-- #4000
 ld bc,#620a ; Sym2 <-- #620a as an ld bc,NNNN operation and
@@ -291,7 +291,7 @@ When you run the ZX Spectrum virtual machine from the IDE, it injects the machin
 However, in several cases, you'd like to keep the cursor in "K" mode, for example, when you intend to start the code with the 
 **RANDOMIZE USER _addr_** command (here, *addr* is the entry address). In this case, you can add the INJECTOP pragma to the code:
 
-```
+```z80klive
 .injectopt cursork
 ```
 
@@ -305,7 +305,7 @@ This option instructs the IDE to call your code (terminated with `RET`) and not 
 
 The __DEFB__ pragma emits 8-bit expressions (bytes) from the current assembly position. Here is a sample:
 
-```
+```z80klive
 .org #6000
 .defb #01, #02, $, #04
 ```
@@ -319,7 +319,7 @@ The `$` expression will emit 0x03, because, at the emission point, the current a
 
 The __DEFW__ pragma is similar to __DEFB__, but it emits 16-bit values with LSB, MSB order.
 
-```
+```z80klive
 .defw #1234, #abcd
 ```
 
@@ -331,7 +331,7 @@ This simple code above will emit these four bytes: 0x34, 0x12, 0xcd, 0xab.
 
 The __DEFM__ pragma emits the byte-array representation of a string. Each character in the string is replaced with the corresponding byte. Take a look at this code:
 
-```
+```z80klive
 .defm "\C by me"
 ```
 
@@ -343,7 +343,7 @@ Here, the __DEFM__ pragma emits 7 bytes for the seven characters (the first esca
 
 The __DEFN__ pragma works just like the `DEFM` pragma, but it emits an additional `0x00` byte to terminate the string. Look at this code:
 
-```
+```z80klive
 .defn "\C by me"
 ```
 
@@ -355,7 +355,7 @@ Here, the __DEFN__ pragma emits 8 bytes for the seven characters (the first esca
 
 The __DEFC__ pragma works just like the `DEFM` pragma, but it sets Bit 7 of the last emitted character. Look at this code:
 
-```
+```z80klive
 .defc "\C by me"
 ```
 
@@ -367,7 +367,7 @@ Here, the __DEFC__ pragma emits 7 bytes for the seven characters (the first esca
 
 The __DEFH__ pragma uses a string with an even number of hexadecimal digits to emit a byte-array representation of the input. Each character pair in the string is replaced with the corresponding byte. Take a look at this code:
 
-```
+```z80klive
 .defh "12E4afD2"
 ```
 
@@ -375,12 +375,11 @@ Here, the __DEFH__ pragma emits 4 bytes: 0x12, 0xe4, 0xaf, 0xd2.
 
 > **Note**: __DEFH__ has extra aliases: `dh`, `.dh`, `DH`, and `.DH`.
 
-
 ## The DEFS pragma
 
 You can emit zero (`0x00`) bytes with this pragma. It accepts a single argument, the number of zeros to emit. This code sends 16 zeros to the generated output:
 
-```
+```z80klive
 .defs 16
 ```
 
@@ -390,14 +389,15 @@ You can emit zero (`0x00`) bytes with this pragma. It accepts a single argument,
 
 With __FILLB__, you can emit a particular count of a specific byte. The first argument of the pragma sets the count, and the second specifies the byte to emit. This code emits 24 bytes of `#A5` values:
 
-```
+```z80klive
 .fillb 24,#a5
 ```
 
 ## The FILLW pragma
 
 With __FILLW__, you can emit a particular count of a 16-bit word. The first argument of the pragma sets the count, and the second specifies the word to emit. This code emits 8 words (16 bytes) of `#12A5` values:
-```
+
+```z80klive
 .fillw 8,#12a5
 ```
 
@@ -407,7 +407,7 @@ Of course, the bytes of a word are emitted in LSB/MSB order.
 
 The __SKIP__ pragma, as its name suggests, skips the number of bytes from the current address to that specified in the first argument. It fills up the skipped bytes with 0xFF by default, but the fill value can be set with the second argument:
 
-```
+```z80klive
 .skip $+#05      ; fills next 5 bytes with 0xFF
 .skip $+#04, #3a ; fills next 4 bytes with 0x3A
 ```
@@ -420,7 +420,7 @@ The __EXTERN__ pragma is kept for future extension. The current compiler accepts
 
 This pragma is used when you run or debug your Z80 code within the emulator. With Spectrum 128K, Spectrum +3, and Spectrum Next models, you can run the Z80 code in different contexts. The __MODEL__ pragma lets you specify which model to run the code. You can use the `SPECTRUM48`, `SPECTRUM128`, `SPECTRUMP3`, or `NEXT` identifiers to choose the model (identifiers are case-insensitive):
 
-```
+```z80klive
 .model Spectrum48
 .model Spectrum128
 .model SpectrumP3
@@ -431,7 +431,7 @@ For example, when you create code for Spectrum 128K, and add the `.model Spectru
 
 > **Note**: With the `#ifmod` and `#ifnmod` directives, you can check the model type. For example, the following Z80 code results in a green background on Spectrum 48K and cyan on Spectrum 128K:
 
-```
+```z80klive
     .model Spectrum48
 
 #ifmod Spectrum128
@@ -453,7 +453,7 @@ Start:
 
 This pragma allows you to align the current assembly counter to the specified byte boundary. You can use this pragma with an optional expression. Look at these samples:
 
-```
+```z80klive
 .org #8000
     nop
 .align 4
@@ -469,7 +469,7 @@ These pragmas send trace information to the assembler output. In the Visual Stud
 
 Let's assume you add these lines to the source code:
 
-```
+```z80klive
 .trace "Hello, this is: ", 42
 .tracehex "Hello, this is: ", 42
 ```
@@ -486,7 +486,7 @@ TRACE: 48656C6C6F2C20746869732069733A20002A
 With the `rnd()` function, you can generate random numbers. The RNDSEED pragma sets the seed value to use for random number generation. If you use this pragma with an integer expression,
 the seed is set to the value of that expression. If you do not provide the expression, the compiler uses the system clock to set up the seed.
 
-```
+```z80klive
 .rndseed ; sets the seed according to the system clock
 .rndseed 123 ; sets the seed to 123
 ```
@@ -507,7 +507,7 @@ The `.` (dot), `-` (dash), and `_` (underscore) sign 0, and any other characters
 
 Here are a few samples:
 
-```
+```z80klive
 .dgx "....OOOO"         ; #0F
 .dgx ">....OOOO"        ; #0F
 .dgx "<----OOOO"        ; #0F
@@ -529,7 +529,7 @@ The `.` (dot), `-` (dash), and `_` (underscore) sign 0, and any other characters
 
 Here are a few samples:
 
-```
+```z80klive
 .dg ....OOOO        ; #0F
 .dg ___OOOO         ; #1E
 .dg ....OOOO ..OO"  ; #0F, #30
@@ -542,7 +542,7 @@ Here are a few samples:
 
 You can raise custom error messages with this pragma. __ERROR__ accepts an expression and displays an error message with code `Z0500` using your provided text. Here is a sample:
 
-```
+```z80klive
 .error "The value must be greater than" + str(minvalue)
 ```
 
@@ -550,7 +550,7 @@ You can raise custom error messages with this pragma. __ERROR__ accepts an expre
 
 You can include a binary file into the source code to emit all bytes as if you used the `.defb` pragma. You can include the entire file or a single segment of it. The pragma has a mandatory argument, the name of the binary file to include, and two optional ones, the start offset of the segment and its length, respectively. Let's see a few examples:
 
-```
+```z80klive
 .includebin "./myfile.bin"
 .includebin "./myfile.bin" 2
 .includebin "./myfile.bin" 2, 3
@@ -567,7 +567,7 @@ Let's assume that `myfile.bin` contains these bytes:
 
 The three lines of code above are the same as if we had written these code lines:
 
-```
+```z80klive
 .defb #00, #01, #02, #03, #04, #05, #06, #07 ; .includebin "./myfile.bin"
 .defb #02, #03, #04, #05, #06, #07           ; .includebin "./myfile.bin" 2
 .defb #02, #03, #04                          ; .includebin "./myfile.bin" 2, 3
@@ -581,7 +581,7 @@ When re-engineering a Z80 program from an exported disassembly, it is good to kn
 
 The pragma has a mandatory argument, the name of the binary file to include, and two optional ones, the start offset of the segment and its length, respectively. Let's see a few examples:
 
-```
+```z80klive
 .comparebin "./myfile.bin"
 .comparebin "./myfile.bin" 2
 .comparebin "./myfile.bin" 2, 3
@@ -605,7 +605,7 @@ Let's assume we have the `origin.bin` file that contains these six bytes:
 
 Take a look at this code:
 
-```
+```z80klive
   .org #8000
   .defb #00, #01, #02
   .comparebin "origin.bin"
@@ -630,6 +630,6 @@ You can put this pragma anywhere in the source code and use multiple pragmas. Th
 
 Here is a sample:
 
-```
+```z80klive
 .onsuccess "expc mycode.tap"
 ```
