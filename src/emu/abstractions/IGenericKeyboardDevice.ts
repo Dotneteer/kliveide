@@ -1,12 +1,12 @@
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import type { IGenericDevice } from "./IGenericDevice";
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 
 export type KeyCodeSet = Record<string, number>;
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's keyboard device.
  */
-export interface IGenericKeyboardDevice<TMachine extends IZ80Machine>
+export interface IGenericKeyboardDevice<TMachine extends IAnyMachine>
   extends IGenericDevice<TMachine> {
   /**
    * Set the status of the specified keyboard key.

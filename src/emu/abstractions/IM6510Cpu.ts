@@ -1,7 +1,9 @@
+import { IAnyCpu } from "./IAnyCpu";
+
 /**
  * This interface represents the behavior and state of the MOS 6510 CPU that is available from outside by other components.
  */
-export interface IM6510Cpu {
+export interface IM6510Cpu extends IAnyCpu {
   /**
    * The A register (accumulator)
    */
@@ -16,11 +18,6 @@ export interface IM6510Cpu {
    * The Y register (index register)
    */
   y: number;
-
-  /**
-   * The S register (stack pointer)
-   */
-  s: number;
 
   /**
    * The P register (processor status register)
@@ -40,36 +37,6 @@ export interface IM6510Cpu {
    */
   pc: number;
   
-  /**
-   * The clock multiplier of the CPU
-   */
-  clockMultiplier: number;
-  
-  /**
-   * The number of T-states (clock cycles) elapsed since the last reset
-   */
-  tacts: number;
-
-  /**
-   * Show the number of machine frames completed since the CPU started.
-   */
-  frames: number;
-
-  /**
-   * The number of T-states within the current frame
-   */
-  frameTacts: number;
-  
-  /**
-   * The number of T-states in a current frame taking clock multiplier into account
-   */
-  tactsInCurrentFrame: number;
-
-  /**
-   * Get the number of T-states in a machine frame.
-   */
-  tactsInFrame: number;
-
   /**
    * Tests if the Negative flag is set
    */
@@ -104,30 +71,4 @@ export interface IM6510Cpu {
    * Tests if the Carry flag is set
    */
   isCFlagSet(): boolean;
-  
-  /**
-   * Get the number of T-states in a display line (use -1, if this info is not available)
-   */
-  tactsInDisplayLine: number;
-  
-  /**
-   * Sets the number of tacts within a single machine frame
-   * @param tacts Tacts to set
-   */
-  setTactsInFrame(tacts: number): void;
-  
-  /**
-   * The T-states (clock cycles) when the CPU execution was started last time
-   */
-  tactsAtLastStart: number;
-  
-  /**
-   * Executes a hard reset as if the machine and the CPU had just been turned on.
-   */
-  hardReset(): void;
-  
-  /**
-   * Handles the active RESET signal of the CPU.
-   */
-  reset(): void;
 }

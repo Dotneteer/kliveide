@@ -1,7 +1,7 @@
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { Unsubscribe } from "@state/redux-light";
 import type { IMachineController } from "./IMachineController";
 import type { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
+import { IAnyMachine } from "./IAnyMachine";
 
 /**
  * This function type represents the event handler when a machine type is changing
@@ -11,7 +11,7 @@ export type MachineTypeEventHandler = (machineId: string) => void;
 /**
  * This function type represents the event handler of a particular machine intance
  */
-export type MachineInstanceEventHandler = (machine: IZ80Machine) => void;
+export type MachineInstanceEventHandler = (machine: IAnyMachine) => void;
 
 /**
  * This interface defines the functions managing the emulated machines within the IDE

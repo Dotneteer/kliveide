@@ -62,6 +62,11 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   readonly uiFrameFrequency = 8;
 
   /**
+   * The dynamic machine configuration (can be set after the machine is created)
+   */
+  dynamicConfig?: MachineConfigSet;
+
+  /**
    * The physical memory of the machine (memory card model)
    */
   memory: Z88BankedMemory;
@@ -247,7 +252,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Configures the machine after setting it up
    */
   async configure(): Promise<void> {
-    // --- Use the dynamic configuation, too
+    // --- Use the dynamic configuration, too
     const config = { ...this.config, ...this.dynamicConfig };
 
     // --- Configure Slots

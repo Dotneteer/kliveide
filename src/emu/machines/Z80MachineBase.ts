@@ -44,11 +44,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   }
 
   /**
-   * The dynamic machine configuration (can be set after the machine is created)
-   */
-  dynamicConfig?: MachineConfigSet;
-
-  /**
    * The unique identifier of the machine type
    */
   abstract readonly machineId: string;

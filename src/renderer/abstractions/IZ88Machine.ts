@@ -10,11 +10,6 @@ import type { Z88BankedMemory } from "@emu/machines/z88/memory/Z88BankedMemory";
  */
 export interface IZ88Machine extends IZ80Machine {
   /**
-   * Gets the ROM ID to load the ROM file
-   */
-  get romId(): string;
-
-  /**
    * The physical memory of the machine
    */
   readonly memory: Z88BankedMemory;

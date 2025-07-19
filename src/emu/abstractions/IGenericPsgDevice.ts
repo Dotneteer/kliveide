@@ -1,11 +1,11 @@
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { IAudioDevice } from "./IAudioDevice";
 import type { PsgChipState } from "./PsgChipState";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
  * Represents the AY-3-8910 PSG chip as a device
  */
-export interface IGenericPsgDevice<T extends IZ80Machine>
+export interface IGenericPsgDevice<T extends IAnyMachine>
   extends IAudioDevice<T> {
   /**
    * Sets the PSG register index to read or write

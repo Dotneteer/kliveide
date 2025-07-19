@@ -25,6 +25,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "tsc && electron-vite build && electron-builder",
+    "build:check": "tsc",
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
     "build:mac:arm64": "npm run build && electron-builder build --mac --arm64",

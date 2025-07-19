@@ -14,14 +14,119 @@ export class M6510Cpu implements IM6510Cpu {
   private _a: number = 0;
   private _x: number = 0;
   private _y: number = 0;
-  private _s: number = 0;
   private _p: number = 0;
   private _pc: number = 0;
-  
+  private _sp: number;
+
   // --- CPU execution properties
   private _tactsInFrame: number;
   private _tactsInDisplayLine: number;
-  
+
+
+  /**
+   * The stack pointer (alias for S register)
+   */
+  get sp(): number {
+    return this._sp;
+  }
+  set sp(value: number) {
+    this._sp = value & 0xffff;
+  }
+
+  baseClockFrequency: number;
+  currentFrameTact: number;
+  opCode: number;
+  stepOutStack: number[];
+  stepOutAddress: number;
+  markStepOutAddress(): void {
+    throw new Error("Method not implemented.");
+  }
+  totalContentionDelaySinceStart: number;
+  contentionDelaySincePause: number;
+  opStartAddress: number;
+  lastMemoryReads: number[];
+  lastMemoryReadValue: number;
+  lastMemoryWrites: number[];
+  lastMemoryWriteValue: number;
+  lastIoReadPort: number;
+  lastIoReadValue: number;
+  lastIoWritePort: number;
+  lastIoWriteValue: number;
+  executeCpuCycle(): void {
+    throw new Error("Method not implemented.");
+  }
+  beforeOpcodeFetch(): void {
+    throw new Error("Method not implemented.");
+  }
+  afterOpcodeFetch(): void {
+    throw new Error("Method not implemented.");
+  }
+  /**
+   * Read the byte at the specified memory address.
+   * @param _address 16-bit memory address
+   * @return The byte read from the memory
+   * Note: the default implementation always returns 0xff
+   */
+  doReadMemory(_address: number): number {
+    return 0xff;
+  }
+
+  /**
+   * This function implements the memory read delay of the CPU.
+   * @param _address Memory address to read
+   */
+  delayMemoryRead(_address: number): void {
+  }
+
+  /**
+   * Write the given byte to the specified memory address.
+   * @param _address 16-bit memory address
+   * @param _value Byte to write into the memory
+   * Note: the default implementation does not write the memory
+   */
+  doWriteMemory(_address: number, _value: number): void {
+    // --- Override this method in derived classes
+  }
+
+  /**
+   * This function implements the memory write delay of the CPU.
+   * @param _address Memory address to write
+   */
+  delayMemoryWrite(_address: number): void {
+  }
+
+  delayAddressBusAccess(_address: number): void {
+    throw new Error("Method not implemented.");
+  }
+
+  doReadPort(address: number): number {
+    return 0xff;
+  }
+
+  delayPortRead(address: number): void {
+  }
+
+  doWritePort(address: number, value: number): void {
+  }
+  delayPortWrite(address: number): void {
+  }
+
+  onTactIncremented(increment: number): void {
+    // TODO: Implement this method to handle tact increments
+  }
+
+  isCpuSnoozed(): boolean {
+    return false;
+  }
+
+  awakeCpu(): void {
+  }
+
+  snoozeCpu(): void {
+  }
+  onSnooze(): void {
+  }
+
   /**
    * The clock multiplier of the CPU
    */
@@ -41,17 +146,17 @@ export class M6510Cpu implements IM6510Cpu {
    * The number of T-states within the current frame
    */
   frameTacts: number = 0;
-  
+
   /**
    * The number of T-states in a current frame taking clock multiplier into account
    */
   tactsInCurrentFrame: number = 0;
-  
+
   /**
    * The T-states (clock cycles) when the CPU execution was started last time
    */
   tactsAtLastStart: number = 0;
-  
+
   // ----------------------------------------------------------------------------------------------------------------
   // Register access
 
@@ -62,7 +167,7 @@ export class M6510Cpu implements IM6510Cpu {
     return this._a;
   }
   set a(value: number) {
-    this._a = value & 0xFF;
+    this._a = value & 0xff;
   }
 
   /**
@@ -72,7 +177,7 @@ export class M6510Cpu implements IM6510Cpu {
     return this._x;
   }
   set x(value: number) {
-    this._x = value & 0xFF;
+    this._x = value & 0xff;
   }
 
   /**
@@ -82,17 +187,7 @@ export class M6510Cpu implements IM6510Cpu {
     return this._y;
   }
   set y(value: number) {
-    this._y = value & 0xFF;
-  }
-
-  /**
-   * The S register (stack pointer)
-   */
-  get s(): number {
-    return this._s;
-  }
-  set s(value: number) {
-    this._s = value & 0xFF;
+    this._y = value & 0xff;
   }
 
   /**
@@ -110,7 +205,7 @@ export class M6510Cpu implements IM6510Cpu {
     return this._p | FlagSetMask6510.UNUSED; // Bit 5 is always set
   }
   set p(value: number) {
-    this._p = (value & 0xFF) | FlagSetMask6510.UNUSED; // Ensure bit 5 is always set
+    this._p = (value & 0xff) | FlagSetMask6510.UNUSED; // Ensure bit 5 is always set
   }
 
   /**
@@ -120,7 +215,7 @@ export class M6510Cpu implements IM6510Cpu {
     return this._pc;
   }
   set pc(value: number) {
-    this._pc = value & 0xFFFF;
+    this._pc = value & 0xffff;
   }
 
   /**
@@ -171,7 +266,7 @@ export class M6510Cpu implements IM6510Cpu {
   isCFlagSet(): boolean {
     return (this._p & FlagSetMask6510.C) !== 0;
   }
-  
+
   /**
    * Get the number of T-states in a machine frame.
    */
@@ -194,11 +289,11 @@ export class M6510Cpu implements IM6510Cpu {
   get tactsInDisplayLine(): number {
     return this._tactsInDisplayLine;
   }
-  
+
   set tactsInDisplayLine(value: number) {
     this._tactsInDisplayLine = value;
   }
-  
+
   /**
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
@@ -207,13 +302,13 @@ export class M6510Cpu implements IM6510Cpu {
     this._a = 0;
     this._x = 0;
     this._y = 0;
-    this._s = 0xFF; // Stack pointer is typically initialized to 0xFF on startup
+    this._sp = 0xff; // Stack pointer is typically initialized to 0xFF on startup
     this._p = FlagSetMask6510.UNUSED; // Only the unused flag is set
     this._pc = 0;
-    
+
     // Reset CPU state
     this.clockMultiplier = 1;
-    
+
     // Reset timing information
     this.tacts = 0;
     this.tactsAtLastStart = 0;
@@ -230,10 +325,10 @@ export class M6510Cpu implements IM6510Cpu {
     this._a = 0;
     this._x = 0;
     this._y = 0;
-    this._s = 0xFF;
+    this._sp = 0xff;
     this._p = FlagSetMask6510.UNUSED;
     this._pc = 0;
-    
+
     // Reset timing information
     this.tacts = 0;
     this.tactsAtLastStart = 0;
@@ -241,36 +336,36 @@ export class M6510Cpu implements IM6510Cpu {
     this.frameTacts = 0;
     this.setTactsInFrame(1_000_000); // Default value, should be adjusted based on machine
   }
-  
+
   /**
    * Operation lookup table for the 6510 CPU
    */
   readonly operationTable: M6510Operation[] = [
-    brk,    // 0x00
+    brk, // 0x00
     oraIndX, // 0x01
     illegal, // 0x02
     illegal, // 0x03
     illegal, // 0x04
-    oraZp,   // 0x05
-    aslZp,   // 0x06
+    oraZp, // 0x05
+    aslZp, // 0x06
     illegal, // 0x07
-    php,     // 0x08
-    oraImm,  // 0x09
-    aslA,    // 0x0A
+    php, // 0x08
+    oraImm, // 0x09
+    aslA, // 0x0A
     illegal, // 0x0B
     illegal, // 0x0C
-    oraAbs,  // 0x0D
-    aslAbs,  // 0x0E
+    oraAbs, // 0x0D
+    aslAbs, // 0x0E
     illegal, // 0x0F
-    bpl,     // 0x10
+    bpl, // 0x10
     oraIndY, // 0x11
     illegal, // 0x12
     illegal, // 0x13
     illegal, // 0x14
-    oraZpX,  // 0x15
-    aslZpX,  // 0x16
+    oraZpX, // 0x15
+    aslZpX, // 0x16
     illegal, // 0x17
-    clc,     // 0x18
+    clc, // 0x18
     oraAbsY, // 0x19
     illegal, // 0x1A
     illegal, // 0x1B
@@ -278,31 +373,31 @@ export class M6510Cpu implements IM6510Cpu {
     oraAbsX, // 0x1D
     aslAbsX, // 0x1E
     illegal, // 0x1F
-    jsr,     // 0x20
+    jsr, // 0x20
     andIndX, // 0x21
     illegal, // 0x22
     illegal, // 0x23
-    bitZp,   // 0x24
-    andZp,   // 0x25
-    rolZp,   // 0x26
+    bitZp, // 0x24
+    andZp, // 0x25
+    rolZp, // 0x26
     illegal, // 0x27
-    plp,     // 0x28
-    andImm,  // 0x29
-    rolA,    // 0x2A
+    plp, // 0x28
+    andImm, // 0x29
+    rolA, // 0x2A
     illegal, // 0x2B
-    bitAbs,  // 0x2C
-    andAbs,  // 0x2D
-    rolAbs,  // 0x2E
+    bitAbs, // 0x2C
+    andAbs, // 0x2D
+    rolAbs, // 0x2E
     illegal, // 0x2F
-    bmi,     // 0x30
+    bmi, // 0x30
     andIndY, // 0x31
     illegal, // 0x32
     illegal, // 0x33
     illegal, // 0x34
-    andZpX,  // 0x35
-    rolZpX,  // 0x36
+    andZpX, // 0x35
+    rolZpX, // 0x36
     illegal, // 0x37
-    sec,     // 0x38
+    sec, // 0x38
     andAbsY, // 0x39
     illegal, // 0x3A
     illegal, // 0x3B
@@ -310,31 +405,31 @@ export class M6510Cpu implements IM6510Cpu {
     andAbsX, // 0x3D
     rolAbsX, // 0x3E
     illegal, // 0x3F
-    rti,     // 0x40
+    rti, // 0x40
     eorIndX, // 0x41
     illegal, // 0x42
     illegal, // 0x43
     illegal, // 0x44
-    eorZp,   // 0x45
-    lsrZp,   // 0x46
+    eorZp, // 0x45
+    lsrZp, // 0x46
     illegal, // 0x47
-    pha,     // 0x48
-    eorImm,  // 0x49
-    lsrA,    // 0x4A
+    pha, // 0x48
+    eorImm, // 0x49
+    lsrA, // 0x4A
     illegal, // 0x4B
-    jmp,     // 0x4C
-    eorAbs,  // 0x4D
-    lsrAbs,  // 0x4E
+    jmp, // 0x4C
+    eorAbs, // 0x4D
+    lsrAbs, // 0x4E
     illegal, // 0x4F
-    bvc,     // 0x50
+    bvc, // 0x50
     eorIndY, // 0x51
     illegal, // 0x52
     illegal, // 0x53
     illegal, // 0x54
-    eorZpX,  // 0x55
-    lsrZpX,  // 0x56
+    eorZpX, // 0x55
+    lsrZpX, // 0x56
     illegal, // 0x57
-    cli,     // 0x58
+    cli, // 0x58
     eorAbsY, // 0x59
     illegal, // 0x5A
     illegal, // 0x5B
@@ -342,31 +437,31 @@ export class M6510Cpu implements IM6510Cpu {
     eorAbsX, // 0x5D
     lsrAbsX, // 0x5E
     illegal, // 0x5F
-    rts,     // 0x60
+    rts, // 0x60
     adcIndX, // 0x61
     illegal, // 0x62
     illegal, // 0x63
     illegal, // 0x64
-    adcZp,   // 0x65
-    rorZp,   // 0x66
+    adcZp, // 0x65
+    rorZp, // 0x66
     illegal, // 0x67
-    pla,     // 0x68
-    adcImm,  // 0x69
-    rorA,    // 0x6A
+    pla, // 0x68
+    adcImm, // 0x69
+    rorA, // 0x6A
     illegal, // 0x6B
-    jmpInd,  // 0x6C
-    adcAbs,  // 0x6D
-    rorAbs,  // 0x6E
+    jmpInd, // 0x6C
+    adcAbs, // 0x6D
+    rorAbs, // 0x6E
     illegal, // 0x6F
-    bvs,     // 0x70
+    bvs, // 0x70
     adcIndY, // 0x71
     illegal, // 0x72
     illegal, // 0x73
     illegal, // 0x74
-    adcZpX,  // 0x75
-    rorZpX,  // 0x76
+    adcZpX, // 0x75
+    rorZpX, // 0x76
     illegal, // 0x77
-    sei,     // 0x78
+    sei, // 0x78
     adcAbsY, // 0x79
     illegal, // 0x7A
     illegal, // 0x7B
@@ -378,91 +473,91 @@ export class M6510Cpu implements IM6510Cpu {
     staIndX, // 0x81
     illegal, // 0x82
     illegal, // 0x83
-    styZp,   // 0x84
-    staZp,   // 0x85
-    stxZp,   // 0x86
+    styZp, // 0x84
+    staZp, // 0x85
+    stxZp, // 0x86
     illegal, // 0x87
-    dey,     // 0x88
+    dey, // 0x88
     illegal, // 0x89
-    txa,     // 0x8A
+    txa, // 0x8A
     illegal, // 0x8B
-    styAbs,  // 0x8C
-    staAbs,  // 0x8D
-    stxAbs,  // 0x8E
+    styAbs, // 0x8C
+    staAbs, // 0x8D
+    stxAbs, // 0x8E
     illegal, // 0x8F
-    bcc,     // 0x90
+    bcc, // 0x90
     staIndY, // 0x91
     illegal, // 0x92
     illegal, // 0x93
-    styZpX,  // 0x94
-    staZpX,  // 0x95
-    stxZpY,  // 0x96
+    styZpX, // 0x94
+    staZpX, // 0x95
+    stxZpY, // 0x96
     illegal, // 0x97
-    tya,     // 0x98
+    tya, // 0x98
     staAbsY, // 0x99
-    txs,     // 0x9A
+    txs, // 0x9A
     illegal, // 0x9B
     illegal, // 0x9C
     staAbsX, // 0x9D
     illegal, // 0x9E
     illegal, // 0x9F
-    ldyImm,  // 0xA0
+    ldyImm, // 0xA0
     ldaIndX, // 0xA1
-    ldxImm,  // 0xA2
+    ldxImm, // 0xA2
     illegal, // 0xA3
-    ldyZp,   // 0xA4
-    ldaZp,   // 0xA5
-    ldxZp,   // 0xA6
+    ldyZp, // 0xA4
+    ldaZp, // 0xA5
+    ldxZp, // 0xA6
     illegal, // 0xA7
-    tay,     // 0xA8
-    ldaImm,  // 0xA9
-    tax,     // 0xAA
+    tay, // 0xA8
+    ldaImm, // 0xA9
+    tax, // 0xAA
     illegal, // 0xAB
-    ldyAbs,  // 0xAC
-    ldaAbs,  // 0xAD
-    ldxAbs,  // 0xAE
+    ldyAbs, // 0xAC
+    ldaAbs, // 0xAD
+    ldxAbs, // 0xAE
     illegal, // 0xAF
-    bcs,     // 0xB0
+    bcs, // 0xB0
     ldaIndY, // 0xB1
     illegal, // 0xB2
     illegal, // 0xB3
-    ldyZpX,  // 0xB4
-    ldaZpX,  // 0xB5
-    ldxZpY,  // 0xB6
+    ldyZpX, // 0xB4
+    ldaZpX, // 0xB5
+    ldxZpY, // 0xB6
     illegal, // 0xB7
-    clv,     // 0xB8
+    clv, // 0xB8
     ldaAbsY, // 0xB9
-    tsx,     // 0xBA
+    tsx, // 0xBA
     illegal, // 0xBB
     ldyAbsX, // 0xBC
     ldaAbsX, // 0xBD
     ldxAbsY, // 0xBE
     illegal, // 0xBF
-    cpyImm,  // 0xC0
+    cpyImm, // 0xC0
     cmpIndX, // 0xC1
     illegal, // 0xC2
     illegal, // 0xC3
-    cpyZp,   // 0xC4
-    cmpZp,   // 0xC5
-    decZp,   // 0xC6
+    cpyZp, // 0xC4
+    cmpZp, // 0xC5
+    decZp, // 0xC6
     illegal, // 0xC7
-    iny,     // 0xC8
-    cmpImm,  // 0xC9
-    dex,     // 0xCA
+    iny, // 0xC8
+    cmpImm, // 0xC9
+    dex, // 0xCA
     illegal, // 0xCB
-    cpyAbs,  // 0xCC
-    cmpAbs,  // 0xCD
-    decAbs,  // 0xCE
+    cpyAbs, // 0xCC
+    cmpAbs, // 0xCD
+    decAbs, // 0xCE
     illegal, // 0xCF
-    bne,     // 0xD0
+    bne, // 0xD0
     cmpIndY, // 0xD1
     illegal, // 0xD2
     illegal, // 0xD3
     illegal, // 0xD4
-    cmpZpX,  // 0xD5
-    decZpX,  // 0xD6
+    cmpZpX, // 0xD5
+    decZpX, // 0xD6
     illegal, // 0xD7
-    cld,     // 0xD8
+    cld, // 0xD8
     cmpAbsY, // 0xD9
     illegal, // 0xDA
     illegal, // 0xDB
@@ -470,38 +565,38 @@ export class M6510Cpu implements IM6510Cpu {
     cmpAbsX, // 0xDD
     decAbsX, // 0xDE
     illegal, // 0xDF
-    cpxImm,  // 0xE0
+    cpxImm, // 0xE0
     sbcIndX, // 0xE1
     illegal, // 0xE2
     illegal, // 0xE3
-    cpxZp,   // 0xE4
-    sbcZp,   // 0xE5
-    incZp,   // 0xE6
+    cpxZp, // 0xE4
+    sbcZp, // 0xE5
+    incZp, // 0xE6
     illegal, // 0xE7
-    inx,     // 0xE8
-    sbcImm,  // 0xE9
-    nop,     // 0xEA
+    inx, // 0xE8
+    sbcImm, // 0xE9
+    nop, // 0xEA
     illegal, // 0xEB
-    cpxAbs,  // 0xEC
-    sbcAbs,  // 0xED
-    incAbs,  // 0xEE
+    cpxAbs, // 0xEC
+    sbcAbs, // 0xED
+    incAbs, // 0xEE
     illegal, // 0xEF
-    beq,     // 0xF0
+    beq, // 0xF0
     sbcIndY, // 0xF1
     illegal, // 0xF2
     illegal, // 0xF3
     illegal, // 0xF4
-    sbcZpX,  // 0xF5
-    incZpX,  // 0xF6
+    sbcZpX, // 0xF5
+    incZpX, // 0xF6
     illegal, // 0xF7
-    sed,     // 0xF8
+    sed, // 0xF8
     sbcAbsY, // 0xF9
     illegal, // 0xFA
     illegal, // 0xFB
     illegal, // 0xFC
     sbcAbsX, // 0xFD
     incAbsX, // 0xFE
-    illegal, // 0xFF
+    illegal // 0xFF
   ];
 }
 

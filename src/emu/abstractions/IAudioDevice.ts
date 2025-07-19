@@ -1,10 +1,10 @@
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { IGenericDevice } from "./IGenericDevice";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
  * This interface represents anaudio device that creates sound samples according to a particular sample rate.
  */
-export interface IAudioDevice<T extends IZ80Machine> extends IGenericDevice<T> {
+export interface IAudioDevice<T extends IAnyMachine> extends IGenericDevice<T> {
     /**
      * Gets the audio sample rate
      */

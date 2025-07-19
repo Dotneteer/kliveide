@@ -3,7 +3,6 @@ import type { IOutputBuffer } from "@appIde/ToolArea/abstractions";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { MachineControllerState } from "@abstractions/MachineControllerState";
 import type { MessengerBase } from "@messaging/MessengerBase";
 import type { AppState } from "@state/AppState";
@@ -12,6 +11,7 @@ import type { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { IAnyMachine } from "./IAnyMachine";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -30,7 +30,7 @@ export interface IMachineController {
   /**
    * The machine controlled by this object
    */
-  readonly machine: IZ80Machine;
+  readonly machine: IAnyMachine;
 
   /**
    * Disposes resources held by this class

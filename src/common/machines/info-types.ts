@@ -1,7 +1,7 @@
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
  * This type stores common information about a particular emulated machine
@@ -111,7 +111,7 @@ export type MachineUiRendererInfo = {
     model?: MachineModel,
     config?: MachineConfigSet,
     messenger?: MessengerBase
-  ) => IZ80Machine;
+  ) => IAnyMachine;
 };
 
 /**

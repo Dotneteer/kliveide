@@ -1,10 +1,10 @@
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
  * This interface represents the operations of a generic device and is intended to be the base interface of all device
  * definitions.
  */
-export interface IGenericDevice<TMachine extends IZ80Machine> {
+export interface IGenericDevice<TMachine extends IAnyMachine> {
   /**
    * Get the machine that hosts the device.
    */
