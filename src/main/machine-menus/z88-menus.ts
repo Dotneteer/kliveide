@@ -3,7 +3,7 @@ import fs from "fs";
 import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { MachineMenuRenderer } from "@common/machines/info-types";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
-import { emuSetKeyboardLayoutAction, incMenuVersionAction } from "@common/state/actions";
+import { incMenuVersionAction } from "@common/state/actions";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { getModelConfig } from "@common/machines/machine-registry";
@@ -61,8 +61,6 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
     { id: "z88_640_64", label: "640 x 64" },
     { id: "z88_640_320", label: "640 x 320" },
     { id: "z88_640_480", label: "640 x 480" },
-    { id: "z88_800_320", label: "800 x 320" },
-    { id: "z88_800_480", label: "800 x 480" }
   ];
   const config = mainStore.getState()?.emulatorState?.config ?? {};
   const lcdState = config?.[MC_SCREEN_SIZE];
