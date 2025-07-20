@@ -16,12 +16,14 @@ export class M6510Cpu implements IM6510Cpu {
   private _y: number = 0;
   private _p: number = 0;
   private _pc: number = 0;
-  private _sp: number;
+  private _sp: number = 0;
 
   // --- CPU execution properties
   private _tactsInFrame: number;
   private _tactsInDisplayLine: number;
-
+  private _nmiRequested: boolean;
+  private _irqRequested: boolean;
+  private _stalled: number;
 
   /**
    * The stack pointer (alias for S register)
@@ -38,29 +40,103 @@ export class M6510Cpu implements IM6510Cpu {
   opCode: number;
   stepOutStack: number[];
   stepOutAddress: number;
+
   markStepOutAddress(): void {
     throw new Error("Method not implemented.");
   }
+
   totalContentionDelaySinceStart: number;
   contentionDelaySincePause: number;
   opStartAddress: number;
-  lastMemoryReads: number[];
+  lastMemoryReads: number[] = [];
   lastMemoryReadValue: number;
-  lastMemoryWrites: number[];
+  lastMemoryWrites: number[] = [];
   lastMemoryWriteValue: number;
   lastIoReadPort: number;
   lastIoReadValue: number;
   lastIoWritePort: number;
   lastIoWriteValue: number;
+
+  /**
+   * Sets the CPU into the stalled state.
+   */
+  stallCpu(): void {
+    this._stalled = 1;
+  }
+
+  /**
+   * Resumes the CPU from the stalled state.
+   */
+  releaseCpu(): void {
+    this._stalled = 0;
+  }
+
+  /**
+   * Waits while the CPU gets released from the stalled state.
+   */
+  waitForCpuRelease(): void {
+    while (this._stalled) {
+      // --- Wait until the CPU is released
+      this.incrementTacts(); // Increment tacts to avoid infinite loop
+      this._stalled++;
+      if (this._stalled > 1000) {
+        console.warn("CPU stalled for too long, releasing...");
+        this.releaseCpu();
+      }
+    }
+  }
+
+  /**
+   * Call this method to execute a CPU instruction cycle.
+   */
   executeCpuCycle(): void {
-    throw new Error("Method not implemented.");
+    if (this._nmiRequested) {
+      this.handleNmi();
+      this._nmiRequested = false;
+    } else if (this._irqRequested && !this.isIFlagSet()) {
+      this.handleIrq();
+      this._irqRequested = false;
+    } else {
+      // --- Handle regular CPU cycle
+      const opCode = this.readMemory(this._pc);
+      this.operationTable[opCode](this);
+    }
   }
+
+  private handleNmi() {
+    // TODO: Implement NMI handling
+  }
+
+  private handleIrq() {
+    // TODO: Implement IRQ handling
+  }
+
+  /**
+   * Execute this method before fetching the opcode of the next instruction
+   */
   beforeOpcodeFetch(): void {
-    throw new Error("Method not implemented.");
+    // --- The base 6510 CPU does not have any specific actions before opcode fetch
   }
+
+  /**
+   * Execute this method after fetching the opcode of the next instruction
+   */
   afterOpcodeFetch(): void {
-    throw new Error("Method not implemented.");
+    // --- The base 6510 CPU does not have any specific actions after opcode fetch
   }
+
+  /**
+   * Reads the specified memory address.
+   * @param address Memory address to read
+   * @returns The byte the CPU has read from the memory
+   * If the emulated hardware uses any delay when reading the memory, increment the CPU tacts accordingly.
+   */
+  readMemory(address: number): number {
+    this.delayMemoryRead(address);
+    this.lastMemoryReads.push(address);
+    return (this.lastMemoryReadValue = this.doReadMemory(address));
+  }
+
   /**
    * Read the byte at the specified memory address.
    * @param _address 16-bit memory address
@@ -73,9 +149,22 @@ export class M6510Cpu implements IM6510Cpu {
 
   /**
    * This function implements the memory read delay of the CPU.
-   * @param _address Memory address to read
    */
-  delayMemoryRead(_address: number): void {
+  delayMemoryRead(_: number): void {
+    this.waitForCpuRelease();
+  }
+
+  /**
+   * Writes a byte to the specfied memory address.
+   * @param address Memory address
+   * @param data Data byte to write
+   * If the emulated hardware uses any delay when writing the memory, increment the CPU tacts accordingly.
+   */
+  writeMemory(address: number, data: number): void {
+    this.delayMemoryWrite(address);
+    this.lastMemoryWrites.push(address);
+    this.lastMemoryWriteValue = data;
+    this.doWriteMemory(address, data);
   }
 
   /**
@@ -85,47 +174,40 @@ export class M6510Cpu implements IM6510Cpu {
    * Note: the default implementation does not write the memory
    */
   doWriteMemory(_address: number, _value: number): void {
-    // --- Override this method in derived classes
+    this.waitForCpuRelease();
   }
 
   /**
    * This function implements the memory write delay of the CPU.
    * @param _address Memory address to write
    */
-  delayMemoryWrite(_address: number): void {
-  }
+  delayMemoryWrite(_address: number): void {}
 
   delayAddressBusAccess(_address: number): void {
     throw new Error("Method not implemented.");
   }
 
-  doReadPort(address: number): number {
+  doReadPort(_address: number): number {
     return 0xff;
   }
 
-  delayPortRead(address: number): void {
-  }
+  delayPortRead(_address: number): void {}
 
-  doWritePort(address: number, value: number): void {
-  }
-  delayPortWrite(address: number): void {
-  }
+  doWritePort(_address: number, _value: number): void {}
+  delayPortWrite(_address: number): void {}
 
-  onTactIncremented(increment: number): void {
-    // TODO: Implement this method to handle tact increments
+  onTactIncremented(): void {
+    // --- Implement this method in derived classes to handle CPU timing
   }
 
   isCpuSnoozed(): boolean {
     return false;
   }
 
-  awakeCpu(): void {
-  }
+  awakeCpu(): void {}
 
-  snoozeCpu(): void {
-  }
-  onSnooze(): void {
-  }
+  snoozeCpu(): void {}
+  onSnooze(): void {}
 
   /**
    * The clock multiplier of the CPU
@@ -301,36 +383,29 @@ export class M6510Cpu implements IM6510Cpu {
    * Executes a hard reset as if the machine and the CPU had just been turned on.
    */
   hardReset(): void {
-    // Reset CPU registers
-    this._a = 0;
-    this._x = 0;
-    this._y = 0;
-    this._sp = 0xff; // Stack pointer is typically initialized to 0xFF on startup
-    this._p = FlagSetMask6510.UNUSED; // Only the unused flag is set
-    this._pc = 0;
-
-    // Reset CPU state
-    this.clockMultiplier = 1;
-
-    // Reset timing information
-    this.tacts = 0;
-    this.tactsAtLastStart = 0;
-    this.frames = 0;
-    this.frameTacts = 0;
-    this.setTactsInFrame(1_000_000); // Default value, should be adjusted based on machine
+    this.reset();
   }
 
   /**
    * Handles the active RESET signal of the CPU.
    */
   reset(): void {
+    this._nmiRequested = false;
+    this._irqRequested = false;
+
     // Reset CPU registers (similar to hard reset but may preserve some values)
     this._a = 0;
     this._x = 0;
     this._y = 0;
-    this._sp = 0xff;
-    this._p = FlagSetMask6510.UNUSED;
-    this._pc = 0;
+    this._sp = 0xfd;
+    this._p = 0x34;
+    this._pc = this.doReadMemory(0xfffc) | (this.doReadMemory(0xfffd) << 8);
+
+    // Reset clock multiplier
+    this.clockMultiplier = 1; 
+
+    // Reset stalled state
+    this._stalled = 0;
 
     // Reset timing information
     this.tacts = 0;
@@ -601,6 +676,21 @@ export class M6510Cpu implements IM6510Cpu {
     incAbsX, // 0xFE
     illegal // 0xFF
   ];
+
+  /**
+   * Increments the CPU tacts and updates the frame and current frame tact counters.
+   * This method should be called every time a CPU tact is completed.
+   */
+  private incrementTacts(): void {
+    this.tacts++;
+    this.frameTacts++;
+    if (this.frameTacts >= this.tactsInCurrentFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInCurrentFrame;
+    }
+    this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.onTactIncremented();
+  }
 }
 
 // --------------------------------------------------------------------------------------------------------------------

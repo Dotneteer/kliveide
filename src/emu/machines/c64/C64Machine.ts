@@ -22,8 +22,9 @@ import { C64KeyCode } from "./C64KeyCode";
 import { c64KeyMappings } from "./C64KeyMappings";
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
 import { MC_SCREEN_FREQ } from "@common/machines/constants";
-import { is } from "@electron-toolkit/utils";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { FILE_PROVIDER } from "../machine-props";
+import { IFileProvider } from "@renderer/core/IFileProvider";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
@@ -37,8 +38,11 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   readonly ioExpansionDevice: C64IoExpansionDevice;
 
   machineId: string = "c64";
+
   softResetOnFirstStart?: boolean = false;
+
   config: MachineConfigSet;
+
   dynamicConfig?: MachineConfigSet;
 
   /**
@@ -58,40 +62,25 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     newValue?: any;
   }>();
 
-  targetClockMultiplier: number = 1;
-  uiFrameFrequency: number = 50;
-  frameJustCompleted: boolean = false;
-  lastRenderedFrameTact: number = 0;
-  baseClockFrequency: number = 985248; // PAL C64
-  clockMultiplier: number = 1;
-  tacts: number = 0;
-  frames: number = 0;
-  frameTacts: number = 0;
-  currentFrameTact: number = 0;
-  tactsInCurrentFrame: number = 0;
-  opCode: number = 0;
-  stepOutStack: number[] = [];
-  stepOutAddress: number = 0;
-  totalContentionDelaySinceStart: number = 0;
-  contentionDelaySincePause: number = 0;
-  tactsAtLastStart: number = 0;
-  opStartAddress: number = 0;
-  lastMemoryReads: number[] = [];
-  lastMemoryReadValue: number = 0;
-  lastMemoryWrites: number[] = [];
-  lastMemoryWriteValue: number = 0;
-  lastIoReadPort: number = 0;
-  lastIoReadValue: number = 0;
-  lastIoWritePort: number = 0;
-  lastIoWriteValue: number = 0;
+  targetClockMultiplier: number;
+  uiFrameFrequency: number;
+  frameJustCompleted: boolean;
+  lastRenderedFrameTact: number;
+
+  get isNtsc(): boolean {
+    return this.modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc";
+  }
 
   constructor(public readonly modelInfo?: MachineModel) {
     super();
-    const isNtsc = modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc";
+    this.baseClockFrequency = this.isNtsc ? 1022727 : 985248;
+    this.clockMultiplier = 1;
+    this.targetClockMultiplier = 1;
+
     this.memory = new C64MemoryDevice(this);
     this.vicDevice = new C64VicDevice(
       this,
-      isNtsc ? C64VicDevice.C64NtscScreenConfiguration : C64VicDevice.C64PalScreenConfiguration
+      this.isNtsc ? C64VicDevice.C64NtscScreenConfiguration : C64VicDevice.C64PalScreenConfiguration
     );
     this.sidDevice = new C64SidDevice(this);
     this.keyboardDevice = new C64KeyboardDevice(this);
@@ -103,6 +92,14 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
   async setup(): Promise<void> {
     this.memory.reset();
+
+    const basicRomContents = await this.loadRomFromResource("c64-basic");
+    this.memory.uploadBasicRom(basicRomContents);
+    const kernalRomContents = await this.loadRomFromResource(`c64-kernal-${this.isNtsc ? "ntsc" : "pal"}`);
+    this.memory.uploadKernalRom(kernalRomContents);
+    const chargenRomContents = await this.loadRomFromResource("c64-chargen");
+    this.memory.uploadChargenRom(chargenRomContents);
+
     this.vicDevice.reset();
     this.sidDevice.reset();
     this.keyboardDevice.reset();
@@ -272,7 +269,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     };
   }
 
-  async executeCustomCommand(command: string): Promise<void> {
+  async executeCustomCommand(_command: string): Promise<void> {
     // Handle custom commands if needed
   }
 
@@ -336,14 +333,8 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }
 
   reset(): void {
-    this.pc = this.memory.getResetVector();
-    this.sp = 0xff;
-    this.a = 0;
-    this.x = 0;
-    this.y = 0;
-    this.sp = 0xff;
-    this.p = 0x34;
     this.memory.reset();
+    super.reset();
     this.vicDevice.reset();
     this.sidDevice.reset();
     this.keyboardDevice.reset();
@@ -353,12 +344,6 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.tacts = 0;
     this.frames = 0;
     this.currentFrameTact = 0;
-  }
-
-  executeCpuCycle(): void {
-    // Emulate a single CPU cycle
-    // This is a stub; real implementation would fetch, decode, execute
-    this.tacts++;
   }
 
   beforeOpcodeFetch(): void {
@@ -387,13 +372,16 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
   delayPortRead(_address: number): void {}
 
-  doWritePort(_address: number, value: number): void {}
+  doWritePort(_address: number, _value: number): void {}
 
   delayPortWrite(_address: number): void {}
 
-  onTactIncremented(increment: number): void {
-    // TODO: Implement logic for handling tact increments
-    this.currentFrameTact += increment;
+  /**
+   * Allow the VIC to render the next screen tact (and stall or release the CPU if needed).
+   */
+  onTactIncremented(): void {
+    this.vicDevice.renderNextTact();
+    
   }
 
   isCpuSnoozed(): boolean {
@@ -423,5 +411,23 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
   consumeEvents(): void {
     // Consume all queued events for the current tact
+  }
+
+  /**
+   * Load the specified ROM
+   * @param romName Name of the ROM file to load
+   * @param page Optional ROM page for multi-rom machines
+   * @returns The byte array that represents the ROM contents
+   */
+  protected async loadRomFromResource(romName: string, page = -1): Promise<Uint8Array> {
+    // --- Obtain the IFileProvider instance
+    const fileProvider = this.getMachineProperty(FILE_PROVIDER) as IFileProvider;
+    if (!fileProvider) {
+      throw new Error("Could not obtain file provider instance");
+    }
+    const filename = romName.startsWith("/")
+      ? romName
+      : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
+    return await fileProvider.readBinaryFile(filename);
   }
 }
