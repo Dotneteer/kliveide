@@ -52,7 +52,7 @@ export class C64KeyboardDevice implements IGenericKeyboardDevice<IC64Machine> {
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.
    */
-  setStatus(key: number, isDown: boolean): void {
+  setKeyStatus(key: number, isDown: boolean): void {
     // --- Ignore invalid key codes
     if (key > 63) {
       return;
@@ -96,7 +96,7 @@ export class C64KeyboardDevice implements IGenericKeyboardDevice<IC64Machine> {
    * @param key Key code
    * @returns True, if the key is down; otherwise, false
    */
-  getStatus(key: number): boolean {
+  getKeyStatus(key: number): boolean {
     // --- Ignore invalid key codes
     if (key > 63) {
       return false;

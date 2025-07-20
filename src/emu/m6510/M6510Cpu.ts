@@ -273,6 +273,9 @@ export class M6510Cpu implements IM6510Cpu {
   get tactsInFrame(): number {
     return this._tactsInFrame;
   }
+  set tactsInFrame(value: number) {
+    this._tactsInFrame = value;
+  }
 
   /**
    * Sets the number of tacts within a single machine frame

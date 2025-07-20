@@ -608,7 +608,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param isDown Indicates if the key is pressed down.
    */
   setKeyStatus(key: number, isDown: boolean): void {
-    this.keyboardDevice.setStatus(key, isDown);
+    this.keyboardDevice.setKeyStatus(key, isDown);
   }
 
   /**
@@ -625,9 +625,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     if (keyStroke.endTact < this.tacts) {
       // --- End emulation of this very keystroke
-      this.keyboardDevice.setStatus(keyStroke.primaryCode, false);
+      this.keyboardDevice.setKeyStatus(keyStroke.primaryCode, false);
       if (keyStroke.secondaryCode !== undefined) {
-        this.keyboardDevice.setStatus(keyStroke.secondaryCode, false);
+        this.keyboardDevice.setKeyStatus(keyStroke.secondaryCode, false);
       }
 
       // --- Remove the keystroke from the queue
@@ -636,9 +636,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }
 
     // --- Emulate this very keystroke, and leave it in the queue
-    this.keyboardDevice.setStatus(keyStroke.primaryCode, true);
+    this.keyboardDevice.setKeyStatus(keyStroke.primaryCode, true);
     if (keyStroke.secondaryCode !== undefined) {
-      this.keyboardDevice.setStatus(keyStroke.secondaryCode, true);
+      this.keyboardDevice.setKeyStatus(keyStroke.secondaryCode, true);
     }
   }
 

@@ -38,7 +38,7 @@ export class KeyboardDevice implements ISpectrumKeyboardDevice {
    * @param key Key code
    * @param isDown Indicates if the key is pressed down
    */
-  setStatus (key: number, isDown: boolean): void {
+  setKeyStatus (key: number, isDown: boolean): void {
     const lineIndex = (key / 5) & 0xff;
     const lineMask = 1 << (key % 5 & 0xff);
     this._lineStatus[lineIndex] = isDown
@@ -51,7 +51,7 @@ export class KeyboardDevice implements ISpectrumKeyboardDevice {
    * @param key Key code
    * @returns True, if the key is down; otherwise, false
    */
-  getStatus (key: number): boolean {
+  getKeyStatus (key: number): boolean {
     const lineIndex = (key / 5) & 0xff;
     const lineMask = 1 << (key % 5 & 0xff);
     return (this._lineStatus[lineIndex] & lineMask) !== 0;

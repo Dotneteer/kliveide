@@ -1,6 +1,6 @@
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { KeyMapping } from "@abstractions/KeyMapping";
-import { MachineConfigSet } from "@common/machines/info-types";
+import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
@@ -18,8 +18,16 @@ import { C64VicDevice } from "./C64VicDevice";
 import { IC64Machine } from "./IC64Machine";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { M6510Cpu } from "@emu/m6510/M6510Cpu";
+import { C64KeyCode } from "./C64KeyCode";
+import { c64KeyMappings } from "./C64KeyMappings";
+import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
+import { MC_SCREEN_FREQ } from "@common/machines/constants";
+import { is } from "@electron-toolkit/utils";
+import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
+  private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
+
   readonly memory: C64MemoryDevice;
   readonly vicDevice: C64VicDevice;
   readonly sidDevice: C64SidDevice;
@@ -32,7 +40,15 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   softResetOnFirstStart?: boolean = false;
   config: MachineConfigSet;
   dynamicConfig?: MachineConfigSet;
-  executionContext: ExecutionContext;
+
+  /**
+   * This property stores the execution context where the emulated machine runs its execution loop.
+   */
+  executionContext: ExecutionContext = {
+    frameTerminationMode: FrameTerminationMode.Normal,
+    debugStepMode: DebugStepMode.NoDebug,
+    canceled: false
+  };
 
   /**
    * This event fires when the state of a machine property changes.
@@ -69,10 +85,14 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   lastIoWritePort: number = 0;
   lastIoWriteValue: number = 0;
 
-  constructor() {
+  constructor(public readonly modelInfo?: MachineModel) {
     super();
+    const isNtsc = modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc";
     this.memory = new C64MemoryDevice(this);
-    this.vicDevice = new C64VicDevice(this);
+    this.vicDevice = new C64VicDevice(
+      this,
+      isNtsc ? C64VicDevice.C64NtscScreenConfiguration : C64VicDevice.C64PalScreenConfiguration
+    );
     this.sidDevice = new C64SidDevice(this);
     this.keyboardDevice = new C64KeyboardDevice(this);
     this.cia1Device = new C64Cia1Device(this);
@@ -134,10 +154,8 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }
 
   get screenHeightInPixels(): number {
-    return this.vicDevice.screenHeight;
+    return this.vicDevice.screenLines;
   }
-
-  getAspectRatio?: () => [number, number] = () => [4, 3];
 
   getPixelBuffer(): Uint32Array {
     return this.vicDevice.getPixelBuffer();
@@ -148,62 +166,110 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }
 
   getBufferStartOffset(): number {
-    return this.vicDevice.getBufferStartOffset();
+    return 0;
   }
 
   getKeyCodeSet(): KeyCodeSet {
-    return this.keyboardDevice.getKeyCodeSet();
+    return C64KeyCode;
   }
 
   getDefaultKeyMapping(): KeyMapping {
-    return this.keyboardDevice.getDefaultKeyMapping();
+    return c64KeyMappings;
   }
 
   setKeyStatus(key: number, isDown: boolean): void {
     this.keyboardDevice.setKeyStatus(key, isDown);
   }
 
+  /**
+   * Emulates queued key strokes as if those were pressed by the user
+   */
   emulateKeystroke(): void {
-    this.keyboardDevice.emulateKeystroke();
+    if (this._emulatedKeyStrokes.length === 0) return;
+
+    // --- Check the next keystroke
+    const keyStroke = this._emulatedKeyStrokes[0];
+
+    // --- Time has not come
+    if (keyStroke.startTact > this.tacts) return;
+
+    if (keyStroke.endTact < this.tacts) {
+      // --- End emulation of this very keystroke
+      this.keyboardDevice.setKeyStatus(keyStroke.primaryCode, false);
+      if (keyStroke.secondaryCode !== undefined) {
+        this.keyboardDevice.setKeyStatus(keyStroke.secondaryCode, false);
+      }
+      if (keyStroke.ternaryCode !== undefined) {
+        this.keyboardDevice.setKeyStatus(keyStroke.ternaryCode, false);
+      }
+
+      // --- Remove the keystroke from the queue
+      this._emulatedKeyStrokes.shift();
+      return;
+    }
+
+    // --- Emulate this very keystroke, and leave it in the queue
+    this.keyboardDevice.setKeyStatus(keyStroke.primaryCode, true);
+    if (keyStroke.secondaryCode !== undefined) {
+      this.keyboardDevice.setKeyStatus(keyStroke.secondaryCode, true);
+    }
+    if (keyStroke.ternaryCode !== undefined) {
+      this.keyboardDevice.setKeyStatus(keyStroke.ternaryCode, true);
+    }
   }
 
-  queueKeystroke(
-    frameOffset: number,
-    frames: number,
-    primary: number,
-    secondary?: number,
-    ternary?: number
-  ): void {
-    this.keyboardDevice.queueKeystroke(frameOffset, frames, primary, secondary, ternary);
+  /**
+   * Adds an emulated keypress to the queue of the provider.
+   * @param frameOffset Number of frames to start the keypress emulation
+   * @param frames Number of frames to hold the emulation
+   * @param primary Primary key code
+   * @param secondary Optional secondary key code
+   *
+   * The keyboard provider can play back emulated key strokes
+   */
+  queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
+    const startTact = this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
+    const endTact = startTact + frames * this.tactsInFrame * this.clockMultiplier;
+    const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
+    this._emulatedKeyStrokes.push(keypress);
   }
 
+  /**
+   * Gets the length of the key emulation queue
+   */
   getKeyQueueLength(): number {
-    return this.keyboardDevice.getKeyQueueLength();
+    return this._emulatedKeyStrokes.length;
   }
 
   getCodeInjectionFlow(_model: string): CodeInjectionFlow {
     return [];
   }
 
-  injectCodeToRun(codeToInject: CodeToInject): number {
-    // Inject code into memory and return the start address
-    return this.memory.injectCode(codeToInject);
+  injectCodeToRun(_codeToInject: CodeToInject): number {
+    // TODO: Implement code injection logic
+    return 0;
   }
 
-  getPartition(address: number): number | undefined {
-    return this.memory.getPartition(address);
+  getPartition(_address: number): number | undefined {
+    // TODO: Implement partition retrieval logic
+    return undefined;
   }
 
-  parsePartitionLabel(label: string): number | undefined {
-    return this.memory.parsePartitionLabel(label);
+  parsePartitionLabel(_label: string): number | undefined {
+    // TODO: Implement partition label parsing logic
+    return undefined;
   }
 
   getPartitionLabels(): Record<number, string> {
-    return this.memory.getPartitionLabels();
+    // TODO: Implement partition label retrieval logic
+    return {};
   }
 
-  getCallStack(frames?: number): CallStackInfo {
-    return this.memory.getCallStack(frames);
+  getCallStack(_frames?: number): CallStackInfo {
+    return {
+      sp: 0,
+      frames: []
+    };
   }
 
   async executeCustomCommand(command: string): Promise<void> {
@@ -211,19 +277,23 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }
 
   get64KFlatMemory(): Uint8Array {
-    return this.memory.get64KFlatMemory();
+    // TODO: Implement 64K flat memory retrieval
+    return new Uint8Array(65536);
   }
 
-  getMemoryPartition(index: number): Uint8Array {
-    return this.memory.getMemoryPartition(index);
+  getMemoryPartition(_index: number): Uint8Array {
+    // TODO: Implement memory partition retrieval
+    return new Uint8Array(65536);
   }
 
   getCurrentPartitions(): number[] {
-    return this.memory.getCurrentPartitions();
+    // TODO: Implement current partition retrieval
+    return [];
   }
 
   getCurrentPartitionLabels(): string[] {
-    return this.memory.getCurrentPartitionLabels();
+    // TODO: Implement current partition label retrieval
+    return [];
   }
 
   getRomFlags(): boolean[] {
@@ -232,19 +302,20 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }
 
   get isOsInitialized(): boolean {
-    return this.memory.isOsInitialized();
+    // TODO: Implement OS initialization status retrieval
+    return false;
   }
 
   getFrameCommand() {
-    return this.memory.getFrameCommand();
+    return undefined;
   }
 
-  setFrameCommand(command: any): void {
-    this.memory.setFrameCommand(command);
+  setFrameCommand(_command: any): void {
+    // TODO: Implement frame command setting
   }
 
-  async processFrameCommand(messenger: MessengerBase): Promise<void> {
-    await this.memory.processFrameCommand(messenger);
+  async processFrameCommand(_messenger: MessengerBase): Promise<void> {
+    // TODO: Implement frame command processing
   }
 
   setTactsInFrame(tacts: number): void {
@@ -306,24 +377,19 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.memory.writeMemory(address, value);
   }
 
-  delayMemoryWrite(_address: number): void {
-  }
+  delayMemoryWrite(_address: number): void {}
 
-  delayAddressBusAccess(_address: number): void {
-  }
+  delayAddressBusAccess(_address: number): void {}
 
   doReadPort(_address: number): number {
     return 0xff;
   }
 
-  delayPortRead(_address: number): void {
-  }
+  delayPortRead(_address: number): void {}
 
-  doWritePort(_address: number, value: number): void {
-  }
+  doWritePort(_address: number, value: number): void {}
 
-  delayPortWrite(_address: number): void {
-  }
+  delayPortWrite(_address: number): void {}
 
   onTactIncremented(increment: number): void {
     // TODO: Implement logic for handling tact increments

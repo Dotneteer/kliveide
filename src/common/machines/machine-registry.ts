@@ -22,6 +22,7 @@ import {
   MC_Z88_SLOT0,
   MI_ZXNEXT,
   MF_ALLOW_CLOCK_MULTIPLIER,
+  MI_C64,
 } from "./constants";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/z80-disassembler/z88-custom.disassembler";
@@ -298,7 +299,35 @@ export const machineRegistry: MachineInfo[] = [
         showScreenOption: false
       }
     }
-  }
+  },
+  {
+    machineId: MI_C64,
+    displayName: "Commodore 64 (experimental)",
+    charSet: ZxSpectrumChars,
+    features: {
+      [MF_TAPE_SUPPORT]: true,
+    },
+    models: [
+      {
+        modelId: "pal",
+        displayName: "Commodore 64 (experimental)",
+        config: {
+          [MC_SCREEN_FREQ]: "pal"
+        }
+      },
+      {
+        modelId: "ntsc",
+        displayName: "Commodore 64 (experimental, NTSC)",
+        config: {
+          [MC_SCREEN_FREQ]: "ntsc"
+        }
+      },
+    ],
+    mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
+    }
+  },
 ];
 
 /**

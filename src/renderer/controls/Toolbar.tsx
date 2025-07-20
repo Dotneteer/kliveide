@@ -364,7 +364,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
           <IconButton
             iconName="disassembly-icon"
             fill="--color-toolbarbutton-orange"
-            title="Show Z80 Disassembly Panel"
+            title="Show Disassembly Panel"
             selected={volatileDocs?.[DISASSEMBLY_PANEL_ID]}
             clicked={async () => {
               if (volatileDocs?.[DISASSEMBLY_PANEL_ID]) {

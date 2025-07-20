@@ -3,7 +3,7 @@ import { Callout } from 'nextra/components'
 
 # The Disassembly View
 
-You can view the Z80 disassembly of the memory with the **IDE | Show Z80 Disassembly** menu command:
+You can view the disassembly of the memory with the **IDE | Show Disassembly** menu command:
 
 <ClickableImage src="/images/working-with-ide/disass-view.png" width={512} />
 
@@ -17,7 +17,7 @@ When you click an existing breakpoint with the right mouse button, the IDE remov
 Currently, you can only add execution breakpoints to the Disassembly view. With interactive [commands](/commands-reference) (see the ones starting with `bp-`), you can create memory and I/O operations breakpoints.
 </Callout>
 
-By default, when you display the Z80 disassembly, it uses the current value of the PC (Program Counter) register and disassembles up to 1024 bytes of code.
+By default, when you display the disassembly, it uses the current value of the PC (Program Counter) register and disassembles up to 1024 bytes of code.
 
 Turn off the **Follow PC** option to disassemble the entire memory (or a selected bank). With this option turned off, models supporting memory paging display a second row of options:
 
@@ -25,7 +25,7 @@ Turn off the **Follow PC** option to disassemble the entire memory (or a selecte
 
 ## Display Options
 
-The Z80 Disassembly View provides a few options to display and navigate the memory contents:
+The Disassembly View provides a few options to display and navigate the memory contents:
 - **Decimal**: Turns on or off the decimal display (off, by default). When turned off, memory addresses, opcodes, and instructions are displayed with decimal numbers; otherwise, they are hexadecimal.
 - **Ram**: This option (on, by default) allows you to disassemble the RAM's contents.
 - **Screen**: This option (off, by default) lets you disassemble the screen memory's ($4000-$5AFF) contents.
@@ -36,7 +36,7 @@ A little icon (up or down arrow) is before the **Go To** address box. Unless the
 
 ## Banked Disassembly Views
 
-When your model supports memory paging, a new switch, **64K View**, is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Z80 Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in.
+When your model supports memory paging, a new switch, **64K View**, is displayed in the second header row. It is turned on by default, and the current 64K memory (according to the current memory page settings) is displayed. When you turn this option off, you can choose the bank to display (ROM pages or RAM banks, depending on the machine type) from the **Select bank** dropdown. The Disassembly View will display only the disassembled contents of that segment, even if that segment is not paged in.
 
 The **Offset** dropdown lets you select a disassembly offset from one of the 8K page boundaries. This selection may help set a disassembly base address to emulate the page's location.
 
