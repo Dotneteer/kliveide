@@ -1,10 +1,10 @@
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { IAudioDevice } from "./IAudioDevice";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's beeper device.
  */
-export interface IGenericBeeperDevice<T extends IZ80Machine> extends IAudioDevice<T> {
+export interface IGenericBeeperDevice<T extends IAnyMachine> extends IAudioDevice<T> {
   /**
    * The current value of the EAR bit
    */

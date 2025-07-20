@@ -93,7 +93,7 @@ export class HideMemoryCommand extends IdeCommandBase {
 
 export class ShowDisassemblyCommand extends IdeCommandBase {
   readonly id = "show-disass";
-  readonly description = "Displays the Z80 disassembly panel";
+  readonly description = "Displays the disassembly panel";
   readonly usage = "show-disass";
   readonly aliases = ["shdis"];
 
@@ -106,7 +106,7 @@ export class ShowDisassemblyCommand extends IdeCommandBase {
       await documentHubService.openDocument(
         {
           id: DISASSEMBLY_PANEL_ID,
-          name: "Z80 Disassembly",
+          name: "Disassembly",
           type: DISASSEMBLY_EDITOR,
           iconName: "disassembly-icon",
           iconFill: "--console-ansi-bright-cyan"
@@ -122,7 +122,7 @@ export class ShowDisassemblyCommand extends IdeCommandBase {
 
 export class HideDisassemblyCommand extends IdeCommandBase {
   readonly id = "hide-disass";
-  readonly description = "Hides the Z80 disassembly panel";
+  readonly description = "Hides the disassembly panel";
   readonly usage = "hide-disass";
   readonly aliases = ["hdis"];
 

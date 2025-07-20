@@ -4,6 +4,7 @@ export const MI_SPECTRUM_128 = "sp128";
 export const MI_SPECTRUM_3E = "spp3e";
 export const MI_Z88 = "z88";
 export const MI_ZXNEXT = "zxnext";
+export const MI_C64 = "c64";
 
 // Available machine configuration keys
 export const MC_DISK_SUPPORT = "diskSupport";

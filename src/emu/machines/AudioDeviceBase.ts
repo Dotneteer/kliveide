@@ -1,10 +1,10 @@
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { IAudioDevice } from "@emu/abstractions/IAudioDevice";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
  * This class represents the functionality of an audio device that can generate audio samples
  */
-export class AudioDeviceBase<T extends IZ80Machine> implements IAudioDevice<T> {
+export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   private _audioSampleRate = 0;
   private _audioSampleLength = 0;
   private _audioNextSampleTact = 0;

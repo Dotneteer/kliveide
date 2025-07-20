@@ -870,7 +870,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       {
         id: IDE_SHOW_DISASSEMBLY,
-        label: "Show Z80 Disassembly",
+        label: "Show Disassembly",
         type: "checkbox",
         checked: volatileDocs[DISASSEMBLY_PANEL_ID],
         click: async () => {

@@ -7,7 +7,6 @@ import type { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstr
 import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
 import type { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
@@ -35,6 +34,7 @@ import { PANE_ID_EMU } from "@common/integration/constants";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -53,7 +53,7 @@ export class MachineController implements IMachineController {
   constructor(
     public readonly store: Store<AppState>,
     public readonly messenger: MessengerBase,
-    public readonly machine: IZ80Machine
+    public readonly machine: IAnyMachine
   ) {
     this.context = machine.executionContext;
     this.isDebugging = false;

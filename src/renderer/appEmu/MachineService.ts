@@ -1,5 +1,4 @@
 import { FileProvider } from "@renderer/core/FileProvider";
-import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { MachineController } from "@emu/machines/MachineController";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
@@ -18,12 +17,13 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
+import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 class MachineService implements IMachineService {
   private _oldDisposing = new LiteEvent<string>();
   private _oldDisposed = new LiteEvent<string>();
-  private _newInitializing = new LiteEvent<IZ80Machine>();
-  private _newInitialized = new LiteEvent<IZ80Machine>();
+  private _newInitializing = new LiteEvent<IAnyMachine>();
+  private _newInitialized = new LiteEvent<IAnyMachine>();
   private _controller?: MachineController;
 
   /**
