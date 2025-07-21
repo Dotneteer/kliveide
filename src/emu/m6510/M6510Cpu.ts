@@ -98,7 +98,7 @@ export class M6510Cpu implements IM6510Cpu {
       this._irqRequested = false;
     } else {
       // --- Handle regular CPU cycle
-      const opCode = this.readMemory(this._pc);
+      const opCode = this.readMemory(this._pc++);
       this.operationTable[opCode](this);
     }
   }
@@ -134,7 +134,9 @@ export class M6510Cpu implements IM6510Cpu {
   readMemory(address: number): number {
     this.delayMemoryRead(address);
     this.lastMemoryReads.push(address);
-    return (this.lastMemoryReadValue = this.doReadMemory(address));
+    const value = (this.lastMemoryReadValue = this.doReadMemory(address));
+    this.incrementTacts();
+    return value;
   }
 
   /**
@@ -402,7 +404,7 @@ export class M6510Cpu implements IM6510Cpu {
     this._pc = this.doReadMemory(0xfffc) | (this.doReadMemory(0xfffd) << 8);
 
     // Reset clock multiplier
-    this.clockMultiplier = 1; 
+    this.clockMultiplier = 1;
 
     // Reset stalled state
     this._stalled = 0;
@@ -677,6 +679,39 @@ export class M6510Cpu implements IM6510Cpu {
     illegal // 0xFF
   ];
 
+  // ------------------------------------------------------------------------------------------------------------------
+  // 6510 operation helpers
+
+  /**
+   * Sets the Zero and Negative flags according to the value.
+   * @param value The value to test
+   */
+  setZeroAndNegativeFlags(value: number): void {
+    // Clear Z and N flags
+    this._p &= ~(FlagSetMask6510.Z | FlagSetMask6510.N);
+    // Set Z flag if value is zero
+    if ((value & 0xff) === 0) {
+      this._p |= FlagSetMask6510.Z;
+    }
+    // Set N flag if bit 7 is set
+    if ((value & 0x80) !== 0) {
+      this._p |= FlagSetMask6510.N;
+    }
+  }
+
+  readMemoryIndexed(address: number, index: number): number {
+    // Read memory at the specified address with index applied
+    const effectiveAddress = (address + index) & 0xffff;
+    // Check for page boundary crossing
+    if ((address & 0xff00) !== (effectiveAddress & 0xff00)) {
+      // Page boundary crossed, handle any required delays or operations
+      this.incrementTacts();
+    }
+    return this.readMemory(effectiveAddress);
+  }
+
+  // ------------------------------------------------------------------------------------------------------------------
+  // 6510 private helpers
   /**
    * Increments the CPU tacts and updates the frame and current frame tact counters.
    * This method should be called every time a CPU tact is completed.
@@ -1167,8 +1202,10 @@ function ldyZp(_cpu: M6510Cpu): void {
 }
 
 // 0xA5: LDA zp - Load Accumulator (Zero Page)
-function ldaZp(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA zp operation
+function ldaZp(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = cpu.readMemory(value);
+  cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xA6: LDX zp - Load X Register (Zero Page)
@@ -1182,8 +1219,10 @@ function tay(_cpu: M6510Cpu): void {
 }
 
 // 0xA9: LDA # - Load Accumulator (Immediate)
-function ldaImm(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA # operation
+function ldaImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = value;
+  cpu.setZeroAndNegativeFlags(value);
 }
 
 // 0xAA: TAX - Transfer Accumulator to X
@@ -1197,8 +1236,12 @@ function ldyAbs(_cpu: M6510Cpu): void {
 }
 
 // 0xAD: LDA abs - Load Accumulator (Absolute)
-function ldaAbs(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA abs operation
+function ldaAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.a = cpu.readMemory(addr);
+  cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xAE: LDX abs - Load X Register (Absolute)
@@ -1237,8 +1280,12 @@ function clv(_cpu: M6510Cpu): void {
 }
 
 // 0xB9: LDA abs,Y - Load Accumulator (Absolute,Y)
-function ldaAbsY(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA abs,Y operation
+function ldaAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.a = cpu.readMemoryIndexed(addr, cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xBA: TSX - Transfer Stack Pointer to X
@@ -1252,8 +1299,12 @@ function ldyAbsX(_cpu: M6510Cpu): void {
 }
 
 // 0xBD: LDA abs,X - Load Accumulator (Absolute,X)
-function ldaAbsX(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA abs,X operation
+function ldaAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.a = cpu.readMemoryIndexed(addr, cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xBE: LDX abs,Y - Load X Register (Absolute,Y)
