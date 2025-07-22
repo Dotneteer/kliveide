@@ -188,8 +188,8 @@ export class M6510TestMachine {
           stopped = this.cpu.pc !== pcBefore;
           break;
         case RunMode.UntilBrk:
-          // Check if BRK instruction (opcode 0x00) has been encountered
-          stopped = this.memory[this.cpu.pc] === 0x00;
+          // Check if BRK instruction (opcode 0x00) was just executed
+          stopped = this.cpu.opCode === 0x00;
           break;
         case RunMode.UntilEnd:
           stopped = this.cpu.pc >= this.codeEndsAt;
