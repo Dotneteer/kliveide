@@ -135,7 +135,6 @@ export class M6510Cpu implements IM6510Cpu {
     this.delayMemoryRead(address);
     this.lastMemoryReads.push(address);
     const value = (this.lastMemoryReadValue = this.doReadMemory(address));
-    this.incrementTacts();
     return value;
   }
 
@@ -154,6 +153,7 @@ export class M6510Cpu implements IM6510Cpu {
    */
   delayMemoryRead(_: number): void {
     this.waitForCpuRelease();
+    this.incrementTacts();
   }
 
   /**
@@ -183,7 +183,10 @@ export class M6510Cpu implements IM6510Cpu {
    * This function implements the memory write delay of the CPU.
    * @param _address Memory address to write
    */
-  delayMemoryWrite(_address: number): void {}
+  delayMemoryWrite(_address: number): void {
+    this.waitForCpuRelease();
+    this.incrementTacts();
+  }
 
   delayAddressBusAccess(_address: number): void {
     throw new Error("Method not implemented.");
@@ -699,7 +702,7 @@ export class M6510Cpu implements IM6510Cpu {
     }
   }
 
-  readMemoryIndexed(address: number, index: number): number {
+  readMemoryWithPageBoundary(address: number, index: number): number {
     // Read memory at the specified address with index applied
     const effectiveAddress = (address + index) & 0xffff;
     // Check for page boundary crossing
@@ -710,13 +713,18 @@ export class M6510Cpu implements IM6510Cpu {
     return this.readMemory(effectiveAddress);
   }
 
-  // ------------------------------------------------------------------------------------------------------------------
-  // 6510 private helpers
-  /**
-   * Increments the CPU tacts and updates the frame and current frame tact counters.
-   * This method should be called every time a CPU tact is completed.
-   */
-  private incrementTacts(): void {
+  writeMemoryIndexed(address: number, index: number, value: number): void {
+    // Write memory at the specified address with index applied
+    const effectiveAddress = (address + index) & 0xffff;
+    // Check for page boundary crossing
+    if ((address & 0xff00) !== (effectiveAddress & 0xff00)) {
+      // Page boundary crossed, handle any required delays or operations
+      this.incrementTacts();
+    }
+    this.writeMemory(effectiveAddress, value);
+  }
+
+  incrementTacts(): void {
     this.tacts++;
     this.frameTacts++;
     if (this.frameTacts >= this.tactsInCurrentFrame) {
@@ -726,6 +734,13 @@ export class M6510Cpu implements IM6510Cpu {
     this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
     this.onTactIncremented();
   }
+
+  // ------------------------------------------------------------------------------------------------------------------
+  // 6510 private helpers
+  /**
+   * Increments the CPU tacts and updates the frame and current frame tact counters.
+   * This method should be called every time a CPU tact is completed.
+   */
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1102,8 +1117,9 @@ function styZp(_cpu: M6510Cpu): void {
 }
 
 // 0x85: STA zp - Store Accumulator (Zero Page)
-function staZp(_cpu: M6510Cpu): void {
-  // TODO: Implement STA zp operation
+function staZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.writeMemory(zpAddress, cpu.a);
 }
 
 // 0x86: STX zp - Store X Register (Zero Page)
@@ -1152,8 +1168,10 @@ function styZpX(_cpu: M6510Cpu): void {
 }
 
 // 0x95: STA zp,X - Store Accumulator (Zero Page,X)
-function staZpX(_cpu: M6510Cpu): void {
-  // TODO: Implement STA zp,X operation
+function staZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Increment tacts for indexed addressing
+  cpu.writeMemory(zpAddress + cpu.x, cpu.a);
 }
 
 // 0x96: STX zp,Y - Store X Register (Zero Page,Y)
@@ -1182,23 +1200,35 @@ function staAbsX(_cpu: M6510Cpu): void {
 }
 
 // 0xA0: LDY # - Load Y Register (Immediate)
-function ldyImm(_cpu: M6510Cpu): void {
-  // TODO: Implement LDY # operation
+function ldyImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.y = value;
+  cpu.setZeroAndNegativeFlags(value);
 }
 
 // 0xA1: LDA (zp,X) - Load Accumulator (Indexed Indirect)
-function ldaIndX(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA (zp,X) operation
+function ldaIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = zeroPageAddress + cpu.x;
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1));
+  cpu.a = cpu.readMemory((high << 8) | low);
+  cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xA2: LDX # - Load X Register (Immediate)
-function ldxImm(_cpu: M6510Cpu): void {
-  // TODO: Implement LDX # operation
+function ldxImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
 }
 
 // 0xA4: LDY zp - Load Y Register (Zero Page)
-function ldyZp(_cpu: M6510Cpu): void {
-  // TODO: Implement LDY zp operation
+function ldyZp(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.y = cpu.readMemory(value);
+  cpu.setZeroAndNegativeFlags(cpu.y);
 }
 
 // 0xA5: LDA zp - Load Accumulator (Zero Page)
@@ -1209,8 +1239,10 @@ function ldaZp(cpu: M6510Cpu): void {
 }
 
 // 0xA6: LDX zp - Load X Register (Zero Page)
-function ldxZp(_cpu: M6510Cpu): void {
-  // TODO: Implement LDX zp operation
+function ldxZp(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.x = cpu.readMemory(value);
+  cpu.setZeroAndNegativeFlags(cpu.x);
 }
 
 // 0xA8: TAY - Transfer Accumulator to Y
@@ -1231,8 +1263,12 @@ function tax(_cpu: M6510Cpu): void {
 }
 
 // 0xAC: LDY abs - Load Y Register (Absolute)
-function ldyAbs(_cpu: M6510Cpu): void {
-  // TODO: Implement LDY abs operation
+function ldyAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.y = cpu.readMemory(addr);
+  cpu.setZeroAndNegativeFlags(cpu.y);
 }
 
 // 0xAD: LDA abs - Load Accumulator (Absolute)
@@ -1245,8 +1281,12 @@ function ldaAbs(cpu: M6510Cpu): void {
 }
 
 // 0xAE: LDX abs - Load X Register (Absolute)
-function ldxAbs(_cpu: M6510Cpu): void {
-  // TODO: Implement LDX abs operation
+function ldxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.x = cpu.readMemory(addr);
+  cpu.setZeroAndNegativeFlags(cpu.x);
 }
 
 // 0xB0: BCS - Branch on Carry Set
@@ -1255,23 +1295,36 @@ function bcs(_cpu: M6510Cpu): void {
 }
 
 // 0xB1: LDA (zp),Y - Load Accumulator (Indirect Indexed)
-function ldaIndY(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA (zp),Y operation
+function ldaIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1));
+  cpu.a = cpu.readMemoryWithPageBoundary((high << 8) | low, cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xB4: LDY zp,X - Load Y Register (Zero Page,X)
-function ldyZpX(_cpu: M6510Cpu): void {
-  // TODO: Implement LDY zp,X operation
+function ldyZpX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  cpu.y = cpu.readMemory(zeroPageAddress + cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.y);
 }
 
 // 0xB5: LDA zp,X - Load Accumulator (Zero Page,X)
-function ldaZpX(_cpu: M6510Cpu): void {
-  // TODO: Implement LDA zp,X operation
+function ldaZpX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  cpu.a = cpu.readMemory(zeroPageAddress + cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xB6: LDX zp,Y - Load X Register (Zero Page,Y)
-function ldxZpY(_cpu: M6510Cpu): void {
-  // TODO: Implement LDX zp,Y operation
+function ldxZpY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  cpu.x = cpu.readMemory(zeroPageAddress + cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.x);
 }
 
 // 0xB8: CLV - Clear Overflow Flag
@@ -1284,7 +1337,7 @@ function ldaAbsY(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
   const addr = (high << 8) | low;
-  cpu.a = cpu.readMemoryIndexed(addr, cpu.y);
+  cpu.a = cpu.readMemoryWithPageBoundary(addr, cpu.y);
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
@@ -1294,8 +1347,12 @@ function tsx(_cpu: M6510Cpu): void {
 }
 
 // 0xBC: LDY abs,X - Load Y Register (Absolute,X)
-function ldyAbsX(_cpu: M6510Cpu): void {
-  // TODO: Implement LDY abs,X operation
+function ldyAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.y = cpu.readMemoryWithPageBoundary(addr, cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.y);
 }
 
 // 0xBD: LDA abs,X - Load Accumulator (Absolute,X)
@@ -1303,13 +1360,17 @@ function ldaAbsX(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
   const addr = (high << 8) | low;
-  cpu.a = cpu.readMemoryIndexed(addr, cpu.x);
+  cpu.a = cpu.readMemoryWithPageBoundary(addr, cpu.x);
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
 // 0xBE: LDX abs,Y - Load X Register (Absolute,Y)
-function ldxAbsY(_cpu: M6510Cpu): void {
-  // TODO: Implement LDX abs,Y operation
+function ldxAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.x = cpu.readMemoryWithPageBoundary(addr, cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.x);
 }
 
 // 0xC0: CPY # - Compare Y Register (Immediate)
