@@ -435,7 +435,7 @@ export class M6510Cpu implements IM6510Cpu {
     oraIndX, // 0x01
     jam, // 0x02
     sloIndX, // 0x03 - SLO (zp,X)
-    illegal, // 0x04
+    dopZp, // 0x04 - DOP zp
     oraZp, // 0x05
     aslZp, // 0x06
     sloZp, // 0x07 - SLO zp
@@ -443,7 +443,7 @@ export class M6510Cpu implements IM6510Cpu {
     oraImm, // 0x09
     aslA, // 0x0A
     aacImm, // 0x0B - AAC #arg
-    illegal, // 0x0C
+    topAbs, // 0x0C - TOP abs
     oraAbs, // 0x0D
     aslAbs, // 0x0E
     sloAbs, // 0x0F - SLO abs
@@ -451,7 +451,7 @@ export class M6510Cpu implements IM6510Cpu {
     oraIndY, // 0x11
     jam, // 0x12
     sloIndY, // 0x13 - SLO (zp),Y
-    illegal, // 0x14
+    dopZpX, // 0x14 - DOP zp,X
     oraZpX, // 0x15
     aslZpX, // 0x16
     sloZpX, // 0x17 - SLO zp,X
@@ -459,7 +459,7 @@ export class M6510Cpu implements IM6510Cpu {
     oraAbsY, // 0x19
     illegal, // 0x1A
     sloAbsY, // 0x1B - SLO abs,Y
-    illegal, // 0x1C
+    topAbsX, // 0x1C - TOP abs,X
     oraAbsX, // 0x1D
     aslAbsX, // 0x1E
     sloAbsX, // 0x1F - SLO abs,X
@@ -483,7 +483,7 @@ export class M6510Cpu implements IM6510Cpu {
     andIndY, // 0x31
     jam, // 0x32
     rlaIndY, // 0x33 - RLA (zp),Y
-    illegal, // 0x34
+    dopZpX, // 0x34 - DOP zp,X
     andZpX, // 0x35
     rolZpX, // 0x36
     rlaZpX, // 0x37 - RLA zp,X
@@ -491,7 +491,7 @@ export class M6510Cpu implements IM6510Cpu {
     andAbsY, // 0x39
     illegal, // 0x3A
     rlaAbsY, // 0x3B - RLA abs,Y
-    illegal, // 0x3C
+    topAbsX, // 0x3C - TOP abs,X
     andAbsX, // 0x3D
     rolAbsX, // 0x3E
     rlaAbsX, // 0x3F - RLA abs,X
@@ -499,7 +499,7 @@ export class M6510Cpu implements IM6510Cpu {
     eorIndX, // 0x41
     jam, // 0x42
     sreIndX, // 0x43 - SRE (zp,X)
-    illegal, // 0x44
+    dopZp, // 0x44 - DOP zp
     eorZp, // 0x45
     lsrZp, // 0x46
     sreZp, // 0x47 - SRE zp
@@ -515,7 +515,7 @@ export class M6510Cpu implements IM6510Cpu {
     eorIndY, // 0x51
     jam, // 0x52
     sreIndY, // 0x53 - SRE (zp),Y
-    illegal, // 0x54
+    dopZpX, // 0x54 - DOP zp,X
     eorZpX, // 0x55
     lsrZpX, // 0x56
     sreZpX, // 0x57 - SRE zp,X
@@ -523,7 +523,7 @@ export class M6510Cpu implements IM6510Cpu {
     eorAbsY, // 0x59
     illegal, // 0x5A
     sreAbsY, // 0x5B - SRE abs,Y
-    illegal, // 0x5C
+    topAbsX, // 0x5C - TOP abs,X
     eorAbsX, // 0x5D
     lsrAbsX, // 0x5E
     sreAbsX, // 0x5F - SRE abs,X
@@ -531,7 +531,7 @@ export class M6510Cpu implements IM6510Cpu {
     adcIndX, // 0x61
     jam, // 0x62
     rraIndX, // 0x63 - RRA (zp,X)
-    illegal, // 0x64
+    dopZp, // 0x64 - DOP zp
     adcZp, // 0x65
     rorZp, // 0x66
     rraZp, // 0x67 - RRA zp
@@ -555,22 +555,22 @@ export class M6510Cpu implements IM6510Cpu {
     adcAbsY, // 0x79
     illegal, // 0x7A
     rraAbsY, // 0x7B - RRA abs,Y
-    illegal, // 0x7C
+    topAbsX, // 0x7C - TOP abs,X
     adcAbsX, // 0x7D
     rorAbsX, // 0x7E
     rraAbsX, // 0x7F - RRA abs,X
-    illegal, // 0x80
+    dopImm, // 0x80 - DOP #arg
     staIndX, // 0x81
-    illegal, // 0x82
+    dopImm, // 0x82 - DOP #arg
     saxIndX, // 0x83 - SAX (zp,X)
     styZp, // 0x84
     staZp, // 0x85
     stxZp, // 0x86
     saxZp, // 0x87 - SAX zp
     dey, // 0x88
-    illegal, // 0x89
+    dopImm, // 0x89 - DOP #arg
     txa, // 0x8A
-    illegal, // 0x8B
+    xaaImm, // 0x8B - XAA #arg
     styAbs, // 0x8C
     staAbs, // 0x8D
     stxAbs, // 0x8E
@@ -586,10 +586,10 @@ export class M6510Cpu implements IM6510Cpu {
     tya, // 0x98
     staAbsY, // 0x99
     txs, // 0x9A
-    illegal, // 0x9B
-    illegal, // 0x9C
+    xasAbsY, // 0x9B - XAS abs,Y
+    syaAbsX, // 0x9C - SYA abs,X
     staAbsX, // 0x9D
-    illegal, // 0x9E
+    sxaAbsY, // 0x9E - SXA abs,Y
     axaAbsY, // 0x9F - AXA abs,Y
     ldyImm, // 0xA0
     ldaIndX, // 0xA1
@@ -618,19 +618,19 @@ export class M6510Cpu implements IM6510Cpu {
     clv, // 0xB8
     ldaAbsY, // 0xB9
     tsx, // 0xBA
-    illegal, // 0xBB
+    larAbsY, // 0xBB - LAR abs,Y
     ldyAbsX, // 0xBC
     ldaAbsX, // 0xBD
     ldxAbsY, // 0xBE
     laxAbsY, // 0xBF
     cpyImm, // 0xC0
     cmpIndX, // 0xC1
-    illegal, // 0xC2
-    illegal, // 0xC3
+    dopImm, // 0xC2 - DOP #arg
+    dcpIndX, // 0xC3 - DCP (zp,X)
     cpyZp, // 0xC4
     cmpZp, // 0xC5
     decZp, // 0xC6
-    illegal, // 0xC7
+    dcpZp, // 0xC7 - DCP zp
     iny, // 0xC8
     cmpImm, // 0xC9
     dex, // 0xCA
@@ -638,55 +638,55 @@ export class M6510Cpu implements IM6510Cpu {
     cpyAbs, // 0xCC
     cmpAbs, // 0xCD
     decAbs, // 0xCE
-    illegal, // 0xCF
+    dcpAbs, // 0xCF - DCP abs
     bne, // 0xD0
     cmpIndY, // 0xD1
     jam, // 0xD2
-    illegal, // 0xD3
-    illegal, // 0xD4
+    dcpIndY, // 0xD3 - DCP (zp),Y
+    dopZpX, // 0xD4 - DOP zp,X
     cmpZpX, // 0xD5
     decZpX, // 0xD6
-    illegal, // 0xD7
+    dcpZpX, // 0xD7 - DCP zp,X
     cld, // 0xD8
     cmpAbsY, // 0xD9
     illegal, // 0xDA
-    illegal, // 0xDB
-    illegal, // 0xDC
+    dcpAbsY, // 0xDB - DCP abs,Y
+    topAbsX, // 0xDC - TOP abs,X
     cmpAbsX, // 0xDD
     decAbsX, // 0xDE
-    illegal, // 0xDF
+    dcpAbsX, // 0xDF - DCP abs,X
     cpxImm, // 0xE0
     sbcIndX, // 0xE1
-    illegal, // 0xE2
-    illegal, // 0xE3
+    dopImm, // 0xE2 - DOP #arg
+    iscIndX, // 0xE3 - ISC (zp,X)
     cpxZp, // 0xE4
     sbcZp, // 0xE5
     incZp, // 0xE6
-    illegal, // 0xE7
+    iscZp, // 0xE7 - ISC zp
     inx, // 0xE8
     sbcImm, // 0xE9
     nop, // 0xEA
-    illegal, // 0xEB
+    sbcImm, // 0xEB - SBC #imm (undocumented duplicate)
     cpxAbs, // 0xEC
     sbcAbs, // 0xED
     incAbs, // 0xEE
-    illegal, // 0xEF
+    iscAbs, // 0xEF - ISC abs
     beq, // 0xF0
     sbcIndY, // 0xF1
     jam, // 0xF2
-    illegal, // 0xF3
-    illegal, // 0xF4
+    iscIndY, // 0xF3 - ISC (zp),Y
+    dopZpX, // 0xF4 - DOP zp,X
     sbcZpX, // 0xF5
     incZpX, // 0xF6
-    illegal, // 0xF7
+    iscZpX, // 0xF7 - ISC zp,X
     sed, // 0xF8
     sbcAbsY, // 0xF9
     illegal, // 0xFA
-    illegal, // 0xFB
-    illegal, // 0xFC
+    iscAbsY, // 0xFB - ISC abs,Y
+    topAbsX, // 0xFC - TOP abs,X
     sbcAbsX, // 0xFD
     incAbsX, // 0xFE
-    illegal // 0xFF
+    iscAbsX // 0xFF - ISC abs,X
   ];
 
   // ------------------------------------------------------------------------------------------------------------------
@@ -3296,4 +3296,560 @@ function axsImm(cpu: M6510Cpu): void {
   } else {
     cpu.p &= ~FlagSetMask6510.C;
   }
+}
+
+// --- DCP (Decrement and Compare) undocumented instruction ---
+// Decrements memory by one, then compares the result with the accumulator
+// Status flags: N,Z,C (from compare operation)
+
+// 0xC3: DCP (zp,X) - Decrement and Compare (Indexed Indirect)
+function dcpIndX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const indirectAddress = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const targetLow = cpu.readMemory(indirectAddress);
+  const targetHigh = cpu.readMemory((indirectAddress + 1) & 0xFF); // Wrap around
+  const targetAddress = (targetHigh << 8) | targetLow;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const decrementedValue = (originalValue - 1) & 0xFF;
+  cpu.writeMemory(targetAddress, decrementedValue);
+  
+  // Now compare decremented value with accumulator (like CMP)
+  const result = cpu.a - decrementedValue;
+  
+  // Set flags based on comparison
+  cpu.setZeroAndNegativeFlags(result & 0xFF);
+  if (cpu.a >= decrementedValue) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// 0xC7: DCP zp - Decrement and Compare (Zero Page)
+function dcpZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const originalValue = cpu.readMemory(zpAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const decrementedValue = (originalValue - 1) & 0xFF;
+  cpu.writeMemory(zpAddress, decrementedValue);
+  
+  // Now compare decremented value with accumulator
+  const result = cpu.a - decrementedValue;
+  
+  // Set flags based on comparison
+  cpu.setZeroAndNegativeFlags(result & 0xFF);
+  if (cpu.a >= decrementedValue) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// 0xCF: DCP abs - Decrement and Compare (Absolute)
+function dcpAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const decrementedValue = (originalValue - 1) & 0xFF;
+  cpu.writeMemory(address, decrementedValue);
+  
+  // Now compare decremented value with accumulator
+  const result = cpu.a - decrementedValue;
+  
+  // Set flags based on comparison
+  cpu.setZeroAndNegativeFlags(result & 0xFF);
+  if (cpu.a >= decrementedValue) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// 0xD3: DCP (zp),Y - Decrement and Compare (Indirect Indexed)
+function dcpIndY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zpAddress);
+  const high = cpu.readMemory((zpAddress + 1) & 0xFF);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Page boundary check for indexed addressing
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const decrementedValue = (originalValue - 1) & 0xFF;
+  cpu.writeMemory(targetAddress, decrementedValue);
+  
+  // Now compare decremented value with accumulator
+  const result = cpu.a - decrementedValue;
+  
+  // Set flags based on comparison
+  cpu.setZeroAndNegativeFlags(result & 0xFF);
+  if (cpu.a >= decrementedValue) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// 0xD7: DCP zp,X - Decrement and Compare (Zero Page,X)
+function dcpZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const decrementedValue = (originalValue - 1) & 0xFF;
+  cpu.writeMemory(address, decrementedValue);
+  
+  // Now compare decremented value with accumulator
+  const result = cpu.a - decrementedValue;
+  
+  // Set flags based on comparison
+  cpu.setZeroAndNegativeFlags(result & 0xFF);
+  if (cpu.a >= decrementedValue) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// 0xDB: DCP abs,Y - Decrement and Compare (Absolute,Y)
+function dcpAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const decrementedValue = (originalValue - 1) & 0xFF;
+  cpu.writeMemory(targetAddress, decrementedValue);
+  
+  // Now compare decremented value with accumulator
+  const result = cpu.a - decrementedValue;
+  
+  // Set flags based on comparison
+  cpu.setZeroAndNegativeFlags(result & 0xFF);
+  if (cpu.a >= decrementedValue) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// 0xDF: DCP abs,X - Decrement and Compare (Absolute,X)
+function dcpAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const decrementedValue = (originalValue - 1) & 0xFF;
+  cpu.writeMemory(targetAddress, decrementedValue);
+  
+  // Now compare decremented value with accumulator
+  const result = cpu.a - decrementedValue;
+  
+  // Set flags based on comparison
+  cpu.setZeroAndNegativeFlags(result & 0xFF);
+  if (cpu.a >= decrementedValue) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// --- DOP (Double NOP) undocumented instruction ---
+// No operation with different addressing modes
+// Status flags: None
+
+// DOP immediate - 2 bytes, 2 cycles
+function dopImm(cpu: M6510Cpu): void {
+  cpu.readMemory(cpu.pc++); // Read and discard the immediate value
+}
+
+// DOP zero page - 2 bytes, 3 cycles
+function dopZp(cpu: M6510Cpu): void {
+  cpu.readMemory(cpu.pc++); // Read and discard the zero page address
+  cpu.incrementTacts(); // Extra cycle for zero page access (but no actual memory access)
+}
+
+// DOP zero page,X - 2 bytes, 4 cycles
+function dopZpX(cpu: M6510Cpu): void {
+  cpu.readMemory(cpu.pc++); // Read and discard the zero page address
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  cpu.incrementTacts(); // Extra cycle for zero page access (but no actual memory access)
+}
+
+// --- ISC (Increment and Subtract with Carry) undocumented instruction ---
+// Increments memory by one, then subtracts memory from accumulator (with borrow)
+// Status flags: N,V,Z,C
+
+// 0xE3: ISC (zp,X) - Increment and Subtract with Carry (Indexed Indirect)
+function iscIndX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const indirectAddress = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const targetLow = cpu.readMemory(indirectAddress);
+  const targetHigh = cpu.readMemory((indirectAddress + 1) & 0xFF); // Wrap around
+  const targetAddress = (targetHigh << 8) | targetLow;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const incrementedValue = (originalValue + 1) & 0xFF;
+  cpu.writeMemory(targetAddress, incrementedValue);
+  
+  // Now subtract incremented value from accumulator (like SBC)
+  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
+  
+  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
+  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
+  if (overflow) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+  
+  // Set C flag: carry (no borrow) when result >= 0
+  if (temp >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  cpu.a = temp & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// 0xE7: ISC zp - Increment and Subtract with Carry (Zero Page)
+function iscZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const originalValue = cpu.readMemory(zpAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const incrementedValue = (originalValue + 1) & 0xFF;
+  cpu.writeMemory(zpAddress, incrementedValue);
+  
+  // Now subtract incremented value from accumulator (like SBC)
+  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
+  
+  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
+  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
+  if (overflow) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+  
+  // Set C flag: carry (no borrow) when result >= 0
+  if (temp >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  cpu.a = temp & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// 0xEF: ISC abs - Increment and Subtract with Carry (Absolute)
+function iscAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const incrementedValue = (originalValue + 1) & 0xFF;
+  cpu.writeMemory(address, incrementedValue);
+  
+  // Now subtract incremented value from accumulator (like SBC)
+  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
+  
+  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
+  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
+  if (overflow) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+  
+  // Set C flag: carry (no borrow) when result >= 0
+  if (temp >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  cpu.a = temp & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// 0xF3: ISC (zp),Y - Increment and Subtract with Carry (Indirect Indexed)
+function iscIndY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zpAddress);
+  const high = cpu.readMemory((zpAddress + 1) & 0xFF);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Page boundary check for indexed addressing
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const incrementedValue = (originalValue + 1) & 0xFF;
+  cpu.writeMemory(targetAddress, incrementedValue);
+  
+  // Now subtract incremented value from accumulator (like SBC)
+  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
+  
+  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
+  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
+  if (overflow) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+  
+  // Set C flag: carry (no borrow) when result >= 0
+  if (temp >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  cpu.a = temp & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// 0xF7: ISC zp,X - Increment and Subtract with Carry (Zero Page,X)
+function iscZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const incrementedValue = (originalValue + 1) & 0xFF;
+  cpu.writeMemory(address, incrementedValue);
+  
+  // Now subtract incremented value from accumulator (like SBC)
+  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
+  
+  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
+  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
+  if (overflow) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+  
+  // Set C flag: carry (no borrow) when result >= 0
+  if (temp >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  cpu.a = temp & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// 0xFB: ISC abs,Y - Increment and Subtract with Carry (Absolute,Y)
+function iscAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const incrementedValue = (originalValue + 1) & 0xFF;
+  cpu.writeMemory(targetAddress, incrementedValue);
+  
+  // Now subtract incremented value from accumulator (like SBC)
+  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
+  
+  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
+  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
+  if (overflow) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+  
+  // Set C flag: carry (no borrow) when result >= 0
+  if (temp >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  cpu.a = temp & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// 0xFF: ISC abs,X - Increment and Subtract with Carry (Absolute,X)
+function iscAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const incrementedValue = (originalValue + 1) & 0xFF;
+  cpu.writeMemory(targetAddress, incrementedValue);
+  
+  // Now subtract incremented value from accumulator (like SBC)
+  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
+  
+  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
+  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
+  if (overflow) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+  
+  // Set C flag: carry (no borrow) when result >= 0
+  if (temp >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  cpu.a = temp & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// LAR (LAS) - Load Accumulator and X with Stack Pointer
+// LAR performs AND between memory and stack pointer, storing result in A, X, and S
+// 0xBB: LAR abs,Y - AND memory with stack pointer, transfer to A, X, and S
+function larAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  
+  // Check for page boundary crossing
+  if ((baseAddress & 0xFF00) !== (targetAddress & 0xFF00)) {
+    cpu.incrementTacts(); // Extra cycle for page boundary crossing
+  }
+  
+  const memoryValue = cpu.readMemory(targetAddress);
+  const result = cpu.sp & memoryValue;
+  
+  cpu.a = result;
+  cpu.x = result;
+  cpu.sp = result;
+  
+  cpu.setZeroAndNegativeFlags(result);
+}
+
+// SXA (SHX) - Store X AND High Byte
+// SXA performs AND between X register and high byte + 1 of target address
+// 0x9E: SXA abs,Y - Store X AND (high byte + 1)
+function sxaAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  
+  // Extra read cycle for indexed addressing
+  cpu.incrementTacts();
+  
+  // Calculate the high byte of the target address + 1
+  const highBytePlusOne = ((targetAddress >> 8) + 1) & 0xFF;
+  
+  // Store X AND (high byte + 1)
+  const result = cpu.x & highBytePlusOne;
+  cpu.writeMemory(targetAddress, result);
+}
+
+// SYA (SHY) performs AND between Y register and high byte + 1 of target address
+// 0x9C: SYA abs,X - Store Y AND (high byte + 1)
+function syaAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
+  
+  // Extra read cycle for indexed addressing
+  cpu.incrementTacts();
+  
+  // Calculate the high byte of the target address + 1
+  const highBytePlusOne = ((targetAddress >> 8) + 1) & 0xFF;
+  
+  // Store Y AND (high byte + 1)
+  const result = cpu.y & highBytePlusOne;
+  cpu.writeMemory(targetAddress, result);
+}
+
+// TOP (NOP) - Triple NOP - No operation with different addressing modes
+// 0x0C: TOP abs - Absolute addressing
+function topAbs(cpu: M6510Cpu): void {
+  // Read the 16-bit address
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  
+  // Read from the address but don't use the value (same as other abs instructions)
+  cpu.readMemory(address);
+}
+
+// 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC: TOP abs,X - Absolute,X addressing
+function topAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  
+  // Use the same pattern as other abs,X instructions - this handles page boundary automatically
+  cpu.readMemoryWithPageBoundary(address, cpu.x);
+}
+
+// XAA (ANE) - Unstable instruction
+// 0x8B: XAA #arg - Immediate addressing
+function xaaImm(cpu: M6510Cpu): void {
+  const operand = cpu.readMemory(cpu.pc++);
+  
+  // This instruction has unstable behavior, but a common implementation is:
+  // A = (A | CONST) & X & operand
+  // Where CONST is typically 0xEE, 0xEF, or 0xFF depending on the chip
+  // For consistency, we'll use 0xEE
+  const MAGIC_CONST = 0xEE;
+  
+  cpu.a = (cpu.a | MAGIC_CONST) & cpu.x & operand;
+  
+  // Set flags based on the result
+  cpu.p &= ~(FlagSetMask6510.Z | FlagSetMask6510.N);
+  
+  if (cpu.a === 0) {
+    cpu.p |= FlagSetMask6510.Z;
+  }
+  
+  if (cpu.a & 0x80) {
+    cpu.p |= FlagSetMask6510.N;
+  }
+}
+
+// XAS (SHS/TAS) - Complex instruction affecting stack pointer and memory
+// 0x9B: XAS abs,Y - Store result of X AND A in stack pointer, then store SP AND (high+1) in memory
+function xasAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  
+  // Extra read cycle for indexed addressing
+  cpu.incrementTacts();
+  
+  // Step 1: Set stack pointer to X AND A
+  cpu.sp = cpu.x & cpu.a;
+  
+  // Step 2: Calculate the high byte of the target address + 1
+  const highBytePlusOne = ((targetAddress >> 8) + 1) & 0xFF;
+  
+  // Step 3: Store stack pointer AND (high byte + 1) in memory
+  const result = cpu.sp & highBytePlusOne;
+  cpu.writeMemory(targetAddress, result);
 }
