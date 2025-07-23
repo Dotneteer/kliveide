@@ -442,7 +442,7 @@ export class M6510Cpu implements IM6510Cpu {
     php, // 0x08
     oraImm, // 0x09
     aslA, // 0x0A
-    illegal, // 0x0B
+    aacImm, // 0x0B - AAC #arg
     illegal, // 0x0C
     oraAbs, // 0x0D
     aslAbs, // 0x0E
@@ -474,7 +474,7 @@ export class M6510Cpu implements IM6510Cpu {
     plp, // 0x28
     andImm, // 0x29
     rolA, // 0x2A
-    illegal, // 0x2B
+    aacImm, // 0x2B - AAC #arg (same as 0x0B)
     bitAbs, // 0x2C
     andAbs, // 0x2D
     rolAbs, // 0x2E
@@ -506,7 +506,7 @@ export class M6510Cpu implements IM6510Cpu {
     pha, // 0x48
     eorImm, // 0x49
     lsrA, // 0x4A
-    illegal, // 0x4B
+    asrImm, // 0x4B - ASR #arg
     jmp, // 0x4C
     eorAbs, // 0x4D
     lsrAbs, // 0x4E
@@ -538,7 +538,7 @@ export class M6510Cpu implements IM6510Cpu {
     pla, // 0x68
     adcImm, // 0x69
     rorA, // 0x6A
-    illegal, // 0x6B
+    arrImm, // 0x6B - ARR #arg
     jmpInd, // 0x6C
     adcAbs, // 0x6D
     rorAbs, // 0x6E
@@ -562,11 +562,11 @@ export class M6510Cpu implements IM6510Cpu {
     illegal, // 0x80
     staIndX, // 0x81
     illegal, // 0x82
-    illegal, // 0x83
+    saxIndX, // 0x83 - SAX (zp,X)
     styZp, // 0x84
     staZp, // 0x85
     stxZp, // 0x86
-    illegal, // 0x87
+    saxZp, // 0x87 - SAX zp
     dey, // 0x88
     illegal, // 0x89
     txa, // 0x8A
@@ -574,15 +574,15 @@ export class M6510Cpu implements IM6510Cpu {
     styAbs, // 0x8C
     staAbs, // 0x8D
     stxAbs, // 0x8E
-    illegal, // 0x8F
+    saxAbs, // 0x8F - SAX abs
     bcc, // 0x90
     staIndY, // 0x91
     jam, // 0x92
-    illegal, // 0x93
+    axaIndY, // 0x93 - AXA (zp),Y
     styZpX, // 0x94
     staZpX, // 0x95
     stxZpY, // 0x96
-    illegal, // 0x97
+    saxZpY, // 0x97 - SAX zp,Y
     tya, // 0x98
     staAbsY, // 0x99
     txs, // 0x9A
@@ -590,31 +590,31 @@ export class M6510Cpu implements IM6510Cpu {
     illegal, // 0x9C
     staAbsX, // 0x9D
     illegal, // 0x9E
-    illegal, // 0x9F
+    axaAbsY, // 0x9F - AXA abs,Y
     ldyImm, // 0xA0
     ldaIndX, // 0xA1
     ldxImm, // 0xA2
-    illegal, // 0xA3
+    laxIndX, // 0xA3
     ldyZp, // 0xA4
     ldaZp, // 0xA5
     ldxZp, // 0xA6
-    illegal, // 0xA7
+    laxZp, // 0xA7
     tay, // 0xA8
     ldaImm, // 0xA9
     tax, // 0xAA
-    illegal, // 0xAB
+    atxImm, // 0xAB - ATX #arg
     ldyAbs, // 0xAC
     ldaAbs, // 0xAD
     ldxAbs, // 0xAE
-    illegal, // 0xAF
+    laxAbs, // 0xAF
     bcs, // 0xB0
     ldaIndY, // 0xB1
     jam, // 0xB2
-    illegal, // 0xB3
+    laxIndY, // 0xB3
     ldyZpX, // 0xB4
     ldaZpX, // 0xB5
     ldxZpY, // 0xB6
-    illegal, // 0xB7
+    laxZpY, // 0xB7
     clv, // 0xB8
     ldaAbsY, // 0xB9
     tsx, // 0xBA
@@ -622,7 +622,7 @@ export class M6510Cpu implements IM6510Cpu {
     ldyAbsX, // 0xBC
     ldaAbsX, // 0xBD
     ldxAbsY, // 0xBE
-    illegal, // 0xBF
+    laxAbsY, // 0xBF
     cpyImm, // 0xC0
     cmpIndX, // 0xC1
     illegal, // 0xC2
@@ -634,7 +634,7 @@ export class M6510Cpu implements IM6510Cpu {
     iny, // 0xC8
     cmpImm, // 0xC9
     dex, // 0xCA
-    illegal, // 0xCB
+    axsImm, // 0xCB - AXS #arg
     cpyAbs, // 0xCC
     cmpAbs, // 0xCD
     decAbs, // 0xCE
@@ -3022,4 +3022,278 @@ function rraAbsX(cpu: M6510Cpu): void {
   const result = cpu.a + rotatedValue + adcCarryIn;
   cpu.setAdcFlags(cpu.a, rotatedValue, result);
   cpu.a = result & 0xFF;
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+// SAX (Undocumented) - Store A AND X
+// Performs A AND X and stores the result to memory
+// Does not affect any flags
+
+// 0x83: SAX (zp,X) - Store A AND X (Indexed Indirect)
+function saxIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(targetAddress, result);
+}
+
+// 0x87: SAX zp - Store A AND X (Zero Page)
+function saxZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(zpAddress, result);
+}
+
+// 0x8F: SAX abs - Store A AND X (Absolute)
+function saxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(address, result);
+}
+
+// 0x97: SAX zp,Y - Store A AND X (Zero Page,Y)
+function saxZpY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.y) & 0xFF; // Wrap around in zero page
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(address, result);
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+// LAX (Undocumented) - Load A and X
+// Loads memory into both accumulator (A) and X register
+// Affects flags: N, Z
+
+// 0xA3: LAX (zp,X) - Load A and X (Indexed Indirect)
+function laxIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  const value = cpu.readMemory(targetAddress);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+// 0xA7: LAX zp - Load A and X (Zero Page)
+function laxZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(zpAddress);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+// 0xAF: LAX abs - Load A and X (Absolute)
+function laxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+// 0xB3: LAX (zp),Y - Load A and X (Indirect Indexed)
+function laxIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle wrap-around
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+// 0xB7: LAX zp,Y - Load A and X (Zero Page,Y)
+function laxZpY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.y) & 0xFF; // Wrap around in zero page
+  const value = cpu.readMemory(address);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+// 0xBF: LAX abs,Y - Load A and X (Absolute,Y)
+function laxAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+// --- AAC/ANC (AND with Carry) undocumented instruction ---
+// Opcodes: 0x0B, 0x2B
+// AND byte with accumulator. If result is negative then carry is set.
+// Status flags: N,Z,C
+function aacImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+  
+  // Set carry flag if result is negative (bit 7 set)
+  if (cpu.a & 0x80) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+// --- ARR (AND and Rotate Right) undocumented instruction ---
+// Opcodes: 0x6B
+// AND byte with accumulator, then rotate one bit right in accumulator and check bit 5 and 6:
+// If both bits are 1: set C, clear V.
+// If both bits are 0: clear C and V.
+// If only bit 5 is 1: set V, clear C.
+// If only bit 6 is 1: set C and V.
+// Status flags: N,V,Z,C
+function arrImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+
+  // AND with accumulator
+  let tmp = cpu.a & value;
+  
+  // Include current carry in bit 8, then shift right (VICE implementation)
+  tmp |= (cpu.isCFlagSet() ? 1 : 0) << 8;
+  tmp >>= 1;
+  
+  // Store result in accumulator
+  cpu.a = tmp & 0xFF;
+  
+  // Set N and Z flags based on result
+  cpu.setZeroAndNegativeFlags(cpu.a);
+  
+  // ARR-specific flag behavior based on VICE implementation:
+  // Set C based on bit 6 of result
+  if (tmp & 0x40) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  // Set V based on VICE overflow calculation: (tmp & 0x40) ^ ((tmp & 0x20) << 1)
+  const overflowCalc = (tmp & 0x40) ^ ((tmp & 0x20) << 1);
+  if (overflowCalc !== 0) {
+    cpu.p |= FlagSetMask6510.V;
+  } else {
+    cpu.p &= ~FlagSetMask6510.V;
+  }
+}
+
+// --- ASR/ALR (AND and Shift Right) undocumented instruction ---
+// Opcodes: 0x4B
+// AND byte with accumulator, then shift right one bit in accumulator.
+// Status flags: N,Z,C
+function asrImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+
+  // AND with accumulator
+  cpu.a = cpu.a & value;
+  
+  // Set carry flag based on bit 0 before shifting
+  if (cpu.a & 0x01) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  // Shift right one bit
+  cpu.a = (cpu.a >> 1) & 0xFF;
+  
+  // Set N and Z flags based on result
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// --- ATX (AND and Transfer to X) undocumented instruction ---
+// Opcode: 0xAB
+// AND byte with accumulator, then transfer accumulator to X register.
+// Status flags: N,Z
+function atxImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  
+  // AND with accumulator
+  cpu.a = cpu.a & value;
+  
+  // Transfer accumulator to X
+  cpu.x = cpu.a;
+  
+  // Set N and Z flags based on result
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+// --- AXA (AND X with A) undocumented instruction ---
+// Opcodes: 0x93, 0x9F
+// AND X register with accumulator, then AND result with 7 and store to memory.
+// Note: This is an unstable instruction that can behave unpredictably.
+// Status flags: None
+
+// 0x93: AXA (zp),Y - AND X with A (Indirect Indexed)
+function axaIndY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zpAddress);
+  const high = cpu.readMemory((zpAddress + 1) & 0xFF);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Page boundary check for indexed addressing
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  
+  // AXA behavior: A AND X AND (high byte of target address + 1)
+  const result = cpu.a & cpu.x & ((targetAddress >> 8) + 1);
+  cpu.writeMemory(targetAddress, result & 0xFF);
+}
+
+// 0x9F: AXA abs,Y - AND X with A (Absolute,Y)
+function axaAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  
+  // AXA behavior: A AND X AND (high byte of target address + 1)
+  const result = cpu.a & cpu.x & ((targetAddress >> 8) + 1);
+  cpu.writeMemory(targetAddress, result & 0xFF);
+}
+
+// --- AXS (AND X with A and Subtract) undocumented instruction ---
+// Opcode: 0xCB
+// AND X register with accumulator, then subtract immediate value without borrow.
+// Status flags: N,Z,C
+function axsImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  
+  // AND X with A
+  const temp = (cpu.a & cpu.x) & 0xFF;
+  
+  // Subtract immediate value (without borrow/carry)
+  const result = temp - value;
+  
+  // Store result in X register
+  cpu.x = result & 0xFF;
+  
+  // Set flags
+  cpu.setZeroAndNegativeFlags(cpu.x);
+  
+  // Set carry flag if no borrow occurred (result >= 0)
+  if (result >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
 }
