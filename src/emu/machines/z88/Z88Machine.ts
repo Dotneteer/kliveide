@@ -290,7 +290,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    */
   async hardReset(): Promise<void> {
     super.hardReset();
-    this.memory.resetSlot0();
+    this.memory.resetInternalRam();
     await this.setup();
     this.reset();
   }
