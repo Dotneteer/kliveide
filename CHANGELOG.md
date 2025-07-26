@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.49.2
+
+### Fixes
+
+- Fix annoying startup issues after a fresh install
+
 ## 0.49.1
 
 ### Features

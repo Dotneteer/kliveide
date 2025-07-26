@@ -81,6 +81,11 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
 export async function initializeZxSpectrumNext(): Promise<void> {
   // --- This is where the SD Card file is stored
   const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SC_CARD_FILE);
+  if (!fs.existsSync(sdCardPath)) {
+    // --- Create the folder if it does not exist
+    fs.mkdirSync(path.dirname(sdCardPath), { recursive: true });
+  }
+
   if (fs.existsSync(sdCardPath) && fs.statSync(sdCardPath).isFile()) {
     // --- The file exits, we are done
     return;

@@ -240,7 +240,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const cpu = controller.machine;
+    const cpu = controller.machine as any;
     return {
       af: cpu.af,
       bc: cpu.bc,
@@ -504,7 +504,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const m = controller.machine;
+    const m = controller.machine as any;
     let memory: Uint8Array;
     if (partition === undefined) {
       memory = (controller.machine as IZxSpectrumMachine).get64KFlatMemory();
@@ -797,7 +797,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const machine = controller.machine;
+    const machine = controller.machine as any;
     switch (register.toUpperCase()) {
       case "A":
         machine.a = value;
