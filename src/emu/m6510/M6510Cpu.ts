@@ -861,43 +861,187 @@ export class M6510Cpu implements IM6510Cpu {
   }
 
   /**
-   * Sets the flags after an SBC (Subtract with Carry) operation
-   * @param accumulator The original accumulator value
+   * Performs SBC (Subtract with Carry) operation with decimal mode support
    * @param operand The value being subtracted
-   * @param borrowIn The borrow input (0 if carry set, 1 if carry clear)
+   * @returns The result to store in the accumulator
    */
-  setSbcFlags(accumulator: number, operand: number, borrowIn: number): void {
-    const result = accumulator - operand - borrowIn;
+  performSbc(operand: number): number {
+    const borrowIn = this.isCFlagSet() ? 0 : 1;
+    const tmp = this.a - operand - borrowIn;
     
+    if (this.isDFlagSet()) {
+      // Decimal mode (BCD)
+      let tmpA = (this.a & 0x0F) - (operand & 0x0F) - borrowIn;
+      if (tmpA & 0x10) {
+        tmpA = ((tmpA - 6) & 0x0F) | ((this.a & 0xF0) - (operand & 0xF0) - 0x10);
+      } else {
+        tmpA = (tmpA & 0x0F) | ((this.a & 0xF0) - (operand & 0xF0));
+      }
+      if (tmpA & 0x100) {
+        tmpA -= 0x60;
+      }
+      
+      // Set flags based on binary operation but use BCD result for accumulator
+      this.setSbcFlagsDecimal(this.a, operand, tmp);
+      return tmpA & 0xFF;
+    } else {
+      // Binary mode
+      this.setSbcFlagsBinary(this.a, operand, tmp);
+      return tmp & 0xFF;
+    }
+  }
+
+  /**
+   * Sets flags for SBC operation in binary mode
+   */
+  private setSbcFlagsBinary(accumulator: number, operand: number, result: number): void {
     // Clear N, V, Z, C flags
     this._p &= ~(FlagSetMask6510.N | FlagSetMask6510.V | FlagSetMask6510.Z | FlagSetMask6510.C);
     
-    // Set N flag if bit 7 of result is set
-    if ((result & 0x80) !== 0) {
+    // Set N and Z flags based on 8-bit result
+    const result8 = result & 0xFF;
+    if (result8 === 0) {
+      this._p |= FlagSetMask6510.Z;
+    }
+    if (result8 & 0x80) {
       this._p |= FlagSetMask6510.N;
     }
     
-    // Set Z flag if result is zero
-    if ((result & 0xFF) === 0) {
-      this._p |= FlagSetMask6510.Z;
-    }
-    
-    // Set C flag if no borrow occurred
-    const minuend = accumulator;
-    const subtrahend = operand + borrowIn;
-    if (minuend >= subtrahend) {
+    // Set C flag if no borrow occurred (result >= 0)
+    if (result >= 0) {
       this._p |= FlagSetMask6510.C;
     }
     
     // Set V flag if signed overflow occurred
-    // In subtraction, overflow occurs when:
-    // - Subtracting a negative from a positive gives a negative result
-    // - Subtracting a positive from a negative gives a positive result
-    const accumulatorSign = accumulator & 0x80;
-    const operandSign = operand & 0x80;
-    const resultSign = result & 0x80;
+    // Overflow in subtraction: (A ^ result) & 0x80 && (A ^ operand) & 0x80
+    if (((accumulator ^ result) & 0x80) && ((accumulator ^ operand) & 0x80)) {
+      this._p |= FlagSetMask6510.V;
+    }
+  }
+
+  /**
+   * Sets flags for SBC operation in decimal mode
+   */
+  private setSbcFlagsDecimal(accumulator: number, operand: number, binaryResult: number): void {
+    // Clear N, V, Z, C flags
+    this._p &= ~(FlagSetMask6510.N | FlagSetMask6510.V | FlagSetMask6510.Z | FlagSetMask6510.C);
     
-    if ((accumulatorSign !== operandSign) && (accumulatorSign !== resultSign)) {
+    // N and Z flags are set based on binary result
+    const result8 = binaryResult & 0xFF;
+    if (result8 === 0) {
+      this._p |= FlagSetMask6510.Z;
+    }
+    if (result8 & 0x80) {
+      this._p |= FlagSetMask6510.N;
+    }
+    
+    // Set C flag if no borrow occurred in binary operation
+    if (binaryResult >= 0) {
+      this._p |= FlagSetMask6510.C;
+    }
+    
+    // Set V flag based on binary operation
+    if (((accumulator ^ binaryResult) & 0x80) && ((accumulator ^ operand) & 0x80)) {
+      this._p |= FlagSetMask6510.V;
+    }
+  }
+
+  /**
+   * Performs ADC (Add with Carry) operation with decimal mode support
+   * @param operand The value being added
+   * @returns The result to store in the accumulator
+   */
+  performAdc(operand: number): number {
+    const carryIn = this.isCFlagSet() ? 1 : 0;
+    
+    if (this.isDFlagSet()) {
+      // Decimal mode (BCD) - exact VICE algorithm
+      let tmp = (this.a & 0x0F) + (operand & 0x0F) + carryIn;
+      if (tmp > 0x09) {
+        tmp += 0x06;
+      }
+      if (tmp <= 0x0F) {
+        tmp = (tmp & 0x0F) + (this.a & 0xF0) + (operand & 0xF0);
+      } else {
+        tmp = (tmp & 0x0F) + (this.a & 0xF0) + (operand & 0xF0) + 0x10;
+      }
+      
+      // Check for tens digit carry BEFORE adjustment
+      const needsCarry = (tmp & 0x1F0) > 0x90;
+      if (needsCarry) {
+        tmp += 0x60;
+      }
+      
+      // The final BCD result is tmp & 0xFF (after all adjustments)
+      const finalBcdResult = tmp & 0xFF;
+      
+      // Set flags based on binary operation for Z and V, N based on final BCD result
+      const binaryResult = this.a + operand + carryIn;
+      this.setAdcFlagsDecimal(this.a, operand, binaryResult, finalBcdResult);
+      
+      // Set carry flag based on whether tens digit needed adjustment
+      if (needsCarry) {
+        this._p |= FlagSetMask6510.C;
+      } else {
+        this._p &= ~FlagSetMask6510.C;
+      }
+      
+      return tmp & 0xFF;
+    } else {
+      // Binary mode
+      const result = this.a + operand + carryIn;
+      this.setAdcFlagsBinary(this.a, operand, result);
+      return result & 0xFF;
+    }
+  }
+
+  /**
+   * Sets flags for ADC operation in binary mode
+   */
+  private setAdcFlagsBinary(accumulator: number, operand: number, result: number): void {
+    // Clear N, V, Z, C flags
+    this._p &= ~(FlagSetMask6510.N | FlagSetMask6510.V | FlagSetMask6510.Z | FlagSetMask6510.C);
+    
+    // Set N and Z flags based on 8-bit result
+    const result8 = result & 0xFF;
+    if (result8 === 0) {
+      this._p |= FlagSetMask6510.Z;
+    }
+    if (result8 & 0x80) {
+      this._p |= FlagSetMask6510.N;
+    }
+    
+    // Set C flag if result > 255 (carry out)
+    if (result > 0xFF) {
+      this._p |= FlagSetMask6510.C;
+    }
+    
+    // Set V flag if signed overflow occurred
+    // Overflow: !((A ^ operand) & 0x80) && ((A ^ result) & 0x80)
+    if (!((accumulator ^ operand) & 0x80) && ((accumulator ^ result) & 0x80)) {
+      this._p |= FlagSetMask6510.V;
+    }
+  }
+
+  /**
+   * Sets flags for ADC operation in decimal mode
+   */
+  private setAdcFlagsDecimal(accumulator: number, operand: number, binaryResult: number, bcdResult: number): void {
+    // Clear N, V, Z flags (C is handled separately in decimal mode)
+    this._p &= ~(FlagSetMask6510.N | FlagSetMask6510.V | FlagSetMask6510.Z);
+    
+    // Z flag is set based on binary result (per 6502 specification)
+    if ((binaryResult & 0xFF) === 0) {
+      this._p |= FlagSetMask6510.Z;
+    }
+    
+    // N flag is set based on BCD result
+    if (bcdResult & 0x80) {
+      this._p |= FlagSetMask6510.N;
+    }
+    
+    // V flag based on binary operation: !((A ^ operand) & 0x80) && ((A ^ result) & 0x80)
+    if (!((accumulator ^ operand) & 0x80) && ((accumulator ^ binaryResult) & 0x80)) {
       this._p |= FlagSetMask6510.V;
     }
   }
@@ -4029,10 +4173,7 @@ function adcIndX(cpu: M6510Cpu): void {
   const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
   const targetAddress = (high << 8) | low;
   const operand = cpu.readMemory(targetAddress);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -4118,10 +4259,7 @@ function rraIndX(cpu: M6510Cpu): void {
 function adcZp(cpu: M6510Cpu): void {
   const address = cpu.readMemory(cpu.pc++);
   const operand = cpu.readMemory(address);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -4261,10 +4399,7 @@ function pla(cpu: M6510Cpu): void {
  */
 function adcImm(cpu: M6510Cpu): void {
   const operand = cpu.readMemory(cpu.pc++);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -4432,10 +4567,7 @@ function adcAbs(cpu: M6510Cpu): void {
   const high = cpu.readMemory(cpu.pc++);
   const address = (high << 8) | low;
   const operand = cpu.readMemory(address);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -4585,10 +4717,7 @@ function adcIndY(cpu: M6510Cpu): void {
   const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
   const baseAddress = (high << 8) | low;
   const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -4677,10 +4806,7 @@ function adcZpX(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Indexed addressing cycle
   const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
   const operand = cpu.readMemory(address);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -4829,10 +4955,7 @@ function adcAbsY(cpu: M6510Cpu): void {
   const high = cpu.readMemory(cpu.pc++);
   const baseAddress = (high << 8) | low;
   const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -4920,10 +5043,7 @@ function adcAbsX(cpu: M6510Cpu): void {
   const high = cpu.readMemory(cpu.pc++);
   const baseAddress = (high << 8) | low;
   const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performAdc(operand);
 }
 
 /**
@@ -7866,10 +7986,7 @@ function sbcIndX(cpu: M6510Cpu): void {
   const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
   const targetAddress = (high << 8) | low;
   const operand = cpu.readMemory(targetAddress);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -7915,26 +8032,8 @@ function iscIndX(cpu: M6510Cpu): void {
   const incrementedValue = (originalValue + 1) & 0xFF;
   cpu.writeMemory(targetAddress, incrementedValue);
   
-  // Now subtract incremented value from accumulator (like SBC)
-  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
-  
-  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
-  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
-  if (overflow) {
-    cpu.p |= FlagSetMask6510.V;
-  } else {
-    cpu.p &= ~FlagSetMask6510.V;
-  }
-  
-  // Set C flag: carry (no borrow) when result >= 0
-  if (temp >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
-  
-  cpu.a = temp & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Now subtract incremented value from accumulator (using proper SBC implementation)
+  cpu.a = cpu.performSbc(incrementedValue);
 }
 
 /**
@@ -7993,10 +8092,7 @@ function cpxZp(cpu: M6510Cpu): void {
 function sbcZp(cpu: M6510Cpu): void {
   const address = cpu.readMemory(cpu.pc++);
   const operand = cpu.readMemory(address);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -8065,26 +8161,8 @@ function iscZp(cpu: M6510Cpu): void {
   const incrementedValue = (originalValue + 1) & 0xFF;
   cpu.writeMemory(zpAddress, incrementedValue);
   
-  // Now subtract incremented value from accumulator (like SBC)
-  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
-  
-  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
-  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
-  if (overflow) {
-    cpu.p |= FlagSetMask6510.V;
-  } else {
-    cpu.p &= ~FlagSetMask6510.V;
-  }
-  
-  // Set C flag: carry (no borrow) when result >= 0
-  if (temp >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
-  
-  cpu.a = temp & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Now subtract incremented value from accumulator (using proper SBC implementation)
+  cpu.a = cpu.performSbc(incrementedValue);
 }
 
 /**
@@ -8138,10 +8216,7 @@ function inx(cpu: M6510Cpu): void {
  */
 function sbcImm(cpu: M6510Cpu): void {
   const operand = cpu.readMemory(cpu.pc++);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -8229,10 +8304,7 @@ function sbcAbs(cpu: M6510Cpu): void {
   const high = cpu.readMemory(cpu.pc++);
   const address = (high << 8) | low;
   const operand = cpu.readMemory(address);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -8308,26 +8380,8 @@ function iscAbs(cpu: M6510Cpu): void {
   const incrementedValue = (originalValue + 1) & 0xFF;
   cpu.writeMemory(address, incrementedValue);
   
-  // Now subtract incremented value from accumulator (like SBC)
-  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
-  
-  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
-  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
-  if (overflow) {
-    cpu.p |= FlagSetMask6510.V;
-  } else {
-    cpu.p &= ~FlagSetMask6510.V;
-  }
-  
-  // Set C flag: carry (no borrow) when result >= 0
-  if (temp >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
-  
-  cpu.a = temp & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Now subtract incremented value from accumulator (using proper SBC implementation)
+  cpu.a = cpu.performSbc(incrementedValue);
 }
 
 /**
@@ -8390,10 +8444,7 @@ function sbcIndY(cpu: M6510Cpu): void {
   const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
   const baseAddress = (high << 8) | low;
   const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -8439,26 +8490,8 @@ function iscIndY(cpu: M6510Cpu): void {
   const incrementedValue = (originalValue + 1) & 0xFF;
   cpu.writeMemory(targetAddress, incrementedValue);
   
-  // Now subtract incremented value from accumulator (like SBC)
-  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
-  
-  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
-  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
-  if (overflow) {
-    cpu.p |= FlagSetMask6510.V;
-  } else {
-    cpu.p &= ~FlagSetMask6510.V;
-  }
-  
-  // Set C flag: carry (no borrow) when result >= 0
-  if (temp >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
-  
-  cpu.a = temp & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Now subtract incremented value from accumulator (using proper SBC implementation)
+  cpu.a = cpu.performSbc(incrementedValue);
 }
 
 /**
@@ -8491,10 +8524,7 @@ function sbcZpX(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Indexed addressing cycle
   const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
   const operand = cpu.readMemory(address);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -8572,26 +8602,8 @@ function iscZpX(cpu: M6510Cpu): void {
   const incrementedValue = (originalValue + 1) & 0xFF;
   cpu.writeMemory(address, incrementedValue);
   
-  // Now subtract incremented value from accumulator (like SBC)
-  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
-  
-  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
-  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
-  if (overflow) {
-    cpu.p |= FlagSetMask6510.V;
-  } else {
-    cpu.p &= ~FlagSetMask6510.V;
-  }
-  
-  // Set C flag: carry (no borrow) when result >= 0
-  if (temp >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
-  
-  cpu.a = temp & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Now subtract incremented value from accumulator (using proper SBC implementation)
+  cpu.a = cpu.performSbc(incrementedValue);
 }
 
 /**
@@ -8651,10 +8663,7 @@ function sbcAbsY(cpu: M6510Cpu): void {
   const high = cpu.readMemory(cpu.pc++);
   const baseAddress = (high << 8) | low;
   const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -8698,26 +8707,8 @@ function iscAbsY(cpu: M6510Cpu): void {
   const incrementedValue = (originalValue + 1) & 0xFF;
   cpu.writeMemory(targetAddress, incrementedValue);
   
-  // Now subtract incremented value from accumulator (like SBC)
-  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
-  
-  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
-  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
-  if (overflow) {
-    cpu.p |= FlagSetMask6510.V;
-  } else {
-    cpu.p &= ~FlagSetMask6510.V;
-  }
-  
-  // Set C flag: carry (no borrow) when result >= 0
-  if (temp >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
-  
-  cpu.a = temp & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Now subtract incremented value from accumulator (using proper SBC implementation)
+  cpu.a = cpu.performSbc(incrementedValue);
 }
 
 /**
@@ -8752,10 +8743,7 @@ function sbcAbsX(cpu: M6510Cpu): void {
   const high = cpu.readMemory(cpu.pc++);
   const baseAddress = (high << 8) | low;
   const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
+  cpu.a = cpu.performSbc(operand);
 }
 
 /**
@@ -8839,26 +8827,8 @@ function iscAbsX(cpu: M6510Cpu): void {
   const incrementedValue = (originalValue + 1) & 0xFF;
   cpu.writeMemory(targetAddress, incrementedValue);
   
-  // Now subtract incremented value from accumulator (like SBC)
-  const temp = cpu.a - incrementedValue - (cpu.isCFlagSet() ? 0 : 1);
-  
-  // Set V flag: overflow occurs when the sign of the inputs are the same and differ from the result
-  const overflow = ((cpu.a ^ temp) & (~incrementedValue ^ temp) & 0x80) !== 0;
-  if (overflow) {
-    cpu.p |= FlagSetMask6510.V;
-  } else {
-    cpu.p &= ~FlagSetMask6510.V;
-  }
-  
-  // Set C flag: carry (no borrow) when result >= 0
-  if (temp >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
-  
-  cpu.a = temp & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Now subtract incremented value from accumulator (using proper SBC implementation)
+  cpu.a = cpu.performSbc(incrementedValue);
 }
 
 

@@ -160,25 +160,64 @@ describe("M6510 Undocumented Instructions - SBC", () => {
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
   });
 
-  // TODO: Fix this test
-  // it("SBC #imm undocumented - decimal mode with borrow", () => {
-  //   // --- Arrange
-  //   const machine = new M6510TestMachine(RunMode.OneInstruction);
-  //   machine.initCode([0xEB, 0x05], 0x1000, 0x1000); // SBC #$05 (undocumented)
-  //   machine.cpu.a = 0x03; // BCD 03
-  //   machine.cpu.p &= ~0x01; // Clear carry flag (borrow will occur)
-  //   machine.cpu.p |= 0x08; // Set decimal flag
+  it("SBC #imm undocumented - decimal mode with borrow", () => {
+    // --- Arrange
+    const machine = new M6510TestMachine(RunMode.OneInstruction);
+    machine.initCode([0xEB, 0x05], 0x1000, 0x1000); // SBC #$05 (undocumented)
+    machine.cpu.a = 0x03; // BCD 03
+    machine.cpu.p &= ~0x01; // Clear carry flag (borrow will occur)
+    machine.cpu.p |= 0x08; // Set decimal flag
 
-  //   // --- Act
-  //   machine.run();
+    // --- Act
+    machine.run();
 
-  //   // --- Assert
-  //   // In decimal mode: 03 - 05 - 1 = 97 (BCD borrow from next decade)
-  //   expect(machine.cpu.a).toBe(0x97); // BCD result with borrow
-  //   expect(machine.cpu.isCFlagSet()).toBe(false); // Borrow occurred
-  //   expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
-  //   expect(machine.cpu.isNFlagSet()).toBe(true); // Result has bit 7 set
-  // });
+    // --- Assert
+    // In decimal mode: 03 - 05 - 1 = 97 (BCD borrow from next decade)
+    expect(machine.cpu.a).toBe(0x97); // BCD result with borrow
+    expect(machine.cpu.isCFlagSet()).toBe(false); // Borrow occurred
+    expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.cpu.isNFlagSet()).toBe(true); // Result has bit 7 set based on binary N flag
+  });
+
+  it("SBC #imm undocumented - decimal mode zero result", () => {
+    // --- Arrange  
+    const machine = new M6510TestMachine(RunMode.OneInstruction);
+    machine.initCode([0xEB, 0x05], 0x1000, 0x1000); // SBC #$05 (undocumented)
+    machine.cpu.a = 0x05; // BCD 05
+    machine.cpu.p |= 0x01; // Set carry flag (no borrow)
+    machine.cpu.p |= 0x08; // Set decimal flag
+
+    // --- Act
+    machine.run();
+
+    // --- Assert
+    // In decimal mode: 05 - 05 = 00
+    expect(machine.cpu.a).toBe(0x00); // BCD result
+    expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
+    expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
+    expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
+    expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+  });
+
+  it("SBC #imm undocumented - decimal mode large subtraction", () => {
+    // --- Arrange
+    const machine = new M6510TestMachine(RunMode.OneInstruction);
+    machine.initCode([0xEB, 0x23], 0x1000, 0x1000); // SBC #$23 (undocumented)
+    machine.cpu.a = 0x45; // BCD 45
+    machine.cpu.p |= 0x01; // Set carry flag (no borrow)
+    machine.cpu.p |= 0x08; // Set decimal flag
+
+    // --- Act
+    machine.run();
+
+    // --- Assert
+    // In decimal mode: 45 - 23 = 22
+    expect(machine.cpu.a).toBe(0x22); // BCD result
+    expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
+    expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
+    expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+  });
 
   it("SBC #imm undocumented - should not affect unrelated flags", () => {
     // --- Arrange
@@ -193,7 +232,8 @@ describe("M6510 Undocumented Instructions - SBC", () => {
     machine.run();
 
     // --- Assert
-    expect(machine.cpu.a).toBe(0x10); // 0x20 - 0x10 = 0x10
+    // In decimal mode: 20 - 10 = 10 (BCD arithmetic)
+    expect(machine.cpu.a).toBe(0x10); // BCD result: 20 - 10 = 10
     expect(machine.cpu.isDFlagSet()).toBe(true); // Decimal should be unchanged
     expect(machine.cpu.isIFlagSet()).toBe(true); // Interrupt should be unchanged
     // Note: B flag behavior may vary, but we don't test it as it's implementation-specific
@@ -234,5 +274,100 @@ describe("M6510 Undocumented Instructions - SBC", () => {
     expect(undocumentedResult.a).toBe(officialResult.a);
     expect(undocumentedResult.p).toBe(officialResult.p);
     expect(undocumentedResult.tacts).toBe(officialResult.tacts);
+  });
+});
+
+describe("M6510 SBC Instructions - Decimal Mode", () => {
+  it("SBC immediate - binary mode vs decimal mode comparison", () => {
+    // Test binary mode first
+    const machine1 = new M6510TestMachine(RunMode.OneInstruction);
+    machine1.initCode([0xE9, 0x15], 0x1000, 0x1000); // SBC #$15
+    machine1.cpu.a = 0x25;
+    machine1.cpu.p |= 0x01; // Set carry (no borrow)
+    // Decimal flag is clear by default
+    
+    machine1.run();
+    
+    const binaryResult = machine1.cpu.a;
+    
+    // Test decimal mode
+    const machine2 = new M6510TestMachine(RunMode.OneInstruction);
+    machine2.initCode([0xE9, 0x15], 0x1000, 0x1000); // SBC #$15
+    machine2.cpu.a = 0x25;
+    machine2.cpu.p |= 0x01; // Set carry (no borrow)
+    machine2.cpu.p |= 0x08; // Set decimal flag
+    
+    machine2.run();
+    
+    const decimalResult = machine2.cpu.a;
+    
+    // Binary: 0x25 - 0x15 = 0x10
+    expect(binaryResult).toBe(0x10);
+    // Decimal: 25 - 15 = 10 (BCD)
+    expect(decimalResult).toBe(0x10);
+    // In this case they're the same, but the algorithm is different
+  });
+
+  it("SBC immediate - decimal mode complex subtraction", () => {
+    const machine = new M6510TestMachine(RunMode.OneInstruction);
+    machine.initCode([0xE9, 0x19], 0x1000, 0x1000); // SBC #$19
+    machine.cpu.a = 0x35;
+    machine.cpu.p |= 0x01; // Set carry (no borrow)
+    machine.cpu.p |= 0x08; // Set decimal flag
+    
+    machine.run();
+    
+    // Decimal: 35 - 19 = 16 (BCD)
+    expect(machine.cpu.a).toBe(0x16);
+    expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
+    expect(machine.cpu.isZFlagSet()).toBe(false);
+    expect(machine.cpu.isNFlagSet()).toBe(false);
+  });
+
+  it("SBC zero page - decimal mode", () => {
+    const machine = new M6510TestMachine(RunMode.OneInstruction);
+    machine.initCode([0xE5, 0x80], 0x1000, 0x1000); // SBC $80
+    machine.writeMemory(0x80, 0x07); // Store 07 at zero page $80
+    machine.cpu.a = 0x12;
+    machine.cpu.p |= 0x01; // Set carry (no borrow)
+    machine.cpu.p |= 0x08; // Set decimal flag
+    
+    machine.run();
+    
+    // Decimal: 12 - 07 = 05 (BCD)
+    expect(machine.cpu.a).toBe(0x05);
+    expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
+  });
+
+  it("SBC absolute - decimal mode with complex borrow", () => {
+    const machine = new M6510TestMachine(RunMode.OneInstruction);
+    machine.initCode([0xED, 0x00, 0x30], 0x1000, 0x1000); // SBC $3000
+    machine.writeMemory(0x3000, 0x28); // Store 28 at $3000
+    machine.cpu.a = 0x15;
+    machine.cpu.p &= ~0x01; // Clear carry (borrow will occur)
+    machine.cpu.p |= 0x08; // Set decimal flag
+    
+    machine.run();
+    
+    // Decimal: 15 - 28 - 1 = 86 (BCD with borrow)
+    expect(machine.cpu.a).toBe(0x86);
+    expect(machine.cpu.isCFlagSet()).toBe(false); // Borrow occurred
+  });
+
+  it("ISC zero page - decimal mode", () => {
+    const machine = new M6510TestMachine(RunMode.OneInstruction);
+    machine.initCode([0xE7, 0x80], 0x1000, 0x1000); // ISC $80 (undocumented)
+    machine.writeMemory(0x80, 0x08); // Store 08 at zero page $80
+    machine.cpu.a = 0x15;
+    machine.cpu.p |= 0x01; // Set carry (no borrow)
+    machine.cpu.p |= 0x08; // Set decimal flag
+    
+    machine.run();
+    
+    // First increment: 08 -> 09
+    expect(machine.readMemory(0x80)).toBe(0x09);
+    // Then subtract: 15 - 09 = 06 (BCD)
+    expect(machine.cpu.a).toBe(0x06);
+    expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
   });
 });

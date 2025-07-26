@@ -331,6 +331,162 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
     });
   });
 
+  describe("ADC - Add with Carry (Decimal Mode)", () => {
+    it("should add BCD numbers correctly in decimal mode", () => {
+      // --- Arrange
+      machine.initCode([0x69, 0x05], 0x1000, 0x1000); // ADC #$05
+      machine.cpu.a = 0x09; // BCD 09
+      machine.cpu.p &= ~FlagSetMask6510.C; // Clear carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 09 + 05 = 14 (BCD)
+      expect(machine.cpu.a).toBe(0x14); // BCD result
+      expect(machine.cpu.isCFlagSet()).toBe(false); // No carry
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+      expect(machine.cpu.isNFlagSet()).toBe(false); // Based on binary calculation
+      expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+    });
+
+    it("should handle BCD carry correctly in decimal mode", () => {
+      // --- Arrange
+      machine.initCode([0x69, 0x09], 0x1000, 0x1000); // ADC #$09
+      machine.cpu.a = 0x08; // BCD 08
+      machine.cpu.p &= ~FlagSetMask6510.C; // Clear carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 08 + 09 = 17 (BCD)
+      expect(machine.cpu.a).toBe(0x17); // BCD result
+      expect(machine.cpu.isCFlagSet()).toBe(false); // No decimal carry out
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+      expect(machine.cpu.isNFlagSet()).toBe(false); // Based on binary calculation
+      expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+    });
+
+    it("should set carry flag when BCD result exceeds 99", () => {
+      // --- Arrange
+      machine.initCode([0x69, 0x05], 0x1000, 0x1000); // ADC #$05
+      machine.cpu.a = 0x95; // BCD 95
+      machine.cpu.p &= ~FlagSetMask6510.C; // Clear carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 95 + 05 = 100, result = 00 with carry
+      expect(machine.cpu.a).toBe(0x00); // BCD result
+      expect(machine.cpu.isCFlagSet()).toBe(true); // Decimal carry out
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Z flag based on binary result (0x95 + 0x05 = 0x9A ≠ 0)
+      expect(machine.cpu.isNFlagSet()).toBe(false); // N flag based on BCD result (0x00 has bit 7 clear)
+      expect(machine.cpu.isVFlagSet()).toBe(false); // No signed overflow
+    });
+
+    it("should handle carry input in decimal mode", () => {
+      // --- Arrange
+      machine.initCode([0x69, 0x05], 0x1000, 0x1000); // ADC #$05
+      machine.cpu.a = 0x09; // BCD 09
+      machine.cpu.p |= FlagSetMask6510.C; // Set carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 09 + 05 + 1 = 15 (BCD)
+      expect(machine.cpu.a).toBe(0x15); // BCD result
+      expect(machine.cpu.isCFlagSet()).toBe(false); // No carry out
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+      expect(machine.cpu.isNFlagSet()).toBe(false); // Based on binary calculation
+      expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+    });
+
+    it("should handle double BCD carry (from ones and tens)", () => {
+      // --- Arrange
+      machine.initCode([0x69, 0x99], 0x1000, 0x1000); // ADC #$99
+      machine.cpu.a = 0x99; // BCD 99
+      machine.cpu.p &= ~FlagSetMask6510.C; // Clear carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 99 + 99 = 198, result = 98 with carry
+      expect(machine.cpu.a).toBe(0x98); // BCD result (198 - 100 = 98)
+      expect(machine.cpu.isCFlagSet()).toBe(true); // Decimal carry out
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Z flag based on binary result (0x132 & 0xFF = 0x32 ≠ 0)
+      expect(machine.cpu.isNFlagSet()).toBe(true); // N flag based on BCD result (0x98 has bit 7 set)
+      expect(machine.cpu.isVFlagSet()).toBe(true); // Signed overflow (0x99 + 0x99 = 0x132, truncated to 0x32)
+    });
+
+    it("should handle edge case: adding 1 to 99 in decimal mode", () => {
+      // --- Arrange
+      machine.initCode([0x69, 0x01], 0x1000, 0x1000); // ADC #$01
+      machine.cpu.a = 0x99; // BCD 99
+      machine.cpu.p &= ~FlagSetMask6510.C; // Clear carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 99 + 01 = 100, result = 00 with carry
+      expect(machine.cpu.a).toBe(0x00); // BCD result
+      expect(machine.cpu.isCFlagSet()).toBe(true); // Decimal carry out
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Z flag based on binary result (0x99 + 0x01 = 0x9A ≠ 0)
+      expect(machine.cpu.isNFlagSet()).toBe(false); // N flag based on BCD result (0x00 has bit 7 clear)
+      expect(machine.cpu.isVFlagSet()).toBe(false); // No signed overflow
+    });
+
+    it("should work with zero page addressing in decimal mode", () => {
+      // --- Arrange
+      machine.initCode([0x65, 0x80], 0x1000, 0x1000); // ADC $80
+      machine.writeMemory(0x80, 0x25); // BCD 25
+      machine.cpu.a = 0x34; // BCD 34
+      machine.cpu.p &= ~FlagSetMask6510.C; // Clear carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 34 + 25 = 59 (BCD)
+      expect(machine.cpu.a).toBe(0x59); // BCD result
+      expect(machine.cpu.isCFlagSet()).toBe(false); // No carry
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+      expect(machine.cpu.isNFlagSet()).toBe(false); // Based on binary calculation
+      expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+    });
+
+    it("should work with absolute addressing in decimal mode", () => {
+      // --- Arrange
+      machine.initCode([0x6D, 0x00, 0x30], 0x1000, 0x1000); // ADC $3000
+      machine.writeMemory(0x3000, 0x47); // BCD 47
+      machine.cpu.a = 0x38; // BCD 38
+      machine.cpu.p &= ~FlagSetMask6510.C; // Clear carry
+      machine.cpu.p |= 0x08; // Set decimal flag
+
+      // --- Act
+      machine.run();
+
+      // --- Assert
+      // In decimal mode: 38 + 47 = 85 (BCD)
+      expect(machine.cpu.a).toBe(0x85); // BCD result
+      expect(machine.cpu.isCFlagSet()).toBe(false); // No carry
+      expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+      expect(machine.cpu.isNFlagSet()).toBe(true); // Based on binary calculation (0x38 + 0x47 = 0x7F, but BCD 0x85 has bit 7 set)
+      expect(machine.cpu.isVFlagSet()).toBe(false); // No signed overflow
+    });
+  });
+
   describe("SBC - Subtract with Carry (Immediate)", () => {
     it("should subtract immediate value from accumulator without borrow", () => {
       // --- Arrange
