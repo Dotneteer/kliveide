@@ -1,11 +1,4 @@
-import {
-  PILOT_PL,
-  SYNC_1_PL,
-  SYNC_2_PL,
-  BIT_0_PL,
-  BIT_1_PL,
-  TERM_SYNC
-} from "./tape-const";
+import { PILOT_PL, SYNC_1_PL, SYNC_2_PL, BIT_0_PL, BIT_1_PL, TERM_SYNC } from "./tape-const";
 
 /**
  * This class represents a data block that the tape device can play
@@ -14,7 +7,7 @@ export class TapeDataBlock {
   /**
    * Block Data
    */
-  data = new Uint8Array(0);
+  data: Uint8Array = new Uint8Array(0);
 
   /**
    * Pause after this block (given in milliseconds)
@@ -49,5 +42,13 @@ export class TapeDataBlock {
   /**
    * Lenght of ther end sync pulse
    */
-  endSyncPulseLenght = TERM_SYNC;
+  endSyncPulseLength = TERM_SYNC;
+
+  /**
+   * Used bits in the last byte (other bits should be 0)
+   *
+   * (e.g. if this is 6, then the bits used(x) in the last byte are:
+   * xxxxxx00, where MSb is the leftmost bit, LSb is the rightmost bit)
+   */
+  lastByteUsedBits?: number;
 }
