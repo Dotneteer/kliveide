@@ -1025,13 +1025,6 @@ export class M6510Cpu implements IM6510Cpu {
 // --------------------------------------------------------------------------------------------------------------------
 // 6510 operation implementations
 
-// JAM - JAM the CPU (not a valid instruction, but used to indicate a jammed state)
-function jam(cpu: M6510Cpu): void {
-  cpu.setJammed();
-  cpu.incrementTacts(); // Increment tacts to simulate a cycle
-}
-
-// 0x00: BRK - Force Break
 function brk(cpu: M6510Cpu): void {
   // BRK is a 2-byte instruction, increment PC to point past the BRK operand
   cpu.pc++;
@@ -1053,7 +1046,6 @@ function brk(cpu: M6510Cpu): void {
   cpu.pc = (vectorHigh << 8) | vectorLow;
 }
 
-// 0x01: ORA (zp,X) - Logical OR with Accumulator (Indexed Indirect)
 function oraIndX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const indAddress = (zpAddress + cpu.x) & 0xff;
@@ -1066,7 +1058,34 @@ function oraIndX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x05: ORA zp - Logical OR with Accumulator (Zero Page)
+function jam(cpu: M6510Cpu): void {
+  cpu.setJammed();
+  cpu.incrementTacts(); // Increment tacts to simulate a cycle
+}
+
+function sloIndX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const indirectAddress = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const targetLow = cpu.readMemory(indirectAddress);
+  const targetHigh = cpu.readMemory((indirectAddress + 1) & 0xFF); // Wrap around
+  const targetAddress = (targetHigh << 8) | targetLow;
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const shiftedValue = (originalValue << 1) & 0xFF;
+  cpu.writeMemory(targetAddress, shiftedValue);
+  // Set ASL flags first
+  cpu.setAslFlags(originalValue, shiftedValue);
+  // Then OR with accumulator
+  cpu.a = cpu.a | shiftedValue;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function dopZp(cpu: M6510Cpu): void {
+  cpu.readMemory(cpu.pc++); // Read and discard the zero page address
+  cpu.incrementTacts(); // Extra cycle for zero page access (but no actual memory access)
+}
+
 function oraZp(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const value = cpu.readMemory(zpAddress);
@@ -1074,7 +1093,6 @@ function oraZp(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x06: ASL zp - Arithmetic Shift Left (Zero Page)
 function aslZp(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const originalValue = cpu.readMemory(zpAddress);
@@ -1084,7 +1102,19 @@ function aslZp(cpu: M6510Cpu): void {
   cpu.setAslFlags(originalValue, shiftedValue);
 }
 
-// 0x08: PHP - Push Processor Status
+function sloZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const originalValue = cpu.readMemory(zpAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const shiftedValue = (originalValue << 1) & 0xFF;
+  cpu.writeMemory(zpAddress, shiftedValue);
+  // Set ASL flags first
+  cpu.setAslFlags(originalValue, shiftedValue);
+  // Then OR with accumulator
+  cpu.a = cpu.a | shiftedValue;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
 function php(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Internal operation cycle
   // When PHP pushes the status register, the B flag is set in the pushed value
@@ -1093,14 +1123,12 @@ function php(cpu: M6510Cpu): void {
   cpu.pushStack(statusWithBreak);
 }
 
-// 0x09: ORA # - Logical OR with Accumulator (Immediate)
 function oraImm(cpu: M6510Cpu): void {
   const value = cpu.readMemory(cpu.pc++);
   cpu.a = cpu.a | value;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x0A: ASL A - Arithmetic Shift Left (Accumulator)
 function aslA(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Internal operation cycle
   const originalValue = cpu.a;
@@ -1109,7 +1137,29 @@ function aslA(cpu: M6510Cpu): void {
   cpu.setAslFlags(originalValue, shiftedValue);
 }
 
-// 0x0D: ORA abs - Logical OR with Accumulator (Absolute)
+function aacImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+  
+  // Set carry flag if result is negative (bit 7 set)
+  if (cpu.a & 0x80) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+function topAbs(cpu: M6510Cpu): void {
+  // Read the 16-bit address
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  
+  // Read from the address but don't use the value (same as other abs instructions)
+  cpu.readMemory(address);
+}
+
 function oraAbs(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -1119,7 +1169,6 @@ function oraAbs(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x0E: ASL abs - Arithmetic Shift Left (Absolute)
 function aslAbs(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -1131,12 +1180,25 @@ function aslAbs(cpu: M6510Cpu): void {
   cpu.setAslFlags(originalValue, shiftedValue);
 }
 
-// 0x10: BPL - Branch on Plus
+function sloAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const shiftedValue = (originalValue << 1) & 0xFF;
+  cpu.writeMemory(address, shiftedValue);
+  // Set ASL flags first
+  cpu.setAslFlags(originalValue, shiftedValue);
+  // Then OR with accumulator
+  cpu.a = cpu.a | shiftedValue;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
 function bpl(cpu: M6510Cpu): void {
   cpu.performBranch(!cpu.isNFlagSet());
 }
 
-// 0x11: ORA (zp),Y - Logical OR with Accumulator (Indirect Indexed)
 function oraIndY(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const low = cpu.readMemory(zpAddress);
@@ -1147,7 +1209,30 @@ function oraIndY(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x15: ORA zp,X - Logical OR with Accumulator (Zero Page,X)
+function sloIndY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zpAddress);
+  const high = cpu.readMemory((zpAddress + 1) & 0xFF);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  cpu.incrementTacts(); // Page boundary check for read
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const shiftedValue = (originalValue << 1) & 0xFF;
+  cpu.writeMemory(targetAddress, shiftedValue);
+  // Set ASL flags first
+  cpu.setAslFlags(originalValue, shiftedValue);
+  // Then OR with accumulator
+  cpu.a = cpu.a | shiftedValue;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function dopZpX(cpu: M6510Cpu): void {
+  cpu.readMemory(cpu.pc++); // Read and discard the zero page address
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  cpu.incrementTacts(); // Extra cycle for zero page access (but no actual memory access)
+}
+
 function oraZpX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts();
@@ -1157,7 +1242,6 @@ function oraZpX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x16: ASL zp,X - Arithmetic Shift Left (Zero Page,X)
 function aslZpX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts();
@@ -1169,13 +1253,26 @@ function aslZpX(cpu: M6510Cpu): void {
   cpu.setAslFlags(originalValue, shiftedValue);
 }
 
-// 0x18: CLC - Clear Carry Flag
+function sloZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const shiftedValue = (originalValue << 1) & 0xFF;
+  cpu.writeMemory(address, shiftedValue);
+  // Set ASL flags first
+  cpu.setAslFlags(originalValue, shiftedValue);
+  // Then OR with accumulator
+  cpu.a = cpu.a | shiftedValue;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
 function clc(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Internal operation cycle
   cpu.p &= ~FlagSetMask6510.C;
 }
 
-// 0x19: ORA abs,Y - Logical OR with Accumulator (Absolute,Y)
 function oraAbsY(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -1185,7 +1282,36 @@ function oraAbsY(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x1D: ORA abs,X - Logical OR with Accumulator (Absolute,X)
+function illegal(_cpu: M6510Cpu): void {
+  // TODO: Handle illegal opcodes
+}
+
+function sloAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  cpu.incrementTacts(); // Page boundary check for read
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const shiftedValue = (originalValue << 1) & 0xFF;
+  cpu.writeMemory(targetAddress, shiftedValue);
+  // Set ASL flags first
+  cpu.setAslFlags(originalValue, shiftedValue);
+  // Then OR with accumulator
+  cpu.a = cpu.a | shiftedValue;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function topAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  
+  // Use the same pattern as other abs,X instructions - this handles page boundary automatically
+  cpu.readMemoryWithPageBoundary(address, cpu.x);
+}
+
 function oraAbsX(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -1195,7 +1321,6 @@ function oraAbsX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x1E: ASL abs,X - Arithmetic Shift Left (Absolute,X)
 function aslAbsX(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -1209,7 +1334,23 @@ function aslAbsX(cpu: M6510Cpu): void {
   cpu.setAslFlags(originalValue, shiftedValue);
 }
 
-// 0x20: JSR - Jump to Subroutine
+function sloAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
+  cpu.incrementTacts(); // Page boundary check for read
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const shiftedValue = (originalValue << 1) & 0xFF;
+  cpu.writeMemory(targetAddress, shiftedValue);
+  // Set ASL flags first
+  cpu.setAslFlags(originalValue, shiftedValue);
+  // Then OR with accumulator
+  cpu.a = cpu.a | shiftedValue;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
 function jsr(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -1225,7 +1366,6 @@ function jsr(cpu: M6510Cpu): void {
   cpu.pc = targetAddress;
 }
 
-// 0x21: AND (zp,X) - Logical AND with Accumulator (Indexed Indirect)
 function andIndX(cpu: M6510Cpu): void {
   const zeroPageAddress = cpu.readMemory(cpu.pc++);
   const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
@@ -1238,1364 +1378,6 @@ function andIndX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x24: BIT zp - Bit Test (Zero Page)
-function bitZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  const value = cpu.readMemory(address);
-  cpu.setBitFlags(cpu.a, value);
-}
-
-// 0x25: AND zp - Logical AND with Accumulator (Zero Page)
-function andZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const value = cpu.readMemory(zpAddress);
-  cpu.a = cpu.a & value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x26: ROL zp - Rotate Left (Zero Page)
-function rolZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const originalValue = cpu.readMemory(zpAddress);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
-  cpu.writeMemory(zpAddress, rotatedValue);
-  cpu.setRolFlags(originalValue, rotatedValue);
-}
-
-// 0x28: PLP - Pull Processor Status
-function plp(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle 1
-  cpu.incrementTacts(); // Internal operation cycle 2
-  const pulledStatus = cpu.pullStack();
-  // When PLP pulls the status register, ignore the B flag from the stack
-  // and always set the UNUSED flag (bit 5)
-  cpu.p = (pulledStatus & ~FlagSetMask6510.B) | FlagSetMask6510.UNUSED;
-}
-
-// 0x29: AND # - Logical AND with Accumulator (Immediate)
-function andImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.a = cpu.a & value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x2A: ROL A - Rotate Left (Accumulator)
-function rolA(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  const originalValue = cpu.a;
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const rotatedValue = ((cpu.a << 1) | carryIn) & 0xff;
-  cpu.a = rotatedValue;
-  cpu.setRolFlags(originalValue, rotatedValue);
-}
-
-// 0x2C: BIT abs - Bit Test (Absolute)
-function bitAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemory(address);
-  cpu.setBitFlags(cpu.a, value);
-}
-
-// 0x2D: AND abs - Logical AND with Accumulator (Absolute)
-function andAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemory(address);
-  cpu.a = cpu.a & value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x2E: ROL abs - Rotate Left (Absolute)
-function rolAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
-  cpu.writeMemory(address, rotatedValue);
-  cpu.setRolFlags(originalValue, rotatedValue);
-}
-
-// 0x30: BMI - Branch on Minus
-function bmi(cpu: M6510Cpu): void {
-  cpu.performBranch(cpu.isNFlagSet());
-}
-
-// 0x31: AND (zp),Y - Logical AND with Accumulator (Indirect Indexed)
-function andIndY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zeroPageAddress);
-  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
-  const baseAddress = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  cpu.a = cpu.a & value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x35: AND zp,X - Logical AND with Accumulator (Zero Page,X)
-function andZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Increment tacts for indexed addressing
-  const value = cpu.readMemory((zpAddress + cpu.x) & 0xFF); // Wrap around in zero page
-  cpu.a = cpu.a & value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x36: ROL zp,X - Rotate Left (Zero Page,X)
-function rolZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts();
-  const address = (zpAddress + cpu.x) & 0xff;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
-  cpu.writeMemory(address, rotatedValue);
-  cpu.setRolFlags(originalValue, rotatedValue);
-}
-
-// 0x38: SEC - Set Carry Flag
-function sec(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.p |= FlagSetMask6510.C;
-}
-
-// 0x39: AND abs,Y - Logical AND with Accumulator (Absolute,Y)
-function andAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(address, cpu.y);
-  cpu.a = cpu.a & value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x3D: AND abs,X - Logical AND with Accumulator (Absolute,X)
-function andAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(address, cpu.x);
-  cpu.a = cpu.a & value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x3E: ROL abs,X - Rotate Left (Absolute,X)
-function rolAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.incrementTacts(); // Extra cycle for indexed addressing
-  const effectiveAddress = (address + cpu.x) & 0xffff;
-  const originalValue = cpu.readMemory(effectiveAddress);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
-  cpu.writeMemory(effectiveAddress, rotatedValue);
-  cpu.setRolFlags(originalValue, rotatedValue);
-}
-
-// 0x40: RTI - Return from Interrupt
-function rti(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle 1
-  
-  // Pull processor status from stack
-  const pulledStatus = cpu.pullStack();
-  // When RTI pulls the status register, ignore the B flag from the stack
-  // and always set the UNUSED flag (bit 5)
-  cpu.p = (pulledStatus & ~FlagSetMask6510.B) | FlagSetMask6510.UNUSED;
-  
-  // Pull return address from stack
-  const low = cpu.pullStack();
-  const high = cpu.pullStack();
-  cpu.pc = (high << 8) | low;
-  cpu.incrementTacts(); // Internal operation cycle 2
-}
-
-// 0x41: EOR (zp,X) - Exclusive OR with Accumulator (Indexed Indirect)
-function eorIndX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts();
-  const low = cpu.readMemory(effectiveAddress);
-  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
-  const targetAddress = (high << 8) | low;
-  const value = cpu.readMemory(targetAddress);
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x45: EOR zp - Exclusive OR with Accumulator (Zero Page)
-function eorZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const value = cpu.readMemory(zpAddress);
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x46: LSR zp - Logical Shift Right (Zero Page)
-function lsrZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const originalValue = cpu.readMemory(zpAddress);
-  cpu.incrementTacts(); // Internal operation cycle
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(zpAddress, shiftedValue);
-  cpu.setLsrFlags(originalValue, shiftedValue);
-}
-
-// 0x48: PHA - Push Accumulator
-function pha(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.pushStack(cpu.a);
-}
-
-// 0x49: EOR # - Exclusive OR with Accumulator (Immediate)
-function eorImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x4A: LSR A - Logical Shift Right (Accumulator)
-function lsrA(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  const originalValue = cpu.a;
-  const shiftedValue = cpu.a >> 1;
-  cpu.a = shiftedValue;
-  cpu.setLsrFlags(originalValue, shiftedValue);
-}
-
-// 0x4C: JMP - Jump
-function jmp(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const targetAddress = (high << 8) | low;
-  cpu.pc = targetAddress;
-}
-
-// 0x4D: EOR abs - Exclusive OR with Accumulator (Absolute)
-function eorAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemory(address);
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x4E: LSR abs - Logical Shift Right (Absolute)
-function lsrAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Internal operation cycle
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(address, shiftedValue);
-  cpu.setLsrFlags(originalValue, shiftedValue);
-}
-
-// 0x50: BVC - Branch on Overflow Clear
-function bvc(cpu: M6510Cpu): void {
-  cpu.performBranch(!cpu.isVFlagSet());
-}
-
-// 0x51: EOR (zp),Y - Exclusive OR with Accumulator (Indirect Indexed)
-function eorIndY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zeroPageAddress);
-  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
-  const baseAddress = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x55: EOR zp,X - Exclusive OR with Accumulator (Zero Page,X)
-function eorZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Increment tacts for indexed addressing
-  const value = cpu.readMemory((zpAddress + cpu.x) & 0xFF); // Wrap around in zero page
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x56: LSR zp,X - Logical Shift Right (Zero Page,X)
-function lsrZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts();
-  const address = (zpAddress + cpu.x) & 0xff;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Internal operation cycle
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(address, shiftedValue);
-  cpu.setLsrFlags(originalValue, shiftedValue);
-}
-
-// 0x58: CLI - Clear Interrupt Disable Flag
-function cli(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.p &= ~FlagSetMask6510.I;
-}
-
-// 0x59: EOR abs,Y - Exclusive OR with Accumulator (Absolute,Y)
-function eorAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(address, cpu.y);
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x5D: EOR abs,X - Exclusive OR with Accumulator (Absolute,X)
-function eorAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(address, cpu.x);
-  cpu.a = cpu.a ^ value;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x5E: LSR abs,X - Logical Shift Right (Absolute,X)
-function lsrAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.incrementTacts(); // Extra cycle for indexed addressing
-  const effectiveAddress = (address + cpu.x) & 0xffff;
-  const originalValue = cpu.readMemory(effectiveAddress);
-  cpu.incrementTacts(); // Internal operation cycle
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(effectiveAddress, shiftedValue);
-  cpu.setLsrFlags(originalValue, shiftedValue);
-}
-
-// 0x60: RTS - Return from Subroutine
-function rts(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle 1
-  cpu.incrementTacts(); // Internal operation cycle 2
-  
-  // Pull return address from stack
-  const low = cpu.pullStack();
-  const high = cpu.pullStack();
-  const returnAddress = (high << 8) | low;
-  
-  cpu.incrementTacts(); // Internal operation cycle 3
-  
-  // RTS increments the return address by 1 (since JSR pushed PC - 1)
-  cpu.pc = (returnAddress + 1) & 0xFFFF;
-}
-
-// 0x61: ADC (zp,X) - Add with Carry (Indexed Indirect)
-function adcIndX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const low = cpu.readMemory(effectiveAddress);
-  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
-  const targetAddress = (high << 8) | low;
-  const operand = cpu.readMemory(targetAddress);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x65: ADC zp - Add with Carry (Zero Page)
-function adcZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  const operand = cpu.readMemory(address);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x66: ROR zp - Rotate Right (Zero Page)
-function rorZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const originalValue = cpu.readMemory(zpAddress);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(zpAddress, rotatedValue);
-  cpu.setRorFlags(originalValue, rotatedValue);
-}
-
-// 0x68: PLA - Pull Accumulator
-function pla(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle 1
-  cpu.incrementTacts(); // Internal operation cycle 2
-  cpu.a = cpu.pullStack();
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x69: ADC # - Add with Carry (Immediate)
-function adcImm(cpu: M6510Cpu): void {
-  const operand = cpu.readMemory(cpu.pc++);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x6A: ROR A - Rotate Right (Accumulator)
-function rorA(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  const originalValue = cpu.a;
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (cpu.a >> 1) | carryIn;
-  cpu.a = rotatedValue;
-  cpu.setRorFlags(originalValue, rotatedValue);
-}
-
-// 0x6C: JMP () - Jump Indirect
-function jmpInd(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const indirectAddress = (high << 8) | low;
-  
-  // Read the target address from the indirect address
-  // 6502 bug: if the indirect address is on a page boundary (e.g., $xxFF),
-  // the high byte is read from $xx00 instead of $(xx+1)00
-  const targetLow = cpu.readMemory(indirectAddress);
-  let targetHigh: number;
-  
-  if ((indirectAddress & 0xFF) === 0xFF) {
-    // Page boundary bug: read high byte from same page
-    targetHigh = cpu.readMemory(indirectAddress & 0xFF00);
-  } else {
-    // Normal case: read high byte from next address
-    targetHigh = cpu.readMemory(indirectAddress + 1);
-  }
-  
-  const targetAddress = (targetHigh << 8) | targetLow;
-  cpu.pc = targetAddress;
-}
-
-// 0x6D: ADC abs - Add with Carry (Absolute)
-function adcAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const operand = cpu.readMemory(address);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x6E: ROR abs - Rotate Right (Absolute)
-function rorAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(address, rotatedValue);
-  cpu.setRorFlags(originalValue, rotatedValue);
-}
-
-// 0x70: BVS - Branch on Overflow Set
-function bvs(cpu: M6510Cpu): void {
-  cpu.performBranch(cpu.isVFlagSet());
-}
-
-// 0x71: ADC (zp),Y - Add with Carry (Indirect Indexed)
-function adcIndY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zeroPageAddress);
-  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
-  const baseAddress = (high << 8) | low;
-  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x75: ADC zp,X - Add with Carry (Zero Page,X)
-function adcZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  const operand = cpu.readMemory(address);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x76: ROR zp,X - Rotate Right (Zero Page,X)
-function rorZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts();
-  const address = (zpAddress + cpu.x) & 0xff;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(address, rotatedValue);
-  cpu.setRorFlags(originalValue, rotatedValue);
-}
-
-// 0x78: SEI - Set Interrupt Disable Flag
-function sei(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.p |= FlagSetMask6510.I;
-}
-
-// 0x79: ADC abs,Y - Add with Carry (Absolute,Y)
-function adcAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x7D: ADC abs,X - Add with Carry (Absolute,X)
-function adcAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
-  const carryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + operand + carryIn;
-  cpu.setAdcFlags(cpu.a, operand, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x7E: ROR abs,X - Rotate Right (Absolute,X)
-function rorAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.incrementTacts(); // Extra cycle for indexed addressing
-  const effectiveAddress = (address + cpu.x) & 0xffff;
-  const originalValue = cpu.readMemory(effectiveAddress);
-  cpu.incrementTacts(); // Internal operation cycle
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(effectiveAddress, rotatedValue);
-  cpu.setRorFlags(originalValue, rotatedValue);
-}
-
-// 0x81: STA (zp,X) - Store Accumulator (Indexed Indirect)
-function staIndX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts();
-  const low = cpu.readMemory(effectiveAddress);
-  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
-  const targetAddress = (high << 8) | low;
-  cpu.writeMemory(targetAddress, cpu.a);
-}
-
-// 0x84: STY zp - Store Y Register (Zero Page)
-function styZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.writeMemory(zpAddress, cpu.y);
-}
-
-// 0x85: STA zp - Store Accumulator (Zero Page)
-function staZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.writeMemory(zpAddress, cpu.a);
-}
-
-// 0x86: STX zp - Store X Register (Zero Page)
-function stxZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.writeMemory(zpAddress, cpu.x);
-}
-
-// 0x88: DEY - Decrement Y Register
-function dey(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // One additional cycle for the operation
-  cpu.y = (cpu.y - 1) & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.y);
-}
-
-// 0x8A: TXA - Transfer X to Accumulator
-function txa(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.a = cpu.x;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x8C: STY abs - Store Y Register (Absolute)
-function styAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.writeMemory(address, cpu.y);
-}
-
-// 0x8D: STA abs - Store Accumulator (Absolute)
-function staAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.writeMemory(address, cpu.a);
-}
-
-// 0x8E: STX abs - Store X Register (Absolute)
-function stxAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.writeMemory(address, cpu.x);
-}
-
-// 0x90: BCC - Branch on Carry Clear
-function bcc(cpu: M6510Cpu): void {
-  cpu.performBranch(!cpu.isCFlagSet());
-}
-
-// 0x91: STA (zp),Y - Store Accumulator (Indirect Indexed)
-function staIndY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zeroPageAddress);
-  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xffff;
-  cpu.incrementTacts(); // Extra cycle for page crossing
-  cpu.writeMemory(targetAddress, cpu.a);
-}
-
-// 0x94: STY zp,X - Store Y Register (Zero Page,X)
-function styZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Increment tacts for indexed addressing
-  cpu.writeMemory((zpAddress + cpu.x) & 0xFF, cpu.y); // Wrap around in zero page
-}
-
-// 0x95: STA zp,X - Store Accumulator (Zero Page,X)
-function staZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Increment tacts for indexed addressing
-  cpu.writeMemory((zpAddress + cpu.x) & 0xFF, cpu.a); // Wrap around in zero page
-}
-
-// 0x96: STX zp,Y - Store X Register (Zero Page,Y)
-function stxZpY(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Increment tacts for indexed addressing
-  cpu.writeMemory((zpAddress + cpu.y) & 0xFF, cpu.x); // Wrap around in zero page
-}
-
-// 0x98: TYA - Transfer Y to Accumulator
-function tya(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.a = cpu.y;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x99: STA abs,Y - Store Accumulator (Absolute,Y)
-function staAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xffff;
-  cpu.incrementTacts(); // Extra cycle for indexed addressing
-  cpu.writeMemory(targetAddress, cpu.a);
-}
-
-// 0x9A: TXS - Transfer X to Stack Pointer
-function txs(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.sp = cpu.x;
-}
-
-// 0x9D: STA abs,X - Store Accumulator (Absolute,X)
-function staAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.x) & 0xffff;
-  cpu.incrementTacts(); // Extra cycle for indexed addressing
-  cpu.writeMemory(targetAddress, cpu.a);
-}
-
-// 0xA0: LDY # - Load Y Register (Immediate)
-function ldyImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.y = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xA1: LDA (zp,X) - Load Accumulator (Indexed Indirect)
-function ldaIndX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const effectiveAddress = zeroPageAddress + cpu.x;
-  cpu.incrementTacts();
-  const low = cpu.readMemory(effectiveAddress);
-  const high = cpu.readMemory((effectiveAddress + 1));
-  cpu.a = cpu.readMemory((high << 8) | low);
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0xA2: LDX # - Load X Register (Immediate)
-function ldxImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.x = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xA4: LDY zp - Load Y Register (Zero Page)
-function ldyZp(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.y = cpu.readMemory(value);
-  cpu.setZeroAndNegativeFlags(cpu.y);
-}
-
-// 0xA5: LDA zp - Load Accumulator (Zero Page)
-function ldaZp(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.a = cpu.readMemory(value);
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0xA6: LDX zp - Load X Register (Zero Page)
-function ldxZp(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.x = cpu.readMemory(value);
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xA8: TAY - Transfer Accumulator to Y
-function tay(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.y = cpu.a;
-  cpu.setZeroAndNegativeFlags(cpu.y);
-}
-
-// 0xA9: LDA # - Load Accumulator (Immediate)
-function ldaImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.a = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xAA: TAX - Transfer Accumulator to X
-function tax(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.x = cpu.a;
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xAC: LDY abs - Load Y Register (Absolute)
-function ldyAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const addr = (high << 8) | low;
-  cpu.y = cpu.readMemory(addr);
-  cpu.setZeroAndNegativeFlags(cpu.y);
-}
-
-// 0xAD: LDA abs - Load Accumulator (Absolute)
-function ldaAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const addr = (high << 8) | low;
-  cpu.a = cpu.readMemory(addr);
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0xAE: LDX abs - Load X Register (Absolute)
-function ldxAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const addr = (high << 8) | low;
-  cpu.x = cpu.readMemory(addr);
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xB0: BCS - Branch on Carry Set
-function bcs(cpu: M6510Cpu): void {
-  cpu.performBranch(cpu.isCFlagSet());
-}
-
-// 0xB1: LDA (zp),Y - Load Accumulator (Indirect Indexed)
-function ldaIndY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zeroPageAddress);
-  const high = cpu.readMemory((zeroPageAddress + 1));
-  cpu.a = cpu.readMemoryWithPageBoundary((high << 8) | low, cpu.y);
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0xB4: LDY zp,X - Load Y Register (Zero Page,X)
-function ldyZpX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts();
-  cpu.y = cpu.readMemory(zeroPageAddress + cpu.x);
-  cpu.setZeroAndNegativeFlags(cpu.y);
-}
-
-// 0xB5: LDA zp,X - Load Accumulator (Zero Page,X)
-function ldaZpX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts();
-  cpu.a = cpu.readMemory(zeroPageAddress + cpu.x);
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0xB6: LDX zp,Y - Load X Register (Zero Page,Y)
-function ldxZpY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts();
-  cpu.x = cpu.readMemory(zeroPageAddress + cpu.y);
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xB8: CLV - Clear Overflow Flag
-function clv(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.p &= ~FlagSetMask6510.V;
-}
-
-// 0xB9: LDA abs,Y - Load Accumulator (Absolute,Y)
-function ldaAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const addr = (high << 8) | low;
-  cpu.a = cpu.readMemoryWithPageBoundary(addr, cpu.y);
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0xBA: TSX - Transfer Stack Pointer to X
-function tsx(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.x = cpu.sp;
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xBC: LDY abs,X - Load Y Register (Absolute,X)
-function ldyAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const addr = (high << 8) | low;
-  cpu.y = cpu.readMemoryWithPageBoundary(addr, cpu.x);
-  cpu.setZeroAndNegativeFlags(cpu.y);
-}
-
-// 0xBD: LDA abs,X - Load Accumulator (Absolute,X)
-function ldaAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const addr = (high << 8) | low;
-  cpu.a = cpu.readMemoryWithPageBoundary(addr, cpu.x);
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0xBE: LDX abs,Y - Load X Register (Absolute,Y)
-function ldxAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const addr = (high << 8) | low;
-  cpu.x = cpu.readMemoryWithPageBoundary(addr, cpu.y);
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xC0: CPY # - Compare Y Register (Immediate)
-function cpyImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.setCompareFlags(cpu.y, value);
-}
-
-// 0xC1: CMP (zp,X) - Compare Accumulator (Indexed Indirect)
-function cmpIndX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const indirectAddress = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  const targetLow = cpu.readMemory(indirectAddress);
-  const targetHigh = cpu.readMemory((indirectAddress + 1) & 0xFF); // Wrap around
-  const targetAddress = (targetHigh << 8) | targetLow;
-  const value = cpu.readMemory(targetAddress);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xC4: CPY zp - Compare Y Register (Zero Page)
-function cpyZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  const value = cpu.readMemory(address);
-  cpu.setCompareFlags(cpu.y, value);
-}
-
-// 0xC5: CMP zp - Compare Accumulator (Zero Page)
-function cmpZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  const value = cpu.readMemory(address);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xC6: DEC zp - Decrement Memory (Zero Page)
-function decZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value - 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// 0xC8: INY - Increment Y Register
-function iny(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // One additional cycle for the operation
-  cpu.y = (cpu.y + 1) & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.y);
-}
-
-// 0xC9: CMP # - Compare Accumulator (Immediate)
-function cmpImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xCA: DEX - Decrement X Register
-function dex(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // One additional cycle for the operation
-  cpu.x = (cpu.x - 1) & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xCC: CPY abs - Compare Y Register (Absolute)
-function cpyAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemory(address);
-  cpu.setCompareFlags(cpu.y, value);
-}
-
-// 0xCD: CMP abs - Compare Accumulator (Absolute)
-function cmpAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemory(address);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xCE: DEC abs - Decrement Memory (Absolute)
-function decAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value - 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// 0xD0: BNE - Branch on Not Equal
-function bne(cpu: M6510Cpu): void {
-  cpu.performBranch(!cpu.isZFlagSet());
-}
-
-// 0xD1: CMP (zp),Y - Compare Accumulator (Indirect Indexed)
-function cmpIndY(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const targetLow = cpu.readMemory(zpAddress);
-  const targetHigh = cpu.readMemory((zpAddress + 1) & 0xFF); // Wrap around in zero page
-  const baseAddress = (targetHigh << 8) | targetLow;
-  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xD5: CMP zp,X - Compare Accumulator (Zero Page,X)
-function cmpZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  const value = cpu.readMemory(address);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xD6: DEC zp,X - Decrement Memory (Zero Page,X)
-function decZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value - 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// 0xD8: CLD - Clear Decimal Mode Flag
-function cld(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.p &= ~FlagSetMask6510.D;
-}
-
-// 0xD9: CMP abs,Y - Compare Accumulator (Absolute,Y)
-function cmpAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xDD: CMP abs,X - Compare Accumulator (Absolute,X)
-function cmpAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
-  cpu.setCompareFlags(cpu.a, value);
-}
-
-// 0xDE: DEC abs,X - Decrement Memory (Absolute,X)
-function decAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const address = (baseAddress + cpu.x) & 0xFFFF;
-  cpu.incrementTacts(); // Indexed addressing cycle
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value - 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// 0xE0: CPX # - Compare X Register (Immediate)
-function cpxImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.setCompareFlags(cpu.x, value);
-}
-
-// 0xE1: SBC (zp,X) - Subtract with Carry (Indexed Indirect)
-function sbcIndX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const low = cpu.readMemory(effectiveAddress);
-  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
-  const targetAddress = (high << 8) | low;
-  const operand = cpu.readMemory(targetAddress);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xE4: CPX zp - Compare X Register (Zero Page)
-function cpxZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  const value = cpu.readMemory(address);
-  cpu.setCompareFlags(cpu.x, value);
-}
-
-// 0xE5: SBC zp - Subtract with Carry (Zero Page)
-function sbcZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  const operand = cpu.readMemory(address);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xE6: INC zp - Increment Memory (Zero Page)
-function incZp(cpu: M6510Cpu): void {
-  const address = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value + 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// 0xE8: INX - Increment X Register
-function inx(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // One additional cycle for the operation
-  cpu.x = (cpu.x + 1) & 0xFF;
-  cpu.setZeroAndNegativeFlags(cpu.x);
-}
-
-// 0xE9: SBC # - Subtract with Carry (Immediate)
-function sbcImm(cpu: M6510Cpu): void {
-  const operand = cpu.readMemory(cpu.pc++);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xEA: NOP - No Operation
-function nop(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-}
-
-// 0xEC: CPX abs - Compare X Register (Absolute)
-function cpxAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemory(address);
-  cpu.setCompareFlags(cpu.x, value);
-}
-
-// 0xED: SBC abs - Subtract with Carry (Absolute)
-function sbcAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const operand = cpu.readMemory(address);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xEE: INC abs - Increment Memory (Absolute)
-function incAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value + 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// 0xF0: BEQ - Branch on Equal
-function beq(cpu: M6510Cpu): void {
-  cpu.performBranch(cpu.isZFlagSet());
-}
-
-// 0xF1: SBC (zp),Y - Subtract with Carry (Indirect Indexed)
-function sbcIndY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zeroPageAddress);
-  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
-  const baseAddress = (high << 8) | low;
-  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xF5: SBC zp,X - Subtract with Carry (Zero Page,X)
-function sbcZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  const operand = cpu.readMemory(address);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xF6: INC zp,X - Increment Memory (Zero Page,X)
-function incZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value + 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// 0xF8: SED - Set Decimal Flag
-function sed(cpu: M6510Cpu): void {
-  cpu.incrementTacts(); // Internal operation cycle
-  cpu.p |= FlagSetMask6510.D;
-}
-
-// 0xF9: SBC abs,Y - Subtract with Carry (Absolute,Y)
-function sbcAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xFD: SBC abs,X - Subtract with Carry (Absolute,X)
-function sbcAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
-  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
-  const result = cpu.a - operand - borrowIn;
-  cpu.setSbcFlags(cpu.a, operand, borrowIn);
-  cpu.a = result & 0xFF;
-}
-
-// 0xFE: INC abs,X - Increment Memory (Absolute,X)
-function incAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const address = (baseAddress + cpu.x) & 0xFFFF;
-  cpu.incrementTacts(); // Indexed addressing cycle
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const value = cpu.readMemory(address);
-  const result = (value + 1) & 0xFF;
-  cpu.writeMemory(address, result);
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// ------------------------------------------------------------------------------------------------------------------
-// SRE (Undocumented) - Shift Right and EOR
-// Performs LSR (Logical Shift Right) followed by EOR (Exclusive OR) with accumulator
-
-// 0x43: SRE (zp,X) - Shift Right and EOR (Indexed Indirect)
-function sreIndX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const indirectAddress = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  const targetLow = cpu.readMemory(indirectAddress);
-  const targetHigh = cpu.readMemory((indirectAddress + 1) & 0xFF); // Wrap around
-  const targetAddress = (targetHigh << 8) | targetLow;
-  const originalValue = cpu.readMemory(targetAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(targetAddress, shiftedValue);
-  // Set LSR flags first
-  cpu.setLsrFlags(originalValue, shiftedValue);
-  // Then EOR with accumulator
-  cpu.a = cpu.a ^ shiftedValue;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x47: SRE zp - Shift Right and EOR (Zero Page)
-function sreZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const originalValue = cpu.readMemory(zpAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(zpAddress, shiftedValue);
-  // Set LSR flags first
-  cpu.setLsrFlags(originalValue, shiftedValue);
-  // Then EOR with accumulator
-  cpu.a = cpu.a ^ shiftedValue;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x4F: SRE abs - Shift Right and EOR (Absolute)
-function sreAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(address, shiftedValue);
-  // Set LSR flags first
-  cpu.setLsrFlags(originalValue, shiftedValue);
-  // Then EOR with accumulator
-  cpu.a = cpu.a ^ shiftedValue;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x53: SRE (zp),Y - Shift Right and EOR (Indirect Indexed)
-function sreIndY(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zpAddress);
-  const high = cpu.readMemory((zpAddress + 1) & 0xFF);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
-  cpu.incrementTacts(); // Page boundary check for read
-  const originalValue = cpu.readMemory(targetAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(targetAddress, shiftedValue);
-  // Set LSR flags first
-  cpu.setLsrFlags(originalValue, shiftedValue);
-  // Then EOR with accumulator
-  cpu.a = cpu.a ^ shiftedValue;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x57: SRE zp,X - Shift Right and EOR (Zero Page,X)
-function sreZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(address, shiftedValue);
-  // Set LSR flags first
-  cpu.setLsrFlags(originalValue, shiftedValue);
-  // Then EOR with accumulator
-  cpu.a = cpu.a ^ shiftedValue;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x5B: SRE abs,Y - Shift Right and EOR (Absolute,Y)
-function sreAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
-  cpu.incrementTacts(); // Page boundary check for read
-  const originalValue = cpu.readMemory(targetAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(targetAddress, shiftedValue);
-  // Set LSR flags first
-  cpu.setLsrFlags(originalValue, shiftedValue);
-  // Then EOR with accumulator
-  cpu.a = cpu.a ^ shiftedValue;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// 0x5F: SRE abs,X - Shift Right and EOR (Absolute,X)
-function sreAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
-  cpu.incrementTacts(); // Page boundary check for read
-  const originalValue = cpu.readMemory(targetAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = originalValue >> 1;
-  cpu.writeMemory(targetAddress, shiftedValue);
-  // Set LSR flags first
-  cpu.setLsrFlags(originalValue, shiftedValue);
-  // Then EOR with accumulator
-  cpu.a = cpu.a ^ shiftedValue;
-  cpu.setZeroAndNegativeFlags(cpu.a);
-}
-
-// ------------------------------------------------------------------------------------------------------------------
-// RLA (Undocumented) - Rotate Left and AND
-// Performs ROL (Rotate Left) followed by AND with accumulator
-
-// 0x23: RLA (zp,X) - Rotate Left and AND (Indexed Indirect)
 function rlaIndX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
@@ -2615,7 +1397,29 @@ function rlaIndX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x27: RLA zp - Rotate Left and AND (Zero Page)
+function bitZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(address);
+  cpu.setBitFlags(cpu.a, value);
+}
+
+function andZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(zpAddress);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function rolZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const originalValue = cpu.readMemory(zpAddress);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
+  cpu.writeMemory(zpAddress, rotatedValue);
+  cpu.setRolFlags(originalValue, rotatedValue);
+}
+
 function rlaZp(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const originalValue = cpu.readMemory(zpAddress);
@@ -2630,7 +1434,59 @@ function rlaZp(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x2F: RLA abs - Rotate Left and AND (Absolute)
+function plp(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle 1
+  cpu.incrementTacts(); // Internal operation cycle 2
+  const pulledStatus = cpu.pullStack();
+  // When PLP pulls the status register, ignore the B flag from the stack
+  // and always set the UNUSED flag (bit 5)
+  cpu.p = (pulledStatus & ~FlagSetMask6510.B) | FlagSetMask6510.UNUSED;
+}
+
+function andImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function rolA(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  const originalValue = cpu.a;
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const rotatedValue = ((cpu.a << 1) | carryIn) & 0xff;
+  cpu.a = rotatedValue;
+  cpu.setRolFlags(originalValue, rotatedValue);
+}
+
+function bitAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.setBitFlags(cpu.a, value);
+}
+
+function andAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function rolAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
+  cpu.writeMemory(address, rotatedValue);
+  cpu.setRolFlags(originalValue, rotatedValue);
+}
+
 function rlaAbs(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -2647,7 +1503,20 @@ function rlaAbs(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x33: RLA (zp),Y - Rotate Left and AND (Indirect Indexed)
+function bmi(cpu: M6510Cpu): void {
+  cpu.performBranch(cpu.isNFlagSet());
+}
+
+function andIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
 function rlaIndY(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const low = cpu.readMemory(zpAddress);
@@ -2667,7 +1536,26 @@ function rlaIndY(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x37: RLA zp,X - Rotate Left and AND (Zero Page,X)
+function andZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Increment tacts for indexed addressing
+  const value = cpu.readMemory((zpAddress + cpu.x) & 0xFF); // Wrap around in zero page
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function rolZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  const address = (zpAddress + cpu.x) & 0xff;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
+  cpu.writeMemory(address, rotatedValue);
+  cpu.setRolFlags(originalValue, rotatedValue);
+}
+
 function rlaZpX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
@@ -2684,7 +1572,20 @@ function rlaZpX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x3B: RLA abs,Y - Rotate Left and AND (Absolute,Y)
+function sec(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.p |= FlagSetMask6510.C;
+}
+
+function andAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(address, cpu.y);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
 function rlaAbsY(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -2703,7 +1604,29 @@ function rlaAbsY(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x3F: RLA abs,X - Rotate Left and AND (Absolute,X)
+function andAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(address, cpu.x);
+  cpu.a = cpu.a & value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function rolAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const effectiveAddress = (address + cpu.x) & 0xffff;
+  const originalValue = cpu.readMemory(effectiveAddress);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const rotatedValue = ((originalValue << 1) | carryIn) & 0xff;
+  cpu.writeMemory(effectiveAddress, rotatedValue);
+  cpu.setRolFlags(originalValue, rotatedValue);
+}
+
 function rlaAbsX(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -2722,12 +1645,35 @@ function rlaAbsX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// ------------------------------------------------------------------------------------------------------------------
-// SLO (Undocumented) - Shift Left and OR
-// Performs ASL (Arithmetic Shift Left) followed by ORA (OR with accumulator)
+function rti(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle 1
+  
+  // Pull processor status from stack
+  const pulledStatus = cpu.pullStack();
+  // When RTI pulls the status register, ignore the B flag from the stack
+  // and always set the UNUSED flag (bit 5)
+  cpu.p = (pulledStatus & ~FlagSetMask6510.B) | FlagSetMask6510.UNUSED;
+  
+  // Pull return address from stack
+  const low = cpu.pullStack();
+  const high = cpu.pullStack();
+  cpu.pc = (high << 8) | low;
+  cpu.incrementTacts(); // Internal operation cycle 2
+}
 
-// 0x03: SLO (zp,X) - Shift Left and OR (Indexed Indirect)
-function sloIndX(cpu: M6510Cpu): void {
+function eorIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  const value = cpu.readMemory(targetAddress);
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function sreIndX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
   const indirectAddress = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
@@ -2736,47 +1682,140 @@ function sloIndX(cpu: M6510Cpu): void {
   const targetAddress = (targetHigh << 8) | targetLow;
   const originalValue = cpu.readMemory(targetAddress);
   cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = (originalValue << 1) & 0xFF;
+  const shiftedValue = originalValue >> 1;
   cpu.writeMemory(targetAddress, shiftedValue);
-  // Set ASL flags first
-  cpu.setAslFlags(originalValue, shiftedValue);
-  // Then OR with accumulator
-  cpu.a = cpu.a | shiftedValue;
+  // Set LSR flags first
+  cpu.setLsrFlags(originalValue, shiftedValue);
+  // Then EOR with accumulator
+  cpu.a = cpu.a ^ shiftedValue;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x07: SLO zp - Shift Left and OR (Zero Page)
-function sloZp(cpu: M6510Cpu): void {
+function eorZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(zpAddress);
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function lsrZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const originalValue = cpu.readMemory(zpAddress);
+  cpu.incrementTacts(); // Internal operation cycle
+  const shiftedValue = originalValue >> 1;
+  cpu.writeMemory(zpAddress, shiftedValue);
+  cpu.setLsrFlags(originalValue, shiftedValue);
+}
+
+function sreZp(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const originalValue = cpu.readMemory(zpAddress);
   cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = (originalValue << 1) & 0xFF;
+  const shiftedValue = originalValue >> 1;
   cpu.writeMemory(zpAddress, shiftedValue);
-  // Set ASL flags first
-  cpu.setAslFlags(originalValue, shiftedValue);
-  // Then OR with accumulator
-  cpu.a = cpu.a | shiftedValue;
+  // Set LSR flags first
+  cpu.setLsrFlags(originalValue, shiftedValue);
+  // Then EOR with accumulator
+  cpu.a = cpu.a ^ shiftedValue;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x0F: SLO abs - Shift Left and OR (Absolute)
-function sloAbs(cpu: M6510Cpu): void {
+function pha(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.pushStack(cpu.a);
+}
+
+function eorImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function lsrA(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  const originalValue = cpu.a;
+  const shiftedValue = cpu.a >> 1;
+  cpu.a = shiftedValue;
+  cpu.setLsrFlags(originalValue, shiftedValue);
+}
+
+function asrImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+
+  // AND with accumulator
+  cpu.a = cpu.a & value;
+  
+  // Set carry flag based on bit 0 before shifting
+  if (cpu.a & 0x01) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+  
+  // Shift right one bit
+  cpu.a = (cpu.a >> 1) & 0xFF;
+  
+  // Set N and Z flags based on result
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function jmp(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const targetAddress = (high << 8) | low;
+  cpu.pc = targetAddress;
+}
+
+function eorAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function lsrAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Internal operation cycle
+  const shiftedValue = originalValue >> 1;
+  cpu.writeMemory(address, shiftedValue);
+  cpu.setLsrFlags(originalValue, shiftedValue);
+}
+
+function sreAbs(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
   const address = (high << 8) | low;
   const originalValue = cpu.readMemory(address);
   cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = (originalValue << 1) & 0xFF;
+  const shiftedValue = originalValue >> 1;
   cpu.writeMemory(address, shiftedValue);
-  // Set ASL flags first
-  cpu.setAslFlags(originalValue, shiftedValue);
-  // Then OR with accumulator
-  cpu.a = cpu.a | shiftedValue;
+  // Set LSR flags first
+  cpu.setLsrFlags(originalValue, shiftedValue);
+  // Then EOR with accumulator
+  cpu.a = cpu.a ^ shiftedValue;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x13: SLO (zp),Y - Shift Left and OR (Indirect Indexed)
-function sloIndY(cpu: M6510Cpu): void {
+function bvc(cpu: M6510Cpu): void {
+  cpu.performBranch(!cpu.isVFlagSet());
+}
+
+function eorIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function sreIndY(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const low = cpu.readMemory(zpAddress);
   const high = cpu.readMemory((zpAddress + 1) & 0xFF);
@@ -2785,33 +1824,64 @@ function sloIndY(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Page boundary check for read
   const originalValue = cpu.readMemory(targetAddress);
   cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = (originalValue << 1) & 0xFF;
+  const shiftedValue = originalValue >> 1;
   cpu.writeMemory(targetAddress, shiftedValue);
-  // Set ASL flags first
-  cpu.setAslFlags(originalValue, shiftedValue);
-  // Then OR with accumulator
-  cpu.a = cpu.a | shiftedValue;
+  // Set LSR flags first
+  cpu.setLsrFlags(originalValue, shiftedValue);
+  // Then EOR with accumulator
+  cpu.a = cpu.a ^ shiftedValue;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x17: SLO zp,X - Shift Left and OR (Zero Page,X)
-function sloZpX(cpu: M6510Cpu): void {
+function eorZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Increment tacts for indexed addressing
+  const value = cpu.readMemory((zpAddress + cpu.x) & 0xFF); // Wrap around in zero page
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function lsrZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  const address = (zpAddress + cpu.x) & 0xff;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Internal operation cycle
+  const shiftedValue = originalValue >> 1;
+  cpu.writeMemory(address, shiftedValue);
+  cpu.setLsrFlags(originalValue, shiftedValue);
+}
+
+function sreZpX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
   const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
   const originalValue = cpu.readMemory(address);
   cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = (originalValue << 1) & 0xFF;
+  const shiftedValue = originalValue >> 1;
   cpu.writeMemory(address, shiftedValue);
-  // Set ASL flags first
-  cpu.setAslFlags(originalValue, shiftedValue);
-  // Then OR with accumulator
-  cpu.a = cpu.a | shiftedValue;
+  // Set LSR flags first
+  cpu.setLsrFlags(originalValue, shiftedValue);
+  // Then EOR with accumulator
+  cpu.a = cpu.a ^ shiftedValue;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x1B: SLO abs,Y - Shift Left and OR (Absolute,Y)
-function sloAbsY(cpu: M6510Cpu): void {
+function cli(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.p &= ~FlagSetMask6510.I;
+}
+
+function eorAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(address, cpu.y);
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function sreAbsY(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
   const baseAddress = (high << 8) | low;
@@ -2819,17 +1889,38 @@ function sloAbsY(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Page boundary check for read
   const originalValue = cpu.readMemory(targetAddress);
   cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = (originalValue << 1) & 0xFF;
+  const shiftedValue = originalValue >> 1;
   cpu.writeMemory(targetAddress, shiftedValue);
-  // Set ASL flags first
-  cpu.setAslFlags(originalValue, shiftedValue);
-  // Then OR with accumulator
-  cpu.a = cpu.a | shiftedValue;
+  // Set LSR flags first
+  cpu.setLsrFlags(originalValue, shiftedValue);
+  // Then EOR with accumulator
+  cpu.a = cpu.a ^ shiftedValue;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0x1F: SLO abs,X - Shift Left and OR (Absolute,X)
-function sloAbsX(cpu: M6510Cpu): void {
+function eorAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(address, cpu.x);
+  cpu.a = cpu.a ^ value;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function lsrAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const effectiveAddress = (address + cpu.x) & 0xffff;
+  const originalValue = cpu.readMemory(effectiveAddress);
+  cpu.incrementTacts(); // Internal operation cycle
+  const shiftedValue = originalValue >> 1;
+  cpu.writeMemory(effectiveAddress, shiftedValue);
+  cpu.setLsrFlags(originalValue, shiftedValue);
+}
+
+function sreAbsX(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
   const baseAddress = (high << 8) | low;
@@ -2837,25 +1928,44 @@ function sloAbsX(cpu: M6510Cpu): void {
   cpu.incrementTacts(); // Page boundary check for read
   const originalValue = cpu.readMemory(targetAddress);
   cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  const shiftedValue = (originalValue << 1) & 0xFF;
+  const shiftedValue = originalValue >> 1;
   cpu.writeMemory(targetAddress, shiftedValue);
-  // Set ASL flags first
-  cpu.setAslFlags(originalValue, shiftedValue);
-  // Then OR with accumulator
-  cpu.a = cpu.a | shiftedValue;
+  // Set LSR flags first
+  cpu.setLsrFlags(originalValue, shiftedValue);
+  // Then EOR with accumulator
+  cpu.a = cpu.a ^ shiftedValue;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// Used for illegal opcodes
-function illegal(_cpu: M6510Cpu): void {
-  // TODO: Handle illegal opcodes
+function rts(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle 1
+  cpu.incrementTacts(); // Internal operation cycle 2
+  
+  // Pull return address from stack
+  const low = cpu.pullStack();
+  const high = cpu.pullStack();
+  const returnAddress = (high << 8) | low;
+  
+  cpu.incrementTacts(); // Internal operation cycle 3
+  
+  // RTS increments the return address by 1 (since JSR pushed PC - 1)
+  cpu.pc = (returnAddress + 1) & 0xFFFF;
 }
 
-// ------------------------------------------------------------------------------------------------------------------
-// RRA (Undocumented) - Rotate Right and Add with Carry
-// Performs ROR (Rotate Right) followed by ADC (Add with Carry)
+function adcIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  const operand = cpu.readMemory(targetAddress);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
 
-// 0x63: RRA (zp,X) - Rotate Right and Add with Carry (Indexed Indirect)
 function rraIndX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
@@ -2881,7 +1991,25 @@ function rraIndX(cpu: M6510Cpu): void {
   cpu.a = result & 0xFF;
 }
 
-// 0x67: RRA zp - Rotate Right and Add with Carry (Zero Page)
+function adcZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  const operand = cpu.readMemory(address);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
+
+function rorZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const originalValue = cpu.readMemory(zpAddress);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(zpAddress, rotatedValue);
+  cpu.setRorFlags(originalValue, rotatedValue);
+}
+
 function rraZp(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const originalValue = cpu.readMemory(zpAddress);
@@ -2902,268 +2030,30 @@ function rraZp(cpu: M6510Cpu): void {
   cpu.a = result & 0xFF;
 }
 
-// 0x6F: RRA abs - Rotate Right and Add with Carry (Absolute)
-function rraAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  
-  // Perform ROR operation
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(address, rotatedValue);
-  
-  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
-  cpu.setRorFlags(originalValue, rotatedValue);
-  
-  // Then perform ADC with accumulator using the carry flag set by ROR
-  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + rotatedValue + adcCarryIn;
-  cpu.setAdcFlags(cpu.a, rotatedValue, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x73: RRA (zp),Y - Rotate Right and Add with Carry (Indirect Indexed)
-function rraIndY(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zpAddress);
-  const high = cpu.readMemory((zpAddress + 1) & 0xFF);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
-  cpu.incrementTacts(); // Page boundary check for read
-  const originalValue = cpu.readMemory(targetAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  
-  // Perform ROR operation
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(targetAddress, rotatedValue);
-  
-  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
-  cpu.setRorFlags(originalValue, rotatedValue);
-  
-  // Then perform ADC with accumulator using the carry flag set by ROR
-  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + rotatedValue + adcCarryIn;
-  cpu.setAdcFlags(cpu.a, rotatedValue, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x77: RRA zp,X - Rotate Right and Add with Carry (Zero Page,X)
-function rraZpX(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  const originalValue = cpu.readMemory(address);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  
-  // Perform ROR operation
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(address, rotatedValue);
-  
-  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
-  cpu.setRorFlags(originalValue, rotatedValue);
-  
-  // Then perform ADC with accumulator using the carry flag set by ROR
-  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + rotatedValue + adcCarryIn;
-  cpu.setAdcFlags(cpu.a, rotatedValue, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x7B: RRA abs,Y - Rotate Right and Add with Carry (Absolute,Y)
-function rraAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
-  cpu.incrementTacts(); // Page boundary check for read
-  const originalValue = cpu.readMemory(targetAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  
-  // Perform ROR operation
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(targetAddress, rotatedValue);
-  
-  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
-  cpu.setRorFlags(originalValue, rotatedValue);
-  
-  // Then perform ADC with accumulator using the carry flag set by ROR
-  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + rotatedValue + adcCarryIn;
-  cpu.setAdcFlags(cpu.a, rotatedValue, result);
-  cpu.a = result & 0xFF;
-}
-
-// 0x7F: RRA abs,X - Rotate Right and Add with Carry (Absolute,X)
-function rraAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
-  cpu.incrementTacts(); // Page boundary check for read
-  const originalValue = cpu.readMemory(targetAddress);
-  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
-  
-  // Perform ROR operation
-  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
-  const rotatedValue = (originalValue >> 1) | carryIn;
-  cpu.writeMemory(targetAddress, rotatedValue);
-  
-  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
-  cpu.setRorFlags(originalValue, rotatedValue);
-  
-  // Then perform ADC with accumulator using the carry flag set by ROR
-  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
-  const result = cpu.a + rotatedValue + adcCarryIn;
-  cpu.setAdcFlags(cpu.a, rotatedValue, result);
-  cpu.a = result & 0xFF;
-}
-
-// ------------------------------------------------------------------------------------------------------------------
-// SAX (Undocumented) - Store A AND X
-// Performs A AND X and stores the result to memory
-// Does not affect any flags
-
-// 0x83: SAX (zp,X) - Store A AND X (Indexed Indirect)
-function saxIndX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts();
-  const low = cpu.readMemory(effectiveAddress);
-  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
-  const targetAddress = (high << 8) | low;
-  const result = cpu.a & cpu.x;
-  cpu.writeMemory(targetAddress, result);
-}
-
-// 0x87: SAX zp - Store A AND X (Zero Page)
-function saxZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const result = cpu.a & cpu.x;
-  cpu.writeMemory(zpAddress, result);
-}
-
-// 0x8F: SAX abs - Store A AND X (Absolute)
-function saxAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const result = cpu.a & cpu.x;
-  cpu.writeMemory(address, result);
-}
-
-// 0x97: SAX zp,Y - Store A AND X (Zero Page,Y)
-function saxZpY(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.y) & 0xFF; // Wrap around in zero page
-  const result = cpu.a & cpu.x;
-  cpu.writeMemory(address, result);
-}
-
-// ------------------------------------------------------------------------------------------------------------------
-// LAX (Undocumented) - Load A and X
-// Loads memory into both accumulator (A) and X register
-// Affects flags: N, Z
-
-// 0xA3: LAX (zp,X) - Load A and X (Indexed Indirect)
-function laxIndX(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
-  cpu.incrementTacts();
-  const low = cpu.readMemory(effectiveAddress);
-  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
-  const targetAddress = (high << 8) | low;
-  const value = cpu.readMemory(targetAddress);
-  cpu.a = value;
-  cpu.x = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xA7: LAX zp - Load A and X (Zero Page)
-function laxZp(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  const value = cpu.readMemory(zpAddress);
-  cpu.a = value;
-  cpu.x = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xAF: LAX abs - Load A and X (Absolute)
-function laxAbs(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  const value = cpu.readMemory(address);
-  cpu.a = value;
-  cpu.x = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xB3: LAX (zp),Y - Load A and X (Indirect Indexed)
-function laxIndY(cpu: M6510Cpu): void {
-  const zeroPageAddress = cpu.readMemory(cpu.pc++);
-  const low = cpu.readMemory(zeroPageAddress);
-  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle wrap-around
-  const baseAddress = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  cpu.a = value;
-  cpu.x = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xB7: LAX zp,Y - Load A and X (Zero Page,Y)
-function laxZpY(cpu: M6510Cpu): void {
-  const zpAddress = cpu.readMemory(cpu.pc++);
-  cpu.incrementTacts(); // Indexed addressing cycle
-  const address = (zpAddress + cpu.y) & 0xFF; // Wrap around in zero page
-  const value = cpu.readMemory(address);
-  cpu.a = value;
-  cpu.x = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// 0xBF: LAX abs,Y - Load A and X (Absolute,Y)
-function laxAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
-  cpu.a = value;
-  cpu.x = value;
-  cpu.setZeroAndNegativeFlags(value);
-}
-
-// --- AAC/ANC (AND with Carry) undocumented instruction ---
-// Opcodes: 0x0B, 0x2B
-// AND byte with accumulator. If result is negative then carry is set.
-// Status flags: N,Z,C
-function aacImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-  cpu.a = cpu.a & value;
+function pla(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle 1
+  cpu.incrementTacts(); // Internal operation cycle 2
+  cpu.a = cpu.pullStack();
   cpu.setZeroAndNegativeFlags(cpu.a);
-  
-  // Set carry flag if result is negative (bit 7 set)
-  if (cpu.a & 0x80) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
 }
 
-// --- ARR (AND and Rotate Right) undocumented instruction ---
-// Opcodes: 0x6B
-// AND byte with accumulator, then rotate one bit right in accumulator and check bit 5 and 6:
-// If both bits are 1: set C, clear V.
-// If both bits are 0: clear C and V.
-// If only bit 5 is 1: set V, clear C.
-// If only bit 6 is 1: set C and V.
-// Status flags: N,V,Z,C
+function adcImm(cpu: M6510Cpu): void {
+  const operand = cpu.readMemory(cpu.pc++);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
+
+function rorA(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  const originalValue = cpu.a;
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (cpu.a >> 1) | carryIn;
+  cpu.a = rotatedValue;
+  cpu.setRorFlags(originalValue, rotatedValue);
+}
+
 function arrImm(cpu: M6510Cpu): void {
   const value = cpu.readMemory(cpu.pc++);
 
@@ -3197,54 +2087,373 @@ function arrImm(cpu: M6510Cpu): void {
   }
 }
 
-// --- ASR/ALR (AND and Shift Right) undocumented instruction ---
-// Opcodes: 0x4B
-// AND byte with accumulator, then shift right one bit in accumulator.
-// Status flags: N,Z,C
-function asrImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
-
-  // AND with accumulator
-  cpu.a = cpu.a & value;
+function jmpInd(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const indirectAddress = (high << 8) | low;
   
-  // Set carry flag based on bit 0 before shifting
-  if (cpu.a & 0x01) {
-    cpu.p |= FlagSetMask6510.C;
+  // Read the target address from the indirect address
+  // 6502 bug: if the indirect address is on a page boundary (e.g., $xxFF),
+  // the high byte is read from $xx00 instead of $(xx+1)00
+  const targetLow = cpu.readMemory(indirectAddress);
+  let targetHigh: number;
+  
+  if ((indirectAddress & 0xFF) === 0xFF) {
+    // Page boundary bug: read high byte from same page
+    targetHigh = cpu.readMemory(indirectAddress & 0xFF00);
   } else {
-    cpu.p &= ~FlagSetMask6510.C;
+    // Normal case: read high byte from next address
+    targetHigh = cpu.readMemory(indirectAddress + 1);
   }
   
-  // Shift right one bit
-  cpu.a = (cpu.a >> 1) & 0xFF;
+  const targetAddress = (targetHigh << 8) | targetLow;
+  cpu.pc = targetAddress;
+}
+
+function adcAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const operand = cpu.readMemory(address);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
+
+function rorAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(address, rotatedValue);
+  cpu.setRorFlags(originalValue, rotatedValue);
+}
+
+function rraAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
   
-  // Set N and Z flags based on result
+  // Perform ROR operation
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(address, rotatedValue);
+  
+  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
+  cpu.setRorFlags(originalValue, rotatedValue);
+  
+  // Then perform ADC with accumulator using the carry flag set by ROR
+  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + rotatedValue + adcCarryIn;
+  cpu.setAdcFlags(cpu.a, rotatedValue, result);
+  cpu.a = result & 0xFF;
+}
+
+function bvs(cpu: M6510Cpu): void {
+  cpu.performBranch(cpu.isVFlagSet());
+}
+
+function adcIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
+  const baseAddress = (high << 8) | low;
+  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
+
+function rraIndY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zpAddress);
+  const high = cpu.readMemory((zpAddress + 1) & 0xFF);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  cpu.incrementTacts(); // Page boundary check for read
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  
+  // Perform ROR operation
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(targetAddress, rotatedValue);
+  
+  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
+  cpu.setRorFlags(originalValue, rotatedValue);
+  
+  // Then perform ADC with accumulator using the carry flag set by ROR
+  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + rotatedValue + adcCarryIn;
+  cpu.setAdcFlags(cpu.a, rotatedValue, result);
+  cpu.a = result & 0xFF;
+}
+
+function adcZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const operand = cpu.readMemory(address);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
+
+function rorZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  const address = (zpAddress + cpu.x) & 0xff;
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(address, rotatedValue);
+  cpu.setRorFlags(originalValue, rotatedValue);
+}
+
+function rraZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const originalValue = cpu.readMemory(address);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  
+  // Perform ROR operation
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(address, rotatedValue);
+  
+  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
+  cpu.setRorFlags(originalValue, rotatedValue);
+  
+  // Then perform ADC with accumulator using the carry flag set by ROR
+  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + rotatedValue + adcCarryIn;
+  cpu.setAdcFlags(cpu.a, rotatedValue, result);
+  cpu.a = result & 0xFF;
+}
+
+function sei(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.p |= FlagSetMask6510.I;
+}
+
+function adcAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
+
+function rraAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  cpu.incrementTacts(); // Page boundary check for read
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  
+  // Perform ROR operation
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(targetAddress, rotatedValue);
+  
+  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
+  cpu.setRorFlags(originalValue, rotatedValue);
+  
+  // Then perform ADC with accumulator using the carry flag set by ROR
+  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + rotatedValue + adcCarryIn;
+  cpu.setAdcFlags(cpu.a, rotatedValue, result);
+  cpu.a = result & 0xFF;
+}
+
+function adcAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
+  const carryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + operand + carryIn;
+  cpu.setAdcFlags(cpu.a, operand, result);
+  cpu.a = result & 0xFF;
+}
+
+function rorAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  const effectiveAddress = (address + cpu.x) & 0xffff;
+  const originalValue = cpu.readMemory(effectiveAddress);
+  cpu.incrementTacts(); // Internal operation cycle
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(effectiveAddress, rotatedValue);
+  cpu.setRorFlags(originalValue, rotatedValue);
+}
+
+function rraAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
+  cpu.incrementTacts(); // Page boundary check for read
+  const originalValue = cpu.readMemory(targetAddress);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  
+  // Perform ROR operation
+  const carryIn = cpu.isCFlagSet() ? 0x80 : 0;
+  const rotatedValue = (originalValue >> 1) | carryIn;
+  cpu.writeMemory(targetAddress, rotatedValue);
+  
+  // Set ROR flags (this sets the carry flag based on bit 0 of original value)
+  cpu.setRorFlags(originalValue, rotatedValue);
+  
+  // Then perform ADC with accumulator using the carry flag set by ROR
+  const adcCarryIn = cpu.isCFlagSet() ? 1 : 0;
+  const result = cpu.a + rotatedValue + adcCarryIn;
+  cpu.setAdcFlags(cpu.a, rotatedValue, result);
+  cpu.a = result & 0xFF;
+}
+
+function dopImm(cpu: M6510Cpu): void {
+  cpu.readMemory(cpu.pc++); // Read and discard the immediate value
+}
+
+function staIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  cpu.writeMemory(targetAddress, cpu.a);
+}
+
+function saxIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(targetAddress, result);
+}
+
+function styZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.writeMemory(zpAddress, cpu.y);
+}
+
+function staZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.writeMemory(zpAddress, cpu.a);
+}
+
+function stxZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.writeMemory(zpAddress, cpu.x);
+}
+
+function saxZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(zpAddress, result);
+}
+
+function dey(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // One additional cycle for the operation
+  cpu.y = (cpu.y - 1) & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.y);
+}
+
+function txa(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.a = cpu.x;
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// --- ATX (AND and Transfer to X) undocumented instruction ---
-// Opcode: 0xAB
-// AND byte with accumulator, then transfer accumulator to X register.
-// Status flags: N,Z
-function atxImm(cpu: M6510Cpu): void {
-  const value = cpu.readMemory(cpu.pc++);
+function xaaImm(cpu: M6510Cpu): void {
+  const operand = cpu.readMemory(cpu.pc++);
   
-  // AND with accumulator
-  cpu.a = cpu.a & value;
+  // This instruction has unstable behavior, but a common implementation is:
+  // A = (A | CONST) & X & operand
+  // Where CONST is typically 0xEE, 0xEF, or 0xFF depending on the chip
+  // For consistency, we'll use 0xEE
+  const MAGIC_CONST = 0xEE;
   
-  // Transfer accumulator to X
-  cpu.x = cpu.a;
+  cpu.a = (cpu.a | MAGIC_CONST) & cpu.x & operand;
   
-  // Set N and Z flags based on result
-  cpu.setZeroAndNegativeFlags(cpu.a);
+  // Set flags based on the result
+  cpu.p &= ~(FlagSetMask6510.Z | FlagSetMask6510.N);
+  
+  if (cpu.a === 0) {
+    cpu.p |= FlagSetMask6510.Z;
+  }
+  
+  if (cpu.a & 0x80) {
+    cpu.p |= FlagSetMask6510.N;
+  }
 }
 
-// --- AXA (AND X with A) undocumented instruction ---
-// Opcodes: 0x93, 0x9F
-// AND X register with accumulator, then AND result with 7 and store to memory.
-// Note: This is an unstable instruction that can behave unpredictably.
-// Status flags: None
+function styAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.writeMemory(address, cpu.y);
+}
 
-// 0x93: AXA (zp),Y - AND X with A (Indirect Indexed)
+function staAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.writeMemory(address, cpu.a);
+}
+
+function stxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.writeMemory(address, cpu.x);
+}
+
+function saxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(address, result);
+}
+
+function bcc(cpu: M6510Cpu): void {
+  cpu.performBranch(!cpu.isCFlagSet());
+}
+
+function staIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xffff;
+  cpu.incrementTacts(); // Extra cycle for page crossing
+  cpu.writeMemory(targetAddress, cpu.a);
+}
+
 function axaIndY(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const low = cpu.readMemory(zpAddress);
@@ -3258,7 +2467,95 @@ function axaIndY(cpu: M6510Cpu): void {
   cpu.writeMemory(targetAddress, result & 0xFF);
 }
 
-// 0x9F: AXA abs,Y - AND X with A (Absolute,Y)
+function styZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Increment tacts for indexed addressing
+  cpu.writeMemory((zpAddress + cpu.x) & 0xFF, cpu.y); // Wrap around in zero page
+}
+
+function staZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Increment tacts for indexed addressing
+  cpu.writeMemory((zpAddress + cpu.x) & 0xFF, cpu.a); // Wrap around in zero page
+}
+
+function stxZpY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Increment tacts for indexed addressing
+  cpu.writeMemory((zpAddress + cpu.y) & 0xFF, cpu.x); // Wrap around in zero page
+}
+
+function saxZpY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.y) & 0xFF; // Wrap around in zero page
+  const result = cpu.a & cpu.x;
+  cpu.writeMemory(address, result);
+}
+
+function tya(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.a = cpu.y;
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function staAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xffff;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  cpu.writeMemory(targetAddress, cpu.a);
+}
+
+function txs(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.sp = cpu.x;
+}
+
+function syaAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
+  
+  // Extra read cycle for indexed addressing
+  cpu.incrementTacts();
+  
+  // Calculate the high byte of the target address + 1
+  const highBytePlusOne = ((targetAddress >> 8) + 1) & 0xFF;
+  
+  // Store Y AND (high byte + 1)
+  const result = cpu.y & highBytePlusOne;
+  cpu.writeMemory(targetAddress, result);
+}
+
+function staAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.x) & 0xffff;
+  cpu.incrementTacts(); // Extra cycle for indexed addressing
+  cpu.writeMemory(targetAddress, cpu.a);
+}
+
+function sxaAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  
+  // Extra read cycle for indexed addressing
+  cpu.incrementTacts();
+  
+  // Calculate the high byte of the target address + 1
+  const highBytePlusOne = ((targetAddress >> 8) + 1) & 0xFF;
+  
+  // Store X AND (high byte + 1)
+  const result = cpu.x & highBytePlusOne;
+  cpu.writeMemory(targetAddress, result);
+}
+
 function axaAbsY(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -3271,38 +2568,276 @@ function axaAbsY(cpu: M6510Cpu): void {
   cpu.writeMemory(targetAddress, result & 0xFF);
 }
 
-// --- AXS (AND X with A and Subtract) undocumented instruction ---
-// Opcode: 0xCB
-// AND X register with accumulator, then subtract immediate value without borrow.
-// Status flags: N,Z,C
-function axsImm(cpu: M6510Cpu): void {
+function ldyImm(cpu: M6510Cpu): void {
   const value = cpu.readMemory(cpu.pc++);
-  
-  // AND X with A
-  const temp = (cpu.a & cpu.x) & 0xFF;
-  
-  // Subtract immediate value (without borrow/carry)
-  const result = temp - value;
-  
-  // Store result in X register
-  cpu.x = result & 0xFF;
-  
-  // Set flags
-  cpu.setZeroAndNegativeFlags(cpu.x);
-  
-  // Set carry flag if no borrow occurred (result >= 0)
-  if (result >= 0) {
-    cpu.p |= FlagSetMask6510.C;
-  } else {
-    cpu.p &= ~FlagSetMask6510.C;
-  }
+  cpu.y = value;
+  cpu.setZeroAndNegativeFlags(value);
 }
 
-// --- DCP (Decrement and Compare) undocumented instruction ---
-// Decrements memory by one, then compares the result with the accumulator
-// Status flags: N,Z,C (from compare operation)
+function ldaIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = zeroPageAddress + cpu.x;
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1));
+  cpu.a = cpu.readMemory((high << 8) | low);
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
 
-// 0xC3: DCP (zp,X) - Decrement and Compare (Indexed Indirect)
+function ldxImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function laxIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts();
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  const value = cpu.readMemory(targetAddress);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function ldyZp(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.y = cpu.readMemory(value);
+  cpu.setZeroAndNegativeFlags(cpu.y);
+}
+
+function ldaZp(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = cpu.readMemory(value);
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function ldxZp(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.x = cpu.readMemory(value);
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function laxZp(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(zpAddress);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function tay(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.y = cpu.a;
+  cpu.setZeroAndNegativeFlags(cpu.y);
+}
+
+function ldaImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.a = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function tax(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.x = cpu.a;
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function atxImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  
+  // AND with accumulator
+  cpu.a = cpu.a & value;
+  
+  // Transfer accumulator to X
+  cpu.x = cpu.a;
+  
+  // Set N and Z flags based on result
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function ldyAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.y = cpu.readMemory(addr);
+  cpu.setZeroAndNegativeFlags(cpu.y);
+}
+
+function ldaAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.a = cpu.readMemory(addr);
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function ldxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.x = cpu.readMemory(addr);
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function laxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function bcs(cpu: M6510Cpu): void {
+  cpu.performBranch(cpu.isCFlagSet());
+}
+
+function ldaIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1));
+  cpu.a = cpu.readMemoryWithPageBoundary((high << 8) | low, cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function laxIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle wrap-around
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function ldyZpX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  cpu.y = cpu.readMemory(zeroPageAddress + cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.y);
+}
+
+function ldaZpX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  cpu.a = cpu.readMemory(zeroPageAddress + cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function ldxZpY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts();
+  cpu.x = cpu.readMemory(zeroPageAddress + cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function laxZpY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.y) & 0xFF; // Wrap around in zero page
+  const value = cpu.readMemory(address);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function clv(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.p &= ~FlagSetMask6510.V;
+}
+
+function ldaAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.a = cpu.readMemoryWithPageBoundary(addr, cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function tsx(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.x = cpu.sp;
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function larAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
+  
+  // Check for page boundary crossing
+  if ((baseAddress & 0xFF00) !== (targetAddress & 0xFF00)) {
+    cpu.incrementTacts(); // Extra cycle for page boundary crossing
+  }
+  
+  const memoryValue = cpu.readMemory(targetAddress);
+  const result = cpu.sp & memoryValue;
+  
+  cpu.a = result;
+  cpu.x = result;
+  cpu.sp = result;
+  
+  cpu.setZeroAndNegativeFlags(result);
+}
+
+function ldyAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.y = cpu.readMemoryWithPageBoundary(addr, cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.y);
+}
+
+function ldaAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.a = cpu.readMemoryWithPageBoundary(addr, cpu.x);
+  cpu.setZeroAndNegativeFlags(cpu.a);
+}
+
+function ldxAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const addr = (high << 8) | low;
+  cpu.x = cpu.readMemoryWithPageBoundary(addr, cpu.y);
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function laxAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.a = value;
+  cpu.x = value;
+  cpu.setZeroAndNegativeFlags(value);
+}
+
+function cpyImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.setCompareFlags(cpu.y, value);
+}
+
+function cmpIndX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const indirectAddress = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const targetLow = cpu.readMemory(indirectAddress);
+  const targetHigh = cpu.readMemory((indirectAddress + 1) & 0xFF); // Wrap around
+  const targetAddress = (targetHigh << 8) | targetLow;
+  const value = cpu.readMemory(targetAddress);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
 function dcpIndX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
@@ -3327,7 +2862,27 @@ function dcpIndX(cpu: M6510Cpu): void {
   }
 }
 
-// 0xC7: DCP zp - Decrement and Compare (Zero Page)
+function cpyZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(address);
+  cpu.setCompareFlags(cpu.y, value);
+}
+
+function cmpZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(address);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
+function decZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value - 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function dcpZp(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const originalValue = cpu.readMemory(zpAddress);
@@ -3347,7 +2902,73 @@ function dcpZp(cpu: M6510Cpu): void {
   }
 }
 
-// 0xCF: DCP abs - Decrement and Compare (Absolute)
+function iny(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // One additional cycle for the operation
+  cpu.y = (cpu.y + 1) & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.y);
+}
+
+function cmpImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
+function dex(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // One additional cycle for the operation
+  cpu.x = (cpu.x - 1) & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function axsImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  
+  // AND X with A
+  const temp = (cpu.a & cpu.x) & 0xFF;
+  
+  // Subtract immediate value (without borrow/carry)
+  const result = temp - value;
+  
+  // Store result in X register
+  cpu.x = result & 0xFF;
+  
+  // Set flags
+  cpu.setZeroAndNegativeFlags(cpu.x);
+  
+  // Set carry flag if no borrow occurred (result >= 0)
+  if (result >= 0) {
+    cpu.p |= FlagSetMask6510.C;
+  } else {
+    cpu.p &= ~FlagSetMask6510.C;
+  }
+}
+
+function cpyAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.setCompareFlags(cpu.y, value);
+}
+
+function cmpAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
+function decAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value - 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function dcpAbs(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -3369,7 +2990,19 @@ function dcpAbs(cpu: M6510Cpu): void {
   }
 }
 
-// 0xD3: DCP (zp),Y - Decrement and Compare (Indirect Indexed)
+function bne(cpu: M6510Cpu): void {
+  cpu.performBranch(!cpu.isZFlagSet());
+}
+
+function cmpIndY(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  const targetLow = cpu.readMemory(zpAddress);
+  const targetHigh = cpu.readMemory((zpAddress + 1) & 0xFF); // Wrap around in zero page
+  const baseAddress = (targetHigh << 8) | targetLow;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
 function dcpIndY(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const low = cpu.readMemory(zpAddress);
@@ -3394,7 +3027,25 @@ function dcpIndY(cpu: M6510Cpu): void {
   }
 }
 
-// 0xD7: DCP zp,X - Decrement and Compare (Zero Page,X)
+function cmpZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const value = cpu.readMemory(address);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
+function decZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value - 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function dcpZpX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
@@ -3416,7 +3067,19 @@ function dcpZpX(cpu: M6510Cpu): void {
   }
 }
 
-// 0xDB: DCP abs,Y - Decrement and Compare (Absolute,Y)
+function cld(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.p &= ~FlagSetMask6510.D;
+}
+
+function cmpAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
 function dcpAbsY(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -3440,7 +3103,27 @@ function dcpAbsY(cpu: M6510Cpu): void {
   }
 }
 
-// 0xDF: DCP abs,X - Decrement and Compare (Absolute,X)
+function cmpAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const value = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
+  cpu.setCompareFlags(cpu.a, value);
+}
+
+function decAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const address = (baseAddress + cpu.x) & 0xFFFF;
+  cpu.incrementTacts(); // Indexed addressing cycle
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value - 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function dcpAbsX(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -3464,33 +3147,25 @@ function dcpAbsX(cpu: M6510Cpu): void {
   }
 }
 
-// --- DOP (Double NOP) undocumented instruction ---
-// No operation with different addressing modes
-// Status flags: None
-
-// DOP immediate - 2 bytes, 2 cycles
-function dopImm(cpu: M6510Cpu): void {
-  cpu.readMemory(cpu.pc++); // Read and discard the immediate value
+function cpxImm(cpu: M6510Cpu): void {
+  const value = cpu.readMemory(cpu.pc++);
+  cpu.setCompareFlags(cpu.x, value);
 }
 
-// DOP zero page - 2 bytes, 3 cycles
-function dopZp(cpu: M6510Cpu): void {
-  cpu.readMemory(cpu.pc++); // Read and discard the zero page address
-  cpu.incrementTacts(); // Extra cycle for zero page access (but no actual memory access)
+function sbcIndX(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const effectiveAddress = (zeroPageAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const low = cpu.readMemory(effectiveAddress);
+  const high = cpu.readMemory((effectiveAddress + 1) & 0xFF); // Handle wrap-around for high byte too
+  const targetAddress = (high << 8) | low;
+  const operand = cpu.readMemory(targetAddress);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
 }
 
-// DOP zero page,X - 2 bytes, 4 cycles
-function dopZpX(cpu: M6510Cpu): void {
-  cpu.readMemory(cpu.pc++); // Read and discard the zero page address
-  cpu.incrementTacts(); // Extra cycle for indexed addressing
-  cpu.incrementTacts(); // Extra cycle for zero page access (but no actual memory access)
-}
-
-// --- ISC (Increment and Subtract with Carry) undocumented instruction ---
-// Increments memory by one, then subtracts memory from accumulator (with borrow)
-// Status flags: N,V,Z,C
-
-// 0xE3: ISC (zp,X) - Increment and Subtract with Carry (Indexed Indirect)
 function iscIndX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
@@ -3525,7 +3200,30 @@ function iscIndX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0xE7: ISC zp - Increment and Subtract with Carry (Zero Page)
+function cpxZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  const value = cpu.readMemory(address);
+  cpu.setCompareFlags(cpu.x, value);
+}
+
+function sbcZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  const operand = cpu.readMemory(address);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
+}
+
+function incZp(cpu: M6510Cpu): void {
+  const address = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value + 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function iscZp(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const originalValue = cpu.readMemory(zpAddress);
@@ -3555,7 +3253,54 @@ function iscZp(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0xEF: ISC abs - Increment and Subtract with Carry (Absolute)
+function inx(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // One additional cycle for the operation
+  cpu.x = (cpu.x + 1) & 0xFF;
+  cpu.setZeroAndNegativeFlags(cpu.x);
+}
+
+function sbcImm(cpu: M6510Cpu): void {
+  const operand = cpu.readMemory(cpu.pc++);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
+}
+
+function nop(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+}
+
+function cpxAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const value = cpu.readMemory(address);
+  cpu.setCompareFlags(cpu.x, value);
+}
+
+function sbcAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  const operand = cpu.readMemory(address);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
+}
+
+function incAbs(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const address = (high << 8) | low;
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value + 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function iscAbs(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -3587,7 +3332,22 @@ function iscAbs(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0xF3: ISC (zp),Y - Increment and Subtract with Carry (Indirect Indexed)
+function beq(cpu: M6510Cpu): void {
+  cpu.performBranch(cpu.isZFlagSet());
+}
+
+function sbcIndY(cpu: M6510Cpu): void {
+  const zeroPageAddress = cpu.readMemory(cpu.pc++);
+  const low = cpu.readMemory(zeroPageAddress);
+  const high = cpu.readMemory((zeroPageAddress + 1) & 0xFF); // Handle zero page wrap-around
+  const baseAddress = (high << 8) | low;
+  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
+}
+
 function iscIndY(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   const low = cpu.readMemory(zpAddress);
@@ -3622,7 +3382,28 @@ function iscIndY(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0xF7: ISC zp,X - Increment and Subtract with Carry (Zero Page,X)
+function sbcZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  const operand = cpu.readMemory(address);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
+}
+
+function incZpX(cpu: M6510Cpu): void {
+  const zpAddress = cpu.readMemory(cpu.pc++);
+  cpu.incrementTacts(); // Indexed addressing cycle
+  const address = (zpAddress + cpu.x) & 0xFF; // Wrap around in zero page
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value + 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function iscZpX(cpu: M6510Cpu): void {
   const zpAddress = cpu.readMemory(cpu.pc++);
   cpu.incrementTacts(); // Indexed addressing cycle
@@ -3654,7 +3435,22 @@ function iscZpX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0xFB: ISC abs,Y - Increment and Subtract with Carry (Absolute,Y)
+function sed(cpu: M6510Cpu): void {
+  cpu.incrementTacts(); // Internal operation cycle
+  cpu.p |= FlagSetMask6510.D;
+}
+
+function sbcAbsY(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.y);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
+}
+
 function iscAbsY(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -3688,7 +3484,30 @@ function iscAbsY(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// 0xFF: ISC abs,X - Increment and Subtract with Carry (Absolute,X)
+function sbcAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const operand = cpu.readMemoryWithPageBoundary(baseAddress, cpu.x);
+  const borrowIn = cpu.isCFlagSet() ? 0 : 1; // Borrow is inverted carry
+  const result = cpu.a - operand - borrowIn;
+  cpu.setSbcFlags(cpu.a, operand, borrowIn);
+  cpu.a = result & 0xFF;
+}
+
+function incAbsX(cpu: M6510Cpu): void {
+  const low = cpu.readMemory(cpu.pc++);
+  const high = cpu.readMemory(cpu.pc++);
+  const baseAddress = (high << 8) | low;
+  const address = (baseAddress + cpu.x) & 0xFFFF;
+  cpu.incrementTacts(); // Indexed addressing cycle
+  cpu.incrementTacts(); // Read-modify-write: extra cycle for internal operations
+  const value = cpu.readMemory(address);
+  const result = (value + 1) & 0xFF;
+  cpu.writeMemory(address, result);
+  cpu.setZeroAndNegativeFlags(result);
+}
+
 function iscAbsX(cpu: M6510Cpu): void {
   const low = cpu.readMemory(cpu.pc++);
   const high = cpu.readMemory(cpu.pc++);
@@ -3722,115 +3541,6 @@ function iscAbsX(cpu: M6510Cpu): void {
   cpu.setZeroAndNegativeFlags(cpu.a);
 }
 
-// LAR (LAS) - Load Accumulator and X with Stack Pointer
-// LAR performs AND between memory and stack pointer, storing result in A, X, and S
-// 0xBB: LAR abs,Y - AND memory with stack pointer, transfer to A, X, and S
-function larAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
-  
-  // Check for page boundary crossing
-  if ((baseAddress & 0xFF00) !== (targetAddress & 0xFF00)) {
-    cpu.incrementTacts(); // Extra cycle for page boundary crossing
-  }
-  
-  const memoryValue = cpu.readMemory(targetAddress);
-  const result = cpu.sp & memoryValue;
-  
-  cpu.a = result;
-  cpu.x = result;
-  cpu.sp = result;
-  
-  cpu.setZeroAndNegativeFlags(result);
-}
-
-// SXA (SHX) - Store X AND High Byte
-// SXA performs AND between X register and high byte + 1 of target address
-// 0x9E: SXA abs,Y - Store X AND (high byte + 1)
-function sxaAbsY(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.y) & 0xFFFF;
-  
-  // Extra read cycle for indexed addressing
-  cpu.incrementTacts();
-  
-  // Calculate the high byte of the target address + 1
-  const highBytePlusOne = ((targetAddress >> 8) + 1) & 0xFF;
-  
-  // Store X AND (high byte + 1)
-  const result = cpu.x & highBytePlusOne;
-  cpu.writeMemory(targetAddress, result);
-}
-
-// SYA (SHY) performs AND between Y register and high byte + 1 of target address
-// 0x9C: SYA abs,X - Store Y AND (high byte + 1)
-function syaAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const baseAddress = (high << 8) | low;
-  const targetAddress = (baseAddress + cpu.x) & 0xFFFF;
-  
-  // Extra read cycle for indexed addressing
-  cpu.incrementTacts();
-  
-  // Calculate the high byte of the target address + 1
-  const highBytePlusOne = ((targetAddress >> 8) + 1) & 0xFF;
-  
-  // Store Y AND (high byte + 1)
-  const result = cpu.y & highBytePlusOne;
-  cpu.writeMemory(targetAddress, result);
-}
-
-// TOP (NOP) - Triple NOP - No operation with different addressing modes
-// 0x0C: TOP abs - Absolute addressing
-function topAbs(cpu: M6510Cpu): void {
-  // Read the 16-bit address
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  
-  // Read from the address but don't use the value (same as other abs instructions)
-  cpu.readMemory(address);
-}
-
-// 0x1C, 0x3C, 0x5C, 0x7C, 0xDC, 0xFC: TOP abs,X - Absolute,X addressing
-function topAbsX(cpu: M6510Cpu): void {
-  const low = cpu.readMemory(cpu.pc++);
-  const high = cpu.readMemory(cpu.pc++);
-  const address = (high << 8) | low;
-  
-  // Use the same pattern as other abs,X instructions - this handles page boundary automatically
-  cpu.readMemoryWithPageBoundary(address, cpu.x);
-}
-
-// XAA (ANE) - Unstable instruction
-// 0x8B: XAA #arg - Immediate addressing
-function xaaImm(cpu: M6510Cpu): void {
-  const operand = cpu.readMemory(cpu.pc++);
-  
-  // This instruction has unstable behavior, but a common implementation is:
-  // A = (A | CONST) & X & operand
-  // Where CONST is typically 0xEE, 0xEF, or 0xFF depending on the chip
-  // For consistency, we'll use 0xEE
-  const MAGIC_CONST = 0xEE;
-  
-  cpu.a = (cpu.a | MAGIC_CONST) & cpu.x & operand;
-  
-  // Set flags based on the result
-  cpu.p &= ~(FlagSetMask6510.Z | FlagSetMask6510.N);
-  
-  if (cpu.a === 0) {
-    cpu.p |= FlagSetMask6510.Z;
-  }
-  
-  if (cpu.a & 0x80) {
-    cpu.p |= FlagSetMask6510.N;
-  }
-}
 
 // XAS (SHS/TAS) - Complex instruction affecting stack pointer and memory
 // 0x9B: XAS abs,Y - Store result of X AND A in stack pointer, then store SP AND (high+1) in memory
