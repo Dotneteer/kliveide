@@ -3,7 +3,7 @@
 Quick links:
 - [What Klive IDE Is](#what-klive-ide-is)
 - [Klive Documentation](https://dotneteer.github.io/kliveide/)
-- [Release v0.49.1](https://github.com/Dotneteer/kliveide/releases/tag/v0.49.1)
+- [Release v0.49.2](https://github.com/Dotneteer/kliveide/releases/tag/v0.49.2)
 
 ## How You Can Contribute
 
@@ -39,6 +39,7 @@ Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive 
 - **Cambridge Z88**
 - **ZX Spectrum Next** (*in progress*)
 - ZX 80/81 (*in the future*)
+- **Commodore 64** (*experimental, in progress*)
 
 ### Emulator Features
 

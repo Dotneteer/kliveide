@@ -43,7 +43,9 @@ import {
   setKeyMappingsAction,
   setMachineSpecificAction,
   setMediaAction,
-  initGlobalSettingsAction
+  initGlobalSettingsAction,
+  setMachineTypeAction,
+  setModelTypeAction
 } from "@state/actions";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
@@ -282,17 +284,28 @@ async function createAppWindows() {
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
-      Object.entries(appSettings.media).forEach(([key, value]) => {
-        mainStore.dispatch(setMediaAction(key, value));
-      });
+      if (appSettings.media) {
+        Object.entries(appSettings.media).forEach(([key, value]) => {
+          mainStore.dispatch(setMediaAction(key, value));
+        });
+      }
 
       // --- At this point the machine can be initialized
-      await setMachineType(
-        appSettings.machineId ?? "sp48",
-        appSettings.modelId,
-        appSettings.config
-      );
-      if (appSettings.media[MEDIA_TAPE]) {
+      let machineId = "sp48";
+      if (appSettings.machineId) {
+        machineId = appSettings.machineId;
+      }
+      let modelId = "pal";
+      if (appSettings.modelId) {
+        modelId = appSettings.modelId;
+      }
+      await setMachineType(machineId, modelId, appSettings.config);
+
+      // --- Ready, sign the machine type state change
+      mainStore.dispatch(setMachineTypeAction(machineId));
+      mainStore.dispatch(setModelTypeAction(modelId));
+
+      if (appSettings.media?.[MEDIA_TAPE]) {
         setSelectedTapeFile(appSettings.media[MEDIA_TAPE]);
       }
 
@@ -313,6 +326,8 @@ async function createAppWindows() {
           mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
         }
       }
+
+      setupMenu(emuWindow, ideWindow);
     }
 
     // --- Handle build file version changes
