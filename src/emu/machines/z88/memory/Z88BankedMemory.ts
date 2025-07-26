@@ -87,8 +87,8 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
    * Resets the slot 0 memory to zero
    * This is used to reset the internal RAM card.
    */
-  resetSlot0(): void {
-    for (let i = 0; i < 0x4000; i++) {
+  resetInternalRam(): void {
+    for (let i = 0x08_0000; i < 0x10_0000; i++) {
       this._memory[i] = 0x00;
     }
   }
