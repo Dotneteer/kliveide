@@ -1,7 +1,8 @@
+import { ILiteEvent } from "@abstractions/ILiteEvent";
 import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 import { IZ80Cpu } from "@emu/abstractions/IZ80Cpu";
 import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
-import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
+import { LiteEvent } from "@emu/utils/lite-event";
 import { Z80Cpu } from "@emu/z80/Z80Cpu";
 import { Z80NCpu } from "@emu/z80/Z80NCpu";
 

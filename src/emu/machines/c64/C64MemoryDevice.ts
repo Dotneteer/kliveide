@@ -110,7 +110,7 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
    * Upload the Character ROM data.
    * @param data The new Character ROM data
    */
-  uploadCharRom(data: Uint8Array): void {
+  uploadChargenRom(data: Uint8Array): void {
     if (data.length !== 0x1000) {
       throw new Error("Character ROM must be exactly 4KB in size.");
     }

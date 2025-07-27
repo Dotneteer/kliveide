@@ -268,6 +268,32 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     contentionValues: []
   };
 
+  renderNextTact(): void {
+    // TODO: Implement this method
+  }
+
+  /**
+   * The 16 standard colors of the Commodore 64
+   */
+  private readonly s_C64Colors: number[] = [
+    0xff000000, // Black
+    0xffffffff, // White
+    0xff883932, // Red
+    0xff67b6bd, // Cyan
+    0xff8b3f96, // Purple/Magenta
+    0xff55a049, // Green
+    0xff40318d, // Blue
+    0xffbfce72, // Yellow
+    0xff8b5429, // Orange/Brown
+    0xff574200, // Light Brown
+    0xffb86962, // Light Red
+    0xff505050, // Dark Grey
+    0xff787878, // Medium Grey
+    0xffa4e599, // Light Green
+    0xff867ade, // Light Blue
+    0xffb8b8b8  // Light Grey
+  ];
+
   private _pixelBuffer = new Uint32Array(504 * 312); // Buffer for pixel data (width * height)
 
   constructor(

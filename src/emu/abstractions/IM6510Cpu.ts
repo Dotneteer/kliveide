@@ -71,4 +71,19 @@ export interface IM6510Cpu extends IAnyCpu {
    * Tests if the Carry flag is set
    */
   isCFlagSet(): boolean;
+
+  /**
+   * Sets the CPU into the stalled state.
+   */
+  stallCpu(): void;
+
+  /**
+   * Resumes the CPU from the stalled state.
+   */
+  releaseCpu(): void;
+
+  /**
+   * Waits while the CPU gets released from the stalled state.
+   */
+  waitForCpuRelease(): void;
 }

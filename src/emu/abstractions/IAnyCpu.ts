@@ -244,7 +244,7 @@ export interface IAnyCpu {
    * With this function, you can emulate hardware activities running simultaneously with the CPU. For example,
    * rendering the screen or sound,  handling peripheral devices, and so on.
    */
-  onTactIncremented(increment: number): void;
+  onTactIncremented(increment?: number): void;
 
   /**
    * Indicates if the CPU is currently snoozed
