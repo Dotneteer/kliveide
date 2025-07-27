@@ -1,6 +1,5 @@
+import { IAssemblySymbolInfo, IExpressionValue, SymbolType } from "@main/compiler-common/abstractions";
 import type { ErrorCodes } from "./assembler-errors";
-import type { IAssemblySymbolInfo, IExpressionValue } from "./assembler-types";
-import { SymbolType } from "./assembler-types";
 import { FixupEntry } from "./fixups";
 
 /**

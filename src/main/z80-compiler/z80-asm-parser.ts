@@ -132,7 +132,7 @@ import type {
   ExpressionNode,
   OnSuccessPragma,
 } from "./assembler-tree-nodes";
-import type { ParserErrorMessage, ErrorCodes } from "./assembler-errors";
+import type { ErrorCodes } from "./assembler-errors";
 
 import { OperandType } from "./assembler-tree-nodes";
 import { TokenStream, TokenType } from "./token-stream";
@@ -140,6 +140,7 @@ import { errorMessages } from "./assembler-errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
 import { convertSpectrumString } from "./utils";
+import { ParserErrorMessage } from "../compiler-common/abstractions";
 
 /**
  * Size of an assembly batch. After this batch, the assembler lets the
@@ -151,7 +152,7 @@ const PARSER_BATCH_SIZE = 1000;
  * This class implements the Z80 assembly parser
  */
 export class Z80AsmParser {
-  private readonly _parseErrors: ParserErrorMessage[] = [];
+  private readonly _parseErrors: ParserErrorMessage<ErrorCodes>[] = [];
   private readonly _macroParamsCollected: MacroParameter[] = [];
 
   // --- Counter for async batches
@@ -171,7 +172,7 @@ export class Z80AsmParser {
   /**
    * The errors raised during the parse phase
    */
-  get errors(): ParserErrorMessage[] {
+  get errors(): ParserErrorMessage<ErrorCodes>[] {
     return this._parseErrors;
   }
 

@@ -1,8 +1,7 @@
+import { IAssemblySymbolInfo, IValueInfo } from "@main/compiler-common/abstractions";
 import type {
-  IAssemblySymbolInfo,
   IMacroDefinition,
   IStructDefinition,
-  IValueInfo
 } from "./assembler-types";
 import type { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 

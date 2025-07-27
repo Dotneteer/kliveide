@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import type { ErrorCodes, ParserErrorMessage } from "./assembler-errors";
+import type { ErrorCodes } from "./assembler-errors";
 import type { Token } from "./token-stream";
 import type {
   AdcInstruction,
@@ -54,7 +54,6 @@ import type {
   ModelPragma,
   ModuleStatement,
   NextRegInstruction,
-  NodePosition,
   OnSuccessPragma,
   Operand,
   OrgPragma,
@@ -89,9 +88,8 @@ import type {
 } from "./assembler-tree-nodes";
 
 import { errorMessages } from "./assembler-errors";
-import { InputStream } from "./input-stream";
+import { InputStream } from "../compiler-common/input-stream";
 import { TokenStream } from "./token-stream";
-import { OperandType } from "./assembler-tree-nodes";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { convertSpectrumString, readTextFile } from "./utils";
 import {
@@ -105,22 +103,20 @@ import {
   BinaryComparisonInfo,
   FixupType,
   IEvaluationContext,
-  IExpressionValue,
   IfDefinition,
   IfSection,
   IListFileItem,
   IMacroDefinition,
   IStructDefinition,
-  IValueInfo,
   StructDefinition,
-  SymbolType,
-  SymbolValueMap
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
 import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionEvaluator, ExpressionValue, setRandomSeed } from "./expressions";
 import { FixupEntry } from "./fixups";
 import { ExpressionValueType, SpectrumModelType } from "@abstractions/CompilerInfo";
+import { IExpressionValue, IValueInfo, ParserErrorMessage, SymbolType, SymbolValueMap } from "../compiler-common/abstractions";
+import { NodePosition, OperandType } from "@main/compiler-common/tree-nodes";
 
 /**
  * The file name of a direct text compilation
@@ -5476,7 +5472,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * the error occurred
    * @param error The error raised by the parser
    */
-  private reportParserError(sourceItem: SourceFileItem, error: ParserErrorMessage): void {
+  private reportParserError(sourceItem: SourceFileItem, error: ParserErrorMessage<ErrorCodes>): void {
     const errorInfo = new AssemblerErrorInfo(
       error.code,
       sourceItem.filename.replace(/\\/g, "/"),

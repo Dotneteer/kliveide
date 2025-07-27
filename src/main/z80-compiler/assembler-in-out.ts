@@ -8,11 +8,11 @@ import type {
   IListFileItem,
   ISourceFileItem,
   SourceMap,
-  SymbolValueMap
 } from "./assembler-types";
 
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { AssemblyModule } from "./assembly-module";
+import { SymbolValueMap } from "@main/compiler-common/abstractions";
 
 /**
  * This class represents the output of the Z80 assembler

@@ -1,98 +1,6 @@
-import type {
-  CompareBinPragma,
-  Expression,
-  IdentifierNode,
-  NodePosition,
-  Statement,
-  Z80AssemblyLine
-} from "./assembler-tree-nodes";
 import type { ErrorCodes } from "./assembler-errors";
-import type { ExpressionValueType } from "@abstractions/CompilerInfo";
-
-/**
- * Represents the value of an evaluated expression
- */
-export interface IExpressionValue {
-  /**
-   * Gets the type of the expression
-   */
-  readonly type: ExpressionValueType;
-
-  /**
-   * Checks if the value of this expression is valid
-   */
-  readonly isValid: boolean;
-
-  /**
-   * Checks if the value of this expression is not evaluated
-   */
-  readonly isNonEvaluated: boolean;
-
-  /**
-   * Gets the value of this instance
-   */
-  readonly value: number;
-
-  /**
-   * Returns the value as a long integer
-   */
-  asLong(): number;
-
-  /**
-   * Returns the value as a real number
-   */
-  asReal(): number;
-
-  /**
-   * Returns the value as a string
-   */
-  asString(): string;
-
-  /**
-   * Returns the value as a Boolean
-   */
-  asBool(): boolean;
-
-  /**
-   * Returns the value as a 16-bit unsigned integer
-   */
-  asWord(): number;
-
-  /**
-   * Returns the value as an 8-bit unsigned integer
-   */
-  asByte(): number;
-}
-
-/**
- * Map of symbols
- */
-export type SymbolValueMap = Record<string, IExpressionValue>;
-
-/**
- * Objects implementing this interface have usage information
- */
-export interface IHasUsageInfo {
-  /**
-   * Signs if the object has been used
-   */
-  isUsed: boolean;
-}
-
-/**
- * Information about a symbol's value
- */
-export interface IValueInfo {
-  /**
-   * The value of the symbol
-   */
-  value: IExpressionValue;
-
-  /**
-   * Symbol usage information
-   */
-  usageInfo: IHasUsageInfo;
-}
+import { IExpressionValue, IHasUsageInfo, IValueInfo } from "@main/compiler-common/abstractions";
+import { NodePosition } from "@main/compiler-common/tree-nodes";
 
 /**
  * Represents the context in which an expression is evaluated
@@ -131,10 +39,7 @@ export interface IEvaluationContext {
    * @param expr Expression to evaluate
    * @param context: Evaluation context
    */
-  doEvalExpression(
-    context: IEvaluationContext,
-    expr: Expression
-  ): IExpressionValue;
+  doEvalExpression(context: IEvaluationContext, expr: Expression): IExpressionValue;
 
   /**
    * Reports an error during evaluation
@@ -299,39 +204,6 @@ export interface IListFileItem {
 }
 
 /**
- * This enum defines the types of assembly symbols
- */
-export enum SymbolType {
-  None,
-  Label,
-  Var
-}
-
-/**
- * This class represents an assembly symbol
- */
-export interface IAssemblySymbolInfo extends IHasUsageInfo {
-  readonly name: string;
-  readonly type: SymbolType;
-  value: IExpressionValue;
-
-  /**
-   * Tests if this symbol is a local symbol within a module.
-   */
-  readonly isModuleLocal: boolean;
-
-  /**
-   * Tests if this symbol is a short-term symbol.
-   */
-  readonly isShortTerm: boolean;
-
-  /**
-   * Signs if the object has been used
-   */
-  isUsed: boolean;
-}
-
-/**
  * Type of the fixup
  */
 export enum FixupType {
@@ -440,7 +312,7 @@ export class IfDefinition {
  * Represents a section of an IF definition
  */
 export class IfSection {
-  constructor (
+  constructor(
     public readonly ifStatement: Statement,
     firstLine: number,
     lastLine: number
@@ -457,7 +329,7 @@ export class IfSection {
  * Represents a struct
  */
 export class StructDefinition implements IStructDefinition {
-  constructor (
+  constructor(
     public readonly structName: string,
     macroDefLine: number,
     macroEndLine: number,
@@ -486,7 +358,7 @@ export class StructDefinition implements IStructDefinition {
    * @param fieldName Field name
    * @param definition Field definition
    */
-  addField (fieldName: string, definition: IFieldDefinition): void {
+  addField(fieldName: string, definition: IFieldDefinition): void {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -498,7 +370,7 @@ export class StructDefinition implements IStructDefinition {
    * @param fieldName Name of the field to check
    * @returns True, if the struct contains the field; otherwise, false.
    */
-  containsField (fieldName: string): boolean {
+  containsField(fieldName: string): boolean {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -510,7 +382,7 @@ export class StructDefinition implements IStructDefinition {
    * @param name field name
    * @returns The field information, if found; otherwise, undefined.
    */
-  getField (fieldName: string): IFieldDefinition | undefined {
+  getField(fieldName: string): IFieldDefinition | undefined {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -522,7 +394,7 @@ export class StructDefinition implements IStructDefinition {
  * Information about binary comparison
  */
 export class BinaryComparisonInfo {
-  constructor (
+  constructor(
     public readonly comparePragma: CompareBinPragma,
     public readonly segment: IBinarySegment,
     public readonly segmentLength: number

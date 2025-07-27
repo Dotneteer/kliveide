@@ -1,11 +1,12 @@
-import { InputStream } from "./input-stream";
+import { Token } from "@main/compiler-common/tree-nodes";
+import { InputStream } from "../compiler-common/input-stream";
 
 /**
  * This class implements the tokenizer (lexer) of the Z80 Assembler
  */
 export class TokenStream {
   // --- Already fetched tokens
-  private _ahead: Token[] = [];
+  private _ahead: Token<TokenType>[] = [];
 
   // --- Prefetched character (from the next token)
   private _prefetched: string | null = null;
@@ -52,7 +53,7 @@ export class TokenStream {
    * Fethches the next token without advancing to its position
    * @param ws If true, retrieve whitespaces too
    */
-  peek (ws = false): Token {
+  peek (ws = false): Token<TokenType> {
     return this.ahead(0, ws);
   }
 
@@ -61,7 +62,7 @@ export class TokenStream {
    * @param n Number of token positions to read ahead
    * @param ws If true, retrieve whitespaces too
    */
-  ahead (n = 1, ws = false): Token {
+  ahead (n = 1, ws = false): Token<TokenType> {
     if (n > 16) {
       throw new Error("Cannot look ahead more than 16 tokens");
     }
@@ -86,7 +87,7 @@ export class TokenStream {
    * Fethces the nex token and advances the stream position
    * @param ws If true, retrieve whitespaces too
    */
-  get (ws = false): Token {
+  get (ws = false): Token<TokenType> {
     if (this._ahead.length > 0) {
       const token = this._ahead.shift();
       if (!token) {
@@ -108,7 +109,7 @@ export class TokenStream {
   /**
    * Fetches the next token from the input stream
    */
-  private fetch (): Token {
+  private fetch (): Token<TokenType> {
     const lexer = this;
     const input = this.input;
     const startPos = this._prefetchedPos || input.position;
@@ -983,7 +984,7 @@ export class TokenStream {
      * Packs the specified type of token to send back
      * @param type
      */
-    function makeToken (): Token {
+    function makeToken (): Token<TokenType> {
       if (useResolver) {
         tokenType =
           resolverHash[text] ??
@@ -995,9 +996,10 @@ export class TokenStream {
         text,
         type: tokenType,
         location: {
-          startPos,
-          endPos: lastEndPos,
-          line,
+          startPosition: startPos,
+          endPosition: lastEndPos,
+          startLine: line,
+          endLine: input.line,
           startColumn,
           endColumn: lastEndColumn
         }
@@ -1007,7 +1009,7 @@ export class TokenStream {
     /**
      * Add the last character to the token and return it
      */
-    function completeToken (suggestedType?: TokenType): Token {
+    function completeToken (suggestedType?: TokenType): Token<TokenType> {
       appendTokenChar();
 
       // --- Send back the token
@@ -1020,59 +1022,9 @@ export class TokenStream {
 }
 
 /**
- * Represents a token
- */
-export interface Token {
-  /**
-   * The raw text of the token
-   */
-  readonly text: string;
-
-  /**
-   * The type of the token
-   */
-  readonly type: TokenType;
-
-  /**
-   * The location of the token
-   */
-  readonly location: TokenLocation;
-}
-
-/**
- * Represents the location of a token
- */
-export interface TokenLocation {
-  /**
-   * Start position in the source stream
-   */
-  readonly startPos: number;
-
-  /**
-   * End position in the source stream
-   */
-  readonly endPos: number;
-
-  /**
-   * Source code line of the token
-   */
-  readonly line: number;
-
-  /**
-   * The token's start column within the line
-   */
-  readonly startColumn: number;
-
-  /**
-   * The tokens end column within the line
-   */
-  readonly endColumn: number;
-}
-
-/**
  * This enumeration defines the token types
  */
-export enum TokenType {
+export const enum TokenType {
   Eof = -1,
   Ws = -2,
   InlineComment = -3,
@@ -1485,7 +1437,7 @@ enum LexerPhase {
  * Tests if a token id EOF
  * @param t Token instance
  */
-function isEof (t: Token): boolean {
+function isEof (t: Token<TokenType>): boolean {
   return t.type === TokenType.Eof;
 }
 
@@ -1493,7 +1445,7 @@ function isEof (t: Token): boolean {
  * Tests if a token is whitespace
  * @param t Token instance
  */
-function isWs (t: Token): boolean {
+function isWs (t: Token<TokenType>): boolean {
   return t.type <= TokenType.Ws;
 }
 

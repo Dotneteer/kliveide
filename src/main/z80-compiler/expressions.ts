@@ -13,8 +13,9 @@ import type {
 } from "./assembler-tree-nodes";
 
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
-import { IEvaluationContext, IExpressionValue, IValueInfo } from "./assembler-types";
+import { IEvaluationContext } from "./assembler-types";
 import { OperandType } from "./assembler-tree-nodes";
+import { IExpressionValue, IValueInfo } from "@main/compiler-common/abstractions";
 
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";

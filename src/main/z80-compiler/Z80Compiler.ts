@@ -5,7 +5,7 @@ import type {
 } from "@abstractions/CompilerInfo";
 
 import { Z80CompilerService } from "./z80-compiler-service";
-import { InputStream } from "./input-stream";
+import { InputStream } from "../compiler-common/input-stream";
 import { TokenStream } from "./token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { Node } from "@main/z80-compiler/assembler-tree-nodes";

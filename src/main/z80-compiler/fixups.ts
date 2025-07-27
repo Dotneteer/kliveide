@@ -3,14 +3,12 @@ import type { Expression, NodePosition, Z80AssemblyLine } from "./assembler-tree
 import type {
   FixupType,
   IEvaluationContext,
-  IExpressionValue,
-  IValueInfo
 } from "./assembler-types";
 import type { SymbolInfoMap } from "./assembly-symbols";
 
-import { SymbolType } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
 import { ExpressionEvaluator } from "./expressions";
+import { IExpressionValue, IValueInfo, SymbolType } from "@main/compiler-common/abstractions";
 
 /**
  * This class represents a fixup that recalculates and replaces
