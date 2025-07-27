@@ -11,9 +11,9 @@ import {
   toDecimal3
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
-import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
-import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
+import { MemorySection, MemorySectionType } from "../disassemblers/common-types";
+import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 
 let disassemblyIndex = 1;
 

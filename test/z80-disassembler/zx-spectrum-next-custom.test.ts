@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { Z80Tester } from "./z80-tester";
-import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-next-disassembler";
+import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
 
 describe("Disassembler - ZX Spectrum Next specific", function () {
   it("RST $18 work as expected", async () => {

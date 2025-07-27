@@ -1,7 +1,7 @@
 import { expect } from "vitest";
-import { M6510Disassembler } from "@appIde/6510-disassembler/m6510-disassembler";
 import { MemoryMap, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { intToX2 } from "@renderer/appIde/disassemblers/utils";
+import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 /**
  * Helper class for M6510 Disassembler testing

@@ -27,15 +27,14 @@ import {
   MF_M6510,
   CT_DISASSEMBLER
 } from "./constants";
-import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
-import { Z88CustomDisassembler } from "@renderer/appIde/z80-disassembler/z88-custom.disassembler";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
-import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-next-disassembler";
 import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
-import { Z80Disassembler } from "@renderer/appIde/z80-disassembler/z80-disassembler";
-import { MemorySection } from "@renderer/appIde/z80-disassembler/disassembly-helper";
-import { M6510Disassembler } from "@renderer/appIde/6510-disassembler/m6510-disassembler";
-import { DisassemblyOptions } from "@renderer/appIde/disassemblers/common-types";
+import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
+import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
+import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
+import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
+import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
+import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 /**
  * The registry of available machine types with their available models

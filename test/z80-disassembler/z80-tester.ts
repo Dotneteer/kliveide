@@ -1,9 +1,9 @@
 import { expect } from "vitest";
-import { ICustomDisassembler } from "@appIde/z80-disassembler/custom-disassembly";
-import { Z80Disassembler } from "@appIde/z80-disassembler/z80-disassembler";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { MemoryMap, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { intToX2 } from "@renderer/appIde/disassemblers/utils";
+import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
+import { ICustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/custom-disassembly";
 
 /**
  * Helper class for Z80 Disassembler testing

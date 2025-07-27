@@ -1,5 +1,11 @@
-import { DisassemblyItem, DisassemblyOptions, DisassemblyOutput, MemorySection, MemorySectionType } from "../disassemblers/common-types";
-import { intToX2, intToX4, toDecimal3, toDecimal5, toSbyte } from "../disassemblers/utils";
+import {
+  DisassemblyItem,
+  DisassemblyOptions,
+  DisassemblyOutput,
+  MemorySection,
+  MemorySectionType
+} from "../common-types";
+import { intToX2, intToX4, toDecimal3, toDecimal5, toSbyte } from "../utils";
 
 /**
  * This class implements the M6510 disassembler

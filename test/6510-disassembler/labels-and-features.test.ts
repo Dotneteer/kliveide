@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { M6510Tester } from "./m6510-tester";
-import { M6510Disassembler } from "@appIde/6510-disassembler/m6510-disassembler";
 import { MemoryMap, MemorySection, MemorySectionType } from "@renderer/appIde/disassemblers/common-types";
+import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 describe("M6510 Disassembler - labels and advanced features", function () {
   it("Labels are created for jumps and branches", async () => {

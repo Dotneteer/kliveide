@@ -1,5 +1,5 @@
-import { DisassemblyItem, FetchResult, MemorySection } from "../disassemblers/common-types";
-import { intToX2, intToX4, toSbyte } from "../disassemblers/utils";
+import { DisassemblyItem, FetchResult, MemorySection } from "../common-types";
+import { intToX2, intToX4, toSbyte } from "../utils";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   ICustomDisassembler,

@@ -6,8 +6,6 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 import { useEmuStateListener } from "../useStateRefresh";
-import { MemorySection, MemorySectionType } from "../z80-disassembler/disassembly-helper";
-import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
 import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointKey } from "@common/utils/breakpoints";
 import { toHexa4 } from "../services/ide-commands";
@@ -17,6 +15,8 @@ import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import { useAppServices } from "../services/AppServicesProvider";
+import { MemorySection, MemorySectionType } from "../disassemblers/common-types";
+import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 
 const BreakpointsPanel = () => {
   const emuApi = useEmuApi();

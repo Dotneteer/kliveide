@@ -1,4 +1,4 @@
-import { DisassemblyItem, FetchResult, MemorySection } from "../disassemblers/common-types";
+import { DisassemblyItem, FetchResult, MemorySection } from "../common-types";
 
 /**
  * The ID of a custom Z80 disassembler for a virtual machine
