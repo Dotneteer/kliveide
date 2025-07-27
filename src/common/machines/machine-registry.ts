@@ -16,19 +16,26 @@ import {
   MF_PSG,
   MC_Z88_INTRAM,
   MC_Z88_INTROM,
-  CT_DISASSEMBLER,
+  CT_CUSTOM_DISASSEMBLER,
   CT_DISASSEMBLER_VIEW,
   MC_Z88_KEYBOARD,
   MC_Z88_SLOT0,
   MI_ZXNEXT,
   MF_ALLOW_CLOCK_MULTIPLIER,
   MI_C64,
+  MF_Z80,
+  MF_M6510,
+  CT_DISASSEMBLER
 } from "./constants";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-48-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/z80-disassembler/z88-custom.disassembler";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/z80-disassembler/zx-spectrum-next-disassembler";
 import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
+import { Z80Disassembler } from "@renderer/appIde/z80-disassembler/z80-disassembler";
+import { MemorySection } from "@renderer/appIde/z80-disassembler/disassembly-helper";
+import { M6510Disassembler } from "@renderer/appIde/6510-disassembler/m6510-disassembler";
+import { DisassemblyOptions } from "@renderer/appIde/disassemblers/common-types";
 
 /**
  * The registry of available machine types with their available models
@@ -39,6 +46,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum 48K",
     charSet: ZxSpectrumChars,
     features: {
+      [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
       [MF_ULA]: true
     },
@@ -68,7 +76,13 @@ export const machineRegistry: MachineInfo[] = [
     ],
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
-      [CT_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
     }
   },
   {
@@ -76,19 +90,29 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum 128K",
     charSet: ZxSpectrumChars,
     features: {
+      [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
       [MF_ULA]: true,
       [MF_PSG]: true,
       [MF_ROM]: 2,
       [MF_BANK]: 8
     },
-    mediaIds: [MEDIA_TAPE]
+    mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options)
+    }
   },
   {
     machineId: MI_SPECTRUM_3E,
     displayName: "ZX Spectrum +2E/+3E",
     charSet: ZxSpectrumChars,
     features: {
+      [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
       [MF_ULA]: true,
       [MF_PSG]: true,
@@ -118,7 +142,15 @@ export const machineRegistry: MachineInfo[] = [
           [MC_DISK_SUPPORT]: 2
         }
       }
-    ]
+    ],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options)
+    }
   },
   {
     machineId: MI_ZXNEXT,
@@ -133,7 +165,13 @@ export const machineRegistry: MachineInfo[] = [
     },
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
-      [CT_DISASSEMBLER]: () => new ZxSpectrumNextCustomDisassembler()
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrumNextCustomDisassembler()
     }
   },
   {
@@ -141,6 +179,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "Cambridge Z88",
     charSet: ZxSpectrumChars,
     features: {
+      [MF_Z80]: true,
       [MF_BANK]: 256,
       [MF_BLINK]: true
     },
@@ -293,7 +332,7 @@ export const machineRegistry: MachineInfo[] = [
       }
     ],
     toolInfo: {
-      [CT_DISASSEMBLER]: () => new Z88CustomDisassembler(),
+      [CT_CUSTOM_DISASSEMBLER]: () => new Z88CustomDisassembler(),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false
@@ -305,7 +344,8 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "Commodore 64 (experimental)",
     charSet: ZxSpectrumChars,
     features: {
-      [MF_TAPE_SUPPORT]: true,
+      [MF_M6510]: true,
+      [MF_TAPE_SUPPORT]: true
     },
     models: [
       {
@@ -321,13 +361,19 @@ export const machineRegistry: MachineInfo[] = [
         config: {
           [MC_SCREEN_FREQ]: "ntsc"
         }
-      },
+      }
     ],
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
-      [CT_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        _?: string[],
+        options?: DisassemblyOptions
+      ) => new M6510Disassembler(memorySections, memoryContents, options),
+      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
     }
-  },
+  }
 ];
 
 /**
@@ -347,7 +393,6 @@ export function getMachineName(machineId: string, modelId?: string): string {
   const model = machine.models?.find((m) => m.modelId === modelId);
   return model?.displayName ?? "";
 }
-
 
 /**
  * Gets all available machine models

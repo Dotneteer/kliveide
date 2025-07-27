@@ -1,10 +1,7 @@
 import { expect } from "vitest";
-import { 
-  M6510MemoryMap, 
-  M6510MemorySection,
-  intToX2 
-} from "@appIde/6510-disassembler/disassembly-helper";
 import { M6510Disassembler } from "@appIde/6510-disassembler/m6510-disassembler";
+import { MemoryMap, MemorySection } from "@renderer/appIde/disassemblers/common-types";
+import { intToX2 } from "@renderer/appIde/disassemblers/utils";
 
 /**
  * Helper class for M6510 Disassembler testing
@@ -16,10 +13,10 @@ export class M6510Tester {
    * @param opCodes Operation codes
    */
   static async Test(expected: string, ...opCodes: number[]): Promise<void> {
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x0000, opCodes.length - 1));
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
 
-    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(opCodes), undefined, 0x0000);
+    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(opCodes), undefined);
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();
     if (output === null) {
@@ -43,11 +40,15 @@ export class M6510Tester {
    * @param expectedCycles Expected cycle count
    * @param opCodes Operation codes
    */
-  static async TestWithCycles(expected: string, expectedCycles: number, ...opCodes: number[]): Promise<void> {
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x0000, opCodes.length - 1));
+  static async TestWithCycles(
+    expected: string,
+    expectedCycles: number,
+    ...opCodes: number[]
+  ): Promise<void> {
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
 
-    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(opCodes), undefined, 0x0000);
+    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(opCodes), undefined);
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();
     if (output === null) {
@@ -60,7 +61,7 @@ export class M6510Tester {
       return;
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
-    expect(item.cycles).toBe(expectedCycles);
+    expect(item.tstates).toBe(expectedCycles);
     expect(item.opCodes ? item.opCodes.map((oc) => intToX2(oc)).join(" ") : "").toBe(
       this._joinOpCodes(opCodes)
     );
@@ -72,12 +73,12 @@ export class M6510Tester {
    * @param opCodes Operation codes
    */
   static async TestWithDecimal(expected: string, ...opCodes: number[]): Promise<void> {
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x0000, opCodes.length - 1));
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
 
     const disassembler = new M6510Disassembler(map.sections, new Uint8Array(opCodes), {
       decimalMode: true
-    }, 0x0000);
+    });
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();
     if (output === null) {
@@ -101,10 +102,10 @@ export class M6510Tester {
    * @param opCodes Operation codes
    */
   static async TestAt1000(expected: string, ...opCodes: number[]): Promise<void> {
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x1000, 0x1000 + opCodes.length - 1));
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x1000, 0x1000 + opCodes.length - 1));
 
-    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(opCodes), undefined, 0x1000);
+    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(opCodes), undefined);
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();
     if (output === null) {

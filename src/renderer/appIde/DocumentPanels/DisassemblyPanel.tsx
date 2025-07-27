@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
-import { CT_DISASSEMBLER, MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
+import { CT_CUSTOM_DISASSEMBLER, MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
@@ -120,7 +120,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     viewState.current?.disassOffset ?? workspace?.disassOffset ?? 0
   );
 
-  const customDisassembly = machineInfo.toolInfo?.[CT_DISASSEMBLER];
+  const customDisassembly = machineInfo.toolInfo?.[CT_CUSTOM_DISASSEMBLER];
 
   const [pausedPc, setPausedPc] = useState(0);
 

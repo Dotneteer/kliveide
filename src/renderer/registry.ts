@@ -38,7 +38,7 @@ import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LangaugeProvide
 import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
 import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
 import { breakpointsPanelRenderer } from "./appIde/SiteBarPanels/BreakpointsPanel";
-import { cpuPanelRenderer } from "./appIde/SiteBarPanels/CpuPanel";
+import { z80CpuPanelRenderer } from "./appIde/SiteBarPanels/Z80CpuPanel";
 import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
 import { sysVarsPanelRenderer } from "./appIde/SiteBarPanels/SysVarsPanel";
 import { ulaPanelRenderer } from "./appIde/SiteBarPanels/UlaPanel";
@@ -57,8 +57,10 @@ import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
 import {
   MC_DISK_SUPPORT,
   MF_BLINK,
+  MF_M6510,
   MF_PSG,
   MF_ULA,
+  MF_Z80,
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { blinkPanelRenderer } from "./appIde/SiteBarPanels/BlinkPanel";
@@ -92,6 +94,7 @@ import { nextMemMappingPanelRenderer } from "./appIde/SiteBarPanels/MemMappingPa
 import { callStackPanelRenderer } from "./appIde/SiteBarPanels/CallStackPanel";
 import { nextPalettePanelRenderer } from "./appIde/SiteBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
+import { m6510CpuPanelRenderer } from "./appIde/SiteBarPanels/M6510CpuPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -138,11 +141,20 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     expandedOnInit: true
   },
   {
-    id: "cpuPanel",
+    id: "z80CpuPanel",
     title: "Z80 CPU",
     hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: cpuPanelRenderer,
-    expandedOnInit: true
+    renderer: z80CpuPanelRenderer,
+    expandedOnInit: true,
+    requireFeature: [MF_Z80]
+  },
+  {
+    id: "m6510CpuPanel",
+    title: "6510 CPU",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: m6510CpuPanelRenderer,
+    expandedOnInit: true,
+    requireFeature: [MF_M6510]
   },
   {
     id: "callStackPanel",

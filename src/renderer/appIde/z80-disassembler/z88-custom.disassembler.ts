@@ -1,9 +1,10 @@
+import { MemorySection, DisassemblyItem, FetchResult } from "../disassemblers/common-types";
+import { intToX2 } from "../disassemblers/utils";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   ICustomDisassembler,
   IDisassemblyApi
 } from "./custom-disassembly";
-import { DisassemblyItem, FetchResult, MemorySection, intToX2 } from "./disassembly-helper";
 
 /**
  * Custom disassembler for the Cambridge Z88 model

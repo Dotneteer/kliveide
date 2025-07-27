@@ -366,7 +366,7 @@ export type CpuStateChunk = {
 };
 
 // --- The response with the CPU state information
-export type CpuState = {
+export type Z80CpuState = {
   af: number;
   bc: number;
   de: number;
@@ -399,6 +399,34 @@ export type CpuState = {
   lastIoWritePort: number;
   lastIoWriteValue: number;
 };
+
+// --- The response with the CPU state information
+export type M6510CpuState = {
+  a: number;
+  x: number;
+  y: number;
+  p: number;
+  pc: number;
+  sp: number;
+  tacts: number;
+  tactsAtLastStart: number;
+  stalled: boolean;
+  jammed: boolean;
+  nmiRequested: boolean;
+  irqRequested: boolean;
+  opStartAddress: number;
+  lastMemoryReads: number[];
+  lastMemoryReadValue: number;
+  lastMemoryWrites: number[];
+  lastMemoryWriteValue: number;
+  lastIoReadPort: number;
+  lastIoReadValue: number;
+  lastIoWritePort: number;
+  lastIoWriteValue: number;
+};
+
+// --- The response with the CPU state information
+export type CpuState = Z80CpuState | M6510CpuState;
 
 export type UlaState = {
   fcl: number;

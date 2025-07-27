@@ -25,6 +25,7 @@ import { MC_SCREEN_FREQ } from "@common/machines/constants";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FILE_PROVIDER } from "../machine-props";
 import { IFileProvider } from "@renderer/core/IFileProvider";
+import { M6510CpuState } from "@common/messaging/EmuApi";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
@@ -71,6 +72,35 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     return this.modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc";
   }
 
+  /**
+   * Gets the current CPU state
+   */
+  getCpuState(): M6510CpuState {
+    return {
+      a: this.a,
+      x: this.x,
+      y: this.y,
+      p: this.p,
+      pc: this.pc,
+      sp: this.sp,
+      tacts: this.tacts,
+      tactsAtLastStart: this.tactsAtLastStart,
+      stalled: !!this.stalled,
+      jammed: this.jammed,
+      nmiRequested: this.nmiRequested,
+      irqRequested: this.irqRequested,
+      opStartAddress: this.opStartAddress,
+      lastMemoryReads: this.lastMemoryReads,
+      lastMemoryReadValue: this.lastMemoryReadValue,
+      lastMemoryWrites: this.lastMemoryWrites,
+      lastMemoryWriteValue: this.lastMemoryWriteValue,
+      lastIoReadPort: this.lastIoReadPort,
+      lastIoReadValue: this.lastIoReadValue,
+      lastIoWritePort: this.lastIoWritePort,
+      lastIoWriteValue: this.lastIoWriteValue
+    };
+  }
+
   constructor(public readonly modelInfo?: MachineModel) {
     super();
     this.baseClockFrequency = this.isNtsc ? 1022727 : 985248;
@@ -95,7 +125,9 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
     const basicRomContents = await this.loadRomFromResource("c64-basic");
     this.memory.uploadBasicRom(basicRomContents);
-    const kernalRomContents = await this.loadRomFromResource(`c64-kernal-${this.isNtsc ? "ntsc" : "pal"}`);
+    const kernalRomContents = await this.loadRomFromResource(
+      `c64-kernal-${this.isNtsc ? "ntsc" : "pal"}`
+    );
     this.memory.uploadKernalRom(kernalRomContents);
     const chargenRomContents = await this.loadRomFromResource("c64-chargen");
     this.memory.uploadChargenRom(chargenRomContents);
@@ -381,7 +413,6 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
    */
   onTactIncremented(): void {
     this.vicDevice.renderNextTact();
-    
   }
 
   isCpuSnoozed(): boolean {

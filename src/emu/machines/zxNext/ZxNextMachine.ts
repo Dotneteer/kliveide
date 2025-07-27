@@ -37,6 +37,7 @@ import { SdCardDevice } from "./SdCardDevice";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { createMainApi } from "@common/messaging/MainApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
+import { CpuState } from "@common/messaging/EmuApi";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -143,6 +144,45 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.ulaDevice = new UlaDevice(this);
     this.loResDevice = new LoResDevice(this);
     this.hardReset();
+  }
+
+  /**
+   * Gets the current CPU state
+   */
+  getCpuState(): CpuState {
+    return {
+      af: this.af,
+      bc: this.bc,
+      de: this.de,
+      hl: this.hl,
+      af_: this.af_,
+      bc_: this.bc_,
+      de_: this.de_,
+      hl_: this.hl_,
+      pc: this.pc,
+      sp: this.sp,
+      ix: this.ix,
+      iy: this.iy,
+      ir: this.ir,
+      wz: this.wz,
+      tacts: this.tacts,
+      tactsAtLastStart: this.tactsAtLastStart,
+      interruptMode: this.interruptMode,
+      iff1: this.iff1,
+      iff2: this.iff2,
+      sigINT: this.sigINT,
+      halted: this.halted,
+      snoozed: this.isCpuSnoozed(),
+      opStartAddress: this.opStartAddress,
+      lastMemoryReads: this.lastMemoryReads,
+      lastMemoryReadValue: this.lastMemoryReadValue,
+      lastMemoryWrites: this.lastMemoryWrites,
+      lastMemoryWriteValue: this.lastMemoryWriteValue,
+      lastIoReadPort: this.lastIoReadPort,
+      lastIoReadValue: this.lastIoReadValue,
+      lastIoWritePort: this.lastIoWritePort,
+      lastIoWriteValue: this.lastIoWriteValue
+    };
   }
 
   reset(): void {

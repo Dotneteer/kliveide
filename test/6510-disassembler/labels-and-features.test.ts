@@ -1,24 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { M6510Tester } from "./m6510-tester";
-import { 
-  M6510MemoryMap, 
-  M6510MemorySection,
-  M6510MemorySectionType
-} from "@appIde/6510-disassembler/disassembly-helper";
 import { M6510Disassembler } from "@appIde/6510-disassembler/m6510-disassembler";
+import { MemoryMap, MemorySection, MemorySectionType } from "@renderer/appIde/disassemblers/common-types";
 
 describe("M6510 Disassembler - labels and advanced features", function () {
   it("Labels are created for jumps and branches", async () => {
     // --- Arrange
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x1000, 0x1010));
-    
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, 0x0010));
+
     // JMP $1005, BEQ +2, NOP, NOP, LDA #$00
     const code = [0x4C, 0x05, 0x10, 0xF0, 0x02, 0xEA, 0xEA, 0xA9, 0x00];
-    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(code), undefined, 0x1000);
-    
+    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(code));
+
     // --- Act
-    const output = await disassembler.disassemble(0x1000, 0x1008);
+    const output = await disassembler.disassemble(0x0000, 0x0008);
     
     // --- Assert
     expect(output).not.toBeNull();
@@ -26,7 +22,7 @@ describe("M6510 Disassembler - labels and advanced features", function () {
     
     expect(output.outputItems.length).toBe(5);
     expect(output.outputItems[0].instruction).toBe("jmp L1005");
-    expect(output.outputItems[1].instruction).toBe("beq L1007");
+    expect(output.outputItems[1].instruction).toBe("beq L0007");
     expect(output.outputItems[2].instruction).toBe("nop");
     expect(output.outputItems[3].instruction).toBe("nop");
     expect(output.outputItems[4].instruction).toBe("lda #$00");
@@ -34,23 +30,23 @@ describe("M6510 Disassembler - labels and advanced features", function () {
     // Check that labels were created
     expect(output.labels.size).toBe(2);
     expect(output.labels.has(0x1005)).toBe(true);
-    expect(output.labels.has(0x1007)).toBe(true);
+    expect(output.labels.has(0x0007)).toBe(true);
   });
 
   it("Memory sections work correctly", async () => {
     // --- Arrange
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x1000, 0x1002, M6510MemorySectionType.Disassemble));
-    map.add(new M6510MemorySection(0x1003, 0x1006, M6510MemorySectionType.ByteArray));
-    map.add(new M6510MemorySection(0x1007, 0x1008, M6510MemorySectionType.WordArray));
-    
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, 0x0002, MemorySectionType.Disassemble));
+    map.add(new MemorySection(0x0003, 0x0006, MemorySectionType.ByteArray));
+    map.add(new MemorySection(0x0007, 0x0008, MemorySectionType.WordArray));
+
     // LDA #$00, NOP, $01, $02, $03, $04, $05, $06, $07, $08
     const code = [0xA9, 0x00, 0xEA, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
-    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(code), undefined, 0x1000);
-    
-    // --- Act  
-    const output = await disassembler.disassemble(0x1000, 0x1008);
-    
+    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(code));
+
+    // --- Act
+    const output = await disassembler.disassemble(0x0000, 0x0008);
+
     // --- Assert
     expect(output).not.toBeNull();
     if (output === null) return;
@@ -64,18 +60,18 @@ describe("M6510 Disassembler - labels and advanced features", function () {
 
   it("Decimal mode affects output formatting", async () => {
     // --- Arrange
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x1000, 0x1002));
-    
-    // LDA #$FF, STA $ABCD  
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, 0x0002));
+
+    // LDA #$FF, STA $ABCD
     const code = [0xA9, 0xFF, 0x8D, 0xCD, 0xAB];
     const disassembler = new M6510Disassembler(map.sections, new Uint8Array(code), {
       decimalMode: true
-    }, 0x1000);
-    
+    });
+
     // --- Act
-    const output = await disassembler.disassemble(0x1000, 0x1004);
-    
+    const output = await disassembler.disassemble(0x0000, 0x0004);
+
     // --- Assert
     expect(output).not.toBeNull();
     if (output === null) return;
@@ -87,23 +83,23 @@ describe("M6510 Disassembler - labels and advanced features", function () {
 
   it("Relative addressing calculates correct addresses", async () => {
     // Test forward and backward branches
-    await M6510Tester.TestAt1000("bpl L1002", 0x10, 0x00); // forward 0 bytes (+2 for instruction length)
-    await M6510Tester.TestAt1000("bpl L1024", 0x10, 0x22); // forward 34 bytes  
-    await M6510Tester.TestAt1000("bpl L0FF4", 0x10, 0xF2); // backward 14 bytes (-14 + 256 = 242 = 0xF2)
+    await M6510Tester.Test("bpl L0002", 0x10, 0x00); // forward 0 bytes (+2 for instruction length)
+    await M6510Tester.Test("bpl L0024", 0x10, 0x22); // forward 34 bytes  
+    await M6510Tester.Test("bpl LFFF4", 0x10, 0xF2); // backward 14 bytes (-14 + 256 = 242 = 0xF2)
   });
 
   it("Symbol tracking works for operands", async () => {
     // --- Arrange
-    const map = new M6510MemoryMap();
-    map.add(new M6510MemorySection(0x1000, 0x1002));
-    
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, 0x0002));
+
     // LDA #$42, STA $1234
     const code = [0xA9, 0x42, 0x8D, 0x34, 0x12];
-    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(code), undefined, 0x1000);
-    
+    const disassembler = new M6510Disassembler(map.sections, new Uint8Array(code));
+
     // --- Act
-    const output = await disassembler.disassemble(0x1000, 0x1004);
-    
+    const output = await disassembler.disassemble(0x0000, 0x0004);
+
     // --- Assert
     expect(output).not.toBeNull();
     if (output === null) return;

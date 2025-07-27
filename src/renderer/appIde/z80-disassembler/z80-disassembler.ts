@@ -1,17 +1,8 @@
 import { getNextRegisters, NextRegInfo } from "@emu/machines/zxNext/NextRegDevice";
 import { ICustomDisassembler } from "./custom-disassembly";
-import {
-  DisassemblyItem,
-  DisassemblyOutput,
-  MemorySection,
-  MemorySectionType,
-  intToX2,
-  intToX4,
-  toSbyte,
-  FetchResult,
-  DisassemblyOptions
-} from "./disassembly-helper";
 import { toDecimal3, toDecimal5 } from "../services/ide-commands";
+import { DisassemblyItem, DisassemblyOptions, DisassemblyOutput, FetchResult, MemorySection, MemorySectionType } from "../disassemblers/common-types";
+import { intToX2, intToX4, toSbyte } from "../disassemblers/utils";
 
 /**
  * This class implements the Z80 disassembler

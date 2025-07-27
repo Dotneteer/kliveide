@@ -36,6 +36,22 @@ export class M6510Cpu implements IM6510Cpu {
     this._sp = value & 0xffff;
   }
 
+  get stalled(): number {
+    return this._stalled;
+  }
+
+  get jammed(): boolean {
+    return this._jammed;
+  }
+
+  get nmiRequested(): boolean {
+    return this._nmiRequested;
+  }
+
+  get irqRequested(): boolean {
+    return this._irqRequested;
+  }
+
   baseClockFrequency: number;
   currentFrameTact: number;
   opCode: number;
