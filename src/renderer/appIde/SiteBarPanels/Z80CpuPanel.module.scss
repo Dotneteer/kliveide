@@ -1,0 +1,33 @@
+@import "@styles/core.scss";
+
+.cpuPanel {
+  @include side-panel-content;
+}
+
+.flags {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.f {
+    color: var(--color-label);
+    font-size: 1.6em;
+    width: 32px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.rows {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.cols {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 0;
+    flex-shrink: 0;
+}

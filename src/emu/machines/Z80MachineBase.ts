@@ -15,6 +15,7 @@ import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { CpuState } from "@common/messaging/EmuApi";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -42,6 +43,9 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   constructor(readonly config: MachineConfigSet = {}) {
     super();
   }
+  softResetOnFirstStart?: boolean;
+  dynamicConfig?: MachineConfigSet;
+  getAspectRatio?: () => [number, number];
 
   /**
    * The unique identifier of the machine type
@@ -74,6 +78,45 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    */
   dispose(): void {
     this.machinePropertyChanged?.release();
+  }
+
+  /**
+   * Gets the current CPU state
+   */
+  getCpuState(): CpuState {
+    return {
+      af: this.af,
+      bc: this.bc,
+      de: this.de,
+      hl: this.hl,
+      af_: this.af_,
+      bc_: this.bc_,
+      de_: this.de_,
+      hl_: this.hl_,
+      pc: this.pc,
+      sp: this.sp,
+      ix: this.ix,
+      iy: this.iy,
+      ir: this.ir,
+      wz: this.wz,
+      tacts: this.tacts,
+      tactsAtLastStart: this.tactsAtLastStart,
+      interruptMode: this.interruptMode,
+      iff1: this.iff1,
+      iff2: this.iff2,
+      sigINT: this.sigINT,
+      halted: this.halted,
+      snoozed: this.isCpuSnoozed(),
+      opStartAddress: this.opStartAddress,
+      lastMemoryReads: this.lastMemoryReads,
+      lastMemoryReadValue: this.lastMemoryReadValue,
+      lastMemoryWrites: this.lastMemoryWrites,
+      lastMemoryWriteValue: this.lastMemoryWriteValue,
+      lastIoReadPort: this.lastIoReadPort,
+      lastIoReadValue: this.lastIoReadValue,
+      lastIoWritePort: this.lastIoWritePort,
+      lastIoWriteValue: this.lastIoWriteValue
+    };
   }
 
   /**

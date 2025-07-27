@@ -1,14 +1,10 @@
+import { DisassemblyItem, FetchResult, MemorySection } from "../common-types";
+import { intToX4 } from "../utils";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   ICustomDisassembler,
   IDisassemblyApi
 } from "./custom-disassembly";
-import {
-  DisassemblyItem,
-  FetchResult,
-  intToX4,
-  MemorySection,
-} from "./disassembly-helper";
 
 /**
  * Custom disassembler for the ZX Spectrum 48 model
@@ -24,7 +20,7 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
    * @param api API to use for disassembly
    * @param machine The virtual machine instance
    */
-  setDisassemblyApi (api: IDisassemblyApi): void {
+  setDisassemblyApi(api: IDisassemblyApi): void {
     this._api = api;
   }
 
@@ -32,7 +28,7 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
    * The disassembler starts disassembling a memory section
    * @param section
    */
-  startSectionDisassembly (_section: MemorySection): void {
+  startSectionDisassembly(_section: MemorySection): void {
     // --- No ZX Spectrum 48 specific code to disassemle
     this._inRst182028Mode = false;
   }
@@ -44,7 +40,7 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
    * @returns True, if the custom disassembler wants to disassemble the next instruction(s);
    * otherwise, false
    */
-  beforeInstruction (fetchResult: FetchResult): boolean {
+  beforeInstruction(fetchResult: FetchResult): boolean {
     // --- Handle RST $18 word address
     if (this._inRst182028Mode) {
       const lsb = this._api.fetch().opcode;
@@ -71,8 +67,8 @@ export class ZxSpectrumNextCustomDisassembler implements ICustomDisassembler {
    * details of the disassembled item, or update its internal state accordingly
    * @param item Disassembled item
    */
-  afterInstruction (item: DisassemblyItem): void {
-    if (!item.opCodes) {  
+  afterInstruction(item: DisassemblyItem): void {
+    if (!item.opCodes) {
       return;
     }
 

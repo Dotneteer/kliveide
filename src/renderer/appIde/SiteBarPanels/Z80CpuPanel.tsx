@@ -1,9 +1,9 @@
-import styles from "./CpuPanel.module.scss";
+import styles from "./Z80CpuPanel.module.scss";
 import { Flag, Label, LabelSeparator, Separator, Value } from "@controls/Labels";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { CpuState } from "@common/messaging/EmuApi";
+import { Z80CpuState } from "@common/messaging/EmuApi";
 import { toBin16, toBin8 } from "../services/ide-commands";
 
 const FLAG_WIDTH = 16;
@@ -13,7 +13,7 @@ const TACT_WIDTH = 72;
 
 const CpuPanel = () => {
   const emuApi = useEmuApi();
-  const [cpuState, setCpuState] = useState<CpuState>(null);
+  const [cpuState, setCpuState] = useState<Z80CpuState>(null);
 
   const toHexa2 = (value?: number) =>
     value !== undefined ? value.toString(16).toUpperCase().padStart(2, "0") : "--";
@@ -38,7 +38,7 @@ const CpuPanel = () => {
     value !== undefined ? !!(value & (1 << bitNo)) : undefined;
 
   useEmuStateListener(emuApi, async () => {
-    setCpuState(await emuApi.getCpuState());
+    setCpuState(await emuApi.getCpuState() as Z80CpuState);
   });
 
   return (
@@ -320,4 +320,4 @@ const CpuPanel = () => {
   );
 };
 
-export const cpuPanelRenderer = () => <CpuPanel />;
+export const z80CpuPanelRenderer = () => <CpuPanel />;

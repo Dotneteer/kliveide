@@ -1,16 +1,10 @@
+import { DisassemblyItem, FetchResult, MemorySection } from "../common-types";
+import { intToX2, intToX4, toSbyte } from "../utils";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   ICustomDisassembler,
   IDisassemblyApi
 } from "./custom-disassembly";
-import {
-  DisassemblyItem,
-  FetchResult,
-  intToX2,
-  intToX4,
-  MemorySection,
-  toSbyte
-} from "./disassembly-helper";
 
 /**
  * Custom disassembler for the ZX Spectrum 48 model

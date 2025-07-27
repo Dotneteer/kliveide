@@ -10,6 +10,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { IMachineEventHandler } from "./IMachineEventHandler";
 import { IAnyCpu } from "@emu/abstractions/IAnyCpu";
+import { CpuState } from "@common/messaging/EmuApi";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from 
@@ -276,5 +277,9 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Stores the last rendered machine frame tact.
    */
   lastRenderedFrameTact: number;
-  
+
+  /**
+   * Gets the current CPU state to be displayed in the debugger
+   */
+  getCpuState(): CpuState;
 }

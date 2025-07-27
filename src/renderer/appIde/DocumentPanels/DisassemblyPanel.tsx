@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
-import { CT_DISASSEMBLER, MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
+import { CT_CUSTOM_DISASSEMBLER, CT_DISASSEMBLER, MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
@@ -15,14 +15,6 @@ import {
   setWorkspaceSettingsAction
 } from "@common/state/actions";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import {
-  DisassemblyItem,
-  MemorySection,
-  MemorySectionType
-} from "../z80-disassembler/disassembly-helper";
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { Z80Disassembler } from "../z80-disassembler/z80-disassembler";
-import { ICustomDisassembler } from "../z80-disassembler/custom-disassembly";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import classnames from "classnames";
 import { BreakpointIndicator } from "./BreakpointIndicator";
@@ -40,6 +32,9 @@ import BankDropdown from "@renderer/controls/new/BankDropdown";
 import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
 import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
+import { DisassemblyItem, MemorySection, MemorySectionType } from "../disassemblers/common-types";
+import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { ICustomDisassembler } from "../disassemblers/z80-disassembler/custom-disassembly";
 
 type BankedMemoryPanelViewState = {
   topAddress?: number;
@@ -120,7 +115,8 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
     viewState.current?.disassOffset ?? workspace?.disassOffset ?? 0
   );
 
-  const customDisassembly = machineInfo.toolInfo?.[CT_DISASSEMBLER];
+  const disassemblerFactory = machineInfo.toolInfo?.[CT_DISASSEMBLER];
+  const customDisassembly = machineInfo.toolInfo?.[CT_CUSTOM_DISASSEMBLER];
 
   const [pausedPc, setPausedPc] = useState(0);
 
@@ -258,7 +254,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
       }
 
       // --- Disassemble the specified memory segments
-      const disassembler = new Z80Disassembler(
+      const disassembler = disassemblerFactory(
         memSections,
         memory,
         getMemoryResponse.partitionLabels,
@@ -268,6 +264,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           decimalMode: cachedRefreshState.current.decimalView
         }
       );
+      console.log("Disassembler created", disassembler);
 
       // --- Set up partition offset
       if (partition !== undefined && !autoRefreshOpt) {
@@ -280,7 +277,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
       if (customDisassembly && typeof customDisassembly === "function") {
         const customPlugin = customDisassembly() as ICustomDisassembler;
-        disassembler.setCustomDisassembler(customPlugin);
+        disassembler.setCustomDisassembler?.(customPlugin);
       }
       const output = await disassembler.disassemble(
         0x0000,

@@ -28,8 +28,11 @@ export const MF_BANK = "bank";
 export const MF_ULA = "ula";
 export const MF_PSG = "psg";
 export const MF_BLINK = "blink";
+export const MF_Z80 = "z80Cpu";
+export const MF_M6510 = "m6510Cpu";
 export const MF_ALLOW_CLOCK_MULTIPLIER = "allowClockMultiplier";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";
+export const CT_CUSTOM_DISASSEMBLER = "customDisassembler";
 export const CT_DISASSEMBLER_VIEW = "disassemblyView";

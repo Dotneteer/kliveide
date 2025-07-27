@@ -240,40 +240,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const cpu = controller.machine as any;
-    return {
-      af: cpu.af,
-      bc: cpu.bc,
-      de: cpu.de,
-      hl: cpu.hl,
-      af_: cpu.af_,
-      bc_: cpu.bc_,
-      de_: cpu.de_,
-      hl_: cpu.hl_,
-      pc: cpu.pc,
-      sp: cpu.sp,
-      ix: cpu.ix,
-      iy: cpu.iy,
-      ir: cpu.ir,
-      wz: cpu.wz,
-      tacts: cpu.tacts,
-      tactsAtLastStart: cpu.tactsAtLastStart,
-      interruptMode: cpu.interruptMode,
-      iff1: cpu.iff1,
-      iff2: cpu.iff2,
-      sigINT: cpu.sigINT,
-      halted: cpu.halted,
-      snoozed: cpu.isCpuSnoozed(),
-      opStartAddress: cpu.opStartAddress,
-      lastMemoryReads: cpu.lastMemoryReads,
-      lastMemoryReadValue: cpu.lastMemoryReadValue,
-      lastMemoryWrites: cpu.lastMemoryWrites,
-      lastMemoryWriteValue: cpu.lastMemoryWriteValue,
-      lastIoReadPort: cpu.lastIoReadPort,
-      lastIoReadValue: cpu.lastIoReadValue,
-      lastIoWritePort: cpu.lastIoWritePort,
-      lastIoWriteValue: cpu.lastIoWriteValue
-    };
+    return controller.machine.getCpuState();
   }
 
   /**
@@ -980,7 +947,6 @@ class EmuMessageProcessor {
     }
     controller.debugSupport.renameBreakpoints(oldResource, newResource);
   }
-  
 }
 
 /**

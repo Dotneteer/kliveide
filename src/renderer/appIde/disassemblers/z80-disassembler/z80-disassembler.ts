@@ -1,17 +1,15 @@
 import { getNextRegisters, NextRegInfo } from "@emu/machines/zxNext/NextRegDevice";
 import { ICustomDisassembler } from "./custom-disassembly";
+import { toDecimal3, toDecimal5 } from "../../services/ide-commands";
 import {
   DisassemblyItem,
+  DisassemblyOptions,
   DisassemblyOutput,
-  MemorySection,
-  MemorySectionType,
-  intToX2,
-  intToX4,
-  toSbyte,
   FetchResult,
-  DisassemblyOptions
-} from "./disassembly-helper";
-import { toDecimal3, toDecimal5 } from "../services/ide-commands";
+  MemorySection,
+  MemorySectionType
+} from "../common-types";
+import { intToX2, intToX4, toSbyte } from "../utils";
 
 /**
  * This class implements the Z80 disassembler
@@ -181,7 +179,9 @@ export class Z80Disassembler {
         const value =
           this.memoryContents[section.startAddress + i + j * 2] +
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
-        words.push(this._decimalMode ? (value & 0xffff).toString(10) : `$${intToX4(value & 0xffff)}`);
+        words.push(
+          this._decimalMode ? (value & 0xffff).toString(10) : `$${intToX4(value & 0xffff)}`
+        );
       }
 
       const startAddress = (section.startAddress + i) & 0xffff;
