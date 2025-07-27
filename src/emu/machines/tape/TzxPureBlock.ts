@@ -3,7 +3,7 @@ import { BinaryWriter } from "@utils/BinaryWriter";
 import { Tzx3ByteBlockBase } from "./Tzx3ByteBlockBase";
 
 /**
- * Represents the standard speed data block in a TZX file
+ * Represents the pure tone block in a TZX file
  */
 export class TzxPureBlock extends Tzx3ByteBlockBase {
   /**

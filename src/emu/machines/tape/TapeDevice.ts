@@ -245,7 +245,7 @@ export class TapeDevice implements ITapeDevice {
    */
   getTapeEarBit(): boolean {
     // --- Calculate the current position
-    const pos = this.machine.tacts - this._tapeStartTact;
+    let pos = this.machine.tacts - this._tapeStartTact;
     const block = this._blocks?.[this._currentBlockIndex];
 
     // --- Tape might be ejected. In this case return with a high bit
@@ -287,47 +287,67 @@ export class TapeDevice implements ITapeDevice {
 
     // --- Data phase?
     if (this._playPhase === PlayPhase.Data) {
-      // --- Generate current bit pulse
-      var bitPos = pos - this._tapeBitStartPos;
+      if (block.data.length > 0) {
+        // --- Generate current bit pulse
+        var bitPos = pos - this._tapeBitStartPos;
 
-      // --- First pulse?
-      if (bitPos < this._tapeBitPulseLen) {
-        return false; // => Low EAR bit
+        // --- First pulse?
+        if (bitPos < this._tapeBitPulseLen) {
+          return false; // => Low EAR bit
+        }
+        if (bitPos < this._tapeBitPulseLen * 2) {
+          return true; // => High EAR bit
+        }
+
+        // --- Move to the next bit
+        this._tapeBitMask = this._tapeBitMask >>> 1;
+
+        // --- Adjust the last bit mask
+        if (this._dataIndex === block.data.length - 1) {
+          // --- This is the last byte, so we need to adjust the last bit mask
+          if (
+            block.lastByteUsedBits !== undefined &&
+            block.lastByteUsedBits > 0 &&
+            block.lastByteUsedBits < 8
+          ) {
+            this._tapeBitMask &= 0xff << (8 - block.lastByteUsedBits);
+          }
+        }
+        if (this._tapeBitMask === 0) {
+          // --- Move to the next byte
+          this._tapeBitMask = 0x80;
+          this._dataIndex++;
+        }
+
+        // --- Do we have more bits to play?
+        if (this._dataIndex < block.data.length) {
+          // --- Prepare to the next bit
+          this._tapeBitStartPos += 2 * this._tapeBitPulseLen;
+
+          // --- Select the bit pulse length of the next bit
+          this._tapeBitPulseLen =
+            (block.data[this._dataIndex] & this._tapeBitMask) != 0
+              ? block.oneBitPulseLength
+              : block.zeroBitPulseLength;
+
+          // --- We're in the first pulse of the next bit
+          return false; // => Low EAR bit
+        }
+
+        // --- We've played all data bytes, let's send the terminating pulse
+        this._playPhase = PlayPhase.TermSync;
+
+        // --- Prepare to the terminating sync
+        this._tapeTermEndPos =
+          this._tapeBitStartPos + 2 * this._tapeBitPulseLen + block.endSyncPulseLength;
+        return false;
+      } else {
+        this._playPhase = PlayPhase.Pause;
+        this._tapePauseEndPos =
+          this.machine.baseClockFrequency * Math.floor(block.pauseAfter / 1000);
+        this._tapeStartTact = this.machine.tacts;
+        pos = 0;
       }
-      if (bitPos < this._tapeBitPulseLen * 2) {
-        return true; // => High EAR bit
-      }
-
-      // --- Move to the next bit
-      this._tapeBitMask = this._tapeBitMask >>> 1;
-      if (this._tapeBitMask === 0) {
-        // --- Move to the next byte
-        this._tapeBitMask = 0x80;
-        this._dataIndex++;
-      }
-
-      // --- Do we have more bits to play?
-      if (this._dataIndex < block.data.length) {
-        // --- Prepare to the next bit
-        this._tapeBitStartPos += 2 * this._tapeBitPulseLen;
-
-        // --- Select the bit pulse length of the next bit
-        this._tapeBitPulseLen =
-          (block.data[this._dataIndex] & this._tapeBitMask) != 0
-            ? block.oneBitPulseLength
-            : block.zeroBitPulseLength;
-
-        // --- We're in the first pulse of the next bit
-        return false; // => Low EAR bit
-      }
-
-      // --- We've played all data bytes, let's send the terminating pulse
-      this._playPhase = PlayPhase.TermSync;
-
-      // --- Prepare to the terminating sync
-      this._tapeTermEndPos =
-        this._tapeBitStartPos + 2 * this._tapeBitPulseLen + block.endSyncPulseLenght;
-      return false;
     }
 
     // --- Termination sync?
@@ -338,7 +358,9 @@ export class TapeDevice implements ITapeDevice {
 
       // --- We terminated the data, it's pause time (1 second)
       this._playPhase = PlayPhase.Pause;
-      this._tapePauseEndPos = this._tapeTermEndPos + this.machine.baseClockFrequency;
+      this._tapePauseEndPos =
+        this._tapeTermEndPos +
+        this.machine.baseClockFrequency * Math.floor(block.pauseAfter / 1000);
       return true; // => High EAR bit
     }
 
@@ -513,7 +535,8 @@ export class TapeDevice implements ITapeDevice {
     this._playPhase = PlayPhase.Pilot;
     this._tapeStartTact = this.machine.tacts;
     this._tapePilotEndPos =
-      block.pilotPulseLength * (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT);
+      block.pilotPulseLength *
+      (block.pilotPulseCount ?? (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT));
     this._tapeSync1EndPos = this._tapePilotEndPos + block.sync1PulseLength;
     this._tapeSync2EndPos = this._tapeSync1EndPos + block.sync2PulseLength;
     this._dataIndex = 0;

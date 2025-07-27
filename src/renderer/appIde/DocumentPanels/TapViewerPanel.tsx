@@ -17,6 +17,10 @@ import {
 import { DataSection } from "@renderer/controls/DataSection";
 import { toHexa2 } from "../services/ide-commands";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import { TzxGroupStartBlock } from "@emu/machines/tape/TzxGroupStartBlock";
+import { TzxSilenceBlock } from "@emu/machines/tape/TzxSilenceBlock";
+import { TzxPureToneBlock } from "@emu/machines/tape/TzxPureToneBlock";
+import { TzxTurboSpeedBlock } from "@emu/machines/tape/TzxTurboSpeedBlock";
 
 const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
@@ -32,9 +36,7 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   if (!fileInfo.data) {
     return (
       <div className={styles.tapViewerPanel}>
-        <div className={classnames(styles.header, styles.error)}>
-          Invalid tape file format
-        </div>
+        <div className={classnames(styles.header, styles.error)}>Invalid tape file format</div>
       </div>
     );
   }
@@ -43,17 +45,17 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
       <div className={styles.tapViewerPanel}>
         <div className={styles.header}>
           <LabelSeparator width={4} />
-          <Label text='Format:' />
+          <Label text="Format:" />
           <ValueLabel text={fileInfo.type?.toUpperCase()} />
           <LabelSeparator width={4} />
           <ToolbarSeparator small={true} />
           <LabelSeparator width={4} />
-          <Label text='Length:' />
+          <Label text="Length:" />
           <ValueLabel text={contents.length.toString()} />
           <LabelSeparator width={4} />
           <ToolbarSeparator small={true} />
           <LabelSeparator width={4} />
-          <Label text='#of sections:' />
+          <Label text="#of sections:" />
           <ValueLabel text={fileInfo.data.length.toString()} />
           <LabelSeparator width={4} />
           <ToolbarSeparator small={true} />
@@ -82,7 +84,7 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
                 key={`${document.id}${idx}`}
                 title={title}
                 expanded={docState?.[idx] ?? true}
-                changed={exp => {
+                changed={(exp) => {
                   documentHubService.setDocumentViewState(document.id, {
                     ...docState,
                     [idx]: exp
@@ -91,18 +93,10 @@ const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
                 }}
               >
                 {fileInfo.type.toLowerCase() === "tap" && (
-                  <TapSection
-                    key={idx}
-                    block={ds as TapeDataBlock}
-                    index={idx}
-                  />
+                  <TapSection key={idx} block={ds as TapeDataBlock} index={idx} />
                 )}
                 {fileInfo.type.toLowerCase() === "tzx" && (
-                  <TzxSection
-                    key={idx}
-                    block={ds as TzxBlockBase}
-                    index={idx}
-                  />
+                  <TzxSection key={idx} block={ds as TzxBlockBase} index={idx} />
                 )}
               </DataSection>
             );
@@ -137,15 +131,31 @@ const TzxSection = ({ block }: TzxSectionProps) => {
   let section: ReactNode;
   switch (block.blockId) {
     case 0x10:
-      section = (
-        <TzxStandarSpeedBlockUi block={block as TzxStandardSpeedBlock} />
-      );
+      section = <TzxStandarSpeedBlockUi block={block as TzxStandardSpeedBlock} />;
+      break;
+
+    case 0x11:
+      section = <TzxTurboSpeedBlockUi block={block as TzxTurboSpeedBlock} />;
+      break;
+
+    case 0x12:
+      section = <TzxPureToneBlockUi block={block as TzxPureToneBlock} />;
+      break;
+
+    case 0x20:
+      section = <TzxSilenceBlockUi block={block as TzxSilenceBlock} />;
+      break;
+
+    case 0x21:
+      section = <TzxGroupStartBlockUi block={block as TzxGroupStartBlock} />;
+      break;
+
+    case 0x22:
+      section = <TzxGroupEndBlockUi />;
       break;
 
     case 0x30:
-      section = (
-        <TzxTextDescriptionBlockUi block={block as TzxTextDescriptionBlock} />
-      );
+      section = <TzxTextDescriptionBlockUi block={block as TzxTextDescriptionBlock} />;
       break;
 
     default:
@@ -198,12 +208,8 @@ const HeaderBlock = ({ data }: BlockProps) => {
 
   return (
     <div className={styles.blockHeader}>
-      <Secondary
-        text={`'${name}' - ${blockType.toUpperCase()} (${length} bytes) `}
-      />
-      <Secondary
-        text={`${par1Name}: ${par1Value}, ${par2Name}: ${par2Value}`}
-      />
+      <Secondary text={`'${name}' - ${blockType.toUpperCase()} (${length} bytes) `} />
+      <Secondary text={`${par1Name}: ${par1Value}, ${par2Name}: ${par2Value}`} />
     </div>
   );
 };
@@ -218,6 +224,32 @@ const TzxStandarSpeedBlockUi = ({ block }: TzxStandarSpeedBlockProps) => {
     <div className={styles.dataSection}>
       {isHeaderBlock(data) && <HeaderBlock data={data} />}
       <div className={styles.blockHeader}>
+        <Secondary text={`Pause after: ${block.pauseAfter}`} />
+      </div>
+      <StaticMemoryView memory={data} />
+    </div>
+  );
+};
+
+type TzxTurboSpeedBlockProps = {
+  block: TzxTurboSpeedBlock;
+};
+
+const TzxTurboSpeedBlockUi = ({ block }: TzxTurboSpeedBlockProps) => {
+  const data = new Uint8Array(block.data);
+  return (
+    <div className={styles.dataSection}>
+      {isHeaderBlock(data) && <HeaderBlock data={data} />}
+      <div className={styles.blockHeader}>
+        <Secondary
+          text={`PILOT: ${block.pilotPulseLength} | PILOT Count: ${block.pilotToneLength}`}
+        />
+        <Secondary
+          text={`SYNC1: ${block.sync1PulseLength} | SYNC2: ${block.sync2PulseLength}`}
+        />
+        <Secondary
+          text={`BIT0: ${block.zeroBitPulseLength} | BIT1: ${block.oneBitPulseLength}`}
+        />
         <Secondary text={`Pause after: ${block.pauseAfter}`} />
       </div>
       <StaticMemoryView memory={data} />
@@ -240,6 +272,59 @@ const TzxTextDescriptionBlockUi = ({ block }: TzxTextDescriptionBlockProps) => {
   );
 };
 
+type TzxGroupStartBlockProps = {
+  block: TzxGroupStartBlock;
+};
+
+const TzxGroupStartBlockUi = ({ block }: TzxGroupStartBlockProps) => {
+  return (
+    <div className={styles.dataSection}>
+      <div className={styles.blockHeader}>
+        <Secondary text={block.groupName} />
+      </div>
+    </div>
+  );
+};
+
+const TzxGroupEndBlockUi = () => {
+  return (
+    <div className={styles.dataSection}>
+      <div className={styles.blockHeader}>
+        <Secondary text="(End of the previous block)" />
+      </div>
+    </div>
+  );
+};
+
+type TzxSilenceBlockProps = {
+  block: TzxSilenceBlock;
+};
+
+const TzxSilenceBlockUi = ({ block }: TzxSilenceBlockProps) => {
+  return (
+    <div className={styles.dataSection}>
+      <div className={styles.blockHeader}>
+        <Secondary text={`Duration: ${block.duration}ms`} />
+      </div>
+    </div>
+  );
+};
+
+type TzxPureToneBlockProps = {
+  block: TzxPureToneBlock;
+};
+
+const TzxPureToneBlockUi = ({ block }: TzxPureToneBlockProps) => {
+  return (
+    <div className={styles.dataSection}>
+      <div className={styles.blockHeader}>
+        <Secondary text={`Pulse count: ${block.pulseCount}`} />
+        <Secondary text={`Pulse length: ${block.pulseLength} T-states`} />
+      </div>
+    </div>
+  );
+};
+
 type TzxNotImplementedBlockProps = {
   block: TzxBlockBase;
 };
@@ -248,17 +333,17 @@ const TzxNotImplementedBlockUi = ({}: TzxNotImplementedBlockProps) => {
   return (
     <div className={styles.dataSection}>
       <div className={styles.blockHeader}>
-        <Secondary text='(block display not implemented yet)' />
+        <Secondary text="(block display not implemented yet)" />
       </div>
     </div>
   );
 };
 
-function isHeaderBlock (data: Uint8Array): boolean {
+function isHeaderBlock(data: Uint8Array): boolean {
   return data.length === 19 && data[0] === 0x00;
 }
 
-function isDataBlock (data: Uint8Array): boolean {
+function isDataBlock(data: Uint8Array): boolean {
   return data.length > 0 && data[0] === 0xff;
 }
 
@@ -291,10 +376,5 @@ const tzxSections = {
 };
 
 export const createTapViewerPanel = ({ document, contents }: DocumentProps) => (
-  <TapViewerPanel
-    key={document.id}
-    document={document}
-    contents={contents}
-    apiLoaded={() => {}}
-  />
+  <TapViewerPanel key={document.id} document={document} contents={contents} apiLoaded={() => {}} />
 );
