@@ -42,7 +42,7 @@ export class TzxTurboSpeedBlock extends Tzx3ByteBlockBase {
    */
   pauseAfter: number;
 
-  constructor () {
+  constructor() {
     super();
     this.pilotPulseLength = 2168;
     this.sync1PulseLength = 667;
@@ -53,17 +53,24 @@ export class TzxTurboSpeedBlock extends Tzx3ByteBlockBase {
     this.lastByteUsedBits = 8;
   }
 
-  get blockId (): number {
+  get blockId(): number {
     return 0x11;
   }
 
-  getDataBlock (): TapeDataBlock {
+  getDataBlock(): TapeDataBlock {
     const block = new TapeDataBlock();
     block.data = new Uint8Array(this.data);
+    block.pilotPulseLength = this.pilotPulseLength;
+    block.sync1PulseLength = this.sync1PulseLength;
+    block.sync2PulseLength = this.sync2PulseLength;
+    block.zeroBitPulseLength = this.zeroBitPulseLength;
+    block.oneBitPulseLength = this.oneBitPulseLength;
+    block.endSyncPulseLength = this.pilotToneLength;
+    block.pauseAfter = this.pauseAfter;
     return block;
   }
 
-  readFrom (reader: BinaryReader): void {
+  readFrom(reader: BinaryReader): void {
     this.pilotPulseLength = reader.readUint16();
     this.sync1PulseLength = reader.readUint16();
     this.sync2PulseLength = reader.readUint16();
@@ -76,7 +83,7 @@ export class TzxTurboSpeedBlock extends Tzx3ByteBlockBase {
     this.data = reader.readBytes(this.getLength());
   }
 
-  writeTo (writer: BinaryWriter): void {
+  writeTo(writer: BinaryWriter): void {
     writer.writeUint16(this.pilotPulseLength);
     writer.writeUint16(this.sync1PulseLength);
     writer.writeUint16(this.sync2PulseLength);

@@ -343,7 +343,8 @@ export class TapeDevice implements ITapeDevice {
         return false;
       } else {
         this._playPhase = PlayPhase.Pause;
-        this._tapePauseEndPos = this.machine.baseClockFrequency * Math.floor(block.pauseAfter / 1000);
+        this._tapePauseEndPos =
+          this.machine.baseClockFrequency * Math.floor(block.pauseAfter / 1000);
         this._tapeStartTact = this.machine.tacts;
         pos = 0;
       }
@@ -534,7 +535,8 @@ export class TapeDevice implements ITapeDevice {
     this._playPhase = PlayPhase.Pilot;
     this._tapeStartTact = this.machine.tacts;
     this._tapePilotEndPos =
-      block.pilotPulseLength * (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT);
+      block.pilotPulseLength *
+      (block.pilotPulseCount ?? (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT));
     this._tapeSync1EndPos = this._tapePilotEndPos + block.sync1PulseLength;
     this._tapeSync2EndPos = this._tapeSync1EndPos + block.sync2PulseLength;
     this._dataIndex = 0;

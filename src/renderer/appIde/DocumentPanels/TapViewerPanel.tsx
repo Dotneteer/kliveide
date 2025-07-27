@@ -20,6 +20,7 @@ import ScrollViewer from "@renderer/controls/ScrollViewer";
 import { TzxGroupStartBlock } from "@emu/machines/tape/TzxGroupStartBlock";
 import { TzxSilenceBlock } from "@emu/machines/tape/TzxSilenceBlock";
 import { TzxPureToneBlock } from "@emu/machines/tape/TzxPureToneBlock";
+import { TzxTurboSpeedBlock } from "@emu/machines/tape/TzxTurboSpeedBlock";
 
 const TapViewerPanel = ({ document, contents: data }: DocumentProps) => {
   const documentHubService = useDocumentHubService();
@@ -133,6 +134,10 @@ const TzxSection = ({ block }: TzxSectionProps) => {
       section = <TzxStandarSpeedBlockUi block={block as TzxStandardSpeedBlock} />;
       break;
 
+    case 0x11:
+      section = <TzxTurboSpeedBlockUi block={block as TzxTurboSpeedBlock} />;
+      break;
+
     case 0x12:
       section = <TzxPureToneBlockUi block={block as TzxPureToneBlock} />;
       break;
@@ -226,6 +231,32 @@ const TzxStandarSpeedBlockUi = ({ block }: TzxStandarSpeedBlockProps) => {
   );
 };
 
+type TzxTurboSpeedBlockProps = {
+  block: TzxTurboSpeedBlock;
+};
+
+const TzxTurboSpeedBlockUi = ({ block }: TzxTurboSpeedBlockProps) => {
+  const data = new Uint8Array(block.data);
+  return (
+    <div className={styles.dataSection}>
+      {isHeaderBlock(data) && <HeaderBlock data={data} />}
+      <div className={styles.blockHeader}>
+        <Secondary
+          text={`PILOT: ${block.pilotPulseLength} | PILOT Count: ${block.pilotToneLength}`}
+        />
+        <Secondary
+          text={`SYNC1: ${block.sync1PulseLength} | SYNC2: ${block.sync2PulseLength}`}
+        />
+        <Secondary
+          text={`BIT0: ${block.zeroBitPulseLength} | BIT1: ${block.oneBitPulseLength}`}
+        />
+        <Secondary text={`Pause after: ${block.pauseAfter}`} />
+      </div>
+      <StaticMemoryView memory={data} />
+    </div>
+  );
+};
+
 type TzxTextDescriptionBlockProps = {
   block: TzxTextDescriptionBlock;
 };
@@ -293,7 +324,6 @@ const TzxPureToneBlockUi = ({ block }: TzxPureToneBlockProps) => {
     </div>
   );
 };
-
 
 type TzxNotImplementedBlockProps = {
   block: TzxBlockBase;

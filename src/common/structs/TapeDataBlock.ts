@@ -51,4 +51,9 @@ export class TapeDataBlock {
    * xxxxxx00, where MSb is the leftmost bit, LSb is the rightmost bit)
    */
   lastByteUsedBits?: number;
+
+  /**
+   * Number of pilot pulses in the block
+   */
+  pilotPulseCount?: number;
 }
