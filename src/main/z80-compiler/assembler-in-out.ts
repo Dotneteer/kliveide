@@ -1,23 +1,17 @@
 import path from "path";
 
 import type { ErrorCodes } from "./assembler-errors";
-import type {
-  IAssemblerErrorInfo,
-  IBinarySegment,
-  IFileLine,
-  IListFileItem,
-  ISourceFileItem,
-  SourceMap,
-} from "./assembler-types";
 
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { AssemblyModule } from "./assembly-module";
-import { SymbolValueMap } from "@main/compiler-common/abstractions";
+import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolValueMap } from "@main/compiler-common/abstractions";
+import { Z80Instruction } from "./assembler-tree-nodes";
+import { Z80TokenType } from "./token-stream";
 
 /**
  * This class represents the output of the Z80 assembler
  */
-export class AssemblerOutput extends AssemblyModule {
+export class AssemblerOutput extends AssemblyModule<Z80Instruction, Z80TokenType> {
   constructor (
     public readonly sourceItem: SourceFileItem,
     caseSensitive: boolean

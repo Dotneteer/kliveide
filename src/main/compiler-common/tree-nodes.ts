@@ -1,9 +1,10 @@
-type TypedObject = { type: string };
+import { TypedObject } from "./abstractions";
+import { CommonTokenType } from "./common-tokens";
 
 /**
  * Aggregate type for all syntax nodes
  */
-export type Node<TInstruction extends TypedObject, TToken> =
+export type Node<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | Program<TInstruction>
   | LabelOnlyLine<TInstruction>
   | CommentOnlyLine<TInstruction>
@@ -17,7 +18,7 @@ export type Node<TInstruction extends TypedObject, TToken> =
   | MacroOrStructInvocation<TInstruction, TToken>
   | FieldAssignment<TInstruction, TToken>;
 
-export type Directive<TInstruction extends TypedObject, TToken> =
+export type Directive<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | IfDefDirective<TInstruction>
   | IfNDefDirective<TInstruction>
   | DefineDirective<TInstruction>
@@ -30,7 +31,7 @@ export type Directive<TInstruction extends TypedObject, TToken> =
   | IncludeDirective<TInstruction>
   | LineDirective<TInstruction, TToken>;
 
-export type ByteEmittingPragma<TInstruction extends TypedObject, TToken> =
+export type ByteEmittingPragma<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | DefBPragma<TInstruction, TToken>
   | DefWPragma<TInstruction, TToken>
   | DefCPragma<TInstruction, TToken>
@@ -43,7 +44,7 @@ export type ByteEmittingPragma<TInstruction extends TypedObject, TToken> =
   | DefGPragma<TInstruction>
   | DefGxPragma<TInstruction, TToken>;
 
-export type Pragma<TInstruction extends TypedObject, TToken> =
+export type Pragma<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | OrgPragma<TInstruction, TToken>
   | BankPragma<TInstruction, TToken>
   | XorgPragma<TInstruction, TToken>
@@ -65,12 +66,12 @@ export type Pragma<TInstruction extends TypedObject, TToken> =
   | InjectOptPragma<TInstruction>
   | OnSuccessPragma<TInstruction>;
 
-export type IfLikeStatement<TInstruction extends TypedObject, TToken> =
+export type IfLikeStatement<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | IfStatement<TInstruction, TToken>
   | IfUsedStatement<TInstruction>
   | IfNUsedStatement<TInstruction>;
 
-export type Statement<TInstruction extends TypedObject, TToken> =
+export type Statement<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | MacroStatement<TInstruction>
   | MacroEndStatement<TInstruction>
   | LoopStatement<TInstruction, TToken>
@@ -97,7 +98,7 @@ export type Statement<TInstruction extends TypedObject, TToken> =
 /**
  * Represents a token
  */
-export interface Token<T> {
+export interface Token<T extends CommonTokenType> {
   /**
    * The raw text of the token
    */
@@ -190,7 +191,7 @@ export interface ExpressionNode<TNode extends TypedObject> extends BaseNode<TNod
 // ============================================================================
 // Expression node types
 
-export type Expression<TNode extends TypedObject, TToken> =
+export type Expression<TNode extends TypedObject, TToken extends CommonTokenType> =
   | IdentifierNode<TNode>
   | UnaryExpression<TNode, TToken>
   | BinaryExpression<TNode, TToken>
@@ -222,7 +223,8 @@ export interface IdentifierNode<TNode extends TypedObject> extends ExpressionNod
 /**
  * Represents an unary expression
  */
-export interface UnaryExpression<TNode extends TypedObject, TToken> extends ExpressionNode<TNode> {
+export interface UnaryExpression<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends ExpressionNode<TNode> {
   type: "UnaryExpression";
 
   /**
@@ -239,7 +241,8 @@ export interface UnaryExpression<TNode extends TypedObject, TToken> extends Expr
 /**
  * Represents a binary expression
  */
-export interface BinaryExpression<TNode extends TypedObject, TToken> extends ExpressionNode<TNode> {
+export interface BinaryExpression<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends ExpressionNode<TNode> {
   type: "BinaryExpression";
 
   /**
@@ -298,7 +301,7 @@ export interface Symbol<TNode extends TypedObject> extends ExpressionNode<TNode>
 /**
  * Represents a ternary conditional expression
  */
-export interface ConditionalExpression<TNode extends TypedObject, TToken>
+export interface ConditionalExpression<TNode extends TypedObject, TToken extends CommonTokenType>
   extends ExpressionNode<TNode> {
   type: "ConditionalExpression";
 
@@ -394,8 +397,10 @@ export interface MacroParameter<TNode extends TypedObject>
 /**
  * Represents a built-in function invocation
  */
-export interface MacroTimeFunctionInvocation<TNode extends TypedObject, TToken>
-  extends ExpressionNode<TNode> {
+export interface MacroTimeFunctionInvocation<
+  TNode extends TypedObject,
+  TToken extends CommonTokenType
+> extends ExpressionNode<TNode> {
   type: "MacroTimeFunctionInvocation";
   functionName: string;
   operand?: Operand<TNode, TToken>;
@@ -404,7 +409,7 @@ export interface MacroTimeFunctionInvocation<TNode extends TypedObject, TToken>
 /**
  * Represents a function invocation
  */
-export interface FunctionInvocation<TNode extends TypedObject, TToken>
+export interface FunctionInvocation<TNode extends TypedObject, TToken extends CommonTokenType>
   extends ExpressionNode<TNode> {
   type: "FunctionInvocation";
   functionName: IdentifierNode<TNode>;
@@ -436,7 +441,7 @@ export enum OperandType {
 /**
  * Represents an operand that may have many forms
  */
-export interface Operand<TNode extends TypedObject, TToken> {
+export interface Operand<TNode extends TypedObject, TToken extends CommonTokenType> {
   type: "Operand";
   startToken?: Token<TToken>;
   operandType: OperandType;
@@ -578,15 +583,16 @@ export interface IfNModDirective<TNode extends TypedObject> extends PartialAssem
   identifier: IdentifierNode<TNode>;
 }
 
-export interface EndIfDirective<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+export interface EndIfDirective<TNode extends TypedObject> extends AssemblyLine<TNode> {
   type: "EndIfDirective";
 }
 
-export interface ElseDirective<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+export interface ElseDirective<TNode extends TypedObject> extends AssemblyLine<TNode> {
   type: "ElseDirective";
 }
 
-export interface IfDirective<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface IfDirective<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "IfDirective";
 
   /**
@@ -604,7 +610,7 @@ export interface IncludeDirective<TNode extends TypedObject> extends PartialAsse
   filename: string;
 }
 
-export interface LineDirective<TNode extends TypedObject, TToken>
+export interface LineDirective<TNode extends TypedObject, TToken extends CommonTokenType>
   extends PartialAssemblyLine<TNode> {
   type: "LineDirective";
 
@@ -622,7 +628,8 @@ export interface LineDirective<TNode extends TypedObject, TToken>
 // ============================================================================
 // Pragma syntax node types
 
-export interface OrgPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface OrgPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "OrgPragma";
 
   /**
@@ -631,7 +638,8 @@ export interface OrgPragma<TNode extends TypedObject, TToken> extends PartialAss
   address: Expression<TNode, TToken>;
 }
 
-export interface BankPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface BankPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "BankPragma";
 
   /**
@@ -645,7 +653,8 @@ export interface BankPragma<TNode extends TypedObject, TToken> extends PartialAs
   offset?: Expression<TNode, TToken>;
 }
 
-export interface XorgPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface XorgPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "XorgPragma";
 
   /**
@@ -654,7 +663,8 @@ export interface XorgPragma<TNode extends TypedObject, TToken> extends PartialAs
   address: Expression<TNode, TToken>;
 }
 
-export interface EntPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface EntPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "EntPragma";
 
   /**
@@ -663,7 +673,8 @@ export interface EntPragma<TNode extends TypedObject, TToken> extends PartialAss
   address: Expression<TNode, TToken>;
 }
 
-export interface XentPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface XentPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "XentPragma";
 
   /**
@@ -672,7 +683,8 @@ export interface XentPragma<TNode extends TypedObject, TToken> extends PartialAs
   address: Expression<TNode, TToken>;
 }
 
-export interface DispPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DispPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DispPragma";
 
   /**
@@ -681,7 +693,8 @@ export interface DispPragma<TNode extends TypedObject, TToken> extends PartialAs
   offset: Expression<TNode, TToken>;
 }
 
-export interface EquPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface EquPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "EquPragma";
 
   /**
@@ -690,7 +703,8 @@ export interface EquPragma<TNode extends TypedObject, TToken> extends PartialAss
   value: Expression<TNode, TToken>;
 }
 
-export interface VarPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface VarPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "VarPragma";
 
   /**
@@ -699,7 +713,8 @@ export interface VarPragma<TNode extends TypedObject, TToken> extends PartialAss
   value: Expression<TNode, TToken>;
 }
 
-export interface DefBPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefBPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DefBPragma";
 
   /**
@@ -708,7 +723,8 @@ export interface DefBPragma<TNode extends TypedObject, TToken> extends PartialAs
   values: Expression<TNode, TToken>[];
 }
 
-export interface DefWPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefWPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DefWPragma";
 
   /**
@@ -717,7 +733,8 @@ export interface DefWPragma<TNode extends TypedObject, TToken> extends PartialAs
   values: Expression<TNode, TToken>[];
 }
 
-export interface DefCPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefCPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DefCPragma";
 
   /**
@@ -726,7 +743,8 @@ export interface DefCPragma<TNode extends TypedObject, TToken> extends PartialAs
   value: Expression<TNode, TToken>;
 }
 
-export interface DefNPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefNPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DefNPragma";
 
   /**
@@ -735,7 +753,8 @@ export interface DefNPragma<TNode extends TypedObject, TToken> extends PartialAs
   value: Expression<TNode, TToken>;
 }
 
-export interface DefMPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefMPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DefMPragma";
 
   /**
@@ -744,7 +763,8 @@ export interface DefMPragma<TNode extends TypedObject, TToken> extends PartialAs
   value: Expression<TNode, TToken>;
 }
 
-export interface DefHPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefHPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DefHPragma";
 
   /**
@@ -753,7 +773,8 @@ export interface DefHPragma<TNode extends TypedObject, TToken> extends PartialAs
   value: Expression<TNode, TToken>;
 }
 
-export interface SkipPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface SkipPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "SkipPragma";
 
   /**
@@ -771,7 +792,8 @@ export interface ExternPragma<TNode extends TypedObject> extends PartialAssembly
   type: "ExternPragma";
 }
 
-export interface DefSPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefSPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
   type: "DefSPragma";
 
   /**
@@ -785,11 +807,11 @@ export interface DefSPragma<TNode extends TypedObject, TToken> extends PartialAs
   fill?: Expression<TNode, TToken>;
 }
 
-export interface FillbPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface FillbPragma<TNode extends TypedObject, TToken extends CommonTokenType> extends PartialAssemblyLine<TNode> {
   type: "FillbPragma";
 
   /**
-   * Number of bytes to skip
+   * Number of bytes to fill
    */
   count: Expression<TNode, TToken>;
 
@@ -799,11 +821,11 @@ export interface FillbPragma<TNode extends TypedObject, TToken> extends PartialA
   fill: Expression<TNode, TToken>;
 }
 
-export interface FillwPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface FillwPragma<TNode extends TypedObject, TToken extends CommonTokenType> extends PartialAssemblyLine<TNode> {
   type: "FillwPragma";
 
   /**
-   * Number of words to skip
+   * Number of words to fill
    */
   count: Expression<TNode, TToken>;
 
@@ -822,7 +844,7 @@ export interface ModelPragma<TNode extends TypedObject> extends PartialAssemblyL
   modelId: string;
 }
 
-export interface AlignPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface AlignPragma<TNode extends TypedObject, TToken extends CommonTokenType> extends PartialAssemblyLine<TNode> {
   type: "AlignPragma";
 
   /**
@@ -831,7 +853,7 @@ export interface AlignPragma<TNode extends TypedObject, TToken> extends PartialA
   alignExpr?: Expression<TNode, TToken>;
 }
 
-export interface TracePragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface TracePragma<TNode extends TypedObject, TToken extends CommonTokenType> extends PartialAssemblyLine<TNode> {
   type: "TracePragma";
 
   /**
@@ -845,7 +867,7 @@ export interface TracePragma<TNode extends TypedObject, TToken> extends PartialA
   values: Expression<TNode, TToken>[];
 }
 
-export interface RndSeedPragma<TNode extends TypedObject, TToken>
+export interface RndSeedPragma<TNode extends TypedObject, TToken extends CommonTokenType>
   extends PartialAssemblyLine<TNode> {
   type: "RndSeedPragma";
 
@@ -855,7 +877,7 @@ export interface RndSeedPragma<TNode extends TypedObject, TToken>
   seedExpr?: Expression<TNode, TToken>;
 }
 
-export interface DefGxPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface DefGxPragma<TNode extends TypedObject, TToken extends CommonTokenType> extends PartialAssemblyLine<TNode> {
   type: "DefGxPragma";
 
   /**
@@ -873,7 +895,7 @@ export interface DefGPragma<TNode extends TypedObject> extends PartialAssemblyLi
   pattern: string;
 }
 
-export interface ErrorPragma<TNode extends TypedObject, TToken> extends PartialAssemblyLine<TNode> {
+export interface ErrorPragma<TNode extends TypedObject, TToken extends CommonTokenType> extends PartialAssemblyLine<TNode> {
   type: "ErrorPragma";
 
   /**
@@ -882,7 +904,7 @@ export interface ErrorPragma<TNode extends TypedObject, TToken> extends PartialA
   message: Expression<TNode, TToken>;
 }
 
-export interface IncBinPragma<TNode extends TypedObject, TToken>
+export interface IncBinPragma<TNode extends TypedObject, TToken extends CommonTokenType>
   extends PartialAssemblyLine<TNode> {
   type: "IncBinPragma";
 
@@ -902,7 +924,7 @@ export interface IncBinPragma<TNode extends TypedObject, TToken>
   length?: Expression<TNode, TToken>;
 }
 
-export interface CompareBinPragma<TNode extends TypedObject, TToken>
+export interface CompareBinPragma<TNode extends TypedObject, TToken extends CommonTokenType>
   extends PartialAssemblyLine<TNode> {
   type: "CompareBinPragma";
 
@@ -965,7 +987,7 @@ export interface MacroEndStatement<TNode extends TypedObject> extends StatementB
 /**
  * Represents a .loop statement
  */
-export interface LoopStatement<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface LoopStatement<TNode extends TypedObject, TToken extends CommonTokenType> extends StatementBase<TNode> {
   type: "LoopStatement";
   expr: Expression<TNode, TToken>;
 }
@@ -980,7 +1002,7 @@ export interface LoopEndStatement<TNode extends TypedObject> extends StatementBa
 /**
  * Represents a .while statement
  */
-export interface WhileStatement<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface WhileStatement<TNode extends TypedObject, TToken extends CommonTokenType> extends StatementBase<TNode> {
   type: "WhileStatement";
   expr: Expression<TNode, TToken>;
 }
@@ -1002,7 +1024,7 @@ export interface RepeatStatement<TNode extends TypedObject> extends StatementBas
 /**
  * Represents an until statement
  */
-export interface UntilStatement<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface UntilStatement<TNode extends TypedObject, TToken extends CommonTokenType> extends StatementBase<TNode> {
   type: "UntilStatement";
   expr: Expression<TNode, TToken>;
 }
@@ -1024,7 +1046,7 @@ export interface ProcEndStatement<TNode extends TypedObject> extends StatementBa
 /**
  * Represents an if statement
  */
-export interface IfStatement<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface IfStatement<TNode extends TypedObject, TToken extends CommonTokenType> extends StatementBase<TNode> {
   type: "IfStatement";
   expr: Expression<TNode, TToken>;
 }
@@ -1062,7 +1084,7 @@ export interface EndIfStatement<TNode extends TypedObject> extends StatementBase
 /**
  * Represents an elseif statement
  */
-export interface ElseIfStatement<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface ElseIfStatement<TNode extends TypedObject, TToken extends CommonTokenType> extends StatementBase<TNode> {
   type: "ElseIfStatement";
   expr: Expression<TNode, TToken>;
 }
@@ -1120,7 +1142,7 @@ export interface NextStatement<TNode extends TypedObject> extends StatementBase<
 /**
  * Represents a for statement
  */
-export interface ForStatement<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface ForStatement<TNode extends TypedObject, TToken extends CommonTokenType> extends StatementBase<TNode> {
   type: "ForStatement";
   identifier: IdentifierNode<TNode>;
   startExpr: Expression<TNode, TToken>;
@@ -1131,7 +1153,7 @@ export interface ForStatement<TNode extends TypedObject, TToken> extends Stateme
 /**
  * Represents a field assignment
  */
-export interface FieldAssignment<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface FieldAssignment<TNode extends TypedObject, TToken extends CommonTokenType> extends StatementBase<TNode> {
   type: "FieldAssignment";
   assignment: ByteEmittingPragma<TNode, TToken>;
 }
@@ -1139,7 +1161,8 @@ export interface FieldAssignment<TNode extends TypedObject, TToken> extends Stat
 /**
  * Represents a macro or struct invokation
  */
-export interface MacroOrStructInvocation<TNode extends TypedObject, TToken> extends StatementBase<TNode> {
+export interface MacroOrStructInvocation<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends StatementBase<TNode> {
   type: "MacroOrStructInvocation";
   identifier: IdentifierNode<TNode>;
   operands: Operand<TNode, TToken>[];

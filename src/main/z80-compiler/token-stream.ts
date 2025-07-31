@@ -1,12 +1,17 @@
 import { Token } from "@main/compiler-common/tree-nodes";
 import { InputStream } from "../compiler-common/input-stream";
+import {
+  commonResolverHash,
+  CommonTokens,
+  CommonTokenType
+} from "@main/compiler-common/common-tokens";
 
 /**
  * This class implements the tokenizer (lexer) of the Z80 Assembler
  */
-export class TokenStream {
+export class TokenStream<TToken extends CommonTokenType> {
   // --- Already fetched tokens
-  private _ahead: Token<TokenType>[] = [];
+  private _ahead: Token<TToken>[] = [];
 
   // --- Prefetched character (from the next token)
   private _prefetched: string | null = null;
@@ -24,28 +29,28 @@ export class TokenStream {
    * Initializes the tokenizer with the input stream
    * @param input Input source code stream
    */
-  constructor (public readonly input: InputStream) {}
+  constructor(public readonly input: InputStream) {}
 
   /**
    * Gets the specified part of the source code
    * @param start Start position
    * @param end End position
    */
-  getSourceSpan (start: number, end: number): string {
+  getSourceSpan(start: number, end: number): string {
     return this.input.getSourceSpan(start, end);
   }
 
   /**
    * Resets the last comment
    */
-  resetComment (): void {
+  resetComment(): void {
     this._lastComment = null;
   }
 
   /**
    * Gets the last end-of-line comment
    */
-  get lastComment (): string | null {
+  get lastComment(): string | null {
     return this._lastComment;
   }
 
@@ -53,7 +58,7 @@ export class TokenStream {
    * Fethches the next token without advancing to its position
    * @param ws If true, retrieve whitespaces too
    */
-  peek (ws = false): Token<TokenType> {
+  peek(ws = false): Token<TToken> {
     return this.ahead(0, ws);
   }
 
@@ -62,7 +67,7 @@ export class TokenStream {
    * @param n Number of token positions to read ahead
    * @param ws If true, retrieve whitespaces too
    */
-  ahead (n = 1, ws = false): Token<TokenType> {
+  ahead(n = 1, ws = false): Token<TToken> {
     if (n > 16) {
       throw new Error("Cannot look ahead more than 16 tokens");
     }
@@ -70,7 +75,7 @@ export class TokenStream {
     // --- Prefetch missing tokens
     while (this._ahead.length <= n) {
       const token = this.fetch();
-      if (token.type === TokenType.EolComment) {
+      if (token.type === Z80Tokens.EolComment) {
         this._lastComment = token.text;
       }
       if (isEof(token)) {
@@ -87,7 +92,7 @@ export class TokenStream {
    * Fethces the nex token and advances the stream position
    * @param ws If true, retrieve whitespaces too
    */
-  get (ws = false): Token<TokenType> {
+  get(ws = false): Token<CommonTokenType> {
     if (this._ahead.length > 0) {
       const token = this._ahead.shift();
       if (!token) {
@@ -97,7 +102,7 @@ export class TokenStream {
     }
     while (true) {
       const token = this.fetch();
-      if (token.type === TokenType.EolComment) {
+      if (token.type === Z80Tokens.EolComment) {
         this._lastComment = token.text;
       }
       if (isEof(token) || ws || (!ws && !isWs(token))) {
@@ -109,14 +114,14 @@ export class TokenStream {
   /**
    * Fetches the next token from the input stream
    */
-  private fetch (): Token<TokenType> {
+  private fetch(): Token<TToken> {
     const lexer = this;
     const input = this.input;
     const startPos = this._prefetchedPos || input.position;
     const line = input.line;
     const startColumn = this._prefetchedColumn || input.column;
     let text = "";
-    let tokenType = TokenType.Eof;
+    let tokenType: CommonTokenType = CommonTokens.Eof;
     let lastEndPos = input.position;
     let lastEndColumn = input.column;
     let ch: string | null = null;
@@ -133,8 +138,8 @@ export class TokenStream {
       }
 
       // --- Set the intial token type to unknown for the other characters
-      if (tokenType === TokenType.Eof) {
-        tokenType = TokenType.Unknown;
+      if (tokenType === Z80Tokens.Eof) {
+        tokenType = Z80Tokens.Unknown;
       }
 
       // --- Follow the lexer state machine
@@ -147,120 +152,120 @@ export class TokenStream {
             case " ":
             case "\t":
               phase = LexerPhase.InWhiteSpace;
-              tokenType = TokenType.Ws;
+              tokenType = Z80Tokens.Ws;
               break;
 
             // --- Standard assembly comment
             case ";":
               phase = LexerPhase.InEolComment;
-              tokenType = TokenType.EolComment;
+              tokenType = Z80Tokens.EolComment;
               break;
 
             // --- Divison or comment
             case "/":
               phase = LexerPhase.InPotentialComment;
-              tokenType = TokenType.Divide;
+              tokenType = Z80Tokens.Divide;
               break;
 
             // --- New line
             case "\n":
-              return completeToken(TokenType.NewLine);
+              return completeToken(CommonTokens.NewLine);
 
             // --- Potential new line
             case "\r":
               phase = LexerPhase.PotentialNewLine;
-              tokenType = TokenType.NewLine;
+              tokenType = Z80Tokens.NewLine;
               break;
 
             // --- ":", "::", or ":="
             case ":":
               phase = LexerPhase.Colon;
-              tokenType = TokenType.Colon;
+              tokenType = Z80Tokens.Colon;
               break;
 
             // --- Comma
             case ",":
-              return completeToken(TokenType.Comma);
+              return completeToken(Z80Tokens.Comma);
 
             // --- "=", "==", and "==="
             case "=":
               phase = LexerPhase.Assign;
-              tokenType = TokenType.Assign;
+              tokenType = Z80Tokens.Assign;
               break;
 
             // --- Left parenthesis
             case "(":
-              return completeToken(TokenType.LPar);
+              return completeToken(Z80Tokens.LPar);
 
             // --- Right parenthesis
             case ")":
-              return completeToken(TokenType.RPar);
+              return completeToken(Z80Tokens.RPar);
 
             // --- Left square bracket
             case "[":
-              return completeToken(TokenType.LSBrac);
+              return completeToken(Z80Tokens.LSBrac);
 
             // --- Right square bracket
             case "]":
-              return completeToken(TokenType.RSBrac);
+              return completeToken(Z80Tokens.RSBrac);
 
             // --- Question mark
             case "?":
-              return completeToken(TokenType.QuestionMark);
+              return completeToken(Z80Tokens.QuestionMark);
 
             // --- Plus mark
             case "+":
-              return completeToken(TokenType.Plus);
+              return completeToken(Z80Tokens.Plus);
 
             // --- "-" or "->"
             case "-":
               phase = LexerPhase.Minus;
-              tokenType = TokenType.Minus;
+              tokenType = Z80Tokens.Minus;
               break;
 
             // --- Vertical bar
             case "|":
-              return completeToken(TokenType.VerticalBar);
+              return completeToken(Z80Tokens.VerticalBar);
 
             // --- Up arrow
             case "^":
-              return completeToken(TokenType.UpArrow);
+              return completeToken(Z80Tokens.UpArrow);
 
             // --- Ampersand
             case "&":
-              return completeToken(TokenType.Ampersand);
+              return completeToken(Z80Tokens.Ampersand);
 
             // --- "!", "!=", or "!=="
             case "!":
               phase = LexerPhase.Exclamation;
-              tokenType = TokenType.Exclamation;
+              tokenType = Z80Tokens.Exclamation;
               break;
 
             // --- "<", "<=", "<<", "<?", or file-string
             case "<":
               phase = LexerPhase.AngleLeft;
-              tokenType = TokenType.LessThan;
+              tokenType = Z80Tokens.LessThan;
               break;
 
             // --- ">", ">=", ">>", ">?", or file-string
             case ">":
               phase = LexerPhase.AngleRight;
-              tokenType = TokenType.GreaterThan;
+              tokenType = Z80Tokens.GreaterThan;
               break;
 
             // --- Multiplication operation
             case "*":
-              return completeToken(TokenType.Multiplication);
+              return completeToken(Z80Tokens.Multiplication);
 
             // --- Modulo operation or binary literal
             case "%":
               phase = LexerPhase.ModuloOrBinary;
-              tokenType = TokenType.Modulo;
+              tokenType = Z80Tokens.Modulo;
               break;
 
             // --- Binary not
             case "~":
-              return completeToken(TokenType.BinaryNot);
+              return completeToken(Z80Tokens.BinaryNot);
 
             // --- Beginning "{{"
             case "{":
@@ -275,7 +280,7 @@ export class TokenStream {
             // ---".", keyword-like, real number
             case ".":
               phase = LexerPhase.Dot;
-              tokenType = TokenType.Dot;
+              tokenType = Z80Tokens.Dot;
               break;
 
             // --- "#" received
@@ -286,18 +291,18 @@ export class TokenStream {
             // --- "$" received
             case "$":
               phase = LexerPhase.Dollar;
-              tokenType = TokenType.CurAddress;
+              tokenType = Z80Tokens.CurAddress;
               break;
 
             // Start of a numeric literal
             case "0":
               phase = LexerPhase.LitBodhr;
-              tokenType = TokenType.DecimalLiteral;
+              tokenType = Z80Tokens.DecimalLiteral;
               break;
 
             case "1":
               phase = LexerPhase.LitBodhr2;
-              tokenType = TokenType.DecimalLiteral;
+              tokenType = Z80Tokens.DecimalLiteral;
               break;
 
             case "2":
@@ -307,13 +312,13 @@ export class TokenStream {
             case "6":
             case "7":
               phase = LexerPhase.LitOdhr;
-              tokenType = TokenType.DecimalLiteral;
+              tokenType = Z80Tokens.DecimalLiteral;
               break;
 
             case "8":
             case "9":
               phase = LexerPhase.LitDhr;
-              tokenType = TokenType.DecimalLiteral;
+              tokenType = Z80Tokens.DecimalLiteral;
               break;
 
             case "'":
@@ -355,11 +360,11 @@ export class TokenStream {
           switch (ch) {
             case "/":
               phase = LexerPhase.InEolComment;
-              tokenType = TokenType.EolComment;
+              tokenType = Z80Tokens.EolComment;
               break;
             case "*":
               phase = LexerPhase.InlineCommentBody;
-              tokenType = TokenType.Unknown;
+              tokenType = Z80Tokens.Unknown;
               break;
             default:
               return makeToken();
@@ -379,14 +384,14 @@ export class TokenStream {
         // --- Looking for the closing "/" of an inline comment
         case LexerPhase.InlineCommentTail:
           if (ch === "/") {
-            return completeToken(TokenType.InlineComment);
+            return completeToken(Z80Tokens.InlineComment);
           }
           break;
 
         // --- We already received a "\r", so this is a new line
         case LexerPhase.PotentialNewLine:
           if (ch === "\n") {
-            return completeToken(TokenType.NewLine);
+            return completeToken(Z80Tokens.NewLine);
           }
           return makeToken();
 
@@ -396,9 +401,9 @@ export class TokenStream {
         // --- Colon or double colon
         case LexerPhase.Colon:
           if (ch === ":") {
-            return completeToken(TokenType.DoubleColon);
+            return completeToken(Z80Tokens.DoubleColon);
           } else if (ch === "=") {
-            return completeToken(TokenType.VarPragma);
+            return completeToken(Z80Tokens.VarPragma);
           }
           return makeToken();
 
@@ -408,20 +413,20 @@ export class TokenStream {
             return makeToken();
           }
           phase = LexerPhase.Equal;
-          tokenType = TokenType.Equal;
+          tokenType = Z80Tokens.Equal;
           break;
 
         // --- Equal or case-insensitive equal
         case LexerPhase.Equal:
           if (ch === "=") {
-            return completeToken(TokenType.CiEqual);
+            return completeToken(Z80Tokens.CiEqual);
           }
           return makeToken();
 
         // --- "-" or "->"
         case LexerPhase.Minus:
           if (ch === ">") {
-            return completeToken(TokenType.GoesTo);
+            return completeToken(Z80Tokens.GoesTo);
           }
           return makeToken();
 
@@ -431,13 +436,13 @@ export class TokenStream {
             return makeToken();
           }
           phase = LexerPhase.NotEqual;
-          tokenType = TokenType.NotEqual;
+          tokenType = Z80Tokens.NotEqual;
           break;
 
         // --- Not equal or case-insensitive not equal
         case LexerPhase.NotEqual:
           if (ch === "=") {
-            return completeToken(TokenType.CiNotEqual);
+            return completeToken(Z80Tokens.CiNotEqual);
           }
           return makeToken();
 
@@ -445,11 +450,11 @@ export class TokenStream {
         case LexerPhase.AngleLeft:
           switch (ch) {
             case "=":
-              return completeToken(TokenType.LessThanOrEqual);
+              return completeToken(Z80Tokens.LessThanOrEqual);
             case "<":
-              return completeToken(TokenType.LeftShift);
+              return completeToken(Z80Tokens.LeftShift);
             case "?":
-              return completeToken(TokenType.MinOp);
+              return completeToken(Z80Tokens.MinOp);
             default:
               return makeToken();
           }
@@ -458,11 +463,11 @@ export class TokenStream {
         case LexerPhase.AngleRight:
           switch (ch) {
             case "=":
-              return completeToken(TokenType.GreaterThanOrEqual);
+              return completeToken(Z80Tokens.GreaterThanOrEqual);
             case ">":
-              return completeToken(TokenType.RightShift);
+              return completeToken(Z80Tokens.RightShift);
             case "?":
-              return completeToken(TokenType.MaxOp);
+              return completeToken(Z80Tokens.MaxOp);
             default:
               return makeToken();
           }
@@ -470,14 +475,14 @@ export class TokenStream {
         // --- "{{"
         case LexerPhase.LBracket:
           if (ch === "{") {
-            return completeToken(TokenType.LDBrac);
+            return completeToken(Z80Tokens.LDBrac);
           }
           return makeToken();
 
         // --- "}}"
         case LexerPhase.RBracket:
           if (ch === "}") {
-            return completeToken(TokenType.RDBrac);
+            return completeToken(Z80Tokens.RDBrac);
           }
           return makeToken();
 
@@ -487,7 +492,7 @@ export class TokenStream {
             phase = LexerPhase.IdTail;
           } else if (isDecimalDigit(ch)) {
             phase = LexerPhase.LitRfrac2;
-            tokenType = TokenType.RealLiteral;
+            tokenType = Z80Tokens.RealLiteral;
           } else {
             return makeToken();
           }
@@ -500,7 +505,7 @@ export class TokenStream {
         case LexerPhase.IdTail:
           useResolver = true;
           if (ch === "'") {
-            return completeToken(TokenType.Identifier);
+            return completeToken(Z80Tokens.Identifier);
           } else if (!isIdContinuation(ch)) {
             // --- Special case: DEFG pragma
             if (
@@ -515,7 +520,7 @@ export class TokenStream {
             ) {
               phase = LexerPhase.DefgTail;
               useResolver = false;
-              tokenType = TokenType.DefgPragma;
+              tokenType = Z80Tokens.DefgPragma;
               break;
             }
             return makeToken();
@@ -555,9 +560,9 @@ export class TokenStream {
             text
               .substr(1)
               .split("")
-              .every(c => isHexadecimalDigit(c))
+              .every((c) => isHexadecimalDigit(c))
           ) {
-            tokenType = TokenType.HexadecimalLiteral;
+            tokenType = Z80Tokens.HexadecimalLiteral;
           } else {
             useResolver = true;
           }
@@ -581,9 +586,9 @@ export class TokenStream {
             text
               .substr(1)
               .split("")
-              .every(c => isHexadecimalDigit(c))
+              .every((c) => isHexadecimalDigit(c))
           ) {
-            tokenType = TokenType.HexadecimalLiteral;
+            tokenType = Z80Tokens.HexadecimalLiteral;
           } else {
             useResolver = true;
           }
@@ -593,8 +598,7 @@ export class TokenStream {
         case LexerPhase.NoneArgTail:
           if (ch === "$") {
             useResolver = false;
-            tokenType =
-              text === "$<none>" ? TokenType.NoneArg : TokenType.Unknown;
+            tokenType = text === "$<none>" ? Z80Tokens.NoneArg : Z80Tokens.Unknown;
             return completeToken();
           }
           break;
@@ -614,7 +618,7 @@ export class TokenStream {
             return makeToken();
           }
           phase = LexerPhase.BinLiteral;
-          tokenType = TokenType.BinaryLiteral;
+          tokenType = Z80Tokens.BinaryLiteral;
           break;
 
         // --- Wait for the completion of a binary literal
@@ -628,16 +632,16 @@ export class TokenStream {
         case LexerPhase.LitBodhr:
           if (isHexaMark(ch)) {
             phase = LexerPhase.LitHx1;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (isHexaSuffix(ch)) {
-            return completeToken(TokenType.HexadecimalLiteral);
+            return completeToken(Z80Tokens.HexadecimalLiteral);
           } else if (isOctalSuffix(ch)) {
-            return completeToken(TokenType.OctalLiteral);
+            return completeToken(Z80Tokens.OctalLiteral);
           } else if (isBinarySuffix(ch, input.ahead(0))) {
-            return completeToken(TokenType.BinaryLiteral);
+            return completeToken(Z80Tokens.BinaryLiteral);
           } else if (ch === ".") {
             phase = LexerPhase.LitRfrac;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (ch === "0" || ch === "1") {
             phase = LexerPhase.LitBodhr2;
           } else if (ch >= "2" && ch <= "7") {
@@ -646,10 +650,10 @@ export class TokenStream {
             phase = LexerPhase.LitDhr;
           } else if (ch === "e" || ch === "E") {
             phase = LexerPhase.LitHr;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.LitH;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else {
             return makeToken();
           }
@@ -659,7 +663,7 @@ export class TokenStream {
         case LexerPhase.LitHx1:
           if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.LitHx2;
-            tokenType = TokenType.HexadecimalLiteral;
+            tokenType = Z80Tokens.HexadecimalLiteral;
           } else {
             return makeToken();
           }
@@ -675,14 +679,14 @@ export class TokenStream {
         // Binary, Octal, Decimal, or Hexadecimal
         case LexerPhase.LitBodhr2:
           if (isHexaSuffix(ch)) {
-            return completeToken(TokenType.HexadecimalLiteral);
+            return completeToken(Z80Tokens.HexadecimalLiteral);
           } else if (isOctalSuffix(ch)) {
-            return completeToken(TokenType.OctalLiteral);
+            return completeToken(Z80Tokens.OctalLiteral);
           } else if (isBinarySuffix(ch, input.ahead(0))) {
-            return completeToken(TokenType.BinaryLiteral);
+            return completeToken(Z80Tokens.BinaryLiteral);
           } else if (ch === ".") {
             phase = LexerPhase.LitRfrac;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (ch === "0" || ch === "1") {
           } else if (ch >= "2" && ch <= "7") {
             phase = LexerPhase.LitOdhr;
@@ -690,10 +694,10 @@ export class TokenStream {
             phase = LexerPhase.LitDhr;
           } else if (ch === "e" || ch === "E") {
             phase = LexerPhase.LitHr;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.LitH;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else {
             return makeToken();
           }
@@ -701,21 +705,21 @@ export class TokenStream {
 
         case LexerPhase.LitOdhr:
           if (isHexaSuffix(ch)) {
-            return completeToken(TokenType.HexadecimalLiteral);
+            return completeToken(Z80Tokens.HexadecimalLiteral);
           } else if (isOctalSuffix(ch)) {
-            return completeToken(TokenType.OctalLiteral);
+            return completeToken(Z80Tokens.OctalLiteral);
           } else if (ch === ".") {
             phase = LexerPhase.LitRfrac;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (ch >= "0" && ch <= "7") {
           } else if (ch === "8" || ch === "9") {
             phase = LexerPhase.LitDhr;
           } else if (ch === "e" || ch === "E") {
             phase = LexerPhase.LitHr;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.LitH;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else {
             return makeToken();
           }
@@ -723,17 +727,17 @@ export class TokenStream {
 
         case LexerPhase.LitDhr:
           if (isHexaSuffix(ch)) {
-            return completeToken(TokenType.HexadecimalLiteral);
+            return completeToken(Z80Tokens.HexadecimalLiteral);
           } else if (ch === ".") {
             phase = LexerPhase.LitRfrac;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (ch >= "0" && ch <= "9") {
           } else if (ch === "e" || ch === "E") {
             phase = LexerPhase.LitHr;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.LitH;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else {
             return makeToken();
           }
@@ -741,16 +745,16 @@ export class TokenStream {
 
         case LexerPhase.LitHr:
           if (isHexaSuffix(ch)) {
-            return completeToken(TokenType.HexadecimalLiteral);
+            return completeToken(Z80Tokens.HexadecimalLiteral);
           } else if (isDecimalDigit(ch)) {
             phase = LexerPhase.LitHr2;
-            tokenType = TokenType.RealLiteral;
+            tokenType = Z80Tokens.RealLiteral;
           } else if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.LitH;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else if (ch === "+" || ch === "-") {
             phase = LexerPhase.LitRexps;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else {
             return makeToken();
           }
@@ -758,11 +762,11 @@ export class TokenStream {
 
         case LexerPhase.LitHr2:
           if (isHexaSuffix(ch)) {
-            return completeToken(TokenType.HexadecimalLiteral);
+            return completeToken(Z80Tokens.HexadecimalLiteral);
           } else if (isDecimalDigit(ch)) {
           } else if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.LitH;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else {
             return makeToken();
           }
@@ -770,7 +774,7 @@ export class TokenStream {
 
         case LexerPhase.LitH:
           if (isHexaSuffix(ch)) {
-            return completeToken(TokenType.HexadecimalLiteral);
+            return completeToken(Z80Tokens.HexadecimalLiteral);
           } else if (!isHexadecimalDigit(ch)) {
             return makeToken();
           }
@@ -779,10 +783,10 @@ export class TokenStream {
         // First digit of fractional part
         case LexerPhase.LitRfrac:
           if (!isDecimalDigit(ch)) {
-            return completeToken(TokenType.Unknown);
+            return completeToken(Z80Tokens.Unknown);
           }
           phase = LexerPhase.LitRfrac2;
-          tokenType = TokenType.RealLiteral;
+          tokenType = Z80Tokens.RealLiteral;
           break;
 
         // Remaining digits of fractional part
@@ -797,7 +801,7 @@ export class TokenStream {
         // Wait for exponent sign
         case LexerPhase.LitRexp:
           if (ch === "+" || ch === "-") {
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
             phase = LexerPhase.LitRexps;
           } else if (isDecimalDigit(ch)) {
             phase = LexerPhase.LitRexp2;
@@ -812,7 +816,7 @@ export class TokenStream {
             return makeToken();
           }
           phase = LexerPhase.LitRexp2;
-          tokenType = TokenType.RealLiteral;
+          tokenType = Z80Tokens.RealLiteral;
           break;
 
         // Remaining digits of exponent
@@ -825,10 +829,10 @@ export class TokenStream {
         // Character data
         case LexerPhase.Char:
           if (isRestrictedInString(ch)) {
-            return completeToken(TokenType.Unknown);
+            return completeToken(Z80Tokens.Unknown);
           } else if (ch === "\\") {
             phase = LexerPhase.CharBackSlash;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           } else {
             phase = LexerPhase.CharTail;
           }
@@ -837,8 +841,8 @@ export class TokenStream {
         // Character literal delimiter
         case LexerPhase.CharTail:
           return ch === "'"
-            ? completeToken(TokenType.CharLiteral)
-            : completeToken(TokenType.Unknown);
+            ? completeToken(Z80Tokens.CharLiteral)
+            : completeToken(Z80Tokens.Unknown);
 
         // Start of character escape
         case LexerPhase.CharBackSlash:
@@ -873,7 +877,7 @@ export class TokenStream {
           if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.CharHexa2;
           } else {
-            return completeToken(TokenType.Unknown);
+            return completeToken(Z80Tokens.Unknown);
           }
           break;
 
@@ -882,19 +886,19 @@ export class TokenStream {
           if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.CharTail;
           } else {
-            return completeToken(TokenType.Unknown);
+            return completeToken(Z80Tokens.Unknown);
           }
           break;
 
         // String data
         case LexerPhase.String:
           if (ch === '"') {
-            return completeToken(TokenType.StringLiteral);
+            return completeToken(Z80Tokens.StringLiteral);
           } else if (isRestrictedInString(ch)) {
-            return completeToken(TokenType.Unknown);
+            return completeToken(Z80Tokens.Unknown);
           } else if (ch === "\\") {
             phase = LexerPhase.StringBackSlash;
-            tokenType = TokenType.Unknown;
+            tokenType = Z80Tokens.Unknown;
           }
           break;
 
@@ -931,7 +935,7 @@ export class TokenStream {
           if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.StringHexa2;
           } else {
-            return completeToken(TokenType.Unknown);
+            return completeToken(Z80Tokens.Unknown);
           }
           break;
 
@@ -940,7 +944,7 @@ export class TokenStream {
           if (isHexadecimalDigit(ch)) {
             phase = LexerPhase.String;
           } else {
-            return completeToken(TokenType.Unknown);
+            return completeToken(Z80Tokens.Unknown);
           }
           break;
 
@@ -959,7 +963,7 @@ export class TokenStream {
     /**
      * Appends the last character to the token, and manages positions
      */
-    function appendTokenChar (): void {
+    function appendTokenChar(): void {
       text += ch;
       lexer._prefetched = null;
       lexer._prefetchedPos = null;
@@ -971,7 +975,7 @@ export class TokenStream {
     /**
      * Fetches the next character from the input stream
      */
-    function fetchNextChar (): string | null {
+    function fetchNextChar(): string | null {
       if (!lexer._prefetched) {
         lexer._prefetchedPos = input.position;
         lexer._prefetchedColumn = input.column;
@@ -984,17 +988,17 @@ export class TokenStream {
      * Packs the specified type of token to send back
      * @param type
      */
-    function makeToken (): Token<TokenType> {
+    function makeToken(): Token<TToken> {
       if (useResolver) {
         tokenType =
           resolverHash[text] ??
           (isIdStart(text[0]) && text[text.length - 1] !== "'"
-            ? TokenType.Identifier
-            : TokenType.Unknown);
+            ? Z80Tokens.Identifier
+            : Z80Tokens.Unknown);
       }
       return {
         text,
-        type: tokenType,
+        type: tokenType as TToken,
         location: {
           startPosition: startPos,
           endPosition: lastEndPos,
@@ -1009,7 +1013,7 @@ export class TokenStream {
     /**
      * Add the last character to the token and return it
      */
-    function completeToken (suggestedType?: TokenType): Token<TokenType> {
+    function completeToken(suggestedType?: CommonTokenType): Token<TToken> {
       appendTokenChar();
 
       // --- Send back the token
@@ -1024,295 +1028,193 @@ export class TokenStream {
 /**
  * This enumeration defines the token types
  */
-export const enum TokenType {
-  Eof = -1,
-  Ws = -2,
-  InlineComment = -3,
-  EolComment = -4,
-  Unknown = 0,
+export const Z80Tokens = {
+  ...CommonTokens,
 
-  A,
-  B,
-  C,
-  D,
-  E,
-  H,
-  L,
-  I,
-  R,
-  XL,
-  XH,
-  YL,
-  YH,
-  BC,
-  DE,
-  HL,
-  SP,
-  IX,
-  IY,
-  AF,
-  AF_,
-  Z,
-  NZ,
-  NC,
-  PO,
-  PE,
-  P,
-  M,
+  A: 1000,
+  B: 1001,
+  C: 1002,
+  D: 1003,
+  E: 1004,
+  H: 1005,
+  L: 1006,
+  I: 1007,
+  R: 1008,
+  XL: 1009,
+  XH: 1010,
+  YL: 1011,
+  YH: 1012,
+  BC: 1013,
+  DE: 1014,
+  HL: 1015,
+  SP: 1016,
+  IX: 1017,
+  IY: 1018,
+  AF: 1019,
+  AF_: 1020,
+  Z: 1021,
+  NZ: 1022,
+  NC: 1023,
+  PO: 1024,
+  PE: 1025,
+  P: 1026,
+  M: 1027,
 
-  Nop,
-  Rlca,
-  Rrca,
-  Rla,
-  Rra,
-  Daa,
-  Cpl,
-  Scf,
-  Ccf,
-  Halt,
-  Ret,
-  Exx,
-  Di,
-  Ei,
-  Neg,
-  Retn,
-  Reti,
-  Rld,
-  Rrd,
-  Ldi,
-  Cpi,
-  Ini,
-  Outi,
-  Ldd,
-  Cpd,
-  Ind,
-  Outd,
-  Ldir,
-  Cpir,
-  Inir,
-  Otir,
-  Lddr,
-  Cpdr,
-  Indr,
-  Otdr,
+  Nop: 1028,
+  Rlca: 1029,
+  Rrca: 1030,
+  Rla: 1031,
+  Rra: 1032,
+  Daa: 1033,
+  Cpl: 1034,
+  Scf: 1035,
+  Ccf: 1036,
+  Halt: 1037,
+  Ret: 1038,
+  Exx: 1039,
+  Di: 1040,
+  Ei: 1041,
+  Neg: 1042,
+  Retn: 1043,
+  Reti: 1044,
+  Rld: 1045,
+  Rrd: 1046,
+  Ldi: 1047,
+  Cpi: 1048,
+  Ini: 1049,
+  Outi: 1050,
+  Ldd: 1051,
+  Cpd: 1052,
+  Ind: 1053,
+  Outd: 1054,
+  Ldir: 1055,
+  Cpir: 1056,
+  Inir: 1057,
+  Otir: 1058,
+  Lddr: 1059,
+  Cpdr: 1060,
+  Indr: 1061,
+  Otdr: 1062,
 
-  Ld,
-  Inc,
-  Dec,
-  Ex,
-  Add,
-  Adc,
-  Sub,
-  Sbc,
-  And,
-  Xor,
-  Or,
-  Cp,
-  Djnz,
-  Jr,
-  Jp,
-  Call,
-  Rst,
-  Push,
-  Pop,
-  In,
-  Out,
-  Im,
-  Rlc,
-  Rrc,
-  Rl,
-  Rr,
-  Sla,
-  Sra,
-  Sll,
-  Srl,
-  Bit,
-  Res,
-  Set,
+  Ld: 1063,
+  Inc: 1064,
+  Dec: 1065,
+  Ex: 1066,
+  Add: 1067,
+  Adc: 1068,
+  Sub: 1069,
+  Sbc: 1070,
+  And: 1071,
+  Xor: 1072,
+  Or: 1073,
+  Cp: 1074,
+  Djnz: 1075,
+  Jr: 1076,
+  Jp: 1077,
+  Call: 1078,
+  Rst: 1079,
+  Push: 1080,
+  Pop: 1081,
+  In: 1082,
+  Out: 1083,
+  Im: 1084,
+  Rlc: 1085,
+  Rrc: 1086,
+  Rl: 1087,
+  Rr: 1088,
+  Sla: 1089,
+  Sra: 1090,
+  Sll: 1091,
+  Srl: 1092,
+  Bit: 1093,
+  Res: 1094,
+  Set: 1095,
 
-  Swapnib,
-  Mirror,
-  Test,
-  Bsla,
-  Bsra,
-  Bsrl,
-  Bsrf,
-  Brlc,
-  Mul,
-  OutInB,
-  NextReg,
-  PixelDn,
-  PixelAd,
-  SetAE,
-  Ldix,
-  Ldws,
-  Lddx,
-  Ldirx,
-  Ldpirx,
-  Lddrx,
+  Swapnib: 1096,
+  Mirror: 1097,
+  Test: 1098,
+  Bsla: 1099,
+  Bsra: 1100,
+  Bsrl: 1101,
+  Bsrf: 1102,
+  Brlc: 1103,
+  Mul: 1104,
+  OutInB: 1105,
+  NextReg: 1106,
+  PixelDn: 1107,
+  PixelAd: 1108,
+  SetAE: 1109,
+  Ldix: 1110,
+  Ldws: 1111,
+  Lddx: 1112,
+  Ldirx: 1113,
+  Ldpirx: 1114,
+  Lddrx: 1115,
 
-  Divide,
-  NewLine,
-  Colon,
-  DoubleColon,
-  Comma,
-  Assign,
-  Equal,
-  CiEqual,
-  LPar,
-  RPar,
-  LSBrac,
-  RSBrac,
-  QuestionMark,
-  Plus,
-  Minus,
-  GoesTo,
-  VerticalBar,
-  UpArrow,
-  Ampersand,
-  Exclamation,
-  NotEqual,
-  CiNotEqual,
-  LessThan,
-  LessThanOrEqual,
-  LeftShift,
-  MinOp,
-  GreaterThan,
-  GreaterThanOrEqual,
-  RightShift,
-  MaxOp,
-  Multiplication,
-  Modulo,
-  BinaryNot,
-  LDBrac,
-  RDBrac,
-  Dot,
+  Macro: 1116,
+  Endm: 1117,
+  Proc: 1118,
+  Endp: 1119,
+  Loop: 1120,
+  Endl: 1121,
+  Repeat: 1122,
+  Until: 1123,
+  While: 1124,
+  Endw: 1125,
+  If: 1126,
+  IfUsed: 1127,
+  IfNUsed: 1128,
+  Elif: 1129,
+  Else: 1130,
+  Endif: 1131,
+  For: 1132,
+  To: 1133,
+  Step: 1134,
+  Next: 1135,
+  Break: 1136,
+  Continue: 1137,
+  Module: 1138,
+  EndModule: 1139,
+  Struct: 1140,
+  Ends: 1141,
 
-  Identifier,
+  HReg: 1142,
+  LReg: 1143,
+  IsReg8: 1144,
+  IsReg8Std: 1145,
+  IsReg8Spec: 1146,
+  IsReg8Idx: 1147,
+  IsReg16: 1148,
+  IsReg16Std: 1149,
+  IsReg16Idx: 1150,
+  IsRegIndirect: 1151,
+  IsCPort: 1152,
+  IsIndexedAddr: 1153,
+  IsCondition: 1154,
+  IsExpr: 1155,
+  IsRegA: 1156,
+  IsRegAf: 1157,
+  IsRegB: 1158,
+  IsRegC: 1159,
+  IsRegBc: 1160,
+  IsRegD: 1161,
+  IsRegE: 1162,
+  IsRegDe: 1163,
+  IsRegH: 1164,
+  IsRegL: 1165,
+  IsRegHl: 1166,
+  IsRegI: 1167,
+  IsRegR: 1168,
+  IsRegXh: 1169,
+  IsRegXl: 1170,
+  IsRegIx: 1171,
+  IsRegYh: 1172,
+  IsRegYl: 1173,
+  IsRegIy: 1174,
+  IsRegSp: 1175
+};
 
-  OrgPragma,
-  BankPragma,
-  XorgPragma,
-  EntPragma,
-  XentPragma,
-  EquPragma,
-  VarPragma,
-  DispPragma,
-  DefbPragma,
-  DefwPragma,
-  DefmPragma,
-  DefnPragma,
-  DefhPragma,
-  DefgxPragma,
-  DefgPragma,
-  DefcPragma,
-  SkipPragma,
-  ExternPragma,
-  DefsPragma,
-  FillbPragma,
-  FillwPragma,
-  ModelPragma,
-  AlignPragma,
-  TracePragma,
-  TraceHexPragma,
-  RndSeedPragma,
-  ErrorPragma,
-  IncludeBinPragma,
-  CompareBinPragma,
-  InjectOptPragma,
-  OnSuccessPragma,
-
-  Macro,
-  Endm,
-  Proc,
-  Endp,
-  Loop,
-  Endl,
-  Repeat,
-  Until,
-  While,
-  Endw,
-  If,
-  IfUsed,
-  IfNUsed,
-  Elif,
-  Else,
-  Endif,
-  For,
-  To,
-  Step,
-  Next,
-  Break,
-  Continue,
-  Module,
-  EndModule,
-  Struct,
-  Ends,
-
-  TextOf,
-  LTextOf,
-  HReg,
-  LReg,
-  Def,
-  IsReg8,
-  IsReg8Std,
-  IsReg8Spec,
-  IsReg8Idx,
-  IsReg16,
-  IsReg16Std,
-  IsReg16Idx,
-  IsRegIndirect,
-  IsCPort,
-  IsIndexedAddr,
-  IsCondition,
-  IsExpr,
-  IsRegA,
-  IsRegAf,
-  IsRegB,
-  IsRegC,
-  IsRegBc,
-  IsRegD,
-  IsRegE,
-  IsRegDe,
-  IsRegH,
-  IsRegL,
-  IsRegHl,
-  IsRegI,
-  IsRegR,
-  IsRegXh,
-  IsRegXl,
-  IsRegIx,
-  IsRegYh,
-  IsRegYl,
-  IsRegIy,
-  IsRegSp,
-
-  True,
-  False,
-  CurCnt,
-
-  IfDefDir,
-  IfNDefDir,
-  EndIfDir,
-  ElseDir,
-  DefineDir,
-  UndefDir,
-  IncludeDir,
-  IfDir,
-  IfModDir,
-  IfNModDir,
-  LineDir,
-  CurAddress,
-  NoneArg,
-
-  BinaryLiteral,
-  OctalLiteral,
-  DecimalLiteral,
-  HexadecimalLiteral,
-  RealLiteral,
-  CharLiteral,
-  StringLiteral
-}
+export type Z80TokenType = (typeof Z80Tokens)[keyof typeof Z80Tokens];
 
 /**
  * This enum indicates the current lexer phase
@@ -1437,35 +1339,31 @@ enum LexerPhase {
  * Tests if a token id EOF
  * @param t Token instance
  */
-function isEof (t: Token<TokenType>): boolean {
-  return t.type === TokenType.Eof;
+function isEof(t: Token<CommonTokenType>): boolean {
+  return t.type === CommonTokens.Eof;
 }
 
 /**
  * Tests if a token is whitespace
  * @param t Token instance
  */
-function isWs (t: Token<TokenType>): boolean {
-  return t.type <= TokenType.Ws;
+function isWs(t: Token<Z80TokenType>): boolean {
+  return t.type <= Z80Tokens.Ws;
 }
 
 /**
  * Tests if a character is a letter
  * @param ch Character to test
  */
-function isLetterOrDigit (ch: string): boolean {
-  return (
-    (ch >= "A" && ch <= "Z") ||
-    (ch >= "a" && ch <= "z") ||
-    (ch >= "0" && ch <= "9")
-  );
+function isLetterOrDigit(ch: string): boolean {
+  return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9");
 }
 
 /**
  * Tests if a character is a binary digit
  * @param ch Character to test
  */
-function isBinaryDigit (ch: string): boolean {
+function isBinaryDigit(ch: string): boolean {
   return ch === "0" || ch === "1" || ch === "_";
 }
 
@@ -1473,7 +1371,7 @@ function isBinaryDigit (ch: string): boolean {
  * Tests if a character is a decimal digit
  * @param ch Character to test
  */
-function isDecimalDigit (ch: string): boolean {
+function isDecimalDigit(ch: string): boolean {
   return ch >= "0" && ch <= "9";
 }
 
@@ -1481,19 +1379,15 @@ function isDecimalDigit (ch: string): boolean {
  * Tests if a character is a hexadecimal digit
  * @param ch Character to test
  */
-function isHexadecimalDigit (ch: string): boolean {
-  return (
-    (ch >= "0" && ch <= "9") ||
-    (ch >= "A" && ch <= "F") ||
-    (ch >= "a" && ch <= "f")
-  );
+function isHexadecimalDigit(ch: string): boolean {
+  return (ch >= "0" && ch <= "9") || (ch >= "A" && ch <= "F") || (ch >= "a" && ch <= "f");
 }
 
 /**
  * Tests if a character can be the start of an identifier
  * @param ch Character to test
  */
-function isIdStart (ch: string): boolean {
+function isIdStart(ch: string): boolean {
   return (
     ch === "." ||
     ch === "_" ||
@@ -1508,7 +1402,7 @@ function isIdStart (ch: string): boolean {
  * Tests if a character can be the continuation of an identifier
  * @param ch Character to test
  */
-function isIdContinuation (ch: string): boolean {
+function isIdContinuation(ch: string): boolean {
   return (
     ch === "_" ||
     ch === "@" ||
@@ -1525,10 +1419,9 @@ function isIdContinuation (ch: string): boolean {
  * @param ch Character to test
  *
  */
-function isBinarySuffix (ch: string | null, ra: string | null): boolean {
+function isBinarySuffix(ch: string | null, ra: string | null): boolean {
   return (
-    (ch === "b" || ch === "B") &&
-    (!ra || (!isHexadecimalDigit(ra) && ra !== "h" && ra !== "H"))
+    (ch === "b" || ch === "B") && (!ra || (!isHexadecimalDigit(ra) && ra !== "h" && ra !== "H"))
   );
 }
 
@@ -1536,7 +1429,7 @@ function isBinarySuffix (ch: string | null, ra: string | null): boolean {
  * Tests if a character can be the suffix of a hexadecimal literal
  * @param ch Character to test
  */
-function isHexaSuffix (ch: string | null): boolean {
+function isHexaSuffix(ch: string | null): boolean {
   return ch === "h" || ch === "H";
 }
 
@@ -1544,7 +1437,7 @@ function isHexaSuffix (ch: string | null): boolean {
  * Tests if a character can be the suffix of an octal literal
  * @param ch Character to test
  */
-function isOctalSuffix (ch: string | null): boolean {
+function isOctalSuffix(ch: string | null): boolean {
   return ch === "o" || ch === "O" || ch === "q" || ch === "Q";
 }
 
@@ -1552,7 +1445,7 @@ function isOctalSuffix (ch: string | null): boolean {
  * Tests if a character is a hexadecimal mark after 0
  * @param ch Character to test
  */
-function isHexaMark (ch: string | null): boolean {
+function isHexaMark(ch: string | null): boolean {
   return ch === "x" || ch === "X";
 }
 
@@ -1560,723 +1453,360 @@ function isHexaMark (ch: string | null): boolean {
  * Tests if a character is restricted in a string
  * @param ch Character to test
  */
-function isRestrictedInString (ch: string): boolean {
-  return (
-    ch === "\r" ||
-    ch === "\n" ||
-    ch === "\u0085" ||
-    ch === "\u2028" ||
-    ch === "\u2029"
-  );
+function isRestrictedInString(ch: string): boolean {
+  return ch === "\r" || ch === "\n" || ch === "\u0085" || ch === "\u2028" || ch === "\u2029";
 }
 
 // A hash of keyword-like tokens starting with a dot
-const resolverHash: { [key: string]: TokenType } = {
-  a: TokenType.A,
-  A: TokenType.A,
-  b: TokenType.B,
-  B: TokenType.B,
-  c: TokenType.C,
-  C: TokenType.C,
-  d: TokenType.D,
-  D: TokenType.D,
-  e: TokenType.E,
-  E: TokenType.E,
-  h: TokenType.H,
-  H: TokenType.H,
-  l: TokenType.L,
-  L: TokenType.L,
-  i: TokenType.I,
-  I: TokenType.I,
-  r: TokenType.R,
-  R: TokenType.R,
-  xl: TokenType.XL,
-  XL: TokenType.XL,
-  ixl: TokenType.XL,
-  IXL: TokenType.XL,
-  IXl: TokenType.XL,
-  yl: TokenType.YL,
-  YL: TokenType.YL,
-  iyl: TokenType.YL,
-  IYL: TokenType.YL,
-  IYl: TokenType.YL,
-  xh: TokenType.XH,
-  XH: TokenType.XH,
-  ixh: TokenType.XH,
-  IXH: TokenType.XH,
-  IXh: TokenType.XH,
-  yh: TokenType.YH,
-  YH: TokenType.YH,
-  iyh: TokenType.YH,
-  IYH: TokenType.YH,
-  IYh: TokenType.YH,
-
-  bc: TokenType.BC,
-  BC: TokenType.BC,
-  de: TokenType.DE,
-  DE: TokenType.DE,
-  hl: TokenType.HL,
-  HL: TokenType.HL,
-  sp: TokenType.SP,
-  SP: TokenType.SP,
-  ix: TokenType.IX,
-  IX: TokenType.IX,
-  iy: TokenType.IY,
-  IY: TokenType.IY,
-  af: TokenType.AF,
-  AF: TokenType.AF,
-  "af'": TokenType.AF_,
-  "AF'": TokenType.AF_,
-
-  z: TokenType.Z,
-  Z: TokenType.Z,
-  nz: TokenType.NZ,
-  NZ: TokenType.NZ,
-  nc: TokenType.NC,
-  NC: TokenType.NC,
-  po: TokenType.PO,
-  PO: TokenType.PO,
-  pe: TokenType.PE,
-  PE: TokenType.PE,
-  p: TokenType.P,
-  P: TokenType.P,
-  m: TokenType.M,
-  M: TokenType.M,
-
-  nop: TokenType.Nop,
-  NOP: TokenType.Nop,
-  rlca: TokenType.Rlca,
-  RLCA: TokenType.Rlca,
-  rrca: TokenType.Rrca,
-  RRCA: TokenType.Rrca,
-  rla: TokenType.Rla,
-  RLA: TokenType.Rla,
-  rra: TokenType.Rra,
-  RRA: TokenType.Rra,
-  daa: TokenType.Daa,
-  DAA: TokenType.Daa,
-  cpl: TokenType.Cpl,
-  CPL: TokenType.Cpl,
-  scf: TokenType.Scf,
-  SCF: TokenType.Scf,
-  ccf: TokenType.Ccf,
-  CCF: TokenType.Ccf,
-  halt: TokenType.Halt,
-  HALT: TokenType.Halt,
-  ret: TokenType.Ret,
-  RET: TokenType.Ret,
-  exx: TokenType.Exx,
-  EXX: TokenType.Exx,
-  di: TokenType.Di,
-  DI: TokenType.Di,
-  ei: TokenType.Ei,
-  EI: TokenType.Ei,
-  neg: TokenType.Neg,
-  NEG: TokenType.Neg,
-  retn: TokenType.Retn,
-  RETN: TokenType.Retn,
-  reti: TokenType.Reti,
-  RETI: TokenType.Reti,
-  rld: TokenType.Rld,
-  RLD: TokenType.Rld,
-  rrd: TokenType.Rrd,
-  RRD: TokenType.Rrd,
-  ldi: TokenType.Ldi,
-  LDI: TokenType.Ldi,
-  cpi: TokenType.Cpi,
-  CPI: TokenType.Cpi,
-  ini: TokenType.Ini,
-  INI: TokenType.Ini,
-  outi: TokenType.Outi,
-  OUTI: TokenType.Outi,
-  ldd: TokenType.Ldd,
-  LDD: TokenType.Ldd,
-  cpd: TokenType.Cpd,
-  CPD: TokenType.Cpd,
-  ind: TokenType.Ind,
-  IND: TokenType.Ind,
-  outd: TokenType.Outd,
-  OUTD: TokenType.Outd,
-  ldir: TokenType.Ldir,
-  LDIR: TokenType.Ldir,
-  cpir: TokenType.Cpir,
-  CPIR: TokenType.Cpir,
-  inir: TokenType.Inir,
-  INIR: TokenType.Inir,
-  otir: TokenType.Otir,
-  OTIR: TokenType.Otir,
-  lddr: TokenType.Lddr,
-  LDDR: TokenType.Lddr,
-  cpdr: TokenType.Cpdr,
-  CPDR: TokenType.Cpdr,
-  indr: TokenType.Indr,
-  INDR: TokenType.Indr,
-  otdr: TokenType.Otdr,
-  OTDR: TokenType.Otdr,
-
-  ld: TokenType.Ld,
-  LD: TokenType.Ld,
-  inc: TokenType.Inc,
-  INC: TokenType.Inc,
-  dec: TokenType.Dec,
-  DEC: TokenType.Dec,
-  ex: TokenType.Ex,
-  EX: TokenType.Ex,
-  add: TokenType.Add,
-  ADD: TokenType.Add,
-  adc: TokenType.Adc,
-  ADC: TokenType.Adc,
-  sub: TokenType.Sub,
-  SUB: TokenType.Sub,
-  sbc: TokenType.Sbc,
-  SBC: TokenType.Sbc,
-  and: TokenType.And,
-  AND: TokenType.And,
-  xor: TokenType.Xor,
-  XOR: TokenType.Xor,
-  or: TokenType.Or,
-  OR: TokenType.Or,
-  cp: TokenType.Cp,
-  CP: TokenType.Cp,
-  djnz: TokenType.Djnz,
-  DJNZ: TokenType.Djnz,
-  jr: TokenType.Jr,
-  JR: TokenType.Jr,
-  jp: TokenType.Jp,
-  JP: TokenType.Jp,
-  call: TokenType.Call,
-  CALL: TokenType.Call,
-  rst: TokenType.Rst,
-  RST: TokenType.Rst,
-  push: TokenType.Push,
-  PUSH: TokenType.Push,
-  pop: TokenType.Pop,
-  POP: TokenType.Pop,
-  in: TokenType.In,
-  IN: TokenType.In,
-  out: TokenType.Out,
-  OUT: TokenType.Out,
-  im: TokenType.Im,
-  IM: TokenType.Im,
-  rlc: TokenType.Rlc,
-  RLC: TokenType.Rlc,
-  rrc: TokenType.Rrc,
-  RRC: TokenType.Rrc,
-  rl: TokenType.Rl,
-  RL: TokenType.Rl,
-  rr: TokenType.Rr,
-  RR: TokenType.Rr,
-  sla: TokenType.Sla,
-  SLA: TokenType.Sla,
-  sra: TokenType.Sra,
-  SRA: TokenType.Sra,
-  sll: TokenType.Sll,
-  SLL: TokenType.Sll,
-  srl: TokenType.Srl,
-  SRL: TokenType.Srl,
-  bit: TokenType.Bit,
-  BIT: TokenType.Bit,
-  set: TokenType.Set,
-  SET: TokenType.Set,
-  res: TokenType.Res,
-  RES: TokenType.Res,
-
-  swapnib: TokenType.Swapnib,
-  SWAPNIB: TokenType.Swapnib,
-  swap: TokenType.Swapnib,
-  SWAP: TokenType.Swapnib,
-  mirror: TokenType.Mirror,
-  MIRROR: TokenType.Mirror,
-  mirr: TokenType.Mirror,
-  MIRR: TokenType.Mirror,
-  test: TokenType.Test,
-  TEST: TokenType.Test,
-  bsla: TokenType.Bsla,
-  BSLA: TokenType.Bsla,
-  bsra: TokenType.Bsra,
-  BSRA: TokenType.Bsra,
-  bsrl: TokenType.Bsrl,
-  BSRL: TokenType.Bsrl,
-  bsrf: TokenType.Bsrf,
-  BSRF: TokenType.Bsrf,
-  brlc: TokenType.Brlc,
-  BRLC: TokenType.Brlc,
-  mul: TokenType.Mul,
-  MUL: TokenType.Mul,
-  outinb: TokenType.OutInB,
-  OUTINB: TokenType.OutInB,
-  otib: TokenType.OutInB,
-  OTIB: TokenType.OutInB,
-  nextreg: TokenType.NextReg,
-  NEXTREG: TokenType.NextReg,
-  nreg: TokenType.NextReg,
-  NREG: TokenType.NextReg,
-  pixeldn: TokenType.PixelDn,
-  PIXELDN: TokenType.PixelDn,
-  pxdn: TokenType.PixelDn,
-  PXDN: TokenType.PixelDn,
-  pixelad: TokenType.PixelAd,
-  PIXELAD: TokenType.PixelAd,
-  pxad: TokenType.PixelAd,
-  PXAD: TokenType.PixelAd,
-  setae: TokenType.SetAE,
-  SETAE: TokenType.SetAE,
-  stae: TokenType.SetAE,
-  STAE: TokenType.SetAE,
-  ldix: TokenType.Ldix,
-  LDIX: TokenType.Ldix,
-  ldws: TokenType.Ldws,
-  LDWS: TokenType.Ldws,
-  lddx: TokenType.Lddx,
-  LDDX: TokenType.Lddx,
-  ldirx: TokenType.Ldirx,
-  LDIRX: TokenType.Ldirx,
-  lirx: TokenType.Ldirx,
-  LIRX: TokenType.Ldirx,
-  ldpirx: TokenType.Ldpirx,
-  LDPIRX: TokenType.Ldpirx,
-  lprx: TokenType.Ldpirx,
-  LPRX: TokenType.Ldpirx,
-  lddrx: TokenType.Lddrx,
-  LDDRX: TokenType.Lddrx,
-  ldrx: TokenType.Lddrx,
-  LDRX: TokenType.Lddrx,
-
-  ".org": TokenType.OrgPragma,
-  ".ORG": TokenType.OrgPragma,
-  org: TokenType.OrgPragma,
-  ORG: TokenType.OrgPragma,
-
-  ".bank": TokenType.BankPragma,
-  ".BANK": TokenType.BankPragma,
-  bank: TokenType.BankPragma,
-  BANK: TokenType.BankPragma,
-
-  ".xorg": TokenType.XorgPragma,
-  ".XORG": TokenType.XorgPragma,
-  xorg: TokenType.XorgPragma,
-  XORG: TokenType.XorgPragma,
-
-  ".ent": TokenType.EntPragma,
-  ".ENT": TokenType.EntPragma,
-  ent: TokenType.EntPragma,
-  ENT: TokenType.EntPragma,
-
-  ".xent": TokenType.XentPragma,
-  ".XENT": TokenType.XentPragma,
-  xent: TokenType.XentPragma,
-  XENT: TokenType.XentPragma,
-
-  ".equ": TokenType.EquPragma,
-  ".EQU": TokenType.EquPragma,
-  equ: TokenType.EquPragma,
-  EQU: TokenType.EquPragma,
-
-  ".var": TokenType.VarPragma,
-  ".VAR": TokenType.VarPragma,
-  var: TokenType.VarPragma,
-  VAR: TokenType.VarPragma,
-
-  ".disp": TokenType.DispPragma,
-  ".DISP": TokenType.DispPragma,
-  disp: TokenType.DispPragma,
-  DISP: TokenType.DispPragma,
-
-  ".defb": TokenType.DefbPragma,
-  ".DEFB": TokenType.DefbPragma,
-  defb: TokenType.DefbPragma,
-  DEFB: TokenType.DefbPragma,
-  ".db": TokenType.DefbPragma,
-  ".DB": TokenType.DefbPragma,
-  db: TokenType.DefbPragma,
-  DB: TokenType.DefbPragma,
-
-  ".defw": TokenType.DefwPragma,
-  ".DEFW": TokenType.DefwPragma,
-  defw: TokenType.DefwPragma,
-  DEFW: TokenType.DefwPragma,
-  ".dw": TokenType.DefwPragma,
-  ".DW": TokenType.DefwPragma,
-  dw: TokenType.DefwPragma,
-  DW: TokenType.DefwPragma,
-
-  ".defm": TokenType.DefmPragma,
-  ".DEFM": TokenType.DefmPragma,
-  defm: TokenType.DefmPragma,
-  DEFM: TokenType.DefmPragma,
-  ".dm": TokenType.DefmPragma,
-  ".DM": TokenType.DefmPragma,
-  dm: TokenType.DefmPragma,
-  DM: TokenType.DefmPragma,
-
-  ".defn": TokenType.DefnPragma,
-  ".DEFN": TokenType.DefnPragma,
-  defn: TokenType.DefnPragma,
-  DEFN: TokenType.DefnPragma,
-  ".dn": TokenType.DefnPragma,
-  ".DN": TokenType.DefnPragma,
-  dn: TokenType.DefnPragma,
-  DN: TokenType.DefnPragma,
-
-  ".defh": TokenType.DefhPragma,
-  ".DEFH": TokenType.DefhPragma,
-  defh: TokenType.DefhPragma,
-  DEFH: TokenType.DefhPragma,
-  ".dh": TokenType.DefhPragma,
-  ".DH": TokenType.DefhPragma,
-  dh: TokenType.DefhPragma,
-  DH: TokenType.DefhPragma,
-
-  ".defgx": TokenType.DefgxPragma,
-  ".DEFGX": TokenType.DefgxPragma,
-  defgx: TokenType.DefgxPragma,
-  DEFGX: TokenType.DefgxPragma,
-  ".dgx": TokenType.DefgxPragma,
-  ".DGX": TokenType.DefgxPragma,
-  dgx: TokenType.DefgxPragma,
-  DGX: TokenType.DefgxPragma,
-
-  ".defg": TokenType.DefgPragma,
-  ".DEFG": TokenType.DefgPragma,
-  defg: TokenType.DefgPragma,
-  DEFG: TokenType.DefgPragma,
-  ".dg": TokenType.DefgPragma,
-  ".DG": TokenType.DefgPragma,
-  dg: TokenType.DefgPragma,
-  DG: TokenType.DefgPragma,
-
-  ".defc": TokenType.DefcPragma,
-  ".DEFC": TokenType.DefcPragma,
-  defc: TokenType.DefcPragma,
-  DEFC: TokenType.DefcPragma,
-  ".dc": TokenType.DefcPragma,
-  ".DC": TokenType.DefcPragma,
-  dc: TokenType.DefcPragma,
-  DC: TokenType.DefcPragma,
-
-  ".skip": TokenType.SkipPragma,
-  ".SKIP": TokenType.SkipPragma,
-  skip: TokenType.SkipPragma,
-  SKIP: TokenType.SkipPragma,
-
-  ".extern": TokenType.ExternPragma,
-  ".EXTERN": TokenType.ExternPragma,
-  extern: TokenType.ExternPragma,
-  EXTERN: TokenType.ExternPragma,
-
-  ".defs": TokenType.DefsPragma,
-  ".DEFS": TokenType.DefsPragma,
-  defs: TokenType.DefsPragma,
-  DEFS: TokenType.DefsPragma,
-  ".ds": TokenType.DefsPragma,
-  ".DS": TokenType.DefsPragma,
-  ds: TokenType.DefsPragma,
-  DS: TokenType.DefsPragma,
-
-  ".fillb": TokenType.FillbPragma,
-  ".FILLB": TokenType.FillbPragma,
-  fillb: TokenType.FillbPragma,
-  FILLB: TokenType.FillbPragma,
-
-  ".fillw": TokenType.FillwPragma,
-  ".FILLW": TokenType.FillwPragma,
-  fillw: TokenType.FillwPragma,
-  FILLW: TokenType.FillwPragma,
-
-  ".model": TokenType.ModelPragma,
-  ".MODEL": TokenType.ModelPragma,
-  model: TokenType.ModelPragma,
-  MODEL: TokenType.ModelPragma,
-
-  ".align": TokenType.AlignPragma,
-  ".ALIGN": TokenType.AlignPragma,
-  align: TokenType.AlignPragma,
-  ALIGN: TokenType.AlignPragma,
-
-  ".trace": TokenType.TracePragma,
-  ".TRACE": TokenType.TracePragma,
-  trace: TokenType.TracePragma,
-  TRACE: TokenType.TracePragma,
-
-  ".tracehex": TokenType.TraceHexPragma,
-  ".TRACEHEX": TokenType.TraceHexPragma,
-  tracehex: TokenType.TraceHexPragma,
-  TRACEHEX: TokenType.TraceHexPragma,
-
-  ".rndseed": TokenType.RndSeedPragma,
-  ".RNDSEED": TokenType.RndSeedPragma,
-  rndseed: TokenType.RndSeedPragma,
-  RNDSEED: TokenType.RndSeedPragma,
-
-  ".error": TokenType.ErrorPragma,
-  ".ERROR": TokenType.ErrorPragma,
-  error: TokenType.ErrorPragma,
-  ERROR: TokenType.ErrorPragma,
-
-  ".includebin": TokenType.IncludeBinPragma,
-  ".INCLUDEBIN": TokenType.IncludeBinPragma,
-  ".include_bin": TokenType.IncludeBinPragma,
-  ".INCLUDE_BIN": TokenType.IncludeBinPragma,
-  includebin: TokenType.IncludeBinPragma,
-  INCLUDEBIN: TokenType.IncludeBinPragma,
-  include_bin: TokenType.IncludeBinPragma,
-  INCLUDE_BIN: TokenType.IncludeBinPragma,
-
-  ".comparebin": TokenType.CompareBinPragma,
-  ".COMPAREBIN": TokenType.CompareBinPragma,
-  comparebin: TokenType.CompareBinPragma,
-  COMPAREBIN: TokenType.CompareBinPragma,
-
-  ".injectopt": TokenType.InjectOptPragma,
-  ".INJECTOPT": TokenType.InjectOptPragma,
-  injectopt: TokenType.InjectOptPragma,
-  INJECTOPT: TokenType.InjectOptPragma,
-
-  ".onsuccess": TokenType.OnSuccessPragma,
-  ".ONSUCCESS": TokenType.OnSuccessPragma,
-  onsuccess: TokenType.OnSuccessPragma,
-  ONSUCCESS: TokenType.OnSuccessPragma,
-
-  ".macro": TokenType.Macro,
-  ".MACRO": TokenType.Macro,
-  macro: TokenType.Macro,
-  MACRO: TokenType.Macro,
-
-  ".endm": TokenType.Endm,
-  ".ENDM": TokenType.Endm,
-  ".mend": TokenType.Endm,
-  ".MEND": TokenType.Endm,
-
-  ".proc": TokenType.Proc,
-  ".PROC": TokenType.Proc,
-
-  ".endp": TokenType.Endp,
-  ".ENDP": TokenType.Endp,
-  ".pend": TokenType.Endp,
-  ".PEND": TokenType.Endp,
-
-  ".loop": TokenType.Loop,
-  ".LOOP": TokenType.Loop,
-
-  ".endl": TokenType.Endl,
-  ".ENDL": TokenType.Endl,
-  ".lend": TokenType.Endl,
-  ".LEND": TokenType.Endl,
-
-  ".repeat": TokenType.Repeat,
-  ".REPEAT": TokenType.Repeat,
-
-  ".until": TokenType.Until,
-  ".UNTIL": TokenType.Until,
-
-  ".while": TokenType.While,
-  ".WHILE": TokenType.While,
-
-  ".endw": TokenType.Endw,
-  ".ENDW": TokenType.Endw,
-  ".wend": TokenType.Endw,
-  ".WEND": TokenType.Endw,
-
-  ".if": TokenType.If,
-  ".IF": TokenType.If,
-  if: TokenType.If,
-  IF: TokenType.If,
-
-  ".ifused": TokenType.IfUsed,
-  ".IFUSED": TokenType.IfUsed,
-  ifused: TokenType.IfUsed,
-  IFUSED: TokenType.IfUsed,
-
-  ".ifnused": TokenType.IfNUsed,
-  ".IFNUSED": TokenType.IfNUsed,
-  ifnused: TokenType.IfNUsed,
-  IFNUSED: TokenType.IfNUsed,
-
-  ".elif": TokenType.Elif,
-  ".ELIF": TokenType.Elif,
-
-  ".else": TokenType.Else,
-  ".ELSE": TokenType.Else,
-
-  ".endif": TokenType.Endif,
-  ".ENDIF": TokenType.Endif,
-
-  ".for": TokenType.For,
-  ".FOR": TokenType.For,
-  for: TokenType.For,
-  FOR: TokenType.For,
-
-  ".to": TokenType.To,
-  ".TO": TokenType.To,
-  to: TokenType.To,
-  TO: TokenType.To,
-
-  ".step": TokenType.Step,
-  ".STEP": TokenType.Step,
-  step: TokenType.Step,
-  STEP: TokenType.Step,
-
-  ".next": TokenType.Next,
-  ".NEXT": TokenType.Next,
-
-  ".break": TokenType.Break,
-  ".BREAK": TokenType.Break,
-
-  ".continue": TokenType.Continue,
-  ".CONTINUE": TokenType.Continue,
-
-  ".module": TokenType.Module,
-  ".MODULE": TokenType.Module,
-  module: TokenType.Module,
-  MODULE: TokenType.Module,
-  ".scope": TokenType.Module,
-  ".SCOPE": TokenType.Module,
-  scope: TokenType.Module,
-  SCOPE: TokenType.Module,
-
-  ".endmodule": TokenType.EndModule,
-  ".ENDMODULE": TokenType.EndModule,
-  endmodule: TokenType.EndModule,
-  ENDMODULE: TokenType.EndModule,
-  ".endscope": TokenType.EndModule,
-  ".ENDSCOPE": TokenType.EndModule,
-  endscope: TokenType.EndModule,
-  ENDSCOPE: TokenType.EndModule,
-  ".moduleend": TokenType.EndModule,
-  ".MODULEEND": TokenType.EndModule,
-  moduleend: TokenType.EndModule,
-  MODULEEND: TokenType.EndModule,
-  ".scopeend": TokenType.EndModule,
-  ".SCOPEEND": TokenType.EndModule,
-  scopeend: TokenType.EndModule,
-  SCOPEEND: TokenType.EndModule,
-
-  ".struct": TokenType.Struct,
-  ".STRUCT": TokenType.Struct,
-  struct: TokenType.Struct,
-  STRUCT: TokenType.Struct,
-
-  ".ends": TokenType.Ends,
-  ".ENDS": TokenType.Ends,
-
-  textof: TokenType.TextOf,
-  TEXTOF: TokenType.TextOf,
-
-  ltextof: TokenType.LTextOf,
-  LTEXTOF: TokenType.LTextOf,
-
-  hreg: TokenType.HReg,
-  HREG: TokenType.HReg,
-
-  lreg: TokenType.LReg,
-  LREG: TokenType.LReg,
-
-  def: TokenType.Def,
-  DEF: TokenType.Def,
-
-  isreg8: TokenType.IsReg8,
-  ISREG8: TokenType.IsReg8,
-
-  isreg8std: TokenType.IsReg8Std,
-  ISREG8STD: TokenType.IsReg8Std,
-
-  isreg8spec: TokenType.IsReg8Spec,
-  ISREG8SPEC: TokenType.IsReg8Spec,
-
-  isreg8idx: TokenType.IsReg8Idx,
-  ISREG8IDX: TokenType.IsReg8Idx,
-
-  isreg16: TokenType.IsReg16,
-  ISREG16: TokenType.IsReg16,
-
-  isreg16std: TokenType.IsReg16Std,
-  ISREG16STD: TokenType.IsReg16Std,
-
-  isreg16idx: TokenType.IsReg16Idx,
-  ISREG16IDX: TokenType.IsReg16Idx,
-
-  isregindirect: TokenType.IsRegIndirect,
-  ISREGINDIRECT: TokenType.IsRegIndirect,
-
-  iscport: TokenType.IsCPort,
-  ISCPORT: TokenType.IsCPort,
-
-  isindexedaddr: TokenType.IsIndexedAddr,
-  ISINDEXEDADDR: TokenType.IsIndexedAddr,
-
-  iscondition: TokenType.IsCondition,
-  ISCONDITION: TokenType.IsCondition,
-
-  isexpr: TokenType.IsExpr,
-  ISEXPR: TokenType.IsExpr,
-
-  isrega: TokenType.IsRegA,
-  ISREGA: TokenType.IsRegA,
-  isregaf: TokenType.IsRegAf,
-  ISREGAF: TokenType.IsRegAf,
-  isregb: TokenType.IsRegB,
-  ISREGB: TokenType.IsRegB,
-  isregc: TokenType.IsRegC,
-  ISREGC: TokenType.IsRegC,
-  isregbc: TokenType.IsRegBc,
-  ISREGBC: TokenType.IsRegBc,
-  isregd: TokenType.IsRegD,
-  ISREGD: TokenType.IsRegD,
-  isrege: TokenType.IsRegE,
-  ISREGE: TokenType.IsRegE,
-  isregde: TokenType.IsRegDe,
-  ISREGDE: TokenType.IsRegDe,
-  isregh: TokenType.IsRegH,
-  ISREGH: TokenType.IsRegH,
-  isregl: TokenType.IsRegL,
-  ISREGL: TokenType.IsRegL,
-  isreghl: TokenType.IsRegHl,
-  ISREGHL: TokenType.IsRegHl,
-  isregi: TokenType.IsRegI,
-  ISREGI: TokenType.IsRegI,
-  isregr: TokenType.IsRegR,
-  ISREGR: TokenType.IsRegR,
-  isregxh: TokenType.IsRegXh,
-  ISREGXH: TokenType.IsRegXh,
-  isregxl: TokenType.IsRegXl,
-  ISREGXL: TokenType.IsRegXl,
-  isregix: TokenType.IsRegIx,
-  ISREGIX: TokenType.IsRegIx,
-  isregyh: TokenType.IsRegYh,
-  ISREGYH: TokenType.IsRegYh,
-  isregyl: TokenType.IsRegYl,
-  ISREGYL: TokenType.IsRegYl,
-  isregiy: TokenType.IsRegIy,
-  ISREGIY: TokenType.IsRegIy,
-  isregsp: TokenType.IsRegSp,
-  ISREGSP: TokenType.IsRegSp,
-
-  ".true": TokenType.True,
-  ".TRUE": TokenType.True,
-  true: TokenType.True,
-  TRUE: TokenType.True,
-
-  ".false": TokenType.False,
-  ".FALSE": TokenType.False,
-  false: TokenType.False,
-  FALSE: TokenType.False,
-
-  ".cnt": TokenType.CurCnt,
-  ".CNT": TokenType.CurCnt,
-  $cnt: TokenType.CurCnt,
-  $CNT: TokenType.CurCnt,
-
-  "#ifdef": TokenType.IfDefDir,
-  "#ifndef": TokenType.IfNDefDir,
-  "#endif": TokenType.EndIfDir,
-  "#else": TokenType.ElseDir,
-  "#define": TokenType.DefineDir,
-  "#undef": TokenType.UndefDir,
-  "#include": TokenType.IncludeDir,
-  "#if": TokenType.IfDir,
-  "#ifmod": TokenType.IfModDir,
-  "#ifnmod": TokenType.IfNModDir,
-  "#line": TokenType.LineDir,
-
-  $: TokenType.CurAddress
+const resolverHash: { [key: string]: Z80TokenType } = {
+  ...commonResolverHash,
+  a: Z80Tokens.A,
+  A: Z80Tokens.A,
+  b: Z80Tokens.B,
+  B: Z80Tokens.B,
+  c: Z80Tokens.C,
+  C: Z80Tokens.C,
+  d: Z80Tokens.D,
+  D: Z80Tokens.D,
+  e: Z80Tokens.E,
+  E: Z80Tokens.E,
+  h: Z80Tokens.H,
+  H: Z80Tokens.H,
+  l: Z80Tokens.L,
+  L: Z80Tokens.L,
+  i: Z80Tokens.I,
+  I: Z80Tokens.I,
+  r: Z80Tokens.R,
+  R: Z80Tokens.R,
+  xl: Z80Tokens.XL,
+  XL: Z80Tokens.XL,
+  ixl: Z80Tokens.XL,
+  IXL: Z80Tokens.XL,
+  IXl: Z80Tokens.XL,
+  yl: Z80Tokens.YL,
+  YL: Z80Tokens.YL,
+  iyl: Z80Tokens.YL,
+  IYL: Z80Tokens.YL,
+  IYl: Z80Tokens.YL,
+  xh: Z80Tokens.XH,
+  XH: Z80Tokens.XH,
+  ixh: Z80Tokens.XH,
+  IXH: Z80Tokens.XH,
+  IXh: Z80Tokens.XH,
+  yh: Z80Tokens.YH,
+  YH: Z80Tokens.YH,
+  iyh: Z80Tokens.YH,
+  IYH: Z80Tokens.YH,
+  IYh: Z80Tokens.YH,
+
+  bc: Z80Tokens.BC,
+  BC: Z80Tokens.BC,
+  de: Z80Tokens.DE,
+  DE: Z80Tokens.DE,
+  hl: Z80Tokens.HL,
+  HL: Z80Tokens.HL,
+  sp: Z80Tokens.SP,
+  SP: Z80Tokens.SP,
+  ix: Z80Tokens.IX,
+  IX: Z80Tokens.IX,
+  iy: Z80Tokens.IY,
+  IY: Z80Tokens.IY,
+  af: Z80Tokens.AF,
+  AF: Z80Tokens.AF,
+  "af'": Z80Tokens.AF_,
+  "AF'": Z80Tokens.AF_,
+
+  z: Z80Tokens.Z,
+  Z: Z80Tokens.Z,
+  nz: Z80Tokens.NZ,
+  NZ: Z80Tokens.NZ,
+  nc: Z80Tokens.NC,
+  NC: Z80Tokens.NC,
+  po: Z80Tokens.PO,
+  PO: Z80Tokens.PO,
+  pe: Z80Tokens.PE,
+  PE: Z80Tokens.PE,
+  p: Z80Tokens.P,
+  P: Z80Tokens.P,
+  m: Z80Tokens.M,
+  M: Z80Tokens.M,
+
+  nop: Z80Tokens.Nop,
+  NOP: Z80Tokens.Nop,
+  rlca: Z80Tokens.Rlca,
+  RLCA: Z80Tokens.Rlca,
+  rrca: Z80Tokens.Rrca,
+  RRCA: Z80Tokens.Rrca,
+  rla: Z80Tokens.Rla,
+  RLA: Z80Tokens.Rla,
+  rra: Z80Tokens.Rra,
+  RRA: Z80Tokens.Rra,
+  daa: Z80Tokens.Daa,
+  DAA: Z80Tokens.Daa,
+  cpl: Z80Tokens.Cpl,
+  CPL: Z80Tokens.Cpl,
+  scf: Z80Tokens.Scf,
+  SCF: Z80Tokens.Scf,
+  ccf: Z80Tokens.Ccf,
+  CCF: Z80Tokens.Ccf,
+  halt: Z80Tokens.Halt,
+  HALT: Z80Tokens.Halt,
+  ret: Z80Tokens.Ret,
+  RET: Z80Tokens.Ret,
+  exx: Z80Tokens.Exx,
+  EXX: Z80Tokens.Exx,
+  di: Z80Tokens.Di,
+  DI: Z80Tokens.Di,
+  ei: Z80Tokens.Ei,
+  EI: Z80Tokens.Ei,
+  neg: Z80Tokens.Neg,
+  NEG: Z80Tokens.Neg,
+  retn: Z80Tokens.Retn,
+  RETN: Z80Tokens.Retn,
+  reti: Z80Tokens.Reti,
+  RETI: Z80Tokens.Reti,
+  rld: Z80Tokens.Rld,
+  RLD: Z80Tokens.Rld,
+  rrd: Z80Tokens.Rrd,
+  RRD: Z80Tokens.Rrd,
+  ldi: Z80Tokens.Ldi,
+  LDI: Z80Tokens.Ldi,
+  cpi: Z80Tokens.Cpi,
+  CPI: Z80Tokens.Cpi,
+  ini: Z80Tokens.Ini,
+  INI: Z80Tokens.Ini,
+  outi: Z80Tokens.Outi,
+  OUTI: Z80Tokens.Outi,
+  ldd: Z80Tokens.Ldd,
+  LDD: Z80Tokens.Ldd,
+  cpd: Z80Tokens.Cpd,
+  CPD: Z80Tokens.Cpd,
+  ind: Z80Tokens.Ind,
+  IND: Z80Tokens.Ind,
+  outd: Z80Tokens.Outd,
+  OUTD: Z80Tokens.Outd,
+  ldir: Z80Tokens.Ldir,
+  LDIR: Z80Tokens.Ldir,
+  cpir: Z80Tokens.Cpir,
+  CPIR: Z80Tokens.Cpir,
+  inir: Z80Tokens.Inir,
+  INIR: Z80Tokens.Inir,
+  otir: Z80Tokens.Otir,
+  OTIR: Z80Tokens.Otir,
+  lddr: Z80Tokens.Lddr,
+  LDDR: Z80Tokens.Lddr,
+  cpdr: Z80Tokens.Cpdr,
+  CPDR: Z80Tokens.Cpdr,
+  indr: Z80Tokens.Indr,
+  INDR: Z80Tokens.Indr,
+  otdr: Z80Tokens.Otdr,
+  OTDR: Z80Tokens.Otdr,
+
+  ld: Z80Tokens.Ld,
+  LD: Z80Tokens.Ld,
+  inc: Z80Tokens.Inc,
+  INC: Z80Tokens.Inc,
+  dec: Z80Tokens.Dec,
+  DEC: Z80Tokens.Dec,
+  ex: Z80Tokens.Ex,
+  EX: Z80Tokens.Ex,
+  add: Z80Tokens.Add,
+  ADD: Z80Tokens.Add,
+  adc: Z80Tokens.Adc,
+  ADC: Z80Tokens.Adc,
+  sub: Z80Tokens.Sub,
+  SUB: Z80Tokens.Sub,
+  sbc: Z80Tokens.Sbc,
+  SBC: Z80Tokens.Sbc,
+  and: Z80Tokens.And,
+  AND: Z80Tokens.And,
+  xor: Z80Tokens.Xor,
+  XOR: Z80Tokens.Xor,
+  or: Z80Tokens.Or,
+  OR: Z80Tokens.Or,
+  cp: Z80Tokens.Cp,
+  CP: Z80Tokens.Cp,
+  djnz: Z80Tokens.Djnz,
+  DJNZ: Z80Tokens.Djnz,
+  jr: Z80Tokens.Jr,
+  JR: Z80Tokens.Jr,
+  jp: Z80Tokens.Jp,
+  JP: Z80Tokens.Jp,
+  call: Z80Tokens.Call,
+  CALL: Z80Tokens.Call,
+  rst: Z80Tokens.Rst,
+  RST: Z80Tokens.Rst,
+  push: Z80Tokens.Push,
+  PUSH: Z80Tokens.Push,
+  pop: Z80Tokens.Pop,
+  POP: Z80Tokens.Pop,
+  in: Z80Tokens.In,
+  IN: Z80Tokens.In,
+  out: Z80Tokens.Out,
+  OUT: Z80Tokens.Out,
+  im: Z80Tokens.Im,
+  IM: Z80Tokens.Im,
+  rlc: Z80Tokens.Rlc,
+  RLC: Z80Tokens.Rlc,
+  rrc: Z80Tokens.Rrc,
+  RRC: Z80Tokens.Rrc,
+  rl: Z80Tokens.Rl,
+  RL: Z80Tokens.Rl,
+  rr: Z80Tokens.Rr,
+  RR: Z80Tokens.Rr,
+  sla: Z80Tokens.Sla,
+  SLA: Z80Tokens.Sla,
+  sra: Z80Tokens.Sra,
+  SRA: Z80Tokens.Sra,
+  sll: Z80Tokens.Sll,
+  SLL: Z80Tokens.Sll,
+  srl: Z80Tokens.Srl,
+  SRL: Z80Tokens.Srl,
+  bit: Z80Tokens.Bit,
+  BIT: Z80Tokens.Bit,
+  set: Z80Tokens.Set,
+  SET: Z80Tokens.Set,
+  res: Z80Tokens.Res,
+  RES: Z80Tokens.Res,
+
+  swapnib: Z80Tokens.Swapnib,
+  SWAPNIB: Z80Tokens.Swapnib,
+  swap: Z80Tokens.Swapnib,
+  SWAP: Z80Tokens.Swapnib,
+  mirror: Z80Tokens.Mirror,
+  MIRROR: Z80Tokens.Mirror,
+  mirr: Z80Tokens.Mirror,
+  MIRR: Z80Tokens.Mirror,
+  test: Z80Tokens.Test,
+  TEST: Z80Tokens.Test,
+  bsla: Z80Tokens.Bsla,
+  BSLA: Z80Tokens.Bsla,
+  bsra: Z80Tokens.Bsra,
+  BSRA: Z80Tokens.Bsra,
+  bsrl: Z80Tokens.Bsrl,
+  BSRL: Z80Tokens.Bsrl,
+  bsrf: Z80Tokens.Bsrf,
+  BSRF: Z80Tokens.Bsrf,
+  brlc: Z80Tokens.Brlc,
+  BRLC: Z80Tokens.Brlc,
+  mul: Z80Tokens.Mul,
+  MUL: Z80Tokens.Mul,
+  outinb: Z80Tokens.OutInB,
+  OUTINB: Z80Tokens.OutInB,
+  otib: Z80Tokens.OutInB,
+  OTIB: Z80Tokens.OutInB,
+  nextreg: Z80Tokens.NextReg,
+  NEXTREG: Z80Tokens.NextReg,
+  nreg: Z80Tokens.NextReg,
+  NREG: Z80Tokens.NextReg,
+  pixeldn: Z80Tokens.PixelDn,
+  PIXELDN: Z80Tokens.PixelDn,
+  pxdn: Z80Tokens.PixelDn,
+  PXDN: Z80Tokens.PixelDn,
+  pixelad: Z80Tokens.PixelAd,
+  PIXELAD: Z80Tokens.PixelAd,
+  pxad: Z80Tokens.PixelAd,
+  PXAD: Z80Tokens.PixelAd,
+  setae: Z80Tokens.SetAE,
+  SETAE: Z80Tokens.SetAE,
+  stae: Z80Tokens.SetAE,
+  STAE: Z80Tokens.SetAE,
+  ldix: Z80Tokens.Ldix,
+  LDIX: Z80Tokens.Ldix,
+  ldws: Z80Tokens.Ldws,
+  LDWS: Z80Tokens.Ldws,
+  lddx: Z80Tokens.Lddx,
+  LDDX: Z80Tokens.Lddx,
+  ldirx: Z80Tokens.Ldirx,
+  LDIRX: Z80Tokens.Ldirx,
+  lirx: Z80Tokens.Ldirx,
+  LIRX: Z80Tokens.Ldirx,
+  ldpirx: Z80Tokens.Ldpirx,
+  LDPIRX: Z80Tokens.Ldpirx,
+  lprx: Z80Tokens.Ldpirx,
+  LPRX: Z80Tokens.Ldpirx,
+  lddrx: Z80Tokens.Lddrx,
+  LDDRX: Z80Tokens.Lddrx,
+  ldrx: Z80Tokens.Lddrx,
+  LDRX: Z80Tokens.Lddrx,
+
+  hreg: Z80Tokens.HReg,
+  HREG: Z80Tokens.HReg,
+
+  lreg: Z80Tokens.LReg,
+  LREG: Z80Tokens.LReg,
+
+  isreg8: Z80Tokens.IsReg8,
+  ISREG8: Z80Tokens.IsReg8,
+
+  isreg8std: Z80Tokens.IsReg8Std,
+  ISREG8STD: Z80Tokens.IsReg8Std,
+
+  isreg8spec: Z80Tokens.IsReg8Spec,
+  ISREG8SPEC: Z80Tokens.IsReg8Spec,
+
+  isreg8idx: Z80Tokens.IsReg8Idx,
+  ISREG8IDX: Z80Tokens.IsReg8Idx,
+
+  isreg16: Z80Tokens.IsReg16,
+  ISREG16: Z80Tokens.IsReg16,
+
+  isreg16std: Z80Tokens.IsReg16Std,
+  ISREG16STD: Z80Tokens.IsReg16Std,
+
+  isreg16idx: Z80Tokens.IsReg16Idx,
+  ISREG16IDX: Z80Tokens.IsReg16Idx,
+
+  isregindirect: Z80Tokens.IsRegIndirect,
+  ISREGINDIRECT: Z80Tokens.IsRegIndirect,
+
+  iscport: Z80Tokens.IsCPort,
+  ISCPORT: Z80Tokens.IsCPort,
+
+  iscondition: Z80Tokens.IsCondition,
+  ISCONDITION: Z80Tokens.IsCondition,
+
+  isexpr: Z80Tokens.IsExpr,
+  ISEXPR: Z80Tokens.IsExpr,
+
+  isrega: Z80Tokens.IsRegA,
+  ISREGA: Z80Tokens.IsRegA,
+  isregaf: Z80Tokens.IsRegAf,
+  ISREGAF: Z80Tokens.IsRegAf,
+  isregb: Z80Tokens.IsRegB,
+  ISREGB: Z80Tokens.IsRegB,
+  isregc: Z80Tokens.IsRegC,
+  ISREGC: Z80Tokens.IsRegC,
+  isregbc: Z80Tokens.IsRegBc,
+  ISREGBC: Z80Tokens.IsRegBc,
+  isregd: Z80Tokens.IsRegD,
+  ISREGD: Z80Tokens.IsRegD,
+  isrege: Z80Tokens.IsRegE,
+  ISREGE: Z80Tokens.IsRegE,
+  isregde: Z80Tokens.IsRegDe,
+  ISREGDE: Z80Tokens.IsRegDe,
+  isregh: Z80Tokens.IsRegH,
+  ISREGH: Z80Tokens.IsRegH,
+  isregl: Z80Tokens.IsRegL,
+  ISREGL: Z80Tokens.IsRegL,
+  isreghl: Z80Tokens.IsRegHl,
+  ISREGHL: Z80Tokens.IsRegHl,
+  isregi: Z80Tokens.IsRegI,
+  ISREGI: Z80Tokens.IsRegI,
+  isregr: Z80Tokens.IsRegR,
+  ISREGR: Z80Tokens.IsRegR,
+  isregxh: Z80Tokens.IsRegXh,
+  ISREGXH: Z80Tokens.IsRegXh,
+  isregxl: Z80Tokens.IsRegXl,
+  ISREGXL: Z80Tokens.IsRegXl,
+  isregix: Z80Tokens.IsRegIx,
+  ISREGIX: Z80Tokens.IsRegIx,
+  isregyh: Z80Tokens.IsRegYh,
+  ISREGYH: Z80Tokens.IsRegYh,
+  isregyl: Z80Tokens.IsRegYl,
+  ISREGYL: Z80Tokens.IsRegYl,
+  isregiy: Z80Tokens.IsRegIy,
+  ISREGIY: Z80Tokens.IsRegIy,
+  isregsp: Z80Tokens.IsRegSp,
+  ISREGSP: Z80Tokens.IsRegSp
 };

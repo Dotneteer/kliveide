@@ -1,22 +1,14 @@
 import type { ErrorCodes } from "./assembler-errors";
-import type {
-  BinaryExpression,
-  MacroTimeFunctionInvocation,
-  ConditionalExpression,
-  Expression,
-  FunctionInvocation,
-  IdentifierNode,
-  NodePosition,
-  Symbol,
-  UnaryExpression,
-  Z80AssemblyLine
-} from "./assembler-tree-nodes";
 
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
-import { IEvaluationContext } from "./assembler-types";
-import { OperandType } from "./assembler-tree-nodes";
-import { IExpressionValue, IValueInfo } from "@main/compiler-common/abstractions";
-
+import {
+  IEvaluationContext,
+  IExpressionValue,
+  IValueInfo,
+  TypedObject
+} from "@main/compiler-common/abstractions";
+import { CommonTokenType } from "@main/compiler-common/common-tokens";
+import { AssemblyLine, BinaryExpression, ConditionalExpression, Expression, FunctionInvocation, IdentifierNode, MacroTimeFunctionInvocation, NodePosition, OperandType, Symbol, UnaryExpression } from "@main/compiler-common/tree-nodes";
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";
 const DIV_BY_ZERO_ERROR = "Divide by zero error";
@@ -191,17 +183,21 @@ export class ExpressionValue implements IExpressionValue {
 /**
  * Base class that evaluates an expression in a specific contents
  */
-export abstract class ExpressionEvaluator implements IEvaluationContext {
+export abstract class ExpressionEvaluator<
+  TInstruction extends TypedObject,
+  TToken extends CommonTokenType
+> implements IEvaluationContext<TInstruction, TToken>
+{
   /**
    * Gets the source line the evaluation context is bound to
    */
-  abstract getSourceLine(): Z80AssemblyLine;
+  abstract getSourceLine(): AssemblyLine<TInstruction>;
 
   /**
    * Sets the source line the evaluation context is bound to
    * @param sourceLine Source line information
    */
-  abstract setSourceLine(sourceLine: Z80AssemblyLine): void;
+  abstract setSourceLine(sourceLine: AssemblyLine<TInstruction>): void;
 
   /**
    * Gets the current assembly address
@@ -230,7 +226,10 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
    * @param context The context to evaluate the expression
    * @param expr Expression to evaluate
    */
-  doEvalExpression(context: IEvaluationContext, expr: Expression): IExpressionValue {
+  doEvalExpression(
+    context: IEvaluationContext<TInstruction, TToken>,
+    expr: Expression<TInstruction, TToken>
+  ): IExpressionValue {
     try {
       switch (expr.type) {
         case "Identifier":
@@ -271,8 +270,8 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param expr Expression to evaluate
      */
     function evalIdentifierValue(
-      context: IEvaluationContext,
-      expr: IdentifierNode
+      context: IEvaluationContext<TInstruction, TToken>,
+      expr: IdentifierNode<TInstruction>
     ): IExpressionValue {
       var valueInfo = context.getSymbolValue(expr.name);
       if (valueInfo !== null) {
@@ -290,7 +289,10 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @param context Evaluation context
      * @param expr Expression to evaluate
      */
-    function evalSymbolValue(context: IEvaluationContext, expr: Symbol): IExpressionValue {
+    function evalSymbolValue(
+      context: IEvaluationContext<TInstruction, TToken>,
+      expr: Symbol<TInstruction>
+    ): IExpressionValue {
       var valueInfo = context.getSymbolValue(expr.identifier.name, expr.startsFromGlobal);
       if (valueInfo !== null) {
         if (valueInfo.usageInfo !== null) {
@@ -309,8 +311,8 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @returns The value of the evaluated expression
      */
     function evalBinaryOperationValue(
-      context: IEvaluationContext,
-      expr: BinaryExpression
+      context: IEvaluationContext<TInstruction, TToken>,
+      expr: BinaryExpression<TInstruction, TToken>
     ): ExpressionValue {
       const left = context.doEvalExpression(context, expr.left);
       const right = context.doEvalExpression(context, expr.right);
@@ -951,8 +953,8 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @returns The value of the evaluated expression
      */
     function evalUnaryOperationValue(
-      context: IEvaluationContext,
-      expr: UnaryExpression
+      context: IEvaluationContext<TInstruction, TToken>,
+      expr: UnaryExpression<TInstruction, TToken>
     ): IExpressionValue {
       const operand = context.doEvalExpression(context, expr.operand);
       if (!operand.isValid) {
@@ -1014,8 +1016,8 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
      * @returns The value of the evaluated expression
      */
     function evalConditionalOperationValue(
-      context: IEvaluationContext,
-      expr: ConditionalExpression
+      context: IEvaluationContext<TInstruction, TToken>,
+      expr: ConditionalExpression<TInstruction, TToken>
     ): IExpressionValue {
       const cond = context.doEvalExpression(context, expr.condition);
       if (!cond.isValid) {
@@ -1042,7 +1044,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
    * @param parameters Optional error parameters
    */
   abstract reportEvaluationError(
-    context: IEvaluationContext,
+    context: IEvaluationContext<TInstruction, TToken>,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
@@ -1520,9 +1522,12 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
  * @param expr Unary expression
  * @returns The value of the evaluated expression
  */
-export function evalFunctionInvocationValue(
-  context: IEvaluationContext,
-  funcExpr: FunctionInvocation
+export function evalFunctionInvocationValue<
+  TInstruction extends TypedObject,
+  TToken extends CommonTokenType
+>(
+  context: IEvaluationContext<TInstruction, TToken>,
+  funcExpr: FunctionInvocation<TInstruction, TToken>
 ): IExpressionValue {
   // --- Evaluate all arguments from left to right
   const argValues: IExpressionValue[] = [];
@@ -1617,9 +1622,12 @@ export function evalFunctionInvocationValue(
  * @param expr Unary expression
  * @returns The value of the evaluated expression
  */
-export function evalMacroTimeFunctionInvocationValue(
-  context: IEvaluationContext,
-  funcExpr: MacroTimeFunctionInvocation
+export function evalMacroTimeFunctionInvocationValue<
+  TInstruction extends TypedObject,
+  TToken extends CommonTokenType
+>(
+  context: IEvaluationContext<TInstruction, TToken>,
+  funcExpr: MacroTimeFunctionInvocation<TInstruction, TToken>
 ): IExpressionValue {
   switch (funcExpr.functionName.toLowerCase()) {
     case "def":

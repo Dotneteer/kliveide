@@ -1,30 +1,37 @@
-import type { ErrorCodes } from "./assembler-errors";
-import type { Expression, NodePosition, Z80AssemblyLine } from "./assembler-tree-nodes";
-import type {
+import type { ErrorCodes } from "../z80-compiler/assembler-errors";
+import type { SymbolInfoMap } from "../z80-compiler/assembly-symbols";
+
+import { AssemblyModule } from "../z80-compiler/assembly-module";
+import { ExpressionEvaluator } from "../z80-compiler/expressions";
+import {
   FixupType,
   IEvaluationContext,
-} from "./assembler-types";
-import type { SymbolInfoMap } from "./assembly-symbols";
-
-import { AssemblyModule } from "./assembly-module";
-import { ExpressionEvaluator } from "./expressions";
-import { IExpressionValue, IValueInfo, SymbolType } from "@main/compiler-common/abstractions";
+  IExpressionValue,
+  IValueInfo,
+  SymbolType,
+  TypedObject
+} from "@main/compiler-common/abstractions";
+import { AssemblyLine, Expression, NodePosition } from "@main/compiler-common/tree-nodes";
+import { CommonTokenType } from "@main/compiler-common/common-tokens";
 
 /**
  * This class represents a fixup that recalculates and replaces
  * unresolved symbol value at the end of the compilation
  */
-export class FixupEntry extends ExpressionEvaluator {
+export class FixupEntry<
+  TInstruction extends TypedObject,
+  TToken extends CommonTokenType
+> extends ExpressionEvaluator<TInstruction, TToken> {
   private readonly _symbols: Record<string, IValueInfo>;
 
   constructor(
-    public readonly parentContext: IEvaluationContext,
-    public readonly module: AssemblyModule,
-    public readonly sourceLine: Z80AssemblyLine,
+    public readonly parentContext: IEvaluationContext<TInstruction, TToken>,
+    public readonly module: AssemblyModule<TInstruction, TToken>,
+    public readonly sourceLine: AssemblyLine<TInstruction>,
     public readonly type: FixupType,
     public readonly segmentIndex: number,
     public readonly offset: number,
-    public readonly expression: Expression,
+    public readonly expression: Expression<TInstruction, TToken>,
     public readonly label: string | null = null,
     public readonly structBytes: Map<number, number> | null = null
   ) {
@@ -40,7 +47,7 @@ export class FixupEntry extends ExpressionEvaluator {
   /**
    * Gets the source line the evaluation context is bound to
    */
-  getSourceLine(): Z80AssemblyLine {
+  getSourceLine(): AssemblyLine<TInstruction> {
     return this.sourceLine;
   }
 
@@ -48,7 +55,7 @@ export class FixupEntry extends ExpressionEvaluator {
    * Sets the source line the evaluation context is bound to
    * @param sourceLine Source line information
    */
-  setSourceLine(_sourceLine: Z80AssemblyLine): void {
+  setSourceLine(_sourceLine: AssemblyLine<TInstruction>): void {
     // --- The constructor already sets the source line
   }
 
@@ -98,7 +105,7 @@ export class FixupEntry extends ExpressionEvaluator {
    * @param parameters Optional error parameters
    */
   reportEvaluationError(
-    context: IEvaluationContext,
+    context: IEvaluationContext<TInstruction, TToken>,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
@@ -106,7 +113,7 @@ export class FixupEntry extends ExpressionEvaluator {
     this.parentContext.reportEvaluationError(context, code, node, ...parameters);
   }
 
-  private static snapshotVars(module: AssemblyModule): Record<string, IValueInfo> {
+  private static snapshotVars(module: AssemblyModule<any, any>): Record<string, IValueInfo> {
     let snapshot = module.parentModule ? FixupEntry.snapshotVars(module.parentModule) : {};
 
     const varsFilter = (s: SymbolInfoMap) => (k: string) => s[k].type === SymbolType.Var;

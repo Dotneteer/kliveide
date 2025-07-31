@@ -1,34 +1,39 @@
-import { IAssemblySymbolInfo, IValueInfo } from "@main/compiler-common/abstractions";
-import type {
+import {
+  IAssemblySymbolInfo,
   IMacroDefinition,
   IStructDefinition,
-} from "./assembler-types";
+  IValueInfo,
+  TypedObject
+} from "@main/compiler-common/abstractions";
 import type { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 
 import { ExpressionValue } from "./expressions";
-import { FixupEntry } from "./fixups";
+import { FixupEntry } from "../compiler-common/fixups";
+import { CommonTokenType } from "@main/compiler-common/common-tokens";
 
 /**
  * This class represents an assembly module that my contain child
  * modules and symbols.
  */
-export class AssemblyModule implements ISymbolScope {
-  constructor (
-    public readonly parentModule: AssemblyModule | null,
+export class AssemblyModule<TInstruction extends TypedObject, TToken extends CommonTokenType>
+  implements ISymbolScope<TInstruction, TToken>
+{
+  constructor(
+    public readonly parentModule: AssemblyModule<TInstruction, TToken> | null,
     private readonly caseSensitive: boolean
   ) {}
 
   /**
    * Gets the root (global) module
    */
-  get rootModule (): AssemblyModule {
+  get rootModule(): AssemblyModule<TInstruction, TToken> {
     return this.parentModule === null ? this : this.parentModule.rootModule;
   }
 
   /**
    * Child modules within this module
    */
-  readonly nestedModules: Record<string, AssemblyModule> = {};
+  readonly nestedModules: Record<string, AssemblyModule<TInstruction, TToken>> = {};
 
   /**
    * The symbol table with properly defined symbols
@@ -43,24 +48,24 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * The map of macro definitions within the module
    */
-  readonly macros: Record<string, IMacroDefinition> = {};
+  readonly macros: Record<string, IMacroDefinition<TInstruction>> = {};
 
   /**
    *  The list of fixups to resolve in the last phase of the compilation
    */
-  readonly fixups: FixupEntry[] = [];
+  readonly fixups: FixupEntry<TInstruction, TToken>[] = [];
 
   /**
    * Local symbol scopes
    */
-  readonly localScopes: SymbolScope[] = [];
+  readonly localScopes: SymbolScope<TInstruction, TToken>[] = [];
 
   /**
    * Adds a symbol to this scope
    * @param name Symbol name
    * @param symbol Symbol data
    */
-  addSymbol (name: string, symbol: IAssemblySymbolInfo): void {
+  addSymbol(name: string, symbol: IAssemblySymbolInfo): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -70,7 +75,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified symbol has been defined
    */
-  containsSymbol (name: string): boolean {
+  containsSymbol(name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -82,7 +87,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Symbol name
    * @returns The symbol information, if found; otherwise, undefined.
    */
-  getSymbol (name: string): IAssemblySymbolInfo | undefined {
+  getSymbol(name: string): IAssemblySymbolInfo | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -94,7 +99,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Struct name
    * @param struct Struct data
    */
-  addStruct (name: string, struct: IStructDefinition): void {
+  addStruct(name: string, struct: IStructDefinition): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -104,7 +109,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified struct has been defined
    */
-  containsStruct (name: string): boolean {
+  containsStruct(name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -116,7 +121,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Struct name
    * @returns The struct information, if found; otherwise, undefined.
    */
-  getStruct (name: string): IStructDefinition | undefined {
+  getStruct(name: string): IStructDefinition | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -128,7 +133,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Macro name
    * @param macro Macro data
    */
-  addMacro (name: string, macro: IMacroDefinition): void {
+  addMacro(name: string, macro: IMacroDefinition<TInstruction>): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -138,7 +143,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified macro has been defined
    */
-  containsMacro (name: string): boolean {
+  containsMacro(name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -150,7 +155,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Macro name
    * @returns The macro information, if found; otherwise, undefined.
    */
-  getMacro (name: string): IMacroDefinition | undefined {
+  getMacro(name: string): IMacroDefinition<TInstruction> | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -162,7 +167,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Module name
    * @param module Module data
    */
-  addNestedModule (name: string, module: AssemblyModule): void {
+  addNestedModule(name: string, module: AssemblyModule<TInstruction, TToken>): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -172,7 +177,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Tests if the specified nested module has been defined
    */
-  containsNestedModule (name: string): boolean {
+  containsNestedModule(name: string): boolean {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -184,7 +189,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Module name
    * @returns The module information, if found; otherwise, undefined.
    */
-  getNestedModule (name: string): AssemblyModule | undefined {
+  getNestedModule(name: string): AssemblyModule<TInstruction, TToken> | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -197,9 +202,9 @@ export class AssemblyModule implements ISymbolScope {
    * @returns Null, if the symbol cannot be found; otherwise, the symbols value and usage
    * information
    */
-  resolveSimpleSymbol (symbol: string): IValueInfo | null {
+  resolveSimpleSymbol(symbol: string): IValueInfo | null {
     // --- Iterate through all modules from the innermost to the outermost
-    let currentModule: AssemblyModule | null = this;
+    let currentModule: AssemblyModule<TInstruction, TToken> | null = this;
     while (currentModule) {
       const valueFound = resolveInModule(currentModule, symbol);
       if (valueFound) {
@@ -212,8 +217,8 @@ export class AssemblyModule implements ISymbolScope {
     return null;
 
     // --- Checks the specified module for a symbol
-    function resolveInModule (
-      module: AssemblyModule,
+    function resolveInModule(
+      module: AssemblyModule<TInstruction, TToken>,
       symb: string
     ): IValueInfo | null {
       // --- Check the local scope in stack order
@@ -233,16 +238,11 @@ export class AssemblyModule implements ISymbolScope {
 
       // --- Check the global scope
       const symbolValue = module.getSymbol(symb);
-      return symbolValue
-        ? { value: symbolValue.value, usageInfo: symbolValue }
-        : null;
+      return symbolValue ? { value: symbolValue.value, usageInfo: symbolValue } : null;
     }
   }
 
-  resolveCompoundSymbol (
-    fullSymbol: string,
-    startFromGlobal: boolean
-  ): IValueInfo | null {
+  resolveCompoundSymbol(fullSymbol: string, startFromGlobal: boolean): IValueInfo | null {
     const symbolParts = fullSymbol.split(".");
     let symbol = symbolParts[0];
     const scopeSymbolNames = symbolParts.length > 0 ? symbolParts.slice(1) : [];

@@ -6,16 +6,16 @@ import type {
 
 import { Z80CompilerService } from "./z80-compiler-service";
 import { InputStream } from "../compiler-common/input-stream";
-import { TokenStream } from "./token-stream";
+import { TokenStream, Z80TokenType } from "./token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
-import { Node } from "@main/z80-compiler/assembler-tree-nodes";
+import { Z80Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { AppState } from "@common/state/AppState";
 
 /**
  * Wraps the built-in Klive Z80 Compiler
  */
 export class Z80Compiler implements IKliveCompiler {
-  private state: AppState;
+  private _state: AppState;
 
   /**
    * The unique ID of the compiler
@@ -50,8 +50,8 @@ export class Z80Compiler implements IKliveCompiler {
    */
   async lineCanHaveBreakpoint(line: string): Promise<boolean> {
     const is = new InputStream(line);
-    const ts = new TokenStream(is);
-    const parser = new Z80AsmParser(ts);
+    const ts = new TokenStream<Z80TokenType>(is);
+    const parser = new Z80AsmParser<Z80Node, Z80TokenType>(ts);
     const parsed = await parser.parseProgram();
     if (parser.errors.length > 0) {
       return false;
@@ -60,7 +60,11 @@ export class Z80Compiler implements IKliveCompiler {
       return false;
     }
     const parsedLine = parsed.assemblyLines[0];
-    return parsedLine && !restrictedNodes.includes(parsedLine.type);
+    return parsedLine && !restrictedNodes.includes(parsedLine.type as Z80Node["type"]);
+  }
+
+  get state(): AppState {
+    return this._state;
   }
 
   /**
@@ -68,11 +72,11 @@ export class Z80Compiler implements IKliveCompiler {
    * @param state State to forward to the compiler
    */
   setAppState(state: AppState): void {
-    this.state = state;
+    this._state = state;
   }
 }
 
-const restrictedNodes: Node["type"][] = [
+const restrictedNodes: Z80Node["type"][] = [
   "CommentOnlyLine",
   "LabelOnlyLine",
   "OrgPragma",
