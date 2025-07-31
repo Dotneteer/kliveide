@@ -1,19 +1,3 @@
-/**
- * Error message type description
- */
-type ErrorText = { [key: string]: string };
-
-/**
- * Describes the structure of error messages
- */
-export interface ParserErrorMessage {
-  code: ErrorCodes;
-  text: string;
-  position: number;
-  line: number;
-  column: number;
-}
-
 export type ErrorCodes =
   // --- Missing or faulty tokens
   | "Z0001"
@@ -160,7 +144,7 @@ export type ErrorCodes =
   // --- Others
   | "Z2000";
 
-export const errorMessages: ErrorText = {
+export const errorMessages: Record<string, string> = {
   // --- Missing or faulty tokens
   Z0001: "Invalid token at the end of the line: {0}",
   Z0002: "A line cannot start with this token: {0}",

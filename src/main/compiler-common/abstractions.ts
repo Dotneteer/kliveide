@@ -1,13 +1,35 @@
-import type {
+import { ExpressionValueType } from "@abstractions/CompilerInfo";
+import {
+  AssemblyLine,
   CompareBinPragma,
   Expression,
   IdentifierNode,
   NodePosition,
-  Statement,
-  Z80AssemblyLine
-} from "./assembler-tree-nodes";
-import type { ErrorCodes } from "./assembler-errors";
-import type { ExpressionValueType } from "@abstractions/CompilerInfo";
+  Statement
+} from "./tree-nodes";
+import { CommonTokenType } from "./common-tokens";
+
+export type TypedObject = { type: string };
+
+/**
+ * Describes the structure of error messages
+ */
+export interface ParserErrorMessage<T> {
+  code: T;
+  text: string;
+  position: number;
+  line: number;
+  column: number;
+}
+
+/**
+ * This enum defines the types of assembly symbols
+ */
+export enum SymbolType {
+  None,
+  Label,
+  Var
+}
 
 /**
  * Represents the value of an evaluated expression
@@ -95,19 +117,38 @@ export interface IValueInfo {
 }
 
 /**
+ * This class represents an assembly symbol
+ */
+export interface IAssemblySymbolInfo extends IHasUsageInfo {
+  readonly name: string;
+  readonly type: SymbolType;
+  value: IExpressionValue;
+
+  /**
+   * Tests if this symbol is a local symbol within a module.
+   */
+  readonly isModuleLocal: boolean;
+
+  /**
+   * Tests if this symbol is a short-term symbol.
+   */
+  readonly isShortTerm: boolean;
+}
+
+/**
  * Represents the context in which an expression is evaluated
  */
-export interface IEvaluationContext {
+export interface IEvaluationContext<TNode extends TypedObject, TToken extends CommonTokenType> {
   /**
    * Gets the source line the evaluation context is bound to
    */
-  getSourceLine(): Z80AssemblyLine;
+  getSourceLine(): AssemblyLine<TNode>;
 
   /**
    * Sets the source line the evaluation context is bound to
    * @param sourceLine Source line information
    */
-  setSourceLine(sourceLine: Z80AssemblyLine): void;
+  setSourceLine(sourceLine: AssemblyLine<TNode>): void;
 
   /**
    * Gets the current assembly address
@@ -132,8 +173,8 @@ export interface IEvaluationContext {
    * @param context: Evaluation context
    */
   doEvalExpression(
-    context: IEvaluationContext,
-    expr: Expression
+    context: IEvaluationContext<TNode, TToken>,
+    expr: Expression<TNode, TToken>
   ): IExpressionValue;
 
   /**
@@ -143,8 +184,8 @@ export interface IEvaluationContext {
    * @param parameters Optional error parameters
    */
   reportEvaluationError(
-    context: IEvaluationContext,
-    code: ErrorCodes,
+    context: IEvaluationContext<TNode, TToken>,
+    code: string,
     node: NodePosition,
     ...parameters: any[]
   ): void;
@@ -273,7 +314,7 @@ export type SourceMap = Record<number, IFileLine>;
  * Represents a compilation error
  */
 export interface IAssemblerErrorInfo {
-  readonly errorCode: ErrorCodes;
+  readonly errorCode: string;
   readonly filename: string;
   readonly line: number;
   readonly startPosition: number;
@@ -296,39 +337,6 @@ export interface IListFileItem {
   lineNumber: number;
   sourceText: string;
   isMacroInvocation: boolean;
-}
-
-/**
- * This enum defines the types of assembly symbols
- */
-export enum SymbolType {
-  None,
-  Label,
-  Var
-}
-
-/**
- * This class represents an assembly symbol
- */
-export interface IAssemblySymbolInfo extends IHasUsageInfo {
-  readonly name: string;
-  readonly type: SymbolType;
-  value: IExpressionValue;
-
-  /**
-   * Tests if this symbol is a local symbol within a module.
-   */
-  readonly isModuleLocal: boolean;
-
-  /**
-   * Tests if this symbol is a short-term symbol.
-   */
-  readonly isShortTerm: boolean;
-
-  /**
-   * Signs if the object has been used
-   */
-  isUsed: boolean;
 }
 
 /**
@@ -358,9 +366,9 @@ export type DefinitionSection = {
 /**
  * Represents the definition of a macro
  */
-export interface IMacroDefinition {
+export interface IMacroDefinition<TNode extends TypedObject> {
   readonly macroName: string;
-  readonly argNames: IdentifierNode[];
+  readonly argNames: IdentifierNode<TNode>[];
   readonly endLabel: string | null;
   readonly section: DefinitionSection;
 }
@@ -419,7 +427,7 @@ export interface IStructDefinition {
 /**
  * Represents the definition of an IF statement
  */
-export class IfDefinition {
+export class IfDefinition<TNode extends TypedObject, TToken extends CommonTokenType> {
   /**
    * The entire if section
    */
@@ -428,20 +436,20 @@ export class IfDefinition {
   /**
    * List of IF sections
    */
-  ifSections: IfSection[] = [];
+  ifSections: IfSection<TNode, TToken>[] = [];
 
   /**
    * Optional ELSE section
    */
-  elseSection?: IfSection;
+  elseSection?: IfSection<TNode, TToken>;
 }
 
 /**
  * Represents a section of an IF definition
  */
-export class IfSection {
-  constructor (
-    public readonly ifStatement: Statement,
+export class IfSection<TNode extends TypedObject, TToken extends CommonTokenType> {
+  constructor(
+    public readonly ifStatement: Statement<TNode, TToken>,
     firstLine: number,
     lastLine: number
   ) {
@@ -457,7 +465,7 @@ export class IfSection {
  * Represents a struct
  */
 export class StructDefinition implements IStructDefinition {
-  constructor (
+  constructor(
     public readonly structName: string,
     macroDefLine: number,
     macroEndLine: number,
@@ -486,7 +494,7 @@ export class StructDefinition implements IStructDefinition {
    * @param fieldName Field name
    * @param definition Field definition
    */
-  addField (fieldName: string, definition: IFieldDefinition): void {
+  addField(fieldName: string, definition: IFieldDefinition): void {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -498,7 +506,7 @@ export class StructDefinition implements IStructDefinition {
    * @param fieldName Name of the field to check
    * @returns True, if the struct contains the field; otherwise, false.
    */
-  containsField (fieldName: string): boolean {
+  containsField(fieldName: string): boolean {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -510,7 +518,7 @@ export class StructDefinition implements IStructDefinition {
    * @param name field name
    * @returns The field information, if found; otherwise, undefined.
    */
-  getField (fieldName: string): IFieldDefinition | undefined {
+  getField(fieldName: string): IFieldDefinition | undefined {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -521,9 +529,9 @@ export class StructDefinition implements IStructDefinition {
 /**
  * Information about binary comparison
  */
-export class BinaryComparisonInfo {
-  constructor (
-    public readonly comparePragma: CompareBinPragma,
+export class BinaryComparisonInfo<TNode extends TypedObject, TToken extends CommonTokenType> {
+  constructor(
+    public readonly comparePragma: CompareBinPragma<TNode, TToken>,
     public readonly segment: IBinarySegment,
     public readonly segmentLength: number
   ) {}

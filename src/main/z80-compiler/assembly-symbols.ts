@@ -1,7 +1,7 @@
+import { IAssemblySymbolInfo, IExpressionValue, SymbolType, TypedObject } from "@main/compiler-common/abstractions";
 import type { ErrorCodes } from "./assembler-errors";
-import type { IAssemblySymbolInfo, IExpressionValue } from "./assembler-types";
-import { SymbolType } from "./assembler-types";
-import { FixupEntry } from "./fixups";
+import { FixupEntry } from "../compiler-common/fixups";
+import { CommonTokenType } from "@main/compiler-common/common-tokens";
 
 /**
  * This class represents an assembly symbol
@@ -54,7 +54,7 @@ export class AssemblySymbolInfo implements IAssemblySymbolInfo {
 /**
  * Represents a symbol scope
  */
-export interface ISymbolScope {
+export interface ISymbolScope<TInstruction extends TypedObject, TToken extends CommonTokenType> {
   /**
    * The symbol table with properly defined symbols
    */
@@ -63,7 +63,7 @@ export interface ISymbolScope {
   /**
    *  The list of fixups to resolve in the last phase of the compilation
    */
-  readonly fixups: FixupEntry[];
+  readonly fixups: FixupEntry<TInstruction, TToken>[];
 
   /**
    * Adds a symbol to this scope
@@ -88,11 +88,11 @@ export interface ISymbolScope {
 /**
  * Represents a scope where local symbols are declared
  */
-export class SymbolScope implements ISymbolScope {
+export class SymbolScope<TInstruction extends TypedObject, TToken extends CommonTokenType> implements ISymbolScope<TInstruction, TToken> {
   private _errorsReported = new Set<ErrorCodes>();
 
   constructor(
-    public readonly ownerScope: SymbolScope | null,
+    public readonly ownerScope: SymbolScope<TInstruction, TToken> | null,
     private readonly caseSensitive: boolean
   ) {}
 
@@ -129,7 +129,7 @@ export class SymbolScope implements ISymbolScope {
   /**
    *  The list of fixups to resolve in the last phase of the compilation
    */
-  readonly fixups: FixupEntry[] = [];
+  readonly fixups: FixupEntry<TInstruction, TToken>[] = [];
 
   /**
    * Indicates if a break statement has been reached in this scope

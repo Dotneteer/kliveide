@@ -1,5 +1,5 @@
 import { AppState } from "@common/state/AppState";
-import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
+import { ISourceFileItem } from "@main/compiler-common/abstractions";
 
 /**
  * The type of the Spectrum model
