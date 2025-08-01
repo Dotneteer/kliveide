@@ -8,7 +8,6 @@ import type {
 } from "@abstractions/CompilerInfo";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import {
   ZXBC_DEBUG_ARRAY,
@@ -28,6 +27,7 @@ import {
 } from "./zxb-config";
 import { AppState } from "@common/state/AppState";
 import { CliRunner } from "@main/cli-integration/CliRunner";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler

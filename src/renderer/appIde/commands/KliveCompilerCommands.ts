@@ -14,7 +14,6 @@ import {
   toHexa4
 } from "@renderer/appIde/services/ide-commands";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { BinaryReader } from "@utils/BinaryReader";
 import { TapReader } from "@emu/machines/tape/TapReader";
 import { TzxReader } from "@emu/machines/tape/TzxReader";
@@ -33,6 +32,7 @@ import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "../utils/compiler-utils";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 

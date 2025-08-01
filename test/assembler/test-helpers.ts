@@ -1,13 +1,13 @@
 import path from "path";
 import { expect } from "vitest";
 import { Z80Assembler } from "@main/z80-compiler/assembler";
-import { ErrorCodes } from "@main/z80-compiler/assembler-errors";
 import {
   AssemblerOptions,
   AssemblerOutput
 } from "@main/z80-compiler/assembler-in-out";
-import { SymbolValueMap } from "@main/z80-compiler/assembler-types";
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
+import { SymbolValueMap } from "@main/compiler-common/abstractions";
+import { ErrorCodes } from "@main/compiler-common/assembler-errors";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 export async function testExpression (
   source: string,

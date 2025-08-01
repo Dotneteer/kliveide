@@ -2,7 +2,6 @@ import path from "path";
 
 import type { ErrorCodes } from "../compiler-common/assembler-errors";
 
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { AssemblyModule } from "./assembly-module";
 import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolValueMap } from "@main/compiler-common/abstractions";
 import { Z80Instruction } from "./assembler-tree-nodes";
@@ -45,7 +44,7 @@ export class AssemblerOutput extends AssemblyModule<Z80Instruction, Z80TokenType
   /**
    * The type of Spectrum model to use
    */
-  modelType?: SpectrumModelType;
+  modelType?: number;
 
   /**
    * Entry address of the code
@@ -285,7 +284,7 @@ export class AssemblerOptions {
   /**
    * The current ZX Spectrum model
    */
-  currentModel: SpectrumModelType = SpectrumModelType.Spectrum48;
+  currentModel: number = 1; // Spectrum 48
 
   /**
    * The maximum number of errors to report within a loop

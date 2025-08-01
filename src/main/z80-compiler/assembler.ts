@@ -52,7 +52,7 @@ import { AssemblyModule } from "./assembly-module";
 import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionEvaluator, ExpressionValue, setRandomSeed } from "./expressions";
 import { FixupEntry } from "../compiler-common/fixups";
-import { ExpressionValueType, SpectrumModelType } from "@abstractions/CompilerInfo";
+import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {
   BinaryComparisonInfo,
   FixupType,
@@ -124,6 +124,7 @@ import {
   XentPragma,
   XorgPragma
 } from "@main/compiler-common/tree-nodes";
+import { findModelTypeByName, SpectrumModelType, SpectrumModelTypes } from "./SpectrumModelTypes";
 
 /**
  * The file name of a direct text compilation
@@ -706,7 +707,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
               processOps.ops = false;
             } else {
               const refModel = this._output.modelType ?? this._options.currentModel;
-              const modelName = SpectrumModelType[refModel].toUpperCase();
+              const modelName = SpectrumModelTypes[refModel].toUpperCase();
               const contains = modelName === directive.identifier.name.toUpperCase();
               const negate = directive.type === "IfNModDirective";
               processOps.ops = (contains && !negate) || (!contains && negate);
@@ -764,23 +765,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
       return;
     }
 
-    let modelType: SpectrumModelType;
-    switch (pragma.modelId.toUpperCase()) {
-      case "SPECTRUM48":
-        modelType = SpectrumModelType.Spectrum48;
-        break;
-      case "SPECTRUM128":
-        modelType = SpectrumModelType.Spectrum128;
-        break;
-      case "SPECTRUMP3":
-        modelType = SpectrumModelType.SpectrumP3;
-        break;
-      case "NEXT":
-        modelType = SpectrumModelType.Next;
-        break;
-      default:
-        this.reportAssemblyError("Z0303", pragma);
-        return;
+    const modelType = findModelTypeByName(pragma.modelId);
+    if (!modelType) {
+      this.reportAssemblyError("Z0303", pragma, null, pragma.modelId);
+      return;
     }
     this._output.modelType = modelType;
   }

@@ -8,7 +8,6 @@ import {
   IKliveCompiler,
   KliveCompilerOutput,
   ListFileItem,
-  SpectrumModelType
 } from "@abstractions/CompilerInfo";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
@@ -156,7 +155,7 @@ export class SjasmPCompiler implements IKliveCompiler {
         errors: [],
         injectOptions: { subroutine: true },
         segments,
-        modelType: SpectrumModelType.Spectrum48,
+        modelType: 1, // Spectrum 48
         sourceFileList,
         sourceMap,
         listFileItems
