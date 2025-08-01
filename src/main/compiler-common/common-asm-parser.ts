@@ -1,51 +1,8 @@
-import type {
-  SimpleZ80Instruction,
-  TestInstruction,
-  NextRegInstruction,
-  DjnzInstruction,
-  RstInstruction,
-  ImInstruction,
-  JrInstruction,
-  JpInstruction,
-  CallInstruction,
-  RetInstruction,
-  IncInstruction,
-  DecInstruction,
-  PushInstruction,
-  PopInstruction,
-  Z80InstructionWithTwoOperands,
-  LdInstruction,
-  Z80InstructionWithOneOperand,
-  ExInstruction,
-  AddInstruction,
-  AdcInstruction,
-  SbcInstruction,
-  BitInstruction,
-  Z80InstructionWithOneOrTwoOperands,
-  SubInstruction,
-  AndInstruction,
-  XorInstruction,
-  CpInstruction,
-  InInstruction,
-  OutInstruction,
-  RlcInstruction,
-  RrcInstruction,
-  RlInstruction,
-  RrInstruction,
-  SlaInstruction,
-  SraInstruction,
-  SllInstruction,
-  SrlInstruction,
-  OrInstruction,
-  Z80InstructionWithTwoOrThreeOperands,
-  ResInstruction,
-  SetInstruction,
-} from "./assembler-tree-nodes";
 import type { ErrorCodes } from "./assembler-errors";
 
-import { TokenStream, Z80Tokens } from "./token-stream";
+import { TokenStream, Z80Tokens } from "./common-token-stream";
 import { errorMessages } from "./assembler-errors";
-import { ParserError } from "../compiler-common/parse-errors";
+import { ParserError } from "./parse-errors";
 import { convertSpectrumString } from "./utils";
 import { ParserErrorMessage, TypedObject } from "../compiler-common/abstractions";
 import { CommonTokens, CommonTokenType, TokenTraits } from "@main/compiler-common/common-tokens";
@@ -140,9 +97,8 @@ import {
   BooleanLiteral,
   CurrentCounterLiteral,
   IntegerLiteral,
-  RealLiteral,
+  RealLiteral
 } from "@main/compiler-common/tree-nodes";
-import { z80TokenTraits } from "./token-traits";
 
 /**
  * Size of an assembly batch. After this batch, the assembler lets the
@@ -153,7 +109,10 @@ const PARSER_BATCH_SIZE = 1000;
 /**
  * This class implements the Z80 assembly parser
  */
-export class Z80AsmParser<TInstruction extends TypedObject, TToken extends CommonTokenType> {
+export abstract class CommonAsmParser<
+  TInstruction extends TypedObject,
+  TToken extends CommonTokenType
+> {
   private readonly _parseErrors: ParserErrorMessage<ErrorCodes>[] = [];
   private readonly _macroParamsCollected: MacroParameter<TInstruction>[] = [];
 
@@ -170,6 +129,22 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
     private readonly fileIndex = 0,
     private readonly macroEmitPhase = false
   ) {}
+
+  /**
+   * Gets the token traits for the specified token type
+   * @param type Token type to get the traits for
+   */
+  protected abstract getTokenTraits(type: CommonTokenType): TokenTraits;
+
+  /**
+   * instruction
+   *   : simpleInstruction
+   *   | compoundInstruction
+   *   ;
+   */
+  protected abstract parseInstruction(
+    parsePoint: ParsePoint<TToken>
+  ): PartialAssemblyLine<TInstruction> | null;
 
   /**
    * The errors raised during the parse phase
@@ -196,10 +171,6 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
         return;
       }
     } while (token.type !== CommonTokens.Eof);
-  }
-
-  getTokenTraits(type: CommonTokenType): TokenTraits {
-    return z80TokenTraits.get(type) ?? {};
   }
 
   /**
@@ -762,311 +733,6 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
       }
     }
     return null;
-  }
-
-  /**
-   * instruction
-   *   : simpleInstruction
-   *   | compoundInstruction
-   *   ;
-   */
-  private parseInstruction(parsePoint: ParsePoint<TToken>): PartialAssemblyLine<TInstruction> | null {
-    const { traits } = parsePoint;
-    return traits.simple
-      ? this.parseSimpleInstruction(parsePoint)
-      : this.parseCompoundInstruction(parsePoint);
-  }
-
-  /**
-   * simpleInstruction
-   *   : NOP
-   *   | RLCA
-   *   | RRCA
-   *   | RLA
-   *   | RRA
-   *   | DAA
-   *   | CPL
-   *   | SCF
-   *   | CCF
-   *   | HALT
-   *   | EXX
-   *   | DI
-   *   | EI
-   *   | NEG
-   *   | RETN
-   *   | RETI
-   *   | RLD
-   *   | RRD
-   *   | LDI
-   *   | CPI
-   *   | INI
-   *   | OUTI
-   *   | LDD
-   *   | CPD
-   *   | IND
-   *   | OUTD
-   *   | LDIR
-   *   | CPIR
-   *   | INIR
-   *   | OTIR
-   *   | LDDR
-   *   | CPDR
-   *   | INDR
-   *   | OTDR
-   *   | LDIX
-   *   | LDWS
-   *   | LDIRX
-   *   | LDDX
-   *   | LDDRX
-   *   | LDPIRX
-   *   | OUTINB
-   *   | SWAPNIB
-   *   | PIXELDN
-   *   | PIXELAD
-   *   | SETAE
-   *   ;
-   */
-  private parseSimpleInstruction(parsePoint: ParsePoint<TToken>): SimpleZ80Instruction | null {
-    this.tokens.get();
-    return {
-      type: "SimpleZ80Instruction",
-      mnemonic: parsePoint.start.text.toUpperCase()
-    };
-  }
-
-  /**
-   *
-   * @param parsePoint
-   */
-  private parseCompoundInstruction(
-    parsePoint: ParsePoint<TToken>
-  ): PartialAssemblyLine<TInstruction> | null {
-    const { start } = parsePoint;
-    const parser = this;
-    this.tokens.get();
-    switch (start.type) {
-      case Z80Tokens.Ld:
-        return twoOperands<LdInstruction>("LdInstruction");
-
-      case Z80Tokens.Inc:
-        return <IncInstruction>oneOperand("IncInstruction");
-
-      case Z80Tokens.Dec:
-        return <DecInstruction>oneOperand("DecInstruction");
-
-      case Z80Tokens.Ex:
-        return twoOperands<ExInstruction>("ExInstruction");
-
-      case Z80Tokens.Add:
-        return oneOrTwoOperands<AddInstruction>("AddInstruction");
-
-      case Z80Tokens.Adc:
-        return oneOrTwoOperands<AdcInstruction>("AdcInstruction");
-
-      case Z80Tokens.Sub:
-        return oneOrTwoOperands<SubInstruction>("SubInstruction");
-
-      case Z80Tokens.Sbc:
-        return oneOrTwoOperands<SbcInstruction>("SbcInstruction");
-
-      case Z80Tokens.And:
-        return oneOrTwoOperands<AndInstruction>("AndInstruction");
-
-      case Z80Tokens.Xor:
-        return oneOrTwoOperands<XorInstruction>("XorInstruction");
-
-      case Z80Tokens.Or:
-        return oneOrTwoOperands<OrInstruction>("OrInstruction");
-
-      case Z80Tokens.Cp:
-        return oneOrTwoOperands<CpInstruction>("CpInstruction");
-
-      case Z80Tokens.Djnz:
-        const djnzTarget = this.getOperand();
-        return <DjnzInstruction>{
-          type: "DjnzInstruction",
-          target: djnzTarget
-        };
-
-      case Z80Tokens.Jr:
-        return oneOrTwoOperands<JrInstruction>("JrInstruction");
-
-      case Z80Tokens.Jp:
-        return oneOrTwoOperands<JpInstruction>("JpInstruction");
-
-      case Z80Tokens.Call:
-        return oneOrTwoOperands<CallInstruction>("CallInstruction");
-
-      case Z80Tokens.Ret:
-        let retCondition: Operand<TInstruction, TToken> = this.parseOperand();
-        return <RetInstruction>{
-          type: "RetInstruction",
-          condition: retCondition
-        };
-
-      case Z80Tokens.Rst:
-        return <RstInstruction>{
-          type: "RstInstruction",
-          target: this.getOperand()
-        };
-
-      case Z80Tokens.Push:
-        return <PushInstruction>oneOperand("PushInstruction");
-
-      case Z80Tokens.Pop:
-        return <PopInstruction>oneOperand("PopInstruction");
-
-      case Z80Tokens.In:
-        return oneOrTwoOperands<InInstruction>("InInstruction");
-
-      case Z80Tokens.Out:
-        return oneOrTwoOperands<OutInstruction>("OutInstruction");
-
-      case Z80Tokens.Im:
-        return <ImInstruction>{
-          type: "ImInstruction",
-          mode: this.getOperand()
-        };
-
-      case Z80Tokens.Rlc:
-        return oneOrTwoOperands<RlcInstruction>("RlcInstruction");
-
-      case Z80Tokens.Rrc:
-        return oneOrTwoOperands<RrcInstruction>("RrcInstruction");
-
-      case Z80Tokens.Rl:
-        return oneOrTwoOperands<RlInstruction>("RlInstruction");
-
-      case Z80Tokens.Rr:
-        return oneOrTwoOperands<RrInstruction>("RrInstruction");
-
-      case Z80Tokens.Sla:
-        return oneOrTwoOperands<SlaInstruction>("SlaInstruction");
-
-      case Z80Tokens.Sra:
-        return oneOrTwoOperands<SraInstruction>("SraInstruction");
-
-      case Z80Tokens.Sll:
-        return oneOrTwoOperands<SllInstruction>("SllInstruction");
-
-      case Z80Tokens.Srl:
-        return oneOrTwoOperands<SrlInstruction>("SrlInstruction");
-
-      case Z80Tokens.Bit:
-        return twoOperands<BitInstruction>("BitInstruction");
-
-      case Z80Tokens.Res:
-        return twoOrThreeOperands<ResInstruction>("ResInstruction");
-
-      case Z80Tokens.Set:
-        return twoOrThreeOperands<SetInstruction>("SetInstruction");
-
-      case Z80Tokens.Mul:
-        parser.expectToken(Z80Tokens.D, "Z0104");
-        parser.expectToken(Z80Tokens.Comma, "Z0003");
-        parser.expectToken(Z80Tokens.E, "Z0105");
-        return <SimpleZ80Instruction>{
-          type: "SimpleZ80Instruction",
-          mnemonic: "mul"
-        };
-
-      case Z80Tokens.Mirror:
-        this.expectToken(Z80Tokens.A, "Z0101");
-        return <SimpleZ80Instruction>{
-          type: "SimpleZ80Instruction",
-          mnemonic: "mirror"
-        };
-
-      case Z80Tokens.NextReg:
-        return twoOperands<NextRegInstruction>("NextRegInstruction");
-
-      case Z80Tokens.Test:
-        return <TestInstruction>{
-          type: "TestInstruction",
-          expr: this.getExpression()
-        };
-
-      case Z80Tokens.Bsla:
-        return expectDeAndB("bsla");
-
-      case Z80Tokens.Bsra:
-        return expectDeAndB("bsra");
-
-      case Z80Tokens.Bsrl:
-        return expectDeAndB("bsrl");
-
-      case Z80Tokens.Bsrf:
-        return expectDeAndB("bsrf");
-
-      case Z80Tokens.Brlc:
-        return expectDeAndB("brlc");
-    }
-    return null;
-
-    function oneOperand<T extends Z80InstructionWithOneOperand>(
-      instrType: TInstruction["type"]
-    ): T | null {
-      return {
-        type: instrType,
-        operand: parser.getOperand()
-      } as unknown as T;
-    }
-
-    function twoOperands<T extends Z80InstructionWithTwoOperands>(
-      instrType: TInstruction["type"]
-    ): T | null {
-      const operand1 = parser.getOperand();
-      parser.expectToken(Z80Tokens.Comma, "Z0003");
-      const operand2 = parser.getOperand();
-      return {
-        type: instrType,
-        operand1,
-        operand2
-      } as unknown as T;
-    }
-
-    function oneOrTwoOperands<T extends Z80InstructionWithOneOrTwoOperands>(
-      instrType: TInstruction["type"]
-    ): T | null {
-      const operand1 = parser.getOperand();
-      let operand2: Operand<TInstruction, TToken> | undefined = undefined;
-      if (parser.skipToken(Z80Tokens.Comma)) {
-        operand2 = parser.getOperand();
-      }
-      return {
-        type: instrType,
-        operand1,
-        operand2
-      } as unknown as T;
-    }
-
-    function twoOrThreeOperands<T extends Z80InstructionWithTwoOrThreeOperands>(
-      instrType: TInstruction["type"]
-    ): T | null {
-      const operand1 = parser.getOperand();
-      parser.expectToken(Z80Tokens.Comma, "Z0003");
-      const operand2 = parser.getOperand();
-      let operand3: Operand<TInstruction, TToken> | undefined = undefined;
-      if (parser.skipToken(Z80Tokens.Comma)) {
-        operand3 = parser.getOperand();
-      }
-      return {
-        type: instrType,
-        operand1,
-        operand2,
-        operand3
-      } as unknown as T;
-    }
-
-    function expectDeAndB(mnemonic: string): SimpleZ80Instruction {
-      parser.expectToken(Z80Tokens.DE, "Z0103");
-      parser.expectToken(Z80Tokens.Comma, "Z0003");
-      parser.expectToken(Z80Tokens.B, "Z0102");
-      return <SimpleZ80Instruction>{
-        type: "SimpleZ80Instruction",
-        mnemonic
-      };
-    }
   }
 
   /**
@@ -2242,7 +1908,9 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
   /**
    * Parses parse-time function invocations
    */
-  private parseParseTimeFunctionInvocation(parsePoint: ParsePoint<TToken>): Expression<TInstruction, TToken> | null {
+  private parseParseTimeFunctionInvocation(
+    parsePoint: ParsePoint<TToken>
+  ): Expression<TInstruction, TToken> | null {
     const { start } = parsePoint;
     this.tokens.get();
     this.expectToken(CommonTokens.LPar, "Z0004");
@@ -2344,7 +2012,9 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
    *   : ( "+" | "-" | "~" | "!" ) expr
    *   ;
    */
-  private parseUnaryExpr(parsePoint: ParsePoint<TToken>): UnaryExpression<TInstruction, TToken> | null {
+  private parseUnaryExpr(
+    parsePoint: ParsePoint<TToken>
+  ): UnaryExpression<TInstruction, TToken> | null {
     // --- Obtain and skip the operator token
     const operator = parsePoint.start.text;
     this.tokens.get();
@@ -2661,7 +2331,11 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
    * @param token Token that represents the error's position
    * @param options Error message options
    */
-  private reportError(errorCode: ErrorCodes, token?: Token<CommonTokenType>, options?: any[]): void {
+  private reportError(
+    errorCode: ErrorCodes,
+    token?: Token<CommonTokenType>,
+    options?: any[]
+  ): void {
     let errorText: string = errorMessages[errorCode] ?? "Unkonwn error";
     if (options) {
       options.forEach(
@@ -2710,7 +2384,7 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
   /**
    * Gets an identifier node
    */
-  private getIdentifier(): IdentifierNode<TInstruction> { 
+  private getIdentifier(): IdentifierNode<TInstruction> {
     const idToken = this.tokens.get();
     if (idToken.type !== CommonTokens.Identifier) {
       this.reportError("Z0107");
@@ -2773,18 +2447,6 @@ export class Z80AsmParser<TInstruction extends TypedObject, TToken extends Commo
       }
     }
     return expressions;
-  }
-
-  /**
-   * Gets a mandatory operand
-   */
-  private getOperand(): Operand<TInstruction, TToken> | null {
-    const operand = this.parseOperand();
-    if (operand) {
-      return operand;
-    }
-    this.reportError("Z0113");
-    return null;
   }
 
   /**
