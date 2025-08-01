@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { codeRaisesError, testCodeEmit, testCodeEmitWithOptions } from "./test-helpers";
-import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 describe("Assembler - macro parameter emit", async () => {
   it("fails in global scope", async () => {

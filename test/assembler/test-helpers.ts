@@ -1,15 +1,15 @@
 import path from "path";
 import { expect } from "vitest";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
-import {
-  AssemblerOptions,
-  AssemblerOutput
-} from "@main/z80-compiler/assembler-in-out";
 import { SymbolValueMap } from "@main/compiler-common/abstractions";
 import { ErrorCodes } from "@main/compiler-common/assembler-errors";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { AssemblerOptions, AssemblerOutput } from "@main/compiler-common/assembler-in-out";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
+import { Z80NCpu } from "@emu/z80/Z80NCpu";
+import { Z80Node } from "@main/z80-compiler/assembler-tree-nodes";
+import { Z80TokenType } from "@main/z80-compiler/z80-token-stream";
 
-export async function testExpression (
+export async function testExpression(
   source: string,
   value: number | boolean | string | null,
   symbols?: SymbolValueMap
@@ -51,7 +51,7 @@ export async function testExpression (
   }
 }
 
-export async function expressionFails (
+export async function expressionFails(
   source: string,
   symbols?: SymbolValueMap,
   ...params: [ErrorCodes?, string?][]
@@ -74,18 +74,13 @@ export async function expressionFails (
       const code: ErrorCodes = entry[0] ?? "Z0606";
       expect(output.errors[i].errorCode === code).toBe(true);
       if (entry[1]) {
-        expect(
-          output.errors[i].message.indexOf(entry[1])
-        ).toBeGreaterThanOrEqual(0);
+        expect(output.errors[i].message.indexOf(entry[1])).toBeGreaterThanOrEqual(0);
       }
     }
   }
 }
 
-export async function testCodeEmit (
-  source: string,
-  ...bytes: number[]
-): Promise<void> {
+export async function testCodeEmit(source: string, ...bytes: number[]): Promise<void> {
   const compiler = new Z80Assembler();
 
   const output = await compiler.compile(source);
@@ -97,10 +92,7 @@ export async function testCodeEmit (
   }
 }
 
-export async function testFlexibleCodeEmit (
-  source: string,
-  ...bytes: number[]
-): Promise<void> {
+export async function testFlexibleCodeEmit(source: string, ...bytes: number[]): Promise<void> {
   const compiler = new Z80Assembler();
 
   const output = await compiler.compile(source, {
@@ -118,7 +110,7 @@ export async function testFlexibleCodeEmit (
   }
 }
 
-export async function testCodeEmitWithOptions (
+export async function testCodeEmitWithOptions(
   source: string,
   options: AssemblerOptions,
   ...bytes: number[]
@@ -134,10 +126,7 @@ export async function testCodeEmitWithOptions (
   }
 }
 
-export async function codeRaisesError (
-  source: string,
-  ...code: ErrorCodes[]
-): Promise<void> {
+export async function codeRaisesError(source: string, ...code: ErrorCodes[]): Promise<void> {
   const compiler = new Z80Assembler();
 
   const output = await compiler.compile(source);
@@ -147,7 +136,7 @@ export async function codeRaisesError (
   }
 }
 
-export async function codeRaisesErrorWithOptions (
+export async function codeRaisesErrorWithOptions(
   source: string,
   options: AssemblerOptions,
   code: ErrorCodes
@@ -159,33 +148,29 @@ export async function codeRaisesErrorWithOptions (
   expect(output.errors[0].errorCode === code).toBe(true);
 }
 
-export async function compileFileWorks (
+export async function compileFileWorks(
   filename: string
-): Promise<AssemblerOutput> {
+): Promise<AssemblerOutput<Z80Node, Z80TokenType>> {
   const output = await compileFile(filename);
   expect(output.errorCount).toBe(0);
   return output;
 }
 
-export async function compileFileFails (
-  filename: string,
-  code: ErrorCodes
-): Promise<void> {
+export async function compileFileFails(filename: string, code: ErrorCodes): Promise<void> {
   const output = await compileFile(filename);
   expect(output.errorCount).toBe(1);
   expect(output.errors[0].errorCode === code).toBe(true);
 }
 
-export async function compileFile (filename: string): Promise<AssemblerOutput> {
+export async function compileFile(
+  filename: string
+): Promise<AssemblerOutput<Z80Node, Z80TokenType>> {
   const fullname = path.join(__dirname, "../testfiles", filename);
   const assembler = new Z80Assembler();
   return await assembler.compileFile(fullname);
 }
 
-export async function testCodeFileEmit (
-  filename: string,
-  ...bytes: number[]
-): Promise<void> {
+export async function testCodeFileEmit(filename: string, ...bytes: number[]): Promise<void> {
   const output = await compileFile(filename);
   expect(output.errorCount).toBe(0);
   expect(output.segments.length).toBe(1);

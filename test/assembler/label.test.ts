@@ -1,11 +1,11 @@
 import { describe, it } from "vitest";
-import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
 import {
   codeRaisesError,
   codeRaisesErrorWithOptions,
   testCodeEmit,
   testCodeEmitWithOptions
 } from "./test-helpers";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 
 describe("Assembler - labels", async () => {
   it("hanging label", async () => {

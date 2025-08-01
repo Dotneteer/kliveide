@@ -1,7 +1,7 @@
+import { SymbolValueMap } from "@main/compiler-common/abstractions";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { describe, it, expect } from "vitest";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
-import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
-import { SymbolValueMap } from "@main/z80-compiler/assembler-types";
 
 describe("Assembler - literals", async () => {
   const decimalLiterals = [

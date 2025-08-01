@@ -1,7 +1,7 @@
 import { describe, it} from "vitest";
-import { SymbolValueMap } from "@main/z80-compiler/assembler-types";
-import { ExpressionValue } from "@main/z80-compiler/expressions";
 import { expressionFails, testExpression } from "./test-helpers";
+import { SymbolValueMap } from "@main/compiler-common/abstractions";
+import { ExpressionValue } from "@main/compiler-common/expressions";
 
 describe("Assembler - expressions", async () => {
   it("Known symbol evaluates to its value", async () => {

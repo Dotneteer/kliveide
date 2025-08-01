@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 describe("Assembler - regression cases", async () => {
   it("Characters are just like numbers", async () => {

@@ -1,16 +1,18 @@
 import path from "path";
 
-import type { ErrorCodes } from "../compiler-common/assembler-errors";
+import type { ErrorCodes } from "./assembler-errors";
 
 import { AssemblyModule } from "./assembly-module";
-import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolValueMap } from "@main/compiler-common/abstractions";
-import { Z80Instruction } from "./assembler-tree-nodes";
-import { Z80TokenType } from "./z80-token-stream";
+import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolValueMap, TypedObject } from "@main/compiler-common/abstractions";
+import { CommonTokenType } from "./common-tokens";
 
 /**
  * This class represents the output of the Z80 assembler
  */
-export class AssemblerOutput extends AssemblyModule<Z80Instruction, Z80TokenType> {
+export class AssemblerOutput<
+  TInstruction extends TypedObject,
+  TToken extends CommonTokenType
+> extends AssemblyModule<TInstruction, TToken> {
   constructor (
     public readonly sourceItem: SourceFileItem,
     caseSensitive: boolean

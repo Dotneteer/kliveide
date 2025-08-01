@@ -44,9 +44,9 @@ import type {
 } from "./assembler-tree-nodes";
 
 import { Z80TokenStream, Z80TokenType, Z80Tokens } from "./z80-token-stream";
-import { convertSpectrumString } from "./utils";
+import { convertSpectrumString } from "./z80-utils";
 import { CommonTokens, CommonTokenType, TokenTraits } from "@main/compiler-common/common-tokens";
-import { z80TokenTraits } from "./token-traits";
+import { z80TokenTraits } from "./z80-token-traits";
 import { CommonAsmParser, ParsePoint } from "@main/compiler-common/common-asm-parser";
 import { Expression, Operand, OperandType, PartialAssemblyLine } from "@main/compiler-common/tree-nodes";
 

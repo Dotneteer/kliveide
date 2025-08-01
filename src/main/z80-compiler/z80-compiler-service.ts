@@ -1,7 +1,7 @@
 import type { CompilerOptions, CompilerOutput } from "@abstractions/CompilerInfo";
 
-import { Z80Assembler } from "./assembler";
-import { AssemblerOptions } from "./assembler-in-out";
+import { Z80Assembler } from "./z80-assembler";
+import { AssemblerOptions } from "../compiler-common/assembler-in-out";
 
 /**
  * This class implements the operations of the Z80 Compiler service

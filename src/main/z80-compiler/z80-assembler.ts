@@ -40,17 +40,17 @@ import { errorMessages } from "../compiler-common/assembler-errors";
 import { InputStream } from "../compiler-common/input-stream";
 import { Z80TokenStream, Z80TokenType } from "./z80-token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
-import { convertSpectrumString, readTextFile } from "./utils";
+import { convertSpectrumString } from "./z80-utils";
 import {
   AssemblerErrorInfo,
   AssemblerOptions,
   AssemblerOutput,
   BinarySegment,
   SourceFileItem
-} from "./assembler-in-out";
-import { AssemblyModule } from "./assembly-module";
-import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
-import { ExpressionEvaluator, ExpressionValue, setRandomSeed } from "./expressions";
+} from "../compiler-common/assembler-in-out";
+import { AssemblyModule } from "../compiler-common/assembly-module";
+import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "../compiler-common/assembly-symbols";
+import { ExpressionEvaluator, ExpressionValue, setRandomSeed } from "../compiler-common/expressions";
 import { FixupEntry } from "../compiler-common/fixups";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {
@@ -125,6 +125,7 @@ import {
   XorgPragma
 } from "@main/compiler-common/tree-nodes";
 import { findModelTypeByName, SpectrumModelType, SpectrumModelTypes } from "./SpectrumModelTypes";
+import { readTextFile } from "@main/compiler-common/utils";
 
 /**
  * The file name of a direct text compilation
@@ -150,7 +151,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   private _options: AssemblerOptions;
 
   // --- Store the current output
-  private _output: AssemblerOutput;
+  private _output: AssemblerOutput<Z80Node, Z80TokenType>;
 
   // --- The current module
   private _currentModule: AssemblyModule<Z80Node, Z80TokenType>;
@@ -218,7 +219,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compileFile(filename: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
+  async compileFile(
+    filename: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput<Z80Node, Z80TokenType>> {
     const sourceText = readTextFile(filename);
     return await this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
@@ -230,7 +234,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compile(sourceText: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
+  async compile(
+    sourceText: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput<Z80Node, Z80TokenType>> {
     return await this.doCompile(new SourceFileItem(NO_FILE_ITEM), sourceText, options);
   }
 
@@ -269,10 +276,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     sourceItem: SourceFileItem,
     sourceText: string,
     options?: AssemblerOptions
-  ): Promise<AssemblerOutput> {
+  ): Promise<AssemblerOutput<Z80Node, Z80TokenType>> {
     this._options = options ?? new AssemblerOptions();
 
-    this._currentModule = this._output = new AssemblerOutput(
+    this._currentModule = this._output = new AssemblerOutput<Z80Node, Z80TokenType>(
       sourceItem,
       options?.useCaseSensitiveSymbols ?? false
     );
