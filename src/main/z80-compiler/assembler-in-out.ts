@@ -1,12 +1,12 @@
 import path from "path";
 
-import type { ErrorCodes } from "./assembler-errors";
+import type { ErrorCodes } from "../compiler-common/assembler-errors";
 
 import { SpectrumModelType } from "@abstractions/CompilerInfo";
 import { AssemblyModule } from "./assembly-module";
 import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolValueMap } from "@main/compiler-common/abstractions";
 import { Z80Instruction } from "./assembler-tree-nodes";
-import { Z80TokenType } from "./token-stream";
+import { Z80TokenType } from "./z80-token-stream";
 
 /**
  * This class represents the output of the Z80 assembler

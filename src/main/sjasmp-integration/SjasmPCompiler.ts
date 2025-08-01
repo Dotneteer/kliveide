@@ -18,8 +18,8 @@ import {
   SJASM_OUTPUT_FILE,
   SJASM_SLD_FILE
 } from "../../script-packages/sjasm/sjasm";
-import { ISourceFileItem } from "@main/z80-compiler/assembler-types";
 import { AppState } from "@common/state/AppState";
+import { ISourceFileItem } from "@main/compiler-common/abstractions";
 
 /**
  * Wraps the SjasmPlus compiler

@@ -1,4 +1,4 @@
-import type { ErrorCodes } from "../z80-compiler/assembler-errors";
+import type { ErrorCodes } from "./assembler-errors";
 import type { SymbolInfoMap } from "../z80-compiler/assembly-symbols";
 
 import { AssemblyModule } from "../z80-compiler/assembly-module";

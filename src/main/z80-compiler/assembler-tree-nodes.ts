@@ -5,7 +5,7 @@ import {
   PartialAssemblyLine,
   Node
 } from "@main/compiler-common/tree-nodes";
-import { Z80TokenType } from "./token-stream";
+import { Z80TokenType } from "./z80-token-stream";
 
 export type Z80Node = Node<Z80Instruction, Z80TokenType>;
 

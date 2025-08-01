@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import type { ErrorCodes } from "./assembler-errors";
+import type { ErrorCodes } from "../compiler-common/assembler-errors";
 import type {
   AdcInstruction,
   AddInstruction,
@@ -36,9 +36,9 @@ import type {
   Z80Node
 } from "./assembler-tree-nodes";
 
-import { errorMessages } from "./assembler-errors";
+import { errorMessages } from "../compiler-common/assembler-errors";
 import { InputStream } from "../compiler-common/input-stream";
-import { TokenStream, Z80TokenType } from "./token-stream";
+import { Z80TokenStream, Z80TokenType } from "./z80-token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { convertSpectrumString, readTextFile } from "./utils";
 import {
@@ -331,8 +331,8 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     // --- Parse the main file
     const is = new InputStream(sourceText);
-    const ts = new TokenStream(is);
-    const parser = new Z80AsmParser<Z80Node, Z80TokenType>(ts, fileIndex);
+    const ts = new Z80TokenStream(is);
+    const parser = new Z80AsmParser(ts, fileIndex);
     const parsed = await parser.parseProgram();
 
     // --- Collect syntax errors
@@ -2516,8 +2516,8 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     // --- Now we have the source text to compile
     const inputStream = new InputStream(macroSource);
-    const tokenStream = new TokenStream(inputStream);
-    const macroParser = new Z80AsmParser<Z80Node, Z80TokenType>(tokenStream, 0, true);
+    const tokenStream = new Z80TokenStream(inputStream);
+    const macroParser = new Z80AsmParser(tokenStream, 0, true);
     const macroProgram = await macroParser.parseProgram();
 
     // --- Collect syntax errors

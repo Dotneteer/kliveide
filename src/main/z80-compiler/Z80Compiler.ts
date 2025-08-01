@@ -6,7 +6,7 @@ import type {
 
 import { Z80CompilerService } from "./z80-compiler-service";
 import { InputStream } from "../compiler-common/input-stream";
-import { TokenStream, Z80TokenType } from "./token-stream";
+import { Z80TokenStream } from "./z80-token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { Z80Node } from "@main/z80-compiler/assembler-tree-nodes";
 import { AppState } from "@common/state/AppState";
@@ -50,8 +50,8 @@ export class Z80Compiler implements IKliveCompiler {
    */
   async lineCanHaveBreakpoint(line: string): Promise<boolean> {
     const is = new InputStream(line);
-    const ts = new TokenStream<Z80TokenType>(is);
-    const parser = new Z80AsmParser<Z80Node, Z80TokenType>(ts);
+    const ts = new Z80TokenStream(is);
+    const parser = new Z80AsmParser(ts);
     const parsed = await parser.parseProgram();
     if (parser.errors.length > 0) {
       return false;
