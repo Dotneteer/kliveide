@@ -30,7 +30,7 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
   /**
    * Gets the resolver hash for the current token stream
    */
-  abstract getResolverHash(): Record<string, TToken>;
+  abstract getResolverHash(): Record<string, number>;
 
   /**
    * Gets the escape characters for the current token stream

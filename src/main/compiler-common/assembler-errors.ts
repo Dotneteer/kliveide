@@ -1,4 +1,5 @@
 export type ErrorCodes =
+  // --- Z80 Compiler Error Codes
   // --- Missing or faulty tokens
   | "Z0001"
   | "Z0002"

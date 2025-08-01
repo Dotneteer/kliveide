@@ -1,5 +1,5 @@
 import { commonTokenTraits, TokenTraits } from "@main/compiler-common/common-tokens";
-import { Z80TokenType, Z80Tokens } from "./token-stream";
+import { Z80TokenType, Z80Tokens } from "./z80-token-stream";
 
 /**
  * This map contains the traits of token types

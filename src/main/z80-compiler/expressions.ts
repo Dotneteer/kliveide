@@ -1,4 +1,4 @@
-import type { ErrorCodes } from "./assembler-errors";
+import type { ErrorCodes } from "../compiler-common/assembler-errors";
 
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {

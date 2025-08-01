@@ -1,9 +1,4 @@
-import type { ErrorCodes } from "./assembler-errors";
-
-import { TokenStream, Z80Tokens } from "./common-token-stream";
-import { errorMessages } from "./assembler-errors";
 import { ParserError } from "./parse-errors";
-import { convertSpectrumString } from "./utils";
 import { ParserErrorMessage, TypedObject } from "../compiler-common/abstractions";
 import { CommonTokens, CommonTokenType, TokenTraits } from "@main/compiler-common/common-tokens";
 import {
@@ -99,6 +94,8 @@ import {
   IntegerLiteral,
   RealLiteral
 } from "@main/compiler-common/tree-nodes";
+import { ErrorCodes, errorMessages } from "./assembler-errors";
+import { CommonTokenStream } from "./common-token-stream";
 
 /**
  * Size of an assembly batch. After this batch, the assembler lets the
@@ -125,7 +122,7 @@ export abstract class CommonAsmParser<
    * @param fileIndex Optional file index of the file being parsed
    */
   constructor(
-    public readonly tokens: TokenStream<TToken>,
+    public readonly tokens: CommonTokenStream<TToken>,
     private readonly fileIndex = 0,
     private readonly macroEmitPhase = false
   ) {}
@@ -143,8 +140,19 @@ export abstract class CommonAsmParser<
    *   ;
    */
   protected abstract parseInstruction(
-    parsePoint: ParsePoint<TToken>
+    parsePoint: ParsePoint
   ): PartialAssemblyLine<TInstruction> | null;
+
+  /**
+   * Parses an operand
+   */
+  protected abstract parseOperand(): Operand<TInstruction, TToken> | null;
+
+  /**
+   * Converts an escaped string to its unescaped form
+   * @param inp String to convert
+   */
+  protected abstract convertEscapedString(inp: string): string;
 
   /**
    * The errors raised during the parse phase
@@ -319,7 +327,7 @@ export abstract class CommonAsmParser<
    *   : Identifier ":"?
    *   ;
    */
-  private parseLabel(parsePoint: ParsePoint<TToken>): IdentifierNode<TInstruction> | null {
+  private parseLabel(parsePoint: ParsePoint): IdentifierNode<TInstruction> | null {
     const { start } = parsePoint;
     if (start.type === CommonTokens.Identifier) {
       const nextToken = this.tokens.ahead(1);
@@ -347,7 +355,7 @@ export abstract class CommonAsmParser<
    *   | fieldAssignment
    *   ;
    */
-  private parseLineBody(parsePoint: ParsePoint<TToken>): PartialAssemblyLine<TInstruction> | null {
+  private parseLineBody(parsePoint: ParsePoint): PartialAssemblyLine<TInstruction> | null {
     const { start, traits } = parsePoint;
     if (start.type === CommonTokens.NewLine || start.type === CommonTokens.Eof) {
       return null;
@@ -499,7 +507,7 @@ export abstract class CommonAsmParser<
    *   | injectOptPragma
    *   ;
    */
-  private parsePragma(parsePoint: ParsePoint<TToken>): PartialAssemblyLine<TInstruction> | null {
+  private parsePragma(parsePoint: ParsePoint): PartialAssemblyLine<TInstruction> | null {
     const { start } = parsePoint;
 
     // --- Skip the pragma token
@@ -739,7 +747,7 @@ export abstract class CommonAsmParser<
    *
    * @param parsePoint
    */
-  private parseDirective(parsePoint: ParsePoint<TToken>): PartialAssemblyLine<TInstruction> | null {
+  private parseDirective(parsePoint: ParsePoint): PartialAssemblyLine<TInstruction> | null {
     const { start } = parsePoint;
     const parser = this;
     switch (start.type) {
@@ -832,230 +840,6 @@ export abstract class CommonAsmParser<
     }
   }
 
-  /**
-   * Parses an operand
-   */
-  private parseOperand(): Operand<TInstruction, TToken> | null {
-    const { start, traits } = this.getParsePoint();
-    const startToken = this.tokens.peek();
-    // --- Check registers
-    if (traits.reg) {
-      // --- We have a register operand
-      this.tokens.get();
-      const register = start.text.toLowerCase();
-      let operandType = OperandType.NoneArg;
-      if (traits.reg8) {
-        operandType = OperandType.Reg8;
-      } else if (traits.reg8Spec) {
-        operandType = OperandType.Reg8Spec;
-      } else if (traits.reg8Idx) {
-        operandType = OperandType.Reg8Idx;
-      } else if (traits.reg16) {
-        operandType = OperandType.Reg16;
-      } else if (traits.reg16Idx) {
-        operandType = OperandType.Reg16Idx;
-      } else if (traits.reg16Spec) {
-        operandType = OperandType.Reg16Spec;
-      }
-      return <Operand<TInstruction, TToken>>{
-        type: "Operand",
-        operandType,
-        register,
-        startToken
-      };
-    }
-
-    // --- Check LREG
-    if (start.type === Z80Tokens.LReg) {
-      this.tokens.get();
-      this.expectToken(CommonTokens.LPar, "Z0004");
-      const reg = this.tokens.peek();
-      if (reg.type === CommonTokens.LDBrac) {
-        // --- Handle macro parameters
-        this.parseMacroParam();
-        this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<TInstruction, TToken>>{
-          type: "Operand",
-          operandType: OperandType.NoneArg,
-          startToken
-        };
-      }
-      let register: string | undefined;
-      let operandType = OperandType.Reg8Idx;
-      switch (reg.text) {
-        case "bc":
-        case "de":
-        case "hl":
-          register = reg.text[1];
-          operandType = OperandType.Reg8;
-          break;
-        case "ix":
-          register = "xl";
-          break;
-        case "iy":
-          register = "yl";
-          break;
-        default:
-          this.reportError("Z0109");
-          return null;
-      }
-      this.tokens.get();
-      this.expectToken(CommonTokens.RPar, "Z0005");
-      return <Operand<TInstruction, TToken>>{
-        type: "Operand",
-        operandType,
-        register,
-        startToken
-      };
-    }
-
-    // --- Check HREG
-    if (start.type === Z80Tokens.HReg) {
-      this.tokens.get();
-      this.expectToken(Z80Tokens.LPar, "Z0004");
-      const reg = this.tokens.peek();
-      if (reg.type === Z80Tokens.LDBrac) {
-        // --- Handle macro parameters
-        this.parseMacroParam();
-        this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<TInstruction, TToken>>{
-          type: "Operand",
-          operandType: OperandType.NoneArg,
-          startToken
-        };
-      }
-      let register: string | undefined;
-      let operandType = OperandType.Reg8Idx;
-      switch (reg.text) {
-        case "bc":
-        case "de":
-        case "hl":
-          register = reg.text[0];
-          operandType = OperandType.Reg8;
-          break;
-        case "ix":
-          register = "xh";
-          break;
-        case "iy":
-          register = "yh";
-          break;
-        default:
-          this.reportError("Z0109");
-          return null;
-      }
-      this.tokens.get();
-      this.expectToken(CommonTokens.RPar, "Z0005");
-      return <Operand<TInstruction, TToken>>{
-        type: "Operand",
-        operandType,
-        register,
-        startToken
-      };
-    }
-
-    // --- Check NONEARG
-    if (start.type === CommonTokens.NoneArg) {
-      this.tokens.get();
-      return <Operand<TInstruction, TToken>>{
-        type: "Operand",
-        operandType: OperandType.NoneArg,
-        startToken
-      };
-    }
-
-    // --- Check for "("
-    if (start.type === CommonTokens.LPar) {
-      const ahead = this.tokens.ahead(1);
-      const traits = this.getTokenTraits(ahead.type);
-      if (ahead.type === Z80Tokens.C) {
-        // C port
-        this.tokens.get();
-        this.tokens.get();
-        this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<TInstruction, TToken>>{
-          type: "Operand",
-          operandType: OperandType.CPort,
-          startToken
-        };
-      }
-      if (traits.reg16) {
-        // 16-bit register indirection
-        this.tokens.get();
-        this.tokens.get();
-        this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<TInstruction, TToken>>{
-          type: "Operand",
-          operandType: OperandType.RegIndirect,
-          register: ahead.text.toLowerCase(),
-          startToken
-        };
-      }
-      if (traits.reg16Idx) {
-        // 16-bit index register indirection
-        this.tokens.get();
-        this.tokens.get();
-        let expr: Expression<TInstruction, TToken> | undefined = undefined;
-        const register = ahead.text.toLowerCase();
-        let sign = this.tokens.peek();
-        let offsetSign =
-          sign.type === CommonTokens.Plus || sign.type === CommonTokens.Minus
-            ? sign.text
-            : undefined;
-        if (offsetSign) {
-          this.tokens.get();
-          expr = this.getExpression();
-          sign = this.tokens.peek();
-        }
-        this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<TInstruction, TToken>>{
-          type: "Operand",
-          operandType: OperandType.IndexedIndirect,
-          register,
-          offsetSign,
-          expr,
-          startToken
-        };
-      }
-      if (traits.expressionStart) {
-        // Memory indirection
-        this.tokens.get();
-        const expr = this.getExpression();
-        this.expectToken(CommonTokens.RPar, "Z0005");
-        return <Operand<TInstruction, TToken>>{
-          type: "Operand",
-          operandType: OperandType.MemIndirect,
-          expr,
-          startToken
-        };
-      }
-    }
-
-    // --- Check for a condition
-    if (traits.condition) {
-      this.tokens.get();
-      return <Operand<TInstruction, TToken>>{
-        type: "Operand",
-        operandType: OperandType.Condition,
-        register: start.text,
-        startToken
-      };
-    }
-
-    // --- Check for an expression
-    if (traits.expressionStart) {
-      // Expression
-      return <Operand<TInstruction, TToken>>{
-        type: "Operand",
-        operandType: OperandType.Expression,
-        expr: this.getExpression(),
-        startToken
-      };
-    }
-
-    // --- It's not an operand
-    return null;
-  }
-
   // --------------------------------------------------------------------------
   // Expression parsing
 
@@ -1099,7 +883,7 @@ export abstract class CommonAsmParser<
    *   | structEndMarker
    *   ;
    */
-  private parseStatement(parsePoint: ParsePoint<TToken>): PartialAssemblyLine<TInstruction> | null {
+  private parseStatement(parsePoint: ParsePoint): PartialAssemblyLine<TInstruction> | null {
     const { start } = parsePoint;
     this.tokens.get();
     if (start.type === CommonTokens.Macro) {
@@ -1887,7 +1671,7 @@ export abstract class CommonAsmParser<
    * Parses macro-time function invocations
    */
   private parseMacroTimeFuncInvocation(
-    parsePoint: ParsePoint<TToken>
+    parsePoint: ParsePoint
   ): MacroTimeFunctionInvocation<TInstruction, TToken> | null {
     const { start } = parsePoint;
     this.tokens.get();
@@ -1909,7 +1693,7 @@ export abstract class CommonAsmParser<
    * Parses parse-time function invocations
    */
   private parseParseTimeFunctionInvocation(
-    parsePoint: ParsePoint<TToken>
+    parsePoint: ParsePoint
   ): Expression<TInstruction, TToken> | null {
     const { start } = parsePoint;
     this.tokens.get();
@@ -1984,7 +1768,7 @@ export abstract class CommonAsmParser<
    *   : "::"? Identifier
    *   ;
    */
-  private parseSymbol(parsePoint: ParsePoint<TToken>): Expression<TInstruction, TToken> | null {
+  private parseSymbol(parsePoint: ParsePoint): Expression<TInstruction, TToken> | null {
     const startToken = this.tokens.peek();
     let startsFromGlobal = false;
     if (this.skipToken(CommonTokens.DoubleColon)) {
@@ -2013,7 +1797,7 @@ export abstract class CommonAsmParser<
    *   ;
    */
   private parseUnaryExpr(
-    parsePoint: ParsePoint<TToken>
+    parsePoint: ParsePoint
   ): UnaryExpression<TInstruction, TToken> | null {
     // --- Obtain and skip the operator token
     const operator = parsePoint.start.text;
@@ -2043,7 +1827,7 @@ export abstract class CommonAsmParser<
    *   | booleanLiteral
    *   ;
    */
-  private parseLiteral(parsePoint: ParsePoint<TToken>): Expression<TInstruction, TToken> | null {
+  private parseLiteral(parsePoint: ParsePoint): Expression<TInstruction, TToken> | null {
     const { start } = parsePoint;
     let literal: Expression<TInstruction, TToken> | null = null;
     switch (start.type) {
@@ -2213,7 +1997,7 @@ export abstract class CommonAsmParser<
    *
    */
   private parseCharLiteral(text: string): IntegerLiteral<TInstruction> | null {
-    text = convertSpectrumString(text.substr(1, text.length - 2));
+    text = this.convertEscapedString(text.substr(1, text.length - 2));
     return <IntegerLiteral<TInstruction>>{
       type: "IntegerLiteral",
       value: text.length > 0 ? text.charCodeAt(0) : 0x00
@@ -2224,7 +2008,7 @@ export abstract class CommonAsmParser<
     text = text.substr(1, text.length - 2);
     return <StringLiteral<TInstruction>>{
       type: "StringLiteral",
-      value: convertSpectrumString(text)
+      value: this.convertEscapedString(text)
     };
   }
 
@@ -2236,7 +2020,7 @@ export abstract class CommonAsmParser<
    *   : "{{" Identifier "}}"
    *   ;
    */
-  private parseMacroParam(): PartialAssemblyLine<TInstruction> | null {
+  parseMacroParam(): PartialAssemblyLine<TInstruction> | null {
     const paramToken = this.tokens.get();
     const identifier = this.getIdentifier();
     this.expectToken(CommonTokens.RDBrac, "Z0006");
@@ -2276,7 +2060,7 @@ export abstract class CommonAsmParser<
   /**
    * Gets the current parse point
    */
-  private getParsePoint(): ParsePoint<TToken> {
+  getParsePoint(): ParsePoint {
     const start = this.tokens.peek();
     const traits = this.getTokenTraits(start.type);
     return { start, traits };
@@ -2286,7 +2070,7 @@ export abstract class CommonAsmParser<
    * Tests the type of the next token
    * @param type Expected token type
    */
-  private expectToken(type: CommonTokenType, errorCode?: ErrorCodes, allowEof?: boolean) {
+  expectToken(type: CommonTokenType, errorCode?: ErrorCodes, allowEof?: boolean) {
     const next = this.tokens.peek();
     if (next.type === type || (allowEof && next.type === CommonTokens.Eof)) {
       // --- Skip the expected token
@@ -2301,7 +2085,7 @@ export abstract class CommonAsmParser<
    * Skips the next token if the type is the specified one
    * @param type Token type to check
    */
-  private skipToken(type: CommonTokenType): Token<CommonTokenType> | null {
+  skipToken(type: CommonTokenType): Token<CommonTokenType> | null {
     const next = this.tokens.peek();
     if (next.type === type) {
       this.tokens.get();
@@ -2314,7 +2098,7 @@ export abstract class CommonAsmParser<
    * Skips the next token if the type is the specified one
    * @param type Token type to check
    */
-  private skipTokens(...types: CommonTokenType[]): Token<CommonTokenType> | null {
+  skipTokens(...types: CommonTokenType[]): Token<CommonTokenType> | null {
     const next = this.tokens.peek();
     for (const type of types) {
       if (next.type === type) {
@@ -2331,12 +2115,12 @@ export abstract class CommonAsmParser<
    * @param token Token that represents the error's position
    * @param options Error message options
    */
-  private reportError(
+  reportError(
     errorCode: ErrorCodes,
     token?: Token<CommonTokenType>,
     options?: any[]
   ): void {
-    let errorText: string = errorMessages[errorCode] ?? "Unkonwn error";
+    let errorText: string = errorMessages[errorCode] ?? "Unknown error";
     if (options) {
       options.forEach(
         (_, idx) => (errorText = replace(errorText, `{${idx}}`, options[idx].toString()))
@@ -2405,7 +2189,7 @@ export abstract class CommonAsmParser<
    * @param optional Is the expression optional?
    * @param leadingComma Test for leading comma?
    */
-  private getExpression(
+  getExpression(
     optional: boolean = false,
     leadingComma: boolean = false
   ): Expression<TInstruction, TToken> | null {
@@ -2476,11 +2260,11 @@ export abstract class CommonAsmParser<
 /**
  * This interface represents the parsing point that can be passed to parsing methods
  */
-interface ParsePoint<TToken extends CommonTokenType> {
+export interface ParsePoint {
   /**
    * Start token at that point
    */
-  start: Token<TToken>;
+  start: Token<number>;
 
   /**
    * Traist of the start token

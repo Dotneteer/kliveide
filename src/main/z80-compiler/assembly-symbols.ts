@@ -1,5 +1,5 @@
 import { IAssemblySymbolInfo, IExpressionValue, SymbolType, TypedObject } from "@main/compiler-common/abstractions";
-import type { ErrorCodes } from "./assembler-errors";
+import type { ErrorCodes } from "../compiler-common/assembler-errors";
 import { FixupEntry } from "../compiler-common/fixups";
 import { CommonTokenType } from "@main/compiler-common/common-tokens";
 
