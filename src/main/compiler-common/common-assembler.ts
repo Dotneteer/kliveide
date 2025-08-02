@@ -2,57 +2,29 @@ import fs from "fs";
 import path from "path";
 
 import type { ErrorCodes } from "../compiler-common/assembler-errors";
-import type {
-  AdcInstruction,
-  AddInstruction,
-  AndInstruction,
-  BitInstruction,
-  CallInstruction,
-  CpInstruction,
-  DecInstruction,
-  ExInstruction,
-  ImInstruction,
-  IncInstruction,
-  InInstruction,
-  JpInstruction,
-  JrInstruction,
-  LdInstruction,
-  NextRegInstruction,
-  OrInstruction,
-  OutInstruction,
-  PopInstruction,
-  PushInstruction,
-  ResInstruction,
-  RetInstruction,
-  RstInstruction,
-  SbcInstruction,
-  SetInstruction,
-  ShiftRotateInstruction,
-  SimpleZ80Instruction,
-  SubInstruction,
-  TestInstruction,
-  XorInstruction,
-  Z80AssemblyLine,
-  Z80Node
-} from "./assembler-tree-nodes";
-
 import { errorMessages } from "../compiler-common/assembler-errors";
 import { InputStream } from "../compiler-common/input-stream";
-import { Z80TokenStream, Z80TokenType } from "./z80-token-stream";
-import { Z80AsmParser } from "./z80-asm-parser";
-import { convertSpectrumString, readTextFile } from "./utils";
 import {
   AssemblerErrorInfo,
   AssemblerOptions,
   AssemblerOutput,
   BinarySegment,
   SourceFileItem
-} from "./assembler-in-out";
-import { AssemblyModule } from "./assembly-module";
-import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
-import { ExpressionEvaluator, ExpressionValue, setRandomSeed } from "./expressions";
+} from "../compiler-common/assembler-in-out";
+import { AssemblyModule } from "../compiler-common/assembly-module";
+import {
+  AssemblySymbolInfo,
+  ISymbolScope,
+  SymbolInfoMap,
+  SymbolScope
+} from "../compiler-common/assembly-symbols";
+import {
+  ExpressionEvaluator,
+  ExpressionValue,
+  setRandomSeed
+} from "../compiler-common/expressions";
 import { FixupEntry } from "../compiler-common/fixups";
-import { ExpressionValueType, SpectrumModelType } from "@abstractions/CompilerInfo";
+import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {
   BinaryComparisonInfo,
   FixupType,
@@ -67,10 +39,12 @@ import {
   ParserErrorMessage,
   StructDefinition,
   SymbolType,
-  SymbolValueMap
+  SymbolValueMap,
+  TypedObject
 } from "../compiler-common/abstractions";
 import {
   AlignPragma,
+  AssemblyLine,
   BankPragma,
   BreakStatement,
   CompareBinPragma,
@@ -106,7 +80,6 @@ import {
   ModuleStatement,
   NodePosition,
   OnSuccessPragma,
-  Operand,
   OperandType,
   OrgPragma,
   PartialAssemblyLine,
@@ -116,7 +89,6 @@ import {
   SkipPragma,
   Statement,
   StructStatement,
-  Token,
   TracePragma,
   UntilStatement,
   VarPragma,
@@ -124,16 +96,17 @@ import {
   XentPragma,
   XorgPragma
 } from "@main/compiler-common/tree-nodes";
+import { readTextFile } from "@main/compiler-common/utils";
+import { CommonTokenType } from "./common-tokens";
+import { CommonTokenStream } from "./common-token-stream";
+import { CommonAsmParser } from "./common-asm-parser";
+import { findModelTypeByName } from "@main/z80-compiler/SpectrumModelTypes";
+import { convertSpectrumString } from "@main/z80-compiler/z80-utils";
 
 /**
  * The file name of a direct text compilation
  */
 const NO_FILE_ITEM = "#";
-
-/**
- * The valid Spectrum model values
- */
-const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT"];
 
 /**
  * Size of an assembly batch. After this batch, the assembler lets the
@@ -144,51 +117,95 @@ const ASSEMBLY_BATCH_SIZE = 1000;
 /**
  * This class provides the functionality of the Z80 Assembler
  */
-export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
+export abstract class CommonAssembler<
+  TInstruction extends TypedObject,
+  TToken extends CommonTokenType
+> extends ExpressionEvaluator<TInstruction, TToken> {
   // --- Use these options
-  private _options: AssemblerOptions;
+  protected _options: AssemblerOptions;
 
   // --- Store the current output
-  private _output: AssemblerOutput;
+  protected _output: AssemblerOutput<TInstruction, TToken>;
 
   // --- The current module
-  private _currentModule: AssemblyModule<Z80Node, Z80TokenType>;
+  protected _currentModule: AssemblyModule<TInstruction, TToken>;
 
   // --- The current output segment
-  private _currentSegment: BinarySegment | null = null;
+  protected _currentSegment: BinarySegment | null = null;
 
   // --- The current structure invocation
-  private _currentStructInvocation: IStructDefinition | null = null;
+  protected _currentStructInvocation: IStructDefinition | null = null;
 
   // --- Offset of the current structure invocation
-  private _currentStructOffset = 0;
+  protected _currentStructOffset = 0;
 
   // --- Start offset of the current struct invocation
-  private _currentStructStartOffset = 0;
+  protected _currentStructStartOffset = 0;
 
   // --- The current line that invokes the struct
-  private _currentStructLine: MacroOrStructInvocation<Z80Node, Z80TokenType> | null = null;
+  protected _currentStructLine: MacroOrStructInvocation<TInstruction, TToken> | null = null;
 
   // --- The current bytes to emit for the structure being invoked
-  private _currentStructBytes: Map<number, number> | null = null;
+  protected _currentStructBytes: Map<number, number> | null = null;
 
   // --- Checks if the compiler is currently cloning a structure byte pattern
-  private _isInStructCloning = false;
+  protected _isInStructCloning = false;
 
   // --- Label that overflew from a label-only line
-  private _overflowLabelLine: LabelOnlyLine<Z80Node> | null = null;
+  protected _overflowLabelLine: LabelOnlyLine<TInstruction> | null = null;
 
   // --- The source line of the experession evaluation context
-  private _currentSourceLine: Z80AssemblyLine;
+  protected _currentSourceLine: AssemblyLine<TInstruction>;
 
   // --- The current list item being processed
-  private _currentListFileItem: IListFileItem | null;
+  protected _currentListFileItem: IListFileItem | null;
 
   // --- The stack of macro invocations
-  private _macroInvocations: MacroOrStructInvocation<Z80Node, Z80TokenType>[] = [];
+  protected _macroInvocations: MacroOrStructInvocation<TInstruction, TToken>[] = [];
 
   // --- Counter for async batches
-  private _batchCounter = 0;
+  protected _batchCounter = 0;
+
+  /**
+   * Creates a token stream from the input stream.
+   * @param is Input stream to create the token stream from
+   */
+  protected abstract createTokenStream(is: InputStream): CommonTokenStream<TToken>;
+
+  /**
+   * Creates an assembly parser from the token stream.
+   * @param ts Token stream to create the parser from
+   * @param fileIndex Index of the source file being parsed
+   */
+  protected abstract createAsmParser(
+    ts: CommonTokenStream<TToken>,
+    fileIndex: number,
+    macroEmitPhase?: boolean
+  ): CommonAsmParser<TInstruction, TToken>;
+
+  /**
+   * Emits the assembly operation code for the specified assembly line.
+   * @param opLine Assembly line to emit the code for
+   */
+  protected abstract emitAssemblyOperationCode(opLine: AssemblyLine<TInstruction>): void;
+
+  /**
+   * Checks if the specified model type is valid.
+   * @param modelType The model type to validate
+   */
+  protected abstract validateModelType(modelType: string): boolean;
+
+  /**
+   * Gets the model name by its ID.
+   * @param modelId The model ID to get the name for
+   */
+  protected abstract getModelNameById(modelId: number): string;
+
+  /**
+   * Checks if the specified model ID supports the .bank pragma.
+   * @param modelId The model ID to check
+   */
+  protected abstract modelSupportsBankPragma(modelId: number): ErrorCodes | null;
 
   /**
    * The condition symbols
@@ -198,12 +215,12 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   /**
    * Lines after running the preprocessor
    */
-  preprocessedLines: Z80AssemblyLine[] = [];
+  preprocessedLines: AssemblyLine<TInstruction>[] = [];
 
   /**
    * .comparebin pragma information
    */
-  compareBins: BinaryComparisonInfo<Z80Node, Z80TokenType>[] = [];
+  compareBins: BinaryComparisonInfo<TInstruction, TToken>[] = [];
 
   /**
    * Store the handler of trace messages
@@ -217,7 +234,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compileFile(filename: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
+  async compileFile(
+    filename: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput<TInstruction, TToken>> {
     const sourceText = readTextFile(filename);
     return await this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
@@ -229,7 +249,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compile(sourceText: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
+  async compile(
+    sourceText: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput<TInstruction, TToken>> {
     return await this.doCompile(new SourceFileItem(NO_FILE_ITEM), sourceText, options);
   }
 
@@ -268,10 +291,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     sourceItem: SourceFileItem,
     sourceText: string,
     options?: AssemblerOptions
-  ): Promise<AssemblerOutput> {
+  ): Promise<AssemblerOutput<TInstruction, TToken>> {
     this._options = options ?? new AssemblerOptions();
 
-    this._currentModule = this._output = new AssemblerOutput(
+    this._currentModule = this._output = new AssemblerOutput<TInstruction, TToken>(
       sourceItem,
       options?.useCaseSensitiveSymbols ?? false
     );
@@ -324,15 +347,15 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     sourceText: string
   ): Promise<{
     success: boolean;
-    parsedLines?: Z80AssemblyLine[];
+    parsedLines?: AssemblyLine<TInstruction>[];
   }> {
     // --- Initialize the parse result
-    const parsedLines: Z80AssemblyLine[] = [];
+    const parsedLines: AssemblyLine<TInstruction>[] = [];
 
     // --- Parse the main file
     const is = new InputStream(sourceText);
-    const ts = new Z80TokenStream(is);
-    const parser = new Z80AsmParser(ts, fileIndex);
+    const ts = this.createTokenStream(is);
+    const parser = this.createAsmParser(ts, fileIndex);
     const parsed = await parser.parseProgram();
 
     // --- Collect syntax errors
@@ -354,7 +377,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     // --- Traverse through parsed lines
     while (currentLineIndex < visitedLines.length) {
       const line = visitedLines[currentLineIndex];
-      this.setSourceLine(line as Z80AssemblyLine);
+      this.setSourceLine(line as AssemblyLine<TInstruction>);
       if (processOps.ops) {
         const typedLine = line as any;
         switch (typedLine.type) {
@@ -387,7 +410,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
           default: {
             if (
               !this.applyScopedDirective(
-                line as unknown as Directive<Z80Node, Z80TokenType>,
+                line as unknown as Directive<TInstruction, TToken>,
                 ifdefStack,
                 processOps
               )
@@ -404,7 +427,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
         }
       } else {
         this.applyScopedDirective(
-          line as unknown as Directive<Z80Node, Z80TokenType>,
+          line as unknown as Directive<TInstruction, TToken>,
           ifdefStack,
           processOps
         );
@@ -429,7 +452,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param lines Source code lines
    * @returns True, if there were no errors during code emission.
    */
-  private async emitCode(lines: Z80AssemblyLine[]): Promise<boolean> {
+  private async emitCode(lines: AssemblyLine<TInstruction>[]): Promise<boolean> {
     if (!lines) {
       return false;
     }
@@ -468,7 +491,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
         return false;
       }
       this.recordFixup(
-        this._currentStructLine as unknown as Z80AssemblyLine,
+        this._currentStructLine as unknown as AssemblyLine<TInstruction>,
         FixupType.Struct,
         null,
         null,
@@ -547,7 +570,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
       // --- Read the binary file
       const currentSourceFile =
-        this._output.sourceFileList[(pragma as unknown as Z80AssemblyLine).fileIndex];
+        this._output.sourceFileList[(pragma as unknown as AssemblyLine<TInstruction>).fileIndex];
       const dirname = path.dirname(currentSourceFile.filename) ?? "";
       const filename = path.join(dirname, fileNameValue.asString());
 
@@ -630,9 +653,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param sourceItem
    */
   async applyIncludeDirective(
-    includeDir: IncludeDirective<Z80Node>,
+    includeDir: IncludeDirective<TInstruction>,
     sourceItem: SourceFileItem
-  ): Promise<{ success: boolean; parsedLines?: Z80AssemblyLine[] }> {
+  ): Promise<{ success: boolean; parsedLines?: AssemblyLine<TInstruction>[] }> {
     // --- Check the #include directive
     let filename = includeDir.filename.trim();
 
@@ -686,7 +709,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @returns True, if the directive has been processed successfully
    */
   applyScopedDirective(
-    directive: Directive<Z80Node, Z80TokenType>,
+    directive: Directive<TInstruction, TToken>,
     ifdefStack: (boolean | null)[],
     processOps: ProcessOps
   ): boolean {
@@ -701,12 +724,12 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
             const value = this.evaluateExprImmediate(directive.condition);
             processOps.ops = value.isValid && value.value !== 0;
           } else if (directive.type === "IfModDirective" || directive.type === "IfNModDirective") {
-            if (VALID_MODELS.indexOf(directive.identifier.name.toUpperCase()) < 0) {
+            if (!this.validateModelType(directive.identifier.name)) {
               this.reportAssemblyError("Z0206", directive);
               processOps.ops = false;
             } else {
               const refModel = this._output.modelType ?? this._options.currentModel;
-              const modelName = SpectrumModelType[refModel].toUpperCase();
+              const modelName = this.getModelNameById(refModel).toUpperCase();
               const contains = modelName === directive.identifier.name.toUpperCase();
               const negate = directive.type === "IfNModDirective";
               processOps.ops = (contains && !negate) || (!contains && negate);
@@ -758,29 +781,16 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Process the specified .model pragma
    * @param pragma Pragma to process
    */
-  processModelPragma(pragma: ModelPragma<Z80Node>): void {
+  processModelPragma(pragma: ModelPragma<TInstruction>): void {
     if (this._output.modelType) {
       this.reportAssemblyError("Z0302", pragma);
       return;
     }
 
-    let modelType: SpectrumModelType;
-    switch (pragma.modelId.toUpperCase()) {
-      case "SPECTRUM48":
-        modelType = SpectrumModelType.Spectrum48;
-        break;
-      case "SPECTRUM128":
-        modelType = SpectrumModelType.Spectrum128;
-        break;
-      case "SPECTRUMP3":
-        modelType = SpectrumModelType.SpectrumP3;
-        break;
-      case "NEXT":
-        modelType = SpectrumModelType.Next;
-        break;
-      default:
-        this.reportAssemblyError("Z0303", pragma);
-        return;
+    const modelType = findModelTypeByName(pragma.modelId);
+    if (!modelType) {
+      this.reportAssemblyError("Z0303", pragma, null, pragma.modelId);
+      return;
     }
     this._output.modelType = modelType;
   }
@@ -791,7 +801,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   /**
    * Gets the source line the evaluation context is bound to
    */
-  getSourceLine(): Z80AssemblyLine {
+  getSourceLine(): AssemblyLine<TInstruction> {
     return this._currentSourceLine;
   }
 
@@ -799,7 +809,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Sets the source line the evaluation context is bound to
    * @param sourceLine Source line information
    */
-  setSourceLine(sourceLine: Z80AssemblyLine): void {
+  setSourceLine(sourceLine: AssemblyLine<TInstruction>): void {
     this._currentSourceLine = sourceLine;
   }
 
@@ -858,7 +868,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param opLine Assembly line that contains the expression
    * @param expr Expression to evaluate
    */
-  evaluateExpr(expr: Expression<Z80Node, Z80TokenType>): IExpressionValue {
+  evaluateExpr(expr: Expression<TInstruction, TToken>): IExpressionValue {
     if (!this.readyToEvaluate(expr)) {
       return ExpressionValue.NonEvaluated;
     }
@@ -869,7 +879,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Immediately evaluates the specified expression
    * @param expr Expression to evaluate
    */
-  evaluateExprImmediate(expr: Expression<Z80Node, Z80TokenType>): IExpressionValue {
+  evaluateExprImmediate(expr: Expression<TInstruction, TToken>): IExpressionValue {
     return this.doEvalExpression(this, expr);
   }
 
@@ -879,7 +889,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param context The context to evaluate the expression
    * @param expr Expression to evaluate
    */
-  readyToEvaluate(expr: Expression<Z80Node, Z80TokenType>): boolean {
+  readyToEvaluate(expr: Expression<TInstruction, TToken>): boolean {
     switch (expr.type) {
       case "UnaryExpression":
         return this.readyToEvaluate(expr.operand);
@@ -909,7 +919,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param node Error position
    */
   reportEvaluationError(
-    context: IEvaluationContext<Z80Node, Z80TokenType>,
+    context: IEvaluationContext<TInstruction, TToken>,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
@@ -925,7 +935,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param defaultAddress Default start address of the segment
    * @param maxLength Maximum segment length
    */
-  private ensureCodeSegment(defaultAddress?: number, maxLength: number = 0xffff): void {
+  protected ensureCodeSegment(defaultAddress?: number, maxLength: number = 0xffff): void {
     if (this._currentSegment) {
       return;
     }
@@ -944,10 +954,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Creates a label at the current point
    * @param asmLine Assembly line with a label
    */
-  private async createCurrentPointLabel(asmLine: LabelOnlyLine<Z80Node>): Promise<void> {
+  private async createCurrentPointLabel(asmLine: LabelOnlyLine<TInstruction>): Promise<void> {
     await this.addSymbol(
       asmLine.label.name,
-      asmLine as unknown as Z80AssemblyLine,
+      asmLine as unknown as AssemblyLine<TInstruction>,
       new ExpressionValue(this.getCurrentAssemblyAddress())
     );
   }
@@ -961,9 +971,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param fromMacroEmit Is this method called during macro emit?
    */
   private async emitSingleLine(
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
-    asmLine: Z80AssemblyLine,
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
+    asmLine: AssemblyLine<TInstruction>,
     currentLineIndex: { index: number },
     fromMacroEmit: boolean = false
   ): Promise<void> {
@@ -1007,7 +1017,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
       if (this._overflowLabelLine) {
         await this.createCurrentPointLabel(this._overflowLabelLine);
       }
-      this._overflowLabelLine = asmLine as LabelOnlyLine<Z80Node>;
+      this._overflowLabelLine = asmLine as LabelOnlyLine<TInstruction>;
     } else {
       // --- This line contains elements to process
       let currentLabel: string | null;
@@ -1082,8 +1092,8 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
       // --- Handle field assignment statement
       if (isFieldAssignment) {
-        asmLine = (asmLine as unknown as FieldAssignment<Z80Node, Z80TokenType>)
-          .assignment as unknown as Z80AssemblyLine;
+        asmLine = (asmLine as unknown as FieldAssignment<TInstruction, TToken>)
+          .assignment as unknown as AssemblyLine<TInstruction>;
       }
       if (this._currentStructInvocation) {
         // --- We are in a .struct invocation...
@@ -1104,7 +1114,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
           // --- Complete emitting the structure
           this.recordFixup(
-            this._currentStructLine as unknown as Z80AssemblyLine,
+            this._currentStructLine as unknown as AssemblyLine<TInstruction>,
             FixupType.Struct,
             null,
             null,
@@ -1145,19 +1155,19 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
         // --- Process a pragma
         this.ensureCodeSegment();
         this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
-        await this.applyPragma(asmLine as Pragma<Z80Node, Z80TokenType>, currentLabel);
+        await this.applyPragma(asmLine as Pragma<TInstruction, TToken>, currentLabel);
         //emitListItem();
       } else if (asmLine.type.endsWith("Statement")) {
         await this.processStatement(
           allLines,
           scopeLines,
-          asmLine as unknown as Statement<Z80Node, Z80TokenType>,
+          asmLine as unknown as Statement<TInstruction, TToken>,
           currentLabel,
           currentLineIndex
         );
       } else if (asmLine.type === "MacroOrStructInvocation") {
         await this.processMacroOrStructInvocation(
-          asmLine as unknown as MacroOrStructInvocation<Z80Node, Z80TokenType>,
+          asmLine as unknown as MacroOrStructInvocation<TInstruction, TToken>,
           allLines
         );
       } else {
@@ -1186,7 +1196,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
      * Tests if the specified line is a label-setter
      * @param asmLine Line to test
      */
-    function isLabelSetter(asmLine: Z80AssemblyLine): boolean {
+    function isLabelSetter(asmLine: AssemblyLine<TInstruction>): boolean {
       switch (asmLine.type) {
         case "EquPragma":
         case "OrgPragma":
@@ -1208,7 +1218,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    */
   private async addSymbol(
     symbol: string,
-    line: Z80AssemblyLine,
+    line: AssemblyLine<TInstruction>,
     value: IExpressionValue
   ): Promise<void> {
     const assembler = this;
@@ -1241,7 +1251,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
       }
     } else {
       // --- Create a new temporary scope
-      const newScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+      const newScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
       newScope.isTemporaryScope = true;
       this._currentModule.localScopes.push(newScope);
       if (symbolIsTemporary) {
@@ -1352,7 +1362,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   /**
    * Gets the top local scope
    */
-  private getTopLocalScope(): SymbolScope<Z80Node, Z80TokenType> {
+  private getTopLocalScope(): SymbolScope<TInstruction, TToken> {
     const localScopes = this._currentModule.localScopes;
     return localScopes[localScopes.length - 1];
   }
@@ -1360,7 +1370,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   /**
    * Gets the current assembly address
    */
-  private getCurrentAssemblyAddress(): number {
+  protected getCurrentAssemblyAddress(): number {
     this.ensureCodeSegment();
     return (
       (this._currentSegment.startAddress +
@@ -1379,7 +1389,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param label Pragma label
    */
   private async applyPragma(
-    pragmaLine: Pragma<Z80Node, Z80TokenType>,
+    pragmaLine: Pragma<TInstruction, TToken>,
     label: string | null
   ): Promise<void> {
     switch (pragmaLine.type) {
@@ -1516,7 +1526,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param label Label information
    */
   async processOrgPragma(
-    pragma: OrgPragma<Z80Node, Z80TokenType>,
+    pragma: OrgPragma<TInstruction, TToken>,
     label: string | null
   ): Promise<void> {
     const value = this.evaluateExprImmediate(pragma.address);
@@ -1542,7 +1552,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     // --- There is a labels, set its value
     await this.fixupTemporaryScope();
-    await this.addSymbol(label, pragma as unknown as Z80AssemblyLine, value);
+    await this.addSymbol(label, pragma as unknown as AssemblyLine<TInstruction>, value);
   }
 
   /**
@@ -1550,7 +1560,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  processBankPragma(pragma: BankPragma<Z80Node, Z80TokenType>, label: string | null): void {
+  processBankPragma(pragma: BankPragma<TInstruction, TToken>, label: string | null): void {
     if (label) {
       // --- No label is allowed
       this.reportAssemblyError("Z0305", pragma);
@@ -1582,11 +1592,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     }
 
     // --- Check for appropriate model type
-    if (
-      this._output.modelType === undefined ||
-      this._output.modelType === SpectrumModelType.Spectrum48
-    ) {
-      this.reportAssemblyError("Z0308", pragma);
+    const errCode = this.modelSupportsBankPragma(this._output.modelType);
+    if (this._output.modelType === undefined || errCode) {
+      this.reportAssemblyError(errCode, pragma);
       return;
     }
 
@@ -1612,7 +1620,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .xorg pragma
    * @param pragma Pragma to process
    */
-  processXorgPragma(pragma: XorgPragma<Z80Node, Z80TokenType>): void {
+  processXorgPragma(pragma: XorgPragma<TInstruction, TToken>): void {
     const value = this.evaluateExprImmediate(pragma.address);
     if (!value.isValid) {
       return;
@@ -1630,13 +1638,17 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .ent pragma
    * @param pragma Pragma to process
    */
-  processEntPragma(pragma: EntPragma<Z80Node, Z80TokenType>): void {
+  processEntPragma(pragma: EntPragma<TInstruction, TToken>): void {
     if (!this.isInGlobalScope && this.shouldReportErrorInCurrentScope("Z0310")) {
       this.reportAssemblyError("Z0310", pragma, null, ".ent");
     }
     const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
-      this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Ent, pragma.address);
+      this.recordFixup(
+        pragma as unknown as AssemblyLine<TInstruction>,
+        FixupType.Ent,
+        pragma.address
+      );
       return;
     }
     this._output.entryAddress = value.value;
@@ -1646,13 +1658,17 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .xent pragma
    * @param pragma Pragma to process
    */
-  processXentPragma(pragma: XentPragma<Z80Node, Z80TokenType>): void {
+  processXentPragma(pragma: XentPragma<TInstruction, TToken>): void {
     if (!this.isInGlobalScope && this.shouldReportErrorInCurrentScope("Z0310")) {
       this.reportAssemblyError("Z0310", pragma, null, ".xent");
     }
     const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
-      this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Xent, pragma.address);
+      this.recordFixup(
+        pragma as unknown as AssemblyLine<TInstruction>,
+        FixupType.Xent,
+        pragma.address
+      );
       return;
     }
     this._output.exportEntryAddress = value.value;
@@ -1662,7 +1678,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .disp pragma
    * @param pragma Pragma to process
    */
-  processDispPragma(pragma: DispPragma<Z80Node, Z80TokenType>): void {
+  processDispPragma(pragma: DispPragma<TInstruction, TToken>): void {
     const value = this.evaluateExprImmediate(pragma.offset);
     if (!value.isValid) {
       return;
@@ -1679,7 +1695,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param label Label information
    */
   private async processEquPragma(
-    pragma: EquPragma<Z80Node, Z80TokenType>,
+    pragma: EquPragma<TInstruction, TToken>,
     label: string | null
   ): Promise<void> {
     if (!label) {
@@ -1696,7 +1712,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     // --- Evaluate .equ value
     const value = this.evaluateExpr(pragma.value);
-    const asmLine = pragma as unknown as Z80AssemblyLine;
+    const asmLine = pragma as unknown as AssemblyLine<TInstruction>;
     if (value.isNonEvaluated) {
       this.recordFixup(asmLine, FixupType.Equ, pragma.value, label);
     } else {
@@ -1710,7 +1726,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param label Label information
    */
   async processVarPragma(
-    pragma: VarPragma<Z80Node, Z80TokenType>,
+    pragma: VarPragma<TInstruction, TToken>,
     label: string | null
   ): Promise<void> {
     if (!label) {
@@ -1736,7 +1752,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .skip pragma
    * @param pragma Pragma to process
    */
-  processSkipPragma(pragma: SkipPragma<Z80Node, Z80TokenType>): void {
+  processSkipPragma(pragma: SkipPragma<TInstruction, TToken>): void {
     const skipAddr = this.evaluateExprImmediate(pragma.skip);
     if (!skipAddr.isValid) {
       return;
@@ -1768,7 +1784,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   processDefBPragma(
-    pragma: DefBPragma<Z80Node, Z80TokenType>,
+    pragma: DefBPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const assembler = this;
@@ -1787,7 +1803,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
           emit(value.value & 0xff);
         }
       } else if (value.isNonEvaluated) {
-        this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Bit8, expr);
+        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, expr);
         emit(0x00);
       }
     }
@@ -1809,7 +1825,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   processDefWPragma(
-    pragma: DefWPragma<Z80Node, Z80TokenType>,
+    pragma: DefWPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const assembler = this;
@@ -1828,7 +1844,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
           emit(value.value & 0xffff);
         }
       } else if (value.isNonEvaluated) {
-        this.recordFixup(pragma as unknown as Z80AssemblyLine, FixupType.Bit16, expr);
+        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit16, expr);
         emit(0x0000);
       }
     }
@@ -1852,9 +1868,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    */
   processDefMNCPragma(
     pragma:
-      | DefMPragma<Z80Node, Z80TokenType>
-      | DefNPragma<Z80Node, Z80TokenType>
-      | DefCPragma<Z80Node, Z80TokenType>,
+      | DefMPragma<TInstruction, TToken>
+      | DefNPragma<TInstruction, TToken>
+      | DefCPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const message = this.evaluateExprImmediate(pragma.value);
@@ -1893,7 +1909,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   processDefHPragma(
-    pragma: DefHPragma<Z80Node, Z80TokenType>,
+    pragma: DefHPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const assembler = this;
@@ -1937,7 +1953,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   processDefSPragma(
-    pragma: DefSPragma<Z80Node, Z80TokenType>,
+    pragma: DefSPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const count = this.evaluateExprImmediate(pragma.count);
@@ -1962,7 +1978,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   processFillbPragma(
-    pragma: FillbPragma<Z80Node, Z80TokenType>,
+    pragma: FillbPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const count = this.evaluateExprImmediate(pragma.count);
@@ -1985,7 +2001,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   processFillwPragma(
-    pragma: FillwPragma<Z80Node, Z80TokenType>,
+    pragma: FillwPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const count = this.evaluateExprImmediate(pragma.count);
@@ -2007,7 +2023,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .align pragma
    * @param pragma Pragma to process
    */
-  processAlignPragma(pragma: AlignPragma<Z80Node, Z80TokenType>): void {
+  processAlignPragma(pragma: AlignPragma<TInstruction, TToken>): void {
     let alignment = 0x0100;
     if (pragma.alignExpr) {
       const alignValue = this.evaluateExprImmediate(pragma.alignExpr);
@@ -2032,7 +2048,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .trace pragma
    * @param pragma Pragma to process
    */
-  processTracePragma(pragma: TracePragma<Z80Node, Z80TokenType>): void {
+  processTracePragma(pragma: TracePragma<TInstruction, TToken>): void {
     let message = "";
     for (const expr of pragma.values) {
       const exprValue = this.evaluateExprImmediate(expr);
@@ -2079,7 +2095,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .rndseed pragma
    * @param pragma Pragma to process
    */
-  processRndSeedPragma(pragma: RndSeedPragma<Z80Node, Z80TokenType>): void {
+  processRndSeedPragma(pragma: RndSeedPragma<TInstruction, TToken>): void {
     if (pragma.seedExpr) {
       const seedValue = this.evaluateExprImmediate(pragma.seedExpr);
       setRandomSeed(seedValue.value);
@@ -2092,7 +2108,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .error pragma
    * @param pragma Pragma to process
    */
-  processErrorPragma(pragma: ErrorPragma<Z80Node, Z80TokenType>): void {
+  processErrorPragma(pragma: ErrorPragma<TInstruction, TToken>): void {
     const errorValue = this.evaluateExprImmediate(pragma.message);
     this.reportAssemblyError("Z2000", pragma, null, errorValue.asString());
   }
@@ -2101,7 +2117,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .includebin pragma
    * @param pragma Pragma to process
    */
-  processIncBinPragma(pragma: IncBinPragma<Z80Node, Z80TokenType>): void {
+  processIncBinPragma(pragma: IncBinPragma<TInstruction, TToken>): void {
     // --- Obtain the file name
     const fileNameValue = this.evaluateExprImmediate(pragma.filename);
     if (fileNameValue.type !== ExpressionValueType.String) {
@@ -2141,7 +2157,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     // --- Read the binary file
     const currentSourceFile =
-      this._output.sourceFileList[(pragma as unknown as Z80AssemblyLine).fileIndex];
+      this._output.sourceFileList[(pragma as unknown as AssemblyLine<TInstruction>).fileIndex];
     const dirname = path.dirname(currentSourceFile.filename) ?? "";
     const filename = path.join(dirname, fileNameValue.asString());
 
@@ -2188,7 +2204,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .comparebin pragma
    * @param pragma Pragma to process
    */
-  processCompareBinPragma(pragma: CompareBinPragma<Z80Node, Z80TokenType>): void {
+  processCompareBinPragma(pragma: CompareBinPragma<TInstruction, TToken>): void {
     // --- Obtain the file name
     const fileNameValue = this.evaluateExprImmediate(pragma.filename);
     if (fileNameValue.type !== ExpressionValueType.String) {
@@ -2206,7 +2222,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes the .injectopt pragma
    * @param pragma Pragma to process
    */
-  processInjectOptPragma(pragma: InjectOptPragma<Z80Node>): void {
+  processInjectOptPragma(pragma: InjectOptPragma<TInstruction>): void {
     for (const id of pragma.identifiers) {
       this._output.injectOptions[id.name.toLowerCase()] = true;
     }
@@ -2217,9 +2233,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processDefGPragma(pragma: DefGPragma<Z80Node>, emitAction?: (b: number) => void): void {
+  processDefGPragma(pragma: DefGPragma<TInstruction>, emitAction?: (b: number) => void): void {
     this.emitDefgBytes(
-      pragma as unknown as Z80AssemblyLine,
+      pragma as unknown as AssemblyLine<TInstruction>,
       pragma.pattern.trim(),
       false,
       emitAction
@@ -2232,7 +2248,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   processDefGXPragma(
-    pragma: DefGxPragma<Z80Node, Z80TokenType>,
+    pragma: DefGxPragma<TInstruction, TToken>,
     emitAction?: (b: number) => void
   ): void {
     const value = this.evaluateExprImmediate(pragma.pattern);
@@ -2241,7 +2257,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
       return;
     }
     var pattern = value.asString().trim();
-    this.emitDefgBytes(pragma as unknown as Z80AssemblyLine, pattern, true, emitAction);
+    this.emitDefgBytes(pragma as unknown as AssemblyLine<TInstruction>, pattern, true, emitAction);
   }
 
   /**
@@ -2249,7 +2265,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param pragma Pragma to process
    * @param emitAction Action to emit a code byte
    */
-  processOnSuccessPragma(pragma: OnSuccessPragma<Z80Node>): void {
+  processOnSuccessPragma(pragma: OnSuccessPragma<TInstruction>): void {
     this._output.onSuccessCommands.push(pragma.command);
   }
 
@@ -2261,7 +2277,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param emitAction Action to emit a code byte
    */
   emitDefgBytes(
-    line: Z80AssemblyLine,
+    line: AssemblyLine<TInstruction>,
     pattern: string,
     allowAlign: boolean = true,
     emitAction?: (b: number) => void
@@ -2337,8 +2353,8 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param allLines All parsed lines
    */
   private async processMacroOrStructInvocation(
-    macroOrStructStmt: MacroOrStructInvocation<Z80Node, Z80TokenType>,
-    allLines: Z80AssemblyLine[]
+    macroOrStructStmt: MacroOrStructInvocation<TInstruction, TToken>,
+    allLines: AssemblyLine<TInstruction>[]
   ): Promise<void> {
     const structDef = this._currentModule.getStruct(macroOrStructStmt.identifier.name);
     if (structDef) {
@@ -2453,7 +2469,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     }
 
     // --- Create a scope for the macro
-    const macroScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+    const macroScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
     macroScope.macroArguments = macroArgs;
     this._currentModule.localScopes.push(macroScope);
 
@@ -2473,7 +2489,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     const currentAddress = this.getCurrentAssemblyAddress();
 
     // --- Create macro invocation map information
-    const asmLine = macroOrStructStmt as unknown as Z80AssemblyLine;
+    const asmLine = macroOrStructStmt as unknown as AssemblyLine<TInstruction>;
     this._output.addToAddressMap(asmLine.fileIndex, asmLine.line, currentAddress);
 
     // --- Store the invocation line for future use
@@ -2516,8 +2532,8 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     // --- Now we have the source text to compile
     const inputStream = new InputStream(macroSource);
-    const tokenStream = new Z80TokenStream(inputStream);
-    const macroParser = new Z80AsmParser(tokenStream, 0, true);
+    const tokenStream = this.createTokenStream(inputStream);
+    const macroParser = this.createAsmParser(tokenStream, 0, true);
     const macroProgram = await macroParser.parseProgram();
 
     // --- Collect syntax errors
@@ -2529,7 +2545,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
         let errorPrefix = "";
         if (this._macroInvocations.length > 0) {
           const lines = this._macroInvocations
-            .map((mi) => (mi as unknown as Z80AssemblyLine).line)
+            .map((mi) => (mi as unknown as AssemblyLine<TInstruction>).line)
             .join(" -> ");
           errorPrefix = `(from macro invocation through line ${lines}) `;
         }
@@ -2637,9 +2653,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param allLines All parsed lines
    */
   private async processStructInvocation(
-    structStmt: MacroOrStructInvocation<Z80Node, Z80TokenType>,
+    structStmt: MacroOrStructInvocation<TInstruction, TToken>,
     structDef: IStructDefinition,
-    allLines: Z80AssemblyLine[]
+    allLines: AssemblyLine<TInstruction>[]
   ): Promise<void> {
     if (structStmt.operands.length > 0) {
       this.reportAssemblyError("Z0809", structStmt, null, structStmt.identifier.name);
@@ -2680,9 +2696,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processStatement(
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
-    stmt: Statement<Z80Node, Z80TokenType>,
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
+    stmt: Statement<TInstruction, TToken>,
     label: string,
     currentLineIndex: { index: number }
   ): Promise<void> {
@@ -2770,9 +2786,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private collectMacroDefinition(
-    macro: MacroStatement<Z80Node>,
+    macro: MacroStatement<TInstruction>,
     label: string,
-    allLines: Z80AssemblyLine[],
+    allLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): void {
     let errorFound = false;
@@ -2812,7 +2828,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     }
 
     // --- Create macro definition
-    const macroDef: IMacroDefinition<Z80Node> = {
+    const macroDef: IMacroDefinition<TInstruction> = {
       macroName: label,
       argNames: macro.parameters,
       endLabel: searchResult.label,
@@ -2867,9 +2883,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private collectStructDefinition(
-    structStmt: StructStatement<Z80Node>,
+    structStmt: StructStatement<TInstruction>,
     label: string,
-    allLines: Z80AssemblyLine[],
+    allLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): void {
     let errorFound = false;
@@ -2944,7 +2960,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
       }
 
       // --- Determine structure size
-      const pragma = structLine as Pragma<Z80Node, Z80TokenType>;
+      const pragma = structLine as Pragma<TInstruction, TToken>;
       switch (pragma.type) {
         case "DefBPragma":
           structOffset += pragma.values.length;
@@ -3016,9 +3032,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processWhileStatement(
-    whileStmt: WhileStatement<Z80Node, Z80TokenType>,
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
+    whileStmt: WhileStatement<TInstruction, TToken>,
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Search for the end of the loop
@@ -3032,7 +3048,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     const lastLine = currentLineIndex.index;
 
     // --- Create a scope for the loop
-    const loopScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+    const loopScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
     this._currentModule.localScopes.push(loopScope);
     const errorsBefore = this._output.errorCount;
 
@@ -3126,9 +3142,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processLoopStatement(
-    loop: LoopStatement<Z80Node, Z80TokenType>,
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
+    loop: LoopStatement<TInstruction, TToken>,
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Search for the end of the loop
@@ -3159,13 +3175,13 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     }
 
     // --- Create a scope for the loop
-    const loopScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+    const loopScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
     this._currentModule.localScopes.push(loopScope);
     const errorsBefore = this._output.errorCount;
 
     for (let i = 0; i < counter; i++) {
       // --- Create a local scope for the loop body
-      var iterationScope = new SymbolScope<Z80Node, Z80TokenType>(loopScope, this.isCaseSensitive);
+      var iterationScope = new SymbolScope<TInstruction, TToken>(loopScope, this.isCaseSensitive);
       this._currentModule.localScopes.push(iterationScope);
       iterationScope.loopCounter = i + 1;
 
@@ -3230,9 +3246,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processRepeatStatement(
-    repeatStmt: RepeatStatement<Z80Node>,
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
+    repeatStmt: RepeatStatement<TInstruction>,
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Search for the end of the loop
@@ -3248,10 +3264,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     // --- End found
     const lastLine = currentLineIndex.index;
-    const untilStmt = scopeLines[lastLine] as unknown as UntilStatement<Z80Node, Z80TokenType>;
+    const untilStmt = scopeLines[lastLine] as unknown as UntilStatement<TInstruction, TToken>;
 
     // --- Create a scope for the loop
-    const loopScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+    const loopScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
     this._currentModule.localScopes.push(loopScope);
     const errorsBefore = this._output.errorCount;
 
@@ -3259,7 +3275,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     let condition = false;
     do {
       // --- Create a local scope for the loop body
-      var iterationScope = new SymbolScope<Z80Node, Z80TokenType>(loopScope, this.isCaseSensitive);
+      var iterationScope = new SymbolScope<TInstruction, TToken>(loopScope, this.isCaseSensitive);
       this._currentModule.localScopes.push(iterationScope);
       iterationScope.loopCounter = loopCount;
 
@@ -3343,9 +3359,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processForStatement(
-    forStmt: ForStatement<Z80Node, Z80TokenType>,
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
+    forStmt: ForStatement<TInstruction, TToken>,
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Search for the end of the loop
@@ -3401,7 +3417,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     }
 
     // --- Create a scope for the loop
-    const loopScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+    const loopScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
     this._currentModule.localScopes.push(loopScope);
     const errorsBefore = this._output.errorCount;
 
@@ -3520,7 +3536,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes a BREAK statement
    * @param breakStmt Break statement
    */
-  private processBreakStatement(breakStmt: BreakStatement<Z80Node>): void {
+  private processBreakStatement(breakStmt: BreakStatement<TInstruction>): void {
     if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
       this.reportAssemblyError("Z0707", breakStmt);
       return;
@@ -3532,7 +3548,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Processes a CONTINUE statement
    * @param continueStmt Break statement
    */
-  private processContinueStatement(continueStmt: ContinueStatement<Z80Node>): void {
+  private processContinueStatement(continueStmt: ContinueStatement<TInstruction>): void {
     if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
       this.reportAssemblyError("Z0708", continueStmt);
       return;
@@ -3548,9 +3564,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processIfStatement(
-    ifStmt: IfLikeStatement<Z80Node, Z80TokenType>,
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
+    ifStmt: IfLikeStatement<TInstruction, TToken>,
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Map the sections of IF
@@ -3560,7 +3576,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     }
 
     // --- Process the IF definition
-    let sectionToCompile: IfSection<Z80Node, Z80TokenType> | undefined;
+    let sectionToCompile: IfSection<TInstruction, TToken> | undefined;
     for (const ifSection of ifDef.definition.ifSections) {
       // --- Evaluate the condition
       let conditionValue: IExpressionValue;
@@ -3642,10 +3658,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Index of the IF defintion line
    */
   private getIfSections(
-    lines: Z80AssemblyLine[],
+    lines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): {
-    definition: IfDefinition<Z80Node, Z80TokenType> | null;
+    definition: IfDefinition<TInstruction, TToken> | null;
     label?: string;
   } {
     let endLabel: string | undefined;
@@ -3653,17 +3669,17 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
       return { definition: null };
     }
 
-    const ifDef = new IfDefinition();
+    const ifDef = new IfDefinition<TInstruction, TToken>();
     const firstLine = currentLineIndex.index;
     let sectionStart = firstLine;
-    let sectionStmt = lines[sectionStart] as unknown as Statement<Z80Node, Z80TokenType>;
+    let sectionStmt = lines[sectionStart] as unknown as Statement<TInstruction, TToken>;
     let elseDetected = false;
     let errorDetected = false;
     currentLineIndex.index++;
 
     // --- Iterate through lines
     while (currentLineIndex.index < lines.length) {
-      const curLine = lines[currentLineIndex.index] as unknown as Statement<Z80Node, Z80TokenType>;
+      const curLine = lines[currentLineIndex.index] as unknown as Statement<TInstruction, TToken>;
 
       // --- Check for ENDIF
       if (curLine.type === "EndIfStatement") {
@@ -3750,8 +3766,8 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processProcStatement(
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Search for the end of the proc
@@ -3765,7 +3781,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     const lastLine = currentLineIndex.index;
 
     // --- Create a scope for the proc
-    const procScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+    const procScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
     procScope.isLoopScope = false;
     procScope.isProcScope = true;
     this._currentModule.localScopes.push(procScope);
@@ -3815,10 +3831,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex Current line index
    */
   private async processModuleStatement(
-    moduleStmt: ModuleStatement<Z80Node>,
+    moduleStmt: ModuleStatement<TInstruction>,
     label: string,
-    allLines: Z80AssemblyLine[],
-    scopeLines: Z80AssemblyLine[],
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): Promise<void> {
     // --- Search for the end of the proc
@@ -3856,7 +3872,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
     this._currentModule = newModule;
 
     // --- The module has a label, so create a temporary scope, too
-    const newScope = new SymbolScope<Z80Node, Z80TokenType>(null, this.isCaseSensitive);
+    const newScope = new SymbolScope<TInstruction, TToken>(null, this.isCaseSensitive);
     newScope.isTemporaryScope = true;
     newModule.localScopes.push(newScope);
 
@@ -3904,8 +3920,8 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param currentLineIndex
    */
   private searchForEndStatement(
-    searchType: Statement<Z80Node, Z80TokenType>["type"],
-    lines: Z80AssemblyLine[],
+    searchType: Statement<TInstruction, TToken>["type"],
+    lines: AssemblyLine<TInstruction>[],
     currentLineIndex: { index: number }
   ): { found: boolean; label?: string } {
     let endLabel: string | undefined;
@@ -3941,9 +3957,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
         endLabel = curLine.label ? curLine.label.name : null;
       } else {
         endLabel = undefined;
-        if ((curLine as any as Statement<Z80Node, Z80TokenType>).isBlock) {
+        if ((curLine as any as Statement<TInstruction, TToken>).isBlock) {
           var nestedSearch = this.searchForEndStatement(
-            (curLine as any as Statement<Z80Node, Z80TokenType>).type,
+            (curLine as any as Statement<TInstruction, TToken>).type,
             lines,
             currentLineIndex
           );
@@ -3964,9 +3980,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param stmtType Statement to check
    */
   private getEndStatementInfo(
-    stmtType: Statement<Z80Node, Z80TokenType>["type"]
-  ): { type: Statement<Z80Node, Z80TokenType>["type"]; displayName: string } | null {
-    let type: Statement<Z80Node, Z80TokenType>["type"] | undefined;
+    stmtType: Statement<TInstruction, TToken>["type"]
+  ): { type: Statement<TInstruction, TToken>["type"]; displayName: string } | null {
+    let type: Statement<TInstruction, TToken>["type"] | undefined;
     let displayName: string | undefined;
     switch (stmtType) {
       case "MacroStatement":
@@ -4025,1218 +4041,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   // Z80 instruction processing methods
 
   /**
-   * Emits code for the specified operation
-   * @param opLine Operation to emit the code for
-   */
-  private emitAssemblyOperationCode(opLine: Z80AssemblyLine): void {
-    if (opLine.type === "SimpleZ80Instruction") {
-      const mnemonic = (opLine as unknown as SimpleZ80Instruction).mnemonic.toLowerCase();
-
-      // --- Get the op codes for the instruction
-      if (
-        nextInstructionCodes[mnemonic] !== undefined &&
-        this._output.modelType !== SpectrumModelType.Next
-      ) {
-        this.reportAssemblyError("Z0414", opLine);
-        return;
-      }
-      const opCodes = simpleInstructionCodes[mnemonic];
-      if (opCodes === undefined) {
-        this.reportEvaluationError(this, "Z0401", opLine, null, mnemonic);
-      }
-
-      // --- Emit the opcode(s);
-      this.emitOpCode(opCodes);
-      return;
-    }
-    const instr = opLine as Z80Node;
-    switch (instr.type) {
-      case "NextRegInstruction":
-        this.processNextRegInst(instr);
-        break;
-      case "PushInstruction":
-      case "PopInstruction":
-        this.processStackInst(instr);
-        break;
-      case "CallInstruction":
-        this.processCallInst(instr);
-        break;
-      case "JpInstruction":
-        this.processJpInst(instr);
-        break;
-      case "JrInstruction":
-        this.processJrInst(instr);
-        break;
-      case "RetInstruction":
-        this.processRetInst(instr);
-        break;
-      case "RstInstruction":
-        this.processRstInst(instr);
-        break;
-      case "DjnzInstruction":
-        this.emitJumpRelativeOp(instr, instr.target, 0x10);
-        break;
-      case "ImInstruction":
-        this.processImInst(instr);
-        break;
-      case "IncInstruction":
-      case "DecInstruction":
-        this.processIncDecInst(instr);
-        break;
-      case "LdInstruction":
-        this.processLdInst(instr);
-        break;
-      case "ExInstruction":
-        this.processExInst(instr);
-        break;
-      case "AddInstruction":
-      case "AdcInstruction":
-      case "SbcInstruction":
-        this.processAlu1Inst(instr);
-        break;
-      case "SubInstruction":
-      case "AndInstruction":
-      case "XorInstruction":
-      case "OrInstruction":
-      case "CpInstruction":
-        this.processAlu2Inst(instr);
-        break;
-      case "InInstruction":
-        this.processInInst(instr);
-        break;
-      case "OutInstruction":
-        this.processOutInst(instr);
-        break;
-      case "RlcInstruction":
-      case "RrcInstruction":
-      case "RlInstruction":
-      case "RrInstruction":
-      case "SlaInstruction":
-      case "SraInstruction":
-      case "SllInstruction":
-      case "SrlInstruction":
-        this.processShiftRotateInst(instr);
-        break;
-      case "BitInstruction":
-        this.processBitInst(instr, 0x40);
-        break;
-      case "ResInstruction":
-        this.processBitInst(instr, 0x80);
-        break;
-      case "SetInstruction":
-        this.processBitInst(instr, 0xc0);
-        break;
-      case "TestInstruction":
-        this.processTestInst(instr);
-        break;
-    }
-  }
-
-  /**
-   * Processes a MUL instruction
-   * @param op Instruction
-   */
-  private processNextRegInst(op: NextRegInstruction): void {
-    if (this.invalidNextInst(op)) {
-      return;
-    }
-    if (op.operand1.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", op.operand1.expr);
-      return;
-    }
-    if (op.operand2.operandType === OperandType.Expression) {
-      this.emitOpCode(0xed91);
-      this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
-      this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-    } else if (op.operand2.operandType === OperandType.Reg8 && op.operand2.register === "a") {
-      this.emitOpCode(0xed92);
-      this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
-    } else {
-      this.reportAssemblyError("Z0604", op);
-    }
-  }
-
-  /**
-   * Processes a PUSH or POP operation
-   * @param op Instruction
-   */
-  private processStackInst(op: PushInstruction | PopInstruction): void {
-    switch (op.operand.operandType) {
-      case OperandType.Expression:
-        // --- PUSH NNNN operation
-        if (op.type === "PopInstruction") {
-          this.reportAssemblyError("Z0412", op);
-          return;
-        }
-        if (this.invalidNextInst(op)) {
-          return;
-        }
-        this.emitOpCode(0xed8a);
-        this.emitNumericExpr(op, op.operand.expr, FixupType.Bit16Be);
-        return;
-      case OperandType.Reg16:
-      case OperandType.Reg16Spec:
-      case OperandType.Reg16Idx:
-        let opcode = popOpBytes[op.operand.register];
-        if (opcode) {
-          if (op.type === "PushInstruction") {
-            opcode |= 0x04;
-          }
-          this.emitOpCode(opcode);
-          return;
-        }
-    }
-    this.reportAssemblyError("Z0413", op);
-  }
-
-  /**
-   * Processes a CALL operation
-   * @param op Instruction
-   */
-  private processCallInst(op: CallInstruction): void {
-    if (!op.operand2) {
-      if (op.operand1.operandType !== OperandType.Expression) {
-        this.reportAssemblyError("Z0604", op);
-        return;
-      }
-      this.emitOpCode(0xcd);
-      this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit16);
-      return;
-    }
-    let condition: string;
-    if (op.operand1.operandType === OperandType.Condition) {
-      condition = op.operand1.register;
-    } else if (op.operand1.operandType === OperandType.Reg8 && op.operand1.register === "c") {
-      condition = "c";
-    } else {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    const order = conditionOrder[condition] ?? 0;
-    this.emitOpCode(0xc4 + order * 8);
-    if (op.operand2.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-  }
-
-  /**
-   * Processes a JP operation
-   * @param op Instruction
-   */
-  private processJpInst(op: JpInstruction): void {
-    if (!op.operand2) {
-      switch (op.operand1.operandType) {
-        case OperandType.CPort:
-          if (this.invalidNextInst(op)) {
-            return;
-          }
-          this.emitOpCode(0xed98);
-          return;
-        case OperandType.Reg16:
-        case OperandType.RegIndirect:
-          if (op.operand1.register !== "hl") {
-            break;
-          }
-          this.emitOpCode(0xe9);
-          return;
-        case OperandType.IndexedIndirect:
-          if (op.operand1.offsetSign) {
-            break;
-          }
-        // --- Flow to the next label is intentional
-        case OperandType.Reg16Idx:
-          if (op.operand1.register === "ix") {
-            this.emitOpCode(0xdde9);
-            return;
-          }
-          if (op.operand1.register === "iy") {
-            this.emitOpCode(0xfde9);
-            return;
-          }
-          break;
-        case OperandType.Expression:
-          this.emitOpCode(0xc3);
-          this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit16);
-          return;
-      }
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-
-    let condition: string;
-    if (op.operand1.operandType === OperandType.Condition) {
-      condition = op.operand1.register;
-    } else if (op.operand1.operandType === OperandType.Reg8 && op.operand1.register === "c") {
-      condition = "c";
-    } else {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    const order = conditionOrder[condition] ?? 0;
-    if (op.operand2.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0111", op);
-      return;
-    }
-    this.emitOpCode(0xc2 + order * 8);
-    this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-  }
-
-  /**
-   * Processes a JR operation
-   * @param op Instruction
-   */
-  private processJrInst(op: JrInstruction): void {
-    if (!op.operand2) {
-      if (op.operand1.operandType !== OperandType.Expression) {
-        this.reportAssemblyError("Z0604", op);
-        return;
-      }
-      this.emitJumpRelativeOp(op, op.operand1, 0x18);
-      return;
-    }
-    let condition: string;
-    if (op.operand1.operandType === OperandType.Condition) {
-      condition = op.operand1.register;
-    } else if (op.operand1.operandType === OperandType.Reg8 && op.operand1.register === "c") {
-      condition = "c";
-    } else {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    const order = conditionOrder[condition] ?? 0;
-    if (order >= 4) {
-      this.reportAssemblyError("Z0402", op);
-      return;
-    }
-    if (op.operand2.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    this.emitJumpRelativeOp(op, op.operand2, 0x20 + order * 8);
-  }
-
-  /**
-   * Processes a RET operation
-   * @param op Instruction
-   */
-  private processRetInst(op: RetInstruction): void {
-    let condition: string;
-    if (op.condition) {
-      if (op.condition.operandType === OperandType.Condition) {
-        condition = op.condition.register;
-      } else if (op.condition.operandType === OperandType.Reg8 && op.condition.register === "c") {
-        condition = "c";
-      } else {
-        this.reportAssemblyError("Z0604", op);
-        return;
-      }
-      const order = conditionOrder[condition] ?? 0;
-      this.emitByte(0xc0 + order * 8);
-      return;
-    }
-    this.emitOpCode(0xc9);
-  }
-
-  /**
-   * Processes an RST operation
-   * @param op Instruction
-   */
-  private processRstInst(op: RstInstruction): void {
-    if (op.target.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    const value = this.evaluateExprImmediate(op.target.expr).value;
-    if (value > 0x38 || value % 8 !== 0) {
-      this.reportAssemblyError("Z0404", op, null, value);
-      return;
-    }
-    this.emitOpCode(0xc7 + value);
-  }
-
-  /**
-   * Processes an IM operation
-   * @param op Instruction
-   */
-  private processImInst(op: ImInstruction): void {
-    if (op.mode.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    const value = this.evaluateExprImmediate(op.mode.expr).value;
-    if (value < 0 || value > 2) {
-      this.reportAssemblyError("Z0405", op, null, value);
-      return;
-    }
-    this.emitOpCode([0xed46, 0xed56, 0xed5e][value]);
-  }
-
-  /**
-   * Processes an EX operation
-   * @param op Instruction
-   */
-  private processExInst(op: ExInstruction): void {
-    switch (op.operand1.operandType) {
-      case OperandType.Reg16Spec:
-        if (op.operand1.register === "af") {
-          if (op.operand2.register === "af'") {
-            this.emitOpCode(0x08);
-            return;
-          }
-        }
-        break;
-      case OperandType.Reg16:
-        if (op.operand1.register === "de") {
-          if (op.operand2.register === "hl") {
-            this.emitOpCode(0xeb);
-            return;
-          }
-        }
-        break;
-      case OperandType.RegIndirect:
-        if (op.operand1.register !== "sp") {
-          break;
-        }
-        if (op.operand2.register === "hl") {
-          this.emitOpCode(0xe3);
-          return;
-        } else if (op.operand2.operandType === OperandType.Reg16Idx) {
-          this.emitOpCode(op.operand2.register === "ix" ? 0xdde3 : 0xfde3);
-          return;
-        }
-        break;
-    }
-    this.reportAssemblyError("Z0604", op);
-  }
-
-  /**
-   * Processes an IN operation
-   * @param op Instruction
-   */
-  private processInInst(op: InInstruction): void {
-    switch (op.operand1.operandType) {
-      case OperandType.CPort:
-        if (op.operand2) {
-          break;
-        }
-        this.emitOpCode(0xed70);
-        return;
-      case OperandType.Reg8:
-        if (!op.operand2) {
-          break;
-        }
-        if (op.operand1.register === "a") {
-          if (op.operand2.operandType === OperandType.MemIndirect) {
-            this.emitOpCode(0xdb);
-            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-            return;
-          }
-          if (op.operand2.operandType === OperandType.CPort) {
-            this.emitOpCode(0xed78);
-            return;
-          }
-        }
-        if (op.operand2?.operandType !== OperandType.CPort) {
-          break;
-        }
-        this.emitOpCode(0xed40 + 8 * reg8Order[op.operand1.register]);
-        return;
-    }
-    this.reportAssemblyError("Z0604", op);
-  }
-
-  /**
-   * Processes an OUT operation
-   * @param op Instruction
-   */
-  private processOutInst(op: OutInstruction): void {
-    switch (op.operand1.operandType) {
-      case OperandType.MemIndirect:
-        if (!op.operand2) {
-          break;
-        }
-        if (op.operand2.register === "a") {
-          this.emitOpCode(0xd3);
-          this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
-          return;
-        }
-        break;
-      case OperandType.CPort:
-        if (!op.operand2) {
-          break;
-        }
-        if (op.operand2.operandType === OperandType.Reg8) {
-          this.emitOpCode(0xed41 + 8 * reg8Order[op.operand2.register]);
-          return;
-        }
-        if (op.operand2.operandType !== OperandType.Expression) {
-          break;
-        }
-        const value = this.evaluateExprImmediate(op.operand2.expr).value;
-        if (value !== 0) {
-          this.reportAssemblyError("Z0406", op);
-        } else {
-          this.emitOpCode(0xed71);
-        }
-        return;
-    }
-    this.reportAssemblyError("Z0604", op);
-  }
-
-  /**
-   * Processes a BIT/RES/SET operation
-   * @param op Instruction
-   * @param opByte Operation base value
-   */
-  private processBitInst(
-    op: BitInstruction | ResInstruction | SetInstruction,
-    opByte: number
-  ): void {
-    if (op.operand1.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", op);
-      return;
-    }
-    const bitIndex = this.evaluateExprImmediate(op.operand1.expr).value;
-    if (bitIndex < 0 || bitIndex > 7) {
-      this.reportAssemblyError("Z0407", op, null, bitIndex);
-      return;
-    }
-    switch (op.operand2.operandType) {
-      case OperandType.IndexedIndirect:
-        if (op.type !== "BitInstruction") {
-          if (!op.operand3) {
-            opByte |= 0x06;
-          } else if (op.operand3.operandType === OperandType.Reg8) {
-            opByte |= reg8Order[op.operand3.register];
-          } else {
-            this.reportAssemblyError("Z0604", op);
-            return;
-          }
-        } else {
-          opByte |= 0x06;
-        }
-        this.emitIndexedBitOperation(
-          op as unknown as Z80AssemblyLine,
-          op.operand2.register,
-          op.operand2.offsetSign,
-          op.operand2.expr,
-          opByte + 8 * bitIndex
-        );
-        return;
-      // Flows to the next label intentionally
-      case OperandType.Reg8:
-        opByte |= reg8Order[op.operand2.register];
-        this.emitByte(0xcb);
-        this.emitByte(opByte + 8 * bitIndex);
-        return;
-      case OperandType.RegIndirect:
-        if (op.operand2.register !== "hl") {
-          break;
-        }
-        this.emitByte(0xcb);
-        this.emitByte((opByte | 0x06) + 8 * bitIndex);
-        return;
-    }
-    this.reportAssemblyError("Z0604", op);
-  }
-
-  /**
-   * Processes an RLC/RRC/RL/RR/SLA/SRA/SLL/SRL operation
-   * @param op Instruction
-   */
-  private processShiftRotateInst(op: ShiftRotateInstruction): void {
-    let opCode = 8 * shiftOpOrder[op.type];
-    let error = false;
-    switch (op.operand1.operandType) {
-      case OperandType.Reg8:
-        opCode |= reg8Order[op.operand1.register];
-        if (op.operand2) {
-          error = true;
-        }
-        break;
-      case OperandType.RegIndirect:
-        if (op.operand1.register === "hl") {
-          opCode |= 0x06;
-          if (op.operand2) {
-            error = true;
-          }
-        } else {
-          error = true;
-        }
-        break;
-      case OperandType.IndexedIndirect:
-        if (!op.operand2) {
-          opCode |= 0x06;
-        } else if (op.operand2.operandType !== OperandType.Reg8) {
-          error = true;
-          break;
-        } else {
-          opCode |= reg8Order[op.operand2.register];
-        }
-        this.emitIndexedBitOperation(
-          op as unknown as Z80AssemblyLine,
-          op.operand1.register,
-          op.operand1.offsetSign,
-          op.operand1.expr,
-          opCode
-        );
-        return;
-      default:
-        error = true;
-        break;
-    }
-    if (error) {
-      this.reportAssemblyError("Z0604", op);
-    } else {
-      this.emitByte(0xcb);
-      this.emitByte(opCode);
-    }
-  }
-
-  /**
-   * Processes an INC/DEC operation
-   * @param op Instruction
-   */
-  private processIncDecInst(op: IncInstruction | DecInstruction): void {
-    switch (op.operand.operandType) {
-      case OperandType.Reg8:
-        this.emitOpCode(
-          (op.type === "IncInstruction" ? 0x04 : 0x05) + 8 * reg8Order[op.operand.register]
-        );
-        return;
-      case OperandType.Reg8Idx:
-      case OperandType.Reg16:
-      case OperandType.Reg16Idx:
-        this.emitOpCode(
-          op.type === "IncInstruction"
-            ? incOpCodes[op.operand.register]
-            : decOpCodes[op.operand.register]
-        );
-        return;
-      case OperandType.RegIndirect:
-        if (op.operand.register !== "hl") {
-          break;
-        }
-        this.emitOpCode(op.type === "IncInstruction" ? 0x34 : 0x35);
-        return;
-      case OperandType.IndexedIndirect:
-        this.emitIndexedOperation(
-          op as unknown as Z80AssemblyLine,
-          op.operand,
-          op.type === "IncInstruction" ? 0x34 : 0x35
-        );
-        return;
-    }
-    this.reportAssemblyError("Z0604", op);
-  }
-
-  /**
-   * Processes a ADD/ADC/SBC operation
-   * @param op Instruction
-   */
-  private processAlu1Inst(op: AddInstruction | AdcInstruction | SbcInstruction): void {
-    if (!op.operand2) {
-      op.operand2 = op.operand1;
-      op.operand1 = {
-        type: "Operand",
-        operandType: OperandType.Reg8,
-        register: "a"
-      };
-    }
-    const aluIdx = aluOpOrder[op.type];
-    switch (op.operand1.operandType) {
-      case OperandType.Reg8:
-        if (op.operand1.register !== "a") {
-          this.reportAssemblyError("Z0409", op);
-          return;
-        }
-        switch (op.operand2.operandType) {
-          case OperandType.Reg8:
-            this.emitOpCode(0x80 + aluIdx * 8 + reg8Order[op.operand2.register]);
-            return;
-          case OperandType.RegIndirect:
-            if (op.operand2.register !== "hl") {
-              break;
-            }
-            this.emitOpCode(0x86 + aluIdx * 8);
-            return;
-          case OperandType.Reg8Idx:
-            this.emitByte(op.operand2.register.indexOf("x") >= 0 ? 0xdd : 0xfd);
-            this.emitByte(aluIdx * 8 + (op.operand2.register.endsWith("h") ? 0x84 : 0x85));
-            return;
-          case OperandType.IndexedIndirect:
-            this.emitIndexedOperation(
-              op as unknown as Z80AssemblyLine,
-              op.operand2,
-              0x86 + aluIdx * 8
-            );
-            return;
-          case OperandType.Expression:
-            this.emitOpCode(0xc6 + aluIdx * 8);
-            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-            return;
-        }
-        break;
-
-      case OperandType.Reg16:
-        switch (op.operand2.operandType) {
-          case OperandType.Reg16:
-            if (op.operand1.register !== "hl") {
-              break;
-            }
-            let opCodeBase = 0xed42;
-            if (op.type === "AddInstruction") {
-              opCodeBase = 0x09;
-            } else if (op.type === "AdcInstruction") {
-              opCodeBase = 0xed4a;
-            }
-            this.emitOpCode(opCodeBase + reg16Order[op.operand2.register] * 16);
-            return;
-          case OperandType.Reg8:
-            if (
-              this.invalidNextInst(op) ||
-              op.operand1.register === "sp" ||
-              op.operand2.register !== "a"
-            ) {
-              break;
-            }
-            {
-              let opCodeBase = 0xed33;
-              if (op.operand1.register === "hl") {
-                opCodeBase = 0xed31;
-              } else if (op.operand1.register === "de") {
-                opCodeBase = 0xed32;
-              }
-              this.emitOpCode(opCodeBase);
-              return;
-            }
-          case OperandType.Expression:
-            if (this.invalidNextInst(op) || op.operand1.register === "sp") {
-              break;
-            }
-            {
-              let opCodeBase = 0xed36;
-              if (op.operand1.register === "hl") {
-                opCodeBase = 0xed34;
-              } else if (op.operand1.register === "de") {
-                opCodeBase = 0xed35;
-              }
-              this.emitOpCode(opCodeBase);
-              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-              return;
-            }
-        }
-        break;
-
-      case OperandType.Reg16Idx:
-        if (op.type !== "AddInstruction") {
-          break;
-        }
-        const opCode = op.operand1.register === "ix" ? 0xdd09 : 0xfd09;
-        switch (op.operand2.operandType) {
-          case OperandType.Reg16:
-            if (op.operand2.register === "hl") {
-              break;
-            }
-            this.emitOpCode(opCode + reg16Order[op.operand2.register] * 16);
-            return;
-          case OperandType.Reg16Idx:
-            if (op.operand1.register !== op.operand2.register) {
-              break;
-            }
-            this.emitOpCode(opCode + 0x20);
-            return;
-        }
-        break;
-    }
-    this.reportAssemblyError("Z0604", op);
-  }
-
-  /**
-   * Processes a SUB/AND/XOR/OR/CP operation
-   * @param op Instruction
-   */
-  private processAlu2Inst(
-    op: SubInstruction | AndInstruction | XorInstruction | OrInstruction | CpInstruction
-  ): void {
-    let operand = op.operand1;
-    let opType = op.operand1.operandType;
-    let opReg = op.operand1.register;
-
-    // --- Check for alternative syntax (A register as the first operand)
-    if (op.operand2) {
-      if (opType !== OperandType.Reg8 || opReg !== "a") {
-        this.reportAssemblyError("Z0408", op);
-        return;
-      }
-      operand = op.operand2;
-      opType = op.operand2.operandType;
-      opReg = op.operand2.register;
-    }
-
-    const aluIdx = aluOpOrder[op.type];
-    switch (opType) {
-      case OperandType.Reg8:
-        this.emitOpCode(0x80 + aluIdx * 8 + reg8Order[opReg]);
-        return;
-      case OperandType.RegIndirect:
-        if (opReg !== "hl") {
-          break;
-        }
-        this.emitOpCode(0x86 + aluIdx * 8);
-        return;
-      case OperandType.Reg8Idx:
-        this.emitByte(opReg.indexOf("x") >= 0 ? 0xdd : 0xfd);
-        this.emitByte(aluIdx * 8 + (opReg.endsWith("h") ? 0x84 : 0x85));
-        return;
-      case OperandType.Expression:
-        this.emitByte(0xc6 + aluIdx * 8);
-        this.emitNumericExpr(op, operand.expr, FixupType.Bit8);
-        return;
-      case OperandType.IndexedIndirect:
-        this.emitIndexedOperation(op as unknown as Z80AssemblyLine, operand, 0x86 + aluIdx * 8);
-        return;
-    }
-    this.reportAssemblyError("Z0604", op);
-  }
-
-  /**
-   * Processes an LD operation
-   * @param op Instruction
-   */
-  private processLdInst(op: LdInstruction): void {
-    let issueWithOp1 = true;
-    switch (op.operand1.operandType) {
-      case OperandType.Reg8: {
-        const destReg = op.operand1.register;
-        const destRegIdx = reg8Order[destReg];
-        const sourceReg = op.operand2.register;
-        switch (op.operand2.operandType) {
-          case OperandType.Reg8:
-            this.emitOpCode(0x40 + destRegIdx * 8 + reg8Order[sourceReg]);
-            return;
-
-          case OperandType.RegIndirect:
-            if (sourceReg === "bc" && destReg === "a") {
-              this.emitOpCode(0x0a);
-              return;
-            } else if (sourceReg === "de" && destReg === "a") {
-              this.emitOpCode(0x1a);
-              return;
-            } else if (sourceReg === "hl") {
-              this.emitOpCode(0x46 + destRegIdx * 8);
-              return;
-            }
-            break;
-
-          case OperandType.Reg8Spec:
-            if (destReg !== "a") {
-              break;
-            }
-            this.emitOpCode(sourceReg === "r" ? 0xed5f : 0xed57);
-            return;
-
-          case OperandType.Reg8Idx:
-            if (destRegIdx >= 4 && destRegIdx <= 6) {
-              break;
-            }
-            this.emitOpCode(
-              (sourceReg.indexOf("x") >= 0 ? 0xdd44 : 0xfd44) +
-                destRegIdx * 8 +
-                (sourceReg.endsWith("h") ? 0 : 1)
-            );
-            return;
-
-          case OperandType.Expression:
-            this.emitOpCode(0x06 + destRegIdx * 8);
-            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-            return;
-
-          case OperandType.MemIndirect:
-            if (destReg !== "a") {
-              break;
-            }
-            this.emitOpCode(0x3a);
-            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-            return;
-
-          case OperandType.IndexedIndirect:
-            this.emitIndexedOperation(
-              op as unknown as Z80AssemblyLine,
-              op.operand2,
-              0x46 + destRegIdx * 8
-            );
-            return;
-        }
-        break;
-      }
-
-      case OperandType.Reg8Idx:
-        {
-          const destReg = op.operand1.register;
-          const sourceReg = op.operand2.register;
-          switch (op.operand2.operandType) {
-            case OperandType.Reg8:
-              const sourceRegIdx = reg8Order[op.operand2.register];
-              if (sourceRegIdx >= 4 && sourceRegIdx <= 6) {
-                break;
-              }
-              this.emitOpCode(
-                (destReg.indexOf("x") >= 0 ? 0xdd60 : 0xfd60) +
-                  (destReg.endsWith("h") ? 0 : 8) +
-                  sourceRegIdx
-              );
-              return;
-
-            case OperandType.Reg8Idx:
-              if (
-                (sourceReg.indexOf("x") >= 0 && destReg.indexOf("y") >= 0) ||
-                (sourceReg.indexOf("y") >= 0 && destReg.indexOf("x") >= 0)
-              ) {
-                break;
-              }
-              this.emitOpCode(
-                (destReg.indexOf("x") >= 0 ? 0xdd64 : 0xfd64) +
-                  (destReg.endsWith("h") ? 0 : 8) +
-                  (sourceReg.endsWith("h") ? 0 : 1)
-              );
-              return;
-
-            case OperandType.Expression:
-              this.emitOpCode(
-                (destReg.indexOf("x") >= 0 ? 0xdd26 : 0xfd26) + (destReg.endsWith("h") ? 0 : 8)
-              );
-              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-              return;
-          }
-        }
-        break;
-
-      case OperandType.Reg8Spec:
-        if (op.operand2.register !== "a") {
-          break;
-        }
-        this.emitOpCode(op.operand1.register === "r" ? 0xed4f : 0xed47);
-        return;
-
-      case OperandType.RegIndirect:
-        {
-          const destReg = op.operand1.register;
-          switch (op.operand2.operandType) {
-            case OperandType.Reg8:
-              const sourceReg = op.operand2.register;
-              if (destReg === "bc" && sourceReg === "a") {
-                this.emitOpCode(0x02);
-                return;
-              } else if (destReg === "de" && sourceReg === "a") {
-                this.emitOpCode(0x12);
-                return;
-              } else if (destReg === "hl") {
-                this.emitOpCode(0x70 + reg8Order[sourceReg]);
-                return;
-              }
-              break;
-
-            case OperandType.Expression:
-              if (destReg !== "hl") {
-                break;
-              }
-              this.emitByte(0x36);
-              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-              return;
-          }
-        }
-        break;
-
-      case OperandType.MemIndirect: {
-        let opCode = 0x00;
-        switch (op.operand2.operandType) {
-          case OperandType.Reg8:
-            if (op.operand2.register !== "a") {
-              break;
-            }
-            opCode = 0x32;
-            break;
-
-          case OperandType.Reg16:
-            const sourceReg = op.operand2.register;
-            opCode = 0x22;
-            if (sourceReg === "bc") {
-              opCode = 0xed43;
-            } else if (sourceReg === "de") {
-              opCode = 0xed53;
-            } else if (sourceReg === "sp") {
-              opCode = 0xed73;
-            }
-            break;
-
-          case OperandType.Reg16Idx:
-            opCode = op.operand2.register === "ix" ? 0xdd22 : 0xfd22;
-            break;
-        }
-        if (!opCode) {
-          break;
-        }
-        this.emitOpCode(opCode);
-        this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit16);
-        return;
-      }
-
-      case OperandType.Reg16:
-        {
-          const destReg = op.operand1.register;
-          const sourceReg = op.operand2.register;
-          switch (op.operand2.operandType) {
-            case OperandType.MemIndirect:
-              let opCode = 0x2a;
-              if (destReg === "bc") {
-                opCode = 0xed4b;
-              } else if (destReg === "de") {
-                opCode = 0xed5b;
-              } else if (destReg === "sp") {
-                opCode = 0xed7b;
-              }
-              this.emitOpCode(opCode);
-              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-              return;
-
-            case OperandType.Expression:
-              this.emitOpCode(0x01 + reg16Order[op.operand1.register] * 16);
-              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-              return;
-
-            default: {
-              if (destReg !== "sp") {
-                break;
-              }
-              let opCode = 0xf9;
-              if (sourceReg === "ix") {
-                opCode = 0xddf9;
-              } else if (sourceReg === "iy") {
-                opCode = 0xfdf9;
-              } else if (sourceReg !== "hl") {
-                break;
-              }
-              this.emitOpCode(opCode);
-              return;
-            }
-          }
-        }
-        break;
-
-      case OperandType.Reg16Idx:
-        {
-          const destReg = op.operand1.register;
-          switch (op.operand2.operandType) {
-            case OperandType.MemIndirect:
-              this.emitOpCode(destReg === "ix" ? 0xdd2a : 0xfd2a);
-              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-              return;
-
-            case OperandType.Expression:
-              this.emitOpCode(destReg === "ix" ? 0xdd21 : 0xfd21);
-              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
-              return;
-          }
-        }
-        break;
-
-      case OperandType.IndexedIndirect: {
-        switch (op.operand2.operandType) {
-          case OperandType.Reg8:
-            this.emitIndexedOperation(
-              op as unknown as Z80AssemblyLine,
-              op.operand1,
-              0x70 + reg8Order[op.operand2.register]
-            );
-            return;
-          case OperandType.Expression:
-            this.emitIndexedOperation(op as unknown as Z80AssemblyLine, op.operand1, 0x36);
-            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
-            return;
-        }
-        break;
-      }
-    }
-    this.reportAssemblyError(
-      "Z0604",
-      op,
-      toPosition(issueWithOp1 ? op.operand1.startToken : op.operand2.startToken)
-    );
-  }
-
-  /**
-   * Processes a TEST operation
-   * @param op Instruction
-   */
-  private processTestInst(op: TestInstruction): void {
-    if (this.invalidNextInst(op)) {
-      return;
-    }
-    this.emitOpCode(0xed27);
-    this.emitNumericExpr(op, op.expr, FixupType.Bit8);
-  }
-
-  /**
-   * Checks if the specified operation results an error as it
-   * can be used only with the ZX Spectrum Next
-   * @param op Instruction to test
-   */
-  private invalidNextInst(op: Z80Node): boolean {
-    if (this._output.modelType !== SpectrumModelType.Next) {
-      this.reportAssemblyError("Z0414", op);
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Evaluates the expression and emits bytes accordingly. If the expression
-   * cannot be resolved, creates a fixup.
-   * @param opLine Assembly line
-   * @param expr Expression to evaluate
-   * @param type Expression/Fixup type
-   */
-  private emitNumericExpr(
-    instr: Z80Node,
-    expr: Expression<Z80Node, Z80TokenType>,
-    type: FixupType
-  ): void {
-    const opLine = instr as unknown as Z80AssemblyLine;
-    let value = this.evaluateExpr(expr);
-    if (value.type === ExpressionValueType.Error) {
-      return;
-    }
-    if (value.isNonEvaluated) {
-      this.recordFixup(opLine, type, expr);
-    }
-    if (value.isValid && value.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z0603", opLine);
-      value = new ExpressionValue(0);
-    }
-    const fixupValue = value.value;
-    if (type === FixupType.Bit16Be) {
-      this.emitByte(fixupValue >> 8);
-      this.emitByte(fixupValue);
-    } else {
-      this.emitByte(fixupValue);
-      if (type === FixupType.Bit16) {
-        this.emitByte(fixupValue >> 8);
-      }
-    }
-  }
-
-  /**
-   *
-   * @param instr Control flow operation line
-   * @param target Target expression
-   * @param opCode Operation code
-   */
-  private emitJumpRelativeOp(
-    instr: Z80Node,
-    target: Operand<Z80Node, Z80TokenType>,
-    opCode: number
-  ) {
-    const opLine = instr as unknown as Z80AssemblyLine;
-    if (target.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z0604", opLine);
-      return;
-    }
-    const value = this.evaluateExpr(target.expr);
-    let dist = 0;
-    if (value.isNonEvaluated) {
-      this.recordFixup(opLine, FixupType.Jr, target.expr);
-    } else {
-      dist = value.value - (this.getCurrentAssemblyAddress() + 2);
-      if (dist < -128 || dist > 127) {
-        this.reportAssemblyError("Z0403", opLine, null, dist);
-        return;
-      }
-    }
-    this.emitByte(opCode);
-    this.emitByte(dist);
-  }
-
-  /**
-   * Emits an indexed operation with the specified operand and operation code
-   * @param opLine Operation source line
-   * @param register Index register
-   * @param sign Displacement sign
-   * @param expr Displacement expression
-   * @param opCode Operation code
-   */
-  private emitIndexedOperation(
-    opLine: Z80AssemblyLine,
-    operand: Operand<Z80Node, Z80TokenType>,
-    opCode: number
-  ): void {
-    const idxByte = operand.register === "ix" ? 0xdd : 0xfd;
-    let dispValue = 0x00;
-    let evaluated = true;
-    if (operand.offsetSign) {
-      const value = this.evaluateExpr(operand.expr);
-      if (!value.isValid) {
-        evaluated = false;
-      } else {
-        dispValue = value.value;
-        if (operand.offsetSign === "-") {
-          dispValue = -dispValue;
-        }
-      }
-    }
-    this.emitByte(idxByte);
-    this.emitByte(opCode);
-    if (!evaluated) {
-      this.recordFixup(opLine, FixupType.Bit8, operand.expr);
-    }
-    this.emitByte(dispValue);
-  }
-
-  /**
-   * Emits an indexed bit operation with the specified operand and operation code
-   * @param opLine Operation source line
-   * @param register Index register
-   * @param sign Displacement sign
-   * @param expr Displacement expression
-   * @param opCode Operation code
-   */
-  private emitIndexedBitOperation(
-    opLine: Z80AssemblyLine,
-    register: string,
-    sign: string,
-    expr: Expression<Z80Node, Z80TokenType>,
-    opCode: number
-  ): void {
-    const idxByte = register === "ix" ? 0xdd : 0xfd;
-    let dispValue = 0x00;
-    let evaluated = true;
-    if (sign) {
-      const value = this.evaluateExpr(expr);
-      if (!value.isValid) {
-        evaluated = false;
-      } else {
-        dispValue = value.value;
-        if (sign === "-") {
-          dispValue = -dispValue;
-        }
-      }
-    }
-    this.emitByte(idxByte);
-    this.emitByte(0xcb);
-    if (!evaluated) {
-      this.recordFixup(opLine, FixupType.Bit8, expr);
-    }
-    this.emitByte(dispValue);
-    this.emitByte(opCode);
-  }
-
-  /**
    * Emits a new byte to the current code segment
    * @param data Data byte to emit
    */
-  private emitByte(data: number): void {
+  protected emitByte(data: number): void {
     this.ensureCodeSegment();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
@@ -5248,7 +4056,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Emits a new word to the current code segment
    * @param data Data byte to emit
    */
-  private emitWord(data: number): void {
+  protected emitWord(data: number): void {
     this.emitByte(data & 0xff);
     this.emitByte((data >> 8) & 0xff);
   }
@@ -5257,7 +4065,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * Emits a byte (high 8-bit value is zero)or a word
    * @param data byte or word data
    */
-  private emitOpCode(data: number): void {
+  protected emitOpCode(data: number): void {
     const high = (data >> 8) & 0xff;
     if (high) {
       this.emitByte(high);
@@ -5271,7 +4079,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param nullTerminator Null terminator flag
    * @param emitAction Action to emit a code byte
    */
-  private emitString(
+  protected emitString(
     message: IExpressionValue,
     bit7Terminator: boolean,
     nullTerminator: boolean,
@@ -5313,10 +4121,10 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param structBytes Optional structure bytes
    * @param offset Fixup offset, if not the current position
    */
-  private recordFixup(
-    opLine: Z80AssemblyLine,
+  protected recordFixup(
+    opLine: AssemblyLine<TInstruction>,
     type: FixupType,
-    expr: Expression<Z80Node, Z80TokenType>,
+    expr: Expression<TInstruction, TToken>,
     label: string | null = null,
     structBytes: Map<number, number> | null = null,
     offset: number | null = null
@@ -5367,7 +4175,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param signNotEvaluable Raise error if the symbol is not evaluable
    */
   private evaluateFixupExpression(
-    fixup: FixupEntry<Z80Node, Z80TokenType>,
+    fixup: FixupEntry<TInstruction, TToken>,
     numericOnly: boolean,
     signNotEvaluable: boolean
   ): { success: boolean; value: IExpressionValue } {
@@ -5403,7 +4211,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param signNotEvaluable Raise error if the symbol is not evaluable
    */
   private async fixupSymbols(
-    scope: ISymbolScope<Z80Node, Z80TokenType>,
+    scope: ISymbolScope<TInstruction, TToken>,
     signNotEvaluable: boolean
   ): Promise<boolean> {
     await this.allowEvents();
@@ -5565,7 +4373,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   private reportMacroInvocationErrors(): void {
     // --- Report macro invocation errors
     for (let i = this._macroInvocations.length - 1; i >= 0; i--) {
-      const errorLine = this._macroInvocations[i] as unknown as Z80AssemblyLine;
+      const errorLine = this._macroInvocations[i] as unknown as AssemblyLine<TInstruction>;
       const sourceItem = this._output.sourceFileList[errorLine.fileIndex];
       const errorInfo = new AssemblerErrorInfo(
         "Z1012",
@@ -5587,9 +4395,9 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
    * @param sourceLine Assembly line of the error
    * @param parameters Optional parameters to report
    */
-  private reportAssemblyError(
+  protected reportAssemblyError(
     code: ErrorCodes,
-    sourceLine: PartialAssemblyLine<Z80Node>,
+    sourceLine: PartialAssemblyLine<TInstruction>,
     nodePosition?: NodePosition | null,
     ...parameters: any[]
   ): void {
@@ -5599,7 +4407,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     this.reportMacroInvocationErrors();
 
-    const line = { ...(sourceLine as Z80AssemblyLine) };
+    const line = { ...(sourceLine as AssemblyLine<TInstruction>) };
 
     // --- Cut closing comment, if there is any
     if (line.sourceText) {
@@ -5616,7 +4424,7 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
 
     if (this._macroInvocations.length > 0) {
       const lines = this._macroInvocations
-        .map((mi) => (mi as unknown as Z80AssemblyLine).line)
+        .map((mi) => (mi as unknown as AssemblyLine<TInstruction>).line)
         .join(", ");
       errorText = `(from macro invocation through ${lines}) ` + errorText;
     }
@@ -5676,16 +4484,6 @@ export class Z80Assembler extends ExpressionEvaluator<Z80Node, Z80TokenType> {
   }
 }
 
-function toPosition(token: Token<Z80TokenType>): NodePosition {
-  return {
-    line: token.location.startLine,
-    startPosition: token.location.startPosition,
-    endPosition: token.location.endPosition,
-    startColumn: token.location.startColumn,
-    endColumn: token.location.endColumn
-  };
-}
-
 /**
  * Keep track of directive stack
  */
@@ -5694,235 +4492,12 @@ interface ProcessOps {
 }
 
 /**
- * Represents the operation codes for simple Z80 instructions.
- */
-const simpleInstructionCodes: { [key: string]: number } = {
-  bsla: 0xed28,
-  bsra: 0xed29,
-  bsrl: 0xed2a,
-  bsrf: 0xed2b,
-  brlc: 0xed2c,
-  ccf: 0x3f,
-  cpd: 0xeda9,
-  cpdr: 0xedb9,
-  cpi: 0xeda1,
-  cpir: 0xedb1,
-  cpl: 0x2f,
-  daa: 0x27,
-  di: 0xf3,
-  ei: 0xfb,
-  exx: 0xd9,
-  halt: 0x76,
-  ind: 0xedaa,
-  indr: 0xedba,
-  ini: 0xeda2,
-  inir: 0xedb2,
-  ldd: 0xeda8,
-  lddr: 0xedb8,
-  lddrx: 0xedbc,
-  ldrx: 0xedbc,
-  lddx: 0xedac,
-  ldi: 0xeda0,
-  ldir: 0xedb0,
-  ldirx: 0xedb4,
-  lirx: 0xedb4,
-  ldix: 0xeda4,
-  ldpirx: 0xedb7,
-  lprx: 0xedb7,
-  ldws: 0xeda5,
-  mirror: 0xed24,
-  mul: 0xed30,
-  neg: 0xed44,
-  nop: 0x00,
-  otdr: 0xedbb,
-  otir: 0xedb3,
-  outinb: 0xed90,
-  otib: 0xed90,
-  outd: 0xedab,
-  outi: 0xeda3,
-  pixelad: 0xed94,
-  pxad: 0xed94,
-  pixeldn: 0xed93,
-  pxdn: 0xed93,
-  reti: 0xed4d,
-  retn: 0xed45,
-  rla: 0x17,
-  rlca: 0x07,
-  rld: 0xed6f,
-  rra: 0x1f,
-  rrca: 0x0f,
-  rrd: 0xed67,
-  scf: 0x37,
-  setae: 0xed95,
-  stae: 0xed95,
-  swapnib: 0xed23,
-  swap: 0xed23
-};
-
-/**
- * Represents the Z80 NEXT operations
- */
-const nextInstructionCodes: { [key: string]: boolean } = {
-  ldix: true,
-  lsws: true,
-  ldirx: true,
-  lirx: true,
-  lddx: true,
-  lddrx: true,
-  ldrx: true,
-  ldpirx: true,
-  lprx: true,
-  outinb: true,
-  otib: true,
-  mul: true,
-  swapnib: true,
-  swap: true,
-  mirror: true,
-  nextreg: true,
-  pixeldn: true,
-  pxdn: true,
-  pixelad: true,
-  pxad: true,
-  setae: true,
-  stae: true,
-  test: true,
-  bsla: true,
-  bsra: true,
-  bsrl: true,
-  bsrf: true,
-  brlc: true
-};
-
-/**
- * Instruction codes for pop operations
- */
-const popOpBytes: { [key: string]: number } = {
-  af: 0xf1,
-  bc: 0xc1,
-  de: 0xd1,
-  hl: 0xe1,
-  ix: 0xdde1,
-  iy: 0xfde1
-};
-
-/**
- * Order of conditions
- */
-const conditionOrder: { [key: string]: number } = {
-  nz: 0,
-  z: 1,
-  nc: 2,
-  c: 3,
-  po: 4,
-  pe: 5,
-  p: 6,
-  m: 7,
-  NZ: 0,
-  Z: 1,
-  NC: 2,
-  C: 3,
-  PO: 4,
-  PE: 5,
-  P: 6,
-  M: 7
-};
-
-/**
- * Order of 8-bit registers
- */
-const reg8Order: { [key: string]: number } = {
-  a: 7,
-  b: 0,
-  c: 1,
-  d: 2,
-  e: 3,
-  h: 4,
-  l: 5
-};
-
-/**
- * Order of shift operations
- */
-const shiftOpOrder: { [key: string]: number } = {
-  RlcInstruction: 0,
-  RrcInstruction: 1,
-  RlInstruction: 2,
-  RrInstruction: 3,
-  SlaInstruction: 4,
-  SraInstruction: 5,
-  SllInstruction: 6,
-  SrlInstruction: 7
-};
-
-/**
- * Increment operation codes
- */
-const incOpCodes: { [key: string]: number } = {
-  xl: 0xdd2c,
-  xh: 0xdd24,
-  yl: 0xfd2c,
-  yh: 0xfd24,
-  ixl: 0xdd2c,
-  ixh: 0xdd24,
-  iyl: 0xfd2c,
-  iyh: 0xfd24,
-  bc: 0x03,
-  de: 0x13,
-  hl: 0x23,
-  sp: 0x33,
-  ix: 0xdd23,
-  iy: 0xfd23
-};
-
-/**
- * Decrement operation codes
- */
-const decOpCodes: { [key: string]: number } = {
-  xl: 0xdd2d,
-  xh: 0xdd25,
-  yl: 0xfd2d,
-  yh: 0xfd25,
-  ixl: 0xdd2d,
-  ixh: 0xdd25,
-  iyl: 0xfd2d,
-  iyh: 0xfd25,
-  bc: 0x0b,
-  de: 0x1b,
-  hl: 0x2b,
-  sp: 0x3b,
-  ix: 0xdd2b,
-  iy: 0xfd2b
-};
-
-/**
- * Order of shift operations
- */
-const aluOpOrder: { [key: string]: number } = {
-  AddInstruction: 0,
-  AdcInstruction: 1,
-  SubInstruction: 2,
-  SbcInstruction: 3,
-  AndInstruction: 4,
-  XorInstruction: 5,
-  OrInstruction: 6,
-  CpInstruction: 7
-};
-
-/**
- * Order of 16-bit registers
- */
-const reg16Order: { [key: string]: number } = {
-  bc: 0,
-  de: 1,
-  hl: 2,
-  sp: 3
-};
-
-/**
  * Is the line a byte-emitting pragma?
  * @param asmLine Assembly line to test
  */
-function isByteEmittingPragma(asmLine: Z80AssemblyLine): boolean {
+function isByteEmittingPragma<TInstruction extends TypedObject>(
+  asmLine: AssemblyLine<TInstruction>
+): boolean {
   switch (asmLine.type) {
     case "DefBPragma":
     case "DefWPragma":

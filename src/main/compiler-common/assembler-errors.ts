@@ -194,7 +194,7 @@ export const errorMessages: Record<string, string> = {
   Z0305: "The .bank pragma cannot have a label.",
   Z0306: "The .bank pragma's value must be between 0 and 7.",
   Z0307: "The .bank pragma's offset value must be between 0 and #03fff.",
-  Z0308: "The .bank pragma cannot be used with the ZX Spectrum 48 model type.",
+  Z0308: "The .bank pragma cannot be used with the current model type.",
   Z0309: "You have already used the .bank pragma for bank {0}.",
   Z0310: "The {0} pragma can be used only in the global scope.",
   Z0311: "A .var pragma must have a label",

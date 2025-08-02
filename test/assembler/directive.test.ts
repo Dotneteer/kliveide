@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
-import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
-import { ExpressionValue } from "@main/z80-compiler/expressions";
-import { SpectrumModelType } from "@abstractions/CompilerInfo";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import { ExpressionValue } from "@main/compiler-common/expressions";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 describe("Assembler - directives", async () => {
   it("No preproc does not change line", async () => {

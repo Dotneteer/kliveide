@@ -5,7 +5,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { IdeCommandBase, commandError, commandSuccessWith } from "../services/ide-commands";
-import { KliveCompilerOutput, SpectrumModelType } from "@abstractions/CompilerInfo";
+import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import {
   endCompileAction,
   incBreakpointsVersionAction,
@@ -16,6 +16,7 @@ import {
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { outputNavigateAction } from "@common/utils/output-utils";
 import { isInjectableCompilerOutput } from "../utils/compiler-utils";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 
 type CodeInjectionType = "inject" | "run" | "debug";
 

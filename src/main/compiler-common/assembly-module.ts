@@ -8,7 +8,7 @@ import {
 import type { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 
 import { ExpressionValue } from "./expressions";
-import { FixupEntry } from "../compiler-common/fixups";
+import { FixupEntry } from "./fixups";
 import { CommonTokenType } from "@main/compiler-common/common-tokens";
 
 /**

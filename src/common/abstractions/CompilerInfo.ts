@@ -2,16 +2,6 @@ import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
 
 /**
- * The type of the Spectrum model
- */
-export enum SpectrumModelType {
-  Spectrum48,
-  Spectrum128,
-  SpectrumP3,
-  Next
-}
-
-/**
  * Represents the possible types of an expression value
  */
 export enum ExpressionValueType {
@@ -40,7 +30,7 @@ export type CompilerOptions = {
   /**
    * The current ZX Spectrum model
    */
-  currentModel: SpectrumModelType;
+  currentModel: number;
 
   /**
    * The maximum number of errors to report within a loop
@@ -115,7 +105,7 @@ export interface CompilerOutput extends CompiledModule {
   /**
    * The type of Spectrum model to use
    */
-  modelType?: SpectrumModelType;
+  modelType?: number;
 
   /**
    * Entry address of the code

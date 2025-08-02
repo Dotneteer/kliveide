@@ -1,8 +1,8 @@
 import type { ErrorCodes } from "./assembler-errors";
-import type { SymbolInfoMap } from "../z80-compiler/assembly-symbols";
+import type { SymbolInfoMap } from "./assembly-symbols";
 
-import { AssemblyModule } from "../z80-compiler/assembly-module";
-import { ExpressionEvaluator } from "../z80-compiler/expressions";
+import { AssemblyModule } from "./assembly-module";
+import { ExpressionEvaluator } from "./expressions";
 import {
   FixupType,
   IEvaluationContext,

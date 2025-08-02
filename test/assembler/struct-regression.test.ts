@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { testCodeEmit } from "./test-helpers";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 describe("Assembler - struct invocation regression", () => {
   it("Struct regression issue (ID casing) #1", async () => {

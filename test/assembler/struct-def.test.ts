@@ -4,8 +4,8 @@ import {
   codeRaisesErrorWithOptions,
   testCodeEmitWithOptions
 } from "./test-helpers";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
-import { AssemblerOptions } from "@main/z80-compiler/assembler-in-out";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 describe("Assembler - struct definition", () => {
   it("fails with no label", async () => {

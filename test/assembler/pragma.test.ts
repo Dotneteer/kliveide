@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { testCodeEmit, codeRaisesError, testFlexibleCodeEmit } from "./test-helpers";
-import { Z80Assembler } from "@main/z80-compiler/assembler";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 describe("Assembler - pragmas", async () => {
   it("org - existing segment", async () => {
