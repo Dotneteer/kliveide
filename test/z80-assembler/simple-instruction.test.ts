@@ -44,7 +44,7 @@ describe("Assembler - simple instructions", () => {
       const high = inst.emit >> 8;
       const low = inst.emit & 0xff;
       const bytes = high ? [high, low] : [low];
-      await await testCodeEmit(inst.source, ...bytes);
+      await testCodeEmit(inst.source, ...bytes);
     });
   });
 

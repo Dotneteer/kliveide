@@ -143,7 +143,10 @@ export type ErrorCodes =
   | "Z1014"
 
   // --- Others
-  | "Z2000";
+  | "Z2000"
+
+  // --- M6510 Compiler Error Codes
+  | "M1001";
 
 export const errorMessages: Record<string, string> = {
   // --- Missing or faulty tokens
