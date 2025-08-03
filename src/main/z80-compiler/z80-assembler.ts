@@ -36,8 +36,6 @@ import type {
 import { InputStream } from "../compiler-common/input-stream";
 import { Z80TokenStream, Z80TokenType } from "./z80-token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
-import { ExpressionValue } from "../compiler-common/expressions";
-import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { FixupType } from "../compiler-common/abstractions";
 import {
   Expression,
@@ -1177,42 +1175,6 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
       return true;
     }
     return false;
-  }
-
-  /**
-   * Evaluates the expression and emits bytes accordingly. If the expression
-   * cannot be resolved, creates a fixup.
-   * @param opLine Assembly line
-   * @param expr Expression to evaluate
-   * @param type Expression/Fixup type
-   */
-  private emitNumericExpr(
-    instr: Z80Node,
-    expr: Expression<Z80Node, Z80TokenType>,
-    type: FixupType
-  ): void {
-    const opLine = instr as unknown as Z80AssemblyLine;
-    let value = this.evaluateExpr(expr);
-    if (value.type === ExpressionValueType.Error) {
-      return;
-    }
-    if (value.isNonEvaluated) {
-      this.recordFixup(opLine, type, expr);
-    }
-    if (value.isValid && value.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z0603", opLine);
-      value = new ExpressionValue(0);
-    }
-    const fixupValue = value.value;
-    if (type === FixupType.Bit16Be) {
-      this.emitByte(fixupValue >> 8);
-      this.emitByte(fixupValue);
-    } else {
-      this.emitByte(fixupValue);
-      if (type === FixupType.Bit16) {
-        this.emitByte(fixupValue >> 8);
-      }
-    }
   }
 
   /**
