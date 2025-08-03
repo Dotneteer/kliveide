@@ -95,6 +95,7 @@ import { callStackPanelRenderer } from "./appIde/SiteBarPanels/CallStackPanel";
 import { nextPalettePanelRenderer } from "./appIde/SiteBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
 import { m6510CpuPanelRenderer } from "./appIde/SiteBarPanels/M6510CpuPanel";
+import { asm6510LanguageProvider } from "./appIde/project/asm6510LangaugeProvider";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -461,6 +462,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".6510.asm",
+    editor: CODE_EDITOR,
+    subType: "6510-asm",
+    icon: "@file-6510-asm"
+  },
+  {
+    matchType: "ends",
     pattern: ".sjasm",
     editor: CODE_EDITOR,
     subType: "sjasmp",
@@ -687,5 +695,6 @@ export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
   asmZxbLanguageProvider,
   zxBasLanguageProvider,
   ksxLanguageProvider,
-  sjasmZ80LanguageProvider
+  sjasmZ80LanguageProvider,
+  asm6510LanguageProvider,
 ];

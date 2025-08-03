@@ -29,7 +29,10 @@ export class M6510TokenStream extends CommonTokenStream<M6510TokenType> {
       "n", // New line
       "s", // Safty space
       "R", // Reverse on
-      "r" // Reverse off
+      "r", // Reverse off
+      "'",
+      '"',
+      "\\"
     ];
   }
 }
