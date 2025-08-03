@@ -737,5 +737,4 @@ describe("Assembler - register load operations", async () => {
     await codeRaisesError("ror ($40,x)", "M1004");
     await codeRaisesError("ror ($40),y", "M1004");
   });
-
 });

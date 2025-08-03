@@ -13,7 +13,7 @@ import { CommonTokenStream } from "@main/compiler-common/common-token-stream";
 import { CommonAsmParser } from "@main/compiler-common/common-asm-parser";
 import { M6510TokenStream, M6510TokenType } from "./m6510-token-stream";
 import { M6510AsmParser } from "./m6510-asm-parser";
-import { AssemblyLine, Expression, OperandType } from "@main/compiler-common/tree-nodes";
+import { AssemblyLine, Expression, Operand, OperandType } from "@main/compiler-common/tree-nodes";
 import { FixupType } from "@main/compiler-common/abstractions";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 
@@ -309,6 +309,190 @@ export class M6510Assembler extends CommonAssembler<M6510Node, M6510TokenType> {
           abs: 0x20 // JSR $xxxx
         });
         break;
+      case "bpl":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0x10); // BPL $xx
+        break;
+      case "bmi":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0x30); // BMI $xx
+        break;
+      case "bvc":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0x50); // BVC $xx
+        break;
+      case "bvs":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0x70); // BVS $xx
+        break;
+      case "bcc":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0x90); // BCC $xx
+        break;
+      case "bcs":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0xb0); // BCS $xx
+        break;
+      case "bne":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0xd0); // BNE $xx
+        break;
+      case "beq":
+        this.emitRelativeJump(compoundInstr, compoundInstr.operand, 0xf0); // BEQ $xx
+        break;
+      case "slo":
+        this.withAddressing(compoundInstr, {
+          idx: 0x03, // SLO ($xx,X)
+          zp: 0x07, // SLO $xx
+          abs: 0x0f, // SLO $xxxx,
+          idy: 0x13, // SLO ($xx),Y
+          zpx: 0x17, // SLO $xx,X
+          aby: 0x1b, // SLO $xxxx,Y
+          abx: 0x1f // SLO $xxxx,X
+        });
+        break;
+      case "dop":
+        this.withAddressing(compoundInstr, {
+          zp: 0x04, // DOP $xx
+          zpx: 0x14, // DOP $xx,X
+          imm: 0x80 // DOP #$xx
+        });
+        break;
+      case "aac":
+        this.withAddressing(compoundInstr, {
+          imm: 0x0b // AAC #$xx
+        });
+        break;
+      case "top":
+        this.withAddressing(compoundInstr, {
+          abs: 0x0c, // TOP $xxxx
+          abx: 0x1c // TOP $xxxx,X
+        });
+        break;
+      case "rla":
+        this.withAddressing(compoundInstr, {
+          idx: 0x23, // RLA ($xx,X)
+          zp: 0x27, // RLA $xx
+          abs: 0x2f, // RLA $xxxx
+          idy: 0x33, // RLA ($xx),Y
+          zpx: 0x37, // RLA $xx,X
+          aby: 0x3b, // RLA $xxxx,Y
+          abx: 0x3f // RLA $xxxx,X
+        });
+        break;
+      case "sre":
+        this.withAddressing(compoundInstr, {
+          idx: 0x43, // SRE ($xx,X)
+          zp: 0x47, // SRE $xx
+          abs: 0x4f, // SRE $xxxx
+          idy: 0x53, // SRE ($xx),Y
+          zpx: 0x57, // SRE $xx,X
+          aby: 0x5b, // SRE $xxxx,Y
+          abx: 0x5f // SRE $xxxx,X
+        });
+        break;
+      case "sax":
+        this.withAddressing(compoundInstr, {
+          idx: 0x83, // SAX ($xx,X)
+          zp: 0x87, // SAX $xx
+          abs: 0x8f, // SAX $xxxx
+          zpy: 0x97 // SAX $xx,Y
+        });
+        break;
+      case "arr":
+        this.withAddressing(compoundInstr, {
+          imm: 0x6b // ARR #$xx
+        });
+        break;
+      case "asr":
+        this.withAddressing(compoundInstr, {
+          imm: 0x4b // ASR #$xx
+        });
+        break;
+      case "atx":
+        this.withAddressing(compoundInstr, {
+          imm: 0xab // ATX #$xx
+        });
+        break;
+      case "axa":
+        this.withAddressing(compoundInstr, {
+          idy: 0x93, // AXA ($xx),Y
+          aby: 0x9f // AXA $xxxx,Y
+        });
+        break;
+      case "axs":
+        this.withAddressing(compoundInstr, {
+          imm: 0xcb // AXS #$xx
+        });
+        break;
+      case "sax":
+        this.withAddressing(compoundInstr, {
+          idx: 0x83, // SAX ($xx,X)
+          zp: 0x87, // SAX $xx
+          abs: 0x8f, // SAX $xxxx
+          zpy: 0x97 // SAX $xx,Y
+        });
+        break;
+      case "dcp":
+        this.withAddressing(compoundInstr, {
+          idx: 0xc3, // DCP ($xx,X)
+          zp: 0xc7, // DCP $xx
+          abs: 0xcf, // DCP $xxxx
+          idy: 0xd3, // DCP ($xx),Y
+          zpx: 0xd7, // DCP $xx,X
+          aby: 0xdb, // DCP $xxxx,Y
+          abx: 0xdf // DCP $xxxx,X
+        });
+        break;
+      case "isc":
+        this.withAddressing(compoundInstr, {
+          idx: 0xe3, // ISC ($xx,X)
+          zp: 0xe7, // ISC $xx
+          abs: 0xef, // ISC $xxxx
+          idy: 0xf3, // ISC ($xx),Y
+          zpx: 0xf7, // ISC $xx,X
+          aby: 0xfb, // ISC $xxxx,Y
+          abx: 0xff // ISC $xxxx,X
+        });
+        break;
+      case "lar":
+        this.withAddressing(compoundInstr, {
+          aby: 0xbb // LAR $xxxx,Y
+        });
+        break;
+      case "lax":
+        this.withAddressing(compoundInstr, {
+          idx: 0xa3, // LAX ($xx,X)
+          zp: 0xa7, // LAX $xx
+          abs: 0xaf, // LAX $xxxx
+          idy: 0xb3, // LAX ($xx),Y
+          zpy: 0xb7, // LAX $xx,Y
+          aby: 0xbf // LAX $xxxx,Y
+        });
+        break;
+      case "rra":
+        this.withAddressing(compoundInstr, {
+          idx: 0x63, // RRA ($xx,X)
+          zp: 0x67, // RRA $xx
+          abs: 0x6f, // RRA $xxxx
+          idy: 0x73, // RRA ($xx),Y
+          zpx: 0x77, // RRA $xx,X
+          aby: 0x7b, // RRA $xxxx,Y
+          abx: 0x7f // RRA $xxxx,X
+        });
+        break;
+      case "sxa":
+        this.withAddressing(compoundInstr, {
+          aby: 0x9e // SXA $xxxx,Y
+        });
+        break;
+      case "sya":
+        this.withAddressing(compoundInstr, {
+          abx: 0x9c // SYA $xxxx,X
+        });
+        break;
+      case "xaa":
+        this.withAddressing(compoundInstr, {
+          imm: 0x8b // XAA #$xx
+        });
+        break;
+      case "xas":
+        this.withAddressing(compoundInstr, {
+          aby: 0x9b // XAS $xxxx,Y
+        });
     }
   }
 
@@ -461,6 +645,37 @@ export class M6510Assembler extends CommonAssembler<M6510Node, M6510TokenType> {
         }
         break;
     }
+  }
+
+  /**
+   *
+   * @param instr Control flow operation line
+   * @param target Target expression
+   * @param opCode Operation code
+   */
+  private emitRelativeJump(
+    instr: CompoundM6510Instruction,
+    target: Operand<M6510Node, M6510TokenType>,
+    opCode: number
+  ) {
+    const opLine = instr as unknown as AssemblyLine<M6510Node>;
+    if (target.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("M1009", opLine, null, instr.mnemonic.toUpperCase());
+      return;
+    }
+    const value = this.evaluateExpr(target.expr);
+    let dist = 0;
+    if (value.isNonEvaluated) {
+      this.recordFixup(opLine, FixupType.Jr, target.expr);
+    } else {
+      dist = value.value - (this.getCurrentAssemblyAddress() + 2);
+      if (dist < -128 || dist > 127) {
+        this.reportAssemblyError("Z0403", opLine, null, dist);
+        return;
+      }
+    }
+    this.emitByte(opCode);
+    this.emitByte(dist);
   }
 }
 

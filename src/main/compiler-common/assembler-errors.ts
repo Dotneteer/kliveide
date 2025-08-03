@@ -153,7 +153,8 @@ export type ErrorCodes =
   | "M1005"
   | "M1006"
   | "M1007"
-  | "M1008";
+  | "M1008"
+  | "M1009";
 
 export const errorMessages: Record<string, string> = {
   // --- Missing or faulty tokens
@@ -317,5 +318,6 @@ export const errorMessages: Record<string, string> = {
   M1005: "The {0} instruction cannot use A as its operand.",
   M1006: "The {0} instruction does not support indexing with register Y.",
   M1007: "The {0} instruction does not support indirect indexing without register X or Y.",
-  M1008: "The {0} instruction does not support zero page or absolute addressing."
+  M1008: "The {0} instruction does not support zero page or absolute addressing.",
+  M1009: "Invalid operand for the {0} instruction.",
 };

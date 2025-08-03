@@ -133,6 +133,8 @@ m6510TokenTraits.set(M6510Tokens.SRE, { instruction: true });
 m6510TokenTraits.set(M6510Tokens.STA, { instruction: true });
 m6510TokenTraits.set(M6510Tokens.STX, { instruction: true });
 m6510TokenTraits.set(M6510Tokens.STY, { instruction: true });
+m6510TokenTraits.set(M6510Tokens.SXA, { instruction: true });
+m6510TokenTraits.set(M6510Tokens.SYA, { instruction: true });
 
 // ----------------------------------------------------------------------------
 // T
