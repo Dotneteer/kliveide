@@ -24,8 +24,12 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
   /**
    * Initializes the tokenizer with the input stream
    * @param input Input source code stream
+   * @param supportsHashedHexadecimal If true, the tokenizer supports hashed hexadecimal numbers
    */
-  constructor(public readonly input: InputStream) {}
+  constructor(
+    public readonly input: InputStream,
+    private readonly supportsHashedHexadecimal = true
+  ) {}
 
   /**
    * Gets the resolver hash for the current token stream
@@ -95,7 +99,7 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
   }
 
   /**
-   * Fethces the nex token and advances the stream position
+   * Fetches the next token and advances the stream position
    * @param ws If true, retrieve whitespaces too
    */
   get(ws = false): Token<CommonTokenType> {
@@ -132,6 +136,7 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
     let lastEndColumn = input.column;
     let ch: string | null = null;
     let useResolver = false;
+    const firstTokenInCurrentLine = !input.hasNonWs;
 
     let phase: LexerPhase = LexerPhase.Start;
     while (true) {
@@ -291,6 +296,10 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
 
             // --- "#" received
             case "#":
+              if (!firstTokenInCurrentLine && !this.supportsHashedHexadecimal) {
+                // --- If this is not the first token in the line, return a hashmark
+                return completeToken(CommonTokens.Hashmark);
+              }
               phase = LexerPhase.DirectiveOrHexLiteral;
               break;
 
@@ -542,6 +551,7 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
             appendTokenChar();
           }
           if (
+            this.supportsHashedHexadecimal &&
             text.length <= 5 &&
             text
               .substring(1)

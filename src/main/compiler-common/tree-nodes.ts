@@ -431,11 +431,13 @@ export enum OperandType {
   Reg16Idx,
   RegIndirect,
   IndexedIndirect,
+  IndexedDirect,
   MemIndirect,
   CPort,
   Expression,
   Condition,
-  NoneArg
+  NoneArg,
+  Immediate,
 }
 
 /**

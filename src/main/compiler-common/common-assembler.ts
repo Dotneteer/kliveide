@@ -4072,6 +4072,7 @@ export abstract class CommonAssembler<
     }
     this.emitByte(data & 0xff);
   }
+
   /**
    * Emits a string
    * @param message Expression with the string
@@ -4105,6 +4106,42 @@ export abstract class CommonAssembler<
         emitter(value);
       } else {
         assembler.emitByte(value);
+      }
+    }
+  }
+
+  /**
+   * Evaluates the expression and emits bytes accordingly. If the expression
+   * cannot be resolved, creates a fixup.
+   * @param opLine Assembly line
+   * @param expr Expression to evaluate
+   * @param type Expression/Fixup type
+   */
+  protected emitNumericExpr(
+    instr: TInstruction,
+    expr: Expression<TInstruction, TToken>,
+    type: FixupType
+  ): void {
+    const opLine = instr as unknown as AssemblyLine<TInstruction>;
+    let value = this.evaluateExpr(expr);
+    if (value.type === ExpressionValueType.Error) {
+      return;
+    }
+    if (value.isNonEvaluated) {
+      this.recordFixup(opLine, type, expr);
+    }
+    if (value.isValid && value.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z0603", opLine);
+      value = new ExpressionValue(0);
+    }
+    const fixupValue = value.value;
+    if (type === FixupType.Bit16Be) {
+      this.emitByte(fixupValue >> 8);
+      this.emitByte(fixupValue);
+    } else {
+      this.emitByte(fixupValue);
+      if (type === FixupType.Bit16) {
+        this.emitByte(fixupValue >> 8);
       }
     }
   }

@@ -11,7 +11,7 @@ export class M6510TokenStream extends CommonTokenStream<M6510TokenType> {
    * @param input Input source code stream
    */
   constructor(public readonly input: InputStream) {
-    super(input);
+    super(input, false);
   }
 
   /**
@@ -43,6 +43,7 @@ export const M6510Tokens = {
   // --- Registers
   X: 1000,
   Y: 1001,
+  A: 1002,
 
   // --- Operations
   BRK: 1100,
@@ -108,21 +109,22 @@ export const M6510Tokens = {
   CMP: 1160,
   DCP: 1161,
   DEC: 1162,
-  INY: 1163,
-  DEX: 1164,
-  AXS: 1165,
-  BNE: 1166,
-  CLD: 1167,
-  CPX: 1168,
-  SBC: 1169,
-  ISC: 1170,
-  INX: 1171,
-  NOP: 1172,
-  BEQ: 1173,
-  SED: 1174,
-  XAS: 1175,
-  KIL: 1176,
-  HLT: 1177,
+  INC: 1163,
+  INY: 1164,
+  DEX: 1165,
+  AXS: 1166,
+  BNE: 1167,
+  CLD: 1168,
+  CPX: 1169,
+  SBC: 1170,
+  ISC: 1171,
+  INX: 1172,
+  NOP: 1173,
+  BEQ: 1174,
+  SED: 1175,
+  XAS: 1176,
+  KIL: 1177,
+  HLT: 1178,
 
   // --- Parse-time functions
   IsRegX: 1200,
@@ -140,6 +142,8 @@ const resolverHash: Record<string, M6510TokenType> = {
   X: M6510Tokens.X,
   y: M6510Tokens.Y,
   Y: M6510Tokens.Y,
+  a: M6510Tokens.A,
+  A: M6510Tokens.A,
 
   // --- Operations
   brk: M6510Tokens.BRK,
@@ -268,6 +272,8 @@ const resolverHash: Record<string, M6510TokenType> = {
   DCP: M6510Tokens.DCP,
   dec: M6510Tokens.DEC,
   DEC: M6510Tokens.DEC,
+  inc: M6510Tokens.INC,
+  INC: M6510Tokens.INC,
   iny: M6510Tokens.INY,
   INY: M6510Tokens.INY,
   dex: M6510Tokens.DEX,

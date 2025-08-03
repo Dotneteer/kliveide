@@ -62,6 +62,7 @@ m6510TokenTraits.set(M6510Tokens.HLT, { instruction: true, simple: true });
 // ----------------------------------------------------------------------------
 // I
 
+m6510TokenTraits.set(M6510Tokens.INC, { instruction: true });
 m6510TokenTraits.set(M6510Tokens.INX, { instruction: true, simple: true });
 m6510TokenTraits.set(M6510Tokens.INY, { instruction: true, simple: true });
 m6510TokenTraits.set(M6510Tokens.ISC, { instruction: true });
