@@ -1,7 +1,7 @@
-import { useRef } from "react";
 import { Icon } from "./Icon";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import styles from "./Labels.module.scss";
+import { BitValue } from "./valuedisplay/Values";
 
 type Props = {
   text: string;
@@ -158,35 +158,35 @@ type FlagRowProps = {
 export const FlagRow = ({ value, flagDescriptions }: FlagRowProps) => {
   return (
     <div className={styles.dumpSection}>
-      <Flag
+      <BitValue
         value={value & 0x80}
         tooltip={`Bit 7: ${flagDescriptions?.[7] ?? ""}`}
       />
-      <Flag
+      <BitValue
         value={value & 0x40}
         tooltip={`Bit 6: ${flagDescriptions?.[6] ?? ""}`}
       />
-      <Flag
+      <BitValue
         value={value & 0x20}
         tooltip={`Bit 5: ${flagDescriptions?.[5] ?? ""}`}
       />
-      <Flag
+      <BitValue
         value={value & 0x10}
         tooltip={`Bit 4: ${flagDescriptions?.[4] ?? ""}`}
       />
-      <Flag
+      <BitValue
         value={value & 0x08}
         tooltip={`Bit 3: ${flagDescriptions?.[3] ?? ""}`}
       />
-      <Flag
+      <BitValue
         value={value & 0x04}
         tooltip={`Bit 2: ${flagDescriptions?.[2] ?? ""}`}
       />
-      <Flag
+      <BitValue
         value={value & 0x02}
         tooltip={`Bit 1: ${flagDescriptions?.[1] ?? ""}`}
       />
-      <Flag
+      <BitValue
         value={value & 0x01}
         tooltip={`Bit 0: ${flagDescriptions?.[0] ?? ""}`}
       />

@@ -1,13 +1,7 @@
 @import "@styles/core.scss";
 
-.blinkPanel {
+.sidePanel {
   @include side-panel-content;
-}
-
-.flags {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
 }
 
 .rows {
@@ -22,15 +16,8 @@
   flex-direction: row;
   flex-grow: 0;
   flex-shrink: 0;
-}
 
-.fieldRow {
-  display: flex;
-  flex-direction: row;
-
-  .fieldValue {
-    display: flex;
-    flex-direction: row;
-    width: fit-content;
+  &.centered {
+    align-items: center;
   }
 }

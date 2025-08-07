@@ -26,6 +26,7 @@ export const MF_TAPE_SUPPORT = "tapeSupport";
 export const MF_ROM = "rom";
 export const MF_BANK = "bank";
 export const MF_ULA = "ula";
+export const MF_VIC = "vic";
 export const MF_PSG = "psg";
 export const MF_BLINK = "blink";
 export const MF_Z80 = "z80Cpu";
