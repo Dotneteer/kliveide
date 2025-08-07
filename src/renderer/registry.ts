@@ -60,6 +60,7 @@ import {
   MF_M6510,
   MF_PSG,
   MF_ULA,
+  MF_VIC,
   MF_Z80,
   MI_ZXNEXT
 } from "@common/machines/constants";
@@ -96,6 +97,7 @@ import { nextPalettePanelRenderer } from "./appIde/SiteBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
 import { m6510CpuPanelRenderer } from "./appIde/SiteBarPanels/M6510CpuPanel";
 import { asm6510LanguageProvider } from "./appIde/project/asm6510LangaugeProvider";
+import { vicPanelRenderer } from "./appIde/SiteBarPanels/VicPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -186,6 +188,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: ulaPanelRenderer,
     initialSize: 500,
     requireFeature: [MF_ULA]
+  },
+  {
+    id: "vicPanel",
+    title: "VIC",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: vicPanelRenderer,
+    initialSize: 500,
+    requireFeature: [MF_VIC]
   },
   {
     id: "blinkPanel",

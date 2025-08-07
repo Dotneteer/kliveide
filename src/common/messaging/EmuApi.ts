@@ -180,7 +180,11 @@ class EmuApiImpl {
    * @param _debug True to run in debug mode.
    * @param _projectDebug True to use project debug mode.
    */
-  async runCodeCommand(_codeToInject: CodeToInject, _debug: boolean, _projectDebug: boolean): Promise<void> {
+  async runCodeCommand(
+    _codeToInject: CodeToInject,
+    _debug: boolean,
+    _projectDebug: boolean
+  ): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -356,6 +360,13 @@ class EmuApiImpl {
   async renameBreakpoints(_oldResource: string, _newResource: string): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Gets the current VIC state.
+   */
+  async getVicState(): Promise<VicState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 // --- The response with the CPU state chunk
@@ -471,6 +482,54 @@ export type BlinkState = {
   SBR: number;
   SCW: number;
   SCH: number;
+};
+
+export type SpriteInfo = {
+  x: number;
+  y: number;
+  enabled: boolean;
+  multicolor: boolean;
+  color: number;
+  xExpansion: boolean;
+  yExpansion: boolean;
+  foregroundPriority: boolean;
+};
+
+export type VicState = {
+  vicBaseAddress: number;
+  spriteInfo: SpriteInfo[];
+  rst8: boolean;
+  ecm: boolean;
+  bmm: boolean;
+  den: boolean;
+  rsel: boolean;
+  xScroll: number;
+  yScroll: number;
+  raster: number;
+  lpx: number;
+  lpy: number;
+  mcm: boolean;
+  csel: boolean;
+  scrMemOffset: number;
+  colMemOffset: number;
+  irqStatus: boolean;
+  ilpStatus: boolean;
+  ilpEnabled: boolean;
+  immcStatus: boolean;
+  immcEnabled: boolean;
+  imbcStatus: boolean;
+  imbcEnabled: boolean;
+  irstStatus: boolean;
+  irstEnabled: boolean;
+  borderColor: number;
+  bgColor0: number;
+  bgColor1: number;
+  bgColor2: number;
+  bgColor3: number;
+  spriteMcolor0: number;
+  spriteMcolor1: number;
+  spriteSpriteCollision: number;
+  spriteDataCollision: number;
 };
 
 // --- The response with the breakpoints set in the emulator

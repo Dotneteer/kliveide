@@ -5,7 +5,7 @@ import { SideBarPanel } from "./SideBarPanel";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { activityRegistry, sideBarPanelRegistry } from "@renderer/registry";
 import { SideBarPanelState } from "@state/AppState";
-import { setSideBarPanelsStateAction } from "@state/actions";
+import { setSideBarPanelSizeAction, setSideBarPanelsStateAction } from "@state/actions";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { noop } from "@renderer/utils/stablerefs";
 import { useAppServices } from "../services/AppServicesProvider";
@@ -181,6 +181,16 @@ export const SiteBar = ({ order }: Props) => {
       nextSizeInPixels = MIN_PANEL_SIZE;
       newSizeInPixels = totalSizeInPixels - MIN_PANEL_SIZE;
     }
+
+    // --- Set the sizes of the resized panels
+    dispatch(
+      setSideBarPanelSizeAction(
+        sizedPanel.id,
+        newSizeInPixels * pixelRatio.current,
+        nextPanel.id,
+        nextSizeInPixels * pixelRatio.current
+      )
+    );
   }
 
   // --- Complete sizing the panel

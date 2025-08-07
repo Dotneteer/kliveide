@@ -33,7 +33,7 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
-import { CpuState, CpuStateChunk } from "@common/messaging/EmuApi";
+import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
@@ -946,6 +946,138 @@ class EmuMessageProcessor {
       noController();
     }
     controller.debugSupport.renameBreakpoints(oldResource, newResource);
+  }
+
+  /**
+   * Gets the current ULA state.
+   */
+  async getVicState(): Promise<VicState> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+
+    // TODO: Implement VIC state retrieval for ZX Next
+    const vicState: VicState = {
+      vicBaseAddress: 0x0000,
+      spriteInfo: [
+        {
+          x: 0,
+          y: 0,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        },
+        {
+          x: 1,
+          y: 1,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        },
+        {
+          x: 2,
+          y: 2,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        },
+        {
+          x: 3,
+          y: 3,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        },
+        {
+          x: 4,
+          y: 4,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        },
+        {
+          x: 5,
+          y: 5,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        },
+        {
+          x: 6,
+          y: 6,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        },
+        {
+          x: 7,
+          y: 7,
+          enabled: false,
+          multicolor: false,
+          color: 0,
+          xExpansion: false,
+          yExpansion: false,
+          foregroundPriority: false
+        }
+      ],
+      rst8: false,
+      ecm: false,
+      bmm: false,
+      den: false,
+      rsel: false,
+      yScroll: 0,
+      raster: 0,
+      lpx: 0,
+      lpy: 0,
+      res: false,
+      mcm: false,
+      csel: false,
+      xScroll: 0,
+      scrMemOffset: 0x0000,
+      colMemOffset: 0x0000,
+      irqStatus: false,
+      ilpStatus: false,
+      immcStatus: false,
+      imbcStatus: false,
+      irstStatus: false,
+      ilpEnabled: false,
+      immcEnabled: false,
+      imbcEnabled: false,
+      irstEnabled: false,
+      spriteSpriteCollision: 0,
+      spriteDataCollision: 0,
+      borderColor: 0,
+      bgColor0: 0,
+      bgColor1: 0,
+      bgColor2: 0,
+      bgColor3: 0,
+      spriteMcolor0: 0,
+      spriteMcolor1: 0,
+
+    };
+    return vicState;
   }
 }
 

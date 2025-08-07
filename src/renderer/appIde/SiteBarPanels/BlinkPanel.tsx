@@ -1,6 +1,4 @@
 import {
-  Flag,
-  FlagRow,
   Label,
   LabelSeparator,
   Secondary,
@@ -9,12 +7,12 @@ import {
 } from "@controls/Labels";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
-import styles from "./BlinkPanel.module.scss";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { BlinkState } from "@common/messaging/EmuApi";
+import { Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
+import { BitValue, FlagFieldRow } from "@renderer/controls/valuedisplay/Values";
 
-const FLAG_WIDTH = 12;
 const LAB_WIDTH = 48;
 const VALUE_WIDTH = 40;
 const KEY_LAB_WIDTH = 46;
@@ -26,7 +24,7 @@ const BlinkPanel = () => {
   useEmuStateListener(emuApi, async () => setBlinkState(await emuApi.getBlinkState()));
 
   return (
-    <div className={styles.blinkPanel}>
+    <SidePanel>
       <FlagFieldRow
         label="COM"
         tooltip="Command Register handles LCD, Beeper, Clock ticking, UV Eprom in slot 3 and if lower 8K of S0 in slot 0 is ROM or RAM"
@@ -137,71 +135,71 @@ const BlinkPanel = () => {
         flagDescriptions={TMKDescription}
       />
       <Separator />
-      <div className={styles.cols}>
+      <Col>
         <KeyboardLine
           text="A15#7"
           tooltip="Keyboard address line A15 (#7) from KBD register"
           value={blinkState?.keyLines?.[7]}
           titles={["\u00a3", "/", ".", "CAPS LOCK", "INDEX", "ESC", "\u25fb", "SHIFT (right)"]}
         />
-      </div>
-      <div className={styles.cols}>
+      </Col>
+      <Col>
         <KeyboardLine
           text="A14#6"
           tooltip="Keyboard address line A14 (#6) from KBD register"
           value={blinkState?.keyLines?.[6]}
           titles={["'", ";", ",", "MENU", "\u25c7", "TAB", "SHIFT (left)", "HELP"]}
         />
-      </div>
-      <div className={styles.cols}>
+      </Col>
+      <Col>
         <KeyboardLine
           text="A13#5"
           tooltip="Keyboard address line A13 (#5) from KBD register"
           value={blinkState?.keyLines?.[5]}
           titles={["0", "L", "Z", "A", "Q", "1", "SPACE", "["]}
         />
-      </div>
-      <div className={styles.cols}>
+      </Col>
+      <Col>
         <KeyboardLine
           text="A12#4"
           tooltip="Keyboard address line A12 (#4) from KBD register"
           value={blinkState?.keyLines?.[4]}
           titles={["P", "M", "X", "S", "W", "2", "⬅︎", "]"]}
         />
-      </div>
-      <div className={styles.cols}>
+      </Col>
+      <Col>
         <KeyboardLine
           text="A11#3"
           tooltip="Keyboard address line A11 (#3) from KBD register"
           value={blinkState?.keyLines?.[3]}
           titles={["9", "K", "C", "D", "E", "3", "➡︎", "-"]}
         />
-      </div>
-      <div className={styles.cols}>
+      </Col>
+      <Col>
         <KeyboardLine
           text="A10#2"
           tooltip="Keyboard address line A10 (#2) from KBD register"
           value={blinkState?.keyLines?.[2]}
           titles={["O", "J", "V", "F", "R", "4", "⬇︎", "="]}
         />
-      </div>
-      <div className={styles.cols}>
+      </Col>
+      <Col>
         <KeyboardLine
           text="A09#1"
           tooltip="Keyboard address line A9 (#1) from KBD register"
           value={blinkState?.keyLines?.[1]}
           titles={["I", "U", "B", "G", "T", "5", "⬆︎", "\\"]}
         />
-      </div>
-      <div className={styles.cols}>
+      </Col>
+      <Col>
         <KeyboardLine
           text="A08#0"
           tooltip="Keyboard address line A8 (#0) from KBD register"
           value={blinkState?.keyLines?.[0]}
           titles={["8", "7", "N", "H", "Y", "6", "ENTER", "DEL"]}
         />
-      </div>
-    </div>
+      </Col>
+    </SidePanel>
   );
 };
 
@@ -216,35 +214,17 @@ const KeyboardLine = ({ value, titles, text, tooltip }: KeyboardLineProps) => {
   const toFlag = (val: number | undefined, bitNo: number) =>
     val !== undefined ? !!(val & (1 << bitNo)) : undefined;
   return (
-    <div className={styles.fieldRow}>
+    <Col>
       <Label text={text} width={KEY_LAB_WIDTH} tooltip={tooltip} />
-      <Flag value={toFlag(value, 7)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[7]} />
-      <Flag value={toFlag(value, 6)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[6]} />
-      <Flag value={toFlag(value, 5)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[5]} />
-      <Flag value={toFlag(value, 4)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[4]} />
-      <Flag value={toFlag(value, 3)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[3]} />
-      <Flag value={toFlag(value, 2)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[2]} />
-      <Flag value={toFlag(value, 1)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[1]} />
-      <Flag value={toFlag(value, 0)} adjustLeft={false} width={FLAG_WIDTH} tooltip={titles?.[0]} />
-    </div>
-  );
-};
-
-type FlagFieldRowProps = {
-  label: string;
-  tooltip: string;
-  value: number;
-  flagDescriptions: string[];
-};
-
-const FlagFieldRow = ({ label, tooltip, value, flagDescriptions }: FlagFieldRowProps) => {
-  return (
-    <div className={styles.fieldRow}>
-      <div className={styles.fieldValue}>
-        <Label text={label} width={LAB_WIDTH} tooltip={tooltip} />
-        <FlagRow value={value} flagDescriptions={flagDescriptions} />
-      </div>
-    </div>
+      <BitValue value={toFlag(value, 7)} tooltip={titles?.[7]} />
+      <BitValue value={toFlag(value, 6)} tooltip={titles?.[6]} />
+      <BitValue value={toFlag(value, 5)} tooltip={titles?.[5]} />
+      <BitValue value={toFlag(value, 4)} tooltip={titles?.[4]} />
+      <BitValue value={toFlag(value, 3)} tooltip={titles?.[3]} />
+      <BitValue value={toFlag(value, 2)} tooltip={titles?.[2]} />
+      <BitValue value={toFlag(value, 1)} tooltip={titles?.[1]} />
+      <BitValue value={toFlag(value, 0)} tooltip={titles?.[0]} />
+    </Col>
   );
 };
 
@@ -257,14 +237,12 @@ type ValueFieldProps = {
 
 const ValueFieldRow = ({ label, tooltip, value, word }: ValueFieldProps) => {
   return (
-    <div className={styles.fieldRow}>
-      <div className={styles.fieldValue}>
+      <Col>
         <Label text={label} width={LAB_WIDTH} tooltip={tooltip} />
         <LabelSeparator width={2} />
         <Value text={word ? toHexa4(value ?? 0) : toHexa2(value ?? 0)} width={VALUE_WIDTH} />
         <Secondary text={`(${value})`} />
-      </div>
-    </div>
+      </Col>
   );
 };
 

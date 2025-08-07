@@ -1,228 +1,97 @@
-import styles from "./M6510CpuPanel.module.scss";
-import { Flag, Label, LabelSeparator, Separator, Value } from "@controls/Labels";
+import { Separator } from "@controls/Labels";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { M6510CpuState } from "@common/messaging/EmuApi";
-import { toBin16, toBin8 } from "../services/ide-commands";
+import {
+  Bit16Value,
+  Bit8Value,
+  FlagLetter,
+  FlagValue,
+  SimpleValue,
+  VerticalFlagValue
+} from "@renderer/controls/valuedisplay/Values";
+import { CenteredRow, Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
 
-const FLAG_WIDTH = 16;
-const LAB_WIDTH = 36;
-const R16_WIDTH = 48;
-const TACT_WIDTH = 72;
+const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
+const REG8_TOOLTIP = "{r8N}: {r8v}";
 
 const CpuPanel = () => {
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<M6510CpuState>(null);
 
-  const toHexa2 = (value?: number) =>
-    value !== undefined ? value.toString(16).toUpperCase().padStart(2, "0") : "--";
-  const toHexa4 = (value?: number) =>
-    value !== undefined ? value.toString(16).toUpperCase().padStart(4, "0") : "----";
-  const toTitle = (value: number | undefined, reg: string, is16Bit = false) => {
-    return value !== undefined
-      ? `${reg}: ${value.toString()}, ${is16Bit ? toBin16(value) : toBin8(value)}`
-      : "n/a";
-  };
   const toFlag = (value: number | undefined, bitNo: number) =>
     value !== undefined ? !!(value & (1 << bitNo)) : undefined;
 
   useEmuStateListener(emuApi, async () => {
-    setCpuState(await emuApi.getCpuState() as M6510CpuState);
+    setCpuState((await emuApi.getCpuState()) as M6510CpuState);
   });
 
   return (
-    <div className={styles.cpuPanel}>
-      <div className={styles.flags}>
-        <div className={styles.f}>F</div>
-        <div className={styles.rows}>
-          <div className={styles.cols}>
-            <Label text="N" width={FLAG_WIDTH} center />
-            <Label text="V" width={FLAG_WIDTH} center />
-            <Label text="-" width={FLAG_WIDTH} center />
-            <Label text="B" width={FLAG_WIDTH} center />
-            <Label text="D" width={FLAG_WIDTH} center />
-            <Label text="I" width={FLAG_WIDTH} center />
-            <Label text="Z" width={FLAG_WIDTH} center />
-            <Label text="C" width={FLAG_WIDTH} center />
-          </div>
-          <div className={styles.cols}>
-            <Flag
-              value={toFlag(cpuState?.p, 7)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Negative"
-            />
-            <Flag
-              value={toFlag(cpuState?.p, 6)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Overflow"
-            />
-            <Flag
-              value={toFlag(cpuState?.p, 5)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Unused (always set)"
-            />
-            <Flag
-              value={toFlag(cpuState?.p, 4)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Break"
-            />
-            <Flag
-              value={toFlag(cpuState?.p, 3)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Decimal mode"
-            />
-            <Flag
-              value={toFlag(cpuState?.p, 2)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Interrupt mask"
-            />
-            <Flag
-              value={toFlag(cpuState?.p, 1)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Zero"
-            />
-            <Flag
-              value={toFlag(cpuState?.p, 0)}
-              adjustLeft={false}
-              width={FLAG_WIDTH}
-              tooltip="Carry"
-            />
-          </div>
-        </div>
-      </div>
+    <SidePanel>
+      <CenteredRow>
+        <FlagLetter label="P" />
+        <VerticalFlagValue label="N" value={toFlag(cpuState?.p, 7)} tooltip="Negative" />
+        <VerticalFlagValue label="V" value={toFlag(cpuState?.p, 6)} tooltip="Overflow" />
+        <VerticalFlagValue label="-" value={toFlag(cpuState?.p, 5)} tooltip="Unused (always set)" />
+        <VerticalFlagValue label="B" value={toFlag(cpuState?.p, 4)} tooltip="Break" />
+        <VerticalFlagValue label="D" value={toFlag(cpuState?.p, 3)} tooltip="Decimal mode" />
+        <VerticalFlagValue label="I" value={toFlag(cpuState?.p, 2)} tooltip="Interrupt mask" />
+        <VerticalFlagValue label="Z" value={toFlag(cpuState?.p, 1)} tooltip="Zero" />
+        <VerticalFlagValue label="C" value={toFlag(cpuState?.p, 0)} tooltip="Carry" />
+      </CenteredRow>
       <Separator />
-      <div className={styles.cols}>
-        <Label text="A" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.a)}
-          tooltip={toTitle(cpuState?.a, "A")}
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text="X" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.x)}
-          tooltip={toTitle(cpuState?.x, "X")}
-          width={R16_WIDTH}
-        />
-        <Label text="Y" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.y)}
-          tooltip={toTitle(cpuState?.y, "Y")}
-          width={R16_WIDTH}
-        />
-      </div>
-      <div className={styles.cols}>
-        <Label text="PC" width={LAB_WIDTH} />
-        <Value
-          text={toHexa4(cpuState?.pc)}
-          tooltip={toTitle(cpuState?.pc, "PC", true)}
-          width={R16_WIDTH}
-        />
-        <Label text="SP" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.sp)}
-          tooltip={toTitle(cpuState?.sp, "SP")}
-          width={R16_WIDTH}
-        />
-      </div>
+      <Col>
+        <Bit8Value label="A" value={cpuState?.a} tooltip={REG8_TOOLTIP} />
+        <Bit8Value label="SP" value={cpuState?.sp} tooltip={REG8_TOOLTIP} />
+      </Col>
+      <Col>
+        <Bit8Value label="X" value={cpuState?.x} tooltip={REG8_TOOLTIP} />
+        <Bit8Value label="Y" value={cpuState?.y} tooltip={REG8_TOOLTIP} />
+      </Col>
+      <Col>
+        <Bit16Value label="PC" reg16Label="PC" value={cpuState?.pc} tooltip={REG16_ONLY_TOOLTIP} />
+      </Col>
       <Separator />
-      <div className={styles.cols}>
-        <Label text="LMR" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.lastMemoryReadValue ?? 0)}
-          tooltip="Last value read from memory"
-          width={R16_WIDTH}
+      <Col>
+        <Bit8Value
+          label="LMR"
+          value={cpuState?.lastMemoryReadValue ?? 0}
+          tooltip={"Last value read from memory:\n{r8v}"}
         />
-        <Label text="LMW" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.lastMemoryWriteValue ?? 0)}
-          tooltip="Last value written to memory"
-          width={R16_WIDTH}
+        <Bit8Value
+          label="LMW"
+          value={cpuState?.lastMemoryWriteValue ?? 0}
+          tooltip={"Last value written to memory:\n{r8v}"}
         />
-      </div>
-      <div className={styles.cols}>
-        <Label text="IRV" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.lastIoReadValue ?? 0)}
-          tooltip="Last value read from the I/O port"
-          width={R16_WIDTH}
-        />
-        <Label text="IWV" width={LAB_WIDTH} />
-        <Value
-          text={toHexa2(cpuState?.lastIoWriteValue ?? 0)}
-          tooltip="Last value written to the I/O port"
-          width={R16_WIDTH}
-        />
-      </div>
+      </Col>
       <Separator />
-      <div className={styles.cols}>
-        <Label text="IRQ" width={LAB_WIDTH - 3} />
-        <Flag
-          value={cpuState?.irqRequested}
-          width={FLAG_WIDTH + 3}
-          adjustLeft={false}
-          center={false}
-          tooltip="IRQ requested"
-        />
-        <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-        <Label text="NMI" width={LAB_WIDTH - 3} />
-        <Flag
-          value={cpuState?.nmiRequested}
-          width={FLAG_WIDTH + 3}
-          adjustLeft={false}
-          center={false}
-          tooltip="NMI requested"
-        />
-        <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-      </div>
-      <div className={styles.cols}>
-        <Label text="STL" width={LAB_WIDTH - 3} />
-        <Flag
-          value={cpuState?.stalled}
-          width={FLAG_WIDTH + 3}
-          adjustLeft={false}
-          center={false}
-          tooltip="CPU stalled"
-        />
-        <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-        <Label text="JAM" width={LAB_WIDTH - 3} />
-        <Flag
-          value={cpuState?.jammed}
-          width={FLAG_WIDTH + 3}
-          adjustLeft={false}
-          center={false}
-          tooltip="CPU jammed"
-        />
-        <LabelSeparator width={R16_WIDTH - FLAG_WIDTH} />
-      </div>
+      <Col>
+        <FlagValue label="IRQ" value={cpuState?.irqRequested} tooltip="IRQ requested" />
+        <FlagValue label="NMI" value={cpuState?.nmiRequested} tooltip="NMI requested" />
+      </Col>
+      <Col>
+        <FlagValue label="STL" value={cpuState?.stalled} tooltip="CPU stalled" />
+        <FlagValue label="JAM" value={cpuState?.jammed} tooltip="CPU jammed" />
+      </Col>
       <Separator />
-      <div className={styles.cols}>
-        <Label text="CLK" width={LAB_WIDTH} />
-        <Value
-          text={cpuState?.tacts?.toString() ?? "---"}
-          width={TACT_WIDTH}
-          tooltip="Curent CPU clock"
+      <Col>
+        <SimpleValue
+          label="CLK"
+          value={cpuState?.tacts ?? 0}
+          tooltip="Current CPU clock"
+          fullWidth
         />
-      </div>
-      <div className={styles.cols}>
-        <Label text="TSP" width={LAB_WIDTH} />
-        <Value
-          text={((cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)).toString() ?? "---"}
-          width={TACT_WIDTH}
+      </Col>
+      <Col>
+        <SimpleValue
+          label="TSP"
+          value={(cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)}
           tooltip="T-States since last start after pause"
+          fullWidth
         />
-      </div>
-    </div>
+      </Col>
+    </SidePanel>
   );
 };
 

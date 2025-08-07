@@ -25,7 +25,8 @@ import {
   MI_C64,
   MF_Z80,
   MF_M6510,
-  CT_DISASSEMBLER
+  CT_DISASSEMBLER,
+  MF_VIC
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -344,6 +345,7 @@ export const machineRegistry: MachineInfo[] = [
     charSet: ZxSpectrumChars,
     features: {
       [MF_M6510]: true,
+      [MF_VIC]: true,
       [MF_TAPE_SUPPORT]: true
     },
     models: [
