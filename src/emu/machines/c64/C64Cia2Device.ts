@@ -8,6 +8,48 @@ import { IC64Machine } from "./IC64Machine";
  */
 export class C64Cia2Device implements IGenericDevice<IC64Machine> {
   /**
+   * Flag indicating if the CPU port is driving the IEC DATA line low
+   * This is used to implement the "wired-AND" behavior of the IEC bus
+   */
+  private _cpuPortDrivingDataLow = false;
+
+  /**
+   * Flag indicating if the CPU port is driving the IEC CLOCK line low
+   * This is used to implement the "wired-AND" behavior of the IEC bus
+   */
+  private _cpuPortDrivingClockLow = false;
+
+  /**
+   * Gets whether the CPU port is driving the IEC DATA line low
+   */
+  get cpuPortDrivingDataLow(): boolean {
+    return this._cpuPortDrivingDataLow;
+  }
+
+  /**
+   * Sets whether the CPU port is driving the IEC DATA line low
+   */
+  set cpuPortDrivingDataLow(value: boolean) {
+    this._cpuPortDrivingDataLow = value;
+    // No need to call updateIecBusLines() as it's empty
+  }
+
+  /**
+   * Gets whether the CPU port is driving the IEC CLOCK line low
+   */
+  get cpuPortDrivingClockLow(): boolean {
+    return this._cpuPortDrivingClockLow;
+  }
+
+  /**
+   * Sets whether the CPU port is driving the IEC CLOCK line low
+   */
+  set cpuPortDrivingClockLow(value: boolean) {
+    this._cpuPortDrivingClockLow = value;
+    // No need to call updateIecBusLines() as it's empty
+  }
+
+  /**
    * Data Port A (Register $DD00)
    * This register serves multiple functions:
    * - VIC-II bank selection
@@ -230,18 +272,67 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
    */
   get portA(): number {
     // The value read depends on DDR settings
-    // Bits set as inputs (0 in DDR) will read external values
-    // Bits set as outputs (1 in DDR) will read the value set in the port register
-    // This is simplified for now - would need actual serial bus state for full implementation
-    return this._portA;
+    // For each bit:
+    // - If set as output (1 in DDR), read the value from _portA
+    // - If set as input (0 in DDR), read the value from external source
+    
+    let result = 0;
+    
+    // Apply data direction register mask
+    for (let bit = 0; bit < 8; bit++) {
+      const mask = 1 << bit;
+      if (this._ddrA & mask) {
+        // This bit is configured as output, use internal latch
+        result |= (this._portA & mask);
+      } else {
+        // This bit is configured as input, read from external source
+        switch (bit) {
+          case 6: // DATA IN (bit 6)
+            // Respect the "wired-AND" behavior - if CPU port is driving low, we read low
+            if (this._cpuPortDrivingDataLow) {
+              // Leave bit 6 as 0 (low)
+            } else {
+              // No device is pulling it low, so it's high (pull-up resistor)
+              result |= mask;
+            }
+            break;
+          case 7: // CLK IN (bit 7)
+            // Respect the "wired-AND" behavior - if CPU port is driving low, we read low
+            if (this._cpuPortDrivingClockLow) {
+              // Leave bit 7 as 0 (low)
+            } else {
+              // No device is pulling it low, so it's high (pull-up resistor)
+              result |= mask;
+            }
+            break;
+          case 3: // ATN IN (bit 3)
+            // In a real C64, this would read the actual IEC ATN IN line from the port
+            // For now, it's always high when not externally driven
+            result |= mask;
+            break;
+          default:
+            // For other bits configured as inputs, use the latch value
+            // This isn't completely accurate for all bits, but works for now
+            result |= (this._portA & mask);
+            break;
+        }
+      }
+    }
+    
+    return result;
   }
 
   /**
    * Sets Port A value (VIC-II bank selection and serial bus control)
    */
   set portA(value: number) {
+    // Update the internal latch
     this._portA = value & 0xFF;
-    // In a full implementation, this would also update VIC-II bank selection
+    
+    // TODO: In a complete implementation, this would:
+    // 1. Update the actual IEC bus lines based on output bits
+    // 2. Update the VIC-II bank selection
+    // 3. Signal other devices about IEC bus changes
   }
 
   /**
@@ -259,6 +350,57 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
     // Clear bits 4-5 and set them according to the inverted bank value
     bank = bank & 0x03; // Ensure valid value 0-3
     this._portA = (this._portA & 0xCF) | ((~bank & 0x03) << 4);
+  }
+
+  /**
+   * Get the current state of the IEC Data line (DATA OUT)
+   * Returns true if the data line is high (1), false if low (0)
+   * This corresponds to bit 2 of Port A
+   */
+  get iecDataLine(): boolean {
+    // DATA OUT is on bit 2 of Port A
+    // A 0 in the register means the line is pulled low (active), 1 means high (inactive)
+    // Only consider this bit if it's configured as an output in DDRA
+    if ((this._ddrA & 0x04) !== 0) {
+      return (this._portA & 0x04) !== 0;
+    }
+    
+    // If not configured as output, the line is high (inactive)
+    return true;
+  }
+
+  /**
+   * Get the current state of the IEC Clock line (CLK OUT)
+   * Returns true if the clock line is high (1), false if low (0)
+   * This corresponds to bit 1 of Port A
+   */
+  get iecClockLine(): boolean {
+    // CLK OUT is on bit 1 of Port A
+    // A 0 in the register means the line is pulled low (active), 1 means high (inactive)
+    // Only consider this bit if it's configured as an output in DDRA
+    if ((this._ddrA & 0x02) !== 0) {
+      return (this._portA & 0x02) !== 0;
+    }
+    
+    // If not configured as output, the line is high (inactive)
+    return true;
+  }
+
+  /**
+   * Get the current state of the IEC ATN line (ATN OUT)
+   * Returns true if the ATN line is high (1), false if low (0)
+   * This corresponds to bit 0 of Port A
+   */
+  get iecAtnLine(): boolean {
+    // ATN OUT is on bit 0 of Port A
+    // A 0 in the register means the line is pulled low (active), 1 means high (inactive)
+    // Only consider this bit if it's configured as an output in DDRA
+    if ((this._ddrA & 0x01) !== 0) {
+      return (this._portA & 0x01) !== 0;
+    }
+    
+    // If not configured as output, the line is high (inactive)
+    return true;
   }
 
   /**
@@ -356,7 +498,7 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
     regIndex &= 0x0F; // Limit to 16 registers (0-15)
     
     switch (regIndex) {
-      case 0x00: return this._portA;
+      case 0x00: return this.portA;
       case 0x01: return this._portB;
       case 0x02: return this._ddrA;
       case 0x03: return this._ddrB;
@@ -397,13 +539,36 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
     
     switch (regIndex) {
       case 0x00: 
+        // Write to Port A - affects IEC bus lines and VIC bank
+        const oldPortA = this._portA;
         this._portA = value;
+        
+        // Check if IEC lines have changed and need to be updated
+        const iecMask = 0x07; // Bits 0-2 affect IEC bus lines
+        if ((oldPortA & iecMask) !== (value & iecMask)) {
+          // The wired-AND behavior is implemented through getters
+          // so no explicit update is needed
+        }
+        
+        // Check if VIC bank selection has changed
+        const vicBankMask = 0x30; // Bits 4-5 affect VIC bank
+        if ((oldPortA & vicBankMask) !== (value & vicBankMask)) {
+          // TODO: Signal VIC-II about bank change
+        }
         break;
       case 0x01:
         this._portB = value;
         break;
       case 0x02:
+        // Data Direction Register A - affects how Port A bits are interpreted
+        const oldDdrA = this._ddrA;
         this._ddrA = value;
+        
+        // If IEC line direction has changed, update their state
+        if ((oldDdrA & 0x07) !== (value & 0x07)) {
+          // The wired-AND behavior is implemented through getters
+          // so no explicit update is needed
+        }
         break;
       case 0x03:
         this._ddrB = value;

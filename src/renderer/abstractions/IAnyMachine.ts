@@ -11,10 +11,11 @@ import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { IMachineEventHandler } from "./IMachineEventHandler";
 import { IAnyCpu } from "@emu/abstractions/IAnyCpu";
 import { CpuState } from "@common/messaging/EmuApi";
+import { SysVar } from "@abstractions/SysVar";
 
 /**
- * This interface defines the behavior of a virtual machine that integrates the emulator from 
- * separate hardware components, including the a CPU, the memory, screen, keyboard, 
+ * This interface defines the behavior of a virtual machine that integrates the emulator from
+ * separate hardware components, including the a CPU, the memory, screen, keyboard,
  * and many other devices.
  */
 export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
@@ -282,4 +283,9 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Gets the current CPU state to be displayed in the debugger
    */
   getCpuState(): CpuState;
+
+  /**
+   * Gets the structure describing system variables
+   */
+  get sysVars(): SysVar[];
 }

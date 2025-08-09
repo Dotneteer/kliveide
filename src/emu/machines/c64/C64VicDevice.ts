@@ -7,6 +7,11 @@ import { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
  * The VIC-II has 47 registers ($D000-$D02E) that control various aspects of the display
  */
 export class C64VicDevice implements IGenericDevice<IC64Machine> {
+  /**
+   * The current VIC bank (0-3)
+   */
+  private _baseBank: number = 0;
+
   // --- The current screen configuration
   private _configuration: ScreenConfiguration;
 
@@ -302,6 +307,14 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   ) {
     this._configuration = configuration;
     this.reset();
+  }
+
+  /**
+   * Sets the current VIC bank (0-3)
+   * @param bank The VIC bank number
+   */
+  setBaseBank(bank: number): void {
+    this._baseBank = bank & 0x03; // Limit to 2 bits (0-3)
   }
 
   /**
@@ -689,6 +702,15 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   renderInstantScreen(_savedPixelBuffer?: Uint32Array): Uint32Array {
     // TODO: Implement the rendering logic for the C64 VIC-II chip
     return this._pixelBuffer;
+  }
+
+  /**
+   * Reads data from the VIC-II chip's PHI1 clock cycle
+   * @returns The data read from the PHI1 clock cycle
+   */
+  readPhi1Data(): number {
+    // TODO: Implement the logic to read data from the VIC-II chip's PHI1 clock cycle
+    return 0;
   }
 
   /**

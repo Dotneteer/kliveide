@@ -247,6 +247,14 @@ export class M6510Cpu implements IM6510Cpu {
   tacts: number = 0;
 
   /**
+   * Sets the value of tacts explicitly
+   * @param value The value to set
+   */
+  setTacts(value: number): void {
+    this.tacts = value;
+  }
+
+  /**
    * Show the number of machine frames completed since the CPU started.
    */
   frames: number = 0;

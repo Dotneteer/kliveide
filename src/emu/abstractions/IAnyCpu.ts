@@ -32,6 +32,12 @@ export interface IAnyCpu {
   readonly tacts: number;
 
   /**
+   * Sets the value of tacts explicitly
+   * @param value The value to set
+   */
+  setTacts(value: number): void;
+
+  /**
    * Show the number of machine frames completed since the CPU started.
    */
   readonly frames: number;
