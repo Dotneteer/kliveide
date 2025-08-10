@@ -49,6 +49,16 @@ export class M6510TestCpu extends M6510Cpu {
   doWriteMemory(address: number, value: number) {
     this.machine.writeMemory(address, value);
   }
+
+  /**
+   * Override the onTactIncremented method to allow injecting custom handlers
+   */
+  onTactIncremented(): void {
+    super.onTactIncremented();
+    if (this.machine.tactIncrementHandler) {
+      this.machine.tactIncrementHandler(this);
+    }
+  }
 }
 
 /**
@@ -95,6 +105,11 @@ export class M6510TestMachine {
    * The count of I/O reads
    */
   ioReadCount: number;
+
+  /**
+   * Optional handler function that gets called when a CPU tact is incremented
+   */
+  tactIncrementHandler?: (cpu: M6510Cpu) => void;
 
   /**
    * Sign that a CPU cycle has just been completed.

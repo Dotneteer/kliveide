@@ -90,6 +90,17 @@ export class M6510Cpu implements IM6510Cpu {
 
   /**
    * Waits while the CPU gets released from the stalled state.
+   * 
+   * This simulates the interaction between the VIC-II and the 6510 CPU when the VIC-II
+   * needs to take over the bus. In the actual hardware:
+   * 
+   * 1. The VIC-II lowers the BA signal 3 cycles before taking over the bus
+   * 2. BA is connected to the RDY line of the 6510 CPU
+   * 3. The RDY line is honored by the CPU only during read operations
+   * 4. When the CPU is fully stalled, it cannot perform any memory access (read or write)
+   * 
+   * The 3-cycle warning period exists because the 6510 never does more than 3 write
+   * operations in sequence, and write operations cannot be immediately interrupted.
    */
   waitForCpuRelease(): void {
     while (this._stalled) {
@@ -172,6 +183,15 @@ export class M6510Cpu implements IM6510Cpu {
 
   /**
    * This function implements the memory read delay of the CPU.
+   * 
+   * In hardware, when the VIC-II needs to take over the bus (such as during a bad line),
+   * the CPU must be stalled. The 6510's RDY line (connected to VIC-II's BA line) is
+   * honored during read operations, making read operations the point where the CPU can 
+   * be stalled. During stall conditions, the CPU cannot access memory at all.
+   * 
+   * This method:
+   * 1. Waits for CPU release if it's currently stalled
+   * 2. Increments the cycle count to account for the memory read operation
    */
   delayMemoryRead(_: number): void {
     this.waitForCpuRelease();
@@ -204,6 +224,18 @@ export class M6510Cpu implements IM6510Cpu {
   /**
    * This function implements the memory write delay of the CPU.
    * @param _address Memory address to write
+   * 
+   * In hardware, the 6510's RDY line (connected to VIC-II's BA) is ignored during write operations.
+   * This means ongoing write operations cannot be immediately interrupted when the VIC-II
+   * signals it needs the bus. This is why the VIC-II signals BA low 3 cycles in advance - 
+   * to allow any write operations in progress to complete (as the 6510 never does more than 
+   * 3 writes in sequence).
+   * 
+   * However, once the CPU is fully stalled (after the advance warning period), it cannot
+   * perform new write operations until released. This method:
+   * 
+   * 1. Waits for CPU release if it's currently stalled (won't happen during the 3-cycle warning)
+   * 2. Increments the cycle count to account for the memory write operation
    */
   delayMemoryWrite(_address: number): void {
     this.waitForCpuRelease();
