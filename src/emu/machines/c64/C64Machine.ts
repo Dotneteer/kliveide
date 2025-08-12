@@ -14,7 +14,7 @@ import { C64IoExpansionDevice } from "./C64IoExpansionDevice";
 import { C64KeyboardDevice } from "./C64KeyboardDevice";
 import { C64MemoryDevice } from "./C64MemoryDevice";
 import { C64SidDevice } from "./C64SidDevice";
-import { C64VicDevice } from "./C64VicDevice";
+import { C64VicDevice } from "./vic/C64VicDevice";
 import { IC64Machine } from "./IC64Machine";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { M6510Cpu } from "@emu/m6510/M6510Cpu";
@@ -29,6 +29,7 @@ import { M6510CpuState } from "@common/messaging/EmuApi";
 import { SysVar, SysVarType } from "@common/abstractions/SysVar";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
+import { vicMos6569r3, vicMos8562 } from "./vic/vic-models";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
@@ -85,7 +86,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
     this.vicDevice = new C64VicDevice(
       this,
-      this.isNtsc ? C64VicDevice.C64NtscScreenConfiguration : C64VicDevice.C64PalScreenConfiguration
+      this.isNtsc ? vicMos8562 : vicMos6569r3
     );
     this.sidDevice = new C64SidDevice(this);
     this.keyboardDevice = new C64KeyboardDevice(this);
@@ -390,10 +391,17 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   delayPortWrite(_address: number): void {}
 
   /**
+   * Optional method that can be invoked before the tact counter is incremented.
+   */
+  beforeTactIncremented(): void {
+    // --- Implement this method in derived classes to handle CPU timing
+  }
+
+  /**
    * Allow the VIC to render the next screen tact (and stall or release the CPU if needed).
    */
   onTactIncremented(): void {
-    this.vicDevice.renderNextTact();
+    this.setStalled(this.vicDevice.renderNextTact());
   }
 
   isCpuSnoozed(): boolean {

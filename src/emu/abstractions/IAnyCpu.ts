@@ -245,6 +245,12 @@ export interface IAnyCpu {
   delayPortWrite(address: number): void;
 
   /**
+   * Optional method that can be invoked before the tact counter is implemented.
+   * @returns
+   */
+  beforeTactIncremented?: () => void;
+
+  /**
    * Every time the CPU clock is incremented with a single T-state, this function is executed.
    * @param increment The tact increment value
    * With this function, you can emulate hardware activities running simultaneously with the CPU. For example,

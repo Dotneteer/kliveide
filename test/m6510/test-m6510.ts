@@ -112,6 +112,13 @@ export class M6510TestMachine {
   tactIncrementHandler?: (cpu: M6510Cpu) => void;
 
   /**
+   * Tracks the start and end tact for interrupt management
+   */
+  private _interruptStartTact?: number;
+  private _interruptEndTact?: number;
+  private _interruptType?: 'irq' | 'nmi' | 'both';
+
+  /**
    * Sign that a CPU cycle has just been completed.
    */
   get cpuCycleCompleted(): ILiteEvent<void> {
@@ -176,6 +183,143 @@ export class M6510TestMachine {
   }
 
   /**
+   * Injects an IRQ handler routine at the specified address
+   * @param handlerAddress Address where the IRQ handler will be placed (default: 0x8000)
+   * @param handlerCode Optional custom handler code. If not provided, a simple LDA #$01, STA $D010, RTI handler is used
+   * @returns The address where the handler was installed
+   * 
+   * Example usage:
+   * ```
+   * machine.setupIrqHandler(0x8000, [
+   *   0xA9, 0x42,        // LDA #$42
+   *   0x8D, 0x00, 0xD0,  // STA $D000 
+   *   0x40               // RTI
+   * ]);
+   * ```
+   */
+  setupIrqHandler(handlerAddress: number = 0x8000, handlerCode?: number[]): number {
+    const defaultHandler = [
+      0xA9, 0x01,           // LDA #$01
+      0x8D, 0x10, 0xD0,     // STA $D010 - marker to prove ISR ran
+      0x40                  // RTI
+    ];
+    
+    const code = handlerCode || defaultHandler;
+    
+    // Install handler code
+    for (let i = 0; i < code.length; i++) {
+      this.writeMemory(handlerAddress + i, code[i]);
+    }
+    
+    // Set IRQ vector to point to our handler
+    this.writeMemory(0xFFFE, handlerAddress & 0xFF);      // IRQ vector low byte
+    this.writeMemory(0xFFFF, (handlerAddress >> 8) & 0xFF); // IRQ vector high byte
+    
+    return handlerAddress;
+  }
+
+  /**
+   * Injects an NMI handler routine at the specified address
+   * @param handlerAddress Address where the NMI handler will be placed (default: 0x9000)
+   * @param handlerCode Optional custom handler code. If not provided, a simple LDA #$02, STA $D011, RTI handler is used
+   * @returns The address where the handler was installed
+   * 
+   * Example usage:
+   * ```
+   * machine.setupNmiHandler(0x9000, [
+   *   0xA9, 0x99,        // LDA #$99
+   *   0x8D, 0x01, 0xD0,  // STA $D001
+   *   0x40               // RTI
+   * ]);
+   * ```
+   */
+  setupNmiHandler(handlerAddress: number = 0x9000, handlerCode?: number[]): number {
+    const defaultHandler = [
+      0xA9, 0x02,           // LDA #$02
+      0x8D, 0x11, 0xD0,     // STA $D011 - marker to prove ISR ran
+      0x40                  // RTI
+    ];
+    
+    const code = handlerCode || defaultHandler;
+    
+    // Install handler code
+    for (let i = 0; i < code.length; i++) {
+      this.writeMemory(handlerAddress + i, code[i]);
+    }
+    
+    // Set NMI vector to point to our handler
+    this.writeMemory(0xFFFA, handlerAddress & 0xFF);      // NMI vector low byte
+    this.writeMemory(0xFFFB, (handlerAddress >> 8) & 0xFF); // NMI vector high byte
+    
+    return handlerAddress;
+  }
+
+  /**
+   * Sets up interrupt handling between specific tact cycles
+   * @param interruptType Type of interrupt ('irq' or 'nmi')
+   * @param startTact Tact cycle when interrupt should be triggered
+   * @param endTact Tact cycle when interrupt should be cleared
+   * 
+   * This method emulates external hardware that triggers interrupts at specific timing,
+   * allowing precise control over when interrupts occur during CPU execution.
+   * This is useful for testing interrupt handling that happens mid-instruction or
+   * at specific timing points that would be difficult to achieve otherwise.
+   * 
+   * Example usage:
+   * ```
+   * // Trigger IRQ at tact 10, clear it at tact 20
+   * machine.setupInterruptWindow('irq', 10, 20);
+   * ```
+   */
+  setupInterruptWindow(interruptType: 'irq' | 'nmi' | 'both', startTact: number, endTact: number): void {
+    this._interruptType = interruptType;
+    this._interruptStartTact = startTact;
+    this._interruptEndTact = endTact;
+    
+    // Set up tact increment handler to manage interrupts
+    this.tactIncrementHandler = (cpu) => {
+      const currentTact = cpu.tacts;
+      
+      // Trigger interrupt at start tact
+      if (currentTact === this._interruptStartTact && this._interruptType) {
+        if (this._interruptType === 'irq') {
+          cpu.triggerIrq();
+        } else if (this._interruptType === 'nmi') {
+          cpu.triggerNmi();
+        } else {
+          cpu.triggerIrq();
+          cpu.triggerNmi();
+        }
+      }
+      
+      // Clear interrupt at end tact
+      if (currentTact === this._interruptEndTact && this._interruptType) {
+        if (this._interruptType === 'irq') {
+          cpu.clearIrq();
+        } else if (this._interruptType === 'nmi') {
+          cpu.clearNmi();
+        } else {
+          cpu.clearIrq();
+          cpu.clearNmi();
+        }
+      }
+    };
+  }
+
+  /**
+   * Clears any previously set up interrupt handling and resets the tact increment handler
+   * 
+   * Call this method to clean up interrupt handling setup between tests or when you want
+   * to switch to a different interrupt handling strategy.
+   */
+  clearInterruptHandling(): void {
+    this._interruptType = undefined;
+    this._interruptStartTact = undefined;
+    this._interruptEndTact = undefined;
+    this.tactIncrementHandler = undefined;
+  }
+
+  /**
    * Run the injected code.
    */
   run(): void {
@@ -186,6 +330,11 @@ export class M6510TestMachine {
     let stopped = false;
 
     while (!stopped) {
+      if (this.runMode === RunMode.UntilBrk && this.memory[this.cpu.pc] === 0x00) {
+        // BRK instruction found, stop execution
+        break;
+      }
+
       const pcBefore = this.cpu.pc;
       this.cpu.executeCpuCycle();
       this._cpuCycleCompleted.fire();
@@ -202,15 +351,9 @@ export class M6510TestMachine {
         case RunMode.OneInstruction:
           stopped = this.cpu.pc !== pcBefore;
           break;
-        case RunMode.UntilBrk:
-          // Check if BRK instruction (opcode 0x00) was just executed
-          stopped = this.cpu.opCode === 0x00;
-          break;
         case RunMode.UntilEnd:
           stopped = this.cpu.pc >= this.codeEndsAt;
           break;
-        default:
-          throw new Error("Invalid RunMode detected.");
       }
     }
   }

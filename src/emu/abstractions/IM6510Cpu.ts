@@ -36,7 +36,7 @@ export interface IM6510Cpu extends IAnyCpu {
    * The Program Counter register
    */
   pc: number;
-  
+
   /**
    * Tests if the Negative flag is set
    */
@@ -71,6 +71,11 @@ export interface IM6510Cpu extends IAnyCpu {
    * Tests if the Carry flag is set
    */
   isCFlagSet(): boolean;
+
+  /**
+   * Sets the CPU into the stalled state.
+   */
+  setStalled(value: boolean): void;
 
   /**
    * Sets the CPU into the stalled state.

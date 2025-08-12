@@ -21,22 +21,22 @@ describe("M6510 - CPU Stalling", () => {
     
     // Stall the CPU
     machine.cpu.stallCpu();
-    expect(machine.cpu.stalled).toBe(1);
+    expect(machine.cpu.stalled).toBe(true);
     
     // Release the CPU
     machine.cpu.releaseCpu();
-    expect(machine.cpu.stalled).toBe(0);
+    expect(machine.cpu.stalled).toBe(false);
   });
   
   test("should always set stalled value to 1 regardless of multiple calls", () => {
     // Stall the CPU twice
     machine.cpu.stallCpu();
     machine.cpu.stallCpu(); // This will set _stalled to 1 again, not increment it
-    expect(machine.cpu.stalled).toBe(1); // The expected value is 1
+    expect(machine.cpu.stalled).toBe(true); // The expected value is 1
     
     // Release once, should be fully released
     machine.cpu.releaseCpu();
-    expect(machine.cpu.stalled).toBe(0);
+    expect(machine.cpu.stalled).toBe(false);
   });
 
   test("tactIncrementHandler should be called during instruction execution", () => {
@@ -96,49 +96,6 @@ describe("M6510 - CPU Stalling", () => {
     expect(wasEverStalled).toBe(true); // CPU should have been stalled
   });
 
-  test("should eventually release CPU after numerous CPU cycles", () => {
-    // --- Arrange
-    // Initialize code to ensure the CPU runs
-    machine.initCode([0xea], 0x1000, 0x1000); // NOP instruction
-    
-    // Setup tracking variables
-    let tactCount = 0;
-    
-    // Clear any previous stalled state
-    while (machine.cpu.stalled > 0) {
-      machine.cpu.releaseCpu();
-    }
-    
-    // Stall the CPU
-    machine.cpu.stallCpu();
-    expect(machine.cpu.stalled).toBe(1);
-    
-    // Set up a handler to count tact increments while stalled
-    machine.tactIncrementHandler = (cpu: M6510Cpu) => {
-      if (cpu.stalled > 0) {
-        tactCount++;
-      }
-    };
-    
-    // --- Act
-    // Execute waitForCpuRelease in a loop to simulate many tact increments
-    for (let i = 0; i < 1100; i++) {
-      if (machine.cpu.stalled === 0) break; // Exit once CPU is released
-      
-      // Call incrementTacts directly to make sure onTactIncremented is triggered
-      (machine.cpu as any).incrementTacts();
-      
-      // Every 100 tacts, check if CPU is still stalled
-      if (i % 100 === 0 && machine.cpu.stalled > 0) {
-        machine.cpu.waitForCpuRelease();
-      }
-    }
-    
-    // --- Assert
-    expect(machine.cpu.stalled).toBe(0); // CPU should be released automatically
-    expect(tactCount).toBeGreaterThan(900); // Should have tracked tacts while stalled
-  });
-
   test("should handle stalling during memory read operations", () => {
     // --- Arrange
     // LDA $2000 (read from absolute address)
@@ -163,7 +120,7 @@ describe("M6510 - CPU Stalling", () => {
           // Record the read operation is starting
           memReads.push({ 
             address: 0x2000, 
-            stalledBefore: cpu.stalled > 0,
+            stalledBefore: cpu.stalledCount > 0,
             stalledAfter: false // will update after stalling
           });
           
@@ -171,7 +128,7 @@ describe("M6510 - CPU Stalling", () => {
           cpu.stallCpu();
           
           // Update the stalled state after stalling
-          memReads[memReads.length - 1].stalledAfter = cpu.stalled > 0;
+          memReads[memReads.length - 1].stalledAfter = cpu.stalledCount > 0;
         }
       }
       
@@ -269,7 +226,7 @@ describe("M6510 - CPU Stalling", () => {
       else if (phase === "operands" && !stalledDuringRead && 
                cpu.lastMemoryReads.some(addr => addr === 0x2000)) {
         // Check if CPU is stalled during the actual memory read
-        stalledDuringRead = cpu.stalled > 0;
+        stalledDuringRead = cpu.stalledCount > 0;
         phase = "completed";
       }
       

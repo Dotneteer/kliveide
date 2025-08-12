@@ -1,7 +1,7 @@
 import { IM6510Cpu } from "@emu/abstractions/IM6510Cpu";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
-import { C64MemoryDevice } from "./C64MemoryDevice";
-import { C64VicDevice } from "./C64VicDevice";
+import { C64MemoryDevice } from "./vic/C64MemoryDevice";
+import { C64VicDevice } from "./vic/C64VicDevice";
 import { C64SidDevice } from "./C64SidDevice";
 import { C64KeyboardDevice } from "./C64KeyboardDevice";
 import { C64Cia1Device } from "./C64Cia1Device";
