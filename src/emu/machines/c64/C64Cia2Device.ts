@@ -220,6 +220,22 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
   }
 
   /**
+   * Check if the device asks for a non-maskable interrupt (NMI).
+   */
+  requestsNmi(): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  /**
+   * Check if the device asks for an interrupt request (IRQ).
+   */
+  requestsIrq(): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  /**
    * Initializes the CIA #2 device to its default state.
    */
   reset(): void {

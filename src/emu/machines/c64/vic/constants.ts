@@ -21,6 +21,20 @@ export const VICII_FETCH_CYCLE = 11;
 export const VICII_RASTER_IRQ_DELAY = 2;
 
 /**
+ * Common parameters for all video standards
+ */
+export const VICII_25ROW_START_LINE = 0x33;
+export const VICII_25ROW_STOP_LINE = 0xfb;
+export const VICII_24ROW_START_LINE = 0x37;
+export const VICII_24ROW_STOP_LINE = 0xf7;
+
+/**
+ * Bad line range
+ */
+export const VICII_FIRST_DMA_LINE = 0x30;
+export const VICII_LAST_DMA_LINE = 0xf7;
+
+/**
  * Available video modes.  The number is given by
  * ((vicii.regs[0x11] & 0x60) | (vicii.regs[0x16] & 0x10)) >> 4.
  */
@@ -43,9 +57,9 @@ export const enum VicFetchIndex {
 }
 
 export const enum VicIdleDataLocation {
-  IDLE_NONE = 0,
-  IDLE_3FFF = 1,
-  IDLE_39FF = 2
+  None = 0,
+  At3FFF = 1,
+  At39FF = 2
 }
 
 /* Common */
@@ -55,7 +69,6 @@ export const None = 0;
 export const UpdateMcBase = 0x001;
 export const ChkSprExp = 0x002;
 export const ChkSprDma = 0x004;
-export const ChkSprDisp = 0x008;
 export const ChkSprCrunch = 0x010;
 export const ChkBrdL1 = 0x020;
 export const ChkBrdL0 = 0x040;

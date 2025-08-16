@@ -7,7 +7,6 @@ import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { MachineEventFn } from "@renderer/abstractions/IMachineEventHandler";
 import { C64Cia1Device } from "./C64Cia1Device";
 import { C64Cia2Device } from "./C64Cia2Device";
 import { C64IoExpansionDevice } from "./C64IoExpansionDevice";
@@ -30,9 +29,13 @@ import { SysVar, SysVarType } from "@common/abstractions/SysVar";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
 import { vicMos6569r3, vicMos8562 } from "./vic/vic-models";
+import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
+
+  // --- Events queued for execution
+  private _queuedEvents?: QueuedEvent[];
 
   readonly memory: C64MemoryDevice;
   readonly cpuPortDevice: C64CpuPortDevice;
@@ -84,10 +87,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.clockMultiplier = 1;
     this.targetClockMultiplier = 1;
 
-    this.vicDevice = new C64VicDevice(
-      this,
-      this.isNtsc ? vicMos8562 : vicMos6569r3
-    );
+    this.vicDevice = new C64VicDevice(this, this.isNtsc ? vicMos8562 : vicMos6569r3);
     this.sidDevice = new C64SidDevice(this);
     this.keyboardDevice = new C64KeyboardDevice(this);
     this.cia1Device = new C64Cia1Device(this);
@@ -121,6 +121,27 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
   dispose(): void {
     // Clean up resources if needed
+  }
+
+  /**
+   * Checks if there is an active IRQ request
+   * @returns True if there is an active IRQ request, false otherwise
+   */
+  isIrqActive(): boolean {
+    return (
+      this.cia1Device.requestsIrq() ||
+      this.cia2Device.requestsIrq() ||
+      this.vicDevice.requestsIrq() ||
+      this.ioExpansionDevice.requestsIrq()
+    );
+  }
+
+  /**
+   * Checks if there is an active NMI request
+   * @returns True if there is an active NMI request, false otherwise
+   */
+  isNmiActive(): boolean {
+    return this.cia2Device.requestsNmi() || this.ioExpansionDevice.requestsNmi();
   }
 
   getMachineProperty(key: string) {
@@ -338,13 +359,13 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   reset(): void {
     // Reset the CPU port first to ensure memory config is correct
     this.cpuPortDevice.reset();
-    
+
     // Reset memory to establish correct config and memory map
     this.memory.reset();
-    
+
     // Reset the CPU base class
     super.reset();
-    
+
     // Reset all other peripherals
     this.vicDevice.reset();
     this.sidDevice.reset();
@@ -353,11 +374,12 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.cia2Device.reset();
     this.ioExpansionDevice.reset();
     this.tapeDevice.reset();
-    
+
     // Reset timing counters
     this.tacts = 0;
     this.frames = 0;
     this.currentFrameTact = 0;
+    this._queuedEvents = null;
   }
 
   beforeOpcodeFetch(): void {
@@ -391,17 +413,10 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   delayPortWrite(_address: number): void {}
 
   /**
-   * Optional method that can be invoked before the tact counter is incremented.
-   */
-  beforeTactIncremented(): void {
-    // --- Implement this method in derived classes to handle CPU timing
-  }
-
-  /**
    * Allow the VIC to render the next screen tact (and stall or release the CPU if needed).
    */
   onTactIncremented(): void {
-    this.setStalled(this.vicDevice.renderNextTact());
+    this.setStalled(this.vicDevice.renderCurrentTact());
   }
 
   isCpuSnoozed(): boolean {
@@ -450,16 +465,64 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     };
   }
 
-  queueEvent(_eventTact: number, _eventFn: MachineEventFn, _data: any): void {
-    // Queue an event for a future tact
+  /**
+   * Registers and event to execute at the specified tact
+   * @param eventTact Tact when the event should be executed
+   * @param eventFn Event function with event data passed
+   * @param data Data to pass to the event function
+   */
+  queueEvent(eventTact: number, eventFn: (data: any) => void, data: any): void {
+    const newEvent = {
+      eventTact,
+      eventFn,
+      data
+    };
+    if (!this._queuedEvents) {
+      this._queuedEvents = [newEvent];
+    } else {
+      let idx = 0;
+      while (idx < this._queuedEvents.length && this._queuedEvents[idx].eventTact <= eventTact) {
+        idx++;
+      }
+      if (idx >= this._queuedEvents.length) {
+        this._queuedEvents.push(newEvent);
+      } else {
+        this._queuedEvents.splice(idx, 0, newEvent);
+      }
+    }
   }
 
-  removeEvent(_eventFn: MachineEventFn): void {
-    // Remove a queued event
+  /**
+   * Removes the specified event handler from the event queue
+   * @param eventFn Event function to remove
+   */
+  removeEvent(eventFn: (data: any) => void): void {
+    if (!this._queuedEvents) return;
+    const idx = this._queuedEvents.findIndex((item) => item.eventFn === eventFn);
+    if (idx < 0) return;
+
+    // --- Event found, remove it
+    this._queuedEvents.splice(idx, 1);
   }
 
+  /**
+   * Consumes all events in the queue for the current tact
+   */
   consumeEvents(): void {
-    // Consume all queued events for the current tact
+    if (!this._queuedEvents) return;
+    const currentTact = this.tacts;
+    while (
+      this._queuedEvents &&
+      this._queuedEvents.length > 0 &&
+      this._queuedEvents[0].eventTact <= currentTact
+    ) {
+      const currentEvent = this._queuedEvents[0];
+      currentEvent.eventFn(currentEvent.data);
+      this._queuedEvents.shift();
+    }
+    if (this._queuedEvents.length === 0) {
+      this._queuedEvents = null;
+    }
   }
 
   /**

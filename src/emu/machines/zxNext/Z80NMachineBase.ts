@@ -16,6 +16,9 @@ import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "../machine-props";
 import { Z80NCpu } from "@emu/z80/Z80NCpu";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MessengerBase } from "@common/messaging/MessengerBase";
+import { SysVar } from "@abstractions/SysVar";
+import { CpuState } from "@common/messaging/EmuApi";
+import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -84,6 +87,45 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    */
   dispose(): void {
     this.machinePropertyChanged?.release();
+  }
+
+  /**
+   * Gets the current CPU state
+   */
+  getCpuState(): CpuState {
+    return {
+      af: this.af,
+      bc: this.bc,
+      de: this.de,
+      hl: this.hl,
+      af_: this.af_,
+      bc_: this.bc_,
+      de_: this.de_,
+      hl_: this.hl_,
+      pc: this.pc,
+      sp: this.sp,
+      ix: this.ix,
+      iy: this.iy,
+      ir: this.ir,
+      wz: this.wz,
+      tacts: this.tacts,
+      tactsAtLastStart: this.tactsAtLastStart,
+      interruptMode: this.interruptMode,
+      iff1: this.iff1,
+      iff2: this.iff2,
+      sigINT: this.sigINT,
+      halted: this.halted,
+      snoozed: this.isCpuSnoozed(),
+      opStartAddress: this.opStartAddress,
+      lastMemoryReads: this.lastMemoryReads,
+      lastMemoryReadValue: this.lastMemoryReadValue,
+      lastMemoryWrites: this.lastMemoryWrites,
+      lastMemoryWriteValue: this.lastMemoryWriteValue,
+      lastIoReadPort: this.lastIoReadPort,
+      lastIoReadValue: this.lastIoReadValue,
+      lastIoWritePort: this.lastIoWritePort,
+      lastIoWriteValue: this.lastIoWriteValue
+    };
   }
 
   /**
@@ -819,14 +861,14 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
     }
     return 0;
   }
-}
 
-// --- Represents a queued event
-type QueuedEvent = {
-  eventTact: number;
-  eventFn: (data: any) => void;
-  data: any;
-};
+  /**
+   * Gets the structure describing system variables
+   */
+  get sysVars(): SysVar[] {
+    return [];
+  }
+}
 
 const extendedInstructionLenghts: Record<number, number> = {
   0xa4: 2,

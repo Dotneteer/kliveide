@@ -1,6 +1,5 @@
 import { IM6510Cpu } from "@emu/abstractions/IM6510Cpu";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
-import { C64MemoryDevice } from "./vic/C64MemoryDevice";
 import { C64VicDevice } from "./vic/C64VicDevice";
 import { C64SidDevice } from "./C64SidDevice";
 import { C64KeyboardDevice } from "./C64KeyboardDevice";
@@ -9,6 +8,7 @@ import { C64Cia2Device } from "./C64Cia2Device";
 import { C64IoExpansionDevice } from "./C64IoExpansionDevice";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
+import { C64MemoryDevice } from "./C64MemoryDevice";
 
 export interface IC64Machine extends IAnyMachine, IM6510Cpu {
   /**
@@ -31,4 +31,8 @@ export interface IC64Machine extends IAnyMachine, IM6510Cpu {
   readonly ioExpansionDevice: C64IoExpansionDevice;
 
   readonly tapeDevice: C64TapeDevice;
+
+  isIrqActive(): boolean;
+
+  isNmiActive(): boolean;
 }
