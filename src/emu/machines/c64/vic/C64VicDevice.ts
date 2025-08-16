@@ -18,7 +18,7 @@ import {
   Refresh,
   UpdateMcBase,
   UpdateRc,
-  UpdateVc,
+  UpdateVc
 } from "./constants";
 import { SprDma1, SprPtr } from "./vic-models";
 
@@ -230,8 +230,61 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- RC: 3 bit counter (row number within a character line, between 0 and 7)
   rowCounter: number;
 
+  // --- The first and last DMA lines for display rendering
   firstDmaLine: number;
   lastDmaLine: number;
+
+  // ----------------------------------------------------------------------------------------------
+  // --- Memory Pointers ($D018)
+
+  // --- Video matrix base address (VM13-VM10 bits from $D018, bits 13-10 of 16KB VIC address space)
+  videoMatrixBase: number;
+
+  // --- Character generator base address (CB13-CB11 bits from $D018, bits 13-11 of 16KB VIC address space)
+  characterBase: number;
+
+  // ----------------------------------------------------------------------------------------------
+  // --- Interrupts ($D019, $D01A)
+
+  // --- Interrupt latch register ($D019) - holds interrupt status bits
+  interruptLatch: number;
+
+  // --- Interrupt enable register ($D01A) - masks which interrupts can trigger IRQ
+  interruptEnable: number;
+
+  // ----------------------------------------------------------------------------------------------
+  // --- Sprite Priority and Multicolor ($D01B, $D01C)
+  // --- These properties are now stored individually in spriteData[index].priority and spriteData[index].multicolor
+
+  // ----------------------------------------------------------------------------------------------
+  // --- Colors ($D020-$D02E)
+
+  // --- Border color register ($D020) - exterior color displayed outside the graphics area
+  // --- Only bits 3-0 are used (4-bit color index), upper bits ignored
+  // --- Values 0-15 correspond to the C64's 16-color palette
+  borderColor: number;
+
+  // --- Background color registers ($D021-$D024) - interior colors used in various graphics modes
+  // --- Only bits 3-0 are used (4-bit color index), upper bits ignored
+  // --- Values 0-15 correspond to the C64's 16-color palette
+  backgroundColor0: number; // $D021 - Primary background color (used in all modes)
+  backgroundColor1: number; // $D022 - Extended background color 1 (ECM/multicolor modes)
+  backgroundColor2: number; // $D023 - Extended background color 2 (ECM/multicolor modes)  
+  backgroundColor3: number; // $D024 - Extended background color 3 (ECM mode only)
+
+  // --- Sprite multicolor registers ($D025-$D026) - shared colors for all multicolor sprites
+  // --- Only bits 3-0 are used (4-bit color index), upper bits ignored
+  // --- Values 0-15 correspond to the C64's 16-color palette
+  spriteMulticolor0: number; // $D025 - Sprite multicolor 0 (01 bit pattern in multicolor sprites)
+  spriteMulticolor1: number; // $D026 - Sprite multicolor 1 (11 bit pattern in multicolor sprites)
+
+  // ----------------------------------------------------------------------------------------------
+  // --- Sprites
+
+  // --- Sprite data array (for testing accessibility)
+  // --- Each element contains information for the corresponding sprite (0-7)
+  // --- Individual sprite colors are now stored in spriteData[index].color ($D027-$D02E)
+  spriteData: SpriteInformation[];
 
   /**
    * The 16 standard colors of the Commodore 64
@@ -285,8 +338,52 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     this.videoMatrixCounter = 0;
     this.videoCounterBase = 0;
 
+    // --- Initialize memory pointers to their reset state (all 0)
+    this.videoMatrixBase = 0;      // VM13-VM10 = 0000 -> video matrix at $0000
+    this.characterBase = 0;        // CB13-CB11 = 000 -> character generator at $0000
+
+    // --- Initialize interrupt system to their reset state (all 0)
+    this.interruptLatch = 0;       // No interrupts pending
+    this.interruptEnable = 0;      // All interrupts disabled
+
+    // --- Sprite priority and multicolor are now initialized in spriteData array initialization above
+
+    // --- Initialize colors to reset state (all 0)
+    this.borderColor = 0;          // Border color = black (color index 0)
+    this.backgroundColor0 = 0;     // Background color 0 = black (color index 0)
+    this.backgroundColor1 = 0;     // Background color 1 = black (color index 0)
+    this.backgroundColor2 = 0;     // Background color 2 = black (color index 0)
+    this.backgroundColor3 = 0;     // Background color 3 = black (color index 0)
+    this.spriteMulticolor0 = 0;    // Sprite multicolor 0 = black (color index 0)
+    this.spriteMulticolor1 = 0;    // Sprite multicolor 1 = black (color index 0)
+
+    // --- Initialize individual sprite colors are now initialized in spriteData array initialization above
+
     // --- Set up VIC registers to their value after a reset
-    // TODO
+    // Initialize $d011 bit fields to their reset state (all 0)
+    this.rst8 = false;
+    this.ecm = false;
+    this.bmm = false;
+    this.den = false;
+    this.rsel = false;
+    this.yScroll = 0;
+
+    // Initialize $d016 bit fields to their reset state (all 0)
+    this.mcm = false;
+    this.csel = false;
+    this.xScroll = 0;
+
+    // Initialize sprite data to their reset state (all sprites disabled, X=0, Y=0, no expansion)
+    this.spriteData = new Array(8).fill(null).map(() => ({
+      enabled: false,
+      x: 0,
+      y: 0,
+      yExpand: false,
+      xExpand: false,
+      color: 0, // Initialize sprite color to black (color index 0)
+      multicolor: false, // Initialize to standard mode (not multicolor)
+      priority: false // Initialize to sprite in front of background
+    }));
 
     // --- Initialize DMA lines based on chip configuration (RSEL=0 initially)
     this.updateDmaLines(false);
@@ -488,8 +585,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       case 0xa: /* $D00a: Sprite #5 X position LSB */
       case 0xc: /* $D00c: Sprite #6 X position LSB */
       case 0xe /* $D00e: Sprite #7 X position LSB */:
-        // TODO: Implement this
-        // this.storeSpriteXPositionLsb(regIndex, value);
+        this.setSpriteXPositionLsb(regIndex, value);
         break;
 
       case 0x1: /* $D001: Sprite #0 Y position */
@@ -500,13 +596,11 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       case 0xb: /* $D00B: Sprite #5 Y position */
       case 0xd: /* $D00D: Sprite #6 Y position */
       case 0xf /* $D00F: Sprite #7 Y position */:
-        // TODO: Implement this
-        // this.storeSpriteYPosition(regIndex, value);
+        this.setSpriteYPosition(regIndex, value);
         break;
 
       case 0x10 /* $D010: Sprite X position MSB */:
-        // TODO: Implement this
-        // this.storeSpriteXPositionMsb(regIndex, value);
+        this.setSpriteXPositionMsb(value);
         break;
 
       case 0x11 /* $D011: video mode, Y scroll, 24/25 line mode and raster MSB */:
@@ -570,10 +664,16 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
         this.setRegD021Value(value);
         break;
 
-      case 0x22: /* $D022: Background #1 color */
-      case 0x23: /* $D023: Background #2 color */
+      case 0x22 /* $D022: Background #1 color */:
+        this.setRegD022Value(value);
+        break;
+
+      case 0x23 /* $D023: Background #2 color */:
+        this.setRegD023Value(value);
+        break;
+
       case 0x24 /* $D024: Background #3 color */:
-        this.setExtBackgroundColor(regIndex, value);
+        this.setRegD024Value(value);
         break;
 
       case 0x25 /* $D025: Sprite multicolor register #0 */:
@@ -592,7 +692,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       case 0x2c: /* $D02C: Sprite #5 color */
       case 0x2d: /* $D02D: Sprite #6 color */
       case 0x2e /* $D02E: Sprite #7 color */:
-        this.setSpriteColor(regIndex, value);
+        this.setSpriteColor(regIndex - 0x27, value); // Convert register index to sprite index (0-7)
         break;
     }
   }
@@ -902,7 +1002,160 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   }
 
   // ----------------------------------------------------------------------------------------------
-  // Register $D011
+  // Sprite X coordinate registers ($D000, $D002, $D004, $D006, $D008, $D00A, $D00C, $D00E)
+
+  // --- Set VIC Register $D000, $D002, $D004, $D006, $D008, $D00A, $D00C, $D00E (Sprite X position LSB)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.8: Sprites
+  // --- Cross-register dependency: Combined with $d010 MSB bits to form 9-bit X coordinate
+  private setSpriteXPositionLsb(regIndex: number, value: number): void {
+    // --- STEP 1: Extract sprite index from register index
+    const spriteIndex = regIndex >> 1; // Register indices 0,2,4,6,8,A,C,E map to sprites 0-7
+
+    // --- STEP 2: Extract new LSB value
+    const newXLsb = value & 0xff;
+
+    // --- STEP 3: Get current MSB from sprite data and combine to form 9-bit X coordinate
+    const currentMsb = this.spriteData[spriteIndex].x & 0x100 ? 1 : 0;
+    const newX = (currentMsb << 8) | newXLsb;
+
+    // --- STEP 4: Detect changes and handle effects
+    if (this.spriteData[spriteIndex].x !== newX) {
+      // --- Sprite X coordinate has changed
+      // --- As per VIC-II doc section 3.8: Sprites, sprite positioning
+      // --- IMMEDIATE EFFECTS (same cycle):
+      // - Sprite positioning: New X coordinate affects where sprite pixels are drawn
+      // - Collision detection: Updated position affects sprite-sprite and sprite-background collisions
+      // - Screen boundaries: Sprite visibility affected by screen edge clipping
+      // - Horizontal scrolling: Interaction with XSCROLL from $d016 for fine positioning
+      // --- CONDITIONAL EFFECTS (depends on current state):
+      // - Sprite enable: Only affects display if sprite is enabled via $d015
+      // - Sprite DMA: May affect sprite data fetch timing if position changes during critical cycles
+      // - Multicolor mode: Affects pixel positioning in both standard and multicolor modes
+      // - X expansion: Actual pixel width affected by expansion setting from $d01d
+      // --- TIMING-CRITICAL considerations:
+      // - Same-line changes: X coordinate changes on current raster line affect immediate display
+      // - DMA cycles: Changes during sprite DMA cycles may cause display artifacts
+      // - Border collision: Changes near screen borders may affect sprite visibility
+      // TODO: Get current cycle within raster line (0-62 for PAL, 0-64 for NTSC)
+      // TODO: Get current raster line number
+      // TODO: Check if sprite position change affects current line rendering
+      // TODO: Handle sprite collision detection updates
+      // TODO: Update sprite visibility calculations based on screen boundaries
+    }
+
+    // --- STEP 5: Update internal state
+    this.spriteData[spriteIndex].x = newX;
+    this.registers[regIndex] = value & 0xff;
+
+    // --- Register handling complete - sprite X position updated according to VIC-II documentation
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Sprite X coordinate MSB register ($D010)
+
+  // --- Set VIC Register $D010 (Sprite X position MSBs)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.8: Sprites
+  // --- Cross-register dependency: Combined with $d000-$d00e LSB values to form 9-bit X coordinates
+  private setSpriteXPositionMsb(value: number): void {
+    // --- STEP 1: Extract MSB bits for all 8 sprites
+    const newMsbBits = [
+      !!(value & 0x01), // Sprite 0 MSB (bit 0)
+      !!(value & 0x02), // Sprite 1 MSB (bit 1)
+      !!(value & 0x04), // Sprite 2 MSB (bit 2)
+      !!(value & 0x08), // Sprite 3 MSB (bit 3)
+      !!(value & 0x10), // Sprite 4 MSB (bit 4)
+      !!(value & 0x20), // Sprite 5 MSB (bit 5)
+      !!(value & 0x40), // Sprite 6 MSB (bit 6)
+      !!(value & 0x80) // Sprite 7 MSB (bit 7)
+    ];
+
+    // --- STEP 2: Update X coordinates for all sprites by combining MSB with existing LSB
+    for (let spriteIndex = 0; spriteIndex < 8; spriteIndex++) {
+      const currentLsb = this.spriteData[spriteIndex].x & 0xff;
+      const newMsb = newMsbBits[spriteIndex] ? 1 : 0;
+      const newX = (newMsb << 8) | currentLsb;
+
+      // --- STEP 3: Detect changes and handle effects for each sprite
+      if (this.spriteData[spriteIndex].x !== newX) {
+        // --- Sprite X coordinate MSB has changed for this sprite
+        // --- As per VIC-II doc section 3.8: Sprites, sprite positioning
+        // --- IMMEDIATE EFFECTS (same cycle):
+        // - Extended positioning: Allows sprite positioning beyond 255 pixels (up to 511)
+        // - Screen wrapping: Sprites can be positioned in extended horizontal area
+        // - Border effects: MSB change may move sprite into/out of visible screen area
+        // --- CONDITIONAL EFFECTS (depends on current state):
+        // - Visibility: Sprite may become visible/invisible based on screen boundaries
+        // - Collision detection: Position change affects collision calculations
+        // - DMA timing: May affect sprite data fetch cycles if position change is significant
+        // --- DISPLAY CHANGES:
+        // - Horizontal movement: Large jumps (256 pixel increments) when MSB changes
+        // - Screen boundaries: Sprite may appear/disappear at screen edges
+        // - Positioning accuracy: Enables precise sprite placement across full screen width
+        // TODO: Handle immediate sprite positioning effects for current raster line
+        // TODO: Update collision detection for affected sprites
+        // TODO: Check screen boundary interactions
+      }
+
+      // --- STEP 4: Update internal state
+      this.spriteData[spriteIndex].x = newX;
+    }
+
+    this.registers[0x10] = value & 0xff;
+
+    // --- Register handling complete - all sprite X MSBs updated according to VIC-II documentation
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Sprite Y coordinate registers ($D001, $D003, $D005, $D007, $D009, $D00B, $D00D, $D00F)
+
+  // --- Set VIC Register $D001, $D003, $D005, $D007, $D009, $D00B, $D00D, $D00F (Sprite Y position)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.8: Sprites
+  // --- Unlike X coordinates, Y coordinates are only 8-bit (0-255)
+  private setSpriteYPosition(regIndex: number, value: number): void {
+    // --- STEP 1: Extract sprite index from register index
+    const spriteIndex = (regIndex - 1) >> 1; // Register indices 1,3,5,7,9,B,D,F map to sprites 0-7
+
+    // --- STEP 2: Extract new Y coordinate value (8-bit, 0-255)
+    const newY = value & 0xff;
+
+    // --- STEP 3: Detect changes and handle effects
+    if (this.spriteData[spriteIndex].y !== newY) {
+      // --- Sprite Y coordinate has changed
+      // --- As per VIC-II doc section 3.8: Sprites, sprite positioning
+      // --- IMMEDIATE EFFECTS (same cycle):
+      // - Sprite positioning: New Y coordinate affects where sprite pixels are drawn
+      // - Collision detection: Updated position affects sprite-sprite and sprite-background collisions
+      // - Screen boundaries: Sprite visibility affected by top/bottom screen edges
+      // - Vertical scrolling: Interaction with YSCROLL from $d011 for fine positioning
+      // - Raster line timing: May affect when sprite DMA occurs if sprite moves across DMA lines
+      // --- CONDITIONAL EFFECTS (depends on current state):
+      // - Sprite enable: Only affects display if sprite is enabled via $d015
+      // - Sprite DMA: Y position determines when sprite data fetch occurs (sprites active on raster lines Y to Y+20)
+      // - Bad line interaction: Sprite DMA may interfere with character DMA on bad lines
+      // - Y expansion: Actual pixel height affected by expansion setting from $d017
+      // --- TIMING-CRITICAL considerations:
+      // - Same-line changes: Y coordinate changes on current raster line affect immediate display
+      // - DMA window: Sprites are active for 21 raster lines (Y to Y+20), affecting memory bandwidth
+      // - Sprite crunch: Multiple sprites on same line can cause sprite multiplexing effects
+      // - Border collision: Changes near screen borders may affect sprite visibility
+      // TODO: Get current raster line number
+      // TODO: Check if sprite Y position change affects current line rendering
+      // TODO: Handle sprite DMA timing changes if Y position moves into/out of DMA window
+      // TODO: Update sprite collision detection calculations
+      // TODO: Update sprite visibility calculations based on screen boundaries
+      // TODO: Handle sprite crunch conditions if multiple sprites share raster lines
+    }
+
+    // --- STEP 4: Update internal state
+    this.spriteData[spriteIndex].y = newY;
+    this.registers[regIndex] = value & 0xff;
+
+    // --- Register handling complete - sprite Y position updated according to VIC-II documentation
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Register $D011 (Control Register 1)
+
   rst8: boolean;
   ecm: boolean;
   bmm: boolean;
@@ -912,7 +1165,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
   // --- Set VIC Register $D011 (Control Register 1)
   // --- As per VIC-II doc section 3.2: Registers, section 3.5: Bad Lines, section 3.14.6: DMA delay
-  // --- Cross-register dependencies: Interacts with $d016 (MCM bit for graphics modes), 
+  // --- Cross-register dependencies: Interacts with $d016 (MCM bit for graphics modes),
   // --- $d012 (RST8 for raster interrupts)
   private setRegD011Value(value: number) {
     // --- STEP 1: Extract new values from register bits
@@ -924,7 +1177,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     const newYScroll = value & 0x07;
 
     // --- STEP 2: Detect changes for each bit/field and handle effects
-    
+
     if (this.ecm !== newEcm) {
       // --- ECM (Extended Character Mode) has changed
       // --- As per VIC-II doc section 3.7.3.5: ECM text mode, section 3.6.2: Address types
@@ -1088,18 +1341,17 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     if (this.rst8 !== newRst8) {
       // --- Store old value before updating rst8
       const oldRasterIrqLine = this.rasterInterruptLine;
-      
+
       // --- Update rst8 first (needed for updateRasterInterruptLine)
       this.rst8 = newRst8;
-      
+
       // --- Update composed 9-bit raster interrupt line
       this.updateRasterInterruptLine();
-      
+
       if (oldRasterIrqLine !== this.rasterInterruptLine) {
         // --- IMMEDIATE EFFECTS (same cycle):
         // - Updated 9-bit raster interrupt comparison value
         // - Raster interrupt timing: VIC tests for matches in cycle 0 of every raster line
-        
         // --- CONDITIONAL EFFECTS (depends on current state):
         // TODO: Get current raster line number
         // TODO: Check if new comparison value matches current raster line
@@ -1116,16 +1368,16 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     this.rsel = newRsel;
     this.yScroll = newYScroll;
     this.registers[0x11] = value & 0xff;
-    
+
     // --- Register handling complete - all effects processed according to VIC-II documentation
   }
 
   // ----------------------------------------------------------------------------------------------
   // Register $D012 (Raster Counter)
-  
+
   // --- 9-bit raster interrupt line (RST8 from $d011 + 8 bits from $d012)
   // --- This is the composed value used for raster interrupt comparisons
-  public rasterInterruptLine: number;
+  rasterInterruptLine: number;
 
   // --- Set VIC Register $D012 (Raster Counter - lower 8 bits)
   // --- As per VIC-II doc section 3.12: VIC interrupts, section 3.2: Registers
@@ -1133,37 +1385,34 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private setRegD012Value(value: number) {
     // --- STEP 1: Extract new values from register bits
     const newRasterIrqLow = value & 0xff;
-    
+
     // --- STEP 2: Detect changes in the composed 9-bit interrupt line
     const oldRasterIrqLine = this.rasterInterruptLine;
-    
+
     // --- STEP 3: Update register first (needed for updateRasterInterruptLine)
     this.registers[0x12] = newRasterIrqLow;
-    
+
     // --- STEP 4: Update composed value and detect changes
     this.updateRasterInterruptLine();
-    
+
     if (oldRasterIrqLine !== this.rasterInterruptLine) {
       // --- Raster interrupt line has changed
       // --- As per VIC-II doc section 3.12: VIC interrupts
-      
       // --- IMMEDIATE EFFECTS (same cycle):
       // - Updated internal 9-bit raster interrupt comparison value
       // - Raster interrupt timing: VIC tests for matches in cycle 0 of every raster line
       // - Interrupt condition: Triggers when current raster line equals interrupt line
-      
       // --- CONDITIONAL EFFECTS (depends on current state):
       // TODO: Get current raster line number
       // TODO: Check if new interrupt line matches current raster position
       // TODO: If match occurs: Handle immediate raster interrupt triggering
       // TODO: If no immediate match: Update for future interrupt on target line
-      
       // --- TIMING-CRITICAL considerations:
       // - Interrupt flag set in cycle 0 of the matching raster line
       // - CPU interrupt signal raised if raster interrupts are enabled (IRQ mask in $d01a)
       // - Special case: Writing during cycle 0 of matching line may affect current interrupt
     }
-    
+
     // --- Register handling complete - raster interrupt line updated according to VIC-II documentation
   }
 
@@ -1173,75 +1422,791 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    */
   private updateRasterInterruptLine(): void {
     this.rasterInterruptLine = (this.rst8 ? 256 : 0) | this.registers[0x12];
-    
+
     // TODO: If value changed, handle raster interrupt logic
     // TODO: Check if new interrupt line matches current raster position
     // TODO: Update interrupt timing for future raster line matches
   }
 
-  // --- Set VIC R15
+  // ----------------------------------------------------------------------------------------------
+  // Register $D015 (Sprite Enable)
+
+  // --- Set VIC Register $D015 (Sprite Enable)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.8: Sprites
+  // --- Each bit controls visibility of corresponding sprite (0=hidden, 1=visible)
   private setRegD015Value(value: number) {
-    // TODO: Implement the function
+    // --- STEP 1: Extract new sprite enable values from register bits
+    const newSpriteEnable = [
+      !!(value & 0x01), // Sprite 0 enable (bit 0)
+      !!(value & 0x02), // Sprite 1 enable (bit 1)
+      !!(value & 0x04), // Sprite 2 enable (bit 2)
+      !!(value & 0x08), // Sprite 3 enable (bit 3)
+      !!(value & 0x10), // Sprite 4 enable (bit 4)
+      !!(value & 0x20), // Sprite 5 enable (bit 5)
+      !!(value & 0x40), // Sprite 6 enable (bit 6)
+      !!(value & 0x80) // Sprite 7 enable (bit 7)
+    ];
+
+    // --- STEP 2: Detect changes for each sprite and handle effects
+    for (let spriteIndex = 0; spriteIndex < 8; spriteIndex++) {
+      if (this.spriteData[spriteIndex].enabled !== newSpriteEnable[spriteIndex]) {
+        // --- Sprite enable state has changed
+        if (newSpriteEnable[spriteIndex]) {
+          // --- Sprite changes from disabled to enabled (0 to 1)
+          // --- IMMEDIATE EFFECTS (same cycle):
+          // - Sprite becomes visible on display if within screen boundaries
+          // - Sprite DMA: May trigger sprite data fetches on current or next raster line
+          // - Collision detection: Sprite participates in sprite-sprite and sprite-background collision detection
+          // - Priority handling: Sprite participates in sprite-background priority comparisons
+          // --- CONDITIONAL EFFECTS (depends on current state):
+          // - Sprite positioning: Uses current X/Y coordinates from $d000-$d00f and $d010 MSB
+          // - Sprite data: Uses sprite pointer from $07f8-$07ff (or current VIC bank equivalent)
+          // - Sprite expansion: Affected by Y expansion ($d017) and X expansion ($d01d) settings
+          // - Sprite colors: Uses individual sprite color ($d027-$d02e) and shared multicolor ($d025-$d026)
+          // --- DISPLAY CHANGES:
+          // - Immediate visibility: Sprite appears on screen starting from next pixel if conditions are met
+          // - DMA scheduling: VIC may schedule sprite data reading for upcoming raster lines
+          // - Performance impact: Additional memory accesses for sprite data, pointers, and rendering
+        } else {
+          // --- Sprite changes from enabled to disabled (1 to 0)
+          // --- IMMEDIATE EFFECTS (same cycle):
+          // - Sprite becomes invisible on display
+          // - Sprite DMA: No more sprite data fetches for this sprite
+          // - Collision detection: Sprite no longer participates in collision detection
+          // - Priority handling: Sprite no longer affects sprite-background priority
+          // --- CONDITIONAL EFFECTS (depends on current state):
+          // - Ongoing rendering: If sprite is currently being drawn, it stops immediately
+          // - Memory bandwidth: Freed sprite DMA slots can be used for other VIC operations
+          // - Interrupt flags: Existing collision flags remain set until explicitly cleared
+          // --- DISPLAY CHANGES:
+          // - Immediate hiding: Sprite disappears from screen immediately
+          // - Performance improvement: Reduced memory accesses and rendering overhead
+          // - Background restoration: Background pixels become visible where sprite was displayed
+        }
+      }
+    }
+
+    // --- STEP 3: Handle timing-critical effects (sprite enable changes can affect current line)
+    // --- As per VIC-II doc section 3.8: Sprites, sprite DMA timing considerations
+
+    // TODO: Get current cycle within raster line (0-62 for PAL, 0-64 for NTSC)
+    // TODO: Get current raster line number
+    // TODO: Check if any sprite enable changes affect sprite DMA for current raster line
+    // TODO: Update sprite DMA schedule if sprites are enabled/disabled during critical timing windows
+
+    // --- Sprite DMA considerations:
+    // - Sprite data fetch timing: Sprites enabled during specific cycles may affect DMA timing
+    // - Bad Line interaction: Sprite DMA competes with character/bitmap data DMA on Bad Lines
+    // - Horizontal positioning: Late enable/disable may cause partial sprite display effects
+
+    // --- STEP 4: Update internal state
+    for (let spriteIndex = 0; spriteIndex < 8; spriteIndex++) {
+      this.spriteData[spriteIndex].enabled = newSpriteEnable[spriteIndex];
+    }
+    this.registers[0x15] = value & 0xff;
+
+    // --- Register handling complete - sprite visibility updated according to VIC-II documentation
   }
 
-  // --- Set VIC R16
+  // ----------------------------------------------------------------------------------------------
+  // Register $D016 (Control Register 2)
+
+  mcm: boolean;
+  csel: boolean;
+  xScroll: number;
+
+  // --- Set VIC Register $D016 (Control Register 2)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.7: Graphics modes, section 3.9: Border units
+  // --- Cross-register dependencies: Interacts with $d011 (ECM, BMM bits for graphics modes),
+  // --- border timing affected by left/right border positions
   private setRegD016Value(value: number) {
-    // TODO: Implement the function
+    // --- STEP 1: Extract new values from register bits
+    // Bit 5 (RES) has no function on VIC 6567/6569, ignore it
+    const newMcm = !!(value & 0x10);    // Bit 4: MCM - Multicolor Mode
+    const newCsel = !!(value & 0x08);   // Bit 3: CSEL - Column select (40/38 columns)
+    const newXScroll = value & 0x07;    // Bits 2-0: XSCROLL - Horizontal fine scroll
+
+    // --- STEP 2: Detect changes for each bit/field and handle effects
+
+    if (this.mcm !== newMcm) {
+      // --- MCM (Multicolor Mode) has changed
+      // --- As per VIC-II doc section 3.7.3: Graphics modes
+      // --- Cross-register dependency: Combined with ECM and BMM bits from $d011 determines graphics mode
+      if (newMcm) {
+        // --- MCM changes from 0 to 1 (Setting Multicolor Mode)
+        // --- IMMEDIATE EFFECTS (same cycle):
+        // - Graphics mode: Changes interpretation of character/bitmap data
+        // - Color resolution: Reduces horizontal color resolution but adds more color options
+        // - Pixel interpretation: 2 pixels per color information instead of 1
+        // --- DISPLAY CHANGES:
+        // - Character mode: Background + 3 character colors available per character
+        // - Bitmap mode: Background + 3 bitmap colors available per 8x8 cell
+        // - Invalid modes: Screen goes black if invalid mode combination (ECM=1, BMM=1, MCM=1)
+      } else {
+        // --- MCM changes from 1 to 0 (Clearing Multicolor Mode)
+        // --- IMMEDIATE EFFECTS (same cycle):
+        // - Return to standard color interpretation
+        // - Full horizontal resolution restored
+        // - Standard 2-color per character/cell mode
+      }
+    }
+
+    if (this.csel !== newCsel) {
+      // --- CSEL (Column Select) has changed
+      // --- As per VIC-II doc section 3.9: Border units, section 3.7.1: Display window
+      if (newCsel) {
+        // --- CSEL changes from 0 to 1 (40 column mode)
+        // --- IMMEDIATE EFFECTS (same cycle):
+        // - Display window: Expanded horizontally by 7 pixels on each side (14 total)
+        // - Border timing: Left border at cycle 24, right border at cycle 56
+        // - Character display: 40 characters per line displayed
+        // - Scrolling: XSCROLL affects timing of border detection
+      } else {
+        // --- CSEL changes from 1 to 0 (38 column mode)
+        // --- IMMEDIATE EFFECTS (same cycle):
+        // - Display window: Reduced horizontally by 7 pixels on each side
+        // - Border timing: Left border at cycle 31, right border at cycle 51
+        // - Character display: 38 characters per line displayed  
+        // - Scrolling: XSCROLL affects timing of border detection differently
+      }
+      
+      // --- TIMING-CRITICAL considerations:
+      // - Same-line changes: CSEL changes on current raster line affect immediate border rendering
+      // - Border state: May immediately trigger border on/off state changes
+      // - DMA timing: Character fetch timing may be affected by border state changes
+      
+      // TODO: Get current cycle within raster line
+      // TODO: Check if CSEL change affects current line border state
+      // TODO: Update border detection timing for current line
+      // TODO: Handle immediate border state changes if change occurs during critical cycles
+    }
+
+    if (this.xScroll !== newXScroll) {
+      // --- XSCROLL (Horizontal Fine Scroll) has changed  
+      // --- As per VIC-II doc section 3.7.4: Scrolling, section 3.9: Border units
+      // --- IMMEDIATE EFFECTS (same cycle):
+      // - Pixel display: Shifts character/bitmap data horizontally by 0-7 pixels
+      // - Border timing: Affects when left/right borders are activated
+      // - Character fetching: May affect timing of character data fetch relative to display
+      // - Sprite positioning: Provides fine positioning reference for sprite horizontal placement
+      
+      // --- CONDITIONAL EFFECTS (depends on current state):
+      // - CSEL interaction: Combined with CSEL determines exact border timing
+      // - Bad line interaction: May affect character fetch timing on bad lines
+      // - Display state: Only affects display when in display state, ignored in idle state
+      
+      // --- TIMING-CRITICAL considerations:
+      // - Same-line changes: XSCROLL changes affect immediate pixel alignment on current line
+      // - Border critical: Changes during border comparison cycles may affect border state
+      // - DMA critical: Changes during character DMA may affect fetch timing
+      
+      // TODO: Get current cycle within raster line
+      // TODO: Check if XSCROLL change affects current line rendering
+      // TODO: Update pixel shift for immediate display effects
+      // TODO: Handle border timing changes based on new XSCROLL value
+      // TODO: Update character fetch timing if change occurs during DMA cycles
+    }
+
+    // --- STEP 3: Update internal state
+    this.mcm = newMcm;
+    this.csel = newCsel;
+    this.xScroll = newXScroll;
+    this.registers[0x16] = value & 0xff;
+
+    // --- Register handling complete - control register 2 updated according to VIC-II documentation
   }
 
-  // --- Set VIC R17
+  // ----------------------------------------------------------------------------------------------
+  // Register $D017 (Sprite Y Expansion)
+
+  // --- Set VIC Register $D017 (Sprite Y Expansion)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.8: Sprites, section 3.14.7: Sprite stretching
+  // --- Each bit controls Y expansion (height doubling) of corresponding sprite
   private setRegD017Value(value: number) {
-    // TODO: Implement the function
+    // --- STEP 1: Extract new sprite Y expansion values from register bits
+    const newSpriteYExpand = [
+      !!(value & 0x01), // Sprite 0 Y expansion (bit 0)
+      !!(value & 0x02), // Sprite 1 Y expansion (bit 1)
+      !!(value & 0x04), // Sprite 2 Y expansion (bit 2)
+      !!(value & 0x08), // Sprite 3 Y expansion (bit 3)
+      !!(value & 0x10), // Sprite 4 Y expansion (bit 4)
+      !!(value & 0x20), // Sprite 5 Y expansion (bit 5)
+      !!(value & 0x40), // Sprite 6 Y expansion (bit 6)
+      !!(value & 0x80)  // Sprite 7 Y expansion (bit 7)
+    ];
+
+    // --- STEP 2: Detect changes for each sprite and handle effects
+    for (let spriteIndex = 0; spriteIndex < 8; spriteIndex++) {
+      if (this.spriteData[spriteIndex].yExpand !== newSpriteYExpand[spriteIndex]) {
+        // --- Sprite Y expansion has changed
+        // --- As per VIC-II doc section 3.8: Sprites, section 3.14.7: Sprite stretching
+
+        if (newSpriteYExpand[spriteIndex]) {
+          // --- Y expansion changes from 0 to 1 (Enabling Y expansion)
+          // --- IMMEDIATE EFFECTS (same cycle):
+          // - Sprite height: Doubled from 21 to 42 pixels
+          // - Pixel duplication: Each sprite line displayed twice vertically
+          // - DMA timing: Sprite remains active for same number of raster lines (21)
+          // - Screen coverage: Sprite covers more vertical screen area
+          
+          // --- CONDITIONAL EFFECTS (depends on current state):
+          // - Sprite enable: Only affects display if sprite is enabled via $d015
+          // - Collision detection: Expanded sprite area affects collision calculations
+          // - Screen boundaries: May cause sprite to extend beyond visible area
+          // - Y coordinate interaction: Same Y position but doubled visual height
+          
+          // --- TIMING-CRITICAL considerations:
+          // - Same-line changes: Y expansion changes affect immediate sprite rendering
+          // - DMA cycles: Expansion doesn't change DMA timing, only display scaling
+          // - Sprite crunch: May affect sprite multiplexing on heavily loaded raster lines
+        } else {
+          // --- Y expansion changes from 1 to 0 (Disabling Y expansion)
+          // --- IMMEDIATE EFFECTS (same cycle):
+          // - Sprite height: Returns to normal 21 pixels
+          // - Pixel display: Each sprite line displayed once (normal)
+          // - Screen coverage: Reduced vertical screen area
+          
+          // --- CONDITIONAL EFFECTS (depends on current state):
+          // - Collision detection: Reduced sprite area affects collision calculations
+          // - Screen positioning: Same Y coordinate but halved visual height
+        }
+
+        // --- DISPLAY CHANGES:
+        // - Vertical scaling: Sprite pixels stretched/compressed vertically
+        // - Aspect ratio: Sprite aspect ratio changes (width remains same, height doubles/halves)
+        // - Border interaction: May affect sprite visibility at top/bottom screen edges
+        // - Overlap effects: Changes in sprite overlap areas for collision detection
+
+        // TODO: Get current raster line number
+        // TODO: Check if sprite Y expansion change affects current line rendering
+        // TODO: Update sprite collision detection for new expansion state
+        // TODO: Handle sprite visibility changes due to expansion at screen edges
+        // TODO: Update sprite DMA calculations if expansion affects timing
+      }
+
+      // --- STEP 3: Update internal state for this sprite
+      this.spriteData[spriteIndex].yExpand = newSpriteYExpand[spriteIndex];
+    }
+
+    // --- STEP 4: Update register value
+    this.registers[0x17] = value & 0xff;
+
+    // --- Register handling complete - sprite Y expansion updated according to VIC-II documentation
   }
 
-  // --- Set VIC R18
+  // ----------------------------------------------------------------------------------------------
+  // Register $D018 (Memory Pointers)
+
+  // --- Set VIC Register $D018 (Memory Pointers)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.7: Video matrix and character generator
+  // --- Controls memory locations for video matrix and character generator within 16KB VIC address space
   private setRegD018Value(value: number) {
-    // TODO: Implement the function
+    // --- STEP 1: Extract new memory pointer values from register bits
+    const newVideoMatrixBase = (value & 0xF0) << 6;  // VM13-VM10 (bits 7-4) shifted to bits 13-10
+    const newCharacterBase = (value & 0x0E) << 10;   // CB13-CB11 (bits 3-1) shifted to bits 13-11
+
+    // --- STEP 2: Detect changes and handle effects
+    if (this.videoMatrixBase !== newVideoMatrixBase) {
+      // --- Video matrix base address has changed
+      // --- As per VIC-II doc section 3.7.3: Text modes, section 3.7.4: Bitmap modes
+
+      // --- IMMEDIATE EFFECTS (same cycle):
+      // - Video matrix location: Changes location of 40x25 character matrix (1000 bytes)
+      // - Address range: Video matrix moves in 1KB steps within 16KB VIC address space
+      // - Character codes: Location where VIC reads character codes for text display
+      // - Color information: Associated color data location (Color RAM remains fixed)
+      
+      // --- CONDITIONAL EFFECTS (depends on current state):
+      // - Text modes: Affects character code reading for all text-based display modes
+      // - Bitmap modes: Video matrix still used for color information in bitmap modes
+      // - DMA timing: Video matrix accesses occur during specific cycles
+      // - Display timing: Changes take effect immediately for next screen refresh
+      
+      // --- TIMING-CRITICAL considerations:
+      // - Same-line changes: Video matrix address changes affect immediate character data access
+      // - Character generation: Combined with character base for complete character lookup
+      // - Memory conflicts: May create badlines if video matrix conflicts with CPU access
+      
+      // TODO: Invalidate video matrix buffer if cached
+      // TODO: Update DMA address calculations for video matrix accesses
+      // TODO: Handle potential memory banking conflicts with new address
+    }
+
+    if (this.characterBase !== newCharacterBase) {
+      // --- Character generator base address has changed
+      // --- As per VIC-II doc section 3.7.3: Text modes, section 3.7.4: Bitmap modes
+
+      // --- IMMEDIATE EFFECTS (same cycle):
+      // - Character generator location: Changes location of character pixel data
+      // - Address range: Character generator moves in 2KB steps within 16KB VIC address space
+      // - Bitmap mode: In bitmap mode, CB13 bit selects 8KB bitmap location
+      // - Character pixel data: Location where VIC reads 8x8 pixel patterns
+      
+      // --- CONDITIONAL EFFECTS (depends on current state):
+      // - Text modes: Affects character pixel pattern reading for text display
+      // - Bitmap modes: CB13 bit selects between two 8KB bitmap areas
+      // - Character ROM: Can redirect from Character ROM to RAM-based character sets
+      // - Custom fonts: Enables use of user-defined character sets
+      
+      // --- DISPLAY CHANGES:
+      // - Font appearance: Different character generator changes displayed font
+      // - Bitmap graphics: In bitmap mode, changes which bitmap area is displayed
+      // - Character images: 8x8 pixel patterns for each of 256 possible characters
+      
+      // TODO: Invalidate character generator cache if cached
+      // TODO: Update character generation address calculations
+      // TODO: Handle Character ROM vs RAM selection based on address
+      // TODO: Update bitmap mode address calculations if in bitmap mode
+    }
+
+    // --- STEP 3: Update internal state
+    this.videoMatrixBase = newVideoMatrixBase;
+    this.characterBase = newCharacterBase;
+
+    // --- STEP 4: Update register value
+    this.registers[0x18] = value & 0xfe;  // Bit 0 is unused and always reads as 0
+
+    // --- Register handling complete - memory pointers updated according to VIC-II documentation
   }
 
-  // --- Set VIC R19
+  // ----------------------------------------------------------------------------------------------
+  // Register $D019 (Interrupt Register/Latch)
+
+  // --- Set VIC Register $D019 (Interrupt Register/Latch)
+  // --- As per VIC-II doc section 3.12: VIC interrupts
+  // --- Writing 1 to a bit clears the corresponding interrupt latch bit
   private setRegD019Value(value: number) {
-    // TODO: Implement the function
+    // --- STEP 1: Extract interrupt clear bits from write value
+    const clearRaster = !!(value & 0x01);      // IRST bit (bit 0) - Raster interrupt
+    const clearSpriteBackground = !!(value & 0x02); // IMBC bit (bit 1) - Sprite-background collision
+    const clearSpriteSprite = !!(value & 0x04);     // IMMC bit (bit 2) - Sprite-sprite collision  
+    const clearLightpen = !!(value & 0x08);    // ILP bit (bit 3) - Light pen interrupt
+
+    // --- STEP 2: Clear interrupt latch bits (writing 1 clears the bit)
+    // --- As per VIC-II doc: "To clear it, the processor has to write a '1' there 'by hand'"
+    if (clearRaster) {
+      this.interruptLatch &= ~0x01;    // Clear IRST bit
+    }
+    if (clearSpriteBackground) {
+      this.interruptLatch &= ~0x02;    // Clear IMBC bit
+    }
+    if (clearSpriteSprite) {
+      this.interruptLatch &= ~0x04;    // Clear IMMC bit
+    }
+    if (clearLightpen) {
+      this.interruptLatch &= ~0x08;    // Clear ILP bit
+    }
+
+    // --- STEP 3: Update IRQ line status (bit 7 reflects IRQ state)
+    // --- As per VIC-II doc: "If at least one latch bit and the belonging bit in the enable register is set, 
+    // --- the IRQ line is held low and so the interrupt is triggered"
+    const activeInterrupts = this.interruptLatch & this.interruptEnable & 0x0F;
+    const irqActive = activeInterrupts !== 0;
+    
+    if (irqActive) {
+      this.interruptLatch |= 0x80;     // Set IRQ bit (bit 7)
+    } else {
+      this.interruptLatch &= ~0x80;    // Clear IRQ bit (bit 7)
+    }
+
+    // --- STEP 4: Update register value (read-only, reflects current latch state)
+    // --- Upper 4 bits (7-4) are: IRQ, unused, unused, unused
+    // --- Lower 4 bits (3-0) are: ILP, IMMC, IMBC, IRST
+    this.registers[0x19] = (this.interruptLatch & 0x8F); // IRQ + interrupt bits, unused bits read as 0
+
+    // --- IRQ OUTPUT HANDLING:
+    // TODO: Signal CPU interrupt controller if IRQ state changed
+    // TODO: Assert/deassert IRQ line to 6510 processor
+    // TODO: Update interrupt timing for accurate emulation
+
+    // --- Register handling complete - interrupt latch updated according to VIC-II documentation
   }
 
-  // --- Set VIC R1A
+  // ----------------------------------------------------------------------------------------------
+  // Register $D01A (Interrupt Enable)
+
+  // --- Set VIC Register $D01A (Interrupt Enable)
+  // --- As per VIC-II doc section 3.12: VIC interrupts
+  // --- Controls which interrupt sources can trigger IRQ line
   private setRegD01AValue(value: number) {
-    // TODO: Implement the function
+    // --- STEP 1: Extract interrupt enable bits from register value
+    const enableRaster = !!(value & 0x01);         // ERST bit (bit 0) - Raster interrupt enable
+    const enableSpriteBackground = !!(value & 0x02); // EMBC bit (bit 1) - Sprite-background collision enable
+    const enableSpriteSprite = !!(value & 0x04);     // EMMC bit (bit 2) - Sprite-sprite collision enable
+    const enableLightpen = !!(value & 0x08);       // ELP bit (bit 3) - Light pen interrupt enable
+
+    // --- STEP 2: Detect changes and handle effects
+    const previousEnable = this.interruptEnable;
+    const newEnable = value & 0x0F; // Only bits 3-0 are used
+
+    if (previousEnable !== newEnable) {
+      // --- Interrupt enable mask has changed
+      // --- As per VIC-II doc: "The four interrupt sources can be independently enabled and disabled with the enable bits"
+
+      // --- IMMEDIATE EFFECTS (same cycle):
+      // - IRQ masking: Changes which pending interrupts can trigger IRQ line
+      // - IRQ line update: May immediately change IRQ line state
+      // - Processor impact: May trigger or clear interrupt request to CPU
+      
+      // --- CONDITIONAL EFFECTS (depends on current state):
+      if (enableRaster && !(previousEnable & 0x01)) {
+        // --- Raster interrupt enabled: If raster interrupt is pending, may trigger IRQ
+      }
+      if (enableSpriteBackground && !(previousEnable & 0x02)) {
+        // --- Sprite-background collision interrupt enabled: If collision pending, may trigger IRQ
+      }
+      if (enableSpriteSprite && !(previousEnable & 0x04)) {
+        // --- Sprite-sprite collision interrupt enabled: If collision pending, may trigger IRQ
+      }
+      if (enableLightpen && !(previousEnable & 0x08)) {
+        // --- Light pen interrupt enabled: If light pen event pending, may trigger IRQ
+      }
+
+      // --- DISABLE EFFECTS:
+      if (!enableRaster && (previousEnable & 0x01)) {
+        // --- Raster interrupt disabled: IRQ may be cleared if this was the only active interrupt
+      }
+      if (!enableSpriteBackground && (previousEnable & 0x02)) {
+        // --- Sprite-background collision interrupt disabled
+      }
+      if (!enableSpriteSprite && (previousEnable & 0x04)) {
+        // --- Sprite-sprite collision interrupt disabled
+      }
+      if (!enableLightpen && (previousEnable & 0x08)) {
+        // --- Light pen interrupt disabled
+      }
+
+      // TODO: Handle interrupt priority if multiple interrupts enabled simultaneously
+      // TODO: Update interrupt service timing for accurate emulation
+    }
+
+    // --- STEP 3: Update internal state
+    this.interruptEnable = newEnable;
+
+    // --- STEP 4: Update IRQ line status based on new enable mask
+    // --- As per VIC-II doc: IRQ triggered when "(latch bit AND enable bit) is set"
+    const activeInterrupts = this.interruptLatch & this.interruptEnable & 0x0F;
+    const irqActive = activeInterrupts !== 0;
+    
+    if (irqActive) {
+      this.interruptLatch |= 0x80;     // Set IRQ bit (bit 7) in latch register
+    } else {
+      this.interruptLatch &= ~0x80;    // Clear IRQ bit (bit 7) in latch register
+    }
+
+    // --- STEP 5: Update register values
+    this.registers[0x1a] = newEnable;  // Only lower 4 bits are valid, upper 4 bits read as 0
+    this.registers[0x19] = (this.interruptLatch & 0x8F); // Update $d019 to reflect IRQ state
+
+    // --- IRQ OUTPUT HANDLING:
+    // TODO: Signal CPU interrupt controller if IRQ state changed
+    // TODO: Assert/deassert IRQ line to 6510 processor based on irqActive state
+    // TODO: Handle interrupt acknowledgment and timing
+
+    // --- Register handling complete - interrupt enable updated according to VIC-II documentation
   }
 
   // --- Set VIC R1B
   private setRegD01BValue(value: number) {
-    // TODO: Implement the function
+    // $D01B - Sprite Data Priority Register
+    // Each bit controls whether the corresponding sprite appears in front of or behind foreground graphics
+    // 
+    // The VIC-II has a display priority hierarchy:
+    // - Border (highest priority - always on top)
+    // - Foreground graphics (text/bitmap data with color ≠ background)
+    // - Sprites (priority depends on MxDP bits in this register)
+    // - Background graphics (lowest priority)
+    //
+    // For each sprite x (bits 7-0 correspond to sprites 7-0):
+    // - MxDP=0: Sprite appears BEHIND foreground graphics
+    //   Priority: Background < Foreground < Sprite < Border
+    // - MxDP=1: Sprite appears IN FRONT of foreground graphics  
+    //   Priority: Background < Sprite < Foreground < Border
+    //
+    // Sprite-to-sprite priority is independent of this register and determined by sprite number
+    // (sprite 0 has highest priority, sprite 7 has lowest priority among sprites)
+    //
+    // Only bits 7-0 are used, no masking needed as this is a full 8-bit register
+    
+    // Set priority for each sprite based on corresponding bit
+    for (let i = 0; i < 8; i++) {
+      this.spriteData[i].priority = (value & (1 << i)) !== 0;
+    }
+    this.registers[0x1b] = value;
   }
 
   // --- Set VIC R1C
   private setRegD01CValue(value: number) {
-    // TODO: Implement the function
+    // $D01C - Sprite Multicolor Select Register
+    // Each bit controls whether the corresponding sprite uses multicolor mode
+    // 
+    // Standard mode (MxMC=0):
+    // - 8 pixels per byte (1 bit per pixel)
+    // - "0": Transparent
+    // - "1": Sprite color ($D027-$D02E)
+    //
+    // Multicolor mode (MxMC=1):
+    // - 4 pixels per byte (2 bits per pixel) 
+    // - "00": Transparent
+    // - "01": Sprite multicolor 0 ($D025)
+    // - "10": Sprite color ($D027-$D02E)
+    // - "11": Sprite multicolor 1 ($D026)
+    //
+    // In multicolor mode, the sprite appears wider because each data bit represents
+    // 2 horizontal pixels instead of 1, and X-expansion further doubles this.
+    //
+    // For each sprite x (bits 7-0 correspond to sprites 7-0):
+    // - MxMC=0: Standard mode (8 pixels, sharper detail)
+    // - MxMC=1: Multicolor mode (4 wider pixels, more colors available)
+    //
+    // Only bits 7-0 are used, no masking needed as this is a full 8-bit register
+    
+    // Set multicolor mode for each sprite based on corresponding bit
+    for (let i = 0; i < 8; i++) {
+      this.spriteData[i].multicolor = (value & (1 << i)) !== 0;
+    }
+    this.registers[0x1c] = value;
   }
 
-  // --- Set VIC R1D
+  // ----------------------------------------------------------------------------------------------
+  // Register $D01D (Sprite X Expansion)
+
+  // --- Set VIC Register $D01D (Sprite X Expansion)
+  // --- As per VIC-II doc section 3.2: Registers, section 3.8: Sprites, section 3.14.7: Sprite stretching
+  // --- Each bit controls X expansion (width doubling) of corresponding sprite
   private setRegD01DValue(value: number) {
-    // TODO: Implement the function
+    // --- STEP 1: Extract new sprite X expansion values from register bits
+    const newSpriteXExpand = [
+      !!(value & 0x01), // Sprite 0 X expansion (bit 0)
+      !!(value & 0x02), // Sprite 1 X expansion (bit 1)
+      !!(value & 0x04), // Sprite 2 X expansion (bit 2)
+      !!(value & 0x08), // Sprite 3 X expansion (bit 3)
+      !!(value & 0x10), // Sprite 4 X expansion (bit 4)
+      !!(value & 0x20), // Sprite 5 X expansion (bit 5)
+      !!(value & 0x40), // Sprite 6 X expansion (bit 6)
+      !!(value & 0x80)  // Sprite 7 X expansion (bit 7)
+    ];
+
+    // --- STEP 2: Detect changes for each sprite and handle effects
+    for (let spriteIndex = 0; spriteIndex < 8; spriteIndex++) {
+      if (this.spriteData[spriteIndex].xExpand !== newSpriteXExpand[spriteIndex]) {
+        // --- Sprite X expansion has changed
+        // --- As per VIC-II doc section 3.8: Sprites, section 3.14.7: Sprite stretching
+
+        if (newSpriteXExpand[spriteIndex]) {
+          // --- X expansion changes from 0 to 1 (Enabling X expansion)
+          // --- IMMEDIATE EFFECTS (same cycle):
+          // - Sprite width: Doubled from 24 to 48 pixels
+          // - Pixel duplication: Each sprite pixel displayed twice horizontally
+          // - Shift timing: Sprite data sequencer outputs pixels with half frequency
+          // - Screen coverage: Sprite covers more horizontal screen area
+          
+          // --- CONDITIONAL EFFECTS (depends on current state):
+          // - Sprite enable: Only affects display if sprite is enabled via $d015
+          // - Collision detection: Expanded sprite area affects collision calculations
+          // - Screen boundaries: May cause sprite to extend beyond visible area
+          // - X coordinate interaction: Same X position but doubled visual width
+          // - Multicolor mode: In multicolor mode, each 2-bit pixel group is doubled
+          
+          // --- TIMING-CRITICAL considerations:
+          // - Same-line changes: X expansion changes affect immediate sprite rendering
+          // - Shift register timing: X expansion changes shift frequency immediately
+          // - Sprite multiplexing: May affect timing on heavily loaded raster lines
+        } else {
+          // --- X expansion changes from 1 to 0 (Disabling X expansion)
+          // --- IMMEDIATE EFFECTS (same cycle):
+          // - Sprite width: Returns to normal 24 pixels
+          // - Pixel display: Each sprite pixel displayed once (normal frequency)
+          // - Screen coverage: Reduced horizontal screen area
+          
+          // --- CONDITIONAL EFFECTS (depends on current state):
+          // - Collision detection: Reduced sprite area affects collision calculations
+          // - Screen positioning: Same X coordinate but halved visual width
+        }
+
+        // --- DISPLAY CHANGES:
+        // - Horizontal scaling: Sprite pixels stretched/compressed horizontally
+        // - Aspect ratio: Sprite aspect ratio changes (height remains same, width doubles/halves)
+        // - Border interaction: May affect sprite visibility at left/right screen edges
+        // - Overlap effects: Changes in sprite overlap areas for collision detection
+
+        // TODO: Get current raster line number and cycle
+        // TODO: Check if sprite X expansion change affects current pixel output
+        // TODO: Update sprite collision detection for new expansion state
+        // TODO: Handle sprite visibility changes due to expansion at screen edges
+        // TODO: Update sprite shift register timing if expansion affects current sprite
+      }
+
+      // --- STEP 3: Update internal state for this sprite
+      this.spriteData[spriteIndex].xExpand = newSpriteXExpand[spriteIndex];
+    }
+
+    // --- STEP 4: Update register value
+    this.registers[0x1d] = value & 0xff;
+
+    // --- Register handling complete - sprite X expansion updated according to VIC-II documentation
   }
 
   // --- Set VIC R20
   private setRegD020Value(value: number) {
-    // TODO: Implement the function
+    // $D020 - Border Color Register
+    // Controls the color displayed in the border area around the graphics window
+    //
+    // The screen layout consists of:
+    // - Border: Outermost area displayed in border color (controlled by this register)
+    // - Graphics window: Inner area containing text/bitmap/sprites (background colors, sprites, etc.)
+    //
+    // Only the lower 4 bits (3-0) are used for the color index:
+    // - Bits 7-4: Unused, read as undefined but typically 0
+    // - Bits 3-0: EC (Exterior Color) - border color index (0-15)
+    //
+    // Color values 0-15 correspond to the C64's standard 16-color palette:
+    // 0=Black, 1=White, 2=Red, 3=Cyan, 4=Purple, 5=Green, 6=Blue, 7=Yellow,
+    // 8=Orange, 9=Brown, 10=Light Red, 11=Dark Gray, 12=Medium Gray, 13=Light Green,
+    // 14=Light Blue, 15=Light Gray
+    //
+    // The border is visible around the graphics area and during vertical/horizontal blanking.
+    // Border manipulation techniques can create "overscan" effects by opening the border.
+
+    const newBorderColor = value & 0x0F; // Mask to 4 bits (0-15)
+    this.borderColor = newBorderColor;
+    this.registers[0x20] = newBorderColor; // Store only the valid 4-bit value
   }
 
   // --- Set VIC R21
   private setRegD021Value(value: number) {
-    // TODO: Implement the function
+    // $D021 - Background Color 0 Register
+    // Controls the primary background color used in all graphics modes
+    //
+    // This is the most commonly used background color and appears in all VIC-II graphics modes:
+    // - Standard text mode: Background behind characters
+    // - Multicolor text mode: Background color (00 bit pattern)  
+    // - Extended Color Mode (ECM): Background color 0 (selected by upper bits 00 of character code)
+    // - Standard bitmap mode: Background color
+    // - Multicolor bitmap mode: Background color (00 bit pattern)
+    //
+    // Only the lower 4 bits (3-0) are used for the color index:
+    // - Bits 7-4: Unused, read as undefined but typically 0
+    // - Bits 3-0: B0C (Background Color 0) - color index (0-15)
+    //
+    // Color values 0-15 correspond to the C64's standard 16-color palette
+
+    const newBackgroundColor0 = value & 0x0F; // Mask to 4 bits (0-15)
+    this.backgroundColor0 = newBackgroundColor0;
+    this.registers[0x21] = newBackgroundColor0; // Store only the valid 4-bit value
+  }
+
+  // --- Set VIC R22
+  private setRegD022Value(value: number) {
+    // $D022 - Background Color 1 Register  
+    // Controls extended background color 1 used in multicolor and ECM modes
+    //
+    // Usage in different graphics modes:
+    // - Standard text mode: Not used
+    // - Multicolor text mode: Background color 1 (01 bit pattern in character data)
+    // - Extended Color Mode (ECM): Background color 1 (selected by upper bits 01 of character code)
+    // - Standard bitmap mode: Not used
+    // - Multicolor bitmap mode: Background color 1 (01 bit pattern in bitmap data)
+    //
+    // Only the lower 4 bits (3-0) are used for the color index:
+    // - Bits 7-4: Unused, read as undefined but typically 0
+    // - Bits 3-0: B1C (Background Color 1) - color index (0-15)
+
+    const newBackgroundColor1 = value & 0x0F; // Mask to 4 bits (0-15)
+    this.backgroundColor1 = newBackgroundColor1;
+    this.registers[0x22] = newBackgroundColor1; // Store only the valid 4-bit value
+  }
+
+  // --- Set VIC R23
+  private setRegD023Value(value: number) {
+    // $D023 - Background Color 2 Register
+    // Controls extended background color 2 used in multicolor and ECM modes
+    //
+    // Usage in different graphics modes:
+    // - Standard text mode: Not used
+    // - Multicolor text mode: Background color 2 (10 bit pattern in character data)
+    // - Extended Color Mode (ECM): Background color 2 (selected by upper bits 10 of character code)
+    // - Standard bitmap mode: Not used  
+    // - Multicolor bitmap mode: Background color 2 (10 bit pattern in bitmap data)
+    //
+    // Only the lower 4 bits (3-0) are used for the color index:
+    // - Bits 7-4: Unused, read as undefined but typically 0
+    // - Bits 3-0: B2C (Background Color 2) - color index (0-15)
+
+    const newBackgroundColor2 = value & 0x0F; // Mask to 4 bits (0-15)
+    this.backgroundColor2 = newBackgroundColor2;
+    this.registers[0x23] = newBackgroundColor2; // Store only the valid 4-bit value
+  }
+
+  // --- Set VIC R24
+  private setRegD024Value(value: number) {
+    // $D024 - Background Color 3 Register
+    // Controls extended background color 3 used in ECM mode only
+    //
+    // Usage in different graphics modes:
+    // - Standard text mode: Not used
+    // - Multicolor text mode: Not used
+    // - Extended Color Mode (ECM): Background color 3 (selected by upper bits 11 of character code)
+    // - Standard bitmap mode: Not used
+    // - Multicolor bitmap mode: Not used
+    //
+    // Only the lower 4 bits (3-0) are used for the color index:
+    // - Bits 7-4: Unused, read as undefined but typically 0
+    // - Bits 3-0: B3C (Background Color 3) - color index (0-15)
+
+    const newBackgroundColor3 = value & 0x0F; // Mask to 4 bits (0-15)
+    this.backgroundColor3 = newBackgroundColor3;
+    this.registers[0x24] = newBackgroundColor3; // Store only the valid 4-bit value
   }
 
   // --- Set VIC R25
+  /**
+   * Sets the Sprite Multicolor 0 register ($D025)
+   * VIC-II color register for multicolor sprites
+   * 
+   * Register: $D025 (53285) - Sprite multicolor 0
+   * Description: The "01" bit pattern in multicolor sprites
+   * 
+   * In multicolor sprite mode (when sprite multicolor bit is set in $D01C):
+   * - The sprite data uses 2 bits per pixel instead of 1
+   * - 00 = transparent (sprite background shows through)
+   * - 01 = sprite multicolor 0 (this register)
+   * - 10 = individual sprite color (from $D027-$D02E)
+   * - 11 = sprite multicolor 1 (from $D026)
+   * 
+   * This color is shared by all multicolor sprites on the screen.
+   * 
+   * @param value Color index (bits 0-3 only, bits 4-7 ignored)
+   */
   private setRegD025Value(value: number) {
-    // TODO: Implement the function
+    const newSpriteMulticolor0 = value & 0x0F; // Mask to 4 bits (0-15)
+    this.spriteMulticolor0 = newSpriteMulticolor0;
+    this.registers[0x25] = newSpriteMulticolor0; // Store only the valid 4-bit value
   }
 
   // --- Set VIC R26
+  /**
+   * Sets the Sprite Multicolor 1 register ($D026)
+   * VIC-II color register for multicolor sprites
+   * 
+   * Register: $D026 (53286) - Sprite multicolor 1
+   * Description: The "11" bit pattern in multicolor sprites
+   * 
+   * In multicolor sprite mode (when sprite multicolor bit is set in $D01C):
+   * - The sprite data uses 2 bits per pixel instead of 1
+   * - 00 = transparent (sprite background shows through)
+   * - 01 = sprite multicolor 0 (from $D025)
+   * - 10 = individual sprite color (from $D027-$D02E)
+   * - 11 = sprite multicolor 1 (this register)
+   * 
+   * This color is shared by all multicolor sprites on the screen.
+   * 
+   * @param value Color index (bits 0-3 only, bits 4-7 ignored)
+   */
   private setRegD026Value(value: number) {
-    // TODO: Implement the function
+    const newSpriteMulticolor1 = value & 0x0F; // Mask to 4 bits (0-15)
+    this.spriteMulticolor1 = newSpriteMulticolor1;
+    this.registers[0x26] = newSpriteMulticolor1; // Store only the valid 4-bit value
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -1287,8 +2252,38 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // ----------------------------------------------------------------------------------------------
   // Sprites
 
+  /**
+   * Sets the individual sprite color registers ($D027-$D02E)
+   * VIC-II color registers for individual sprite colors
+   * 
+   * Registers: $D027-$D02E (53287-53294) - Sprite 0-7 colors
+   * Description: Individual color for each sprite
+   * 
+   * Usage in different sprite modes:
+   * - Standard sprite mode (multicolor bit = 0 in $D01C):
+   *   * 0 = transparent (sprite background shows through)
+   *   * 1 = sprite color (this register)
+   * 
+   * - Multicolor sprite mode (multicolor bit = 1 in $D01C):
+   *   * 00 = transparent (sprite background shows through)  
+   *   * 01 = sprite multicolor 0 (from $D025)
+   *   * 10 = sprite color (this register)
+   *   * 11 = sprite multicolor 1 (from $D026)
+   * 
+   * Each sprite has its own individual color independent of other sprites.
+   * 
+   * @param index Sprite index (0-7) corresponding to register $D027+index
+   * @param value Color index (bits 0-3 only, bits 4-7 ignored)
+   */
   private setSpriteColor(index: number, value: number) {
-    // TODO: Implement the function
+    const newSpriteColor = value & 0x0F; // Mask to 4 bits (0-15)
+    const regAddress = 0x27 + index; // Calculate register address
+    
+    // Update the sprite color in the spriteData array
+    this.spriteData[index].color = newSpriteColor;
+    
+    // Update the register array
+    this.registers[regAddress] = newSpriteColor;
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -1353,25 +2348,40 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private FetchSprData(tact: RenderingTact): void {
     // --- Implement this method
   }
+
+  // --- Compatibility getters for tests that expect the old property names
+  // --- These return the combined 8-bit values for backward compatibility
+
+  /**
+   * Get sprite priority register value ($D01B) - backward compatibility getter
+   * Returns 8-bit value where each bit represents sprite priority 
+   * (0 = sprite behind foreground, 1 = sprite in front of foreground)
+   */
+  get spritePriority(): number {
+    let value = 0;
+    for (let i = 0; i < 8; i++) {
+      if (this.spriteData[i].priority) {
+        value |= (1 << i);
+      }
+    }
+    return value;
+  }
+
+  /**
+   * Get sprite multicolor register value ($D01C) - backward compatibility getter  
+   * Returns 8-bit value where each bit represents sprite multicolor mode
+   * (0 = standard mode, 1 = multicolor mode)
+   */
+  get spriteMulticolor(): number {
+    let value = 0;
+    for (let i = 0; i < 8; i++) {
+      if (this.spriteData[i].multicolor) {
+        value |= (1 << i);
+      }
+    }
+    return value;
+  }
 }
-
-type SpriteData = {
-  // --- Sprite data to display
-  data: number;
-
-  // --- 6 bit counters
-  mc: number;
-  mcbase: number;
-
-  // --- 8 bit pointer
-  pointer: number;
-
-  // --- Expansion flop
-  exp_flop: boolean;
-
-  // --- X coordinate
-  x: number;
-};
 
 const enum VideoModes {
   VICII_NORMAL_TEXT_MODE = 0,
@@ -1387,4 +2397,29 @@ const enum VideoModes {
 type Idle3fff = {
   cycle: number;
   value: number;
+};
+
+/**
+ * Information about a single sprite (0-7) in the VIC-II chip.
+ * Contains all sprite-related state that can be controlled by VIC registers.
+ */
+type SpriteInformation = {
+  /** Whether the sprite is enabled/visible (controlled by $d015) */
+  enabled: boolean;
+  /** X coordinate (9-bit value from $d000, $d002, etc. + MSB from $d010) */
+  x: number;
+  /** Y coordinate (8-bit value from $d001, $d003, $d005, $d007, $d009, $d00b, $d00d, $d00f) */
+  y: number;
+  /** Y expansion (doubled height when true, controlled by $d017) */
+  yExpand: boolean;
+  /** X expansion (doubled width when true, controlled by $d01d) */
+  xExpand: boolean;
+  /** Sprite color (4-bit value from $d027-$d02e) */
+  color: number;
+  /** Multicolor mode (controlled by $d01c) - true = multicolor, false = standard */
+  multicolor: boolean;
+  /** Sprite-background priority (controlled by $d01b) - true = sprite behind background, false = sprite in front */
+  priority: boolean;
+  // TODO: Add other sprite properties as we implement more registers:
+  // dataPointer: number; // Sprite data pointer (from $07f8-$07ff + VIC bank)
 };
