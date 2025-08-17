@@ -14,7 +14,7 @@ export interface IC64Machine extends IAnyMachine, IM6510Cpu {
   /**
    * The physical memory of the machine
    */
-  readonly memory: C64MemoryDevice;
+  readonly memoryDevice: C64MemoryDevice;
 
   readonly cpuPortDevice: C64CpuPortDevice;
 

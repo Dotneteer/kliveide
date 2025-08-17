@@ -1,5 +1,6 @@
 import type { IM6510Cpu } from "../abstractions/IM6510Cpu";
 import { FlagSetMask6510 } from "../abstractions/FlagSetMask6510";
+import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 /**
  * The function represents a 6510 operation

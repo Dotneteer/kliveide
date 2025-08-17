@@ -106,6 +106,14 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
     // Update external signals when direction changes
     // This is important for IEC bus lines when they switch between input/output
     this.updateExternalSignals();
+
+    // Check if memory configuration bits (0-2) direction has changed
+    const oldConfigDirBits = oldDirection & 0x07;
+    const newConfigDirBits = value & 0x07;
+    if (oldConfigDirBits !== newConfigDirBits) {
+      // Notify memory device to update configuration
+      this.machine.memoryDevice.updateConfiguration();
+    }
   }
 
   /**
@@ -124,6 +132,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
    * @param value The new data register value
    */
   writeData(value: number): void {
+    const oldData = this._data;
     this._data = value;
 
     // Update capacitor bits for output bits
@@ -132,6 +141,14 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
 
     // Handle external signals (tape control)
     this.updateExternalSignals();
+
+    // Check if memory configuration bits (0-2) have changed
+    const oldConfigBits = oldData & 0x07;
+    const newConfigBits = value & 0x07;
+    if (oldConfigBits !== newConfigBits) {
+      // Notify memory device to update configuration
+      this.machine.memoryDevice.updateConfiguration();
+    }
   }
 
   // Implementation details for the CPU port device
