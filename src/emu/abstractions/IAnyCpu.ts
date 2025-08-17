@@ -61,7 +61,7 @@ export interface IAnyCpu {
    * Get the number of T-states in the current machine frame, which have a higher
    * clock multiplier than 1.
    */
-  readonly tactsInCurrentFrame: number;
+  tactsInCurrentFrame: number;
 
   /**
    * Sets the number of tacts within a single machine frame
@@ -277,4 +277,23 @@ export interface IAnyCpu {
    * Define what to do when CPU is snoozed. You should increment the tacts emulating the snoozing.
    */
   onSnooze(): void;
+
+  /**
+   * We need this flag to implement the step-over debugger function that continues the execution and stops when the
+   * current subroutine returns to its caller. The debugger will observe the change of this flag and manage its
+   * internal tracking of the call stack accordingly.
+   */
+  retExecuted: boolean;
+
+  /**
+   * Checks if the next instruction to be executed is a call instruction or not
+   * @return 0, if the next instruction is not a call; otherwise the length of the call instruction
+   */
+  getCallInstructionLength(): number
+
+  /**
+   * Checks if the CPU is currently executing an instruction.
+   * @return True if an instruction is being executed; otherwise false.
+   */
+  instructionExecutionInProgress(): boolean;
 }

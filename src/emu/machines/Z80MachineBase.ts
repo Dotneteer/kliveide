@@ -18,11 +18,15 @@ import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { CpuState } from "@common/messaging/EmuApi";
 import { SysVar } from "@abstractions/SysVar";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
+import { IMachineFrameRunner, MachineFrameRunner } from "./MachineFrameRunner";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
  */
 export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
+  // --- This instance runs the machine frame
+  private _machineFrameRunner: IMachineFrameRunner;
+
   // --- Store the start tact of the next machine frame
   protected _nextFrameStartTact = 0;
 
@@ -44,10 +48,15 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    */
   constructor(readonly config: MachineConfigSet = {}) {
     super();
+    this._machineFrameRunner = this.createMachineFrameRunner();
   }
   softResetOnFirstStart?: boolean;
   dynamicConfig?: MachineConfigSet;
   getAspectRatio?: () => [number, number];
+
+  protected createMachineFrameRunner(): IMachineFrameRunner {
+    return new MachineFrameRunner(this);
+  }
 
   /**
    * The unique identifier of the machine type
@@ -171,8 +180,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    */
   reset(): void {
     super.reset();
-    this._frameCompleted = true;
-    this._frameOverflow = 0;
+    this._machineFrameRunner.reset();
     this._queuedEvents = null;
   }
 
@@ -796,7 +804,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    *
    * By default, this method checks if the PC equals the execution context's TerminationPoint value.
    */
-  protected testTerminationPoint(): boolean {
+  testTerminationPoint(): boolean {
     return (
       this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint &&
       this.pc === this.executionContext.terminationPoint
@@ -807,7 +815,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * The machine's execution loop calls this method to check if it can change the clock multiplier.
    * @returns True, if the clock multiplier can be changed; otherwise, false.
    */
-  protected allowCpuClockChange(): boolean {
+  allowCpuClockChange(): boolean {
     return true;
   }
 
@@ -816,7 +824,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  protected onInitNewFrame(_clockMultiplierChanged: boolean): void {
+  onInitNewFrame(_clockMultiplierChanged: boolean): void {
     // --- Override this method in derived classes.
   }
 
@@ -826,9 +834,17 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   protected abstract shouldRaiseInterrupt(): boolean;
 
   /**
+   * The machine frame loop invokes this method before executing a CPU instruction.
+   */
+  beforeInstructionExecuted(): void {
+    // --- Set the interrupt signal, if required so
+    this.sigINT = this.shouldRaiseInterrupt();
+  }
+
+  /**
    * The machine frame loop invokes this method after executing a CPU instruction.
    */
-  protected afterInstructionExecuted(): void {
+  afterInstructionExecuted(): void {
     // --- Override this method in derived classes.
   }
 

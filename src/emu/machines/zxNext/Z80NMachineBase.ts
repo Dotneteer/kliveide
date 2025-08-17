@@ -2,8 +2,6 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import type { CodeToInject } from "@abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import type { MachineConfigSet } from "@common/machines/info-types";
 
@@ -19,6 +17,8 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { SysVar } from "@abstractions/SysVar";
 import { CpuState } from "@common/messaging/EmuApi";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
+import { CodeToInject } from "@abstractions/CodeToInject";
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -789,7 +789,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    *
    * By default, this method checks if the PC equals the execution context's TerminationPoint value.
    */
-  protected testTerminationPoint(): boolean {
+  testTerminationPoint(): boolean {
     return (
       this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint &&
       this.pc === this.executionContext.terminationPoint
@@ -800,7 +800,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * The machine's execution loop calls this method to check if it can change the clock multiplier.
    * @returns True, if the clock multiplier can be changed; otherwise, false.
    */
-  protected allowCpuClockChange(): boolean {
+  allowCpuClockChange(): boolean {
     return true;
   }
 
@@ -809,7 +809,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  protected onInitNewFrame(_clockMultiplierChanged?: boolean): void {
+  onInitNewFrame(_clockMultiplierChanged?: boolean): void {
     // --- Override this method in derived classes.
   }
 
@@ -819,9 +819,24 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   protected abstract shouldRaiseInterrupt(): boolean;
 
   /**
+   * Checks if the CPU is currently executing an instruction.
+   * @return True if an instruction is being executed; otherwise false.
+   */
+  instructionExecutionInProgress(): boolean {
+    return this.prefix !== OpCodePrefix.None;
+  }
+
+  /**
+   * The machine frame loop invokes this method before executing a CPU instruction.
+   */
+  beforeInstructionExecuted(): void {
+    // --- Override this method in derived classes.
+  }
+
+  /**
    * The machine frame loop invokes this method after executing a CPU instruction.
    */
-  protected afterInstructionExecuted(): void {
+  afterInstructionExecuted(): void {
     // --- Override this method in derived classes.
   }
 

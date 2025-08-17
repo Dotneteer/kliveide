@@ -204,12 +204,6 @@ export interface IZ80Cpu extends IAnyCpu {
   allowExtendedInstructions: boolean;
 
   /**
-   * Checks if the next instruction to be executed is a call instruction or not
-   * @return 0, if the next instruction is not a call; otherwise the length of the call instruction
-   */
-  getCallInstructionLength(): number;
-
-  /**
    * This method increments the current CPU tacts by one.
    */
   tactPlus1(): void;

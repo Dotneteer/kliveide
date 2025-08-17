@@ -26,13 +26,13 @@ export class Z80Cpu implements IZ80Cpu {
   private _r: number = 0;
   private _wh: number = 0;
   private _wl: number = 0;
-  
+
   // --- Shadow registers
   private _af_: number = 0;
   private _bc_: number = 0xffff;
   private _de_: number = 0xffff;
   private _hl_: number = 0xffff;
-  
+
   // --- Special registers
   private _pc: number;
   private _sp: number;
@@ -51,7 +51,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._a;
   }
   set a(value: number) {
-    this._a = value & 0xFF;
+    this._a = value & 0xff;
   }
 
   /**
@@ -61,7 +61,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._f;
   }
   set f(value: number) {
-    this._f = value & 0xFF;
+    this._f = value & 0xff;
   }
 
   /**
@@ -71,8 +71,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._a << 8) | this._f;
   }
   set af(value: number) {
-    this._a = (value >> 8) & 0xFF;
-    this._f = value & 0xFF;
+    this._a = (value >> 8) & 0xff;
+    this._f = value & 0xff;
   }
 
   /**
@@ -82,7 +82,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._b;
   }
   set b(value: number) {
-    this._b = value & 0xFF;
+    this._b = value & 0xff;
   }
 
   /**
@@ -92,7 +92,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._c;
   }
   set c(value: number) {
-    this._c = value & 0xFF;
+    this._c = value & 0xff;
   }
 
   /**
@@ -102,8 +102,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._b << 8) | this._c;
   }
   set bc(value: number) {
-    this._b = (value >> 8) & 0xFF;
-    this._c = value & 0xFF;
+    this._b = (value >> 8) & 0xff;
+    this._c = value & 0xff;
   }
 
   /**
@@ -113,7 +113,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._d;
   }
   set d(value: number) {
-    this._d = value & 0xFF;
+    this._d = value & 0xff;
   }
 
   /**
@@ -123,7 +123,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._e;
   }
   set e(value: number) {
-    this._e = value & 0xFF;
+    this._e = value & 0xff;
   }
 
   /**
@@ -133,8 +133,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._d << 8) | this._e;
   }
   set de(value: number) {
-    this._d = (value >> 8) & 0xFF;
-    this._e = value & 0xFF;
+    this._d = (value >> 8) & 0xff;
+    this._e = value & 0xff;
   }
 
   /**
@@ -144,7 +144,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._h;
   }
   set h(value: number) {
-    this._h = value & 0xFF;
+    this._h = value & 0xff;
   }
 
   /**
@@ -154,7 +154,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._l;
   }
   set l(value: number) {
-    this._l = value & 0xFF;
+    this._l = value & 0xff;
   }
 
   /**
@@ -164,8 +164,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._h << 8) | this._l;
   }
   set hl(value: number) {
-    this._h = (value >> 8) & 0xFF;
-    this._l = value & 0xFF;
+    this._h = (value >> 8) & 0xff;
+    this._l = value & 0xff;
   }
 
   /**
@@ -215,7 +215,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._xh;
   }
   set xh(value: number) {
-    this._xh = value & 0xFF;
+    this._xh = value & 0xff;
   }
 
   /**
@@ -225,7 +225,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._xl;
   }
   set xl(value: number) {
-    this._xl = value & 0xFF;
+    this._xl = value & 0xff;
   }
 
   /**
@@ -235,8 +235,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._xh << 8) | this._xl;
   }
   set ix(value: number) {
-    this._xh = (value >> 8) & 0xFF;
-    this._xl = value & 0xFF;
+    this._xh = (value >> 8) & 0xff;
+    this._xl = value & 0xff;
   }
 
   /**
@@ -246,7 +246,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._yh;
   }
   set yh(value: number) {
-    this._yh = value & 0xFF;
+    this._yh = value & 0xff;
   }
 
   /**
@@ -256,7 +256,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._yl;
   }
   set yl(value: number) {
-    this._yl = value & 0xFF;
+    this._yl = value & 0xff;
   }
 
   /**
@@ -266,8 +266,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._yh << 8) | this._yl;
   }
   set iy(value: number) {
-    this._yh = (value >> 8) & 0xFF;
-    this._yl = value & 0xFF;
+    this._yh = (value >> 8) & 0xff;
+    this._yl = value & 0xff;
   }
 
   /**
@@ -277,7 +277,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._i;
   }
   set i(value: number) {
-    this._i = value & 0xFF;
+    this._i = value & 0xff;
   }
 
   /**
@@ -287,7 +287,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._r;
   }
   set r(value: number) {
-    this._r = value & 0xFF;
+    this._r = value & 0xff;
   }
 
   /**
@@ -297,8 +297,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._i << 8) | this._r;
   }
   set ir(value: number) {
-    this._i = (value >> 8) & 0xFF;
-    this._r = value & 0xFF;
+    this._i = (value >> 8) & 0xff;
+    this._r = value & 0xff;
   }
 
   /**
@@ -328,7 +328,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._wh;
   }
   set wh(value: number) {
-    this._wh = value & 0xFF;
+    this._wh = value & 0xff;
   }
 
   /**
@@ -338,7 +338,7 @@ export class Z80Cpu implements IZ80Cpu {
     return this._wl;
   }
   set wl(value: number) {
-    this._wl = value & 0xFF;
+    this._wl = value & 0xff;
   }
 
   /**
@@ -348,8 +348,8 @@ export class Z80Cpu implements IZ80Cpu {
     return (this._wh << 8) | this._wl;
   }
   set wz(value: number) {
-    this._wh = (value >> 8) & 0xFF;
-    this._wl = value & 0xFF;
+    this._wh = (value >> 8) & 0xff;
+    this._wl = value & 0xff;
   }
 
   /**
@@ -929,6 +929,14 @@ export class Z80Cpu implements IZ80Cpu {
         this.prefix = OpCodePrefix.None;
         break;
     }
+  }
+
+  /**
+   * Checks if the CPU is currently executing an instruction.
+   * @return True if an instruction is being executed; otherwise false.
+   */
+  instructionExecutionInProgress(): boolean {
+    return this.prefix !== OpCodePrefix.None;
   }
 
   /**
