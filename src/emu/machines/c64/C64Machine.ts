@@ -30,14 +30,27 @@ import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
 import { vicMos6569r3, vicMos8562 } from "./vic/vic-models";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
+import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
+  // --- This instance runs the machine frame
+  private _machineFrameRunner: IMachineFrameRunner;
+
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
+
+  // --- This flag indicates that the last machine frame has been completed.
+  protected _frameCompleted: boolean;
+
+  // --- Shows the number of frame tacts that overflow to the subsequent machine frame.
+  protected _frameOverflow = 0;
+
+  // --- Store the start tact of the next machine frame
+  protected _nextFrameStartTact = 0;
 
   // --- Events queued for execution
   private _queuedEvents?: QueuedEvent[];
 
-  readonly memory: C64MemoryDevice;
+  readonly memoryDevice: C64MemoryDevice;
   readonly cpuPortDevice: C64CpuPortDevice;
   readonly vicDevice: C64VicDevice;
   readonly sidDevice: C64SidDevice;
@@ -73,8 +86,6 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }>();
 
   targetClockMultiplier: number;
-  uiFrameFrequency: number;
-  frameJustCompleted: boolean;
   lastRenderedFrameTact: number;
 
   get isNtsc(): boolean {
@@ -83,6 +94,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
   constructor(public readonly modelInfo?: MachineModel) {
     super();
+    this._machineFrameRunner = this.createMachineFrameRunner();
     this.baseClockFrequency = this.isNtsc ? 1022727 : 985248;
     this.clockMultiplier = 1;
     this.targetClockMultiplier = 1;
@@ -95,21 +107,45 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.tapeDevice = new C64TapeDevice(this);
     this.ioExpansionDevice = new C64IoExpansionDevice(this);
     this.cpuPortDevice = new C64CpuPortDevice(this);
-    this.memory = new C64MemoryDevice(this);
+    this.memoryDevice = new C64MemoryDevice(this);
     this.config = {};
   }
 
+  /**
+   * Creates the machine frame runner for the emulated machine.
+   * @returns The machine frame runner instance
+   */
+  protected createMachineFrameRunner(): IMachineFrameRunner {
+    return new MachineFrameRunner(this);
+  }
+
+  /**
+   * Gets the machine frame runner associated with the machine.
+   */
+  get machineFrameRunner(): IMachineFrameRunner {
+    return this._machineFrameRunner;
+  }
+
+  get frameJustCompleted(): boolean {
+    return this.machineFrameRunner.frameCompleted;
+  }
+
+  /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency: number = 1;
+
   async setup(): Promise<void> {
-    this.memory.reset();
+    this.memoryDevice.reset();
 
     const basicRomContents = await this.loadRomFromResource("c64-basic");
-    this.memory.uploadBasicRom(basicRomContents);
+    this.memoryDevice.uploadBasicRom(basicRomContents);
     const kernalRomContents = await this.loadRomFromResource(
       `c64-kernal-${this.isNtsc ? "ntsc" : "pal"}`
     );
-    this.memory.uploadKernalRom(kernalRomContents);
+    this.memoryDevice.uploadKernalRom(kernalRomContents);
     const chargenRomContents = await this.loadRomFromResource("c64-chargen");
-    this.memory.uploadChargenRom(chargenRomContents);
+    this.memoryDevice.uploadChargenRom(chargenRomContents);
   }
 
   async configure(): Promise<void> {
@@ -153,17 +189,53 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.machinePropertyChanged?.fire({ propertyName: key, newValue: value });
   }
 
+  /**
+   * This method tests if the CPU reached the specified termination point.
+   * @returns True, if the execution has reached the termination point; otherwise, false.
+   *
+   * By default, this method checks if the PC equals the execution context's TerminationPoint value.
+   */
+  testTerminationPoint(): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  /**
+   * The machine's execution loop calls this method to check if it can change the clock multiplier.
+   * @returns True, if the clock multiplier can be changed; otherwise, false.
+   */
+  allowCpuClockChange(): boolean {
+    return true;
+  }
+
+  /**
+   * The machine's execution loop calls this method when it is about to initialize a new frame.
+   * previous frame.
+   */
+  onInitNewFrame(): void {
+    // --- Override this method in derived classes.
+  }
+
+  /**
+   * The machine frame loop invokes this method before executing a CPU instruction.
+   */
+  beforeInstructionExecuted(): void {
+    // --- Override this method in derived classes.
+  }
+
+  /**
+   * The machine frame loop invokes this method after executing a CPU instruction.
+   */
+  afterInstructionExecuted(): void {
+    // --- Override this method in derived classes.
+  }
+
+  /**
+   * Executes the machine loop using the current execution context.
+   * @returns The value indicates the termination reason of the loop
+   */
   executeMachineFrame(): FrameTerminationMode {
-    // Emulate a single frame
-    this.frameJustCompleted = false;
-    for (let t = 0; t < this.tactsInFrame; t++) {
-      this.executeCpuCycle();
-      this.currentFrameTact++;
-    }
-    this.frames++;
-    this.frameJustCompleted = true;
-    this.lastRenderedFrameTact = this.currentFrameTact;
-    return FrameTerminationMode.Normal;
+    return this._machineFrameRunner.executeMachineFrame();
   }
 
   onStop(): void {
@@ -361,10 +433,11 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.cpuPortDevice.reset();
 
     // Reset memory to establish correct config and memory map
-    this.memory.reset();
+    this.memoryDevice.reset();
 
     // Reset the CPU base class
     super.reset();
+    this._machineFrameRunner.reset();
 
     // Reset all other peripherals
     this.vicDevice.reset();
@@ -391,11 +464,11 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }
 
   doReadMemory(address: number): number {
-    return this.memory.readMemory(address);
+    return this.memoryDevice.readMemory(address);
   }
 
   doWriteMemory(address: number, value: number): void {
-    this.memory.writeMemory(address, value);
+    this.memoryDevice.writeMemory(address, value);
   }
 
   delayMemoryWrite(_address: number): void {}

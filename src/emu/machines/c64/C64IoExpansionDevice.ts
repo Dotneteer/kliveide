@@ -121,7 +121,7 @@ export class C64IoExpansionDevice implements IGenericDevice<IC64Machine> {
    */
   set gameLine(value: boolean) {
     this._gameLine = value;
-    this.machine.memory.updateConfiguration();
+    this.machine.memoryDevice.updateConfiguration();
   }
   
   /**
@@ -138,7 +138,7 @@ export class C64IoExpansionDevice implements IGenericDevice<IC64Machine> {
    */
   set exromLine(value: boolean) {
     this._exromLine = value;
-    this.machine.memory.updateConfiguration();
+    this.machine.memoryDevice.updateConfiguration();
   }
   
   /**

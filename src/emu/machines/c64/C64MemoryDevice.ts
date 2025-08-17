@@ -24,6 +24,11 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
   private _chargenRom = new Uint8Array(0x1000); // 4KB Character ROM
   private _colorRam = new Uint8Array(0x400); // 1KB Color RAM
 
+  // --- Memory paging flags
+  private _loram: boolean = false; // BASIC ROM visible
+  private _hiram: boolean = false; // KERNAL ROM visible
+  private _chargen: boolean = false; // Character ROM visible
+
   // --- Device references
   private _port: C64CpuPortDevice;
   private _vic: C64VicDevice;
@@ -75,6 +80,27 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
   dispose(): void {
     // Clean up resources if necessary
     // For now, nothing to dispose
+  }
+
+  /**
+   * Gets the current state of the BASIC ROM visibility
+   */
+  get loram(): boolean {
+    return this._loram;
+  }
+
+  /**
+   * Gets the current state of the KERNAL ROM visibility
+   */
+  get hiram(): boolean {
+    return this._hiram;
+  }
+
+  /**
+   * Gets the current state of the Character ROM visibility
+   */
+  get chargen(): boolean {
+    return this._chargen;
   }
 
   /**
@@ -165,6 +191,11 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
       ((~this._port.readDirection() | this._port.readData()) & 0x7) |
       (this._ioExtDevice.exromLine ? 0x08 : 0) |
       (this._ioExtDevice.gameLine ? 0x10 : 0);
+    
+    // Update the configuration flags based on the new configuration
+    this._loram = (this._currentConfig & 0x01) !== 0;
+    this._hiram = (this._currentConfig & 0x02) !== 0;
+    this._chargen = (this._currentConfig & 0x04) !== 0;
   }
 
   /**
@@ -185,11 +216,11 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
       this._writeTable[config] = [];
 
       // --- Calculate the configuration flags
-      const loram = (config & 0x01) !== 0;
-      const hiram = (config & 0x02) !== 0;
-      const charen = (config & 0x04) !== 0;
-      const exrom = (config & 0x08) === 0;
-      const game = (config & 0x10) === 0;
+      this._loram = (config & 0x01) !== 0;
+      this._hiram = (config & 0x02) !== 0;
+      this._chargen = (config & 0x04) !== 0;
+      const exrom = (config & 0x08) !== 0;
+      const game = (config & 0x10) !== 0;
 
       // --- Zero page
       this._readTable[config][0x00] = this.zeroPageRead.bind(this);
@@ -201,26 +232,22 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
         this._writeTable[config][page] = this.ramWrite.bind(this);
       }
 
-      // --- Page in the BASIC ROM when HIRAM is enabled and LORAM is disabled
-      if (hiram && !loram) {
+      // --- Page in the BASIC ROM when LORAM is enabled
+      if (this._loram) {
         for (let page = 0xa0; page <= 0xbf; page++) {
           this._readTable[config][page] = this.basicRomRead.bind(this);
         }
       }
 
       // --- Page in the KERNAL ROM when HIRAM is enabled
-      if (hiram) {
+      if (this._hiram) {
         for (let page = 0xe0; page <= 0xff; page++) {
           this._readTable[config][page] = this.kernalRomRead.bind(this);
         }
       }
 
       // --- Page in the Character ROM when CHAREN is enabled
-      if (charen) {
-        for (let page = 0xd0; page <= 0xdf; page++) {
-          this._readTable[config][page] = this.chargenRomRead.bind(this);
-        }
-      } else {
+      if (this._chargen) {
         // --- I/O area visible
         // $D000-$D3FF: VIC-II registers (mirrored every $40 bytes)
         for (let page = 0xd0; page <= 0xd3; page++) {
@@ -242,6 +269,10 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
 
         // $DE00-$DEFF: CIA2
         this._readTable[config][0xde] = this.cia2Read.bind(this);
+      } else {
+        for (let page = 0xd0; page <= 0xdf; page++) {
+          this._readTable[config][page] = this.chargenRomRead.bind(this);
+        }
       }
 
       // --- Handle extension ROMs
@@ -333,7 +364,7 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
   }
 
   private chargenRomRead(address: number): number {
-    const offset = address & 0x1fff;
+    const offset = address & 0x0fff;
     return this._chargenRom[offset];
   }
 

@@ -62,11 +62,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   readonly uiFrameFrequency = 8;
 
   /**
-   * The dynamic machine configuration (can be set after the machine is created)
-   */
-  dynamicConfig?: MachineConfigSet;
-
-  /**
    * The physical memory of the machine (memory card model)
    */
   memory: Z88BankedMemory;

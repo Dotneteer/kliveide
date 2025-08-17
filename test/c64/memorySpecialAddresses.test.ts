@@ -10,7 +10,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Reading from address $0000 returns CPU port direction register", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     const cpuPort = c64.cpuPortDevice;
     
     // --- Set a known value in the CPU port direction register
@@ -26,7 +26,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Reading from address $0001 returns CPU port data register", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     const cpuPort = c64.cpuPortDevice;
     
     // --- Set direction register to make all pins outputs
@@ -44,7 +44,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Writing to address $0000 updates CPU port direction register", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     const cpuPort = c64.cpuPortDevice;
     
     // --- Act
@@ -56,7 +56,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Writing to address $0001 updates CPU port data register", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     const cpuPort = c64.cpuPortDevice;
     
     // --- Set all pins as outputs first
@@ -71,7 +71,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Writing to CPU port registers updates memory configuration", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     
     // --- Act & Assert
     // Just check that the port registers can be written and read correctly
@@ -99,7 +99,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Memory reads and writes to zero page", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     
     // --- Act & Assert
     // Just test that we can write to zero page memory and read it back
@@ -125,7 +125,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Reading CPU port from both normal and mirrored zero page locations works", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     const cpuPort = c64.cpuPortDevice;
     
     // --- Set known values to direction register (all outputs)
@@ -143,7 +143,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("CPU port data register handles input vs output bits correctly", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     
     // --- Act
     // Set all bits as inputs
@@ -178,7 +178,7 @@ describe("C64 - Memory device CPU port handling", () => {
   
   it("Configuration bits calculation follows C64 PLA logic", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     
     // Set all bits as outputs
     memory.writeMemory(0x0000, 0xFF);
@@ -222,7 +222,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Changing CPU port direction affects ability to change data bits", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     
     // --- Act & Assert
     // 1. Set all bits as outputs
@@ -244,7 +244,7 @@ describe("C64 - Memory device CPU port handling", () => {
 
   it("Memory writes to regular RAM", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     
     // --- Act & Assert
     // Test writing to regular RAM areas
@@ -266,7 +266,7 @@ describe("C64 - Memory device CPU port handling", () => {
   
   it("Memory configuration affects ROM/RAM visibility", () => {
     // --- Arrange
-    const memory = c64.memory;
+    const memory = c64.memoryDevice;
     
     // First, set up a known memory configuration - all RAM
     memory.writeMemory(0x0000, 0xFF); // All bits output

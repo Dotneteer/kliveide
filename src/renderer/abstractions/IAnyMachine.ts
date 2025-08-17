@@ -12,6 +12,7 @@ import { IMachineEventHandler } from "./IMachineEventHandler";
 import { IAnyCpu } from "@emu/abstractions/IAnyCpu";
 import { CpuState } from "@common/messaging/EmuApi";
 import { SysVar } from "@abstractions/SysVar";
+import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -288,4 +289,90 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Gets the structure describing system variables
    */
   get sysVars(): SysVar[];
+
+  /**
+   * The machine's execution loop calls this method to check if it can change the clock multiplier.
+   * @returns True, if the clock multiplier can be changed; otherwise, false.
+   */
+  allowCpuClockChange(): boolean;
+
+  /**
+   * The machine's execution loop calls this method when it is about to initialize a new frame.
+   * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
+   * previous frame.
+   */
+  onInitNewFrame(clockMultiplierChanged: boolean): void;
+
+  /**
+   * Emulates queued key strokes as if those were pressed by the user
+   */
+  emulateKeystroke(): void;
+
+  /**
+   * Adds an emulated keypress to the queue of the provider.
+   * @param frameOffset Number of frames to start the keypress emulation
+   * @param frames Number of frames to hold the emulation
+   * @param primary Primary key code
+   * @param secondary Optional secondary key code
+   *
+   * The keyboard provider can play back emulated key strokes
+   */
+  queueKeystroke(
+    frameOffset: number,
+    frames: number,
+    primary: number,
+    secondary?: number,
+    ternary?: number
+  ): void;
+
+  /**
+   * Gets the main execution point information of the machine
+   * @param model Machine model to use for code execution
+   */
+  getCodeInjectionFlow(model: string): CodeInjectionFlow;
+
+  /**
+   * Gets the length of the key emulation queue
+   */
+  getKeyQueueLength(): number;
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  injectCodeToRun(codeToInject: CodeToInject): number;
+
+  /**
+   * The machine frame loop invokes this method before executing a CPU instruction.
+   */
+  beforeInstructionExecuted(): void;
+
+  /**
+   * The machine frame loop invokes this method after executing a CPU instruction.
+   */
+  afterInstructionExecuted(): void;
+
+  /**
+   * This method tests if the CPU reached the specified termination point.
+   * @returns True, if the execution has reached the termination point; otherwise, false.
+   *
+   * By default, this method checks if the PC equals the execution context's TerminationPoint value.
+   */
+  testTerminationPoint(): boolean;
+
+  /**
+   * Gets the current frame command
+   */
+  getFrameCommand(): any;
+
+  /**
+   * Sets a frame command that terminates the current frame for execution.
+   * @param command
+   */
+  setFrameCommand(command: any): void;
+
+  /**
+   * Gets the machine frame runner associated with the machine.
+   */
+  machineFrameRunner: IMachineFrameRunner;
 }
