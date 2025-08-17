@@ -57,6 +57,22 @@ export class C64IoExpansionDevice implements IGenericDevice<IC64Machine> {
   }
 
   /**
+   * Check if the device asks for a non-maskable interrupt (NMI).
+   */
+  requestsNmi(): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  /**
+   * Check if the device asks for an interrupt request (IRQ).
+   */
+  requestsIrq(): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  /**
    * Initializes the I/O Expansion device to its default state.
    */
   reset(): void {
@@ -105,6 +121,7 @@ export class C64IoExpansionDevice implements IGenericDevice<IC64Machine> {
    */
   set gameLine(value: boolean) {
     this._gameLine = value;
+    this.machine.memory.updateConfiguration();
   }
   
   /**
@@ -121,6 +138,7 @@ export class C64IoExpansionDevice implements IGenericDevice<IC64Machine> {
    */
   set exromLine(value: boolean) {
     this._exromLine = value;
+    this.machine.memory.updateConfiguration();
   }
   
   /**

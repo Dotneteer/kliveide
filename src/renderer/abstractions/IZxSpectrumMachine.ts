@@ -83,9 +83,4 @@ export interface IZxSpectrumMachine extends IZ80Machine {
    * Gets the current cursor mode
    */
   getCursorMode(): number;
-
-  /**
-   * Gets the structure describing system variables
-   */
-  get sysVars(): SysVar[];
 }

@@ -6,7 +6,7 @@ export interface IMachineEventHandler {
    * @param eventFn Event function with event data passed
    * @param data Data to pass to the event function
    */
-  queueEvent(eventTact: number, eventFn: MachineEventFn, data: any): void;
+  queueEvent(eventTact: number, eventFn: MachineEventFn, data?: any): void;
 
   /**
    * Removes the specified event handler from the event queue

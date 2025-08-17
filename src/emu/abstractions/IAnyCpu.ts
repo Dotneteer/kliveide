@@ -32,6 +32,12 @@ export interface IAnyCpu {
   readonly tacts: number;
 
   /**
+   * Sets the value of tacts explicitly
+   * @param value The value to set
+   */
+  setTacts(value: number): void;
+
+  /**
    * Show the number of machine frames completed since the CPU started.
    */
   readonly frames: number;
@@ -237,6 +243,12 @@ export interface IAnyCpu {
    * the CPU tacts at least with 4 T-states!
    */
   delayPortWrite(address: number): void;
+
+  /**
+   * Optional method that can be invoked before the tact counter is implemented.
+   * @returns
+   */
+  beforeTactIncremented?: () => void;
 
   /**
    * Every time the CPU clock is incremented with a single T-state, this function is executed.

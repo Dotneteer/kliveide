@@ -16,6 +16,8 @@ import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { CpuState } from "@common/messaging/EmuApi";
+import { SysVar } from "@abstractions/SysVar";
+import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -829,11 +831,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   protected afterInstructionExecuted(): void {
     // --- Override this method in derived classes.
   }
-}
 
-// --- Represents a queued event
-type QueuedEvent = {
-  eventTact: number;
-  eventFn: (data: any) => void;
-  data: any;
-};
+  /**
+   * Gets the structure describing system variables
+   */
+  get sysVars(): SysVar[] {
+    return [];
+  }
+}

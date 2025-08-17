@@ -15,14 +15,23 @@ export interface IGenericDevice<TMachine extends IAnyMachine> {
    */
   reset(): void;
 
-
   /**
    * Optional hard reset operation
    */
   hardReset?: () => void;
-  
+
   /**
    * Dispose the resources held by the device
    */
   dispose(): void;
+
+  /**
+   * Check if the device asks for a non-maskable interrupt (NMI).
+   */
+  requestsNmi?: () => boolean;
+
+  /**
+   * Check if the device asks for an interrupt request (IRQ).
+   */
+  requestsIrq?: () => boolean;
 }
