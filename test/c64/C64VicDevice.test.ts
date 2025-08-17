@@ -4093,4 +4093,112 @@ describe("C64 - VIC-II Device", () => {
       });
     });
   });
+
+  describe("CIA2-VIC Bank Integration", () => {
+    it("Should have default VIC bank 0 on reset", () => {
+      // --- Arrange
+      const vic = c64.vicDevice;
+      const cia2 = c64.cia2Device;
+      
+      // --- Act
+      vic.reset();
+      cia2.reset();
+      
+      // --- Assert
+      expect(vic.getBaseBank()).toBe(0x0000); // Bank 0 = $0000
+      expect(cia2.vicMemoryBank).toBe(0); // CIA2 should default to bank 0
+    });
+
+    it("Should update VIC base address when CIA2 VIC bank changes via Port A", () => {
+      // --- Arrange
+      const vic = c64.vicDevice;
+      const cia2 = c64.cia2Device;
+      vic.reset();
+      cia2.reset();
+      
+      // --- Act & Assert for each bank
+      
+      // Bank 0: CIA2 Port A bits 4-5 = 11 (inverted) -> bank 0
+      cia2.writeRegister(0x00, 0x30); // Set bits 4-5 to 11
+      expect(cia2.vicMemoryBank).toBe(0);
+      expect(vic.getBaseBank()).toBe(0x0000);
+      
+      // Bank 1: CIA2 Port A bits 4-5 = 10 (inverted) -> bank 1
+      cia2.writeRegister(0x00, 0x20); // Set bits 4-5 to 10
+      expect(cia2.vicMemoryBank).toBe(1);
+      expect(vic.getBaseBank()).toBe(0x4000);
+      
+      // Bank 2: CIA2 Port A bits 4-5 = 01 (inverted) -> bank 2
+      cia2.writeRegister(0x00, 0x10); // Set bits 4-5 to 01
+      expect(cia2.vicMemoryBank).toBe(2);
+      expect(vic.getBaseBank()).toBe(0x8000);
+      
+      // Bank 3: CIA2 Port A bits 4-5 = 00 (inverted) -> bank 3
+      cia2.writeRegister(0x00, 0x00); // Set bits 4-5 to 00
+      expect(cia2.vicMemoryBank).toBe(3);
+      expect(vic.getBaseBank()).toBe(0xC000);
+    });
+
+    it("Should update VIC base address when CIA2 VIC bank changes via vicMemoryBank property", () => {
+      // --- Arrange
+      const vic = c64.vicDevice;
+      const cia2 = c64.cia2Device;
+      vic.reset();
+      cia2.reset();
+      
+      // --- Act & Assert for each bank
+      
+      // Bank 0
+      cia2.vicMemoryBank = 0;
+      expect(vic.getBaseBank()).toBe(0x0000);
+      
+      // Bank 1
+      cia2.vicMemoryBank = 1;
+      expect(vic.getBaseBank()).toBe(0x4000);
+      
+      // Bank 2
+      cia2.vicMemoryBank = 2;
+      expect(vic.getBaseBank()).toBe(0x8000);
+      
+      // Bank 3
+      cia2.vicMemoryBank = 3;
+      expect(vic.getBaseBank()).toBe(0xC000);
+    });
+
+    it("Should handle invalid bank values gracefully", () => {
+      // --- Arrange
+      const vic = c64.vicDevice;
+      
+      // --- Act & Assert
+      vic.setBaseBank(4); // Invalid bank (> 3)
+      expect(vic.getBaseBank()).toBe(0x0000); // Should wrap to bank 0
+      
+      vic.setBaseBank(7); // Invalid bank (> 3)
+      expect(vic.getBaseBank()).toBe(0xC000); // Should wrap to bank 3 (7 & 3 = 3)
+      
+      vic.setBaseBank(-1); // Negative bank
+      expect(vic.getBaseBank()).toBe(0xC000); // Should wrap to bank 3 (-1 & 3 = 3)
+    });
+
+    it("Should not affect other CIA2 Port A bits when changing VIC bank", () => {
+      // --- Arrange
+      const vic = c64.vicDevice;
+      const cia2 = c64.cia2Device;
+      vic.reset();
+      cia2.reset();
+      
+      // --- Set some IEC bus bits (bits 0-2) and other bits
+      cia2.writeRegister(0x00, 0x47); // Set bits 0, 1, 2, 6 and VIC bank bits to 10 (bank 1)
+      
+      // --- Act
+      cia2.vicMemoryBank = 2; // Change VIC bank to 2
+      
+      // --- Assert
+      const portAValue = cia2.readRegister(0x00);
+      expect(portAValue & 0x07).toBe(0x07); // IEC bits (0-2) should be preserved
+      expect(portAValue & 0x40).toBe(0x40); // Bit 6 should be preserved
+      expect((portAValue & 0x30) >> 4).toBe(0x01); // VIC bank bits should be 01 (inverted bank 2)
+      expect(vic.getBaseBank()).toBe(0x8000); // VIC should be at bank 2
+    });
+  });
 });

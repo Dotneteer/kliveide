@@ -366,6 +366,8 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
     // Clear bits 4-5 and set them according to the inverted bank value
     bank = bank & 0x03; // Ensure valid value 0-3
     this._portA = (this._portA & 0xCF) | ((~bank & 0x03) << 4);
+    // Notify VIC device of the bank change
+    this.machine.vicDevice.setBaseBank(bank);
   }
 
   /**
@@ -569,7 +571,9 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
         // Check if VIC bank selection has changed
         const vicBankMask = 0x30; // Bits 4-5 affect VIC bank
         if ((oldPortA & vicBankMask) !== (value & vicBankMask)) {
-          // TODO: Signal VIC-II about bank change
+          // Signal VIC-II about bank change
+          const newBank = this.vicMemoryBank;
+          this.machine.vicDevice.setBaseBank(newBank);
         }
         break;
       case 0x01:

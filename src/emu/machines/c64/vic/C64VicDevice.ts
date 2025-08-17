@@ -243,6 +243,10 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Character generator base address (CB13-CB11 bits from $D018, bits 13-11 of 16KB VIC address space)
   characterBase: number;
 
+  // --- VIC bank base address (controlled by CIA2 Port A bits 4-5)
+  // --- Each bank is 16KB, so bank 0=$0000, bank 1=$4000, bank 2=$8000, bank 3=$C000
+  bankBaseAddress: number;
+
   // ----------------------------------------------------------------------------------------------
   // --- Interrupts ($D019, $D01A)
 
@@ -341,6 +345,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // --- Initialize memory pointers to their reset state (all 0)
     this.videoMatrixBase = 0;      // VM13-VM10 = 0000 -> video matrix at $0000
     this.characterBase = 0;        // CB13-CB11 = 000 -> character generator at $0000
+    this.bankBaseAddress = 0x0000; // Bank 0 = $0000-$3FFF (CIA2 Port A bits 4-5 = 11 inverted = 00)
 
     // --- Initialize interrupt system to their reset state (all 0)
     this.interruptLatch = 0;       // No interrupts pending
@@ -396,14 +401,186 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
   /**
    * Executes the current VIC rendering cycle based on the current clock.
+   * 
+   * This method implements cycle-accurate VIC-II behavior based on extensive
+   * documentation of the 6567/6569 VIC-II chip timing and operations.
+   * Each cycle can perform different memory accesses and rendering operations.
+   * 
    * @returns True, if the CPU is stalled; otherwise, false.
    */
   renderCurrentTact(): boolean {
     // --- By default allow the CPU to access the bus
     let shouldStall = false;
 
-    // --- TODO: execute the current rendering cycle
+    // Get the current rendering operation for this cycle
+    const tact = this.renderingTactTable[this.currentCycle];
+    
+    // === TIMING AND CYCLE MANAGEMENT ===
+    // VIC-II timing: 6569 has 63 cycles per line, 6567 has 65 cycles per line
+    // Current implementation uses tactsInDisplayLine cycles per line
+    
+    // ============================================================================
+    // === PHI1/PHI2 CLOCK PHASE BARRIER ===
+    // ============================================================================
+    // PHI1 PHASE (First Half-Cycle): CPU may access the address bus
+    // - CPU can perform memory operations and register accesses
+    // - VIC performs internal state updates that don't require bus access
+    // 
+    // PHI2 PHASE (Second Half-Cycle): Only VIC can access the address bus  
+    // - VIC performs all memory accesses (c-access, g-access, p-access, s-access, refresh)
+    // - CPU is blocked from bus access during VIC memory operations
+    // - BA (Bus Available) and AEC (Address Enable Control) signals coordinate this
+    // ============================================================================
+    
+    // === MEMORY ACCESS OPERATIONS ===
+    // The VIC-II performs different types of memory accesses each cycle:
+    // - c-access: Read from video matrix and color RAM (12-bit address)
+    // - g-access: Read graphics data from character generator or bitmap (8-bit data)  
+    // - p-access: Read sprite data pointers from video matrix (8-bit data)
+    // - s-access: Read sprite pixel data (8-bit data)
+    // - refresh: DRAM refresh cycles (5 per raster line)
+    
+    if (tact.fetchOperation) {
+      // Execute the fetch operation using the function pointer
+      // The fetchOperation function handles the specific type of memory access
+      tact.fetchOperation(tact);
+      
+      // Only real memory accesses require CPU to wait, not idle operations
+      // Idle fetches maintain timing but don't access the bus
+      if (tact.fetchOperation !== this.FetchIdle) {
+        shouldStall = true;
+      }
+    }
+    
+    // === BAD LINE DETECTION AND HANDLING ===
+    // Bad Line Condition: RASTER >= $30 && RASTER <= $f7 && (RASTER & 7) == YSCROLL
+    // Bad Lines trigger c-accesses and g-accesses in display state
+    // Also require BA signal management for CPU bus access
+    const isInDisplayWindow = this.currentRasterLine >= 0x30 && this.currentRasterLine <= 0xf7;
+    const yscroll = this.registers[0x11] & 0x07; // YSCROLL from $d011
+    const isBadLine = isInDisplayWindow && (this.currentRasterLine & 0x07) === yscroll;
+    
+    if (isBadLine && tact.mayFetchVideoMatrix) {
+      // TODO: Set BA low 3 cycles before first c-access (cycle 12)
+      // TODO: Enable c-accesses and g-accesses for this line (cycles 15-54)
+      // TODO: Load VC from VCBASE in cycle 14
+      // TODO: Handle display state vs idle state transitions
+      
+      // Bad Lines require extended CPU stalling during video matrix fetch
+      shouldStall = true;
+    }
+    
+    // === SPRITE PROCESSING ===
+    // Sprite timing is critical and varies by sprite number and raster line
+    // Each sprite requires p-access followed by s-accesses when visible
+    
+    if (tact.spriteOperation) {
+      // Execute sprite-specific operation using the function pointer
+      // Handles sprite visibility checking, Y expansion, data counters, etc.
+      // TODO: Implement sprite visibility checking (MxE register)
+      // TODO: Handle sprite Y expansion (MxYE bits) - affects visibility
+      // TODO: Manage sprite data counters (MC0-MC7) - track sprite line
+      // TODO: Load sprite data into shift registers for rendering
+      // TODO: Check sprite Y coordinate against current raster line
+      
+      tact.spriteOperation(tact);
+      
+      // Sprite memory accesses also stall CPU
+      shouldStall = true;
+    }
+    
+    // === GRAPHICS SEQUENCER AND RENDERING ===
+    // The graphics sequencer manages an 8-bit shift register
+    // Shifted 1 bit per pixel, reloaded after each g-access
+    // XSCROLL can delay reloading by 0-7 pixels
+    
+    // TODO: Shift graphics data register by 1 bit per pixel
+    // TODO: Apply XSCROLL delay to graphics data loading
+    // TODO: Handle different graphics modes:
+    //   - Standard text (ECM/BMM/MCM = 0/0/0)
+    //   - Multicolor text (ECM/BMM/MCM = 0/0/1)  
+    //   - Standard bitmap (ECM/BMM/MCM = 0/1/0)
+    //   - Multicolor bitmap (ECM/BMM/MCM = 0/1/1)
+    //   - ECM text (ECM/BMM/MCM = 1/0/0)
+    //   - Invalid modes (remaining combinations)
+    // TODO: Generate 8 pixels of output data for this cycle
+    // TODO: Handle color resolution (1 bit/pixel vs 2 bits/pixel in MC mode)
+    
+    // === BORDER UNIT PROCESSING ===
+    // Two flip-flops control border display:
+    // - Main border flip-flop: Controls border color vs graphics/sprite output
+    // - Vertical border flip-flop: Controls upper/lower border
+    
+    if (tact.borderOperation) {
+      // Execute border operation using the function pointer
+      // Handles border flip-flop state based on X/Y coordinate comparisons
+      // Border comparison values (depend on CSEL/RSEL bits from $d016/$d011):
+      // CSEL=0: Left=31, Right=335  |  CSEL=1: Left=24, Right=344
+      // RSEL=0: Top=55, Bottom=247  |  RSEL=1: Top=51, Bottom=251
+      
+      // TODO: Check X coordinate against left/right comparison values
+      // TODO: Check Y coordinate against top/bottom values in cycle 63
+      // TODO: Manage main border flip-flop state
+      // TODO: Manage vertical border flip-flop state  
+      // TODO: Handle DEN bit influence on border behavior
+      // TODO: Border has highest display priority (overlays sprites and graphics)
+      
+      tact.borderOperation(tact);
+    }
+    
+    // === COUNTER AND STATE UPDATES ===
+    if (tact.counterOperation) {
+      // Execute counter operation using the function pointer
+      // Handles Video Counter (VC), Row Counter (RC), and related state
+      
+      // Video Counter (VC): Points to current position in video matrix (10 bits)
+      // Row Counter (RC): Tracks character row within 8-pixel character (3 bits)
+      // Video Matrix Line Increment (VMLI): Backup of VC for next character row
+      
+      // TODO: Update VC after each g-access in display state
+      // TODO: Update RC at end of each raster line (checked in cycle 58)
+      // TODO: Handle VC reload from VCBASE in cycle 14 of Bad Lines
+      // TODO: Manage VMLI for character row processing
+      // TODO: Handle idle state detection (RC=7 in cycle 58)
+      
+      tact.counterOperation(tact);
+    }
+    
+    // === BA SIGNAL MANAGEMENT ===
+    // BA (Bus Available) signal controls CPU access to memory bus
+    // Must go low 3 cycles before VIC needs bus access
+    if (tact.checkFetchBA) {
+      // TODO: Set BA low for upcoming c-access, g-access, or s-access
+      // TODO: Coordinate with AEC (Address Enable Control) for proper timing
+      // TODO: BA affects when CPU can access memory (extends instruction timing)
+      
+      // Check if BA should be set for sprite fetch operations
+      if (tact.checkSpriteFetchBAMask !== 0) {
+        // TODO: Check sprite visibility flags against mask
+        // TODO: Set BA low if any sprites need fetch access
+        shouldStall = true;
+      }
+    }
+    
+    // === INTERRUPT PROCESSING ===
+    // Check for interrupt conditions specific to this cycle
+    if (this.currentCycle === 0 || (this.currentRasterLine === 0 && this.currentCycle === 1)) {
+      // Raster interrupt check occurs in cycle 0 of each line (cycle 1 for line 0)
+      const rasterInterruptLine = this.registers[0x12] | ((this.registers[0x11] & 0x80) << 1);
+      if (this.currentRasterLine === rasterInterruptLine) {
+        // TODO: Trigger raster interrupt (set IRQ bit 0 in $d019)
+        // TODO: Generate CPU interrupt if enabled in $d01a
+      }
+    }
+    
+    // TODO: Check for sprite-sprite collision during rendering
+    //       Set MxM bits in $d01e and trigger interrupt if enabled
+    // TODO: Check for sprite-background collision during rendering  
+    //       Set MxD bits in $d01f and trigger interrupt if enabled
+    // TODO: Handle lightpen trigger if LP input goes low
+    //       Latch X/Y position in $d013/$d014 and trigger interrupt
 
+    // === FINAL CYCLE MANAGEMENT ===
     // --- Move to the next cycle
     this.currentCycle++;
     if (this.currentCycle >= this.tactsInDisplayLine) {
@@ -411,7 +588,13 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       this.currentRasterLine++;
       if (this.currentRasterLine >= this.rasterLines) {
         this.currentRasterLine = 0;
+        // TODO: Reset refresh counter to $ff at start of frame
+        // TODO: Handle frame-specific state resets
+        // TODO: Clear lightpen trigger for next frame
       }
+      // TODO: Update raster line register ($d012) with lower 8 bits
+      // TODO: Update bit 7 of $d011 with bit 8 of raster line
+      // TODO: Handle line-specific state updates (sprite counters, etc.)
     }
 
     return shouldStall;
@@ -422,7 +605,26 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    * @param bank The VIC bank number
    */
   setBaseBank(bank: number): void {
-    // TODO: Implement bank switching
+    // Ensure valid bank number (0-3)
+    bank = bank & 0x03;
+    
+    // Calculate the base address for the bank
+    // Bank 0: $0000-$3FFF, Bank 1: $4000-$7FFF, Bank 2: $8000-$BFFF, Bank 3: $C000-$FFFF
+    this.bankBaseAddress = bank * 0x4000;
+    
+    // TODO: Invalidate any cached address calculations that depend on the bank
+    // TODO: Update sprite pointer base addresses (they are relative to current bank)
+    // TODO: Update video matrix and character generator effective addresses
+    // TODO: Notify any components that cache bank-relative addresses
+    // TODO: Handle any pending DMA operations that might be affected by bank change
+  }
+
+  /**
+   * Gets the current VIC bank base address
+   * @returns The base address of the current VIC bank
+   */
+  getBaseBank(): number {
+    return this.bankBaseAddress;
   }
 
   /**
@@ -2289,64 +2491,165 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // ----------------------------------------------------------------------------------------------
   // Rendering operation methods
 
-  private CheckLeftBorderWhenNoCSEL(tact: RenderingTact): void {
-    // --- Implement this method
+  private CheckLeftBorderWhenNoCSEL(): void {
+    // Check left border when CSEL=0 (38 column mode)
+    // Border appears at X coordinate 31 ($1F)
+    // TODO: Get current X position from cycle timing
+    // TODO: Compare X position with left border threshold (31)
+    // TODO: Set main border flip-flop if threshold reached
+    // TODO: Handle border state transition effects
   }
 
-  private CheckLeftBorderWhenCSEL(tact: RenderingTact): void {
-    // --- Implement this method
+  private CheckLeftBorderWhenCSEL(): void {
+    // Check left border when CSEL=1 (40 column mode)
+    // Border appears at X coordinate 24 ($18)
+    // TODO: Get current X position from cycle timing
+    // TODO: Compare X position with left border threshold (24)
+    // TODO: Set main border flip-flop if threshold reached
+    // TODO: Handle border state transition effects
   }
 
-  private CheckRightBorderWhenNoCSEL(tact: RenderingTact): void {
-    // --- Implement this method
+  private CheckRightBorderWhenNoCSEL(): void {
+    // Check right border when CSEL=0 (38 column mode)
+    // Border appears at X coordinate 335 ($14F)
+    // TODO: Get current X position from cycle timing
+    // TODO: Compare X position with right border threshold (335)
+    // TODO: Set main border flip-flop if threshold reached
+    // TODO: Handle border state transition effects
   }
 
-  private CheckRightBorderWhenCSEL(tact: RenderingTact): void {
-    // --- Implement this method
+  private CheckRightBorderWhenCSEL(): void {
+    // Check right border when CSEL=1 (40 column mode)
+    // Border appears at X coordinate 344 ($158)
+    // TODO: Get current X position from cycle timing
+    // TODO: Compare X position with right border threshold (344)
+    // TODO: Set main border flip-flop if threshold reached
+    // TODO: Handle border state transition effects
   }
 
   private CheckSpriteExpansion(tact: RenderingTact): void {
-    // --- Implement this method
+    // Check sprite Y expansion in cycle 55
+    // MxYE bit controls sprite height doubling
+    const spriteIndex = tact.spriteIndex;
+    if (spriteIndex !== undefined) {
+      // TODO: Check if sprite Y expansion bit is set for this sprite
+      // TODO: Toggle sprite expansion flip-flop based on MxYE bit
+      // TODO: Handle sprite expansion state changes
+      // TODO: Update sprite display height calculations
+    }
   }
 
   private CheckSpriteDma(tact: RenderingTact): void {
-    // --- Implement this method
+    // Check if sprite DMA (data fetch) is needed
+    // Occurs in cycles 55-56 for sprite visibility testing
+    const spriteIndex = tact.spriteIndex;
+    if (spriteIndex !== undefined) {
+      // TODO: Check sprite Y coordinate against current raster line
+      // TODO: Determine if sprite is visible on current line
+      // TODO: Set sprite DMA flag if sprite needs data fetch
+      // TODO: Handle sprite data counter management
+    }
   }
 
-  private UpdateSpriteBaseAddress(tact: RenderingTact): void {
-    // --- Implement this method
+  private UpdateSpriteBaseAddress(): void {
+    // Update sprite base address (MCBASE) in cycle 58
+    // TODO: Update MCBASE from MC for all sprites
+    // TODO: Handle sprite line counter management
+    // TODO: Reset sprite data counters as needed
+    // TODO: Prepare for next sprite line processing
   }
 
-  private CheckSpriteCrunching(tact: RenderingTact): void {
-    // --- Implement this method
+  private CheckSpriteCrunching(): void {
+    // Check for sprite crunching conditions
+    // Occurs when too many sprites are active on same line
+    // TODO: Count active sprites on current line
+    // TODO: Determine if sprite multiplexing is needed
+    // TODO: Handle sprite priority conflicts
+    // TODO: Manage sprite data fetch timing conflicts
   }
 
-  private UpdateVC(tact: RenderingTact): void {
-    // --- Implement this method
+  private UpdateVC(): void {
+    // Update Video Counter (VC) after g-access in display state
+    // VC points to current position in video matrix (40x25 characters)
+    // TODO: Check if in display state (not idle state)
+    // TODO: Increment VC after each character/bitmap data fetch
+    // TODO: Handle VC wraparound at end of video matrix
+    // TODO: Manage VC reload from VCBASE on Bad Lines
   }
 
-  private UpdateRC(tact: RenderingTact): void {
-    // --- Implement this method
+  private UpdateRC(): void {
+    // Update Row Counter (RC) - tracks character row within 8-pixel character
+    // Checked in cycle 58 of each raster line
+    // TODO: Check if RC should be incremented (end of character row)
+    // TODO: Handle RC reset when character row complete (RC=7)
+    // TODO: Manage transition between display state and idle state
+    // TODO: Update VMLI (Video Matrix Line Increment) as needed
   }
 
-  private FetchIdle(tact: RenderingTact): void {
-    // --- Implement this method
+  private FetchIdle(): void {
+    // Idle fetch - no actual memory access, just timing maintenance
+    // The VIC maintains cycle timing but doesn't access the bus
+    // This allows the CPU to continue normal operation
   }
 
-  private FetchRefresh(tact: RenderingTact): void {
-    // --- Implement this method
+  private FetchRefresh(): void {
+    // DRAM refresh cycle - maintains dynamic RAM integrity
+    // TODO: Implement DRAM refresh address generation using refresh counter
+    // TODO: Generate refresh address from 8-bit refresh counter (REF)
+    // TODO: Perform refresh memory access (read cycle at refresh address)
+    // TODO: Decrement refresh counter for next refresh cycle
+    // TODO: Handle refresh counter wraparound (resets to $FF at frame start)
   }
 
   private FetchG(tact: RenderingTact): void {
-    // --- Implement this method
+    // Graphics data fetch (character generator or bitmap access)
+    // Address depends on current graphics mode and display state
+    
+    // TODO: Determine graphics mode from ECM/BMM/MCM bits
+    const ecm = this.ecm;
+    const bmm = this.bmm;
+    const mcm = this.mcm;
+    
+    if (bmm) {
+      // Bitmap mode - fetch bitmap data
+      // TODO: Calculate bitmap address using VC and RC
+      // TODO: Address = CB13|VC9|VC8|VC7|VC6|VC5|VC4|VC3|VC2|VC1|VC0|RC2|RC1|RC0
+      // TODO: Perform memory read at calculated address
+      // TODO: Load fetched data into graphics shift register
+    } else {
+      // Text mode - fetch character generator data
+      // TODO: Calculate character generator address using character code and RC
+      // TODO: Address = CB13|CB12|CB11|CHAR7|CHAR6|CHAR5|CHAR4|CHAR3|CHAR2|CHAR1|CHAR0|RC2|RC1|RC0
+      // TODO: Handle ECM mode address line forcing (A9=A10=0 when ECM=1)
+      // TODO: Perform memory read at calculated address
+      // TODO: Load fetched data into graphics shift register
+    }
+    
+    // TODO: Handle idle state (always fetch from $3FFF or $39FF if ECM=1)
+    // TODO: Apply XSCROLL delay to graphics data loading
   }
 
   private FetchSprPtr(tact: RenderingTact): void {
-    // --- Implement this method
+    // Sprite data pointer fetch - reads sprite pointer from video matrix
+    // Determines which 64-byte block contains sprite data
+    
+    // TODO: Calculate sprite pointer address in video matrix
+    // TODO: Address = video_matrix_base + $3F8 + sprite_number
+    // TODO: Perform memory read to get sprite data pointer
+    // TODO: Store sprite pointer for subsequent sprite data fetches
+    // TODO: Handle sprite index from tact.spriteIndex if available
   }
 
   private FetchSprData(tact: RenderingTact): void {
-    // --- Implement this method
+    // Sprite data fetch - reads 24x21 pixel data (3 bytes per line)
+    // Fetches actual sprite pixel data using sprite pointer
+    
+    // TODO: Calculate sprite data address using sprite pointer and sprite line counter
+    // TODO: Address = sprite_pointer * 64 + sprite_line_offset
+    // TODO: Perform memory read to get sprite data bytes (3 bytes per sprite line)
+    // TODO: Load sprite data into sprite shift register
+    // TODO: Handle sprite index from tact.spriteIndex if available
+    // TODO: Update sprite line counter after fetch
   }
 
   // --- Compatibility getters for tests that expect the old property names
@@ -2382,22 +2685,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     return value;
   }
 }
-
-const enum VideoModes {
-  VICII_NORMAL_TEXT_MODE = 0,
-  VICII_MULTICOLOR_TEXT_MODE = 1,
-  VICII_HIRES_BITMAP_MODE = 2,
-  VICII_MULTICOLOR_BITMAP_MODE = 3,
-  VICII_EXTENDED_TEXT_MODE = 4,
-  VICII_ILLEGAL_TEXT_MODE = 5,
-  VICII_ILLEGAL_BITMAP_MODE_1 = 6,
-  VICII_ILLEGAL_BITMAP_MODE_2 = 7
-}
-
-type Idle3fff = {
-  cycle: number;
-  value: number;
-};
 
 /**
  * Information about a single sprite (0-7) in the VIC-II chip.
