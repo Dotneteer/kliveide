@@ -30,8 +30,12 @@ import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
 import { vicMos6569r3, vicMos8562 } from "./vic/vic-models";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
+import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
+  // --- This instance runs the machine frame
+  private _machineFrameRunner: IMachineFrameRunner;
+
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   // --- This flag indicates that the last machine frame has been completed.
@@ -82,8 +86,6 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }>();
 
   targetClockMultiplier: number;
-  uiFrameFrequency: number;
-  frameJustCompleted: boolean;
   lastRenderedFrameTact: number;
 
   get isNtsc(): boolean {
@@ -92,6 +94,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
   constructor(public readonly modelInfo?: MachineModel) {
     super();
+    this._machineFrameRunner = this.createMachineFrameRunner();
     this.baseClockFrequency = this.isNtsc ? 1022727 : 985248;
     this.clockMultiplier = 1;
     this.targetClockMultiplier = 1;
@@ -107,6 +110,30 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     this.memoryDevice = new C64MemoryDevice(this);
     this.config = {};
   }
+
+  /**
+   * Creates the machine frame runner for the emulated machine.
+   * @returns The machine frame runner instance
+   */
+  protected createMachineFrameRunner(): IMachineFrameRunner {
+    return new MachineFrameRunner(this);
+  }
+
+  /**
+   * Gets the machine frame runner associated with the machine.
+   */
+  get machineFrameRunner(): IMachineFrameRunner {
+    return this._machineFrameRunner;
+  }
+
+  get frameJustCompleted(): boolean {
+    return this.machineFrameRunner.frameCompleted;
+  }
+
+  /**
+   * The number of consequtive frames after which the UI should be refreshed
+   */
+  readonly uiFrameFrequency: number = 1;
 
   async setup(): Promise<void> {
     this.memoryDevice.reset();
@@ -163,10 +190,43 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
   }
 
   /**
+   * This method tests if the CPU reached the specified termination point.
+   * @returns True, if the execution has reached the termination point; otherwise, false.
+   *
+   * By default, this method checks if the PC equals the execution context's TerminationPoint value.
+   */
+  testTerminationPoint(): boolean {
+    // TODO: Implement this method
+    return false;
+  }
+
+  /**
+   * The machine's execution loop calls this method to check if it can change the clock multiplier.
+   * @returns True, if the clock multiplier can be changed; otherwise, false.
+   */
+  allowCpuClockChange(): boolean {
+    return true;
+  }
+
+  /**
    * The machine's execution loop calls this method when it is about to initialize a new frame.
    * previous frame.
    */
-  protected onInitNewFrame(): void {
+  onInitNewFrame(): void {
+    // --- Override this method in derived classes.
+  }
+
+  /**
+   * The machine frame loop invokes this method before executing a CPU instruction.
+   */
+  beforeInstructionExecuted(): void {
+    // --- Override this method in derived classes.
+  }
+
+  /**
+   * The machine frame loop invokes this method after executing a CPU instruction.
+   */
+  afterInstructionExecuted(): void {
     // --- Override this method in derived classes.
   }
 
@@ -175,304 +235,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
    * @returns The value indicates the termination reason of the loop
    */
   executeMachineFrame(): FrameTerminationMode {
-    return this.executionContext.debugStepMode === DebugStepMode.NoDebug
-      ? this.executeMachineLoopWithNoDebug()
-      : this.executeMachineLoopWithDebug();
-  }
-
-  /**
-   * Executes the machine loop using the current execution context.
-   * @returns The value indicates the termination reason of the loop.
-   */
-  private executeMachineLoopWithNoDebug(): FrameTerminationMode {
-    // --- Sign that the loop execution is in progress
-    this.executionContext.lastTerminationReason = undefined;
-
-    // --- Execute the machine loop until the frame is completed or the loop is interrupted because of any other
-    // --- completion reason, like reaching a breakpoint, etc.
-    do {
-      // --- Test if the machine frame has just been completed.
-      if (this._frameCompleted) {
-        const currentFrameStart = this.tacts - this._frameOverflow;
-
-        // --- Allow a machine to handle frame initialization
-        this.onInitNewFrame();
-        this._frameCompleted = false;
-
-        // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
-
-        // --- Emulate a keystroke, if any has been queued at all
-        this.emulateKeystroke();
-      }
-
-      // --- Set the interrupt signal, if required so
-      this.sigINT = this.shouldRaiseInterrupt();
-
-      // --- Execute the next CPU instruction entirely
-      do {
-        if (this.isCpuSnoozed()) {
-          // --- The CPU is snoozed, mimic 4 NOPs
-          this.onSnooze();
-        } else {
-          this.executeCpuCycle();
-          break;
-        }
-      } while (true);
-
-      // --- Maintain the step-out stack
-      if (this.retExecuted) {
-        this.retExecuted = false;
-        this.stepOutStack.pop();
-      }
-
-      // --- Execute the queued event
-      if (this._queuedEvents) {
-        const currentEvent = this._queuedEvents[0];
-        if (currentEvent.eventTact < this.tacts) {
-          // --- Time to execute the event
-          currentEvent.eventFn(currentEvent.data);
-          this._queuedEvents.shift();
-          if (this._queuedEvents.length === 0) {
-            this._queuedEvents = null;
-          }
-        }
-      }
-
-      // --- Allow the machine to do additional tasks after the completed CPU instruction
-      this.afterInstructionExecuted();
-
-      // --- Do the machine reached the termination point?
-      if (this.testTerminationPoint()) {
-        // --- The machine reached the termination point
-        return (this.executionContext.lastTerminationReason =
-          FrameTerminationMode.UntilExecutionPoint);
-      }
-
-      this._frameCompleted = this.tacts >= this._nextFrameStartTact;
-    } while (!this._frameCompleted);
-
-    // --- Calculate the overflow, we need this value in the next frame
-    this._frameOverflow = Math.floor(this.tacts - this._nextFrameStartTact);
-
-    // --- Done
-    return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
-  }
-
-  /**
-   * Executes the machine loop using the current execution context.
-   * @returns The value indicates the termination reason of the loop.
-   */
-  private executeMachineLoopWithDebug(): FrameTerminationMode {
-    // --- Sign that the loop execution is in progress
-    const z80Machine = this;
-    this.executionContext.lastTerminationReason = undefined;
-    let instructionsExecuted = 0;
-
-    // --- Check the startup breakpoint
-    if (this.pc != this.executionContext.debugSupport?.lastStartupBreakpoint) {
-      // --- Check startup breakpoint
-      if (checkBreakpoints()) {
-        return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-      }
-      if (this.executionContext.lastTerminationReason !== undefined) {
-        // --- The code execution has stopped at the startup breakpoint.
-        // --- Sign that fact so that the next time the code do not stop
-        if (this.executionContext.debugSupport) {
-          this.executionContext.debugSupport.lastStartupBreakpoint = this.pc;
-        }
-        return this.executionContext.lastTerminationReason;
-      }
-    }
-
-    // --- Remove the startup breakpoint
-    if (this.executionContext.debugSupport) {
-      this.executionContext.debugSupport.lastStartupBreakpoint = undefined;
-    }
-
-    // --- Execute the machine loop until the frame is completed or the loop is interrupted because of any other
-    // --- completion reason, like reaching a breakpoint, etc.
-    do {
-      // --- Test if the machine frame has just been completed.
-      if (this._frameCompleted) {
-        const currentFrameStart = this.tacts - this._frameOverflow;
-
-        // --- Update the CPU's clock multiplier, if the machine's has changed.
-        var clockMultiplierChanged = false;
-        if (this.allowCpuClockChange() && this.clockMultiplier != this.targetClockMultiplier) {
-          // --- Use the current clock multiplier
-          this.clockMultiplier = this.targetClockMultiplier;
-          this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
-          clockMultiplierChanged = true;
-        }
-
-        // --- Allow a machine to handle frame initialization
-        this.onInitNewFrame(clockMultiplierChanged);
-        this._frameCompleted = false;
-
-        // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
-      }
-
-      // --- Set the interrupt signal, if required so
-      this.sigINT = this.shouldRaiseInterrupt();
-
-      // --- Execute the next CPU instruction entirely
-      do {
-        if (this.isCpuSnoozed()) {
-          // --- The CPU is snoozed, mimic 4 NOPs
-          this.onSnooze();
-        } else {
-          this.executeCpuCycle();
-        }
-        instructionsExecuted++;
-      } while (this.prefix !== OpCodePrefix.None);
-
-      // --- Maintain the step-out stack
-      if (this.retExecuted) {
-        this.retExecuted = false;
-        this.stepOutStack.pop();
-      }
-
-      // --- Execute the queued event
-      this.consumeEvents();
-
-      // --- Allow the machine to do additional tasks after the completed CPU instruction
-      this.afterInstructionExecuted();
-
-      if (this.executionContext.debugSupport) {
-        // --- Check for memory read/write breakpoints
-        if (
-          this.executionContext.debugSupport.hasMemoryRead(z80Machine.lastMemoryReads, (addr) =>
-            z80Machine.getPartition(addr)
-          )
-        ) {
-          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-        }
-        if (
-          this.executionContext.debugSupport.hasMemoryWrite(z80Machine.lastMemoryWrites, (addr) =>
-            z80Machine.getPartition(addr)
-          )
-        ) {
-          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-        }
-
-        // --- Check for port read/write breakpoints
-        if (this.executionContext.debugSupport.hasIoRead(z80Machine.lastIoReadPort)) {
-          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-        }
-        if (this.executionContext.debugSupport.hasIoWrite(z80Machine.lastIoWritePort)) {
-          return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-        }
-      }
-
-      // --- Do the machine reached the termination point?
-      if (this.testTerminationPoint()) {
-        // --- The machine reached the termination point
-        return (this.executionContext.lastTerminationReason =
-          FrameTerminationMode.UntilExecutionPoint);
-      }
-
-      // --- Test if the execution reached a breakpoint
-      if (checkBreakpoints()) {
-        return (this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-      }
-      if (this.executionContext.lastTerminationReason !== undefined) {
-        // --- The code execution has stopped at the startup breakpoint.
-        // --- Sign that fact so that the next time the code do not stop
-        if (this.executionContext.debugSupport) {
-          this.executionContext.debugSupport.lastStartupBreakpoint = this.pc;
-        }
-        return this.executionContext.lastTerminationReason;
-      }
-
-      this._frameCompleted = this.tacts >= this._nextFrameStartTact;
-    } while (!this._frameCompleted);
-
-    // --- Calculate the overflow, we need this value in the next frame
-    this._frameOverflow = Math.floor(this.tacts - this._nextFrameStartTact);
-
-    // --- Done
-    return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
-
-    // --- This method tests if any breakpoint is reached during the execution of the machine frame
-    // --- to suspend the loop.
-    function checkBreakpoints(): boolean {
-      // --- The machine must support debugging
-      const debugSupport = z80Machine.executionContext.debugSupport;
-      if (!debugSupport) return false;
-
-      if (z80Machine.executionContext.debugStepMode === DebugStepMode.StepInto) {
-        // --- Stop right after the first executed instruction
-        const shouldStop = instructionsExecuted > 0;
-        if (shouldStop) {
-          debugSupport.imminentBreakpoint = undefined;
-        }
-        return shouldStop;
-      }
-
-      // --- Go on with StepAtBreakpoint, StepOver, and StepOut
-      // --- Stop if PC reaches a breakpoint
-      const stopAt = debugSupport.shouldStopAt(z80Machine.pc, () =>
-        z80Machine.getPartition(z80Machine.pc)
-      );
-      if (
-        stopAt &&
-        (instructionsExecuted > 0 ||
-          debugSupport.lastBreakpoint === undefined ||
-          debugSupport.lastBreakpoint !== z80Machine.pc)
-      ) {
-        // --- Stop when reached a breakpoint
-        debugSupport.lastBreakpoint = z80Machine.pc;
-        debugSupport.imminentBreakpoint = undefined;
-        return true;
-      }
-
-      if (z80Machine.executionContext.debugStepMode === DebugStepMode.StopAtBreakpoint) {
-        // --- No breakpoint found and we stop only at defined breakpoints.
-        return false;
-      }
-
-      // --- Step over checks
-      if (z80Machine.executionContext.debugStepMode === DebugStepMode.StepOver) {
-        if (debugSupport.imminentBreakpoint !== undefined) {
-          // --- We also stop if an imminent breakpoint is reached, and also remove this breakpoint
-          if (debugSupport.imminentBreakpoint === z80Machine.pc) {
-            debugSupport.imminentBreakpoint = undefined;
-            return true;
-          }
-        } else {
-          let imminentJustCreated = false;
-
-          // --- We check for a CALL-like instruction
-          var length = z80Machine.getCallInstructionLength();
-          if (length > 0) {
-            // --- Its a CALL-like instruction, create an imminent breakpoint
-            debugSupport.imminentBreakpoint = (z80Machine.pc + length) & 0xffff;
-            imminentJustCreated = true;
-          }
-
-          // --- We stop, we executed at least one instruction and if there's no imminent
-          // --- breakpoint or we've just created one
-          if (
-            instructionsExecuted > 0 &&
-            (debugSupport.imminentBreakpoint === undefined || imminentJustCreated)
-          ) {
-            debugSupport.imminentBreakpoint = undefined;
-            return true;
-          }
-        }
-        return false;
-      }
-
-      // --- Step out checks
-      if (z80Machine.stepOutAddress === z80Machine.pc) {
-        // --- We reached the step-out address
-        debugSupport.imminentBreakpoint = undefined;
-        return true;
-      }
-      return false;
-    }
+    return this._machineFrameRunner.executeMachineFrame();
   }
 
   onStop(): void {
@@ -674,6 +437,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
     // Reset the CPU base class
     super.reset();
+    this._machineFrameRunner.reset();
 
     // Reset all other peripherals
     this.vicDevice.reset();

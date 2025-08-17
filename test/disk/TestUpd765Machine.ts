@@ -2,7 +2,6 @@ import { SysVar } from "@abstractions/SysVar";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
-import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
 import { SpectrumBeeperDevice } from "@emu/machines/BeeperDevice";
 import { CommonScreenDevice } from "@emu/machines/CommonScreenDevice";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
@@ -39,86 +38,24 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     this.beeperDevice.reset();
     this.tapeDevice.reset();
     this.floppyDevice.reset();
-    this._frameCompleted = true;
     (this.floppyDevice as unknown as IFloppyControllerDeviceTest).disableRandomSeek = true;
+    this.machineFrameRunner.reset();
   }
 
   getCurrentPartitions(): number[] {
     return [];
   }
 
+  getRomFlags(): boolean[] {
+    return [];
+  }
+  
   /**
    * Executes the machine loop using the current execution context.
    * @returns The value indicates the termination reason of the loop
    */
   executeMachineFrame(): FrameTerminationMode {
-    // --- Sign that the loop execution is in progress
-    this.executionContext.lastTerminationReason = undefined;
-
-    // --- Execute the machine loop until the frame is completed or the loop is interrupted because of any other
-    // --- completion reason, like reaching a breakpoint, etc.
-    do {
-      // --- Test if the machine frame has just been completed.
-      if (this._frameCompleted) {
-        const currentFrameStart = this.tacts - this._frameOverflow;
-
-        // --- Update the CPU's clock multiplier, if the machine's has changed.
-        let clockMultiplierChanged = false;
-        if (this.allowCpuClockChange() && this.clockMultiplier !== this.targetClockMultiplier) {
-          // --- Use the current clock multiplier
-          this.clockMultiplier = this.targetClockMultiplier;
-          this.tactsInCurrentFrame = this.tactsInFrame * this.clockMultiplier;
-          clockMultiplierChanged = true;
-        }
-
-        // --- Allow a machine to handle frame initialization
-        this.onInitNewFrame(clockMultiplierChanged);
-        this._frameCompleted = false;
-
-        // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact = currentFrameStart + this.tactsInFrame * this.clockMultiplier;
-      }
-
-      // --- Execute the next CPU instruction entirely
-      do {
-        if (this.isCpuSnoozed()) {
-          this.tacts += 16;
-        } else {
-          this.executeCpuCycle();
-        }
-      } while (this.prefix !== OpCodePrefix.None);
-
-      // --- Execute the queued event
-      if (this._queuedEvents) {
-        const currentEvent = this._queuedEvents[0];
-        if (currentEvent.eventTact < this.tacts) {
-          // --- Time to execute the event
-          currentEvent.eventFn(currentEvent.data);
-          this._queuedEvents.shift();
-          if (this._queuedEvents.length === 0) {
-            this._queuedEvents = null;
-          }
-        }
-      }
-
-      // --- Allow the machine to do additional tasks after the completed CPU instruction
-      this.afterInstructionExecuted();
-
-      // --- Do the machine reached the termination point?
-      if (this.testTerminationPoint()) {
-        // --- The machine reached the termination point
-        return (this.executionContext.lastTerminationReason =
-          FrameTerminationMode.UntilExecutionPoint);
-      }
-
-      this._frameCompleted = this.tacts >= this._nextFrameStartTact;
-    } while (!this._frameCompleted);
-
-    // --- Calculate the overflow, we need this value in the next frame
-    this._frameOverflow = Math.floor(this.tacts - this._nextFrameStartTact);
-
-    // --- Done
-    return (this.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
+    return this.machineFrameRunner.executeMachineFrame();
   }
 
   emulateFrameCompletion(numFrames: number): void {

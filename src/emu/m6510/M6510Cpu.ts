@@ -1,6 +1,5 @@
 import type { IM6510Cpu } from "../abstractions/IM6510Cpu";
 import { FlagSetMask6510 } from "../abstractions/FlagSetMask6510";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 /**
  * The function represents a 6510 operation
@@ -86,6 +85,13 @@ export class M6510Cpu implements IM6510Cpu {
   lastIoWriteValue: number;
 
   /**
+   * We need this flag to implement the step-over debugger function that continues the execution and stops when the
+   * current subroutine returns to its caller. The debugger will observe the change of this flag and manage its
+   * internal tracking of the call stack accordingly.
+   */
+  retExecuted: boolean;
+
+  /**
    * Sets the CPU into the stalled state.
    */
   stallCpu(): void {
@@ -136,6 +142,7 @@ export class M6510Cpu implements IM6510Cpu {
    * Call this method to execute a CPU instruction cycle.
    */
   executeCpuCycle(): void {
+    this.retExecuted = false;
     if (this._jammed) {
       return;
     }
@@ -153,6 +160,30 @@ export class M6510Cpu implements IM6510Cpu {
       this.opCode = opCode; // Store the current opcode
       this.operationTable[opCode](this);
     }
+  }
+
+  /**
+   * Checks if the CPU is currently executing an instruction.
+   * @return True if an instruction is being executed; otherwise false.
+   */
+  instructionExecutionInProgress(): boolean {
+    return false;
+  }
+
+  /**
+   * Checks if the next instruction to be executed is a call instruction or not
+   * @return 0, if the next instruction is not a call; otherwise the length of the call instruction
+   */
+  getCallInstructionLength(): number {
+    // --- We intentionally avoid using ReadMemory() directly
+    // --- So that we can prevent false memory touching.
+    var opCode = this.doReadMemory(this.pc);
+
+    // --- JSR instruction
+    if (opCode == 0x20) return 3;
+
+    // --- Not a call instruction
+    return 0x00;
   }
 
   /**
@@ -533,6 +564,7 @@ export class M6510Cpu implements IM6510Cpu {
     this._nmiRequested = false;
     this._irqRequested = false;
     this._jammed = false;
+    this.retExecuted = false;
 
     // Reset CPU registers (similar to hard reset but may preserve some values)
     this._a = 0;
@@ -3385,6 +3417,9 @@ function rti(cpu: M6510Cpu): void {
   const high = cpu.pullStack();
   cpu.pc = (high << 8) | low;
   cpu.incrementTacts(); // Internal operation cycle 2
+
+  // --- Sign the execution of RTI
+  cpu.retExecuted = true;
 }
 
 /**
@@ -4309,6 +4344,9 @@ function rts(cpu: M6510Cpu): void {
 
   // RTS increments the return address by 1 (since JSR pushed PC - 1)
   cpu.pc = (returnAddress + 1) & 0xffff;
+
+  // --- Sign the execution of RTS
+  cpu.retExecuted = true;
 }
 
 /**

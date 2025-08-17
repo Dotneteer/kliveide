@@ -12,6 +12,7 @@ import { IMachineEventHandler } from "./IMachineEventHandler";
 import { IAnyCpu } from "@emu/abstractions/IAnyCpu";
 import { CpuState } from "@common/messaging/EmuApi";
 import { SysVar } from "@abstractions/SysVar";
+import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -358,4 +359,20 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * By default, this method checks if the PC equals the execution context's TerminationPoint value.
    */
   testTerminationPoint(): boolean;
+
+  /**
+   * Gets the current frame command
+   */
+  getFrameCommand(): any;
+
+  /**
+   * Sets a frame command that terminates the current frame for execution.
+   * @param command
+   */
+  setFrameCommand(command: any): void;
+
+  /**
+   * Gets the machine frame runner associated with the machine.
+   */
+  machineFrameRunner: IMachineFrameRunner;
 }

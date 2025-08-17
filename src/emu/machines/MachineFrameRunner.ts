@@ -35,6 +35,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
    * @returns The value indicates the termination reason of the loop
    */
   executeMachineFrame(): FrameTerminationMode {
+    this.machine.setFrameCommand(null);
     return this.machine.executionContext.debugStepMode === DebugStepMode.NoDebug
       ? this.executeMachineLoopWithNoDebug()
       : this.executeMachineLoopWithDebug();
@@ -45,8 +46,8 @@ export class MachineFrameRunner implements IMachineFrameRunner {
    * @returns The value indicates the termination reason of the loop.
    */
   private executeMachineLoopWithNoDebug(): FrameTerminationMode {
-    const machine = this.machine;
     // --- Sign that the loop execution is in progress
+    const machine = this.machine;
     machine.executionContext.lastTerminationReason = undefined;
 
     // --- Execute the machine loop until the frame is completed or the loop is interrupted because of any other
@@ -112,7 +113,13 @@ export class MachineFrameRunner implements IMachineFrameRunner {
           FrameTerminationMode.UntilExecutionPoint);
       }
 
+      // --- Test if the machine frame has just been completed.
       this._frameCompleted = machine.tacts >= this._nextFrameStartTact;
+
+      // --- Exit, if there is a frame command to execute
+      if (machine.getFrameCommand()) {
+        return (machine.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
+      }
     } while (!this._frameCompleted);
 
     // --- Calculate the overflow, we need this value in the next frame
@@ -254,7 +261,13 @@ export class MachineFrameRunner implements IMachineFrameRunner {
         return machine.executionContext.lastTerminationReason;
       }
 
+      // --- Test if the machine frame has just been completed.
       this._frameCompleted = machine.tacts >= this._nextFrameStartTact;
+
+      // --- Exit, if there is a frame command to execute
+      if (machine.getFrameCommand()) {
+        return (machine.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
+      }
     } while (!this._frameCompleted);
 
     // --- Calculate the overflow, we need this value in the next frame

@@ -550,8 +550,10 @@ export class MachineController implements IMachineController {
 
         // --- Wait for the next frame in case of normal termination
         if (frameCompleted) {
+          
           // --- Calculate the time to wait before the next machine frame starts
           if (this.machine.frames % this.machine.uiFrameFrequency === 0) {
+          console.log("Frame completed");
             const curTime = performance.now();
             const toWait = Math.floor(nextFrameTime - curTime);
             await delay(toWait - 2);
