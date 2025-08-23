@@ -35,7 +35,10 @@
     "test:e2e": "playwright test test-e2e",
     "doc:dev": "next",
     "doc:build": "next build",
-    "bootstrap:ci": "npm ci"
+    "bootstrap:ci": "npm ci",
+    "convert-c64": "node convert-c64-rom.js",
+    "convert-c64:1000": "node convert-c64-rom.js --lines 1000",
+    "convert-c64:full": "node convert-c64-rom.js"
   },
   "engines": {
     "node": "^14.18.0 || >=16.0.0"

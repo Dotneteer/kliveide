@@ -10,6 +10,7 @@ import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
+import { IMemorySection } from "@abstractions/MemorySection";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -367,6 +368,15 @@ class EmuApiImpl {
   async getVicState(): Promise<VicState> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  async getDisassemblySection(_options: Record<string, any>): Promise<IMemorySection[]> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 // --- The response with the CPU state chunk
@@ -508,6 +518,7 @@ export type VicState = {
   raster: number;
   lpx: number;
   lpy: number;
+  res: boolean;
   mcm: boolean;
   csel: boolean;
   scrMemOffset: number;

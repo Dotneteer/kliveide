@@ -137,6 +137,45 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
   }
 
   /**
+   * Gets the 64KB flat memory representation.
+   * @returns A Uint8Array representing the 64KB flat memory
+   */
+  get64KFlatMemory(): Uint8Array {
+    const flatMemory = new Uint8Array(65536);
+
+    // --- RAM between 0x0000-0x9fff
+    flatMemory.set(this._ram.slice(0x0000, 0xa000), 0x0000);
+
+    // --- RAM/BASIC ROM between 0xa000-0xbfff
+    if (this._loram) {
+      flatMemory.set(this._basicRom, 0xa000);
+    } else {
+      flatMemory.set(this._ram.slice(0xa000, 0xc000), 0xa000);
+    }
+
+    // --- IO RAM/CHARACTER ROM between 0xd000-0xdfff
+    if (!this._chargen) {
+      flatMemory.set(this._chargenRom, 0xd000);
+    } else {
+      flatMemory.set(this.machine.vicDevice.getFlatMemory(), 0xd000);
+      flatMemory.set(this._sid.getFlatMemory(), 0xd400);
+      flatMemory.set(this._colorRam, 0xd800);
+      flatMemory.set(this._cia1.getFlatMemory(), 0xdc00);
+      flatMemory.set(this._cia2.getFlatMemory(), 0xdd00);
+    }
+
+    // --- RAM/KERNAL ROM between 0xe000-0xffff
+    if (this._hiram) {
+      flatMemory.set(this._kernalRom, 0xe000);
+    } else {
+      flatMemory.set(this._ram.slice(0xe000), 0xe000);
+    }
+
+    // --- Done.
+    return flatMemory;
+  }
+
+  /**
    * Gets the current memory configuration.
    */
   get currentConfig(): number {
@@ -191,7 +230,7 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
       ((~this._port.readDirection() | this._port.readData()) & 0x7) |
       (this._ioExtDevice.exromLine ? 0x08 : 0) |
       (this._ioExtDevice.gameLine ? 0x10 : 0);
-    
+
     // Update the configuration flags based on the new configuration
     this._loram = (this._currentConfig & 0x01) !== 0;
     this._hiram = (this._currentConfig & 0x02) !== 0;

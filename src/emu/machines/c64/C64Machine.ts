@@ -31,6 +31,7 @@ import { C64TapeDevice } from "./C64TapeDevice";
 import { vicMos6569r3, vicMos8562 } from "./vic/vic-models";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
+import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 
 export class C64Machine extends M6510Cpu implements IC64Machine {
   // --- This instance runs the machine frame
@@ -369,9 +370,12 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
     // Handle custom commands if needed
   }
 
+  /**
+   * Gets the 64KB flat memory representation.
+   * @returns A Uint8Array representing the 64KB flat memory
+   */
   get64KFlatMemory(): Uint8Array {
-    // TODO: Implement 64K flat memory retrieval
-    return new Uint8Array(65536);
+    return this.memoryDevice.get64KFlatMemory();
   }
 
   getMemoryPartition(_index: number): Uint8Array {
@@ -621,6 +625,55 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
    */
   get sysVars(): SysVar[] {
     return c64SysVars;
+  }
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  getDisassemblySection(options: Record<string, any>): IMemorySection[] {
+    const ram = !!options.ram;
+    const screen = !!options.screen;
+    const sections: IMemorySection[] = [];
+    if (!ram || !screen) {
+      // --- Use the memory segments according to the "ram" and "screen" flags
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0x3fff,
+        sectionType: MemorySectionType.Disassemble
+      });
+      if (ram) {
+        if (screen) {
+          sections.push({
+            startAddress: 0x4000,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        } else {
+          sections.push({
+            startAddress: 0x5b00,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        }
+      } else if (screen) {
+        sections.push({
+          startAddress: 0x4000,
+          endAddress: 0x5aff,
+          sectionType: MemorySectionType.Disassemble
+        });
+      }
+    } else {
+      // --- Disassemble the whole memory
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0xffff,
+        sectionType: MemorySectionType.Disassemble
+      });
+    }
+
+    return sections;
   }
 }
 

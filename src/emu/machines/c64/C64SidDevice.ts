@@ -248,7 +248,10 @@ export class C64SidDevice implements IGenericDevice<IC64Machine> {
    */
   private _voice3EnvelopeOutput: number = 0;
   
+  registers: Uint8Array;
+
   constructor(public readonly machine: IC64Machine) {
+    this.registers = new Uint8Array(0x20);
   }
 
   /**
@@ -311,6 +314,18 @@ export class C64SidDevice implements IGenericDevice<IC64Machine> {
     // Example: this.machine = null as any;
   }
   
+    /**
+   * Gets the flat memory value of the VIC-II registers
+   */
+  getFlatMemory(): Uint8Array {
+    const flatMemory = new Uint8Array(0x400);
+    for (let i = 0; i < 0x20; i++) {
+      flatMemory.set(this.registers, i * 0x20);
+    }
+    return flatMemory;
+  }
+
+
   // Voice 1 accessor methods
   
   /**

@@ -1,3 +1,5 @@
+import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+
 /**
  * Base disassembly options that can be extended by specific CPU disassemblers
  */
@@ -67,40 +69,9 @@ export class DisassemblyLabel {
 }
 
 /**
- * This enumeration represents the memory section types that can be used
- * when disassemblying a project.
- */
-export enum MemorySectionType {
-  /**
-   * Simply skip the section without any output code generation
-   */
-  Skip,
-
-  /**
-   * Create Z80 disassembly for the memory section
-   */
-  Disassemble,
-
-  /**
-   * Create a byte array for the memory section
-   */
-  ByteArray,
-
-  /**
-   * Create a word array for the memory section
-   */
-  WordArray,
-
-  /**
-   * Create an RST 28 bytecode memory section
-   */
-  CustomSection
-}
-
-/**
  * Base class for memory sections with common functionality
  */
-export class MemorySection {
+export class MemorySection implements IMemorySection {
   private _start = 0;
   private _end = 0;
   private _type: MemorySectionType = MemorySectionType.Disassemble;

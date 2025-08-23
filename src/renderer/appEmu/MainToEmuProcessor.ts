@@ -35,6 +35,7 @@ import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
 import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import { IMemorySection } from "@abstractions/MemorySection";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -1074,10 +1075,22 @@ class EmuMessageProcessor {
       bgColor2: 0,
       bgColor3: 0,
       spriteMcolor0: 0,
-      spriteMcolor1: 0,
-
+      spriteMcolor1: 0
     };
     return vicState;
+  }
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  async getDisassemblySection(_options: Record<string, any>): Promise<IMemorySection[]> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.machine.getDisassemblySection(_options);
   }
 }
 

@@ -32,9 +32,10 @@ import BankDropdown from "@renderer/controls/new/BankDropdown";
 import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
 import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
-import { DisassemblyItem, MemorySection, MemorySectionType } from "../disassemblers/common-types";
+import { DisassemblyItem, MemorySection } from "../disassemblers/common-types";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { ICustomDisassembler } from "../disassemblers/z80-disassembler/custom-disassembly";
+import { MemorySectionType } from "@abstractions/MemorySection";
 
 type BankedMemoryPanelViewState = {
   topAddress?: number;
@@ -264,7 +265,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           decimalMode: cachedRefreshState.current.decimalView
         }
       );
-      console.log("Disassembler created", disassembler);
 
       // --- Set up partition offset
       if (partition !== undefined && !autoRefreshOpt) {
@@ -369,11 +369,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   useEmuStateListener(emuApi, async () => {
     await refreshDisassembly();
   });
-
-  // // --- Take care of refreshing the screen
-  // useStateRefresh(1000, async () => {
-  //   await refreshDisassembly();
-  // });
 
   const bank16KOptions: DropdownOption[] = [];
   for (let i = 0; i < 8; i++) {

@@ -12,8 +12,9 @@ import {
 } from "../services/ide-commands";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
-import { MemorySection, MemorySectionType } from "../disassemblers/common-types";
+import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
+import { MemorySectionType } from "@abstractions/MemorySection";
 
 let disassemblyIndex = 1;
 

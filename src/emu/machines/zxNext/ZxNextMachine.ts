@@ -38,6 +38,7 @@ import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { createMainApi } from "@common/messaging/MainApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { CpuState } from "@common/messaging/EmuApi";
+import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -816,5 +817,54 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         console.log("Unknown frame command", frameCommand);
         break;
     }
+  }
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  getDisassemblySection(options: Record<string, any>): IMemorySection[] {
+    const ram = !!options.ram;
+    const screen = !!options.screen;
+    const sections: IMemorySection[] = [];
+    if (!ram || !screen) {
+      // --- Use the memory segments according to the "ram" and "screen" flags
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0x3fff,
+        sectionType: MemorySectionType.Disassemble
+      });
+      if (ram) {
+        if (screen) {
+          sections.push({
+            startAddress: 0x4000,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        } else {
+          sections.push({
+            startAddress: 0x5b00,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        }
+      } else if (screen) {
+        sections.push({
+          startAddress: 0x4000,
+          endAddress: 0x5aff,
+          sectionType: MemorySectionType.Disassemble
+        });
+      }
+    } else {
+      // --- Disassemble the whole memory
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0xffff,
+        sectionType: MemorySectionType.Disassemble
+      });
+    }
+
+    return sections;
   }
 }

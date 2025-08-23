@@ -331,7 +331,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    */
   reset(): void {
     // --- Reset the register values
-    this.registers = new Uint8Array(0x2f);
+    this.registers = new Uint8Array(0x40);
     for (let i = 0; i < this.registers.length; i++) {
       this.registers[i] = 0x00;
     }
@@ -625,6 +625,17 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    */
   getBaseBank(): number {
     return this.bankBaseAddress;
+  }
+
+  /**
+   * Gets the flat memory value of the VIC-II registers
+   */
+  getFlatMemory(): Uint8Array {
+    const flatMemory = new Uint8Array(0x400);
+    for (let i = 0; i < 0x10; i++) {
+      flatMemory.set(this.registers, i * 0x40);
+    }
+    return flatMemory;
   }
 
   /**

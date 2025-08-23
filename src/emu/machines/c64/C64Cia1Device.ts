@@ -172,8 +172,11 @@ export class C64Cia1Device implements IGenericDevice<IC64Machine> {
   private _todAlarmSeconds: number = 0;
   private _todAlarmMinutes: number = 0;
   private _todAlarmHours: number = 0;
-  
+
+  private registers: Uint8Array;
+
   constructor(public readonly machine: IC64Machine) {
+    this.registers = new Uint8Array(0x10);
   }
 
   /**
@@ -238,6 +241,14 @@ export class C64Cia1Device implements IGenericDevice<IC64Machine> {
   dispose(): void {
     // Clean up resources if necessary
     // For now, nothing to dispose
+  }
+
+  getFlatMemory(): Uint8Array {
+    const flatMemory = new Uint8Array(0x100);
+    for (let i = 0; i < 0x10; i++) {
+      flatMemory.set(this.registers, i * 0x10);
+    }
+    return flatMemory;
   }
 
   /**

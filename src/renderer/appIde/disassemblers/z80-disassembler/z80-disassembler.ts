@@ -7,9 +7,9 @@ import {
   DisassemblyOutput,
   FetchResult,
   MemorySection,
-  MemorySectionType
 } from "../common-types";
 import { intToX2, intToX4, toSbyte } from "../utils";
+import { MemorySectionType } from "@abstractions/MemorySection";
 
 /**
  * This class implements the Z80 disassembler

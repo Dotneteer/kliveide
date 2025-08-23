@@ -36,6 +36,7 @@ import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
+import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -807,5 +808,54 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   signalFlapClosed(): void {
     this.blinkDevice.setACK(STAFlags.FLAPOPEN);
     this.awakeCpu();
+  }
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  getDisassemblySection(options: Record<string, any>): IMemorySection[] {
+    const ram = !!options.ram;
+    const screen = !!options.screen;
+    const sections: IMemorySection[] = [];
+    if (!ram || !screen) {
+      // --- Use the memory segments according to the "ram" and "screen" flags
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0x3fff,
+        sectionType: MemorySectionType.Disassemble
+      });
+      if (ram) {
+        if (screen) {
+          sections.push({
+            startAddress: 0x4000,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        } else {
+          sections.push({
+            startAddress: 0x5b00,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        }
+      } else if (screen) {
+        sections.push({
+          startAddress: 0x4000,
+          endAddress: 0x5aff,
+          sectionType: MemorySectionType.Disassemble
+        });
+      }
+    } else {
+      // --- Disassemble the whole memory
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0xffff,
+        sectionType: MemorySectionType.Disassemble
+      });
+    }
+
+    return sections;
   }
 }
