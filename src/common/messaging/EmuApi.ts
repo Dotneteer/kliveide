@@ -374,7 +374,7 @@ class EmuApiImpl {
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
    */
-  async getDisassemblySection(_options: Record<string, any>): Promise<IMemorySection[]> {
+  async getDisassemblySections(_options: Record<string, any>): Promise<IMemorySection[]> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 }

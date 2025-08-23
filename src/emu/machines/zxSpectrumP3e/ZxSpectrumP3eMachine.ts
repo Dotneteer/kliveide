@@ -18,9 +18,7 @@ import {
 import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 import { AUDIO_SAMPLE_RATE, TAPE_MODE, TAPE_SAVER, REWIND_REQUESTED } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
-import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128Machine";
 import { ZxSpectrum128PsgDevice } from "../zxSpectrum128/ZxSpectrum128PsgDevice";
-import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48Machine";
 import {
   ZxSpectrumP3eFloatingBusDevice,
   zxSpectrumP32FloatingBusPorts
@@ -30,6 +28,8 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { MC_DISK_SUPPORT } from "@common/machines/constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
+import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128SysVars";
+import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -708,10 +708,10 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
 
   /**
    * The machine's execution loop calls this method when it is about to initialize a new frame.
-   * @param clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
+   * @param _clockMultiplierChanged Indicates if the clock multiplier has been changed since the execution of the
    * previous frame.
    */
-  onInitNewFrame(clockMultiplierChanged: boolean): void {
+  onInitNewFrame(_clockMultiplierChanged: boolean): void {
     // --- No screen tact rendered in this frame
     this.lastRenderedFrameTact = 0;
 

@@ -582,7 +582,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
    */
-  getDisassemblySection(options: Record<string, any>): IMemorySection[] {
+  getDisassemblySections(options: Record<string, any>): IMemorySection[] {
     const ram = !!options.ram;
     const screen = !!options.screen;
     const sections: IMemorySection[] = [];

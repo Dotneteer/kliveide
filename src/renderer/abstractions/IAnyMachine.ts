@@ -382,5 +382,5 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
    */
-  getDisassemblySection(_options: Record<string, any>): IMemorySection[];
+  getDisassemblySections(_options: Record<string, any>): IMemorySection[];
 }

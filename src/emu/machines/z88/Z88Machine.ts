@@ -815,7 +815,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
    */
-  getDisassemblySection(options: Record<string, any>): IMemorySection[] {
+  getDisassemblySections(options: Record<string, any>): IMemorySection[] {
     const ram = !!options.ram;
     const screen = !!options.screen;
     const sections: IMemorySection[] = [];

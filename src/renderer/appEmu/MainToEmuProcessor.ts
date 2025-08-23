@@ -1085,12 +1085,12 @@ class EmuMessageProcessor {
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
    */
-  async getDisassemblySection(_options: Record<string, any>): Promise<IMemorySection[]> {
+  async getDisassemblySections(_options: Record<string, any>): Promise<IMemorySection[]> {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    return controller.machine.getDisassemblySection(_options);
+    return controller.machine.getDisassemblySections(_options);
   }
 }
 

@@ -558,5 +558,5 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
    */
-  abstract getDisassemblySection(_options: Record<string, any>): IMemorySection[];
+  abstract getDisassemblySections(_options: Record<string, any>): IMemorySection[];
 }
