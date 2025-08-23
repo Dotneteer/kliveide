@@ -3,7 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
-import { CT_CUSTOM_DISASSEMBLER, CT_DISASSEMBLER, MF_BANK, MF_ROM, MI_Z88, MI_ZXNEXT } from "@common/machines/constants";
+import {
+  CT_CUSTOM_DISASSEMBLER,
+  CT_DISASSEMBLER,
+  MF_BANK,
+  MF_ROM,
+  MI_Z88,
+  MI_ZXNEXT
+} from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
@@ -32,9 +39,10 @@ import BankDropdown from "@renderer/controls/new/BankDropdown";
 import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
 import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
-import { DisassemblyItem, MemorySection, MemorySectionType } from "../disassemblers/common-types";
+import { DisassemblyItem, MemorySection } from "../disassemblers/common-types";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { ICustomDisassembler } from "../disassemblers/z80-disassembler/custom-disassembly";
+import { MemorySectionType } from "@abstractions/MemorySection";
 
 type BankedMemoryPanelViewState = {
   topAddress?: number;
@@ -229,28 +237,41 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
       if (autoRefreshOpt) {
         // --- Disassemble only one KB from the current PC value
-        memSections.push(
-          new MemorySection(
-            getMemoryResponse.pc,
-            (getMemoryResponse.pc + 1024) & 0xffff,
-            MemorySectionType.Disassemble
-          )
-        );
-      } else if (!ramOpt || !screenOpt) {
-        // --- Use the memory segments according to the "ram" and "screen" flags
-        memSections.push(new MemorySection(0x0000, 0x3fff, MemorySectionType.Disassemble));
-        if (ramOpt) {
-          if (screenOpt) {
-            memSections.push(new MemorySection(0x4000, 0xffff, MemorySectionType.Disassemble));
-          } else {
-            memSections.push(new MemorySection(0x5b00, 0xffff, MemorySectionType.Disassemble));
-          }
-        } else if (screenOpt) {
-          memSections.push(new MemorySection(0x4000, 0x5aff, MemorySectionType.Disassemble));
+        const pcAddr = getMemoryResponse.pc;
+        let endAddr = (pcAddr + 1024) & 0xffff;
+
+        // --- Adjust end address if it wraps around
+        if (endAddr < pcAddr) {
+          endAddr = 0xffff;
+        }
+
+        // --- Make sure vector addresses are included
+        if (endAddr > 0xfff9) {
+          endAddr = 0xffff;
+
+        }
+
+        if (endAddr > 0xfff9) {
+          // --- Make sure vectors are displayed as words
+          memSections.push(
+            new MemorySection(getMemoryResponse.pc, 0xfff9, MemorySectionType.Disassemble)
+          );
+          memSections.push(
+            new MemorySection(0xfffa, 0xfffb, MemorySectionType.WordArray),
+            new MemorySection(0xfffc, 0xfffd, MemorySectionType.WordArray),
+            new MemorySection(0xfffe, 0xffff, MemorySectionType.WordArray)
+          );
+        } else {
+          // --- Pure disassembly
+          memSections.push(
+            new MemorySection(getMemoryResponse.pc, endAddr, MemorySectionType.Disassemble)
+          );
         }
       } else {
-        // --- Disassemble the whole memory
-        memSections.push(new MemorySection(0x0000, 0xffff, MemorySectionType.Disassemble));
+        const sections = await emuApi.getDisassemblySections({ ram: ramOpt, screen: screenOpt });
+        sections.forEach((s) =>
+          memSections.push(new MemorySection(s.startAddress, s.endAddress, s.sectionType))
+        );
       }
 
       // --- Disassemble the specified memory segments
@@ -264,7 +285,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           decimalMode: cachedRefreshState.current.decimalView
         }
       );
-      console.log("Disassembler created", disassembler);
 
       // --- Set up partition offset
       if (partition !== undefined && !autoRefreshOpt) {
@@ -369,11 +389,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   useEmuStateListener(emuApi, async () => {
     await refreshDisassembly();
   });
-
-  // // --- Take care of refreshing the screen
-  // useStateRefresh(1000, async () => {
-  //   await refreshDisassembly();
-  // });
 
   const bank16KOptions: DropdownOption[] = [];
   for (let i = 0; i < 8; i++) {
@@ -524,12 +539,14 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
             }}
             renderItem={(idx) => {
               // --- Prepare the information to display
-              const address = cachedItems.current?.[idx].address;
+              const item = cachedItems.current?.[idx];
+              if (!item) return <div></div>;
+
+              const address = item?.address;
               const execPoint = address === pausedPc;
               const breakpoint = breakpoints.current.find(
                 (bp) => bp.address === address || bp.resolvedAddress === address
               );
-              const item = cachedItems.current?.[idx];
 
               // --- Calculate the partition label
               let partitionLabel = isFullView

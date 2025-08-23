@@ -1,9 +1,9 @@
+import { MemorySectionType } from "@abstractions/MemorySection";
 import {
   DisassemblyItem,
   DisassemblyOptions,
   DisassemblyOutput,
   MemorySection,
-  MemorySectionType
 } from "../common-types";
 import { intToX2, intToX4, toDecimal3, toDecimal5, toSbyte } from "../utils";
 

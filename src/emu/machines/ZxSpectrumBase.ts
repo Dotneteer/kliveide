@@ -15,6 +15,7 @@ import { TapeMode } from "../abstractions/TapeMode";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { SpectrumKeyCode } from "./zxSpectrum/SpectrumKeyCode";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
+import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -575,4 +576,53 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * Gets a flag for each 8K page that indicates if the page is a ROM
    */
   abstract getRomFlags(): boolean[];
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  getDisassemblySections(options: Record<string, any>): IMemorySection[] {
+    const ram = !!options.ram;
+    const screen = !!options.screen;
+    const sections: IMemorySection[] = [];
+    if (!ram || !screen) {
+      // --- Use the memory segments according to the "ram" and "screen" flags
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0x3fff,
+        sectionType: MemorySectionType.Disassemble
+      });
+      if (ram) {
+        if (screen) {
+          sections.push({
+            startAddress: 0x4000,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        } else {
+          sections.push({
+            startAddress: 0x5b00,
+            endAddress: 0xffff,
+            sectionType: MemorySectionType.Disassemble
+          });
+        }
+      } else if (screen) {
+        sections.push({
+          startAddress: 0x4000,
+          endAddress: 0x5aff,
+          sectionType: MemorySectionType.Disassemble
+        });
+      }
+    } else {
+      // --- Disassemble the whole memory
+      sections.push({
+        startAddress: 0x0000,
+        endAddress: 0xffff,
+        sectionType: MemorySectionType.Disassemble
+      });
+    }
+
+    return sections;
+  }
 }

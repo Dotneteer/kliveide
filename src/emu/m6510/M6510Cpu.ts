@@ -581,6 +581,11 @@ export class M6510Cpu implements IM6510Cpu {
     this._stalledCount = 0;
     this._stalled = false;
 
+    // Step-out management
+    this.retExecuted = false;
+    this.stepOutStack = [];
+    this.stepOutAddress = -1;
+
     // Reset timing information
     this.tacts = 0;
     this.tactsAtLastStart = 0;

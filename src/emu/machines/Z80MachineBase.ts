@@ -18,6 +18,7 @@ import { CpuState } from "@common/messaging/EmuApi";
 import { SysVar } from "@abstractions/SysVar";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "./MachineFrameRunner";
+import { IMemorySection } from "@abstractions/MemorySection";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -551,4 +552,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   get sysVars(): SysVar[] {
     return [];
   }
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  abstract getDisassemblySections(_options: Record<string, any>): IMemorySection[];
 }

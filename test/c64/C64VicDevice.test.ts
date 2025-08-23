@@ -18,7 +18,7 @@ describe("C64 - VIC-II Device", () => {
     
     // Check that all 47 VIC registers are initialized to 0x00
     expect(vic.registers).toBeDefined();
-    expect(vic.registers.length).toBe(0x2f); // 47 registers ($D000-$D02E)
+    expect(vic.registers.length).toBe(0x40); // 47 registers ($D000-$D02E) + filler bytes
     
     for (let i = 0; i < vic.registers.length; i++) {
       expect(vic.registers[i]).toBe(0x00);

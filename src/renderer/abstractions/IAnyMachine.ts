@@ -13,6 +13,7 @@ import { IAnyCpu } from "@emu/abstractions/IAnyCpu";
 import { CpuState } from "@common/messaging/EmuApi";
 import { SysVar } from "@abstractions/SysVar";
 import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
+import { IMemorySection } from "@abstractions/MemorySection";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -375,4 +376,11 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Gets the machine frame runner associated with the machine.
    */
   machineFrameRunner: IMachineFrameRunner;
+
+  /**
+   * Gets a disassembly section of the machine with the specified options.
+   * @param _options The options for the disassembly section.
+   * @returns The disassembly section.
+   */
+  getDisassemblySections(_options: Record<string, any>): IMemorySection[];
 }
