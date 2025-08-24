@@ -75,11 +75,9 @@ export type RenderingTact = {
   xPosition: number;
 
   // --- Border operation
-  // --- | CheckLeftBorderWhenNoCSEL
-  // --- | CheckLeftBorderWhenCSEL
-  // --- | CheckRightBorderWhenNoCSEL
-  // --- | CheckRightBorderWhenCSEL
-  borderOperation?: RenderingOperation;
+  // --- | CheckLeftBorder
+  // --- | CheckRightBorder
+  borderOperation?: BorderRenderingOperation;
 
   // --- Sprite operation
   // --- | CheckSpriteExpansion
@@ -114,6 +112,9 @@ export type RenderingTact = {
   // --- Sprite flags to check if BA should be set
   checkSpriteFetchBAMask: number;
 };
+
+// --- A border rendering operation
+export type BorderRenderingOperation = () => void; 
 
 // --- An operation working with the specified tact information
 export type RenderingOperation = (tact: RenderingTact) => void;

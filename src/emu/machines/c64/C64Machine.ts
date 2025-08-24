@@ -24,8 +24,8 @@ import { MC_SCREEN_FREQ } from "@common/machines/constants";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FILE_PROVIDER } from "../machine-props";
 import { IFileProvider } from "@renderer/core/IFileProvider";
-import { M6510CpuState } from "@common/messaging/EmuApi";
-import { SysVar, SysVarType } from "@common/abstractions/SysVar";
+import { M6510CpuState, VicState } from "@common/messaging/EmuApi";
+import { SysVar } from "@common/abstractions/SysVar";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
 import { vicMos6569r3, vicMos8562 } from "./vic/vic-models";
@@ -698,7 +698,7 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
         endAddress: 0xfff9,
         sectionType: MemorySectionType.Disassemble
       });
-    } 
+    }
 
     // --- NMI, START, and IRQ vectors
     sections.push({
@@ -719,5 +719,11 @@ export class C64Machine extends M6510Cpu implements IC64Machine {
 
     return sections;
   }
-}
 
+  /**
+   * Retrieves the current VIC state.
+   */
+  getVicState(): VicState {
+    return this.vicDevice.getVicState();
+  }
+}

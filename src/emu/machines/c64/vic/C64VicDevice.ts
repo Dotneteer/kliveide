@@ -21,6 +21,7 @@ import {
   UpdateVc
 } from "./constants";
 import { SprDma1, SprPtr } from "./vic-models";
+import { VicState } from "@common/messaging/EmuApi";
 
 /**
  * Implementation of the VIC-II (Video Interface Chip) for the Commodore 64
@@ -221,6 +222,9 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Current cycle in a raster line (between 0 and this.configuration.cyclesPerLine)
   currentCycle: number;
 
+  // --- Current X position (between 0 and 503/0x1f7)
+  currentXPosition: number;
+
   // --- VC: 10 bit counter (current video matrix position, between 0 and 999)
   videoMatrixCounter: number;
 
@@ -273,7 +277,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Values 0-15 correspond to the C64's 16-color palette
   backgroundColor0: number; // $D021 - Primary background color (used in all modes)
   backgroundColor1: number; // $D022 - Extended background color 1 (ECM/multicolor modes)
-  backgroundColor2: number; // $D023 - Extended background color 2 (ECM/multicolor modes)  
+  backgroundColor2: number; // $D023 - Extended background color 2 (ECM/multicolor modes)
   backgroundColor3: number; // $D024 - Extended background color 3 (ECM mode only)
 
   // --- Sprite multicolor registers ($D025-$D026) - shared colors for all multicolor sprites
@@ -343,24 +347,24 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     this.videoCounterBase = 0;
 
     // --- Initialize memory pointers to their reset state (all 0)
-    this.videoMatrixBase = 0;      // VM13-VM10 = 0000 -> video matrix at $0000
-    this.characterBase = 0;        // CB13-CB11 = 000 -> character generator at $0000
+    this.videoMatrixBase = 0; // VM13-VM10 = 0000 -> video matrix at $0000
+    this.characterBase = 0; // CB13-CB11 = 000 -> character generator at $0000
     this.bankBaseAddress = 0x0000; // Bank 0 = $0000-$3FFF (CIA2 Port A bits 4-5 = 11 inverted = 00)
 
     // --- Initialize interrupt system to their reset state (all 0)
-    this.interruptLatch = 0;       // No interrupts pending
-    this.interruptEnable = 0;      // All interrupts disabled
+    this.interruptLatch = 0; // No interrupts pending
+    this.interruptEnable = 0; // All interrupts disabled
 
     // --- Sprite priority and multicolor are now initialized in spriteData array initialization above
 
     // --- Initialize colors to reset state (all 0)
-    this.borderColor = 0;          // Border color = black (color index 0)
-    this.backgroundColor0 = 0;     // Background color 0 = black (color index 0)
-    this.backgroundColor1 = 0;     // Background color 1 = black (color index 0)
-    this.backgroundColor2 = 0;     // Background color 2 = black (color index 0)
-    this.backgroundColor3 = 0;     // Background color 3 = black (color index 0)
-    this.spriteMulticolor0 = 0;    // Sprite multicolor 0 = black (color index 0)
-    this.spriteMulticolor1 = 0;    // Sprite multicolor 1 = black (color index 0)
+    this.borderColor = 0; // Border color = black (color index 0)
+    this.backgroundColor0 = 0; // Background color 0 = black (color index 0)
+    this.backgroundColor1 = 0; // Background color 1 = black (color index 0)
+    this.backgroundColor2 = 0; // Background color 2 = black (color index 0)
+    this.backgroundColor3 = 0; // Background color 3 = black (color index 0)
+    this.spriteMulticolor0 = 0; // Sprite multicolor 0 = black (color index 0)
+    this.spriteMulticolor1 = 0; // Sprite multicolor 1 = black (color index 0)
 
     // --- Initialize individual sprite colors are now initialized in spriteData array initialization above
 
@@ -401,57 +405,83 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
   /**
    * Executes the current VIC rendering cycle based on the current clock.
-   * 
+   *
    * This method implements cycle-accurate VIC-II behavior based on extensive
    * documentation of the 6567/6569 VIC-II chip timing and operations.
    * Each cycle can perform different memory accesses and rendering operations.
-   * 
+   *
    * @returns True, if the CPU is stalled; otherwise, false.
    */
   renderCurrentTact(): boolean {
     // --- By default allow the CPU to access the bus
     let shouldStall = false;
 
-    // Get the current rendering operation for this cycle
+    // --- Get the current rendering operation for this cycle
     const tact = this.renderingTactTable[this.currentCycle];
-    
+    this.currentXPosition = tact.xPosition;
+
+    // --- The border unit may change its flip-flop state
+    if (this.currentCycle === 63) {
+      // --- Border rule 2: If the Y coordinate reaches the bottom comparison value in cycle 63,
+      // --- the vertical border flip flop is set.
+      const bottomComparisonValue = this.rsel ? 251 : 247;
+      if (this.currentRasterLine === bottomComparisonValue) {
+        this.verticalBorderFlipFlop = true;
+      }
+      // --- Border rule 3: If the Y coordinate reaches the top comparison value in cycle 63 and
+      // --- the DEN bit in register $d011 is set, the vertical border flip flop is reset.
+      const topComparisonValue = this.rsel ? 51 : 55;
+      if (this.currentRasterLine === topComparisonValue && this.den) {
+        this.verticalBorderFlipFlop = false;
+      }
+    }
+
+    // --- The cycle may have border check operations (left or right border)
+    tact.borderOperation?.();
+
+    // --- Render the four pixels to be displayed during the PHI1 phase
+    this.renderPixel();
+    this.renderPixel();
+    this.renderPixel();
+    this.renderPixel();
+
     // === TIMING AND CYCLE MANAGEMENT ===
     // VIC-II timing: 6569 has 63 cycles per line, 6567 has 65 cycles per line
     // Current implementation uses tactsInDisplayLine cycles per line
-    
+
     // ============================================================================
     // === PHI1/PHI2 CLOCK PHASE BARRIER ===
     // ============================================================================
     // PHI1 PHASE (First Half-Cycle): CPU may access the address bus
     // - CPU can perform memory operations and register accesses
     // - VIC performs internal state updates that don't require bus access
-    // 
-    // PHI2 PHASE (Second Half-Cycle): Only VIC can access the address bus  
+    //
+    // PHI2 PHASE (Second Half-Cycle): Only VIC can access the address bus
     // - VIC performs all memory accesses (c-access, g-access, p-access, s-access, refresh)
     // - CPU is blocked from bus access during VIC memory operations
     // - BA (Bus Available) and AEC (Address Enable Control) signals coordinate this
     // ============================================================================
-    
+
     // === MEMORY ACCESS OPERATIONS ===
     // The VIC-II performs different types of memory accesses each cycle:
     // - c-access: Read from video matrix and color RAM (12-bit address)
-    // - g-access: Read graphics data from character generator or bitmap (8-bit data)  
+    // - g-access: Read graphics data from character generator or bitmap (8-bit data)
     // - p-access: Read sprite data pointers from video matrix (8-bit data)
     // - s-access: Read sprite pixel data (8-bit data)
     // - refresh: DRAM refresh cycles (5 per raster line)
-    
+
     if (tact.fetchOperation) {
       // Execute the fetch operation using the function pointer
       // The fetchOperation function handles the specific type of memory access
       tact.fetchOperation(tact);
-      
+
       // Only real memory accesses require CPU to wait, not idle operations
       // Idle fetches maintain timing but don't access the bus
       if (tact.fetchOperation !== this.FetchIdle) {
         shouldStall = true;
       }
     }
-    
+
     // === BAD LINE DETECTION AND HANDLING ===
     // Bad Line Condition: RASTER >= $30 && RASTER <= $f7 && (RASTER & 7) == YSCROLL
     // Bad Lines trigger c-accesses and g-accesses in display state
@@ -459,21 +489,21 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     const isInDisplayWindow = this.currentRasterLine >= 0x30 && this.currentRasterLine <= 0xf7;
     const yscroll = this.registers[0x11] & 0x07; // YSCROLL from $d011
     const isBadLine = isInDisplayWindow && (this.currentRasterLine & 0x07) === yscroll;
-    
+
     if (isBadLine && tact.mayFetchVideoMatrix) {
       // TODO: Set BA low 3 cycles before first c-access (cycle 12)
       // TODO: Enable c-accesses and g-accesses for this line (cycles 15-54)
       // TODO: Load VC from VCBASE in cycle 14
       // TODO: Handle display state vs idle state transitions
-      
+
       // Bad Lines require extended CPU stalling during video matrix fetch
       shouldStall = true;
     }
-    
+
     // === SPRITE PROCESSING ===
     // Sprite timing is critical and varies by sprite number and raster line
     // Each sprite requires p-access followed by s-accesses when visible
-    
+
     if (tact.spriteOperation) {
       // Execute sprite-specific operation using the function pointer
       // Handles sprite visibility checking, Y expansion, data counters, etc.
@@ -482,70 +512,48 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       // TODO: Manage sprite data counters (MC0-MC7) - track sprite line
       // TODO: Load sprite data into shift registers for rendering
       // TODO: Check sprite Y coordinate against current raster line
-      
+
       tact.spriteOperation(tact);
-      
+
       // Sprite memory accesses also stall CPU
       shouldStall = true;
     }
-    
+
     // === GRAPHICS SEQUENCER AND RENDERING ===
     // The graphics sequencer manages an 8-bit shift register
     // Shifted 1 bit per pixel, reloaded after each g-access
     // XSCROLL can delay reloading by 0-7 pixels
-    
+
     // TODO: Shift graphics data register by 1 bit per pixel
     // TODO: Apply XSCROLL delay to graphics data loading
     // TODO: Handle different graphics modes:
     //   - Standard text (ECM/BMM/MCM = 0/0/0)
-    //   - Multicolor text (ECM/BMM/MCM = 0/0/1)  
+    //   - Multicolor text (ECM/BMM/MCM = 0/0/1)
     //   - Standard bitmap (ECM/BMM/MCM = 0/1/0)
     //   - Multicolor bitmap (ECM/BMM/MCM = 0/1/1)
     //   - ECM text (ECM/BMM/MCM = 1/0/0)
     //   - Invalid modes (remaining combinations)
     // TODO: Generate 8 pixels of output data for this cycle
     // TODO: Handle color resolution (1 bit/pixel vs 2 bits/pixel in MC mode)
-    
-    // === BORDER UNIT PROCESSING ===
-    // Two flip-flops control border display:
-    // - Main border flip-flop: Controls border color vs graphics/sprite output
-    // - Vertical border flip-flop: Controls upper/lower border
-    
-    if (tact.borderOperation) {
-      // Execute border operation using the function pointer
-      // Handles border flip-flop state based on X/Y coordinate comparisons
-      // Border comparison values (depend on CSEL/RSEL bits from $d016/$d011):
-      // CSEL=0: Left=31, Right=335  |  CSEL=1: Left=24, Right=344
-      // RSEL=0: Top=55, Bottom=247  |  RSEL=1: Top=51, Bottom=251
-      
-      // TODO: Check X coordinate against left/right comparison values
-      // TODO: Check Y coordinate against top/bottom values in cycle 63
-      // TODO: Manage main border flip-flop state
-      // TODO: Manage vertical border flip-flop state  
-      // TODO: Handle DEN bit influence on border behavior
-      // TODO: Border has highest display priority (overlays sprites and graphics)
-      
-      tact.borderOperation(tact);
-    }
-    
+
     // === COUNTER AND STATE UPDATES ===
     if (tact.counterOperation) {
       // Execute counter operation using the function pointer
       // Handles Video Counter (VC), Row Counter (RC), and related state
-      
+
       // Video Counter (VC): Points to current position in video matrix (10 bits)
       // Row Counter (RC): Tracks character row within 8-pixel character (3 bits)
       // Video Matrix Line Increment (VMLI): Backup of VC for next character row
-      
+
       // TODO: Update VC after each g-access in display state
       // TODO: Update RC at end of each raster line (checked in cycle 58)
       // TODO: Handle VC reload from VCBASE in cycle 14 of Bad Lines
       // TODO: Manage VMLI for character row processing
       // TODO: Handle idle state detection (RC=7 in cycle 58)
-      
+
       tact.counterOperation(tact);
     }
-    
+
     // === BA SIGNAL MANAGEMENT ===
     // BA (Bus Available) signal controls CPU access to memory bus
     // Must go low 3 cycles before VIC needs bus access
@@ -553,7 +561,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       // TODO: Set BA low for upcoming c-access, g-access, or s-access
       // TODO: Coordinate with AEC (Address Enable Control) for proper timing
       // TODO: BA affects when CPU can access memory (extends instruction timing)
-      
+
       // Check if BA should be set for sprite fetch operations
       if (tact.checkSpriteFetchBAMask !== 0) {
         // TODO: Check sprite visibility flags against mask
@@ -561,7 +569,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
         shouldStall = true;
       }
     }
-    
+
     // === INTERRUPT PROCESSING ===
     // Check for interrupt conditions specific to this cycle
     if (this.currentCycle === 0 || (this.currentRasterLine === 0 && this.currentCycle === 1)) {
@@ -572,13 +580,22 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
         // TODO: Generate CPU interrupt if enabled in $d01a
       }
     }
-    
+
     // TODO: Check for sprite-sprite collision during rendering
     //       Set MxM bits in $d01e and trigger interrupt if enabled
-    // TODO: Check for sprite-background collision during rendering  
+    // TODO: Check for sprite-background collision during rendering
     //       Set MxD bits in $d01f and trigger interrupt if enabled
     // TODO: Handle lightpen trigger if LP input goes low
     //       Latch X/Y position in $d013/$d014 and trigger interrupt
+
+    // --- Render the four pixels to be displayed during the PHI2 phase
+    this.renderPixel();
+    this.renderPixel();
+    this.renderPixel();
+
+    // --- The border unit may check for changes
+    tact.borderOperation?.();
+    this.renderPixel();
 
     // === FINAL CYCLE MANAGEMENT ===
     // --- Move to the next cycle
@@ -592,8 +609,8 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
         // TODO: Handle frame-specific state resets
         // TODO: Clear lightpen trigger for next frame
       }
-      // TODO: Update raster line register ($d012) with lower 8 bits
-      // TODO: Update bit 7 of $d011 with bit 8 of raster line
+      this.registers[0x12] = this.currentRasterLine & 0xff;
+      this.registers[0x11] = (this.registers[0x11] & 0x7f) | ((this.currentRasterLine >> 8) & 0x01);
       // TODO: Handle line-specific state updates (sprite counters, etc.)
     }
 
@@ -607,11 +624,11 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   setBaseBank(bank: number): void {
     // Ensure valid bank number (0-3)
     bank = bank & 0x03;
-    
+
     // Calculate the base address for the bank
     // Bank 0: $0000-$3FFF, Bank 1: $4000-$7FFF, Bank 2: $8000-$BFFF, Bank 3: $C000-$FFFF
     this.bankBaseAddress = bank * 0x4000;
-    
+
     // TODO: Invalidate any cached address calculations that depend on the bank
     // TODO: Update sprite pointer base addresses (they are relative to current bank)
     // TODO: Update video matrix and character generator effective addresses
@@ -704,8 +721,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     switch (regIndex) {
       case 0x11:
       case 0x12:
-        // TODO: Implement
-        return 0xff;
+        return this.currentRasterLine & 0xff;
 
       case 0x13:
         // TODO: Implement light pen X read
@@ -768,7 +784,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   writeRegister(regIndex: number, value: number): void {
     regIndex &= 0x3f; // Limit to 64 registers (0-63), with mirroring
     value &= 0xff; // Ensure it's a byte value
-    const currentTacts = this.machine.tacts;
 
     // TODO
     //this.handlePendingAlarmsExternalWrite();
@@ -1101,6 +1116,58 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     }
   }
 
+  getVicState(): VicState {
+    // Convert internal sprite data to VicState format
+    const spriteInfo = this.spriteData.map((sprite) => ({
+      x: sprite.x,
+      y: sprite.y,
+      enabled: sprite.enabled,
+      multicolor: sprite.multicolor,
+      color: sprite.color,
+      xExpansion: sprite.xExpand,
+      yExpansion: sprite.yExpand,
+      foregroundPriority: !sprite.priority // VIC priority is inverted: true=behind, VicState wants foreground priority
+    }));
+
+    return {
+      vicBaseAddress: this.bankBaseAddress,
+      spriteInfo,
+      rst8: this.rst8,
+      ecm: this.ecm,
+      bmm: this.bmm,
+      den: this.den,
+      rsel: this.rsel,
+      xScroll: this.xScroll,
+      yScroll: this.yScroll,
+      raster: this.currentRasterLine,
+      lpx: this.registers[0x13], // Light pen X from register $D013
+      lpy: this.registers[0x14], // Light pen Y from register $D014
+      res: false, // RES bit is unused in VIC-II
+      mcm: this.mcm,
+      csel: this.csel,
+      scrMemOffset: this.videoMatrixBase,
+      colMemOffset: 0xd800 - this.bankBaseAddress, // Color RAM is always at $D800 regardless of VIC bank
+      irqStatus: !!(this.interruptLatch & 0x80), // IRQ bit from interrupt latch register
+      ilpStatus: !!(this.interruptLatch & 0x08), // ILP (Light Pen) interrupt status
+      ilpEnabled: !!(this.interruptEnable & 0x08), // ILP interrupt enabled
+      immcStatus: !!(this.interruptLatch & 0x04), // IMMC (Sprite-Sprite Collision) interrupt status
+      immcEnabled: !!(this.interruptEnable & 0x04), // IMMC interrupt enabled
+      imbcStatus: !!(this.interruptLatch & 0x02), // IMBC (Sprite-Background Collision) interrupt status
+      imbcEnabled: !!(this.interruptEnable & 0x02), // IMBC interrupt enabled
+      irstStatus: !!(this.interruptLatch & 0x01), // IRST (Raster) interrupt status
+      irstEnabled: !!(this.interruptEnable & 0x01), // IRST interrupt enabled
+      borderColor: this.borderColor,
+      bgColor0: this.backgroundColor0,
+      bgColor1: this.backgroundColor1,
+      bgColor2: this.backgroundColor2,
+      bgColor3: this.backgroundColor3,
+      spriteMcolor0: this.spriteMulticolor0,
+      spriteMcolor1: this.spriteMulticolor1,
+      spriteSpriteCollision: this.registers[0x1e], // Sprite-Sprite collision register $D01E
+      spriteDataCollision: this.registers[0x1f] // Sprite-Data collision register $D01F
+    };
+  }
+
   /**
    * Initialize the helper tables that accelerate screen rendering by precalculating rendering tact information.
    */
@@ -1196,16 +1263,16 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
         // --- Border operations
         if (f & ChkBrdL0) {
-          tactInfo.borderOperation = this.CheckLeftBorderWhenNoCSEL;
+          tactInfo.borderOperation = this.CheckLeftBorder;
         }
         if (f & ChkBrdL1) {
-          tactInfo.borderOperation = this.CheckLeftBorderWhenCSEL;
+          tactInfo.borderOperation = this.CheckLeftBorder;
         }
         if (f & ChkBrdR0) {
-          tactInfo.borderOperation = this.CheckRightBorderWhenNoCSEL;
+          tactInfo.borderOperation = this.CheckRightBorder;
         }
         if (f & ChkBrdR1) {
-          tactInfo.borderOperation = this.CheckRightBorderWhenCSEL;
+          tactInfo.borderOperation = this.CheckRightBorder;
         }
 
         // --- This tact is processed
@@ -1735,9 +1802,9 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private setRegD016Value(value: number) {
     // --- STEP 1: Extract new values from register bits
     // Bit 5 (RES) has no function on VIC 6567/6569, ignore it
-    const newMcm = !!(value & 0x10);    // Bit 4: MCM - Multicolor Mode
-    const newCsel = !!(value & 0x08);   // Bit 3: CSEL - Column select (40/38 columns)
-    const newXScroll = value & 0x07;    // Bits 2-0: XSCROLL - Horizontal fine scroll
+    const newMcm = !!(value & 0x10); // Bit 4: MCM - Multicolor Mode
+    const newCsel = !!(value & 0x08); // Bit 3: CSEL - Column select (40/38 columns)
+    const newXScroll = value & 0x07; // Bits 2-0: XSCROLL - Horizontal fine scroll
 
     // --- STEP 2: Detect changes for each bit/field and handle effects
 
@@ -1779,15 +1846,15 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
         // --- IMMEDIATE EFFECTS (same cycle):
         // - Display window: Reduced horizontally by 7 pixels on each side
         // - Border timing: Left border at cycle 31, right border at cycle 51
-        // - Character display: 38 characters per line displayed  
+        // - Character display: 38 characters per line displayed
         // - Scrolling: XSCROLL affects timing of border detection differently
       }
-      
+
       // --- TIMING-CRITICAL considerations:
       // - Same-line changes: CSEL changes on current raster line affect immediate border rendering
       // - Border state: May immediately trigger border on/off state changes
       // - DMA timing: Character fetch timing may be affected by border state changes
-      
+
       // TODO: Get current cycle within raster line
       // TODO: Check if CSEL change affects current line border state
       // TODO: Update border detection timing for current line
@@ -1795,24 +1862,30 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     }
 
     if (this.xScroll !== newXScroll) {
-      // --- XSCROLL (Horizontal Fine Scroll) has changed  
+      if (newXScroll < this.xScroll) {
+        if (this.currentCycle < 56) {
+        }
+      } else {
+      }
+
+      // --- XSCROLL (Horizontal Fine Scroll) has changed
       // --- As per VIC-II doc section 3.7.4: Scrolling, section 3.9: Border units
       // --- IMMEDIATE EFFECTS (same cycle):
       // - Pixel display: Shifts character/bitmap data horizontally by 0-7 pixels
       // - Border timing: Affects when left/right borders are activated
       // - Character fetching: May affect timing of character data fetch relative to display
       // - Sprite positioning: Provides fine positioning reference for sprite horizontal placement
-      
+
       // --- CONDITIONAL EFFECTS (depends on current state):
       // - CSEL interaction: Combined with CSEL determines exact border timing
       // - Bad line interaction: May affect character fetch timing on bad lines
       // - Display state: Only affects display when in display state, ignored in idle state
-      
+
       // --- TIMING-CRITICAL considerations:
       // - Same-line changes: XSCROLL changes affect immediate pixel alignment on current line
       // - Border critical: Changes during border comparison cycles may affect border state
       // - DMA critical: Changes during character DMA may affect fetch timing
-      
+
       // TODO: Get current cycle within raster line
       // TODO: Check if XSCROLL change affects current line rendering
       // TODO: Update pixel shift for immediate display effects
@@ -1845,7 +1918,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       !!(value & 0x10), // Sprite 4 Y expansion (bit 4)
       !!(value & 0x20), // Sprite 5 Y expansion (bit 5)
       !!(value & 0x40), // Sprite 6 Y expansion (bit 6)
-      !!(value & 0x80)  // Sprite 7 Y expansion (bit 7)
+      !!(value & 0x80) // Sprite 7 Y expansion (bit 7)
     ];
 
     // --- STEP 2: Detect changes for each sprite and handle effects
@@ -1861,13 +1934,11 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
           // - Pixel duplication: Each sprite line displayed twice vertically
           // - DMA timing: Sprite remains active for same number of raster lines (21)
           // - Screen coverage: Sprite covers more vertical screen area
-          
           // --- CONDITIONAL EFFECTS (depends on current state):
           // - Sprite enable: Only affects display if sprite is enabled via $d015
           // - Collision detection: Expanded sprite area affects collision calculations
           // - Screen boundaries: May cause sprite to extend beyond visible area
           // - Y coordinate interaction: Same Y position but doubled visual height
-          
           // --- TIMING-CRITICAL considerations:
           // - Same-line changes: Y expansion changes affect immediate sprite rendering
           // - DMA cycles: Expansion doesn't change DMA timing, only display scaling
@@ -1878,7 +1949,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
           // - Sprite height: Returns to normal 21 pixels
           // - Pixel display: Each sprite line displayed once (normal)
           // - Screen coverage: Reduced vertical screen area
-          
           // --- CONDITIONAL EFFECTS (depends on current state):
           // - Collision detection: Reduced sprite area affects collision calculations
           // - Screen positioning: Same Y coordinate but halved visual height
@@ -1915,31 +1985,27 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Controls memory locations for video matrix and character generator within 16KB VIC address space
   private setRegD018Value(value: number) {
     // --- STEP 1: Extract new memory pointer values from register bits
-    const newVideoMatrixBase = (value & 0xF0) << 6;  // VM13-VM10 (bits 7-4) shifted to bits 13-10
-    const newCharacterBase = (value & 0x0E) << 10;   // CB13-CB11 (bits 3-1) shifted to bits 13-11
+    const newVideoMatrixBase = (value & 0xf0) << 6; // VM13-VM10 (bits 7-4) shifted to bits 13-10
+    const newCharacterBase = (value & 0x0e) << 10; // CB13-CB11 (bits 3-1) shifted to bits 13-11
 
     // --- STEP 2: Detect changes and handle effects
     if (this.videoMatrixBase !== newVideoMatrixBase) {
       // --- Video matrix base address has changed
       // --- As per VIC-II doc section 3.7.3: Text modes, section 3.7.4: Bitmap modes
-
       // --- IMMEDIATE EFFECTS (same cycle):
       // - Video matrix location: Changes location of 40x25 character matrix (1000 bytes)
       // - Address range: Video matrix moves in 1KB steps within 16KB VIC address space
       // - Character codes: Location where VIC reads character codes for text display
       // - Color information: Associated color data location (Color RAM remains fixed)
-      
       // --- CONDITIONAL EFFECTS (depends on current state):
       // - Text modes: Affects character code reading for all text-based display modes
       // - Bitmap modes: Video matrix still used for color information in bitmap modes
       // - DMA timing: Video matrix accesses occur during specific cycles
       // - Display timing: Changes take effect immediately for next screen refresh
-      
       // --- TIMING-CRITICAL considerations:
       // - Same-line changes: Video matrix address changes affect immediate character data access
       // - Character generation: Combined with character base for complete character lookup
       // - Memory conflicts: May create badlines if video matrix conflicts with CPU access
-      
       // TODO: Invalidate video matrix buffer if cached
       // TODO: Update DMA address calculations for video matrix accesses
       // TODO: Handle potential memory banking conflicts with new address
@@ -1948,24 +2014,20 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     if (this.characterBase !== newCharacterBase) {
       // --- Character generator base address has changed
       // --- As per VIC-II doc section 3.7.3: Text modes, section 3.7.4: Bitmap modes
-
       // --- IMMEDIATE EFFECTS (same cycle):
       // - Character generator location: Changes location of character pixel data
       // - Address range: Character generator moves in 2KB steps within 16KB VIC address space
       // - Bitmap mode: In bitmap mode, CB13 bit selects 8KB bitmap location
       // - Character pixel data: Location where VIC reads 8x8 pixel patterns
-      
       // --- CONDITIONAL EFFECTS (depends on current state):
       // - Text modes: Affects character pixel pattern reading for text display
       // - Bitmap modes: CB13 bit selects between two 8KB bitmap areas
       // - Character ROM: Can redirect from Character ROM to RAM-based character sets
       // - Custom fonts: Enables use of user-defined character sets
-      
       // --- DISPLAY CHANGES:
       // - Font appearance: Different character generator changes displayed font
       // - Bitmap graphics: In bitmap mode, changes which bitmap area is displayed
       // - Character images: 8x8 pixel patterns for each of 256 possible characters
-      
       // TODO: Invalidate character generator cache if cached
       // TODO: Update character generation address calculations
       // TODO: Handle Character ROM vs RAM selection based on address
@@ -1977,7 +2039,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     this.characterBase = newCharacterBase;
 
     // --- STEP 4: Update register value
-    this.registers[0x18] = value & 0xfe;  // Bit 0 is unused and always reads as 0
+    this.registers[0x18] = value & 0xfe; // Bit 0 is unused and always reads as 0
 
     // --- Register handling complete - memory pointers updated according to VIC-II documentation
   }
@@ -1990,42 +2052,42 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Writing 1 to a bit clears the corresponding interrupt latch bit
   private setRegD019Value(value: number) {
     // --- STEP 1: Extract interrupt clear bits from write value
-    const clearRaster = !!(value & 0x01);      // IRST bit (bit 0) - Raster interrupt
+    const clearRaster = !!(value & 0x01); // IRST bit (bit 0) - Raster interrupt
     const clearSpriteBackground = !!(value & 0x02); // IMBC bit (bit 1) - Sprite-background collision
-    const clearSpriteSprite = !!(value & 0x04);     // IMMC bit (bit 2) - Sprite-sprite collision  
-    const clearLightpen = !!(value & 0x08);    // ILP bit (bit 3) - Light pen interrupt
+    const clearSpriteSprite = !!(value & 0x04); // IMMC bit (bit 2) - Sprite-sprite collision
+    const clearLightpen = !!(value & 0x08); // ILP bit (bit 3) - Light pen interrupt
 
     // --- STEP 2: Clear interrupt latch bits (writing 1 clears the bit)
     // --- As per VIC-II doc: "To clear it, the processor has to write a '1' there 'by hand'"
     if (clearRaster) {
-      this.interruptLatch &= ~0x01;    // Clear IRST bit
+      this.interruptLatch &= ~0x01; // Clear IRST bit
     }
     if (clearSpriteBackground) {
-      this.interruptLatch &= ~0x02;    // Clear IMBC bit
+      this.interruptLatch &= ~0x02; // Clear IMBC bit
     }
     if (clearSpriteSprite) {
-      this.interruptLatch &= ~0x04;    // Clear IMMC bit
+      this.interruptLatch &= ~0x04; // Clear IMMC bit
     }
     if (clearLightpen) {
-      this.interruptLatch &= ~0x08;    // Clear ILP bit
+      this.interruptLatch &= ~0x08; // Clear ILP bit
     }
 
     // --- STEP 3: Update IRQ line status (bit 7 reflects IRQ state)
-    // --- As per VIC-II doc: "If at least one latch bit and the belonging bit in the enable register is set, 
+    // --- As per VIC-II doc: "If at least one latch bit and the belonging bit in the enable register is set,
     // --- the IRQ line is held low and so the interrupt is triggered"
-    const activeInterrupts = this.interruptLatch & this.interruptEnable & 0x0F;
+    const activeInterrupts = this.interruptLatch & this.interruptEnable & 0x0f;
     const irqActive = activeInterrupts !== 0;
-    
+
     if (irqActive) {
-      this.interruptLatch |= 0x80;     // Set IRQ bit (bit 7)
+      this.interruptLatch |= 0x80; // Set IRQ bit (bit 7)
     } else {
-      this.interruptLatch &= ~0x80;    // Clear IRQ bit (bit 7)
+      this.interruptLatch &= ~0x80; // Clear IRQ bit (bit 7)
     }
 
     // --- STEP 4: Update register value (read-only, reflects current latch state)
     // --- Upper 4 bits (7-4) are: IRQ, unused, unused, unused
     // --- Lower 4 bits (3-0) are: ILP, IMMC, IMBC, IRST
-    this.registers[0x19] = (this.interruptLatch & 0x8F); // IRQ + interrupt bits, unused bits read as 0
+    this.registers[0x19] = this.interruptLatch & 0x8f; // IRQ + interrupt bits, unused bits read as 0
 
     // --- IRQ OUTPUT HANDLING:
     // TODO: Signal CPU interrupt controller if IRQ state changed
@@ -2043,14 +2105,14 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Controls which interrupt sources can trigger IRQ line
   private setRegD01AValue(value: number) {
     // --- STEP 1: Extract interrupt enable bits from register value
-    const enableRaster = !!(value & 0x01);         // ERST bit (bit 0) - Raster interrupt enable
+    const enableRaster = !!(value & 0x01); // ERST bit (bit 0) - Raster interrupt enable
     const enableSpriteBackground = !!(value & 0x02); // EMBC bit (bit 1) - Sprite-background collision enable
-    const enableSpriteSprite = !!(value & 0x04);     // EMMC bit (bit 2) - Sprite-sprite collision enable
-    const enableLightpen = !!(value & 0x08);       // ELP bit (bit 3) - Light pen interrupt enable
+    const enableSpriteSprite = !!(value & 0x04); // EMMC bit (bit 2) - Sprite-sprite collision enable
+    const enableLightpen = !!(value & 0x08); // ELP bit (bit 3) - Light pen interrupt enable
 
     // --- STEP 2: Detect changes and handle effects
     const previousEnable = this.interruptEnable;
-    const newEnable = value & 0x0F; // Only bits 3-0 are used
+    const newEnable = value & 0x0f; // Only bits 3-0 are used
 
     if (previousEnable !== newEnable) {
       // --- Interrupt enable mask has changed
@@ -2060,7 +2122,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       // - IRQ masking: Changes which pending interrupts can trigger IRQ line
       // - IRQ line update: May immediately change IRQ line state
       // - Processor impact: May trigger or clear interrupt request to CPU
-      
+
       // --- CONDITIONAL EFFECTS (depends on current state):
       if (enableRaster && !(previousEnable & 0x01)) {
         // --- Raster interrupt enabled: If raster interrupt is pending, may trigger IRQ
@@ -2076,16 +2138,16 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       }
 
       // --- DISABLE EFFECTS:
-      if (!enableRaster && (previousEnable & 0x01)) {
+      if (!enableRaster && previousEnable & 0x01) {
         // --- Raster interrupt disabled: IRQ may be cleared if this was the only active interrupt
       }
-      if (!enableSpriteBackground && (previousEnable & 0x02)) {
+      if (!enableSpriteBackground && previousEnable & 0x02) {
         // --- Sprite-background collision interrupt disabled
       }
-      if (!enableSpriteSprite && (previousEnable & 0x04)) {
+      if (!enableSpriteSprite && previousEnable & 0x04) {
         // --- Sprite-sprite collision interrupt disabled
       }
-      if (!enableLightpen && (previousEnable & 0x08)) {
+      if (!enableLightpen && previousEnable & 0x08) {
         // --- Light pen interrupt disabled
       }
 
@@ -2098,18 +2160,18 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
     // --- STEP 4: Update IRQ line status based on new enable mask
     // --- As per VIC-II doc: IRQ triggered when "(latch bit AND enable bit) is set"
-    const activeInterrupts = this.interruptLatch & this.interruptEnable & 0x0F;
+    const activeInterrupts = this.interruptLatch & this.interruptEnable & 0x0f;
     const irqActive = activeInterrupts !== 0;
-    
+
     if (irqActive) {
-      this.interruptLatch |= 0x80;     // Set IRQ bit (bit 7) in latch register
+      this.interruptLatch |= 0x80; // Set IRQ bit (bit 7) in latch register
     } else {
-      this.interruptLatch &= ~0x80;    // Clear IRQ bit (bit 7) in latch register
+      this.interruptLatch &= ~0x80; // Clear IRQ bit (bit 7) in latch register
     }
 
     // --- STEP 5: Update register values
-    this.registers[0x1a] = newEnable;  // Only lower 4 bits are valid, upper 4 bits read as 0
-    this.registers[0x19] = (this.interruptLatch & 0x8F); // Update $d019 to reflect IRQ state
+    this.registers[0x1a] = newEnable; // Only lower 4 bits are valid, upper 4 bits read as 0
+    this.registers[0x19] = this.interruptLatch & 0x8f; // Update $d019 to reflect IRQ state
 
     // --- IRQ OUTPUT HANDLING:
     // TODO: Signal CPU interrupt controller if IRQ state changed
@@ -2123,7 +2185,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private setRegD01BValue(value: number) {
     // $D01B - Sprite Data Priority Register
     // Each bit controls whether the corresponding sprite appears in front of or behind foreground graphics
-    // 
+    //
     // The VIC-II has a display priority hierarchy:
     // - Border (highest priority - always on top)
     // - Foreground graphics (text/bitmap data with color ≠ background)
@@ -2133,14 +2195,14 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // For each sprite x (bits 7-0 correspond to sprites 7-0):
     // - MxDP=0: Sprite appears BEHIND foreground graphics
     //   Priority: Background < Foreground < Sprite < Border
-    // - MxDP=1: Sprite appears IN FRONT of foreground graphics  
+    // - MxDP=1: Sprite appears IN FRONT of foreground graphics
     //   Priority: Background < Sprite < Foreground < Border
     //
     // Sprite-to-sprite priority is independent of this register and determined by sprite number
     // (sprite 0 has highest priority, sprite 7 has lowest priority among sprites)
     //
     // Only bits 7-0 are used, no masking needed as this is a full 8-bit register
-    
+
     // Set priority for each sprite based on corresponding bit
     for (let i = 0; i < 8; i++) {
       this.spriteData[i].priority = (value & (1 << i)) !== 0;
@@ -2152,14 +2214,14 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private setRegD01CValue(value: number) {
     // $D01C - Sprite Multicolor Select Register
     // Each bit controls whether the corresponding sprite uses multicolor mode
-    // 
+    //
     // Standard mode (MxMC=0):
     // - 8 pixels per byte (1 bit per pixel)
     // - "0": Transparent
     // - "1": Sprite color ($D027-$D02E)
     //
     // Multicolor mode (MxMC=1):
-    // - 4 pixels per byte (2 bits per pixel) 
+    // - 4 pixels per byte (2 bits per pixel)
     // - "00": Transparent
     // - "01": Sprite multicolor 0 ($D025)
     // - "10": Sprite color ($D027-$D02E)
@@ -2173,7 +2235,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // - MxMC=1: Multicolor mode (4 wider pixels, more colors available)
     //
     // Only bits 7-0 are used, no masking needed as this is a full 8-bit register
-    
+
     // Set multicolor mode for each sprite based on corresponding bit
     for (let i = 0; i < 8; i++) {
       this.spriteData[i].multicolor = (value & (1 << i)) !== 0;
@@ -2197,7 +2259,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       !!(value & 0x10), // Sprite 4 X expansion (bit 4)
       !!(value & 0x20), // Sprite 5 X expansion (bit 5)
       !!(value & 0x40), // Sprite 6 X expansion (bit 6)
-      !!(value & 0x80)  // Sprite 7 X expansion (bit 7)
+      !!(value & 0x80) // Sprite 7 X expansion (bit 7)
     ];
 
     // --- STEP 2: Detect changes for each sprite and handle effects
@@ -2213,14 +2275,12 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
           // - Pixel duplication: Each sprite pixel displayed twice horizontally
           // - Shift timing: Sprite data sequencer outputs pixels with half frequency
           // - Screen coverage: Sprite covers more horizontal screen area
-          
           // --- CONDITIONAL EFFECTS (depends on current state):
           // - Sprite enable: Only affects display if sprite is enabled via $d015
           // - Collision detection: Expanded sprite area affects collision calculations
           // - Screen boundaries: May cause sprite to extend beyond visible area
           // - X coordinate interaction: Same X position but doubled visual width
           // - Multicolor mode: In multicolor mode, each 2-bit pixel group is doubled
-          
           // --- TIMING-CRITICAL considerations:
           // - Same-line changes: X expansion changes affect immediate sprite rendering
           // - Shift register timing: X expansion changes shift frequency immediately
@@ -2231,7 +2291,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
           // - Sprite width: Returns to normal 24 pixels
           // - Pixel display: Each sprite pixel displayed once (normal frequency)
           // - Screen coverage: Reduced horizontal screen area
-          
           // --- CONDITIONAL EFFECTS (depends on current state):
           // - Collision detection: Reduced sprite area affects collision calculations
           // - Screen positioning: Same X coordinate but halved visual width
@@ -2281,7 +2340,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // The border is visible around the graphics area and during vertical/horizontal blanking.
     // Border manipulation techniques can create "overscan" effects by opening the border.
 
-    const newBorderColor = value & 0x0F; // Mask to 4 bits (0-15)
+    const newBorderColor = value & 0x0f; // Mask to 4 bits (0-15)
     this.borderColor = newBorderColor;
     this.registers[0x20] = newBorderColor; // Store only the valid 4-bit value
   }
@@ -2293,7 +2352,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     //
     // This is the most commonly used background color and appears in all VIC-II graphics modes:
     // - Standard text mode: Background behind characters
-    // - Multicolor text mode: Background color (00 bit pattern)  
+    // - Multicolor text mode: Background color (00 bit pattern)
     // - Extended Color Mode (ECM): Background color 0 (selected by upper bits 00 of character code)
     // - Standard bitmap mode: Background color
     // - Multicolor bitmap mode: Background color (00 bit pattern)
@@ -2304,14 +2363,14 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     //
     // Color values 0-15 correspond to the C64's standard 16-color palette
 
-    const newBackgroundColor0 = value & 0x0F; // Mask to 4 bits (0-15)
+    const newBackgroundColor0 = value & 0x0f; // Mask to 4 bits (0-15)
     this.backgroundColor0 = newBackgroundColor0;
     this.registers[0x21] = newBackgroundColor0; // Store only the valid 4-bit value
   }
 
   // --- Set VIC R22
   private setRegD022Value(value: number) {
-    // $D022 - Background Color 1 Register  
+    // $D022 - Background Color 1 Register
     // Controls extended background color 1 used in multicolor and ECM modes
     //
     // Usage in different graphics modes:
@@ -2325,7 +2384,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // - Bits 7-4: Unused, read as undefined but typically 0
     // - Bits 3-0: B1C (Background Color 1) - color index (0-15)
 
-    const newBackgroundColor1 = value & 0x0F; // Mask to 4 bits (0-15)
+    const newBackgroundColor1 = value & 0x0f; // Mask to 4 bits (0-15)
     this.backgroundColor1 = newBackgroundColor1;
     this.registers[0x22] = newBackgroundColor1; // Store only the valid 4-bit value
   }
@@ -2339,14 +2398,14 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // - Standard text mode: Not used
     // - Multicolor text mode: Background color 2 (10 bit pattern in character data)
     // - Extended Color Mode (ECM): Background color 2 (selected by upper bits 10 of character code)
-    // - Standard bitmap mode: Not used  
+    // - Standard bitmap mode: Not used
     // - Multicolor bitmap mode: Background color 2 (10 bit pattern in bitmap data)
     //
     // Only the lower 4 bits (3-0) are used for the color index:
     // - Bits 7-4: Unused, read as undefined but typically 0
     // - Bits 3-0: B2C (Background Color 2) - color index (0-15)
 
-    const newBackgroundColor2 = value & 0x0F; // Mask to 4 bits (0-15)
+    const newBackgroundColor2 = value & 0x0f; // Mask to 4 bits (0-15)
     this.backgroundColor2 = newBackgroundColor2;
     this.registers[0x23] = newBackgroundColor2; // Store only the valid 4-bit value
   }
@@ -2367,7 +2426,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // - Bits 7-4: Unused, read as undefined but typically 0
     // - Bits 3-0: B3C (Background Color 3) - color index (0-15)
 
-    const newBackgroundColor3 = value & 0x0F; // Mask to 4 bits (0-15)
+    const newBackgroundColor3 = value & 0x0f; // Mask to 4 bits (0-15)
     this.backgroundColor3 = newBackgroundColor3;
     this.registers[0x24] = newBackgroundColor3; // Store only the valid 4-bit value
   }
@@ -2376,23 +2435,23 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   /**
    * Sets the Sprite Multicolor 0 register ($D025)
    * VIC-II color register for multicolor sprites
-   * 
+   *
    * Register: $D025 (53285) - Sprite multicolor 0
    * Description: The "01" bit pattern in multicolor sprites
-   * 
+   *
    * In multicolor sprite mode (when sprite multicolor bit is set in $D01C):
    * - The sprite data uses 2 bits per pixel instead of 1
    * - 00 = transparent (sprite background shows through)
    * - 01 = sprite multicolor 0 (this register)
    * - 10 = individual sprite color (from $D027-$D02E)
    * - 11 = sprite multicolor 1 (from $D026)
-   * 
+   *
    * This color is shared by all multicolor sprites on the screen.
-   * 
+   *
    * @param value Color index (bits 0-3 only, bits 4-7 ignored)
    */
   private setRegD025Value(value: number) {
-    const newSpriteMulticolor0 = value & 0x0F; // Mask to 4 bits (0-15)
+    const newSpriteMulticolor0 = value & 0x0f; // Mask to 4 bits (0-15)
     this.spriteMulticolor0 = newSpriteMulticolor0;
     this.registers[0x25] = newSpriteMulticolor0; // Store only the valid 4-bit value
   }
@@ -2401,29 +2460,35 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   /**
    * Sets the Sprite Multicolor 1 register ($D026)
    * VIC-II color register for multicolor sprites
-   * 
+   *
    * Register: $D026 (53286) - Sprite multicolor 1
    * Description: The "11" bit pattern in multicolor sprites
-   * 
+   *
    * In multicolor sprite mode (when sprite multicolor bit is set in $D01C):
    * - The sprite data uses 2 bits per pixel instead of 1
    * - 00 = transparent (sprite background shows through)
    * - 01 = sprite multicolor 0 (from $D025)
    * - 10 = individual sprite color (from $D027-$D02E)
    * - 11 = sprite multicolor 1 (this register)
-   * 
+   *
    * This color is shared by all multicolor sprites on the screen.
-   * 
+   *
    * @param value Color index (bits 0-3 only, bits 4-7 ignored)
    */
   private setRegD026Value(value: number) {
-    const newSpriteMulticolor1 = value & 0x0F; // Mask to 4 bits (0-15)
+    const newSpriteMulticolor1 = value & 0x0f; // Mask to 4 bits (0-15)
     this.spriteMulticolor1 = newSpriteMulticolor1;
     this.registers[0x26] = newSpriteMulticolor1; // Store only the valid 4-bit value
   }
 
   // ----------------------------------------------------------------------------------------------
   // Video modes
+
+  // ----------------------------------------------------------------------------------------------
+  // Border unit
+
+  mainBorderFlipFlop: boolean;
+  verticalBorderFlipFlop: boolean;
 
   // ----------------------------------------------------------------------------------------------
   // IRQ
@@ -2468,33 +2533,33 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   /**
    * Sets the individual sprite color registers ($D027-$D02E)
    * VIC-II color registers for individual sprite colors
-   * 
+   *
    * Registers: $D027-$D02E (53287-53294) - Sprite 0-7 colors
    * Description: Individual color for each sprite
-   * 
+   *
    * Usage in different sprite modes:
    * - Standard sprite mode (multicolor bit = 0 in $D01C):
    *   * 0 = transparent (sprite background shows through)
    *   * 1 = sprite color (this register)
-   * 
+   *
    * - Multicolor sprite mode (multicolor bit = 1 in $D01C):
-   *   * 00 = transparent (sprite background shows through)  
+   *   * 00 = transparent (sprite background shows through)
    *   * 01 = sprite multicolor 0 (from $D025)
    *   * 10 = sprite color (this register)
    *   * 11 = sprite multicolor 1 (from $D026)
-   * 
+   *
    * Each sprite has its own individual color independent of other sprites.
-   * 
+   *
    * @param index Sprite index (0-7) corresponding to register $D027+index
    * @param value Color index (bits 0-3 only, bits 4-7 ignored)
    */
   private setSpriteColor(index: number, value: number) {
-    const newSpriteColor = value & 0x0F; // Mask to 4 bits (0-15)
+    const newSpriteColor = value & 0x0f; // Mask to 4 bits (0-15)
     const regAddress = 0x27 + index; // Calculate register address
-    
+
     // Update the sprite color in the spriteData array
     this.spriteData[index].color = newSpriteColor;
-    
+
     // Update the register array
     this.registers[regAddress] = newSpriteColor;
   }
@@ -2502,40 +2567,40 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // ----------------------------------------------------------------------------------------------
   // Rendering operation methods
 
-  private CheckLeftBorderWhenNoCSEL(): void {
-    // Check left border when CSEL=0 (38 column mode)
-    // Border appears at X coordinate 31 ($1F)
-    // TODO: Get current X position from cycle timing
-    // TODO: Compare X position with left border threshold (31)
-    // TODO: Set main border flip-flop if threshold reached
-    // TODO: Handle border state transition effects
+  private CheckLeftBorder(): void {
+    const compareValue = this.csel ? 24 : 32;
+    if (this.currentCycle !== compareValue) return;
+
+    // --- At this point, the X coordinate reaches the left comparison value.
+
+    const topComparison = this.rsel ? 51 : 55; // RSEL=1: 51, RSEL=0: 55
+    const bottomComparison = this.rsel ? 251 : 247; // RSEL=1: 251, RSEL=0: 247
+
+    // --- Border Rule 4: If the X coordinate reaches the left comparison value and the Y
+    // --- coordinate reaches the bottom one, the vertical border flip flop is set.
+    if (this.currentRasterLine === bottomComparison) {
+      this.verticalBorderFlipFlop = true;
+    }
+
+    // --- Border Rule 5: If X reaches left AND Y reaches top AND DEN=1, reset vertical
+    // --- border flip-flop
+    if (this.currentRasterLine === topComparison && this.den) {
+      this.verticalBorderFlipFlop = false;
+    }
+
+    // --- Border Rule 6: If X reaches left AND vertical border flip-flop is NOT set, reset
+    // --- main border flip-flop
+    if (!this.verticalBorderFlipFlop) {
+      this.mainBorderFlipFlop = false;
+    }
   }
 
-  private CheckLeftBorderWhenCSEL(): void {
-    // Check left border when CSEL=1 (40 column mode)
-    // Border appears at X coordinate 24 ($18)
-    // TODO: Get current X position from cycle timing
-    // TODO: Compare X position with left border threshold (24)
-    // TODO: Set main border flip-flop if threshold reached
-    // TODO: Handle border state transition effects
-  }
+  private CheckRightBorder(): void {
+    const compareValue = this.csel ? 344 : 335;
+    if (this.currentCycle !== compareValue) return;
 
-  private CheckRightBorderWhenNoCSEL(): void {
-    // Check right border when CSEL=0 (38 column mode)
-    // Border appears at X coordinate 335 ($14F)
-    // TODO: Get current X position from cycle timing
-    // TODO: Compare X position with right border threshold (335)
-    // TODO: Set main border flip-flop if threshold reached
-    // TODO: Handle border state transition effects
-  }
-
-  private CheckRightBorderWhenCSEL(): void {
-    // Check right border when CSEL=1 (40 column mode)
-    // Border appears at X coordinate 344 ($158)
-    // TODO: Get current X position from cycle timing
-    // TODO: Compare X position with right border threshold (344)
-    // TODO: Set main border flip-flop if threshold reached
-    // TODO: Handle border state transition effects
+    // --- Border Rule 1:
+    this.mainBorderFlipFlop = true;
   }
 
   private CheckSpriteExpansion(tact: RenderingTact): void {
@@ -2615,12 +2680,12 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private FetchG(tact: RenderingTact): void {
     // Graphics data fetch (character generator or bitmap access)
     // Address depends on current graphics mode and display state
-    
+
     // TODO: Determine graphics mode from ECM/BMM/MCM bits
     const ecm = this.ecm;
     const bmm = this.bmm;
     const mcm = this.mcm;
-    
+
     if (bmm) {
       // Bitmap mode - fetch bitmap data
       // TODO: Calculate bitmap address using VC and RC
@@ -2635,7 +2700,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       // TODO: Perform memory read at calculated address
       // TODO: Load fetched data into graphics shift register
     }
-    
+
     // TODO: Handle idle state (always fetch from $3FFF or $39FF if ECM=1)
     // TODO: Apply XSCROLL delay to graphics data loading
   }
@@ -2643,7 +2708,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private FetchSprPtr(tact: RenderingTact): void {
     // Sprite data pointer fetch - reads sprite pointer from video matrix
     // Determines which 64-byte block contains sprite data
-    
     // TODO: Calculate sprite pointer address in video matrix
     // TODO: Address = video_matrix_base + $3F8 + sprite_number
     // TODO: Perform memory read to get sprite data pointer
@@ -2654,7 +2718,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   private FetchSprData(tact: RenderingTact): void {
     // Sprite data fetch - reads 24x21 pixel data (3 bytes per line)
     // Fetches actual sprite pixel data using sprite pointer
-    
     // TODO: Calculate sprite data address using sprite pointer and sprite line counter
     // TODO: Address = sprite_pointer * 64 + sprite_line_offset
     // TODO: Perform memory read to get sprite data bytes (3 bytes per sprite line)
@@ -2668,21 +2731,21 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
   /**
    * Get sprite priority register value ($D01B) - backward compatibility getter
-   * Returns 8-bit value where each bit represents sprite priority 
+   * Returns 8-bit value where each bit represents sprite priority
    * (0 = sprite behind foreground, 1 = sprite in front of foreground)
    */
   get spritePriority(): number {
     let value = 0;
     for (let i = 0; i < 8; i++) {
       if (this.spriteData[i].priority) {
-        value |= (1 << i);
+        value |= 1 << i;
       }
     }
     return value;
   }
 
   /**
-   * Get sprite multicolor register value ($D01C) - backward compatibility getter  
+   * Get sprite multicolor register value ($D01C) - backward compatibility getter
    * Returns 8-bit value where each bit represents sprite multicolor mode
    * (0 = standard mode, 1 = multicolor mode)
    */
@@ -2690,10 +2753,23 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     let value = 0;
     for (let i = 0; i < 8; i++) {
       if (this.spriteData[i].multicolor) {
-        value |= (1 << i);
+        value |= 1 << i;
       }
     }
     return value;
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Pixel rendering
+
+  /**
+   * Renders the current pixel to the screen.
+   */
+  private renderPixel(): void {
+    // TODO: Implement pixel rendering logic
+
+    // --- Next pixel
+    this.currentXPosition++;
   }
 }
 
