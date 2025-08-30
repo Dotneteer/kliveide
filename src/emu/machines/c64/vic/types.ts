@@ -11,11 +11,11 @@ export type VicChipConfiguration = {
   // --- The number of raster lines
   numRasterLines: number;
 
-  // --- The width of visible left border
-  borderLeft: number;
+  // --- The number of cycles for the left border
+  borderLeftCycles: number;
 
-  // --- The width of visible right border
-  borderRight: number;
+  // --- The number of cycles for the right border
+  borderRightCycles: number;
 
   // --- The width of visible top border
   borderTop: number;
@@ -111,6 +111,9 @@ export type RenderingTact = {
 
   // --- Sprite flags to check if BA should be set
   checkSpriteFetchBAMask: number;
+
+  // --- Indicates if the current cycle is visible
+  visible: boolean;
 };
 
 // --- A border rendering operation

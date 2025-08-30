@@ -225,6 +225,15 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Current X position (between 0 and 503/0x1f7)
   currentXPosition: number;
 
+  // --- Indicates if the current raster line is visible
+  currentRasterIsVisible: boolean;
+
+  // --- Indicates if the current cycle is visible
+  currentIsVisible: boolean;
+
+  // --- Current pixel index within the pixel buffer
+  currentPixelIndex: number;
+
   // --- VC: 10 bit counter (current video matrix position, between 0 and 999)
   videoMatrixCounter: number;
 
@@ -237,6 +246,10 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- The first and last DMA lines for display rendering
   firstDmaLine: number;
   lastDmaLine: number;
+
+  // --- The first and last visible cycles for display rendering
+  firstVisibleCycle: number;
+  lastVisibleCycle: number;
 
   // ----------------------------------------------------------------------------------------------
   // --- Memory Pointers ($D018)
@@ -294,39 +307,51 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Individual sprite colors are now stored in spriteData[index].color ($D027-$D02E)
   spriteData: SpriteInformation[];
 
+  // --- The table with rendering tacts for each cycle within a raster line
+  renderingTactTable: RenderingTact[];
+
   /**
    * The 16 standard colors of the Commodore 64
    */
-  private readonly s_C64Colors: number[] = [
+  readonly s_C64Colors: number[] = [
     0xff000000, // Black
     0xffffffff, // White
-    0xff883932, // Red
-    0xff67b6bd, // Cyan
-    0xff8b3f96, // Purple/Magenta
-    0xff55a049, // Green
-    0xff40318d, // Blue
-    0xffbfce72, // Yellow
-    0xff8b5429, // Orange/Brown
-    0xff574200, // Light Brown
-    0xffb86962, // Light Red
-    0xff505050, // Dark Grey
-    0xff787878, // Medium Grey
-    0xffa4e599, // Light Green
-    0xff867ade, // Light Blue
-    0xffb8b8b8 // Light Grey
+    0xff2b3791, // Red
+    0xffe6e265, // Cyan
+    0xffda359c, // Purple/Magenta
+    0xff55be5a, // Green
+    0xffda3540, // Blue
+    0xff76f0e9, // Yellow
+    0xff1869b8, // Orange/Brown
+    0xff323988, // Light Brown
+    0xff7d89ff, // Light Red
+    0xff4B4B4B, // Dark Grey
+    0xff8B8B8B, // Medium Grey
+    0xffb8f8b8, // Light Green
+    0xffda707c, // Light Blue
+    0xffbebebe // Light Grey
   ];
-
-  // --- The table with rendering tacts for each cycle within a raster line
-  private renderingTactTable: RenderingTact[];
 
   // --- Store the pixels that can be rendered on the physical screen
   private _pixelBuffer: Uint32Array;
+
+  // --- Pixel rendering can be intercepted (for test and debug purposes)
+  private _pixelRendererInterceptor: PixelRenderInterceptor | null;
 
   constructor(
     public readonly machine: IC64Machine,
     public readonly configuration: VicChipConfiguration
   ) {
     this.reset();
+    this._pixelRendererInterceptor = null;
+  }
+
+  /**
+   * Sets a pixel rendering interceptor for the VIC-II chip.
+   * @param interceptor The interceptor function to be called during pixel rendering.
+   */
+  setPixelRendererInterceptor(interceptor: PixelRenderInterceptor | null): void {
+    this._pixelRendererInterceptor = interceptor;
   }
 
   /**
@@ -343,6 +368,9 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // --- Counters
     this.currentRasterLine = 0;
     this.currentCycle = 0;
+    this.currentRasterIsVisible = false;
+    this.currentIsVisible = false;
+    this.currentPixelIndex = 0;
     this.videoMatrixCounter = 0;
     this.videoCounterBase = 0;
 
@@ -400,7 +428,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // --- Initialize composed raster interrupt line (RST8=0, $d012=0 initially)
     this.rasterInterruptLine = 0;
 
-    this.initializeRenderingTactTableNew();
+    this.initializeRenderingTactTable();
   }
 
   /**
@@ -601,17 +629,30 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // --- Move to the next cycle
     this.currentCycle++;
     if (this.currentCycle >= this.tactsInDisplayLine) {
+      // --- Enter a new raster line
       this.currentCycle = 0;
       this.currentRasterLine++;
       if (this.currentRasterLine >= this.rasterLines) {
+        // --- We start a new frame
         this.currentRasterLine = 0;
+        this.currentPixelIndex = 0;
         // TODO: Reset refresh counter to $ff at start of frame
-        // TODO: Handle frame-specific state resets
         // TODO: Clear lightpen trigger for next frame
       }
       this.registers[0x12] = this.currentRasterLine & 0xff;
       this.registers[0x11] = (this.registers[0x11] & 0x7f) | ((this.currentRasterLine >> 8) & 0x01);
+
+      // --- Update visibility state because of raster line change
+      this.currentRasterIsVisible =
+        this.currentRasterLine >= this.configuration.firstDisplayedLine &&
+        this.currentRasterLine <= this.configuration.lastDisplayedLine;
       // TODO: Handle line-specific state updates (sprite counters, etc.)
+    } else {
+      // --- Update visibility because of cycle change
+      this.currentIsVisible =
+        this.currentRasterIsVisible &&
+        this.currentCycle >= this.firstVisibleCycle &&
+        this.currentCycle <= this.lastVisibleCycle;
     }
 
     return shouldStall;
@@ -675,6 +716,18 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    */
   tactsInDisplayLine: number;
 
+  /**
+   * Get the total number of tacts in a single frame.
+   * @returns The total number of tacts in a frame.
+   */
+  get totalTactsInFrame(): number {
+    return this.tactsInDisplayLine * this.rasterLines;
+  }
+
+  /**
+   * Get the pixel buffer for the current frame.
+   * @returns The pixel buffer as a Uint32Array.
+   */
   getPixelBuffer(): Uint32Array {
     return this._pixelBuffer;
   }
@@ -926,6 +979,24 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   }
 
   /**
+   * Renders the entire screen frame using the current VIC register values.
+   */
+  renderFullScreen(numTacts?: number): void {
+    // --- Counters
+    this.currentRasterLine = 0;
+    this.currentCycle = 0;
+    this.currentRasterIsVisible = false;
+    this.currentIsVisible = false;
+    this.currentPixelIndex = 0;
+    this.videoMatrixCounter = 0;
+    this.videoCounterBase = 0;
+
+    for (let i = 0; i < (numTacts ?? this.totalTactsInFrame); i++) {
+      this.renderCurrentTact();
+    }
+  }
+
+  /**
    * This method renders the entire screen frame as the shadow screen
    * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
    * @returns The pixel buffer that represents the previous screen
@@ -1171,16 +1242,22 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   /**
    * Initialize the helper tables that accelerate screen rendering by precalculating rendering tact information.
    */
-  private initializeRenderingTactTableNew(): void {
+  private initializeRenderingTactTable(): void {
     // --- Calculate the rendered screen size in pixels
     this.rasterLines = this.configuration.numRasterLines;
     this.tactsInDisplayLine = this.configuration.cyclesPerLine;
 
-    this.screenLines = this.configuration.borderTop + 25 * 8 + this.configuration.borderBottom;
-    this.screenWidth = this.configuration.borderLeft + 8 * 40 + this.configuration.borderRight;
+    this.screenLines =
+      this.configuration.lastDisplayedLine - this.configuration.firstDisplayedLine + 1;
+    this.screenWidth =
+      (this.configuration.borderLeftCycles + 40 + this.configuration.borderRightCycles) * 8;
+
+    // --- Visibility cycle counts
+    this.firstVisibleCycle = 16 - this.configuration.borderLeftCycles;
+    this.lastVisibleCycle = 16 + 40 + this.configuration.borderRightCycles - 1;
 
     // --- Prepare the pixel buffer to store the rendered screen bitmap
-    this._pixelBuffer = new Uint32Array((this.screenLines + 4) * this.screenWidth);
+    this._pixelBuffer = new Uint32Array(this.screenLines * this.screenWidth);
 
     // --- Calculate the entire rendering time of a single screen line
 
@@ -1214,7 +1291,8 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
           xPosition: xposPhi[0] >> 3,
           mayFetchVideoMatrix: (fetchPhi[1] & FetchType_M) === FetchC,
           checkFetchBA: !!(baPhi[0] & BaFetch),
-          checkSpriteFetchBAMask: baPhi[0] & BaSpr_M
+          checkSpriteFetchBAMask: baPhi[0] & BaSpr_M,
+          visible: ct[i].visible !== 0
         };
 
         switch (fetchPhi[0] & FetchType_M) {
@@ -2766,7 +2844,17 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    * Renders the current pixel to the screen.
    */
   private renderPixel(): void {
-    // TODO: Implement pixel rendering logic
+    const shouldRender = !this._pixelRendererInterceptor?.(this);
+    if (shouldRender) {
+      // TODO: Implement pixel processing logic
+
+      if (this.currentIsVisible) {
+        // TODO: Handle visible pixel rendering
+        // As of now, we render a red pixel
+        this._pixelBuffer[this.currentPixelIndex] = this.s_C64Colors[15];
+        this.currentPixelIndex++;
+      }
+    }
 
     // --- Next pixel
     this.currentXPosition++;
@@ -2797,3 +2885,5 @@ type SpriteInformation = {
   // TODO: Add other sprite properties as we implement more registers:
   // dataPointer: number; // Sprite data pointer (from $07f8-$07ff + VIC bank)
 };
+
+type PixelRenderInterceptor = (device: C64VicDevice) => boolean | void;
