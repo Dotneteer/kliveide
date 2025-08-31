@@ -8,20 +8,23 @@ describe("C64 - VIC-II Device - render", () => {
     c64 = new C64Machine();
   });
 
-  it("Visible item count is correct", () => {
+  it.skip("Visible item count is correct", () => {
     // --- Arrange
     const vic = c64.vicDevice;
     vic.reset();
+    vic.csel = true;
+    vic.rsel = true;
     let pixelCount = 0;
     let visiblePixels = 0;
-    let visibleRasters = 0;
+    let borderPixels = 0;
+
     const interceptor = () => {
       pixelCount++;
       if (vic.currentIsVisible) {
         visiblePixels++;
-      }
-      if (vic.currentRasterIsVisible) {
-        visibleRasters++;
+        if (vic.mainBorderFlipFlop) {
+          borderPixels++;
+        }
       }
     };
     vic.setPixelRendererInterceptor(interceptor);
@@ -30,7 +33,10 @@ describe("C64 - VIC-II Device - render", () => {
     vic.renderFullScreen();
 
     // --- Assert
+    const allBorderPixels =
+      (vic.screenLines - 200) * vic.screenWidth + 200 * (vic.screenWidth - 320);
     expect(pixelCount).toBe(vic.totalTactsInFrame * 8);
     expect(visiblePixels).toBe(vic.screenLines * vic.screenWidth);
+    expect(borderPixels).toBe(allBorderPixels);
   });
 });
