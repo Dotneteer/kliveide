@@ -9,6 +9,7 @@ import { C64IoExpansionDevice } from "./C64IoExpansionDevice";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
 import { C64MemoryDevice } from "./C64MemoryDevice";
+import { VicState } from "@common/messaging/EmuApi";
 
 export interface IC64Machine extends IAnyMachine, IM6510Cpu {
   /**
@@ -35,4 +36,9 @@ export interface IC64Machine extends IAnyMachine, IM6510Cpu {
   isIrqActive(): boolean;
 
   isNmiActive(): boolean;
+
+  /**
+   * Retrieves the current VIC state.
+   */
+  getVicState(): VicState;
 }

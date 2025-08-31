@@ -36,6 +36,7 @@ import { MachineCommand } from "@abstractions/MachineCommand";
 import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
+import { IC64Machine } from "@emu/machines/c64/IC64Machine";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -958,7 +959,8 @@ class EmuMessageProcessor {
       noController();
     }
 
-    // TODO: Implement VIC state retrieval for ZX Next
+    // TODO: Implement VIC state retrieval for C64
+    const machine = controller.machine as IC64Machine;
     const vicState: VicState = {
       vicBaseAddress: 0x0000,
       spriteInfo: [
