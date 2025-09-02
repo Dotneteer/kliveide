@@ -86,9 +86,4 @@ export interface IM6510Cpu extends IAnyCpu {
    * Resumes the CPU from the stalled state.
    */
   releaseCpu(): void;
-
-  /**
-   * Waits while the CPU gets released from the stalled state.
-   */
-  waitForCpuRelease(): void;
 }
