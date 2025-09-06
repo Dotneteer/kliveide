@@ -46,7 +46,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x8F is not zero
       expect(machine.cpu.isNFlagSet()).toBe(true); // Result 0x8F has bit 7 set
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+      expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
     });
 
     it("Should handle carry flag correctly when shifting 0x80", () => {
@@ -94,7 +94,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0xBB is not zero
       expect(machine.cpu.isNFlagSet()).toBe(true); // Result 0xBB has bit 7 set
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
+      expect(machine.checkedTacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
     });
 
     it("Should work with zero accumulator", () => {
@@ -137,7 +137,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x2A is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x2A has bit 7 clear
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
+      expect(machine.checkedTacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
     });
   });
 
@@ -167,7 +167,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x7F is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x7F has bit 7 clear
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+      expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
     });
   });
 
@@ -192,7 +192,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x55 is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x55 has bit 7 clear
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
+      expect(machine.checkedTacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
     });
 
     it("Should handle zero page wrap-around", () => {
@@ -237,7 +237,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x25 is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x25 has bit 7 clear
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+      expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
     });
   });
 
@@ -262,7 +262,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x62 is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x62 has bit 7 clear
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+      expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
     });
   });
 
@@ -352,7 +352,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x85 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(true); // Result 0x85 has bit 7 set
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+        expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
       });
 
       it("Should handle carry flag correctly when rotating 0x80", () => {
@@ -400,7 +400,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x01 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x01 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
+        expect(machine.checkedTacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
       });
 
       it("Should work with zero carry", () => {
@@ -443,7 +443,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0xAA is not zero
         expect(machine.cpu.isNFlagSet()).toBe(true); // Result 0xAA has bit 7 set
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
+        expect(machine.checkedTacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
       });
     });
 
@@ -473,7 +473,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x3C is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x3C has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+        expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
       });
     });
 
@@ -498,7 +498,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x01 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x01 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
+        expect(machine.checkedTacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
       });
 
       it("Should handle zero page wrap-around", () => {
@@ -543,7 +543,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x40 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x40 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+        expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
       });
     });
 
@@ -568,7 +568,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x02 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x02 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+        expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
       });
     });
 
@@ -659,7 +659,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x4D is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x4D has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+        expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
       });
 
       it("Should handle carry flag correctly when shifting odd number", () => {
@@ -707,7 +707,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x77 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x77 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
+        expect(machine.checkedTacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
       });
 
       it("Should work with zero accumulator", () => {
@@ -750,7 +750,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(true); // Result 0x00 is zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x00 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
+        expect(machine.checkedTacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
       });
     });
 
@@ -780,7 +780,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(true); // Result 0x00 is zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x00 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+        expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
       });
     });
 
@@ -805,7 +805,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x33 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x33 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
+        expect(machine.checkedTacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
       });
 
       it("Should handle zero page wrap-around", () => {
@@ -850,7 +850,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x21 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x21 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+        expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
       });
     });
 
@@ -875,7 +875,7 @@ describe("M6510 Undocumented Instructions - SLO", () => {
         expect(machine.cpu.isZFlagSet()).toBe(false); // Result 0x21 is not zero
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result 0x21 has bit 7 clear
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+        expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
       });
     });
 

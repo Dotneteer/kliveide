@@ -21,7 +21,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3080)).toBe(0x42);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // STA (zp,X) with wrap-around: 0x81
@@ -43,7 +43,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x5000)).toBe(0x66);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // STY zp: 0x84
@@ -60,7 +60,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x50)).toBe(0x33);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // STA zp: 0x85
@@ -77,7 +77,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x34)).toBe(0x12);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // STX zp: 0x86
@@ -94,7 +94,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x60)).toBe(0x55);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // STY abs: 0x8C
@@ -111,7 +111,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3000)).toBe(0x77);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // STA abs: 0x8D
@@ -128,7 +128,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3000)).toBe(0x88);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // STX abs: 0x8E
@@ -145,7 +145,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3000)).toBe(0x99);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // STA (zp),Y: 0x91
@@ -168,7 +168,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x4005)).toBe(0xaa);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // STA (zp),Y with address wrap-around: 0x91
@@ -191,7 +191,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x0000)).toBe(0xbb);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // STY zp,X: 0x94
@@ -209,7 +209,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x43)).toBe(0xbb); // Effective address is 0x40 + 0x03 = 0x43
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // STA zp,X: 0x95
@@ -227,7 +227,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x36)).toBe(0x12); // Effective address is 0x34 + 0x02 = 0x36
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // STX zp,Y: 0x96
@@ -245,7 +245,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x57)).toBe(0xcc); // Effective address is 0x50 + 0x07 = 0x57
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // STA abs,Y: 0x99
@@ -263,7 +263,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3010)).toBe(0xdd); // Effective address is 0x3000 + 0x10 = 0x3010
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // STA abs,X: 0x9D
@@ -281,7 +281,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3008)).toBe(0xee); // Effective address is 0x3000 + 0x08 = 0x3008
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // Test with zero values: 0x85
@@ -298,7 +298,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x34)).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // Test with 0xFF values: 0x86
@@ -315,7 +315,7 @@ describe("M6510 Registers store instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x60)).toBe(0xff);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 });
 
@@ -334,7 +334,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.y).toBe(0x04);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -353,7 +353,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.y).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -372,7 +372,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.y).toBe(0xff);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -394,7 +394,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // DEC zp with zero result: 0xC6
@@ -414,7 +414,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // DEC zp with wrap-around: 0xC6
@@ -434,7 +434,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // INY: 0xC8
@@ -454,7 +454,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // INY with wrap-around: 0xC8
@@ -471,7 +471,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.y).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -490,7 +490,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.y).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -509,7 +509,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.x).toBe(0x04);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -528,7 +528,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.x).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -547,7 +547,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.x).toBe(0xff);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -566,7 +566,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.x).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -588,7 +588,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // DEC abs sets zero flag: 0xCE
@@ -608,7 +608,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // DEC abs with wrap-around: 0xCE
@@ -628,7 +628,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // DEC abs sets negative flag: 0xCE
@@ -648,7 +648,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // DEC zp,X: 0xD6
@@ -669,7 +669,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // DEC zp,X with zero page wrap-around: 0xD6
@@ -687,7 +687,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x01)).toBe(0x09);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -707,7 +707,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x55)).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -727,7 +727,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x55)).toBe(0xff);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -747,7 +747,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x55)).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -770,7 +770,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // DEC abs,X sets zero flag: 0xDE
@@ -791,7 +791,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // DEC abs,X wraps around from 0x00 to 0xFF: 0xDE
@@ -812,7 +812,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
 
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // DEC abs,X sets negative flag: 0xDE
@@ -833,7 +833,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
 
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // INC zp: 0xE6
@@ -853,7 +853,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // INC zp with wrap-around: 0xE6
@@ -873,7 +873,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // INC zp sets negative flag: 0xE6
@@ -893,7 +893,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // INX: 0xE8
@@ -910,7 +910,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.x).toBe(0x06);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -929,7 +929,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.x).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -948,7 +948,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.cpu.x).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -970,7 +970,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC abs sets zero flag: 0xEE
@@ -990,7 +990,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC abs with wrap-around: 0xEE
@@ -1010,7 +1010,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC abs sets negative flag: 0xEE
@@ -1030,7 +1030,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC zp,X: 0xF6
@@ -1051,7 +1051,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC zp,X with zero page wrap-around: 0xF6
@@ -1072,7 +1072,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC zp,X sets zero flag: 0xF6
@@ -1093,7 +1093,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC zp,X wraps around from 0xFF to 0x00: 0xF6
@@ -1114,7 +1114,7 @@ describe("M6510 DEC and INC instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // INC zp,X sets negative flag: 0xF6
@@ -1132,7 +1132,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x55)).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -1152,7 +1152,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3010)).toBe(0x06);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -1172,7 +1172,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x0001)).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -1192,7 +1192,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3010)).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -1212,7 +1212,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3010)).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });
@@ -1232,7 +1232,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x3010)).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -1251,7 +1251,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x50)).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
   });
@@ -1270,7 +1270,7 @@ describe("M6510 DEC and INC instructions", () => {
     // --- Assert
     expect(machine.readMemory(0x50)).toBe(0x7f);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
   });

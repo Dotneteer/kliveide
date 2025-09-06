@@ -16,7 +16,6 @@ import { C64SidDevice } from "./C64SidDevice";
 import { C64VicDevice } from "./vic/C64VicDevice";
 import { IC64Machine } from "./IC64Machine";
 import { LiteEvent } from "@emu/utils/lite-event";
-import { M6510Cpu } from "@emu/m6510/M6510Cpu";
 import { C64KeyCode } from "./C64KeyCode";
 import { c64KeyMappings } from "./C64KeyMappings";
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
@@ -33,8 +32,9 @@ import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 import { c64SysVars } from "./C64SysVars";
+import { M6510VaCpu } from "@emu/m6510Va/M6510VaCpu";
 
-export class C64Machine extends M6510Cpu implements IC64Machine {
+export class C64Machine extends M6510VaCpu implements IC64Machine {
   // --- This instance runs the machine frame
   private _machineFrameRunner: IMachineFrameRunner;
 

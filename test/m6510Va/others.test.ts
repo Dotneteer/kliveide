@@ -23,7 +23,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
       expect(machine.cpu.a).toBe(initialA);
       expect(machine.cpu.x).toBe(initialX);
       expect(machine.cpu.y).toBe(initialY);
@@ -44,7 +44,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x50); // 0x20 + 0x30 = 0x50
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
       expect(machine.cpu.isCFlagSet()).toBe(false);
       expect(machine.cpu.isZFlagSet()).toBe(false);
       expect(machine.cpu.isNFlagSet()).toBe(false);
@@ -168,7 +168,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x3A); // 0x15 + 0x25 = 0x3A
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(3);
+      expect(machine.checkedTacts).toBe(3);
       expect(machine.cpu.isCFlagSet()).toBe(false);
       expect(machine.cpu.isZFlagSet()).toBe(false);
       expect(machine.cpu.isNFlagSet()).toBe(false);
@@ -191,7 +191,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x40); // 0x10 + 0x30 = 0x40
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(4);
+      expect(machine.checkedTacts).toBe(4);
       expect(machine.cpu.isCFlagSet()).toBe(false);
     });
 
@@ -208,7 +208,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.a).toBe(0x4A); // 0x08 + 0x42 = 0x4A
-      expect(machine.cpu.tacts).toBe(4);
+      expect(machine.checkedTacts).toBe(4);
     });
   });
 
@@ -226,7 +226,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x5A); // 0x25 + 0x35 = 0x5A
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(4);
+      expect(machine.checkedTacts).toBe(4);
       expect(machine.cpu.isCFlagSet()).toBe(false);
     });
   });
@@ -246,7 +246,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x5A); // 0x15 + 0x45 = 0x5A
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(4); // No page boundary crossed
+      expect(machine.checkedTacts).toBe(4); // No page boundary crossed
       expect(machine.cpu.isCFlagSet()).toBe(false);
     });
 
@@ -263,7 +263,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.a).toBe(0x50); // 0x20 + 0x30 = 0x50
-      expect(machine.cpu.tacts).toBe(5); // +1 cycle for page boundary cross
+      expect(machine.checkedTacts).toBe(5); // +1 cycle for page boundary cross
     });
   });
 
@@ -282,7 +282,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x7A); // 0x25 + 0x55 = 0x7A
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(4); // No page boundary crossed
+      expect(machine.checkedTacts).toBe(4); // No page boundary crossed
       expect(machine.cpu.isCFlagSet()).toBe(false);
     });
   });
@@ -304,7 +304,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x7A); // 0x15 + 0x65 = 0x7A
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(6);
+      expect(machine.checkedTacts).toBe(6);
       expect(machine.cpu.isCFlagSet()).toBe(false);
     });
   });
@@ -326,7 +326,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x7A); // 0x05 + 0x75 = 0x7A
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(5); // No page boundary crossed
+      expect(machine.checkedTacts).toBe(5); // No page boundary crossed
       expect(machine.cpu.isCFlagSet()).toBe(false);
     });
   });
@@ -500,7 +500,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x20); // 0x50 - 0x30 - 0 = 0x20
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
       expect(machine.cpu.isZFlagSet()).toBe(false);
       expect(machine.cpu.isNFlagSet()).toBe(false);
@@ -624,7 +624,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x3B); // 0x60 - 0x25 - 0 = 0x3B
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(3);
+      expect(machine.checkedTacts).toBe(3);
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
       expect(machine.cpu.isZFlagSet()).toBe(false);
       expect(machine.cpu.isNFlagSet()).toBe(false);
@@ -647,7 +647,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x20); // 0x50 - 0x30 - 0 = 0x20
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(4);
+      expect(machine.checkedTacts).toBe(4);
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     });
   });
@@ -666,7 +666,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x3B); // 0x70 - 0x35 - 0 = 0x3B
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(4);
+      expect(machine.checkedTacts).toBe(4);
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     });
   });
@@ -686,7 +686,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x20); // 0x45 - 0x25 - 0 = 0x20
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(4); // No page boundary crossed
+      expect(machine.checkedTacts).toBe(4); // No page boundary crossed
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     });
   });
@@ -706,7 +706,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x40); // 0x55 - 0x15 - 0 = 0x40
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(4); // No page boundary crossed
+      expect(machine.checkedTacts).toBe(4); // No page boundary crossed
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     });
   });
@@ -728,7 +728,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x40); // 0x65 - 0x25 - 0 = 0x40
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(6);
+      expect(machine.checkedTacts).toBe(6);
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     });
   });
@@ -750,7 +750,7 @@ describe("M6510 - NOP, ADC, and SBC Instructions", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(0x40); // 0x75 - 0x35 - 0 = 0x40
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(5); // No page boundary crossed
+      expect(machine.checkedTacts).toBe(5); // No page boundary crossed
       expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     });
   });

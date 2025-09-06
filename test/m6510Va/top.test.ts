@@ -34,7 +34,7 @@ describe("M6510 Undocumented Instructions - TOP", () => {
 
     // --- Assert
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
     
     // All registers should be unchanged
     expect(machine.cpu.a).toBe(initialA);
@@ -61,7 +61,7 @@ describe("M6510 Undocumented Instructions - TOP", () => {
 
     // --- Assert
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4); // No page boundary cross
+    expect(machine.checkedTacts).toBe(4); // No page boundary cross
     
     // All registers should be unchanged
     expect(machine.cpu.a).toBe(initialA);
@@ -88,7 +88,7 @@ describe("M6510 Undocumented Instructions - TOP", () => {
 
     // --- Assert
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary cross
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary cross
     
     // All registers should be unchanged
     expect(machine.cpu.a).toBe(initialA);
@@ -113,7 +113,7 @@ describe("M6510 Undocumented Instructions - TOP", () => {
 
     // --- Assert
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
     
     // Memory should be unchanged
     expect(machine.readMemory(0x4050)).toBe(0x42);
@@ -165,7 +165,7 @@ describe("M6510 Undocumented Instructions - TOP", () => {
 
     // --- Assert
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4); // No page boundary with X=0
+    expect(machine.checkedTacts).toBe(4); // No page boundary with X=0
     expect(machine.cpu.a).toBe(initialA);
     expect(machine.cpu.x).toBe(0x00);
     expect(machine.cpu.y).toBe(initialY);
@@ -190,7 +190,7 @@ describe("M6510 Undocumented Instructions - TOP", () => {
 
     // --- Assert
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Page boundary cross
+    expect(machine.checkedTacts).toBe(5); // Page boundary cross
     expect(machine.cpu.a).toBe(initialRegisters.a);
     expect(machine.cpu.x).toBe(0x01);
     expect(machine.cpu.y).toBe(initialRegisters.y);
@@ -211,7 +211,7 @@ describe("M6510 Undocumented Instructions - TOP", () => {
     // --- Assert
     expect(machine.cpu.sp).toBe(initialSp); // Stack pointer unchanged
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   it("TOP abs,X - timing consistency across all opcodes", () => {
@@ -255,6 +255,6 @@ describe("M6510 Undocumented Instructions - TOP", () => {
     // --- Assert
     expect(machine.cpu.p).toBe(initialFlags); // All flags unchanged
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 });

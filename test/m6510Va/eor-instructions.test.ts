@@ -17,7 +17,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // EOR # sets zero flag: 0x49
@@ -35,7 +35,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // EOR # sets negative flag: 0x49
@@ -53,7 +53,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // EOR # with all bits set: 0x49
@@ -71,7 +71,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // EOR zp (Zero Page): 0x45
@@ -90,7 +90,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // EOR zp sets zero flag: 0x45
@@ -109,7 +109,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // EOR zp sets negative flag: 0x45
@@ -128,7 +128,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // EOR zp,X (Zero Page,X): 0x55
@@ -148,7 +148,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR zp,X with zero page wrap-around: 0x55
@@ -168,7 +168,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR zp,X sets zero flag: 0x55
@@ -188,7 +188,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR zp,X sets negative flag: 0x55
@@ -208,7 +208,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs (Absolute): 0x4D
@@ -227,7 +227,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs sets zero flag: 0x4D
@@ -246,7 +246,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs sets negative flag: 0x4D
@@ -265,7 +265,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs,X (Absolute,X): 0x5D
@@ -285,7 +285,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs,X with page boundary crossing: 0x5D
@@ -305,7 +305,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary crossing
   });
 
   // EOR abs,X sets zero flag: 0x5D
@@ -325,7 +325,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs,X sets negative flag: 0x5D
@@ -345,7 +345,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs,Y (Absolute,Y): 0x59
@@ -365,7 +365,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs,Y with page boundary crossing: 0x59
@@ -385,7 +385,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary crossing
   });
 
   // EOR abs,Y sets zero flag: 0x59
@@ -405,7 +405,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR abs,Y sets negative flag: 0x59
@@ -425,7 +425,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // EOR (zp,X) (Indexed Indirect): 0x41
@@ -449,7 +449,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // EOR (zp,X) with wrap-around: 0x41
@@ -473,7 +473,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // EOR (zp,X) sets zero flag: 0x41
@@ -497,7 +497,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // EOR (zp,X) sets negative flag: 0x41
@@ -521,7 +521,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // EOR (zp),Y (Indirect Indexed): 0x51
@@ -545,7 +545,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // EOR (zp),Y with page boundary crossing: 0x51
@@ -569,7 +569,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(6); // Extra cycle for page boundary crossing
   });
 
   // EOR (zp),Y with zero page wrap-around: 0x51
@@ -593,7 +593,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // EOR (zp),Y sets zero flag: 0x51
@@ -617,7 +617,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // EOR (zp),Y sets negative flag: 0x51
@@ -641,7 +641,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // Edge case: EOR with 0x00 preserves accumulator value
@@ -659,7 +659,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: EOR with 0xFF complements accumulator value  
@@ -677,7 +677,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits
@@ -695,7 +695,7 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - same bits
@@ -713,6 +713,6 @@ describe("M6510 EOR instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 });

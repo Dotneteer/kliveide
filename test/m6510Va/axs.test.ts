@@ -30,7 +30,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Positive result
     expect(machine.cpu.isZFlagSet()).toBe(false); // Not zero
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS #$55 - should result in zero and set Z flag", () => {
@@ -50,6 +50,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow (result >= 0)
     expect(machine.cpu.isNFlagSet()).toBe(false); // Not negative
     expect(machine.cpu.isZFlagSet()).toBe(true); // Zero result
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS #$60 - should result in negative and clear C flag (borrow)", () => {
@@ -69,6 +70,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // Borrow occurred (result < 0)
     expect(machine.cpu.isNFlagSet()).toBe(true); // Negative result
     expect(machine.cpu.isZFlagSet()).toBe(false); // Not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS #$00 - subtract zero should preserve AND result", () => {
@@ -88,6 +90,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     expect(machine.cpu.isNFlagSet()).toBe(false); // Positive result
     expect(machine.cpu.isZFlagSet()).toBe(false); // Not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS #$FF - maximum subtraction", () => {
@@ -107,6 +110,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow (0xFF - 0xFF = 0)
     expect(machine.cpu.isNFlagSet()).toBe(false); // Not negative
     expect(machine.cpu.isZFlagSet()).toBe(true); // Zero result
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS with AND result of zero", () => {
@@ -126,6 +130,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // Borrow occurred
     expect(machine.cpu.isNFlagSet()).toBe(true); // Negative result
     expect(machine.cpu.isZFlagSet()).toBe(false); // Not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS should not affect other flags", () => {
@@ -147,6 +152,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isVFlagSet()).toBe(true); // Overflow should be unchanged
     expect(machine.cpu.isDFlagSet()).toBe(true); // Decimal should be unchanged
     expect(machine.cpu.isIFlagSet()).toBe(true); // Interrupt should be unchanged
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS edge case - result exactly at boundary", () => {
@@ -166,6 +172,7 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow (exact subtraction)
     expect(machine.cpu.isNFlagSet()).toBe(false); // Not negative
     expect(machine.cpu.isZFlagSet()).toBe(true); // Zero result
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("AXS with partial AND result", () => {
@@ -185,5 +192,6 @@ describe("M6510 Undocumented Instructions - AXS", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     expect(machine.cpu.isNFlagSet()).toBe(false); // Positive result
     expect(machine.cpu.isZFlagSet()).toBe(false); // Not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 });

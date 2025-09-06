@@ -37,7 +37,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // 0x42 has bit 7 clear
     expect(machine.cpu.isZFlagSet()).toBe(false); // 0x42 is not zero
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
+    expect(machine.checkedTacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
   });
 
   it("Should handle zero page wrap-around in indexed indirect addressing", () => {
@@ -59,6 +59,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.x).toBe(0x80);
     expect(machine.cpu.isNFlagSet()).toBe(true); // 0x80 has bit 7 set
     expect(machine.cpu.isZFlagSet()).toBe(false);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("Should load memory into both A and X using zero page addressing", () => {
@@ -76,7 +77,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // 0x7F has bit 7 clear
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3); // 2 + 1 = 3 cycles
+    expect(machine.checkedTacts).toBe(3); // 2 + 1 = 3 cycles
   });
 
   it("Should set zero flag when loading zero value", () => {
@@ -93,6 +94,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.x).toBe(0x00);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isZFlagSet()).toBe(true); // Zero flag set
+    expect(machine.checkedTacts).toBe(3);
   });
 
   it("Should load memory into both A and X using absolute addressing", () => {
@@ -110,7 +112,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true); // 0xAA has bit 7 set
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4); // 2 + 2 = 4 cycles
+    expect(machine.checkedTacts).toBe(4); // 2 + 2 = 4 cycles
   });
 
   it("Should load memory into both A and X using indirect indexed addressing", () => {
@@ -133,7 +135,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
+    expect(machine.checkedTacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
   });
 
   it("Should handle page boundary crossing in indirect indexed addressing", () => {
@@ -153,7 +155,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     // --- Assert
     expect(machine.cpu.a).toBe(0x55);
     expect(machine.cpu.x).toBe(0x55);
-    expect(machine.cpu.tacts).toBe(6); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(6); // Extra cycle for page boundary crossing
   });
 
   it("Should load memory into both A and X using zero page,Y addressing", () => {
@@ -172,7 +174,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true); // 0x99 has bit 7 set
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4); // 2 + 1 + 1 = 4 cycles
+    expect(machine.checkedTacts).toBe(4); // 2 + 1 + 1 = 4 cycles
   });
 
   it("Should wrap around in zero page when Y causes overflow", () => {
@@ -188,6 +190,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     // --- Assert
     expect(machine.cpu.a).toBe(0x44);
     expect(machine.cpu.x).toBe(0x44);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   it("Should load memory into both A and X using absolute,Y addressing", () => {
@@ -206,7 +209,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4); // No page boundary crossing
+    expect(machine.checkedTacts).toBe(4); // No page boundary crossing
   });
 
   it("Should handle page boundary crossing in absolute,Y addressing", () => {
@@ -222,7 +225,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     // --- Assert
     expect(machine.cpu.a).toBe(0x88);
     expect(machine.cpu.x).toBe(0x88);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary crossing
   });
 
   it("Should not affect other flags besides N and Z", () => {
@@ -247,6 +250,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.p & 0x7D).toBe(expectedFlags & 0x7D); // Check C, I, D, B, V flags unchanged
     expect(machine.cpu.isNFlagSet()).toBe(false); // N flag based on value
     expect(machine.cpu.isZFlagSet()).toBe(false); // Z flag based on value
+    expect(machine.checkedTacts).toBe(3);
   });
 
   it("Should preserve other registers", () => {
@@ -267,6 +271,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
     expect(machine.cpu.y).toBe(0x12); // Y unchanged
     expect(machine.cpu.sp).toBe(0xFE); // SP unchanged
     expect(machine.cpu.pc).toBe(0x1003); // PC incremented correctly
+    expect(machine.checkedTacts).toBe(4);
   });
 
   describe("LAX flag behavior verification", () => {
@@ -293,6 +298,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
         expect(machine.cpu.x).toBe(value);
         expect(machine.cpu.isNFlagSet()).toBe(expectedN);
         expect(machine.cpu.isZFlagSet()).toBe(expectedZ);
+        expect(machine.checkedTacts).toBe(3);
       });
     });
   });
@@ -340,7 +346,7 @@ describe("M6510 Undocumented Instructions - LAX", () => {
         machine.run();
 
         // --- Assert
-        expect(machine.cpu.tacts).toBe(expectedCycles);
+        expect(machine.checkedTacts).toBe(expectedCycles);
         expect(machine.cpu.a).toBe(0x42);
         expect(machine.cpu.x).toBe(0x42);
       });

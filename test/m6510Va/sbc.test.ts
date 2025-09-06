@@ -29,7 +29,7 @@ describe("M6510 Undocumented Instructions - SBC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("SBC #imm undocumented - should work with borrow (carry clear)", () => {

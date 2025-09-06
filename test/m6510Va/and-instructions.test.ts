@@ -17,7 +17,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // AND # sets zero flag: 0x29
@@ -35,7 +35,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // AND # sets negative flag: 0x29
@@ -53,7 +53,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // AND # with all bits set: 0x29
@@ -71,7 +71,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // AND zp (Zero Page): 0x25
@@ -90,7 +90,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // AND zp sets zero flag: 0x25
@@ -109,7 +109,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // AND zp sets negative flag: 0x25
@@ -128,7 +128,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // AND zp,X (Zero Page,X): 0x35
@@ -148,7 +148,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND zp,X with zero page wrap-around: 0x35
@@ -168,7 +168,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND zp,X sets zero flag: 0x35
@@ -188,7 +188,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND zp,X sets negative flag: 0x35
@@ -208,7 +208,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs (Absolute): 0x2D
@@ -227,7 +227,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs sets zero flag: 0x2D
@@ -246,7 +246,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs sets negative flag: 0x2D
@@ -265,7 +265,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs,X (Absolute,X): 0x3D
@@ -285,7 +285,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs,X with page boundary crossing: 0x3D
@@ -305,7 +305,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary crossing
   });
 
   // AND abs,X sets zero flag: 0x3D
@@ -325,7 +325,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs,X sets negative flag: 0x3D
@@ -345,7 +345,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs,Y (Absolute,Y): 0x39
@@ -365,7 +365,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs,Y with page boundary crossing: 0x39
@@ -385,7 +385,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary crossing
   });
 
   // AND abs,Y sets zero flag: 0x39
@@ -405,7 +405,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND abs,Y sets negative flag: 0x39
@@ -425,7 +425,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // AND (zp,X) (Indexed Indirect): 0x21
@@ -449,7 +449,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // AND (zp,X) with wrap-around: 0x21
@@ -473,7 +473,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // AND (zp,X) sets zero flag: 0x21
@@ -497,7 +497,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // AND (zp,X) sets negative flag: 0x21
@@ -521,7 +521,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // AND (zp),Y (Indirect Indexed): 0x31
@@ -545,7 +545,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // AND (zp),Y with page boundary crossing: 0x31
@@ -569,7 +569,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(6); // Extra cycle for page boundary crossing
   });
 
   // AND (zp),Y with zero page wrap-around: 0x31
@@ -593,7 +593,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // AND (zp),Y sets zero flag: 0x31
@@ -617,7 +617,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // AND (zp),Y sets negative flag: 0x31
@@ -641,7 +641,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // Edge case: AND with 0x00 always produces zero
@@ -659,7 +659,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: AND with 0xFF preserves accumulator value
@@ -677,7 +677,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns
@@ -695,7 +695,7 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test same bit patterns
@@ -713,6 +713,6 @@ describe("M6510 AND instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 });

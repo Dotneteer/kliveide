@@ -35,7 +35,7 @@ describe("M6510 Undocumented Instructions - AXA", () => {
     // Result should be A AND X AND (high+1) = 0xFF AND 0xAA AND 0x31 = 0x20
     expect(machine.readMemory(0x3005)).toBe(0x20);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("AXA abs,Y - should store A AND X AND (high+1) to memory (0x9F)", () => {
@@ -56,7 +56,7 @@ describe("M6510 Undocumented Instructions - AXA", () => {
     // Result should be A AND X AND (high+1) = 0x55 AND 0x33 AND 0x41 = 0x01
     expect(machine.readMemory(0x4010)).toBe(0x01);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("AXA (zp),Y - with zero page wraparound", () => {
@@ -81,6 +81,7 @@ describe("M6510 Undocumented Instructions - AXA", () => {
     // Result should be A AND X AND (high+1) = 0x77 AND 0x88 AND 0x26 = 0x00
     expect(machine.readMemory(0x2553)).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1002);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("AXA abs,Y - with Y causing page boundary cross", () => {
@@ -101,6 +102,7 @@ describe("M6510 Undocumented Instructions - AXA", () => {
     // Result should be A AND X AND (high+1) = 0xCC AND 0x99 AND 0x22 = 0x00
     expect(machine.readMemory(0x2101)).toBe(0x00);
     expect(machine.cpu.pc).toBe(0x1003);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("AXA should not affect any processor flags", () => {
@@ -124,6 +126,7 @@ describe("M6510 Undocumented Instructions - AXA", () => {
 
     // --- Assert
     expect(machine.cpu.p).toBe(initialFlags); // Flags should be unchanged
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("AXA (zp),Y - with all zeros should result in zero", () => {
@@ -146,6 +149,7 @@ describe("M6510 Undocumented Instructions - AXA", () => {
     // --- Assert
     // Result should be A AND X AND (high+1) = 0x00 AND 0x00 AND 0x61 = 0x00
     expect(machine.readMemory(0x6000)).toBe(0x00);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("AXA abs,Y - unstable behavior with high byte calculation", () => {
@@ -166,5 +170,6 @@ describe("M6510 Undocumented Instructions - AXA", () => {
     // Result should be A AND X AND (high+1) = 0xFF AND 0xFF AND 0x80 = 0x80
     expect(machine.readMemory(0x7FFF)).toBe(0x80);
     expect(machine.cpu.pc).toBe(0x1003);
+    expect(machine.checkedTacts).toBe(5);
   });
 });

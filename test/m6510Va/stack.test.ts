@@ -24,7 +24,7 @@ describe("M6510 - Stack Instructions", () => {
       expect(machine.cpu.sp).toBe(0xFE); // Stack pointer decremented
       expect(machine.readMemory(0x01FF)).toBe(0x42); // Value on stack
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(3); // PHA takes 3 cycles
+      expect(machine.checkedTacts).toBe(3); // PHA takes 3 cycles
     });
 
     it("should handle stack wrap around", () => {
@@ -73,7 +73,7 @@ describe("M6510 - Stack Instructions", () => {
       expect(machine.cpu.a).toBe(0x33); // Accumulator loaded from stack
       expect(machine.cpu.sp).toBe(0xFF); // Stack pointer incremented
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(4); // PLA takes 4 cycles
+      expect(machine.checkedTacts).toBe(4); // PLA takes 4 cycles
     });
 
     it("should set zero flag when pulled value is zero", () => {
@@ -156,7 +156,7 @@ describe("M6510 - Stack Instructions", () => {
       expect(pushedStatus & FlagSetMask6510.UNUSED).toBe(FlagSetMask6510.UNUSED); // UNUSED flag set
       expect(machine.cpu.p & FlagSetMask6510.B).toBe(0); // B flag not changed in actual processor
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(3); // PHP takes 3 cycles
+      expect(machine.checkedTacts).toBe(3); // PHP takes 3 cycles
     });
 
     it("should always set unused flag (bit 5) in pushed status", () => {
@@ -212,7 +212,7 @@ describe("M6510 - Stack Instructions", () => {
       expect(machine.cpu.isNFlagSet()).toBe(true); // N flag restored
       expect(machine.cpu.p & FlagSetMask6510.UNUSED).toBe(FlagSetMask6510.UNUSED); // UNUSED always set
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(4); // PLP takes 4 cycles
+      expect(machine.checkedTacts).toBe(4); // PLP takes 4 cycles
     });
 
     it("should ignore B flag from stack and always set unused flag", () => {
@@ -269,7 +269,7 @@ describe("M6510 - Stack Instructions", () => {
       expect(machine.cpu.sp).toBe(0x80); // Stack pointer set to X value
       expect(machine.cpu.x).toBe(0x80); // X register unchanged
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2); // TXS takes 2 cycles
+      expect(machine.checkedTacts).toBe(2); // TXS takes 2 cycles
     });
 
     it("should not affect flags", () => {
@@ -317,7 +317,7 @@ describe("M6510 - Stack Instructions", () => {
       expect(machine.cpu.x).toBe(0x42); // X register set to stack pointer value
       expect(machine.cpu.sp).toBe(0x42); // Stack pointer unchanged
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2); // TSX takes 2 cycles
+      expect(machine.checkedTacts).toBe(2); // TSX takes 2 cycles
     });
 
     it("should set zero flag when stack pointer is zero", () => {

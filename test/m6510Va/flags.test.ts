@@ -13,7 +13,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isCFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should leave carry flag clear when already clear", () => {
@@ -25,7 +25,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isCFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should not affect other flags", () => {
@@ -43,6 +43,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true);
       expect(machine.cpu.isDFlagSet()).toBe(true);
       expect(machine.cpu.isIFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -56,7 +57,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isCFlagSet()).toBe(true);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should leave carry flag set when already set", () => {
@@ -68,7 +69,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isCFlagSet()).toBe(true);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should not affect other flags", () => {
@@ -85,6 +86,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true);
       expect(machine.cpu.isDFlagSet()).toBe(true);
       expect(machine.cpu.isIFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -98,7 +100,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isIFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should leave interrupt disable flag clear when already clear", () => {
@@ -110,7 +112,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isIFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should not affect other flags", () => {
@@ -128,6 +130,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true);
       expect(machine.cpu.isDFlagSet()).toBe(true);
       expect(machine.cpu.isCFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -141,7 +144,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isIFlagSet()).toBe(true);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should leave interrupt disable flag set when already set", () => {
@@ -153,7 +156,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isIFlagSet()).toBe(true);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should not affect other flags", () => {
@@ -170,6 +173,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true);
       expect(machine.cpu.isDFlagSet()).toBe(true);
       expect(machine.cpu.isCFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -183,7 +187,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isVFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should leave overflow flag clear when already clear", () => {
@@ -195,7 +199,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isVFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should not affect other flags", () => {
@@ -213,6 +217,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isDFlagSet()).toBe(true);
       expect(machine.cpu.isIFlagSet()).toBe(true);
       expect(machine.cpu.isCFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -226,7 +231,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isDFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should leave decimal mode flag clear when already clear", () => {
@@ -238,7 +243,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isDFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should not affect other flags", () => {
@@ -256,6 +261,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true);
       expect(machine.cpu.isIFlagSet()).toBe(true);
       expect(machine.cpu.isCFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -269,7 +275,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isDFlagSet()).toBe(true);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should leave decimal mode flag set when already set", () => {
@@ -281,7 +287,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isDFlagSet()).toBe(true);
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should not affect other flags", () => {
@@ -298,6 +304,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true);
       expect(machine.cpu.isIFlagSet()).toBe(true);
       expect(machine.cpu.isCFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -329,7 +336,7 @@ describe("M6510 - Flag Instructions", () => {
       expect(machine.cpu.isIFlagSet()).toBe(true);  // Cleared by CLI, then set by SEI
       expect(machine.cpu.isCFlagSet()).toBe(true);  // Cleared by CLC, then set by SEC
       expect(machine.cpu.pc).toBe(0x1007);
-      expect(machine.cpu.tacts).toBe(14); // 7 instructions × 2 cycles each
+      expect(machine.checkedTacts).toBe(14); // 7 instructions × 2 cycles each
     });
 
     it("should preserve unused flag bit", () => {
@@ -341,6 +348,7 @@ describe("M6510 - Flag Instructions", () => {
       
       // Unused bit should still be set (bit 5 is always 1 in 6510)
       expect(machine.cpu.p & FlagSetMask6510.UNUSED).toBe(FlagSetMask6510.UNUSED);
+      expect(machine.checkedTacts).toBe(2);
     });
   });
 
@@ -354,6 +362,7 @@ describe("M6510 - Flag Instructions", () => {
       
       expect(machine.cpu.isCFlagSet()).toBe(false);
       expect(machine.cpu.pc).toBe(0x0000); // Wraps around
+      expect(machine.checkedTacts).toBe(2);
     });
 
     it("should verify all flag instruction opcodes", () => {
@@ -382,7 +391,7 @@ describe("M6510 - Flag Instructions", () => {
         
         const flagIsSet = (machine.cpu.p & instr.flagMask) !== 0;
         expect(flagIsSet).toBe(instr.shouldSet);
-        expect(machine.cpu.tacts).toBe(2);
+        expect(machine.checkedTacts).toBe(2);
       });
     });
   });

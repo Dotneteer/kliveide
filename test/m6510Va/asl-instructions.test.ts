@@ -18,7 +18,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ASL A sets carry flag: 0x0A
@@ -37,7 +37,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ASL A sets negative flag: 0x0A
@@ -56,7 +56,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ASL A sets both carry and zero flags: 0x0A
@@ -75,7 +75,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ASL zp (Zero Page): 0x06
@@ -94,7 +94,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ASL zp sets carry flag: 0x06
@@ -113,7 +113,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ASL zp sets negative flag: 0x06
@@ -132,7 +132,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ASL zp,X (Zero Page,X): 0x16
@@ -152,7 +152,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ASL zp,X with zero page wrap-around: 0x16
@@ -172,7 +172,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ASL zp,X sets carry flag: 0x16
@@ -192,7 +192,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ASL zp,X sets negative flag: 0x16
@@ -212,7 +212,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ASL abs (Absolute): 0x0E
@@ -231,7 +231,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ASL abs sets carry flag: 0x0E
@@ -250,7 +250,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ASL abs sets negative flag: 0x0E
@@ -269,7 +269,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ASL abs,X (Absolute,X): 0x1E
@@ -289,7 +289,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // ASL abs,X sets carry flag: 0x1E
@@ -309,7 +309,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // ASL abs,X sets negative flag: 0x1E
@@ -329,7 +329,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // Edge case: ASL with 0x00
@@ -348,7 +348,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: ASL with 0xFF (all bits set)
@@ -367,7 +367,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits low
@@ -386,7 +386,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits high
@@ -405,7 +405,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test bit pattern that produces exactly 0x80 (negative flag boundary)
@@ -424,7 +424,7 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test that ASL doesn't affect other flags
@@ -449,6 +449,6 @@ describe("M6510 ASL instructions", () => {
     expect(machine.cpu.isBFlagSet()).toBe(false);
     expect(machine.cpu.isDFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 });

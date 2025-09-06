@@ -19,7 +19,7 @@ describe("M6510 Register Transfer Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // 0x42 is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // 0x42 bit 7 is 0
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2); // TXA takes 2 cycles
+      expect(machine.checkedTacts).toBe(2); // TXA takes 2 cycles
     });
 
     it("TXA sets zero flag when X is 0x00", () => {
@@ -90,7 +90,7 @@ describe("M6510 Register Transfer Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // 0x55 is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // 0x55 bit 7 is 0
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2); // TYA takes 2 cycles
+      expect(machine.checkedTacts).toBe(2); // TYA takes 2 cycles
     });
 
     it("TYA sets zero flag when Y is 0x00", () => {
@@ -143,7 +143,7 @@ describe("M6510 Register Transfer Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // 0x33 is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // 0x33 bit 7 is 0
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2); // TAY takes 2 cycles
+      expect(machine.checkedTacts).toBe(2); // TAY takes 2 cycles
     });
 
     it("TAY sets zero flag when accumulator is 0x00", () => {
@@ -196,7 +196,7 @@ describe("M6510 Register Transfer Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(false); // 0x77 is not zero
       expect(machine.cpu.isNFlagSet()).toBe(false); // 0x77 bit 7 is 0
       expect(machine.cpu.pc).toBe(0x1001);
-      expect(machine.cpu.tacts).toBe(2); // TAX takes 2 cycles
+      expect(machine.checkedTacts).toBe(2); // TAX takes 2 cycles
     });
 
     it("TAX sets zero flag when accumulator is 0x00", () => {

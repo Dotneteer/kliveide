@@ -30,7 +30,7 @@ describe("M6510 - Interrupt Handling", () => {
       expect(machine.cpu.pc).toBe(0x8000); // Should jump to NMI vector
       expect(machine.cpu.sp).toBe(0xFC); // Stack pointer should be decremented by 3 (PCH, PCL, P)
       expect(machine.cpu.isIFlagSet()).toBe(true); // I flag should be set during NMI handling
-      expect(machine.cpu.tacts).toBe(9); // NMI handling takes 7 cycles + 2 for the NOP at 0x8000
+      expect(machine.checkedTacts).toBe(9); // NMI handling takes 7 cycles + 2 for the NOP at 0x8000
 
       // Check stack contents - PC was 0x1000 when NMI was triggered
       expect(machine.readMemory(0x01FF)).toBe(0x10); // PCH on stack
@@ -136,7 +136,7 @@ describe("M6510 - Interrupt Handling", () => {
       expect(machine.cpu.pc).toBe(0x8000); // Should jump to IRQ vector
       expect(machine.cpu.sp).toBe(0xFC); // Stack pointer should be decremented by 3
       expect(machine.cpu.isIFlagSet()).toBe(true); // I flag should be set during IRQ handling
-      expect(machine.cpu.tacts).toBe(9); // IRQ handling takes 7 cycles + 2 for NOP
+      expect(machine.checkedTacts).toBe(9); // IRQ handling takes 7 cycles + 2 for NOP
 
       // Check stack contents - PC was 0x1000 when IRQ was triggered
       expect(machine.readMemory(0x01FF)).toBe(0x10); // PCH on stack
@@ -165,7 +165,7 @@ describe("M6510 - Interrupt Handling", () => {
       expect(machine.cpu.irqRequested).toBe(true); // IRQ should still be pending
       expect(machine.cpu.pc).toBe(0x1001); // Should execute the NOP instead
       expect(machine.cpu.sp).toBe(0xFF); // Stack should be unchanged
-      expect(machine.cpu.tacts).toBe(2); // Should take only 2 cycles for NOP
+      expect(machine.checkedTacts).toBe(2); // Should take only 2 cycles for NOP
     });
 
     it("should handle IRQ after CLI clears I flag", () => {
@@ -247,7 +247,7 @@ describe("M6510 - Interrupt Handling", () => {
       machine.run(); // This should handle the NMI instead of executing the NOP
 
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(19); // 2 (NOP) + (7 for NMI + 6 for RTI) + 2 (NOP) + 2 (NOP)
+      expect(machine.checkedTacts).toBe(19); // 2 (NOP) + (7 for NMI + 6 for RTI) + 2 (NOP) + 2 (NOP)
     });
 
     it("should handle multiple consecutive IRQ requests when I flag is clear", () => {
@@ -266,7 +266,7 @@ describe("M6510 - Interrupt Handling", () => {
       machine.setupInterruptWindow("irq", 1, 30);
       machine.run(); // This should handle the IRQ instead of executing the NOP
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(45); // 2 (NOP) + 3 * (7 for IRQ + 6 for RTI) + 2 (NOP) + 2 (NOP)
+      expect(machine.checkedTacts).toBe(45); // 2 (NOP) + 3 * (7 for IRQ + 6 for RTI) + 2 (NOP) + 2 (NOP)
     });
 
     it("should preserve interrupt request state across normal instruction execution", () => {

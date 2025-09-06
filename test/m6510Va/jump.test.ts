@@ -20,7 +20,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.pc).toBe(0x3000); // Jumped to target address
-      expect(machine.cpu.tacts).toBe(3); // JMP absolute takes 3 cycles
+      expect(machine.checkedTacts).toBe(3); // JMP absolute takes 3 cycles
     });
 
     it("should handle jump to low memory", () => {
@@ -33,6 +33,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.pc).toBe(0x1234);
+      expect(machine.checkedTacts).toBe(3); // JMP absolute takes 3 cycles
     });
 
     it("should handle jump to high memory", () => {
@@ -45,6 +46,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.pc).toBe(0xABCD);
+      expect(machine.checkedTacts).toBe(3); // JMP absolute takes 3 cycles
     });
 
     it("should not affect any flags", () => {
@@ -61,6 +63,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(true);
       expect(machine.cpu.isNFlagSet()).toBe(true);
       expect(machine.cpu.isVFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(3); // JMP absolute takes 3 cycles
     });
 
     it("should not affect registers", () => {
@@ -80,6 +83,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.x).toBe(0x33);
       expect(machine.cpu.y).toBe(0x24);
       expect(machine.cpu.sp).toBe(0xFE);
+      expect(machine.checkedTacts).toBe(3); // JMP absolute takes 3 cycles
     });
   });
 
@@ -96,7 +100,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.pc).toBe(0x1234); // Jumped to target address from indirect
-      expect(machine.cpu.tacts).toBe(5); // JMP indirect takes 5 cycles
+      expect(machine.checkedTacts).toBe(5); // JMP indirect takes 5 cycles
     });
 
     it("should handle page boundary bug", () => {
@@ -111,6 +115,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.pc).toBe(0x5678); // Should use 0x2000 for high byte, not 0x2100
+      expect(machine.checkedTacts).toBe(5); 
     });
 
     it("should handle normal (non-boundary) indirect addressing", () => {
@@ -125,6 +130,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
 
       // --- Assert
       expect(machine.cpu.pc).toBe(0xCDAB);
+      expect(machine.checkedTacts).toBe(5);
     });
 
     it("should not affect flags or registers", () => {
@@ -149,6 +155,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.sp).toBe(0xFD);
       expect(machine.cpu.isNFlagSet()).toBe(true); // Flags unchanged
       expect(machine.cpu.isCFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(5);
     });
   });
 
@@ -167,7 +174,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.sp).toBe(0xFD); // Stack pointer decremented by 2
       expect(machine.readMemory(0x01FF)).toBe(0x10); // Return address high byte (PC after JSR - 1)
       expect(machine.readMemory(0x01FE)).toBe(0x02); // Return address low byte (PC after JSR - 1)
-      expect(machine.cpu.tacts).toBe(6); // JSR takes 6 cycles
+      expect(machine.checkedTacts).toBe(6); // JSR takes 6 cycles
     });
 
     it("should push correct return address", () => {
@@ -185,6 +192,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       // JSR pushes PC - 1, so for PC=0x2003 after reading operands, it pushes 0x2002
       expect(machine.readMemory(0x01FF)).toBe(0x20); // High byte of 0x2002
       expect(machine.readMemory(0x01FE)).toBe(0x02); // Low byte of 0x2002
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should handle stack wrap around", () => {
@@ -200,6 +208,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.sp).toBe(0xFF); // Stack pointer wrapped around
       expect(machine.readMemory(0x0101)).toBe(0x10); // Return address high byte
       expect(machine.readMemory(0x0100)).toBe(0x02); // Return address low byte
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should not affect flags", () => {
@@ -217,6 +226,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(true);
       expect(machine.cpu.isNFlagSet()).toBe(true);
       expect(machine.cpu.isVFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should not affect registers except PC and SP", () => {
@@ -236,6 +246,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.a).toBe(0x55); // Other registers unchanged
       expect(machine.cpu.x).toBe(0x66);
       expect(machine.cpu.y).toBe(0x77);
+      expect(machine.checkedTacts).toBe(6);
     });
   });
 
@@ -253,7 +264,8 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       // --- Assert
       expect(machine.cpu.pc).toBe(0x1003); // Returned to address + 1 (0x1002 + 1)
       expect(machine.cpu.sp).toBe(0xFF); // Stack pointer restored
-      expect(machine.cpu.tacts).toBe(6); // RTS takes 6 cycles
+      expect(machine.checkedTacts).toBe(6); // RTS takes 6 cycles
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should handle return to different addresses", () => {
@@ -269,6 +281,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       // --- Assert
       expect(machine.cpu.pc).toBe(0x8056); // 0x8055 + 1
       expect(machine.cpu.sp).toBe(0xFF);
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should handle stack wrap around", () => {
@@ -284,6 +297,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       // --- Assert
       expect(machine.cpu.pc).toBe(0x2035); // 0x2034 + 1
       expect(machine.cpu.sp).toBe(0x01); // Stack pointer wrapped
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should not affect flags", () => {
@@ -303,6 +317,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(true);
       expect(machine.cpu.isNFlagSet()).toBe(true);
       expect(machine.cpu.isVFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should not affect registers except PC and SP", () => {
@@ -324,6 +339,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.a).toBe(0xAA); // Other registers unchanged
       expect(machine.cpu.x).toBe(0xBB);
       expect(machine.cpu.y).toBe(0xCC);
+      expect(machine.checkedTacts).toBe(6);
     });
   });
 
@@ -348,7 +364,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.isZFlagSet()).toBe(true);
       expect(machine.cpu.isNFlagSet()).toBe(true);
       expect(machine.cpu.p & FlagSetMask6510.UNUSED).toBe(FlagSetMask6510.UNUSED); // UNUSED always set
-      expect(machine.cpu.tacts).toBe(6); // RTI takes 6 cycles
+      expect(machine.checkedTacts).toBe(6); // RTI takes 6 cycles
     });
 
     it("should ignore B flag from stack and always set unused flag", () => {
@@ -370,6 +386,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true); // V flag restored
       expect(machine.cpu.isIFlagSet()).toBe(true); // I flag restored
       expect(machine.cpu.p & FlagSetMask6510.UNUSED).toBe(FlagSetMask6510.UNUSED); // UNUSED always set
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should restore all flags except B flag", () => {
@@ -395,6 +412,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.isVFlagSet()).toBe(true);
       expect(machine.cpu.isNFlagSet()).toBe(true);
       expect(machine.cpu.p & FlagSetMask6510.UNUSED).toBe(FlagSetMask6510.UNUSED);
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should handle stack wrap around", () => {
@@ -412,6 +430,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.pc).toBe(0x7788);
       expect(machine.cpu.sp).toBe(0x01); // Stack pointer wrapped
       expect(machine.cpu.isCFlagSet()).toBe(true);
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should not affect registers except PC, SP, and P", () => {
@@ -435,6 +454,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       expect(machine.cpu.a).toBe(0x11); // Other registers unchanged
       expect(machine.cpu.x).toBe(0x22);
       expect(machine.cpu.y).toBe(0x33);
+      expect(machine.checkedTacts).toBe(6);
     });
   });
 
@@ -466,6 +486,7 @@ describe("M6510 - Jump and Subroutine Instructions", () => {
       // --- Assert after RTS
       expect(machine2.cpu.pc).toBe(0x1003); // Returned to instruction after JSR
       expect(machine2.cpu.sp).toBe(0xFF); // Stack pointer restored
+      expect(machine.checkedTacts).toBe(6);
     });
 
     it("should handle nested subroutine calls", () => {

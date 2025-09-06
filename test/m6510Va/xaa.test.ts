@@ -28,7 +28,7 @@ describe("M6510 Undocumented Instructions - XAA", () => {
     // Result should be (A | 0xEE) & X & operand = (0x00 | 0xEE) & 0x55 & 0xFF = 0xEE & 0x55 & 0xFF = 0x44
     expect(machine.cpu.a).toBe(0x44);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("XAA #imm - should set Zero flag when result is zero", () => {
@@ -219,7 +219,7 @@ describe("M6510 Undocumented Instructions - XAA", () => {
       // --- Assert
       expect(machine.cpu.a).toBe(testCase.expected);
       expect(machine.cpu.pc).toBe(0x1002);
-      expect(machine.cpu.tacts).toBe(2);
+      expect(machine.checkedTacts).toBe(2);
     }
   });
 });

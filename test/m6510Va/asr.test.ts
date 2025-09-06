@@ -29,7 +29,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result has bit 7 clear (logical shift)
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("Should clear carry flag when bit 0 is clear", () => {
@@ -48,6 +48,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // Bit 0 of AND result was 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result has bit 7 clear
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("Should set zero flag when result is zero", () => {
@@ -66,6 +67,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // Bit 0 of AND result was 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
     expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("Should handle single bit shift", () => {
@@ -83,6 +85,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
     expect(machine.cpu.a).toBe(0x00);
     expect(machine.cpu.isCFlagSet()).toBe(true); // Bit 0 of AND result was 1
     expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("Should never set negative flag (logical shift always clears bit 7)", () => {
@@ -101,6 +104,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // Bit 0 was 1
     expect(machine.cpu.isNFlagSet()).toBe(false); // Logical shift never sets negative flag
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("Should not affect other flags besides N, Z, and C", () => {
@@ -123,6 +127,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // C flag based on bit 0 of AND result
     expect(machine.cpu.isNFlagSet()).toBe(false); // N flag always clear for ASR
     expect(machine.cpu.isZFlagSet()).toBe(false); // Z flag based on result
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("Should preserve other registers", () => {
@@ -143,6 +148,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
     expect(machine.cpu.y).toBe(0x34); // Y unchanged
     expect(machine.cpu.sp).toBe(0xFE); // SP unchanged
     expect(machine.cpu.pc).toBe(0x1002); // PC incremented correctly
+    expect(machine.checkedTacts).toBe(2);
   });
 
   describe("ASR AND operation verification", () => {
@@ -167,6 +173,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
         // --- Assert
         expect(machine.cpu.a).toBe(expectedResult);
         expect(machine.cpu.isCFlagSet()).toBe(expectedCarry);
+        expect(machine.checkedTacts).toBe(2);
       });
     });
   });
@@ -196,6 +203,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
         // --- Assert
         expect(machine.cpu.a).toBe(expectedShift);
         expect(machine.cpu.isCFlagSet()).toBe(expectedCarry);
+        expect(machine.checkedTacts).toBe(2);
       });
     });
   });
@@ -225,6 +233,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
         expect(machine.cpu.isNFlagSet()).toBe(expectedN);
         expect(machine.cpu.isZFlagSet()).toBe(expectedZ);
         expect(machine.cpu.isCFlagSet()).toBe(expectedC);
+        expect(machine.checkedTacts).toBe(2);
       });
     });
   });
@@ -248,6 +257,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
         expect(machine.cpu.isCFlagSet()).toBe(expectedCarry);
         expect(machine.cpu.isNFlagSet()).toBe(false); // Never negative for ASR
         expect(machine.cpu.isZFlagSet()).toBe(expectedResult === 0);
+        expect(machine.checkedTacts).toBe(2);
       }
     });
 
@@ -274,6 +284,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
         expect(machine.cpu.isCFlagSet()).toBe(expectedCarry);
         expect(machine.cpu.isNFlagSet()).toBe(false);
         expect(machine.cpu.isZFlagSet()).toBe(expectedResult === 0);
+        expect(machine.checkedTacts).toBe(2);
       });
     });
   });
@@ -302,6 +313,7 @@ describe("M6510 Undocumented Instructions - ASR", () => {
         expect(machine.cpu.isCFlagSet()).toBe(expectedCarry);
         expect(machine.cpu.isNFlagSet()).toBe(false);
         expect(machine.cpu.isZFlagSet()).toBe(expectedResult === 0);
+        expect(machine.checkedTacts).toBe(2);
       });
     });
   });

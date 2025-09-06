@@ -35,7 +35,7 @@ describe("M6510 Undocumented Instructions - SAX", () => {
     expect(machine.readMemory(0x3000)).toBe(0x3C);
     expect(machine.cpu.p).toBe(initialFlags); // Flags should be unchanged
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
+    expect(machine.checkedTacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
   });
 
   it("Should handle zero page wrap-around for address calculation", () => {
@@ -72,7 +72,7 @@ describe("M6510 Undocumented Instructions - SAX", () => {
     expect(machine.readMemory(0x80)).toBe(0x00); // F0 AND 0F = 00
     expect(machine.cpu.p).toBe(initialFlags);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3); // 2 + 1 = 3 cycles
+    expect(machine.checkedTacts).toBe(3); // 2 + 1 = 3 cycles
   });
 
   it("Should work with all bits set", () => {
@@ -105,7 +105,7 @@ describe("M6510 Undocumented Instructions - SAX", () => {
     expect(machine.readMemory(0x4000)).toBe(0x00); // AA AND 55 = 00
     expect(machine.cpu.p).toBe(initialFlags);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4); // 2 + 2 = 4 cycles
+    expect(machine.checkedTacts).toBe(4); // 2 + 2 = 4 cycles
   });
 
   it("Should handle alternating bit patterns", () => {
@@ -139,7 +139,7 @@ describe("M6510 Undocumented Instructions - SAX", () => {
     expect(machine.readMemory(0x25)).toBe(0x1F); // 3F AND 1F = 1F, stored at $20+$05=$25
     expect(machine.cpu.p).toBe(initialFlags);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4); // 2 + 1 + 1 = 4 cycles
+    expect(machine.checkedTacts).toBe(4); // 2 + 1 + 1 = 4 cycles
   });
 
   it("Should wrap around in zero page when Y causes overflow", () => {

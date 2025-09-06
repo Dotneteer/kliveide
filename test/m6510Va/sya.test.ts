@@ -28,7 +28,7 @@ describe("M6510 Undocumented Instructions - SYA", () => {
     // Result should be Y AND (high+1) = 0xFF AND 0x31 = 0x31
     expect(machine.readMemory(0x3005)).toBe(0x31);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("SYA abs,X - with different Y register value", () => {
@@ -48,7 +48,7 @@ describe("M6510 Undocumented Instructions - SYA", () => {
     // Result should be Y AND (high+1) = 0x55 AND 0x41 = 0x41
     expect(machine.readMemory(0x4010)).toBe(0x41);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("SYA abs,X - with Y causing zero result", () => {

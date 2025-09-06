@@ -24,9 +24,9 @@ describe("M6510 Undocumented Instructions - ATX", () => {
     expect(machine.cpu.a).toBe(0x55); // 0xFF AND 0x55 = 0x55
     expect(machine.cpu.x).toBe(0x55); // X should equal A after ATX
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
     expect(machine.cpu.isNFlagSet()).toBe(false); // Bit 7 is 0
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("ATX #$00 - should set zero flag and clear negative flag", () => {
@@ -43,6 +43,7 @@ describe("M6510 Undocumented Instructions - ATX", () => {
     expect(machine.cpu.x).toBe(0x00); // X should equal A after ATX
     expect(machine.cpu.isNFlagSet()).toBe(false); // Bit 7 is 0
     expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("ATX #$80 - should set negative flag and clear zero flag", () => {
@@ -59,6 +60,7 @@ describe("M6510 Undocumented Instructions - ATX", () => {
     expect(machine.cpu.x).toBe(0x80); // X should equal A after ATX
     expect(machine.cpu.isNFlagSet()).toBe(true); // Bit 7 is 1
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("ATX #$AA - partial AND operation", () => {
@@ -75,6 +77,7 @@ describe("M6510 Undocumented Instructions - ATX", () => {
     expect(machine.cpu.x).toBe(0x00); // X should equal A after ATX
     expect(machine.cpu.isNFlagSet()).toBe(false); // Bit 7 is 0
     expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("ATX #$FF - should preserve all bits", () => {
@@ -91,6 +94,7 @@ describe("M6510 Undocumented Instructions - ATX", () => {
     expect(machine.cpu.x).toBe(0x77); // X should equal A after ATX
     expect(machine.cpu.isNFlagSet()).toBe(false); // Bit 7 is 0
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("ATX should not affect other flags", () => {
@@ -113,6 +117,7 @@ describe("M6510 Undocumented Instructions - ATX", () => {
     expect(machine.cpu.isVFlagSet()).toBe(true); // Overflow should be unchanged
     expect(machine.cpu.isDFlagSet()).toBe(true); // Decimal should be unchanged
     expect(machine.cpu.isIFlagSet()).toBe(true); // Interrupt should be unchanged
+    expect(machine.checkedTacts).toBe(2);
   });
 
   it("ATX should work with different initial X values", () => {
@@ -130,5 +135,6 @@ describe("M6510 Undocumented Instructions - ATX", () => {
     expect(machine.cpu.x).toBe(0x33); // X should equal A after ATX, not related to initial X
     expect(machine.cpu.isNFlagSet()).toBe(false); // Bit 7 is 0
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
+    expect(machine.checkedTacts).toBe(2);
   });
 });

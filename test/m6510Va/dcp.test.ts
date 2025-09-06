@@ -34,7 +34,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true); // A - decremented = 0x4F - 0x4F = 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("DCP zp - accumulator less than decremented value (0xC7)", () => {
@@ -53,6 +53,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // A < decremented value (0x50 < 0x5F)
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.isNFlagSet()).toBe(true); // Result is negative (0x50 - 0x5F = 0xF1)
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("DCP zp - accumulator greater than decremented value (0xC7)", () => {
@@ -71,6 +72,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // A >= decremented value (0x50 >= 0x2F)
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive (0x50 - 0x2F = 0x21)
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("DCP abs - absolute addressing (0xCF)", () => {
@@ -90,7 +92,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true); // A - decremented = 0xFE - 0xFE = 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("DCP zp,X - zero page indexed addressing (0xD7)", () => {
@@ -111,7 +113,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("DCP (zp,X) - indexed indirect addressing (0xC3)", () => {
@@ -137,7 +139,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true); // A - decremented = 0x7F - 0x7F = 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(8);
+    expect(machine.checkedTacts).toBe(8);
   });
 
   it("DCP (zp),Y - indirect indexed addressing (0xD3)", () => {
@@ -164,7 +166,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false); // A - decremented = 0x05 - 0x00 = 0x05 (not zero)
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(8);
+    expect(machine.checkedTacts).toBe(8);
   });
 
   it("DCP abs,X - absolute indexed addressing (0xDF)", () => {
@@ -187,7 +189,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true); // A - decremented = 0x7E - 0x7E = 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   it("DCP abs,Y - absolute indexed addressing (0xDB)", () => {
@@ -210,7 +212,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.isNFlagSet()).toBe(true); // Result is negative (0x40 - 0x54 = 0xEC)
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   it("DCP should handle memory wrapping correctly", () => {
@@ -229,6 +231,7 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // A >= decremented value (0xFF >= 0xFF)
     expect(machine.cpu.isZFlagSet()).toBe(true); // A - decremented = 0xFF - 0xFF = 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("DCP should not affect other flags", () => {
@@ -250,5 +253,6 @@ describe("M6510 Undocumented Instructions - DCP", () => {
     expect(machine.cpu.isVFlagSet()).toBe(true); // Overflow should be unchanged
     expect(machine.cpu.isDFlagSet()).toBe(true); // Decimal should be unchanged
     expect(machine.cpu.isIFlagSet()).toBe(true); // Interrupt should be unchanged
+    expect(machine.checkedTacts).toBe(5);
   });
 });

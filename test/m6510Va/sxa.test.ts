@@ -31,7 +31,7 @@ describe("M6510 Undocumented Instructions - SXA", () => {
     expect(machine.cpu.x).toBe(0xAA); // X register should be unchanged
     expect(machine.cpu.y).toBe(0x10); // Y register should be unchanged
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("SXA abs,Y - different bit patterns", () => {

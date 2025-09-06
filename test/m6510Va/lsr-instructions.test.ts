@@ -18,7 +18,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LSR A sets carry flag: 0x4A
@@ -37,7 +37,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LSR A sets zero flag: 0x4A
@@ -56,7 +56,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LSR A never sets negative flag: 0x4A
@@ -75,7 +75,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // N flag is never set by LSR
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LSR zp (Zero Page): 0x46
@@ -94,7 +94,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LSR zp sets carry flag: 0x46
@@ -113,7 +113,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LSR zp with high value: 0x46
@@ -132,7 +132,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // N flag never set by LSR
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LSR zp,X (Zero Page,X): 0x56
@@ -152,7 +152,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LSR zp,X with zero page wrap-around: 0x56
@@ -172,7 +172,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LSR zp,X sets carry flag: 0x56
@@ -192,7 +192,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LSR zp,X with high value: 0x56
@@ -212,7 +212,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LSR abs (Absolute): 0x4E
@@ -231,7 +231,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LSR abs sets carry flag: 0x4E
@@ -250,7 +250,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LSR abs with high value: 0x4E
@@ -269,7 +269,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LSR abs,X (Absolute,X): 0x5E
@@ -289,7 +289,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // LSR abs,X sets carry flag: 0x5E
@@ -309,7 +309,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // LSR abs,X with high value: 0x5E
@@ -329,7 +329,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // Edge case: LSR with 0x00
@@ -348,7 +348,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: LSR with 0xFF (all bits set)
@@ -367,7 +367,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits low
@@ -386,7 +386,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits high
@@ -405,7 +405,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test that result of LSR is exactly 0x40
@@ -424,7 +424,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // N flag never set by LSR
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test that LSR doesn't affect other flags
@@ -449,7 +449,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isBFlagSet()).toBe(true);
     expect(machine.cpu.isDFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test that bit 0 of original determines carry flag
@@ -468,7 +468,7 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false); // Bit 0 was 0
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test that bit 0 of original determines carry flag
@@ -487,6 +487,6 @@ describe("M6510 LSR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true); // Bit 0 was 1
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 });

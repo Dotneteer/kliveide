@@ -43,7 +43,7 @@ describe("M6510 Undocumented Instructions - DOP", () => {
     expect(machine.cpu.y).toBe(0x56); // Y register unchanged
     expect(machine.cpu.p).toBe(0x78); // Flags unchanged
     expect(machine.cpu.pc).toBe(0x1002); // PC advanced by 2
-    expect(machine.cpu.tacts).toBe(2); // 2 cycles for immediate
+    expect(machine.checkedTacts).toBe(2); // 2 cycles for immediate
   });
 
   it("DOP #imm - immediate addressing variants", () => {
@@ -73,7 +73,7 @@ describe("M6510 Undocumented Instructions - DOP", () => {
       expect(machine.cpu.y).toBe(initialY); // No change to Y
       expect(machine.cpu.p).toBe(initialP); // No change to flags
       expect(machine.cpu.pc).toBe(0x1002); // PC advanced by 2
-      expect(machine.cpu.tacts).toBe(2); // 2 cycles
+      expect(machine.checkedTacts).toBe(2); // 2 cycles
     });
   });
 
@@ -99,7 +99,7 @@ describe("M6510 Undocumented Instructions - DOP", () => {
     expect(machine.cpu.p).toBe(0x78); // Flags unchanged
     expect(machine.readMemory(0x80)).toBe(0x55); // Memory unchanged
     expect(machine.cpu.pc).toBe(0x1002); // PC advanced by 2
-    expect(machine.cpu.tacts).toBe(3); // 3 cycles for zero page
+    expect(machine.checkedTacts).toBe(3); // 3 cycles for zero page
   });
 
   it("DOP zp - zero page addressing variants", () => {
@@ -131,7 +131,7 @@ describe("M6510 Undocumented Instructions - DOP", () => {
       expect(machine.cpu.p).toBe(initialP); // No change to flags
       expect(machine.readMemory(0x90)).toBe(0xAA); // Memory unchanged
       expect(machine.cpu.pc).toBe(0x1002); // PC advanced by 2
-      expect(machine.cpu.tacts).toBe(3); // 3 cycles
+      expect(machine.checkedTacts).toBe(3); // 3 cycles
     });
   });
 
@@ -157,7 +157,7 @@ describe("M6510 Undocumented Instructions - DOP", () => {
     expect(machine.cpu.p).toBe(0x78); // Flags unchanged
     expect(machine.readMemory(0x85)).toBe(0x99); // Memory unchanged
     expect(machine.cpu.pc).toBe(0x1002); // PC advanced by 2
-    expect(machine.cpu.tacts).toBe(4); // 4 cycles for zero page,X
+    expect(machine.checkedTacts).toBe(4); // 4 cycles for zero page,X
   });
 
   it("DOP zp,X - zero page indexed addressing variants", () => {
@@ -188,7 +188,7 @@ describe("M6510 Undocumented Instructions - DOP", () => {
       expect(machine.cpu.p).toBe(initialP); // No change to flags
       expect(machine.readMemory(0x7F)).toBe(0xBB); // Memory unchanged
       expect(machine.cpu.pc).toBe(0x1002); // PC advanced by 2
-      expect(machine.cpu.tacts).toBe(4); // 4 cycles
+      expect(machine.checkedTacts).toBe(4); // 4 cycles
     });
   });
 
@@ -217,7 +217,7 @@ describe("M6510 Undocumented Instructions - DOP", () => {
     expect(machine.cpu.p).toBe(initialP); // No change to flags
     expect(machine.readMemory(0x01)).toBe(0x33); // Memory unchanged
     expect(machine.cpu.pc).toBe(0x1002); // PC advanced by 2
-    expect(machine.cpu.tacts).toBe(4); // 4 cycles
+    expect(machine.checkedTacts).toBe(4); // 4 cycles
   });
 
   it("DOP should not affect any memory during read", () => {
@@ -271,5 +271,6 @@ describe("M6510 Undocumented Instructions - DOP", () => {
     // --- Assert
     expect(machine.readMemory(0x1002)).toBe(0xDD); // Should not be accessed
     expect(machine.cpu.pc).toBe(0x1002); // PC should point to next instruction
+    expect(machine.checkedTacts).toBe(2); // 2 cycles
   });
 });

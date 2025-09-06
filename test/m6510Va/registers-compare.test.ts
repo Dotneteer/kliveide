@@ -19,7 +19,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow (A >= operand)
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result bit 7 is 0
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(2); // CMP # takes 2 cycles
+        expect(machine.checkedTacts).toBe(2); // CMP # takes 2 cycles
       });
 
       it("CMP immediate with A > operand sets C flag only", () => {
@@ -87,7 +87,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isZFlagSet()).toBe(true);
         expect(machine.cpu.isCFlagSet()).toBe(true);
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(3); // CMP zp takes 3 cycles
+        expect(machine.checkedTacts).toBe(3); // CMP zp takes 3 cycles
       });
     });
 
@@ -108,7 +108,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(true); // 0x77 >= 0x55
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result (0x22) bit 7 is 0
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(4); // CMP abs takes 4 cycles
+        expect(machine.checkedTacts).toBe(4); // CMP abs takes 4 cycles
       });
     });
 
@@ -129,7 +129,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isZFlagSet()).toBe(true);
         expect(machine.cpu.isCFlagSet()).toBe(true);
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(4); // CMP zp,X takes 4 cycles
+        expect(machine.checkedTacts).toBe(4); // CMP zp,X takes 4 cycles
       });
 
       it("CMP zero page,X handles wrap-around", () => {
@@ -168,7 +168,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(false); // 0x77 < 0x88
         expect(machine.cpu.isNFlagSet()).toBe(true); // Result (0xEF) bit 7 is 1
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(4); // Base cycles, may add 1 for page boundary
+        expect(machine.checkedTacts).toBe(4); // Base cycles, may add 1 for page boundary
       });
     });
 
@@ -211,7 +211,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isZFlagSet()).toBe(true);
         expect(machine.cpu.isCFlagSet()).toBe(true);
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(6); // CMP (zp,X) takes 6 cycles
+        expect(machine.checkedTacts).toBe(6); // CMP (zp,X) takes 6 cycles
       });
     });
 
@@ -235,7 +235,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(false); // 0xAA < 0xBB
         expect(machine.cpu.isNFlagSet()).toBe(true); // Result (0xEF) bit 7 is 1
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(5); // Base cycles, may add 1 for page boundary
+        expect(machine.checkedTacts).toBe(5); // Base cycles, may add 1 for page boundary
       });
     });
   });
@@ -257,7 +257,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(true);
         expect(machine.cpu.isNFlagSet()).toBe(false);
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(2); // CPX # takes 2 cycles
+        expect(machine.checkedTacts).toBe(2); // CPX # takes 2 cycles
       });
 
       it("CPX immediate with X > operand sets C flag only", () => {
@@ -309,7 +309,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isZFlagSet()).toBe(true);
         expect(machine.cpu.isCFlagSet()).toBe(true);
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(3); // CPX zp takes 3 cycles
+        expect(machine.checkedTacts).toBe(3); // CPX zp takes 3 cycles
       });
     });
 
@@ -330,7 +330,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(true); // 0x44 >= 0x33
         expect(machine.cpu.isNFlagSet()).toBe(false); // Result (0x11) bit 7 is 0
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(4); // CPX abs takes 4 cycles
+        expect(machine.checkedTacts).toBe(4); // CPX abs takes 4 cycles
       });
     });
   });
@@ -352,7 +352,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(true);
         expect(machine.cpu.isNFlagSet()).toBe(false);
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(2); // CPY # takes 2 cycles
+        expect(machine.checkedTacts).toBe(2); // CPY # takes 2 cycles
       });
 
       it("CPY immediate with Y > operand sets C flag only", () => {
@@ -404,7 +404,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isZFlagSet()).toBe(true);
         expect(machine.cpu.isCFlagSet()).toBe(true);
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(3); // CPY zp takes 3 cycles
+        expect(machine.checkedTacts).toBe(3); // CPY zp takes 3 cycles
       });
     });
 
@@ -425,7 +425,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isCFlagSet()).toBe(false); // 0x77 < 0x99
         expect(machine.cpu.isNFlagSet()).toBe(true); // Result (0xDE) bit 7 is 1
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(4); // CPY abs takes 4 cycles
+        expect(machine.checkedTacts).toBe(4); // CPY abs takes 4 cycles
       });
     });
   });
@@ -490,7 +490,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isVFlagSet()).toBe(false); // Bit 6 of memory is 0
         expect(machine.cpu.isNFlagSet()).toBe(false); // Bit 7 of memory is 0
         expect(machine.cpu.pc).toBe(0x1002);
-        expect(machine.cpu.tacts).toBe(3); // BIT zp takes 3 cycles
+        expect(machine.checkedTacts).toBe(3); // BIT zp takes 3 cycles
       });
 
       it("BIT zero page with Z flag set", () => {
@@ -579,7 +579,7 @@ describe("M6510 Compare Instructions", () => {
         expect(machine.cpu.isVFlagSet()).toBe(true); // Bit 6 of memory is 1
         expect(machine.cpu.isNFlagSet()).toBe(true); // Bit 7 of memory is 1
         expect(machine.cpu.pc).toBe(0x1003);
-        expect(machine.cpu.tacts).toBe(4); // BIT abs takes 4 cycles
+        expect(machine.checkedTacts).toBe(4); // BIT abs takes 4 cycles
       });
 
       it("BIT absolute with zero result", () => {

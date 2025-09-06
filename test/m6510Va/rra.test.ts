@@ -52,7 +52,7 @@ describe("M6510 Undocumented Instructions - RRA", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true); // Result 0xC6 has bit 7 set
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow: pos + neg cannot overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+    expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
   });
 
   it("Should handle carry from ROR operation correctly", () => {
@@ -106,7 +106,7 @@ describe("M6510 Undocumented Instructions - RRA", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result has bit 7 clear
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
+    expect(machine.checkedTacts).toBe(5); // 2 + 1 + 1 + 1 = 5 cycles
   });
 
   it("Should work with carry flag set initially", () => {
@@ -155,7 +155,7 @@ describe("M6510 Undocumented Instructions - RRA", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result has bit 7 clear
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
+    expect(machine.checkedTacts).toBe(6); // 2 + 2 + 1 + 1 = 6 cycles
   });
 
   it("Should handle overflow correctly", () => {
@@ -208,7 +208,7 @@ describe("M6510 Undocumented Instructions - RRA", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true); // Result has bit 7 set
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow: pos + neg cannot overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
+    expect(machine.checkedTacts).toBe(8); // 2 + 1 + 1 + 1 + 1 + 1 + 1 = 8 cycles
   });
 
   it("Should rotate right zero page indexed memory and add with carry to accumulator", () => {
@@ -235,7 +235,7 @@ describe("M6510 Undocumented Instructions - RRA", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result has bit 7 clear
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
+    expect(machine.checkedTacts).toBe(6); // 2 + 1 + 1 + 1 + 1 = 6 cycles
   });
 
   it("Should handle zero page wrap-around", () => {
@@ -283,7 +283,7 @@ describe("M6510 Undocumented Instructions - RRA", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result has bit 7 clear
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+    expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
   });
 
   it("Should rotate right absolute indexed X memory and add with carry to accumulator", () => {
@@ -310,7 +310,7 @@ describe("M6510 Undocumented Instructions - RRA", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true); // Result has bit 7 set
     expect(machine.cpu.isVFlagSet()).toBe(true); // Overflow: pos + pos = neg
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
+    expect(machine.checkedTacts).toBe(7); // 2 + 2 + 1 + 1 + 1 = 7 cycles
   });
 
   it("Should produce zero result and set Z flag", () => {

@@ -36,7 +36,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC zp - subtract with borrow (carry clear) (0xE7)", () => {
@@ -57,6 +57,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC zp - result is zero (0xE7)", () => {
@@ -77,6 +78,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC zp - result is negative (0xE7)", () => {
@@ -97,6 +99,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.isNFlagSet()).toBe(true); // Result is negative
     expect(machine.cpu.isVFlagSet()).toBe(true); // Signed overflow: +112 - (-128) should be positive but result is negative
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC zp - overflow case (0xE7)", () => {
@@ -117,6 +120,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
     expect(machine.cpu.isVFlagSet()).toBe(false); // Signed overflow: -128 - (+128) should be negative but result is 0
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC abs - absolute addressing (0xEF)", () => {
@@ -138,7 +142,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("ISC zp,X - zero page indexed addressing (0xF7)", () => {
@@ -161,7 +165,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   it("ISC (zp,X) - indexed indirect addressing (0xE3)", () => {
@@ -189,7 +193,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(8);
+    expect(machine.checkedTacts).toBe(8);
   });
 
   it("ISC (zp),Y - indirect indexed addressing (0xF3)", () => {
@@ -218,7 +222,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(8);
+    expect(machine.checkedTacts).toBe(8);
   });
 
   it("ISC abs,X - absolute indexed addressing (0xFF)", () => {
@@ -243,7 +247,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(true); // No overflow
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   it("ISC abs,Y - absolute indexed addressing (0xFB)", () => {
@@ -268,7 +272,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
     expect(machine.cpu.isVFlagSet()).toBe(false); // No overflow
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   it("ISC should handle memory wrapping correctly", () => {
@@ -288,6 +292,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow
     expect(machine.cpu.isZFlagSet()).toBe(false); // Result is not zero
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is positive
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC decimal mode behavior", () => {
@@ -308,6 +313,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.readMemory(0x80)).toBe(0x09); // Memory should be incremented: 0x08 + 1 = 0x09
     // The subtraction part may behave differently in decimal mode depending on implementation
     expect(machine.cpu.a).toBe(0x06); // A = 0x15 - 0x09 = 0x06 (assuming binary subtraction)
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC should not affect other flags unnecessarily", () => {
@@ -327,6 +333,7 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isDFlagSet()).toBe(true); // Decimal should be unchanged
     expect(machine.cpu.isIFlagSet()).toBe(true); // Interrupt should be unchanged
     // Note: B flag behavior may vary, but we don't test it as it's implementation-specific
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("ISC edge case - maximum values", () => {
@@ -346,5 +353,6 @@ describe("M6510 Undocumented Instructions - ISC", () => {
     expect(machine.cpu.isCFlagSet()).toBe(true); // No borrow (0xFF >= 0xFF)
     expect(machine.cpu.isZFlagSet()).toBe(true); // Result is zero
     expect(machine.cpu.isNFlagSet()).toBe(false); // Result is not negative
+    expect(machine.checkedTacts).toBe(5);
   });
 });

@@ -12,7 +12,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when N flag is set", () => {
@@ -23,7 +23,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // No branch, just next instruction
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -36,7 +36,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when N flag is clear", () => {
@@ -47,7 +47,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1002, no branch
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -60,7 +60,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when V flag is set", () => {
@@ -71,7 +71,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1002, no branch
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -84,7 +84,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when V flag is clear", () => {
@@ -95,7 +95,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1002, no branch
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -108,7 +108,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when C flag is set", () => {
@@ -119,7 +119,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1002, no branch
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -132,7 +132,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when C flag is clear", () => {
@@ -143,7 +143,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1002, no branch
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -156,7 +156,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when Z flag is set", () => {
@@ -167,7 +167,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1002, no branch
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -180,7 +180,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // 0x1002 + 3
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should not branch when Z flag is clear", () => {
@@ -191,7 +191,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1002, no branch
-      expect(machine.cpu.tacts).toBe(2); // 2 base cycles only
+      expect(machine.checkedTacts).toBe(2); // 2 base cycles only
     });
   });
 
@@ -204,7 +204,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1006 - 4
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should handle maximum forward branch (+127)", () => {
@@ -215,7 +215,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1081); // 0x1002 + 127
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should handle maximum backward branch (-128)", () => {
@@ -226,7 +226,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1002); // 0x1082 - 128
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
   });
 
@@ -239,7 +239,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1103); // Should cross to next page
-      expect(machine.cpu.tacts).toBe(4); // 2 base + 1 branch + 1 page crossing
+      expect(machine.checkedTacts).toBe(4); // 2 base + 1 branch + 1 page crossing
     });
 
     it("should detect page crossing on backward branch", () => {
@@ -250,7 +250,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x10FE); // Crossed page boundary backward  
-      expect(machine.cpu.tacts).toBe(4); // 2 base + 1 branch + 1 page crossing
+      expect(machine.checkedTacts).toBe(4); // 2 base + 1 branch + 1 page crossing
     });
   });
 
@@ -263,7 +263,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run();
       
       expect(machine.cpu.pc).toBe(0x1005); // Should branch because Z is set
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
 
     it("should handle complex branching scenario", () => {
@@ -274,7 +274,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run(); // First instruction
       
       expect(machine.cpu.pc).toBe(0x1004); // Branched to 0x1002 + 2
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
       
       // Now position at destination and add more code
       machine.initCode([0xD0, 0x04], 0x1004, 0x1004); // BNE +4 at destination
@@ -284,7 +284,7 @@ describe("M6510 - Branch Instructions", () => {
       machine.run(); // Second instruction
       
       expect(machine.cpu.pc).toBe(0x100A); // Branched to 0x1006 + 4
-      expect(machine.cpu.tacts).toBe(3); // 2 base + 1 branch taken
+      expect(machine.checkedTacts).toBe(3); // 2 base + 1 branch taken
     });
   });
 });

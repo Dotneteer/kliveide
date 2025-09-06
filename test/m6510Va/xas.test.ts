@@ -33,7 +33,7 @@ describe("M6510 Undocumented Instructions - XAS", () => {
     // Step 2: Memory should contain SP AND (high+1) = 0xAA AND 0x31 = 0x20
     expect(machine.readMemory(0x3005)).toBe(0x20);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("XAS abs,Y - with different A and X values", () => {
@@ -57,7 +57,7 @@ describe("M6510 Undocumented Instructions - XAS", () => {
     // Step 2: Memory should contain SP AND (high+1) = 0x11 AND 0x41 = 0x01
     expect(machine.readMemory(0x4010)).toBe(0x01);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   it("XAS abs,Y - with zero result in memory", () => {
@@ -305,7 +305,7 @@ describe("M6510 Undocumented Instructions - XAS", () => {
       expect(machine.cpu.sp).toBe(testCase.expectedSp);
       expect(machine.readMemory(testCase.addr + testCase.y)).toBe(testCase.expectedMem);
       expect(machine.cpu.pc).toBe(0x1003);
-      expect(machine.cpu.tacts).toBe(5);
+      expect(machine.checkedTacts).toBe(5);
     }
   });
 });

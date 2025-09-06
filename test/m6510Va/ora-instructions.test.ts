@@ -17,7 +17,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ORA # sets zero flag: 0x09
@@ -35,7 +35,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ORA # sets negative flag: 0x09
@@ -53,7 +53,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ORA # with all bits set: 0x09
@@ -71,7 +71,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ORA zp (Zero Page): 0x05
@@ -90,7 +90,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // ORA zp sets zero flag: 0x05
@@ -109,7 +109,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // ORA zp sets negative flag: 0x05
@@ -128,7 +128,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // ORA zp,X (Zero Page,X): 0x15
@@ -148,7 +148,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA zp,X with zero page wrap-around: 0x15
@@ -168,7 +168,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA zp,X sets zero flag: 0x15
@@ -188,7 +188,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA zp,X sets negative flag: 0x15
@@ -208,7 +208,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs (Absolute): 0x0D
@@ -227,7 +227,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs sets zero flag: 0x0D
@@ -246,7 +246,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs sets negative flag: 0x0D
@@ -265,7 +265,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs,X (Absolute,X): 0x1D
@@ -285,7 +285,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs,X with page boundary crossing: 0x1D
@@ -305,7 +305,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary crossing
   });
 
   // ORA abs,X sets zero flag: 0x1D
@@ -325,7 +325,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs,X sets negative flag: 0x1D
@@ -345,7 +345,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs,Y (Absolute,Y): 0x19
@@ -365,7 +365,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs,Y with page boundary crossing: 0x19
@@ -385,7 +385,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(5); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(5); // Extra cycle for page boundary crossing
   });
 
   // ORA abs,Y sets zero flag: 0x19
@@ -405,7 +405,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA abs,Y sets negative flag: 0x19
@@ -425,7 +425,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // ORA (zp,X) (Indexed Indirect): 0x01
@@ -449,7 +449,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ORA (zp,X) with wrap-around: 0x01
@@ -473,7 +473,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ORA (zp,X) sets zero flag: 0x01
@@ -497,7 +497,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ORA (zp,X) sets negative flag: 0x01
@@ -521,7 +521,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ORA (zp),Y (Indirect Indexed): 0x11
@@ -545,7 +545,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ORA (zp),Y with page boundary crossing: 0x11
@@ -569,7 +569,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6); // Extra cycle for page boundary crossing
+    expect(machine.checkedTacts).toBe(6); // Extra cycle for page boundary crossing
   });
 
   // ORA (zp),Y with zero page wrap-around: 0x11
@@ -593,7 +593,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ORA (zp),Y sets zero flag: 0x11
@@ -617,7 +617,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(true);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ORA (zp),Y sets negative flag: 0x11
@@ -641,7 +641,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // Edge case: ORA with 0x00 preserves accumulator value
@@ -659,7 +659,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: ORA with 0xFF always produces 0xFF  
@@ -677,7 +677,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits
@@ -695,7 +695,7 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - same bits
@@ -713,6 +713,6 @@ describe("M6510 ORA instructions", () => {
     expect(machine.cpu.isZFlagSet()).toBe(false);
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 });

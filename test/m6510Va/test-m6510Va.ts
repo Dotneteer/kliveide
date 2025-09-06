@@ -68,6 +68,8 @@ export class M6510VaTestCpu extends M6510VaCpu {
  * behavior.
  */
 export class M6510VaTestMachine {
+  private _phi1Tacts: number;
+  private _phi2Tacts: number;
   private _cpuCycleCompleted = new LiteEvent<void>();
   private _instructionCompleted = new LiteEvent<void>();
 
@@ -110,6 +112,22 @@ export class M6510VaTestMachine {
    * Optional handler function that gets called when a CPU tact is incremented
    */
   tactIncrementHandler?: (cpu: M6510VaCpu) => void;
+
+  vicPhi1Processor() {
+    this._phi1Tacts++;
+  }
+
+  vicPhi2Processor() {
+    this._phi2Tacts++;
+  }
+
+  get phi1Tacts(): number {
+    return this._phi1Tacts;
+  }
+
+  get phi2Tacts(): number {
+    return this._phi2Tacts;
+  }
 
   /**
    * Tracks the start and end tact for interrupt management
@@ -156,6 +174,11 @@ export class M6510VaTestMachine {
     this.ioInputSequence = [];
     this.ioReadCount = 0;
     this.cpu = new M6510VaTestCpu(this);
+    this.cpu.setVicPhi1Processor(() => this.vicPhi1Processor());
+    this.cpu.setVicPhi2Processor(() => this.vicPhi2Processor());
+    this._phi1Tacts = 0;
+    this._phi2Tacts = 0;
+    this.codeEndsAt = 0x0000;
   }
 
   /**
@@ -180,6 +203,15 @@ export class M6510VaTestMachine {
     // --- Init code execution
     this.cpu.reset();
     this.cpu.pc = startAddress;
+    this._phi1Tacts = 0;
+    this._phi2Tacts = 0;
+    this.memoryAccessLog = [];
+    this.ioAccessLog = [];
+    this.ioReadCount = 0;
+    this.ioInputSequence = [];
+    this.registersBeforeRun = undefined;
+    this.memoryBeforeRun = [];
+    this.clearInterruptHandling();
   }
 
   /**
@@ -607,6 +639,10 @@ export class M6510VaTestMachine {
     throw new Error(
       `C flag expected to keep its value, but it changed from ${before} to ${after}`
     );
+  }
+
+  get checkedTacts(): number {
+    return (this.cpu.tacts === this.phi1Tacts && this.phi1Tacts === this.phi2Tacts) ? this.cpu.tacts : -1;
   }
 }
 

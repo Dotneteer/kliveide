@@ -18,7 +18,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDY #<N>: 0xa0
@@ -37,7 +37,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDY #<N>: 0xa0
@@ -56,7 +56,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDY #<N>: 0xa0
@@ -76,7 +76,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDY #<N>: 0xa0
@@ -96,7 +96,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDA (zp,X): 0xa1
@@ -118,7 +118,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002); // PC should be increment by 2
 
-    expect(machine.cpu.tacts).toBe(6); // 6 tacts for LDA (zp,X)
+    expect(machine.checkedTacts).toBe(6); // 6 tacts for LDA (zp,X)
   });
 
   // LDA (zp,X): 0xa1
@@ -140,7 +140,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002); // PC should be incremented by 2
 
-    expect(machine.cpu.tacts).toBe(6); // 6 tacts for LDA (zp,X)
+    expect(machine.checkedTacts).toBe(6); // 6 tacts for LDA (zp,X)
   });
 
   // LDA (zp,X): 0xa1
@@ -162,7 +162,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002); // PC should be incremented by 2
 
-    expect(machine.cpu.tacts).toBe(6); // 6 tacts for LDA (zp,X)
+    expect(machine.checkedTacts).toBe(6); // 6 tacts for LDA (zp,X)
   });
 
   // LDA (zp,X): 0xa1
@@ -184,7 +184,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101); // PC should be incremented by 2
 
-    expect(machine.cpu.tacts).toBe(6); // 6 tacts for LDA (zp,X)
+    expect(machine.checkedTacts).toBe(6); // 6 tacts for LDA (zp,X)
   });
 
   // LDA (zp,X): 0xa1
@@ -206,7 +206,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100); // PC should be incremented by 2
 
-    expect(machine.cpu.tacts).toBe(6); // 6 tacts for LDA (zp,X)
+    expect(machine.checkedTacts).toBe(6); // 6 tacts for LDA (zp,X)
   });
 
   // LDX #<N>: 0xa2
@@ -225,7 +225,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDX #<N>: 0xa2
@@ -244,7 +244,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDX #<N>: 0xa2
@@ -263,7 +263,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDX #<N>: 0xa2
@@ -283,7 +283,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDX #<N>: 0xa2
@@ -303,7 +303,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDY <zp>: 0xa4
@@ -323,7 +323,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDY <zp>: 0xa4
@@ -343,7 +343,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDY <zp>: 0xa4
@@ -362,7 +362,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDY <zp>: 0xa4
@@ -382,7 +382,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDY <zp>: 0xa4
@@ -401,7 +401,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDA <zp>: 0xa5
@@ -421,7 +421,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDA <zp>: 0xa5
@@ -441,7 +441,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDA <zp>: 0xa5
@@ -460,7 +460,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDA <zp>: 0xa5
@@ -480,7 +480,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDA <zp>: 0xa5
@@ -499,7 +499,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDX <zp>: 0xa6
@@ -519,7 +519,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDX <zp>: 0xa6
@@ -539,7 +539,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDX <zp>: 0xa6,
@@ -559,7 +559,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDX <zp>: 0xa6
@@ -579,7 +579,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDX <zp>: 0xa6
@@ -598,7 +598,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(3);
+    expect(machine.checkedTacts).toBe(3);
   });
 
   // LDA #<N>: 0xa9
@@ -617,7 +617,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDA #<N>: 0xa9
@@ -636,7 +636,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDA #<N>: 0xa9
@@ -655,7 +655,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDA #<N>: 0xa9
@@ -674,7 +674,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDA #<N>: 0xa9
@@ -693,7 +693,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDA #<N>: 0xa9
@@ -713,7 +713,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDA #<N>: 0xa9
@@ -733,7 +733,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // LDY <abs>: 0xac
@@ -753,7 +753,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>: 0xac
@@ -772,7 +772,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>: 0xac
@@ -791,7 +791,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>: 0xac
@@ -810,7 +810,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>: 0xac
@@ -829,7 +829,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>: 0xad
@@ -849,7 +849,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>: 0xad
@@ -869,7 +869,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>: 0xad
@@ -888,7 +888,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>: 0xad
@@ -908,7 +908,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>: 0xad
@@ -927,7 +927,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <abs>: 0xae
@@ -947,7 +947,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <abs>: 0xae
@@ -967,7 +967,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <abs>: 0xae
@@ -986,7 +986,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <abs>: 0xae
@@ -1005,7 +1005,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <abs>: 0xae
@@ -1024,7 +1024,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA (zp),Y: 0xb1
@@ -1046,7 +1046,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LDA (zp),Y: 0xb1
@@ -1068,7 +1068,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LDA (zp),Y: 0xb1
@@ -1090,7 +1090,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LDA (zp),Y: 0xb1
@@ -1113,7 +1113,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LDA (zp),Y: 0xb1
@@ -1135,7 +1135,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // LDY <zp>,X: 0xb4
@@ -1155,7 +1155,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <zp>,X: 0xb4
@@ -1175,7 +1175,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <zp>,X: 0xb4
@@ -1195,7 +1195,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <zp>,X: 0xb4
@@ -1215,7 +1215,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <zp>,X: 0xb4
@@ -1235,7 +1235,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <zp>,X: 0xb5
@@ -1255,7 +1255,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <zp>,X: 0xb5
@@ -1274,7 +1274,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <zp>,X: 0xb5
@@ -1294,7 +1294,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <zp>,X: 0xb5
@@ -1314,7 +1314,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <zp>,X: 0xb5
@@ -1334,7 +1334,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <zp>,Y: 0xb6
@@ -1354,7 +1354,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <zp>,Y: 0xb6
@@ -1374,7 +1374,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <zp>,Y: 0xb6, ZP,Y
@@ -1394,7 +1394,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <zp>,Y: 0xb6
@@ -1414,7 +1414,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <zp>,Y: 0xb6
@@ -1434,7 +1434,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1100);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>,Y: 0xb9
@@ -1455,7 +1455,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>,Y: 0xb9
@@ -1476,7 +1476,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>,Y: 0xb9
@@ -1496,7 +1496,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>,Y: 0xb9
@@ -1516,7 +1516,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <abs>,Y: 0xb9
@@ -1536,7 +1536,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LDY <abs>,X: 0xbc
@@ -1557,7 +1557,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>,X: 0xbc
@@ -1577,7 +1577,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>,X: 0xbc
@@ -1597,7 +1597,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>,X: 0xbc
@@ -1618,7 +1618,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDY <abs>,X: 0xbc
@@ -1638,7 +1638,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LDA <N>,X: 0xbd
@@ -1659,7 +1659,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <N>,X 0xbd, ABS
@@ -1680,7 +1680,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <N>,X 0xbd, ABS,X
@@ -1700,7 +1700,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <N>,X 0xbd, ABS
@@ -1721,7 +1721,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDA <N>,X 0xbd, ABS
@@ -1741,7 +1741,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // LDX <N>,Y 0xbe, ABS
@@ -1762,7 +1762,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <N>,Y 0xbe, ABS
@@ -1783,7 +1783,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <N>,Y 0xbe, ABS
@@ -1803,7 +1803,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1003);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <N>,Y 0xbe, ABS,Y
@@ -1823,7 +1823,7 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1102);
 
-    expect(machine.cpu.tacts).toBe(4);
+    expect(machine.checkedTacts).toBe(4);
   });
 
   // LDX <N>,Y 0xbe, ABS
@@ -1843,6 +1843,6 @@ describe("M6510 Registers load instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1101);
 
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 });

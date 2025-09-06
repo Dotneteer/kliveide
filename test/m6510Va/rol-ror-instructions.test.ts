@@ -19,7 +19,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROL A with carry in: 0x2A
@@ -39,7 +39,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROL A sets carry flag: 0x2A
@@ -59,7 +59,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROL A sets negative flag: 0x2A
@@ -79,7 +79,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROL A with carry in and carry out: 0x2A
@@ -99,7 +99,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROR A (Accumulator): 0x6A
@@ -119,7 +119,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROR A with carry in: 0x6A
@@ -139,7 +139,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROR A sets carry flag: 0x6A
@@ -159,7 +159,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROR A with carry in and carry out: 0x6A
@@ -179,7 +179,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // ROL zp (Zero Page): 0x26
@@ -199,7 +199,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ROL zp with carry: 0x26
@@ -219,7 +219,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ROR zp (Zero Page): 0x66
@@ -239,7 +239,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ROR zp with carry: 0x66
@@ -259,7 +259,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(5);
+    expect(machine.checkedTacts).toBe(5);
   });
 
   // ROL zp,X (Zero Page,X): 0x36
@@ -280,7 +280,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ROL zp,X with zero page wrap-around: 0x36
@@ -301,7 +301,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ROR zp,X (Zero Page,X): 0x76
@@ -322,7 +322,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1002);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ROL abs (Absolute): 0x2E
@@ -342,7 +342,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ROR abs (Absolute): 0x6E
@@ -362,7 +362,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(6);
+    expect(machine.checkedTacts).toBe(6);
   });
 
   // ROL abs,X (Absolute,X): 0x3E
@@ -383,7 +383,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // ROR abs,X (Absolute,X): 0x7E
@@ -404,7 +404,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1003);
-    expect(machine.cpu.tacts).toBe(7);
+    expect(machine.checkedTacts).toBe(7);
   });
 
   // Edge case: ROL with 0x00
@@ -424,7 +424,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: ROL with 0x00 and carry set
@@ -444,7 +444,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: ROR with 0x00
@@ -464,7 +464,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Edge case: ROR with 0x00 and carry set
@@ -484,7 +484,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits
@@ -504,7 +504,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(true);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test specific bit patterns - alternating bits
@@ -524,7 +524,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isNFlagSet()).toBe(false);
     expect(machine.cpu.isCFlagSet()).toBe(false);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test that ROL doesn't affect other flags
@@ -549,7 +549,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isBFlagSet()).toBe(true);
     expect(machine.cpu.isDFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test that ROR doesn't affect other flags
@@ -574,7 +574,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isBFlagSet()).toBe(true);
     expect(machine.cpu.isDFlagSet()).toBe(true);
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test complete rotation cycle (ROL then ROR should restore original)
@@ -593,7 +593,7 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // Bit 7 of 0x42 was 0
     expect(machine.cpu.isNFlagSet()).toBe(true); // Bit 7 of result is 1
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 
   // Test ROR with the result from ROL
@@ -612,6 +612,6 @@ describe("M6510 ROL and ROR instructions", () => {
     expect(machine.cpu.isCFlagSet()).toBe(false); // Bit 0 of 0x84 was 0
     expect(machine.cpu.isNFlagSet()).toBe(false); // Bit 7 of result is 0
     expect(machine.cpu.pc).toBe(0x1001);
-    expect(machine.cpu.tacts).toBe(2);
+    expect(machine.checkedTacts).toBe(2);
   });
 });
