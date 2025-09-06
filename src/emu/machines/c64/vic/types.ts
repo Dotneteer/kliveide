@@ -74,10 +74,11 @@ export type RenderingTact = {
   // --- (0-39 for 40 columns, 0-37 for 38 columns)
   xPosition: number;
 
-  // --- Border operation
-  // --- | CheckLeftBorder
-  // --- | CheckRightBorder
-  borderOperation?: BorderRenderingOperation;
+  // --- Border operation flags
+  checkLeftBorderWithNoCSel?: boolean;
+  checkLeftBorderWithCSel?: boolean;
+  checkRightBorderWithNoCSel?: boolean;
+  checkRightBorderWithCSel?: boolean;
 
   // --- Sprite operation
   // --- | CheckSpriteExpansion

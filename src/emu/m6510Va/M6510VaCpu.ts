@@ -1416,7 +1416,6 @@ export class M6510VaCpu implements IM6510VaCpu {
     this.tacts++;
     this._irqRequested = this._irqSignal;
     this._nmiRequested = this._nmiSignal;
-    this.onTactIncremented?.();
   }
 
   setJammed(): void {

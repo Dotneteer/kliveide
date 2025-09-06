@@ -494,13 +494,6 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
 
   delayPortWrite(_address: number): void {}
 
-  /**
-   * Allow the VIC to render the next screen tact (and stall or release the CPU if needed).
-   */
-  onTactIncremented(): void {
-    this.setStalled(this.vicDevice.renderCurrentTact());
-  }
-
   isCpuSnoozed(): boolean {
     // Return CPU snooze state
     return false;

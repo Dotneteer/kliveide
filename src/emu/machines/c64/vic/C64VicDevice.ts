@@ -231,6 +231,9 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // --- Indicates if the current cycle is visible
   currentIsVisible: boolean;
 
+  // --- Indicates if the current raster line can be a bad line
+  currentRasterCanBeBadLine: boolean;
+
   // --- Current pixel index within the pixel buffer
   currentPixelIndex: number;
 
@@ -325,8 +328,8 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     0xff1869b8, // Orange/Brown
     0xff323988, // Light Brown
     0xff7d89ff, // Light Red
-    0xff4B4B4B, // Dark Grey
-    0xff8B8B8B, // Medium Grey
+    0xff4b4b4b, // Dark Grey
+    0xff8b8b8b, // Medium Grey
     0xffb8f8b8, // Light Green
     0xffda707c, // Light Blue
     0xffbebebe // Light Grey
@@ -366,6 +369,10 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     for (let i = 0; i < this.registers.length; i++) {
       this.registers[i] = 0x00;
     }
+
+    // --- Border flip-flops
+    this.mainBorderFlipFlop = true;
+    this.verticalBorderFlipFlop = true;
 
     // --- Counters
     this.currentRasterLine = 0;
@@ -433,11 +440,123 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     this.initializeRenderingTactTable();
   }
 
+  /**
+   * Executes the VIC rendering tasks in the PHI1 phase of the clock cycle.
+   */
   renderPhi1(): void {
+    // --- Update the raster line if last cycle was reached
+    if (this.currentCycle >= this.tactsInDisplayLine) {
+      // --- Move to the next raster line
+      this.currentCycle = 0;
+      this.currentRasterLine++;
+      if (this.currentRasterLine >= this.rasterLines) {
+        // --- New raster line starts
+        this.currentRasterLine = 0;
+      }
 
+      // --- Update the raster line visibility status
+      this.currentRasterIsVisible =
+        this.currentRasterLine >= this.firstDmaLine && this.currentRasterLine <= this.lastDmaLine;
+    }
+
+    // --- At this point, the raster line and cycle are set for the new cycle.
+    // --- Check if we need to execute any raster line or new frame operations.
+    const isNewRasterLine = this.currentCycle === 0;
+    const inNewFrame = isNewRasterLine && this.currentRasterLine === 0;
+    const shouldSetupRasterLine =
+      isNewRasterLine || (this.currentCycle === 1 && this.currentRasterLine === 0);
+
+    if (inNewFrame) {
+      // --- New frame started (raster line 0, cycle 0)
+      this.currentPixelIndex = 0;
+      // --- We have already updated the raster counter.
+      // --- #1: Vertical timing reset
+      // --- - Initialize vertical blanking period - the new frame begins during vertical blanking)
+      // --- - Reset vertical display window logic for the upcoming frame
+      // --- #2: Prepare vertical display enable evaluation for the upcoming display lines
+    }
+
+    if (shouldSetupRasterLine) {
+      // --- #1: Check for raster interrupt condition
+      if (
+        this.rasterInterruptLine === this.currentRasterLine &&
+        (this.interruptEnable & 0x01) !== 0
+      ) {
+        // --- Raster interrupt is enabled and the current raster line matches the interrupt line
+        this.machine.setIrqSignal(true);
+      }
+
+      // --- #2: Check if the current raster line can have be a bad line
+      this.currentRasterCanBeBadLine =
+        this.currentRasterLine >= 0x30 && this.currentRasterLine <= 0xf7;
+
+      // --- #3: Process Sprite Y coordinates for DMA activation
+      // TODO: Implement sprite Y coordinate checking and DMA activation
+    }
+
+    // --- Normal phi1 operations for the current cycle
+    // --- #1: Border checks
+    // --- The border unit may change its flip-flop state
+    if (this.currentCycle === 62) {
+      // --- Border rule 2: If the Y coordinate reaches the bottom comparison value in cycle 63,
+      // --- the vertical border flip flop is set.
+      const bottomComparisonValue = this.rsel ? 251 : 247;
+      if (this.currentRasterLine === bottomComparisonValue) {
+        this.verticalBorderFlipFlop = true;
+      }
+      // --- Border rule 3: If the Y coordinate reaches the top comparison value in cycle 63 and
+      // --- the DEN bit in register $d011 is set, the vertical border flip flop is reset.
+      const topComparisonValue = this.rsel ? 51 : 55;
+      if (this.currentRasterLine === topComparisonValue /* && this.den */) {
+        this.verticalBorderFlipFlop = false;
+      }
+    }
   }
 
+  /**
+   * Executes the VIC rendering tasks in the PHI2 phase of the clock cycle.
+   */
   renderPhi2(): void {
+    const tact = this.renderingTactTable[this.currentCycle];
+
+    // === #1: Check for left border condition
+    if (
+      (tact.checkLeftBorderWithNoCSel && !this.csel) ||
+      (tact.checkLeftBorderWithCSel && this.csel)
+    ) {
+      // --- Left border starts (X coordinate reaches the left comparison value)
+      const topComparison = this.rsel ? 51 : 55; // RSEL=1: 51, RSEL=0: 55
+      const bottomComparison = this.rsel ? 251 : 247; // RSEL=1: 251, RSEL=0: 247
+
+      // --- Border Rule 4: If the X coordinate reaches the left comparison value and the Y
+      // --- coordinate reaches the bottom one, the vertical border flip flop is set.
+      if (this.currentRasterLine === bottomComparison) {
+        this.verticalBorderFlipFlop = true;
+      }
+
+      // --- Border Rule 5: If X reaches left AND Y reaches top AND DEN=1, reset vertical
+      // --- border flip-flop
+      if (this.currentRasterLine === topComparison /* && this.den */) {
+        this.verticalBorderFlipFlop = false;
+      }
+
+      // --- Border Rule 6: If X reaches left AND vertical border flip-flop is NOT set, reset
+      // --- main border flip-flop
+      if (!this.verticalBorderFlipFlop) {
+        this.mainBorderFlipFlop = false;
+      }
+    }
+
+    // === #2: Check for right border condition
+    if (
+      (tact.checkRightBorderWithNoCSel && !this.csel) ||
+      (tact.checkRightBorderWithNoCSel && this.csel)
+    ) {
+      // --- Right border ends
+      // --- Border Rule 1: If the X coordinate reaches the right comparison value, the main
+      // --- border flip flop is set
+      this.mainBorderFlipFlop = true;
+    }
   }
 
   /**
@@ -453,217 +572,32 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     // --- By default allow the CPU to access the bus
     let shouldStall = false;
 
-    // --- Get the current rendering operation for this cycle
-    const tact = this.renderingTactTable[this.currentCycle];
-    this.currentXPosition = tact.xPosition;
+    // --- Carry out the rendering operations for this cycle
+    // --- The PHI1 and PHI2 phases are separated to allow CPU operations in between
+    // --- The machine calls renderPhi1() first, then allows CPU operations, then calls renderPhi2()
+    this.renderPhi1();
+    this.renderPhi2();
 
-    // --- The border unit may change its flip-flop state
-    if (this.currentCycle === 63) {
-      // --- Border rule 2: If the Y coordinate reaches the bottom comparison value in cycle 63,
-      // --- the vertical border flip flop is set.
-      const bottomComparisonValue = this.rsel ? 251 : 247;
-      if (this.currentRasterLine === bottomComparisonValue) {
-        this.verticalBorderFlipFlop = true;
-      }
-      // --- Border rule 3: If the Y coordinate reaches the top comparison value in cycle 63 and
-      // --- the DEN bit in register $d011 is set, the vertical border flip flop is reset.
-      const topComparisonValue = this.rsel ? 51 : 55;
-      if (this.currentRasterLine === topComparisonValue && this.den) {
-        this.verticalBorderFlipFlop = false;
-      }
-    }
-
-    // --- The cycle may have border check operations (left or right border)
-    tact.borderOperation?.();
-
-    // --- Render the four pixels to be displayed during the PHI1 phase
+    // --- Render the eight pixels to be displayed during the cycle
+    this.renderPixel();
+    this.renderPixel();
+    this.renderPixel();
+    this.renderPixel();
     this.renderPixel();
     this.renderPixel();
     this.renderPixel();
     this.renderPixel();
 
-    // === TIMING AND CYCLE MANAGEMENT ===
-    // VIC-II timing: 6569 has 63 cycles per line, 6567 has 65 cycles per line
-    // Current implementation uses tactsInDisplayLine cycles per line
-
-    // ============================================================================
-    // === PHI1/PHI2 CLOCK PHASE BARRIER ===
-    // ============================================================================
-    // PHI1 PHASE (First Half-Cycle): CPU may access the address bus
-    // - CPU can perform memory operations and register accesses
-    // - VIC performs internal state updates that don't require bus access
-    //
-    // PHI2 PHASE (Second Half-Cycle): Only VIC can access the address bus
-    // - VIC performs all memory accesses (c-access, g-access, p-access, s-access, refresh)
-    // - CPU is blocked from bus access during VIC memory operations
-    // - BA (Bus Available) and AEC (Address Enable Control) signals coordinate this
-    // ============================================================================
-
-    // === MEMORY ACCESS OPERATIONS ===
-    // The VIC-II performs different types of memory accesses each cycle:
-    // - c-access: Read from video matrix and color RAM (12-bit address)
-    // - g-access: Read graphics data from character generator or bitmap (8-bit data)
-    // - p-access: Read sprite data pointers from video matrix (8-bit data)
-    // - s-access: Read sprite pixel data (8-bit data)
-    // - refresh: DRAM refresh cycles (5 per raster line)
-
-    if (tact.fetchOperation) {
-      // Execute the fetch operation using the function pointer
-      // The fetchOperation function handles the specific type of memory access
-      tact.fetchOperation(tact);
-
-      // Only real memory accesses require CPU to wait, not idle operations
-      // Idle fetches maintain timing but don't access the bus
-      if (tact.fetchOperation !== this.FetchIdle) {
-        shouldStall = true;
-      }
-    }
-
-    // === BAD LINE DETECTION AND HANDLING ===
-    // Bad Line Condition: RASTER >= $30 && RASTER <= $f7 && (RASTER & 7) == YSCROLL
-    // Bad Lines trigger c-accesses and g-accesses in display state
-    // Also require BA signal management for CPU bus access
-    const isInDisplayWindow = this.currentRasterLine >= 0x30 && this.currentRasterLine <= 0xf7;
-    const yscroll = this.registers[0x11] & 0x07; // YSCROLL from $d011
-    const isBadLine = isInDisplayWindow && (this.currentRasterLine & 0x07) === yscroll;
-
-    if (isBadLine && tact.mayFetchVideoMatrix) {
-      // TODO: Set BA low 3 cycles before first c-access (cycle 12)
-      // TODO: Enable c-accesses and g-accesses for this line (cycles 15-54)
-      // TODO: Load VC from VCBASE in cycle 14
-      // TODO: Handle display state vs idle state transitions
-
-      // Bad Lines require extended CPU stalling during video matrix fetch
-      shouldStall = true;
-    }
-
-    // === SPRITE PROCESSING ===
-    // Sprite timing is critical and varies by sprite number and raster line
-    // Each sprite requires p-access followed by s-accesses when visible
-
-    if (tact.spriteOperation) {
-      // Execute sprite-specific operation using the function pointer
-      // Handles sprite visibility checking, Y expansion, data counters, etc.
-      // TODO: Implement sprite visibility checking (MxE register)
-      // TODO: Handle sprite Y expansion (MxYE bits) - affects visibility
-      // TODO: Manage sprite data counters (MC0-MC7) - track sprite line
-      // TODO: Load sprite data into shift registers for rendering
-      // TODO: Check sprite Y coordinate against current raster line
-
-      tact.spriteOperation(tact);
-
-      // Sprite memory accesses also stall CPU
-      shouldStall = true;
-    }
-
-    // === GRAPHICS SEQUENCER AND RENDERING ===
-    // The graphics sequencer manages an 8-bit shift register
-    // Shifted 1 bit per pixel, reloaded after each g-access
-    // XSCROLL can delay reloading by 0-7 pixels
-
-    // TODO: Shift graphics data register by 1 bit per pixel
-    // TODO: Apply XSCROLL delay to graphics data loading
-    // TODO: Handle different graphics modes:
-    //   - Standard text (ECM/BMM/MCM = 0/0/0)
-    //   - Multicolor text (ECM/BMM/MCM = 0/0/1)
-    //   - Standard bitmap (ECM/BMM/MCM = 0/1/0)
-    //   - Multicolor bitmap (ECM/BMM/MCM = 0/1/1)
-    //   - ECM text (ECM/BMM/MCM = 1/0/0)
-    //   - Invalid modes (remaining combinations)
-    // TODO: Generate 8 pixels of output data for this cycle
-    // TODO: Handle color resolution (1 bit/pixel vs 2 bits/pixel in MC mode)
-
-    // === COUNTER AND STATE UPDATES ===
-    if (tact.counterOperation) {
-      // Execute counter operation using the function pointer
-      // Handles Video Counter (VC), Row Counter (RC), and related state
-
-      // Video Counter (VC): Points to current position in video matrix (10 bits)
-      // Row Counter (RC): Tracks character row within 8-pixel character (3 bits)
-      // Video Matrix Line Increment (VMLI): Backup of VC for next character row
-
-      // TODO: Update VC after each g-access in display state
-      // TODO: Update RC at end of each raster line (checked in cycle 58)
-      // TODO: Handle VC reload from VCBASE in cycle 14 of Bad Lines
-      // TODO: Manage VMLI for character row processing
-      // TODO: Handle idle state detection (RC=7 in cycle 58)
-
-      tact.counterOperation(tact);
-    }
-
-    // === BA SIGNAL MANAGEMENT ===
-    // BA (Bus Available) signal controls CPU access to memory bus
-    // Must go low 3 cycles before VIC needs bus access
-    if (tact.checkFetchBA) {
-      // TODO: Set BA low for upcoming c-access, g-access, or s-access
-      // TODO: Coordinate with AEC (Address Enable Control) for proper timing
-      // TODO: BA affects when CPU can access memory (extends instruction timing)
-
-      // Check if BA should be set for sprite fetch operations
-      if (tact.checkSpriteFetchBAMask !== 0) {
-        // TODO: Check sprite visibility flags against mask
-        // TODO: Set BA low if any sprites need fetch access
-        shouldStall = true;
-      }
-    }
-
-    // === INTERRUPT PROCESSING ===
-    // Check for interrupt conditions specific to this cycle
-    if (this.currentCycle === 0 || (this.currentRasterLine === 0 && this.currentCycle === 1)) {
-      // Raster interrupt check occurs in cycle 0 of each line (cycle 1 for line 0)
-      const rasterInterruptLine = this.registers[0x12] | ((this.registers[0x11] & 0x80) << 1);
-      if (this.currentRasterLine === rasterInterruptLine) {
-        // TODO: Trigger raster interrupt (set IRQ bit 0 in $d019)
-        // TODO: Generate CPU interrupt if enabled in $d01a
-      }
-    }
-
-    // TODO: Check for sprite-sprite collision during rendering
-    //       Set MxM bits in $d01e and trigger interrupt if enabled
-    // TODO: Check for sprite-background collision during rendering
-    //       Set MxD bits in $d01f and trigger interrupt if enabled
-    // TODO: Handle lightpen trigger if LP input goes low
-    //       Latch X/Y position in $d013/$d014 and trigger interrupt
-
-    // --- Render the four pixels to be displayed during the PHI2 phase
-    this.renderPixel();
-    this.renderPixel();
-    this.renderPixel();
-
-    // --- The border unit may check for changes
-    tact.borderOperation?.();
-    this.renderPixel();
-
-    // === FINAL CYCLE MANAGEMENT ===
-    // --- Move to the next cycle
+    // --- Advance to the next cycle
     this.currentCycle++;
-    if (this.currentCycle >= this.tactsInDisplayLine) {
-      // --- Enter a new raster line
-      this.currentCycle = 0;
-      this.currentRasterLine++;
-      if (this.currentRasterLine >= this.rasterLines) {
-        // --- We start a new frame
-        this.currentRasterLine = 0;
-        this.currentPixelIndex = 0;
-        // TODO: Reset refresh counter to $ff at start of frame
-        // TODO: Clear lightpen trigger for next frame
-      }
-      this.registers[0x12] = this.currentRasterLine & 0xff;
-      this.registers[0x11] = (this.registers[0x11] & 0x7f) | ((this.currentRasterLine >> 8) & 0x01);
 
-      // --- Update visibility state because of raster line change
-      this.currentRasterIsVisible =
-        this.currentRasterLine >= this.configuration.firstDisplayedLine &&
-        this.currentRasterLine <= this.configuration.lastDisplayedLine;
-      // TODO: Handle line-specific state updates (sprite counters, etc.)
-    } else {
-      // --- Update visibility because of cycle change
-      this.currentIsVisible =
-        this.currentRasterIsVisible &&
-        this.currentCycle >= this.firstVisibleCycle &&
-        this.currentCycle <= this.lastVisibleCycle;
-    }
+    // --- Determine if the subsequent cycle results in a visible pixel
+    this.currentIsVisible =
+      this.currentRasterIsVisible &&
+      this.currentCycle >= this.firstVisibleCycle &&
+      this.currentCycle <= this.lastVisibleCycle;
 
+    // --- Done
     return shouldStall;
   }
 
@@ -844,6 +778,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    * @param value The value to write
    */
   writeRegister(regIndex: number, value: number): void {
+    console.log(`VIC write register $${(0xd000 + regIndex).toString(16)} <= $${value.toString(16)}`);
     regIndex &= 0x3f; // Limit to 64 registers (0-63), with mirroring
     value &= 0xff; // Ensure it's a byte value
 
@@ -1350,16 +1285,16 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
         // --- Border operations
         if (f & ChkBrdL0) {
-          tactInfo.borderOperation = this.CheckLeftBorder;
+          tactInfo.checkLeftBorderWithNoCSel = true;
         }
         if (f & ChkBrdL1) {
-          tactInfo.borderOperation = this.CheckLeftBorder;
+          tactInfo.checkLeftBorderWithCSel = true;
         }
         if (f & ChkBrdR0) {
-          tactInfo.borderOperation = this.CheckRightBorder;
+          tactInfo.checkRightBorderWithNoCSel = true;
         }
         if (f & ChkBrdR1) {
-          tactInfo.borderOperation = this.CheckRightBorder;
+          tactInfo.checkRightBorderWithCSel = true;
         }
 
         // --- This tact is processed
@@ -2429,6 +2364,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
     const newBorderColor = value & 0x0f; // Mask to 4 bits (0-15)
     this.borderColor = newBorderColor;
+    console.log(`Border color set to ${this.borderColor}`);
     this.registers[0x20] = newBorderColor; // Store only the valid 4-bit value
   }
 
@@ -2654,42 +2590,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   // ----------------------------------------------------------------------------------------------
   // Rendering operation methods
 
-  private CheckLeftBorder(): void {
-    const compareValue = this.csel ? 24 : 32;
-    if (this.currentCycle !== compareValue) return;
-
-    // --- At this point, the X coordinate reaches the left comparison value.
-
-    const topComparison = this.rsel ? 51 : 55; // RSEL=1: 51, RSEL=0: 55
-    const bottomComparison = this.rsel ? 251 : 247; // RSEL=1: 251, RSEL=0: 247
-
-    // --- Border Rule 4: If the X coordinate reaches the left comparison value and the Y
-    // --- coordinate reaches the bottom one, the vertical border flip flop is set.
-    if (this.currentRasterLine === bottomComparison) {
-      this.verticalBorderFlipFlop = true;
-    }
-
-    // --- Border Rule 5: If X reaches left AND Y reaches top AND DEN=1, reset vertical
-    // --- border flip-flop
-    if (this.currentRasterLine === topComparison && this.den) {
-      this.verticalBorderFlipFlop = false;
-    }
-
-    // --- Border Rule 6: If X reaches left AND vertical border flip-flop is NOT set, reset
-    // --- main border flip-flop
-    if (!this.verticalBorderFlipFlop) {
-      this.mainBorderFlipFlop = false;
-    }
-  }
-
-  private CheckRightBorder(): void {
-    const compareValue = this.csel ? 344 : 335;
-    if (this.currentCycle !== compareValue) return;
-
-    // --- Border Rule 1:
-    this.mainBorderFlipFlop = true;
-  }
-
   private CheckSpriteExpansion(tact: RenderingTact): void {
     // Check sprite Y expansion in cycle 55
     // MxYE bit controls sprite height doubling
@@ -2860,13 +2760,14 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       if (this.currentIsVisible) {
         // TODO: Handle visible pixel rendering
         // As of now, we render a red pixel
-        this._pixelBuffer[this.currentPixelIndex] = this.s_C64Colors[15];
+        if (this.mainBorderFlipFlop) {
+          this._pixelBuffer[this.currentPixelIndex] = this.s_C64Colors[this.borderColor];
+        } else {
+          this._pixelBuffer[this.currentPixelIndex] = this.s_C64Colors[2];
+        }
         this.currentPixelIndex++;
       }
     }
-
-    // --- Next pixel
-    this.currentXPosition++;
   }
 }
 
