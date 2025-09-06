@@ -342,6 +342,8 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     public readonly machine: IC64Machine,
     public readonly configuration: VicChipConfiguration
   ) {
+    this.machine.setVicPhi1Processor(() => this.renderPhi1());
+    this.machine.setVicPhi2Processor(() => this.renderPhi2());
     this.reset();
     this._pixelRendererInterceptor = null;
   }
@@ -429,6 +431,13 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     this.rasterInterruptLine = 0;
 
     this.initializeRenderingTactTable();
+  }
+
+  renderPhi1(): void {
+
+  }
+
+  renderPhi2(): void {
   }
 
   /**

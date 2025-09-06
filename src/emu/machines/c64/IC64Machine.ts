@@ -1,4 +1,3 @@
-import { IM6510Cpu } from "@emu/abstractions/IM6510Cpu";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import { C64VicDevice } from "./vic/C64VicDevice";
 import { C64SidDevice } from "./C64SidDevice";
@@ -10,8 +9,9 @@ import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
 import { C64MemoryDevice } from "./C64MemoryDevice";
 import { VicState } from "@common/messaging/EmuApi";
+import { IM6510VaCpu } from "@emu/abstractions/IM6510VaCpu";
 
-export interface IC64Machine extends IAnyMachine, IM6510Cpu {
+export interface IC64Machine extends IAnyMachine, IM6510VaCpu {
   /**
    * The physical memory of the machine
    */
