@@ -124,7 +124,6 @@ export class ZxBasicCompiler implements IKliveCompiler {
       outputFile: string,
       labelFile: string
     ): Promise<string[]> {
-      const settingsReader = createSettingsReader(this.state);
       const args: string[] = [inputFile, "--output", outputFile, "--mmap", labelFile];
       const arrayBaseOne = !!settingsReader.readSetting(ZXBC_ONE_AS_ARRAY_BASE_INDEX);
       if (arrayBaseOne) {
