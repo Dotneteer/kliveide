@@ -484,6 +484,7 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       ) {
         // --- Raster interrupt is enabled and the current raster line matches the interrupt line
         this.machine.setIrqSignal(true);
+        console.log("IRQ");
       }
 
       // --- #2: Check if the current raster line can have be a bad line
@@ -557,26 +558,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       // --- border flip flop is set
       this.mainBorderFlipFlop = true;
     }
-  }
-
-  /**
-   * Executes the current VIC rendering cycle based on the current clock.
-   *
-   * This method implements cycle-accurate VIC-II behavior based on extensive
-   * documentation of the 6567/6569 VIC-II chip timing and operations.
-   * Each cycle can perform different memory accesses and rendering operations.
-   *
-   * @returns True, if the CPU is stalled; otherwise, false.
-   */
-  renderCurrentTact(): boolean {
-    // --- By default allow the CPU to access the bus
-    let shouldStall = false;
-
-    // --- Carry out the rendering operations for this cycle
-    // --- The PHI1 and PHI2 phases are separated to allow CPU operations in between
-    // --- The machine calls renderPhi1() first, then allows CPU operations, then calls renderPhi2()
-    this.renderPhi1();
-    this.renderPhi2();
 
     // --- Render the eight pixels to be displayed during the cycle
     this.renderPixel();
@@ -596,9 +577,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       this.currentRasterIsVisible &&
       this.currentCycle >= this.firstVisibleCycle &&
       this.currentCycle <= this.lastVisibleCycle;
-
-    // --- Done
-    return shouldStall;
   }
 
   /**
@@ -778,7 +756,9 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    * @param value The value to write
    */
   writeRegister(regIndex: number, value: number): void {
-    console.log(`VIC write register $${(0xd000 + regIndex).toString(16)} <= $${value.toString(16)}`);
+    console.log(
+      `VIC write register $${(0xd000 + regIndex).toString(16)} <= $${value.toString(16)}`
+    );
     regIndex &= 0x3f; // Limit to 64 registers (0-63), with mirroring
     value &= 0xff; // Ensure it's a byte value
 
@@ -936,7 +916,8 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
     this.videoCounterBase = 0;
 
     for (let i = 0; i < (numTacts ?? this.totalTactsInFrame); i++) {
-      this.renderCurrentTact();
+      this.renderPhi1();
+      this.renderPhi2();
     }
   }
 

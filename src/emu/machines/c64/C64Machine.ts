@@ -438,8 +438,6 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     // Reset the CPU base class
     super.reset();
 
-    console.log("here");
-
     // Reset the CPU port first to ensure memory config is correct
     this.cpuPortDevice.reset();
 
