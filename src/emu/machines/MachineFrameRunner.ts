@@ -28,6 +28,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
   reset(): void {
     this._frameCompleted = false;
     this._frameOverflow = 0;
+    this._nextFrameStartTact = 0;
   }
 
   /**
