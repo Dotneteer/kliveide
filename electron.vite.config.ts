@@ -1,6 +1,9 @@
 import { resolve } from "path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import react from "@vitejs/plugin-react";
+// @ts-ignore - xmlui plugin may not have TypeScript definitions
+import viteXmluiModule from "xmlui/vite-xmlui-plugin";
+const viteXmlUiPlugin = viteXmluiModule?.default;
 
 const alias = {
   "@styles": resolve("src/renderer/assets/styles"),
@@ -56,6 +59,7 @@ export default defineConfig({
       }
     },
     resolve: { alias },
-    plugins: [react()]
+    //assetsInclude: ["**/*.xmlui"],
+    plugins: [react(), viteXmlUiPlugin()]
   }
 });

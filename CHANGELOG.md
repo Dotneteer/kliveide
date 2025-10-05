@@ -1,5 +1,17 @@
 # Klive IDE Changelog
 
+## 0.49.4
+
+### Fixes
+
+- Fix the freeze of paused (restarted) emulator
+
+## 0.49.3
+
+### Fixes
+
+- Fix ZXBASIC compilation issue (TypeError)
+
 ## 0.49.2
 
 ### Fixes
