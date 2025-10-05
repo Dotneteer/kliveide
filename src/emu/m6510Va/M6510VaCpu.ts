@@ -31,8 +31,8 @@ export class M6510VaCpu implements IM6510VaCpu {
   private _addressBus: number;
 
   // --- VIC-II processor hooks
-  private _vicPhi1Processor: (cpu: M6510VaCpu) => void;
-  private _vicPhi2Processor: (cpu: M6510VaCpu) => void;
+  private _vicPhi1Processor: () => void;
+  private _vicPhi2Processor: () => void;
 
   /**
    * The stack pointer (alias for S register)
@@ -97,7 +97,7 @@ export class M6510VaCpu implements IM6510VaCpu {
    * Sets the VIC-II Phi1 processor function.
    * @param processor The function to process the Phi1 clock cycle.
    */
-  setVicPhi1Processor(processor?: (cpu: M6510VaCpu) => void): void {
+  setVicPhi1Processor(processor?: () => void): void {
     this._vicPhi1Processor = processor;
   }
 
@@ -105,7 +105,7 @@ export class M6510VaCpu implements IM6510VaCpu {
    * Sets the VIC-II Phi2 processor function.
    * @param processor The function to process the Phi2 clock cycle.
    */
-  setVicPhi2Processor(processor?: (cpu: M6510VaCpu) => void): void {
+  setVicPhi2Processor(processor?: () => void): void {
     this._vicPhi2Processor = processor;
   }
 
@@ -150,14 +150,14 @@ export class M6510VaCpu implements IM6510VaCpu {
    * Handles the VIC-II Phi1 clock cycle.
    */
   vicPhi1(): void {
-    this._vicPhi1Processor?.(this);
+    this._vicPhi1Processor?.();
   }
 
   /**
    * Handles the VIC-II Phi2 clock cycle.
    */
   vicPhi2(): void {
-    this._vicPhi2Processor?.(this);
+    this._vicPhi2Processor?.();
   }
 
   /**
@@ -1416,7 +1416,6 @@ export class M6510VaCpu implements IM6510VaCpu {
     this.tacts++;
     this._irqRequested = this._irqSignal;
     this._nmiRequested = this._nmiSignal;
-    this.onTactIncremented?.();
   }
 
   setJammed(): void {

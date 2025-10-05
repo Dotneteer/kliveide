@@ -438,8 +438,6 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     // Reset the CPU base class
     super.reset();
 
-    console.log("here");
-
     // Reset the CPU port first to ensure memory config is correct
     this.cpuPortDevice.reset();
 
@@ -493,13 +491,6 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
   doWritePort(_address: number, _value: number): void {}
 
   delayPortWrite(_address: number): void {}
-
-  /**
-   * Allow the VIC to render the next screen tact (and stall or release the CPU if needed).
-   */
-  onTactIncremented(): void {
-    this.setStalled(this.vicDevice.renderCurrentTact());
-  }
 
   isCpuSnoozed(): boolean {
     // Return CPU snooze state
