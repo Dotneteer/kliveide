@@ -13,11 +13,7 @@ import {
   errorResponse,
   ResponseMessage
 } from "@messaging/messages-core";
-import {
-  displayDialogAction,
-  emuLoadedAction,
-  setAudioSampleRateAction
-} from "@state/actions";
+import { displayDialogAction, emuLoadedAction, setAudioSampleRateAction } from "@state/actions";
 import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
@@ -46,7 +42,13 @@ import {
 } from "@renderer/CachedServices";
 import { setIsWindows } from "@renderer/os-utils";
 import { FullPanel } from "@renderer/controls/new/Panels";
-import { SETTING_EMU_SHOW_STATUS_BAR, SETTING_EMU_SHOW_TOOLBAR } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_SHOW_STATUS_BAR,
+  SETTING_EMU_SHOW_TOOLBAR
+} from "@common/settings/setting-const";
+import { AppRoot, StandaloneApp } from "xmlui";
+import hello from "../xmlui/Hello.xmlui";
+console.log("XMLUI Hello:", hello);
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -59,13 +61,11 @@ const EmuApp = () => {
   // --- Visual state
   const showToolbar = useGlobalSetting(SETTING_EMU_SHOW_TOOLBAR);
   const showStatusBar = useGlobalSetting(SETTING_EMU_SHOW_STATUS_BAR);
-  const kliveProjectLoaded = useSelector(
-    s => s.project?.isKliveProject ?? false
-  );
-  const dimmed = useSelector(s => s.dimMenu ?? false);
-  const isWindows = useSelector(s => s.isWindows ?? false);
-  const dialogId = useSelector(s => s.ideView?.dialogToDisplay);
-  const dialogData = useSelector(s => s.ideView?.dialogData);
+  const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
+  const dimmed = useSelector((s) => s.dimMenu ?? false);
+  const isWindows = useSelector((s) => s.isWindows ?? false);
+  const dialogId = useSelector((s) => s.ideView?.dialogToDisplay);
+  const dialogData = useSelector((s) => s.ideView?.dialogData);
 
   // --- Use the current instance of the app services
   const mounted = useRef(false);
@@ -94,19 +94,15 @@ const EmuApp = () => {
       // More details: https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/AudioContext
       ctx?.close().catch(console.error);
     }
-
   }, [appServices, store, messenger]);
 
   useEffect(() => {
     setIsWindows(isWindows);
   }, [isWindows]);
 
-
   return (
-    <FullPanel id='appMain' data-testid='emu-app'>
-      {showToolbar && (
-        <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />
-      )}
+    <FullPanel id="appMain" data-testid="emu-app">
+      {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />}
       <EmulatorArea />
       <EmuStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />

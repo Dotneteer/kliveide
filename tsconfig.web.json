@@ -12,6 +12,7 @@
     "src/emu/**/*",
     "src/lib/**/*",
     "src/script-packages/**/*",
+    "src/types/**/*.d.ts"
   ],
   "compilerOptions": {
     "composite": true,
