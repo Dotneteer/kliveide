@@ -34,7 +34,73 @@ Available aliases: `bd`
 
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
-- an address with a partition (the partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in);
+- an address with a partition Available aliases: `shmem`
+
+## `wp-add`
+
+This command adds a watchpoint for a symbol.
+
+```
+wp-add <symbol>[:<type>[:<length>]]
+```
+
+Available aliases: `wp`
+
+The watchpoint specification format is `<symbol>[:<type>[:<length>]]` where:
+- `symbol`: A valid identifier (symbol name)
+- `type`: Optional data type (defaults to `b` if omitted). One of the following:
+  - `a`: byte array (requires length)
+  - `b`: 8-bit number (default)
+  - `w`: 16-bit little-endian number
+  - `l`: 32-bit little-endian number
+  - `-w`: 16-bit big-endian number
+  - `-l`: 32-bit big-endian number
+  - `f`: flag (boolean, zero is false, other values are true)
+  - `s`: string (requires length)
+- `length`: Required for array (`a`) and string (`s`) types, must be between 1 and 1024
+
+Examples:
+- `wp-add playerScore` - 8-bit value (default type)
+- `wp-add playerScore:w` - 16-bit little-endian value
+- `wp-add playerName:s:32` - 32-byte string
+- `wp-add inventory:a:64` - 64-byte array
+- `wp-add isAlive:f` - boolean flag
+
+## `wp-del`
+
+This command removes a watchpoint by symbol name.
+
+```
+wp-del <symbol>
+```
+
+Available aliases: `wd`
+
+The `symbol` parameter is the name of the symbol for which the watchpoint should be removed.
+
+## `wp-ea`
+
+This command erases all watchpoints.
+
+```
+wp-ea
+```
+
+Available aliases: `wea`
+
+## `wp-list`
+
+This command lists all defined watchpoints.
+
+```
+wp-list
+```
+
+Available aliases: `wpl`
+
+This command displays all defined watchpoints with their symbol names, data types, lengths (if applicable), and resolved addresses/partitions (if the symbols have been resolved after compilation).
+
+## `show-memory`e partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in);
 - or a source code line specification, for example, `[code/code.kz80.asm]`
 
 ## `bp-en`

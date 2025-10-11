@@ -8,6 +8,17 @@ import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { CompilationCompleted } from "@main/compiler-integration/runWorker";
 
 /**
+ * Represents a watchpoint definition
+ */
+export type WatchpointInfo = {
+  symbol: string;
+  type: "a" | "b" | "w" | "l" | "-w" | "-l" | "f" | "s";
+  length?: number;
+  address?: number;
+  partition?: number;
+};
+
+/**
  * Represents the state of the entire application
  */
 export type AppState = {
@@ -36,6 +47,7 @@ export type AppState = {
   menuVersion?: number;
   scripts?: ScriptRunInfo[];
   workspaceSettings?: Record<string, any>;
+  watchpoints?: WatchpointInfo[];
 };
 
 export type IdeView = {
@@ -158,5 +170,6 @@ export const initialAppState: AppState = {
     injectionVersion: 0
   },
   scripts: [],
-  workspaceSettings: {}
+  workspaceSettings: {},
+  watchpoints: []
 };

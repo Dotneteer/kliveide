@@ -42,6 +42,8 @@ export type Payload = {
   compileResult: KliveCompilerOutput;
   failed: string;
   value: any;
+  watchpoint: any;
+  symbol: string;
 };
 
 /**

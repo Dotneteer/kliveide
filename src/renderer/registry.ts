@@ -98,6 +98,7 @@ import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvi
 import { m6510CpuPanelRenderer } from "./appIde/SiteBarPanels/M6510CpuPanel";
 import { asm6510LanguageProvider } from "./appIde/project/asm6510LangaugeProvider";
 import { vicPanelRenderer } from "./appIde/SiteBarPanels/VicPanel";
+import { watchPanelRenderer } from "./appIde/SiteBarPanels/WatchPanel";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -204,6 +205,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: blinkPanelRenderer,
     initialSize: 500,
     requireFeature: [MF_BLINK]
+  },
+  {
+    id: "watchPanel",
+    title: "Watchpoints",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    noScrollViewer: false,
+    renderer: watchPanelRenderer,
+    expandedOnInit: true
   },
   {
     id: "breakpointsPanel",

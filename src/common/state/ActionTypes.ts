@@ -90,4 +90,9 @@ export interface ActionTypes {
   // --- Globa setting now use this action type
   INIT_GLOBAL_SETTINGS: null;
   SET_GLOBAL_SETTING: null;
+
+  // --- Watchpoint actions
+  ADD_WATCHPOINT: null;
+  REMOVE_WATCHPOINT: null;
+  CLEAR_WATCHPOINTS: null;
 }

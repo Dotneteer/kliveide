@@ -331,3 +331,18 @@ export const endBackgroundCompileAction: ActionCreator = (value: any) => ({
   type: "END_BACKGROUND_COMPILE",
   payload: { value }
 });
+
+// --- Watchpoint actions
+export const addWatchpointAction: ActionCreator = (watchpoint: any) => ({
+  type: "ADD_WATCHPOINT",
+  payload: { watchpoint }
+});
+
+export const removeWatchpointAction: ActionCreator = (symbol: string) => ({
+  type: "REMOVE_WATCHPOINT",
+  payload: { symbol }
+});
+
+export const clearWatchpointsAction: ActionCreator = () => ({
+  type: "CLEAR_WATCHPOINTS"
+});
