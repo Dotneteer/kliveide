@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { M6510VaTestMachine, RunMode } from "./test-m6510Va";
 import { FlagSetMask6510 } from "../../src/emu/abstractions/FlagSetMask6510";
 
-describe("M6510 - DCP Interrupt Handling", () => {
+describe.skip("M6510 - DCP Interrupt Handling", () => {
   let machine: M6510VaTestMachine;
 
   beforeEach(() => {

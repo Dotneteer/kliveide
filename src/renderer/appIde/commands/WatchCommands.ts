@@ -11,53 +11,53 @@ import {
   validationError,
   IdeCommandBase
 } from "@renderer/appIde/services/ide-commands";
-import { WatchpointInfo } from "@common/state/AppState";
+import { WatchInfo } from "@common/state/AppState";
 import { 
-  addWatchpointAction, 
-  removeWatchpointAction, 
-  clearWatchpointsAction 
+  addWatchAction, 
+  removeWatchAction, 
+  clearWatchAction 
 } from "@common/state/actions";
 
-// --- Watchpoint type definitions
-export type WatchpointType = "a" | "b" | "w" | "l" | "-w" | "-l" | "f" | "s";
+// --- Watch type definitions
+export type WatchType = "a" | "b" | "w" | "l" | "-w" | "-l" | "f" | "s";
 
-type WatchpointSpecArgs = {
-  watchpointSpec?: string;
+type WatchSpecArgs = {
+  watchSpec?: string;
   symbol?: string;
-  type?: WatchpointType;
+  type?: WatchType;
   length?: number;
 };
 
-type WatchpointSymbolArgs = {
+type WatchSymbolArgs = {
   symbol: string;
 };
 
 /**
- * Base class for watchpoint commands with common validation logic
+ * Base class for watch commands with common validation logic
  */
-abstract class WatchpointWithSpecCommand extends IdeCommandBase<WatchpointSpecArgs> {
+abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
   argumentInfo: CommandArgumentInfo = {
     mandatory: [
       {
-        name: "watchpointSpec"
+        name: "watchSpec"
       }
     ]
   };
 
   async validateCommandArgs(
     _context: IdeCommandContext,
-    args: WatchpointSpecArgs
+    args: WatchSpecArgs
   ): Promise<ValidationMessage[]> {
-    const spec = args.watchpointSpec?.trim() ?? "";
+    const spec = args.watchSpec?.trim() ?? "";
     
     if (!spec) {
-      return [validationError("Watchpoint specification cannot be empty")];
+      return [validationError("Watch specification cannot be empty")];
     }
 
-    // Parse the watchpoint specification: <name>[:<type>[:<length>]]
+    // Parse the watch specification: <name>[:<type>[:<length>]]
     const parts = spec.split(":");
     if (parts.length < 1 || parts.length > 3) {
-      return [validationError("Invalid watchpoint format. Use: <symbol>[:<type>[:<length>]]")];
+      return [validationError("Invalid watch format. Use: <symbol>[:<type>[:<length>]]")];
     }
 
     const [symbol, type = "b", lengthStr] = parts;
@@ -68,18 +68,18 @@ abstract class WatchpointWithSpecCommand extends IdeCommandBase<WatchpointSpecAr
     }
 
     // Validate type
-    const validTypes: WatchpointType[] = ["a", "b", "w", "l", "-w", "-l", "f", "s"];
-    if (!validTypes.includes(type as WatchpointType)) {
+    const validTypes: WatchType[] = ["a", "b", "w", "l", "-w", "-l", "f", "s"];
+    if (!validTypes.includes(type as WatchType)) {
       return [validationError("Invalid type. Valid types: a, b, w, l, -w, -l, f, s")];
     }
 
-    const watchpointType = type as WatchpointType;
+    const watchType = type as WatchType;
 
     // Validate length specification
     let length: number | undefined;
     if (lengthStr !== undefined) {
       // Length is only allowed for array ("a") and string ("s") types
-      if (watchpointType !== "a" && watchpointType !== "s") {
+      if (watchType !== "a" && watchType !== "s") {
         return [validationError("Length specification is only allowed for array (a) and string (s) types")];
       }
 
@@ -89,14 +89,14 @@ abstract class WatchpointWithSpecCommand extends IdeCommandBase<WatchpointSpecAr
       }
     } else {
       // Length is required for array and string types
-      if (watchpointType === "a" || watchpointType === "s") {
+      if (watchType === "a" || watchType === "s") {
         return [validationError("Length specification is required for array (a) and string (s) types")];
       }
     }
 
     // Store parsed values
     args.symbol = symbol;
-    args.type = watchpointType;
+    args.type = watchType;
     args.length = length;
 
     return [];
@@ -110,41 +110,41 @@ abstract class WatchpointWithSpecCommand extends IdeCommandBase<WatchpointSpecAr
 }
 
 /**
- * Command to add a new watchpoint
+ * Command to add a new watch expression
  */
-export class AddWatchpointCommand extends WatchpointWithSpecCommand {
-  readonly id = "wp-add";
-  readonly description = "Adds a watchpoint for a symbol";
-  readonly usage = "wp-add <symbol>[:<type>[:<length>]]";
-  readonly aliases = ["wp"];
+export class AddWatchCommand extends WatchWithSpecCommand {
+  readonly id = "w-add";
+  readonly description = "Adds a watch expression for a symbol";
+  readonly usage = "w-add <symbol>[:<type>[:<length>]]";
+  readonly aliases = ["w"];
 
   async execute(
     context: IdeCommandContext,
-    args: WatchpointSpecArgs
+    args: WatchSpecArgs
   ): Promise<IdeCommandResult> {
-    const watchpoint: WatchpointInfo = {
+    const watch: WatchInfo = {
       symbol: args.symbol!,
       type: args.type!,
       length: args.length
     };
 
-    // Add watchpoint to the Redux store
-    context.store.dispatch(addWatchpointAction(watchpoint), "ide");
+    // Add watch to the Redux store
+    context.store.dispatch(addWatchAction(watch), "ide");
     
-    let typeDesc = this.getTypeDescription(watchpoint.type);
-    if (watchpoint.length) {
-      typeDesc += ` (${watchpoint.length} bytes)`;
+    let typeDesc = this.getTypeDescription(watch.type);
+    if (watch.length) {
+      typeDesc += ` (${watch.length} bytes)`;
     }
 
     writeSuccessMessage(
       context.output,
-      `Watchpoint added: ${watchpoint.symbol.toUpperCase()} [${typeDesc}]`
+      `Watch added: ${watch.symbol.toUpperCase()} [${typeDesc}]`
     );
     
     return commandSuccess;
   }
 
-  private getTypeDescription(type: WatchpointType): string {
+  private getTypeDescription(type: WatchType): string {
     switch (type) {
       case "a": return "byte array";
       case "b": return "8-bit";
@@ -160,12 +160,12 @@ export class AddWatchpointCommand extends WatchpointWithSpecCommand {
 }
 
 /**
- * Command to remove a watchpoint by symbol name
+ * Command to remove a watch expression by symbol name
  */
-export class RemoveWatchpointCommand extends IdeCommandBase<WatchpointSymbolArgs> {
-  readonly id = "wp-del";
-  readonly description = "Removes a watchpoint by symbol name";
-  readonly usage = "wp-del <symbol>";
+export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
+  readonly id = "w-del";
+  readonly description = "Removes a watch expression by symbol name";
+  readonly usage = "w-del <symbol>";
   readonly aliases = ["wd"];
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -178,7 +178,7 @@ export class RemoveWatchpointCommand extends IdeCommandBase<WatchpointSymbolArgs
 
   async validateCommandArgs(
     _context: IdeCommandContext,
-    args: WatchpointSymbolArgs
+    args: WatchSymbolArgs
   ): Promise<ValidationMessage[]> {
     const symbol = args.symbol?.trim() ?? "";
     
@@ -197,14 +197,14 @@ export class RemoveWatchpointCommand extends IdeCommandBase<WatchpointSymbolArgs
 
   async execute(
     context: IdeCommandContext,
-    args: WatchpointSymbolArgs
+    args: WatchSymbolArgs
   ): Promise<IdeCommandResult> {
-    // Remove watchpoint from the Redux store
-    context.store.dispatch(removeWatchpointAction(args.symbol), "ide");
+    // Remove watch from the Redux store
+    context.store.dispatch(removeWatchAction(args.symbol), "ide");
     
     writeSuccessMessage(
       context.output,
-      `Watchpoint removed: ${args.symbol.toUpperCase()}`
+      `Watch removed: ${args.symbol.toUpperCase()}`
     );
     
     return commandSuccess;
@@ -212,37 +212,37 @@ export class RemoveWatchpointCommand extends IdeCommandBase<WatchpointSymbolArgs
 }
 
 /**
- * Command to list all watchpoints
+ * Command to list all watch expressions
  */
-export class ListWatchpointsCommand extends IdeCommandBase {
-  readonly id = "wp-list";
-  readonly description = "Lists all defined watchpoints";
-  readonly usage = "wp-list";
-  readonly aliases = ["wpl"];
+export class ListWatchCommand extends IdeCommandBase {
+  readonly id = "w-list";
+  readonly description = "Lists all defined watch expressions";
+  readonly usage = "w-list";
+  readonly aliases = ["wl"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    // Retrieve watchpoints from Redux store
+    // Retrieve watch expressions from Redux store
     const state = context.store.getState();
-    const watchpoints = state.watchpoints || [];
+    const watchExpressions = state.watchExpressions || [];
 
-    if (watchpoints.length === 0) {
-      writeMessage(context.output, "No watchpoints defined", "bright-blue");
+    if (watchExpressions.length === 0) {
+      writeMessage(context.output, "No watch expressions defined", "bright-blue");
     } else {
-      writeMessage(context.output, "Defined watchpoints:", "bright-blue");
+      writeMessage(context.output, "Defined watch expressions:", "bright-blue");
       
-      watchpoints.forEach((wp, idx) => {
+      watchExpressions.forEach((w, idx) => {
         writeMessage(context.output, `[${idx + 1}]: `, "bright-blue", false);
-        writeMessage(context.output, wp.symbol.toUpperCase(), "bright-magenta", false);
-        writeMessage(context.output, ` (${this.getTypeDescription(wp.type)}`, "cyan", false);
+        writeMessage(context.output, w.symbol.toUpperCase(), "bright-magenta", false);
+        writeMessage(context.output, ` (${this.getTypeDescription(w.type)}`, "cyan", false);
         
-        if (wp.length) {
-          writeMessage(context.output, `, ${wp.length} bytes`, "cyan", false);
+        if (w.length) {
+          writeMessage(context.output, `, ${w.length} bytes`, "cyan", false);
         }
         
-        if (wp.address !== undefined) {
-          writeMessage(context.output, `, addr: $${toHexa4(wp.address)}`, "yellow", false);
-          if (wp.partition !== undefined) {
-            writeMessage(context.output, `:${wp.partition}`, "yellow", false);
+        if (w.address !== undefined) {
+          writeMessage(context.output, `, addr: $${toHexa4(w.address)}`, "yellow", false);
+          if (w.partition !== undefined) {
+            writeMessage(context.output, `:${w.partition}`, "yellow", false);
           }
         } else {
           writeMessage(context.output, `, unresolved`, "red", false);
@@ -253,7 +253,7 @@ export class ListWatchpointsCommand extends IdeCommandBase {
       
       writeMessage(
         context.output,
-        `${watchpoints.length} watchpoint${watchpoints.length !== 1 ? "s" : ""} defined`,
+        `${watchExpressions.length} watch expression${watchExpressions.length !== 1 ? "s" : ""} defined`,
         "bright-blue"
       );
     }
@@ -261,7 +261,7 @@ export class ListWatchpointsCommand extends IdeCommandBase {
     return commandSuccess;
   }
 
-  private getTypeDescription(type: WatchpointType): string {
+  private getTypeDescription(type: WatchType): string {
     switch (type) {
       case "a": return "byte array";
       case "b": return "8-bit";
@@ -277,25 +277,25 @@ export class ListWatchpointsCommand extends IdeCommandBase {
 }
 
 /**
- * Command to erase all watchpoints
+ * Command to erase all watch expressions
  */
-export class EraseAllWatchpointsCommand extends IdeCommandBase {
-  readonly id = "wp-ea";
-  readonly description = "Erases all watchpoints";
-  readonly usage = "wp-ea";
+export class EraseAllWatchCommand extends IdeCommandBase {
+  readonly id = "w-ea";
+  readonly description = "Erases all watch expressions";
+  readonly usage = "w-ea";
   readonly aliases = ["wea"];
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
-    // Get current watchpoint count before clearing
+    // Get current watch expression count before clearing
     const state = context.store.getState();
-    const removedCount = state.watchpoints?.length || 0;
+    const removedCount = state.watchExpressions?.length || 0;
     
-    // Clear all watchpoints from Redux store
-    context.store.dispatch(clearWatchpointsAction(), "ide");
+    // Clear all watch expressions from Redux store
+    context.store.dispatch(clearWatchAction(), "ide");
     
     writeMessage(
       context.output,
-      `${removedCount} watchpoint${removedCount > 1 ? "s" : ""} removed.`,
+      `${removedCount} watch expression${removedCount > 1 ? "s" : ""} removed.`,
       "green"
     );
 

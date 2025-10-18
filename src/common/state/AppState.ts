@@ -8,9 +8,9 @@ import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { CompilationCompleted } from "@main/compiler-integration/runWorker";
 
 /**
- * Represents a watchpoint definition
+ * Represents a watch expression definition
  */
-export type WatchpointInfo = {
+export type WatchInfo = {
   symbol: string;
   type: "a" | "b" | "w" | "l" | "-w" | "-l" | "f" | "s";
   length?: number;
@@ -47,7 +47,7 @@ export type AppState = {
   menuVersion?: number;
   scripts?: ScriptRunInfo[];
   workspaceSettings?: Record<string, any>;
-  watchpoints?: WatchpointInfo[];
+  watchExpressions?: WatchInfo[];
 };
 
 export type IdeView = {
@@ -171,5 +171,5 @@ export const initialAppState: AppState = {
   },
   scripts: [],
   workspaceSettings: {},
-  watchpoints: []
+  watchExpressions: []
 };

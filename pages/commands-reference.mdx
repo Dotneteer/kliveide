@@ -36,17 +36,17 @@ The `address-spec` parameter can be
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
 - an address with a partition Available aliases: `shmem`
 
-## `wp-add`
+## `w-add`
 
-This command adds a watchpoint for a symbol.
+This command adds a watch expression for a symbol.
 
 ```
-wp-add <symbol>[:<type>[:<length>]]
+w-add <symbol>[:<type>[:<length>]]
 ```
 
-Available aliases: `wp`
+Available aliases: `w`
 
-The watchpoint specification format is `<symbol>[:<type>[:<length>]]` where:
+The watch expression specification format is `<symbol>[:<type>[:<length>]]` where:
 - `symbol`: A valid identifier (symbol name)
 - `type`: Optional data type (defaults to `b` if omitted). One of the following:
   - `a`: byte array (requires length)
@@ -60,43 +60,43 @@ The watchpoint specification format is `<symbol>[:<type>[:<length>]]` where:
 - `length`: Required for array (`a`) and string (`s`) types, must be between 1 and 1024
 
 Examples:
-- `wp-add playerScore` - 8-bit value (default type)
-- `wp-add playerScore:w` - 16-bit little-endian value
-- `wp-add playerName:s:32` - 32-byte string
-- `wp-add inventory:a:64` - 64-byte array
-- `wp-add isAlive:f` - boolean flag
+- `w-add playerScore` - 8-bit value (default type)
+- `w-add playerScore:w` - 16-bit little-endian value
+- `w-add playerName:s:32` - 32-byte string
+- `w-add inventory:a:64` - 64-byte array
+- `w-add isAlive:f` - boolean flag
 
-## `wp-del`
+## `w-del`
 
-This command removes a watchpoint by symbol name.
+This command removes a watch expression by symbol name.
 
 ```
-wp-del <symbol>
+w-del <symbol>
 ```
 
 Available aliases: `wd`
 
-The `symbol` parameter is the name of the symbol for which the watchpoint should be removed.
+The `symbol` parameter is the name of the symbol for which the watch expression should be removed.
 
-## `wp-ea`
+## `w-ea`
 
-This command erases all watchpoints.
+This command erases all watch expressions.
 
 ```
-wp-ea
+w-ea
 ```
 
 Available aliases: `wea`
 
-## `wp-list`
+## `w-list`
 
-This command lists all defined watchpoints.
+This command lists all defined watch expressions.
 
 ```
-wp-list
+w-list
 ```
 
-Available aliases: `wpl`
+Available aliases: `wl`
 
 This command displays all defined watchpoints with their symbol names, data types, lengths (if applicable), and resolved addresses/partitions (if the symbols have been resolved after compilation).
 

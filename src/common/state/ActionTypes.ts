@@ -91,8 +91,8 @@ export interface ActionTypes {
   INIT_GLOBAL_SETTINGS: null;
   SET_GLOBAL_SETTING: null;
 
-  // --- Watchpoint actions
-  ADD_WATCHPOINT: null;
-  REMOVE_WATCHPOINT: null;
-  CLEAR_WATCHPOINTS: null;
+  // --- Watch expression actions
+  ADD_WATCH: null;
+  REMOVE_WATCH: null;
+  CLEAR_WATCH: null;
 }
