@@ -253,6 +253,12 @@ export const pageMap = [{
       "sidebarTitle": "Ula"
     }
   }, {
+    name: "watch",
+    route: "/working-with-ide/watch",
+    frontMatter: {
+      "sidebarTitle": "Watch"
+    }
+  }, {
     name: "zxb",
     route: "/working-with-ide/zxb",
     frontMatter: {
