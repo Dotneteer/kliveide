@@ -1,4 +1,5 @@
 import { LabelSeparator, Label } from "@controls/Labels";
+import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa2, toDecimal5, toDecimal3, toBin8 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
@@ -216,6 +217,11 @@ const HexValues = ({
     setHoveredByteIndex(null);
   };
 
+  // Tooltip content
+  const tooltipContent = hoveredByteIndex !== null && memory[address + hoveredByteIndex] !== undefined
+    ? `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):\n${tooltipCache[memory[address + hoveredByteIndex]]}`
+    : null;
+
   // Calculate overlay position for the hovered byte
   const overlayStyle = hoveredByteIndex !== null && charWidth > 0 ? {
     left: `${hoveredByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
@@ -253,13 +259,23 @@ const HexValues = ({
       onMouseLeave={handleMouseLeave}
     >
       {hexString}
-      {overlayStyle && (
+      {overlayStyle && hoveredByteIndex !== null && (
         <div className={styles.byteHoverOverlay} style={overlayStyle} />
+      )}
+      {tooltipContent && containerRef.current && (
+        <TooltipFactory
+          refElement={containerRef.current}
+          placement="right"
+          offsetX={8}
+          offsetY={32}
+          showDelay={0}
+          isShown={true}
+          content={tooltipContent}
+        />
       )}
     </div>
   );
 };
-
 type CharValuesProps = {
   address: number;
   memory: Uint8Array;
