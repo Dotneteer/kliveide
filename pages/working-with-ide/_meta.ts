@@ -10,6 +10,7 @@ export default {
   ula: "The ULA View",
   memory: "The Memory View",
   disassembly: "The Disassembly View",
+  watch: "Watch Expressions",
   breakpoints: "The Breakpoints View",
   "system-vars": "The System Variables View",
   basic: "The BASIC Listing",

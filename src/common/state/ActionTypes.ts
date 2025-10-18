@@ -90,4 +90,9 @@ export interface ActionTypes {
   // --- Globa setting now use this action type
   INIT_GLOBAL_SETTINGS: null;
   SET_GLOBAL_SETTING: null;
+
+  // --- Watch expression actions
+  ADD_WATCH: null;
+  REMOVE_WATCH: null;
+  CLEAR_WATCH: null;
 }

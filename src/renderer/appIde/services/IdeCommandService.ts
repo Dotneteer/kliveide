@@ -339,7 +339,25 @@ class HelpCommand extends IdeCommandBase<HelpArgs> {
         context.output.write(`: `);
         context.output.writeLine(ci.description);
         if (ci.usage) {
-          context.output.writeLine(`  usage: ${ci.usage}`);
+          // Normalize usage (string | string[]) to an array of lines.
+          const toLines = (u: string | string[]): string[] => {
+            const arr = Array.isArray(u) ? u : [u];
+            const outLines: string[] = [];
+            for (const part of arr) {
+              const text = (part ?? "").replace(/\\n/g, "\n");
+              outLines.push(...text.split("\n"));
+            }
+            return outLines.filter((l) => l !== undefined);
+          };
+
+          const lines = toLines(ci.usage);
+          if (lines.length > 0) {
+            context.output.writeLine(`  usage: ${lines[0]}`);
+            const indent = "  ".replace(/./g, " "); // keep alignment for subsequent lines
+            for (let i = 1; i < lines.length; i++) {
+              context.output.writeLine(`${indent}${lines[i]}`);
+            }
+          }
         }
         count++;
       });

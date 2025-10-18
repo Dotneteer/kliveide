@@ -70,6 +70,7 @@ export class KliveCompileCommand extends IdeCommandBase {
 
   async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
     const compileResult = await compileCode(context);
+    console.log(compileResult.result);
     return compileResult.message
       ? commandError(compileResult.message)
       : commandSuccessWith(`Project file successfully compiled.`);

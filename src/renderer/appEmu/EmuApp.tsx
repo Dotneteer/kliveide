@@ -46,7 +46,6 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR
 } from "@common/settings/setting-const";
-import { AppRoot, StandaloneApp } from "xmlui";
 import hello from "../xmlui/Hello.xmlui";
 console.log("XMLUI Hello:", hello);
 

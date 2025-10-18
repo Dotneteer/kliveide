@@ -34,7 +34,75 @@ Available aliases: `bd`
 
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
-- an address with a partition (the partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in);
+- an address with a partition Available aliases: `shmem`
+
+## `w-add`
+
+This command adds a watch expression for a symbol.
+
+```
+w-add [>]<symbol>[:<type>[:<length>]]
+```
+
+Available aliases: `w`
+
+The watch expression specification format is `[>]<symbol>[:<type>[:<length>]]` where:
+- `symbol`: A valid identifier (symbol name)
+- `>`: Optional flag. When present, the watch is marked as direct (the IDE will treat the symbol as a direct value/address).
+- `type`: Optional data type (defaults to `b` if omitted). One of the following:
+  - `a`: byte array (requires length)
+  - `b`: 8-bit number (default)
+  - `w`: 16-bit little-endian number
+  - `l`: 32-bit little-endian number
+  - `-w`: 16-bit big-endian number
+  - `-l`: 32-bit big-endian number
+  - `f`: flag (boolean, zero is false, other values are true)
+  - `s`: string (requires length)
+- `length`: Required for array (`a`) and string (`s`) types, must be between 1 and 1024
+
+Examples:
+- `w-add playerScore` - 8-bit value (default type)
+- `w-add >playerScore` - 8-bit value with direct flag
+- `w-add playerScore:w` - 16-bit little-endian value
+- `w-add playerName:s:32` - 32-byte string
+- `w-add inventory:a:64` - 64-byte array
+- `w-add isAlive:f` - boolean flag
+
+## `w-del`
+
+This command removes a watch expression by symbol name.
+
+```
+w-del <symbol>
+```
+
+Available aliases: `wd`
+
+The `symbol` parameter is the name of the symbol for which the watch expression should be removed.
+
+## `w-ea`
+
+This command erases all watch expressions.
+
+```
+w-ea
+```
+
+Available aliases: `wea`
+
+## `w-list`
+
+This command lists all defined watch expressions.
+
+```
+w-list
+```
+
+Available aliases: `wl`
+
+This command displays all defined watchpoints with their symbol names, data types, lengths (if applicable), and resolved addresses/partitions (if the symbols have been resolved after compilation).
+
+## `show-memory`e partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in);
 - or a source code line specification, for example, `[code/code.kz80.asm]`
 
 ## `bp-en`

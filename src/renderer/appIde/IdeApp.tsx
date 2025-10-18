@@ -40,6 +40,12 @@ import {
   RemoveBreakpointCommand,
   EnableBreakpointCommand
 } from "./commands/BreakpointCommands";
+import {
+  AddWatchCommand,
+  RemoveWatchCommand,
+  ListWatchCommand,
+  EraseAllWatchCommand
+} from "./commands/WatchCommands";
 import { ClearHistoryCommand } from "./commands/ClearHistoryCommand";
 import { ClearScreenCommand } from "./commands/ClearScreenCommand";
 import { CloseFolderCommand } from "./commands/CloseFolderCommand";
@@ -388,6 +394,11 @@ function registerCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new SetBreakpointCommand());
   cmdSrv.registerCommand(new RemoveBreakpointCommand());
   cmdSrv.registerCommand(new EnableBreakpointCommand());
+
+  cmdSrv.registerCommand(new AddWatchCommand());
+  cmdSrv.registerCommand(new RemoveWatchCommand());
+  cmdSrv.registerCommand(new ListWatchCommand());
+  cmdSrv.registerCommand(new EraseAllWatchCommand());
 
   cmdSrv.registerCommand(new NumCommand());
   cmdSrv.registerCommand(new ShellCommand());

@@ -331,3 +331,18 @@ export const endBackgroundCompileAction: ActionCreator = (value: any) => ({
   type: "END_BACKGROUND_COMPILE",
   payload: { value }
 });
+
+// --- Watch expression actions
+export const addWatchAction: ActionCreator = (watch: any) => ({
+  type: "ADD_WATCH",
+  payload: { watch }
+});
+
+export const removeWatchAction: ActionCreator = (symbol: string) => ({
+  type: "REMOVE_WATCH",
+  payload: { symbol }
+});
+
+export const clearWatchAction: ActionCreator = () => ({
+  type: "CLEAR_WATCH"
+});
