@@ -65,6 +65,7 @@
 }
 
 .hexValues {
+  position: relative;
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
@@ -74,15 +75,11 @@
   white-space: nowrap;
   width: fit-content;
   border: 1px solid transparent;
+  z-index: 1;
 
   &.lastJump {
     animation: borderColorChange 3s alternate;
     animation-delay: 400ms;
-  }
-
-  &:hover {
-    background: #606060;
-    opacity: 0.9;
   }
 
   &.pointed {
@@ -94,6 +91,16 @@
     background: var(--bgcolor-memory-pc-pointed);
     color: var(--color-memory-pointed);
   }
+}
+
+.byteHoverOverlay {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  background: #606060;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .charValues {

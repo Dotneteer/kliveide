@@ -4,7 +4,7 @@ import { toHexa4, toHexa2, toDecimal5, toDecimal3, toBin8 } from "../services/id
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
-import { useEffect, memo } from "react";
+import { useEffect, memo, useLayoutEffect, useRef, useState } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 
 type DumpProps = {
@@ -145,6 +145,10 @@ const HexValues = ({
   isRom: _isRom,
   editClicked: _editClicked
 }: HexValuesProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hoveredByteIndex, setHoveredByteIndex] = useState<number | null>(null);
+  const [charWidth, setCharWidth] = useState<number>(0);
+
   // Build the space-separated hex string for all 8 bytes
   const hexParts: string[] = [];
   for (let i = 0; i < 8; i++) {
@@ -154,6 +158,69 @@ const HexValues = ({
     }
   }
   const hexString = hexParts.join(" ");
+
+  // Calculate character width from the container after render (monospace font)
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+    
+    // Create a temporary span to measure actual text width
+    const tempSpan = document.createElement('span');
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.position = 'absolute';
+    tempSpan.style.whiteSpace = 'pre';
+    
+    // Copy font properties from container
+    const computedStyle = window.getComputedStyle(containerRef.current);
+    tempSpan.style.font = computedStyle.font;
+    tempSpan.style.fontSize = computedStyle.fontSize;
+    tempSpan.style.fontFamily = computedStyle.fontFamily;
+    tempSpan.textContent = hexString;
+    
+    document.body.appendChild(tempSpan);
+    const textWidth = tempSpan.offsetWidth;
+    document.body.removeChild(tempSpan);
+    
+    const totalChars = hexString.length;
+    if (totalChars > 0) {
+      setCharWidth(textWidth / totalChars);
+    }
+  }, [hexString]);
+
+  // Handle mouse move to determine which byte is hovered
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || charWidth === 0) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    
+    // Calculate byte positions based on character width
+    // Each byte in hex is 2 chars, in decimal is 3 chars, plus 1 space between bytes
+    const byteWidth = decimalView ? 3 : 2;
+    const spacing = 1; // space character
+    
+    let foundIndex: number | null = null;
+    for (let i = 0; i < hexParts.length; i++) {
+      const startPos = i * (byteWidth + spacing) * charWidth;
+      const endPos = startPos + byteWidth * charWidth;
+      
+      if (x >= startPos && x < endPos) {
+        foundIndex = i;
+        break;
+      }
+    }
+    
+    setHoveredByteIndex(foundIndex);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredByteIndex(null);
+  };
+
+  // Calculate overlay position for the hovered byte
+  const overlayStyle = hoveredByteIndex !== null && charWidth > 0 ? {
+    left: `${hoveredByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
+    width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
+  } : undefined;
 
   // Determine styling based on pointed/lastJump for any of the 8 bytes
   let hasPointed = false;
@@ -176,13 +243,19 @@ const HexValues = ({
 
   return (
     <div
+      ref={containerRef}
       className={classnames(styles.hexValues, {
         [styles.pointed]: hasPointed,
         [styles.pcPointed]: hasPcPointed,
         [styles.lastJump]: hasLastJump
       })}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
       {hexString}
+      {overlayStyle && (
+        <div className={styles.byteHoverOverlay} style={overlayStyle} />
+      )}
     </div>
   );
 };
