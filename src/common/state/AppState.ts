@@ -16,6 +16,7 @@ export type WatchInfo = {
   length?: number;
   address?: number;
   partition?: number;
+  direct?: boolean;
 };
 
 /**

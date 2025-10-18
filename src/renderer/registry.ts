@@ -208,7 +208,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
   },
   {
     id: "watchPanel",
-    title: "Watchpoints",
+    title: "Watch",
     hostActivity: ACTIVITY_DEBUG_ID,
     noScrollViewer: false,
     renderer: watchPanelRenderer,

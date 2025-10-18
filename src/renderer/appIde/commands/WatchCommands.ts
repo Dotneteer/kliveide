@@ -12,11 +12,7 @@ import {
   IdeCommandBase
 } from "@renderer/appIde/services/ide-commands";
 import { WatchInfo } from "@common/state/AppState";
-import { 
-  addWatchAction, 
-  removeWatchAction, 
-  clearWatchAction 
-} from "@common/state/actions";
+import { addWatchAction, removeWatchAction, clearWatchAction } from "@common/state/actions";
 
 // --- Watch type definitions
 export type WatchType = "a" | "b" | "w" | "l" | "-w" | "-l" | "f" | "s";
@@ -26,6 +22,7 @@ type WatchSpecArgs = {
   symbol?: string;
   type?: WatchType;
   length?: number;
+  direct?: boolean;
 };
 
 type WatchSymbolArgs = {
@@ -49,15 +46,26 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
     args: WatchSpecArgs
   ): Promise<ValidationMessage[]> {
     const spec = args.watchSpec?.trim() ?? "";
-    
+
     if (!spec) {
       return [validationError("Watch specification cannot be empty")];
     }
 
+    // Check for optional direct flag ('>') at the beginning
+    let direct = false;
+    let specBody = spec;
+    if (spec.startsWith(">")) {
+      direct = true;
+      specBody = spec.substring(1).trim();
+      if (!specBody) {
+        return [validationError("Symbol name cannot be empty after '>'")];
+      }
+    }
+
     // Parse the watch specification: <name>[:<type>[:<length>]]
-    const parts = spec.split(":");
+    const parts = specBody.split(":");
     if (parts.length < 1 || parts.length > 3) {
-      return [validationError("Invalid watch format. Use: <symbol>[:<type>[:<length>]]")];
+      return [validationError("Invalid watch format. Use: [>]<symbol>[:<type>[:<length>]]")];
     }
 
     const [symbol, type = "b", lengthStr] = parts;
@@ -80,7 +88,9 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
     if (lengthStr !== undefined) {
       // Length is only allowed for array ("a") and string ("s") types
       if (watchType !== "a" && watchType !== "s") {
-        return [validationError("Length specification is only allowed for array (a) and string (s) types")];
+        return [
+          validationError("Length specification is only allowed for array (a) and string (s) types")
+        ];
       }
 
       length = parseInt(lengthStr, 10);
@@ -88,9 +98,9 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
         return [validationError("Length must be a positive number between 1 and 1024")];
       }
     } else {
-      // Length is required for array and string types
+      // Default length for array and string types when omitted
       if (watchType === "a" || watchType === "s") {
-        return [validationError("Length specification is required for array (a) and string (s) types")];
+        length = 8;
       }
     }
 
@@ -98,6 +108,7 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
     args.symbol = symbol;
     args.type = watchType;
     args.length = length;
+    args.direct = direct;
 
     return [];
   }
@@ -115,46 +126,56 @@ abstract class WatchWithSpecCommand extends IdeCommandBase<WatchSpecArgs> {
 export class AddWatchCommand extends WatchWithSpecCommand {
   readonly id = "w-add";
   readonly description = "Adds a watch expression for a symbol";
-  readonly usage = "w-add <symbol>[:<type>[:<length>]]";
+  readonly usage =
+    "w-add [>]<symbol>[:<type>[:<length>]]\n" + 
+    ">: use direct symbol value\n" +
+    "<type>:\n  b=byte,\n  " +
+    "w=16-bit little-endian, -w=16-bit big-endian,\n  " +
+    "l=32-bit little-endian, -l=32-bit big-endian,\n  " +
+    "f=flag,\n  a=array (use length, default: 8), s=string (use length, default: 8)";
   readonly aliases = ["w"];
 
-  async execute(
-    context: IdeCommandContext,
-    args: WatchSpecArgs
-  ): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: WatchSpecArgs): Promise<IdeCommandResult> {
     const watch: WatchInfo = {
       symbol: args.symbol!,
       type: args.type!,
-      length: args.length
+      length: args.length,
+      direct: args.direct
     };
 
     // Add watch to the Redux store
     context.store.dispatch(addWatchAction(watch), "ide");
-    
+
     let typeDesc = this.getTypeDescription(watch.type);
     if (watch.length) {
       typeDesc += ` (${watch.length} bytes)`;
     }
 
-    writeSuccessMessage(
-      context.output,
-      `Watch added: ${watch.symbol.toUpperCase()} [${typeDesc}]`
-    );
-    
+    writeSuccessMessage(context.output, `Watch added: ${watch.symbol.toUpperCase()} [${typeDesc}]`);
+
     return commandSuccess;
   }
 
   private getTypeDescription(type: WatchType): string {
     switch (type) {
-      case "a": return "byte array";
-      case "b": return "8-bit";
-      case "w": return "16-bit little-endian";
-      case "l": return "32-bit little-endian";
-      case "-w": return "16-bit big-endian";
-      case "-l": return "32-bit big-endian";
-      case "f": return "flag";
-      case "s": return "string";
-      default: return "unknown";
+      case "a":
+        return "byte array";
+      case "b":
+        return "8-bit";
+      case "w":
+        return "16-bit little-endian";
+      case "l":
+        return "32-bit little-endian";
+      case "-w":
+        return "16-bit big-endian";
+      case "-l":
+        return "32-bit big-endian";
+      case "f":
+        return "flag";
+      case "s":
+        return "string";
+      default:
+        return "unknown";
     }
   }
 }
@@ -181,7 +202,7 @@ export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
     args: WatchSymbolArgs
   ): Promise<ValidationMessage[]> {
     const symbol = args.symbol?.trim() ?? "";
-    
+
     if (!symbol) {
       return [validationError("Symbol name cannot be empty")];
     }
@@ -195,18 +216,12 @@ export class RemoveWatchCommand extends IdeCommandBase<WatchSymbolArgs> {
     return [];
   }
 
-  async execute(
-    context: IdeCommandContext,
-    args: WatchSymbolArgs
-  ): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: WatchSymbolArgs): Promise<IdeCommandResult> {
     // Remove watch from the Redux store
     context.store.dispatch(removeWatchAction(args.symbol), "ide");
-    
-    writeSuccessMessage(
-      context.output,
-      `Watch removed: ${args.symbol.toUpperCase()}`
-    );
-    
+
+    writeSuccessMessage(context.output, `Watch removed: ${args.symbol.toUpperCase()}`);
+
     return commandSuccess;
   }
 }
@@ -229,16 +244,16 @@ export class ListWatchCommand extends IdeCommandBase {
       writeMessage(context.output, "No watch expressions defined", "bright-blue");
     } else {
       writeMessage(context.output, "Defined watch expressions:", "bright-blue");
-      
+
       watchExpressions.forEach((w, idx) => {
         writeMessage(context.output, `[${idx + 1}]: `, "bright-blue", false);
         writeMessage(context.output, w.symbol.toUpperCase(), "bright-magenta", false);
         writeMessage(context.output, ` (${this.getTypeDescription(w.type)}`, "cyan", false);
-        
+
         if (w.length) {
           writeMessage(context.output, `, ${w.length} bytes`, "cyan", false);
         }
-        
+
         if (w.address !== undefined) {
           writeMessage(context.output, `, addr: $${toHexa4(w.address)}`, "yellow", false);
           if (w.partition !== undefined) {
@@ -247,10 +262,10 @@ export class ListWatchCommand extends IdeCommandBase {
         } else {
           writeMessage(context.output, `, unresolved`, "red", false);
         }
-        
+
         writeMessage(context.output, ")", "cyan");
       });
-      
+
       writeMessage(
         context.output,
         `${watchExpressions.length} watch expression${watchExpressions.length !== 1 ? "s" : ""} defined`,
@@ -263,15 +278,24 @@ export class ListWatchCommand extends IdeCommandBase {
 
   private getTypeDescription(type: WatchType): string {
     switch (type) {
-      case "a": return "byte array";
-      case "b": return "8-bit";
-      case "w": return "16-bit little-endian";
-      case "l": return "32-bit little-endian";
-      case "-w": return "16-bit big-endian";
-      case "-l": return "32-bit big-endian";
-      case "f": return "flag";
-      case "s": return "string";
-      default: return "unknown";
+      case "a":
+        return "byte array";
+      case "b":
+        return "8-bit";
+      case "w":
+        return "16-bit little-endian";
+      case "l":
+        return "32-bit little-endian";
+      case "-w":
+        return "16-bit big-endian";
+      case "-l":
+        return "32-bit big-endian";
+      case "f":
+        return "flag";
+      case "s":
+        return "string";
+      default:
+        return "unknown";
     }
   }
 }
@@ -289,10 +313,10 @@ export class EraseAllWatchCommand extends IdeCommandBase {
     // Get current watch expression count before clearing
     const state = context.store.getState();
     const removedCount = state.watchExpressions?.length || 0;
-    
+
     // Clear all watch expressions from Redux store
     context.store.dispatch(clearWatchAction(), "ide");
-    
+
     writeMessage(
       context.output,
       `${removedCount} watch expression${removedCount > 1 ? "s" : ""} removed.`,

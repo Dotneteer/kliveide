@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.50.0
+
+### Features
+
+- Watch panel prototype
+
 ## 0.49.4
 
 ### Fixes

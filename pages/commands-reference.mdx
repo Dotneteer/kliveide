@@ -41,13 +41,14 @@ The `address-spec` parameter can be
 This command adds a watch expression for a symbol.
 
 ```
-w-add <symbol>[:<type>[:<length>]]
+w-add [>]<symbol>[:<type>[:<length>]]
 ```
 
 Available aliases: `w`
 
-The watch expression specification format is `<symbol>[:<type>[:<length>]]` where:
+The watch expression specification format is `[>]<symbol>[:<type>[:<length>]]` where:
 - `symbol`: A valid identifier (symbol name)
+- `>`: Optional flag. When present, the watch is marked as direct (the IDE will treat the symbol as a direct value/address).
 - `type`: Optional data type (defaults to `b` if omitted). One of the following:
   - `a`: byte array (requires length)
   - `b`: 8-bit number (default)
@@ -61,6 +62,7 @@ The watch expression specification format is `<symbol>[:<type>[:<length>]]` wher
 
 Examples:
 - `w-add playerScore` - 8-bit value (default type)
+- `w-add >playerScore` - 8-bit value with direct flag
 - `w-add playerScore:w` - 16-bit little-endian value
 - `w-add playerName:s:32` - 32-byte string
 - `w-add inventory:a:64` - 64-byte array

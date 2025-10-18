@@ -26,7 +26,7 @@ export function watchReducer(
 
     case "REMOVE_WATCH":
       if (!payload?.symbol) return state;
-      return state.filter(w => w.symbol !== payload.symbol);
+      return state.filter(w => w.symbol.toLowerCase() !== payload.symbol.toLowerCase());
 
     case "CLEAR_WATCH":
       return [];
