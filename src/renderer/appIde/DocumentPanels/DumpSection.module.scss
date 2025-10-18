@@ -1,6 +1,7 @@
 .dumpSection {
   display: flex;
   flex-direction: row;
+  align-items: center;
   padding: 2px 0;
 
   &.fit {
@@ -60,6 +61,54 @@
   &.pcPointed {
     background: var(--bgcolor-memory-pc-pointed);
     color: var(--color-memory-pointed);
+  }
+}
+
+.hexValues {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--color-value);
+  white-space: nowrap;
+  width: fit-content;
+  border: 1px solid transparent;
+
+  &.lastJump {
+    animation: borderColorChange 3s alternate;
+    animation-delay: 400ms;
+  }
+
+  &:hover {
+    background: #606060;
+    opacity: 0.9;
+  }
+
+  &.pointed {
+    background: var(--bgcolor-memory-pointed);
+    color: var(--color-memory-pointed);
+  }
+
+  &.pcPointed {
+    background: var(--bgcolor-memory-pc-pointed);
+    color: var(--color-memory-pointed);
+  }
+}
+
+.charValues {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--color-secondary-label);
+  white-space: nowrap;
+  width: 64px;
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+    opacity: 0.9;
   }
 }
 

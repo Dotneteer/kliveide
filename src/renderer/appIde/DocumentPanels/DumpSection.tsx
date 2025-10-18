@@ -1,11 +1,10 @@
 import { LabelSeparator, Label } from "@controls/Labels";
-import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa2, toDecimal5, toDecimal3, toBin8 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
-import { useEffect } from "react";
+import { useEffect, memo } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 
 type DumpProps = {
@@ -21,7 +20,7 @@ type DumpProps = {
   editClicked?: (address: number) => void;
 };
 
-export const DumpSection = ({
+const DumpSectionComponent = ({
   showPartitions,
   partitionLabel,
   address,
@@ -69,127 +68,23 @@ export const DumpSection = ({
         text={decimalView ? toDecimal5(address) : toHexa4(address)}
         width={decimalView ? 48 : 40}
       />
-      <ByteValue
-        address={address + 0}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 0]}
+      <HexValues
+        address={address}
+        memory={memory}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 1}
         lastJumpAddress={lastJumpAddress}
-        value={memory[address + 1]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 2}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 2]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 3}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 3]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 4}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 4]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 5}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 5]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 6}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 6]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 7}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 7]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
         isRom={isRom}
         editClicked={editClicked}
       />
       <LabelSeparator width={8} />
       {charDump && (
         <>
-          <CharValue
-            address={address + 0}
-            value={memory[address + 0]}
+          <CharValues
+            address={address}
+            memory={memory}
             pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 1}
-            value={memory[address + 1]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 2}
-            value={memory[address + 2]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 3}
-            value={memory[address + 3]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 4}
-            value={memory[address + 4]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 5}
-            value={memory[address + 5]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 6}
-            value={memory[address + 6]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 7}
-            value={memory[address + 7]}
-            pointedInfo={pointedInfo}
+            isRom={isRom}
             editClicked={editClicked}
           />
           <LabelSeparator width={8} />
@@ -199,97 +94,126 @@ export const DumpSection = ({
   );
 };
 
-type ByteValueProps = {
+// --- Memoize DumpSection to avoid re-rendering when the 8 displayed byte values (and
+// other display-impacting props) have not changed.
+export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
+  // Address itself affects the address label and which bytes are shown
+  if (prev.address !== next.address) return false;
+
+  // View mode and layout-affecting props
+  if (prev.decimalView !== next.decimalView) return false;
+  if (prev.charDump !== next.charDump) return false;
+  if (prev.showPartitions !== next.showPartitions) return false;
+  if (prev.partitionLabel !== next.partitionLabel) return false;
+
+  // Highlighting/styling and edit behavior
+  if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
+  if (prev.isRom !== next.isRom) return false;
+  if (prev.editClicked !== next.editClicked) return false;
+
+  // Compare the 8 byte values actually rendered (address .. address+7)
+  for (let i = 0; i < 8; i++) {
+    const addr = prev.address + i;
+    if (prev.memory[addr] !== next.memory[addr]) return false;
+
+    // Also ensure pointed info affecting tooltip/styling hasn't changed for these addresses
+    const prevPoint = prev.pointedInfo?.[addr];
+    const nextPoint = next.pointedInfo?.[addr];
+    if (prevPoint !== nextPoint) return false;
+  }
+
+  // If we got here, nothing relevant changed
+  return true;
+});
+
+type HexValuesProps = {
   address: number;
+  memory: Uint8Array;
   decimalView?: boolean;
-  value?: number;
   pointedInfo?: Record<number, string>;
   lastJumpAddress?: number;
   isRom?: boolean;
   editClicked?: (address: number) => void;
 };
 
-const ByteValue = ({
+const HexValues = ({
   address,
+  memory,
   decimalView,
-  value,
   pointedInfo,
   lastJumpAddress,
-  isRom,
-  editClicked
-}: ByteValueProps) => {
-  // --- Do not display non-existing values
-  if (value === undefined) return <div style={{ width: 20 }}></div>;
+  isRom: _isRom,
+  editClicked: _editClicked
+}: HexValuesProps) => {
+  // Build the space-separated hex string for all 8 bytes
+  const hexParts: string[] = [];
+  for (let i = 0; i < 8; i++) {
+    const value = memory[address + i];
+    if (value !== undefined) {
+      hexParts.push(decimalView ? toDecimal3(value) : toHexa2(value));
+    }
+  }
+  const hexString = hexParts.join(" ");
 
-  const ref = useTooltipRef(value);
-  const pointedHint = pointedInfo?.[address];
-  const pointed = pointedHint !== undefined;
-  const pcPointed = pointed && pointedHint.indexOf("PC") >= 0;
-  let title =
-    "Value at " +
-    (decimalView ? `${address} ($${toHexa4(address)}):\n` : `$${toHexa4(address)} (${address}):\n`);
-  title += `${tooltipCache[value]}${pointed ? `\nPointed by: ${pointedHint}` : ""}`;
-  title += isRom ? "\n(ROM)" : "\nRight-click to edit the memory value";
+  // Determine styling based on pointed/lastJump for any of the 8 bytes
+  let hasPointed = false;
+  let hasPcPointed = false;
+  let hasLastJump = false;
+
+  for (let i = 0; i < 8; i++) {
+    const addr = address + i;
+    const pointedHint = pointedInfo?.[addr];
+    if (pointedHint !== undefined) {
+      hasPointed = true;
+      if (pointedHint.indexOf("PC") >= 0) {
+        hasPcPointed = true;
+      }
+    }
+    if (lastJumpAddress === addr) {
+      hasLastJump = true;
+    }
+  }
+
   return (
     <div
-      ref={ref}
-      className={classnames(styles.value, {
-        [styles.pointed]: pointed,
-        [styles.pcPointed]: pcPointed,
-        [styles.decimal]: decimalView,
-        [styles.lastJump]: lastJumpAddress === address
+      className={classnames(styles.hexValues, {
+        [styles.pointed]: hasPointed,
+        [styles.pcPointed]: hasPcPointed,
+        [styles.lastJump]: hasLastJump
       })}
-      onContextMenu={(e) => {
-        if (isRom) return false;
-        e.preventDefault();
-        editClicked?.(address);
-        return false;
-      }}
     >
-      {decimalView ? toDecimal3(value) : toHexa2(value)}
-      {title && (
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-          content={title}
-        />
-      )}
+      {hexString}
     </div>
   );
 };
 
-const CharValue = ({ address, value, isRom, editClicked }: ByteValueProps) => {
-  const hasValue = value !== undefined;
-  const ref = useTooltipRef(value);
-  const valueInfo = characterSet[(value ?? 0x20) & 0xff];
-  let text = valueInfo.v ?? ".";
-  let title = `Value at $${toHexa4(address)} (${address}):\n${tooltipCache[value]}`;
-  title += isRom ? "\n(ROM)" : "\nRight-click to edit the memory value";
+type CharValuesProps = {
+  address: number;
+  memory: Uint8Array;
+  pointedInfo?: Record<number, string>;
+  isRom?: boolean;
+  editClicked?: (address: number) => void;
+};
+
+const CharValues = ({ 
+  address, 
+  memory, 
+  isRom: _isRom,
+  editClicked: _editClicked
+}: CharValuesProps) => {
+  // Build the 8-character string
+  let charString = "";
+  for (let i = 0; i < 8; i++) {
+    const value = memory[address + i];
+    if (value !== undefined) {
+      const valueInfo = characterSet[(value ?? 0x20) & 0xff];
+      charString += valueInfo.v ?? ".";
+    }
+  }
+
   return (
-    <div
-      ref={ref}
-      className={styles.char}
-      onContextMenu={(e) => {
-        if (isRom) return false;
-        e.preventDefault();
-        editClicked?.(address);
-        return false;
-      }}
-    >
-      {text}
-      {title && hasValue && (
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-          content={title}
-        />
-      )}
+    <div className={styles.charValues}>
+      {charString}
     </div>
   );
 };
