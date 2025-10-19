@@ -36,11 +36,11 @@ const store = createAppStore(messageSource, async (action, source) => {
 document.title = isEmu ? "Klive Retro-Computer Emulator" : "Klive IDE";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
+  // <React.StrictMode> -- Temporarily disabled to debug flickering issue
     <RendererProvider store={store} messenger={messenger} messageSource={messageSource}>
       <ThemeProvider>
         <AppServicesProvider>{isEmu ? <EmuApp /> : <IdeApp />}</AppServicesProvider>
       </ThemeProvider>
     </RendererProvider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppServices } from "../services/AppServicesProvider";
 import { DocumentsContainer } from "./DocumentsContainer";
 import { DocumentsHeader } from "./DocumentsHeader";
@@ -21,16 +21,41 @@ export const DocumentArea = () => {
 
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
+    console.log("📋 [DocumentArea] Effect triggered", { hubVersion, projectViewStateVersion });
     const doc = documentHubService?.getActiveDocument();
     if (doc) {
       const lockedDocs = projectService.getLockedFiles();
       doc.isLocked = lockedDocs.includes(doc.id);
     }
-    setActiveDoc(doc);
+    // Only update if doc ID actually changed to prevent unnecessary re-renders
+    setActiveDoc(prevDoc => {
+      if (prevDoc?.id === doc?.id && prevDoc?.isLocked === doc?.isLocked) {
+        console.log("📋 [DocumentArea] activeDoc unchanged, keeping same reference");
+        return prevDoc;
+      }
+      console.log("📋 [DocumentArea] activeDoc changed, updating");
+      return doc;
+    });
     const viewState = documentHubService?.getDocumentViewState(doc?.id);
     setViewState(viewState);
     setData(doc?.contents);
   }, [hubVersion, projectViewStateVersion]);
+
+  console.log("🔍 [DocumentArea] Rendering", {
+    activeDocId: activeDoc?.id,
+    keyValue: activeDoc?.id,
+    activeDocRef: activeDoc,
+    hasData: !!data,
+    hasViewState: !!viewState,
+    documentHubService: !!documentHubService
+  });
+
+  // --- Memoize apiLoaded callback to prevent unnecessary re-renders
+  const handleApiLoaded = useCallback((api) => {
+    if (activeDoc) {
+      documentHubService?.setDocumentApi(activeDoc.id, api);
+    }
+  }, [documentHubService, activeDoc?.id]);
 
   return (
     <DocumentHubServiceProvider value={documentHubService}>
@@ -42,9 +67,7 @@ export const DocumentArea = () => {
             document={activeDoc}
             contents={data}
             viewState={viewState}
-            apiLoaded={(api) => {
-              documentHubService.setDocumentApi(activeDoc.id, api);
-            }}
+            apiLoaded={handleApiLoaded}
           />
         )}
       </div>

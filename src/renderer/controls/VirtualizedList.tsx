@@ -5,21 +5,33 @@ import ScrollViewer from "./ScrollViewer";
 type Props = {
   items: any[];
   overscan?: number;
+  startIndex?: number; // Initial scroll position
   renderItem?: (index: number) => React.ReactNode;
   apiLoaded?: (api: VListHandle) => void;
   onScroll?: (offset: number) => void;
 };
 
-export const VirtualizedList = ({ items, overscan, renderItem, apiLoaded, onScroll }: Props) => {
+export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLoaded, onScroll }: Props) => {
   const ref = useRef<VListHandle>(null);
   const [itemsCount, setItemsCount] = useState(items?.length ?? 0);
+  const hasScrolledToStart = useRef(false);
 
-  // --- Notify the parent that the API is ready
+  // --- Notify the parent that the API is ready and scroll to start position
   useEffect(() => {
     if (ref.current) {
       apiLoaded?.(ref.current);
+      
+      // Scroll to initial position on first mount only
+      if (!hasScrolledToStart.current && startIndex !== undefined && startIndex > 0) {
+        hasScrolledToStart.current = true;
+        console.log("🎬 [VirtualizedList] Scrolling to startIndex:", startIndex);
+        // Use setTimeout to ensure the list is fully rendered
+        setTimeout(() => {
+          ref.current?.scrollToIndex(startIndex, { align: "start" });
+        }, 0);
+      }
     }
-  }, [ref.current]);
+  }, [ref.current, startIndex]);
 
   useEffect(() => {
     setItemsCount(items?.length ?? 0);

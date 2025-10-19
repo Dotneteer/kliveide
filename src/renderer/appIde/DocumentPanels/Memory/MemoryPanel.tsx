@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
@@ -20,7 +20,7 @@ import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { Text } from "@renderer/controls/generic/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
 import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
-import { incProjectFileVersionAction, setWorkspaceSettingsAction } from "@common/state/actions";
+import { incProjectFileVersionAction /*, setWorkspaceSettingsAction */ } from "@common/state/actions";
 import { MEMORY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import { SetMemoryDialog } from "@renderer/appIde/dialogs/SetMemoryDialog";
@@ -42,7 +42,7 @@ export type CachedRefreshState = {
   decimalView: boolean;
 };
 
-const BankedMemoryPanel = ({ document }: DocumentProps) => {
+const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
@@ -58,41 +58,59 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [segmentOptions, setSegmentOptions] = useState<DropdownOption[]>([]);
   const allowRefresh = useRef(true);
 
-  // --- Read the view state of the document
-  const viewState = useRef(
-    (documentHubService.getDocumentViewState(document.id) as BankedMemoryPanelViewState) ?? {}
-  );
-
   // --- View state variables
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const workspace = useSelector((s) => s.workspaceSettings?.[MEMORY_EDITOR]);
-  const [topIndex, setTopIndex] = useState<number>(
-    viewState.current?.topIndex ?? workspace?.topIndex ?? 0
-  );
-  const [isFullView, setIsFullView] = useState(
-    viewState.current?.isFullView ?? workspace?.isFullView ?? true
-  );
-  const [currentSegment, setCurrentSegment] = useState<number>(null);
-  const [bankLabel, setBankLabel] = useState(
-    viewState.current?.bankLabel ?? workspace?.bankLabel ?? true
-  );
+  
+  // --- Load viewState ONCE during mount using useMemo with empty deps
+  const loadedViewState = useMemo(() => {
+    console.log("🔄 [MemoryPanel] Loading viewState during state initialization");
+    const activeDoc = documentHubService.getActiveDocument();
+    console.log("📄 [MemoryPanel] Active document:", activeDoc?.id);
+    const viewState = activeDoc 
+      ? documentHubService.getDocumentViewState(activeDoc.id) as BankedMemoryPanelViewState
+      : undefined;
+    console.log("💾 [MemoryPanel] Loaded viewState:", viewState);
+    return viewState;
+  }, []); // Empty deps = runs once on mount
 
-  // --- Display options
-  const [decimalView, setDecimalView] = useState(
-    viewState.current?.decimalView ?? workspace?.decimalView ?? false
-  );
-  const [twoColumns, setTwoColumns] = useState(
-    viewState.current?.twoColumns ?? workspace?.twoColumns ?? true
-  );
-  const [charDump, setCharDump] = useState(
-    viewState.current?.charDump ?? workspace?.charDump ?? true
-  );
+  const [topIndex, setTopIndex] = useState<number>(() => loadedViewState?.topIndex ?? 0);
+  const [isFullView, setIsFullView] = useState(() => loadedViewState?.isFullView ?? true);
+  const [currentSegment, setCurrentSegment] = useState<number>(() => loadedViewState?.currentSegment ?? null);
+  const [bankLabel, setBankLabel] = useState(() => loadedViewState?.bankLabel ?? true);
+  const [decimalView, setDecimalView] = useState(() => loadedViewState?.decimalView ?? workspace?.decimalView ?? false);
+  const [twoColumns, setTwoColumns] = useState(() => loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true);
+  const [charDump, setCharDump] = useState(() => loadedViewState?.charDump ?? workspace?.charDump ?? true);
+  const [isReady, setIsReady] = useState(false);
+
+  console.log("📊 [MemoryPanel] Initialized state:", {
+    topIndex,
+    isFullView,
+    currentSegment,
+    bankLabel,
+    decimalView,
+    twoColumns,
+    charDump,
+    isReady
+  });
 
   // --- State of the memory view
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
-  const [memoryItems, setMemoryItems] = useState<number[]>([]);
-  const cachedItems = useRef<number[]>([]);
+  
+  // Initialize both memoryItems state and cachedItems ref together
+  const initialMemoryItems = useMemo(() => {
+    const memItems: number[] = [];
+    const hasTwoColumns = loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true;
+    for (let addr = 0; addr < 0x1_0000; addr += hasTwoColumns ? 0x10 : 0x08) {
+      memItems.push(addr);
+    }
+    console.log("📦 [MemoryPanel] Created", memItems.length, "memory items during initialization");
+    return memItems;
+  }, []); // Empty deps = compute once
+  
+  const [memoryItems, setMemoryItems] = useState<number[]>(initialMemoryItems);
+  const cachedItems = useRef<number[]>(initialMemoryItems);
   const vlApi = useRef<VListHandle>(null);
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
   const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>(null);
@@ -108,11 +126,26 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     currentSegment
   });
 
+  // --- Track if this is the initial mount to skip saving viewState on first render
+  const isInitialMount = useRef(true);
+  const componentInstanceId = useRef(Math.random());
+
   const [isMemoryDialogOpen, setMemoryDialogOpen] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<number>(null);
 
+  // --- Track mount/unmount and initialization phase
+  const isInitializing = useRef(true);
+  
+  useEffect(() => {
+    console.log(`🟢 [MemoryPanel#${componentInstanceId.current}] Component MOUNTED`);
+    return () => {
+      console.log(`🔴 [MemoryPanel#${componentInstanceId.current}] Component UNMOUNTED`);
+    };
+  }, []);
+
   // --- Respond to machineId changes
   useEffect(() => {
+    isInitializing.current = true; // Mark as initializing when machine changes
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
     const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
@@ -137,6 +170,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         setSegmentOptions(options);
       }
       setCurrentSegment(romPagesValue ? -1 : 0);
+      // Mark initialization complete after all async setup is done
+      setTimeout(() => {
+        isInitializing.current = false;
+        setIsReady(true);
+        console.log("✅ [MemoryPanel] Initialization complete, component ready");
+      }, 50);
     })();
   }, [machineId]);
 
@@ -151,8 +190,11 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       charDump,
       bankLabel
     };
+    console.log("💾 [MemoryPanel] Saving viewState:", mergedState);
     documentHubService.saveActiveDocumentState(mergedState);
-    dispatch(setWorkspaceSettingsAction(MEMORY_EDITOR, mergedState));
+    // TEMPORARILY DISABLED: This causes a Redux feedback loop
+    // The workspace selector triggers re-renders when this dispatches
+    // dispatch(setWorkspaceSettingsAction(MEMORY_EDITOR, mergedState));
     (async () => {
       await mainApi.saveProject();
       dispatch(incProjectFileVersionAction());
@@ -165,8 +207,15 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     for (let addr = 0; addr < length; addr += hasTwoColums ? 0x10 : 0x08) {
       memItems.push(addr);
     }
-    cachedItems.current = memItems;
-    setMemoryItems(memItems);
+    
+    // Only update state if the array actually changed (different length or params)
+    if (cachedItems.current.length !== memItems.length) {
+      console.log("📦 [MemoryPanel] Updating memoryItems, length changed:", cachedItems.current.length, "→", memItems.length);
+      cachedItems.current = memItems;
+      setMemoryItems(memItems);
+    } else {
+      console.log("📦 [MemoryPanel] Skipping memoryItems update, no change needed");
+    }
   };
 
   // --- This function refreshes the memory
@@ -189,7 +238,16 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       // --- Get memory information
       const response = await emuApi.getMemoryContents(partition);
       memory.current = response.memory;
-      setMem64kLabels(response.partitionLabels);
+      
+      // Only update partition labels if they actually changed
+      setMem64kLabels(prevLabels => {
+        if (JSON.stringify(prevLabels) === JSON.stringify(response.partitionLabels)) {
+          console.log("🏷️ [MemoryPanel] Skipping mem64kLabels update, no change");
+          return prevLabels; // Return same reference to prevent re-render
+        }
+        console.log("🏷️ [MemoryPanel] Updating mem64kLabels");
+        return response.partitionLabels;
+      });
 
       // --- Calculate tooltips for pointed addresses
       pointedRegs.current = {};
@@ -213,7 +271,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       createDumpSections(memory.current.length, twoColumns);
     } finally {
       refreshInProgress.current = false;
-      setScrollVersion(scrollVersion + 1);
+      // Don't increment scrollVersion here - it causes unnecessary re-renders
+      // The scroll effect will handle scrolling when topIndex changes
     }
 
     function extendPointedAddress(regName: string, regValue: number): void {
@@ -227,6 +286,16 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
   // --- Save viewState changed
   useEffect(() => {
+    // Skip saving during initialization phase - only save after user interactions
+    if (isInitialMount.current) {
+      console.log("⏭️ [MemoryPanel] Skipping saveViewState on initial mount");
+      isInitialMount.current = false;
+      return;
+    }
+    if (isInitializing.current) {
+      console.log("⏭️ [MemoryPanel] Skipping saveViewState during initialization");
+      return;
+    }
     saveViewState();
     cachedRefreshState.current = {
       isFullView,
@@ -235,19 +304,34 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     };
   }, [topIndex, isFullView, decimalView, currentSegment, twoColumns, charDump, bankLabel]);
 
-  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
+  // --- Initial view: refresh the memory content, then mark as ready
   useInitializeAsync(async () => {
+    console.log("🔄 [MemoryPanel] Initial refresh of memory view");
     await refreshMemoryView();
-    setScrollVersion(scrollVersion + 1);
+    // Mark component as ready - now VirtualizedList will render with correct topIndex
+    setIsReady(true);
+    console.log("✅ [MemoryPanel] Component ready, topIndex:", topIndex);
   });
 
-  // --- Scroll to the desired position whenever the scroll index changes
+  // --- Scroll to the desired position whenever topIndex changes externally (e.g., jump to address)
+  const lastScrolledIndex = useRef(-1);
+  
   useEffect(() => {
-    if (!memoryItems.length) return;
-    vlApi.current?.scrollToIndex(Math.floor(topIndex), {
-      align: "start"
-    });
-  }, [scrollVersion, memoryItems]);
+    // Only handle programmatic scrolls (like "jump to address"), not user scrolls
+    if (!vlApi.current || scrollVersion === 1) {
+      // Skip initial scroll - VirtualizedList will start at correct position
+      return;
+    }
+    
+    const scrollIndex = Math.floor(topIndex);
+    if (scrollIndex !== lastScrolledIndex.current) {
+      console.log("📜 [MemoryPanel] Programmatic scroll to index:", scrollIndex);
+      lastScrolledIndex.current = scrollIndex;
+      vlApi.current.scrollToIndex(scrollIndex, {
+        align: "start"
+      });
+    }
+  }, [scrollVersion]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -261,6 +345,11 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   }, [machineState]);
 
   useEffect(() => {
+    // Skip refresh during initialization - useInitializeAsync handles the first refresh
+    if (isInitializing.current) {
+      console.log("⏭️ [MemoryPanel] Skipping refresh during initialization");
+      return;
+    }
     refreshMemoryView();
   }, [currentSegment, isFullView, decimalView, emuViewVersion]);
 
@@ -319,8 +408,14 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             allowRefresh.current = false;
           }}
           onAddressSent={async (address) => {
+            const newTopIndex = Math.floor(address / (twoColumns ? 16 : 8));
+            console.log("🎯 [MemoryPanel] Jump to address:", {
+              address: `0x${address.toString(16).toUpperCase()}`,
+              twoColumns,
+              calculatedTopIndex: newTopIndex
+            });
             setLastJumpAddress(address);
-            setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
+            setTopIndex(newTopIndex);
             setScrollVersion(scrollVersion + 1);
             allowRefresh.current = true;
           }}
@@ -349,6 +444,27 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       }}
     />
   );
+
+  console.log("🎨 [MemoryPanel] Rendering component with state:", {
+    topIndex,
+    isFullView,
+    currentSegment,
+    twoColumns,
+    charDump,
+    memoryItemsLength: memoryItems.length,
+    isReady
+  });
+
+  // Show loading state until initialization completes and first scroll happens
+  if (!isReady) {
+    return (
+      <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+        <div style={{ padding: "20px", textAlign: "center", color: "var(--color-text-subtle)" }}>
+          Initializing memory view...
+        </div>
+      </FullPanel>
+    );
+  }
 
   return (
     <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
@@ -423,11 +539,25 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <VirtualizedList
           items={memoryItems}
           overscan={25}
+          startIndex={topIndex}
           onScroll={() => {
+            // User scroll tracking disabled - we only track programmatic scrolls
+            // This simplifies the state machine and prevents feedback loops
+            /*
             if (!vlApi.current || cachedItems.current.length === 0) return;
-            setTopIndex(vlApi.current.findStartIndex());
+            const newTopIndex = vlApi.current.findStartIndex();
+            if (newTopIndex !== topIndex) {
+              console.log("📜 [MemoryPanel] User scrolled, updating topIndex:", newTopIndex);
+              setTopIndex(newTopIndex);
+            }
+            */
           }}
-          apiLoaded={(api) => (vlApi.current = api)}
+          apiLoaded={(api) => {
+            console.log("🔌 [MemoryPanel] VirtualizedList API loaded");
+            vlApi.current = api;
+            // Reset lastScrolledIndex when API reloads to force scroll on next effect
+            lastScrolledIndex.current = -1;
+          }}
           renderItem={(idx) => {
             const partitionLabel = isFullView
               ? mem64kLabels[memoryItems[idx] >> 13]
@@ -478,6 +608,5 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 };
 
-export const createMemoryPanel = ({ document, contents }: DocumentProps) => (
-  <BankedMemoryPanel document={document} contents={contents} apiLoaded={() => {}} />
-);
+// Wrap in memo to prevent unnecessary re-renders from parent updates
+export const createMemoryPanel = memo(BankedMemoryPanel);
