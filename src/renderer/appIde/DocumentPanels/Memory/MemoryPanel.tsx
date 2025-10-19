@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
@@ -8,8 +8,6 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { DumpSection } from "../DumpSection";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
@@ -20,11 +18,14 @@ import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { Text } from "@renderer/controls/generic/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
 import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
-import { incProjectFileVersionAction, setWorkspaceSettingsAction } from "@common/state/actions";
+import {
+  incProjectFileVersionAction /*, setWorkspaceSettingsAction */
+} from "@common/state/actions";
 import { MEMORY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import { SetMemoryDialog } from "@renderer/appIde/dialogs/SetMemoryDialog";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 
 type BankedMemoryPanelViewState = {
   topIndex?: number;
@@ -42,7 +43,7 @@ export type CachedRefreshState = {
   decimalView: boolean;
 };
 
-const BankedMemoryPanel = ({ document }: DocumentProps) => {
+const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   // --- Get the services used in this component
   const dispatch = useDispatch();
   const documentHubService = useDocumentHubService();
@@ -58,44 +59,56 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   const [segmentOptions, setSegmentOptions] = useState<DropdownOption[]>([]);
   const allowRefresh = useRef(true);
 
-  // --- Read the view state of the document
-  const viewState = useRef(
-    (documentHubService.getDocumentViewState(document.id) as BankedMemoryPanelViewState) ?? {}
-  );
-
   // --- View state variables
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const workspace = useSelector((s) => s.workspaceSettings?.[MEMORY_EDITOR]);
-  const [topIndex, setTopIndex] = useState<number>(
-    viewState.current?.topIndex ?? workspace?.topIndex ?? 0
-  );
-  const [isFullView, setIsFullView] = useState(
-    viewState.current?.isFullView ?? workspace?.isFullView ?? true
-  );
-  const [currentSegment, setCurrentSegment] = useState<number>(null);
-  const [bankLabel, setBankLabel] = useState(
-    viewState.current?.bankLabel ?? workspace?.bankLabel ?? true
-  );
 
-  // --- Display options
+  // --- Load viewState ONCE during mount using useMemo with empty deps
+  const loadedViewState = useMemo(() => {
+    const activeDoc = documentHubService.getActiveDocument();
+    const viewState = activeDoc
+      ? (documentHubService.getDocumentViewState(activeDoc.id) as BankedMemoryPanelViewState)
+      : undefined;
+    return viewState;
+  }, []); // Empty deps = runs once on mount
+
+  const [topIndex, setTopIndex] = useState<number>(() => loadedViewState?.topIndex ?? 0);
+  const [isFullView, setIsFullView] = useState(() => loadedViewState?.isFullView ?? true);
+  const [currentSegment, setCurrentSegment] = useState<number>(
+    () => loadedViewState?.currentSegment ?? null
+  );
+  const [bankLabel, setBankLabel] = useState(() => loadedViewState?.bankLabel ?? true);
   const [decimalView, setDecimalView] = useState(
-    viewState.current?.decimalView ?? workspace?.decimalView ?? false
+    () => loadedViewState?.decimalView ?? workspace?.decimalView ?? false
   );
   const [twoColumns, setTwoColumns] = useState(
-    viewState.current?.twoColumns ?? workspace?.twoColumns ?? true
+    () => loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true
   );
   const [charDump, setCharDump] = useState(
-    viewState.current?.charDump ?? workspace?.charDump ?? true
+    () => loadedViewState?.charDump ?? workspace?.charDump ?? true
   );
+  const [isReady, setIsReady] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
 
   // --- State of the memory view
   const refreshInProgress = useRef(false);
   const memory = useRef<Uint8Array>(new Uint8Array(0x1_0000));
-  const [memoryItems, setMemoryItems] = useState<number[]>([]);
-  const cachedItems = useRef<number[]>([]);
+
+  // Initialize both memoryItems state and cachedItems ref together
+  const initialMemoryItems = useMemo(() => {
+    const memItems: number[] = [];
+    const hasTwoColumns = loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true;
+    for (let addr = 0; addr < 0x1_0000; addr += hasTwoColumns ? 0x10 : 0x08) {
+      memItems.push(addr);
+    }
+    return memItems;
+  }, []); // Empty deps = compute once
+
+  const [memoryItems, setMemoryItems] = useState<number[]>(initialMemoryItems);
+  const cachedItems = useRef<number[]>(initialMemoryItems);
   const vlApi = useRef<VListHandle>(null);
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
-  const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>(null);
+  const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
   const pointedRegs = useRef<Record<number, string>>({});
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
@@ -108,21 +121,78 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     currentSegment
   });
 
+  // --- Track if this is the initial mount to skip saving viewState on first render
+  const isInitialMount = useRef(true);
+
   const [isMemoryDialogOpen, setMemoryDialogOpen] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<number>(null);
 
+  // --- Track mount/unmount and initialization phase
+  const isInitializing = useRef(true);
+  const machineSetupComplete = useRef(false);
+  const hasScrolledToInitialPosition = useRef(false);
+
+  useEffect(() => {
+    // Reset scroll tracking on mount
+    hasScrolledToInitialPosition.current = false;
+    setHasScrolled(false);
+    return () => {
+      // Clean up debounced save on unmount
+      if (saveViewStateTimeout.current) {
+        clearTimeout(saveViewStateTimeout.current);
+      }
+    };
+  }, []);
+
   // --- Respond to machineId changes
   useEffect(() => {
+    isInitializing.current = true; // Mark as initializing when machine changes
+    machineSetupComplete.current = false; // Reset machine setup flag
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
     const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
-    setBanksView(romPagesValue > 0 || ramBankValue > 0);
-    setDisplayBankMatrix(ramBankValue > 8 || romPagesValue > 8);
+
     (async () => {
-      setRomFlags(await emuApi.getRomFlags());
-      const options: DropdownOption[] = [];
+      // Get ALL async data FIRST before any state updates
+      const romFlags = await emuApi.getRomFlags();
       const labels = await emuApi.getPartitionLabels();
-      setPartitionLabels(labels);
+
+      // Now update all state synchronously in one batch
+      const newBanksView = romPagesValue > 0 || ramBankValue > 0;
+      setBanksView((prev) => {
+        if (prev === newBanksView) {
+          return prev;
+        }
+        return newBanksView;
+      });
+
+      const newDisplayBankMatrix = ramBankValue > 8 || romPagesValue > 8;
+      setDisplayBankMatrix((prev) => {
+        if (prev === newDisplayBankMatrix) {
+          return prev;
+        }
+        return newDisplayBankMatrix;
+      });
+
+      setRomFlags((prev) => {
+        const flagsChanged = JSON.stringify(prev) !== JSON.stringify(romFlags);
+        if (flagsChanged) {
+          return romFlags;
+        } else {
+          return prev;
+        }
+      });
+
+      setPartitionLabels((prev) => {
+        const labelsChanged = JSON.stringify(prev) !== JSON.stringify(labels);
+        if (labelsChanged) {
+          return labels;
+        } else {
+          return prev;
+        }
+      });
+
+      const options: DropdownOption[] = [];
       if (ramBankValue <= 8) {
         const ordered = Object.keys(labels)
           .map((l) => parseInt(l, 10))
@@ -134,13 +204,34 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             options.push({ value: key.toString(), label: `BANK ${key}` });
           }
         });
-        setSegmentOptions(options);
+        setSegmentOptions((prev) => {
+          const optionsChanged = JSON.stringify(prev) !== JSON.stringify(options);
+          if (optionsChanged) {
+            return options;
+          } else {
+            return prev;
+          }
+        });
       }
-      setCurrentSegment(romPagesValue ? -1 : 0);
+
+      const newSegment = romPagesValue ? -1 : 0;
+      setCurrentSegment((prev) => {
+        if (prev === newSegment) {
+          return prev;
+        }
+        return newSegment;
+      });
+
+      // Mark initialization complete after ALL state updates
+      isInitializing.current = false;
+      machineSetupComplete.current = true;
     })();
   }, [machineId]);
 
-  // --- Save the current view state
+  // Debounce ref for saving to prevent immediate re-renders from hubVersion changes
+  const saveViewStateTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Save the current view state (debounced to prevent triggering parent re-renders)
   const saveViewState = () => {
     const mergedState: BankedMemoryPanelViewState = {
       topIndex,
@@ -151,26 +242,35 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       charDump,
       bankLabel
     };
-    documentHubService.saveActiveDocumentState(mergedState);
-    dispatch(setWorkspaceSettingsAction(MEMORY_EDITOR, mergedState));
-    (async () => {
+
+    // Debounce ENTIRE save operation - this prevents hubVersion from incrementing immediately
+    if (saveViewStateTimeout.current) {
+      clearTimeout(saveViewStateTimeout.current);
+    }
+    saveViewStateTimeout.current = setTimeout(async () => {
+      documentHubService.saveActiveDocumentState(mergedState);
       await mainApi.saveProject();
       dispatch(incProjectFileVersionAction());
-    })();
+    }, 100); // Short 100ms debounce - just enough to batch rapid changes
   };
 
   // --- Creates the addresses to represent dump sections
-  const createDumpSections = (length: number, hasTwoColums: boolean) => {
+  const createDumpSections = useCallback((length: number, hasTwoColums: boolean) => {
     const memItems: number[] = [];
     for (let addr = 0; addr < length; addr += hasTwoColums ? 0x10 : 0x08) {
       memItems.push(addr);
     }
-    cachedItems.current = memItems;
-    setMemoryItems(memItems);
-  };
+
+    // Only update state if the array actually changed (different length or params)
+    if (cachedItems.current.length !== memItems.length) {
+      cachedItems.current = memItems;
+      setMemoryItems(memItems);
+    } else {
+    }
+  }, []);
 
   // --- This function refreshes the memory
-  const refreshMemoryView = async () => {
+  const refreshMemoryView = useCallback(async () => {
     if (refreshInProgress.current) return;
     if (!allowRefresh.current) return;
     refreshInProgress.current = true;
@@ -189,7 +289,14 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       // --- Get memory information
       const response = await emuApi.getMemoryContents(partition);
       memory.current = response.memory;
-      setMem64kLabels(response.partitionLabels);
+
+      // Only update partition labels if they actually changed
+      setMem64kLabels((prevLabels) => {
+        if (JSON.stringify(prevLabels) === JSON.stringify(response.partitionLabels)) {
+          return prevLabels; // Return same reference to prevent re-render
+        }
+        return response.partitionLabels;
+      });
 
       // --- Calculate tooltips for pointed addresses
       pointedRegs.current = {};
@@ -213,7 +320,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
       createDumpSections(memory.current.length, twoColumns);
     } finally {
       refreshInProgress.current = false;
-      setScrollVersion(scrollVersion + 1);
+      // Don't increment scrollVersion here - it causes unnecessary re-renders
+      // The scroll effect will handle scrolling when topIndex changes
     }
 
     function extendPointedAddress(regName: string, regValue: number): void {
@@ -223,10 +331,18 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         pointedRegs.current[regValue] = regName;
       }
     }
-  };
+  }, [emuApi, machineState, createDumpSections, twoColumns]);
 
   // --- Save viewState changed
   useEffect(() => {
+    // Skip saving during initialization phase - only save after user interactions
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (isInitializing.current) {
+      return;
+    }
     saveViewState();
     cachedRefreshState.current = {
       isFullView,
@@ -235,19 +351,45 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     };
   }, [topIndex, isFullView, decimalView, currentSegment, twoColumns, charDump, bankLabel]);
 
-  // --- Initial view: refresh the disassembly lint and scroll to the last saved top position
-  useInitializeAsync(async () => {
-    await refreshMemoryView();
-    setScrollVersion(scrollVersion + 1);
-  });
-
-  // --- Scroll to the desired position whenever the scroll index changes
+  // --- Initial view: wait for machine setup, refresh memory, then mark as ready
   useEffect(() => {
-    if (!memoryItems.length) return;
-    vlApi.current?.scrollToIndex(Math.floor(topIndex), {
-      align: "start"
-    });
-  }, [scrollVersion, memoryItems]);
+    // Only run once on mount - manual initialization to ensure proper sequencing
+    if (!isInitializing.current) return;
+
+    (async () => {
+      // Wait for machine setup to complete before proceeding
+      let attempts = 0;
+      while (!machineSetupComplete.current && attempts < 100) {
+        if (attempts % 10 === 0) {
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        attempts++;
+      }
+
+      await refreshMemoryView();
+      // Mark component as ready - now VirtualizedList will render with correct topIndex
+      setIsReady(true);
+    })();
+  }, []); // Empty deps = run once on mount
+
+  // --- Scroll to the desired position whenever topIndex changes externally (e.g., jump to address)
+  const lastScrolledIndex = useRef(-1);
+
+  useEffect(() => {
+    // Only handle programmatic scrolls (like "jump to address"), not user scrolls
+    if (!vlApi.current || scrollVersion === 1) {
+      // Skip initial scroll - VirtualizedList will start at correct position
+      return;
+    }
+
+    const scrollIndex = Math.floor(topIndex);
+    if (scrollIndex !== lastScrolledIndex.current) {
+      lastScrolledIndex.current = scrollIndex;
+      vlApi.current.scrollToIndex(scrollIndex, {
+        align: "start"
+      });
+    }
+  }, [scrollVersion]);
 
   // --- Whenever machine state changes or breakpoints change, refresh the list
   useEffect(() => {
@@ -261,6 +403,10 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   }, [machineState]);
 
   useEffect(() => {
+    // Skip refresh during initialization - manual initialization effect handles the first refresh
+    if (isInitializing.current) {
+      return;
+    }
     refreshMemoryView();
   }, [currentSegment, isFullView, decimalView, emuViewVersion]);
 
@@ -271,7 +417,12 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 
   // --- Take care of refreshing the screen
-  useEmuStateListener(emuApi, refreshMemoryView);
+  const handleEmuStateChange = useCallback(() => {
+    setScrollVersion((prev) => prev + 1);
+    return refreshMemoryView();
+  }, [refreshMemoryView]);
+
+  useEmuStateListener(emuApi, handleEmuStateChange);
 
   const OptionsBar = () => {
     return (
@@ -319,8 +470,9 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
             allowRefresh.current = false;
           }}
           onAddressSent={async (address) => {
+            const newTopIndex = Math.floor(address / (twoColumns ? 16 : 8));
             setLastJumpAddress(address);
-            setTopIndex(Math.floor(address / (twoColumns ? 16 : 8)));
+            setTopIndex(newTopIndex);
             setScrollVersion(scrollVersion + 1);
             allowRefresh.current = true;
           }}
@@ -350,8 +502,23 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
     />
   );
 
+  // Don't render at all until isReady
+  if (!isReady) {
+    return null;
+  }
+
+  // For non-zero topIndex, hide the component until scroll completes to prevent flicker
+  const shouldHideUntilScrolled = topIndex > 0 && !hasScrolled;
+
+  if (shouldHideUntilScrolled) {
+  }
+
   return (
-    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+    <FullPanel
+      fontFamily="--monospace-font"
+      fontSize="0.8em"
+      style={{ opacity: shouldHideUntilScrolled ? 0 : 1 }}
+    >
       {setMemoryDialog}
       <PanelHeader>
         <OptionsBar />
@@ -423,11 +590,33 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
         <VirtualizedList
           items={memoryItems}
           overscan={25}
+          startIndex={topIndex}
           onScroll={() => {
+            // User scroll tracking disabled - we only track programmatic scrolls
+            // This simplifies the state machine and prevents feedback loops
             if (!vlApi.current || cachedItems.current.length === 0) return;
-            setTopIndex(vlApi.current.findStartIndex());
+            const newTopIndex = vlApi.current.findStartIndex();
+            if (newTopIndex !== topIndex) {
+              setTopIndex(newTopIndex);
+            }
           }}
-          apiLoaded={(api) => (vlApi.current = api)}
+          apiLoaded={(api) => {
+            vlApi.current = api;
+            // Reset lastScrolledIndex when API reloads to force scroll on next effect
+            lastScrolledIndex.current = -1;
+
+            // Mark as scrolled after a short delay to ensure scroll completes
+            if (!hasScrolledToInitialPosition.current && topIndex > 0) {
+              setTimeout(() => {
+                hasScrolledToInitialPosition.current = true;
+                setHasScrolled(true);
+              }, 50); // Small delay to ensure scroll completes
+            } else {
+              // If starting at topIndex 0, no scroll needed
+              hasScrolledToInitialPosition.current = true;
+              setHasScrolled(true);
+            }
+          }}
           renderItem={(idx) => {
             const partitionLabel = isFullView
               ? mem64kLabels[memoryItems[idx] >> 13]
@@ -435,8 +624,8 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
 
             const section1Address = memoryItems[idx];
             const section2Address = memoryItems[idx] + 0x08;
-            const section1IsRom = romFlags[(section1Address >> 13) & 0x07];
-            const section2IsRom = romFlags[(section2Address >> 13) & 0x07];
+            const section1IsRom = !!romFlags?.[(section1Address >> 13) & 0x07];
+            const section2IsRom = !!romFlags?.[(section2Address >> 13) & 0x07];
 
             return (
               <HStack
@@ -478,6 +667,15 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
   );
 };
 
-export const createMemoryPanel = ({ document, contents }: DocumentProps) => (
-  <BankedMemoryPanel document={document} contents={contents} apiLoaded={() => {}} />
-);
+// Custom comparator to prevent re-renders when props haven't meaningfully changed
+const arePropsEqual = (prevProps: DocumentProps, nextProps: DocumentProps) => {
+  // Only re-render if the document ID changes
+  const docIdChanged = prevProps.document?.id !== nextProps.document?.id;
+  if (docIdChanged) {
+    return false; // Props are NOT equal, allow re-render
+  }
+  return true; // Props are equal, prevent re-render
+};
+
+// Wrap in memo with custom comparator to prevent unnecessary re-renders from parent updates
+export const createMemoryPanel = memo(BankedMemoryPanel, arePropsEqual);

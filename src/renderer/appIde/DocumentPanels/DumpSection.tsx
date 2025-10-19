@@ -1,11 +1,11 @@
 import { LabelSeparator, Label } from "@controls/Labels";
-import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
+import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa2, toDecimal5, toDecimal3, toBin8 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
-import { useEffect } from "react";
+import { useEffect, memo, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 
 type DumpProps = {
@@ -21,7 +21,7 @@ type DumpProps = {
   editClicked?: (address: number) => void;
 };
 
-export const DumpSection = ({
+const DumpSectionComponent = ({
   showPartitions,
   partitionLabel,
   address,
@@ -69,230 +69,292 @@ export const DumpSection = ({
         text={decimalView ? toDecimal5(address) : toHexa4(address)}
         width={decimalView ? 48 : 40}
       />
-      <ByteValue
-        address={address + 0}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 0]}
+      <HexValues
+        address={address}
+        memory={memory}
         decimalView={decimalView}
         pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 1}
         lastJumpAddress={lastJumpAddress}
-        value={memory[address + 1]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 2}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 2]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 3}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 3]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 4}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 4]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 5}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 5]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 6}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 6]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
-        isRom={isRom}
-        editClicked={editClicked}
-      />
-      <ByteValue
-        address={address + 7}
-        lastJumpAddress={lastJumpAddress}
-        value={memory[address + 7]}
-        decimalView={decimalView}
-        pointedInfo={pointedInfo}
         isRom={isRom}
         editClicked={editClicked}
       />
       <LabelSeparator width={8} />
-      {charDump && (
-        <>
-          <CharValue
-            address={address + 0}
-            value={memory[address + 0]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 1}
-            value={memory[address + 1]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 2}
-            value={memory[address + 2]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 3}
-            value={memory[address + 3]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 4}
-            value={memory[address + 4]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 5}
-            value={memory[address + 5]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 6}
-            value={memory[address + 6]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <CharValue
-            address={address + 7}
-            value={memory[address + 7]}
-            pointedInfo={pointedInfo}
-            editClicked={editClicked}
-          />
-          <LabelSeparator width={8} />
-        </>
-      )}
+      {charDump && <CharDump address={address} memory={memory} />}
     </div>
   );
 };
 
-type ByteValueProps = {
+// --- Memoize DumpSection to avoid re-rendering when the 8 displayed byte values (and
+// other display-impacting props) have not changed.
+export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
+  // Address itself affects the address label and which bytes are shown
+  if (prev.address !== next.address) return false;
+
+  // View mode and layout-affecting props
+  if (prev.decimalView !== next.decimalView) return false;
+  if (prev.charDump !== next.charDump) return false;
+  if (prev.showPartitions !== next.showPartitions) return false;
+  if (prev.partitionLabel !== next.partitionLabel) return false;
+
+  // Highlighting/styling and edit behavior
+  if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
+  if (prev.isRom !== next.isRom) return false;
+  if (prev.editClicked !== next.editClicked) return false;
+
+  // Compare the 8 byte values actually rendered (address .. address+7)
+  for (let i = 0; i < 8; i++) {
+    const addr = prev.address + i;
+    if (prev.memory[addr] !== next.memory[addr]) return false;
+
+    // Also ensure pointed info affecting tooltip/styling hasn't changed for these addresses
+    const prevPoint = prev.pointedInfo?.[addr];
+    const nextPoint = next.pointedInfo?.[addr];
+    if (prevPoint !== nextPoint) return false;
+  }
+
+  // If we got here, nothing relevant changed
+  return true;
+});
+
+// Character dump component - memoized
+type CharDumpProps = {
   address: number;
+  memory: Uint8Array;
+};
+
+const CharDumpComponent = ({ address, memory }: CharDumpProps) => {
+  const charString = useMemo(() => {
+    return Array.from({ length: 8 }, (_, i) => {
+      const value = memory[address + i];
+      if (value === undefined) return " ";
+      const valueInfo = characterSet[(value ?? 0x20) & 0xff];
+      return valueInfo.v ?? ".";
+    }).join("");
+  }, [address, memory]);
+
+  return (
+    <>
+      <div className={styles.charValues}>{charString}</div>
+      <LabelSeparator width={8} />
+    </>
+  );
+};
+
+const CharDump = memo(CharDumpComponent, (prev, next) => {
+  if (prev.address !== next.address) return false;
+  // Check if the 8 bytes have changed
+  for (let i = 0; i < 8; i++) {
+    if (prev.memory[prev.address + i] !== next.memory[next.address + i]) return false;
+  }
+  return true;
+});
+
+type HexValuesProps = {
+  address: number;
+  memory: Uint8Array;
   decimalView?: boolean;
-  value?: number;
   pointedInfo?: Record<number, string>;
   lastJumpAddress?: number;
   isRom?: boolean;
   editClicked?: (address: number) => void;
 };
 
-const ByteValue = ({
+const HexValuesComponent = ({
   address,
+  memory,
   decimalView,
-  value,
   pointedInfo,
   lastJumpAddress,
-  isRom,
-  editClicked
-}: ByteValueProps) => {
-  // --- Do not display non-existing values
-  if (value === undefined) return <div style={{ width: 20 }}></div>;
+  isRom: _isRom,
+  editClicked: _editClicked
+}: HexValuesProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hoveredByteIndex, setHoveredByteIndex] = useState<number | null>(null);
+  const [charWidth, setCharWidth] = useState<number>(0);
 
-  const ref = useTooltipRef(value);
-  const pointedHint = pointedInfo?.[address];
-  const pointed = pointedHint !== undefined;
-  const pcPointed = pointed && pointedHint.indexOf("PC") >= 0;
-  let title =
-    "Value at " +
-    (decimalView ? `${address} ($${toHexa4(address)}):\n` : `$${toHexa4(address)} (${address}):\n`);
-  title += `${tooltipCache[value]}${pointed ? `\nPointed by: ${pointedHint}` : ""}`;
-  title += isRom ? "\n(ROM)" : "\nRight-click to edit the memory value";
+  // Build the space-separated hex string for all 8 bytes - memoized
+  const { hexParts, hexString } = useMemo(() => {
+    const parts: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      const value = memory[address + i];
+      if (value !== undefined) {
+        parts.push(decimalView ? toDecimal3(value) : toHexa2(value));
+      }
+    }
+    return {
+      hexParts: parts,
+      hexString: parts.join(" ")
+    };
+  }, [address, memory, decimalView]);
+
+  // Calculate character width from the container after render (monospace font)
+  useLayoutEffect(() => {
+    if (!containerRef.current) return;
+
+    // Create a temporary span to measure actual text width
+    const tempSpan = document.createElement("span");
+    tempSpan.style.visibility = "hidden";
+    tempSpan.style.position = "absolute";
+    tempSpan.style.whiteSpace = "pre";
+
+    // Copy font properties from container
+    const computedStyle = window.getComputedStyle(containerRef.current);
+    tempSpan.style.font = computedStyle.font;
+    tempSpan.style.fontSize = computedStyle.fontSize;
+    tempSpan.style.fontFamily = computedStyle.fontFamily;
+    tempSpan.textContent = hexString;
+
+    document.body.appendChild(tempSpan);
+    const textWidth = tempSpan.offsetWidth;
+    document.body.removeChild(tempSpan);
+
+    const totalChars = hexString.length;
+    if (totalChars > 0) {
+      setCharWidth(textWidth / totalChars);
+    }
+  }, [hexString]);
+
+  // Handle mouse move to determine which byte is hovered - memoized
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || charWidth === 0) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Check if mouse is actually within the container bounds
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+      setHoveredByteIndex(null);
+      return;
+    }
+
+    // Calculate byte positions based on character width
+    // Each byte in hex is 2 chars, in decimal is 3 chars, plus 1 space between bytes
+    const byteWidth = decimalView ? 3 : 2;
+    const spacing = 1; // space character
+
+    let foundIndex: number | null = null;
+    for (let i = 0; i < hexParts.length; i++) {
+      const startPos = i * (byteWidth + spacing) * charWidth;
+      const endPos = startPos + byteWidth * charWidth;
+
+      if (x >= startPos && x < endPos) {
+        foundIndex = i;
+        break;
+      }
+    }
+
+    setHoveredByteIndex(foundIndex);
+  }, [charWidth, decimalView, hexParts]);
+
+  const handleMouseLeave = useCallback(() => {
+    setHoveredByteIndex(null);
+  }, []);
+
+  const handleMouseOut = useCallback(() => {
+    // Additional safeguard to clear hover state when mouse exits
+    setHoveredByteIndex(null);
+  }, []);
+
+  // Tooltip content - memoized
+  const tooltipContent = useMemo(() => {
+    if (hoveredByteIndex === null || memory[address + hoveredByteIndex] === undefined) {
+      return null;
+    }
+    return `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):` +
+      `\n${tooltipCache[memory[address + hoveredByteIndex]]}`;
+  }, [hoveredByteIndex, address, memory]);
+
+  const pointedHint = hoveredByteIndex !== null ? pointedInfo?.[address + hoveredByteIndex] : undefined;
+
+  // Calculate overlay position for the hovered byte - memoized
+  const overlayStyle = useMemo(() => {
+    if (hoveredByteIndex === null || charWidth === 0) return undefined;
+    return {
+      left: `${hoveredByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
+      width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
+    };
+  }, [hoveredByteIndex, charWidth, decimalView]);
+
+  // Determine lastJump byte index - memoized
+  const lastJumpByteIndex = useMemo(() => {
+    for (let i = 0; i < 8; i++) {
+      if (lastJumpAddress === address + i) {
+        return i;
+      }
+    }
+    return null;
+  }, [lastJumpAddress, address]);
+
+  // Calculate overlay position for lastJump byte - memoized
+  const lastJumpOverlayStyle = useMemo(() => {
+    if (lastJumpByteIndex === null || charWidth === 0) return undefined;
+    return {
+      left: `${lastJumpByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
+      width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
+    };
+  }, [lastJumpByteIndex, charWidth, decimalView]);
+
   return (
     <div
-      ref={ref}
-      className={classnames(styles.value, {
-        [styles.pointed]: pointed,
-        [styles.pcPointed]: pcPointed,
-        [styles.decimal]: decimalView,
-        [styles.lastJump]: lastJumpAddress === address
-      })}
-      onContextMenu={(e) => {
-        if (isRom) return false;
-        e.preventDefault();
-        editClicked?.(address);
-        return false;
-      }}
+      ref={containerRef}
+      className={styles.hexValues}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onMouseOut={handleMouseOut}
     >
-      {decimalView ? toDecimal3(value) : toHexa2(value)}
-      {title && (
+      {hexString}
+      {overlayStyle && hoveredByteIndex !== null && (
+        <div className={styles.byteHoverOverlay} style={overlayStyle}>
+          {hexString.substring(
+            hoveredByteIndex * (decimalView ? 4 : 3),
+            hoveredByteIndex * (decimalView ? 4 : 3) + (decimalView ? 3 : 2)
+          )}
+        </div>
+      )}
+      {lastJumpOverlayStyle && lastJumpByteIndex !== null && (
+        <div className={styles.lastJumpOverlay} style={lastJumpOverlayStyle}>
+          {hexString.substring(
+            lastJumpByteIndex * (decimalView ? 4 : 3),
+            lastJumpByteIndex * (decimalView ? 4 : 3) + (decimalView ? 3 : 2)
+          )}
+        </div>
+      )}
+      {tooltipContent && containerRef.current && (
         <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-          content={title}
+          refElement={containerRef.current}
+          placement="bottom"
+          offsetX={12}
+          offsetY={0}
+          showDelay={0}
+          isShown={true}
+          content={tooltipContent + `${pointedHint ? `\nPointed by: ${pointedHint}` : ""}`}
         />
       )}
     </div>
   );
 };
 
-const CharValue = ({ address, value, isRom, editClicked }: ByteValueProps) => {
-  const hasValue = value !== undefined;
-  const ref = useTooltipRef(value);
-  const valueInfo = characterSet[(value ?? 0x20) & 0xff];
-  let text = valueInfo.v ?? ".";
-  let title = `Value at $${toHexa4(address)} (${address}):\n${tooltipCache[value]}`;
-  title += isRom ? "\n(ROM)" : "\nRight-click to edit the memory value";
-  return (
-    <div
-      ref={ref}
-      className={styles.char}
-      onContextMenu={(e) => {
-        if (isRom) return false;
-        e.preventDefault();
-        editClicked?.(address);
-        return false;
-      }}
-    >
-      {text}
-      {title && hasValue && (
-        <TooltipFactory
-          refElement={ref.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
-          showDelay={100}
-          content={title}
-        />
-      )}
-    </div>
-  );
-};
+// Memoize HexValues to avoid re-rendering when props haven't changed
+const HexValues = memo(HexValuesComponent, (prev, next) => {
+  // Only re-render if these props actually change
+  if (prev.address !== next.address) return false;
+  if (prev.decimalView !== next.decimalView) return false;
+  if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
+  
+  // Check if the 8 bytes have changed
+  for (let i = 0; i < 8; i++) {
+    if (prev.memory[prev.address + i] !== next.memory[next.address + i]) return false;
+  }
+  
+  // Check if pointedInfo has changed for any of the 8 bytes
+  for (let i = 0; i < 8; i++) {
+    const addr = prev.address + i;
+    if (prev.pointedInfo?.[addr] !== next.pointedInfo?.[addr]) return false;
+  }
+  
+  return true;
+});
 
 // --- Cache tooltip value
 let tooltipCache: string[] = [];

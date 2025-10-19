@@ -219,7 +219,6 @@ const IdeApp = () => {
   }, [isWindows]);
 
   useEffect(() => {
-    console.log("IdeLoaded effect:", ideLoaded);
     if (ideLoaded) {
       (async () => {
         // --- Wait for global settings sync
@@ -230,28 +229,18 @@ const IdeApp = () => {
           await new Promise((resolve) => setTimeout(resolve, 100));
         }
         if (counter >= 100) {
-          console.error("Timeout while waiting for IDE settings sync");
           return;
         }
 
-        console.log("Load IDE settings");
         const mainApi = createMainApi(messenger);
         const openLastProject = getGlobalSetting(store, SETTING_IDE_OPEN_LAST_PROJECT);
         if (openLastProject) {
-          console.log("Query settings");
           const settings = await mainApi.getAppSettings();
           let projectPath = settings?.project?.folderPath;
-          console.log("Project path:", projectPath);
           if (projectPath) {
             // --- Let's load the last propject
             projectPath = projectPath.replaceAll("\\", "/");
-            console.log("Opening project");
-            const result = await mainApi.openFolder(projectPath);
-            if (result) {
-              console.log("Opening project resulted in error:", result);
-            } else {
-              console.log("Project opened");
-            }
+            await mainApi.openFolder(projectPath);
           }
         }
       })();

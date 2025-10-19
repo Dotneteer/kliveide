@@ -1,6 +1,7 @@
 .dumpSection {
   display: flex;
   flex-direction: row;
+  align-items: center;
   padding: 2px 0;
 
   &.fit {
@@ -60,6 +61,73 @@
   &.pcPointed {
     background: var(--bgcolor-memory-pc-pointed);
     color: var(--color-memory-pointed);
+  }
+}
+
+.hexValues {
+  position: relative;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--color-value);
+  white-space: nowrap;
+  width: fit-content;
+  border: 1px solid transparent;
+  z-index: 1;
+
+  &.lastJump {
+    animation: borderColorChange 3s alternate;
+    animation-delay: 400ms;
+  }
+
+  &.pointed {
+    background: var(--bgcolor-memory-pointed);
+    color: var(--color-memory-pointed);
+  }
+
+  &.pcPointed {
+    background: var(--bgcolor-memory-pc-pointed);
+    color: var(--color-memory-pointed);
+  }
+}
+
+.byteHoverOverlay {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  border: 1px solid var(--bgcolor-memory-pointed);
+  background: var(--bgcolor-memory-hover);
+  color: var(--color-memory-pointed);
+  padding-left: 2px;;
+  pointer-events: none;
+}
+
+.lastJumpOverlay {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  border: 1px solid transparent;
+  padding-left: 2px;
+  pointer-events: none;
+  animation: borderColorChange 3s alternate;
+  animation-delay: 400ms;
+}
+
+.charValues {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  color: var(--color-secondary-label);
+  white-space: nowrap;
+  width: 64px;
+
+  &:hover {
+    background: var(--bgcolor-disass-hover);
+    opacity: 0.9;
   }
 }
 

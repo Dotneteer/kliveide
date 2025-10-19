@@ -91,7 +91,6 @@ const WatchPanel = () => {
       }
 
       setDisplayedWatches(toDisplay);
-      console.log("WatchPanel: Updated watch values", toDisplay);
     },
     []
   );
@@ -280,7 +279,6 @@ function formatIntegerWatchValue(watch: WatchInfo, mem: Uint8Array, symbolInfo: 
         return "<unsupported type>";
     }
   } catch (err) {
-    console.error("WatchPanel: integer formatting failed", err);
     return "<error>";
   }
 }
