@@ -1,1 +1,2 @@
+$5B54: Old BC value when paging
 $5B69: The index of the last available RAM bank ($70 with full RAM)

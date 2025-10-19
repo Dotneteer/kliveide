@@ -7,38 +7,49 @@ Total Instructions: 9815
 
 0000 F3                         di                         ; Disable interrupts during the cold start
 0001 C3 EF 00                   jp ColdStart               ; Continue with the cold start boot
-0004 45                         ld b,l
-0005 44                         ld b,h
-0006 08                         ex af,af'
-0007 02                         ld (bc),a
+0004 45 44 08 02                .defb $45, $44, $08, $02   ; "E", "D", 08, 02
+;
+; RST $08:
+;
 0008 C3 E0 15                   jp L15E0
-000B 2A 2E 2A                   ld hl,($2A2E)
-000E FF                         rst $38
-000F 00                         nop
+000B 2A 2E 2A FF                .defb $2A, $2E, $2A, $FF.  ; "*", ".", "*", copyright
+000F 00                         .defb $00                  ; 00
+; 
+; RST $10:
+;
 0010 EF                         rst $28
 0011 10 00                      djnz L0013
 0013 C9            L0013:       ret
 0014 C3 EF 00                   jp ColdStart
-0017 00                         nop
-0018 C3 80 3E                   jp L3E80
-001B 3C                         inc a
-001C 44                         ld b,h
-001D 49                         ld c,c
-001E 52                         ld d,d
-001F BE                         cp (hl)
-0020 C3 00 3E                   jp L3E00
-0023 14                         inc d
-0024 00                         nop
-0025 04                         inc b
-0026 98                         sbc a,b
-0027 00                         nop
-0028 ED 43 54 5B                ld ($5B54),bc
-002C E3                         ex (sp),hl
+0017 00   
+;
+; RST $18:
+;                      nop
+0018 C3 80 3E                   jp Rom1Call
+001B 3C 44 49 52                .defb $3C, $44, $49, $52   ; <DIR
+001F BE                         .defb $BE
+;
+; RST $20: Call ROM2 routine. The address to call is specified in the stack.
+;
+0020 C3 00 3E                   jp Rom2Call
+0023 14 00 04 98                .defb $14, $00, $04, $98   ; 
+0027 00                         .defb $00
+;
+; RST $28:
+;
+0028 ED 43 54 5B                ld ($5B54),bc              ; Save the value of BC temporarily
+002C E3                         ex (sp),hl                 ; Move the return address to HL
 002D C3 80 00                   jp L0080
+;
+; RST $30
+;
 0030 C3 C9 15                   jp L15C9
 0033 CD D7 04                   call L04D7
 0036 77                         ld (hl),a
 0037 C9                         ret
+;
+; RST $38: IRQ handler
+;
 0038 F5                         push af
 0039 E5                         push hl
 003A 26 00                      ld h,$00
@@ -249,9 +260,9 @@ Total Instructions: 9815
 016A D9            `SKIP_3:     exx                        ; Restore registers
 016B 0C                         inc c                      ; Increment page index
 016C 10 C8                      djnz `BANK_LOOP            ; Loop until B (high counter) reaches zero
-016E 18 1E                      jr L018E                   ; Jump to next initialization phase
+016E 18 1E                      jr BANK_TEST               ; Jump to next initialization phase
 ;
-; At this point, the memory test failed.
+; At this point, the memory test failed. The border is set to the color of the error bit index.
 ;
 0170 08            INIT_ERR:    ex af,af'                  ; Label placeholder: swap AFs (entry for next phase)
 0171 3E 08                      ld a,$08                   ; load test value $08 for comparison/output
@@ -261,12 +272,12 @@ Total Instructions: 9815
 0176 7D                         ld a,l                     ; move result back to A for the NZ test
 0177 20 04                      jr nz,`BIT_ERR             ; if non-zero, display a continuous border pulse
 ;
-; TRAP: Bit 0 is faulty, set the border to BLACK and stop the machine
+; Static border means error when testing zero bit value
 ;
 0179 D3 FE                      out ($FE),a                ; poke port $FE (ULA/control) with A
 017B 18 FE         B0_TRAP:     jr B0_TRAP                 ; Stop further operation (interrupt is still disabled)
 ;
-; TRAP: Bit 1-7 is faulty, set the border to a color representing the bit
+; Pulsing border means error when testing 1 bit value
 ;
 017D EE 07         `BIT_ERR:    xor $07                    ; prepare output pattern (toggle/mask bits $07)
 017F 67                         ld h,a                     ; store pattern in H for repeated use
@@ -281,7 +292,7 @@ Total Instructions: 9815
 ;
 ; The first test loop went through all memory banks. Now, iterate through all pages again.
 ;
-018E AF            L018E:       xor a                      ; A=0: start mapping/test loop for pages
+018E AF            BANK_TEST:   xor a                      ; A=0: start mapping/test loop for pages
 ;
 ; BC: The screen area storing test result bytes of each bank
 ; D: Bit 0 set
@@ -366,11 +377,8 @@ Total Instructions: 9815
 ; Continue from here...
 ;
 01D4 E7                         rst $20                    ; call ROM vector $20 (system/BIOS service)
-01D5 DF                         rst $18                    ; call ROM vector $18
-01D6 1E ED                      ld e,$ED                   ; load E with $ED (magic/parameter)
-01D8 91                         sub c                      ; A := A - C (mix indices into A)
-01D9 8E                         adc a,(hl)                 ; add with carry value at (HL) into A for checksum/validation
-01DA 08                         ex af,af'                  ; restore AF status
+01D5 DF 1E                      .defw $1EDF                ;
+01D7 ED 91 8E 08                nextreg $8e,$08            ; select current bank for slot 3 to 0
 01DB ED 56                      im 1                       ; set interrupt mode 1 (prepare interrupt state)
 01DD CD E3 00                   call L00E3                 ; call routine at L00E3 (cleanup/continue)
 01E0 21 FF FF                   ld hl,$FFFF                ; HL := $FFFF (post-call sentinel)
@@ -9614,18 +9622,29 @@ Total Instructions: 9815
 3DFD 00                         nop
 3DFE 00                         nop
 3DFF 00                         nop
-3E00 ED 43 54 5B   L3E00:       ld ($5B54),bc
-3E04 E3                         ex (sp),hl
-3E05 4E                         ld c,(hl)
+;
+; Calls a subroutine in ROM2
+; The subroutine address is stored immediately after the RST $20 instruction
+;
+3E00 ED 43 54 5B   Rom2Call:    ld ($5B54),bc              ; Store BC temporarily
+3E04 E3                         ex (sp),hl                 ; HL := return address
+3E05 4E                         ld c,(hl)                  
 3E06 23                         inc hl
-3E07 46                         ld b,(hl)
-3E08 23                         inc hl
-3E09 E3                         ex (sp),hl
-3E0A ED 8A 3E 13                push $3E13
-3E0E C5                         push bc
-3E0F ED 4B 54 5B                ld bc,($5B54)
-3E13 ED 91 8E 02                nextreg $8E,$02
-3E17 C9                         ret
+3E07 46                         ld b,(hl)                  ; Now, BC contains the address to call
+3E08 23                         inc hl  
+3E09 E3                         ex (sp),hl                 ; Set the return address (from RST $20)
+3E0A ED 8A 3E 13                push RETF2                 ; Push the return address (from ROM2 routine)
+3E0E C5                         push bc                    ; This is the address to call in ROM2
+3E0F ED 4B 54 5B                ld bc,($5B54)              ; Restore the original BC value
+;
+; At the RETF2 address in ROM2 there is a nextreg $8E,$00 instruction that switches back to ROM0
+; ROM2 contains a ret instruction after RETF2, and that returns to the caller in ROM0
+;
+3E13 ED 91 8E 02   RETF2:       nextreg $8E,$02            ; Switch to ROM2. 
+3E17 C9                         ret                        ; Jump to ROM2 routine
+;
+;
+;
 3E18 3A 38 5C      L3E18:       ld a,($5C38)
 3E1B CB 3F                      srl a
 3E1D 21 80 0C                   ld hl,$0C80
@@ -9679,18 +9698,29 @@ Total Instructions: 9815
 3E7A FE 49                      cp $49
 3E7C 28 DF                      jr z,L3E5D
 3E7E 18 E9                      jr L3E69
-3E80 ED 43 54 5B   L3E80:       ld ($5B54),bc
-3E84 E3                         ex (sp),hl
+;
+; Calls a subroutine in ROM2
+; The subroutine address is stored immediately after the RST $18 instruction
+;
+3E80 ED 43 54 5B   Rom1Call:    ld ($5B54),bc              ; Store BC temporarily
+3E84 E3                         ex (sp),hl                 ; HL := return address
 3E85 4E                         ld c,(hl)
 3E86 23                         inc hl
-3E87 46                         ld b,(hl)
+3E87 46                         ld b,(hl)                  ; Now, BC contains the address to call
 3E88 23                         inc hl
-3E89 E3                         ex (sp),hl
-3E8A ED 8A 3E 93                push $3E93
-3E8E C5                         push bc
-3E8F ED 4B 54 5B   L3E8F:       ld bc,($5B54)
-3E93 ED 91 8E 01                nextreg $8E,$01
-3E97 C9                         ret
+3E89 E3                         ex (sp),hl                 ; Set the return address (from RST $20)
+3E8A ED 8A 3E 93                push $3E93                 ; Push the return address (from ROM2 routine)
+3E8E C5                         push bc                    ; This is the address to call in ROM2
+3E8F ED 4B 54 5B   L3E8F:       ld bc,($5B54)              ; Restore the original BC value
+;
+; At the RETF1 address in ROM1 there is a nextreg $8E,$00 instruction that switches back to ROM0
+; ROM1 contains a ret instruction after RETF1, and that returns to the caller in ROM0
+;
+3E93 ED 91 8E 01   RETF1:       nextreg $8E,$01            ; Switch to ROM2.
+3E97 C9                         ret                        ; Jump to ROM2 routine
+;
+;
+;
 3E98 2A 5D 5C      L3E98:       ld hl,($5C5D)
 3E9B E5                         push hl
 3E9C 2A 51 5C                   ld hl,($5C51)

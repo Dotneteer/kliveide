@@ -11609,8 +11609,16 @@ Total Instructions: 12028
 3E0A ED 8A 3E 13                push $3E13
 3E0E C5                         push bc
 3E0F ED 4B 54 5B   L3E0F:       ld bc,($5B54)
-3E13 ED 91 8E 00                nextreg $8E,$00
+;
+; When a ROM2 routine called from ROM0 returns, this address is used. The nextreg
+; statement switches back to ROM0. The next statement in ROM0 is a ret, and that 
+; returns to the caller in ROM0.
+;
+3E13 ED 91 8E 00   RETT0:       nextreg $8E,$00
 3E17 C9                         ret
+;
+;
+;
 3E18 ED 43 54 5B   L3E18:       ld ($5B54),bc
 3E1C E3                         ex (sp),hl
 3E1D 4E                         ld c,(hl)
