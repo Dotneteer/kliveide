@@ -97,9 +97,11 @@
   position: absolute;
   top: -1px;
   bottom: -1px;
-  background: #606060;
-  opacity: 0.9;
-  z-index: -1;
+  border: 1px solid var(--bgcolor-memory-pointed);
+  background: var(--bgcolor-memory-hover);
+  color: var(--color-memory-pointed);
+  padding-left: 2px;;
+  pointer-events: none;
 }
 
 .charValues {

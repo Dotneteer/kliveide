@@ -163,24 +163,24 @@ const HexValues = ({
   // Calculate character width from the container after render (monospace font)
   useLayoutEffect(() => {
     if (!containerRef.current) return;
-    
+
     // Create a temporary span to measure actual text width
-    const tempSpan = document.createElement('span');
-    tempSpan.style.visibility = 'hidden';
-    tempSpan.style.position = 'absolute';
-    tempSpan.style.whiteSpace = 'pre';
-    
+    const tempSpan = document.createElement("span");
+    tempSpan.style.visibility = "hidden";
+    tempSpan.style.position = "absolute";
+    tempSpan.style.whiteSpace = "pre";
+
     // Copy font properties from container
     const computedStyle = window.getComputedStyle(containerRef.current);
     tempSpan.style.font = computedStyle.font;
     tempSpan.style.fontSize = computedStyle.fontSize;
     tempSpan.style.fontFamily = computedStyle.fontFamily;
     tempSpan.textContent = hexString;
-    
+
     document.body.appendChild(tempSpan);
     const textWidth = tempSpan.offsetWidth;
     document.body.removeChild(tempSpan);
-    
+
     const totalChars = hexString.length;
     if (totalChars > 0) {
       setCharWidth(textWidth / totalChars);
@@ -190,26 +190,33 @@ const HexValues = ({
   // Handle mouse move to determine which byte is hovered
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current || charWidth === 0) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    
+    const y = e.clientY - rect.top;
+
+    // Check if mouse is actually within the container bounds
+    if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+      setHoveredByteIndex(null);
+      return;
+    }
+
     // Calculate byte positions based on character width
     // Each byte in hex is 2 chars, in decimal is 3 chars, plus 1 space between bytes
     const byteWidth = decimalView ? 3 : 2;
     const spacing = 1; // space character
-    
+
     let foundIndex: number | null = null;
     for (let i = 0; i < hexParts.length; i++) {
       const startPos = i * (byteWidth + spacing) * charWidth;
       const endPos = startPos + byteWidth * charWidth;
-      
+
       if (x >= startPos && x < endPos) {
         foundIndex = i;
         break;
       }
     }
-    
+
     setHoveredByteIndex(foundIndex);
   };
 
@@ -217,16 +224,25 @@ const HexValues = ({
     setHoveredByteIndex(null);
   };
 
+  const handleMouseOut = () => {
+    // Additional safeguard to clear hover state when mouse exits
+    setHoveredByteIndex(null);
+  };
+
   // Tooltip content
-  const tooltipContent = hoveredByteIndex !== null && memory[address + hoveredByteIndex] !== undefined
-    ? `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):\n${tooltipCache[memory[address + hoveredByteIndex]]}`
-    : null;
+  const tooltipContent =
+    hoveredByteIndex !== null && memory[address + hoveredByteIndex] !== undefined
+      ? `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):\n${tooltipCache[memory[address + hoveredByteIndex]]}`
+      : null;
 
   // Calculate overlay position for the hovered byte
-  const overlayStyle = hoveredByteIndex !== null && charWidth > 0 ? {
-    left: `${hoveredByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
-    width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
-  } : undefined;
+  const overlayStyle =
+    hoveredByteIndex !== null && charWidth > 0
+      ? {
+          left: `${hoveredByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
+          width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
+        }
+      : undefined;
 
   // Determine styling based on pointed/lastJump for any of the 8 bytes
   let hasPointed = false;
@@ -257,17 +273,23 @@ const HexValues = ({
       })}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onMouseOut={handleMouseOut}
     >
       {hexString}
       {overlayStyle && hoveredByteIndex !== null && (
-        <div className={styles.byteHoverOverlay} style={overlayStyle} />
+        <div className={styles.byteHoverOverlay} style={overlayStyle}>
+          {hexString.substring(
+            hoveredByteIndex * (decimalView ? 4 : 3),
+            hoveredByteIndex * (decimalView ? 4 : 3) + (decimalView ? 3 : 2)
+          )}
+        </div>
       )}
       {tooltipContent && containerRef.current && (
         <TooltipFactory
           refElement={containerRef.current}
-          placement="right"
-          offsetX={8}
-          offsetY={32}
+          placement="bottom"
+          offsetX={12}
+          offsetY={0}
           showDelay={0}
           isShown={true}
           content={tooltipContent}
@@ -284,9 +306,9 @@ type CharValuesProps = {
   editClicked?: (address: number) => void;
 };
 
-const CharValues = ({ 
-  address, 
-  memory, 
+const CharValues = ({
+  address,
+  memory,
   isRom: _isRom,
   editClicked: _editClicked
 }: CharValuesProps) => {
@@ -300,11 +322,7 @@ const CharValues = ({
     }
   }
 
-  return (
-    <div className={styles.charValues}>
-      {charString}
-    </div>
-  );
+  return <div className={styles.charValues}>{charString}</div>;
 };
 
 // --- Cache tooltip value
