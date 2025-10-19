@@ -1,12 +1,12 @@
 ZX Spectrum Next ROM Disassembly (First 16KB)
-================================================================================
+=======================================================================================================================
 File: enNextZX.rom
 Address Range: $0000 - $3FFF (0 - 16383)
 Total Instructions: 9815
-================================================================================
+=======================================================================================================================
 
-0000 F3                         di
-0001 C3 EF 00                   jp L00EF
+0000 F3                         di                         ; Disable interrupts during the cold start
+0001 C3 EF 00                   jp ColdStart               ; Continue with the cold start boot
 0004 45                         ld b,l
 0005 44                         ld b,h
 0006 08                         ex af,af'
@@ -18,7 +18,7 @@ Total Instructions: 9815
 0010 EF                         rst $28
 0011 10 00                      djnz L0013
 0013 C9            L0013:       ret
-0014 C3 EF 00                   jp L00EF
+0014 C3 EF 00                   jp ColdStart
 0017 00                         nop
 0018 C3 80 3E                   jp L3E80
 001B 3C                         inc a
@@ -148,138 +148,232 @@ Total Instructions: 9815
 00E9 01 52 00                   ld bc,$0052
 00EC ED B0                      ldir
 00EE C9                         ret
-00EF ED 91 07 03   L00EF:       nextreg $07,$03
-00F3 ED 91 03 B0                nextreg $03,$B0
-00F7 ED 91 C0 08                nextreg $C0,$08
-00FB 3E FF                      ld a,$FF
-00FD ED 92 82                   nextreg $82,a
-0100 ED 92 83                   nextreg $83,a
-0103 ED 92 84                   nextreg $84,a
-0106 ED 92 85                   nextreg $85,a
-0109 AF                         xor a
-010A ED 92 80                   nextreg $80,a
-010D ED 92 81                   nextreg $81,a
-0110 ED 92 8A                   nextreg $8A,a
-0113 ED 92 8F                   nextreg $8F,a
-0116 01 3B 24                   ld bc,$243B
-0119 16 06                      ld d,$06
-011B ED 51                      out (c),d
-011D 04                         inc b
-011E ED 78                      in a,(c)
-0120 E6 44                      and $44
-0122 ED 79                      out (c),a
-0124 21 00 58                   ld hl,$5800
-0127 11 01 58                   ld de,$5801
-012A 75                         ld (hl),l
-012B 01 FF 02                   ld bc,$02FF
-012E ED B0                      ldir
-0130 01 00 70                   ld bc,$7000
-0133 21 00 40                   ld hl,$4000
-0136 79            L0136:       ld a,c
-0137 D9                         exx
-0138 87                         add a,a
-0139 ED 92 56                   nextreg $56,a
-013C 3C                         inc a
-013D ED 92 57                   nextreg $57,a
-0140 CB 3F                      srl a
-0142 21 FF FF                   ld hl,$FFFF
-0145 08                         ex af,af'
-0146 7E                         ld a,(hl)
-0147 D9                         exx
-0148 77                         ld (hl),a
-0149 79                         ld a,c
-014A FE 0C                      cp $0C
-014C 30 02                      jr nc,L0150
-014E 36 00                      ld (hl),$00
-0150 23            L0150:       inc hl
-0151 D9                         exx
-0152 08                         ex af,af'
-0153 36 BB                      ld (hl),$BB
-0155 2B                         dec hl
-0156 11 FD FF                   ld de,$FFFD
-0159 01 FE 3F                   ld bc,$3FFE
-015C FE 0C                      cp $0C
-015E 30 0A                      jr nc,L016A
-0160 FE 08                      cp $08
-0162 20 02                      jr nz,L0166
-0164 06 1F                      ld b,$1F
-0166 36 00         L0166:       ld (hl),$00
-0168 ED B8                      lddr
-016A D9            L016A:       exx
-016B 0C                         inc c
-016C 10 C8                      djnz L0136
-016E 18 1E                      jr L018E
-0170 08            L0170:       ex af,af'
-0171 3E 08                      ld a,$08
-0173 93                         sub e
-0174 6F                         ld l,a
-0175 08                         ex af,af'
-0176 7D                         ld a,l
-0177 20 04                      jr nz,L017D
-0179 D3 FE                      out ($FE),a
-017B 18 FE         L017B:       jr L017B
-017D EE 07         L017D:       xor $07
-017F 67                         ld h,a
-0180 06 20         L0180:       ld b,$20
-0182 7C            L0182:       ld a,h
-0183 D3 FE                      out ($FE),a
-0185 10 FB                      djnz L0182
-0187 7D            L0187:       ld a,l
-0188 D3 FE                      out ($FE),a
-018A 10 FB                      djnz L0187
-018C 18 F2                      jr L0180
-018E AF            L018E:       xor a
-018F 01 00 40                   ld bc,$4000
-0192 11 08 01      L0192:       ld de,$0108
-0195 87                         add a,a
-0196 ED 92 56                   nextreg $56,a
-0199 3C                         inc a
-019A ED 92 57                   nextreg $57,a
-019D CB 3F                      srl a
-019F 08                         ex af,af'
-01A0 21 FF FF                   ld hl,$FFFF
-01A3 7E                         ld a,(hl)
-01A4 FE BB                      cp $BB
-01A6 20 24                      jr nz,L01CC
-01A8 0A                         ld a,(bc)
-01A9 03                         inc bc
-01AA 77                         ld (hl),a
-01AB 21 BA DC                   ld hl,$DCBA
-01AE 7E                         ld a,(hl)
-01AF DD 6F                      ld xl,a
-01B1 7A            L01B1:       ld a,d
-01B2 77                         ld (hl),a
-01B3 7E                         ld a,(hl)
-01B4 A2                         and d
-01B5 28 B9                      jr z,L0170
-01B7 2F                         cpl
-01B8 77                         ld (hl),a
-01B9 7E                         ld a,(hl)
-01BA A2                         and d
-01BB 20 B3                      jr nz,L0170
-01BD CB 02                      rlc d
-01BF 1D                         dec e
-01C0 20 EF                      jr nz,L01B1
-01C2 DD 7D                      ld a,xl
-01C4 77                         ld (hl),a
-01C5 08                         ex af,af'
-01C6 3C                         inc a
-01C7 FE 70                      cp $70
-01C9 20 C7                      jr nz,L0192
-01CB 08                         ex af,af'
-01CC 08            L01CC:       ex af,af'
-01CD 3D                         dec a
-01CE 32 69 5B                   ld ($5B69),a
-01D1 31 FF 5B                   ld sp,$5BFF
-01D4 E7                         rst $20
-01D5 DF                         rst $18
-01D6 1E ED                      ld e,$ED
-01D8 91                         sub c
-01D9 8E                         adc a,(hl)
-01DA 08                         ex af,af'
-01DB ED 56                      im 1
-01DD CD E3 00                   call L00E3
-01E0 21 FF FF                   ld hl,$FFFF
+; ---------------------------------------------------------------------------------------------------------------------
+; This is the cold start routine
+;
+; ---------------------------------------------------------------------------------------------------------------------
+00EF ED 91 07 03   ColdStart:   nextreg $07,$03            ; Set CPU speed to 28 MHz (bits 1:0 = 11)
+00F3 ED 91 03 B0                nextreg $03,$B0            ; Set machine type: enable changes (bit 7=1), +2A/+2B/+3 timing (bits 6:4=011), ZX 48K (bits 2:0=000)
+00F7 ED 91 C0 08                nextreg $C0,$08            ; Interrupt control: stackless NMI enabled (bit 3=1), pulse mode (bit 0=0)
+00FB 3E FF                      ld a,$FF                   ; Load $FF into A for port decoding setup
+00FD ED 92 82                   nextreg $82,a              ; Internal Port Decoding: Enable all internal ports (all bits = 1)
+0100 ED 92 83                   nextreg $83,a              ; Internal Port Decoding byte 2: Enable all (all bits = 1)
+0103 ED 92 84                   nextreg $84,a              ; Internal Port Decoding byte 3: Enable all (all bits = 1)
+0106 ED 92 85                   nextreg $85,a              ; Internal Port Decoding byte 4 (MSB): Enable all (all bits = 1)
+0109 AF                         xor a                      ; Clear A (set to $00)
+010A ED 92 80                   nextreg $80,a              ; Expansion Bus: Disable expansion bus and all overrides
+010D ED 92 81                   nextreg $81,a              ; Expansion Bus Control: Default settings (3.5MHz max)
+0110 ED 92 8A                   nextreg $8A,a              ; Expansion Bus IO Propagate: No port propagation to expansion bus
+0113 ED 92 8F                   nextreg $8F,a              ; Memory Mapping Mode: Standard ZX 128K +3 mode (bits 1:0 = 00)
+;
+; Keep only the PS/2 mode and DivMMC automap flags (REG 0x06)
+;
+0116 01 3B 24                   ld bc,$243B                ; BC = $243B (nextreg select port)
+0119 16 06                      ld d,$06                   ; D = $06 for peripheral settings
+011B ED 51                      out (c),d                  ; Select nextreg $06
+011D 04                         inc b                      ; BC = $253B (nextreg data port)
+011E ED 78                      in a,(c)                   ; Read current peripheral 2 settings
+0120 E6 44                      and $44                    ; Mask bits 6 and 2 (PS/2 mode and DivMMC automap)
+0122 ED 79                      out (c),a                  ; Write back masked settings
+;
+; Set BLACK paper and BLACK ink for the entire screen
+;
+0124 21 00 58                   ld hl,$5800                ; HL = start of screen attributes
+0127 11 01 58                   ld de,$5801                ; DE = second byte of attributes
+012A 75                         ld (hl),l                  ; Fill first attribute byte with $00
+012B 01 FF 02                   ld bc,$02FF                ; BC = 767 bytes to copy
+012E ED B0                      ldir                       ; Clear all screen attributes to $00
+;
+; Memory test
+; Map each physical 8K page into MMU slots 6/7 using nextreg $56/$57 for access.
+; Page index is derived from C (A:=C; A*=2 for mapping, then A>>=1 to restore index).
+; Perform read-modify-write checks on the mapped page and write test patterns
+; (conditional $00 clears or $BB pattern) to exercise different cases per page.
+; Use block moves (LDDR/LDIR variants) for efficient large-region testing and fills.
+; Loop uses BC=$7000 and DJNZ to iterate through page sets until all banks are covered.
+; Purpose: initialize and validate RAM pages via the display window before boot continues.
+; For pages with index >=12, does not zero the page contents.
+;
+; B represents the index of the 16K bank to test.
+; C represents the 16K page to map to MMU Slot 6/7 during the test
+; 
+0130 01 00 70                   ld bc,$7000                ; BC = $7000 (loop counter for RAM exercise)
+0133 21 00 40                   ld hl,$4000                ; HL = display memory window start
+; 
+; Page the 16K bank indexed by C into MMU slot 6/7
+;
+0136 79            `BANK_LOOP:  ld a,c                     ; A := C (low byte of page index)
+0137 D9                         exx                        ; Switch to alternate register set (work with HL'/DE'/BC')
+0138 87                         add a,a                    ; A := A*2 -> compute 8K page number (word index)
+0139 ED 92 56                   nextreg $56,a              ; Map 8K page to MMU slot 6 ($C000-$DFFF)
+013C 3C                         inc a                      ; Next page (for slot 7)
+013D ED 92 57                   nextreg $57,a              ; Map 8K page to MMU slot 7 ($E000-$FFFF)
+0140 CB 3F                      srl a                      ; A := A >> 1 (restore original page index)
+;
+; Copy test data from the $FFFF address to the screen area
+;
+0142 21 FF FF                   ld hl,$FFFF                ; HL := $FFFF (prepare end marker)
+0145 08                         ex af,af'                  ; Swap AF/AF' to use A' for data
+0146 7E                         ld a,(hl)                  ; Read byte from current mapped page (test read)
+0147 D9                         exx                        ; Restore original register set
+0148 77                         ld (hl),a                  ; Write read byte back (test write)
+;
+; For banks with index <12, zero the byte in the screen memory
+;
+0149 79                         ld a,c                     ; A := C (page index low)
+014A FE 0C                      cp $0C                     ; Compare with 12 (special-case threshold)
+014C 30 02                      jr nc,`SKIP_1              ; If >=12 skip next write
+014E 36 00                      ld (hl),$00                ; Otherwise write $00 (clear)
+0150 23            `SKIP_1:     inc hl                     ; Advance HL pointer
+0151 D9                         exx                        ; Switch to alternate registers
+0152 08                         ex af,af'                  ; Swap AF/AF' back
+0153 36 BB                      ld (hl),$BB                ; Set the last byte of the bank to $BB
+0155 2B                         dec hl                     ; Move HL back (prepare for block op)
+0156 11 FD FF                   ld de,$FFFD                ; DE := -3 (used by block ops)
+0159 01 FE 3F                   ld bc,$3FFE                ; BC := $3FFE (block length marker)
+;
+; Special cases: 
+; - Do not zero the banks for 12 and above
+; - Zero only the upper half 8K for bank 8
+;
+015C FE 0C                      cp $0C                     ; Compare A with 12 again
+015E 30 0A                      jr nc,`SKIP_3              ; If >=12 branch to `SKIP_3
+0160 FE 08                      cp $08                     ; Compare A with 8
+0162 20 02                      jr nz,`SKIP_2              ; If not equal to 8 skip next
+0164 06 1F                      ld b,$1F                   ; Set B := $1F for special-case count
+0166 36 00         `SKIP_2:     ld (hl),$00                ; Write $00 (zero) at current HL
+0168 ED B8                      lddr                       ; Zero the entire bank (or in special case, the upper half)
+;
+; Move to the next bank
+;
+016A D9            `SKIP_3:     exx                        ; Restore registers
+016B 0C                         inc c                      ; Increment page index
+016C 10 C8                      djnz `BANK_LOOP            ; Loop until B (high counter) reaches zero
+016E 18 1E                      jr L018E                   ; Jump to next initialization phase
+;
+; At this point, the memory test failed.
+;
+0170 08            INIT_ERR:    ex af,af'                  ; Label placeholder: swap AFs (entry for next phase)
+0171 3E 08                      ld a,$08                   ; load test value $08 for comparison/output
+0173 93                         sub e                      ; A := $08 - E (prepare condition)
+0174 6F                         ld l,a                     ; save subtraction result in L
+0175 08                         ex af,af'                  ; restore original AF pair
+0176 7D                         ld a,l                     ; move result back to A for the NZ test
+0177 20 04                      jr nz,`BIT_ERR             ; if non-zero, display a continuous border pulse
+;
+; TRAP: Bit 0 is faulty, set the border to BLACK and stop the machine
+;
+0179 D3 FE                      out ($FE),a                ; poke port $FE (ULA/control) with A
+017B 18 FE         B0_TRAP:     jr B0_TRAP                 ; Stop further operation (interrupt is still disabled)
+;
+; TRAP: Bit 1-7 is faulty, set the border to a color representing the bit
+;
+017D EE 07         `BIT_ERR:    xor $07                    ; prepare output pattern (toggle/mask bits $07)
+017F 67                         ld h,a                     ; store pattern in H for repeated use
+0180 06 20         B1_7_TRAP:   ld b,$20                   ; set B=32 (repeat counter for the output loop)
+0182 7C            `PULSE_1:    ld a,h                     ; reload pattern into A
+0183 D3 FE                      out ($FE),a                ; output pattern to port $FE (repeat to initialize/pulse)
+0185 10 FB                      djnz `PULSE_1              ; loop inner pulse sequence B times
+0187 7D            `PULSE_2:    ld a,l                     ; load low part of current page index
+0188 D3 FE                      out ($FE),a                ; pulse ULA/control port with A (short blink/ack)
+018A 10 FB                      djnz `PULSE_2              ; repeat pulse sequence B times
+018C 18 F2                      jr B1_7_TRAP               ; return to outer pulse setup
+;
+; The first test loop went through all memory banks. Now, iterate through all pages again.
+;
+018E AF            L018E:       xor a                      ; A=0: start mapping/test loop for pages
+;
+; BC: The screen area storing test result bytes of each bank
+; D: Bit 0 set
+; E: Bit counter
+; We are going to test reads and writes for each banks
+;
+018F 01 00 40                   ld bc,$4000                ; BC -> source/read pointer at display window
+0192 11 08 01      BANK_LOOP2:  ld de,$0108                ; DE = destination offset increment (pattern copy step)
+;
+; Page in the bank indexed by A
+;
+0195 87                         add a,a                    ; A := A*2 (compute 8K page index for nextreg)
+0196 ED 92 56                   nextreg $56,a              ; map computed page into MMU slot 6
+0199 3C                         inc a                      ; prepare next page for slot 7
+019A ED 92 57                   nextreg $57,a              ; map next page into MMU slot 7
+019D CB 3F                      srl a                      ; restore original page index (A>>=1)
+019F 08                         ex af,af'                  ; Save the bank index to A'
+;
+; If the tested bank was a RAM (it exists), the last byte should be $BB, as set in the first loop.
+; If not, we reached the last RAM bank, its index in A'
+;
+01A0 21 FF FF                   ld hl,$FFFF                ; HL = $FFFF (end-marker for read location)
+01A3 7E                         ld a,(hl)                  ; read byte at HL (test read from mapped page end)
+01A4 FE BB                      cp $BB                     ; compare with pattern $BB (test pattern check)
+01A6 20 24                      jr nz,TEST_COMP            ; The last byte of the bank is not the expected value
+;
+; The bank is a RAM. Let's write back the byte from the screen memory
+;
+01A8 0A                         ld a,(bc)                  ; load a byte from source (display window)
+01A9 03                         inc bc                     ; advance source pointer
+01AA 77                         ld (hl),a                  ; write byte to mapped page (copy from display window)
+;
+; Let's use the $1CBA address of the bank for a bit pattern test.
+; Save that memory value to the XL register.
+;
+01AB 21 BA DC                   ld hl,$DCBA                ; HL := $DCBA (source for special fill/copy)
+01AE 7E                         ld a,(hl)                  ; read a byte from DCBA (seed value)
+01AF DD 6F                      ld xl,a                    ; store seed into X' low (Z80N extended regs)
+;
+; Test the subsequent bit value 0
+;
+01B1 7A            `BIT_LOOP:   ld a,d                     ; A := D (work with high part of pattern/length)
+01B2 77                         ld (hl),a                  ; write A into mapped page at HL
+01B3 7E                         ld a,(hl)                  ; reload what we just wrote (verify/readback)
+01B4 A2                         and d                      ; test bits with D (condition check)
+01B5 28 B9                      jr z,INIT_ERR              ; The bit pattern in D if faulty --> sign the error
+;
+; Test the subsequent bit value 1
+;
+01B7 2F                         cpl                        ; complement A (invert pattern)
+01B8 77                         ld (hl),a                  ; write inverted byte back
+01B9 7E                         ld a,(hl)                  ; read back for verification
+01BA A2                         and d                      ; test again with D
+01BB 20 B3                      jr nz,INIT_ERR             ; The bit pattern in D if faulty --> sign the error
+;
+; Move to the next bit pattern
+;
+01BD CB 02                      rlc d                      ; rotate left D (modify pattern/length)
+01BF 1D                         dec e                      ; decrement E (inner repeat counter)
+01C0 20 EF                      jr nz,`BIT_LOOP            ; loop until E becomes zero
+01C2 DD 7D                      ld a,xl                    ; load A from X' low (use stored seed)
+01C4 77                         ld (hl),a                  ; Write back the original byte to $1CBA
+;
+; Loop while we 
+;
+01C5 08                         ex af,af'                  ; restore AF / status
+01C6 3C                         inc a                      ; advance page index (A++)
+01C7 FE 70                      cp $70                     ; compare with $70 (limit check for mapping/page range)
+01C9 20 C7                      jr nz,BANK_LOOP2           ; if not $70 continue mapping loop
+;
+; We have all RAM pages successfully tested.
+;
+01CB 08                         ex af,af'                  ; restore AF (if $70 reached)
+;
+; We have found the last RAM page (stored in A')
+;
+01CC 08            TEST_COMP:   ex af,af'                  ; sync AF/AF' before leaving mapping/test section
+01CD 3D                         dec a                      ; decrement A (prepare return value / final index)
+01CE 32 69 5B                   ld ($5B69),a               ; store final A into $5B69 (record last-tested page)
+01D1 31 FF 5B                   ld sp,$5BFF                ; restore stack pointer for next stage
+;
+; Continue from here...
+;
+01D4 E7                         rst $20                    ; call ROM vector $20 (system/BIOS service)
+01D5 DF                         rst $18                    ; call ROM vector $18
+01D6 1E ED                      ld e,$ED                   ; load E with $ED (magic/parameter)
+01D8 91                         sub c                      ; A := A - C (mix indices into A)
+01D9 8E                         adc a,(hl)                 ; add with carry value at (HL) into A for checksum/validation
+01DA 08                         ex af,af'                  ; restore AF status
+01DB ED 56                      im 1                       ; set interrupt mode 1 (prepare interrupt state)
+01DD CD E3 00                   call L00E3                 ; call routine at L00E3 (cleanup/continue)
+01E0 21 FF FF                   ld hl,$FFFF                ; HL := $FFFF (post-call sentinel)
 01E3 22 B4 5C                   ld ($5CB4),hl
 01E6 11 AF 3E                   ld de,$3EAF
 01E9 01 A8 00                   ld bc,$00A8

@@ -157,6 +157,7 @@ export const machineRegistry: MachineInfo[] = [
     displayName: "ZX Spectrum Next",
     charSet: ZxNextChars,
     features: {
+      [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: false,
       [MF_ULA]: true,
       [MF_ROM]: 7,
