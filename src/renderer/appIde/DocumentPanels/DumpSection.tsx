@@ -230,9 +230,10 @@ const HexValues = ({
   };
 
   // Tooltip content
-  const tooltipContent =
+  let tooltipContent =
     hoveredByteIndex !== null && memory[address + hoveredByteIndex] !== undefined
-      ? `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):\n${tooltipCache[memory[address + hoveredByteIndex]]}`
+      ? `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):` +
+        `\n${tooltipCache[memory[address + hoveredByteIndex]]}`
       : null;
 
   // Calculate overlay position for the hovered byte
@@ -247,29 +248,31 @@ const HexValues = ({
   // Determine styling based on pointed/lastJump for any of the 8 bytes
   let hasPointed = false;
   let hasPcPointed = false;
-  let hasLastJump = false;
+  let lastJumpByteIndex: number | null = null;
 
+  const pointedHint = pointedInfo?.[address + hoveredByteIndex];
   for (let i = 0; i < 8; i++) {
     const addr = address + i;
-    const pointedHint = pointedInfo?.[addr];
-    if (pointedHint !== undefined) {
-      hasPointed = true;
-      if (pointedHint.indexOf("PC") >= 0) {
-        hasPcPointed = true;
-      }
-    }
     if (lastJumpAddress === addr) {
-      hasLastJump = true;
+      lastJumpByteIndex = i;
     }
   }
+
+  // Calculate overlay position for lastJump byte
+  const lastJumpOverlayStyle =
+    lastJumpByteIndex !== null && charWidth > 0
+      ? {
+          left: `${lastJumpByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
+          width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
+        }
+      : undefined;
 
   return (
     <div
       ref={containerRef}
       className={classnames(styles.hexValues, {
         [styles.pointed]: hasPointed,
-        [styles.pcPointed]: hasPcPointed,
-        [styles.lastJump]: hasLastJump
+        [styles.pcPointed]: hasPcPointed
       })}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -284,6 +287,14 @@ const HexValues = ({
           )}
         </div>
       )}
+      {lastJumpOverlayStyle && lastJumpByteIndex !== null && (
+        <div className={styles.lastJumpOverlay} style={lastJumpOverlayStyle}>
+          {hexString.substring(
+            lastJumpByteIndex * (decimalView ? 4 : 3),
+            lastJumpByteIndex * (decimalView ? 4 : 3) + (decimalView ? 3 : 2)
+          )}
+        </div>
+      )}
       {tooltipContent && containerRef.current && (
         <TooltipFactory
           refElement={containerRef.current}
@@ -292,7 +303,7 @@ const HexValues = ({
           offsetY={0}
           showDelay={0}
           isShown={true}
-          content={tooltipContent}
+          content={tooltipContent + `${pointedHint ? `\nPointed by: ${pointedHint}` : ""}`}
         />
       )}
     </div>

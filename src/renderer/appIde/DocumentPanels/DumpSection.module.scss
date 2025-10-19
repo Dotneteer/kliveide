@@ -104,6 +104,17 @@
   pointer-events: none;
 }
 
+.lastJumpOverlay {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  border: 1px solid transparent;
+  padding-left: 2px;
+  pointer-events: none;
+  animation: borderColorChange 3s alternate;
+  animation-delay: 400ms;
+}
+
 .charValues {
   display: flex;
   flex-grow: 0;
