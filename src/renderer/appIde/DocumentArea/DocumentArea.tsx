@@ -19,28 +19,18 @@ export const DocumentArea = () => {
   const [viewState, setViewState] = useState<any>(null);
   const [data, setData] = useState<string | Uint8Array>(null);
 
-  console.log("🔍 [DocumentArea] Rendering START", {
-    hubVersion,
-    projectViewStateVersion,
-    activeDocId: activeDoc?.id,
-    documentHubService: !!documentHubService
-  });
-
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
-    console.log("📋 [DocumentArea] Effect triggered", { hubVersion, projectViewStateVersion });
     const doc = documentHubService?.getActiveDocument();
     if (doc) {
       const lockedDocs = projectService.getLockedFiles();
       doc.isLocked = lockedDocs.includes(doc.id);
     }
     // Only update if doc ID actually changed to prevent unnecessary re-renders
-    setActiveDoc(prevDoc => {
+    setActiveDoc((prevDoc) => {
       if (prevDoc?.id === doc?.id && prevDoc?.isLocked === doc?.isLocked) {
-        console.log("📋 [DocumentArea] activeDoc unchanged, keeping same reference");
         return prevDoc;
       }
-      console.log("📋 [DocumentArea] activeDoc changed, updating");
       return doc;
     });
     const viewState = documentHubService?.getDocumentViewState(doc?.id);
@@ -48,20 +38,15 @@ export const DocumentArea = () => {
     setData(doc?.contents);
   }, [hubVersion, projectViewStateVersion]);
 
-  console.log("🔍 [DocumentArea] Rendering END", {
-    activeDocId: activeDoc?.id,
-    keyValue: activeDoc?.id,
-    activeDocRef: activeDoc,
-    hasData: !!data,
-    hasViewState: !!viewState
-  });
-
   // --- Memoize apiLoaded callback to prevent unnecessary re-renders
-  const handleApiLoaded = useCallback((api) => {
-    if (activeDoc) {
-      documentHubService?.setDocumentApi(activeDoc.id, api);
-    }
-  }, [documentHubService, activeDoc?.id]);
+  const handleApiLoaded = useCallback(
+    (api) => {
+      if (activeDoc) {
+        documentHubService?.setDocumentApi(activeDoc.id, api);
+      }
+    },
+    [documentHubService, activeDoc?.id]
+  );
 
   return (
     <DocumentHubServiceProvider value={documentHubService}>

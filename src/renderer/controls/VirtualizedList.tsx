@@ -29,7 +29,6 @@ export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLo
       // Scroll to initial position on first mount only
       if (!hasScrolledToStart.current && startIndex !== undefined && startIndex > 0) {
         hasScrolledToStart.current = true;
-        console.log("🎬 [VirtualizedList] Scrolling to startIndex:", startIndex);
         ref.current?.scrollToIndex(startIndex, { align: "start" });
       }
     }

@@ -23,35 +23,18 @@ const DocumentsContainerComponent = ({
   apiLoaded
 }: DocumentProps) => {
   const instanceId = useRef(++containerInstanceCounter);
-  
+
   // --- Get the document's renderer from the registry
-  const docRenderer = documentPanelRegistry.find(
-    dp => dp.id === document?.type
-  );
+  const docRenderer = documentPanelRegistry.find((dp) => dp.id === document?.type);
 
   if (docRenderer && document) {
     document.iconName ||= docRenderer.icon;
     document.iconFill ||= docRenderer.iconFill;
   }
 
-  console.log(`📦 [DocumentsContainer#${instanceId.current}] Rendering`, {
-    documentId: document?.id,
-    documentType: document?.type,
-    hasContents: !!contents,
-    hasViewState: !!viewState,
-    hasApiLoaded: !!apiLoaded,
-    rendererType: docRenderer?.renderer?.name,
-    rendererRef: docRenderer?.renderer
-  });
-
   // Render the component directly instead of using createElement
   // This ensures React properly tracks component identity
   const RendererComponent = docRenderer?.renderer;
-  
-  console.log(`🎭 [DocumentsContainer#${instanceId.current}] RendererComponent`, {
-    name: RendererComponent?.name,
-    ref: RendererComponent
-  });
 
   return document ? (
     RendererComponent ? (
@@ -70,24 +53,11 @@ const DocumentsContainerComponent = ({
 };
 
 export const DocumentsContainer = memo(DocumentsContainerComponent, (prevProps, nextProps) => {
-  const same = 
+  return (
     prevProps.document?.id === nextProps.document?.id &&
     prevProps.document?.type === nextProps.document?.type &&
     prevProps.contents === nextProps.contents &&
     prevProps.viewState === nextProps.viewState &&
-    prevProps.apiLoaded === nextProps.apiLoaded;
-  
-  if (!same) {
-    console.log("🔄 [DocumentsContainer] Props changed", {
-      documentIdChanged: prevProps.document?.id !== nextProps.document?.id,
-      documentTypeChanged: prevProps.document?.type !== nextProps.document?.type,
-      contentsChanged: prevProps.contents !== nextProps.contents,
-      viewStateChanged: prevProps.viewState !== nextProps.viewState,
-      apiLoadedChanged: prevProps.apiLoaded !== nextProps.apiLoaded,
-      prevApiLoaded: prevProps.apiLoaded,
-      nextApiLoaded: nextProps.apiLoaded
-    });
-  }
-  
-  return same;
+    prevProps.apiLoaded === nextProps.apiLoaded
+  );
 });
