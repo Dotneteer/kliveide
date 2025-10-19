@@ -8,8 +8,6 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { DumpSection } from "../DumpSection";
-import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
-import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
@@ -82,6 +80,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   const [twoColumns, setTwoColumns] = useState(() => loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true);
   const [charDump, setCharDump] = useState(() => loadedViewState?.charDump ?? workspace?.charDump ?? true);
   const [isReady, setIsReady] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
 
   console.log("📊 [MemoryPanel] Initialized state:", {
     topIndex,
@@ -91,7 +90,8 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
     decimalView,
     twoColumns,
     charDump,
-    isReady
+    isReady,
+    hasScrolled
   });
 
   // --- State of the memory view
@@ -113,7 +113,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   const cachedItems = useRef<number[]>(initialMemoryItems);
   const vlApi = useRef<VListHandle>(null);
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
-  const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>(null);
+  const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
   const pointedRegs = useRef<Record<number, string>>({});
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
@@ -135,27 +135,84 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
 
   // --- Track mount/unmount and initialization phase
   const isInitializing = useRef(true);
+  const machineSetupComplete = useRef(false);
+  const hasScrolledToInitialPosition = useRef(false);
   
   useEffect(() => {
     console.log(`🟢 [MemoryPanel#${componentInstanceId.current}] Component MOUNTED`);
+    // Reset scroll tracking on mount
+    hasScrolledToInitialPosition.current = false;
+    setHasScrolled(false);
     return () => {
       console.log(`🔴 [MemoryPanel#${componentInstanceId.current}] Component UNMOUNTED`);
+      // Clean up debounced save on unmount
+      if (saveViewStateTimeout.current) {
+        clearTimeout(saveViewStateTimeout.current);
+      }
     };
   }, []);
 
   // --- Respond to machineId changes
   useEffect(() => {
     isInitializing.current = true; // Mark as initializing when machine changes
+    machineSetupComplete.current = false; // Reset machine setup flag
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     const romPagesValue = machine?.features?.[MF_ROM] ?? 0;
     const ramBankValue = machine?.features?.[MF_BANK] ?? 0;
-    setBanksView(romPagesValue > 0 || ramBankValue > 0);
-    setDisplayBankMatrix(ramBankValue > 8 || romPagesValue > 8);
+    
     (async () => {
-      setRomFlags(await emuApi.getRomFlags());
-      const options: DropdownOption[] = [];
+      // Get ALL async data FIRST before any state updates
+      const romFlags = await emuApi.getRomFlags();
       const labels = await emuApi.getPartitionLabels();
-      setPartitionLabels(labels);
+      
+      // Now update all state synchronously in one batch
+      const newBanksView = romPagesValue > 0 || ramBankValue > 0;
+      console.log("🔧 [MemoryPanel] Setting banksView:", newBanksView);
+      setBanksView(prev => {
+        if (prev === newBanksView) {
+          console.log("⏭️ [MemoryPanel] Skipping banksView update, value unchanged");
+          return prev;
+        }
+        console.log("✏️ [MemoryPanel] banksView changed from", prev, "to", newBanksView);
+        return newBanksView;
+      });
+      
+      const newDisplayBankMatrix = ramBankValue > 8 || romPagesValue > 8;
+      console.log("🔧 [MemoryPanel] Setting displayBankMatrix:", newDisplayBankMatrix);
+      setDisplayBankMatrix(prev => {
+        if (prev === newDisplayBankMatrix) {
+          console.log("⏭️ [MemoryPanel] Skipping displayBankMatrix update, value unchanged");
+          return prev;
+        }
+        console.log("✏️ [MemoryPanel] displayBankMatrix changed from", prev, "to", newDisplayBankMatrix);
+        return newDisplayBankMatrix;
+      });
+      
+      console.log("🔧 [MemoryPanel] Setting romFlags:", romFlags);
+      setRomFlags(prev => {
+        const flagsChanged = JSON.stringify(prev) !== JSON.stringify(romFlags);
+        if (flagsChanged) {
+          console.log("✏️ [MemoryPanel] romFlags changed, updating");
+          return romFlags;
+        } else {
+          console.log("⏭️ [MemoryPanel] Skipping romFlags update, value unchanged");
+          return prev;
+        }
+      });
+      
+      console.log("🔧 [MemoryPanel] Setting partitionLabels:", labels);
+      setPartitionLabels(prev => {
+        const labelsChanged = JSON.stringify(prev) !== JSON.stringify(labels);
+        if (labelsChanged) {
+          console.log("✏️ [MemoryPanel] partitionLabels changed, updating");
+          return labels;
+        } else {
+          console.log("⏭️ [MemoryPanel] Skipping partitionLabels update, value unchanged");
+          return prev;
+        }
+      });
+      
+      const options: DropdownOption[] = [];
       if (ramBankValue <= 8) {
         const ordered = Object.keys(labels)
           .map((l) => parseInt(l, 10))
@@ -167,19 +224,41 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
             options.push({ value: key.toString(), label: `BANK ${key}` });
           }
         });
-        setSegmentOptions(options);
+        console.log("🔧 [MemoryPanel] Setting segmentOptions:", options);
+        setSegmentOptions(prev => {
+          const optionsChanged = JSON.stringify(prev) !== JSON.stringify(options);
+          if (optionsChanged) {
+            console.log("✏️ [MemoryPanel] segmentOptions changed, updating");
+            return options;
+          } else {
+            console.log("⏭️ [MemoryPanel] Skipping segmentOptions update, value unchanged");
+            return prev;
+          }
+        });
       }
-      setCurrentSegment(romPagesValue ? -1 : 0);
-      // Mark initialization complete after all async setup is done
-      setTimeout(() => {
-        isInitializing.current = false;
-        setIsReady(true);
-        console.log("✅ [MemoryPanel] Initialization complete, component ready");
-      }, 50);
+      
+      const newSegment = romPagesValue ? -1 : 0;
+      console.log("🔧 [MemoryPanel] Setting currentSegment:", newSegment);
+      setCurrentSegment(prev => {
+        if (prev === newSegment) {
+          console.log("⏭️ [MemoryPanel] Skipping currentSegment update, value unchanged");
+          return prev;
+        }
+        console.log("✏️ [MemoryPanel] currentSegment changed from", prev, "to", newSegment);
+        return newSegment;
+      });
+      
+      // Mark initialization complete after ALL state updates
+      isInitializing.current = false;
+      machineSetupComplete.current = true;
+      console.log("✅ [MemoryPanel] Machine setup complete, all state synchronized");
     })();
   }, [machineId]);
 
-  // --- Save the current view state
+  // Debounce ref for saving to prevent immediate re-renders from hubVersion changes
+  const saveViewStateTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // --- Save the current view state (debounced to prevent triggering parent re-renders)
   const saveViewState = () => {
     const mergedState: BankedMemoryPanelViewState = {
       topIndex,
@@ -190,15 +269,17 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
       charDump,
       bankLabel
     };
-    console.log("💾 [MemoryPanel] Saving viewState:", mergedState);
-    documentHubService.saveActiveDocumentState(mergedState);
-    // TEMPORARILY DISABLED: This causes a Redux feedback loop
-    // The workspace selector triggers re-renders when this dispatches
-    // dispatch(setWorkspaceSettingsAction(MEMORY_EDITOR, mergedState));
-    (async () => {
+    
+    // Debounce ENTIRE save operation - this prevents hubVersion from incrementing immediately
+    if (saveViewStateTimeout.current) {
+      clearTimeout(saveViewStateTimeout.current);
+    }
+    saveViewStateTimeout.current = setTimeout(async () => {
+      console.log("💾 [MemoryPanel] Debounced save executing:", mergedState);
+      documentHubService.saveActiveDocumentState(mergedState);
       await mainApi.saveProject();
       dispatch(incProjectFileVersionAction());
-    })();
+    }, 100); // Short 100ms debounce - just enough to batch rapid changes
   };
 
   // --- Creates the addresses to represent dump sections
@@ -304,14 +385,35 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
     };
   }, [topIndex, isFullView, decimalView, currentSegment, twoColumns, charDump, bankLabel]);
 
-  // --- Initial view: refresh the memory content, then mark as ready
-  useInitializeAsync(async () => {
-    console.log("🔄 [MemoryPanel] Initial refresh of memory view");
-    await refreshMemoryView();
-    // Mark component as ready - now VirtualizedList will render with correct topIndex
-    setIsReady(true);
-    console.log("✅ [MemoryPanel] Component ready, topIndex:", topIndex);
-  });
+  // --- Initial view: wait for machine setup, refresh memory, then mark as ready
+  useEffect(() => {
+    // Only run once on mount - manual initialization to ensure proper sequencing
+    if (!isInitializing.current) return;
+    
+    (async () => {
+      console.log("🔄 [MemoryPanel] Initial refresh of memory view");
+      
+      // Wait for machine setup to complete before proceeding
+      let attempts = 0;
+      while (!machineSetupComplete.current && attempts < 100) {
+        if (attempts % 10 === 0) {
+          console.log("⏳ [MemoryPanel] Waiting for machine setup to complete...");
+        }
+        await new Promise(resolve => setTimeout(resolve, 10));
+        attempts++;
+      }
+      
+      if (!machineSetupComplete.current) {
+        console.warn("⚠️ [MemoryPanel] Machine setup timeout, proceeding anyway");
+      }
+      
+      await refreshMemoryView();
+      // Mark component as ready - now VirtualizedList will render with correct topIndex
+      console.log("🔧 [MemoryPanel] Setting isReady: true");
+      setIsReady(true);
+      console.log("✅ [MemoryPanel] Component ready, topIndex:", topIndex);
+    })();
+  }, []); // Empty deps = run once on mount
 
   // --- Scroll to the desired position whenever topIndex changes externally (e.g., jump to address)
   const lastScrolledIndex = useRef(-1);
@@ -345,7 +447,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   }, [machineState]);
 
   useEffect(() => {
-    // Skip refresh during initialization - useInitializeAsync handles the first refresh
+    // Skip refresh during initialization - manual initialization effect handles the first refresh
     if (isInitializing.current) {
       console.log("⏭️ [MemoryPanel] Skipping refresh during initialization");
       return;
@@ -360,7 +462,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   );
 
   // --- Take care of refreshing the screen
-  useEmuStateListener(emuApi, refreshMemoryView);
+  // useEmuStateListener(emuApi, refreshMemoryView);
 
   const OptionsBar = () => {
     return (
@@ -376,13 +478,17 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
           label="2 Columns"
           title="Use two-column layout?"
           clicked={(v) => {
+            console.log("🔧 [MemoryPanel] Setting twoColumns:", v);
             setTwoColumns(v);
             createDumpSections(memory.current.length, v);
             if (v) {
+              console.log("🔧 [MemoryPanel] Setting topIndex (2col):", Math.floor(topIndex / 2));
               setTopIndex(Math.floor(topIndex / 2));
             } else {
+              console.log("🔧 [MemoryPanel] Setting topIndex (1col):", topIndex * 2);
               setTopIndex(topIndex * 2);
             }
+            console.log("🔧 [MemoryPanel] Setting scrollVersion:", scrollVersion + 1);
             setScrollVersion(scrollVersion + 1);
           }}
         />
@@ -452,22 +558,25 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
     twoColumns,
     charDump,
     memoryItemsLength: memoryItems.length,
-    isReady
+    isReady,
+    hasScrolled
   });
 
-  // Show loading state until initialization completes and first scroll happens
+  // Don't render at all until isReady
   if (!isReady) {
-    return (
-      <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
-        <div style={{ padding: "20px", textAlign: "center", color: "var(--color-text-subtle)" }}>
-          Initializing memory view...
-        </div>
-      </FullPanel>
-    );
+    console.log("⏸️ [MemoryPanel] Waiting for ready:", { isReady });
+    return null;
+  }
+
+  // For non-zero topIndex, hide the component until scroll completes to prevent flicker
+  const shouldHideUntilScrolled = topIndex > 0 && !hasScrolled;
+
+  if (shouldHideUntilScrolled) {
+    console.log("👻 [MemoryPanel] Rendering hidden (waiting for scroll):", { topIndex, hasScrolled });
   }
 
   return (
-    <FullPanel fontFamily="--monospace-font" fontSize="0.8em">
+    <FullPanel fontFamily="--monospace-font" fontSize="0.8em" style={{ opacity: shouldHideUntilScrolled ? 0 : 1 }}>
       {setMemoryDialog}
       <PanelHeader>
         <OptionsBar />
@@ -557,6 +666,20 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
             vlApi.current = api;
             // Reset lastScrolledIndex when API reloads to force scroll on next effect
             lastScrolledIndex.current = -1;
+            
+            // Mark as scrolled after a short delay to ensure scroll completes
+            if (!hasScrolledToInitialPosition.current && topIndex > 0) {
+              console.log("⏳ [MemoryPanel] Waiting for initial scroll to complete...");
+              setTimeout(() => {
+                console.log("✅ [MemoryPanel] Initial scroll complete");
+                hasScrolledToInitialPosition.current = true;
+                setHasScrolled(true);
+              }, 50); // Small delay to ensure scroll completes
+            } else {
+              // If starting at topIndex 0, no scroll needed
+              hasScrolledToInitialPosition.current = true;
+              setHasScrolled(true);
+            }
           }}
           renderItem={(idx) => {
             const partitionLabel = isFullView
@@ -608,5 +731,17 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   );
 };
 
-// Wrap in memo to prevent unnecessary re-renders from parent updates
-export const createMemoryPanel = memo(BankedMemoryPanel);
+// Custom comparator to prevent re-renders when props haven't meaningfully changed
+const arePropsEqual = (prevProps: DocumentProps, nextProps: DocumentProps) => {
+  // Only re-render if the document ID changes
+  const docIdChanged = prevProps.document?.id !== nextProps.document?.id;
+  if (docIdChanged) {
+    console.log("🔄 [MemoryPanel] Document ID changed, allowing re-render");
+    return false; // Props are NOT equal, allow re-render
+  }
+  console.log("⏭️ [MemoryPanel] Props unchanged, preventing re-render");
+  return true; // Props are equal, prevent re-render
+};
+
+// Wrap in memo with custom comparator to prevent unnecessary re-renders from parent updates
+export const createMemoryPanel = memo(BankedMemoryPanel, arePropsEqual);

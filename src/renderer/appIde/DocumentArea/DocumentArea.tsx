@@ -19,6 +19,13 @@ export const DocumentArea = () => {
   const [viewState, setViewState] = useState<any>(null);
   const [data, setData] = useState<string | Uint8Array>(null);
 
+  console.log("🔍 [DocumentArea] Rendering START", {
+    hubVersion,
+    projectViewStateVersion,
+    activeDocId: activeDoc?.id,
+    documentHubService: !!documentHubService
+  });
+
   // --- Manage saving and restoring state when the active index changes
   useEffect(() => {
     console.log("📋 [DocumentArea] Effect triggered", { hubVersion, projectViewStateVersion });
@@ -41,13 +48,12 @@ export const DocumentArea = () => {
     setData(doc?.contents);
   }, [hubVersion, projectViewStateVersion]);
 
-  console.log("🔍 [DocumentArea] Rendering", {
+  console.log("🔍 [DocumentArea] Rendering END", {
     activeDocId: activeDoc?.id,
     keyValue: activeDoc?.id,
     activeDocRef: activeDoc,
     hasData: !!data,
-    hasViewState: !!viewState,
-    documentHubService: !!documentHubService
+    hasViewState: !!viewState
   });
 
   // --- Memoize apiLoaded callback to prevent unnecessary re-renders

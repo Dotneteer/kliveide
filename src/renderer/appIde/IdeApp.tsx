@@ -152,6 +152,8 @@ const IdeApp = () => {
   const mainApi = useMainApi();
   const { store, messenger } = useRendererContext();
 
+  console.log("🏠 [IdeApp] Rendering START");
+
   // --- Default document service instance
   if (!appServices.projectService.getActiveDocumentHubService()) {
     appServices.projectService.createDocumentHubService();

@@ -15,20 +15,22 @@ export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLo
   const ref = useRef<VListHandle>(null);
   const [itemsCount, setItemsCount] = useState(items?.length ?? 0);
   const hasScrolledToStart = useRef(false);
+  const hasNotifiedApi = useRef(false);
 
   // --- Notify the parent that the API is ready and scroll to start position
   useEffect(() => {
     if (ref.current) {
-      apiLoaded?.(ref.current);
+      // Only call apiLoaded once per component instance
+      if (!hasNotifiedApi.current) {
+        hasNotifiedApi.current = true;
+        apiLoaded?.(ref.current);
+      }
       
       // Scroll to initial position on first mount only
       if (!hasScrolledToStart.current && startIndex !== undefined && startIndex > 0) {
         hasScrolledToStart.current = true;
         console.log("🎬 [VirtualizedList] Scrolling to startIndex:", startIndex);
-        // Use setTimeout to ensure the list is fully rendered
-        setTimeout(() => {
-          ref.current?.scrollToIndex(startIndex, { align: "start" });
-        }, 0);
+        ref.current?.scrollToIndex(startIndex, { align: "start" });
       }
     }
   }, [ref.current, startIndex]);
