@@ -5,7 +5,7 @@ import { toHexa4, toHexa2, toDecimal5, toDecimal3, toBin8 } from "../services/id
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
-import { useEffect, memo, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, memo, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
 
 type DumpProps = {
@@ -79,18 +79,7 @@ const DumpSectionComponent = ({
         editClicked={editClicked}
       />
       <LabelSeparator width={8} />
-      {charDump && (
-        <>
-          <CharValues
-            address={address}
-            memory={memory}
-            pointedInfo={pointedInfo}
-            isRom={isRom}
-            editClicked={editClicked}
-          />
-          <LabelSeparator width={8} />
-        </>
-      )}
+      {charDump && <CharDump address={address} memory={memory} />}
     </div>
   );
 };
@@ -127,6 +116,39 @@ export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
   return true;
 });
 
+// Character dump component - memoized
+type CharDumpProps = {
+  address: number;
+  memory: Uint8Array;
+};
+
+const CharDumpComponent = ({ address, memory }: CharDumpProps) => {
+  const charString = useMemo(() => {
+    return Array.from({ length: 8 }, (_, i) => {
+      const value = memory[address + i];
+      if (value === undefined) return " ";
+      const valueInfo = characterSet[(value ?? 0x20) & 0xff];
+      return valueInfo.v ?? ".";
+    }).join("");
+  }, [address, memory]);
+
+  return (
+    <>
+      <div className={styles.charValues}>{charString}</div>
+      <LabelSeparator width={8} />
+    </>
+  );
+};
+
+const CharDump = memo(CharDumpComponent, (prev, next) => {
+  if (prev.address !== next.address) return false;
+  // Check if the 8 bytes have changed
+  for (let i = 0; i < 8; i++) {
+    if (prev.memory[prev.address + i] !== next.memory[next.address + i]) return false;
+  }
+  return true;
+});
+
 type HexValuesProps = {
   address: number;
   memory: Uint8Array;
@@ -137,7 +159,7 @@ type HexValuesProps = {
   editClicked?: (address: number) => void;
 };
 
-const HexValues = ({
+const HexValuesComponent = ({
   address,
   memory,
   decimalView,
@@ -150,15 +172,20 @@ const HexValues = ({
   const [hoveredByteIndex, setHoveredByteIndex] = useState<number | null>(null);
   const [charWidth, setCharWidth] = useState<number>(0);
 
-  // Build the space-separated hex string for all 8 bytes
-  const hexParts: string[] = [];
-  for (let i = 0; i < 8; i++) {
-    const value = memory[address + i];
-    if (value !== undefined) {
-      hexParts.push(decimalView ? toDecimal3(value) : toHexa2(value));
+  // Build the space-separated hex string for all 8 bytes - memoized
+  const { hexParts, hexString } = useMemo(() => {
+    const parts: string[] = [];
+    for (let i = 0; i < 8; i++) {
+      const value = memory[address + i];
+      if (value !== undefined) {
+        parts.push(decimalView ? toDecimal3(value) : toHexa2(value));
+      }
     }
-  }
-  const hexString = hexParts.join(" ");
+    return {
+      hexParts: parts,
+      hexString: parts.join(" ")
+    };
+  }, [address, memory, decimalView]);
 
   // Calculate character width from the container after render (monospace font)
   useLayoutEffect(() => {
@@ -187,8 +214,8 @@ const HexValues = ({
     }
   }, [hexString]);
 
-  // Handle mouse move to determine which byte is hovered
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Handle mouse move to determine which byte is hovered - memoized
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current || charWidth === 0) return;
 
     const rect = containerRef.current.getBoundingClientRect();
@@ -218,62 +245,60 @@ const HexValues = ({
     }
 
     setHoveredByteIndex(foundIndex);
-  };
+  }, [charWidth, decimalView, hexParts]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
     setHoveredByteIndex(null);
-  };
+  }, []);
 
-  const handleMouseOut = () => {
+  const handleMouseOut = useCallback(() => {
     // Additional safeguard to clear hover state when mouse exits
     setHoveredByteIndex(null);
-  };
+  }, []);
 
-  // Tooltip content
-  let tooltipContent =
-    hoveredByteIndex !== null && memory[address + hoveredByteIndex] !== undefined
-      ? `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):` +
-        `\n${tooltipCache[memory[address + hoveredByteIndex]]}`
-      : null;
-
-  // Calculate overlay position for the hovered byte
-  const overlayStyle =
-    hoveredByteIndex !== null && charWidth > 0
-      ? {
-          left: `${hoveredByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
-          width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
-        }
-      : undefined;
-
-  // Determine styling based on pointed/lastJump for any of the 8 bytes
-  let hasPointed = false;
-  let hasPcPointed = false;
-  let lastJumpByteIndex: number | null = null;
-
-  const pointedHint = pointedInfo?.[address + hoveredByteIndex];
-  for (let i = 0; i < 8; i++) {
-    const addr = address + i;
-    if (lastJumpAddress === addr) {
-      lastJumpByteIndex = i;
+  // Tooltip content - memoized
+  const tooltipContent = useMemo(() => {
+    if (hoveredByteIndex === null || memory[address + hoveredByteIndex] === undefined) {
+      return null;
     }
-  }
+    return `Value at $${toHexa4(address + hoveredByteIndex)} (${address + hoveredByteIndex}):` +
+      `\n${tooltipCache[memory[address + hoveredByteIndex]]}`;
+  }, [hoveredByteIndex, address, memory]);
 
-  // Calculate overlay position for lastJump byte
-  const lastJumpOverlayStyle =
-    lastJumpByteIndex !== null && charWidth > 0
-      ? {
-          left: `${lastJumpByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
-          width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
-        }
-      : undefined;
+  const pointedHint = hoveredByteIndex !== null ? pointedInfo?.[address + hoveredByteIndex] : undefined;
+
+  // Calculate overlay position for the hovered byte - memoized
+  const overlayStyle = useMemo(() => {
+    if (hoveredByteIndex === null || charWidth === 0) return undefined;
+    return {
+      left: `${hoveredByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
+      width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
+    };
+  }, [hoveredByteIndex, charWidth, decimalView]);
+
+  // Determine lastJump byte index - memoized
+  const lastJumpByteIndex = useMemo(() => {
+    for (let i = 0; i < 8; i++) {
+      if (lastJumpAddress === address + i) {
+        return i;
+      }
+    }
+    return null;
+  }, [lastJumpAddress, address]);
+
+  // Calculate overlay position for lastJump byte - memoized
+  const lastJumpOverlayStyle = useMemo(() => {
+    if (lastJumpByteIndex === null || charWidth === 0) return undefined;
+    return {
+      left: `${lastJumpByteIndex * ((decimalView ? 3 : 2) + 1) * charWidth - 2}px`,
+      width: `${(decimalView ? 3 : 2) * charWidth + 4}px`
+    };
+  }, [lastJumpByteIndex, charWidth, decimalView]);
 
   return (
     <div
       ref={containerRef}
-      className={classnames(styles.hexValues, {
-        [styles.pointed]: hasPointed,
-        [styles.pcPointed]: hasPcPointed
-      })}
+      className={styles.hexValues}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseOut={handleMouseOut}
@@ -309,32 +334,27 @@ const HexValues = ({
     </div>
   );
 };
-type CharValuesProps = {
-  address: number;
-  memory: Uint8Array;
-  pointedInfo?: Record<number, string>;
-  isRom?: boolean;
-  editClicked?: (address: number) => void;
-};
 
-const CharValues = ({
-  address,
-  memory,
-  isRom: _isRom,
-  editClicked: _editClicked
-}: CharValuesProps) => {
-  // Build the 8-character string
-  let charString = "";
+// Memoize HexValues to avoid re-rendering when props haven't changed
+const HexValues = memo(HexValuesComponent, (prev, next) => {
+  // Only re-render if these props actually change
+  if (prev.address !== next.address) return false;
+  if (prev.decimalView !== next.decimalView) return false;
+  if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
+  
+  // Check if the 8 bytes have changed
   for (let i = 0; i < 8; i++) {
-    const value = memory[address + i];
-    if (value !== undefined) {
-      const valueInfo = characterSet[(value ?? 0x20) & 0xff];
-      charString += valueInfo.v ?? ".";
-    }
+    if (prev.memory[prev.address + i] !== next.memory[next.address + i]) return false;
   }
-
-  return <div className={styles.charValues}>{charString}</div>;
-};
+  
+  // Check if pointedInfo has changed for any of the 8 bytes
+  for (let i = 0; i < 8; i++) {
+    const addr = prev.address + i;
+    if (prev.pointedInfo?.[addr] !== next.pointedInfo?.[addr]) return false;
+  }
+  
+  return true;
+});
 
 // --- Cache tooltip value
 let tooltipCache: string[] = [];
