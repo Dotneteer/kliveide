@@ -488,6 +488,11 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   abstract getCallStack(frames): CallStackInfo;
 
   /**
+   * Returns disassembly sections for the machine (required by IAnyMachine)
+   */
+  abstract getDisassemblySections(_options: Record<string, any>): any[];
+
+  /**
    * Executes the specified custom command
    * @param _command Command to execute
    */
@@ -542,7 +547,8 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * The machine frame loop invokes this method before executing a CPU instruction.
    */
   beforeInstructionExecuted(): void {
-    // --- Override this method in derived classes.
+    // --- Set the interrupt signal, if required so
+    this.sigINT = this.shouldRaiseInterrupt();
   }
 
   /**
