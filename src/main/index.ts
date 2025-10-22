@@ -157,6 +157,9 @@ const preload = join(__dirname, "../preload/index.js");
 // --- Store the latest build menu version to detect changes
 let lastBuildMenuVersion = 0;
 
+// --- Track the previous stay-on-top setting to detect changes
+let lastStayOnTopValue: boolean | undefined = undefined;
+
 async function initializeMachineTypes() {
   Object.entries(machineMenuRegistry).forEach(async ([_, machine]) => {
     await machine.initializer?.();
@@ -169,6 +172,7 @@ async function createAppWindows() {
   machineTypeInitialized = false;
   allowCloseIde = false;
   ideSaved = false;
+  lastStayOnTopValue = undefined;
 
   // --- Create state manager for the EMU window
   const emuWindowStateManager = createWindowStateManager(appSettings?.windowStates?.emuWindow, {
@@ -206,6 +210,11 @@ async function createAppWindows() {
   }
 
   emuWindowStateManager.manage(emuWindow);
+
+  // --- Initialize the always-on-top state based on the saved setting
+  const initialStayOnTop = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
+  emuWindow.setAlwaysOnTop(initialStayOnTop);
+  lastStayOnTopValue = initialStayOnTop;
 
   // --- Create state manager for the EMU window
   const ideWindowStateManager = createWindowStateManager(appSettings?.windowStates?.ideWindow, {
@@ -337,11 +346,11 @@ async function createAppWindows() {
     }
 
     // --- Manage the Stay on top for the emu window
+    // --- Only update the window state when the setting actually changes
     const isEmuOnTop = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
-    if (isEmuOnTop && !emuWindow?.isAlwaysOnTop()) {
-      emuWindow?.setAlwaysOnTop(true);
-    } else if (!isEmuOnTop && emuWindow?.isAlwaysOnTop()) {
-      emuWindow?.setAlwaysOnTop(false);
+    if (lastStayOnTopValue !== isEmuOnTop) {
+      lastStayOnTopValue = isEmuOnTop;
+      emuWindow?.setAlwaysOnTop(isEmuOnTop);
     }
 
     // --- Adjust menu items whenever the app state changes
