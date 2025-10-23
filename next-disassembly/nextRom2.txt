@@ -76,7 +76,14 @@ Total Instructions: 12028
 004F F1                         pop af
 0050 FB                         ei
 0051 C9                         ret
-0052 3E 3A         L0052:       ld a,$3A
+;
+; Deprecated API stub - returns rc_notimp (error code $3A - Not implemented)
+; Used for deprecated functions: IDE_FORMAT, IDE_PARTITION_NEW, IDE_PARTITION_INIT,
+; IDE_PARTITION_ERASE, IDE_PARTITION_RENAME, IDE_PARTITION_WRITE, IDE_PARTITION_WINFO,
+; IDE_PARTITION_GETINFO, IDE_PARTITION_SETINFO, IDE_PATH, IDE_CAPACITY, IDE_BROWSER,
+; IDE_MOUNT, IDE_FILESIZE, IDE_DOS_UNPERMANENT
+;
+0052 3E 3A         IdeDepr:     ld a,$3A
 0054 A7                         and a
 0055 C9                         ret
 0056 C3 52 11                   jp L1152                    ; IDE_STREAM_OPEN
@@ -136,25 +143,25 @@ Total Instructions: 12028
 009D 00                         nop
 009E 00                         nop
 009F 00                         nop
-00A0 C3 70 1A                   jp L1A70                    ; IDE_VERSION
-00A3 C3 AE 19      L00A3:       jp L19AE                    ; IDE_INTERFACE
-00A6 C3 DF 1A                   jp L1ADF                    ; IDE_INIT
-00A9 C3 DB 01      L00A9:       jp L01DB                    ; IDE_DRIVE
-00AC C3 4A 18      L00AC:       jp L184A                    ; IDE_SECTOR_READ
-00AF C3 79 18                   jp L1879                    ; IDE_SECTOR_WRITE
-00B2 C3 52 00                   jp L0052                    ; IDE_FORMAT (deprecated)
-00B5 C3 E6 01      L00B5:       jp L01E6                    ; IDE_PARTITION_FIND
-00B8 C3 52 00                   jp L0052                    ; IDE_PARTITION_NEW (deprecated)
-00BB C3 52 00                   jp L0052                    ; IDE_PARTITION_INIT (deprecated)
-00BE C3 52 00                   jp L0052                    ; IDE_PARTITION_ERASE (deprecated)
-00C1 C3 52 00                   jp L0052                    ; IDE_PARTITION_RENAME (deprecated)
-00C4 C3 EB 01      L00C4:       jp L01EB                    ; IDE_PARTITION_READ
-00C7 C3 52 00                   jp L0052                    ; IDE_PARTITION_WRITE (deprecated)
-00CA C3 52 00                   jp L0052                    ; IDE_PARTITION_WINFO (deprecated)
-00CD C3 40 07                   jp L0740                    ; IDE_PARTITION_OPEN
-00D0 C3 CF 07                   jp L07CF                    ; IDE_PARTITION_CLOSE
-00D3 C3 52 00                   jp L0052                    ; IDE_PARTITION_GETINFO (deprecated)
-00D6 C3 52 00                   jp L0052                    ; IDE_PARTITION_SETINFO (deprecated)
+00A0 C3 70 1A                   jp IdeVer                   ; IDE_VERSION
+00A3 C3 AE 19      L00A3:       jp IdeIntf                  ; IDE_INTERFACE
+00A6 C3 DF 1A                   jp IdeInit                  ; IDE_INIT
+00A9 C3 DB 01      L00A9:       jp IdeDrv                   ; IDE_DRIVE
+00AC C3 4A 18      L00AC:       jp IdeSRead                 ; IDE_SECTOR_READ
+00AF C3 79 18                   jp IdeSWrt                  ; IDE_SECTOR_WRITE
+00B2 C3 52 00                   jp IdeDepr                  ; IDE_FORMAT (deprecated)
+00B5 C3 E6 01      L00B5:       jp IdePrtFind               ; IDE_PARTITION_FIND
+00B8 C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_NEW (deprecated)
+00BB C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_INIT (deprecated)
+00BE C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_ERASE (deprecated)
+00C1 C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_RENAME (deprecated)
+00C4 C3 EB 01      L00C4:       jp IdePrtRd                 ; IDE_PARTITION_READ
+00C7 C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_WRITE (deprecated)
+00CA C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_WINFO (deprecated)
+00CD C3 40 07                   jp IdePrtOpen               ; IDE_PARTITION_OPEN
+00D0 C3 CF 07                   jp IdePrtCls                ; IDE_PARTITION_CLOSE
+00D3 C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_GETINFO (deprecated)
+00D6 C3 52 00                   jp IdeDepr                  ; IDE_PARTITION_SETINFO (deprecated)
 00D9 C3 AC 16                   jp L16AC                    ; IDE_SWAP_OPEN
 00DC C3 76 17      L00DC:       jp L1776                    ; IDE_SWAP_CLOSE
 00DF C3 8B 16                   jp L168B                    ; IDE_SWAP_OUT
@@ -166,7 +173,7 @@ Total Instructions: 12028
 00F1 C3 CF 03      L00F1:       jp L03CF                    ; IDE_DOS_MAP
 00F4 C3 51 04      L00F4:       jp L0451                    ; IDE_DOS_UNMAP
 00F7 C3 78 04      L00F7:       jp L0478                    ; IDE_DOS_MAPPING
-00FA C3 52 00                   jp L0052                    ; IDE_DOS_UNPERMANENT (deprecated)
+00FA C3 52 00                   jp IdeDepr                  ; IDE_DOS_UNPERMANENT (deprecated)
 00FD C3 2E 08                   jp L082E                    ; IDE_SNAPLOAD
 0100 C3 2A 25                   jp L252A                    ; DOS_INITIALISE
 0103 C3 2C 25                   jp L252C                    ; DOS_VERSION
@@ -193,7 +200,7 @@ Total Instructions: 12028
 0142 C3 F8 01                   jp L01F8                    ; DOS_FLUSH
 0145 C3 4C 02                   jp L024C                    ; DOS_SET_ACCESS
 0148 C3 14 02                   jp L0214                    ; DOS_SET_ATTRIBUTES
-014B C3 52 00                   jp L0052                    ; Reserved (invalid)
+014B C3 52 00                   jp IdeDepr                  ; Reserved (invalid)
 014E C3 9F 25                   jp L259F                    ; DOS_OPEN_DRIVE
 0151 C3 E4 20                   jp L20E4                    ; DOS_SET_MESSAGE
 0154 C3 99 25                   jp L2599                    ; Reserved (invalid)
@@ -221,12 +228,12 @@ Total Instructions: 12028
 0196 C3 9D 25                   jp L259D                    ; DD_L_DPB
 0199 C3 9D 25                   jp L259D                    ; DD_L_SEEK
 019C C3 9D 25                   jp L259D                    ; DD_L_READ
-019F C3 52 00                   jp L0052                    ; IDE_PATH
-01A2 C3 52 00                   jp L0052                    ; IDE_CAPACITY
+019F C3 52 00                   jp IdeDepr                  ; IDE_PATH
+01A2 C3 52 00                   jp IdeDepr                  ; IDE_CAPACITY
 01A5 C3 8A 1F                   jp L1F8A                    ; IDE_GET_LFN
-01A8 C3 52 00                   jp L0052                    ; IDE_BROWSER
-01AB C3 52 00                   jp L0052                    ; IDE_MOUNT
-01AE C3 52 00                   jp L0052                    ; IDE_FILESIZE
+01A8 C3 52 00                   jp IdeDepr                  ; IDE_BROWSER
+01AB C3 52 00                   jp IdeDepr                  ; IDE_MOUNT
+01AE C3 52 00                   jp IdeDepr                  ; IDE_FILESIZE
 01B1 C3 27 05      L01B1:       jp L0527                    ; IDE_BANK
 01B4 C3 E0 01                   jp L01E0                    ; IDE_BASIC
 01B7 C3 0B 02                   jp L020B                    ; IDE_WINDOW_STRING
@@ -241,7 +248,10 @@ Total Instructions: 12028
 01D2 C3 75 1A                   jp L1A75                    ; IDE_TOKENISER
 01D5 C3 FD 0F                   jp L0FFD                    ; IDE_OPUS_SAVEDIR
 01D8 C3 80 10                   jp L1080                    ; IDE_OPUS_CHDIR
-01DB CF            L01DB:       rst $08
+;
+; IDE_DRIVE: Get unit handle
+;
+01DB CF            IdeDrv:      rst $08
 01DC 00                         nop
 01DD 03                         inc bc
 01DE 01 C9 79                   ld bc,$79C9
@@ -249,13 +259,23 @@ Total Instructions: 12028
 01E2 00                         nop
 01E3 06 01                      ld b,$01
 01E5 C9                         ret
-01E6 CF            L01E6:       rst $08
+;
+; IDE_PARTITION_FIND: Find named partition
+;
+01E6 CF            IdePrtFind:  rst $08
 01E7 00                         nop
 01E8 09                         add hl,bc
-01E9 01 C9 CF                   ld bc,$CFC9
+01E9 01 C9 
+;
+; IDE_PARTITION_READ: Read IDE partition
+;
+01EB CF            IdePrtRd:    ld bc,$CFC9
 01EC 00                         nop
 01ED 0C                         inc c
 01EE 01 C9 CD                   ld bc,$CDC9
+;
+; DOS_FREE_SPACE: Free space on disk
+;
 01F1 B4                         or h
 01F2 05                         dec b
 01F3 CF                         rst $08
@@ -267,6 +287,9 @@ Total Instructions: 12028
 01FC 00                         nop
 01FD 1B                         dec de
 01FE 01 C9 DD                   ld bc,$DDC9
+;
+; DOS_CATALOG: Catalog disk directory
+;
 0201 6F                         ld l,a
 0202 CF                         rst $08
 0203 00                         nop
@@ -283,6 +306,11 @@ Total Instructions: 12028
 0210 00                         nop
 0211 7E                         ld a,(hl)
 0212 01 C9 CF                   ld bc,$CFC9
+
+;
+; DOS_SET_ATTRIBUTES: Change a file's attributes
+;
+0214 78                         ld a,b
 0215 00                         nop
 0216 4F                         ld c,a
 0217 03                         inc bc
@@ -297,31 +325,60 @@ Total Instructions: 12028
 0222 00                         nop
 0223 84                         add a,h
 0224 01 C9 78                   ld bc,$78C9
+;
+; DOS_REF_HEAD: Point at the header data for this file
+;
 0227 CF                         rst $08
 0228 00                         nop
 0229 3F                         ccf
 022A 01 C9 78                   ld bc,$78C9
+;
+; DOS_BYTE_READ: Read a byte
+;
 022D CF                         rst $08
 022E 00                         nop
 022F 48                         ld c,b
 0230 01 C9 78                   ld bc,$78C9
+;
+; DOS_BYTE_WRITE: Write a byte
+;
 0233 CF                         rst $08
 0234 00                         nop
 0235 4B                         ld c,e
 0236 01 C9 78                   ld bc,$78C9
+
+;
+; DOS_GET_POSITION: Get file pointer for random access
+;
+0238 78                         ld a,b
 0239 CF                         rst $08
 023A 00                         nop
 023B 4E                         ld c,(hl)
 023C 01 C9 78                   ld bc,$78C9
+
+;
+; DOS_SET_POSITION: Set file pointer for random access
+;
+023E 78                         ld a,b
 023F 16 00                      ld d,$00
 0241 CF                         rst $08
 0242 00                         nop
 0243 51                         ld d,c
 0244 01 C9 78                   ld bc,$78C9
+
+;
+; DOS_GET_EOF: Get end of file position for random access
+;
+0246 78                         ld a,b
 0247 CF                         rst $08
 0248 00                         nop
 0249 54                         ld d,h
 024A 01 C9 79                   ld bc,$79C9
+
+;
+; DOS_SET_ACCESS: Change open file's access mode
+;
+024C 78                         ld a,b
 024D E6 F8                      and $F8
 024F 3E 1E                      ld a,$1E
 0251 C0                         ret nz
@@ -330,6 +387,9 @@ Total Instructions: 12028
 0254 00                         nop
 0255 57                         ld d,a
 0256 01 C9 78                   ld bc,$78C9
+;
+; DOS_CLOSE: Close a file
+;
 0259 ED 73 05 F5                ld ($F505),sp
 025D 31 05 F5                   ld sp,$F505
 0260 CF                         rst $08
@@ -339,6 +399,9 @@ Total Instructions: 12028
 0266 05                         dec b
 0267 F5                         push af
 0268 C9                         ret
+;
+; DOS_ABANDON: Abandon a file
+;
 0269 78            L0269:       ld a,b
 026A ED 73 05 F5                ld ($F505),sp
 026E 31 05 F5                   ld sp,$F505
@@ -420,6 +483,9 @@ Total Instructions: 12028
 02D3 B3                         or e
 02D4 78                         ld a,b
 02D5 C9                         ret
+;
+; DOS_WRITE: Write bytes from memory
+;
 02D6 7C            L02D6:       ld a,h
 02D7 E6 C0                      and $C0
 02D9 20 14                      jr nz,L02EF
@@ -476,6 +542,9 @@ Total Instructions: 12028
 031E 19                         add hl,de
 031F D1                         pop de
 0320 18 B4                      jr L02D6
+;
+; DOS_OPEN: Create and/or open a file
+;
 0322 CD AC 03      L0322:       call L03AC
 0325 D0                         ret nc
 0326 7B                         ld a,e
@@ -592,6 +661,9 @@ Total Instructions: 12028
 03CC 00                         nop
 03CD 87                         add a,a
 03CE C9                         ret
+;
+; IDE_DOS_MAP: Map drive to partition
+;
 03CF 57            L03CF:       ld d,a
 03D0 7D                         ld a,l
 03D1 CD B4 05                   call L05B4
@@ -678,6 +750,9 @@ Total Instructions: 12028
 044E 70                         ld (hl),b
 044F 37                         scf
 0450 C9                         ret
+;
+; IDE_DOS_UNMAP: Unmap drive
+;
 0451 7D            L0451:       ld a,l
 0452 CD B4 05                   call L05B4
 0455 F5                         push af
@@ -706,6 +781,9 @@ Total Instructions: 12028
 0473 2B                         dec hl
 0474 77                         ld (hl),a
 0475 C3 FA 04                   jp L04FA
+;
+; IDE_DOS_MAPPING: Get drive mapping
+;
 0478 7D            L0478:       ld a,l
 0479 F5                         push af
 047A C5                         push bc
@@ -823,6 +901,10 @@ Total Instructions: 12028
 0522 06 00                      ld b,$00
 0524 E5                         push hl
 0525 18 08                      jr L052F
+
+;
+; IDE_BANK: Bank switching for IDE operations (deprecated entry)
+;
 0527 47            L0527:       ld b,a
 0528 E5                         push hl
 0529 C5                         push bc
@@ -853,6 +935,10 @@ Total Instructions: 12028
 054C 3C                         inc a
 054D 20 FA                      jr nz,L0549
 054F C9                         ret
+
+;
+; DOS_SET_DRIVE: Set/get default drive
+;
 0550 FE FF         L0550:       cp $FF
 0552 C4 B4 05                   call nz,L05B4
 0555 CF            L0555:       rst $08
@@ -862,6 +948,10 @@ Total Instructions: 12028
 055B 41                         ld b,c
 055C 37                         scf
 055D C9                         ret
+
+;
+; DOS_SET_USER: Set/get default user number
+;
 055E F5            L055E:       push af
 055F 3E FF                      ld a,$FF
 0561 CF                         rst $08
@@ -958,11 +1048,19 @@ Total Instructions: 12028
 05D7 22 52 5B                   ld ($5B52),hl
 05DA 21 DD 04                   ld hl,$04DD
 05DD C3 2A 3F                   jp L3F2A
+
+;
+; DOS_GET_1346: Get memory usage in pages 1, 3, 4, 6
+;
 05E0 CF            L05E0:       rst $08
 05E1 0D                         dec c
 05E2 B6                         or (hl)
 05E3 34                         inc (hl)
 05E4 C9                         ret
+
+;
+; DOS_SET_1346: Re-allocate memory usage in pages 1, 3, 4, 6
+;
 05E5 CF            L05E5:       rst $08
 05E6 0D                         dec c
 05E7 BC                         cp h
@@ -1113,7 +1211,7 @@ Total Instructions: 12028
 06DA C5                         push bc
 06DB 01 00 07                   ld bc,$0700
 06DE 21 90 E0                   ld hl,$E090
-06E1 CD 4A 18                   call L184A
+06E1 CD 4A 18                   call IdeSRead
 06E4 C1                         pop bc
 06E5 30 0D                      jr nc,L06F4
 06E7 21 90 E0                   ld hl,$E090
@@ -1171,7 +1269,10 @@ Total Instructions: 12028
 073B 28 F3                      jr z,L0730
 073D F1                         pop af
 073E 18 BE                      jr L06FE
-0740 F5            L0740:       push af
+;
+; IDE_PARTITION_OPEN: Open a partition
+;
+0740 F5            IdePrtOpen:  push af
 0741 CD 1F 06                   call L061F
 0744 30 05                      jr nc,L074B
 0746 CD 05 06                   call L0605
@@ -1241,7 +1342,10 @@ Total Instructions: 12028
 07CC FB                         ei
 07CD 37                         scf
 07CE C9                         ret
-07CF DD 36 00 00   L07CF:       ld (ix),$00
+;
+; IDE_PARTITION_CLOSE: Close a partition
+;
+07CF DD 36 00 00   IdePrtCls:   ld (ix),$00
 07D3 37                         scf
 07D4 C9                         ret
 07D5 F5            L07D5:       push af
@@ -1306,6 +1410,9 @@ Total Instructions: 12028
 082B 00                         nop
 082C 00                         nop
 082D 00                         nop
+;
+; IDE_SNAPLOAD: Load a snapshot
+;
 082E 54            L082E:       ld d,h
 082F 5D                         ld e,l
 0830 1A            L0830:       ld a,(de)
@@ -2369,6 +2476,10 @@ Total Instructions: 12028
 0FB2 21 68 5B                   ld hl,$5B68
 0FB5 CB 86                      res 0,(hl)
 0FB7 C9                         ret
+
+;
+; IDE_DRIVER: Access the driver API
+;
 0FB8 79            L0FB8:       ld a,c
 0FB9 FE 1A                      cp $1A
 0FBB 3E 15                      ld a,$15
@@ -2406,16 +2517,28 @@ Total Instructions: 12028
 0FEB 60                         ld h,b
 0FEC 28 37                      jr z,L1025
 0FEE C9                         ret
+
+;
+; IDE_MODE: Query NextBASIC display mode info, or change mode
+;
 0FEF CF            L0FEF:       rst $08
 0FF0 00                         nop
 0FF1 F2 00 3E                   jp p,L3E00
 0FF4 3A 3F C9                   ld a,($C93F)
+
+;
+; IDE_UIFIFO: UI FIFO operations (not documented in API)
+;
 0FF7 CF            L0FF7:       rst $08
 0FF8 00                         nop
 0FF9 F5                         push af
 0FFA 00                         nop
 0FFB 3F                         ccf
 0FFC C9                         ret
+
+;
+; IDE_OPUS_SAVEDIR: OPUS save directory (not documented in API)
+;
 0FFD A7            L0FFD:       and a
 0FFE 28 30                      jr z,L1030
 1000 3D                         dec a
@@ -2483,6 +2606,10 @@ Total Instructions: 12028
 107D F1                         pop af
 107E 37                         scf
 107F C9                         ret
+
+;
+; IDE_OPUS_CHDIR: OPUS change directory (not documented in API)
+;
 1080 78            L1080:       ld a,b
 1081 FE 02                      cp $02
 1083 30 8C                      jr nc,L1011
@@ -2520,6 +2647,10 @@ Total Instructions: 12028
 10C0 E1                         pop hl
 10C1 FD 36 00 FF                ld (iy),$FF
 10C5 C9                         ret
+
+;
+; IDE_WINDOW_LINPUT: Line input to current window stream (not fully documented)
+;
 10C6 E5            L10C6:       push hl
 10C7 F5                         push af
 10C8 3A B8 D5                   ld a,($D5B8)
@@ -3376,11 +3507,19 @@ Total Instructions: 12028
 1598 08                         ex af,af'
 1599 ED 91 8E 7A                nextreg $8E,$7A
 159D C9                         ret
+
+;
+; IDE_INTEGER_VAR: Get or set NextBASIC integer variable
+;
 159E DD 2A 51 5C   L159E:       ld ix,($5C51)
 15A2 CD 00 3E                   call L3E00
 15A5 D5                         push de
 15A6 27                         daa
 15A7 C9                         ret
+
+;
+; IDE_RTC: Query the real-time-clock module
+;
 15A8 DD 2A 51 5C   L15A8:       ld ix,($5C51)
 15AC CD 00 3E                   call L3E00
 15AF 2D                         dec l
@@ -3393,12 +3532,18 @@ Total Instructions: 12028
 15B9 3E 3D                      ld a,$3D
 15BB A7                         and a
 15BC C9                         ret
+;
+; IDE_SWAP_POS: Get current block number in swap partition
+;
 15BD CD B2 15      L15BD:       call L15B2
 15C0 D0                         ret nc
 15C1 DD 4E 0C                   ld c,(ix+$0C)
 15C4 DD 46 0D                   ld b,(ix+$0D)
 15C7 37                         scf
 15C8 C9                         ret
+;
+; IDE_SWAP_MOVE: Set current block number in swap partition
+;
 15C9 CD B2 15      L15C9:       call L15B2
 15CC D0                         ret nc
 15CD E5                         push hl
@@ -3440,6 +3585,9 @@ Total Instructions: 12028
 1611 47                         ld b,a
 1612 37                         scf
 1613 C9                         ret
+;
+; IDE_SWAP_IN: Read block from swap partition
+;
 1614 CD E4 15      L1614:       call L15E4
 1617 D0                         ret nc
 1618 C5                         push bc
@@ -3504,12 +3652,15 @@ Total Instructions: 12028
 1686 18 E9                      jr L1671
 1688 E1            L1688:       pop hl
 1689 18 E6                      jr L1671
+;
+; IDE_SWAP_OUT: Write block to swap partition
+;
 168B CD E4 15      L168B:       call L15E4
 168E D0                         ret nc
 168F DD 7E 0B                   ld a,(ix+$0B)
 1692 F5            L1692:       push af
 1693 D5                         push de
-1694 CD 79 18                   call L1879
+1694 CD 79 18                   call IdeSWrt
 1697 D1                         pop de
 1698 30 0C                      jr nc,L16A6
 169A 13                         inc de
@@ -3524,9 +3675,15 @@ Total Instructions: 12028
 16A5 C9                         ret
 16A6 D1            L16A6:       pop de
 16A7 C9                         ret
+;
+; IDE_SWAP_EX: Exchange block with swap partition (deprecated)
+;
 16A8 3E 3A         L16A8:       ld a,$3A
 16AA A7                         and a
 16AB C9                         ret
+;
+; IDE_SWAP_OPEN: Open a swap partition
+;
 16AC CB 7F         L16AC:       bit 7,a
 16AE CB BF                      res 7,a
 16B0 F5                         push af
@@ -3642,6 +3799,9 @@ Total Instructions: 12028
 1773 C1            L1773:       pop bc
 1774 C1                         pop bc
 1775 C9                         ret
+;
+; IDE_SWAP_CLOSE: Close a swap partition
+;
 1776 CD B2 15      L1776:       call L15B2
 1779 D0                         ret nc
 177A CD F4 04                   call L04F4
@@ -3665,6 +3825,9 @@ Total Instructions: 12028
 1798 EB                         ex de,hl
 1799 6F                         ld l,a
 179A C9                         ret
+;
+; IDE_SWAP_RESIZE: Change block size of swap partition
+;
 179B 57            L179B:       ld d,a
 179C CD B2 15                   call L15B2
 179F D0                         ret nc
@@ -3774,7 +3937,10 @@ Total Instructions: 12028
 1846 1B                         dec de
 1847 2B                         dec hl
 1848 18 D9                      jr L1823
-184A 78            L184A:       ld a,b
+;
+; IDE_SECTOR_READ: Low-level sector read
+;
+184A 78            IdeSRead:    ld a,b
 184B CB BF                      res 7,a
 184D C5            L184D:       push bc
 184E D5                         push de
@@ -3802,7 +3968,10 @@ Total Instructions: 12028
 1876 D1                         pop de
 1877 C1                         pop bc
 1878 C9                         ret
-1879 78            L1879:       ld a,b
+;
+; IDE_SECTOR_WRITE: Low-level sector write
+;
+1879 78            IdeSWrt:     ld a,b
 187A CB FF                      set 7,a
 187C 18 CF                      jr L184D
 187E 06 00         L187E:       ld b,$00
@@ -3974,7 +4143,10 @@ Total Instructions: 12028
 19A9 3E 00         L19A9:       ld a,$00
 19AB A7                         and a
 19AC 18 A0         L19AC:       jr L194E
-19AE 01 00 02      L19AE:       ld bc,$0200
+;
+; IDE_INTERFACE: Initialise card interfaces
+;
+19AE 01 00 02      IdeIntf:     ld bc,$0200
 19B1 3E 02         L19B1:       ld a,$02
 19B3 90                         sub b
 19B4 21 90 E0                   ld hl,$E090
@@ -4092,9 +4264,16 @@ Total Instructions: 12028
 1A6D C8                         ret z
 1A6E A7                         and a
 1A6F C9                         ret
-1A70 11 09 01      L1A70:       ld de,$0109
+;
+; IDE_VERSION: Get IDEDOS version number
+;
+1A70 11 09 01      IdeVer:      ld de,$0109
 1A73 37                         scf
 1A74 C9                         ret
+
+;
+; IDE_TOKENISER: Convert BASIC between plain text & tokenised forms
+;
 1A75 FE 01         L1A75:       cp $01
 1A77 28 72                      jr z,L1AEB
 1A79 A7                         and a
@@ -4154,7 +4333,12 @@ Total Instructions: 12028
 1ADB CF                         rst $08
 1ADC 00                         nop
 1ADD 67                         ld h,a
-1ADE 31 37 C9                   ld sp,$C937
+1ADE 31                         .defb. $31
+;
+; IDE_INIT: Initialise IDEDOS
+;
+1ADF 37            IdeInit:     scf
+1AE0 C9                         ret
 1AE1 D8            L1AE1:       ret c
 1AE2 FE 1D                      cp $1D
 1AE4 C8                         ret z
@@ -4782,6 +4966,10 @@ Total Instructions: 12028
 1F85 80                         add a,b
 1F86 00                         nop
 1F87 01 00 00                   ld bc,$0000
+
+;
+; IDE_GET_LFN: Get long filename
+;
 1F8A 4F            L1F8A:       ld c,a
 1F8B DD 21 6C E4                ld ix,$E46C
 1F8F 06 14                      ld b,$14
@@ -5055,6 +5243,10 @@ Total Instructions: 12028
 20E1 6D                         ld l,l
 20E2 0D                         dec c
 20E3 FF                         rst $38
+
+;
+; DOS_SET_MESSAGE: Enable/disable error messages
+;
 20E4 E6 DF         L20E4:       and $DF
 20E6 D6 41                      sub $41
 20E8 3F                         ccf
@@ -5150,7 +5342,7 @@ Total Instructions: 12028
 2181 F1                         pop af
 2182 F5                         push af
 2183 C5                         push bc
-2184 CD 40 07                   call L0740
+2184 CD 40 07                   call IdePrtOpen
 2187 C1                         pop bc
 2188 30 E1                      jr nc,L216B
 218A 21 32 F7                   ld hl,$F732
@@ -5689,7 +5881,13 @@ Total Instructions: 12028
 2525 2E 96                      ld l,$96
 2527 2E 96                      ld l,$96
 2529 2E 37                      ld l,$37
-252B C9                         ret
+;
+; DOS_INITIALISE: Initialise +3DOS
+;
+252A C9            ret
+;
+; DOS_VERSION: Get +3DOS issue and version numbers
+;
 252C AF            L252C:       xor a
 252D 06 01                      ld b,$01
 252F 90                         sub b
@@ -5700,6 +5898,10 @@ Total Instructions: 12028
 2537 21 69 00                   ld hl,$0069
 253A 37                         scf
 253B C9                         ret
+
+;
+; DOS_BOOT: Boot an operating system or other program
+;
 253C 3E 41         L253C:       ld a,$41
 253E 06 07                      ld b,$07
 2540 21 90 E0                   ld hl,$E090
@@ -5747,11 +5949,30 @@ Total Instructions: 12028
 2591 C3 FB FD                   jp LFDFB
 2594 ED 79                      out (c),a
 2596 C3 10 FE                   jp LFE10
+
+;
+; DOS_RESERVED: Reserved (invalid)
+;
 2599 3E 3A         L2599:       ld a,$3A
 259B A7                         and a
 259C C9                         ret
+
+;
+; DD_INTERFACE: Is the floppy disk driver interface present?
+;
 259D 37            L259D:       scf
 259E C9                         ret
+
+;
+; DD_INIT: Initialise disk driver
+; DD_SETUP: Specify drive parameters
+; DD_SET_RETRY: Set try/retry count
+;
+; (All three functions share the same implementation)
+
+;
+; DOS_OPEN_DRIVE: Open a drive as a single file
+;
 259F 21 00 00      L259F:       ld hl,$0000
 25A2 C9                         ret
 25A3 DD 7E 19      L25A3:       ld a,(ix+$19)
@@ -5818,6 +6039,10 @@ Total Instructions: 12028
 2616 B1                         or c
 2617 4F                         ld c,a
 2618 C9                         ret
+
+;
+; DD_SET_DRIVE: Set drive (not documented in API)
+;
 2619 B7            L2619:       or a
 261A 20 03                      jr nz,L261F
 261C 21 00 00                   ld hl,$0000
@@ -5825,6 +6050,10 @@ Total Instructions: 12028
 2623 22 19 E4                   ld ($E419),hl
 2626 EB                         ex de,hl
 2627 C9                         ret
+
+;
+; DD_ASK_1: Is unit 1 (external drive) present?
+;
 2628 E5            L2628:       push hl
 2629 C5                         push bc
 262A 7E                         ld a,(hl)
@@ -5863,6 +6092,10 @@ Total Instructions: 12028
 2664 DD 36 19 60                ld (ix+$19),$60
 2668 C1                         pop bc
 2669 E1                         pop hl
+
+;
+; DD_DRIVE_STATUS: Fetch drive status
+;
 266A C5            L266A:       push bc
 266B E5                         push hl
 266C EB                         ex de,hl
@@ -6030,6 +6263,10 @@ Total Instructions: 12028
 2773 CB 1D                      rr l
 2775 10 FA                      djnz L2771
 2777 C9                         ret
+
+;
+; DD_READ_TRACK: Read a track (deprecated)
+;
 2778 79            L2778:       ld a,c
 2779 E6 01                      and $01
 277B 4F                         ld c,a
@@ -6040,6 +6277,10 @@ Total Instructions: 12028
 2786 B1                         or c
 2787 37                         scf
 2788 C9                         ret
+
+;
+; DD_READ_SECTOR: Read a sector
+;
 2789 CD A3 25      L2789:       call L25A3
 278C D5                         push de
 278D C5                         push bc
@@ -6055,6 +6296,10 @@ Total Instructions: 12028
 279B C8                         ret z
 279C AF                         xor a
 279D C9                         ret
+
+;
+; DD_ENCODE: Set intercept routine for copy protection
+;
 279E CF            L279E:       rst $08
 279F 0C                         inc c
 27A0 CC 30 C9                   call z,LC930
@@ -6131,6 +6376,9 @@ Total Instructions: 12028
 280B D9                         exx
 280C FD CB 01 FE                set 7,(iy+$01)
 2810 DD E9                      jp (ix)
+;
+; DOS_DELETE: Delete a file
+;
 2812 E5            L2812:       push hl
 2813 CD 1D 02                   call L021D
 2816 E1                         pop hl
@@ -6140,6 +6388,9 @@ Total Instructions: 12028
 281E DC 1D 02                   call c,L021D
 2821 37                         scf
 2822 C9                         ret
+;
+; DOS_RENAME: Rename a file
+;
 2823 E5            L2823:       push hl
 2824 D5                         push de
 2825 11 00 F7                   ld de,$F700
