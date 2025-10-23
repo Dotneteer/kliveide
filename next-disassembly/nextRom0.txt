@@ -1,10 +1,10 @@
-ZX Spectrum Next ROM Disassembly (First 16KB)
-=======================================================================================================================
-File: enNextZX.rom
-Address Range: $0000 - $3FFF (0 - 16383)
-Total Instructions: 9815
-=======================================================================================================================
-
+; ZX Spectrum Next ROM Disassembly (First 16KB)
+; =======================================================================================================================
+; File: enNextZX.rom
+; Address Range: $0000 - $3FFF (0 - 16383)<
+; Total Instructions: 9815
+;=======================================================================================================================
+;
 0000 F3                         di                         ; Disable interrupts during the cold start
 0001 C3 EF 00                   jp ColdStart               ; Continue with the cold start boot
 0004 45 44 08 02                .defb $45, $44, $08, $02   ; "E", "D", 08, 02
@@ -15,19 +15,19 @@ Total Instructions: 9815
 000B 2A 2E 2A FF                .defb $2A, $2E, $2A, $FF.  ; "*", ".", "*", copyright
 000F 00                         .defb $00                  ; 00
 ; 
-; RST $10:
+; RST $10: Calls the RST $10 routine in ROM3
 ;
 0010 EF                         rst $28
-0011 10 00                      djnz L0013
+0011 10 00                      .defw $0010;
 0013 C9            L0013:       ret
 0014 C3 EF 00                   jp ColdStart
-0017 00   
+0017 00                         .defb $00
 ;
 ; RST $18:
 ;                      nop
 0018 C3 80 3E                   jp Rom1Call
-001B 3C 44 49 52                .defb $3C, $44, $49, $52   ; <DIR
-001F BE                         .defb $BE
+001B 3C 44 49 52                .defb $3C, $44, $49, $52   ; Filler bytes: "<DIR"
+001F BE                         .defb $BE                  ; $BE
 ;
 ; RST $20: Call ROM2 routine. The address to call is specified in the stack.
 ;
@@ -35,11 +35,11 @@ Total Instructions: 9815
 0023 14 00 04 98                .defb $14, $00, $04, $98   ; 
 0027 00                         .defb $00
 ;
-; RST $28:
+; RST $28: Call ROM3 routine. The address to call is specified in the stack.
 ;
 0028 ED 43 54 5B                ld ($5B54),bc              ; Save the value of BC temporarily
 002C E3                         ex (sp),hl                 ; Move the return address to HL
-002D C3 80 00                   jp L0080
+002D C3 80 00                   jp Rom3Cont
 ;
 ; RST $30
 ;
@@ -50,119 +50,169 @@ Total Instructions: 9815
 ;
 ; RST $38: IRQ handler
 ;
-0038 F5                         push af
-0039 E5                         push hl
-003A 26 00                      ld h,$00
-003C 3E 80                      ld a,$80
-003E C3 46 00                   jp L0046
-0041 3C                         inc a
-0042 52                         ld d,d
-0043 55                         ld d,l
-0044 4E                         ld c,(hl)
-0045 BE                         cp (hl)
-0046 D3 E3         L0046:       out ($E3),a
-0048 05                         dec b
-0049 1A                         ld a,(de)
-004A 17                         rla
-004B FF                         rst $38
-004C 07                         rlca
-004D 87                         add a,a
-004E 00                         nop
-004F 00                         nop
-0050 00                         nop
-0051 00                         nop
-0052 00                         nop
-0053 00                         nop
-0054 00                         nop
-0055 00                         nop
-0056 00                         nop
-0057 00                         nop
-0058 00                         nop
-0059 00                         nop
-005A 00                         nop
-005B 00                         nop
-005C 00                         nop
-005D 00                         nop
-005E 00                         nop
-005F 00                         nop
-0060 E1                         pop hl
+0038 F5            IRQ:         push af
+0039 E5                         push hl                    ; Save used registers (AF, HL)
+003A 26 00                      ld h,$00                   ; DivMMC value at return
+003C 3E 80                      ld a,$80                   ; DivMMC value at start
+003E C3 46 00                   jp `Irq1
+;
+; Unused filler bytes
+;
+0041 3C 52 55 4E                .defb $3C, $52, $55, $4E   ; Fillers bytes "<RUN"
+0045 BE                         .defb $BE
+; Continuation of IRQ handler
+;
+0046 D3 E3         `Irq1:       out ($E3),a                ; Turns on DivMMC ROM and RAM page 0
+;
+; Unused filler bytes
+;
+0048 05 1A 17 FF                .defb $05, $1a, $17, $ff
+004C 07 87 00 00                .defb $07, $87, $00, $00
+0050 00 00 00 00                .defb $00, $00, $00, $00
+0054 00 00 00 00                .defb $00, $00, $00, $00
+0058 00 00 00 00                .defb $00, $00, $00, $00
+005C 00 00 00 00                .defb $00, $00, $00, $00
+;
+; With DivMMC ROM turned off, this will be the address
+;
+0060 E1            `Irq2:       pop hl                     ; Restore used registers
 0061 F1                         pop af
-0062 FB                         ei
-0063 C9                         ret
-0064 00                         nop
-0065 00                         nop
-0066 ED 45                      retn
-0068 ED 43 54 5B   L0068:       ld ($5B54),bc
-006C E3                         ex (sp),hl
+0062 FB                         ei                         ; Enable the IRQ again
+0063 C9                         ret                        ; Done
+;
+; Filler bytes
+;
+0064 00 00                      .defb $00, $00
+;
+; NMI routine
+;
+0066 ED 45         NMI:         retn                       ; ROM1 does not do anything with NMI
+;
+;
+;
+0068 ED 43 54 5B   L0068:       ld ($5B54),bc              ; Save the value of BC temporarily
+006C E3                         ex (sp),hl                 ; HL := Return address
 006D 4E                         ld c,(hl)
 006E 23                         inc hl
-006F 46                         ld b,(hl)
-0070 23                         inc hl
-0071 E3                         ex (sp),hl
-0072 ED 8A 00 7B   L0072:       push $007B
-0076 C5                         push bc
-0077 ED 4B 54 5B                ld bc,($5B54)
-007B ED 91 8C 80                nextreg $8C,$80
-007F C9                         ret
-0080 4E            L0080:       ld c,(hl)
+006F 46                         ld b,(hl)                  ; Read the 16-bit value from the stack into BC
+0070 23                         inc hl                     ; Set the return address
+0071 E3                         ex (sp),hl                 ; to the next one
+0072 ED 8A 00 7B   L0072:       push $007B                 ; Use the $007B address of the alternate ROM to return
+0076 C5                         push bc                    ; Execute routine addressed with BC in the alternate ROM
+0077 ED 4B 54 5B                ld bc,($5B54)              ; Restore the original value of BC
+007B ED 91 8C 80                nextreg $8C,$80            ; Enable AltROM (for reads)
+007F C9                         ret    
+;
+; 
+;                 
+0080 4E            Rom3Cont:    ld c,(hl)                  ; When entering, HL is the return addrss of the caller
 0081 23                         inc hl
-0082 46                         ld b,(hl)
-0083 23                         inc hl
-0084 E3                         ex (sp),hl
-0085 ED 8A 5B 4D   L0085:       push $5B4D
-0089 C5                         push bc
-008A ED 4B 54 5B                ld bc,($5B54)
-008E C3 48 5B                   jp L5B48
-0091 F5                         push af
-0092 C5                         push bc
-0093 01 FD 7F                   ld bc,$7FFD
-0096 3A 5C 5B                   ld a,($5B5C)
-0099 EE 10                      xor $10
-009B F3                         di
-009C 32 5C 5B                   ld ($5B5C),a
-009F ED 79                      out (c),a
-00A1 01 FD 1F                   ld bc,$1FFD
-00A4 3A 67 5B                   ld a,($5B67)
-00A7 EE 04                      xor $04
-00A9 32 67 5B                   ld ($5B67),a
-00AC ED 79                      out (c),a
-00AE FB                         ei
-00AF C1                         pop bc
+0082 46                         ld b,(hl)                  ; Read the 16-bit value from the stack into BC 
+0083 23                         inc hl                     ; Set the return address
+0084 E3                         ex (sp),hl                 ; to the next one
+0085 ED 8A 5B 4D   L0085:       push $5B4D                 ; Return to the RAM routine that switches back ROM0
+0089 C5                         push bc                    ; Push the original return address to the stack
+008A ED 4B 54 5B                ld bc,($5B54)              ; Restore the original value of BC
+008E C3 48 5B                   jp L5B48                   ; Jump to the RAM routine that turns on ROM3
+;
+; Pager subroutines
+; The CopyPages subroutine moves these routines to $5B00-$5B51
+;
+; PagerStart: ZX Spectrum +2/+3 type paging flips ROMs:
+; ROM0 -> ROM3
+; ROM1 -> ROM2
+; ROM2 -> ROM1
+; ROM3 -> ROM0
+;
+; Address in RAM: $5B00
+;
+0091 F5            PagerStart:  push af                
+0092 C5                         push bc                    ; Save used registers (AF, BC)
+0093 01 FD 7F                   ld bc,$7FFD                ; ZX Spectrum 128 port
+0096 3A 5C 5B                   ld a,($5B5C)               ; Get the last value written to $7FFD
+0099 EE 10                      xor $10                    ; Flip ROM bit low
+009B F3                         di                         ; No interrupt while paging
+009C 32 5C 5B                   ld ($5B5C),a               ; Store the last value written back
+009F ED 79                      out (c),a                  ; Switch ROM bit high
+00A1 01 FD 1F      RomHSw:      ld bc,$1FFD                ; ZX Spectrum +2/+3 port
+00A4 3A 67 5B                   ld a,($5B67)               ; Get the last value written to $1FFD
+00A7 EE 04                      xor $04                    ; Fip ROM bit high
+00A9 32 67 5B                   ld ($5B67),a               ; Store the last value written back         
+00AC ED 79                      out (c),a                  ; Switch ROM bit low
+00AE FB                         ei                         ; Enable interrupt again
+00AF C1                         pop bc                     ; Restore used registers
 00B0 F1                         pop af
-00B1 C9                         ret
-00B2 CD 00 5B                   call L5B00
-00B5 E5                         push hl
-00B6 2A 5A 5B                   ld hl,($5B5A)
-00B9 E3                         ex (sp),hl
-00BA C9                         ret
-00BB E5                         push hl
-00BC 21 34 5B                   ld hl,$5B34
-00BF E3                         ex (sp),hl
-00C0 F5                         push af
-00C1 C5                         push bc
-00C2 C3 10 5B                   jp L5B10
-00C5 E5                         push hl
-00C6 2A 5A 5B                   ld hl,($5B5A)
-00C9 E3                         ex (sp),hl
-00CA C9                         ret
-00CB ED 8A 0A B0                push $0AB0
-00CF ED 91 8E 01                nextreg $8E,$01
-00D3 C9                         ret
-00D4 ED 91 8E 02                nextreg $8E,$02
+00B1 C9                         ret                        ; Done
+;
+; This subroutine ($5B21) switches the current ROM and returns th the 
+; address stored in $5B5A. Set's the contents of HL as the next return address.
+;
+; Address in RAM: $5B21
+;
+00B2 CD 00 5B                   call L5B00                 ; Calls PagerStart in RAM
+00B5 E5                         push hl                    ; Save HL on stack
+00B6 2A 5A 5B                   ld hl,($5B5A)              ; Load return address from system variable
+00B9 E3                         ex (sp),hl                 ; Swap HL with top of stack
+00BA C9                         ret                        ; Return to the address now in HL
+;
+; Address in RAM: $5B2A
+;
+00BB E5                         push hl                    ; Save HL on stack
+00BC 21 34 5B                   ld hl,$5B34                ; Set return address to $5B34 (RetFromSw)
+00BF E3                         ex (sp),hl                 ; Swap HL with top of stack
+00C0 F5                         push af                     
+00C1 C5                         push bc                    ; Save used registers (AF, BC)
+00C2 C3 10 5B                   jp L5B10                   ; Jump to paging routine at $5B10 (RomHSw)
+;
+; Returns from the swith
+; Address in RAM: $5B34
+;
+00C5 E5            RetFromSw:   push hl                    ; Save HL on stack
+00C6 2A 5A 5B                   ld hl,($5B5A)              ; Load return address from system variable
+00C9 E3                         ex (sp),hl                 ; Swap HL with top of stack
+00CA C9                         ret                        ; Return to the address now in HL
+;
+; This subroutine jumps to $0AB0 in ROM1. It is used widely in ROM1
+; Address in RAM: $5B3A
+;
+00CB ED 8A 0A B0                push $0AB0                 ; Push return address $0AB0 onto stack
+00CF ED 91 8E 01                nextreg $8E,$01            ; Set Next register $8E to $01 (Transparency fallback color)
+00D3 C9                         ret                        ; Done
+;
+; This subroutine turns to ROM2 and jumps to the top stack address
+; Address in RAM: $5B43
+;
+00D4 ED 91 8E 02                nextreg $8E,$02            ; Set Next register $8E to $02 (Transparency fallback color)
 00D8 C9                         ret
+;
+; This subroutine turns to ROM3 and jumps to the top stack address.
+; It is used widely in ROM3.
+; Address in RAM: $5B48
+;
 00D9 ED 91 8E 03                nextreg $8E,$03
 00DD C9                         ret
+;
+; This subroutine turns to ROM0 and jumps to the top stack address.
+; Address in RAM: $5B4D
+;
 00DE ED 91 8E 00                nextreg $8E,$00
 00E2 C9                         ret
-00E3 21 91 00      L00E3:       ld hl,$0091
+;
+; Copies the pager routines to $5B00-$5B51
+;
+00E3 21 91 00      CopyPager:   ld hl,$0091
 00E6 11 00 5B                   ld de,$5B00
-00E9 01 52 00                   ld bc,$0052
+;
+; Moves $52 bytes
+;
+00E9 01 52 00                   ld bc,CopyPager - PagerStart
 00EC ED B0                      ldir
 00EE C9                         ret
-; ---------------------------------------------------------------------------------------------------------------------
-; This is the cold start routine
 ;
 ; ---------------------------------------------------------------------------------------------------------------------
+; This is the cold start routine
+; ---------------------------------------------------------------------------------------------------------------------
+;
 00EF ED 91 07 03   ColdStart:   nextreg $07,$03            ; Set CPU speed to 28 MHz (bits 1:0 = 11)
 00F3 ED 91 03 B0                nextreg $03,$B0            ; Set machine type: enable changes (bit 7=1), +2A/+2B/+3 timing (bits 6:4=011), ZX 48K (bits 2:0=000)
 00F7 ED 91 C0 08                nextreg $C0,$08            ; Interrupt control: stackless NMI enabled (bit 3=1), pulse mode (bit 0=0)
@@ -380,16 +430,16 @@ Total Instructions: 9815
 01D5 DF 1E                      .defw $1EDF                ;
 01D7 ED 91 8E 08                nextreg $8e,$08            ; select current bank for slot 3 to 0
 01DB ED 56                      im 1                       ; set interrupt mode 1 (prepare interrupt state)
-01DD CD E3 00                   call L00E3                 ; call routine at L00E3 (cleanup/continue)
+01DD CD E3 00                   call CopyPager             ; call routine at CopyPager (cleanup/continue)
 01E0 21 FF FF                   ld hl,$FFFF                ; HL := $FFFF (post-call sentinel)
-01E3 22 B4 5C                   ld ($5CB4),hl
-01E6 11 AF 3E                   ld de,$3EAF
-01E9 01 A8 00                   ld bc,$00A8
+01E3 22 B4 5C                   ld ($5CB4),hl              ; Set the VARS sytem variable to $ffff
+01E6 11 AF 3E                   ld de,$3EAF                ; Sets the top of the stack ($FF58-$FFFF)
+01E9 01 A8 00                   ld bc,$00A8                ; to the $A8 bytes starting at $3EA8 (in ROM3)
 01EC EB                         ex de,hl
-01ED EF                         rst $28
-01EE 61                         ld h,c
-01EF 16 EB                      ld d,$EB
-01F1 23                         inc hl
+01ED EF                         rst $28                    ; by calling $1661 in ROM3
+01EE 61 16                      .defw $1661
+01F0 EB                         ex de,hl                   ;
+01F1 23                         inc hl                     ; 
 01F2 22 7B 5C                   ld ($5C7B),hl
 01F5 2B                         dec hl
 01F6 22 B2 5C                   ld ($5CB2),hl
@@ -424,7 +474,7 @@ Total Instructions: 9815
 0240 CD DE 12                   call L12DE
 0243 F6 10                      or $10
 0245 ED 79                      out (c),a
-0247 CD E3 00                   call L00E3
+0247 CD E3 00                   call CopyPager
 024A 62                         ld h,d
 024B 6B                         ld l,e
 024C 71                         ld (hl),c
@@ -9734,7 +9784,8 @@ Total Instructions: 9815
 3EAB E5                         push hl
 3EAC D9                         exx
 3EAD EF                         rst $28
-3EAE 18 00                      jr L3EB0
+3EAE 18 
+3EAF 00                      jr L3EB0
 3EB0 EF            L3EB0:       rst $28
 3EB1 BC                         cp h
 3EB2 28 D9                      jr z,L3E8D

@@ -10160,169 +10160,54 @@ Total Instructions: 10592
 3E05 40                         ld b,b
 3E06 3C                         inc a
 3E07 00                         nop
-3E08 00                         nop
-3E09 3C                         inc a
-3E0A 42                         ld b,d
-3E0B 42                         ld b,d
-3E0C 7E                         ld a,(hl)
-3E0D 42                         ld b,d
-3E0E 42                         ld b,d
-3E0F 00                         nop
-3E10 00                         nop
-3E11 7C                         ld a,h
-3E12 42                         ld b,d
-3E13 7C                         ld a,h
-3E14 42                         ld b,d
-3E15 42                         ld b,d
-3E16 7C                         ld a,h
-3E17 00                         nop
-3E18 00                         nop
-3E19 3C                         inc a
-3E1A 42                         ld b,d
-3E1B 40                         ld b,b
-3E1C 40                         ld b,b
-3E1D 42                         ld b,d
-3E1E 3C                         inc a
-3E1F 00                         nop
-3E20 00                         nop
-3E21 78                         ld a,b
-3E22 44                         ld b,h
-3E23 42                         ld b,d
-3E24 42                         ld b,d
-3E25 44                         ld b,h
-3E26 78                         ld a,b
-3E27 00                         nop
-3E28 00                         nop
-3E29 7E                         ld a,(hl)
-3E2A 40                         ld b,b
-3E2B 7C                         ld a,h
-3E2C 40                         ld b,b
-3E2D 40                         ld b,b
-3E2E 7E                         ld a,(hl)
-3E2F 00                         nop
-3E30 00                         nop
-3E31 7E                         ld a,(hl)
-3E32 40                         ld b,b
-3E33 7C                         ld a,h
-3E34 40                         ld b,b
-3E35 40                         ld b,b
-3E36 40                         ld b,b
-3E37 00                         nop
-3E38 00                         nop
-3E39 3C                         inc a
-3E3A 42                         ld b,d
-3E3B 40                         ld b,b
-3E3C 4E                         ld c,(hl)
-3E3D 42                         ld b,d
-3E3E 3C                         inc a
-3E3F 00                         nop
-3E40 00                         nop
-3E41 42                         ld b,d
-3E42 42                         ld b,d
-3E43 7E                         ld a,(hl)
-3E44 42                         ld b,d
-3E45 42                         ld b,d
-3E46 42                         ld b,d
-3E47 00                         nop
-3E48 00                         nop
-3E49 3E 08                      ld a,$08
-3E4B 08                         ex af,af'
-3E4C 08                         ex af,af'
-3E4D 08                         ex af,af'
-3E4E 3E 00                      ld a,$00
-3E50 00                         nop
-3E51 02                         ld (bc),a
-3E52 02                         ld (bc),a
-3E53 02                         ld (bc),a
-3E54 42                         ld b,d
-3E55 42                         ld b,d
-3E56 3C                         inc a
-3E57 00                         nop
-3E58 00                         nop
-3E59 44                         ld b,h
-3E5A 48                         ld c,b
-3E5B 70                         ld (hl),b
-3E5C 48                         ld c,b
-3E5D 44                         ld b,h
-3E5E 42                         ld b,d
-3E5F 00                         nop
-3E60 00                         nop
-3E61 40                         ld b,b
-3E62 40                         ld b,b
-3E63 40                         ld b,b
-3E64 40                         ld b,b
-3E65 40                         ld b,b
-3E66 7E                         ld a,(hl)
-3E67 00                         nop
-3E68 00                         nop
-3E69 42                         ld b,d
-3E6A 66                         ld h,(hl)
-3E6B 5A                         ld e,d
-3E6C 42                         ld b,d
-3E6D 42                         ld b,d
-3E6E 42                         ld b,d
-3E6F 00                         nop
-3E70 00                         nop
-3E71 42                         ld b,d
-3E72 62                         ld h,d
-3E73 52                         ld d,d
-3E74 4A                         ld c,d
-3E75 46                         ld b,(hl)
-3E76 42                         ld b,d
-3E77 00                         nop
-3E78 00                         nop
-3E79 3C                         inc a
-3E7A 42                         ld b,d
-3E7B 42                         ld b,d
-3E7C 42                         ld b,d
-3E7D 42                         ld b,d
-3E7E 3C                         inc a
-3E7F 00                         nop
-3E80 00                         nop
-3E81 7C                         ld a,h
-3E82 42                         ld b,d
-3E83 42                         ld b,d
-3E84 7C                         ld a,h
-3E85 40                         ld b,b
-3E86 40                         ld b,b
-3E87 00                         nop
-3E88 00                         nop
-3E89 3C                         inc a
-3E8A 42                         ld b,d
-3E8B 42                         ld b,d
-3E8C 52                         ld d,d
-3E8D 4A                         ld c,d
-3E8E 3C                         inc a
-3E8F 00                         nop
-3E90 00                         nop
-3E91 7C                         ld a,h
-3E92 42                         ld b,d
-3E93 42                         ld b,d
-3E94 7C                         ld a,h
-3E95 44                         ld b,h
-3E96 42                         ld b,d
-3E97 00                         nop
-3E98 00                         nop
-3E99 3C                         inc a
-3E9A 40                         ld b,b
-3E9B 3C                         inc a
-3E9C 02                         ld (bc),a
-3E9D 42                         ld b,d
-3E9E 3C                         inc a
-3E9F 00                         nop
-3EA0 00                         nop
-3EA1 FE 10                      cp $10
-3EA3 10 10                      djnz L3EB5
-3EA5 10 10                      djnz L3EB7
-3EA7 00                         nop
-3EA8 00                         nop
-3EA9 42                         ld b,d
-3EAA 42                         ld b,d
-3EAB 42                         ld b,d
-3EAC 42                         ld b,d
-3EAD 42                         ld b,d
-3EAE 3C                         inc a
-3EAF 00                         nop
+; 
+; User defined characters
+;
+3E08 00 3C 42 42                .defb $00, $3C, $42, $42   ; "A"             
+3E0C 7E 42 42 00                .defb $7E, $42, $42, $00
+3E10 00 7C 42 7C                .defb $00, $7C, $42, $7C   ; "B"
+3E14 42 42 7C 00                .defb $42, $42, $7C, $00
+3E18 00 3C 42 40                .defb $00, $3C, $42, $40
+3E1C 40 42 3C 00                .defb $40, $42, $3C, $00
+3E20 00 78 44 42                .defb $00, $78, $44, $42
+3E24 42 44 78 00                .defb $42, $44, $78, $00
+3E28 00 7E 40 7C                .defb $00, $7E, $40, $7C
+3E2C 40 40 7E 00                .defb $40, $40, $7E, $00
+3E30 00 7E 40 7C                .defb $00, $7E, $40, $7C
+3E34 40 40 40 00                .defb $40, $40, $40, $00
+3E38 00 3C 42 40                .defb $00, $3C, $42, $40
+3E3C 4E 42 3C 00                .defb $4E, $42, $3C, $00
+3E40 00 42 42 7E                .defb $00, $42, $42, $7E
+3E44 42 42 42 00                .defb $42, $42, $42, $00
+3E48 00 3E 08 08                .defb $00, $3E, $08, $08
+3E4C 08 08 3E 00                .defb $08, $08, $3E, $00
+3E50 00 02 02 02                .defb $00, $02, $02, $02
+3E54 42 42 3C 00                .defb $42, $42, $3C, $00
+3E58 00 44 48 70                .defb $00, $44, $48, $70
+3E5C 48 44 42 00                .defb $48, $44, $42, $00
+3E60 00 40 40 40                .defb $00, $40, $40, $40
+3E64 40 40 7E 00                .defb $40, $40, $7E, $00
+3E68 00 42 66 5A                .defb $00, $42, $66, $5A
+3E6C 42 42 42 00                .defb $42, $42, $42, $00
+3E70 00 42 62 52                .defb $00, $42, $62, $52
+3E74 4A 46 42 00                .defb $4A, $46, $42, $00
+3E78 00 3C 42 42                .defb $00, $3C, $42, $42
+3E7C 42 42 3C 00                .defb $42, $42, $3C, $00
+3E80 00 7C 42 42                .defb $00, $7C, $42, $42
+3E84 7C 40 40 00                .defb $7C, $40, $40, $00
+3E88 00 3C 42 42                .defb $00, $3C, $42, $42
+3E8C 52 4A 3C 00                .defb $52, $4A, $3C, $00
+3E90 00 7C 42 42                .defb $00, $7C, $42, $42
+3E94 7C 44 42 00                .defb $7C, $44, $42, $00
+3E98 00 3C 40 3C                .defb $00, $3C, $40, $3C
+3E9C 02 42 3C 00                .defb $02, $42, $3C, $00
+3EA0 00 FE 10 10                .defb $00, $FE, $10, $10 
+3EA4 10 10 10 00                .defb $10, $10, $10, $00
+3EA8 00 42 42 42                .defb $00, $42, $42, $42
+3EAC 42 42 3C 00                .defb $42, $42, $3C, $00
+;
+;
+;
 3EB0 00                         nop
 3EB1 42                         ld b,d
 3EB2 42                         ld b,d

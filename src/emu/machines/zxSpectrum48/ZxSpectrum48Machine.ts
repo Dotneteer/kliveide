@@ -2,7 +2,6 @@ import type { SysVar } from "@abstractions/SysVar";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { MachineModel } from "@common/machines/info-types";
 
-import { SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
