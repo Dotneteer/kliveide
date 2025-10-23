@@ -421,7 +421,7 @@
 ;
 01CC 08            TEST_COMP:   ex af,af'                  ; sync AF/AF' before leaving mapping/test section
 01CD 3D                         dec a                      ; decrement A (prepare return value / final index)
-01CE 32 69 5B                   ld ($5B69),a               ; store final A into $5B69 (record last-tested page)
+01CE 32 69 5B                   ld (LBANK),a               ; store final A into LBANK (record last-tested page)
 01D1 31 FF 5B                   ld sp,$5BFF                ; restore stack pointer for next stage
 ;
 ; Continue from here...
@@ -430,7 +430,7 @@
 01D5 DF 1E                      .defw $1EDF                ;
 01D7 ED 91 8E 08                nextreg $8e,$08            ; select current bank for slot 3 to 0
 01DB ED 56                      im 1                       ; set interrupt mode 1 (prepare interrupt state)
-01DD CD E3 00                   call CopyPager             ; call routine at CopyPager (cleanup/continue)
+01DD CD E3 00                   call CopyPager             ; Copy page switching routines to the RAM
 01E0 21 FF FF                   ld hl,$FFFF                ; HL := $FFFF (post-call sentinel)
 01E3 22 B4 5C                   ld ($5CB4),hl              ; Set the VARS sytem variable to $ffff
 01E6 11 AF 3E                   ld de,$3EAF                ; Sets the top of the stack ($FF58-$FFFF)
@@ -438,64 +438,88 @@
 01EC EB                         ex de,hl
 01ED EF                         rst $28                    ; by calling $1661 in ROM3
 01EE 61 16                      .defw $1661
-01F0 EB                         ex de,hl                   ;
-01F1 23                         inc hl                     ; 
-01F2 22 7B 5C                   ld ($5C7B),hl
+01F0 EB                         ex de,hl                   
+01F1 23                         inc hl                      
+01F2 22 7B 5C                   ld (UDG),hl              ; Set the UDG system variable to the beginning of the copied area
 01F5 2B                         dec hl
-01F6 22 B2 5C                   ld ($5CB2),hl
-01F9 06 00                      ld b,$00
-01FB FD 21 3A 5C                ld iy,$5C3A
-01FF 3A 69 5B                   ld a,($5B69)
+01F6 22 B2 5C                   ld ($5CB2),hl              ; Set RAMTOP to the address before UDG
+01F9 06 00                      ld b,$00                   ;
+01FB FD 21 3A 5C                ld iy,$5C3A                ; Now, IY points to the beginning of the sysvars area
+01FF 3A 69 5B                   ld a,(LBANK)               ; Get the index of the last available RAM bank
 0202 4F                         ld c,a
-0203 2A 7B 5C                   ld hl,($5C7B)
-0206 D9                         exx
-0207 ED 91 B8 82                nextreg $B8,$82
-020B ED 91 B9 00                nextreg $B9,$00
-020F ED 91 BA 00                nextreg $BA,$00
-0213 ED 91 BB F2                nextreg $BB,$F2
-0217 ED 91 D8 01                nextreg $D8,$01
-021B 3E 05                      ld a,$05
-021D CD DE 12                   call L12DE
-0220 E6 05                      and $05
-0222 F6 5A                      or $5A
-0224 ED 79                      out (c),a
+0203 2A 7B 5C                   ld hl,(UDG)              ; HL := UDG address
+0206 D9                         exx                        ; Save main registers
+;
+; Configura initial DivMMC settings
+;
+0207 ED 91 B8 82                nextreg $B8,$82            ; Enable DivMMC automap for $38 and $08
+020B ED 91 B9 00                nextreg $B9,$00            ; Allow DivMMC only when ROM3 is present
+020F ED 91 BA 00                nextreg $BA,$00            ; DivMMC mappings are delayed
+0213 ED 91 BB F2                nextreg $BB,$F2            ; Enable $3Dxx automaps, 
+                                                           ; Disable $1FF8-$1FFFF automap
+                                                           ; Enable $056A and $04D7 automap
+0217 ED 91 D8 01                nextreg $D8,$01            ; enable +3 FDC traps on ports $2FFD and $3FFD
+;
+; Init peripheral 1 settings (Reg $05)
+;
+021B 3E 05                      ld a,$05                   
+021D CD DE 12                   call GetNxRegA
+0220 E6 05                      and $05                    ; Keep 50/60Hz mode and scandoubler settings only
+0222 F6 5A                      or $5A                     ; Set Jonstick 1 and 2 to Kempston 1 (port $1F)
+0224 ED 79                      out (c),a                  ; Write out the new port value 
+;
+; Init peripheral 1 settings (Reg $08)
+;
 0226 3E 08                      ld a,$08
-0228 CD DE 12                   call L12DE
-022B F6 4E                      or $4E
-022D ED 79                      out (c),a
+0228 CD DE 12                   call GetNxRegA
+022B F6 4E                      or $4E                     ; Disable RAM and port contention
+                                                           ; Enable 8-bit DACs (A,B,C,D)
+                                                           ; Enable port $FF Timex video mode read
+                                                           ; Enable turbosound
+022D ED 79                      out (c),a                  ; Write out the new port value
+;
+; Init peripheral 2 settings (Reg $06)
+;
 022F 3E 06                      ld a,$06
-0231 CD DE 12                   call L12DE
-0234 E6 44                      and $44
-0236 F6 AB                      or $AB
-0238 ED 79                      out (c),a
-023A E6 FC                      and $FC
-023C ED 79                      out (c),a
+0231 CD DE 12                   call GetNxRegA
+0234 E6 44                      and $44                    ; Keep Diver Beep only and Enable multiface nmi by M1 button flags
+0236 F6 AB                      or $AB                     ; Enable F8 cpu speed hotkey and F5/F6 expansion bus hotkeys
+                                                           ; Enable F3 50/60 Hz hotkey, PS/2 mode, and AY audio chip mode
+0238 ED 79                      out (c),a                  ; Write out the new port value
+023A E6 FC                      and $FC                    ; Set YM audio chip mode
+023C ED 79                      out (c),a                  ; Write out the new port value
+;
+; Init peripheral 2 settings (Reg $0A)
+;
 023E 3E 0A                      ld a,$0A
-0240 CD DE 12                   call L12DE
-0243 F6 10                      or $10
-0245 ED 79                      out (c),a
-0247 CD E3 00                   call CopyPager
-024A 62                         ld h,d
+0240 CD DE 12                   call GetNxRegA
+0243 F6 10                      or $10                     ; Enable divmmc automap
+0245 ED 79                      out (c),a                  ; Write out the new port value
+0247 CD E3 00                   call CopyPager             ; Copy page switching routines to the RAM
+024A 62                         ld h,d                     ; HL := Next address after the page switching routines
 024B 6B                         ld l,e
-024C 71                         ld (hl),c
-024D 13                         inc de
-024E 01 5F 01                   ld bc,$015F
-0251 ED B0                      ldir
-0253 21 FF 5B                   ld hl,$5BFF
-0256 22 6A 5B                   ld ($5B6A),hl
-0259 F9                         ld sp,hl
-025A DF                         rst $18
-025B 71                         ld (hl),c
-025C 34                         inc (hl)
-025D 3E CF                      ld a,$CF
-025F 32 5D 5B                   ld ($5B5D),a
+024C 71                         ld (hl),c                  ; Set $5B52 to 0
+024D 13                         inc de                     ; DE := $5B53
+024E 01 5F 01                   ld bc,$015F                ; BC := 351 bytes
+0251 ED B0                      ldir                       ; Zero the $5B52-$5CB1 area
+0253 21 FF 5B                   ld hl,$5BFF                ; 
+0256 22 6A 5B                   ld (TMPSP),hl              ; Set TMPSP just below the sysvars area
+0259 F9                         ld sp,hl                   ; Set SP to $5BFF
+025A DF                         rst $18                    ; ROM1: $3471
+025B 71 34                      .defw $3471                ; Initializes the stack
+025D 3E CF                      ld a,$CF                   ;
+025F 32 5D 5B                   ld ($5B5D),a               ; 
 0262 21 40 00                   ld hl,$0040
-0265 22 38 5C                   ld ($5C38),hl
-0268 D9                         exx
-0269 79                         ld a,c
-026A 32 69 5B                   ld ($5B69),a
-026D 22 7B 5C                   ld ($5C7B),hl
-0270 C5                         push bc
+0265 22 38 5C                   ld ($5C38),hl              ; Set RASp to $40 (Length of warning buzz)
+0268 D9                         exx                        ; Restore the main registers
+0269 79                         ld a,c                     ; A := last available RAM bank
+;
+; The LDIR at $251 overwrote these variable values
+;
+026A 32 69 5B                   ld (LBANK),a               ; Store it to LBANK
+026D 22 7B 5C                   ld (UDG),hl                ; Store UDG again
+
+0270 C5                         push bc                    ; Save BC (B = 0 at this point)
 0271 CD 29 23                   call L2329
 0274 DF                         rst $18
 0275 B9                         cp c
@@ -1178,7 +1202,7 @@
 0717 CD B5 07                   call L07B5
 071A 06 09                      ld b,$09
 071C CD D1 07                   call L07D1
-071F 3A 69 5B                   ld a,($5B69)
+071F 3A 69 5B                   ld a,(LBANK)
 0722 A7                         and a
 0723 28 1F                      jr z,L0744
 0725 3C                         inc a
@@ -2468,8 +2492,8 @@
 0E50 11 F7 0D      L0E50:       ld de,$0DF7
 0E53 18 03         L0E53:       jr L0E58
 0E55 11 50 D7      L0E55:       ld de,$D750
-0E58 2A 7B 5C      L0E58:       ld hl,($5C7B)
-0E5B ED 53 7B 5C                ld ($5C7B),de
+0E58 2A 7B 5C      L0E58:       ld hl,(UDG)
+0E5B ED 53 7B 5C                ld (UDG),de
 0E5F C9                         ret
 0E60 E1                         pop hl
 0E61 E1                         pop hl
@@ -2727,15 +2751,15 @@
 1017 11 00 37                   ld de,$3700
 101A D5            L101A:       push de
 101B 3E 43                      ld a,$43
-101D CD DE 12                   call L12DE
+101D CD DE 12                   call GetNxRegA
 1020 77                         ld (hl),a
 1021 23                         inc hl
 1022 3E 15                      ld a,$15
-1024 CD DE 12                   call L12DE
+1024 CD DE 12                   call GetNxRegA
 1027 77                         ld (hl),a
 1028 23                         inc hl
 1029 3E 14                      ld a,$14
-102B CD DE 12                   call L12DE
+102B CD DE 12                   call GetNxRegA
 102E 77                         ld (hl),a
 102F 23                         inc hl
 1030 3A 8D 5C                   ld a,($5C8D)
@@ -2769,7 +2793,7 @@
 1060 E6 38                      and $38
 1062 32 62 5B                   ld ($5B62),a
 1065 3E 4A                      ld a,$4A
-1067 CD DE 12                   call L12DE
+1067 CD DE 12                   call GetNxRegA
 106A ED 92 14                   nextreg $14,a
 106D ED 91 15 00                nextreg $15,$00
 1071 37                         scf
@@ -3139,17 +3163,23 @@
 12D1 F5            L12D1:       push af
 12D2 C5                         push bc
 12D3 3E 53                      ld a,$53
-12D5 CD DE 12                   call L12DE
+12D5 CD DE 12                   call GetNxRegA
 12D8 08                         ex af,af'
 12D9 ED 79                      out (c),a
 12DB C1                         pop bc
 12DC F1                         pop af
 12DD C9                         ret
-12DE 01 3B 24      L12DE:       ld bc,$243B
-12E1 ED 79                      out (c),a
-12E3 04                         inc b
-12E4 ED 78                      in a,(c)
-12E6 C9                         ret
+;
+; Read the Next register port value addressed by A
+;
+12DE 01 3B 24      GetNxRegA:   ld bc,$243B                ; Register index port
+12E1 ED 79                      out (c),a                  ; A --> Register index
+12E3 04                         inc b                      ; Register value port
+12E4 ED 78                      in a,(c)                   ; Read register value
+12E6 C9                         ret                        ; Done
+;
+;
+;
 12E7 14                         inc d
 12E8 01 47 20                   ld bc,$2047
 12EB 14                         inc d
@@ -3759,8 +3789,8 @@
 15CD 08            L15CD:       ex af,af'
 15CE F1                         pop af
 15CF 22 52 5B                   ld ($5B52),hl
-15D2 2A 6A 5B                   ld hl,($5B6A)
-15D5 ED 73 6A 5B   L15D5:       ld ($5B6A),sp
+15D2 2A 6A 5B                   ld hl,(TMPSP)
+15D5 ED 73 6A 5B   L15D5:       ld (TMPSP),sp
 15D9 F9                         ld sp,hl
 15DA 2A 52 5B                   ld hl,($5B52)
 15DD F5                         push af
@@ -3769,8 +3799,8 @@
 15E0 08            L15E0:       ex af,af'
 15E1 F1                         pop af
 15E2 22 52 5B                   ld ($5B52),hl
-15E5 2A 6A 5B                   ld hl,($5B6A)
-15E8 ED 73 6A 5B                ld ($5B6A),sp
+15E5 2A 6A 5B                   ld hl,(TMPSP)
+15E8 ED 73 6A 5B                ld (TMPSP),sp
 15EC F9                         ld sp,hl
 15ED 2A 52 5B                   ld hl,($5B52)
 15F0 F5                         push af
@@ -4240,7 +4270,7 @@
 192D D5                         push de
 192E C5                         push bc
 192F 16 54                      ld d,$54
-1931 CD BA 27                   call L27BA
+1931 CD BA 27                   call SetMMU100B
 1934 C1                         pop bc
 1935 D1                         pop de
 1936 E3                         ex (sp),hl
@@ -4249,9 +4279,9 @@
 193A C3 33 16                   jp L1633
 193D 54                         ld d,h
 193E E1                         pop hl
-193F CD BD 27                   call L27BD
+193F CD BD 27                   call SetMMU
 1942 16 56         L1942:       ld d,$56
-1944 C3 BA 27                   jp L27BA
+1944 C3 BA 27                   jp SetMMU100B
 1947 C5            L1947:       push bc
 1948 D5                         push de
 1949 E5                         push hl
@@ -4262,7 +4292,7 @@
 1950 E3                         ex (sp),hl
 1951 F5                         push af
 1952 15                         dec d
-1953 CD BD 27                   call L27BD
+1953 CD BD 27                   call SetMMU
 1956 F1                         pop af
 1957 E1                         pop hl
 1958 D1                         pop de
@@ -4275,7 +4305,7 @@
 195F 20 E6                      jr nz,L1947
 1961 C9                         ret
 1962 16 54         L1962:       ld d,$54
-1964 CD BA 27                   call L27BA
+1964 CD BA 27                   call SetMMU100B
 1967 E5                         push hl
 1968 CD 9B 23                   call L239B
 196B 18 CF                      jr L193C
@@ -4844,7 +4874,7 @@
 1D96 01 6B 1D                   ld bc,$1D6B
 1D99 DA 5B 2B                   jp c,L2B5B
 1D9C DD CB 25 8E                res 1,(ix+$25)
-1DA0 ED 5B 7B 5C                ld de,($5C7B)
+1DA0 ED 5B 7B 5C                ld de,(UDG)
 1DA4 19                         add hl,de
 1DA5 11 80 04                   ld de,$0480
 1DA8 A7                         and a
@@ -4873,7 +4903,7 @@
 1DDB ED B0                      ldir
 1DDD E1                         pop hl
 1DDE 16 54                      ld d,$54
-1DE0 CD BD 27                   call L27BD
+1DE0 CD BD 27                   call SetMMU
 1DE3 21 50 F3                   ld hl,$F350
 1DE6 DD 7E 24      L1DE6:       ld a,(ix+$24)
 1DE9 DD CB 25 66                bit 4,(ix+$25)
@@ -5647,21 +5677,27 @@
 2324 20 08         L2324:       jr nz,L232E
 2326 0D            L2326:       dec c
 2327 38 00                      jr c,L2329
-2329 ED 8A 23 86   L2329:       push $2386
-232D 58                         ld e,b
-232E 16 54         L232E:       ld d,$54
-2330 CD 0A 27                   call L270A
-2333 1D                         dec e
-2334 28 3C                      jr z,L2372
-2336 21 00 A0                   ld hl,$A000
-2339 11 01 A0                   ld de,$A001
-233C 01 51 01                   ld bc,$0151
-233F 75                         ld (hl),l
-2340 ED B0                      ldir
-2342 3A 69 5B                   ld a,($5B69)
-2345 3C                         inc a
-2346 87                         add a,a
-2347 32 50 A0                   ld ($A050),a
+;
+;
+;
+2329 ED 8A 23 86   L2329:       push $2386                  ; Return to $2386
+232D 58                         ld e,b      
+232E 16 54         L232E:       ld d,$54                    ; Use MMU Slot 4 and 5
+2330 CD 0A 27                   call PgIn100B               ; Page in $0b, and $10
+2333 1D                         dec e                       ;
+2334 28 3C                      jr z,L2372                  ; Skip init, if ...
+;
+; Initializes some structure (perhaps, NextOS)
+;
+2336 21 00 A0                   ld hl,$A000                 ;
+2339 11 01 A0                   ld de,$A001                 ;
+233C 01 51 01                   ld bc,$0151                 ;
+233F 75                         ld (hl),l                   ;
+2340 ED B0                      ldir                        ; Fill $A000-$A151 with 0
+2342 3A 69 5B                   ld a,(LBANK)                ;
+2345 3C                         inc a                       ; A := Number of RAM banks
+2346 87                         add a,a                     ; A := Number of pages
+2347 32 50 A0                   ld ($A050),a                ; Store the number of pages
 234A 3E 10                      ld a,$10
 234C 32 51 A0                   ld ($A051),a
 234F 21 FF FF                   ld hl,$FFFF
@@ -5674,11 +5710,10 @@
 2362 22 20 A0                   ld ($A020),hl
 2365 22 48 A0                   ld ($A048),hl
 2368 21 01 00                   ld hl,$0001
-236B E7                         rst $20
-236C BD                         cp l
-236D 01 7B 32                   ld bc,$327B
-2370 58                         ld e,b
-2371 5B                         ld e,e
+236B E7                         rst $20                     ; ROM2: IDE_WINDOW_MENU
+236C BD 01                      .defw $01BD
+235E 7B                         ld a,e
+235F 32 58 5B                   ld ($5B58),a
 2372 21 00 3D      L2372:       ld hl,$3D00
 2375 11 00 BC                   ld de,$BC00
 2378 01 00 03                   ld bc,$0300
@@ -6343,21 +6378,27 @@
 2704 CB 3F                      srl a
 2706 3D                         dec a
 2707 C9                         ret
+;
+;
+;
 2708 16 56         L2708:       ld d,$56
-270A C1            L270A:       pop bc
-270B 21 00 00                   ld hl,$0000
-270E 39                         add hl,sp
-270F 7C                         ld a,h
-2710 FE 5C                      cp $5C
-2712 38 08                      jr c,L271C
-2714 2A 6A 5B                   ld hl,($5B6A)
-2717 ED 73 6A 5B                ld ($5B6A),sp
-271B F9                         ld sp,hl
-271C 32 8E 5B      L271C:       ld ($5B8E),a
-271F C5                         push bc
-2720 CD BA 27                   call L27BA
-2723 22 8A 5B                   ld ($5B8A),hl
-2726 C9                         ret
+;
+; Pages in banks $0B to MMU4, $10 to MMU5. Saves old pages to OMMU45
+;
+270A C1            PgIn100B:    pop bc                      ; Pop the return value into BC
+270B 21 00 00                   ld hl,$0000                 ; 
+270E 39                         add hl,sp                   ; HL := SP, Carry reset
+270F 7C                         ld a,h                      ; A := the MSB of SP
+2710 FE 5C                      cp $5C                      ; 
+2712 38 08                      jr c,L271C                  ; Jump if MSP of SP < $5C (temporary stack)
+2714 2A 6A 5B                   ld hl,(TMPSP)               ; HL := TMPSP
+2717 ED 73 6A 5B                ld (TMPSP),sp               ; Save SP to TMPSP
+271B F9                         ld sp,hl                    ; Use the TMPSP
+271C 32 8E 5B      L271C:       ld ($5B8E),a                ; Store the MSB of SP
+271F C5                         push bc                     ; Store the return value into the stack
+2720 CD BA 27                   call SetMMU100B             ; Set pages $0B for Slot 4, $10 for slot 5
+2723 22 8A 5B                   ld (OMMU45),hl              ; Old Slot4 and 5 pages
+2726 C9                         ret                         ; Done
 2727 1E 80         L2727:       ld e,$80
 2729 18 02                      jr L272D
 272B 1E FF         L272B:       ld e,$FF
@@ -6395,7 +6436,7 @@
 2767 5F            L2767:       ld e,a
 2768 CD 08 27                   call L2708
 276B CD 47 1D                   call L1D47
-276E 2A 8A 5B      L276E:       ld hl,($5B8A)
+276E 2A 8A 5B      L276E:       ld hl,(OMMU45)
 2771 7D                         ld a,l
 2772 ED 92 56                   nextreg $56,a
 2775 7C                         ld a,h
@@ -6403,8 +6444,8 @@
 2779 3A 8E 5B      L2779:       ld a,($5B8E)
 277C FE 5C                      cp $5C
 277E D8                         ret c
-277F 2A 6A 5B                   ld hl,($5B6A)
-2782 ED 73 6A 5B                ld ($5B6A),sp
+277F 2A 6A 5B                   ld hl,(TMPSP)
+2782 ED 73 6A 5B                ld (TMPSP),sp
 2786 F9                         ld sp,hl
 2787 C9                         ret
 2788 78            L2788:       ld a,b
@@ -6435,25 +6476,35 @@
 27B1 A5                         and l
 27B2 0D                         dec c
 27B3 16 56         L27B3:       ld d,$56
-27B5 2A 8A 5B      L27B5:       ld hl,($5B8A)
-27B8 18 03                      jr L27BD
-27BA 21 0B 10      L27BA:       ld hl,$100B
-27BD C5            L27BD:       push bc
-27BE 01 3B 24                   ld bc,$243B
-27C1 ED 51                      out (c),d
-27C3 04                         inc b
-27C4 ED 78                      in a,(c)
-27C6 ED 69                      out (c),l
-27C8 6F                         ld l,a
-27C9 05                         dec b
-27CA 14                         inc d
-27CB ED 51                      out (c),d
-27CD 04                         inc b
-27CE ED 78                      in a,(c)
-27D0 ED 61                      out (c),h
-27D2 67                         ld h,a
-27D3 C1                         pop bc
-27D4 C9                         ret
+27B5 2A 8A 5B      L27B5:       ld hl,(OMMU45)
+27B8 18 03                      jr SetMMU
+;
+; Sets the MMU slot pair in D ($50-$57) to the ULA Screen banks
+;
+27BA 21 0B 10      SetMMU100B: ld hl,$100B                  ; HL := Pages $10, and $0b
+;
+; Sets the MMU slot pair in D ($50-$57) to the L, and H values, respectively
+; Returns with the old values in HL
+;
+27BD C5            SetMMU:      push bc                     ; Save BC
+27BE 01 3B 24                   ld bc,$243B                 ; BC := Next register index port
+27C1 ED 51                      out (c),d                   ; Set thre Next register index to D
+27C3 04                         inc b                       ; BC := Next register value port
+27C4 ED 78                      in a,(c)                    ; A := Register value
+27C6 ED 69                      out (c),l                   ; Set new register value to L
+27C8 6F                         ld l,a                      ; L := old register value
+27C9 05                         dec b                       ; BC := Next register index port 
+27CA 14                         inc d                       ; Next register index
+27CB ED 51                      out (c),d                   ; Set thre Next register index to D
+27CD 04                         inc b                       ; BC := Next register value port 
+27CE ED 78                      in a,(c)                    ; A := Register value
+27D0 ED 61                      out (c),h                   ; Set new register value to L 
+27D2 67                         ld h,a                      ; L := old register value
+27D3 C1                         pop bc                      ; Restore BC
+27D4 C9                         ret                         ; Done
+;
+;
+;
 27D5 FD CB 37 FE   L27D5:       set 7,(iy+$37)
 27D9 A7                         and a
 27DA 28 03                      jr z,L27DF
@@ -6646,8 +6697,8 @@
 2930 75                         ld (hl),l
 2931 3E C0                      ld a,$C0
 2933 CD B3 27                   call L27B3
-2936 2A 6A 5B                   ld hl,($5B6A)
-2939 ED 73 6A 5B                ld ($5B6A),sp
+2936 2A 6A 5B                   ld hl,(TMPSP)
+2939 ED 73 6A 5B                ld (TMPSP),sp
 293D F9                         ld sp,hl
 293E DF                         rst $18
 293F 1E 00                      ld e,$00
@@ -7002,7 +7053,7 @@
 2B50 29                         add hl,hl
 2B51 29                         add hl,hl
 2B52 29                         add hl,hl
-2B53 ED 5B 7B 5C                ld de,($5C7B)
+2B53 ED 5B 7B 5C                ld de,(UDG)
 2B57 19                         add hl,de
 2B58 E1                         pop hl
 2B59 D1                         pop de
@@ -8450,7 +8501,7 @@
 35A9 06 00                      ld b,$00
 35AB 4B                         ld c,e
 35AC 21 0B 10                   ld hl,$100B
-35AF 22 8A 5B                   ld ($5B8A),hl
+35AF 22 8A 5B                   ld (OMMU45),hl
 35B2 21 D2 E1                   ld hl,$E1D2
 35B5 11 00 C4                   ld de,$C400
 35B8 79                         ld a,c
@@ -8968,7 +9019,7 @@
 3935 C8                         ret z
 3936 D5                         push de
 3937 21 0B 10                   ld hl,$100B
-393A 22 8A 5B                   ld ($5B8A),hl
+393A 22 8A 5B                   ld (OMMU45),hl
 393D 21 52 E1                   ld hl,$E152
 3940 11 27 D8                   ld de,$D827
 3943 01 5A 00                   ld bc,$005A
@@ -9223,7 +9274,7 @@
 3B28 4A                         ld c,d
 3B29 C5            L3B29:       push bc
 3B2A CD 42 19                   call L1942
-3B2D 22 8A 5B                   ld ($5B8A),hl
+3B2D 22 8A 5B                   ld (OMMU45),hl
 3B30 11 52 E1                   ld de,$E152
 3B33 C1                         pop bc
 3B34 E1                         pop hl
@@ -9627,7 +9678,7 @@
 3DB0 FF                         rst $38
 3DB1 76            L3DB1:       halt
 3DB2 3E 07                      ld a,$07
-3DB4 CD DE 12                   call L12DE
+3DB4 CD DE 12                   call GetNxRegA
 3DB7 E6 03                      and $03
 3DB9 C9                         ret
 3DBA 3A BB D5                   ld a,($D5BB)

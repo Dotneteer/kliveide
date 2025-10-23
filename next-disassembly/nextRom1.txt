@@ -7744,16 +7744,22 @@ Total Instructions: 9430
 3468 20 04                      jr nz,L346E
 346A ED 4B B2 5C   L346A:       ld bc,($5CB2)
 346E CD 85 34      L346E:       call L3485
-3471 D1                         pop de
-3472 E1                         pop hl
-3473 ED 7B B2 5C                ld sp,($5CB2)
-3477 06 3E                      ld b,$3E
-3479 C5                         push bc
-347A ED 73 0B 5C                ld ($5C0B),sp
-347E E5                         push hl
-347F ED 73 3D 5C                ld ($5C3D),sp
-3483 D5                         push de
-3484 C9                         ret
+;
+; Initializes the stack
+;
+3471 D1            InitStack:   pop de                      ; DE := return address to the pager
+3472 E1                         pop hl                      ; HL := return value to the caller
+3473 ED 7B B2 5C                ld sp,($5CB2)               ; SP := RAMTOP
+3477 06 3E                      ld b,$3E                    ; Put the $3E marker (end of the stack) to the stack
+3479 C5                         push bc                     
+347A ED 73 0B 5C                ld ($5C0B),sp               ; Store SP to DEFADD
+347E E5                         push hl                     ; Restore caller return address
+347F ED 73 3D 5C                ld ($5C3D),sp               ; Store SP to ERR-SP
+3483 D5                         push de                     ; Restore return address to the pager
+3484 C9                         ret                         ; Done
+;
+;
+;
 3485 C5            L3485:       push bc
 3486 ED 5B 4B 5C                ld de,($5C4B)
 348A 2A 59 5C                   ld hl,($5C59)

@@ -9769,29 +9769,13 @@ Total Instructions: 10592
 3BFD FF                         rst $38
 3BFE FF                         rst $38
 3BFF FF                         rst $38
-3C00 FF                         rst $38
-3C01 FF                         rst $38
-3C02 00                         nop
-3C03 00                         nop
-3C04 00                         nop
-3C05 00                         nop
-3C06 00                         nop
-3C07 00                         nop
-3C08 00                         nop
-3C09 01 00 00                   ld bc,$0000
-3C0C 80                         add a,b
-3C0D 00                         nop
-3C0E 00                         nop
-3C0F 00                         nop
-3C10 00                         nop
-3C11 81                         add a,c
-3C12 49                         ld c,c
-3C13 0F                         rrca
-3C14 DA A2 00                   jp c,L00A2
-3C17 00                         nop
-3C18 0A                         ld a,(bc)
-3C19 00                         nop
-3C1A 00                         nop
+3C00 FF FF 00 00                .defb $FF, $FF, $00, $00
+3C04 00 00 00 00                .defb $00, $00, $00, $00
+3C08 00 01 00 00                .defb $00, $01, $00, $00
+3C0C 80 00 00 00                .defb $80, $00, $00, $00
+3C10 00 81 49 0F                .defb $00, $81, $49, $0F
+3C14 DA A2 00 00                .defb $DA, $A2, $00, $00
+3C18 0A 00 00                   .defb $0A, $00, $00
 3C1B E5            L3C1B:       push hl
 3C1C 2A 65 5C                   ld hl,($5C65)
 3C1F 01 55 00                   ld bc,$0055
@@ -9929,239 +9913,78 @@ Total Instructions: 10592
 3CFA C9                         ret
 3CFB AE                         xor (hl)
 3CFC C9                         ret
-3CFD FF                         rst $38
-3CFE FF                         rst $38
-3CFF FF                         rst $38
-3D00 00                         nop
-3D01 00                         nop
-3D02 00                         nop
-3D03 00                         nop
-3D04 00                         nop
-3D05 00                         nop
-3D06 00                         nop
-3D07 00                         nop
-3D08 00                         nop
-3D09 10 10                      djnz L3D1B
-3D0B 10 10                      djnz L3D1D
-3D0D 00                         nop
-3D0E 10 00                      djnz L3D10
-3D10 00            L3D10:       nop
-3D11 24                         inc h
-3D12 24                         inc h
-3D13 00                         nop
-3D14 00                         nop
-3D15 00                         nop
-3D16 00                         nop
-3D17 00                         nop
-3D18 00                         nop
-3D19 24                         inc h
-3D1A 7E                         ld a,(hl)
-3D1B 24            L3D1B:       inc h
-3D1C 24                         inc h
-3D1D 7E            L3D1D:       ld a,(hl)
-3D1E 24                         inc h
-3D1F 00                         nop
-3D20 00                         nop
-3D21 08                         ex af,af'
-3D22 3E 28                      ld a,$28
-3D24 3E 0A                      ld a,$0A
-3D26 3E 08                      ld a,$08
-3D28 00                         nop
-3D29 62                         ld h,d
-3D2A 64                         ld h,h
-3D2B 08                         ex af,af'
-3D2C 10 26                      djnz L3D54
-3D2E 46                         ld b,(hl)
-3D2F 00                         nop
-3D30 00                         nop
-3D31 10 28                      djnz L3D5B
-3D33 10 2A                      djnz L3D5F
-3D35 44                         ld b,h
-3D36 3A 00 00                   ld a,($0000)
-3D39 08                         ex af,af'
-3D3A 10 00                      djnz L3D3C
-3D3C 00            L3D3C:       nop
-3D3D 00                         nop
-3D3E 00                         nop
-3D3F 00                         nop
-3D40 00                         nop
-3D41 04                         inc b
-3D42 08                         ex af,af'
-3D43 08                         ex af,af'
-3D44 08                         ex af,af'
-3D45 08                         ex af,af'
-3D46 04                         inc b
-3D47 00                         nop
-3D48 00                         nop
-3D49 20 10                      jr nz,L3D5B
-3D4B 10 10                      djnz L3D5D
-3D4D 10 20                      djnz L3D6F
-3D4F 00                         nop
-3D50 00                         nop
-3D51 00                         nop
-3D52 14                         inc d
-3D53 08                         ex af,af'
-3D54 3E 08         L3D54:       ld a,$08
-3D56 14                         inc d
-3D57 00                         nop
-3D58 00                         nop
-3D59 00                         nop
-3D5A 08                         ex af,af'
-3D5B 08            L3D5B:       ex af,af'
-3D5C 3E 08                      ld a,$08
-3D5E 08                         ex af,af'
-3D5F 00            L3D5F:       nop
-3D60 00                         nop
-3D61 00                         nop
-3D62 00                         nop
-3D63 00                         nop
-3D64 00                         nop
-3D65 08                         ex af,af'
-3D66 08                         ex af,af'
-3D67 10 00                      djnz L3D69
-3D69 00            L3D69:       nop
-3D6A 00                         nop
-3D6B 00                         nop
-3D6C 3E 00                      ld a,$00
-3D6E 00                         nop
-3D6F 00            L3D6F:       nop
-3D70 00                         nop
-3D71 00                         nop
-3D72 00                         nop
-3D73 00                         nop
-3D74 00                         nop
-3D75 18 18                      jr L3D8F
-3D77 00                         nop
-3D78 00                         nop
-3D79 00                         nop
-3D7A 02                         ld (bc),a
-3D7B 04                         inc b
-3D7C 08                         ex af,af'
-3D7D 10 20                      djnz L3D9F
-3D7F 00                         nop
-3D80 00                         nop
-3D81 3C                         inc a
-3D82 46                         ld b,(hl)
-3D83 4A                         ld c,d
-3D84 52                         ld d,d
-3D85 62                         ld h,d
-3D86 3C                         inc a
-3D87 00                         nop
-3D88 00                         nop
-3D89 18 28                      jr L3DB3
-3D8B 08                         ex af,af'
-3D8C 08                         ex af,af'
-3D8D 08                         ex af,af'
-3D8E 3E 00                      ld a,$00
-3D90 00                         nop
-3D91 3C                         inc a
-3D92 42                         ld b,d
-3D93 02                         ld (bc),a
-3D94 3C                         inc a
-3D95 40                         ld b,b
-3D96 7E                         ld a,(hl)
-3D97 00                         nop
-3D98 00                         nop
-3D99 3C                         inc a
-3D9A 42                         ld b,d
-3D9B 0C                         inc c
-3D9C 02                         ld (bc),a
-3D9D 42                         ld b,d
-3D9E 3C                         inc a
-3D9F 00            L3D9F:       nop
-3DA0 00                         nop
-3DA1 08                         ex af,af'
-3DA2 18 28                      jr L3DCC
-3DA4 48                         ld c,b
-3DA5 7E                         ld a,(hl)
-3DA6 08                         ex af,af'
-3DA7 00                         nop
-3DA8 00                         nop
-3DA9 7E                         ld a,(hl)
-3DAA 40                         ld b,b
-3DAB 7C                         ld a,h
-3DAC 02                         ld (bc),a
-3DAD 42                         ld b,d
-3DAE 3C                         inc a
-3DAF 00                         nop
-3DB0 00                         nop
-3DB1 3C                         inc a
-3DB2 40                         ld b,b
-3DB3 7C            L3DB3:       ld a,h
-3DB4 42                         ld b,d
-3DB5 42                         ld b,d
-3DB6 3C                         inc a
-3DB7 00                         nop
-3DB8 00                         nop
-3DB9 7E                         ld a,(hl)
-3DBA 02                         ld (bc),a
-3DBB 04                         inc b
-3DBC 08                         ex af,af'
-3DBD 10 10                      djnz L3DCF
-3DBF 00                         nop
-3DC0 00                         nop
-3DC1 3C                         inc a
-3DC2 42                         ld b,d
-3DC3 3C                         inc a
-3DC4 42                         ld b,d
-3DC5 42                         ld b,d
-3DC6 3C                         inc a
-3DC7 00                         nop
-3DC8 00                         nop
-3DC9 3C                         inc a
-3DCA 42                         ld b,d
-3DCB 42                         ld b,d
-3DCC 3E 02         L3DCC:       ld a,$02
-3DCE 3C                         inc a
-3DCF 00            L3DCF:       nop
-3DD0 00                         nop
-3DD1 00                         nop
-3DD2 00                         nop
-3DD3 10 00                      djnz L3DD5
-3DD5 00            L3DD5:       nop
-3DD6 10 00                      djnz L3DD8
-3DD8 00            L3DD8:       nop
-3DD9 00                         nop
-3DDA 10 00                      djnz L3DDC
-3DDC 00            L3DDC:       nop
-3DDD 10 10                      djnz L3DEF
-3DDF 20 00                      jr nz,L3DE1
-3DE1 00            L3DE1:       nop
-3DE2 04                         inc b
-3DE3 08                         ex af,af'
-3DE4 10 08                      djnz L3DEE
-3DE6 04                         inc b
-3DE7 00                         nop
-3DE8 00                         nop
-3DE9 00                         nop
-3DEA 00                         nop
-3DEB 3E 00                      ld a,$00
-3DED 3E 00                      ld a,$00
-3DEF 00            L3DEF:       nop
-3DF0 00                         nop
-3DF1 00                         nop
-3DF2 10 08                      djnz L3DFC
-3DF4 04                         inc b
-3DF5 08                         ex af,af'
-3DF6 10 00                      djnz L3DF8
-3DF8 00            L3DF8:       nop
-3DF9 3C                         inc a
-3DFA 42                         ld b,d
-3DFB 04                         inc b
-3DFC 08            L3DFC:       ex af,af'
-3DFD 00                         nop
-3DFE 08                         ex af,af'
-3DFF 00                         nop
-3E00 00                         nop
-3E01 3C                         inc a
-3E02 4A                         ld c,d
-3E03 56                         ld d,(hl)
-3E04 5E                         ld e,(hl)
-3E05 40                         ld b,b
-3E06 3C                         inc a
-3E07 00                         nop
+3CFD FF FF FF                   .defb $FF, $FF, $FF
 ; 
-; User defined characters
+; Character bitmap definitions (8x8 pixels, 8 bytes per character)
+;
+3D00 00 00 00 00                .defb $00, $00, $00, $00   ; " " (space)
+3D04 00 00 00 00                .defb $00, $00, $00, $00
+3D08 00 10 10 10                .defb $00, $10, $10, $10   ; "!"
+3D0C 10 00 10 00                .defb $10, $00, $10, $00
+3D10 00 24 24 00                .defb $00, $24, $24, $00   ; """
+3D14 00 00 00 00                .defb $00, $00, $00, $00
+3D18 00 24 7E 24                .defb $00, $24, $7E, $24   ; "#"
+3D1C 24 7E 24 00                .defb $24, $7E, $24, $00
+3D20 00 08 3E 28                .defb $00, $08, $3E, $28   ; "$"
+3D24 3E 0A 3E 08                .defb $3E, $0A, $3E, $08
+3D28 00 62 64 08                .defb $00, $62, $64, $08   ; "%"
+3D2C 10 26 46 00                .defb $10, $26, $46, $00
+3D30 00 10 28 10                .defb $00, $10, $28, $10   ; "&"
+3D34 2A 44 3A 00                .defb $2A, $44, $3A, $00
+3D38 00 08 10 00                .defb $00, $08, $10, $00   ; "'"
+3D3C 00 00 00 00                .defb $00, $00, $00, $00
+3D40 00 04 08 08                .defb $00, $04, $08, $08   ; "("
+3D44 08 08 04 00                .defb $08, $08, $04, $00
+3D48 00 20 10 10                .defb $00, $20, $10, $10   ; ")"
+3D4C 10 10 20 00                .defb $10, $10, $20, $00
+3D50 00 00 14 08                .defb $00, $00, $14, $08   ; "*"
+3D54 3E 08 14 00                .defb $3E, $08, $14, $00
+3D58 00 00 08 08                .defb $00, $00, $08, $08   ; "+"
+3D5C 3E 08 08 00                .defb $3E, $08, $08, $00
+3D60 00 00 00 00                .defb $00, $00, $00, $00   ; ","
+3D64 00 08 08 10                .defb $00, $08, $08, $10
+3D68 00 00 00 3E                .defb $00, $00, $00, $3E   ; "-"
+3D6C 00 00 00 00                .defb $00, $00, $00, $00
+3D70 00 00 00 00                .defb $00, $00, $00, $00   ; "."
+3D74 00 18 18 00                .defb $00, $18, $18, $00
+3D78 00 00 02 04                .defb $00, $00, $02, $04   ; "/"
+3D7C 08 10 20 00                .defb $08, $10, $20, $00
+3D80 00 3C 46 4A                .defb $00, $3C, $46, $4A   ; "0"
+3D84 52 62 3C 00                .defb $52, $62, $3C, $00
+3D88 00 18 28 08                .defb $00, $18, $28, $08   ; "1"
+3D8C 08 08 3E 00                .defb $08, $08, $3E, $00
+3D90 00 3C 42 02                .defb $00, $3C, $42, $02   ; "2"
+3D94 3C 40 7E 00                .defb $3C, $40, $7E, $00
+3D98 00 3C 42 0C                .defb $00, $3C, $42, $0C   ; "3"
+3D9C 02 42 3C 00                .defb $02, $42, $3C, $00
+3DA0 00 08 18 28                .defb $00, $08, $18, $28   ; "4"
+3DA4 48 7E 08 00                .defb $48, $7E, $08, $00
+3DA8 00 7E 40 7C                .defb $00, $7E, $40, $7C   ; "5"
+3DAC 02 42 3C 00                .defb $02, $42, $3C, $00
+3DB0 00 3C 40 7C                .defb $00, $3C, $40, $7C   ; "6"
+3DB4 42 42 3C 00                .defb $42, $42, $3C, $00
+3DB8 00 7E 02 04                .defb $00, $7E, $02, $04   ; "7"
+3DBC 08 10 10 00                .defb $08, $10, $10, $00
+3DC0 00 3C 42 3C                .defb $00, $3C, $42, $3C   ; "8"
+3DC4 42 42 3C 00                .defb $42, $42, $3C, $00
+3DC8 00 3C 42 42                .defb $00, $3C, $42, $42   ; "9"
+3DCC 3E 02 3C 00                .defb $3E, $02, $3C, $00
+3DD0 00 00 00 10                .defb $00, $00, $00, $10   ; ":"
+3DD4 00 00 10 00                .defb $00, $00, $10, $00
+3DD8 00 00 10 00                .defb $00, $00, $10, $00   ; ";"
+3DDC 00 10 10 20                .defb $00, $10, $10, $20
+3DE0 00 04 08 10                .defb $00, $04, $08, $10   ; "<"
+3DE4 08 04 00 00                .defb $08, $04, $00, $00
+3DE8 00 00 00 3E                .defb $00, $00, $00, $3E   ; "="
+3DEC 00 3E 00 00                .defb $00, $3E, $00, $00
+3DF0 00 00 10 08                .defb $00, $00, $10, $08   ; ">"
+3DF4 04 08 10 00                .defb $04, $08, $10, $00
+3DF8 00 3C 42 04                .defb $00, $3C, $42, $04   ; "?"
+3DFC 08 00 08 00                .defb $08, $00, $08, $00
+3E00 00 3C 4A 56                .defb $00, $3C, $4A, $56   ; "@"
+3E04 5E 40 3C 00                .defb $5E, $40, $3C, $00
+; 
+; User defined characters start here (A-U)
 ;
 3E08 00 3C 42 42                .defb $00, $3C, $42, $42   ; "A"             
 3E0C 7E 42 42 00                .defb $7E, $42, $42, $00
@@ -10203,283 +10026,89 @@ Total Instructions: 10592
 3E9C 02 42 3C 00                .defb $02, $42, $3C, $00
 3EA0 00 FE 10 10                .defb $00, $FE, $10, $10 
 3EA4 10 10 10 00                .defb $10, $10, $10, $00
-3EA8 00 42 42 42                .defb $00, $42, $42, $42
+3EA8 00 42 42 42                .defb $00, $42, $42, $42   ; "U"
 3EAC 42 42 3C 00                .defb $42, $42, $3C, $00
-;
-;
-;
-3EB0 00                         nop
-3EB1 42                         ld b,d
-3EB2 42                         ld b,d
-3EB3 42                         ld b,d
-3EB4 42                         ld b,d
-3EB5 24            L3EB5:       inc h
-3EB6 18 00                      jr L3EB8
-3EB8 00            L3EB8:       nop
-3EB9 42                         ld b,d
-3EBA 42                         ld b,d
-3EBB 42                         ld b,d
-3EBC 42                         ld b,d
-3EBD 5A                         ld e,d
-3EBE 24                         inc h
-3EBF 00                         nop
-3EC0 00                         nop
-3EC1 42                         ld b,d
-3EC2 24                         inc h
-3EC3 18 18                      jr L3EDD
-3EC5 24                         inc h
-3EC6 42                         ld b,d
-3EC7 00                         nop
-3EC8 00                         nop
-3EC9 82                         add a,d
-3ECA 44                         ld b,h
-3ECB 28 10                      jr z,L3EDD
-3ECD 10 10                      djnz L3EDF
-3ECF 00                         nop
-3ED0 00                         nop
-3ED1 7E                         ld a,(hl)
-3ED2 04                         inc b
-3ED3 08                         ex af,af'
-3ED4 10 20                      djnz L3EF6
-3ED6 7E                         ld a,(hl)
-3ED7 00                         nop
-3ED8 00                         nop
-3ED9 0E 08                      ld c,$08
-3EDB 08                         ex af,af'
-3EDC 08                         ex af,af'
-3EDD 08            L3EDD:       ex af,af'
-3EDE 0E 00                      ld c,$00
-3EE0 00                         nop
-3EE1 00                         nop
-3EE2 40                         ld b,b
-3EE3 20 10                      jr nz,L3EF5
-3EE5 08                         ex af,af'
-3EE6 04                         inc b
-3EE7 00                         nop
-3EE8 00                         nop
-3EE9 70                         ld (hl),b
-3EEA 10 10                      djnz L3EFC
-3EEC 10 10                      djnz L3EFE
-3EEE 70                         ld (hl),b
-3EEF 00                         nop
-3EF0 00                         nop
-3EF1 10 38                      djnz L3F2B
-3EF3 54                         ld d,h
-3EF4 10 10                      djnz L3F06
-3EF6 10 00         L3EF6:       djnz L3EF8
-3EF8 00            L3EF8:       nop
-3EF9 00                         nop
-3EFA 00                         nop
-3EFB 00                         nop
-3EFC 00            L3EFC:       nop
-3EFD 00                         nop
-3EFE 00            L3EFE:       nop
-3EFF FF                         rst $38
-3F00 00                         nop
-3F01 1C                         inc e
-3F02 22 78 20                   ld ($2078),hl
-3F05 20 7E                      jr nz,L3F85
-3F07 00                         nop
-3F08 00                         nop
-3F09 00                         nop
-3F0A 38 04                      jr c,L3F10
-3F0C 3C                         inc a
-3F0D 44                         ld b,h
-3F0E 3C                         inc a
-3F0F 00                         nop
-3F10 00            L3F10:       nop
-3F11 20 20                      jr nz,L3F33
-3F13 3C                         inc a
-3F14 22 22 3C                   ld ($3C22),hl
-3F17 00                         nop
-3F18 00                         nop
-3F19 00                         nop
-3F1A 1C                         inc e
-3F1B 20 20                      jr nz,L3F3D
-3F1D 20 1C                      jr nz,L3F3B
-3F1F 00                         nop
-3F20 00                         nop
-3F21 04                         inc b
-3F22 04                         inc b
-3F23 3C                         inc a
-3F24 44                         ld b,h
-3F25 44                         ld b,h
-3F26 3C                         inc a
-3F27 00                         nop
-3F28 00                         nop
-3F29 00                         nop
-3F2A 38 44         L3F2A:       jr c,L3F70
-3F2C 78                         ld a,b
-3F2D 40                         ld b,b
-3F2E 3C                         inc a
-3F2F 00                         nop
-3F30 00                         nop
-3F31 0C                         inc c
-3F32 10 18                      djnz L3F4C
-3F34 10 10                      djnz L3F46
-3F36 10 00                      djnz L3F38
-3F38 00            L3F38:       nop
-3F39 00                         nop
-3F3A 3C                         inc a
-3F3B 44            L3F3B:       ld b,h
-3F3C 44                         ld b,h
-3F3D 3C            L3F3D:       inc a
-3F3E 04                         inc b
-3F3F 38 00                      jr c,L3F41
-3F41 40            L3F41:       ld b,b
-3F42 40                         ld b,b
-3F43 78                         ld a,b
-3F44 44                         ld b,h
-3F45 44                         ld b,h
-3F46 44            L3F46:       ld b,h
-3F47 00                         nop
-3F48 00                         nop
-3F49 10 00                      djnz L3F4B
-3F4B 30 10         L3F4B:       jr nc,L3F5D
-3F4D 10 38                      djnz L3F87
-3F4F 00                         nop
-3F50 00                         nop
-3F51 04                         inc b
-3F52 00                         nop
-3F53 04                         inc b
-3F54 04                         inc b
-3F55 04                         inc b
-3F56 24                         inc h
-3F57 18 00                      jr L3F59
-3F59 20 28         L3F59:       jr nz,L3F83
-3F5B 30 30                      jr nc,L3F8D
-3F5D 28 24         L3F5D:       jr z,L3F83
-3F5F 00                         nop
-3F60 00                         nop
-3F61 10 10                      djnz L3F73
-3F63 10 10                      djnz L3F75
-3F65 10 0C                      djnz L3F73
-3F67 00                         nop
-3F68 00                         nop
-3F69 00                         nop
-3F6A 68                         ld l,b
-3F6B 54                         ld d,h
-3F6C 54                         ld d,h
-3F6D 54                         ld d,h
-3F6E 54                         ld d,h
-3F6F 00                         nop
-3F70 00            L3F70:       nop
-3F71 00                         nop
-3F72 78                         ld a,b
-3F73 44            L3F73:       ld b,h
-3F74 44                         ld b,h
-3F75 44            L3F75:       ld b,h
-3F76 44                         ld b,h
-3F77 00                         nop
-3F78 00                         nop
-3F79 00                         nop
-3F7A 38 44                      jr c,L3FC0
-3F7C 44                         ld b,h
-3F7D 44                         ld b,h
-3F7E 38 00                      jr c,L3F80
-3F80 00            L3F80:       nop
-3F81 00                         nop
-3F82 78                         ld a,b
-3F83 44            L3F83:       ld b,h
-3F84 44                         ld b,h
-3F85 78            L3F85:       ld a,b
-3F86 40                         ld b,b
-3F87 40            L3F87:       ld b,b
-3F88 00                         nop
-3F89 00                         nop
-3F8A 3C                         inc a
-3F8B 44                         ld b,h
-3F8C 44                         ld b,h
-3F8D 3C            L3F8D:       inc a
-3F8E 04                         inc b
-3F8F 06 00                      ld b,$00
-3F91 00                         nop
-3F92 1C                         inc e
-3F93 20 20                      jr nz,L3FB5
-3F95 20 20                      jr nz,L3FB7
-3F97 00                         nop
-3F98 00                         nop
-3F99 00                         nop
-3F9A 38 40                      jr c,L3FDC
-3F9C 38 04                      jr c,L3FA2
-3F9E 78                         ld a,b
-3F9F 00                         nop
-3FA0 00                         nop
-3FA1 10 38                      djnz L3FDB
-3FA3 10 10                      djnz L3FB5
-3FA5 10 0C                      djnz L3FB3
-3FA7 00                         nop
-3FA8 00                         nop
-3FA9 00                         nop
-3FAA 44                         ld b,h
-3FAB 44                         ld b,h
-3FAC 44                         ld b,h
-3FAD 44                         ld b,h
-3FAE 38 00                      jr c,L3FB0
-3FB0 00            L3FB0:       nop
-3FB1 00                         nop
-3FB2 44                         ld b,h
-3FB3 44            L3FB3:       ld b,h
-3FB4 28 28                      jr z,L3FDE
-3FB6 10 00                      djnz L3FB8
-3FB8 00            L3FB8:       nop
-3FB9 00                         nop
-3FBA 44                         ld b,h
-3FBB 54                         ld d,h
-3FBC 54                         ld d,h
-3FBD 54                         ld d,h
-3FBE 28 00                      jr z,L3FC0
-3FC0 00            L3FC0:       nop
-3FC1 00                         nop
-3FC2 44                         ld b,h
-3FC3 28 10                      jr z,L3FD5
-3FC5 28 44                      jr z,L400B
-3FC7 00                         nop
-3FC8 00                         nop
-3FC9 00                         nop
-3FCA 44                         ld b,h
-3FCB 44                         ld b,h
-3FCC 44                         ld b,h
-3FCD 3C                         inc a
-3FCE 04                         inc b
-3FCF 38 00                      jr c,L3FD1
-3FD1 00            L3FD1:       nop
-3FD2 7C                         ld a,h
-3FD3 08                         ex af,af'
-3FD4 10 20                      djnz L3FF6
-3FD6 7C                         ld a,h
-3FD7 00                         nop
-3FD8 00                         nop
-3FD9 0E 08                      ld c,$08
-3FDB 30 08         L3FDB:       jr nc,L3FE5
-3FDD 08                         ex af,af'
-3FDE 0E 00         L3FDE:       ld c,$00
-3FE0 00                         nop
-3FE1 08                         ex af,af'
-3FE2 08                         ex af,af'
-3FE3 08                         ex af,af'
-3FE4 08                         ex af,af'
-3FE5 08            L3FE5:       ex af,af'
-3FE6 08                         ex af,af'
-3FE7 00                         nop
-3FE8 00                         nop
-3FE9 70                         ld (hl),b
-3FEA 10 0C                      djnz L3FF8
-3FEC 10 10                      djnz L3FFE
-3FEE 70                         ld (hl),b
-3FEF 00                         nop
-3FF0 00                         nop
-3FF1 14                         inc d
-3FF2 28 00                      jr z,L3FF4
-3FF4 00            L3FF4:       nop
-3FF5 00                         nop
-3FF6 00            L3FF6:       nop
-3FF7 00                         nop
-3FF8 3C            L3FF8:       inc a
-3FF9 42                         ld b,d
-3FFA 99                         sbc a,c
-3FFB A1                         and c
-3FFC A1                         and c
-3FFD 99                         sbc a,c
-3FFE 42            L3FFE:       ld b,d
-3FFF 3C                         inc a
+3EB0 00 42 42 42                .defb $00, $42, $42, $42   ; "V"
+3EB4 42 24 18 00                .defb $42, $24, $18, $00
+3EB8 00 42 42 42                .defb $00, $42, $42, $42   ; "W"
+3EBC 42 5A 24 00                .defb $42, $5A, $24, $00
+3EC0 00 42 24 18                .defb $00, $42, $24, $18   ; "X"
+3EC4 18 24 42 00                .defb $18, $24, $42, $00
+3EC8 00 82 44 28                .defb $00, $82, $44, $28   ; "Y"
+3ECC 10 10 10 00                .defb $10, $10, $10, $00
+3ED0 00 7E 04 08                .defb $00, $7E, $04, $08   ; "Z"
+3ED4 10 20 7E 00                .defb $10, $20, $7E, $00
+3ED8 00 0E 08 08                .defb $00, $0E, $08, $08   ; "["
+3EDC 08 08 0E 00                .defb $08, $08, $0E, $00
+3EE0 00 00 40 20                .defb $00, $00, $40, $20   ; "\"
+3EE4 10 08 04 00                .defb $10, $08, $04, $00
+3EE8 00 70 10 10                .defb $00, $70, $10, $10   ; "]"
+3EEC 10 10 70 00                .defb $10, $10, $70, $00
+3EF0 00 10 38 54                .defb $00, $10, $38, $54   ; "^"
+3EF4 10 10 10 00                .defb $10, $10, $10, $00
+3EF8 00 00 00 00                .defb $00, $00, $00, $00   ; "_"
+3EFC 00 00 00 FF                .defb $00, $00, $00, $FF
+3F00 00 1C 22 78                .defb $00, $1C, $22, $78   ; "`"
+3F04 20 20 7E 00                .defb $20, $20, $7E, $00
+3F08 00 00 38 04                .defb $00, $00, $38, $04   ; "a"
+3F0C 3C 44 3C 00                .defb $3C, $44, $3C, $00
+3F10 00 20 20 3C                .defb $00, $20, $20, $3C   ; "b"
+3F14 22 22 3C 00                .defb $22, $22, $3C, $00
+3F18 00 00 1C 20                .defb $00, $00, $1C, $20   ; "c"
+3F1C 20 20 1C 00                .defb $20, $20, $1C, $00
+3F20 00 04 04 3C                .defb $00, $04, $04, $3C   ; "d"
+3F24 44 44 3C 00                .defb $44, $44, $3C, $00
+3F28 00 00 38 44                .defb $00, $00, $38, $44   ; "e"
+3F2C 78 40 3C 00                .defb $78, $40, $3C, $00
+3F30 00 0C 10 18                .defb $00, $0C, $10, $18   ; "f"
+3F34 10 10 10 00                .defb $10, $10, $10, $00
+3F38 00 00 3C 44                .defb $00, $00, $3C, $44   ; "g"
+3F3C 44 3C 04 38                .defb $44, $3C, $04, $38
+3F40 00 40 40 78                .defb $00, $40, $40, $78   ; "h"
+3F44 44 44 44 00                .defb $44, $44, $44, $00
+3F48 00 10 00 30                .defb $00, $10, $00, $30   ; "i"
+3F4C 10 10 38 00                .defb $10, $10, $38, $00
+3F50 00 04 00 04                .defb $00, $04, $00, $04   ; "j"
+3F54 04 04 24 18                .defb $04, $04, $24, $18
+3F58 00 20 28 30                .defb $00, $20, $28, $30   ; "k"
+3F5C 30 28 24 00                .defb $30, $28, $24, $00
+3F60 00 10 10 10                .defb $00, $10, $10, $10   ; "l"
+3F64 10 10 0C 00                .defb $10, $10, $0C, $00
+3F68 00 00 68 54                .defb $00, $00, $68, $54   ; "m"
+3F6C 54 54 54 00                .defb $54, $54, $54, $00
+3F70 00 00 78 44                .defb $00, $00, $78, $44   ; "n"
+3F74 44 44 44 00                .defb $44, $44, $44, $00
+3F78 00 00 38 44                .defb $00, $00, $38, $44   ; "o"
+3F7C 44 44 38 00                .defb $44, $44, $38, $00
+3F80 00 00 78 44                .defb $00, $00, $78, $44   ; "p"
+3F84 44 78 40 40                .defb $44, $78, $40, $40
+3F88 00 00 3C 44                .defb $00, $00, $3C, $44   ; "q"
+3F8C 44 3C 04 06                .defb $44, $3C, $04, $06
+3F90 00 00 1C 20                .defb $00, $00, $1C, $20   ; "r"
+3F94 20 20 20 00                .defb $20, $20, $20, $00
+3F98 00 00 38 40                .defb $00, $00, $38, $40   ; "s"
+3F9C 38 04 78 00                .defb $38, $04, $78, $00
+3FA0 00 10 38 10                .defb $00, $10, $38, $10   ; "t"
+3FA4 10 10 0C 00                .defb $10, $10, $0C, $00
+3FA8 00 00 44 44                .defb $00, $00, $44, $44   ; "u"
+3FAC 44 44 38 00                .defb $44, $44, $38, $00
+3FB0 00 00 44 44                .defb $00, $00, $44, $44   ; "v"
+3FB4 28 28 10 00                .defb $28, $28, $10, $00
+3FB8 00 00 44 54                .defb $00, $00, $44, $54   ; "w"
+3FBC 54 54 28 00                .defb $54, $54, $28, $00
+3FC0 00 00 44 28                .defb $00, $00, $44, $28   ; "x"
+3FC4 10 28 44 00                .defb $10, $28, $44, $00
+3FC8 00 00 44 44                .defb $00, $00, $44, $44   ; "y"
+3FCC 44 3C 04 38                .defb $44, $3C, $04, $38
+3FD0 00 7C 08 10                .defb $00, $7C, $08, $10   ; "z"
+3FD4 20 7C 00 00                .defb $20, $7C, $00, $00
+3FD8 0E 08 30 08                .defb $0E, $08, $30, $08   ; "{"
+3FDC 08 0E 00 00                .defb $08, $0E, $00, $00
+3FE0 08 08 08 08                .defb $08, $08, $08, $08   ; "|"
+3FE4 08 08 00 00                .defb $08, $08, $00, $00
+3FE8 70 10 0C 10                .defb $70, $10, $0C, $10   ; "}"
+3FEC 10 70 00 00                .defb $10, $70, $00, $00
+3FF0 14 28 00 00                .defb $14, $28, $00, $00   ; "~"
+3FF4 00 00 00 00                .defb $00, $00, $00, $00
+3FF8 3C 42 99 A1                .defb $3C, $42, $99, $A1   ; "©"
+3FFC A1 99 42 3C                .defb $A1, $99, $42, $3C

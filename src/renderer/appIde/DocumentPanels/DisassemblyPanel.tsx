@@ -544,7 +544,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
 
               const address = item?.address;
               const execPoint = address === pausedPc;
-              const breakpoint = breakpoints.current.find(
+              const breakpoint = breakpoints.current?.find(
                 (bp) => bp.address === address || bp.resolvedAddress === address
               );
 

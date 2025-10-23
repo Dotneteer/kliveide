@@ -79,11 +79,11 @@ Total Instructions: 12028
 0052 3E 3A         L0052:       ld a,$3A
 0054 A7                         and a
 0055 C9                         ret
-0056 C3 52 11                   jp L1152
-0059 C3 BE 14                   jp L14BE
-005C C3 65 15                   jp L1565
-005F C3 5B 15                   jp L155B
-0062 C3 6A 15                   jp L156A
+0056 C3 52 11                   jp L1152                    ; IDE_STREAM_OPEN
+0059 C3 BE 14                   jp L14BE                    ; IDE_STREAM_CLOSE
+005C C3 65 15                   jp L1565                    ; IDE_STREAM_IN
+005F C3 5B 15                   jp L155B                    ; IDE_STREAM_OUT
+0062 C3 6A 15                   jp L156A                    ; IDE_STREAM_PTR
 0065 00                         nop
 0066 ED 45                      retn
 0068 CF                         rst $08
@@ -136,111 +136,111 @@ Total Instructions: 12028
 009D 00                         nop
 009E 00                         nop
 009F 00                         nop
-00A0 C3 70 1A                   jp L1A70
-00A3 C3 AE 19      L00A3:       jp L19AE
-00A6 C3 DF 1A                   jp L1ADF
-00A9 C3 DB 01      L00A9:       jp L01DB
-00AC C3 4A 18      L00AC:       jp L184A
-00AF C3 79 18                   jp L1879
-00B2 C3 52 00                   jp L0052
-00B5 C3 E6 01      L00B5:       jp L01E6
-00B8 C3 52 00                   jp L0052
-00BB C3 52 00                   jp L0052
-00BE C3 52 00                   jp L0052
-00C1 C3 52 00                   jp L0052
-00C4 C3 EB 01      L00C4:       jp L01EB
-00C7 C3 52 00                   jp L0052
-00CA C3 52 00                   jp L0052
-00CD C3 40 07                   jp L0740
-00D0 C3 CF 07                   jp L07CF
-00D3 C3 52 00                   jp L0052
-00D6 C3 52 00                   jp L0052
-00D9 C3 AC 16                   jp L16AC
-00DC C3 76 17      L00DC:       jp L1776
-00DF C3 8B 16                   jp L168B
-00E2 C3 14 16                   jp L1614
-00E5 C3 A8 16                   jp L16A8
-00E8 C3 BD 15                   jp L15BD
-00EB C3 C9 15                   jp L15C9
-00EE C3 9B 17                   jp L179B
-00F1 C3 CF 03      L00F1:       jp L03CF
-00F4 C3 51 04      L00F4:       jp L0451
-00F7 C3 78 04      L00F7:       jp L0478
-00FA C3 52 00                   jp L0052
-00FD C3 2E 08                   jp L082E
-0100 C3 2A 25                   jp L252A
-0103 C3 2C 25                   jp L252C
-0106 C3 22 03      L0106:       jp L0322
-0109 C3 58 02      L0109:       jp L0258
-010C C3 69 02      L010C:       jp L0269
-010F C3 26 02                   jp L0226
-0112 C3 7A 02      L0112:       jp L027A
-0115 C3 D6 02                   jp L02D6
-0118 C3 2C 02                   jp L022C
-011B C3 32 02                   jp L0232
-011E C3 00 02      L011E:       jp L0200
-0121 C3 F0 01                   jp L01F0
-0124 C3 12 28                   jp L2812
-0127 C3 23 28                   jp L2823
-012A C3 3C 25                   jp L253C
-012D C3 50 05      L012D:       jp L0550
-0130 C3 5E 05      L0130:       jp L055E
-0133 C3 38 02                   jp L0238
-0136 C3 3E 02                   jp L023E
-0139 C3 46 02      L0139:       jp L0246
-013C C3 E0 05      L013C:       jp L05E0
-013F C3 E5 05      L013F:       jp L05E5
-0142 C3 F8 01                   jp L01F8
-0145 C3 4C 02                   jp L024C
-0148 C3 14 02                   jp L0214
-014B C3 52 00                   jp L0052
-014E C3 9F 25                   jp L259F
-0151 C3 E4 20                   jp L20E4
-0154 C3 99 25                   jp L2599
-0157 C3 9D 25                   jp L259D
-015A C3 9D 25                   jp L259D
-015D C3 9D 25                   jp L259D
-0160 C3 9D 25                   jp L259D
-0163 C3 89 27                   jp L2789
-0166 C3 99 25                   jp L2599
-0169 C3 99 25                   jp L2599
-016C C3 99 25                   jp L2599
-016F C3 99 25                   jp L2599
-0172 C3 99 25                   jp L2599
-0175 C3 99 25                   jp L2599
-0178 C3 99 25                   jp L2599
-017B C3 50 27                   jp L2750
-017E C3 78 27                   jp L2778
-0181 C3 99 25                   jp L2599
-0184 C3 19 26                   jp L2619
-0187 C3 28 26                   jp L2628
-018A C3 6A 26                   jp L266A
-018D C3 9D 25                   jp L259D
-0190 C3 9E 27                   jp L279E
-0193 C3 99 25                   jp L2599
-0196 C3 9D 25                   jp L259D
-0199 C3 9D 25                   jp L259D
-019C C3 9D 25                   jp L259D
-019F C3 52 00                   jp L0052
-01A2 C3 52 00                   jp L0052
-01A5 C3 8A 1F                   jp L1F8A
-01A8 C3 52 00                   jp L0052
-01AB C3 52 00                   jp L0052
-01AE C3 52 00                   jp L0052
-01B1 C3 27 05      L01B1:       jp L0527
-01B4 C3 E0 01                   jp L01E0
-01B7 C3 0B 02                   jp L020B
-01BA C3 C6 10                   jp L10C6
-01BD C3 9F 0E                   jp L0E9F
-01C0 C3 9D 0F                   jp L0F9D
-01C3 C3 9E 15                   jp L159E
-01C6 C3 A8 15                   jp L15A8
-01C9 C3 B8 0F                   jp L0FB8
-01CC C3 EF 0F                   jp L0FEF
-01CF C3 F7 0F      L01CF:       jp L0FF7
-01D2 C3 75 1A                   jp L1A75
-01D5 C3 FD 0F                   jp L0FFD
-01D8 C3 80 10                   jp L1080
+00A0 C3 70 1A                   jp L1A70                    ; IDE_VERSION
+00A3 C3 AE 19      L00A3:       jp L19AE                    ; IDE_INTERFACE
+00A6 C3 DF 1A                   jp L1ADF                    ; IDE_INIT
+00A9 C3 DB 01      L00A9:       jp L01DB                    ; IDE_DRIVE
+00AC C3 4A 18      L00AC:       jp L184A                    ; IDE_SECTOR_READ
+00AF C3 79 18                   jp L1879                    ; IDE_SECTOR_WRITE
+00B2 C3 52 00                   jp L0052                    ; IDE_FORMAT (deprecated)
+00B5 C3 E6 01      L00B5:       jp L01E6                    ; IDE_PARTITION_FIND
+00B8 C3 52 00                   jp L0052                    ; IDE_PARTITION_NEW (deprecated)
+00BB C3 52 00                   jp L0052                    ; IDE_PARTITION_INIT (deprecated)
+00BE C3 52 00                   jp L0052                    ; IDE_PARTITION_ERASE (deprecated)
+00C1 C3 52 00                   jp L0052                    ; IDE_PARTITION_RENAME (deprecated)
+00C4 C3 EB 01      L00C4:       jp L01EB                    ; IDE_PARTITION_READ
+00C7 C3 52 00                   jp L0052                    ; IDE_PARTITION_WRITE (deprecated)
+00CA C3 52 00                   jp L0052                    ; IDE_PARTITION_WINFO (deprecated)
+00CD C3 40 07                   jp L0740                    ; IDE_PARTITION_OPEN
+00D0 C3 CF 07                   jp L07CF                    ; IDE_PARTITION_CLOSE
+00D3 C3 52 00                   jp L0052                    ; IDE_PARTITION_GETINFO (deprecated)
+00D6 C3 52 00                   jp L0052                    ; IDE_PARTITION_SETINFO (deprecated)
+00D9 C3 AC 16                   jp L16AC                    ; IDE_SWAP_OPEN
+00DC C3 76 17      L00DC:       jp L1776                    ; IDE_SWAP_CLOSE
+00DF C3 8B 16                   jp L168B                    ; IDE_SWAP_OUT
+00E2 C3 14 16                   jp L1614                    ; IDE_SWAP_IN
+00E5 C3 A8 16                   jp L16A8                    ; IDE_SWAP_EX
+00E8 C3 BD 15                   jp L15BD                    ; IDE_SWAP_POS
+00EB C3 C9 15                   jp L15C9                    ; IDE_SWAP_MOVE
+00EE C3 9B 17                   jp L179B                    ; IDE_SWAP_RESIZE
+00F1 C3 CF 03      L00F1:       jp L03CF                    ; IDE_DOS_MAP
+00F4 C3 51 04      L00F4:       jp L0451                    ; IDE_DOS_UNMAP
+00F7 C3 78 04      L00F7:       jp L0478                    ; IDE_DOS_MAPPING
+00FA C3 52 00                   jp L0052                    ; IDE_DOS_UNPERMANENT (deprecated)
+00FD C3 2E 08                   jp L082E                    ; IDE_SNAPLOAD
+0100 C3 2A 25                   jp L252A                    ; DOS_INITIALISE
+0103 C3 2C 25                   jp L252C                    ; DOS_VERSION
+0106 C3 22 03      L0106:       jp L0322                    ; DOS_OPEN
+0109 C3 58 02      L0109:       jp L0258                    ; DOS_CLOSE
+010C C3 69 02      L010C:       jp L0269                    ; DOS_ABANDON
+010F C3 26 02                   jp L0226                    ; DOS_REF_HEAD
+0112 C3 7A 02      L0112:       jp L027A                    ; DOS_READ
+0115 C3 D6 02                   jp L02D6                    ; DOS_WRITE
+0118 C3 2C 02                   jp L022C                    ; DOS_BYTE_READ
+011B C3 32 02                   jp L0232                    ; DOS_BYTE_WRITE
+011E C3 00 02      L011E:       jp L0200                    ; DOS_CATALOG
+0121 C3 F0 01                   jp L01F0                    ; DOS_FREE_SPACE
+0124 C3 12 28                   jp L2812                    ; DOS_DELETE
+0127 C3 23 28                   jp L2823                    ; DOS_RENAME
+012A C3 3C 25                   jp L253C                    ; DOS_BOOT
+012D C3 50 05      L012D:       jp L0550                    ; DOS_SET_DRIVE
+0130 C3 5E 05      L0130:       jp L055E                    ; DOS_SET_USER
+0133 C3 38 02                   jp L0238                    ; DOS_GET_POSITION
+0136 C3 3E 02                   jp L023E                    ; DOS_SET_POSITION
+0139 C3 46 02      L0139:       jp L0246                    ; DOS_GET_EOF
+013C C3 E0 05      L013C:       jp L05E0                    ; DOS_GET_1346
+013F C3 E5 05      L013F:       jp L05E5                    ; DOS_SET_1346
+0142 C3 F8 01                   jp L01F8                    ; DOS_FLUSH
+0145 C3 4C 02                   jp L024C                    ; DOS_SET_ACCESS
+0148 C3 14 02                   jp L0214                    ; DOS_SET_ATTRIBUTES
+014B C3 52 00                   jp L0052                    ; Reserved (invalid)
+014E C3 9F 25                   jp L259F                    ; DOS_OPEN_DRIVE
+0151 C3 E4 20                   jp L20E4                    ; DOS_SET_MESSAGE
+0154 C3 99 25                   jp L2599                    ; Reserved (invalid)
+0157 C3 9D 25                   jp L259D                    ; DD_INTERFACE
+015A C3 9D 25                   jp L259D                    ; DD_INIT
+015D C3 9D 25                   jp L259D                    ; DD_SETUP
+0160 C3 9D 25                   jp L259D                    ; DD_SET_RETRY
+0163 C3 89 27                   jp L2789                    ; DD_READ_SECTOR
+0166 C3 99 25                   jp L2599                    ; DD_WRITE_SECTOR (deprecated)
+0169 C3 99 25                   jp L2599                    ; DD_CHECK_SECTOR (deprecated)
+016C C3 99 25                   jp L2599                    ; DD_FORMAT (deprecated)
+016F C3 99 25                   jp L2599                    ; DD_READ_ID (deprecated)
+0172 C3 99 25                   jp L2599                    ; DD_TEST_UNSUITABLE (deprecated)
+0175 C3 99 25                   jp L2599                    ; DD_LOGIN (deprecated)
+0178 C3 99 25                   jp L2599                    ; DD_SEL_FORMAT (deprecated)
+017B C3 50 27                   jp L2750                    ; DD_WRITE_TRACK (deprecated)
+017E C3 78 27                   jp L2778                    ; DD_READ_TRACK (deprecated)
+0181 C3 99 25                   jp L2599                    ; DD_SETUP_DPB (deprecated)
+0184 C3 19 26                   jp L2619                    ; DD_SET_DRIVE
+0187 C3 28 26                   jp L2628                    ; DD_ASK_1
+018A C3 6A 26                   jp L266A                    ; DD_DRIVE_STATUS
+018D C3 9D 25                   jp L259D                    ; DD_EQUIPMENT
+0190 C3 9E 27                   jp L279E                    ; DD_ENCODE
+0193 C3 99 25                   jp L2599                    ; DD_L_XDPB (deprecated)
+0196 C3 9D 25                   jp L259D                    ; DD_L_DPB
+0199 C3 9D 25                   jp L259D                    ; DD_L_SEEK
+019C C3 9D 25                   jp L259D                    ; DD_L_READ
+019F C3 52 00                   jp L0052                    ; IDE_PATH
+01A2 C3 52 00                   jp L0052                    ; IDE_CAPACITY
+01A5 C3 8A 1F                   jp L1F8A                    ; IDE_GET_LFN
+01A8 C3 52 00                   jp L0052                    ; IDE_BROWSER
+01AB C3 52 00                   jp L0052                    ; IDE_MOUNT
+01AE C3 52 00                   jp L0052                    ; IDE_FILESIZE
+01B1 C3 27 05      L01B1:       jp L0527                    ; IDE_BANK
+01B4 C3 E0 01                   jp L01E0                    ; IDE_BASIC
+01B7 C3 0B 02                   jp L020B                    ; IDE_WINDOW_STRING
+01BA C3 C6 10                   jp L10C6                    ; IDE_WINDOW_LINPUT
+01BD C3 9F 0E                   jp IdeBank                  ; IDE_BANK
+01C0 C3 9D 0F                   jp L0F9D                    ; IDE_BASIC
+01C3 C3 9E 15                   jp L159E                    ; IDE_INTEGER_VAR
+01C6 C3 A8 15                   jp L15A8                    ; IDE_RTC
+01C9 C3 B8 0F                   jp L0FB8                    ; IDE_DRIVER
+01CC C3 EF 0F                   jp L0FEF                    ; IDE_MODE
+01CF C3 F7 0F      L01CF:       jp L0FF7                    ; IDE_UIFIFO
+01D2 C3 75 1A                   jp L1A75                    ; IDE_TOKENISER
+01D5 C3 FD 0F                   jp L0FFD                    ; IDE_OPUS_SAVEDIR
+01D8 C3 80 10                   jp L1080                    ; IDE_OPUS_CHDIR
 01DB CF            L01DB:       rst $08
 01DC 00                         nop
 01DD 03                         inc bc
@@ -2171,7 +2171,28 @@ Total Instructions: 12028
 0E94 ED 8A 5B 43   L0E94:       push $5B43
 0E98 ED 8A 00 1B                push $001B
 0E9C C3 3E 5B                   jp L5B3E
-0E9F 01 3B 24      L0E9F:       ld bc,$243B
+;
+; IDE_BANK: Allocate or free 8K RAM banks in main ZX memory or DivMMC memory
+; IN: H=bank type:
+;       rc_banktype_zx (0), ZX memory half-banks (8K size)
+;       rc_banktype_mmc (1), DivMMC memory banks (8K size)
+;     L=reason:
+;       rc_bank_total (0), return total number of 8K banks of specified type
+;       rc_bank_alloc (1), allocate next available 8K bank
+;       rc_bank_reserve (2), reserve bank specified in E (0..total-1)
+;       rc_bank_free (3), free bank specified in E (0..total-1)
+;       rc_bank_available (4), return number of currently-available 8K banks
+;       of specified type
+;     E=8K bank ID (0..total-1), for rc_bank_reserve/rc_bank_free
+; OUT(s): Fc=1
+;     E=8K bank ID (0..total-1), for rc_bank_alloc
+;     E=total number of 8K banks of specified type, for rc_bank_total
+;     E=available number of 8K banks of specified type, for rc_bank_available
+; OUT(f): Fc=0
+;     A=error: rc_inuse if no available banks to allocate
+;     rc_badparam if H, L or E is invalid
+;
+0E9F 01 3B 24      IdeBank:     ld bc,$243B
 0EA2 3E 57                      ld a,$57
 0EA4 ED 79                      out (c),a
 0EA6 04                         inc b
@@ -2312,6 +2333,31 @@ Total Instructions: 12028
 0F96 22 63 5C                   ld ($5C63),hl
 0F99 22 65 5C                   ld ($5C65),hl
 0F9C E1                         pop hl
+;
+; IDE_BASIC: Execute a BASIC command line
+; IN: HL=address of tokenized BASIC command line, terminated with $0d
+; OUT(s): Fc=1
+;     System variable ERR_NR contains generated BASIC error code-1
+;     ($ff means BASIC command completed successfully)
+;     Register status on return:
+;     ......../.. same
+;     AFBCDEHL/IX different
+; NOTES:
+;     This call must be made with the ROM2/RAM5/RAM2/RAM0 memory configuration rather
+;     than the usual +3DOS configuration. The stack must be located between STKEND and
+;     RAMTOP (the normal location for the stack during BASIC operation).
+;     Any number of BASIC commands may be executed, separated by colons (:), and the
+;     line must be terminated with an ENTER character ($0d).
+;     If you intend to return to BASIC, don't forget to first clear the ERR_NR system
+;     variable back to $ff (no error).
+;     Additionally, note that a m/code program using IDE_BASIC should not be executed
+;     using a variable assignment, eg:
+;     LET variable=USR x
+;     since this will cause unexpected effects if the BASIC statements executed by
+;     IDE_BASIC have also performed any variable assignments.
+;     This will not work for adding lines to a program (ie no line number should be
+;     present).
+;
 0F9D EB            L0F9D:       ex de,hl
 0F9E 21 68 5B                   ld hl,$5B68
 0FA1 CB C6                      set 0,(hl)
@@ -2576,6 +2622,9 @@ Total Instructions: 12028
 114E 13            L114E:       inc de
 114F 0B                         dec bc
 1150 18 E0                      jr L1132
+;
+; IDE_STREAM_OPEN: Open stream to a channel
+;
 1152 C5            L1152:       push bc
 1153 CD E3 10                   call L10E3
 1156 30 9F                      jr nc,L10F7
@@ -3173,6 +3222,9 @@ Total Instructions: 12028
 14BB EB                         ex de,hl
 14BC E1                         pop hl
 14BD C9                         ret
+;
+; IDE_STREAM_CLOSE: Close stream and attached channel
+;
 14BE CD E3 10      L14BE:       call L10E3
 14C1 D0                         ret nc
 14C2 78                         ld a,b
@@ -3282,14 +3334,23 @@ Total Instructions: 12028
 1555 D0                         ret nc
 1556 01 07 00                   ld bc,$0007
 1559 18 DF                      jr L153A
+;
+; IDE_STREAM_OUT: Write byte to current stream
+;
 155B D9            L155B:       exx
 155C 11 00 00                   ld de,$0000
 155F CD 00 3E      L155F:       call L3E00
 1562 E5                         push hl
 1563 03                         inc bc
 1564 C9                         ret
+;
+; IDE_STREAM_IN: Get byte from current stream
+;
 1565 11 02 00      L1565:       ld de,$0002
 1568 18 F5                      jr L155F
+;
+; IDE_STREAM_PTR: Get or set pointer information for current stream
+;
 156A D9            L156A:       exx
 156B 11 04 00                   ld de,$0004
 156E 18 EF                      jr L155F
