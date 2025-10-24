@@ -22,7 +22,7 @@
 0014 C3 EF 00                   jp ColdStart
 0017 00                         .defb $00
 ;
-; RST $18:
+; RST $18: Call ROM1 routine. The address to call is specified in the stack.
 ;                      nop
 0018 C3 80 3E                   jp Rom1Call
 001B 3C 44 49 52                .defb $3C, $44, $49, $52   ; Filler bytes: "<DIR"
@@ -570,7 +570,7 @@
 02E6 FD 35 C6                   dec (iy-$3A)
 02E9 FD 35 CA                   dec (iy-$36)
 02EC 21 C6 15                   ld hl,$15C6
-02EF 11 10 5C                   ld de,$5C10
+02EF 11 10 5C                   ld de,STRMS
 02F2 01 0E 00                   ld bc,$000E
 02F5 EF                         rst $28
 02F6 C3 33 FD                   jp LFD33
@@ -934,7 +934,7 @@
 0554 ED 52                      sbc hl,de
 0556 E5                         push hl
 0557 3E 13                      ld a,$13
-0559 21 10 5C                   ld hl,$5C10
+0559 21 10 5C                   ld hl,STRMS
 055C 5E            L055C:       ld e,(hl)
 055D 23                         inc hl
 055E 56                         ld d,(hl)
@@ -986,7 +986,7 @@
 05A6 ED 52                      sbc hl,de
 05A8 E5                         push hl
 05A9 3E 13                      ld a,$13
-05AB 21 10 5C                   ld hl,$5C10
+05AB 21 10 5C                   ld hl,STRMS
 05AE 5E            L05AE:       ld e,(hl)
 05AF 23                         inc hl
 05B0 56                         ld d,(hl)

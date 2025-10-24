@@ -241,6 +241,16 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getCurrentPartitions(): number[];
 
   /**
+   * Gets the selected ROM page number
+   */
+  getSelectedRomPage(): number;
+
+  /**
+   * Gets the selected RAM bank number
+   */
+  getSelectedRamBank(): number;
+
+  /**
    * Gets the current partition labels for all 16K/8K partitions
    */
   getCurrentPartitionLabels(): string[];

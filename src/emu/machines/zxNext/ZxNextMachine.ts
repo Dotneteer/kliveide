@@ -251,6 +251,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     return this.memoryDevice.getPartitions();
   }
 
+  /**
+   * Gets the selected ROM page number
+   */
+  getSelectedRomPage(): number {
+    return this.memoryDevice.selectedRomMsb | this.memoryDevice.selectedRomLsb;
+  }
+
+  /**
+   * Gets the selected RAM bank number
+   */
+  getSelectedRamBank(): number {
+    return this.memoryDevice.selectedBankMsb | this.memoryDevice.selectedBankLsb;
+  }
+
   getCurrentPartitionLabels(): string[] {
     return this.memoryDevice.getPartitionLabels();
   }

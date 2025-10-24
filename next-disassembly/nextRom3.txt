@@ -3764,7 +3764,7 @@
 1726 17                         rla
 1727 C6 03         L1727:       add a,$03
 1729 07                         rlca
-172A 21 10 5C                   ld hl,$5C10
+172A 21 10 5C                   ld hl,STRMS
 172D 4F                         ld c,a
 172E 06 00                      ld b,$00
 1730 09                         add hl,bc

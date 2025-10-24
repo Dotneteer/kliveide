@@ -57,7 +57,7 @@
 
 ; Non-filesystem-related API entry points
 ;
-0056 C3 52 11                   jp L1152                   ; IDE_STREAM_OPEN
+0056 C3 52 11                   jp IdeStrmOpen             ; IDE_STREAM_OPEN
 0059 C3 BE 14                   jp L14BE                   ; IDE_STREAM_CLOSE
 005C C3 65 15                   jp L1565                   ; IDE_STREAM_IN
 005F C3 5B 15                   jp L155B                   ; IDE_STREAM_OUT
@@ -2642,34 +2642,56 @@
 10E0 F1                         pop af
 10E1 E1                         pop hl
 10E2 C9                         ret
-10E3 C6 03         L10E3:       add a,$03
-10E5 FE 13                      cp $13
-10E7 30 0F                      jr nc,L10F8
-10E9 07                         rlca
-10EA 21 10 5C                   ld hl,$5C10
-10ED 4F                         ld c,a
+;
+; Gets the stream infomration address.
+; IN: A=stream index
+; OUT: BC=stream vector
+;      HL=address in the stream vector table
+;
+10E3 C6 03         GetStrInfo:  add a,$03                  ; The stream table contains 3 extra entries
+10E5 FE 13                      cp $13                     ; Is the stream number between $00 and $0F?
+10E7 30 0F                      jr nc,InvStream            ; No, sign the error
+10E9 07                         rlca                       ; A := A * 2
+10EA 21 10 5C                   ld hl,STRMS                ; HL := Start of the stream vectors
+10ED 4F                         ld c,a                     
 10EE 06 00                      ld b,$00
-10F0 09                         add hl,bc
-10F1 4E                         ld c,(hl)
+10F0 09                         add hl,bc                  ; HL := Pointer for the stream entry
+10F1 4E                         ld c,(hl)                  
 10F2 23                         inc hl
-10F3 46                         ld b,(hl)
-10F4 2B                         dec hl
-10F5 37                         scf
-10F6 C9                         ret
-10F7 C1            L10F7:       pop bc
-10F8 3E 17         L10F8:       ld a,$17
-10FA A7                         and a
-10FB C9                         ret
-10FC 23            L10FC:       inc hl
-10FD 23                         inc hl
-10FE 7E            L10FE:       ld a,(hl)
-10FF 23                         inc hl
-1100 A7                         and a
-1101 C8                         ret z
-1102 B9                         cp c
-1103 20 F7                      jr nz,L10FC
-1105 37                         scf
-1106 C9                         ret
+10F3 46                         ld b,(hl)                  ; BC := Stream entry
+10F4 2B                         dec hl                     ; HL := LSB of the stream entry
+10F5 37                         scf                        ; Sign success
+10F6 C9                         ret                        ; Done.
+
+; Restore BC and sign an invalid stream
+;
+10F7 C1            GetStrBc:    pop bc                     ; Restore BC
+
+; Sign an invalid stream
+;
+10F8 3E 17         InvStream:   ld a,$17                   ; A := $17, Invalid stream
+10FA A7                         and a                      ; Fc := 0, Error
+10FB C9                         ret                        ; Done
+;
+; Move to the next stream table entry
+;
+10FC 23            L10FC:       inc hl                     ; Skip the stream routine LSB
+10FD 23                         inc hl                     ; Skip the stream routine MSB
+;
+; Search for a stream table entry
+; IN: C=stream name character
+;     HL=Stream table
+; OUT(s): Fc=1, HL points to the stream table entry
+; OUT(f): Fc=0
+;
+10FE 7E            SeaChnEntry: ld a,(hl)                  ; Load the currenct stream table character
+10FF 23                         inc hl                     ; Move to stream routine LSB
+1100 A7                         and a                      ; End of the table?
+1101 C8                         ret z                      ; Return, if so (Fc=0)
+1102 B9                         cp c                       ; Marches the serached character?
+1103 20 F7                      jr nz,L10FC                ; No, move to the next entry
+1105 37                         scf                        ; Sign success
+1106 C9                         ret                        ; Done
 1107 3A 7F 5C      L1107:       ld a,($5C7F)
 110A E6 0F                      and $0F
 110C FE 01                      cp $01
@@ -2726,18 +2748,27 @@
 114E 13            L114E:       inc de
 114F 0B                         dec bc
 1150 18 E0                      jr L1132
-;
+
 ; IDE_STREAM_OPEN: Open stream to a channel
+; IN: A=stream number
+;     DE=address of string specifying channel to open
+;     BC=length of string specifying channel to open
+; OUT(s):  Fc=1
+; OUT(f):  Fc=0
+;     A=+3 BASIC error code: $17=invalid stream, $0e=invalid filename
 ;
-1152 C5            L1152:       push bc
-1153 CD E3 10                   call L10E3
-1156 30 9F                      jr nc,L10F7
+1152 C5            IdeStrmOpen: push bc                    ; Save BC
+1153 CD E3 10                   call GetStrInfo
+1156 30 9F                      jr nc,GetStrBc             ; Return if failed
 1158 78                         ld a,b
-1159 B1                         or c
-115A 28 16                      jr z,L1172
-115C E5                         push hl
-115D 2A 4F 5C                   ld hl,($5C4F)
-1160 09                         add hl,bc
+1159 B1                         or c                       ; Check if stream address is 0 (closed)
+115A 28 16                      jr z,L1172                 ; If so, jump to open it
+;
+; The stream is already open
+;
+115C E5                         push hl                    ; Save the stream table MSB
+115D 2A 4F 5C                   ld hl,(CHANS)              ; HL := current channel data address
+1160 09                         add hl,bc                  ; 
 1161 23                         inc hl
 1162 23                         inc hl
 1163 23                         inc hl
@@ -2748,81 +2779,102 @@
 116A FE 53                      cp $53
 116C 28 04                      jr z,L1172
 116E FE 50                      cp $50
-1170 20 85                      jr nz,L10F7
-1172 C1            L1172:       pop bc
-1173 E5                         push hl
-1174 21 B2 11                   ld hl,$11B2
+1170 20 85                      jr nz,GetStrBc
+1172 C1            L1172:       pop bc                     ; Get the length of the channel specification
+1173 E5                         push hl                    ; Save the stream table LSB 
+1174 21 B2 11                   ld hl,$11B2                ; 
 1177 78                         ld a,b
-1178 B1                         or c
-1179 28 32                      jr z,L11AD
-117B 0B                         dec bc
+1178 B1                         or c                       ; Filename length is zero?
+1179 28 32                      jr z,`InvFName             ; If so, sign this issue
+117B 0B                         dec bc                     ; Check if BC = 1
 117C 78                         ld a,b
 117D B1                         or c
-117E 03                         inc bc
-117F 1A                         ld a,(de)
-1180 28 11                      jr z,L1193
-1182 21 CA 11                   ld hl,$11CA
-1185 13                         inc de
-1186 1A                         ld a,(de)
-1187 1B                         dec de
-1188 FE 3E                      cp $3E
-118A 3E 49                      ld a,$49
-118C 20 05                      jr nz,L1193
-118E 1A                         ld a,(de)
-118F 13                         inc de
-1190 13                         inc de
-1191 0B                         dec bc
-1192 0B                         dec bc
-1193 E6 DF         L1193:       and $DF
-1195 C5                         push bc
-1196 4F                         ld c,a
-1197 CD FE 10                   call L10FE
-119A C1                         pop bc
-119B 30 10                      jr nc,L11AD
-119D 7E                         ld a,(hl)
+117E 03                         inc bc                     ; At this point Fz = 1, if length is 1
+117F 1A                         ld a,(de)                  ; First character of the filename
+1180 28 11                      jr z,`ChnChar              ; Jump, if length is 1
+1182 21 CA 11                   ld hl,$11CA                ; HL := Address of the stream descriptor table
+1185 13                         inc de                     ; Next char address
+1186 1A                         ld a,(de)                  ; Get next char
+1187 1B                         dec de                     ; Back to the first char
+1188 FE 3E                      cp ">"                    
+118A 3E 49                      ld a,"I"                   ;
+118C 20 05                      jr nz,`ChnChar             ; If the second char is not ">", it's an "I"
+118E 1A                         ld a,(de)                  ; Get the first channel char again
+118F 13                         inc de                     ; Point to the second character
+1190 13                         inc de                     ; Point to the third character
+1191 0B                         dec bc               
+1192 0B                         dec bc                     ; Decrease the remaining length with 2
+1193 E6 DF         `ChnChar:    and $DF                    ; Convert to uppercase character (if letter at all)
+1195 C5                         push bc                    ; Save the filename length
+1196 4F                         ld c,a                     ; C := stream name (1 character)
+1197 CD FE 10                   call SeaChnEntry           ; Search for the stream entey
+119A C1                         pop bc                     ; Restore the filename length
+119B 30 10                      jr nc,`InvFName            ; Not found, sign the error
+119D 7E                         ld a,(hl)                  
 119E 23                         inc hl
 119F 66                         ld h,(hl)
-11A0 6F                         ld l,a
-11A1 CD AC 11                   call L11AC
-11A4 E1                         pop hl
-11A5 30 07                      jr nc,L11AE
-11A7 73                         ld (hl),e
-11A8 23                         inc hl
-11A9 72                         ld (hl),d
-11AA 37                         scf
-11AB C9                         ret
-11AC E9            L11AC:       jp (hl)
-11AD C1            L11AD:       pop bc
-11AE 3E 0E         L11AE:       ld a,$0E
-11B0 A7                         and a
-11B1 C9                         ret
-11B2 4B                         ld c,e
-11B3 BC                         cp h
-11B4 11 53 C0                   ld de,$C053
-11B7 11 50 C4                   ld de,$C450
-11BA 11 00 1E                   ld de,$1E00
-11BD 01 18 06                   ld bc,$0618
+11A0 6F                         ld l,a                     ; HL := stream routine
+11A1 CD AC 11                   call CallHl                ; Open the channel by calling the stream routine
+11A4 E1                         pop hl                     ; Restore HL (points to the stream table LSB)
+11A5 30 07                      jr nc,`InvFName2           ; Opening ended with invalid filename  
+11A7 73                         ld (hl),e                  ; Store the LSB value
+11A8 23                         inc hl                     
+11A9 72                         ld (hl),d                  ; Store the MSB value
+11AA 37                         scf                        ; Sign success
+11AB C9                         ret                        ; Done
+
+; Call the subroutine pointed by HL
+;
+11AC E9            CallHl:      jp (hl)
+
+; Sign an Invalid filename error
+;
+11AD C1            `InvFName:   pop bc                     ; Get the top of the stack
+11AE 3E 0E         `InvFName2:  ld a,$0E                   ; A := $0E, Invalid filename error
+11B0 A7                         and a                      ; Fc := 0, sign error
+11B1 C9                         ret                        ; Done
+; 
+; Single-letter channels
+;
+11B2 4B                         .defb "K"                  ; Keyboard
+11B3 BC 11                      .defw $11BC
+11B5 53                         .defb "S"                  ; Screen
+11B6 C0 11                      .defw $11C0
+11B8 50                         .defb "P"                  ; Printer
+11B9 C4 11                      .defw $11C4                
+11BB 00                         .defb $00                  ; End of the table
+;
+; Open the "K" (keyboard) channel
+;
+11BC 1E 01                      ld e,$01
+11BE 18 06                      jr L11C6
+;
+; Open the "S" (screen) channel
+;
 11C0 1E 06                      ld e,$06
 11C2 18 02                      jr L11C6
+;
+; Open the "P" (printer) channel
+;
 11C4 1E 10                      ld e,$10
 11C6 16 00         L11C6:       ld d,$00
 11C8 37                         scf
 11C9 C9                         ret
-11CA 49                         ld c,c
-11CB EE 11                      xor $11
-11CD 4F                         ld c,a
-11CE E7                         rst $20
-11CF 11 55 E0                   ld de,$E055
-11D2 11 4D 59                   ld de,$594D
-11D5 12                         ld (de),a
-11D6 56                         ld d,(hl)
-11D7 94                         sub h
-11D8 12                         ld (de),a
-11D9 57                         ld d,a
-11DA 33                         inc sp
-11DB 13                         inc de
-11DC 44                         ld b,h
-11DD DA 12 00                   jp c,L0012
+11CA 49            L11CA:       .defb "I"
+11CB EE 11                      .defw $11EE
+11CD 4F                         .defb "O"
+11CE E7 11                      .defb $11E7
+11D0 55                         .defb "U"
+11D1 E0 11                      .defw $11E0
+11D3 4D                         .defb "M"
+11D4 59 12                      .defw $1259
+11D6 56                         .defb "V"
+11D7 94 12                      .defw $1294
+11D9 57                         .defb "W"
+11DA 33 13                      .defw $1333
+11DC 44                         .defb "D"
+11DD DA 12                      .defw $12DA
+11DF 00                         .defb $00
 11E0 21 02 02                   ld hl,$0202
 11E3 3E 03                      ld a,$03
 11E5 18 0C                      jr L11F3
@@ -3319,7 +3371,7 @@
 14AF 0B                         dec bc
 14B0 18 F6                      jr L14A8
 14B2 E5            L14B2:       push hl
-14B3 ED 5B 4F 5C                ld de,($5C4F)
+14B3 ED 5B 4F 5C                ld de,(CHANS)
 14B7 A7                         and a
 14B8 ED 52                      sbc hl,de
 14BA 23                         inc hl
@@ -3329,14 +3381,14 @@
 ;
 ; IDE_STREAM_CLOSE: Close stream and attached channel
 ;
-14BE CD E3 10      L14BE:       call L10E3
+14BE CD E3 10      L14BE:       call GetStrInfo
 14C1 D0                         ret nc
 14C2 78                         ld a,b
 14C3 B1                         or c
 14C4 37                         scf
 14C5 C8                         ret z
 14C6 E5                         push hl
-14C7 2A 4F 5C                   ld hl,($5C4F)
+14C7 2A 4F 5C                   ld hl,(CHANS)
 14CA 09                         add hl,bc
 14CB 23                         inc hl
 14CC 23                         inc hl
@@ -3344,13 +3396,13 @@
 14CE 4E                         ld c,(hl)
 14CF EB                         ex de,hl
 14D0 21 FB 14                   ld hl,$14FB
-14D3 CD FE 10                   call L10FE
-14D6 D2 F8 10                   jp nc,L10F8
+14D3 CD FE 10                   call SeaChnEntry
+14D6 D2 F8 10                   jp nc,InvStream
 14D9 7E                         ld a,(hl)
 14DA 23                         inc hl
 14DB 66                         ld h,(hl)
 14DC 6F                         ld l,a
-14DD CD AC 11                   call L11AC
+14DD CD AC 11                   call CallHl
 14E0 E1                         pop hl
 14E1 3E 12                      ld a,$12
 14E3 D0                         ret nc

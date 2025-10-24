@@ -256,6 +256,20 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Gets the selected ROM page number
+   */
+  getSelectedRomPage(): number {
+    return this.selectedRom;
+  }
+
+  /**
+   * Gets the selected RAM bank number
+   */
+  getSelectedRamBank(): number {
+    return this.selectedBank;
+  }
+
+  /**
    * Gets the current partition labels for all 16K/8K partitions
    */
   getCurrentPartitionLabels(): string[] {

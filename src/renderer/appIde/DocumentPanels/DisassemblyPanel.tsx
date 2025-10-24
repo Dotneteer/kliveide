@@ -248,7 +248,6 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         // --- Make sure vector addresses are included
         if (endAddr > 0xfff9) {
           endAddr = 0xffff;
-
         }
 
         if (endAddr > 0xfff9) {
@@ -282,7 +281,14 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
         {
           noLabelPrefix: false,
           allowExtendedSet: machineId === MI_ZXNEXT,
-          decimalMode: cachedRefreshState.current.decimalView
+          decimalMode: cachedRefreshState.current.decimalView,
+          getRomPage: () => {
+            return isFullView
+              ? getMemoryResponse.selectedRom
+              : currentSegment < 0
+                ? -currentSegment - 1
+                : -1;
+          }
         }
       );
 

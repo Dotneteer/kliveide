@@ -15,6 +15,11 @@ export interface DisassemblyOptions {
   noLabelPrefix?: boolean;
 
   /**
+   * Gets the current ROM page number
+   */
+  getRomPage?: () => number;
+
+  /**
    * Allow additional properties
    */
   [x: string]: any;
