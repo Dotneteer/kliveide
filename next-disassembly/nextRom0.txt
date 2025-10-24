@@ -1,10 +1,9 @@
-; ZX Spectrum Next ROM Disassembly (First 16KB)
+; ZX Spectrum Next ROM Disassembly (ROM 0)
 ; =======================================================================================================================
 ; File: enNextZX.rom
-; Address Range: $0000 - $3FFF (0 - 16383)<
-; Total Instructions: 9815
+; Source ROM Block: ROM 0 (file bytes 0x0000-0x3FFF)
 ;=======================================================================================================================
-;
+
 0000 F3                         di                         ; Disable interrupts during the cold start
 0001 C3 EF 00                   jp ColdStart               ; Continue with the cold start boot
 0004 45 44 08 02                .defb $45, $44, $08, $02   ; "E", "D", 08, 02
@@ -37,7 +36,7 @@
 ;
 ; RST $28: Call ROM3 routine. The address to call is specified in the stack.
 ;
-0028 ED 43 54 5B                ld ($5B54),bc              ; Save the value of BC temporarily
+0028 ED 43 54 5B                ld (TMPBC),bc              ; Save the value of BC temporarily
 002C E3                         ex (sp),hl                 ; Move the return address to HL
 002D C3 80 00                   jp Rom3Cont
 ;
@@ -90,7 +89,7 @@
 ;
 ;
 ;
-0068 ED 43 54 5B   L0068:       ld ($5B54),bc              ; Save the value of BC temporarily
+0068 ED 43 54 5B   L0068:       ld (TMPBC),bc              ; Save the value of BC temporarily
 006C E3                         ex (sp),hl                 ; HL := Return address
 006D 4E                         ld c,(hl)
 006E 23                         inc hl
@@ -99,7 +98,7 @@
 0071 E3                         ex (sp),hl                 ; to the next one
 0072 ED 8A 00 7B   L0072:       push $007B                 ; Use the $007B address of the alternate ROM to return
 0076 C5                         push bc                    ; Execute routine addressed with BC in the alternate ROM
-0077 ED 4B 54 5B                ld bc,($5B54)              ; Restore the original value of BC
+0077 ED 4B 54 5B                ld bc,(TMPBC)              ; Restore the original value of BC
 007B ED 91 8C 80                nextreg $8C,$80            ; Enable AltROM (for reads)
 007F C9                         ret    
 ;
@@ -112,7 +111,7 @@
 0084 E3                         ex (sp),hl                 ; to the next one
 0085 ED 8A 5B 4D   L0085:       push $5B4D                 ; Return to the RAM routine that switches back ROM0
 0089 C5                         push bc                    ; Push the original return address to the stack
-008A ED 4B 54 5B                ld bc,($5B54)              ; Restore the original value of BC
+008A ED 4B 54 5B                ld bc,(TMPBC)              ; Restore the original value of BC
 008E C3 48 5B                   jp L5B48                   ; Jump to the RAM routine that turns on ROM3
 ;
 ; Pager subroutines
@@ -498,7 +497,7 @@
 0247 CD E3 00                   call CopyPager             ; Copy page switching routines to the RAM
 024A 62                         ld h,d                     ; HL := Next address after the page switching routines
 024B 6B                         ld l,e
-024C 71                         ld (hl),c                  ; Set $5B52 to 0
+024C 71                         ld (hl),c                  ; Set TMPHL to 0
 024D 13                         inc de                     ; DE := $5B53
 024E 01 5F 01                   ld bc,$015F                ; BC := 351 bytes
 0251 ED B0                      ldir                       ; Zero the $5B52-$5CB1 area
@@ -3788,21 +3787,21 @@
 15C9 ED 91 8E 08   L15C9:       nextreg $8E,$08
 15CD 08            L15CD:       ex af,af'
 15CE F1                         pop af
-15CF 22 52 5B                   ld ($5B52),hl
+15CF 22 52 5B                   ld (TMPHL),hl
 15D2 2A 6A 5B                   ld hl,(TMPSP)
 15D5 ED 73 6A 5B   L15D5:       ld (TMPSP),sp
 15D9 F9                         ld sp,hl
-15DA 2A 52 5B                   ld hl,($5B52)
+15DA 2A 52 5B                   ld hl,(TMPHL)
 15DD F5                         push af
 15DE 08                         ex af,af'
 15DF C9                         ret
 15E0 08            L15E0:       ex af,af'
 15E1 F1                         pop af
-15E2 22 52 5B                   ld ($5B52),hl
+15E2 22 52 5B                   ld (TMPHL),hl
 15E5 2A 6A 5B                   ld hl,(TMPSP)
 15E8 ED 73 6A 5B                ld (TMPSP),sp
 15EC F9                         ld sp,hl
-15ED 2A 52 5B                   ld hl,($5B52)
+15ED 2A 52 5B                   ld hl,(TMPHL)
 15F0 F5                         push af
 15F1 08                         ex af,af'
 15F2 ED 91 8E 78                nextreg $8E,$78
@@ -9701,7 +9700,7 @@
 3DD7 F1                         pop af
 3DD8 ED 92 07                   nextreg $07,a
 3DDB C9                         ret
-3DDC ED 43 54 5B   L3DDC:       ld ($5B54),bc
+3DDC ED 43 54 5B   L3DDC:       ld (TMPBC),bc
 3DE0 E3                         ex (sp),hl
 3DE1 4E                         ld c,(hl)
 3DE2 23                         inc hl
@@ -9727,7 +9726,7 @@
 ; Calls a subroutine in ROM2
 ; The subroutine address is stored immediately after the RST $20 instruction
 ;
-3E00 ED 43 54 5B   Rom2Call:    ld ($5B54),bc              ; Store BC temporarily
+3E00 ED 43 54 5B   Rom2Call:    ld (TMPBC),bc              ; Store BC temporarily
 3E04 E3                         ex (sp),hl                 ; HL := return address
 3E05 4E                         ld c,(hl)                  
 3E06 23                         inc hl
@@ -9736,7 +9735,7 @@
 3E09 E3                         ex (sp),hl                 ; Set the return address (from RST $20)
 3E0A ED 8A 3E 13                push RETF2                 ; Push the return address (from ROM2 routine)
 3E0E C5                         push bc                    ; This is the address to call in ROM2
-3E0F ED 4B 54 5B                ld bc,($5B54)              ; Restore the original BC value
+3E0F ED 4B 54 5B                ld bc,(TMPBC)              ; Restore the original BC value
 ;
 ; At the RETF2 address in ROM2 there is a nextreg $8E,$00 instruction that switches back to ROM0
 ; ROM2 contains a ret instruction after RETF2, and that returns to the caller in ROM0
@@ -9803,7 +9802,7 @@
 ; Calls a subroutine in ROM2
 ; The subroutine address is stored immediately after the RST $18 instruction
 ;
-3E80 ED 43 54 5B   Rom1Call:    ld ($5B54),bc              ; Store BC temporarily
+3E80 ED 43 54 5B   Rom1Call:    ld (TMPBC),bc              ; Store BC temporarily
 3E84 E3                         ex (sp),hl                 ; HL := return address
 3E85 4E                         ld c,(hl)
 3E86 23                         inc hl
@@ -9812,7 +9811,7 @@
 3E89 E3                         ex (sp),hl                 ; Set the return address (from RST $20)
 3E8A ED 8A 3E 93                push $3E93                 ; Push the return address (from ROM2 routine)
 3E8E C5                         push bc                    ; This is the address to call in ROM2
-3E8F ED 4B 54 5B   L3E8F:       ld bc,($5B54)              ; Restore the original BC value
+3E8F ED 4B 54 5B   L3E8F:       ld bc,(TMPBC)              ; Restore the original BC value
 ;
 ; At the RETF1 address in ROM1 there is a nextreg $8E,$00 instruction that switches back to ROM0
 ; ROM1 contains a ret instruction after RETF1, and that returns to the caller in ROM0

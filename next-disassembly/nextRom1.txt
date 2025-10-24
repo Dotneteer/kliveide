@@ -1,10 +1,8 @@
-ZX Spectrum Next ROM Disassembly (ROM 1 - Second 16KB)
-================================================================================
-File: enNextZX.rom
-Source ROM Block: ROM 1 (file bytes 0x4000-0x7FFF)
-Disassembly Address Range: $0000 - $3FFF (0 - 16383)
-Total Instructions: 9430
-================================================================================
+; ZX Spectrum Next ROM Disassembly (ROM 1)
+; ================================================================================
+; File: enNextZX.rom
+; Source ROM Block: ROM 1 (file bytes 0x4000-0x7FFF)
+; ================================================================================
 
 0000 00                         nop
 0001 C3 00 3F                   jp L3F00

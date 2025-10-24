@@ -692,6 +692,10 @@ Total Instructions: 4922
 0445 D5            L0445:       push de
 0446 D9                         exx
 0447 C9                         ret
+
+;
+; DivMMC return point
+;
 0448 D3 E3                      out ($E3),a
 044A CD 5D 04                   call L045D
 044D F5                         push af

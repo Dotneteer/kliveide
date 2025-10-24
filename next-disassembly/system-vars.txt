@@ -1,5 +1,6 @@
-$5B52: ???
-$5B54: (word) Old BC value when paging
+$5B52: (word) TMPHL - Temporary storage for HL
+$5B54: (word) TMPBC - Temporary storage for BC
+$5B56: (word) ???
 $5B58: ???
 $5B5A: ???
 $5B5C: (byte) Last value written to port $7FFD
