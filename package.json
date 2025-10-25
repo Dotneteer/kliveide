@@ -49,7 +49,7 @@
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@eslint-community/regexpp": "^4.10.0",
     "@monaco-editor/react": "^4.6.0",
-    "@playwright/test": "^1.52.0",
+    "@playwright/test": "^1.56.1",
     "@types/lodash": "^4.17.0",
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.8",
