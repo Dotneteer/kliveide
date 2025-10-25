@@ -497,8 +497,8 @@ class EmuMessageProcessor {
       ir: m.ir,
       wz: m.wz,
       partitionLabels: controller.machine.getCurrentPartitionLabels(),
-      selectedRom: controller.machine.getCurrentPartitions()?.[0],
-      selectedBank: controller.machine.getCurrentPartitions()?.[6],
+      selectedRom: controller.machine.getSelectedRomPage?.(),
+      selectedBank: controller.machine.getSelectedRamBank?.(),
       memBreakpoints: controller.debugSupport.breakpoints,
       osInitialized: controller.machine?.isOsInitialized ?? false
     };

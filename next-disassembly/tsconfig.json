@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "module": "commonjs",
+    "target": "ESNext",
+    "noImplicitAny": false,
+    "noImplicitThis": true,
+    "strictNullChecks": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "paths": {
+      "@abstractions/*": ["../src/common/abstractions/*"],
+      "@common/*": ["../src/common/*"],
+      "@styles/*": ["../src/renderer/assets/styles/*"],
+      "@messaging/*": ["../src/common/messaging/*"],
+      "@state/*": ["../src/common/state/*"],
+      "@utils/*": ["../src/common/utils/*"],
+      "@renderer/*": ["../src/renderer/*"],
+      "@emu/*": ["../src/emu/*"],
+      "@appIde/*": ["../src/renderer/appIde/*"],
+      "@main/*": ["../src/main/*"],
+      "@controls/*": ["../src/renderer/controls/*"]
+    }
+  },
+  "include": ["*.ts"],
+  "exclude": ["node_modules", "*.txt"]
+}

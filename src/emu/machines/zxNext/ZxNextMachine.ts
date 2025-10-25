@@ -39,6 +39,7 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { CpuState } from "@common/messaging/EmuApi";
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import { zxNextSysVars } from "./ZxNextSysVars";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -251,6 +252,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     return this.memoryDevice.getPartitions();
   }
 
+  /**
+   * Gets the selected ROM page number
+   */
+  getSelectedRomPage(): number {
+    return this.memoryDevice.selectedRomMsb | this.memoryDevice.selectedRomLsb;
+  }
+
+  /**
+   * Gets the selected RAM bank number
+   */
+  getSelectedRamBank(): number {
+    return this.memoryDevice.selectedBankMsb | this.memoryDevice.selectedBankLsb;
+  }
+
   getCurrentPartitionLabels(): string[] {
     return this.memoryDevice.getPartitionLabels();
   }
@@ -424,7 +439,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   get sysVars(): SysVar[] {
     // TODO: Implement this
-    return [];
+    return zxNextSysVars;
   }
 
   /**

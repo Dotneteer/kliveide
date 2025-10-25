@@ -7,6 +7,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst $18", ".defw $1234"],
       0xdf,
       0x34,
@@ -18,6 +19,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst $18", ".defw $1234", "nop"],
       0xdf,
       0x34,
@@ -30,6 +32,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst $20", ".defw $1234"],
       0xe7,
       0x34,
@@ -41,6 +44,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst $20", ".defw $1234", "nop"],
       0xe7,
       0x34,
@@ -53,6 +57,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst $28", ".defw $1234"],
       0xef,
       0x34,
@@ -64,6 +69,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst $28", ".defw $1234", "nop"],
       0xef,
       0x34,
@@ -76,6 +82,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst 24", ".defw 4660"],
       0xdf,
       0x34,
@@ -87,6 +94,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst 24", ".defw 4660", "nop"],
       0xdf,
       0x34,
@@ -99,6 +107,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst 32", ".defw 4660"],
       0xe7,
       0x34,
@@ -110,6 +119,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst 32", ".defw 4660", "nop"],
       0xe7,
       0x34,
@@ -122,6 +132,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst 40", ".defw 4660"],
       0xef,
       0x34,
@@ -133,6 +144,7 @@ describe("Disassembler - ZX Spectrum Next specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrumNextCustomDisassembler(),
+      0,
       ["rst 40", ".defw 4660", "nop"],
       0xef,
       0x34,

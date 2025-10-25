@@ -2,7 +2,6 @@ import type { SysVar } from "@abstractions/SysVar";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { MachineModel } from "@common/machines/info-types";
 
-import { SysVarType } from "@abstractions/SysVar";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
@@ -156,6 +155,20 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    */
   getCurrentPartitions(): number[] {
     return [];
+  }
+
+  /**
+   * Gets the selected ROM page number
+   */
+  getSelectedRomPage(): number {
+    return 0;
+  }
+
+  /**
+   * Gets the selected RAM bank number
+   */
+  getSelectedRamBank(): number {
+    return 0;
   }
 
   /**

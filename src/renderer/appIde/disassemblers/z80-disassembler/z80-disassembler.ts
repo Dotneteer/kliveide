@@ -67,7 +67,13 @@ export class Z80Disassembler {
       fetch: () => this.apiFetch(),
       peek: (ahead?: number) => this.peek(ahead),
       addDisassemblyItem: (item: DisassemblyItem) => this._output.addItem(item),
-      createLabel: (address: number) => this._output.createLabel(address)
+      createLabel: (address: number) => this._output.createLabel(address),
+      getRomPage: () => {
+        if (this.options && this.options.getRomPage) {
+          return this.options.getRomPage();
+        }
+        return -1;
+      }
     });
   }
 

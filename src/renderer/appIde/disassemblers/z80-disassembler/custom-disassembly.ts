@@ -61,6 +61,11 @@ export interface IDisassemblyApi {
    * @param address Addres to create a label from
    */
   createLabel(address: number): void;
+ 
+  /**
+   * Gets the current ROM page number
+   */
+  getRomPage(): number;
 }
 
 /**

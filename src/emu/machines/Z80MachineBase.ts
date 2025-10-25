@@ -380,6 +380,16 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   abstract getCurrentPartitions(): number[];
 
   /**
+   * Gets the currently selected ROM page
+   */
+  abstract getSelectedRomPage(): number;
+
+  /**
+   * Gets the currently selected RAM bank
+   */
+  abstract getSelectedRamBank(): number;
+
+  /**
    * Gets the current partition labels for all 16K/8K partitions
    */
   abstract getCurrentPartitionLabels(): string[];
