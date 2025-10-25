@@ -4115,7 +4115,7 @@
 196C D7            L196C:       rst $10
 196D C9                         ret
 196E E5            L196E:       push hl
-196F 2A 53 5C                   ld hl,($5C53)
+196F 2A 53 5C                   ld hl,(PROG)
 1972 54                         ld d,h
 1973 5D                         ld e,l
 1974 C1                         pop bc

@@ -545,7 +545,7 @@
 02AB 2B                         dec hl
 02AC 22 57 5C                   ld ($5C57),hl
 02AF 23                         inc hl
-02B0 22 53 5C                   ld ($5C53),hl
+02B0 22 53 5C                   ld (PROG),hl
 02B3 22 4B 5C                   ld ($5C4B),hl
 02B6 36 80                      ld (hl),$80
 02B8 23                         inc hl
@@ -643,7 +643,7 @@
 0372 FE 53                      cp $53
 0374 20 1B                      jr nz,L0391
 0376 DD E5         L0376:       push ix
-0378 3A 7F 5C                   ld a,($5C7F)
+0378 3A 7F 5C                   ld a,(GMODE)
 037B E6 0F                      and $0F
 037D C6 F2                      add a,$F2
 037F DD 67                      ld xh,a
@@ -739,7 +739,7 @@
 0428 2B                         dec hl
 0429 11 02 00                   ld de,$0002
 042C 18 B7                      jr L03E5
-042E 3A 7F 5C      L042E:       ld a,($5C7F)
+042E 3A 7F 5C      L042E:       ld a,(GMODE)
 0431 E6 0F                      and $0F
 0433 C6 F2                      add a,$F2
 0435 DD 67                      ld xh,a
@@ -961,7 +961,7 @@
 0577 E5            L0577:       push hl
 0578 C5                         push bc
 0579 E5                         push hl
-057A 2A 53 5C                   ld hl,($5C53)
+057A 2A 53 5C                   ld hl,(PROG)
 057D 09                         add hl,bc
 057E 7C                         ld a,h
 057F FE C0                      cp $C0
@@ -973,7 +973,7 @@
 0589 16 E1                      ld d,$E1
 058B 22 5A 5B                   ld ($5B5A),hl
 058E 2A 57 5C                   ld hl,($5C57)
-0591 ED 5B 53 5C                ld de,($5C53)
+0591 ED 5B 53 5C                ld de,(PROG)
 0595 1B                         dec de
 0596 A7                         and a
 0597 ED 52                      sbc hl,de
@@ -2551,7 +2551,7 @@
 0EC6 1A                         ld a,(de)
 0EC7 17                         rla
 0EC8 9E                         sbc a,(hl)
-0EC9 3A 7F 5C      L0EC9:       ld a,($5C7F)
+0EC9 3A 7F 5C      L0EC9:       ld a,(GMODE)
 0ECC E6 0F                      and $0F
 0ECE 28 05                      jr z,L0ED5
 0ED0 FD CB 02 AE                res 5,(iy+$02)
@@ -2568,7 +2568,7 @@
 0EE5 C4 73 10                   call nz,L1073
 0EE8 3A 7B 5B      L0EE8:       ld a,($5B7B)
 0EEB F5                         push af
-0EEC 3A 7F 5C                   ld a,($5C7F)
+0EEC 3A 7F 5C                   ld a,(GMODE)
 0EEF F5                         push af
 0EF0 76                         halt
 0EF1 AF                         xor a
@@ -6368,7 +6368,7 @@
 26F5 06 D8                      ld b,$D8
 26F7 C9                         ret
 26F8 5F            L26F8:       ld e,a
-26F9 3A 7F 5C      L26F9:       ld a,($5C7F)
+26F9 3A 7F 5C      L26F9:       ld a,(GMODE)
 26FC E6 0F                      and $0F
 26FE C8                         ret z
 26FF FE 03                      cp $03
@@ -8035,7 +8035,7 @@
 3225 C9                         ret
 3226 A7            L3226:       and a
 3227 CD BD 33                   call L33BD
-322A 3A 7F 5C                   ld a,($5C7F)
+322A 3A 7F 5C                   ld a,(GMODE)
 322D 32 93 D6                   ld ($D693),a
 3230 2A 51 5C                   ld hl,($5C51)
 3233 22 3A D7                   ld ($D73A),hl

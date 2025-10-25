@@ -39,6 +39,7 @@ import { createMainApi } from "@common/messaging/MainApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { CpuState } from "@common/messaging/EmuApi";
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import { zxNextSysVars } from "./ZxNextSysVars";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -438,7 +439,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   get sysVars(): SysVar[] {
     // TODO: Implement this
-    return [];
+    return zxNextSysVars;
   }
 
   /**

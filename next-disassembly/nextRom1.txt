@@ -1752,7 +1752,7 @@
 0B1A 20 1C                      jr nz,L0B38
 0B1C 3A 7B 5B                   ld a,($5B7B)
 0B1F 32 BA D5                   ld ($D5BA),a
-0B22 3A 7F 5C                   ld a,($5C7F)
+0B22 3A 7F 5C                   ld a,(GMODE)
 0B25 32 B9 D5                   ld ($D5B9),a
 0B28 CB 5F                      bit 3,a
 0B2A 28 0C                      jr z,L0B38
@@ -1894,7 +1894,7 @@
 0C5D F7                         rst $30
 0C5E FE 08                      cp $08
 0C60 20 1A                      jr nz,L0C7C
-0C62 3A 7F 5C                   ld a,($5C7F)
+0C62 3A 7F 5C                   ld a,(GMODE)
 0C65 E6 0F                      and $0F
 0C67 FE 09                      cp $09
 0C69 20 0E                      jr nz,L0C79
@@ -2059,12 +2059,12 @@
 0D7C 03                         inc bc
 0D7D 03                         inc bc
 0D7E 2B                         dec hl
-0D7F ED 5B 53 5C                ld de,($5C53)
+0D7F ED 5B 53 5C                ld de,(PROG)
 0D83 D5                         push de
 0D84 EF                         rst $28
 0D85 55                         ld d,l
 0D86 16 E1                      ld d,$E1
-0D88 22 53 5C                   ld ($5C53),hl
+0D88 22 53 5C                   ld (PROG),hl
 0D8B C1                         pop bc
 0D8C C5                         push bc
 0D8D 13                         inc de
@@ -2338,7 +2338,7 @@
 0F5C 3A 58 5B      L0F5C:       ld a,($5B58)
 0F5F ED 92 51                   nextreg $51,a
 0F62 21 00 20                   ld hl,$2000
-0F65 ED 4B 53 5C                ld bc,($5C53)
+0F65 ED 4B 53 5C                ld bc,(PROG)
 0F69 DD 7C         L0F69:       ld a,xh
 0F6B E6 03                      and $03
 0F6D 5F                         ld e,a
@@ -2419,7 +2419,7 @@
 0FD9 18 0D                      jr L0FE8
 0FDB 3A 58 5B      L0FDB:       ld a,($5B58)
 0FDE ED 92 51                   nextreg $51,a
-0FE1 ED 5B 53 5C                ld de,($5C53)
+0FE1 ED 5B 53 5C                ld de,(PROG)
 0FE5 21 00 20                   ld hl,$2000
 0FE8 C5            L0FE8:       push bc
 0FE9 D5                         push de
@@ -2498,7 +2498,7 @@
 105E 3A 58 5B      L105E:       ld a,($5B58)
 1061 ED 92 51                   nextreg $51,a
 1064 21 00 20                   ld hl,$2000
-1067 ED 5B 53 5C                ld de,($5C53)
+1067 ED 5B 53 5C                ld de,(PROG)
 106B FD CB 30 AE   L106B:       res 5,(iy+$30)
 106F FD CB 01 86                res 0,(iy+$01)
 1073 3E 07         L1073:       ld a,$07
@@ -3007,7 +3007,7 @@
 13A2 EF                         rst $28
 13A3 3C                         inc a
 13A4 20 C9                      jr nz,L136F
-13A6 3A 7F 5C                   ld a,($5C7F)
+13A6 3A 7F 5C                   ld a,(GMODE)
 13A9 E6 0F                      and $0F
 13AB 28 23                      jr z,L13D0
 13AD 0F                         rrca
@@ -3079,10 +3079,10 @@
 1417 01 3B 12                   ld bc,$123B
 141A ED 79                      out (c),a
 141C 32 7B 5B                   ld ($5B7B),a
-141F 3A 7F 5C      L141F:       ld a,($5C7F)
+141F 3A 7F 5C      L141F:       ld a,(GMODE)
 1422 E6 F0                      and $F0
 1424 B3                         or e
-1425 32 7F 5C                   ld ($5C7F),a
+1425 32 7F 5C                   ld (GMODE),a
 1428 E6 03                      and $03
 142A 21 11 0B                   ld hl,$0B11
 142D 5F                         ld e,a
@@ -3580,7 +3580,7 @@
 17D8 E7                         rst $20
 17D9 CD 14 09                   call L0914
 17DC 21 00 00                   ld hl,$0000
-17DF 3A 7F 5C                   ld a,($5C7F)
+17DF 3A 7F 5C                   ld a,(GMODE)
 17E2 E6 0F                      and $0F
 17E4 28 51                      jr z,L1837
 17E6 FE 05                      cp $05
@@ -3679,7 +3679,7 @@
 18BD A7                         and a
 18BE C4 9B 1C                   call nz,L1C9B
 18C1 2A 59 5C                   ld hl,($5C59)
-18C4 ED 5B 53 5C                ld de,($5C53)
+18C4 ED 5B 53 5C                ld de,(PROG)
 18C8 37                         scf
 18C9 ED 52                      sbc hl,de
 18CB DD 75 0B                   ld (ix+$0B),l
@@ -3973,7 +3973,7 @@
 1AD4 E5                         push hl
 1AD5 CD EB 19                   call L19EB
 1AD8 E1                         pop hl
-1AD9 ED 5B 53 5C                ld de,($5C53)
+1AD9 ED 5B 53 5C                ld de,(PROG)
 1ADD 7E                         ld a,(hl)
 1ADE E6 C0                      and $C0
 1AE0 20 1C                      jr nz,L1AFE
@@ -4998,7 +4998,7 @@
 22A3 2A 57 5C                   ld hl,($5C57)
 22A6 3C                         inc a
 22A7 20 07                      jr nz,L22B0
-22A9 ED 5B 53 5C                ld de,($5C53)
+22A9 ED 5B 53 5C                ld de,(PROG)
 22AD A7                         and a
 22AE ED 52                      sbc hl,de
 22B0 E5            L22B0:       push hl
@@ -5188,7 +5188,7 @@
 2431 ED 53 A6 5C                ld ($5CA6),de
 2435 3C                         inc a
 2436 20 36                      jr nz,L246E
-2438 ED 5B 53 5C                ld de,($5C53)
+2438 ED 5B 53 5C                ld de,(PROG)
 243C A7                         and a
 243D ED 52                      sbc hl,de
 243F 22 A8 5C      L243F:       ld ($5CA8),hl
@@ -6658,7 +6658,7 @@
 2D0D D2 E6 13                   jp nc,L13E6
 2D10 ED 92 07                   nextreg $07,a
 2D13 C9                         ret
-2D14 3A 7F 5C                   ld a,($5C7F)
+2D14 3A 7F 5C                   ld a,(GMODE)
 2D17 E6 0F                      and $0F
 2D19 28 06                      jr z,L2D21
 2D1B CD E5 26                   call L26E5
@@ -6939,7 +6939,7 @@
 2E79 DD 7E 04                   ld a,(ix+$04)
 2E7C FE 53                      cp $53
 2E7E 20 14                      jr nz,L2E94
-2E80 3A 7F 5C      L2E80:       ld a,($5C7F)
+2E80 3A 7F 5C      L2E80:       ld a,(GMODE)
 2E83 E6 0F                      and $0F
 2E85 28 15                      jr z,L2E9C
 2E87 C6 F2                      add a,$F2
@@ -7013,7 +7013,7 @@
 2F0D 1C                         inc e
 2F0E 2F                         cpl
 2F0F CD 14 09                   call L0914
-2F12 3A 7F 5C                   ld a,($5C7F)
+2F12 3A 7F 5C                   ld a,(GMODE)
 2F15 E6 0F                      and $0F
 2F17 C0                         ret nz
 2F18 EF                         rst $28
@@ -7402,7 +7402,7 @@
 3215 07                         rlca
 3216 23                         inc hl
 3217 ED 43 A5 5C                ld ($5CA5),bc
-321B 3A 7F 5C                   ld a,($5C7F)
+321B 3A 7F 5C                   ld a,(GMODE)
 321E E6 0F                      and $0F
 3220 5F                         ld e,a
 3221 3A A3 5C                   ld a,($5CA3)
@@ -7725,7 +7725,7 @@
 3444 01 CD CB                   ld bc,$CBCD
 3447 26 06                      ld h,$06
 3449 2A 0E FF                   ld hl,($FF0E)
-344C 2A 53 5C                   ld hl,($5C53)
+344C 2A 53 5C                   ld hl,(PROG)
 344F 2B                         dec hl
 3450 CD 7B 36                   call L367B
 3453 AF                         xor a
@@ -7990,7 +7990,7 @@
 3681 22 57 5C                   ld ($5C57),hl
 3684 FD CB 30 BE                res 7,(iy+$30)
 3688 C9                         ret
-3689 3A 7F 5C      L3689:       ld a,($5C7F)
+3689 3A 7F 5C      L3689:       ld a,(GMODE)
 368C E6 0F                      and $0F
 368E 28 1F                      jr z,L36AF
 3690 C6 F2                      add a,$F2
@@ -8014,7 +8014,7 @@
 36B3 FE 2C                      cp $2C
 36B5 28 14                      jr z,L36CB
 36B7 CD 14 09                   call L0914
-36BA 3A 7F 5C                   ld a,($5C7F)
+36BA 3A 7F 5C                   ld a,(GMODE)
 36BD E6 0F                      and $0F
 36BF 28 06                      jr z,L36C7
 36C1 CD E5 26                   call L26E5
@@ -8027,7 +8027,7 @@
 36CA C9                         ret
 36CB CD 34 06      L36CB:       call L0634
 36CE CD 14 09                   call L0914
-36D1 3A 7F 5C                   ld a,($5C7F)
+36D1 3A 7F 5C                   ld a,(GMODE)
 36D4 E6 0F                      and $0F
 36D6 28 06                      jr z,L36DE
 36D8 CD E5 26                   call L26E5
@@ -8564,7 +8564,7 @@
 3A19 C0                         ret nz
 3A1A 2A 77 5B                   ld hl,($5B77)
 3A1D 2C                         inc l
-3A1E 2A 53 5C                   ld hl,($5C53)
+3A1E 2A 53 5C                   ld hl,(PROG)
 3A21 C8                         ret z
 3A22 2A B6 5E      L3A22:       ld hl,($5EB6)
 3A25 D5                         push de
@@ -8638,7 +8638,7 @@
 3AA7 2A 9B 5B                   ld hl,($5B9B)
 3AAA 3C                         inc a
 3AAB 20 05                      jr nz,L3AB2
-3AAD ED 5B 53 5C                ld de,($5C53)
+3AAD ED 5B 53 5C                ld de,(PROG)
 3AB1 19                         add hl,de
 3AB2 22 57 5C      L3AB2:       ld ($5C57),hl
 3AB5 E1            L3AB5:       pop hl
@@ -8810,7 +8810,7 @@
 3BB6 3C                         inc a
 3BB7 20 0E                      jr nz,L3BC7
 3BB9 EB                         ex de,hl
-3BBA 2A 53 5C                   ld hl,($5C53)
+3BBA 2A 53 5C                   ld hl,(PROG)
 3BBD 09                         add hl,bc
 3BBE EB                         ex de,hl
 3BBF 01 05 00                   ld bc,$0005
@@ -9435,7 +9435,7 @@
 3FE8 AF                         xor a
 3FE9 32 7A 5C                   ld ($5C7A),a
 3FEC C9                         ret
-3FED 3A 7F 5C      L3FED:       ld a,($5C7F)
+3FED 3A 7F 5C      L3FED:       ld a,(GMODE)
 3FF0 E6 0F                      and $0F
 3FF2 C8                         ret z
 3FF3 FE 03                      cp $03

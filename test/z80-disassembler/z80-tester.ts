@@ -202,12 +202,15 @@ export class Z80Tester {
    */
   static async TestCustom(
     provider: ICustomDisassembler,
+    romPage: number,
     expected: string[],
     ...opCodes: number[]
   ): Promise<void> {
     const map = new MemoryMap();
     map.add(new MemorySection(0x0000, opCodes.length - 1));
-    const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes));
+    const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes), undefined, {
+      getRomPage: () => romPage
+    });
     disassembler.setCustomDisassembler(provider);
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();
@@ -233,13 +236,15 @@ export class Z80Tester {
    */
   static async TestCustomWithDecimal(
     provider: ICustomDisassembler,
+    romPage: number,
     expected: string[],
     ...opCodes: number[]
   ): Promise<void> {
     const map = new MemoryMap();
     map.add(new MemorySection(0x0000, opCodes.length - 1));
     const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes), undefined, {
-      decimalMode: true
+      decimalMode: true,
+      getRomPage: () => romPage
     });
     disassembler.setCustomDisassembler(provider);
     var output = await disassembler.disassemble();
@@ -266,13 +271,16 @@ export class Z80Tester {
    */
   static async TestCustomWithComments(
     provider: ICustomDisassembler,
+    romPage: number,
     expected: string[],
     comments: string[],
     opCodes: number[]
   ): Promise<void> {
     const map = new MemoryMap();
     map.add(new MemorySection(0x0000, opCodes.length - 1));
-    const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes));
+    const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes), undefined, {
+      getRomPage: () => romPage
+    });
     disassembler.setCustomDisassembler(provider);
     var output = await disassembler.disassemble();
     expect(output).not.toBeNull();
@@ -306,6 +314,7 @@ export class Z80Tester {
    */
   static async TestCustomWithCommentsAndDecimal(
     provider: ICustomDisassembler,
+    romPage: number,
     expected: string[],
     comments: string[],
     opCodes: number[]
@@ -313,7 +322,8 @@ export class Z80Tester {
     const map = new MemoryMap();
     map.add(new MemorySection(0x0000, opCodes.length - 1));
     const disassembler = new Z80Disassembler(map.sections, new Uint8Array(opCodes), undefined, {
-      decimalMode: true
+      decimalMode: true,
+      getRomPage: () => romPage
     });
     disassembler.setCustomDisassembler(provider);
     var output = await disassembler.disassemble();

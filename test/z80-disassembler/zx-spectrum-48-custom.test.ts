@@ -7,6 +7,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       ["rst $08", ".defb $0a"],
       0xcf,
       0x0a
@@ -17,6 +18,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       ["rst $08", ".defb $0a", "nop"],
       0xcf,
       0x0a,
@@ -28,6 +30,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustom(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       ["rst $28", ".defb $38", "nop"],
       0xef,
       0x38,
@@ -62,6 +65,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithComments(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       expected,
       expComment,
       opCodes
@@ -72,6 +76,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       ["rst 8", ".defb 10"],
       0xcf,
       0x0a
@@ -82,6 +87,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       ["rst 8", ".defb 10", "nop"],
       0xcf,
       0x0a,
@@ -93,6 +99,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithDecimal(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       ["rst 40", ".defb 56", "nop"],
       0xef,
       0x38,
@@ -127,6 +134,7 @@ describe("Disassembler - ZX Spectrum-specific", function () {
     // --- Act
     await Z80Tester.TestCustomWithCommentsAndDecimal(
       new ZxSpectrum48CustomDisassembler(),
+      -1,
       expected,
       expComment,
       opCodes
