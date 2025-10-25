@@ -143,7 +143,7 @@ const WatchItem = memo(({ watch }: WatchItemProps) => {
     await ideCommandsService.executeCommand(command);
   };
 
-  const tip = `(${watch.typeName}) Right-click to delete '${watch.symbol}'`;
+  const tip = watch ? `(${watch.typeName}) Right-click to delete '${watch.symbol}'` : "";
 
   return watch ? (
     <div className={styles.watchItem}>

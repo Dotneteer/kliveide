@@ -418,6 +418,10 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
 
   // --- Take care of refreshing the screen
   const handleEmuStateChange = useCallback(() => {
+    // Don't refresh if AddressInput has focus
+    if (!allowRefresh.current) {
+      return Promise.resolve();
+    }
     setScrollVersion((prev) => prev + 1);
     return refreshMemoryView();
   }, [refreshMemoryView]);
