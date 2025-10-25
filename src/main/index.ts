@@ -213,7 +213,7 @@ async function createAppWindows() {
 
   // --- Initialize the always-on-top state based on the saved setting
   const initialStayOnTop = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
-  emuWindow.setAlwaysOnTop(initialStayOnTop);
+  emuWindow.setAlwaysOnTop(initialStayOnTop, process.platform === "linux" ? "normal" : undefined);
   lastStayOnTopValue = initialStayOnTop;
 
   // --- Create state manager for the EMU window
@@ -350,7 +350,9 @@ async function createAppWindows() {
     const isEmuOnTop = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
     if (lastStayOnTopValue !== isEmuOnTop) {
       lastStayOnTopValue = isEmuOnTop;
-      emuWindow?.setAlwaysOnTop(isEmuOnTop);
+      // Use "normal" level for better compatibility across platforms, especially Linux
+      // The level parameter helps window managers properly handle the always-on-top state
+      emuWindow?.setAlwaysOnTop(isEmuOnTop, process.platform === "linux" ? "normal" : undefined);
     }
 
     // --- Adjust menu items whenever the app state changes
@@ -464,6 +466,13 @@ async function createAppWindows() {
   // --- Sign when EMU is focused
   emuWindow.on("focus", () => {
     mainStore.dispatch(emuFocusedAction(true), "main");
+
+    // On Linux with certain window managers (like Cinnamon), the always-on-top state
+    // can get lost or incorrectly reported. Re-apply it on focus to ensure consistency.
+    if (process.platform === "linux" && lastStayOnTopValue !== undefined) {
+      const currentSetting = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
+      emuWindow.setAlwaysOnTop(currentSetting, "normal");
+    }
   });
 
   // --- Sign when EMU loses the focus
