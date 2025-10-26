@@ -1,8 +1,0 @@
-@import "@styles/core.scss";
-
-.sideBar {
-    @include fill-parent-flex;
-    flex-direction: column;
-    background: var(--bgcolor-sitebar);
-    user-select: none;
-}
