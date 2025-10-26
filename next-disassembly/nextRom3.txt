@@ -4,37 +4,62 @@
 ; Source ROM Block: ROM 3 (file bytes 0xC000-0xFFFF)
 ; ================================================================================
 
-0000 F3                         di
-0001 AF                         xor a
-0002 01 3B 24                   ld bc,$243B
-0005 C3 E8 3B                   jp L3BE8
-0008 2A 5D 5C                   ld hl,($5C5D)
-000B 22 5F 5C                   ld ($5C5F),hl
-000E 18 43                      jr L0053
-0010 C3 F2 15                   jp L15F2
-0013 DD E9         L0013:       jp (ix)
-0015 FF                         rst $38
-0016 FF                         rst $38
-0017 FF                         rst $38
-0018 C3 55 15                   jp L1555
+0000 F3                         di                         ; Disable interrupt
+0001 AF                         xor a                      
+0002 01 3B 24                   ld bc,$243B                ; Next Reg index port
+0005 C3 E8 3B                   jp L3BE8                   ; Jump forward
+
+; RST $08: The "Error" restart
+;
+0008 2A 5D 5C                   ld hl,(CH_ADD)
+000B 22 5F 5C                   ld (X_PTR),hl              ; Copy interpreter address to error pointer
+000E 18 43                      jr L0053                   ; Move on
+
+; RST $10: The "Print a character" restart
+;
+0010 C3 F2 15                   jp L15F2                   ; Go to print it
+
+; Indirect call by IX
+;
+0013 DD E9         CallIX:      jp (ix)
+
+; Filler bytes
+;
+0015 FF FF FF                   .defb £FF, $FF, $FF
+
+; RST $18: The "Collect character" restart
+;
+0018 C3 55 15                   jp L1555 
 001B 7E                         ld a,(hl)
 001C CD 7D 00      L001C:       call L007D
 001F D0                         ret nc
+;
+; RST $20: 
+;
 0020 C3 5B 15                   jp L155B
 0023 18 F7                      jr L001C
 0025 FF                         rst $38
 0026 FF                         rst $38
 0027 FF                         rst $38
+;
+; RST $28
+;
 0028 C3 5B 33                   jp L335B
 002B FF                         rst $38
 002C FF                         rst $38
 002D FF                         rst $38
 002E FF                         rst $38
 002F FF                         rst $38
+;
+; RST $30
+;
 0030 C5            L0030:       push bc
 0031 2A 61 5C                   ld hl,($5C61)
 0034 E5                         push hl
 0035 C3 9E 16                   jp L169E
+;
+; RST $38: IRQ Handler
+;
 0038 F5                         push af
 0039 E5                         push hl
 003A 2A 78 5C                   ld hl,($5C78)
@@ -78,9 +103,9 @@
 0071 00                         nop
 0072 00                         nop
 0073 00                         nop
-0074 2A 5D 5C      L0074:       ld hl,($5C5D)
+0074 2A 5D 5C      L0074:       ld hl,(CH_ADD)
 0077 23                         inc hl
-0078 22 5D 5C                   ld ($5C5D),hl
+0078 22 5D 5C                   ld (CH_ADD),hl
 007B 7E                         ld a,(hl)
 007C C9                         ret
 007D FE 21         L007D:       cp $21
@@ -97,7 +122,7 @@
 008D 38 01                      jr c,L0090
 008F 23                         inc hl
 0090 37            L0090:       scf
-0091 22 5D 5C                   ld ($5C5D),hl
+0091 22 5D 5C                   ld (CH_ADD),hl
 0094 C9                         ret
 0095 BF                         cp a
 0096 52                         ld d,d
@@ -1480,7 +1505,7 @@
 0841 3A 78 5B                   ld a,($5B78)
 0844 F5                         push af
 0845 E5                         push hl
-0846 2A 5F 5C                   ld hl,($5C5F)
+0846 2A 5F 5C                   ld hl,(X_PTR)
 0849 E5                         push hl
 084A 21 EF 34                   ld hl,$34EF
 084D CD CD 32                   call L32CD
@@ -1495,7 +1520,7 @@
 0861 03                         inc bc
 0862 CD 2F 2D      L0862:       call L2D2F
 0865 E1                         pop hl
-0866 22 5F 5C                   ld ($5C5F),hl
+0866 22 5F 5C                   ld (X_PTR),hl
 0869 E1                         pop hl
 086A F1                         pop af
 086B 32 78 5B                   ld ($5B78),a
@@ -2866,7 +2891,7 @@
 1204 18 03                      jr L1209
 1206 CD 4F 13      L1206:       call L134F
 1209 10 FB         L1209:       djnz L1206
-120B 22 5D 5C                   ld ($5C5D),hl
+120B 22 5D 5C                   ld (CH_ADD),hl
 120E CD FB 24                   call L24FB
 1211 FE 29                      cp $29
 1213 28 0C                      jr z,L1221
@@ -2874,7 +2899,7 @@
 1216 06 02         L1216:       ld b,$02
 1218 CD 4F 13                   call L134F
 121B 10 F9                      djnz L1216
-121D ED 53 5D 5C                ld ($5C5D),de
+121D ED 53 5D 5C                ld (CH_ADD),de
 1221 E7            L1221:       rst $20
 1222 C3 13 27                   jp L2713
 1225 FD CB 01 76   L1225:       bit 6,(iy+$01)
@@ -3424,7 +3449,7 @@
 1506 61                         ld h,c
 1507 ED 46                      im 0
 1509 4E                         ld c,(hl)
-150A 20 77                      jr nz,L1583
+150A 20 77                      jr nz,`Mul2
 150C 69                         ld l,c
 150D 74                         ld (hl),h
 150E 68                         ld l,b
@@ -3442,7 +3467,7 @@
 151C 74                         ld (hl),h
 151D 65            L151D:       ld h,l
 151E 72                         ld (hl),d
-151F 20 65                      jr nz,L1586
+151F 20 65                      jr nz,`Mul3
 1521 72                         ld (hl),d
 1522 72                         ld (hl),d
 1523 6F                         ld l,a
@@ -3483,64 +3508,76 @@
 1550 68            L1550:       ld l,b
 1551 20 4C                      jr nz,L159F
 1553 74                         ld (hl),h
-1554 E4 2A 5D      L1554:       call po,L5D2A
-1557 5C                         ld e,h
+1554 E4                         .defb $E4
+
+; "Collect character" continuation
+;
+1555 2A 5D 5C      L1555:       ld hl,(CH_ADD)
 1558 C3 62 15      L1558:       jp L1562
-155B 2A 5D 5C      L155B:       ld hl,($5C5D)
+155B 2A 5D 5C      L155B:       ld hl,(CH_ADD)
 155E 23            L155E:       inc hl
-155F 22 5D 5C      L155F:       ld ($5C5D),hl
-1562 7E            L1562:       ld a,(hl)
-1563 FE 21         L1563:       cp $21
-1565 D0                         ret nc
-1566 FE 0D                      cp $0D
-1568 C8                         ret z
-1569 23                         inc hl
-156A FE 18                      cp $18
-156C 30 F1                      jr nc,L155F
-156E FE 10                      cp $10
-1570 38 ED                      jr c,L155F
-1572 FE 16                      cp $16
-1574 38 E8                      jr c,L155E
-1576 23            L1576:       inc hl
-1577 18 E5                      jr L155E
-1579 37            L1579:       scf
-157A 14                         inc d
-157B 15                         dec d
-157C 28 03                      jr z,L1581
-157E 24                         inc h
-157F 25                         dec h
-1580 C0                         ret nz
-1581 42            L1581:       ld b,d
-1582 4B                         ld c,e
-1583 54            L1583:       ld d,h
-1584 ED 30                      mul d,e
-1586 14            L1586:       inc d
-1587 15                         dec d
-1588 C0                         ret nz
-1589 7B                         ld a,e
-158A 50                         ld d,b
-158B 5D                         ld e,l
-158C ED 30                      mul d,e
-158E 14                         inc d
-158F 15                         dec d
-1590 C0                         ret nz
-1591 83                         add a,e
-1592 D8                         ret c
-1593 55                         ld d,l
-1594 59            L1594:       ld e,c
-1595 ED 30                      mul d,e
-1597 67            L1597:       ld h,a
-1598 2E 00         L1598:       ld l,$00
-159A 19                         add hl,de
-159B D8                         ret c
-159C 7C            L159C:       ld a,h
-159D B5                         or l
-159E C9                         ret
+155F 22 5D 5C      L155F:       ld (CH_ADD),hl
+
+; "Collect character" 2nd continuation
+;
+1562 7E            L1562:       ld a,(hl)                  ; Get the current character
+1563 FE 21         L1563:       cp "!"                     ;
+1565 D0                         ret nc                     ; return, if >= "!"
+1566 FE 0D                      cp $0D                     ; Enter?
+1568 C8                         ret z                      ; return if so
+1569 23                         inc hl                     ; Move to the next character
+156A FE 18                      cp $18                     ; >= "ATTR" control character (special window controls)?
+156C 30 F1                      jr nc,L155F                ; If so, move to the next character (should be $155E)
+156E FE 10                      cp $10                     ; < "INK" (special window control) ?
+1570 38 ED                      jr c,L155F                 ; If so, move to the next character (should be $155E)
+1572 FE 16                      cp $16                     ; < "AT"?
+1574 38 E8                      jr c,L155E                 ; If so, skip the parameter character
+1576 23            L1576:       inc hl                     ; Skip one character
+1577 18 E5                      jr L155E                   ; Move to the next character
+
+; 16-bit by 16-bit multiplication: HL = HL * DE
+; Returns with carry flag set if overflow (result > 65535)
+; Uses the formula: (H*256+L) * (D*256+E) = H*E*256 + D*L*256 + L*E
+;
+1579 37            MulHlDe:     scf                        ; Set carry flag initially
+157A 14                         inc d                      ; Test if D is zero
+157B 15                         dec d                      ; (restore D)
+157C 28 03                      jr z,`Mul1                 ; If D=0, skip to `Mul1
+157E 24                         inc h                      ; Test if H is zero
+157F 25                         dec h                      ; (restore H)
+1580 C0                         ret nz                     ; Return if H≠0 (result would overflow)
+1581 42            `Mul1:       ld b,d                     ; Preserve D in B
+1582 4B                         ld c,e                     ; Preserve E in C (BC = original DE)
+1583 54                         ld d,h                     ; D = H
+1584 ED 30                      mul d,e                    ; DE = H * E (using Next extended instruction)
+1586 14                         inc d                      ; Test if high byte is non-zero
+1587 15                         dec d                      ; (restore D)
+1588 C0                         ret nz                     ; Return if overflow (D≠0)
+1589 7B                         ld a,e                     ; A = low byte of H*E
+158A 50                         ld d,b                     ; D = B (original D value)
+158B 5D                         ld e,l                     ; E = L
+158C ED 30                      mul d,e                    ; DE = D * L
+158E 14                         inc d                      ; Test if high byte is non-zero
+158F 15                         dec d                      ; (restore D)
+1590 C0                         ret nz                     ; Return if overflow (D≠0)
+1591 83                         add a,e                    ; A = (H*E low) + (D*L low)
+1592 D8                         ret c                      ; Return if carry (overflow)
+1593 55                         ld d,l                     ; D = L
+1594 59                         ld e,c                     ; E = C (original E value)
+1595 ED 30                      mul d,e                    ; DE = L * E
+1597 67                         ld h,a                     ; H = accumulated result
+1598 2E 00                      ld l,$00                   ; L = 0, so HL = accumulated * 256
+159A 19                         add hl,de                  ; HL = (H*E + D*L)*256 + L*E
+159B D8                         ret c                      ; Return if carry (overflow)
+159C 7C                         ld a,h                     ; A = high byte of result
+159D B5                         or l                       ; Set flags based on result
+159E C9                         ret                        ; Return with result in HL
+
 159F CD 30 25      L159F:       call L2530
 15A2 C8                         ret z
 15A3 C5                         push bc
 15A4 D5                         push de
-15A5 CD 79 15                   call L1579
+15A5 CD 79 15                   call MulHlDe
 15A8 D1                         pop de
 15A9 C1                         pop bc
 15AA D0                         ret nc
@@ -3640,6 +3677,9 @@
 164D FD CB 01 CE                set 1,(iy+$01)
 1651 C9                         ret
 1652 01 01 00      L1652:       ld bc,$0001
+;
+; Make room
+;
 1655 E5            L1655:       push hl
 1656 CD 05 1F                   call L1F05
 1659 E1                         pop hl
@@ -3847,7 +3887,7 @@
 17A5 28 F4                      jr z,L179B
 17A7 A6            L17A7:       and (hl)
 17A8 77                         ld (hl),a
-17A9 FC 13 00                   call m,L0013
+17A9 FC 13 00                   call m,CallIX
 17AC C3 12 27                   jp L2712
 17AF 7A            L17AF:       ld a,d
 17B0 A7                         and a
@@ -3864,7 +3904,7 @@
 17BF FE 24                      cp $24
 17C1 E1                         pop hl
 17C2 28 11                      jr z,L17D5
-17C4 22 5D 5C                   ld ($5C5D),hl
+17C4 22 5D 5C                   ld (CH_ADD),hl
 17C7 F1                         pop af
 17C8 30 05                      jr nc,L17CF
 17CA 0E ED                      ld c,$ED
@@ -3984,7 +4024,7 @@
 188C FD CB 37 6E                bit 5,(iy+$37)
 1890 28 02                      jr z,L1894
 1892 CB D6                      set 2,(hl)
-1894 2A 5F 5C      L1894:       ld hl,($5C5F)
+1894 2A 5F 5C      L1894:       ld hl,(X_PTR)
 1897 A7                         and a
 1898 ED 52                      sbc hl,de
 189A 20 05                      jr nz,L18A1
@@ -4136,7 +4176,7 @@
 1988 23                         inc hl
 1989 23                         inc hl
 198A 23                         inc hl
-198B 22 5D 5C      L198B:       ld ($5C5D),hl
+198B 22 5D 5C      L198B:       ld (CH_ADD),hl
 198E 0E 00                      ld c,$00
 1990 15            L1990:       dec d
 1991 C8                         ret z
@@ -4148,7 +4188,7 @@
 1998 23            L1998:       inc hl
 1999 7E                         ld a,(hl)
 199A CD B6 18      L199A:       call L18B6
-199D 22 5D 5C                   ld ($5C5D),hl
+199D 22 5D 5C                   ld (CH_ADD),hl
 19A0 FE 22                      cp $22
 19A2 20 01                      jr nz,L19A5
 19A4 0D                         dec c
@@ -4214,7 +4254,7 @@
 19FA C9                         ret
 19FB 2A 59 5C                   ld hl,($5C59)
 19FE 2B                         dec hl
-19FF 22 5D 5C                   ld ($5C5D),hl
+19FF 22 5D 5C                   ld (CH_ADD),hl
 1A02 E7                         rst $20
 1A03 21 92 5C                   ld hl,$5C92
 1A06 22 65 5C                   ld ($5C65),hl
@@ -6239,7 +6279,7 @@
 26BA 20 FA                      jr nz,L26B6
 26BC 23                         inc hl
 26BD CD B4 33                   call L33B4
-26C0 22 5D 5C                   ld ($5C5D),hl
+26C0 22 5D 5C                   ld (CH_ADD),hl
 26C3 FD CB 01 F6   L26C3:       set 6,(iy+$01)
 26C7 18 15                      jr L26DE
 26C9 EB                         ex de,hl
@@ -6722,7 +6762,7 @@
 29DF 20 35                      jr nz,L2A16
 29E1 DF            L29E1:       rst $18
 29E2 2B                         dec hl
-29E3 22 5D 5C                   ld ($5C5D),hl
+29E3 22 5D 5C                   ld (CH_ADD),hl
 29E6 C3 81 16                   jp L1681
 29E9 47            L29E9:       ld b,a
 29EA 21 00 00      L29EA:       ld hl,$0000
@@ -7886,7 +7926,7 @@
 30DC 4F                         ld c,a
 30DD E1                         pop hl
 30DE C5                         push bc
-30DF CD 79 15                   call L1579
+30DF CD 79 15                   call MulHlDe
 30E2 C1                         pop bc
 30E3 EB                         ex de,hl
 30E4 E1                         pop hl
@@ -8776,7 +8816,7 @@
 35DB C9                         ret
 35DC CF            L35DC:       rst $08
 35DD 0A                         ld a,(bc)
-35DE 2A 5D 5C                   ld hl,($5C5D)
+35DE 2A 5D 5C                   ld hl,(CH_ADD)
 35E1 E5                         push hl
 35E2 78                         ld a,b
 35E3 C6 E3                      add a,$E3
@@ -8787,7 +8827,7 @@
 35EB 03                         inc bc
 35EC F7                         rst $30
 35ED E1                         pop hl
-35EE ED 53 5D 5C                ld ($5C5D),de
+35EE ED 53 5D 5C                ld (CH_ADD),de
 35F2 D5                         push de
 35F3 ED B0                      ldir
 35F5 EB                         ex de,hl
@@ -8803,11 +8843,11 @@
 3607 FD AE 01                   xor (iy+$01)
 360A E6 40                      and $40
 360C C2 8A 1C      L360C:       jp nz,L1C8A
-360F 22 5D 5C                   ld ($5C5D),hl
+360F 22 5D 5C                   ld (CH_ADD),hl
 3612 FD CB 01 FE                set 7,(iy+$01)
 3616 CD FB 24                   call L24FB
 3619 E1                         pop hl
-361A 22 5D 5C                   ld ($5C5D),hl
+361A 22 5D 5C                   ld (CH_ADD),hl
 361D 18 A0                      jr L35BF
 361F 11 E3 2D                   ld de,$2DE3
 3622 D5            L3622:       push de
@@ -9365,7 +9405,7 @@
 3987 FE DE                      cp $DE
 3989 28 24                      jr z,L39AF
 398B 2B                         dec hl
-398C 22 5D 5C                   ld ($5C5D),hl
+398C 22 5D 5C                   ld (CH_ADD),hl
 398F 3E 9E                      ld a,$9E
 3991 18 E3                      jr L3976
 3993 CD 22 25      L3993:       call L2522
@@ -9846,7 +9886,7 @@
 3C9A 23            L3C9A:       inc hl
 3C9B 13                         inc de
 3C9C 1A                         ld a,(de)
-3C9D CD 13 00                   call L0013
+3C9D CD 13 00                   call CallIX
 3CA0 77                         ld (hl),a
 3CA1 10 F7                      djnz L3C9A
 3CA3 D1                         pop de
@@ -9882,15 +9922,15 @@
 3CCC 21 5E 5B                   ld hl,$5B5E
 3CCF 77                         ld (hl),a
 3CD0 08                         ex af,af'
-3CD1 CD 13 00                   call L0013
+3CD1 CD 13 00                   call CallIX
 3CD4 08                         ex af,af'
 3CD5 70                         ld (hl),b
 3CD6 7A                         ld a,d
-3CD7 CD 13 00                   call L0013
+3CD7 CD 13 00                   call CallIX
 3CDA 57                         ld d,a
 3CDB 71                         ld (hl),c
 3CDC 7B                         ld a,e
-3CDD CD 13 00                   call L0013
+3CDD CD 13 00                   call CallIX
 3CE0 5F                         ld e,a
 3CE1 08                         ex af,af'
 3CE2 6F                         ld l,a
@@ -9898,11 +9938,11 @@
 3CE4 21 5E 5B                   ld hl,$5B5E
 3CE7 71                         ld (hl),c
 3CE8 7A                         ld a,d
-3CE9 CD 13 00                   call L0013
+3CE9 CD 13 00                   call CallIX
 3CEC 57                         ld d,a
 3CED 70                         ld (hl),b
 3CEE 7B                         ld a,e
-3CEF CD 13 00                   call L0013
+3CEF CD 13 00                   call CallIX
 3CF2 5F                         ld e,a
 3CF3 E1                         pop hl
 3CF4 C3 7C 30                   jp L307C
