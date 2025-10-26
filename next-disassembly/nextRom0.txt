@@ -543,7 +543,7 @@
 02A7 EF                         rst $28
 02A8 C3 33 EB                   jp LEB33
 02AB 2B                         dec hl
-02AC 22 57 5C                   ld ($5C57),hl
+02AC 22 57 5C                   ld (DATADD),hl
 02AF 23                         inc hl
 02B0 22 53 5C                   ld (PROG),hl
 02B3 22 4B 5C                   ld ($5C4B),hl
@@ -957,28 +957,31 @@
 0572 20 E8                      jr nz,L055C
 0574 E1                         pop hl
 0575 C9                         ret
-0576 D9                         exx
-0577 E5            L0577:       push hl
+;
+;
+;
+0576 D9                         exx                        ; Turn back to main register set (when called from another ROM)
+0577 E5            L0577:       push hl                    ; Save used registers
 0578 C5                         push bc
 0579 E5                         push hl
-057A 2A 53 5C                   ld hl,(PROG)
-057D 09                         add hl,bc
-057E 7C                         ld a,h
-057F FE C0                      cp $C0
-0581 30 44                      jr nc,L05C7
-0583 2A 5A 5B                   ld hl,($5B5A)
-0586 E3                         ex (sp),hl
-0587 EF                         rst $28
-0588 55                         ld d,l
-0589 16 E1                      ld d,$E1
-058B 22 5A 5B                   ld ($5B5A),hl
-058E 2A 57 5C                   ld hl,($5C57)
+057A 2A 53 5C                   ld hl,(PROG)               ; HL := Start of the program area
+057D 09                         add hl,bc                  ; Calculate the potential end address
+057E 7C                         ld a,h                     
+057F FE C0                      cp $C0                     ; Will be this address over $C000?
+0581 30 44                      jr nc,L05C7                ; If so, take an alternate path
+0583 2A 5A 5B                   ld hl,($5B5A)              
+0586 E3                         ex (sp),hl                 ; Save the value of $5B5A to the stack
+0587 EF                         rst $28                    ; Call the "make room" routine in ROM3
+0588 55 16                      .defw $1655
+058A E1                         pop hl                     ; Restore the value of $5B5A from the stack
+058B 22 5A 5B                   ld ($5B5A),hl              ; Save it
+058E 2A 57 5C                   ld hl,(DATADD)
 0591 ED 5B 53 5C                ld de,(PROG)
 0595 1B                         dec de
 0596 A7                         and a
 0597 ED 52                      sbc hl,de
 0599 30 04                      jr nc,L059F
-059B ED 53 57 5C                ld ($5C57),de
+059B ED 53 57 5C                ld (DATADD),de
 059F C1            L059F:       pop bc
 05A0 E1                         pop hl
 05A1 ED 5B 4F 5C                ld de,($5C4F)

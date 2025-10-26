@@ -2631,7 +2631,7 @@
 10CE 67                         ld h,a
 10CF F1                         pop af
 10D0 E3                         ex (sp),hl
-10D1 CD 00 3E                   call CallRom3              ; Call ROM3 routine $2C2E
+10D1 CD 00 3E                   call CallRom0              ; Call ROM0 routine $2C2E
 10D4 2E 2C                      .defb $2C2E
 10D6 E3                         ex (sp),hl
 10D7 F5                         push af
@@ -3247,9 +3247,8 @@
 13AE E5                         push hl                    ; Save the character address to the stack
 13AF 21 81 14                   ld hl,$1481
 13B2 01 30 00                   ld bc,$0030                ; 48 bytes
-13B5 11 0D 00                   ld de,$000D
-13B8 CD 8E 14                   call L148E
-
+13B5 11 0D 00                   ld de,$000D                ; 13 bytes to copy
+13B8 CD 8E 14                   call L148E                 ; Init channel data
 13BB 01 0D 00                   ld bc,$000D
 13BE 09                         add hl,bc
 13BF C1                         pop bc
@@ -3405,16 +3404,10 @@
 ;
 ;
 ;
-1481 4D                         ld c,l
-1482 5B                         ld e,e
-1483 4D                         ld c,l
-1484 5B                         ld e,e
-1485 57                         ld d,a
-1486 5B                         ld e,e
-1487 27                         daa
-1488 E0                         ret po
-1489 11 9A 2B                   ld de,$2B9A
-148C 30 00                      jr nc,L148E
+1481 4D 5B 4D 5B                .defb $4D, $5B, $4D, $5B
+1485 57 5B 27 E0                .defb $57, $5B, $27, $E0
+1489 11 9A 2B 30                .defb $11, $9A, $2B, $30
+148d 00                         .defb $00
 ;
 ;
 ;
@@ -3424,29 +3417,29 @@
 1491 2A 53 5C                   ld hl,(PROG)               ; HL := Start of the BASIC program
 1494 2B                         dec hl                     ; Get back one byte
 1495 E5                         push hl                    ; Save that address
-1496 D9                         exx                        ; Save registers
-1497 CD 00 3E                   call CallRom3              ; Call ROM3 routine $0576
+1496 D9                         exx                        ; Save registers, $0576 will do an "exx" again
+1497 CD 00 3E                   call CallRom0              ; Call ROM0 routine $0576
 149A 76 05                      .defb $0576
-149C D1                         pop de
-149D E1                         pop hl
-149E C1                         pop bc
-149F A7                         and a
-14A0 ED 42                      sbc hl,bc
-14A2 E3                         ex (sp),hl
-14A3 D5                         push de
-14A4 ED B0                      ldir
-14A6 E1                         pop hl
-14A7 C1                         pop bc
+149C D1                         pop de                     ; DE := destination address
+149D E1                         pop hl                     ; HL := bytes count
+149E C1                         pop bc                     ; BC := table length
+149F A7                         and a                      ; Fc = 0
+14A0 ED 42                      sbc hl,bc                  ; HL := number of bytes to fill with zero
+14A2 E3                         ex (sp),hl                 ; Save the number of bytes, HL := table start address
+14A3 D5                         push de                    ; Save the destination addresses
+14A4 ED B0                      ldir                       ; Copy the bytes from the table
+14A6 E1                         pop hl                     ; HL := destination address
+14A7 C1                         pop bc                     ; BC := number of bytes to fill with zero
 14A8 78            L14A8:       ld a,b
 14A9 B1                         or c
-14AA 28 06                      jr z,L14B2
-14AC AF                         xor a
-14AD 12                         ld (de),a
-14AE 13                         inc de
-14AF 0B                         dec bc
-14B0 18 F6                      jr L14A8
-14B2 E5            L14B2:       push hl
-14B3 ED 5B 4F 5C                ld de,(CHANS)
+14AA 28 06                      jr z,L14B2                 ; Exit loop if all bytes filled
+14AC AF                         xor a                      ; A := 0
+14AD 12                         ld (de),a                  ; Fill the byte with zero
+14AE 13                         inc de                     ; Next byte
+14AF 0B                         dec bc                     ; Decrement the counter
+14B0 18 F6                      jr L14A8                   ; Next iteration
+14B2 E5            L14B2:       push hl                    ; Save the channel address
+14B3 ED 5B 4F 5C                ld de,(CHANS)              ; 
 14B7 A7                         and a
 14B8 ED 52                      sbc hl,de
 14BA 23                         inc hl
@@ -3548,7 +3541,7 @@
 153D 1B                         dec de
 153E EB                         ex de,hl
 153F D9                         exx
-1540 CD 00 3E                   call CallRom3              ; Call ROM3 routine $053E
+1540 CD 00 3E                   call CallRom0              ; Call ROM0 routine $053E
 1543 3E 05                      .defw $053E
 1545 37                         scf
 1546 C9                         ret
@@ -3570,7 +3563,7 @@
 ;
 155B D9            L155B:       exx
 155C 11 00 00                   ld de,$0000
-155F CD 00 3E      L155F:       call CallRom3              ; Call ROM3 routine $03E5
+155F CD 00 3E      L155F:       call CallRom0              ; Call ROM0 routine $03E5
 1562 E5 03                      .defw $03E5
 1564 C9                         ret
 ;
@@ -3611,14 +3604,14 @@
 ; IDE_WINDOW_LINEIN: Input line from current window stream
 ;
 159E DD 2A 51 5C   IdeWLineIn:  ld ix,($5C51)
-15A2 CD 00 3E                   call CallRom3              ; Call ROM3 routine $27D5
+15A2 CD 00 3E                   call CallRom0              ; Call ROM0 routine $27D5
 15A5 D5 27                      .defw $27D5
 15A7 C9                         ret
 ;
 ; IDE_WINDOW_STRING: Output string to current window stream
 ;
 15A8 DD 2A 51 5C   IdeWStr:     ld ix,($5C51)
-15AC CD 00 3E                   call CallRom3              ; Call ROM3 routine $272D
+15AC CD 00 3E                   call CallRom0              ; Call ROM0 routine $272D
 15AF 2D 27                      .defw $272D                
 15B1 C9                         ret
 15B2 DD 7E 00      L15B2:       ld a,(ix)
@@ -4930,7 +4923,7 @@
 1E97 FE 3A                      cp $3A
 1E99 38 02                      jr c,L1E9D
 1E9B C6 27                      add a,$27
-1E9D CD 00 3E      L1E9D:       call CallRom3              ; Call ROM3 routine $0010
+1E9D CD 00 3E      L1E9D:       call CallRom0              ; Call ROM0 routine $0010
 1EA0 10 00                      .defw $0010
 1EA2 29            L1EA2:       add hl,hl
 1EA3 29                         add hl,hl
@@ -4938,7 +4931,7 @@
 1EA5 29                         add hl,hl
 1EA6 10 E8                      djnz L1E90
 1EA8 3E 20                      ld a,$20
-1EAA CD 00 3E                   call CallRom3              ; Call ROM3 routine $0010
+1EAA CD 00 3E                   call CallRom0              ; Call ROM0 routine $0010
 1EAD 10 00                      .defw $0010
 1EAF E1            L1EAF:       pop hl
 1EB0 CD CD 1E      L1EB0:       call L1ECD
@@ -4960,7 +4953,7 @@
 1ED4 D5                         push de
 1ED5 ED B0                      ldir
 1ED7 E1                         pop hl
-1ED8 CD 00 3E                   call CallRom3              ; Call ROM3 routine $081D
+1ED8 CD 00 3E                   call CallRom0              ; Call ROM0 routine $081D
 1EDB 1D 08                      .defw $081D
 1EDD D1                         pop de
 1EDE C9                         ret
@@ -6660,9 +6653,9 @@
 ;
 3D00                            .fillb $100,$00
 
-; Call ROM3 routine. The address to call is specified in the stack.
+; Call ROM0 routine. The address to call is specified in the stack.
 ;
-3E00 ED 43 54 5B   CallRom3:    ld (TMPBC),bc
+3E00 ED 43 54 5B   CallRom0:    ld (TMPBC),bc
 3E04 E3                         ex (sp),hl
 3E05 4E                         ld c,(hl)
 3E06 23                         inc hl
