@@ -1,0 +1,36 @@
+
+> kliveide@1.0.0 dev
+> electron-vite dev
+
+vite v5.4.21 building SSR bundle for development...
+transforming...
+✓ 1 modules transformed.
+rendering chunks...
+out/main/index.js  1.36 kB
+✓ built in 23ms
+
+build the electron main process successfully
+
+-----
+
+vite v5.4.21 building SSR bundle for development...
+transforming...
+✓ 1 modules transformed.
+rendering chunks...
+out/preload/index.js  0.42 kB
+✓ built in 5ms
+
+build the electron preload files successfully
+
+-----
+
+dev server running for the electron renderer process at:
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+
+start electron app...
+
+Open dev tool...
+[71845:1026/131751.180373:ERROR:CONSOLE(1)] "Request Autofill.enable failed. {"code":-32601,"message":"'Autofill.enable' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)
+[71845:1026/131751.180395:ERROR:CONSOLE(1)] "Request Autofill.setAddresses failed. {"code":-32601,"message":"'Autofill.setAddresses' wasn't found"}", source: devtools://devtools/bundled/core/protocol_client/protocol_client.js (1)

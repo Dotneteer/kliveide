@@ -2,7 +2,8 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
   "compilerOptions": {
     "composite": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   },
   "include": ["src/renderer/**/*", "src/preload/index.d.ts"]
 }
