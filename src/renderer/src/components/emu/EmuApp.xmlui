@@ -1,0 +1,7 @@
+<Component name="EmuApp">
+  <App name="Klive Emulator">
+    <H1>
+      Klive Emulator
+    </H1>
+  </App>
+</Component>

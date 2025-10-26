@@ -1,7 +1,7 @@
 import { StandaloneAppDescription } from "xmlui";
 
 const App: StandaloneAppDescription = {
-  name: "Tutorial",
+  name: "Klive",
   version: "0.0.1",
   defaultTheme: "brand-theme",
   appGlobals: {

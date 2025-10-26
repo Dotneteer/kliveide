@@ -40,8 +40,7 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: {
-          appEmu: resolve(__dirname, 'src/renderer/appEmu/index.html'),
-          appIde: resolve(__dirname, 'src/renderer/appIde/index.html')
+          klive: resolve(__dirname, 'src/renderer/index.html'),
         }
       }
     },

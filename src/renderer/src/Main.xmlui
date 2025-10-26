@@ -1,3 +1,4 @@
-<App>
-  <H1>Klive IDE</H1>
-</App>
+<Fragment var.isEmu="{window.location.search.startsWith('?emu')}">
+  <EmuApp when="{isEmu}" />
+  <IdeApp when="{!isEmu}" />
+</Fragment>

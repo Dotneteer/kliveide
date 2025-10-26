@@ -1,0 +1,7 @@
+<Component name="IdeApp">
+  <App name="Klive IDE">
+    <H1>
+      Klive IDE
+    </H1>
+  </App>
+</Component>

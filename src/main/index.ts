@@ -31,9 +31,9 @@ function createEmulatorWindow(): void {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    emulatorWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/appEmu/')
+    emulatorWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/index.html?emu')
   } else {
-    emulatorWindow.loadFile(join(__dirname, '../renderer/appEmu.html'))
+    emulatorWindow.loadFile(join(__dirname, '../renderer/index.html?emu'))
   }
 
   emulatorWindow.on('closed', () => {
@@ -67,9 +67,11 @@ function createIdeWindow(): void {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    ideWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/appIde/')
+    const ideUrl = process.env['ELECTRON_RENDERER_URL'] + '/index.html?ide'
+    console.log('Loading IDE from URL:', ideUrl)
+    ideWindow.loadURL(ideUrl)
   } else {
-    ideWindow.loadFile(join(__dirname, '../renderer/appIde.html'))
+    ideWindow.loadFile(join(__dirname, '../renderer/index.html?ide'))
   }
 
   ideWindow.on('closed', () => {
