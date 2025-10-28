@@ -1,0 +1,25 @@
+.styledText {
+  display: inline-block;
+  transition: all 0.2s ease;
+
+  // Size styles
+  &.size-small {
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  &.size-medium {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  &.size-large {
+    font-size: 1.25rem;
+    line-height: 1.6;
+  }
+
+  &.size-xlarge {
+    font-size: 1.5rem;
+    line-height: 1.7;
+  }
+}

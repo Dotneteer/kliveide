@@ -3,5 +3,9 @@
     <H1>
       Klive Emulator
     </H1>
+    <StyledText
+      size="large"
+      color="blue"
+      text="This is styled text from a React component library." />
   </App>
 </Component>

@@ -1,90 +1,71 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { electronApp, optimizer } from '@electron-toolkit/utils'
+import {
+  createEmulatorWindow,
+  destroyEmulatorWindow,
+  getEmulatorState
+} from './emulatorWindow'
+import {
+  createIdeWindow,
+  destroyIdeWindow,
+  getIdeState
+} from './ideWindow'
+import { loadSettings, saveSettings } from './settingsManager'
+import { AppSettings } from '../common/abstractions/AppSettings'
 
-let emulatorWindow: BrowserWindow | null = null
-let ideWindow: BrowserWindow | null = null
+// Save all window states with timeout
+async function saveAllStates(): Promise<void> {
+  const saveTimeout = 3000
 
-function createEmulatorWindow(): void {
-  // Create the emulator browser window.
-  emulatorWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    show: false,
-    autoHideMenuBar: true,
-    title: 'Klive Emulator',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+  try {
+    // Capture current window states
+    const emulatorState = getEmulatorState()
+    const ideState = getIdeState()
+
+    // Build settings object
+    const settings: AppSettings = {
+      windowStates: {
+        emuWindow: emulatorState,
+        ideWindow: ideState
+      }
     }
-  })
 
-  emulatorWindow.on('ready-to-show', () => {
-    emulatorWindow?.show()
-  })
+    // Save to disk with timeout
+    await Promise.race([
+      saveSettings(settings),
+      new Promise<void>((_, reject) => 
+        setTimeout(() => reject(new Error('Save timeout')), saveTimeout)
+      )
+    ])
 
-  emulatorWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    emulatorWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/index.html?emu')
-  } else {
-    emulatorWindow.loadFile(join(__dirname, '../renderer/index.html?emu'))
+    console.log('All window states saved successfully')
+  } catch (error) {
+    console.error('Failed to save window states:', error)
   }
-
-  emulatorWindow.on('closed', () => {
-    emulatorWindow = null
-  })
 }
 
-function createIdeWindow(): void {
-  // Create the IDE browser window.
-  ideWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    show: false,
-    autoHideMenuBar: true,
-    title: 'Klive IDE',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
-    }
-  })
-
-  ideWindow.on('ready-to-show', () => {
-    ideWindow?.show()
-  })
-
-  ideWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    const ideUrl = process.env['ELECTRON_RENDERER_URL'] + '/index.html?ide'
-    console.log('Loading IDE from URL:', ideUrl)
-    ideWindow.loadURL(ideUrl)
-  } else {
-    ideWindow.loadFile(join(__dirname, '../renderer/index.html?ide'))
-  }
-
-  ideWindow.on('closed', () => {
-    ideWindow = null
-  })
+// Handle window close - called by both windows
+async function handleWindowClose(): Promise<void> {
+  // Save states before closing
+  await saveAllStates()
+  
+  // Now close both windows
+  destroyIdeWindow()
+  destroyEmulatorWindow()
+  
+  // Quit the app
+  app.quit()
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  // Load settings before creating windows
+  await loadSettings()
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -96,15 +77,15 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  createEmulatorWindow()
-  createIdeWindow()
+  createEmulatorWindow(handleWindowClose)
+  createIdeWindow(handleWindowClose)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      createEmulatorWindow()
-      createIdeWindow()
+      createEmulatorWindow(handleWindowClose)
+      createIdeWindow(handleWindowClose)
     }
   })
 })
