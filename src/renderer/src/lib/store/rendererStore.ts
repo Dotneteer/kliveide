@@ -24,10 +24,13 @@ export function getRendererStore(): Store<AppState, Action> {
     // Set up IPC listener to receive forwarded actions from main process
     window.electron.ipcRenderer.on("ForwardActionToRenderer", (_event, data) => {
       const { action, sourceProcess } = data;
+      console.log(`[RendererStore/${storeId}] Received ForwardActionToRenderer - action: ${action.type}, sourceProcess: ${sourceProcess}`);
       
       // Dispatch with source set to the originating process to avoid re-forwarding
       rendererStore!.dispatch(action, sourceProcess);
     });
+    
+    console.log(`[RendererStore/${storeId}] Store initialized and IPC listener registered`);
   }
   return rendererStore;
 }

@@ -20,17 +20,24 @@ export function getMainStore(
   if (!mainStore) {
     // Create the main store with a forwarder that sends to both renderers
     mainStore = createAppStore("main", async (action: Action, source) => {
+      console.log(`[MainStore/Forwarder] Called - action: ${action.type}, source: ${source}`);
+      
       // Forward actions based on their source:
       // - If from emu, send to ide (with source='emu' so IDE knows where it came from)
       // - If from ide, send to emu (with source='ide' so EMU knows where it came from)
       // - If from main, send to both (with source='main')
       if (source === "emu") {
+        console.log(`[MainStore/Forwarder] Source is EMU, forwarding to IDE`);
         sendToIde(action, source);
       } else if (source === "ide") {
+        console.log(`[MainStore/Forwarder] Source is IDE, forwarding to EMU`);
         sendToEmu(action, source);
       } else if (source === "main") {
+        console.log(`[MainStore/Forwarder] Source is MAIN, forwarding to BOTH`);
         sendToEmu(action, source);
         sendToIde(action, source);
+      } else {
+        console.log(`[MainStore/Forwarder] Unknown source: ${source}, not forwarding`);
       }
     });
   }
