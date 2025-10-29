@@ -16,10 +16,10 @@ import { loadSettings, saveSettings } from './settingsManager'
 import { AppSettings } from '../common/abstractions/AppSettings'
 import { getMainStore } from './mainStore'
 import type { Action } from '../common/state/Action'
+import { emuFocusedAction, ideFocusedAction } from '../common/state/actions'
 
 // Helper functions to send actions to renderers
 function sendActionToEmu(action: Action, sourceProcess: string = 'main'): void {
-  console.log(`[Main/sendActionToEmu] Sending action: ${action.type}, sourceProcess: ${sourceProcess}`);
   const emulatorWindow = BrowserWindow.getAllWindows().find(w => 
     w.webContents.getURL().includes('?emu')
   );
@@ -28,14 +28,10 @@ function sendActionToEmu(action: Action, sourceProcess: string = 'main'): void {
       action, 
       sourceProcess 
     });
-    console.log(`[Main/sendActionToEmu] Sent to EMU window`);
-  } else {
-    console.log(`[Main/sendActionToEmu] No EMU window found`);
   }
 }
 
 function sendActionToIde(action: Action, sourceProcess: string = 'main'): void {
-  console.log(`[Main/sendActionToIde] Sending action: ${action.type}, sourceProcess: ${sourceProcess}`);
   const ideWindow = BrowserWindow.getAllWindows().find(w => 
     w.webContents.getURL().includes('?ide')
   );
@@ -44,9 +40,6 @@ function sendActionToIde(action: Action, sourceProcess: string = 'main'): void {
       action, 
       sourceProcess 
     });
-    console.log(`[Main/sendActionToIde] Sent to IDE window`);
-  } else {
-    console.log(`[Main/sendActionToIde] No IDE window found`);
   }
 }
 
@@ -118,19 +111,34 @@ app.whenReady().then(async () => {
   ipcMain.on('ping', () => console.log('pong'))
 
   // Create windows first (but don't load content yet)
-  createEmulatorWindow(handleWindowClose)
-  createIdeWindow(handleWindowClose)
+  const emuWindow = createEmulatorWindow(handleWindowClose)
+  const ideWindow = createIdeWindow(handleWindowClose)
+
+  // Set up focus tracking for both windows
+  emuWindow.on('focus', () => {
+    mainStore.dispatch(emuFocusedAction(true), 'main');
+  });
+
+  emuWindow.on('blur', () => {
+    mainStore.dispatch(emuFocusedAction(false), 'main');
+  });
+
+  ideWindow.on('focus', () => {
+    mainStore.dispatch(ideFocusedAction(true), 'main');
+  });
+
+  ideWindow.on('blur', () => {
+    mainStore.dispatch(ideFocusedAction(false), 'main');
+  });
 
   // Set up IPC handler for forwarding Redux actions between renderers
   // This must be done AFTER windows are created but BEFORE content is loaded
   ipcMain.handle('ForwardAction', async (_event, data) => {
     const { action, sourceProcess } = data;
-    console.log(`[Main/IPC] Received ForwardAction - action: ${action.type}, sourceProcess: ${sourceProcess}`);
     
     // Dispatch to main store (which will update main state and forward to renderers)
     // Pass sourceProcess so the forwarder knows where it came from
     mainStore.dispatch(action, sourceProcess);
-    console.log(`[Main/IPC] Dispatched to mainStore`);
   });
 
   // Now that IPC infrastructure is ready, load the window contents

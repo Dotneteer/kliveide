@@ -75,7 +75,6 @@ export function SharedAppStateNative({
           updateStateRef.current({ value: store.getState() });
         },
         isWindows: (flag: boolean) => {
-          console.log(`[SharedAppState API] isWindows() called with flag: ${flag}`);
           store.dispatch(isWindowsAction(flag));
           updateStateRef.current({ value: store.getState() });
         },

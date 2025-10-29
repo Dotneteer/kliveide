@@ -13,6 +13,8 @@
       <Text>Emulator loaded: {appState.value.emuLoaded ? 'Yes' : 'No'}</Text>
       <Text>IDE loaded: {appState.value.ideLoaded ? 'Yes' : 'No'}</Text>
       <Text>isWindows flag: {appState.value.isWindows ? 'TRUE' : 'FALSE'}</Text>
+      <Text>EMU focused: {appState.value.emuFocused ? 'YES' : 'NO'}</Text>
+      <Text>IDE focused: {appState.value.ideFocused ? 'YES' : 'NO'}</Text>
       <Button 
         label="Toggle isWindows Flag" 
         onClick="() => { toggleFlag = !toggleFlag; appState.isWindows(toggleFlag); }" />

@@ -101,8 +101,6 @@ export function createStore<S = any, A extends Action = Action> (
   }
 
   function dispatch (action: A, source: MessageSource = "main"): A {
-    console.log(`[Store/${id}] dispatch() called - action: ${action.type}, source: ${source}`);
-    
     if (typeof action !== "object" || Array.isArray(action)) {
       throw new Error("Actions must be plain objects.");
     }
@@ -119,10 +117,7 @@ export function createStore<S = any, A extends Action = Action> (
       isDispatching = true;
       currentState = currentReducer(currentState, action);
       if (source && forwarder) {
-        console.log(`[Store/${id}] Calling forwarder for action: ${action.type}, source: ${source}`);
         (async () => await forwarder(action, source))();
-      } else {
-        console.log(`[Store/${id}] NOT calling forwarder - source: ${source}, hasForwarder: ${!!forwarder}`);
       }
     } finally {
       isDispatching = false;
@@ -133,7 +128,6 @@ export function createStore<S = any, A extends Action = Action> (
       const listener = listeners[i];
       listener();
     }
-    console.log(`[Store/${id}] dispatch() complete - notified ${listeners.length} listeners`);
     return action;
   }
 
