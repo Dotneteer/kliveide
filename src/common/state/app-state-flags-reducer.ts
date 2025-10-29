@@ -11,14 +11,12 @@ export function appStateFlagsReducer (
 ): AppState {
   switch (type) {
     case "EMU_LOADED":
-      console.log('[Reducer] EMU_LOADED - setting emuLoaded to true');
       return { ...state, emuLoaded: true, emuStateSynched: false };
 
     case "EMU_STATE_SYNCHED":
       return { ...state, emuStateSynched: true };
 
     case "IDE_LOADED":
-      console.log('[Reducer] IDE_LOADED - setting ideLoaded to true');
       return { ...state, ideLoaded: true, ideStateSynched: false };
 
     case "IS_WINDOWS":

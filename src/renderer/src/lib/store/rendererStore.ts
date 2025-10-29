@@ -16,26 +16,18 @@ export function getRendererStore(): Store<AppState, Action> {
     const url = new URL(window.location.href);
     const storeId = url.searchParams.has("emu") ? "emu" : "ide";
     
-    console.log(`[RendererStore/${storeId}] Creating store with IPC action forwarder`);
-    
     // Create action forwarder that sends actions via IPC
     const forwarder = createIpcActionForwarder(storeId);
     
     rendererStore = createAppStore(storeId, forwarder);
     
-    console.log(`[RendererStore/${storeId}] Store created, setting up IPC listener`);
-    
     // Set up IPC listener to receive forwarded actions from main process
     window.electron.ipcRenderer.on("ForwardActionToRenderer", (_event, data) => {
       const { action, sourceProcess } = data;
-      console.log(`[RendererStore/${storeId}] Received forwarded action from ${sourceProcess}:`, action.type);
       
       // Dispatch with source set to the originating process to avoid re-forwarding
       rendererStore!.dispatch(action, sourceProcess);
-      console.log(`[RendererStore/${storeId}] Dispatched forwarded action locally`);
     });
-    
-    console.log(`[RendererStore/${storeId}] IPC listener registered - store ready`);
   }
   return rendererStore;
 }

@@ -59,15 +59,7 @@ export function createIdeWindow(onClose: () => void): BrowserWindow {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    const ideUrl = process.env['ELECTRON_RENDERER_URL'] + '/index.html?ide'
-    console.log('Loading IDE from URL:', ideUrl)
-    ideWindow.loadURL(ideUrl)
-  } else {
-    ideWindow.loadFile(join(__dirname, '../renderer/index.html?ide'))
-  }
+  // NOTE: Do NOT load URL here - let the caller load it after IPC is ready
 
   ideWindow.on('close', async (event) => {
     // Prevent the window from closing immediately
@@ -82,6 +74,26 @@ export function createIdeWindow(onClose: () => void): BrowserWindow {
   })
 
   return ideWindow
+}
+
+/**
+ * Loads the content into the IDE window.
+ * Should be called after IPC infrastructure is ready.
+ */
+export function loadIdeContent(): void {
+  if (!ideWindow) {
+    throw new Error('IDE window not created');
+  }
+
+  // HMR for renderer base on electron-vite cli.
+  // Load the remote URL for development or the local html file for production.
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    const ideUrl = process.env['ELECTRON_RENDERER_URL'] + '/index.html?ide'
+    console.log('Loading IDE from URL:', ideUrl)
+    ideWindow.loadURL(ideUrl)
+  } else {
+    ideWindow.loadFile(join(__dirname, '../renderer/index.html?ide'))
+  }
 }
 
 export function getIdeWindow(): BrowserWindow | null {

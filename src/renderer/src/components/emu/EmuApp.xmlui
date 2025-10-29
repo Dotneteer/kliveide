@@ -1,11 +1,10 @@
 <Component name="EmuApp">
-  <variable name="readyFired" value="{false}" />
+  <variable name="toggleFlag" value="{false}" />
   <SharedAppState id="appState" />
-  <App name="Klive Emulator" onReady="() => {readyFired = true; appState.emuLoaded();}">
+  <App name="Klive Emulator" onReady="() => { delay(0); appState.emuLoaded(); }">
     <H1>
       Klive Emulator
     </H1>
-    <Text>Ready fired: {readyFired ? 'YES' : 'NO'}</Text>
     <StyledText
       size="large"
       color="blue"
@@ -13,6 +12,10 @@
     <VStack gap="$space-4" padding="$space-4">
       <Text>Emulator loaded: {appState.value.emuLoaded ? 'Yes' : 'No'}</Text>
       <Text>IDE loaded: {appState.value.ideLoaded ? 'Yes' : 'No'}</Text>
+      <Text>isWindows flag: {appState.value.isWindows ? 'TRUE' : 'FALSE'}</Text>
+      <Button 
+        label="Toggle isWindows Flag" 
+        onClick="() => { toggleFlag = !toggleFlag; appState.isWindows(toggleFlag); }" />
     </VStack>
   </App>
 </Component>

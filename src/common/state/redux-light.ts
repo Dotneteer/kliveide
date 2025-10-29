@@ -115,11 +115,8 @@ export function createStore<S = any, A extends Action = Action> (
 
     try {
       isDispatching = true;
-      console.log(`[Redux/${id}] Dispatching action:`, action.type, 'source:', source);
       currentState = currentReducer(currentState, action);
-      console.log(`[Redux/${id}] State after reducer:`, currentState);
       if (source && forwarder) {
-        console.log(`[Redux/${id}] Calling forwarder for action:`, action.type);
         (async () => await forwarder(action, source))();
       }
     } finally {
@@ -127,7 +124,6 @@ export function createStore<S = any, A extends Action = Action> (
     }
 
     const listeners = (currentListeners = nextListeners);
-    console.log(`[Redux/${id}] Notifying ${listeners.length} subscribers`);
     for (let i = 0; i < listeners.length; i++) {
       const listener = listeners[i];
       listener();

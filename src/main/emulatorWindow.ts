@@ -59,13 +59,7 @@ export function createEmulatorWindow(onClose: () => void): BrowserWindow {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    emulatorWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/index.html?emu')
-  } else {
-    emulatorWindow.loadFile(join(__dirname, '../renderer/index.html?emu'))
-  }
+  // NOTE: Do NOT load URL here - let the caller load it after IPC is ready
 
   emulatorWindow.on('close', async (event) => {
     // Prevent the window from closing immediately
@@ -80,6 +74,24 @@ export function createEmulatorWindow(onClose: () => void): BrowserWindow {
   })
 
   return emulatorWindow
+}
+
+/**
+ * Loads the content into the emulator window.
+ * Should be called after IPC infrastructure is ready.
+ */
+export function loadEmulatorContent(): void {
+  if (!emulatorWindow) {
+    throw new Error('Emulator window not created');
+  }
+
+  // HMR for renderer base on electron-vite cli.
+  // Load the remote URL for development or the local html file for production.
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    emulatorWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/index.html?emu')
+  } else {
+    emulatorWindow.loadFile(join(__dirname, '../renderer/index.html?emu'))
+  }
 }
 
 export function getEmulatorWindow(): BrowserWindow | null {

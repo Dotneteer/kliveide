@@ -58,29 +58,21 @@ export function SharedAppStateNative({
   // Register API and subscribe to store changes using useLayoutEffect
   // This ensures the subscription is ready BEFORE onReady fires
   useLayoutEffect(() => {
-    console.log(`[SharedAppState/${store.id}] useLayoutEffect starting - setting up API and subscription`);
-    
     // Register API methods
     if (registerComponentApiRef.current) {
       registerComponentApiRef.current({
         emuLoaded: () => {
-          console.log(`[SharedAppState/${store.id}] API emuLoaded() called - store state BEFORE dispatch:`, store.getState());
           store.dispatch(emuLoadedAction());
-          console.log(`[SharedAppState/${store.id}] API emuLoaded() - store state AFTER dispatch:`, store.getState());
           // Immediately update component state after dispatch
           updateStateRef.current({ value: store.getState() });
-          console.log(`[SharedAppState/${store.id}] API emuLoaded() - updateState called`);
         },
         emuSynched: () => {
           store.dispatch(emuSynchedAction());
           updateStateRef.current({ value: store.getState() });
         },
         ideLoaded: () => {
-          console.log(`[SharedAppState/${store.id}] API ideLoaded() called - store state BEFORE dispatch:`, store.getState());
           store.dispatch(ideLoadedAction());
-          console.log(`[SharedAppState/${store.id}] API ideLoaded() - store state AFTER dispatch:`, store.getState());
           updateStateRef.current({ value: store.getState() });
-          console.log(`[SharedAppState/${store.id}] API ideLoaded() - updateState called`);
         },
         isWindows: (flag: boolean) => {
           store.dispatch(isWindowsAction(flag));
@@ -99,23 +91,15 @@ export function SharedAppStateNative({
           updateStateRef.current({ value: store.getState() });
         },
       });
-      console.log(`[SharedAppState/${store.id}] API methods registered successfully`);
     }
 
     // Subscribe to store changes
-    console.log(`[SharedAppState/${store.id}] Setting up store subscription`);
     const unsubscribe = store.subscribe(() => {
       const newState = store.getState();
       const prevState = prevStateRef.current;
 
-      console.log(`[SharedAppState/${store.id}] Store subscription fired - state changed:`, {
-        prev: { emuLoaded: prevState.emuLoaded, ideLoaded: prevState.ideLoaded },
-        new: { emuLoaded: newState.emuLoaded, ideLoaded: newState.ideLoaded }
-      });
-
       // Update the component state with new value
       updateStateRef.current({ value: newState });
-      console.log(`[SharedAppState/${store.id}] Subscription - updateState called`);
 
       // Fire onChange event if state actually changed
       if (throttledOnChange && !isEqual(prevState, newState)) {
@@ -130,9 +114,7 @@ export function SharedAppStateNative({
     });
 
     // Initial state update
-    console.log(`[SharedAppState/${store.id}] Setting initial state:`, store.getState());
     updateStateRef.current({ value: store.getState() });
-    console.log(`[SharedAppState/${store.id}] Initial updateState called - infrastructure ready!`);
 
     return () => {
       unsubscribe();

@@ -1,14 +1,13 @@
 <Component name="IdeApp">
-  <variable name="readyFired" value="{false}" />
   <SharedAppState id="appState" />
-  <App name="Klive IDE" onReady="() => {readyFired = true; appState.ideLoaded()}">
+  <App name="Klive IDE" onReady="() => {delay(100);appState.ideLoaded()}">
     <H1>
       Klive IDE
     </H1>
-    <Text>Ready fired: {readyFired ? 'YES' : 'NO'}</Text>
     <VStack gap="$space-4" padding="$space-4">
       <Text>Emulator loaded: {appState.value.emuLoaded ? 'Yes' : 'No'}</Text>
       <Text>IDE loaded: {appState.value.ideLoaded ? 'Yes' : 'No'}</Text>
+      <Text>isWindows flag: {appState.value.isWindows ? 'TRUE' : 'FALSE'}</Text>
     </VStack>
   </App>
 </Component>

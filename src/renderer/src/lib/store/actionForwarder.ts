@@ -8,22 +8,18 @@ import type { MessageSource } from "../../../../common/messaging/messages-core";
  */
 export function createIpcActionForwarder(processId: string): ActionForwarder {
   return async (action: Action, source: MessageSource) => {
-    console.log(`[ActionForwarder/${processId}] Called with action:`, action.type, 'source:', source);
-    
-    // Don't forward actions that came from other processes (avoid loops)
+    // Only forward actions that originated locally (source === "main")
+    // Don't forward actions that came from other processes via IPC (avoid loops)
     if (source !== "main") {
-      console.log(`[ActionForwarder/${processId}] Skipping forward - source is not main, it's:`, source);
       return;
     }
 
-    console.log(`[ActionForwarder/${processId}] Forwarding action ${action.type} to main process via IPC`);
     try {
       // Send ForwardAction message to main process via IPC
       await window.electron.ipcRenderer.invoke("ForwardAction", {
         action,
         sourceProcess: processId
       });
-      console.log(`[ActionForwarder/${processId}] Action ${action.type} forwarded successfully`);
     } catch (error) {
       console.error(`[ActionForwarder/${processId}] Error forwarding action:`, error);
     }
