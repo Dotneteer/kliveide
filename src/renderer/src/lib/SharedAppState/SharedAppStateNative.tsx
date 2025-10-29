@@ -9,6 +9,8 @@ import {
   emuFocusedAction,
   ideFocusedAction,
   setThemeAction,
+  setOsAction,
+  setAppPathAction,
 } from "../../../../common/state/actions";
 import type { AppState } from "../../../../common/state/AppState";
 
@@ -88,6 +90,14 @@ export function SharedAppStateNative({
         },
         setTheme: (id: string) => {
           store.dispatch(setThemeAction(id));
+          updateStateRef.current({ value: store.getState() });
+        },
+        setOs: (os: string) => {
+          store.dispatch(setOsAction(os));
+          updateStateRef.current({ value: store.getState() });
+        },
+        setAppPath: (appPath: string) => {
+          store.dispatch(setAppPathAction(appPath));
           updateStateRef.current({ value: store.getState() });
         },
       });

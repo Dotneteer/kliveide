@@ -89,6 +89,28 @@ export const SharedAppStateMd = createMetadata({
       ],
       returns: "void",
     },
+    setOs: {
+      description: "Sets the operating system identifier.",
+      args: [
+        {
+          name: "os",
+          type: "string",
+          description: "The operating system name (e.g., 'win32', 'darwin', 'linux').",
+        },
+      ],
+      returns: "void",
+    },
+    setAppPath: {
+      description: "Sets the Electron application path.",
+      args: [
+        {
+          name: "appPath",
+          type: "string",
+          description: "The absolute path to the Electron application.",
+        },
+      ],
+      returns: "void",
+    },
   },
 });
 

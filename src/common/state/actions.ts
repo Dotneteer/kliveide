@@ -32,3 +32,12 @@ export const setThemeAction: ActionCreator = (id: string) => ({
   payload: { id }
 });
 
+export const setOsAction: ActionCreator = (os: string) => ({
+  type: "SET_OS",
+  payload: { os }
+});
+
+export const setAppPathAction: ActionCreator = (appPath: string) => ({
+  type: "SET_APP_PATH",
+  payload: { appPath }
+});

@@ -1,0 +1,3 @@
+<Component name="Toolbar">
+  <HStack backgroundColor="#202020" color="#FFFFFF">Toolbar</HStack>
+</Component>

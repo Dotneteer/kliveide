@@ -21,6 +21,8 @@ export type Action = {
 export type Payload = {
   flag: boolean;
   id: string;
+  os: string;
+  appPath: string;
   size: number;
   nextId: string;
   nextSize: number;

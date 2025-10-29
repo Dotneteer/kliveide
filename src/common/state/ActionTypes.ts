@@ -10,4 +10,6 @@ export interface ActionTypes {
   SET_THEME: null;
   IDE_FOCUSED: null,
   EMU_FOCUSED: null,
+  SET_OS: null;
+  SET_APP_PATH: null;
 }

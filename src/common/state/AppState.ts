@@ -8,6 +8,7 @@ export type AppState = {
   ideLoaded?: boolean;
   ideStateSynched?: boolean;
   isWindows?: boolean;
+  os?: string;
   emuFocused?: boolean;
   ideFocused?: boolean;
 };
@@ -16,9 +17,11 @@ export type AppState = {
  * The initial application state
  */
 export const initialAppState: AppState = {
+  appPath: "",
   emuLoaded: false,
   ideLoaded: false,
   isWindows: false,
+  os: "",
   emuFocused: false,
   ideFocused: false,
 };

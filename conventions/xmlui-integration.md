@@ -2,7 +2,19 @@
 
 ## Overview
 
-Klive IDE uses **XMLUI** as its declarative UI framework. XMLUI is a React-based framework that allows building user interfaces using XML-like markup that compiles to React components. This document explains how XMLUI integrates with Klive IDE and provides guidelines for extending the component library.
+Klive IDE uses **XMLUI** as its declarative UI framework. XMLUI is a React-based framework that allows building user interfaces using XML-like markup that compiles to React components. This document explains how XMLUI integrates with Klive IDE and provides guidelines for extending the component library and managing state across multiple Electron processes.
+
+## Table of Contents
+
+1. [XMLUI Framework Characteristics](#xmlui-framework-characteristics)
+2. [File Structure](#file-structure)
+3. [Application Bootstrap](#application-bootstrap)
+4. [Creating Custom XMLUI Components](#creating-custom-xmlui-components)
+5. [Cross-Process State Management](#cross-process-state-management)
+6. [Adding New Dispatch Actions](#adding-new-dispatch-actions)
+7. [XMLUI AppState Component](#xmlui-appstate-component)
+8. [Best Practices](#best-practices)
+9. [References](#references)
 
 ## XMLUI Framework Characteristics
 
@@ -420,6 +432,361 @@ Custom XMLUI components in Klive IDE can:
 - ✅ Use `useCallback` and `useMemo` when appropriate
 - ✅ Lazy load heavy components if needed
 
+## Cross-Process State Management
+
+### Overview
+
+Klive IDE runs as a multi-process Electron application with **three separate Redux stores**:
+- **Main Process Store** - The source of truth for application state
+- **EMU Renderer Store** - State for the emulator window
+- **IDE Renderer Store** - State for the IDE window
+
+To synchronize state across these processes, Klive uses a **three-store architecture** with IPC-based action forwarding.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Main Process                            │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              Main Store (Source of Truth)            │  │
+│  │  - Receives actions from both renderers             │  │
+│  │  - Forwards actions based on source:                │  │
+│  │    * EMU → forwards to IDE                          │  │
+│  │    * IDE → forwards to EMU                          │  │
+│  │    * MAIN → forwards to both                        │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                        ↑  ↓                                  │
+│                   IPC (ForwardAction)                        │
+└─────────────────────────────────────────────────────────────┘
+              ↑                              ↑
+              │                              │
+    ┌─────────────────┐          ┌─────────────────┐
+    │  EMU Renderer   │          │  IDE Renderer   │
+    │                 │          │                 │
+    │  EMU Store      │          │  IDE Store      │
+    │  - Local state  │          │  - Local state  │
+    │  - Forwards to  │          │  - Forwards to  │
+    │    main via IPC │          │    main via IPC │
+    └─────────────────┘          └─────────────────┘
+```
+
+### Key Concepts
+
+#### 1. Source Tracking
+
+Every Redux action carries a **source** parameter to identify where it originated:
+- `"main"` - Action originated locally in a renderer or main process
+- `"emu"` - Action came from the emulator renderer
+- `"ide"` - Action came from the IDE renderer
+
+This prevents infinite loops: renderers only forward actions with source `"main"`, ignoring actions from other processes.
+
+#### 2. Action Forwarding Flow
+
+**Example: User clicks button in EMU window**
+
+1. EMU: User action → `dispatch(action)` with default source=`"main"`
+2. EMU: ActionForwarder sees source=`"main"` → forwards via IPC with `sourceProcess: "emu"`
+3. Main: Receives action → `mainStore.dispatch(action, "emu")`
+4. Main: Forwarder sees source=`"emu"` → forwards only to IDE with source=`"emu"`
+5. IDE: Receives action → `ideStore.dispatch(action, "emu")`
+6. IDE: ActionForwarder sees source=`"emu"` (not `"main"`) → skips forwarding ✅ (no loop!)
+
+#### 3. SharedAppState Component
+
+The `SharedAppState` XMLUI component bridges Redux stores with XMLUI's reactive system, allowing `.xmlui` files to access and update cross-process state.
+
+**File Structure:**
+```
+src/renderer/src/lib/SharedAppState/
+├── SharedAppState.tsx          # Component definition & metadata
+└── SharedAppStateNative.tsx    # React implementation with hooks
+```
+
+**Usage in XMLUI:**
+```xmlui
+<Component name="EmuApp">
+  <SharedAppState id="appState" />
+  <App name="Klive Emulator" onReady="() => { delay(0); appState.emuLoaded(); }">
+    <Text>Emulator loaded: {appState.value.emuLoaded ? 'Yes' : 'No'}</Text>
+    <Text>IDE loaded: {appState.value.ideLoaded ? 'Yes' : 'No'}</Text>
+    <Text>EMU focused: {appState.value.emuFocused ? 'YES' : 'NO'}</Text>
+  </App>
+</Component>
+```
+
+**Key Features:**
+- Exposes API methods to dispatch actions (e.g., `appState.emuLoaded()`)
+- Provides reactive `appState.value` object for reading state
+- Automatically syncs state across all windows
+- Uses `useLayoutEffect` to register before first render
+
+### Implementation Details
+
+#### Store Creation (src/common/state/store.ts)
+
+Each store is created from a cloned `initialAppState` to ensure independence:
+
+```typescript
+export default function createAppStore(id: string, forwarder?: ActionForwarder) {
+  const clonedInitialState: AppState = { ...initialAppState };
+  return createStore(id, appReducer, clonedInitialState, forwarder);
+}
+```
+
+#### Main Store Forwarder (src/main/mainStore.ts)
+
+```typescript
+mainStore = createAppStore("main", async (action: Action, source) => {
+  if (source === "emu") {
+    sendToIde(action, source);  // Forward to IDE with source preserved
+  } else if (source === "ide") {
+    sendToEmu(action, source);  // Forward to EMU with source preserved
+  } else if (source === "main") {
+    sendToEmu(action, source);  // Broadcast to both
+    sendToIde(action, source);
+  }
+});
+```
+
+**Critical:** Source parameter is passed through to preserve origin information.
+
+#### Renderer Store Forwarder (src/renderer/src/lib/store/actionForwarder.ts)
+
+```typescript
+export function createIpcActionForwarder(processId: string): ActionForwarder {
+  return async (action: Action, source: MessageSource) => {
+    // Only forward locally-originated actions
+    if (source !== "main") {
+      return;  // Skip actions from other processes to prevent loops
+    }
+
+    await window.electron.ipcRenderer.invoke("ForwardAction", {
+      action,
+      sourceProcess: processId  // "emu" or "ide"
+    });
+  };
+}
+```
+
+#### IPC Listener in Renderer (src/renderer/src/lib/store/rendererStore.ts)
+
+```typescript
+window.electron.ipcRenderer.on("ForwardActionToRenderer", (_event, data) => {
+  const { action, sourceProcess } = data;
+  
+  // Dispatch with source set to the originating process
+  rendererStore!.dispatch(action, sourceProcess);
+});
+```
+
+**Critical:** Preserve `sourceProcess` when dispatching to avoid re-forwarding.
+
+#### Window Focus Tracking Example
+
+The main process can dispatch actions based on Electron events:
+
+```typescript
+// In src/main/index.ts
+const emuWindow = createEmulatorWindow(handleWindowClose);
+const ideWindow = createIdeWindow(handleWindowClose);
+
+emuWindow.on('focus', () => {
+  mainStore.dispatch(emuFocusedAction(true), 'main');
+});
+
+emuWindow.on('blur', () => {
+  mainStore.dispatch(emuFocusedAction(false), 'main');
+});
+
+ideWindow.on('focus', () => {
+  mainStore.dispatch(ideFocusedAction(true), 'main');
+});
+
+ideWindow.on('blur', () => {
+  mainStore.dispatch(ideFocusedAction(false), 'main');
+});
+```
+
+Both renderer windows automatically display the updated focus state.
+
+### Infrastructure Setup
+
+#### Window Creation Timing
+
+**Critical:** IPC infrastructure must be ready before loading window content:
+
+```typescript
+// Create windows first (but don't load content yet)
+const emuWindow = createEmulatorWindow(handleWindowClose);
+const ideWindow = createIdeWindow(handleWindowClose);
+
+// Set up focus handlers and IPC
+// ... (setup code)
+
+// Now load window contents
+loadEmulatorContent();
+loadIdeContent();
+```
+
+This ensures that when components mount and try to dispatch actions, the IPC system is ready.
+
+#### Dispatching Actions from Main Process
+
+When the main process needs to dispatch actions with values (e.g., OS detection, app path), it must wait until renderer stores are initialized. Use the **store subscription pattern**:
+
+```typescript
+// In src/main/index.ts
+const mainStore = getMainStore(sendActionToEmu, sendActionToIde);
+
+// Track if we've already set the values (only set once)
+let osAndPathSet = false;
+
+// Subscribe to store changes to detect when both windows are loaded
+mainStore.subscribe(() => {
+  const state = mainStore.getState();
+  
+  // Once both windows are loaded and we haven't set OS/path yet
+  if (state.emuLoaded && state.ideLoaded && !osAndPathSet) {
+    osAndPathSet = true;
+    
+    // Now it's safe to dispatch - renderer stores are initialized
+    mainStore.dispatch(setOsAction(process.platform), 'main');
+    mainStore.dispatch(setAppPathAction(app.getAppPath()), 'main');
+  }
+});
+```
+
+**Why this works:**
+- Renderer windows signal they're ready via `appState.emuLoaded()` / `appState.ideLoaded()`
+- The main store subscription detects when both are `true`
+- At this point, both renderer stores exist and can receive forwarded actions
+- The flag ensures actions are only dispatched once
+
+**⚠️ Don't dispatch from main before renderers are ready:**
+- Dispatching before `loadEmulatorContent()` / `loadIdeContent()` won't work (stores don't exist)
+- Using `setTimeout()` is unreliable and creates race conditions
+- Always wait for renderer readiness signals
+
+### Debugging Tips
+
+When debugging cross-process state issues:
+
+1. **Add source tracking logs** - Temporarily log source at each step
+2. **Check for infinite loops** - Look for repeated action dispatches
+3. **Verify source propagation** - Ensure source parameter is passed through all forwarding functions
+4. **Confirm IPC timing** - Make sure IPC is set up before content loads
+5. **Check renderer readiness** - Ensure renderers are loaded before main dispatches actions
+
+## Adding New Dispatch Actions
+
+Follow these steps to add new Redux actions that sync across all processes:
+
+### Step 1: Define the Action (src/common/state/actions.ts)
+
+```typescript
+export const newFeatureAction: ActionCreator = (value: string) => ({
+  type: "NEW_FEATURE",
+  payload: { value }
+});
+```
+
+### Step 2: Add State Property (src/common/state/AppState.ts)
+
+```typescript
+export interface AppState {
+  // ... existing properties
+  newFeature?: string;
+}
+
+export const initialAppState: AppState = {
+  // ... existing properties
+  newFeature: "",
+};
+```
+
+### Step 3: Add Reducer Case (src/common/state/app-state-flags-reducer.ts)
+
+```typescript
+export function appStateFlagsReducer(
+  state: AppState,
+  action: Action
+): AppState {
+  const { type, payload } = action;
+  switch (type) {
+    // ... existing cases
+    case "NEW_FEATURE":
+      return { ...state, newFeature: payload?.value };
+    default:
+      return state;
+  }
+}
+```
+
+### Step 4: Add Method to SharedAppState (src/renderer/src/lib/SharedAppState/SharedAppStateNative.tsx)
+
+```typescript
+useLayoutEffect(() => {
+  if (registerComponentApiRef.current) {
+    registerComponentApiRef.current({
+      // ... existing methods
+      newFeature: (value: string) => {
+        store.dispatch(newFeatureAction(value));
+        updateStateRef.current({ value: store.getState() });
+      },
+    });
+  }
+  // ... rest of effect
+}, []);
+```
+
+### Step 5: Update Type Definitions (src/renderer/src/lib/SharedAppState/SharedAppState.tsx)
+
+Update the metadata to include the new API method:
+
+```typescript
+export const SharedAppStateMd = createMetadata({
+  // ... existing config
+  api: {
+    newFeature: {
+      parameters: [
+        {
+          name: "value",
+          type: "string",
+          description: "The value to set"
+        }
+      ],
+      description: "Sets the new feature value"
+    }
+  }
+});
+```
+
+### Step 6: Use in XMLUI Files
+
+```xmlui
+<Component name="MyComponent">
+  <SharedAppState id="appState" />
+  <Button onClick="() => appState.newFeature('test value')">
+    Set Feature
+  </Button>
+  <Text>Feature value: {appState.value.newFeature}</Text>
+</Component>
+```
+
+### Complete Checklist
+
+- [ ] Define action creator in `actions.ts`
+- [ ] Add state property to `AppState` interface
+- [ ] Add initial value to `initialAppState`
+- [ ] Add reducer case in `app-state-flags-reducer.ts`
+- [ ] Add API method in `SharedAppStateNative.tsx`
+- [ ] Update metadata in `SharedAppState.tsx`
+- [ ] Test in both EMU and IDE windows
+- [ ] Verify state syncs across windows
+
 ## XMLUI AppState Component
 
 ### Overview
@@ -761,8 +1128,51 @@ AppState can be integrated with Klive's existing state management:
 
 ---
 
+## Quick Reference Summary
+
+### State Management Decision Tree
+
+```
+Need state management?
+├─ Single window, UI-only (forms, modals, selections)
+│  └─ Use: AppState (built-in XMLUI component)
+│
+└─ Cross-window sync (EMU ↔ IDE ↔ Main)
+   └─ Use: SharedAppState (custom Klive component with Redux)
+```
+
+### Adding New Cross-Process Actions - Quick Steps
+
+1. **Define action** in `src/common/state/actions.ts`
+2. **Add state property** to `AppState` interface and `initialAppState`
+3. **Add reducer case** in `app-state-flags-reducer.ts`
+4. **Add API method** to `SharedAppStateNative.tsx`
+5. **Update metadata** in `SharedAppState.tsx`
+6. **Use in XMLUI** via `appState.methodName()`
+7. **Test** in both EMU and IDE windows
+
+### Key Architecture Patterns
+
+**Three-Store Architecture:**
+- Main Store (source of truth) + EMU Store + IDE Store
+- All stores created from cloned `initialAppState`
+- Actions forwarded via IPC with source tracking
+
+**Source Tracking:**
+- `"main"` = locally originated action
+- `"emu"` = from emulator renderer
+- `"ide"` = from IDE renderer
+- Prevents infinite loops: only forward if source === `"main"`
+
+**IPC Timing:**
+- Create windows → Setup IPC/focus handlers → Load content
+- Ensures IPC infrastructure is ready before components mount
+
+---
+
 ## References
 
+- **Adding Dispatch Actions**: See `adding-dispatch-actions.md` for step-by-step guide
 - **Component Conventions**: See `create-xmlui-components.md` for detailed patterns
 - **App Architecture**: See `ARCHITECTURE.md` for state management and IPC
 - **Testing**: See `testing-conventions.md` for component testing patterns
