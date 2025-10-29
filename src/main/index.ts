@@ -12,6 +12,44 @@ import {
 } from './ideWindow'
 import { loadSettings, saveSettings } from './settingsManager'
 import { AppSettings } from '../common/abstractions/AppSettings'
+import { getMainStore } from './mainStore'
+import type { Action } from '../common/state/Action'
+
+// Helper functions to send actions to renderers
+function sendActionToEmu(action: Action): void {
+  console.log(`[Main] sendActionToEmu called for action:`, action.type);
+  const emulatorWindow = BrowserWindow.getAllWindows().find(w => 
+    w.webContents.getURL().includes('?emu')
+  );
+  if (emulatorWindow) {
+    console.log(`[Main] Sending action ${action.type} to EMU window`);
+    emulatorWindow.webContents.send('ForwardActionToRenderer', { 
+      action, 
+      sourceProcess: 'main' 
+    });
+  } else {
+    console.log(`[Main] EMU window not found, cannot send action ${action.type}`);
+  }
+}
+
+function sendActionToIde(action: Action): void {
+  console.log(`[Main] sendActionToIde called for action:`, action.type);
+  const ideWindow = BrowserWindow.getAllWindows().find(w => 
+    w.webContents.getURL().includes('?ide')
+  );
+  if (ideWindow) {
+    console.log(`[Main] Sending action ${action.type} to IDE window`);
+    ideWindow.webContents.send('ForwardActionToRenderer', { 
+      action, 
+      sourceProcess: 'main' 
+    });
+  } else {
+    console.log(`[Main] IDE window not found, cannot send action ${action.type}`);
+  }
+}
+
+// Initialize main store with forwarders
+const mainStore = getMainStore(sendActionToEmu, sendActionToIde);
 
 // Save all window states with timeout
 async function saveAllStates(): Promise<void> {
@@ -76,6 +114,18 @@ app.whenReady().then(async () => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // IPC handler for forwarding Redux actions between renderers
+  // This is where the main store receives actions from renderers and forwards them
+  ipcMain.handle('ForwardAction', async (_event, data) => {
+    const { action, sourceProcess } = data;
+    console.log(`[Main] Received action from ${sourceProcess}:`, action.type);
+    
+    // Dispatch to main store (which will update main state and forward to renderers)
+    // Pass sourceProcess so the forwarder knows where it came from
+    mainStore.dispatch(action, sourceProcess);
+    console.log(`[Main] Dispatched action to mainStore`);
+  });
 
   createEmulatorWindow(handleWindowClose)
   createIdeWindow(handleWindowClose)

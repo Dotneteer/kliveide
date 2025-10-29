@@ -1,4 +1,4 @@
-import { createComponentRenderer, createMetadata, d, parseScssVar } from "xmlui";
+import { createComponentRenderer, createMetadata } from "xmlui";
 import { StyledText } from "./StyledTextNative";
 
 const COMP = "StyledText";

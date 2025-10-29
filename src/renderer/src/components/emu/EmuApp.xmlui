@@ -1,11 +1,18 @@
 <Component name="EmuApp">
-  <App name="Klive Emulator">
+  <variable name="readyFired" value="{false}" />
+  <SharedAppState id="appState" />
+  <App name="Klive Emulator" onReady="() => {readyFired = true; appState.emuLoaded();}">
     <H1>
       Klive Emulator
     </H1>
+    <Text>Ready fired: {readyFired ? 'YES' : 'NO'}</Text>
     <StyledText
       size="large"
       color="blue"
       text="This is styled text from a React component library." />
+    <VStack gap="$space-4" padding="$space-4">
+      <Text>Emulator loaded: {appState.value.emuLoaded ? 'Yes' : 'No'}</Text>
+      <Text>IDE loaded: {appState.value.ideLoaded ? 'Yes' : 'No'}</Text>
+    </VStack>
   </App>
 </Component>
