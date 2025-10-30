@@ -1,5 +1,5 @@
 <Component name="EmulatorArea">
-  <VSplitter height="*" minPrimarySize="10%" maxPrimarySize="90%">
+  <VSplitter floating height="*" minPrimarySize="10%" maxPrimarySize="90%">
     <EmulatorPanel height="*" />
     <KeyboardPanel height="*" />
   </VSplitter>

@@ -1,0 +1,18 @@
+<Component name="Toolbar">
+  <HStack
+    backgroundColor="$backgroundColor-Toolbar"
+    paddingHorizontal="$space-0_5"
+    gap="0">
+    <ToolbarButton
+      icon="play"
+      color="$color-ToolbarButton-green"
+      tooltip="Run Machine (F5)" />
+    <ToolbarButton
+      icon="pause"
+      color="$color-ToolbarButton-blue"
+      disabled="{true}" />
+    <ToolbarButton icon="stop" color="$color-ToolbarButton-red" />
+    <ToolbarButton icon="restart" color="$color-ToolbarButton-green" />
+    <ToolbarSeparator />
+  </HStack>
+</Component>
