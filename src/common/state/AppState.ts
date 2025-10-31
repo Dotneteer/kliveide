@@ -11,6 +11,7 @@ export type AppState = {
   os?: string;
   emuFocused?: boolean;
   ideFocused?: boolean;
+  globalSettings?: Record<string, any>;
 };
 
 /**
@@ -24,4 +25,5 @@ export const initialAppState: AppState = {
   os: "",
   emuFocused: false,
   ideFocused: false,
+  globalSettings: {},
 };

@@ -111,6 +111,33 @@ export const SharedAppStateMd = createMetadata({
       ],
       returns: "void",
     },
+    setGlobalSetting: {
+      description: "Sets a global application setting value by path.",
+      args: [
+        {
+          name: "id",
+          type: "string",
+          description: "The setting path (e.g., 'ui.theme' or 'editor.fontSize').",
+        },
+        {
+          name: "value",
+          type: "any",
+          description: "The value to set for the setting.",
+        },
+      ],
+      returns: "void",
+    },
+    toggleGlobalSetting: {
+      description: "Toggles a global application setting boolean value by path.",
+      args: [
+        {
+          name: "id",
+          type: "string",
+          description: "The setting path (e.g., 'ui.darkMode' or 'editor.wordWrap').",
+        },
+      ],
+      returns: "void",
+    },
   },
 });
 

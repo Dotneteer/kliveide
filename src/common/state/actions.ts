@@ -41,3 +41,13 @@ export const setAppPathAction: ActionCreator = (appPath: string) => ({
   type: "SET_APP_PATH",
   payload: { appPath }
 });
+
+export const setGlobalSettingAction: ActionCreator = (id: string, value: any) => ({
+  type: "SET_GLOBAL_SETTING",
+  payload: { id, value }
+});
+
+export const toggleGlobalSettingAction: ActionCreator = (id: string) => ({
+  type: "TOGGLE_GLOBAL_SETTING",
+  payload: { id }
+});

@@ -23,6 +23,18 @@ const App: StandaloneAppDescription = {
     "icon.pause": "resources/icons/pause.svg",
     "icon.stop": "resources/icons/stop.svg",
     "icon.restart": "resources/icons/restart.svg",
+    "icon.debug": "resources/icons/debug.svg",
+    "icon.step-into": "resources/icons/step-into.svg",
+    "icon.step-over": "resources/icons/step-over.svg",
+    "icon.step-out": "resources/icons/step-out.svg",
+    "icon.pin": "resources/icons/pin.svg",
+    "icon.pinned": "resources/icons/pinned.svg",
+    "icon.vm": "resources/icons/vm.svg",
+    "icon.keyboard": "resources/icons/keyboard.svg",
+    "icon.mute": "resources/icons/mute.svg",
+    "icon.unmute": "resources/icons/unmute.svg",
+    "icon.rocket": "resources/icons/rocket.svg",
+    "icon.reverse-tape": "resources/icons/reverse-tape.svg",
   },
 };
 

@@ -1,4 +1,6 @@
 <Component name="Toolbar">
+  <SharedAppState id="appState" />
+  <variable name="gs" value="{appState.globalSettings}" />
   <HStack
     backgroundColor="$backgroundColor-Toolbar"
     paddingHorizontal="$space-0_5"
@@ -10,9 +12,57 @@
     <ToolbarButton
       icon="pause"
       color="$color-ToolbarButton-blue"
-      disabled="{true}" />
-    <ToolbarButton icon="stop" color="$color-ToolbarButton-red" />
-    <ToolbarButton icon="restart" color="$color-ToolbarButton-green" />
+      tooltip="Pause (Shift+F5)" />
+    <ToolbarButton
+      icon="stop"
+      color="$color-ToolbarButton-red"
+      tooltip="Stop (F4)" />
+    <ToolbarButton
+      icon="restart"
+      color="$color-ToolbarButton-green"
+      tooltip="Restart (Shift+F4)" />
     <ToolbarSeparator />
+    <ToolbarButton
+      icon="debug"
+      color="$color-ToolbarButton-green"
+      tooltip="Debug Machine (Ctrl+F5)" />
+    <ToolbarButton
+      icon="step-into"
+      color="$color-ToolbarButton-blue"
+      tooltip="Step Into (F10)" />
+    <ToolbarButton
+      icon="step-over"
+      color="$color-ToolbarButton-blue"
+      tooltip="Step Over (F11)" />
+    <ToolbarButton
+      icon="step-out"
+      color="$color-ToolbarButton-blue"
+      tooltip="Step Out (F12)" />
+    <ToolbarSeparator />
+    <ToolbarButton
+      icon="pinned"
+      tooltip="Stay on top" />
+    <ToolbarSeparator />
+    <ToolbarButton
+      icon="vm"
+      tooltip="Turn on/off instant screen" />
+    <ToolbarSeparator />
+    <ToolbarButton
+      icon="keyboard"
+      tooltip="Show/Hide keyboard" />
+    <ToolbarSeparator />
+    <ToolbarButton
+      icon="unmute"
+      tooltip="Mute/Unmute sound" />
+    <ToolbarSeparator />
+    <ToolbarButton
+      icon="rocket"
+      selected="{gs.emuOptions.fastLoad}"
+      tooltip="Fast LOAD mode"
+      onClick="appState.toggleGlobalSetting('emuOptions.fastLoad')" />
+    <ToolbarSeparator />
+    <ToolbarButton
+      icon="reverse-tape"
+      tooltip="Rewind the tape" />
   </HStack>
 </Component>

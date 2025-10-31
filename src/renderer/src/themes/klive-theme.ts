@@ -7,6 +7,7 @@ export const theme: ThemeDefinition = {
     // --- Desktop page setup:
     'paddingHorizontal-Pages': '0',
     'paddingVertical-Pages': '0',
+    'maxWidth-content-App': '',
 
     // --- Surface colors:
     'const-color-surface-50': 'hsl(0, 0%, 95%)',
@@ -22,10 +23,13 @@ export const theme: ThemeDefinition = {
     'const-color-surface-950': 'hsl(0, 0%, 5%)',
     'const-color-surface': '$const-color-surface-500',
 
+    // --- Other colors:
+    "color-highlight": "#007acc",
+
     // --- Toolbar:
     'backgroundColor-Toolbar': '$color-surface-200',
     'backgroundColor-Button-toolbarButton--hover': '$color-surface-300',
-    'textColor-Button-toolbarButton': '$color-surface-800',
+    'textColor-Button-toolbarButton': '$color-surface-900',
     'textColor-Button-toolbarButton--hover': '$color-surface-1',
     'textColor-Button-toolbarButton--disabled': '$color-surface-600',
     'paddingLeft-Button-toolbarButton': '$space-2',
@@ -35,7 +39,11 @@ export const theme: ThemeDefinition = {
     'color-ToolbarButton-blue': 'cyan',
     'color-ToolbarButton-orange': 'orange',
     'color-ToolbarButton-red': 'red',
+    'border-ToolbarButton': '2px solid transparent',
+    'border-ToolbarButton--selected': '2px solid $color-highlight',
 
+    // --- Splitter:
+    'backgroundColor-resizer-Splitter': '$color-highlight',
 
     // --- Tooltip:
     'backgroundColor-Tooltip': '$color-surface-700',
