@@ -11,7 +11,7 @@
     <!-- No pages, we can stretch to content to the full width and height -->
     <Pages />
     <VStack gap="0" height="100%" padding="0">
-      <Toolbar />
+      <Toolbar isIde="{false}" />
       <EmulatorArea backgroundColor="gray" />
       <StatusBar />
     </VStack>

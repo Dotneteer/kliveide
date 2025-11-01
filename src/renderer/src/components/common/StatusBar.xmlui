@@ -1,3 +1,0 @@
-<Component name="StatusBar">
-  <HStack  backgroundColor="lightblue">StatusBar</HStack>
-</Component>

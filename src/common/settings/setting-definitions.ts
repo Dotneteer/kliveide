@@ -29,7 +29,8 @@ import {
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EMU_KEYBOARD_HEIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
+  SETTING_EMU_SOUND_MUTED
 } from "./setting-const";
 import { SettingDescription } from "../abstractions/SettingDescription";
 
@@ -74,6 +75,15 @@ const settingDefinitions: SettingDescription[] = [
     id: SETTING_EMU_FAST_LOAD,
     title: "Fast load",
     description: "Allows the emulator fast tape load mode.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SOUND_MUTED,
+    title: "Mute/Unmute Sound",
+    description: "Allows the emulator sound to be muted or unmuted.",
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
