@@ -1,0 +1,14 @@
+writing block
+
+58 00 01 e1 2c ff
+
+GET STATUS
+
+4d 00 00 00 00 ff 
+
+ff 00 00 ff
+
+
+
+
+

@@ -1,0 +1,12 @@
+After DivMMC fix:
+
+0339 ok
+034c ok --> Does not reach 034f
+  
+Reason: MMC handling is not implemented
+r2:18cc --> Set breakpoint
+
+
+
+
+
