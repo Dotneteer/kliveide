@@ -1,4 +1,4 @@
-import type { BreakpointInfo } from "./BreakpointInfo";
+import type { BreakpointInfo } from "../../emu/abstractions/BreakpointInfo";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.

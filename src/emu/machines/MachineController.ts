@@ -2,7 +2,7 @@ import type {
   FrameCompletedArgs,
   IMachineController
 } from "@renderer/abstractions/IMachineController";
-import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeToInject } from "@emu/abstractions/CodeToInject";
 import type { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
@@ -10,7 +10,7 @@ import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
 import type { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@emu/abstractions/BreakpointInfo";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";

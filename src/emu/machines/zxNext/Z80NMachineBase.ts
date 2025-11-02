@@ -17,7 +17,7 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { SysVar } from "@abstractions/SysVar";
 import { CpuState } from "@common/messaging/EmuApi";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
-import { CodeToInject } from "@abstractions/CodeToInject";
+import { CodeToInject } from "@emu/abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
 

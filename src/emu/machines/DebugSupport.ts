@@ -1,6 +1,6 @@
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@emu/abstractions/BreakpointInfo";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 
 import { incBreakpointsVersionAction } from "@state/actions";

@@ -1,4 +1,4 @@
-import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import { IGenericDevice } from "../../../emu/abstractions/IGenericDevice";
 import { IC64Machine } from "./IC64Machine";
 import { C64VicDevice } from "./vic/C64VicDevice";
 import { C64SidDevice } from "./C64SidDevice";

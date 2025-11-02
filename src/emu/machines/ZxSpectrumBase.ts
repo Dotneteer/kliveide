@@ -6,7 +6,7 @@ import type { ISpectrumKeyboardDevice } from "./zxSpectrum/ISpectrumKeyboardDevi
 import type { IScreenDevice } from "../abstractions/IScreenDevice";
 import type { ITapeDevice } from "../abstractions/ITapeDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeToInject } from "@emu/abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 

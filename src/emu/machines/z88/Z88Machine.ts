@@ -4,7 +4,7 @@ import type { IZ88BeeperDevice } from "./IZ88BeeperDevice";
 import type { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
 import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeToInject } from "@emu/abstractions/CodeToInject";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
 import type { CardSlotState } from "./memory/CardSlotState";

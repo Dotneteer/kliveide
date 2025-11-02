@@ -3,7 +3,7 @@ import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
-import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeToInject } from "@emu/abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { MachineModel } from "@common/machines/info-types";

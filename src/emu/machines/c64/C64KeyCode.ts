@@ -1,4 +1,4 @@
-import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import type { KeyCodeSet } from "../../abstractions/IGenericKeyboardDevice";
 
 /**
  * This enumeration assigns integers to the enumerated values representing a particular Commodore 64 key

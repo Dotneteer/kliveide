@@ -2,7 +2,7 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 import type { ExecutionContext } from "../abstractions/ExecutionContext";
 import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeToInject } from "@emu/abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import type { MachineConfigSet } from "@common/machines/info-types";

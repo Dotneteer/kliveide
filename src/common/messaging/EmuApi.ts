@@ -1,16 +1,16 @@
-import { PsgChipState } from "@emu/abstractions/PsgChipState";
-import { MachineCommand } from "@abstractions/MachineCommand";
+import { PsgChipState } from "../../emu/abstractions/PsgChipState";
+import { MachineCommand } from "../abstractions/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { SysVar } from "@abstractions/SysVar";
-import { CodeToInject } from "@abstractions/CodeToInject";
-import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
-import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
-import { CallStackInfo } from "@emu/abstractions/CallStack";
-import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { IMemorySection } from "@abstractions/MemorySection";
+import { BreakpointInfo } from "../../emu/abstractions/BreakpointInfo";
+import { SysVar } from "../abstractions/SysVar";
+import { CodeToInject } from "../../emu/abstractions/CodeToInject";
+import { ResolvedBreakpoint } from "../../emu/abstractions/ResolvedBreakpoint";
+import { FloppyLogEntry } from "../../emu/abstractions/FloppyLogEntry";
+import { MemoryPageInfo } from "../../emu/machines/zxNext/MemoryDevice";
+import { CallStackInfo } from "../../emu/abstractions/CallStack";
+import { MachineControllerState } from "../abstractions/MachineControllerState";
+import { IMemorySection } from "../abstractions/MemorySection";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
