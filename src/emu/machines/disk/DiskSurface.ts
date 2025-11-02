@@ -1,6 +1,6 @@
 import type { DiskInformation, TrackInformation } from "./DiskInformation";
 
-import { DiskDensity } from "@emu/abstractions/DiskDensity";
+import { DiskDensity } from "../../../emu/abstractions/DiskDensity";
 import { BufferSpan } from "./BufferSpan";
 import { DiskCrc } from "./DiskCrc";
 
