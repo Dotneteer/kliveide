@@ -1,4 +1,4 @@
-import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import type { KeyCodeSet } from "../../abstractions/IGenericKeyboardDevice";
 
 /**
  * This enum assigns key codes to the keys of the Cambridge Z88 keyboard.
