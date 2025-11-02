@@ -1,4 +1,4 @@
-import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IZxNextMachine } from "../../../abstractions/IZxNextMachine";
 
 import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
 import {
@@ -46,7 +46,7 @@ import {
   writeMultifaceP3DisablePort,
   writeMultifaceP3EnablePort
 } from "./MultifacePortHandler";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { toHexa4 } from "@common/utils/conversions";
 
 type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
 type IoPortWriterFn = (port: number, value: number) => void | boolean;

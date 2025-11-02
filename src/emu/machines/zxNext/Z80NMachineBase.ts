@@ -1,24 +1,24 @@
-import type { KeyMapping } from "@abstractions/KeyMapping";
-import type { IFileProvider } from "@renderer/core/IFileProvider";
-import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import type { MachineConfigSet } from "@common/machines/info-types";
+import type { KeyMapping } from "../../../common/abstractions/KeyMapping";
+import type { IFileProvider } from "../../../common/abstractions/IFileProvider";
+import type { ExecutionContext } from "../../abstractions/ExecutionContext";
+import type { IZ80Machine } from "../../abstractions/IZ80Machine";
+import type { KeyCodeSet } from "../../abstractions/IGenericKeyboardDevice";
+import type { MachineConfigSet } from "../../../common/machines/info-types";
 
-import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
-import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
-import { TapeMode } from "@emu/abstractions/TapeMode";
-import { LiteEvent } from "@emu/utils/lite-event";
+import { DebugStepMode } from "../../abstractions/DebugStepMode";
+import { FrameTerminationMode } from "../../abstractions/FrameTerminationMode";
+import { OpCodePrefix } from "../../abstractions/OpCodePrefix";
+import { TapeMode } from "../../abstractions/TapeMode";
+import { LiteEvent } from "../../utils/lite-event";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "../machine-props";
-import { Z80NCpu } from "@emu/z80/Z80NCpu";
-import { CallStackInfo } from "@emu/abstractions/CallStack";
-import { MessengerBase } from "@common/messaging/MessengerBase";
-import { SysVar } from "@abstractions/SysVar";
-import { CpuState } from "@common/messaging/EmuApi";
-import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
-import { CodeToInject } from "@emu/abstractions/CodeToInject";
-import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { Z80NCpu } from "../../z80/Z80NCpu";
+import { CallStackInfo } from "../../abstractions/CallStack";
+import { MessengerBase } from "../../../common/messaging/MessengerBase";
+import { SysVar } from "../../../common/abstractions/SysVar";
+import { CpuState } from "../../../common/messaging/EmuApi";
+import { QueuedEvent } from "../../abstractions/QueuedEvent";
+import { CodeToInject } from "../../abstractions/CodeToInject";
+import { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
 
 /**
@@ -398,6 +398,16 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   abstract getCurrentPartitionLabels(): string[];
 
   /**
+   * Gets the selected ROM page number
+   */
+  abstract getSelectedRomPage(): number;
+
+  /**
+   * Gets the selected RAM bank number
+   */
+  abstract getSelectedRamBank(): number;
+
+  /**
    * Gets a flag for each 8K page that indicates if the page is a ROM
    */
   abstract getRomFlags(): boolean[];
@@ -440,7 +450,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    */
   removeEvent(eventFn: (data: any) => void): void {
     if (!this._queuedEvents) return;
-    const idx = this._queuedEvents.findIndex((item) => item.eventFn === eventFn);
+    const idx = this._queuedEvents.findIndex(item => item.eventFn === eventFn);
     if (idx < 0) return;
 
     // --- Event found, remove it

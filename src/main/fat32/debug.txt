@@ -1,0 +1,45 @@
+- Sector 0: Boot sector seems to be ok
+  BS_JmpBoot: ok
+  BS_OEMName: ok
+  BPB_BytsPerSec: 0x0002, ok
+  BPB_SecPerClus: 0x01, ok
+  BPB_ResvdSecCnt: 0x0020, ok
+  BPB_NumFATs: 0x02, ok
+  BPB_RootEntCnt: 0x0000, ok
+  BPB_TotSec16: 0x0000, ok
+* BPB_Media: 0xf0 | 0xf8, diff
+  BPB_FATSz16: 0x0000, ok
+* BPB_SecPerTrk: 0x003f | 0x0020, diff
+* BPB_NumHeads: 0x0010 | 0x00ff, diff
+  BPB_HiddSec: 0x00000000, ok
+* BPB_TotSec32: 0x0001fffe | 0x00020000, diff
+* BPB_FATSz32: 0x000003f0 | 0x00000400, diff
+  BPB_ExtFlags: 0x0000, ok
+  BPB_FSVer: 0x0000, ok
+  BPB_RootClus: 0x00000002, ok
+  BPB_FSInfo: 0x0001, ok
+  BPB_BkBootSec: 0x0006, ok
+  BPB_Reserved: ok
+* BS_DrvNum: 0x00 | 0x80, diff
+  BS_Reserved1: 0x00, ok
+  BS_BootSig: 0x29, ok
+  BS_VolID: ok
+  BS_VolLab: ok
+  BS_FileSysType: "FAT32   ", ok
+  BootCode: ok ???
+  BootSectorSignature: 0xAA55
+
+- Sector 1: FSInfo seems to be ok
+  FSI_LeadSig: ok,
+  FSI_StrucSig: ok
+* FSI_Free_Count: 0x0001F7F9 | 0x0001F7DE, diff
+* FSI_Nxt_Free: 0x00000007 | 0xffffffff, diff
+  FSI_TrailSig: 0x0000AA55, ok
+
+
+- Sector 2: Seems faulty: ends with AA 55 00 00, working image is full 00
+- Sector 3-5: Seems ok (full 00)
+- Sector 6: Should be the backup of the boot sector but is full 00
+- Sector 7: Should be the backup of FSInfo but is full 00
+- Sector 32: FAT table with 7 0x0fffffff entries (in the real image file)
+

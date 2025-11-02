@@ -1,17 +1,17 @@
-import type { KeyMapping } from "@abstractions/KeyMapping";
-import type { SysVar } from "@abstractions/SysVar";
-import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
-import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
-import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
-import type { CodeToInject } from "@emu/abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import type { MachineModel } from "@common/machines/info-types";
+import type { KeyMapping } from "../../../common/abstractions/KeyMapping";
+import type { SysVar } from "../../../common/abstractions/SysVar";
+import type { ISpectrumBeeperDevice } from "../../machines/zxSpectrum/ISpectrumBeeperDevice";
+import type { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
+import type { ITapeDevice } from "../../abstractions/ITapeDevice";
+import type { CodeToInject } from "../../abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
+import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
+import type { MachineModel } from "../../../common/machines/info-types";
 
-import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
-import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
+import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
+import { SpectrumKeyCode } from "../../machines/zxSpectrum/SpectrumKeyCode";
+import { KeyCodeSet } from "../../abstractions/IGenericKeyboardDevice";
+import { spectrumKeyMappings } from "../../machines/zxSpectrum/SpectrumKeyMappings";
 import { Z80NMachineBase } from "./Z80NMachineBase";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
@@ -32,14 +32,14 @@ import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
 import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
-import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { CallStackInfo } from "../../abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { createMainApi } from "@common/messaging/MainApi";
-import { MessengerBase } from "@common/messaging/MessengerBase";
-import { CpuState } from "@common/messaging/EmuApi";
-import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import { createMainApi } from "../../../common/messaging/MainApi";
+import { MessengerBase } from "../../../common/messaging/MessengerBase";
+import { CpuState } from "../../../common/messaging/EmuApi";
+import { IMemorySection, MemorySectionType } from "../../../common/abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
+import { toHexa2 } from "../../../common/utils/conversions";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.

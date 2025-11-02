@@ -1,4 +1,4 @@
-import { toHexa6 } from "@renderer/appIde/services/ide-commands";
+import { toHexa6 } from "../../../common/utils/conversions";
 import { zxNext9BitColorCodes } from "./PaletteDevice";
 
 const colorIntensity = [0x00, 0x25, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff];

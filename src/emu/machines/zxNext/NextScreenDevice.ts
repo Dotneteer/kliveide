@@ -1,9 +1,9 @@
-import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import type { RenderingTact } from "@emu/abstractions/RenderingTact";
-import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
-import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IGenericDevice } from "../../abstractions/IGenericDevice";
+import type { RenderingTact } from "../../abstractions/RenderingTact";
+import type { ScreenConfiguration } from "../../abstractions/ScreenConfiguration";
+import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
 
-import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
+import { RenderingPhase } from "../../abstractions/RenderingPhase";
 import { zxNext9BitColorCodes } from "./PaletteDevice";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {

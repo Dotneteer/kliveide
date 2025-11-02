@@ -1,4 +1,4 @@
-import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
 
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 

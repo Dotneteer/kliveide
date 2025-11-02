@@ -1,6 +1,6 @@
-import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
 import type { ISpectrumKeyboardDevice } from "./ISpectrumKeyboardDevice";
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IZxSpectrumMachine } from "../../abstractions/IZxSpectrumMachine";
 
 /**
  * This class implements the ZX Spectrum keyboard device.

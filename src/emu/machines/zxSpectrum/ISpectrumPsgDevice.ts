@@ -1,4 +1,4 @@
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IZxSpectrumMachine } from "../../abstractions/IZxSpectrumMachine";
 import type { IGenericPsgDevice } from "../../abstractions/IGenericPsgDevice";
 
 /**

@@ -1,4 +1,4 @@
-import { SysVar, SysVarType } from "@abstractions/SysVar";
+import { SysVar, SysVarType } from "../../../common/abstractions/SysVar";
 
 /**
  * System variables of ZX Spectrum 48K
