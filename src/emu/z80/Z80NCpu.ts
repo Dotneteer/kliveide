@@ -1,18 +1,18 @@
-import type { IZ80NCpu } from "@emu/abstractions/IZ80NCpu";
+import type { IZ80NCpu } from "../abstractions/IZ80NCpu";
 
 import { Z80Cpu, Z80Operation, parityTable, sz53Table, sz53pvTable } from "./Z80Cpu";
-import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
+import { FlagsSetMask } from "../abstractions/FlagSetMask";
 
 export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   // --- Number of tacts in the current frame with 28MHz clock
   protected tactsInFrame28 = 0;
 
   readonly mergedOps: Z80Operation[];
-  
+
   constructor() {
     super();
     this.mergedOps = [...super.getExtendedOpsTable()];
-    Object.keys(z80NExtendedOps).forEach((key) => {
+    Object.keys(z80NExtendedOps).forEach(key => {
       const numKey = parseInt(key, 10);
       this.mergedOps[numKey] = z80NExtendedOps[numKey];
     });
@@ -41,7 +41,7 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    this.frameTacts += n/this.clockMultiplier;
+    this.frameTacts += n / this.clockMultiplier;
     if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInFrame;

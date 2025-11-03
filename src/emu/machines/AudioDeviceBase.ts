@@ -1,5 +1,5 @@
-import type { IAudioDevice } from "@emu/abstractions/IAudioDevice";
-import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+import type { IAudioDevice } from "../abstractions/IAudioDevice";
+import { IAnyMachine } from "../abstractions/IAnyMachine";
 
 /**
  * This class represents the functionality of an audio device that can generate audio samples

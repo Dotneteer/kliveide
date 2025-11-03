@@ -1,7 +1,7 @@
-import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IFloatingBusDevice } from "../../abstractions/IFloatingBusDevice";
+import type { IZxSpectrumMachine } from "../../abstractions/IZxSpectrumMachine";
 
-import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
+import { RenderingPhase } from "../../abstractions/RenderingPhase";
 import { ZxSpectrumP3EMachine } from "./ZxSpectrumP3eMachine";
 
 /**

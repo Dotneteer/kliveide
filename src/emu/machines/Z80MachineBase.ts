@@ -1,11 +1,11 @@
-import type { KeyMapping } from "@abstractions/KeyMapping";
-import type { IFileProvider } from "@renderer/core/IFileProvider";
+import type { KeyMapping } from "../../common/abstractions/KeyMapping";
+import type { IFileProvider } from "../../common/abstractions/IFileProvider";
 import type { ExecutionContext } from "../abstractions/ExecutionContext";
-import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
-import type { CodeToInject } from "@emu/abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
-import type { MachineConfigSet } from "@common/machines/info-types";
+import type { IZ80Machine } from "../abstractions/IZ80Machine";
+import type { CodeToInject } from "../abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "../abstractions/CodeInjectionFlow";
+import type { KeyCodeSet } from "../abstractions/IGenericKeyboardDevice";
+import type { MachineConfigSet } from "../../common/machines/info-types";
 
 import { DebugStepMode } from "../abstractions/DebugStepMode";
 import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
@@ -13,12 +13,12 @@ import { TapeMode } from "../abstractions/TapeMode";
 import { LiteEvent } from "../utils/lite-event";
 import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
-import { CallStackInfo } from "@emu/abstractions/CallStack";
-import { CpuState } from "@common/messaging/EmuApi";
-import { SysVar } from "@abstractions/SysVar";
-import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
+import { CallStackInfo } from "../abstractions/CallStack";
+import { CpuState } from "../../common/messaging/EmuApi";
+import { SysVar } from "../../common/abstractions/SysVar";
+import { QueuedEvent } from "../abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "./MachineFrameRunner";
-import { IMemorySection } from "@abstractions/MemorySection";
+import { IMemorySection } from "../../common/abstractions/MemorySection";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.

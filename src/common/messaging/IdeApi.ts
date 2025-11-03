@@ -1,5 +1,8 @@
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
+import { IdeCommandResult } from "../../common/abstractions/IdeCommandResult";
+import { ProjectStructure } from "../../main/ksx-runner/ProjectStructure";
+import { OutputSpecification } from "../../common/abstractions/OutputBuffer";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -10,6 +13,14 @@ const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
  */
 abstract class IdeApiImpl {
   /**
+   * Displays output in the IDE output pane.
+   * @param _toDisplay Output specification to display.
+   */
+  async displayOutput(_toDisplay: OutputSpecification): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sends script output to the IDE.
    * @param _id Script ID.
    * @param _operation Buffer operation to perform.
@@ -19,6 +30,55 @@ abstract class IdeApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  /**
+   * Shows or hides the memory panel.
+   * @param _show True to show, false to hide.
+   */
+  async showMemory(_show: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Shows or hides the disassembly panel.
+   * @param _show True to show, false to hide.
+   */
+  async showDisassembly(_show: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Shows or hides the BASIC listing panel.
+   * @param _show True to show, false to hide.
+   */
+  async showBasic(_show: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Executes a command in the IDE.
+   * @param _commandText The command text to execute.
+   * @param _scriptId Optional script ID for script context.
+   */
+  async executeCommand(
+    _commandText: string,
+    _scriptId?: number
+  ): Promise<IdeCommandResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves all files before quitting the IDE.
+   */
+  async saveAllBeforeQuit(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Gets the current project structure.
+   */
+  async getProjectStructure(): Promise<ProjectStructure> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 // Internal concrete subclass for proxy instantiation

@@ -1,9 +1,9 @@
 import type { IScreenDevice } from "../abstractions/IScreenDevice";
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
 
-import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
-import { RenderingTact } from "@emu/abstractions/RenderingTact";
-import { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
+import { RenderingPhase } from "../abstractions/RenderingPhase";
+import { RenderingTact } from "../abstractions/RenderingTact";
+import { ScreenConfiguration } from "../abstractions/ScreenConfiguration";
 
 /**
  * This class implements the ZX Spectrum screen device.

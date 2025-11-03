@@ -184,7 +184,7 @@ class EmuApiImpl {
   async runCodeCommand(
     _codeToInject: CodeToInject,
     _debug: boolean,
-    _projectDebug: boolean
+    _projectDebug?: boolean
   ): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }

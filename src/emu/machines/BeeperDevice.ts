@@ -1,6 +1,6 @@
 import type { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
+import type { IZxNextMachine } from "../abstractions/IZxNextMachine";
 
 import { AudioDeviceBase } from "./AudioDeviceBase";
 

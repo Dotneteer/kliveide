@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "@renderer/appIde/ToolArea/abstractions";
+import { IOutputBuffer } from "../abstractions/OutputBuffer";
 
 /**
  * Describes a console action that can be displayed in the output pane

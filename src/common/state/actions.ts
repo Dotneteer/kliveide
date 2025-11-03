@@ -1,3 +1,4 @@
+import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 
 export const emuLoadedAction: ActionCreator = () => ({
@@ -51,3 +52,26 @@ export const toggleGlobalSettingAction: ActionCreator = (id: string) => ({
   type: "TOGGLE_GLOBAL_SETTING",
   payload: { id }
 });
+
+export const incBreakpointsVersionAction: ActionCreator = () => ({
+  type: "INC_BPS_VERSION"
+});
+
+export const setDebuggingAction: ActionCreator = (flag) => ({
+  type: "SET_DEBUGGING",
+  payload: { flag }
+});
+
+export const setMachineStateAction: ActionCreator = (
+  state: MachineControllerState,
+  numValue: number
+) => ({
+  type: "SET_MACHINE_STATE",
+  payload: { state, numValue }
+});
+
+export const setProjectDebuggingAction: ActionCreator = (flag) => ({
+  type: "SET_PROJECT_DEBUGGING",
+  payload: { flag }
+});
+

@@ -1,12 +1,12 @@
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import { createEmuApi } from "@common/messaging/EmuApi";
-import { MessengerBase } from "@common/messaging/MessengerBase";
-import { AppState } from "@common/state/AppState";
-import { Store } from "@common/state/redux-light";
-import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
-import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import type { BreakpointInfo } from "../../emu/abstractions/BreakpointInfo";
+import { createEmuApi } from "../messaging/EmuApi";
+import { MessengerBase } from "../messaging/MessengerBase";
+import { AppState } from "../state/AppState";
+import { Store } from "../state/redux-light";
+import { ResolvedBreakpoint } from "../../emu/abstractions/ResolvedBreakpoint";
+import { getBreakpoints } from "./breakpoint-utils";
+import { isDebuggableCompilerOutput } from "./compiler-utils";
+import { toHexa4 } from "./conversions";
 
 export function getBreakpointKey(
   bp: BreakpointInfo,

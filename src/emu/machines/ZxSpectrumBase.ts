@@ -1,21 +1,21 @@
-import type { KeyMapping } from "@abstractions/KeyMapping";
-import type { SysVar } from "@abstractions/SysVar";
+import type { KeyMapping } from "../../common/abstractions/KeyMapping";
+import type { SysVar } from "../../common/abstractions/SysVar";
 import type { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
 import type { ISpectrumKeyboardDevice } from "./zxSpectrum/ISpectrumKeyboardDevice";
 import type { IScreenDevice } from "../abstractions/IScreenDevice";
 import type { ITapeDevice } from "../abstractions/ITapeDevice";
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import type { CodeToInject } from "@emu/abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import type { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
+import type { CodeToInject } from "../abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "../abstractions/CodeInjectionFlow";
+import type { KeyCodeSet } from "../abstractions/IGenericKeyboardDevice";
 
 import { EmulatedKeyStroke } from "../structs/EmulatedKeyStroke";
 import { TapeMode } from "../abstractions/TapeMode";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { SpectrumKeyCode } from "./zxSpectrum/SpectrumKeyCode";
-import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
-import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import { spectrumKeyMappings } from "../machines/zxSpectrum/SpectrumKeyMappings";
+import { IMemorySection, MemorySectionType } from "../../common/abstractions/MemorySection";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point

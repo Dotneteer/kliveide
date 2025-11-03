@@ -1,10 +1,10 @@
-import type { SysVar } from "@abstractions/SysVar";
-import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
-import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { MachineModel } from "@common/machines/info-types";
+import type { SysVar } from "../../../common/abstractions/SysVar";
+import type { ISpectrumPsgDevice } from "../../machines/zxSpectrum/ISpectrumPsgDevice";
+import type { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
+import type { MachineModel } from "../../../common/machines/info-types";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 
-import { TapeMode } from "@emu/abstractions/TapeMode";
+import { TapeMode } from "../../abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
@@ -24,12 +24,12 @@ import {
   zxSpectrumP32FloatingBusPorts
 } from "./ZxSpectrumP3eFloatingBusDevice";
 import { PagedMemory } from "../memory/PagedMemory";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { MC_DISK_SUPPORT } from "@common/machines/constants";
-import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
+import { SpectrumKeyCode } from "../../machines/zxSpectrum/SpectrumKeyCode";
+import { MC_DISK_SUPPORT } from "../../../common/machines/constants";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "../../../common/structs/project-const";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128SysVars";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
+import { toHexa4 } from "../../../common/utils/conversions";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.

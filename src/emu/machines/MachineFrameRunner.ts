@@ -1,6 +1,6 @@
-import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
-import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+import { DebugStepMode } from "../abstractions/DebugStepMode";
+import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
+import { IAnyMachine } from "../abstractions/IAnyMachine";
 
 export interface IMachineFrameRunner {
   get frameCompleted(): boolean;
