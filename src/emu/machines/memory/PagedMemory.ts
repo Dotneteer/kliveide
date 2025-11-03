@@ -1,4 +1,4 @@
-import { toHexa2 } from "@common/utils/conversions";
+import { toHexa2 } from "../../../common/utils/conversions";
 
 /**
  * Memory information about a 8K page

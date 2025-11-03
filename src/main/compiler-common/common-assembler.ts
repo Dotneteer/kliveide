@@ -24,7 +24,7 @@ import {
   setRandomSeed
 } from "../compiler-common/expressions";
 import { FixupEntry } from "../compiler-common/fixups";
-import { ExpressionValueType } from "@abstractions/CompilerInfo";
+import { ExpressionValueType } from "../../common/abstractions/CompilerInfo";
 import {
   BinaryComparisonInfo,
   FixupType,
@@ -41,7 +41,7 @@ import {
   SymbolType,
   SymbolValueMap,
   TypedObject
-} from "../compiler-common/abstractions";
+} from "./abstractions";
 import {
   AlignPragma,
   AssemblyLine,
@@ -95,13 +95,13 @@ import {
   WhileStatement,
   XentPragma,
   XorgPragma
-} from "@main/compiler-common/tree-nodes";
-import { readTextFile } from "@main/compiler-common/utils";
+} from "./tree-nodes";
+import { readTextFile } from "./utils";
 import { CommonTokenType } from "./common-tokens";
 import { CommonTokenStream } from "./common-token-stream";
 import { CommonAsmParser } from "./common-asm-parser";
-import { findModelTypeByName } from "@main/z80-compiler/SpectrumModelTypes";
-import { convertSpectrumString } from "@main/z80-compiler/z80-utils";
+import { findModelTypeByName } from "../z80-compiler/SpectrumModelTypes";
+import { convertSpectrumString } from "../z80-compiler/z80-utils";
 
 /**
  * The file name of a direct text compilation

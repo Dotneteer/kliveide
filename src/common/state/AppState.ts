@@ -1,4 +1,4 @@
-import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import { KliveCompilerOutput } from "../abstractions/CompilerInfo";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { CompilationCompleted } from "../../main/compiler-integration/runWorker";
 

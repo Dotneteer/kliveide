@@ -33,8 +33,8 @@ import { createIdeApi } from "../../common/messaging/IdeApi";
 import { SETTING_EMU_FAST_LOAD } from "../../common/settings/setting-const";
 import { IAnyMachine } from "../abstractions/IAnyMachine";
 import { IOutputBuffer, OutputColor } from "../../common/abstractions/OutputBuffer";
-import { toHexa4 } from "@common/utils/conversions";
-import { getGlobalSetting } from "@common/settings/utils";
+import { toHexa4 } from "../../common/utils/conversions";
+import { getGlobalSetting } from "../../common/settings/utils";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.

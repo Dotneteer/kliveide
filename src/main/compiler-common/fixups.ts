@@ -10,9 +10,9 @@ import {
   IValueInfo,
   SymbolType,
   TypedObject
-} from "@main/compiler-common/abstractions";
-import { AssemblyLine, Expression, NodePosition } from "@main/compiler-common/tree-nodes";
-import { CommonTokenType } from "@main/compiler-common/common-tokens";
+} from "./abstractions";
+import { AssemblyLine, Expression, NodePosition } from "./tree-nodes";
+import { CommonTokenType } from "./common-tokens";
 
 /**
  * This class represents a fixup that recalculates and replaces
@@ -121,7 +121,7 @@ export class FixupEntry<
       Object.keys(module.symbols)
         .filter(varsFilter(module.symbols))
         .concat(
-          ...module.localScopes.map((s) => Object.keys(s.symbols).filter(varsFilter(s.symbols)))
+          ...module.localScopes.map(s => Object.keys(s.symbols).filter(varsFilter(s.symbols)))
         )
     );
     for (const v of vars) snapshot[v] = module.resolveSimpleSymbol(v);

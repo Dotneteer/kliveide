@@ -4,7 +4,7 @@ import type {
   IFloppyDiskDrive,
   ChangedSectors,
   SectorChanges
-} from "@emu/abstractions/IFloppyDiskDrive";
+} from "../../../emu/abstractions/IFloppyDiskDrive";
 
 import { createDiskSurface } from "./DiskSurface";
 import { readDiskData } from "./disk-readers";

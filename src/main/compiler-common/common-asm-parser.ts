@@ -1,6 +1,6 @@
 import { ParserError } from "./parse-errors";
 import { ParserErrorMessage, TypedObject } from "../compiler-common/abstractions";
-import { CommonTokens, CommonTokenType, TokenTraits } from "@main/compiler-common/common-tokens";
+import { CommonTokens, CommonTokenType, TokenTraits } from "./common-tokens";
 import {
   AlignPragma,
   AssemblyLine,

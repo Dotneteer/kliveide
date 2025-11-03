@@ -4,12 +4,12 @@ import {
   IStructDefinition,
   IValueInfo,
   TypedObject
-} from "@main/compiler-common/abstractions";
+} from "./abstractions";
 import type { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 
 import { ExpressionValue } from "./expressions";
 import { FixupEntry } from "./fixups";
-import { CommonTokenType } from "@main/compiler-common/common-tokens";
+import { CommonTokenType } from "./common-tokens";
 
 /**
  * This class represents an assembly module that my contain child

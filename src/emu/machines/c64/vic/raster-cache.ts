@@ -1,6 +1,5 @@
 const RASTER_CACHE_MAX_TEXTCOLS = 0x100;
 const RASTER_CACHE_MAX_SPRITES = 8;
-const RASTER_CACHE_GFX_MSK_SIZE = 0x100;
 
 /**
  * This defines the screen cache.  It includes the sprite cache too.

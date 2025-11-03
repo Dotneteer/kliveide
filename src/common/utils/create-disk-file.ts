@@ -1,7 +1,7 @@
-import { BinaryWriter } from "./BinaryWriter";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { BinaryWriter } from "./BinaryWriter";
 import { resolveHomeFilePath } from "../../main/path-utils";
 
 const CPC_HEAD = "MV - CPCEMU Disk-File\r\nDisk-Info\r\n";

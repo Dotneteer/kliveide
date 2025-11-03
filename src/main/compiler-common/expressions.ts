@@ -1,14 +1,22 @@
 import type { ErrorCodes } from "./assembler-errors";
 
-import { ExpressionValueType } from "@abstractions/CompilerInfo";
+import { ExpressionValueType } from "../../common/abstractions/CompilerInfo";
+import { IEvaluationContext, IExpressionValue, IValueInfo, TypedObject } from "./abstractions";
+import { CommonTokenType } from "./common-tokens";
 import {
-  IEvaluationContext,
-  IExpressionValue,
-  IValueInfo,
-  TypedObject
-} from "@main/compiler-common/abstractions";
-import { CommonTokenType } from "@main/compiler-common/common-tokens";
-import { AssemblyLine, BinaryExpression, ConditionalExpression, Expression, FunctionInvocation, IdentifierNode, MacroTimeFunctionInvocation, NodePosition, OperandType, Symbol, UnaryExpression } from "@main/compiler-common/tree-nodes";
+  AssemblyLine,
+  BinaryExpression,
+  ConditionalExpression,
+  Expression,
+  FunctionInvocation,
+  IdentifierNode,
+  MacroTimeFunctionInvocation,
+  NodePosition,
+  OperandType,
+  Symbol,
+  UnaryExpression
+} from "./tree-nodes";
+
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";
 const DIV_BY_ZERO_ERROR = "Divide by zero error";
@@ -1111,75 +1119,75 @@ class FunctionEvaluator {
 const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   abs: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.abs(args[0].asLong())),
+      args => new ExpressionValue(Math.abs(args[0].asLong())),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.abs(args[0].asReal())),
+      args => new ExpressionValue(Math.abs(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   acos: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.acos(args[0].asReal())),
+      args => new ExpressionValue(Math.acos(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   asin: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.asin(args[0].asReal())),
+      args => new ExpressionValue(Math.asin(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   atan: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.atan(args[0].asReal())),
+      args => new ExpressionValue(Math.atan(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   atan2: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.atan2(args[0].asReal(), args[1].asReal())),
+      args => new ExpressionValue(Math.atan2(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   ceiling: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.ceil(args[0].asReal())),
+      args => new ExpressionValue(Math.ceil(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   cos: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.cos(args[0].asReal())),
+      args => new ExpressionValue(Math.cos(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   cosh: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.cosh(args[0].asReal())),
+      args => new ExpressionValue(Math.cosh(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   exp: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.exp(args[0].asReal())),
+      args => new ExpressionValue(Math.exp(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   floor: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.floor(args[0].asReal())),
+      args => new ExpressionValue(Math.floor(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   log: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.log(args[0].asReal())),
+      args => new ExpressionValue(Math.log(args[0].asReal())),
       [ExpressionValueType.Real]
     ),
     new FunctionEvaluator(
-      (args) =>
+      args =>
         new ExpressionValue(
           Math.log(args[0].asReal()) / (args[1].asReal() === 0.0 ? 1 : Math.log(args[1].asReal()))
         ),
@@ -1188,85 +1196,85 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   log10: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.log10(args[0].asReal())),
+      args => new ExpressionValue(Math.log10(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   max: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.max(args[0].asLong(), args[1].asLong())),
+      args => new ExpressionValue(Math.max(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.max(args[0].asReal(), args[1].asReal())),
+      args => new ExpressionValue(Math.max(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   min: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.min(args[0].asLong(), args[1].asLong())),
+      args => new ExpressionValue(Math.min(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.min(args[0].asReal(), args[1].asReal())),
+      args => new ExpressionValue(Math.min(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   pow: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.pow(args[0].asReal(), args[1].asReal())),
+      args => new ExpressionValue(Math.pow(args[0].asReal(), args[1].asReal())),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     )
   ],
   round: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.round(args[0].asReal())),
+      args => new ExpressionValue(Math.round(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sign: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sign(args[0].asLong())),
+      args => new ExpressionValue(Math.sign(args[0].asLong())),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sign(args[0].asReal())),
+      args => new ExpressionValue(Math.sign(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sin: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sin(args[0].asReal())),
+      args => new ExpressionValue(Math.sin(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sinh: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sinh(args[0].asReal())),
+      args => new ExpressionValue(Math.sinh(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   sqrt: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.sqrt(args[0].asReal())),
+      args => new ExpressionValue(Math.sqrt(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   tan: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.tan(args[0].asReal())),
+      args => new ExpressionValue(Math.tan(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   tanh: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.tanh(args[0].asReal())),
+      args => new ExpressionValue(Math.tanh(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
   truncate: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.trunc(args[0].asReal())),
+      args => new ExpressionValue(Math.trunc(args[0].asReal())),
       [ExpressionValueType.Real]
     )
   ],
@@ -1274,44 +1282,44 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   nat: [new FunctionEvaluator(() => new ExpressionValue(Math.E), [])],
   low: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() & 0xff),
+      args => new ExpressionValue(args[0].asLong() & 0xff),
       [ExpressionValueType.Integer]
     )
   ],
   high: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue((args[0].asLong() >> 8) & 0xff),
+      args => new ExpressionValue((args[0].asLong() >> 8) & 0xff),
       [ExpressionValueType.Integer]
     )
   ],
   word: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asWord()),
+      args => new ExpressionValue(args[0].asWord()),
       [ExpressionValueType.Integer]
     )
   ],
   rnd: [
     new FunctionEvaluator(() => new ExpressionValue(randomGenerator.integer(0, 65536)), []),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(randomGenerator.integer(args[0].asLong(), args[1].asLong())),
+      args => new ExpressionValue(randomGenerator.integer(args[0].asLong(), args[1].asLong())),
       [ExpressionValueType.Integer, ExpressionValueType.Integer]
     )
   ],
   length: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().length),
+      args => new ExpressionValue(args[0].asString().length),
       [ExpressionValueType.String]
     )
   ],
   len: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().length),
+      args => new ExpressionValue(args[0].asString().length),
       [ExpressionValueType.String]
     )
   ],
   left: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const len = Math.min(str.length, args[1].asLong());
         return new ExpressionValue(str.substr(0, len));
@@ -1321,7 +1329,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   right: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const len = Math.min(str.length, args[1].asLong());
         return new ExpressionValue(str.substr(str.length - len, len));
@@ -1331,7 +1339,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   substr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const start = Math.min(str.length, args[1].asLong());
         const len = Math.min(str.length - start, args[2].asLong());
@@ -1342,7 +1350,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   fill: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const str = args[0].asString();
         const count = args[1].asLong();
         const resultLen = str.length * count;
@@ -1359,62 +1367,59 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
     )
   ],
   int: [
-    new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong()),
-      [ExpressionValueType.Real]
-    )
+    new FunctionEvaluator(args => new ExpressionValue(args[0].asLong()), [ExpressionValueType.Real])
   ],
   frac: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asReal() - args[0].asLong()),
+      args => new ExpressionValue(args[0].asReal() - args[0].asLong()),
       [ExpressionValueType.Real]
     )
   ],
   lowercase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toLowerCase()),
+      args => new ExpressionValue(args[0].asString().toLowerCase()),
       [ExpressionValueType.String]
     )
   ],
   lcase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toLowerCase()),
+      args => new ExpressionValue(args[0].asString().toLowerCase()),
       [ExpressionValueType.String]
     )
   ],
   uppercase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toUpperCase()),
+      args => new ExpressionValue(args[0].asString().toUpperCase()),
       [ExpressionValueType.String]
     )
   ],
   ucase: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString().toUpperCase()),
+      args => new ExpressionValue(args[0].asString().toUpperCase()),
       [ExpressionValueType.String]
     )
   ],
   str: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Bool]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.Real]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asString()),
+      args => new ExpressionValue(args[0].asString()),
       [ExpressionValueType.String]
     )
   ],
   scraddr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const line = args[0].asLong();
         if (line < 0 || line > 191) {
           throw new Error(
@@ -1437,7 +1442,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   attraddr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const line = args[0].asLong();
         if (line < 0 || line > 191) {
           throw new Error(
@@ -1458,31 +1463,31 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
   ],
   ink: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() & 0x07),
+      args => new ExpressionValue(args[0].asLong() & 0x07),
       [ExpressionValueType.Integer]
     )
   ],
   paper: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue((args[0].asLong() & 0x07) << 3),
+      args => new ExpressionValue((args[0].asLong() & 0x07) << 3),
       [ExpressionValueType.Integer]
     )
   ],
   bright: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x40),
+      args => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x40),
       [ExpressionValueType.Integer]
     )
   ],
   flash: [
     new FunctionEvaluator(
-      (args) => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x80),
+      args => new ExpressionValue(args[0].asLong() === 0 ? 0x00 : 0x80),
       [ExpressionValueType.Integer]
     )
   ],
   attr: [
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         const bright = args[2].asLong() === 0 ? 0x00 : 0x40;
@@ -1497,7 +1502,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
       ]
     ),
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         const bright = args[2].asLong() === 0 ? 0x00 : 0x40;
@@ -1506,7 +1511,7 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
       [ExpressionValueType.Integer, ExpressionValueType.Integer, ExpressionValueType.Integer]
     ),
     new FunctionEvaluator(
-      (args) => {
+      args => {
         const ink = args[0].asLong() & 0x07;
         const paper = (args[1].asLong() & 0x07) << 3;
         return new ExpressionValue((paper | ink) & 0xff);

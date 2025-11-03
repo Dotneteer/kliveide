@@ -1,6 +1,6 @@
 import type { FloppyLogEntry } from "../../../emu/abstractions/FloppyLogEntry";
 import type { IZxSpectrumMachine } from "../../../emu/abstractions/IZxSpectrumMachine";
-import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+import type { IFloppyControllerDevice } from "../../../emu/abstractions/IFloppyControllerDevice";
 import type { IFloppyDiskDrive } from "../../../emu/abstractions/IFloppyDiskDrive";
 import type { IFloppyControllerDeviceTest } from "./IFloppyContorllerDeviceTest";
 
@@ -9,7 +9,7 @@ import { DISK_A_CHANGES, DISK_A_WP, DISK_B_CHANGES, DISK_B_WP } from "../machine
 import { FloppyDiskDrive } from "./FloppyDiskDrive";
 import { DiskCrc } from "./DiskCrc";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "../../../common/structs/project-const";
-import { toHexa2 } from "@common/utils/conversions";
+import { toHexa2 } from "../../../common/utils/conversions";
 
 // --- Implements the NEC UPD 765 chip emulation
 export class FloppyControllerDevice

@@ -46,7 +46,7 @@ import {
   writeMultifaceP3DisablePort,
   writeMultifaceP3EnablePort
 } from "./MultifacePortHandler";
-import { toHexa4 } from "@common/utils/conversions";
+import { toHexa4 } from "../../../../common/utils/conversions";
 
 type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
 type IoPortWriterFn = (port: number, value: number) => void | boolean;

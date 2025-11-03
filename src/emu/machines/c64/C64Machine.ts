@@ -32,7 +32,7 @@ import { QueuedEvent } from "../../../emu/abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
 import { IMemorySection, MemorySectionType } from "../../../common/abstractions/MemorySection";
 import { c64SysVars } from "./C64SysVars";
-import { M6510VaCpu } from "@emu/m6510Va/M6510VaCpu";
+import { M6510VaCpu } from "../../../emu/m6510Va/M6510VaCpu";
 
 export class C64Machine extends M6510VaCpu implements IC64Machine {
   // --- This instance runs the machine frame

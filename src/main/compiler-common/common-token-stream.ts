@@ -1,6 +1,6 @@
-import { Token } from "@main/compiler-common/tree-nodes";
+import { Token } from "./tree-nodes";
 import { InputStream } from "./input-stream";
-import { CommonTokens, CommonTokenType } from "@main/compiler-common/common-tokens";
+import { CommonTokens, CommonTokenType } from "./common-tokens";
 
 /**
  * This class implements the tokenizer (lexer) of the assembler
