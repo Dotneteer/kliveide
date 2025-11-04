@@ -1,0 +1,33 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "bundler",
+    "noImplicitAny": false,
+    "noImplicitThis": true,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    "strictFunctionTypes": false,
+    "useUnknownInCatchVariables": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "types": ["vitest/globals"],
+    "paths": {
+      "@state/*": ["../src/common/state/*"],
+      "@common/*": ["../src/common/*"],
+      "@main/*": ["../src/main/*"],
+      "@emu/*": ["../src/emu/*"],
+      "@renderer/*": ["../src/renderer/*"]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../src/**/*"
+  ],
+  "exclude": ["node_modules", "**/build/*", "**/dist/*", "**/out/*"]
+}
