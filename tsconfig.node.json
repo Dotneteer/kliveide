@@ -2,12 +2,19 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
   "compilerOptions": {
     "composite": true,
+    "strictPropertyInitialization": false,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "useUnknownInCatchVariables": false,
+    "strictFunctionTypes": false,
     "types": ["vite/client", "node"]
   },
   "include": [
     "electron.vite.config.ts",
     "src/main/**/*",
     "src/preload/**/*",
-    "src/common/**/*"
+    "src/common/**/*",
+    "src/emu/**/*",
+    "src/script-packages/**/*"
   ]
 }

@@ -9,6 +9,10 @@ import {
   emuFocusedAction,
   ideFocusedAction,
   setThemeAction,
+  setOsAction,
+  setAppPathAction,
+  setGlobalSettingAction,
+  toggleGlobalSettingAction,
 } from "../../../../common/state/actions";
 import type { AppState } from "../../../../common/state/AppState";
 
@@ -34,6 +38,15 @@ export function SharedAppStateNative({
 }: Props) {
   const store = getRendererStore();
   const prevStateRef = useRef<AppState>(store.getState());
+  
+  // Helper function to update component state consistently
+  const updateComponentState = () => {
+    const currentState = store.getState();
+    updateStateRef.current({ 
+      value: currentState,
+      globalSettings: currentState.globalSettings || {}
+    });
+  };
   
   // Use refs to store stable references to prop functions
   const updateStateRef = useRef(updateState);
@@ -64,31 +77,47 @@ export function SharedAppStateNative({
         emuLoaded: () => {
           store.dispatch(emuLoadedAction());
           // Immediately update component state after dispatch
-          updateStateRef.current({ value: store.getState() });
+          updateComponentState();
         },
         emuSynched: () => {
           store.dispatch(emuSynchedAction());
-          updateStateRef.current({ value: store.getState() });
+          updateComponentState();
         },
         ideLoaded: () => {
           store.dispatch(ideLoadedAction());
-          updateStateRef.current({ value: store.getState() });
+          updateComponentState();
         },
         isWindows: (flag: boolean) => {
           store.dispatch(isWindowsAction(flag));
-          updateStateRef.current({ value: store.getState() });
+          updateComponentState();
         },
         emuFocused: (flag: boolean) => {
           store.dispatch(emuFocusedAction(flag));
-          updateStateRef.current({ value: store.getState() });
+          updateComponentState();
         },
         ideFocused: (flag: boolean) => {
           store.dispatch(ideFocusedAction(flag));
-          updateStateRef.current({ value: store.getState() });
+          updateComponentState();
         },
         setTheme: (id: string) => {
           store.dispatch(setThemeAction(id));
-          updateStateRef.current({ value: store.getState() });
+          updateComponentState();
+        },
+        setOs: (os: string) => {
+          store.dispatch(setOsAction(os));
+          updateComponentState();
+        },
+        setAppPath: (appPath: string) => {
+          store.dispatch(setAppPathAction(appPath));
+          updateComponentState();
+        },
+        setGlobalSetting: (id: string, value: any) => {
+          store.dispatch(setGlobalSettingAction(id, value));
+          updateComponentState();
+        },
+        toggleGlobalSetting: (id: string) => {
+          store.dispatch(toggleGlobalSettingAction(id));
+          updateComponentState();
         },
       });
     }
@@ -98,8 +127,8 @@ export function SharedAppStateNative({
       const newState = store.getState();
       const prevState = prevStateRef.current;
 
-      // Update the component state with new value
-      updateStateRef.current({ value: newState });
+      // Update the component state with new value and globalSettings
+      updateComponentState();
 
       // Fire onChange event if state actually changed
       if (throttledOnChange && !isEqual(prevState, newState)) {
@@ -114,7 +143,7 @@ export function SharedAppStateNative({
     });
 
     // Initial state update
-    updateStateRef.current({ value: store.getState() });
+    updateComponentState();
 
     return () => {
       unsubscribe();

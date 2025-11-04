@@ -1,23 +1,19 @@
 <Component name="EmuApp">
-  <variable name="toggleFlag" value="{false}" />
   <SharedAppState id="appState" />
-  <App name="Klive Emulator" onReady="() => { delay(0); appState.emuLoaded(); }">
-    <H1>
-      Klive Emulator
-    </H1>
-    <StyledText
-      size="large"
-      color="blue"
-      text="This is styled text from a React component library." />
-    <VStack gap="$space-4" padding="$space-4">
-      <Text>Emulator loaded: {appState.value.emuLoaded ? 'Yes' : 'No'}</Text>
-      <Text>IDE loaded: {appState.value.ideLoaded ? 'Yes' : 'No'}</Text>
-      <Text>isWindows flag: {appState.value.isWindows ? 'TRUE' : 'FALSE'}</Text>
-      <Text>EMU focused: {appState.value.emuFocused ? 'YES' : 'NO'}</Text>
-      <Text>IDE focused: {appState.value.ideFocused ? 'YES' : 'NO'}</Text>
-      <Button 
-        label="Toggle isWindows Flag" 
-        onClick="() => { toggleFlag = !toggleFlag; appState.isWindows(toggleFlag); }" />
+  <App 
+    name="Klive Emulator"
+    gap="0"
+    padding="0"
+    noScrollbarGutters
+    scrollWholePage="false"
+    height="*"
+    onReady="() => { delay(0); appState.emuLoaded(); }">
+    <!-- No pages, we can stretch to content to the full width and height -->
+    <Pages />
+    <VStack gap="0" height="100%" padding="0">
+      <Toolbar isIde="{false}" />
+      <EmulatorArea backgroundColor="gray" />
+      <StatusBar />
     </VStack>
   </App>
 </Component>

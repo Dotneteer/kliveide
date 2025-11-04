@@ -1,0 +1,6 @@
+<Component name="StatusBarItem">
+  <HStack gap="$space-2" verticalAlignment="center" fontSize="$fontSize-sm">
+      <Icon when="{$props.icon} "name="{$props.icon}" />
+      <Text>{$props.label}</Text>
+  </HStack>
+</Component>

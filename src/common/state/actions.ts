@@ -1,3 +1,4 @@
+import { MachineControllerState } from "../abstractions/MachineControllerState";
 import { ActionCreator } from "./Action";
 
 export const emuLoadedAction: ActionCreator = () => ({
@@ -30,5 +31,52 @@ export const ideFocusedAction: ActionCreator = (flag: boolean) => ({
 export const setThemeAction: ActionCreator = (id: string) => ({
   type: "SET_THEME",
   payload: { id }
+});
+
+export const setOsAction: ActionCreator = (os: string) => ({
+  type: "SET_OS",
+  payload: { os }
+});
+
+export const setAppPathAction: ActionCreator = (appPath: string) => ({
+  type: "SET_APP_PATH",
+  payload: { appPath }
+});
+
+export const setGlobalSettingAction: ActionCreator = (id: string, value: any) => ({
+  type: "SET_GLOBAL_SETTING",
+  payload: { id, value }
+});
+
+export const toggleGlobalSettingAction: ActionCreator = (id: string) => ({
+  type: "TOGGLE_GLOBAL_SETTING",
+  payload: { id }
+});
+
+export const incBreakpointsVersionAction: ActionCreator = () => ({
+  type: "INC_BPS_VERSION"
+});
+
+export const setDebuggingAction: ActionCreator = (flag) => ({
+  type: "SET_DEBUGGING",
+  payload: { flag }
+});
+
+export const setMachineStateAction: ActionCreator = (
+  state: MachineControllerState,
+  numValue: number
+) => ({
+  type: "SET_MACHINE_STATE",
+  payload: { state, numValue }
+});
+
+export const setProjectDebuggingAction: ActionCreator = (flag) => ({
+  type: "SET_PROJECT_DEBUGGING",
+  payload: { flag }
+});
+
+export const setScriptsStatusAction: ActionCreator = (value: any) => ({
+  type: "SET_SCRIPTS_STATUS",
+  payload: { value }
 });
 

@@ -1,0 +1,6 @@
+Select:
+  - allow a property to hide the clear box
+  - review and fix Select theming
+  
+ContentSeparator:
+  - Provide vertical and horizontal paddings

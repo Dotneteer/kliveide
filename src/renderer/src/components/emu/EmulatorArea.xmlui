@@ -1,0 +1,7 @@
+<Component name="EmulatorArea">
+  <SharedAppState id="appState" />
+  <VSplitter floating height="*" minPrimarySize="10%" maxPrimarySize="90%">
+    <EmulatorPanel height="*" />
+    <KeyboardPanel when="{appState.globalSettings.emuOptions.showKeyboard}" height="*" />
+  </VSplitter>
+</Component>

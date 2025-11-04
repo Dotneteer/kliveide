@@ -23,11 +23,16 @@ export function appStateFlagsReducer (
       return { ...state, isWindows: payload?.flag };
 
     case "EMU_FOCUSED":
-      console.log('[appStateFlagsReducer] EMU_FOCUSED');
       return { ...state, emuFocused: payload?.flag };
 
     case "IDE_FOCUSED":
       return { ...state, ideFocused: payload?.flag };
+
+    case "SET_OS":
+      return { ...state, os: payload?.os };
+
+    case "SET_APP_PATH":
+      return { ...state, appPath: payload?.appPath };
 
     default:
       return state;

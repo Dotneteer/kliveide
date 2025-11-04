@@ -1,5 +1,5 @@
-singleQuote: true
-semi: false
+singleQuote: false
+semi: true
 trailingComma: none
 arrowParens: avoid
 printWidth: 100

@@ -1,0 +1,3 @@
+<Component name="EmulatorPanel">
+  <CVStack height="100%" backgroundColor="gray">Emulator Panel</CVStack>
+</Component>

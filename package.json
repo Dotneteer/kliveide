@@ -23,7 +23,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
-    "xmlui": "^0.10.25"
+    "execa": "^9.6.0",
+    "xmlui": "^0.11.4"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",

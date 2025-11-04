@@ -1,0 +1,24 @@
+Memory map:
+
+0x000000 - 0x00FFFF (64K)  => ZX Spectrum ROM         A20:A16 = 00000
+0x010000 - 0x011FFF ( 8K)  => divMMC ROM              A20:A16 = 00001,000
+0x012000 - 0x013FFF ( 8K)  => unused                  A20:A16 = 00001,001
+0x014000 - 0x017FFF (16K)  => Multiface ROM,RAM       A20:A16 = 00001,01
+0x018000 - 0x01BFFF (16K)  => Alt ROM0 128k           A20:A16 = 00001,10
+0x01c000 - 0x01FFFF (16K)  => Alt ROM1 48k            A20:A16 = 00001,11
+0x020000 - 0x03FFFF (128K) => divMMC RAM              A20:A16 = 00010
+0x040000 - 0x05FFFF (128K) => ZX Spectrum RAM         A20:A16 = 00100
+0x060000 - 0x07FFFF (128K) => Extra RAM
+0x080000 - 0x0FFFFF (512K) => 1st Extra IC RAM (if present)
+0x100000 - 0x17FFFF (512K) => 2nd Extra IC RAM (if present)
+0x180000 - 0x1FFFFF (512K) => 3rd Extra IC RAM (if present)
+
+
+
+Visible screen dimensions:
+    width: (48+256+48)*2 = 704 (left border + screen + right border, multiplied by 2) =
+    height: = 48 + 192 + 48 = 288; (top border + screen height + bottom border)
+
+Screen tacts: 
+    horizontal: 224
+    vertical: 312

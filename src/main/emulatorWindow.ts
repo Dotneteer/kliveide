@@ -34,6 +34,8 @@ export function createEmulatorWindow(onClose: () => void): BrowserWindow {
   emulatorWindow = new BrowserWindow({
     width: savedState?.width || defaultWidth,
     height: savedState?.height || defaultHeight,
+    minWidth: 640,
+    minHeight: 480,
     x: savedState?.x,
     y: savedState?.y,
     show: false,

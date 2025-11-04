@@ -16,7 +16,7 @@ import { loadSettings, saveSettings } from './settingsManager'
 import { AppSettings } from '../common/abstractions/AppSettings'
 import { getMainStore } from './mainStore'
 import type { Action } from '../common/state/Action'
-import { emuFocusedAction, ideFocusedAction } from '../common/state/actions'
+import { emuFocusedAction, ideFocusedAction, isWindowsAction, setOsAction, setAppPathAction } from '../common/state/actions'
 
 // Helper functions to send actions to renderers
 function sendActionToEmu(action: Action, sourceProcess: string = 'main'): void {
@@ -45,6 +45,29 @@ function sendActionToIde(action: Action, sourceProcess: string = 'main'): void {
 
 // Initialize main store with forwarders
 const mainStore = getMainStore(sendActionToEmu, sendActionToIde);
+
+// Track if we've already set the OS and app path (only set once)
+let osAndPathSet = false;
+
+// Subscribe to store changes to detect when both windows are loaded
+mainStore.subscribe(() => {
+  const state = mainStore.getState();
+  
+  // Once both windows are loaded and we haven't set OS/path yet, set them
+  if (state.emuLoaded && state.ideLoaded && !osAndPathSet) {
+    osAndPathSet = true;
+    
+    // Detect OS and set isWindows flag
+    const isWindows = process.platform === 'win32';
+    mainStore.dispatch(isWindowsAction(isWindows), 'main');
+    
+    // Set OS platform
+    mainStore.dispatch(setOsAction(process.platform), 'main');
+    
+    // Set app path
+    mainStore.dispatch(setAppPathAction(app.getAppPath()), 'main');
+  }
+});
 
 // Save all window states with timeout
 async function saveAllStates(): Promise<void> {

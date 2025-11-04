@@ -89,6 +89,55 @@ export const SharedAppStateMd = createMetadata({
       ],
       returns: "void",
     },
+    setOs: {
+      description: "Sets the operating system identifier.",
+      args: [
+        {
+          name: "os",
+          type: "string",
+          description: "The operating system name (e.g., 'win32', 'darwin', 'linux').",
+        },
+      ],
+      returns: "void",
+    },
+    setAppPath: {
+      description: "Sets the Electron application path.",
+      args: [
+        {
+          name: "appPath",
+          type: "string",
+          description: "The absolute path to the Electron application.",
+        },
+      ],
+      returns: "void",
+    },
+    setGlobalSetting: {
+      description: "Sets a global application setting value by path.",
+      args: [
+        {
+          name: "id",
+          type: "string",
+          description: "The setting path (e.g., 'ui.theme' or 'editor.fontSize').",
+        },
+        {
+          name: "value",
+          type: "any",
+          description: "The value to set for the setting.",
+        },
+      ],
+      returns: "void",
+    },
+    toggleGlobalSetting: {
+      description: "Toggles a global application setting boolean value by path.",
+      args: [
+        {
+          name: "id",
+          type: "string",
+          description: "The setting path (e.g., 'ui.darkMode' or 'editor.wordWrap').",
+        },
+      ],
+      returns: "void",
+    },
   },
 });
 

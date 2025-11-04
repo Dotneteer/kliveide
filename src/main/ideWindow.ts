@@ -34,6 +34,8 @@ export function createIdeWindow(onClose: () => void): BrowserWindow {
   ideWindow = new BrowserWindow({
     width: savedState?.width || defaultWidth,
     height: savedState?.height || defaultHeight,
+    minWidth: 640,
+    minHeight: 480,
     x: savedState?.x,
     y: savedState?.y,
     show: false,
