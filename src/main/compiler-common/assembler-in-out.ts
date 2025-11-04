@@ -3,7 +3,16 @@ import path from "path";
 import type { ErrorCodes } from "./assembler-errors";
 
 import { AssemblyModule } from "./assembly-module";
-import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolValueMap, TypedObject } from "@main/compiler-common/abstractions";
+import {
+  IAssemblerErrorInfo,
+  IBinarySegment,
+  IFileLine,
+  IListFileItem,
+  ISourceFileItem,
+  SourceMap,
+  SymbolValueMap,
+  TypedObject
+} from "../../main/compiler-common/abstractions";
 import { CommonTokenType } from "./common-tokens";
 
 /**
@@ -13,7 +22,7 @@ export class AssemblerOutput<
   TInstruction extends TypedObject,
   TToken extends CommonTokenType
 > extends AssemblyModule<TInstruction, TToken> {
-  constructor (
+  constructor(
     public readonly sourceItem: SourceFileItem,
     caseSensitive: boolean
   ) {
@@ -39,7 +48,7 @@ export class AssemblerOutput<
   /**
    * Number of errors
    */
-  get errorCount (): number {
+  get errorCount(): number {
     return this.errors.length;
   }
 
@@ -101,7 +110,7 @@ export class AssemblerOutput<
    * @param line Source line number
    * @param address Address
    */
-  addToAddressMap (fileIndex: number, line: number, address: number): void {
+  addToAddressMap(fileIndex: number, line: number, address: number): void {
     const sourceInfo: IFileLine = { fileIndex, line };
     const addressList = this.addressMap.get(sourceInfo);
     if (addressList) {
@@ -169,7 +178,7 @@ export class BinarySegment implements IBinarySegment {
   /**
    * The current code generation offset
    */
-  get currentOffset (): number {
+  get currentOffset(): number {
     return this.emittedCode.length;
   }
 
@@ -178,19 +187,13 @@ export class BinarySegment implements IBinarySegment {
    * @param data Byte to emit
    * @returns Null, if byte emitted; otherwise, error message
    */
-  emitByte (data: number): ErrorCodes | null {
+  emitByte(data: number): ErrorCodes | null {
     this.emittedCode.push(data & 0xff);
-    if (
-      this.startAddress + this.emittedCode.length > 0x10000 &&
-      !this.overflowDetected
-    ) {
+    if (this.startAddress + this.emittedCode.length > 0x10000 && !this.overflowDetected) {
       this.overflowDetected = true;
       return "Z0410";
     }
-    if (
-      this.emittedCode.length > this.maxCodeLength &&
-      !this.overflowDetected
-    ) {
+    if (this.emittedCode.length > this.maxCodeLength && !this.overflowDetected) {
       this.overflowDetected = true;
       return "Z0411";
     }
@@ -202,7 +205,7 @@ export class BinarySegment implements IBinarySegment {
  * Represents a compilation error
  */
 export class AssemblerErrorInfo implements IAssemblerErrorInfo {
-  constructor (
+  constructor(
     public readonly errorCode: ErrorCodes,
     public readonly filename: string,
     public readonly line: number,
@@ -221,7 +224,7 @@ export class AssemblerErrorInfo implements IAssemblerErrorInfo {
 export class SourceFileItem implements ISourceFileItem {
   public readonly filename: string;
 
-  constructor (filename: string) {
+  constructor(filename: string) {
     this.filename = path.normalize(filename).replace(/\\/g, "/");
   }
 
@@ -242,7 +245,7 @@ export class SourceFileItem implements ISourceFileItem {
    * False, if the inclusion would create a circular reference,
    * or the child is already is in the list
    */
-  include (childItem: SourceFileItem): boolean {
+  include(childItem: SourceFileItem): boolean {
     let current: SourceFileItem = this;
     while (current) {
       if (current.filename === childItem.filename) {
@@ -264,7 +267,7 @@ export class SourceFileItem implements ISourceFileItem {
    * @param childItem Child item to check
    * @returns True, if this item contains the child item; otherwise, false
    */
-  containsInIncludeList (childItem: SourceFileItem): boolean {
+  containsInIncludeList(childItem: SourceFileItem): boolean {
     return this.includes.some(c => c.filename === childItem.filename);
   }
 }

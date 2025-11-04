@@ -1,4 +1,4 @@
-import { toDecimal3, toDecimal5, toHexa2, toHexa4, toSbyte } from "@common/utils/conversions";
+import { toDecimal3, toDecimal5, toHexa2, toHexa4, toSbyte } from "../../../common/utils/conversions";
 import { MemorySectionType } from "../../../common/abstractions/MemorySection";
 import {
   DisassemblyItem,

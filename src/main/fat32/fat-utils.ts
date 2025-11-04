@@ -5,7 +5,7 @@ import {
   O_ACCMODE,
   O_RDWR,
   O_WRONLY
-} from "@main/fat32/Fat32Types";
+} from "../../main/fat32/Fat32Types";
 import { FatDirEntry } from "./FatDirEntry";
 import { FatLongFileName } from "./FatLongFileName";
 import { FatMasterBootRecord } from "./FatMasterBootRecord";

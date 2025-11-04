@@ -1,5 +1,5 @@
 import fs from "fs";
-import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
+import type { ErrorFilterDescriptor } from "../../main/cli-integration/CliRunner";
 
 import {
   BinarySegment,
@@ -8,8 +8,8 @@ import {
   IKliveCompiler,
   KliveCompilerOutput,
   ListFileItem,
-} from "@abstractions/CompilerInfo";
-import { createSettingsReader } from "@common/utils/SettingsReader";
+} from "../../common/abstractions/CompilerInfo";
+import { createSettingsReader } from "../../common/utils/SettingsReader";
 import { SJASMP_INSTALL_FOLDER, SJASMP_KEEP_TEMP_FILES } from "./sjasmp-config";
 import {
   createSjasmRunner,
@@ -17,8 +17,8 @@ import {
   SJASM_OUTPUT_FILE,
   SJASM_SLD_FILE
 } from "../../script-packages/sjasm/sjasm";
-import { AppState } from "@common/state/AppState";
-import { ISourceFileItem } from "@main/compiler-common/abstractions";
+import { AppState } from "../../common/state/AppState";
+import { ISourceFileItem } from "../../main/compiler-common/abstractions";
 
 /**
  * Wraps the SjasmPlus compiler

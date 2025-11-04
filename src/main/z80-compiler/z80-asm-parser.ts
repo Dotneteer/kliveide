@@ -40,15 +40,24 @@ import type {
   Z80InstructionWithTwoOrThreeOperands,
   ResInstruction,
   SetInstruction,
-  Z80Node,
+  Z80Node
 } from "./assembler-tree-nodes";
 
 import { Z80TokenStream, Z80TokenType, Z80Tokens } from "./z80-token-stream";
 import { convertSpectrumString } from "./z80-utils";
-import { CommonTokens, CommonTokenType, TokenTraits } from "@main/compiler-common/common-tokens";
+import {
+  CommonTokens,
+  CommonTokenType,
+  TokenTraits
+} from "../../main/compiler-common/common-tokens";
 import { z80TokenTraits } from "./z80-token-traits";
-import { CommonAsmParser, ParsePoint } from "@main/compiler-common/common-asm-parser";
-import { Expression, Operand, OperandType, PartialAssemblyLine } from "@main/compiler-common/tree-nodes";
+import { CommonAsmParser, ParsePoint } from "../../main/compiler-common/common-asm-parser";
+import {
+  Expression,
+  Operand,
+  OperandType,
+  PartialAssemblyLine
+} from "../../main/compiler-common/tree-nodes";
 
 /**
  * This class implements the Z80 assembly parser
@@ -59,11 +68,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
    * @param tokens Token stream of the source code
    * @param fileIndex Optional file index of the file being parsed
    */
-  constructor(
-    tokens: Z80TokenStream,
-    fileIndex = 0,
-    macroEmitPhase = false
-  ) {
+  constructor(tokens: Z80TokenStream, fileIndex = 0, macroEmitPhase = false) {
     super(tokens, fileIndex, macroEmitPhase);
   }
 
@@ -71,7 +76,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
     return z80TokenTraits.get(type) ?? {};
   }
 
-    /**
+  /**
    * Converts an escaped string to its unescaped form
    * @param inp String to convert
    */
@@ -153,9 +158,7 @@ export class Z80AsmParser extends CommonAsmParser<Z80Node, Z80TokenType> {
    *
    * @param parsePoint
    */
-  private parseCompoundInstruction(
-    parsePoint: ParsePoint
-  ): PartialAssemblyLine<Z80Node> | null {
+  private parseCompoundInstruction(parsePoint: ParsePoint): PartialAssemblyLine<Z80Node> | null {
     const { start } = parsePoint;
     const parser = this;
     this.tokens.get();

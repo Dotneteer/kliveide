@@ -1,7 +1,7 @@
 import { BinaryReader } from "../../../common/utils/BinaryReader";
 import { BinaryWriter } from "../../../common/utils/BinaryWriter";
+import { TapeDataBlock } from "../../../common/structs/TapeDataBlock";
 import { TzxBlockBase } from "./TzxBlockBase";
-import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 /**
  * Represents the standard speed data block in a TZX file

@@ -1,4 +1,9 @@
-import { IAssemblySymbolInfo, IExpressionValue, SymbolType, TypedObject } from "@main/compiler-common/abstractions";
+import {
+  IAssemblySymbolInfo,
+  IExpressionValue,
+  SymbolType,
+  TypedObject
+} from "../../main/compiler-common/abstractions";
 import type { ErrorCodes } from "./assembler-errors";
 import { FixupEntry } from "./fixups";
 import { CommonTokenType } from "./common-tokens";
@@ -88,7 +93,9 @@ export interface ISymbolScope<TInstruction extends TypedObject, TToken extends C
 /**
  * Represents a scope where local symbols are declared
  */
-export class SymbolScope<TInstruction extends TypedObject, TToken extends CommonTokenType> implements ISymbolScope<TInstruction, TToken> {
+export class SymbolScope<TInstruction extends TypedObject, TToken extends CommonTokenType>
+  implements ISymbolScope<TInstruction, TToken>
+{
   private _errorsReported = new Set<ErrorCodes>();
 
   constructor(

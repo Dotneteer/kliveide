@@ -1,5 +1,3 @@
-import fs from "fs";
-
 /**
  * Converts a ZX Spectrum string to intrinsic string
  * @param input ZX Spectrum string to convert

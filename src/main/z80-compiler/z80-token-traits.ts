@@ -1,11 +1,10 @@
-import { commonTokenTraits, TokenTraits } from "@main/compiler-common/common-tokens";
+import { commonTokenTraits, TokenTraits } from "../../main/compiler-common/common-tokens";
 import { Z80TokenType, Z80Tokens } from "./z80-token-stream";
 
 /**
  * This map contains the traits of token types
  */
 export const z80TokenTraits = new Map<Z80TokenType, TokenTraits>(commonTokenTraits);
-
 
 // ----------------------------------------------------------------------------
 // A

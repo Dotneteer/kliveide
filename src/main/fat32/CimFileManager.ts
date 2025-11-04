@@ -1,7 +1,7 @@
 import fs from "fs";
-import { CimInfo } from "@abstractions/CimInfo";
-import { BinaryWriter } from "@common/utils/BinaryWriter";
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { CimInfo } from "../../common/abstractions/CimInfo";
+import { BinaryWriter } from "../../common/utils/BinaryWriter";
+import { BinaryReader } from "../../common/utils/BinaryReader";
 import { isInteger } from "lodash";
 
 export const CIM_VERSION_MAJOR = 1;

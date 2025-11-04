@@ -1,4 +1,4 @@
-import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import { IMemorySection, MemorySectionType } from "../abstractions/MemorySection";
 
 /**
  * Base disassembly options that can be extended by specific CPU disassemblers

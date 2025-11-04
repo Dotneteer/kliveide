@@ -43,11 +43,11 @@ import {
   Operand,
   OperandType,
   Token
-} from "@main/compiler-common/tree-nodes";
+} from "../../main/compiler-common/tree-nodes";
 import { SpectrumModelType, SpectrumModelTypes } from "./SpectrumModelTypes";
-import { CommonAssembler } from "@main/compiler-common/common-assembler";
-import { CommonTokenStream } from "@main/compiler-common/common-token-stream";
-import { CommonAsmParser } from "@main/compiler-common/common-asm-parser";
+import { CommonAssembler } from "../../main/compiler-common/common-assembler";
+import { CommonTokenStream } from "../../main/compiler-common/common-token-stream";
+import { CommonAsmParser } from "../../main/compiler-common/common-asm-parser";
 
 /**
  * The valid Spectrum model values

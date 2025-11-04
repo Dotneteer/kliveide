@@ -7,7 +7,7 @@ import type { ExecutionContext } from "../abstractions/ExecutionContext";
 import type { FrameStats } from "../../common/abstractions/FrameStats";
 import type { IDebugSupport } from "../abstractions/IDebugSupport";
 import type { AppState } from "../../common/state/AppState";
-import type { Store } from "@state/redux-light";
+import type { Store } from "../../common/state/redux-light";
 import type { SavedFileInfo } from "../abstractions/ITapeDevice";
 import type { BreakpointInfo } from "../abstractions/BreakpointInfo";
 import type { ResolvedBreakpoint } from "../abstractions/ResolvedBreakpoint";

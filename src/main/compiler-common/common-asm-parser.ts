@@ -93,7 +93,7 @@ import {
   CurrentCounterLiteral,
   IntegerLiteral,
   RealLiteral
-} from "@main/compiler-common/tree-nodes";
+} from "../../main/compiler-common/tree-nodes";
 import { ErrorCodes, errorMessages } from "./assembler-errors";
 import { CommonTokenStream } from "./common-token-stream";
 

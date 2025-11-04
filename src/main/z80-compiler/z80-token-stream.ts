@@ -2,8 +2,8 @@ import { InputStream } from "../compiler-common/input-stream";
 import {
   commonResolverHash,
   CommonTokens,
-} from "@main/compiler-common/common-tokens";
-import { CommonTokenStream } from "@main/compiler-common/common-token-stream";
+} from "../../main/compiler-common/common-tokens";
+import { CommonTokenStream } from "../../main/compiler-common/common-token-stream";
 
 /**
  * This class implements the tokenizer (lexer) of the assembler

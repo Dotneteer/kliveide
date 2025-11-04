@@ -1,5 +1,3 @@
-
-
 export const enum SpectrumModelType {
   Spectrum48 = 1,
   Spectrum128 = 2,

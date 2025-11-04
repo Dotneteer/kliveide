@@ -1,6 +1,6 @@
 import fs from "fs";
-import { CimInfo } from "@abstractions/CimInfo";
-import { BinaryReader } from "@common/utils/BinaryReader";
+import { CimInfo } from "../../common/abstractions/CimInfo";
+import { BinaryReader } from "../../common/utils/BinaryReader";
 
 export const MAX_CLUSTERS = 32760;
 

@@ -1,4 +1,4 @@
-import { toHexa2, toHexa6 } from "@common/utils/conversions";
+import { toHexa2, toHexa6 } from "../../../common/utils/conversions";
 import type { IGenericDevice } from "../../abstractions/IGenericDevice";
 import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
 

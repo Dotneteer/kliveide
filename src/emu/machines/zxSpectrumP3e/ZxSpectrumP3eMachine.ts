@@ -2,7 +2,7 @@ import type { SysVar } from "../../../common/abstractions/SysVar";
 import type { ISpectrumPsgDevice } from "../../machines/zxSpectrum/ISpectrumPsgDevice";
 import type { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
 import type { MachineModel } from "../../../common/machines/info-types";
-import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+import type { IFloppyControllerDevice } from "../../../emu/abstractions/IFloppyControllerDevice";
 
 import { TapeMode } from "../../abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";

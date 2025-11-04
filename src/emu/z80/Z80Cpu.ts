@@ -2,6 +2,7 @@ import type { IZ80Cpu } from "../abstractions/IZ80Cpu";
 
 import { FlagsSetMask } from "../abstractions/FlagSetMask";
 import { OpCodePrefix } from "../abstractions/OpCodePrefix";
+import { Z80NCpu } from "./Z80NCpu";
 
 const MAX_STEP_OUT_STACK_SIZE = 256;
 

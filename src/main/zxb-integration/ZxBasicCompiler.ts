@@ -5,10 +5,10 @@ import type {
   IKliveCompiler,
   InjectableOutput,
   KliveCompilerOutput
-} from "@abstractions/CompilerInfo";
-import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
+} from "../../common/abstractions/CompilerInfo";
+import type { ErrorFilterDescriptor } from "../../main/cli-integration/CliRunner";
 
-import { createSettingsReader } from "@common/utils/SettingsReader";
+import { createSettingsReader } from "../../common/utils/SettingsReader";
 import {
   ZXBC_DEBUG_ARRAY,
   ZXBC_DEBUG_MEMORY,
@@ -25,9 +25,9 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE
 } from "./zxb-config";
-import { AppState } from "@common/state/AppState";
-import { CliRunner } from "@main/cli-integration/CliRunner";
-import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { AppState } from "../../common/state/AppState";
+import { CliRunner } from "../../main/cli-integration/CliRunner";
+import { SpectrumModelType } from "../../main/z80-compiler/SpectrumModelTypes";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler

@@ -1,8 +1,4 @@
 /**
- * Common utility functions shared between different CPU disassemblers
- */
-
-/**
  * Allows the JavaScript event loop to process waiting messages
  */
 export function processMessages(): Promise<void> {

@@ -21,7 +21,7 @@ import {
   UpdateVc
 } from "./constants";
 import { SprDma1, SprPtr } from "./vic-models";
-import { VicState } from "@common/messaging/EmuApi";
+import { VicState } from "../../../../common/messaging/EmuApi";
 
 /**
  * Implementation of the VIC-II (Video Interface Chip) for the Commodore 64

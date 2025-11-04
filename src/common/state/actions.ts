@@ -75,3 +75,8 @@ export const setProjectDebuggingAction: ActionCreator = (flag) => ({
   payload: { flag }
 });
 
+export const setScriptsStatusAction: ActionCreator = (value: any) => ({
+  type: "SET_SCRIPTS_STATUS",
+  payload: { value }
+});
+

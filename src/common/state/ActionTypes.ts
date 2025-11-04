@@ -22,4 +22,5 @@ export interface ActionTypes {
   SET_DEBUGGING: null;
   SET_MACHINE_STATE: null;
   SET_PROJECT_DEBUGGING: null;
+  SET_SCRIPTS_STATUS: null;
 }

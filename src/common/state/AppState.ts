@@ -1,6 +1,6 @@
 import { KliveCompilerOutput } from "../abstractions/CompilerInfo";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
-import { CompilationCompleted } from "../../main/compiler-integration/runWorker";
+import { ScriptRunInfo } from "../abstractions/ScriptRunInfo";
 
 /**
  * Represents the state of the entire application
@@ -16,8 +16,12 @@ export type AppState = {
   emuFocused?: boolean;
   ideFocused?: boolean;
   globalSettings?: Record<string, any>;
+  projectSettings?: Record<string, any>;
+  userSettings?: Record<string, any>;
   emulatorState?: EmulatorState;
   compilation?: CompilationState;
+  project?: IdeProject;
+  scripts?: ScriptRunInfo[];
 };
 
 export type EmulatorState = {
@@ -48,7 +52,18 @@ export type CompilationState = {
   failed?: string;
   injectionVersion?: number;
   backgroundInProgress?: boolean;
-  backgroundResult?: CompilationCompleted;
+};
+
+export type IdeProject = {
+  folderPath?: string | null;
+  isKliveProject?: boolean;
+  workspaceLoaded?: boolean;
+  buildRoots?: string[];
+  projectFileVersion?: number;
+  projectViewStateVersion?: number;
+  excludedItems?: string[];
+  hasBuildFile?: boolean;
+  buildFileVersion?: number;
 };
 
 /**

@@ -1,7 +1,6 @@
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
 import { IdeCommandResult } from "../../common/abstractions/IdeCommandResult";
-import { ProjectStructure } from "../../main/ksx-runner/ProjectStructure";
 import { OutputSpecification } from "../../common/abstractions/OutputBuffer";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
@@ -70,13 +69,6 @@ abstract class IdeApiImpl {
    * Saves all files before quitting the IDE.
    */
   async saveAllBeforeQuit(): Promise<void> {
-    return Promise.reject(new Error(NO_PROXY_ERROR));
-  }
-
-  /**
-   * Gets the current project structure.
-   */
-  async getProjectStructure(): Promise<ProjectStructure> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 }
