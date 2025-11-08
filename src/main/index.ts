@@ -16,14 +16,14 @@ import {
 } from "./ideWindow";
 import { loadAppSettings, saveAppSettings, appSettings } from "./settingsManager";
 import { initializeMainStore, mainStore } from "./mainStore";
-import type { Action } from "../common/state/Action";
+import type { Action } from "@state/Action";
 import {
   emuFocusedAction,
   ideFocusedAction,
   isWindowsAction,
   setOsAction,
   setAppPathAction
-} from "../common/state/actions";
+} from "@state/actions";
 import { setupMenu } from "./app-menu";
 
 // Helper functions to send actions to renderers

@@ -1,8 +1,8 @@
-import type { SysVar } from "../../../common/abstractions/SysVar";
+import type { SysVar } from "@abstr/SysVar";
 import type { ISpectrumPsgDevice } from "../../machines/zxSpectrum/ISpectrumPsgDevice";
-import type { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
+import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
 
-import { TapeMode } from "../../abstractions/TapeMode";
+import { TapeMode } from "@emuabstr/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
@@ -21,7 +21,7 @@ import { PagedMemory } from "../memory/PagedMemory";
 import { SpectrumKeyCode } from "../../machines/zxSpectrum/SpectrumKeyCode";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
 import { zxSpectrum128SysVars } from "./ZxSpectrum128SysVars";
-import { toHexa4 } from "../../../common/utils/conversions";
+import { toHexa4 } from "@common/utils/conversions";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.

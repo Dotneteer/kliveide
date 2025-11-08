@@ -2,7 +2,7 @@ import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { captureWindowState, applyWindowState, appSettings } from './settingsManager'
-import { WindowState } from '../common/abstractions/WindowState'
+import { WindowState } from '@abstr/WindowState'
 
 let ideWindow: BrowserWindow | null = null
 

@@ -2,7 +2,7 @@ import path from "path";
 
 import { app } from "electron";
 import { mainStore } from "./mainStore";
-import { KLIVE_HOME_FOLDER, KLIVE_PROJECT_ROOT } from "../common/structs/project-const";
+import { KLIVE_HOME_FOLDER, KLIVE_PROJECT_ROOT } from "@common/structs/project-const";
 /**
  * Resolves the specified path using the public folder as relative root
  * @param toResolve Path to resolve

@@ -1,11 +1,11 @@
-import type { MachineConfigSet } from "../common/machines/info-types";
+import type { MachineConfigSet } from "@common/machines/info-types";
 
-import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
-import { getIdeApi } from "../common/messaging/MainToIdeMessenger";
-import { PANE_ID_EMU } from "../common/integration/constants";
-import { getMachineName } from "../common/machines/machine-registry";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { PANE_ID_EMU } from "@common/integration/constants";
+import { getMachineName } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
-import { OutputColor } from "../common/abstractions/OutputBuffer";
+import { OutputColor } from "@abstr/OutputBuffer";
 
 /**
  * This function set the machine type to the specified one

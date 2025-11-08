@@ -8,7 +8,7 @@ import {
   MenuItemConstructorOptions
 } from "electron";
 import os from "os";
-import { AppState } from "../common/state/AppState";
+import { AppState } from "@state/AppState";
 import {
   appSettings,
   getSettingDefinition,
@@ -42,8 +42,8 @@ import {
   SETTING_IDE_SIDEBAR_TO_RIGHT,
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
-} from "../common/settings/setting-const";
-import { machineRegistry } from "../common/machines/machine-registry";
+} from "@common/settings/setting-const";
+import { machineRegistry } from "@common/machines/machine-registry";
 import { emuWindow } from "./emulatorWindow";
 import { ideWindow } from "./ideWindow";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
@@ -52,12 +52,12 @@ import {
   setKeyMappingsAction,
   setSoundLevelAction,
   setThemeAction
-} from "../common/state/actions";
+} from "@state/actions";
 import { mainStore } from "./mainStore";
-import { MF_ALLOW_CLOCK_MULTIPLIER } from "../common/machines/constants";
+import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
-import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
-import { getIdeApi } from "../common/messaging/MainToIdeMessenger";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 

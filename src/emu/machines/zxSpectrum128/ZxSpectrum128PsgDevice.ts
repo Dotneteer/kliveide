@@ -1,6 +1,6 @@
 import type { ISpectrumPsgDevice } from "../../machines/zxSpectrum/ISpectrumPsgDevice";
-import type { IZxSpectrumMachine } from "../../abstractions/IZxSpectrumMachine";
-import type { PsgChipState } from "../../abstractions/PsgChipState";
+import type { IZxSpectrumMachine } from "@emuabstr/IZxSpectrumMachine";
+import type { PsgChipState } from "@emuabstr/PsgChipState";
 
 import { AudioDeviceBase } from "../AudioDeviceBase";
 import { PsgChip } from "./PsgChip";

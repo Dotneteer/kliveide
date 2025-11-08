@@ -7,9 +7,9 @@ import {
   defaultResponse,
   errorResponse,
   RequestMessage,
-} from "../common/messaging/messages-core";
-import { sendFromMainToEmu } from "../common/messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "../common/messaging/MainToIdeMessenger";
+} from "@messaging/messages-core";
+import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
+import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
 import {
   getKliveProjectFolder,
   resolveHomeFilePath,
@@ -18,7 +18,7 @@ import {
 } from "./projects";
 
 import { Dispatch } from "react";
-import { Action } from "../common/state/Action";
+import { Action } from "@state/Action";
 import { mainStore } from "./mainStore";
 
 class MainMessageProcessor {

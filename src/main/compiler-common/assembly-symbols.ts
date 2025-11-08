@@ -3,7 +3,7 @@ import {
   IExpressionValue,
   SymbolType,
   TypedObject
-} from "../../main/compiler-common/abstractions";
+} from "@main/compiler-common/abstractions";
 import type { ErrorCodes } from "./assembler-errors";
 import { FixupEntry } from "./fixups";
 import { CommonTokenType } from "./common-tokens";

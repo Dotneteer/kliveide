@@ -1,21 +1,21 @@
-import type { KeyMapping } from "../../common/abstractions/KeyMapping";
-import type { SysVar } from "../../common/abstractions/SysVar";
+import type { KeyMapping } from "@abstr/KeyMapping";
+import type { SysVar } from "@abstr/SysVar";
 import type { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
-import type { IFloatingBusDevice } from "../abstractions/IFloatingBusDevice";
+import type { IFloatingBusDevice } from "@emuabstr/IFloatingBusDevice";
 import type { ISpectrumKeyboardDevice } from "./zxSpectrum/ISpectrumKeyboardDevice";
-import type { IScreenDevice } from "../abstractions/IScreenDevice";
-import type { ITapeDevice } from "../abstractions/ITapeDevice";
-import type { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
-import type { CodeToInject } from "../abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "../abstractions/CodeInjectionFlow";
-import type { KeyCodeSet } from "../abstractions/IGenericKeyboardDevice";
+import type { IScreenDevice } from "@emuabstr/IScreenDevice";
+import type { ITapeDevice } from "@emuabstr/ITapeDevice";
+import type { IZxSpectrumMachine } from "@emuabstr/IZxSpectrumMachine";
+import type { CodeToInject } from "@emuabstr/CodeToInject";
+import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
+import type { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
 
-import { EmulatedKeyStroke } from "../structs/EmulatedKeyStroke";
-import { TapeMode } from "../abstractions/TapeMode";
+import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
+import { TapeMode } from "@emuabstr/TapeMode";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { SpectrumKeyCode } from "./zxSpectrum/SpectrumKeyCode";
 import { spectrumKeyMappings } from "../machines/zxSpectrum/SpectrumKeyMappings";
-import { IMemorySection, MemorySectionType } from "../../common/abstractions/MemorySection";
+import { IMemorySection, MemorySectionType } from "@abstr/MemorySection";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point

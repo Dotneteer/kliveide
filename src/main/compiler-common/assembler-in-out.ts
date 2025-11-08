@@ -12,7 +12,7 @@ import {
   SourceMap,
   SymbolValueMap,
   TypedObject
-} from "../../main/compiler-common/abstractions";
+} from "@main/compiler-common/abstractions";
 import { CommonTokenType } from "./common-tokens";
 
 /**

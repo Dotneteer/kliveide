@@ -1,4 +1,4 @@
-import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
+import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
 
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 

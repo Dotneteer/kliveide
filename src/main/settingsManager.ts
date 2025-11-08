@@ -1,14 +1,14 @@
 import { app, BrowserWindow, screen } from "electron";
 import { promises as fs } from "fs";
 import { join } from "path";
-import { AppSettings } from "../common/abstractions/AppSettings";
-import { WindowState } from "../common/abstractions/WindowState";
-import { KLIVE_HOME_FOLDER, SETTINGS_FILE_NAME } from "../common/structs/project-const";
-import { SettingDescription } from "../common/abstractions/SettingDescription";
-import { KliveGlobalSettings } from "../common/settings/setting-definitions";
+import { AppSettings } from "@abstr/AppSettings";
+import { WindowState } from "@abstr/WindowState";
+import { KLIVE_HOME_FOLDER, SETTINGS_FILE_NAME } from "@common/structs/project-const";
+import { SettingDescription } from "@abstr/SettingDescription";
+import { KliveGlobalSettings } from "@common/settings/setting-definitions";
 import { mainStore } from "./mainStore";
 import { get } from "lodash";
-import { setGlobalSettingAction } from "../common/state/actions";
+import { setGlobalSettingAction } from "@state/actions";
 
 const SETTINGS_DIR = join(app.getPath("home"), KLIVE_HOME_FOLDER);
 const SETTINGS_FILE = join(SETTINGS_DIR, SETTINGS_FILE_NAME);

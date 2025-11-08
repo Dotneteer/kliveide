@@ -1,4 +1,4 @@
-import type { IKliveCompiler } from "../../common/abstractions/CompilerInfo";
+import type { IKliveCompiler } from "@abstr/CompilerInfo";
 import { SjasmPCompiler } from "../sjasmp-integration/SjasmPCompiler";
 import { Z80Compiler } from "../z80-compiler/Z80Compiler";
 import { ZxBasicCompiler } from "../zxb-integration/ZxBasicCompiler";
