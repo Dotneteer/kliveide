@@ -7,19 +7,40 @@ import type { AppState } from "../common/state/AppState";
  * The main process Redux store - the source of truth for application state.
  * This store forwards actions to both renderer processes.
  */
-let mainStore: Store<AppState, Action> | null = null;
+let _mainStore: Store<AppState, Action> | null = null;
 
 /**
- * Gets the main process Redux store.
- * Creates it on first access with a forwarder that broadcasts to both renderers.
+ * Gets the main store (assumes it has been initialized)
  */
-export function getMainStore(
+export const mainStore = {
+  get dispatch() {
+    return _mainStore!.dispatch;
+  },
+  get getState() {
+    return _mainStore!.getState;
+  },
+  get subscribe() {
+    return _mainStore!.subscribe;
+  },
+  get id() {
+    return _mainStore!.id;
+  },
+  get resetTo() {
+    return _mainStore!.resetTo;
+  }
+};
+
+/**
+ * Initializes the main process Redux store.
+ * Creates the store with a forwarder that broadcasts to both renderers.
+ */
+export function initializeMainStore(
   sendToEmu: (action: Action, source: string) => void,
   sendToIde: (action: Action, source: string) => void
 ): Store<AppState, Action> {
-  if (!mainStore) {
+  if (!_mainStore) {
     // Create the main store with a forwarder that sends to both renderers
-    mainStore = createAppStore("main", async (action: Action, source) => {
+    _mainStore = createAppStore("main", async (action: Action, source) => {
       // Forward actions based on their source:
       // - If from emu, send to ide (with source='emu' so IDE knows where it came from)
       // - If from ide, send to emu (with source='ide' so EMU knows where it came from)
@@ -34,12 +55,12 @@ export function getMainStore(
       }
     });
   }
-  return mainStore;
+  return _mainStore;
 }
 
 /**
  * Resets the main store (useful for testing)
  */
 export function resetMainStore(): void {
-  mainStore = null;
+  _mainStore = null;
 }

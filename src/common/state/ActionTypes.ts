@@ -23,4 +23,10 @@ export interface ActionTypes {
   SET_MACHINE_STATE: null;
   SET_PROJECT_DEBUGGING: null;
   SET_SCRIPTS_STATUS: null;
+  SET_CLOCK_MULTIPLIER: null;
+  SET_SOUND_LEVEL: null;
+  SET_KEY_MAPPINGS: null;
+  SET_VOLATILE_DOC_STATE: null;
+  SET_MEDIA: null;
+  START_SCREEN_DISPLAYED: null;
 }

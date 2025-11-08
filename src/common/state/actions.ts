@@ -57,7 +57,7 @@ export const incBreakpointsVersionAction: ActionCreator = () => ({
   type: "INC_BPS_VERSION"
 });
 
-export const setDebuggingAction: ActionCreator = (flag) => ({
+export const setDebuggingAction: ActionCreator = flag => ({
   type: "SET_DEBUGGING",
   payload: { flag }
 });
@@ -70,7 +70,7 @@ export const setMachineStateAction: ActionCreator = (
   payload: { state, numValue }
 });
 
-export const setProjectDebuggingAction: ActionCreator = (flag) => ({
+export const setProjectDebuggingAction: ActionCreator = flag => ({
   type: "SET_PROJECT_DEBUGGING",
   payload: { flag }
 });
@@ -78,5 +78,34 @@ export const setProjectDebuggingAction: ActionCreator = (flag) => ({
 export const setScriptsStatusAction: ActionCreator = (value: any) => ({
   type: "SET_SCRIPTS_STATUS",
   payload: { value }
+});
+
+export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
+  type: "SET_CLOCK_MULTIPLIER",
+  payload: { numValue }
+});
+
+export const setSoundLevelAction: ActionCreator = (numValue: number) => ({
+  type: "SET_SOUND_LEVEL",
+  payload: { numValue }
+});
+
+export const setKeyMappingsAction: ActionCreator = (file, value) => ({
+  type: "SET_KEY_MAPPINGS",
+  payload: { file, value }
+});
+
+export const setVolatileDocStateAction: ActionCreator = (id, flag) => ({
+  type: "SET_VOLATILE_DOC_STATE",
+  payload: { id, flag }
+});
+
+export const setMediaAction: ActionCreator = (id: string, value: any) => ({
+  type: "SET_MEDIA",
+  payload: { id, value }
+});
+
+export const incMenuVersionAction: ActionCreator = () => ({
+  type: "START_SCREEN_DISPLAYED"
 });
 

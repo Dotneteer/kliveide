@@ -1,10 +1,13 @@
 import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
-import { captureWindowState, applyWindowState, getCachedSettings } from './settingsManager'
+import { captureWindowState, applyWindowState, appSettings } from './settingsManager'
 import { WindowState } from '../common/abstractions/WindowState'
 
 let ideWindow: BrowserWindow | null = null
+
+// Export the singleton window reference
+export { ideWindow }
 
 export async function saveIdeState(): Promise<void> {
   if (ideWindow && !ideWindow.isDestroyed()) {
@@ -23,8 +26,13 @@ export function getIdeState(): WindowState | undefined {
 }
 
 export function createIdeWindow(onClose: () => void): BrowserWindow {
+  // Return existing window if it exists and is not destroyed
+  if (ideWindow && !ideWindow.isDestroyed()) {
+    return ideWindow
+  }
+
   // Get saved state
-  const savedSettings = getCachedSettings()
+  const savedSettings = appSettings;
   const savedState = savedSettings.windowStates?.ideWindow
 
   // Create the IDE browser window with default or saved dimensions

@@ -1,10 +1,13 @@
 import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
-import { captureWindowState, applyWindowState, getCachedSettings } from './settingsManager'
+import { captureWindowState, applyWindowState, appSettings } from './settingsManager'
 import { WindowState } from '../common/abstractions/WindowState'
 
 let emulatorWindow: BrowserWindow | null = null
+
+// Export the singleton window reference
+export { emulatorWindow as emuWindow }
 
 export async function saveEmulatorState(): Promise<void> {
   if (emulatorWindow && !emulatorWindow.isDestroyed()) {
@@ -23,8 +26,13 @@ export function getEmulatorState(): WindowState | undefined {
 }
 
 export function createEmulatorWindow(onClose: () => void): BrowserWindow {
+  // Return existing window if it exists and is not destroyed
+  if (emulatorWindow && !emulatorWindow.isDestroyed()) {
+    return emulatorWindow
+  }
+
   // Get saved state
-  const savedSettings = getCachedSettings()
+  const savedSettings = appSettings;
   const savedState = savedSettings.windowStates?.emuWindow
 
   // Create the emulator browser window with default or saved dimensions

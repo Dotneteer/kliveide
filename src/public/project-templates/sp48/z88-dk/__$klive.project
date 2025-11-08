@@ -1,0 +1,7 @@
+{
+  "builder": {
+    "roots": [
+      "code/main.c"
+    ]
+  }
+}

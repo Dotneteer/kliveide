@@ -5,10 +5,7 @@ import { AppState } from "./AppState";
 /**
  * This reducer is used to manage the AppState flags and simple properties
  */
-export function appStateFlagsReducer (
-  state: AppState,
-  { type, payload }: Action
-): AppState {
+export function appStateFlagsReducer(state: AppState, { type, payload }: Action): AppState {
   switch (type) {
     case "EMU_LOADED":
       return { ...state, emuLoaded: true, emuStateSynched: false };
@@ -33,6 +30,19 @@ export function appStateFlagsReducer (
 
     case "SET_APP_PATH":
       return { ...state, appPath: payload?.appPath };
+
+    case "SET_THEME":
+      return { ...state, theme: payload?.id };
+
+    case "START_SCREEN_DISPLAYED":
+      return { ...state, startScreenDisplayed: true };
+
+    case "SET_KEY_MAPPINGS":
+      return {
+        ...state,
+        keyMappingFile: payload?.file,
+        keyMappings: payload?.value
+      };
 
     default:
       return state;
