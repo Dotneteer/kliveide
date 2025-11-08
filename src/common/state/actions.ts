@@ -1,4 +1,4 @@
-import { MachineControllerState } from "../abstractions/MachineControllerState";
+import { MachineControllerState } from "@abstr/MachineControllerState";
 import { ActionCreator } from "./Action";
 
 export const emuLoadedAction: ActionCreator = () => ({

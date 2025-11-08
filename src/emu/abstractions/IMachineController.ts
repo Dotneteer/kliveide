@@ -1,17 +1,17 @@
-import type { ILiteEvent } from "../../common/abstractions/ILiteEvent";
-import type { CodeToInject } from "../abstractions/CodeToInject";
-import type { FrameStats } from "../../common/abstractions/FrameStats";
-import type { IDebugSupport } from "../abstractions/IDebugSupport";
-import type { MachineControllerState } from "../../common/abstractions/MachineControllerState";
-import type { MessengerBase } from "../../common/messaging/MessengerBase";
-import type { AppState } from "../../common/state/AppState";
-import type { Store } from "../../common/state/redux-light";
-import type { SavedFileInfo } from "../abstractions/ITapeDevice";
-import type { ResolvedBreakpoint } from "../abstractions/ResolvedBreakpoint";
-import type { BreakpointInfo } from "../abstractions/BreakpointInfo";
-import type { SectorChanges } from "../abstractions/IFloppyDiskDrive";
+import type { ILiteEvent } from "@abstr/ILiteEvent";
+import type { CodeToInject } from "@emuabstr/CodeToInject";
+import type { FrameStats } from "@abstr/FrameStats";
+import type { IDebugSupport } from "@emuabstr/IDebugSupport";
+import type { MachineControllerState } from "@abstr/MachineControllerState";
+import type { MessengerBase } from "@messaging/MessengerBase";
+import type { AppState } from "@state/AppState";
+import type { Store } from "@state/redux-light";
+import type { SavedFileInfo } from "@emuabstr/ITapeDevice";
+import type { ResolvedBreakpoint } from "@emuabstr/ResolvedBreakpoint";
+import type { BreakpointInfo } from "@emuabstr/BreakpointInfo";
+import type { SectorChanges } from "@emuabstr/IFloppyDiskDrive";
 import { IAnyMachine } from "./IAnyMachine";
-import { IOutputBuffer } from "../../common/abstractions/OutputBuffer";
+import { IOutputBuffer } from "@abstr/OutputBuffer";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.

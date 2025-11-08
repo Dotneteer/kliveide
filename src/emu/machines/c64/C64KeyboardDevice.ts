@@ -1,4 +1,4 @@
-import { IGenericKeyboardDevice } from "../../abstractions/IGenericKeyboardDevice";
+import { IGenericKeyboardDevice } from "@emuabstr/IGenericKeyboardDevice";
 import { IC64Machine } from "./IC64Machine";
 
 /**

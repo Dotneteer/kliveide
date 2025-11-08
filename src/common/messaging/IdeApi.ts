@@ -1,7 +1,7 @@
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
-import { IdeCommandResult } from "../../common/abstractions/IdeCommandResult";
-import { OutputSpecification } from "../../common/abstractions/OutputBuffer";
+import { IdeCommandResult } from "@abstr/IdeCommandResult";
+import { OutputSpecification } from "@abstr/OutputBuffer";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 

@@ -7,6 +7,14 @@ import xmluiPlugin from 'xmlui/vite-xmlui-plugin'
 const rendererConfig = {
   resolve: {
     alias: {
+      '@': resolve('src'),
+      '@common': resolve('src/common'),
+      '@abstr': resolve('src/common/abstractions'),
+      '@state': resolve('src/common/state'),
+      '@messaging': resolve('src/common/messaging'),
+      '@emu': resolve('src/emu'),
+      '@emuabstr': resolve('src/emu/abstractions'),
+      '@main': resolve('src/main'),
       '@renderer': resolve('src/renderer')
     }
   },
@@ -24,6 +32,18 @@ const rendererConfig = {
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    resolve: {
+      alias: {
+        '@': resolve('src'),
+        '@common': resolve('src/common'),
+        '@abstr': resolve('src/common/abstractions'),
+        '@state': resolve('src/common/state'),
+        '@messaging': resolve('src/common/messaging'),
+        '@emu': resolve('src/emu'),
+        '@emuabstr': resolve('src/emu/abstractions'),
+        '@main': resolve('src/main')
+      }
+    },
     build: {
       rollupOptions: {
         input: {
@@ -33,7 +53,19 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    resolve: {
+      alias: {
+        '@': resolve('src'),
+        '@common': resolve('src/common'),
+        '@abstr': resolve('src/common/abstractions'),
+        '@state': resolve('src/common/state'),
+        '@messaging': resolve('src/common/messaging'),
+        '@emu': resolve('src/emu'),
+        '@emuabstr': resolve('src/emu/abstractions'),
+        '@main': resolve('src/main')
+      }
+    }
   },
   renderer: {
     root: 'src/renderer',

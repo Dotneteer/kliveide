@@ -1,4 +1,4 @@
-import type { ScriptStatus } from "../abstractions/ScriptRunInfo";
+import type { ScriptStatus } from "@abstr/ScriptRunInfo";
 
 export function isScriptCompleted (status: ScriptStatus): boolean {
   return (

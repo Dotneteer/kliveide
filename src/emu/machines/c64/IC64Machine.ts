@@ -1,15 +1,18 @@
-import { IAnyMachine } from "../../abstractions/IAnyMachine";
-import { C64VicDevice } from "./vic/C64VicDevice";
-import { C64SidDevice } from "./C64SidDevice";
-import { C64KeyboardDevice } from "./C64KeyboardDevice";
+import { IAnyMachine } from "@emuabstr/IAnyMachine";
+import { IDebugSupport } from "@emuabstr/IDebugSupport";
+import { IStandardKeyboardDevice } from "@emuabstr/IGenericKeyboardDevice";
+import { MessengerBase } from "@messaging/MessengerBase";
 import { C64Cia1Device } from "./C64Cia1Device";
 import { C64Cia2Device } from "./C64Cia2Device";
-import { C64IoExpansionDevice } from "./C64IoExpansionDevice";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";
-import { C64TapeDevice } from "./C64TapeDevice";
+import { C64IoExpansionDevice } from "./C64IoExpansionDevice";
+import { C64KeyboardDevice } from "./C64KeyboardDevice";
 import { C64MemoryDevice } from "./C64MemoryDevice";
-import { VicState } from "../../../common/messaging/EmuApi";
-import { IM6510VaCpu } from "../../abstractions/IM6510VaCpu";
+import { C64SidDevice } from "./C64SidDevice";
+import { C64VicDevice } from "./vic/C64VicDevice";
+import { C64TapeDevice } from "./C64TapeDevice";
+import { VicState } from "@messaging/EmuApi";
+import { IM6510VaCpu } from "@emuabstr/IM6510VaCpu";
 
 export interface IC64Machine extends IAnyMachine, IM6510VaCpu {
   /**

@@ -1,5 +1,5 @@
-import type { DiskSurface } from "../machines/disk/DiskSurface";
-import type { DiskInformation } from "../machines/disk/DiskInformation";
+import type { DiskSurface } from "@emu/machines/disk/DiskSurface";
+import type { DiskInformation } from "@emu/machines/disk/DiskInformation";
 import type { IFloppyControllerDevice } from "./IFloppyControllerDevice";
 
 /**

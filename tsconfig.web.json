@@ -1,11 +1,7 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "strict": true,
-    "strictNullChecks": false,
-    "strictPropertyInitialization": false,
-
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },

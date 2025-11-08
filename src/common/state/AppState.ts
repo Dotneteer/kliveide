@@ -1,8 +1,8 @@
-import { KliveCompilerOutput } from "../abstractions/CompilerInfo";
-import { KeyMapping } from "../abstractions/KeyMapping";
-import { MachineControllerState } from "../abstractions/MachineControllerState";
-import { ScriptRunInfo } from "../abstractions/ScriptRunInfo";
-import { ToolInfo } from "../abstractions/ToolInfo";
+import { KliveCompilerOutput } from "@abstr/CompilerInfo";
+import { KeyMapping } from "@abstr/KeyMapping";
+import { MachineControllerState } from "@abstr/MachineControllerState";
+import { ScriptRunInfo } from "@abstr/ScriptRunInfo";
+import { ToolInfo } from "@abstr/ToolInfo";
 
 /**
  * Represents the state of the entire application

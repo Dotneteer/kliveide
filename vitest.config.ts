@@ -43,10 +43,14 @@ export default defineConfig({
   // Path aliases to match your project structure
   resolve: {
     alias: {
-      '@state': path.resolve(__dirname, 'src/common/state'),
+      '@': path.resolve(__dirname, 'src'),
       '@common': path.resolve(__dirname, 'src/common'),
-      '@main': path.resolve(__dirname, 'src/main'),
+      '@abstr': path.resolve(__dirname, 'src/common/abstractions'),
+      '@state': path.resolve(__dirname, 'src/common/state'),
+      '@messaging': path.resolve(__dirname, 'src/common/messaging'),
       '@emu': path.resolve(__dirname, 'src/emu'),
+      '@emuabstr': path.resolve(__dirname, 'src/emu/abstractions'),
+      '@main': path.resolve(__dirname, 'src/main'),
       '@renderer': path.resolve(__dirname, 'src/renderer')
     }
   }
