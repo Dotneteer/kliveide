@@ -109,3 +109,17 @@ export const incMenuVersionAction: ActionCreator = () => ({
   type: "START_SCREEN_DISPLAYED"
 });
 
+export const setMachineConfigAction: ActionCreator = (value: any) => ({
+  type: "SET_MACHINE_CONFIG",
+  payload: { value }
+});
+
+export const setMachineTypeAction: ActionCreator = (id: string) => ({
+  type: "SET_MACHINE_TYPE",
+  payload: { id }
+});
+
+export const setModelTypeAction: ActionCreator = (id: string) => ({
+  type: "SET_MODEL_TYPE",
+  payload: { id }
+});

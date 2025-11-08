@@ -2,8 +2,9 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
   "compilerOptions": {
     "composite": true,
-    "strictPropertyInitialization": false,
+    "strict": true,
     "strictNullChecks": false,
+    "strictPropertyInitialization": false,
     "noImplicitAny": false,
     "useUnknownInCatchVariables": false,
     "strictFunctionTypes": false,

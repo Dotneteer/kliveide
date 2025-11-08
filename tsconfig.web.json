@@ -2,6 +2,10 @@
   "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
   "compilerOptions": {
     "composite": true,
+    "strict": true,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
@@ -9,6 +13,7 @@
     "src/renderer/**/*",
     "src/preload/index.d.ts",
     "src/common/**/*",
+    "src/emu/**/*",
     "src/script-packages/**/*"
   ]
 }

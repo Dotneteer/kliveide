@@ -29,4 +29,7 @@ export interface ActionTypes {
   SET_VOLATILE_DOC_STATE: null;
   SET_MEDIA: null;
   START_SCREEN_DISPLAYED: null;
+  SET_MACHINE_CONFIG: null;
+  SET_MACHINE_TYPE: null;
+  SET_MODEL_TYPE: null;
 }

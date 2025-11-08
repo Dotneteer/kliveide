@@ -10,11 +10,11 @@ export function emulatorStateReducer(
   { type, payload }: Action
 ): EmulatorState {
   switch (type) {
-    // case "SET_MACHINE_TYPE":
-    //   return { ...state, machineId: payload?.id };
+    case "SET_MACHINE_TYPE":
+      return { ...state, machineId: payload?.id };
 
-    // case "SET_MODEL_TYPE":
-    //   return { ...state, modelId: payload?.id };
+    case "SET_MODEL_TYPE":
+      return { ...state, modelId: payload?.id };
 
     // case "SET_MACHINE_STATE":
     //   return {
@@ -28,11 +28,11 @@ export function emulatorStateReducer(
     //     pcValue: payload?.numValue
     //   };
 
-    // case "SET_MACHINE_CONFIG":
-    //   return {
-    //     ...state,
-    //     config: payload?.value
-    //   };
+    case "SET_MACHINE_CONFIG":
+      return {
+        ...state,
+        config: payload?.value
+      };
 
     // case "SET_MACHINE_SPECIFIC":
     //   return {

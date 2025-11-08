@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { isEqual, throttle } from "lodash";
-import { getRendererStore } from "../store/rendererStore";
+import { getRendererStore } from "../../store/rendererStore";
 import {
   emuLoadedAction,
   emuSynchedAction,
@@ -13,8 +13,8 @@ import {
   setAppPathAction,
   setGlobalSettingAction,
   toggleGlobalSettingAction,
-} from "../../../../common/state/actions";
-import type { AppState } from "../../../../common/state/AppState";
+} from "../../../../../common/state/actions";
+import type { AppState } from "../../../../../common/state/AppState";
 
 // =====================================================================================================================
 // React SharedAppState component implementation
