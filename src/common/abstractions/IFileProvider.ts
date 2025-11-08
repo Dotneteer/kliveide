@@ -9,14 +9,14 @@ export interface IFileProvider {
    * @param encoding Text encoding ("utf8", by default)
    * @returns The contents of a file as a string
    */
-  readTextFile(path: string, encoding?: string): Promise<string>;
+  readTextFile(path: string, encoding?: string): Promise<string | null>;
 
   /**
    * Read a binary file from the specified path
    * @param path Absolute path, or one relative to the dist/assets (public) folder
    * @returns The contents of a file as an Uint8Array instance
    */
-  readBinaryFile(path: string): Promise<Uint8Array>;
+  readBinaryFile(path: string): Promise<Uint8Array | null>;
 
   /**
    * Writes a text file to the specified path

@@ -1,6 +1,6 @@
 import type { DiskInformation, SectorInformation } from "./DiskInformation";
-import { FloppyDiskFormat } from "../../../emu/abstractions/FloppyDiskFormat";
-import { BinaryReader } from "../../../common/utils/BinaryReader";
+import { FloppyDiskFormat } from "@emuabstr/FloppyDiskFormat";
+import { BinaryReader } from "@common/utils/BinaryReader";
 
 /**
  * Reads disk information from the specified disk contents

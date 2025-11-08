@@ -1,6 +1,6 @@
-import type { ISpectrumBeeperDevice } from "../machines/zxSpectrum/ISpectrumBeeperDevice";
+import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "./IFloatingBusDevice";
-import type { ISpectrumKeyboardDevice } from "../machines/zxSpectrum/ISpectrumKeyboardDevice";
+import type { ISpectrumKeyboardDevice } from "@emu/machines/zxSpectrum/ISpectrumKeyboardDevice";
 import type { IScreenDevice } from "./IScreenDevice";
 import type { ITapeDevice } from "./ITapeDevice";
 import type { IZ80Machine } from "./IZ80Machine";

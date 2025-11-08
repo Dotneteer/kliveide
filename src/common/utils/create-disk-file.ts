@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { BinaryWriter } from "./BinaryWriter";
-import { resolveHomeFilePath } from "../../main/path-utils";
+import { resolveHomeFilePath } from "@main/path-utils";
 
 const CPC_HEAD = "MV - CPCEMU Disk-File\r\nDisk-Info\r\n";
 const CPC_EXT_HEAD = "EXTENDED CPC DSK File\r\nDisk-Info\r\n";

@@ -1,3 +1,6 @@
+export const KLIVE_HOME_FOLDER = "Klive";
+export const SETTINGS_FILE_NAME = "klive.settings";
+
 export const KLIVE_PROJECT_ROOT = "KliveProjects";
 export const CODE_FOLDER = "code";
 export const DISK_FOLDER = "disks";

@@ -1,7 +1,7 @@
-import type { BreakpointInfo } from "../../emu/abstractions/BreakpointInfo";
+import type { BreakpointInfo } from "@emuabstr/BreakpointInfo";
 
-import { createEmuApi } from "../messaging/EmuApi";
-import { MessengerBase } from "../messaging/MessengerBase";
+import { createEmuApi } from "@messaging/EmuApi";
+import { MessengerBase } from "@messaging/MessengerBase";
 
 export async function getBreakpoints(messenger: MessengerBase): Promise<BreakpointInfo[]> {
   // --- Get breakpoint information

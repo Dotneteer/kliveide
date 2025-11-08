@@ -1,7 +1,7 @@
-import createAppStore from "../../../../common/state/store";
-import type { Store } from "../../../../common/state/redux-light";
-import type { AppState } from "../../../../common/state/AppState";
-import type { Action } from "../../../../common/state/Action";
+import createAppStore from "@state/store";
+import type { Store } from "@state/redux-light";
+import type { AppState } from "@state/AppState";
+import type { Action } from "@state/Action";
 import { createIpcActionForwarder } from "./actionForwarder";
 
 let rendererStore: Store<AppState, Action> | null = null;

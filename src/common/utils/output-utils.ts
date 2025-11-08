@@ -1,4 +1,4 @@
-import { IOutputBuffer } from "../abstractions/OutputBuffer";
+import { IOutputBuffer } from "@abstr/OutputBuffer";
 
 /**
  * Describes a console action that can be displayed in the output pane

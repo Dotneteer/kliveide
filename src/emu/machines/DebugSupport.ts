@@ -1,10 +1,10 @@
-import type { AppState } from "../../common/state/AppState";
-import type { Store } from "../../common/state/redux-light";
-import type { BreakpointInfo } from "../abstractions/BreakpointInfo";
-import type { IDebugSupport } from "../abstractions/IDebugSupport";
+import type { AppState } from "@state/AppState";
+import type { Store } from "@state/redux-light";
+import type { BreakpointInfo } from "@emuabstr/BreakpointInfo";
+import type { IDebugSupport } from "@emuabstr/IDebugSupport";
 
-import { incBreakpointsVersionAction } from "../../common/state/actions";
-import { getBreakpointKey } from "../../common/utils/breakpoints";
+import { incBreakpointsVersionAction } from "@state/actions";
+import { getBreakpointKey } from "@common/utils/breakpoints";
 
 // --- Breakpoint flags
 // --- Execution breakpoint

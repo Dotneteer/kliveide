@@ -1,4 +1,4 @@
-import { IGenericDevice } from "../../../abstractions/IGenericDevice";
+import { IGenericDevice } from "@emuabstr/IGenericDevice";
 import { IC64Machine } from "../IC64Machine";
 import { RenderingTact, VicChipConfiguration } from "./types";
 import {
@@ -21,7 +21,7 @@ import {
   UpdateVc
 } from "./constants";
 import { SprDma1, SprPtr } from "./vic-models";
-import { VicState } from "../../../../common/messaging/EmuApi";
+import { VicState } from "@messaging/EmuApi";
 
 /**
  * Implementation of the VIC-II (Video Interface Chip) for the Commodore 64

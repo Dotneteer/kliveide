@@ -24,7 +24,7 @@ import {
   setRandomSeed
 } from "../compiler-common/expressions";
 import { FixupEntry } from "../compiler-common/fixups";
-import { ExpressionValueType } from "../../common/abstractions/CompilerInfo";
+import { ExpressionValueType } from "@abstr/CompilerInfo";
 import {
   BinaryComparisonInfo,
   FixupType,

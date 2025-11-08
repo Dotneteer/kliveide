@@ -1,24 +1,24 @@
-import type { KeyMapping } from "../../common/abstractions/KeyMapping";
-import type { IFileProvider } from "../../common/abstractions/IFileProvider";
-import type { ExecutionContext } from "../abstractions/ExecutionContext";
-import type { IZ80Machine } from "../abstractions/IZ80Machine";
-import type { CodeToInject } from "../abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "../abstractions/CodeInjectionFlow";
-import type { KeyCodeSet } from "../abstractions/IGenericKeyboardDevice";
-import type { MachineConfigSet } from "../../common/machines/info-types";
+import type { KeyMapping } from "@abstr/KeyMapping";
+import type { IFileProvider } from "@abstr/IFileProvider";
+import type { ExecutionContext } from "@emuabstr/ExecutionContext";
+import type { IZ80Machine } from "@emuabstr/IZ80Machine";
+import type { CodeToInject } from "@emuabstr/CodeToInject";
+import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
+import type { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
+import type { MachineConfigSet } from "@common/machines/info-types";
 
-import { DebugStepMode } from "../abstractions/DebugStepMode";
-import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import { TapeMode } from "../abstractions/TapeMode";
-import { LiteEvent } from "../utils/lite-event";
-import { Z80Cpu } from "../z80/Z80Cpu";
+import { DebugStepMode } from "@emuabstr/DebugStepMode";
+import { FrameTerminationMode } from "@emuabstr/FrameTerminationMode";
+import { TapeMode } from "@emuabstr/TapeMode";
+import { LiteEvent } from "@emu/utils/lite-event";
+import { Z80Cpu } from "@emu/z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
-import { CallStackInfo } from "../abstractions/CallStack";
-import { CpuState } from "../../common/messaging/EmuApi";
-import { SysVar } from "../../common/abstractions/SysVar";
-import { QueuedEvent } from "../abstractions/QueuedEvent";
+import { CallStackInfo } from "@emuabstr/CallStack";
+import { CpuState } from "@messaging/EmuApi";
+import { SysVar } from "@abstr/SysVar";
+import { QueuedEvent } from "@emuabstr/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "./MachineFrameRunner";
-import { IMemorySection } from "../../common/abstractions/MemorySection";
+import { IMemorySection } from "@abstr/MemorySection";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.

@@ -1,17 +1,43 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "lib": ["ES2020"],
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["esnext"],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "strict": true,
+    // Less restrictive overrides for the project
     "strictNullChecks": false,
     "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+    "useUnknownInCatchVariables": false,
+    "strictFunctionTypes": false,
+    // Additional options
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@": ["src"],
+      "@common/*": ["src/common/*"],
+      "@common": ["src/common"],
+      "@abstr/*": ["src/common/abstractions/*"],
+      "@abstr": ["src/common/abstractions"],
+      "@state/*": ["src/common/state/*"],
+      "@state": ["src/common/state"],
+      "@messaging/*": ["src/common/messaging/*"],
+      "@messaging": ["src/common/messaging"],
+      "@emu/*": ["src/emu/*"],
+      "@emu": ["src/emu"],
+      "@emuabstr/*": ["src/emu/abstractions/*"],
+      "@emuabstr": ["src/emu/abstractions"],
+      "@main/*": ["src/main/*"],
+      "@main": ["src/main"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "electron.vite.config.*"],
   "references": [

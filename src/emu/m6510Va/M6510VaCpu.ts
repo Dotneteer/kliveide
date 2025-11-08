@@ -1,5 +1,5 @@
-import { FlagSetMask6510 } from "../abstractions/FlagSetMask6510";
-import { IM6510VaCpu } from "../abstractions/IM6510VaCpu";
+import { FlagSetMask6510 } from "@emuabstr/FlagSetMask6510";
+import { IM6510VaCpu } from "@emuabstr/IM6510VaCpu";
 
 /**
  * The function represents a 6510 operation

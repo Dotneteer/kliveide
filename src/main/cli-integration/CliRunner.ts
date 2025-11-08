@@ -2,7 +2,7 @@ import { ExecaSyncError, execa } from "execa";
 import type {
   AssemblerErrorInfo,
   SimpleAssemblerOutput
-} from "../../common/abstractions/CompilerInfo";
+} from "@abstr/CompilerInfo";
 
 /**
  * This class is responsible for running the CLI commands that are passed to it.

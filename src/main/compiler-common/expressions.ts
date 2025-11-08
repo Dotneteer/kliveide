@@ -1,6 +1,6 @@
 import type { ErrorCodes } from "./assembler-errors";
 
-import { ExpressionValueType } from "../../common/abstractions/CompilerInfo";
+import { ExpressionValueType } from "@abstr/CompilerInfo";
 import { IEvaluationContext, IExpressionValue, IValueInfo, TypedObject } from "./abstractions";
 import { CommonTokenType } from "./common-tokens";
 import {

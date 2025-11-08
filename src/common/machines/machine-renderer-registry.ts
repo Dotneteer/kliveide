@@ -1,6 +1,6 @@
 import type { MachineUiRendererInfo } from "./info-types";
 
-import { ZxSpectrum48Machine } from "../../emu/machines/zxSpectrum48/ZxSpectrum48Machine";
+import { ZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48Machine";
 import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_48,
@@ -9,11 +9,11 @@ import {
   MI_ZXNEXT,
   MI_C64
 } from "./constants";
-import { ZxSpectrum128Machine } from "../../emu/machines/zxSpectrum128/ZxSpectrum128Machine";
-import { Z88Machine } from "../../emu/machines/z88/Z88Machine";
-import { ZxSpectrumP3EMachine } from "../../emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
-import { ZxNextMachine } from "../../emu/machines/zxNext/ZxNextMachine";
-import { C64Machine } from "../../emu/machines/c64/C64Machine";
+import { ZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128Machine";
+import { Z88Machine } from "@emu/machines/z88/Z88Machine";
+import { ZxSpectrumP3EMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachine";
+import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import { C64Machine } from "@emu/machines/c64/C64Machine";
 
 export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {

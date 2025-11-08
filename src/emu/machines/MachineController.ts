@@ -1,40 +1,40 @@
 import type {
   FrameCompletedArgs,
   IMachineController
-} from "../abstractions/IMachineController";
-import type { CodeToInject } from "../abstractions/CodeToInject";
-import type { ExecutionContext } from "../abstractions/ExecutionContext";
-import type { FrameStats } from "../../common/abstractions/FrameStats";
-import type { IDebugSupport } from "../abstractions/IDebugSupport";
-import type { AppState } from "../../common/state/AppState";
-import type { Store } from "../../common/state/redux-light";
-import type { SavedFileInfo } from "../abstractions/ITapeDevice";
-import type { BreakpointInfo } from "../abstractions/BreakpointInfo";
-import type { ResolvedBreakpoint } from "../abstractions/ResolvedBreakpoint";
-import type { SectorChanges } from "../abstractions/IFloppyDiskDrive";
-import type { MachineInfo } from "../../common/machines/info-types";
+} from "@emuabstr/IMachineController";
+import type { CodeToInject } from "@emuabstr/CodeToInject";
+import type { ExecutionContext } from "@emuabstr/ExecutionContext";
+import type { FrameStats } from "@abstr/FrameStats";
+import type { IDebugSupport } from "@emuabstr/IDebugSupport";
+import type { AppState } from "@state/AppState";
+import type { Store } from "@state/redux-light";
+import type { SavedFileInfo } from "@emuabstr/ITapeDevice";
+import type { BreakpointInfo } from "@emuabstr/BreakpointInfo";
+import type { ResolvedBreakpoint } from "@emuabstr/ResolvedBreakpoint";
+import type { SectorChanges } from "@emuabstr/IFloppyDiskDrive";
+import type { MachineInfo } from "@common/machines/info-types";
 
-import { DebugStepMode } from "../abstractions/DebugStepMode";
-import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
-import { LiteEvent } from "../utils/lite-event";
-import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
-import { MessengerBase } from "../../common/messaging/MessengerBase";
+import { DebugStepMode } from "@emuabstr/DebugStepMode";
+import { FrameTerminationMode } from "@emuabstr/FrameTerminationMode";
+import { LiteEvent } from "@emu/utils/lite-event";
+import { MachineControllerState } from "@abstr/MachineControllerState";
+import { MessengerBase } from "@messaging/MessengerBase";
 import {
   setDebuggingAction,
   setMachineStateAction,
   setProjectDebuggingAction
-} from "../../common/state/actions";
+} from "@state/actions";
 import { DISK_A_CHANGES, DISK_B_CHANGES, FAST_LOAD, SAVED_TO_TAPE } from "./machine-props";
-import { delay } from "../../common/utils/timing";
-import { machineRegistry } from "../../common/machines/machine-registry";
+import { delay } from "@common/utils/timing";
+import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
-import { PANE_ID_EMU } from "../../common/integration/constants";
-import { createIdeApi } from "../../common/messaging/IdeApi";
-import { SETTING_EMU_FAST_LOAD } from "../../common/settings/setting-const";
-import { IAnyMachine } from "../abstractions/IAnyMachine";
-import { IOutputBuffer, OutputColor } from "../../common/abstractions/OutputBuffer";
-import { toHexa4 } from "../../common/utils/conversions";
-import { getGlobalSetting } from "../../common/settings/utils";
+import { PANE_ID_EMU } from "@common/integration/constants";
+import { createIdeApi } from "@messaging/IdeApi";
+import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
+import { IAnyMachine } from "@emuabstr/IAnyMachine";
+import { IOutputBuffer, OutputColor } from "@abstr/OutputBuffer";
+import { toHexa4 } from "@common/utils/conversions";
+import { getGlobalSetting } from "@common/settings/utils";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.

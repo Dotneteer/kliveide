@@ -1,8 +1,8 @@
 import { CodeToInject } from "./CodeToInject";
-import { ILiteEvent } from "../../common/abstractions/ILiteEvent";
-import { KeyMapping } from "../../common/abstractions/KeyMapping";
-import { MachineConfigSet } from "../../common/abstractions/info-types";
-import { MessengerBase } from "../../common/messaging/MessengerBase";
+import { ILiteEvent } from "@abstr/ILiteEvent";
+import { KeyMapping } from "@abstr/KeyMapping";
+import { MachineConfigSet } from "@abstr/info-types";
+import { MessengerBase } from "@messaging/MessengerBase";
 import { CallStackInfo } from "./CallStack";
 import { CodeInjectionFlow } from "./CodeInjectionFlow";
 import { ExecutionContext } from "./ExecutionContext";
@@ -10,10 +10,10 @@ import { FrameTerminationMode } from "./FrameTerminationMode";
 import { KeyCodeSet } from "./IGenericKeyboardDevice";
 import { IMachineEventHandler } from "./IMachineEventHandler";
 import { IAnyCpu } from "./IAnyCpu";
-import { CpuState } from "../../common/messaging/EmuApi";
-import { SysVar } from "../../common/abstractions/SysVar";
-import { IMachineFrameRunner } from "../machines/MachineFrameRunner";
-import { IMemorySection } from "../../common/abstractions/MemorySection";
+import { CpuState } from "@messaging/EmuApi";
+import { SysVar } from "@abstr/SysVar";
+import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
+import { IMemorySection } from "@abstr/MemorySection";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from

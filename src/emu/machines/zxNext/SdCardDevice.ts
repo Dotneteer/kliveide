@@ -1,7 +1,7 @@
-import type { IGenericDevice } from "../../abstractions/IGenericDevice";
-import { calculateCRC7 } from "../../utils/crc";
-import { BYTES_PER_SECTOR } from "../../../main/fat32/Fat32Types";
-import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
+import type { IGenericDevice } from "@emuabstr/IGenericDevice";
+import { calculateCRC7 } from "@emu/utils/crc";
+import { BYTES_PER_SECTOR } from "@main/fat32/Fat32Types";
+import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
 
 const READ_DELAY = 56;
 

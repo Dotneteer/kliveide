@@ -1,4 +1,4 @@
-import { ExpressionValueType } from "../../common/abstractions/CompilerInfo";
+import { ExpressionValueType } from "@abstr/CompilerInfo";
 import {
   AssemblyLine,
   CompareBinPragma,

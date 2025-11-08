@@ -1,5 +1,5 @@
-import type { IZ88Machine } from "../../abstractions/IZ88Machine";
-import type { IGenericKeyboardDevice } from "../../abstractions/IGenericKeyboardDevice";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
+import type { IGenericKeyboardDevice } from "@emuabstr/IGenericKeyboardDevice";
 
 /**
  * This interface defines the properties and operations of the Cambridge Z88 keyboard device.

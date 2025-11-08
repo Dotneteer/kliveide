@@ -1,5 +1,5 @@
-import type { IGenericDevice } from "../../abstractions/IGenericDevice";
-import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
+import type { IGenericDevice } from "@emuabstr/IGenericDevice";
+import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
 
 import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
 

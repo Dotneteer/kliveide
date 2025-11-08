@@ -1,6 +1,8 @@
-import { KliveCompilerOutput } from "../abstractions/CompilerInfo";
-import { MachineControllerState } from "../abstractions/MachineControllerState";
-import { ScriptRunInfo } from "../abstractions/ScriptRunInfo";
+import { KliveCompilerOutput } from "@abstr/CompilerInfo";
+import { KeyMapping } from "@abstr/KeyMapping";
+import { MachineControllerState } from "@abstr/MachineControllerState";
+import { ScriptRunInfo } from "@abstr/ScriptRunInfo";
+import { ToolInfo } from "@abstr/ToolInfo";
 
 /**
  * Represents the state of the entire application
@@ -18,10 +20,16 @@ export type AppState = {
   globalSettings?: Record<string, any>;
   projectSettings?: Record<string, any>;
   userSettings?: Record<string, any>;
+  theme?: string;
   emulatorState?: EmulatorState;
   compilation?: CompilationState;
   project?: IdeProject;
   scripts?: ScriptRunInfo[];
+  keyMappingFile?: string;
+  keyMappings?: { mapping: KeyMapping; merge: boolean };
+  ideView?: IdeView;
+  media?: MediaState;
+  startScreenDisplayed?: boolean;
 };
 
 export type EmulatorState = {
@@ -66,6 +74,34 @@ export type IdeProject = {
   buildFileVersion?: number;
 };
 
+export type IdeView = {
+  activity?: string;
+  sideBarPanels?: Record<string, SideBarPanelState>;
+  documentHubState?: Record<number, number>;
+  editorVersion?: number;
+  explorerViewVersion?: number;
+  volatileDocs: Record<string, boolean>;
+  tools?: ToolInfo[];
+  statusMessage?: string;
+  statusSuccess?: boolean;
+  toolCommandSeqNo: number;
+  dialogToDisplay?: number;
+  dialogData?: any;
+};
+
+/**
+ * The state of a particular site bar panel
+ */
+export type SideBarPanelState = {
+  expanded: boolean;
+  size: number;
+};
+
+/**
+ * The current state of removable media
+ */
+export type MediaState = Record<string, any>;
+
 /**
  * The initial application state
  */
@@ -77,5 +113,6 @@ export const initialAppState: AppState = {
   os: "",
   emuFocused: false,
   ideFocused: false,
-  globalSettings: {}
+  globalSettings: {},
+  theme: "light"
 };

@@ -1,4 +1,4 @@
-import type { FloppyDiskFormat } from "../../../emu/abstractions/FloppyDiskFormat";
+import type { FloppyDiskFormat } from "@emuabstr/FloppyDiskFormat";
 
 // --- Describes the disk information
 export type DiskInformation = {

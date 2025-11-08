@@ -1,5 +1,5 @@
-import type { IGenericDevice } from "../../abstractions/IGenericDevice";
-import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
+import type { IGenericDevice } from "@emuabstr/IGenericDevice";
+import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
 
 export class LoResDevice implements IGenericDevice<IZxNextMachine> {
   scrollX: number;

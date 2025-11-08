@@ -1,4 +1,4 @@
-import { AppState } from "../state/AppState";
+import { AppState } from "@state/AppState";
 
 /**
  * Implementation of a function similar to lodash.get that safely retrieves values

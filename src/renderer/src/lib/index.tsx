@@ -1,7 +1,6 @@
-import { styledTextComponentRenderer } from "./StyledText/StyledText";
-import { sharedAppStateComponentRenderer } from "./SharedAppState/SharedAppState";
+import { sharedAppStateComponentRenderer } from "./react-components/SharedAppState/SharedAppState";
 
 export default {
   namespace: "XMLUIExtensions",
-  components: [styledTextComponentRenderer, sharedAppStateComponentRenderer],
+  components: [sharedAppStateComponentRenderer],
 };

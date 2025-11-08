@@ -1,4 +1,4 @@
-import { BinaryReader } from "../../../common/utils/BinaryReader";
+import { BinaryReader } from "@common/utils/BinaryReader";
 import { TzxDeprecatedBlockBase } from "./TzxDeprecatedBlockBase";
 
 /**
@@ -11,7 +11,7 @@ export class TzxSnapshotBlock extends TzxDeprecatedBlockBase {
   }
 
   readThrough (reader: BinaryReader): void {
-    length = reader.readUint32() & 0x00ffffff;
+    const length = reader.readUint32() & 0x00ffffff;
     reader.readBytes(length);
   }
 }

@@ -1,5 +1,5 @@
 import type { IZ88MemoryCard } from "./IZ88MemoryCard";
-import type { IZ88Machine } from "../../../abstractions/IZ88Machine";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
 
 import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";

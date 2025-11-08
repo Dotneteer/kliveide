@@ -7,7 +7,7 @@ import {
   FNAME_FLAG_NEED_LFN,
   FS_ATTR_ARCHIVE,
   FS_DIR_SIZE
-} from "../../main/fat32/Fat32Types";
+} from "@main/fat32/Fat32Types";
 import { FatLongFileName } from "./FatLongFileName";
 import { FatDirEntry } from "./FatDirEntry";
 

@@ -1,6 +1,6 @@
-import type { IZxSpectrumMachine } from "../../abstractions/IZxSpectrumMachine";
-import type { IGenericBeeperDevice } from "../../abstractions/IGenericBeeperDevice";
-import type { IZxNextMachine } from "../../abstractions/IZxNextMachine";
+import type { IZxSpectrumMachine } from "@emuabstr/IZxSpectrumMachine";
+import type { IGenericBeeperDevice } from "@emuabstr/IGenericBeeperDevice";
+import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's beeper device.

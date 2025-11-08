@@ -1,4 +1,4 @@
-import { MessageSource } from "../messaging/messages-core";
+import { MessageSource } from "@messaging/messages-core";
 import { Action } from "./Action";
 
 /**

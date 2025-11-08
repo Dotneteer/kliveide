@@ -1,11 +1,11 @@
-import { ProjectNodeWithChildren } from "../abstractions/ProjectNode";
+import { ProjectNodeWithChildren } from "@abstr/ProjectNode";
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
-import { CompilerOptions, KliveCompilerOutput } from "../abstractions/CompilerInfo";
-import { SectorChanges } from "../../emu/abstractions/IFloppyDiskDrive";
-import { ScriptStartInfo } from "../abstractions/ScriptStartInfo";
-import { ScriptRunInfo } from "../abstractions/ScriptRunInfo";
-import { AppSettings } from "../abstractions/AppSettings";
+import { CompilerOptions, KliveCompilerOutput } from "@abstr/CompilerInfo";
+import { SectorChanges } from "@emuabstr/IFloppyDiskDrive";
+import { ScriptStartInfo } from "@abstr/ScriptStartInfo";
+import { ScriptRunInfo } from "@abstr/ScriptRunInfo";
+import { AppSettings } from "@abstr/AppSettings";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 

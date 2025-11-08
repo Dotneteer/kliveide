@@ -1,24 +1,24 @@
-import type { KeyMapping } from "../../../common/abstractions/KeyMapping";
-import type { IFileProvider } from "../../../common/abstractions/IFileProvider";
-import type { ExecutionContext } from "../../abstractions/ExecutionContext";
-import type { IZ80Machine } from "../../abstractions/IZ80Machine";
-import type { KeyCodeSet } from "../../abstractions/IGenericKeyboardDevice";
-import type { MachineConfigSet } from "../../../common/machines/info-types";
+import type { KeyMapping } from "@abstr/KeyMapping";
+import type { IFileProvider } from "@abstr/IFileProvider";
+import type { ExecutionContext } from "@emuabstr/ExecutionContext";
+import type { IZ80Machine } from "@emuabstr/IZ80Machine";
+import type { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
+import type { MachineConfigSet } from "@common/machines/info-types";
 
-import { DebugStepMode } from "../../abstractions/DebugStepMode";
-import { FrameTerminationMode } from "../../abstractions/FrameTerminationMode";
-import { OpCodePrefix } from "../../abstractions/OpCodePrefix";
-import { TapeMode } from "../../abstractions/TapeMode";
-import { LiteEvent } from "../../utils/lite-event";
+import { DebugStepMode } from "@emuabstr/DebugStepMode";
+import { FrameTerminationMode } from "@emuabstr/FrameTerminationMode";
+import { OpCodePrefix } from "@emuabstr/OpCodePrefix";
+import { TapeMode } from "@emuabstr/TapeMode";
+import { LiteEvent } from "@emu/utils/lite-event";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "../machine-props";
-import { Z80NCpu } from "../../z80/Z80NCpu";
-import { CallStackInfo } from "../../abstractions/CallStack";
-import { MessengerBase } from "../../../common/messaging/MessengerBase";
-import { SysVar } from "../../../common/abstractions/SysVar";
-import { CpuState } from "../../../common/messaging/EmuApi";
-import { QueuedEvent } from "../../abstractions/QueuedEvent";
-import { CodeToInject } from "../../abstractions/CodeToInject";
-import { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
+import { Z80NCpu } from "@emu/z80/Z80NCpu";
+import { CallStackInfo } from "@emuabstr/CallStack";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { SysVar } from "@abstr/SysVar";
+import { CpuState } from "@messaging/EmuApi";
+import { QueuedEvent } from "@emuabstr/QueuedEvent";
+import { CodeToInject } from "@emuabstr/CodeToInject";
+import { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
 
 /**

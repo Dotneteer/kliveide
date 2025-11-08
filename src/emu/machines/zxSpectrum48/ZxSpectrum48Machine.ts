@@ -1,8 +1,8 @@
-import type { SysVar } from "../../../common/abstractions/SysVar";
-import type { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
-import type { MachineModel } from "../../../common/machines/info-types";
+import type { SysVar } from "@abstr/SysVar";
+import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
+import type { MachineModel } from "@common/machines/info-types";
 
-import { TapeMode } from "../../abstractions/TapeMode";
+import { TapeMode } from "@emuabstr/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
@@ -10,9 +10,9 @@ import { AUDIO_SAMPLE_RATE, REWIND_REQUESTED, TAPE_MODE, TAPE_SAVER } from "../m
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
-import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "../../../common/machines/constants";
+import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "@common/machines/constants";
 import { zxSpectrum48SysVars } from "./ZxSpectrum48SysVars";
-import { toHexa4 } from "../../../common/utils/conversions";
+import { toHexa4 } from "@common/utils/conversions";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.

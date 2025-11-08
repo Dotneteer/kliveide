@@ -1,5 +1,5 @@
-import type { IZ88Machine } from "../../../abstractions/IZ88Machine";
-import { CardType } from "../../../../emu/machines/z88/memory/CardType";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
+import { CardType } from "./CardType";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 
 export class Z88RamMemoryCard extends Z88MemoryCardBase {

@@ -1,4 +1,4 @@
-import { IGenericDevice } from "../../abstractions/IGenericDevice";
+import { IGenericDevice } from "@emuabstr/IGenericDevice";
 import { IC64Machine } from "./IC64Machine";
 
 /**

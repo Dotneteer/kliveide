@@ -1,4 +1,4 @@
-import type { KeyMapping } from "../../../common/abstractions/KeyMapping";
+import type { KeyMapping } from "@abstr/KeyMapping";
 
 /**
  * Maps the physical keyboard to the US keyboard.

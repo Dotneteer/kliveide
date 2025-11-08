@@ -1,7 +1,7 @@
-import { MessengerBase } from "../messaging/MessengerBase";
-import type { AppState } from "../state/AppState";
-import type { Store } from "../state/redux-light";
-import { IAnyMachine } from "../../emu/abstractions/IAnyMachine";
+import { MessengerBase } from "@messaging/MessengerBase";
+import type { AppState } from "@state/AppState";
+import type { Store } from "@state/redux-light";
+import { IAnyMachine } from "@emuabstr/IAnyMachine";
 
 /**
  * This type stores common information about a particular emulated machine

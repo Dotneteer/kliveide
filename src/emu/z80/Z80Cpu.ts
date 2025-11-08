@@ -1,7 +1,7 @@
-import type { IZ80Cpu } from "../abstractions/IZ80Cpu";
+import type { IZ80Cpu } from "@emuabstr/IZ80Cpu";
 
-import { FlagsSetMask } from "../abstractions/FlagSetMask";
-import { OpCodePrefix } from "../abstractions/OpCodePrefix";
+import { FlagsSetMask } from "@emuabstr/FlagSetMask";
+import { OpCodePrefix } from "@emuabstr/OpCodePrefix";
 import { Z80NCpu } from "./Z80NCpu";
 
 const MAX_STEP_OUT_STACK_SIZE = 256;

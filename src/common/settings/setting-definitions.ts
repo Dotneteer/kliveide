@@ -32,7 +32,7 @@ import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
   SETTING_EMU_SOUND_MUTED
 } from "./setting-const";
-import { SettingDescription } from "../abstractions/SettingDescription";
+import { SettingDescription } from "@abstr/SettingDescription";
 
 const settingDefinitions: SettingDescription[] = [
   {

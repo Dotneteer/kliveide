@@ -1,7 +1,7 @@
-import { BinaryReader } from "../../../common/utils/BinaryReader";
-import { BinaryWriter } from "../../../common/utils/BinaryWriter";
+import { BinaryReader } from "@common/utils/BinaryReader";
+import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { TzxBlockBase } from "./TzxBlockBase";
-import { TapeDataBlock } from "../../../common/structs/TapeDataBlock";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 
 /**
  * Pause (silence) or 'Stop the Tape' block

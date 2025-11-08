@@ -1,0 +1,34 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "target": "ESNext",
+    "noImplicitThis": true,
+    "sourceMap": true,
+    "types": ["vitest/globals"],
+    "paths": {
+      "@/*": ["../src/*"],
+      "@": ["../src"],
+      "@common/*": ["../src/common/*"],
+      "@common": ["../src/common"],
+      "@abstr/*": ["../src/common/abstractions/*"],
+      "@abstr": ["../src/common/abstractions"],
+      "@state/*": ["../src/common/state/*"],
+      "@state": ["../src/common/state"],
+      "@messaging/*": ["../src/common/messaging/*"],
+      "@messaging": ["../src/common/messaging"],
+      "@emu/*": ["../src/emu/*"],
+      "@emu": ["../src/emu"],
+      "@emuabstr/*": ["../src/emu/abstractions/*"],
+      "@emuabstr": ["../src/emu/abstractions"],
+      "@main/*": ["../src/main/*"],
+      "@main": ["../src/main"],
+      "@renderer/*": ["../src/renderer/*"]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../src/**/*"
+  ],
+  "exclude": ["node_modules", "**/build/*", "**/dist/*", "**/out/*"]
+}

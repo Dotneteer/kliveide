@@ -1,5 +1,5 @@
-import type { IZ88Machine } from "../../abstractions/IZ88Machine";
-import type { IGenericDevice } from "../../abstractions/IGenericDevice";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
+import type { IGenericDevice } from "@emuabstr/IGenericDevice";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's screen device.

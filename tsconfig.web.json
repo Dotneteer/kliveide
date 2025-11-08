@@ -1,5 +1,5 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",
@@ -9,6 +9,7 @@
     "src/renderer/**/*",
     "src/preload/index.d.ts",
     "src/common/**/*",
+    "src/emu/**/*",
     "src/script-packages/**/*"
   ]
 }

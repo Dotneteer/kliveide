@@ -1,10 +1,10 @@
-import type { SysVar } from "../../../common/abstractions/SysVar";
+import type { SysVar } from "@abstr/SysVar";
 import type { ISpectrumPsgDevice } from "../../machines/zxSpectrum/ISpectrumPsgDevice";
-import type { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
-import type { MachineModel } from "../../../common/machines/info-types";
-import type { IFloppyControllerDevice } from "../../../emu/abstractions/IFloppyControllerDevice";
+import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
+import type { MachineModel } from "@common/machines/info-types";
+import type { IFloppyControllerDevice } from "@emuabstr/IFloppyControllerDevice";
 
-import { TapeMode } from "../../abstractions/TapeMode";
+import { TapeMode } from "@emuabstr/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
@@ -25,11 +25,11 @@ import {
 } from "./ZxSpectrumP3eFloatingBusDevice";
 import { PagedMemory } from "../memory/PagedMemory";
 import { SpectrumKeyCode } from "../../machines/zxSpectrum/SpectrumKeyCode";
-import { MC_DISK_SUPPORT } from "../../../common/machines/constants";
-import { MEDIA_DISK_A, MEDIA_DISK_B } from "../../../common/structs/project-const";
+import { MC_DISK_SUPPORT } from "@common/machines/constants";
+import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { zxSpectrum128SysVars } from "../zxSpectrum128/ZxSpectrum128SysVars";
 import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
-import { toHexa4 } from "../../../common/utils/conversions";
+import { toHexa4 } from "@common/utils/conversions";
 
 /**
  * This class represents the emulator of a ZX Spectrum 48 machine.
@@ -76,8 +76,8 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
    * Initialize the machine
    */
   constructor(model: MachineModel) {
+    super();
     try {
-      super();
       switch (model?.config?.[MC_DISK_SUPPORT]) {
         case 1:
           this.hasFloppy = true;

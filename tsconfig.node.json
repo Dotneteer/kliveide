@@ -1,12 +1,7 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "composite": true,
-    "strictPropertyInitialization": false,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "useUnknownInCatchVariables": false,
-    "strictFunctionTypes": false,
     "types": ["vite/client", "node"]
   },
   "include": [

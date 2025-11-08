@@ -1,5 +1,5 @@
-import { AppState } from "../state/AppState";
-import { ISourceFileItem } from "../../main/compiler-common/abstractions";
+import { AppState } from "@state/AppState";
+import { ISourceFileItem } from "@main/compiler-common/abstractions";
 
 /**
  * Represents the possible types of an expression value

@@ -1,4 +1,4 @@
-import { CompilerOutput, KliveCompilerOutput } from "../abstractions/CompilerInfo";
+import { CompilerOutput, KliveCompilerOutput } from "@abstr/CompilerInfo";
 
 /**
  * Type guard that checks if the specified output can be used for code injection

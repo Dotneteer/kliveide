@@ -1,12 +1,12 @@
 import type { Z88PageInfo } from "./Z88PageInfo";
 import type { IZ88MemoryCard } from "./IZ88MemoryCard";
-import type { IZ88Machine } from "../../../abstractions/IZ88Machine";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
 
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
-import { MC_Z88_INTRAM } from "../../../../common/machines/constants";
+import { MC_Z88_INTRAM } from "@common/machines/constants";
 import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
 import { COMFlags } from "../IZ88BlinkDevice";
-import { toHexa2 } from "../../../../common/utils/conversions";
+import { toHexa2 } from "@common/utils/conversions";
 
 /**
  * This object represents the Z88 banked memory. Its responsibility is to carry out memory
