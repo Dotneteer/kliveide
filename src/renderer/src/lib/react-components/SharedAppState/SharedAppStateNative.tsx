@@ -13,8 +13,8 @@ import {
   setAppPathAction,
   setGlobalSettingAction,
   toggleGlobalSettingAction,
-} from "../../../../../common/state/actions";
-import type { AppState } from "../../../../../common/state/AppState";
+} from "@state/actions";
+import type { AppState } from "@state/AppState";
 
 // =====================================================================================================================
 // React SharedAppState component implementation

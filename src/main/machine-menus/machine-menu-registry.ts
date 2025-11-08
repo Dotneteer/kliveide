@@ -1,4 +1,4 @@
-import type { MachineMenuInfo } from "../../common/machines/info-types";
+import type { MachineMenuInfo } from "@common/machines/info-types";
 
 import {
   MI_SPECTRUM_128,
@@ -6,7 +6,7 @@ import {
   MI_SPECTRUM_48,
   MI_Z88,
   MI_ZXNEXT
-} from "../../common/machines/constants";
+} from "@common/machines/constants";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer } from "./zx-spectrum-menus";
 import { z88KeyboardLayoutRenderer, z88LcdRenderer, z88ResetRenderer } from "./z88-menus";
 import { initializeZxSpectrumNext, sdCardMenuRenderer, setupZxSpectrumNext } from "./zx-next-menus";

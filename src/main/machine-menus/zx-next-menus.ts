@@ -1,15 +1,15 @@
 import path from "path";
 import fs from "fs";
 
-import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
-import { MachineMenuItem, MachineMenuRenderer } from "../../common/machines/info-types";
-import { AppState } from "../../common/state/AppState";
-import { KLIVE_HOME_FOLDER, MEDIA_SD_CARD } from "../../common/structs/project-const";
-import { mainStore } from "../../main/mainStore";
+import { MachineControllerState } from "@abstr/MachineControllerState";
+import { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info-types";
+import { AppState } from "@state/AppState";
+import { KLIVE_HOME_FOLDER, MEDIA_SD_CARD } from "@common/structs/project-const";
+import { mainStore } from "@main/mainStore";
 import { app, BrowserWindow, dialog } from "electron";
-import { setMediaAction } from "../../common/state/actions";
-import { logEmuEvent } from "../../main/registeredMachines";
-import { CimHandler } from "../../main/fat32/CimHandlers";
+import { setMediaAction } from "@state/actions";
+import { logEmuEvent } from "@main/registeredMachines";
+import { CimHandler } from "@main/fat32/CimHandlers";
 import { saveAppSettings, appSettings } from "../settingsManager";
 
 const SD_CARD_FILE_FOLDER = "sdCardFileFolder";

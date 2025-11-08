@@ -1,22 +1,22 @@
-import { MachineController } from "../../../../emu/machines/MachineController";
-import { DebugSupport } from "../../../../emu/machines/DebugSupport";
-import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "../../../../emu/machines/machine-props";
-import { LiteEvent } from "../../../../emu/utils/lite-event";
-import { MessageSource } from "../../../../common/messaging/messages-core";
-import { MessengerBase } from "../../../../common/messaging/MessengerBase";
-import { setMachineConfigAction, setMachineTypeAction, setModelTypeAction } from "../../../../common/state/actions";
-import { AppState } from "../../../../common/state/AppState";
-import { Store, Unsubscribe } from "../../../../common/state/redux-light";
+import { MachineController } from "@emu/machines/MachineController";
+import { DebugSupport } from "@emu/machines/DebugSupport";
+import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
+import { LiteEvent } from "@emu/utils/lite-event";
+import { MessageSource } from "@messaging/messages-core";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { setMachineConfigAction, setMachineTypeAction, setModelTypeAction } from "@state/actions";
+import { AppState } from "@state/AppState";
+import { Store, Unsubscribe } from "@state/redux-light";
 import {
   IMachineService,
   MachineTypeEventHandler,
   MachineInstanceEventHandler
 } from "./IMachineService";
-import type { BreakpointInfo } from "../../../../emu/abstractions/BreakpointInfo";
-import { machineRendererRegistry } from "../../../../common/machines/machine-renderer-registry";
-import { machineRegistry } from "../../../../common/machines/machine-registry";
-import { MachineConfigSet, MachineInfo, MachineModel } from "../../../../common/machines/info-types";
-import { IAnyMachine } from "../../../../emu/abstractions/IAnyMachine";
+import type { BreakpointInfo } from "@emuabstr/BreakpointInfo";
+import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
+import { IAnyMachine } from "@emuabstr/IAnyMachine";
 import { FileProvider } from "./FileProvider";
 
 class MachineService implements IMachineService {

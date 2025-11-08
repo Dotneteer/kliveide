@@ -1,4 +1,4 @@
-import type { CompilerOptions, CompilerOutput } from "../../common/abstractions/CompilerInfo";
+import type { CompilerOptions, CompilerOutput } from "@abstr/CompilerInfo";
 
 import { Z80Assembler } from "./z80-assembler";
 import { AssemblerOptions } from "../compiler-common/assembler-in-out";

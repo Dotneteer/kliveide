@@ -1,14 +1,14 @@
 import fs from "fs";
 
-import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
-import { MachineMenuRenderer } from "../../common/machines/info-types";
-import { getEmuApi } from "../../common/messaging/MainToEmuMessenger";
-import { incMenuVersionAction } from "../../common/state/actions";
-import { mainStore } from "../../main/mainStore";
-import { getModelConfig } from "../../common/machines/machine-registry";
-import { MC_SCREEN_SIZE } from "../../common/machines/constants";
-import { setMachineType } from "../../main/registeredMachines";
-import { SETTING_EMU_KEYBOARD_LAYOUT } from "../../common/settings/setting-const";
+import { MachineControllerState } from "@abstr/MachineControllerState";
+import { MachineMenuRenderer } from "@common/machines/info-types";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { incMenuVersionAction } from "@state/actions";
+import { mainStore } from "@main/mainStore";
+import { getModelConfig } from "@common/machines/machine-registry";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
+import { setMachineType } from "@main/registeredMachines";
+import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
 import { getSettingValue, setSettingValue } from "../settingsManager";
 
 const Z88_KEYBOARDS = "z88_keyboards";

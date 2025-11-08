@@ -1,6 +1,16 @@
-import type { Action } from "../../../../common/state/Action";
-import type { ActionForwarder } from "../../../../common/state/redux-light";
-import type { MessageSource } from "../../../../common/messaging/messages-core";
+import type { Action } from "@state/Action";
+import type { ActionForwarder } from "@state/redux-light";
+import type { MessageSource } from "@messaging/messages-core";
+
+// Declare window for electron API access
+declare const window: Window & {
+  electron: {
+    ipcRenderer: {
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+      on: (channel: string, listener: (...args: any[]) => void) => void;
+    };
+  };
+};
 
 /**
  * Creates an action forwarder that sends actions to the main process via IPC.

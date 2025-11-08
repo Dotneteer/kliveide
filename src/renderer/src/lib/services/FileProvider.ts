@@ -1,7 +1,7 @@
-import { IFileProvider } from "../../../../common/abstractions/IFileProvider";
-import { MessengerBase } from "../../../../common/messaging/MessengerBase";
+import { IFileProvider } from "@abstr/IFileProvider";
+import { MessengerBase } from "@messaging/MessengerBase";
 import { reportMessagingError } from "./reportError";
-import { createMainApi } from "../../../../common/messaging/MainApi";
+import { createMainApi } from "@messaging/MainApi";
 
 /**
  * This class implements a file provider to read and write files throught the main process

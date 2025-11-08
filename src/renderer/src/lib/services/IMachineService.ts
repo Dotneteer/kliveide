@@ -1,7 +1,7 @@
-import type { Unsubscribe } from "../../../../common/state/redux-light";
-import type { IMachineController } from "./IMachineController";
-import type { MachineConfigSet, MachineInfo, MachineModel } from "../../../../common/machines/info-types";
-import { IAnyMachine } from "../../../../emu/abstractions/IAnyMachine";
+import type { Unsubscribe } from "@state/redux-light";
+import type { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
+import { IAnyMachine } from "@emuabstr/IAnyMachine";
+import { IMachineController } from "@/emu/abstractions/IMachineController";
 
 /**
  * This function type represents the event handler when a machine type is changing

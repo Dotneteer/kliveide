@@ -49,15 +49,15 @@ import {
   CommonTokens,
   CommonTokenType,
   TokenTraits
-} from "../../main/compiler-common/common-tokens";
+} from "@main/compiler-common/common-tokens";
 import { z80TokenTraits } from "./z80-token-traits";
-import { CommonAsmParser, ParsePoint } from "../../main/compiler-common/common-asm-parser";
+import { CommonAsmParser, ParsePoint } from "@main/compiler-common/common-asm-parser";
 import {
   Expression,
   Operand,
   OperandType,
   PartialAssemblyLine
-} from "../../main/compiler-common/tree-nodes";
+} from "@main/compiler-common/tree-nodes";
 
 /**
  * This class implements the Z80 assembly parser

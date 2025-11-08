@@ -2,14 +2,14 @@ import type {
   CompilerOptions,
   IKliveCompiler,
   KliveCompilerOutput
-} from "../../common/abstractions/CompilerInfo";
+} from "@abstr/CompilerInfo";
 
 import { Z80CompilerService } from "./z80-compiler-service";
 import { InputStream } from "../compiler-common/input-stream";
 import { Z80TokenStream } from "./z80-token-stream";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { Z80Node } from "./assembler-tree-nodes";
-import { AppState } from "../../common/state/AppState";
+import { AppState } from "@state/AppState";
 
 /**
  * Wraps the built-in Klive Z80 Compiler

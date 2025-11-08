@@ -1,21 +1,21 @@
 import path from "path";
 import fs from "fs";
 
-import type { MachineMenuRenderer, MachineMenuItem } from "../../common/machines/info-types";
-import type { AppState } from "../../common/state/AppState";
+import type { MachineMenuRenderer, MachineMenuItem } from "@common/machines/info-types";
+import type { AppState } from "@state/AppState";
 
-import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "../../common/machines/constants";
-import { getEmuApi } from "../../common/messaging/MainToEmuMessenger";
-import { getIdeApi } from "../../common/messaging/MainToIdeMessenger";
+import { MF_TAPE_SUPPORT, MC_DISK_SUPPORT } from "@common/machines/constants";
+import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { mainStore } from "../mainStore";
 import { logEmuEvent } from "../registeredMachines";
 import { dialog, BrowserWindow, app } from "electron";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "../../common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { createBooleanSettingsMenu } from "../app-menu";
-import { SETTING_EMU_FAST_LOAD } from "../../common/settings/setting-const";
-import { BASIC_PANEL_ID } from "../../common/state/common-ids";
+import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
+import { BASIC_PANEL_ID } from "@state/common-ids";
 import { appSettings } from "../settingsManager";
-import { setMediaAction, setVolatileDocStateAction } from "../../common/state/actions";
+import { setMediaAction, setVolatileDocStateAction } from "@state/actions";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
 

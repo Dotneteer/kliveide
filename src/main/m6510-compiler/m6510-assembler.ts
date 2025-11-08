@@ -15,7 +15,7 @@ import { M6510TokenStream, M6510TokenType } from "./m6510-token-stream";
 import { M6510AsmParser } from "./m6510-asm-parser";
 import { AssemblyLine, Expression, Operand, OperandType } from "../compiler-common/tree-nodes";
 import { FixupType } from "../compiler-common/abstractions";
-import { ExpressionValueType } from "../../common/abstractions/CompilerInfo";
+import { ExpressionValueType } from "@abstr/CompilerInfo";
 
 /**
  * This class provides the functionality of the M6510 Assembler
