@@ -1,4 +1,4 @@
-import { KeyCode } from "@emuabstr/IGenericKeyboardDevice";
+import { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
 
 /**
  * This enumeration assigns integers to the enumerated values representing a particular Commodore 64 key

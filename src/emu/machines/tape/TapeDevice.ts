@@ -1,12 +1,12 @@
-import type { ITapeDevice } from "../../../emu/abstractions/ITapeDevice";
-import type { IZxSpectrumMachine } from "../../../emu/abstractions/IZxSpectrumMachine";
+import type { ITapeDevice } from "@emuabstr/ITapeDevice";
+import type { IZxSpectrumMachine } from "@emuabstr/IZxSpectrumMachine";
 import type { ITapeSaver } from "./ITapeSaver";
 
-import { PlayPhase } from "../../../emu/abstractions/PlayPhase";
-import { FlagsSetMask } from "../../../emu/abstractions/FlagSetMask";
-import { MicPulseType } from "../../../emu/abstractions/MicPulseTypes";
-import { SavePhase } from "../../../emu/abstractions/SavePhase";
-import { TapeMode } from "../../../emu/abstractions/TapeMode";
+import { PlayPhase } from "@emuabstr/PlayPhase";
+import { FlagsSetMask } from "@emuabstr/FlagSetMask";
+import { MicPulseType } from "@emuabstr/MicPulseTypes";
+import { SavePhase } from "@emuabstr/SavePhase";
+import { TapeMode } from "@emuabstr/TapeMode";
 import {
   BIT_0_PL,
   BIT_1_PL,
@@ -14,8 +14,8 @@ import {
   SYNC_1_PL,
   SYNC_2_PL,
   TERM_SYNC
-} from "../../../common/structs/tape-const";
-import { TapeDataBlock } from "../../../common/structs/TapeDataBlock";
+} from "@common/structs/tape-const";
+import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import {
   TAPE_MODE,
   FAST_LOAD,
@@ -24,9 +24,9 @@ import {
   SAVED_TO_TAPE
 } from "../machine-props";
 import { TzxStandardSpeedBlock } from "./TzxStandardSpeedBlock";
-import { BinaryWriter } from "../../../common/utils/BinaryWriter";
+import { BinaryWriter } from "@common/utils/BinaryWriter";
 import { TzxHeader } from "./TzxHeader";
-import { MEDIA_TAPE } from "../../../common/structs/project-const";
+import { MEDIA_TAPE } from "@common/structs/project-const";
 
 // --- Pilot pulses in the header blcok
 const HEADER_PILOT_COUNT = 8063;

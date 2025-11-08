@@ -7,9 +7,9 @@
  * https://gitlab.com/b4works/ozvm/-/blob/master/src/com/gitlab/z88/ozvm/EpromBank.java
  */
 
-import type { IZ88Machine } from "../../../abstractions/IZ88Machine";
-import { COMFlags } from "../../../machines/z88/IZ88BlinkDevice";
-import { CardType } from "../../../machines/z88/memory/CardType";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
+import { COMFlags } from "../IZ88BlinkDevice";
+import { CardType } from "./CardType";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 
 export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {

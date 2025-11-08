@@ -1,4 +1,4 @@
-import type { IZ88Machine } from "../../abstractions/IZ88Machine";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
 import type { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
 
 import {

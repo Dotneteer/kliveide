@@ -1,7 +1,4 @@
 import { IAnyMachine } from "@emuabstr/IAnyMachine";
-import { IDebugSupport } from "@emuabstr/IDebugSupport";
-import { IStandardKeyboardDevice } from "@emuabstr/IGenericKeyboardDevice";
-import { MessengerBase } from "@messaging/MessengerBase";
 import { C64Cia1Device } from "./C64Cia1Device";
 import { C64Cia2Device } from "./C64Cia2Device";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";

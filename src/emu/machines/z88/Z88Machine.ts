@@ -1,19 +1,19 @@
-import type { KeyMapping } from "../../../common/abstractions/KeyMapping";
-import type { IZ88Machine } from "../../abstractions/IZ88Machine";
+import type { KeyMapping } from "@abstr/KeyMapping";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
 import type { IZ88BeeperDevice } from "./IZ88BeeperDevice";
 import type { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
 import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
-import type { CodeInjectionFlow } from "../../abstractions/CodeInjectionFlow";
-import type { CodeToInject } from "../../abstractions/CodeToInject";
-import type { MachineConfigSet, MachineModel } from "../../../common/machines/info-types";
+import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
+import type { CodeToInject } from "@emuabstr/CodeToInject";
+import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
 import type { CardSlotState } from "./memory/CardSlotState";
 
 import { Z80MachineBase } from "../Z80MachineBase";
 import { Z88KeyCode } from "./Z88KeyCode";
-import { KeyCodeSet } from "../../abstractions/IGenericKeyboardDevice";
+import { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
 import { z88KeyMappings } from "./Z88KeyMappings";
-import { EmulatedKeyStroke } from "../../structs/EmulatedKeyStroke";
+import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
 import { Z88KeyboardDevice } from "./Z88KeyboardDevice";
 import { Z88ScreenDevice } from "./Z88ScreenDevice";
 import { Z88BeeperDevice } from "./Z88BeeperDevice";
@@ -27,16 +27,16 @@ import {
   MC_Z88_SLOT2,
   MC_Z88_SLOT3,
   MC_Z88_USE_DEFAULT_ROM
-} from "../../../common/machines/constants";
-import { MC_Z88_INTROM } from "../../../common/machines/constants";
+} from "@common/machines/constants";
+import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { createZ88MemoryCard } from "./memory/CardType";
-import { MessengerBase } from "../../../common/messaging/MessengerBase";
-import { createMainApi } from "../../../common/messaging/MainApi";
-import { SETTING_EMU_KEYBOARD_LAYOUT } from "../../../common/settings/setting-const";
-import { IMemorySection, MemorySectionType } from "../../../common/abstractions/MemorySection";
-import { toHexa2 } from "../../../common/utils/conversions";
+import { MessengerBase } from "@messaging/MessengerBase";
+import { createMainApi } from "@messaging/MainApi";
+import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
+import { IMemorySection, MemorySectionType } from "@abstr/MemorySection";
+import { toHexa2 } from "@common/utils/conversions";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";

@@ -1,7 +1,7 @@
-import type { IZ88Machine } from "../../abstractions/IZ88Machine";
+import type { IZ88Machine } from "@emuabstr/IZ88Machine";
 import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { COMFlags } from "./IZ88BlinkDevice";
-import { MC_SCREEN_SIZE } from "../../../common/machines/constants";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
 
 const SBF_ROW_WIDTH = 256;
 const TEXT_FLASH_TOGGLE = 200;
