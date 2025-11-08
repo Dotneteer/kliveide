@@ -1,4 +1,13 @@
-import { app, BrowserWindow, Menu, MenuItem, MenuItemConstructorOptions } from "electron";
+import {
+  app,
+  shell,
+  dialog,
+  BrowserWindow,
+  Menu,
+  MenuItem,
+  MenuItemConstructorOptions
+} from "electron";
+import os from "os";
 import { AppState } from "../common/state/AppState";
 import {
   appSettings,
@@ -23,7 +32,9 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_MAXIMIZE_TOOLS,
+  SETTING_IDE_OPEN_LAST_PROJECT,
   SETTING_IDE_SHOW_SIDEBAR,
   SETTING_IDE_SHOW_STATUS_BAR,
   SETTING_IDE_SHOW_TOOLBAR,
@@ -36,12 +47,19 @@ import { machineRegistry } from "../common/machines/machine-registry";
 import { emuWindow } from "./emulatorWindow";
 import { ideWindow } from "./ideWindow";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
-import { setClockMultiplierAction, setKeyMappingsAction, setSoundLevelAction, setThemeAction } from "../common/state/actions";
+import {
+  setClockMultiplierAction,
+  setKeyMappingsAction,
+  setSoundLevelAction,
+  setThemeAction
+} from "../common/state/actions";
 import { mainStore } from "./mainStore";
 import { MF_ALLOW_CLOCK_MULTIPLIER } from "../common/machines/constants";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
 import { getIdeApi } from "../common/messaging/MainToIdeMessenger";
+
+export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
 const SYSTEM_MENU_ID = "system_menu";
 const EDITOR_FONT_SIZE = "editor_font_size";
@@ -697,6 +715,175 @@ export function setupMenu(state: AppState): void {
   template.push({
     label: "Machine",
     submenu: machineSubMenu
+  });
+
+  // ==========================================================================
+  // Project Menu
+
+  // if ((true /* TODO: kliveProject */)) {
+  //   if (true /* TODO: hasBuildFile */) {
+  //     let buildTasks: MenuItemConstructorOptions[] = [];
+  //     for (const task of collectedBuildTasks) {
+  //       if (task.separatorBefore) {
+  //         buildTasks.push({ type: "separator" });
+  //       }
+  //       buildTasks.push({
+  //         id: `BF_${task.id}`,
+  //         label: task.displayName,
+  //         click: async () => {
+  //           const commandResult = await executeIdeCommand(
+  //             ideWindow,
+  //             `run-build-function ${task.id}`,
+  //             undefined,
+  //             true
+  //           );
+  //           if (!commandResult.success) {
+  //             if (task.id !== "exportCode") {
+  //               await executeIdeCommand(ideWindow, "outp build", undefined, true);
+  //             }
+  //           }
+  //         }
+  //       });
+  //     }
+
+  //     if (buildTasks.length > 0) {
+  //       template.push({
+  //         label: "Build",
+  //         submenu: buildTasks
+  //       });
+  //     }
+  //   }
+  // }
+
+  // ==========================================================================
+  // IDE Menu
+
+  let specificIdeMenus: MenuItemConstructorOptions[] = [];
+  if (machineMenus && machineMenus.ideItems) {
+    specificIdeMenus = machineMenus.ideItems(
+      {
+        emuWindow,
+        ideWindow
+      },
+      currentMachine,
+      currentModel
+    );
+  }
+
+  template.push({
+    id: "ide_menu",
+    visible: isIdeWindowVisible(),
+    label: "IDE",
+    submenu: [
+      {
+        id: "ide_show_memory",
+        label: "Show Machine Memory",
+        type: "checkbox",
+        checked: true, // TODO: volatileDocs[MEMORY_PANEL_ID],
+        click: async () => {
+          // await getIdeApi().showMemory(!volatileDocs[MEMORY_PANEL_ID]);
+          // mainStore.dispatch(
+          //   setVolatileDocStateAction(MEMORY_PANEL_ID, !volatileDocs[MEMORY_PANEL_ID])
+          // );
+        }
+      },
+      {
+        id: "ide_show_assembly",
+        label: "Show Disassembly",
+        type: "checkbox",
+        checked: true, // TODO: volatileDocs[DISASSEMBLY_PANEL_ID],
+        click: async () => {
+          // await getIdeApi().showDisassembly(!volatileDocs[DISASSEMBLY_PANEL_ID]);
+          // mainStore.dispatch(
+          //   setVolatileDocStateAction(DISASSEMBLY_PANEL_ID, !volatileDocs[DISASSEMBLY_PANEL_ID])
+          // );
+        }
+      },
+      { type: "separator" },
+      ...specificIdeMenus,
+      { type: "separator" },
+      {
+        type: "submenu",
+        id: "ide_settings",
+        label: "IDE Settings",
+        submenu: [
+          createBooleanSettingsMenu(SETTING_IDE_OPEN_LAST_PROJECT),
+          { type: "separator" },
+          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU)
+        ]
+      }
+    ]
+  });
+
+  // ==========================================================================
+  // Help menu
+
+  let specificHelpMenus: MenuItemConstructorOptions[] = [];
+  if (machineMenus && machineMenus.helpItems) {
+    specificIdeMenus = machineMenus.helpItems(
+      {
+        emuWindow,
+        ideWindow
+      },
+      currentMachine,
+      currentModel
+    );
+  }
+
+  const helpLinks: MenuItemConstructorOptions[] = (machineMenus?.helpLinks ?? []).map(hl => {
+    if (hl.label) {
+      return {
+        label: hl.label,
+        click: () => shell.openExternal(hl.url)
+      };
+    } else {
+      return { type: "separator" };
+    }
+  });
+
+  template.push({
+    id: "help_menu",
+    label: "Help",
+    submenu: [
+      {
+        id: "help_about",
+        label: "About",
+        click: async () => {
+          const result = await dialog.showMessageBox(state.ideFocused ? ideWindow : emuWindow, {
+            message: "About Klive IDE",
+            detail:
+              `${KLIVE_GITHUB_PAGES}\n\nVersion: ${app.getVersion()}\n` +
+              `Electron version: ${process.versions.electron}\n` +
+              `OS version: ${os.version()}`,
+            buttons: ["Close", "Visit website"]
+          });
+          if (result.response) {
+            shell.openExternal(KLIVE_GITHUB_PAGES);
+          }
+        }
+      },
+      {
+        id: "help_home_page",
+        label: "Klive IDE Home Page",
+        click: () => shell.openExternal(KLIVE_GITHUB_PAGES)
+      },
+      { type: "separator" },
+      {
+        id: "help_show_welcome",
+        label: "Welcome screen",
+        click: () => {
+          if (isIdeWindowFocused()) {
+            // TODO: mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_IDE));
+          } else {
+            // TODO: mainStore.dispatch(displayDialogAction(FIRST_STARTUP_DIALOG_EMU));
+          }
+        }
+      },
+      { type: "separator" },
+      ...specificHelpMenus,
+      { type: "separator" },
+      ...helpLinks
+    ]
   });
 
   // --- Preserve the submenus as a dedicated array.

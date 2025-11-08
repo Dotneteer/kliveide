@@ -19,7 +19,6 @@ function appReducer(state: AppState, action: Action): AppState {
   invokeReducer(state.emulatorState, emulatorStateReducer, (a, n) => (a.emulatorState = n));
   invokeReducer(state.ideView, ideViewReducer, (a, n) => (a.ideView = n));
   invokeReducer(state.media, mediaReducer, (a, n) => (a.media = n));
-  console.log('newState', state)
   return state;
 
   /**
