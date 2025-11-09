@@ -993,6 +993,17 @@ async function compileCode(
     traceOutput.forEach((msg) => out.writeLine(msg));
   }
 
+  // --- Display optional debug messages (e.g., DISPLAY directives from SjasmPlus)
+  const debugMessages = (result as any)?.debugMessages;
+  if (debugMessages?.length > 0) {
+    out.resetStyle();
+    out.color("bright-cyan");
+    debugMessages.forEach((msg: string) => {
+      out.writeLine(msg);
+    });
+    out.resetStyle();
+  }
+
   // --- Collect errors
   const errorCount = result?.errors?.filter((m) => !m.isWarning).length ?? 0;
 

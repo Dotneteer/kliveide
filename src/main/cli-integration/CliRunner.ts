@@ -52,8 +52,11 @@ export class CliRunner {
   ): Promise<CompilerResult | null> {
     try {
       const result = await execa(command, args, options);
+      
       return {
-        traceOutput: [`Executing ${result.command}`]
+        traceOutput: [`Executing ${result.command}`],
+        stdout: result.stdout,
+        stderr: result.stderr
       };
     } catch (error: any) {
       if ("exitCode" in error) {
@@ -63,19 +66,26 @@ export class CliRunner {
         if (!hasErrorOutput) {
           return {
             traceOutput,
-            failed: errorInfo.shortMessage
+            failed: errorInfo.shortMessage,
+            stdout: errorInfo.stdout,
+            stderr: errorInfo.stderr
           };
         }
         const lines = this.errorLineSplitterFn(errorInfo);
         const errors = lines.map((l) => this.parseErrorMessage(l)).filter((m) => m !== null);
+        
         return errors.length > 0
           ? {
               traceOutput,
-              errors
+              errors,
+              stdout: errorInfo.stdout,
+              stderr: errorInfo.stderr
             }
           : {
               traceOutput,
-              failed: error.message
+              failed: error.message,
+              stdout: errorInfo.stdout,
+              stderr: errorInfo.stderr
             };
       }
       return {
@@ -224,6 +234,8 @@ export type CompilerResult = SimpleAssemblerOutput & {
   outFile?: string;
   contents?: Uint8Array;
   errorCount?: number;
+  stdout?: string;
+  stderr?: string;
 };
 
 export type CompilerFunction = (

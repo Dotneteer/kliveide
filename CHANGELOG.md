@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.50.1
+
+### Fixes
+
+- The SjasmPlus compiler DISPLAY output is now shown
+
 ## 0.50.0
 
 ### Features

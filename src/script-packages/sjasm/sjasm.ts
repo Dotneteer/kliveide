@@ -246,6 +246,35 @@ class SjasmCliManager extends CliManager {
     } catch (err) {
       // --- Intentionally ignore this error
     }
+
+    // --- Extract DISPLAY messages from stderr (SjasmPlus outputs to stderr)
+    const outputToCheck = result.stderr || result.stdout;
+    if (outputToCheck) {
+      const displayMessages = this.extractDisplayMessages(outputToCheck);
+      if (displayMessages.length > 0) {
+        result.debugMessages = displayMessages;
+      }
+    }
+  }
+
+  /**
+   * Extracts DISPLAY messages from the compiler output
+   * @param stdout Standard output from the compiler
+   * @returns Array of display messages
+   */
+  private extractDisplayMessages(stdout: string): string[] {
+    const messages: string[] = [];
+    const lines = stdout.split(/\r?\n/);
+    
+    for (const line of lines) {
+      // DISPLAY messages start with ">" in SjasmPlus output
+      if (line.startsWith('>')) {
+        const message = line.substring(1).trim();
+        messages.push(message);
+      }
+    }
+    
+    return messages;
   }
 
   /**
