@@ -152,6 +152,7 @@ export class SjasmPCompiler implements IKliveCompiler {
       // --- Done.
       return {
         traceOutput: result.traceOutput,
+        debugMessages: result.debugMessages,
         errors: [],
         injectOptions: { subroutine: true },
         segments,
