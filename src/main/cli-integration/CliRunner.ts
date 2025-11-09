@@ -1,8 +1,5 @@
 import { ExecaSyncError, execa } from "execa";
-import type {
-  AssemblerErrorInfo,
-  SimpleAssemblerOutput
-} from "@abstr/CompilerInfo";
+import type { AssemblerErrorInfo, SimpleAssemblerOutput } from "@abstr/CompilerInfo";
 
 /**
  * This class is responsible for running the CLI commands that are passed to it.
@@ -55,30 +52,40 @@ export class CliRunner {
   ): Promise<CompilerResult | null> {
     try {
       const result = await execa(command, args, options);
+      
       return {
-        traceOutput: [`Executing ${result.command}`]
+        traceOutput: [`Executing ${result.command}`],
+        stdout: result.stdout,
+        stderr: result.stderr
       };
     } catch (error: any) {
       if ("exitCode" in error) {
         let errorInfo = error as any;
         const traceOutput = [`Executing ${errorInfo.command}`];
-        const hasErrorOutput = this.errorDetectorFn?.(errorInfo);
+        const hasErrorOutput = this.errorDetectorFn(errorInfo);
         if (!hasErrorOutput) {
           return {
             traceOutput,
-            failed: errorInfo.shortMessage
+            failed: errorInfo.shortMessage,
+            stdout: errorInfo.stdout,
+            stderr: errorInfo.stderr
           };
         }
         const lines = this.errorLineSplitterFn(errorInfo);
-        const errors = lines.map(l => this.parseErrorMessage(l)).filter(m => m !== null);
+        const errors = lines.map((l) => this.parseErrorMessage(l)).filter((m) => m !== null);
+        
         return errors.length > 0
           ? {
               traceOutput,
-              errors
+              errors,
+              stdout: errorInfo.stdout,
+              stderr: errorInfo.stderr
             }
           : {
               traceOutput,
-              failed: error.message
+              failed: error.message,
+              stdout: errorInfo.stdout,
+              stderr: errorInfo.stderr
             };
       }
       return {
@@ -104,7 +111,7 @@ export class CliRunner {
     const getMatch = (index: number): string =>
       match ? (index >= 0 ? match[index] : match[match.length - index]) : "";
 
-    const hasLineNo = filter.hasLineInfo ? filter.hasLineInfo(match!) : true;
+    const hasLineNo = filter.hasLineInfo ? filter.hasLineInfo(match) : true;
     const isWarning =
       filter.warningFilterIndex &&
       getMatch(filter.warningFilterIndex) === (filter.warningText ?? "warning");
@@ -127,7 +134,7 @@ export class CliRunner {
           ),
           endColumn: 0,
           message: filter.messageFilterIndex ? getMatch(filter.messageFilterIndex) : "",
-          isWarning: isWarning as any
+          isWarning
         }
       : null;
   }
@@ -227,6 +234,8 @@ export type CompilerResult = SimpleAssemblerOutput & {
   outFile?: string;
   contents?: Uint8Array;
   errorCount?: number;
+  stdout?: string;
+  stderr?: string;
 };
 
 export type CompilerFunction = (
