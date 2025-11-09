@@ -17,7 +17,7 @@ import {
   SJASM_OUTPUT_FILE,
   SJASM_SLD_FILE
 } from "../../script-packages/sjasm/sjasm";
-import { AppState } from "@state/AppState";
+import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
 
 /**
@@ -152,6 +152,7 @@ export class SjasmPCompiler implements IKliveCompiler {
       // --- Done.
       return {
         traceOutput: result.traceOutput,
+        debugMessages: result.debugMessages,
         errors: [],
         injectOptions: { subroutine: true },
         segments,

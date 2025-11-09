@@ -1,14 +1,14 @@
 import fs from "fs";
-import { createSettingsReader } from "../../common/utils/SettingsReader";
-import { CliManager } from "../../main/cli-integration/CliManager";
+import { createSettingsReader } from "@common/utils/SettingsReader";
+import { CliManager } from "@main/cli-integration/CliManager";
 import {
   CmdLineOptionSet,
   CompilerResult,
   ErrorFilterDescriptor,
   OptionResult
-} from "../../main/cli-integration/CliRunner";
-import { SJASMP_INSTALL_FOLDER } from "../../main/sjasmp-integration/sjasmp-config";
-import { AppState } from "../../common/state/AppState";
+} from "@main/cli-integration/CliRunner";
+import { SJASMP_INSTALL_FOLDER } from "@main/sjasmp-integration/sjasmp-config";
+import { AppState } from "@common/state/AppState";
 
 export const SJASM_OUTPUT_FILE = "_output.bin";
 export const SJASM_LIST_FILE = "_output.txt";
@@ -246,6 +246,35 @@ class SjasmCliManager extends CliManager {
     } catch (err) {
       // --- Intentionally ignore this error
     }
+
+    // --- Extract DISPLAY messages from stderr (SjasmPlus outputs to stderr)
+    const outputToCheck = result.stderr || result.stdout;
+    if (outputToCheck) {
+      const displayMessages = this.extractDisplayMessages(outputToCheck);
+      if (displayMessages.length > 0) {
+        result.debugMessages = displayMessages;
+      }
+    }
+  }
+
+  /**
+   * Extracts DISPLAY messages from the compiler output
+   * @param stdout Standard output from the compiler
+   * @returns Array of display messages
+   */
+  private extractDisplayMessages(stdout: string): string[] {
+    const messages: string[] = [];
+    const lines = stdout.split(/\r?\n/);
+    
+    for (const line of lines) {
+      // DISPLAY messages start with ">" in SjasmPlus output
+      if (line.startsWith('>')) {
+        const message = line.substring(1).trim();
+        messages.push(message);
+      }
+    }
+    
+    return messages;
   }
 
   /**
