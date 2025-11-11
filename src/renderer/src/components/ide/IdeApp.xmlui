@@ -1,15 +1,9 @@
 <Component name="IdeApp">
   <SharedAppState id="appState" />
   <App
+    layout="desktop"
     name="Klive IDE"
-    gap="0"
-    padding="0"
-    noScrollbarGutters
-    scrollWholePage="false"
-    height="*"
     onReady="() => {delay(100);appState.ideLoaded()}">
-    <!-- No pages, we can stretch to content to the full width and height -->
-    <Pages />
     <VStack gap="0" height="100%" padding="0">
       <Toolbar isIde="{true}"/>
       <CVStack backgroundColor="purple" height="*">IDE Content</CVStack>

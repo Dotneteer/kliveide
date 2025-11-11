@@ -30,10 +30,8 @@
       id="runMode"
       initialValue="{gs.emuOptions.startMode ?? 0}"
       when="{!$props.isIde}"
-      required
-      width="$space-64"
-      paddingVertical="0"
-      height="fit-content"
+      width="200px"
+      paddingVertical="2px"
       onDidChange="newValue => appState.setGlobalSetting('emuOptions.startMode', newValue)">
       <Option value="{0}" label="{emuStartOptions[0].label}" />
       <Option value="{1}" label="{emuStartOptions[1].label}" />
