@@ -1,8 +1,8 @@
 <Component name="ToolbarButton">
   <CVStack
     backgroundColor="transparent"
-    width="$space-10"
-    height="$space-10"
+    width="$space-8"
+    height="$space-8"
     margin="$space-1"
     padding="$space-0"
     tooltip="{ $props.tooltip ?? '' }"
@@ -12,15 +12,15 @@
       border="{$props.selected ? '0px solid transparent' : ''}"
       padding="0"
       enabled="{!$props.disabled}"
-      width="$space-8"
-      height="$space-8"
+      width="$space-7"
+      height="$space-7"
       tooltipOptions="bottom"
       onClick="emitEvent('click')">
       <Icon
         name="{$props.icon}"
         fallback="warning"
         color="{!$props.disabled ? $props.color ?? '$iconColor-ToolbarButton' : ''}"
-        size="$space-6" />
+        size="$space-5" />
     </Button>
   </CVStack>
 </Component>

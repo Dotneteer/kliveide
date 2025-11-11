@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { decompressZ80DataBlock } from "@renderer/appIde/utils/compression/z80-file-compression";
+import { decompressZ80DataBlock } from "@common/utils/z80-file-compression";
 
 describe(".z80 file data compression", () => {
   it("Data compression without end marker #1", () => {

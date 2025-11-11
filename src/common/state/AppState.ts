@@ -17,6 +17,7 @@ export type AppState = {
   os?: string;
   emuFocused?: boolean;
   ideFocused?: boolean;
+  dimMenu?: boolean;
   globalSettings?: Record<string, any>;
   projectSettings?: Record<string, any>;
   userSettings?: Record<string, any>;

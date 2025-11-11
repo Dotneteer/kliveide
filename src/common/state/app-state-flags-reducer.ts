@@ -44,6 +44,9 @@ export function appStateFlagsReducer(state: AppState, { type, payload }: Action)
         keyMappings: payload?.value
       };
 
+    case "DIM_MENU":
+      return { ...state, dimMenu: payload?.flag };
+
     default:
       return state;
   }
