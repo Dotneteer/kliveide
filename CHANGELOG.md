@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.50.2
+
+### Fixes
+
+- Resolve the Windows 11 "installer hang" issue by updating to the newest electron-builder version
+
 ## 0.50.1
 
 ### Fixes
