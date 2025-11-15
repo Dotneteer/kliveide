@@ -112,7 +112,16 @@
       "icon": "public/images/klive-logo.icns"
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ],
       "asar": false,
       "icon": "public/images/512x512.png"
     },
