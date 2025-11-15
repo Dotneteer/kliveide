@@ -22,7 +22,8 @@ import {
   ideFocusedAction,
   isWindowsAction,
   setOsAction,
-  setAppPathAction
+  setAppPathAction,
+  setGlobalSettingAction
 } from "@state/actions";
 import { setupMenu } from "./app-menu";
 
@@ -50,6 +51,7 @@ initializeMainStore(sendActionToEmu, sendActionToIde);
 
 // Track initialization state
 let emulationSetupDone = false;
+let globalSettingsRestored = false;
 
 // Initialize OS and app path immediately (no need to wait for windows)
 const isWindows = process.platform === "win32";
@@ -64,9 +66,27 @@ function setupEmulation(): void {
   // TODO: Implement emulation setup logic
 }
 
+/**
+ * Restores global settings from saved app settings - called only once after both windows are loaded
+ */
+function restoreGlobalSettings(): void {
+  if (appSettings.globalSettings) {
+    for (const [key, value] of Object.entries(appSettings.globalSettings)) {
+      mainStore.dispatch(setGlobalSettingAction(key, value), "main");
+    }
+    console.log("Global settings restored");
+  }
+}
+
 // Subscribe to store changes for menu updates and emulation setup
 mainStore.subscribe(() => {
   const state = mainStore.getState();
+
+  // Restore global settings once when both windows are loaded
+  if (state.emuLoaded && state.ideLoaded && !globalSettingsRestored) {
+    globalSettingsRestored = true;
+    restoreGlobalSettings();
+  }
 
   // Setup emulation once when both windows are loaded
   if (state.emuLoaded && state.ideLoaded && !emulationSetupDone) {
@@ -89,12 +109,17 @@ async function saveAllStates(): Promise<void> {
     const emulatorState = getEmulatorState();
     const ideState = getIdeState();
 
+    // Capture global settings from main store
+    const currentState = mainStore.getState();
+    const globalSettings = currentState.globalSettings || {};
+
     // Update the global appSettings object
     if (!appSettings.windowStates) {
       appSettings.windowStates = {};
     }
     appSettings.windowStates.emuWindow = emulatorState;
     appSettings.windowStates.ideWindow = ideState;
+    appSettings.globalSettings = globalSettings;
 
     // Save to disk with timeout
     await Promise.race([

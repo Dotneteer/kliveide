@@ -7,4 +7,5 @@ export type AppSettings = {
     showIdeOnStartup?: boolean;
   };
   recentProjects?: string[];
+  globalSettings?: Record<string, any>;
 };
