@@ -6,11 +6,12 @@ import { ClickableImage } from '../../page-components'
 Visit the project [release page](https://github.com/Dotneteer/kliveide/releases) to get the install kits for Klive. You find the latest release at the top of the page. When you expand the Assets tab, it will list five files, including the three installation kits:
 
 - `KliveIdeSetup-{version}-{arch}.AppImage`: The Linux AppImage format to install Klive IDE on Linux without requiring an admin privilege to run
-- `KliveIdeSetup-{version}-{arch}.exe`: Self-extracting executable to install Klive IDE on Windows x64
+- `KliveIdeSetup-{version}-{arch}.exe`: Self-extracting executable to install Klive IDE on Windows x64 (NSIS installer)
+- `KliveIdeSetup-{version}-{arch}.msi`: Windows Installer package for Klive IDE on Windows x64 (MSI installer)
 - `KliveIdeSetup-{version}-{arch}.pkg`: The standard PKG format to install Klive IDE on MacOS
 
 `{version}` is a placeholder for the version number of a particular release in the filename.
-`{arch}` is a placeholder for the architecture of the target platform. It can be `x64` or `arm64`.  
+`{arch}` is a placeholder for the architecture of the target platform. It can be `x64` or `arm64`.
 
 <Callout type="info" emoji="💡">
 Windows currently supports only the x64 architecture.
@@ -56,7 +57,32 @@ After the successful installation, you can find Klive IDE in your Applications f
 
 ## Windows Installation
 
-The setup file is a self-extracting executable. Open it, and it will automatically extract itself and copy the executable files into the Programs (within your user home's`AppData/Local/Programs/klive-ide`) directory.
+Klive IDE provides two installer formats for Windows:
+
+### NSIS Installer (.exe) - Recommended for most users
+
+The `.exe` setup file is a self-extracting executable. Open it, and it will automatically extract itself and copy the executable files into the Programs (within your user home's `AppData/Local/Programs/klive-ide`) directory.
+
+This installer typically provides a streamlined installation experience for individual users.
+
+<Callout type="warning" emoji="⚠️">
+**Known Issue on Windows 11**: Some users have reported that the NSIS installer may appear to hang or take an exceptionally long time to complete (10-22 minutes) on Windows 11 systems. If you experience this issue, the installer will eventually complete if you wait, or you can try the MSI installer as an alternative.
+</Callout>
+
+### MSI Installer (.msi) - For enterprise environments and as an alternative
+
+The `.msi` setup file uses the Windows Installer framework. Double-click the file to start the installation process. This format is ideal for:
+
+- Enterprise deployments through Group Policy
+- System administrators who need standardized installation packages
+- Environments requiring Windows Installer transaction logging and rollback capabilities
+- **Alternative installation method** if the NSIS (.exe) installer hangs or takes too long on your system
+
+<Callout type="info" emoji="💡">
+The MSI installer may display "Please wait while Windows configures Klive IDE" for several minutes before showing progress. This is normal behavior due to Windows Installer overhead, especially on systems with real-time antivirus protection enabled. The installation will complete successfully if you wait.
+</Callout>
+
+Both installers will install Klive IDE to the same location and provide identical functionality. Choose the format that best fits your installation requirements.
 
 The setup kit will start Klive IDE after completion. Later, you can start Klive IDE again:
 
@@ -82,7 +108,7 @@ Copy the `.AppImage` file into the folder from which you intend to use it. Make 
 
 ```text
 chmod +x KliveIdeSetup-{version}-{arch}.AppImage
-``` 
+```
 
 Alternatively, you can right-click on the file in the file manager and select the Properties command. In the Permissions tab, check the Allow executing file as program checkbox:
 

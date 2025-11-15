@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.50.3
+
+### Features
+
+- Add .MSI installer for Windows
+
 ## 0.50.2
 
 ### Fixes
