@@ -69,14 +69,13 @@ This installer typically provides a streamlined installation experience for indi
 **Known Issue on Windows 11**: Some users have reported that the NSIS installer may appear to hang or take an exceptionally long time to complete (10-22 minutes) on Windows 11 systems. If you experience this issue, the installer will eventually complete if you wait, or you can try the MSI installer as an alternative.
 </Callout>
 
-### MSI Installer (.msi) - For enterprise environments and as an alternative
+### MSI Installer (.msi) - Alternative installation method
 
-The `.msi` setup file uses the Windows Installer framework. Double-click the file to start the installation process. This format is ideal for:
+The `.msi` setup file uses the Windows Installer framework. Double-click the file to start the installation process. Use this installer if:
 
-- Enterprise deployments through Group Policy
-- System administrators who need standardized installation packages
-- Environments requiring Windows Installer transaction logging and rollback capabilities
-- **Alternative installation method** if the NSIS (.exe) installer hangs or takes too long on your system
+- The NSIS (.exe) installer hangs or takes too long on your system
+- You prefer using the Windows Installer framework
+- You need transaction logging and rollback capabilities
 
 <Callout type="info" emoji="💡">
 The MSI installer may display "Please wait while Windows configures Klive IDE" for several minutes before showing progress. This is normal behavior due to Windows Installer overhead, especially on systems with real-time antivirus protection enabled. The installation will complete successfully if you wait.
