@@ -3,7 +3,7 @@
     backgroundColor="transparent"
     width="$space-8"
     height="$space-8"
-    margin="$space-1"
+    marginVertical="$space-1"
     padding="$space-0"
     tooltip="{ $props.tooltip ?? '' }"
     border="{$props.selected ? '$border-ToolbarButton--selected' : '$border-ToolbarButton'}">

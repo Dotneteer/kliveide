@@ -2,13 +2,13 @@
   <script>
     var emuStartOptions = [
       {
-        label: "Debug Machine (Ctrl+F5)",
-        labelCont: "Continue Debugging (Ctrl+F5)",
+        label: "Debug (Ctrl+F5)",
+        labelCont: "Continue (Ctrl+F5)",
         iconName: "debug",
         cmd: null
       },
       {
-        label: "Run Machine (F5)",
+        label: "Run (F5)",
         labelCont: "Continue (F5)",
         iconName: "play",
         cmd: null
@@ -30,7 +30,7 @@
       id="runMode"
       initialValue="{gs.emuOptions.startMode ?? 0}"
       when="{!$props.isIde}"
-      width="200px"
+      width="$space-36"
       paddingVertical="2px"
       onDidChange="newValue => appState.setGlobalSetting('emuOptions.startMode', newValue)">
       <Option value="{0}" label="{emuStartOptions[0].label}" />
