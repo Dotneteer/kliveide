@@ -14,8 +14,9 @@ import {
   loadIdeContent,
   ideWindow
 } from "./ideWindow";
-import { loadAppSettings, saveAppSettings, appSettings } from "./settingsManager";
+import { loadAppSettings, saveAppSettings, appSettings, getSettingValue } from "./settingsManager";
 import { initializeMainStore, mainStore } from "./mainStore";
+import { SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import type { Action } from "@state/Action";
 import {
   emuFocusedAction,
@@ -120,6 +121,10 @@ async function saveAllStates(): Promise<void> {
     appSettings.windowStates.emuWindow = emulatorState;
     appSettings.windowStates.ideWindow = ideState;
     appSettings.globalSettings = globalSettings;
+    // Save IDE visibility state
+    if (ideWindow && !ideWindow.isDestroyed()) {
+      appSettings.windowStates.showIdeOnStartup = ideWindow.isVisible();
+    }
 
     // Save to disk with timeout
     await Promise.race([
@@ -135,8 +140,8 @@ async function saveAllStates(): Promise<void> {
   }
 }
 
-// Handle window close - called by both windows
-async function handleWindowClose(): Promise<void> {
+// Handle emulator window close - always closes app
+async function handleEmulatorWindowClose(): Promise<void> {
   // Save states before closing
   await saveAllStates();
 
@@ -146,6 +151,30 @@ async function handleWindowClose(): Promise<void> {
 
   // Quit the app
   app.quit();
+}
+
+// Handle IDE window close - behavior depends on setting
+async function handleIdeWindowClose(): Promise<void> {
+  const closeEmuWithIde = getSettingValue(SETTING_IDE_CLOSE_EMU);
+  
+  if (closeEmuWithIde) {
+    // Close both windows and quit
+    await saveAllStates();
+    destroyIdeWindow();
+    destroyEmulatorWindow();
+    app.quit();
+  } else {
+    // Just hide the IDE window
+    if (ideWindow && !ideWindow.isDestroyed()) {
+      ideWindow.hide();
+      // Update the saved state
+      if (!appSettings.windowStates) {
+        appSettings.windowStates = {};
+      }
+      appSettings.windowStates.showIdeOnStartup = false;
+      await saveAppSettings();
+    }
+  }
 }
 
 // This method will be called when Electron has finished
@@ -169,8 +198,16 @@ app.whenReady().then(async () => {
   ipcMain.on("ping", () => console.log("pong"));
 
   // Create windows first (but don't load content yet)
-  const emuWindow = createEmulatorWindow(handleWindowClose);
-  const ideWindow = createIdeWindow(handleWindowClose);
+  const emuWindow = createEmulatorWindow(handleEmulatorWindowClose);
+  const ideWindow = createIdeWindow(handleIdeWindowClose);
+
+  // Show or hide IDE window based on saved preference
+  if (appSettings.windowStates?.showIdeOnStartup === false) {
+    // Window will be created but we'll hide it after it's shown
+    ideWindow.once('ready-to-show', () => {
+      ideWindow.hide();
+    });
+  }
 
   // Set up focus tracking for both windows
   emuWindow.on("focus", () => {
@@ -187,6 +224,15 @@ app.whenReady().then(async () => {
 
   ideWindow.on("blur", () => {
     mainStore.dispatch(ideFocusedAction(false), "main");
+  });
+
+  // Update menu when IDE window visibility changes
+  ideWindow.on("show", () => {
+    setupMenu(mainStore.getState());
+  });
+
+  ideWindow.on("hide", () => {
+    setupMenu(mainStore.getState());
   });
 
   // Set up IPC handler for forwarding Redux actions between renderers
@@ -207,8 +253,8 @@ app.whenReady().then(async () => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      createEmulatorWindow(handleWindowClose);
-      createIdeWindow(handleWindowClose);
+      createEmulatorWindow(handleEmulatorWindowClose);
+      createIdeWindow(handleIdeWindowClose);
     }
   });
 });

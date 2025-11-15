@@ -1,13 +1,15 @@
 <Component name="EmuApp">
   <SharedAppState id="appState" />
-  <App 
+  <variable name="gs" value="{appState.globalSettings}" />
+  <App
     layout="desktop"
     name="Klive Emulator"
-    onReady="() => { delay(0); appState.emuLoaded(); }">
+    onReady="() => { delay(0); appState.emuLoaded(); }"
+  >
     <VStack gap="0" height="100%" padding="0">
-      <Toolbar isIde="{false}" />
+      <Toolbar isIde="{false}" when="{gs.emuViewOptions.showToolbar ?? true}" />
       <EmulatorArea backgroundColor="gray" />
-      <StatusBar />
+      <StatusBar when="{gs.emuViewOptions.showStatusBar ?? true}" />
     </VStack>
   </App>
 </Component>

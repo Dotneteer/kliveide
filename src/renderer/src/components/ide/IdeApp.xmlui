@@ -1,13 +1,14 @@
 <Component name="IdeApp">
   <SharedAppState id="appState" />
+  <variable name="gs" value="{appState.globalSettings}" />
   <App
     layout="desktop"
     name="Klive IDE"
     onReady="() => {delay(100);appState.ideLoaded()}">
     <VStack gap="0" height="100%" padding="0">
-      <Toolbar isIde="{true}"/>
+      <Toolbar isIde="{true}" when="{gs.ideViewOptions.showToolbar ?? true}" />
       <CVStack backgroundColor="purple" height="*">IDE Content</CVStack>
-      <StatusBar />
+      <StatusBar when="{gs.ideViewOptions.showStatusBar ?? true}" />
     </VStack>
   </App>
 </Component>
