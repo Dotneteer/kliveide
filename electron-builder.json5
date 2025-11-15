@@ -24,6 +24,10 @@
         target: "nsis",
         arch: ["x64"],
       },
+      {
+        target: "msi",
+        arch: ["x64"],
+      },
     ],
     artifactName: "${productName}-Windows-${version}-Setup.${ext}",
   },
@@ -32,6 +36,11 @@
     perMachine: false,
     allowToChangeInstallationDirectory: true,
     deleteAppDataOnUninstall: false,
+  },
+  msi: {
+    oneClick: false,
+    perMachine: false,
+    runAfterFinish: true,
   },
   mac: {
     target: ["dmg", "zip"],
