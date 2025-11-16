@@ -2,8 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import type { ApiMethodRequest, ResponseMessage } from "@messaging/messages-core";
 import { processEmuMessage } from "./process-emu-messages";
 import { getRendererStore } from "../../store/rendererStore";
-import { EmuToMainMessenger } from "@messaging/EmuToMainMessenger";
-import { useEmuAppServices } from "../EmuAppServicesProvider/useEmuAppServices";
+import { useEmuAppServices, useEmuMessenger } from "../EmuAppServicesProvider/useEmuAppServices";
 
 // Declare window for electron API access
 declare const window: Window & {
@@ -28,10 +27,10 @@ type Props = {
 export function EmuMessageProcessorNative({ registerComponentApi, updateState }: Props) {
   // Get services from context
   const { machineService } = useEmuAppServices();
+  const messenger = useEmuMessenger();
 
-  // Get store and messenger
+  // Get store
   const store = getRendererStore();
-  const messengerRef = useRef(new EmuToMainMessenger());
 
   // Use refs to store stable references to prop functions
   const updateStateRef = useRef(updateState);
@@ -53,18 +52,15 @@ export function EmuMessageProcessorNative({ registerComponentApi, updateState }:
     const ipcRenderer = window.electron?.ipcRenderer;
 
     if (!ipcRenderer) {
-      console.error("[EmuMessageProcessor] electron.ipcRenderer not available");
       return () => {}; // Return empty cleanup function
     }
 
     // Set up listener for MainToEmu channel to receive API method requests
-    const handleMessage = (_event: any, message: ApiMethodRequest) => {
-      console.log("[EmuMessageProcessor] Received message:", message);
-
+    const handleMessage = async (_event: any, message: ApiMethodRequest) => {
       // Process the message and get the result
       let response: ResponseMessage = { type: "Ack" };
       if (message.type === "ApiMethodRequest") {
-        const result = processEmuMessage(message, store, messengerRef.current, machineService);
+        const result = await processEmuMessage(message, store, messenger, machineService);
         response = {
           type: "ApiMethodResponse",
           correlationId: message.correlationId,
@@ -78,16 +74,13 @@ export function EmuMessageProcessorNative({ registerComponentApi, updateState }:
     // Register the listener
     ipcRenderer.on("MainToEmu", handleMessage);
 
-    console.log("[EmuMessageProcessor] Initialized and listening for messages");
-
     // Cleanup function
     return () => {
       if (ipcRenderer.removeListener) {
         ipcRenderer.removeListener("MainToEmu", handleMessage);
       }
-      console.log("[EmuMessageProcessor] Cleaned up message listener");
     };
-  }, [store, machineService]);
+  }, [store, messenger, machineService]);
 
   // This is a non-visual component, render nothing
   return null;

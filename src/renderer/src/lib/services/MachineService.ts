@@ -47,7 +47,6 @@ class MachineService implements IMachineService {
     modelId?: string,
     config?: MachineConfigSet
   ): Promise<void> {
-    console.log("HERE");
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(
       (m) =>
@@ -98,6 +97,7 @@ class MachineService implements IMachineService {
     this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
     this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
     this.store.dispatch(setMachineConfigAction(config || modelInfo?.config), this.messageSource);
+    console.log(`[MachineService] Machine type set to '${machineId}' successfully.`);
   }
 
   /**

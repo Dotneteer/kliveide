@@ -115,5 +115,9 @@ export const initialAppState: AppState = {
   emuFocused: false,
   ideFocused: false,
   globalSettings: {},
-  theme: "light"
+  theme: "light",
+  emulatorState: {
+    breakpointsVersion: 0,
+    emuViewVersion: 0,
+  },
 };

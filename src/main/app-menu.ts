@@ -548,6 +548,7 @@ export function setupMenu(state: AppState): void {
         type: "checkbox",
         checked: state.emulatorState?.machineId === mt.machineId,
         click: async () => {
+          console.log(`Switching to machine type: ${mt.machineId}`);
           await setMachineType(mt.machineId);
           // TODO: await saveKliveProject();
         }
@@ -562,6 +563,7 @@ export function setupMenu(state: AppState): void {
             state.emulatorState?.machineId === mt.machineId &&
             state.emulatorState?.modelId === m.modelId,
           click: async () => {
+            console.log(`Switching to machine type: ${mt.machineId}, model: ${m.modelId}`);
             await setMachineType(mt.machineId, m.modelId);
             // TODO: await saveKliveProject();
           }

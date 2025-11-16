@@ -18,7 +18,7 @@ function noController() {
 class EmuMessageProcessor {
   /**
    * Constructs the EmuMessageProcessor.
-   * @param _mainMessenger Messenger for main process communication.
+   * @param _mainMessenger Messenger for main process communication (reserved for future use).
    * @param machineService Service for machine operations.
    */
   constructor(
@@ -33,7 +33,6 @@ class EmuMessageProcessor {
    * @param config Optional configuration object.
    */
   async setMachineType(machineId: string, modelId?: string, config?: Record<string, any>) {
-    console.log(`[EmuMessageProcessor] setMachineType: ${machineId}, model: ${modelId}`);
     await this.machineService.setMachineType(machineId, modelId, config);
   }
 
@@ -104,11 +103,6 @@ export async function processEmuMessage(
   messenger: MessengerBase,
   machineService: IMachineService
 ): Promise<ResponseMessage> {
-  console.log("[EmuMessageProcessor] Processing message:", {
-    method: message.method,
-    args: message.args,
-    correlationId: message.correlationId
-  });
 
   const emuMessageProcessor = new EmuMessageProcessor(messenger, machineService);
   const processingMethod = emuMessageProcessor[message.method];
@@ -123,12 +117,8 @@ export async function processEmuMessage(
       };
     } catch (err) {
       // --- Report the error
-      console.error(`Error processing message: ${err}`, err);
       return errorResponse(err.toString());
     }
   }
   return errorResponse(`Unknown method ${message.method}`);
-
-  // For now, just return undefined
-  return undefined;
 }

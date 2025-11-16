@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useMemo } from "react";
 import type { EmuAppServices } from "../../services/EmuAppServices";
 import type { MessageSource } from "@messaging/messages-core";
+import type { MessengerBase } from "@messaging/MessengerBase";
 import { createMachineService } from "../../services/MachineService";
 import { getRendererStore } from "../../store/rendererStore";
 import { EmuToMainMessenger } from "@messaging/EmuToMainMessenger";
@@ -12,6 +13,11 @@ import { EmuToMainMessenger } from "@messaging/EmuToMainMessenger";
  * React Context for providing EmuAppServices to the component tree
  */
 export const EmuAppServicesContext = createContext<EmuAppServices | undefined>(undefined);
+
+/**
+ * React Context for providing the messenger instance
+ */
+export const EmuMessengerContext = createContext<MessengerBase | undefined>(undefined);
 
 // =====================================================================================================================
 // React EmuAppServicesProvider component implementation
@@ -61,8 +67,10 @@ export function EmuAppServicesProvider({ children }: Props) {
 
   // Provide the services to children via Context
   return (
-    <EmuAppServicesContext.Provider value={emuAppServices}>
-      {children}
-    </EmuAppServicesContext.Provider>
+    <EmuMessengerContext.Provider value={messenger}>
+      <EmuAppServicesContext.Provider value={emuAppServices}>
+        {children}
+      </EmuAppServicesContext.Provider>
+    </EmuMessengerContext.Provider>
   );
 }

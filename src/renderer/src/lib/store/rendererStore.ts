@@ -1,8 +1,17 @@
+/// <reference types="vite/client" />
+/// <reference lib="dom" />
+
 import createAppStore from "@state/store";
 import type { Store } from "@state/redux-light";
 import type { AppState } from "@state/AppState";
 import type { Action } from "@state/Action";
 import { createIpcActionForwarder } from "./actionForwarder";
+
+// Declare window for renderer context
+declare const window: {
+  location: Location;
+  electron: any;
+};
 
 let rendererStore: Store<AppState, Action> | null = null;
 
@@ -24,6 +33,9 @@ export function getRendererStore(): Store<AppState, Action> {
     // Set up IPC listener to receive forwarded actions from main process
     window.electron.ipcRenderer.on("ForwardActionToRenderer", (_event, data) => {
       const { action, sourceProcess } = data;
+      
+      if (action.type === "SET_MACHINE_TYPE") {
+      }
       
       // Dispatch with source set to the originating process to avoid re-forwarding
       rendererStore!.dispatch(action, sourceProcess);

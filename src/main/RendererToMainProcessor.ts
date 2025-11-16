@@ -154,17 +154,24 @@ export async function processRendererToMainMessages(
           // --- to pass it as the "this" parameter.
           return {
             type: "ApiMethodResponse",
+            correlationId: message.correlationId,
             result: await (processingMethod as Function).call(mainMessageProcessor, ...message.args)
           };
         } catch (err) {
           // --- Report the error
           console.error(`Error processing message: ${err}`);
-          return errorResponse(err.toString());
+          const errorResp = errorResponse(err.toString());
+          errorResp.correlationId = message.correlationId;
+          return errorResp;
         }
       }
-      return errorResponse(`Unknown method ${message.method}`);
+      const unknownMethodError = errorResponse(`Unknown method ${message.method}`);
+      unknownMethodError.correlationId = message.correlationId;
+      return unknownMethodError;
   }
-  return defaultResponse();
+  const defaultResp = defaultResponse();
+  defaultResp.correlationId = message.correlationId;
+  return defaultResp;
 }
 
 function resolveMessagePath(inputPath: string, resolveIn?: string): string {

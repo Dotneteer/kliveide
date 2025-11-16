@@ -1,4 +1,5 @@
 <Component name="StatusBar">
+  <MachineInfo id="machineInfo" />
   <HStack
     backgroundColor="$backgroundColor-StatusBar"
     color="$colorText-StatusBar"
@@ -8,6 +9,6 @@
     >
     <StatusBarItem icon="vm" label="Ready"/>
     <SpaceFiller />
-    <StatusBarItem label="ZX Spectrum 48K"/>
+    <StatusBarItem label="{console.log(machineInfo), machineInfo.machine?.machine?.displayName ?? 'No machine'}"/>
   </HStack>
 </Component>

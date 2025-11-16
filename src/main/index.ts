@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { electronApp, optimizer } from "@electron-toolkit/utils";
+import { join } from "path";
 import {
   createEmulatorWindow,
   destroyEmulatorWindow,
@@ -18,6 +19,7 @@ import { loadAppSettings, saveAppSettings, appSettings, getSettingValue } from "
 import { initializeMainStore, mainStore } from "./mainStore";
 import { SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import type { Action } from "@state/Action";
+import type { RequestMessage } from "@messaging/messages-core";
 import {
   emuFocusedAction,
   ideFocusedAction,
@@ -27,6 +29,14 @@ import {
   setGlobalSettingAction
 } from "@state/actions";
 import { setupMenu } from "./app-menu";
+import { processRendererToMainMessages } from "./RendererToMainProcessor";
+
+// Set up environment variables for resource paths
+process.env.DIST_ELECTRON = join(__dirname, "../..");
+process.env.DIST = join(process.env.DIST_ELECTRON, "dist");
+process.env.PUBLIC = app.isPackaged
+  ? process.resourcesPath
+  : join(process.env.DIST_ELECTRON, "src/public");
 
 // Helper functions to send actions to renderers
 function sendActionToEmu(action: Action, sourceProcess: string = "main"): void {
@@ -243,6 +253,28 @@ app.whenReady().then(async () => {
     // Dispatch to main store (which will update main state and forward to renderers)
     // Pass sourceProcess so the forwarder knows where it came from
     mainStore.dispatch(action, sourceProcess);
+  });
+
+  // Set up IPC handlers for renderer-to-main messages (EmuToMain, IdeToMain)
+  // These use the send/on pattern, not invoke/handle
+  ipcMain.on("EmuToMain", async (event, message: RequestMessage) => {
+    try {
+      const response = await processRendererToMainMessages(message, emuWindow);
+      // Send response back on the response channel
+      event.sender.send("EmuToMainResponse", response);
+    } catch (error) {
+      event.sender.send("EmuToMainResponse", { type: "ErrorResponse", message: error.toString() });
+    }
+  });
+
+  ipcMain.on("IdeToMain", async (event, message: RequestMessage) => {
+    try {
+      const response = await processRendererToMainMessages(message, ideWindow);
+      // Send response back on the response channel
+      event.sender.send("IdeToMainResponse", response);
+    } catch (error) {
+      event.sender.send("IdeToMainResponse", { type: "ErrorResponse", message: error.toString() });
+    }
   });
 
   // Now that IPC infrastructure is ready, load the window contents
