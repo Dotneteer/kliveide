@@ -1,5 +1,13 @@
 # Klive IDE Changelog
 
+## 0.50.4
+
+### Features
+
+- Removed .MSI installer for Windows
+- Added compression: "store" to NSIS config (disables compression for faster antimalware scanning)
+- Removed ASAR unpacking of compilerWorker files (reduces loose files that trigger scanning)
+
 ## 0.50.3
 
 ### Features
