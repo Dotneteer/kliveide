@@ -6,10 +6,6 @@
   productName: "Klive IDE",
   copyright: "Copyright © 2019-2023 ${author}",
   asar: true,
-  asarUnpack: [
-    "dist-electron/compilerWorker.js",
-    "dist-electron/compilerWorker.js.map"
-  ],
   directories: {
     output: "release/${version}",
     buildResources: "src/electron/resources",
@@ -24,10 +20,6 @@
         target: "nsis",
         arch: ["x64"],
       },
-      {
-        target: "msi",
-        arch: ["x64"],
-      },
     ],
     artifactName: "${productName}-Windows-${version}-Setup.${ext}",
   },
@@ -36,11 +28,7 @@
     perMachine: false,
     allowToChangeInstallationDirectory: true,
     deleteAppDataOnUninstall: false,
-  },
-  msi: {
-    oneClick: false,
-    perMachine: false,
-    runAfterFinish: true,
+    compression: "store",
   },
   mac: {
     target: ["dmg", "zip"],
