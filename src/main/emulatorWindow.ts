@@ -1,44 +1,45 @@
-import { BrowserWindow, shell } from 'electron'
-import { join } from 'path'
-import { is } from '@electron-toolkit/utils'
-import { captureWindowState, applyWindowState, appSettings } from './settingsManager'
-import { WindowState } from '@abstr/WindowState'
+import { BrowserWindow, shell } from "electron";
+import { join } from "path";
+import { is } from "@electron-toolkit/utils";
+import { captureWindowState, applyWindowState, appSettings } from "./settingsManager";
+import { WindowState } from "@abstr/WindowState";
+import { registerMainToEmuMessenger } from "@/common/messaging/MainToEmuMessenger";
 
-let emulatorWindow: BrowserWindow | null = null
+let emulatorWindow: BrowserWindow | null = null;
 
 // Export the singleton window reference
-export { emulatorWindow as emuWindow }
+export { emulatorWindow as emuWindow };
 
 export async function saveEmulatorState(): Promise<void> {
   if (emulatorWindow && !emulatorWindow.isDestroyed()) {
-    const state = captureWindowState(emulatorWindow)
+    const state = captureWindowState(emulatorWindow);
     // Return the state so it can be saved by the main process
-    return state as any
+    return state as any;
   }
-  return undefined as any
+  return undefined as any;
 }
 
 export function getEmulatorState(): WindowState | undefined {
   if (emulatorWindow && !emulatorWindow.isDestroyed()) {
-    return captureWindowState(emulatorWindow)
+    return captureWindowState(emulatorWindow);
   }
-  return undefined
+  return undefined;
 }
 
 export function createEmulatorWindow(onClose: () => void): BrowserWindow {
   // Return existing window if it exists and is not destroyed
   if (emulatorWindow && !emulatorWindow.isDestroyed()) {
-    return emulatorWindow
+    return emulatorWindow;
   }
 
   // Get saved state
   const savedSettings = appSettings;
-  const savedState = savedSettings.windowStates?.emuWindow
+  const savedState = savedSettings.windowStates?.emuWindow;
 
   // Create the emulator browser window with default or saved dimensions
-  const defaultWidth = 800
-  const defaultHeight = 600
-  
+  const defaultWidth = 800;
+  const defaultHeight = 600;
+
   emulatorWindow = new BrowserWindow({
     width: savedState?.width || defaultWidth,
     height: savedState?.height || defaultHeight,
@@ -48,42 +49,45 @@ export function createEmulatorWindow(onClose: () => void): BrowserWindow {
     y: savedState?.y,
     show: false,
     autoHideMenuBar: true,
-    title: 'Klive Emulator',
+    title: "Klive Emulator",
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, "../preload/index.js"),
       sandbox: false
     }
-  })
+  });
+
+  // --- Initialize messaging
+  registerMainToEmuMessenger(emulatorWindow);
 
   // Apply saved state (maximized, fullscreen, etc.)
   if (savedState) {
-    applyWindowState(emulatorWindow, savedState)
+    applyWindowState(emulatorWindow, savedState);
   }
 
-  emulatorWindow.on('ready-to-show', () => {
-    emulatorWindow?.show()
-  })
+  emulatorWindow.on("ready-to-show", () => {
+    emulatorWindow?.show();
+  });
 
-  emulatorWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
+  emulatorWindow.webContents.setWindowOpenHandler(details => {
+    shell.openExternal(details.url);
+    return { action: "deny" };
+  });
 
   // NOTE: Do NOT load URL here - let the caller load it after IPC is ready
 
-  emulatorWindow.on('close', async (event) => {
+  emulatorWindow.on("close", async event => {
     // Prevent the window from closing immediately
-    event.preventDefault()
-    
+    event.preventDefault();
+
     // Trigger the close handler which will save all states and quit
-    onClose()
-  })
+    onClose();
+  });
 
-  emulatorWindow.on('closed', () => {
-    emulatorWindow = null
-  })
+  emulatorWindow.on("closed", () => {
+    emulatorWindow = null;
+  });
 
-  return emulatorWindow
+  return emulatorWindow;
 }
 
 /**
@@ -92,25 +96,25 @@ export function createEmulatorWindow(onClose: () => void): BrowserWindow {
  */
 export function loadEmulatorContent(): void {
   if (!emulatorWindow) {
-    throw new Error('Emulator window not created');
+    throw new Error("Emulator window not created");
   }
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    emulatorWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/index.html?emu')
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    emulatorWindow.loadURL(process.env["ELECTRON_RENDERER_URL"] + "/index.html?emu");
   } else {
-    emulatorWindow.loadFile(join(__dirname, '../renderer/index.html?emu'))
+    emulatorWindow.loadFile(join(__dirname, "../renderer/index.html?emu"));
   }
 }
 
 export function getEmulatorWindow(): BrowserWindow | null {
-  return emulatorWindow
+  return emulatorWindow;
 }
 
 export function destroyEmulatorWindow(): void {
   if (emulatorWindow && !emulatorWindow.isDestroyed()) {
-    emulatorWindow.destroy()
+    emulatorWindow.destroy();
   }
-  emulatorWindow = null
+  emulatorWindow = null;
 }

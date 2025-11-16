@@ -47,6 +47,7 @@ class MachineService implements IMachineService {
     modelId?: string,
     config?: MachineConfigSet
   ): Promise<void> {
+    console.log("HERE");
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(
       (m) =>

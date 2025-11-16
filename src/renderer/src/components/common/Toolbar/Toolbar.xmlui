@@ -20,83 +20,98 @@
   <HStack
     verticalAlignment="center"
     backgroundColor="$backgroundColor-Toolbar"
-    paddingHorizontal="$space-0_5"
-    gap="0">
+    gap="0"
+  >
     <ToolbarButton
       icon="{gs.emuOptions.startMode ? 'play' : 'debug'}"
       color="$color-ToolbarButton-green"
-      tooltip="Run Machine (F5)" />
+      tooltip="Run Machine (F5)"
+    />
     <Select
       id="runMode"
       initialValue="{gs.emuOptions.startMode ?? 0}"
       when="{!$props.isIde}"
       width="$space-36"
       paddingVertical="2px"
-      onDidChange="newValue => appState.setGlobalSetting('emuOptions.startMode', newValue)">
+      onDidChange="newValue => appState.setGlobalSetting('emuOptions.startMode', newValue)"
+    >
       <Option value="{0}" label="{emuStartOptions[0].label}" />
       <Option value="{1}" label="{emuStartOptions[1].label}" />
     </Select>
     <ToolbarButton
       icon="pause"
       color="$color-ToolbarButton-blue"
-      tooltip="Pause (Shift+F5)" />
+      tooltip="Pause (Shift+F5)"
+    />
     <ToolbarButton
       icon="stop"
       color="$color-ToolbarButton-red"
-      tooltip="Stop (F4)" />
+      tooltip="Stop (F4)"
+    />
     <ToolbarButton
       icon="restart"
       color="$color-ToolbarButton-green"
-      tooltip="Restart (Shift+F4)" />
+      tooltip="Restart (Shift+F4)"
+    />
     <ToolbarSeparator />
     <ToolbarButton
       icon="debug"
       color="$color-ToolbarButton-green"
-      tooltip="Debug Machine (Ctrl+F5)" />
+      tooltip="Debug Machine (Ctrl+F5)"
+    />
     <ToolbarButton
       icon="step-into"
       color="$color-ToolbarButton-blue"
-      tooltip="Step Into (F10)" />
+      tooltip="Step Into (F10)"
+    />
     <ToolbarButton
       icon="step-over"
       color="$color-ToolbarButton-blue"
-      tooltip="Step Over (F11)" />
+      tooltip="Step Over (F11)"
+    />
     <ToolbarButton
       icon="step-out"
       color="$color-ToolbarButton-blue"
-      tooltip="Step Out (F12)" />
+      tooltip="Step Out (F12)"
+    />
     <ToolbarSeparator />
     <ToolbarButton
       icon="{gs.emuOptions.stayOnTop ? 'pinned' : 'pin'}"
       selected="{gs.emuOptions.stayOnTop}"
       tooltip="Stay on top"
-      onClick="appState.toggleGlobalSetting('emuOptions.stayOnTop')" />
+      onClick="appState.toggleGlobalSetting('emuOptions.stayOnTop')"
+    />
     <ToolbarSeparator />
     <ToolbarButton
       icon="vm"
       selected="{gs.emuOptions.showInstantScreen}"
       tooltip="Turn {gs.emuOptions.showInstantScreen ? 'off' : 'on'} instant screen"
-      onClick="appState.toggleGlobalSetting('emuOptions.showInstantScreen')" />
+      onClick="appState.toggleGlobalSetting('emuOptions.showInstantScreen')"
+    />
     <ToolbarSeparator />
     <ToolbarButton
       icon="keyboard"
       selected="{gs.emuOptions.showKeyboard}"
       tooltip="{gs.emuOptions.showKeyboard ? 'Hide' : 'Show'} keyboard"
-      onClick="appState.toggleGlobalSetting('emuOptions.showKeyboard')" />
+      onClick="appState.toggleGlobalSetting('emuOptions.showKeyboard')"
+    />
     <ToolbarSeparator />
     <ToolbarButton
       icon="{gs.emuOptions.soundMuted ? 'mute' : 'unmute'}"
       tooltip="{gs.emuOptions.soundMuted ? 'Unmute' : 'Mute'} sound"
-      onClick="appState.toggleGlobalSetting('emuOptions.soundMuted')" />
+      onClick="appState.toggleGlobalSetting('emuOptions.soundMuted')"
+    />
     <ToolbarSeparator />
     <ToolbarButton
       icon="rocket"
       selected="{gs.emuOptions.fastLoad}"
       tooltip="Fast LOAD mode"
-      onClick="appState.toggleGlobalSetting('emuOptions.fastLoad')" />
+      onClick="appState.toggleGlobalSetting('emuOptions.fastLoad')"
+    />
     <ToolbarSeparator />
     <ToolbarButton
       icon="reverse-tape"
-      tooltip="Rewind the tape" />
+      tooltip="Rewind the tape"
+    />
   </HStack>
 </Component>

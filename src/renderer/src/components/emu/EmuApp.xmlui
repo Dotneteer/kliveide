@@ -1,15 +1,20 @@
 <Component name="EmuApp">
   <SharedAppState id="appState" />
   <variable name="gs" value="{appState.globalSettings}" />
-  <App
-    layout="desktop"
-    name="Klive Emulator"
-    onReady="() => { delay(0); appState.emuLoaded(); }"
-  >
-    <VStack gap="0" height="100%" padding="0">
-      <Toolbar isIde="{false}" when="{gs.emuViewOptions.showToolbar ?? true}" />
-      <EmulatorArea backgroundColor="gray" />
-      <StatusBar when="{gs.emuViewOptions.showStatusBar ?? true}" />
-    </VStack>
-  </App>
+  <EmuAppContext>
+    <App
+      layout="desktop"
+      name="Klive Emulator"
+      onReady="() => { delay(0); appState.emuLoaded(); }"
+    >
+      <EmuMessageProcessor
+        onMessage="(e) => console.log('API call:', e.method, e.args)"
+      />
+      <VStack gap="0" height="100%" padding="0">
+        <Toolbar isIde="{false}" when="{gs.emuViewOptions.showToolbar ?? true}" />
+        <EmulatorArea backgroundColor="gray" />
+        <StatusBar when="{gs.emuViewOptions.showStatusBar ?? true}" />
+      </VStack>
+    </App>
+  </EmuAppContext>
 </Component>
