@@ -38,7 +38,7 @@ class EmuApiImpl {
    * @param _command The machine command to issue.
    * @param _customCommand Optional custom command string.
    */
-  async issueMachineCommand(_command: MachineCommand, _customCommand?: string): Promise<void> {
+  async issueMachineCommand(_command: MachineCommand, _customCommand?: string): Promise<any> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

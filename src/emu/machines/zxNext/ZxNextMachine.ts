@@ -112,7 +112,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Represents the tape device of ZX Spectrum 48K
    */
   tapeDevice: ITapeDevice;
-  
+
   expansionBusDevice: ExpansionBusDevice;
 
   /**
@@ -126,6 +126,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
 
+    this.expansionBusDevice = new ExpansionBusDevice(this);
     this.cpuSpeedDevice = new CpuSpeedDevice(this);
 
     // --- Create and initialize the I/O port manager
@@ -153,7 +154,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.soundDevice = new NextSoundDevice(this);
     this.ulaDevice = new UlaDevice(this);
     this.loResDevice = new LoResDevice(this);
-    this.expansionBusDevice = new ExpansionBusDevice(this);
     this.hardReset();
   }
 
@@ -249,6 +249,58 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.reset();
     this.nextRegDevice.hardReset();
     this.memoryDevice.hardReset();
+  }
+
+  /**
+   * Executes the specified custom command
+   * @param command Command to execute
+   */
+  async executeCustomCommand(command: string): Promise<any> {
+    switch (command) {
+      case "toggleScandoubler":
+        return (this.screenDevice.scandoublerEnabled = !this.screenDevice.scandoublerEnabled);
+
+      case "toggle5060Hz":
+        return (this.screenDevice.hz60Mode = !this.screenDevice.hz60Mode);
+
+      case "cycleCpuSpeed":
+        if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
+          this.cpuSpeedDevice.nextReg07Value = (this.cpuSpeedDevice.nextReg07Value + 1) % 4;
+        }
+        break;
+
+      case "enableExpansionBus":
+        if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
+          this.expansionBusDevice.nextReg80Value ^= 0x80;
+          return this.expansionBusDevice.enabled;
+        }
+        break;
+
+      case "disableExpansionBus":
+        if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
+          this.expansionBusDevice.nextReg80Value &= 0x7f;
+          return this.expansionBusDevice.enabled;
+        }
+        break;
+
+      case "adjustScanlineWeight":
+        return (this.screenDevice.scanlineWeight = (this.screenDevice.scanlineWeight + 1) % 4);
+
+      case "cycleCpuSpeed":
+        // TODO: Implement cycling CPU speed
+        console.log("Cycling CPU speed - not yet implemented");
+        break;
+
+      case "multifaceNmi":
+        // TODO: Implement multiface NMI
+        console.log("Multiface NMI - not yet implemented");
+        break;
+
+      case "divmmcNmi":
+        // TODO: Implement divmmc NMI
+        console.log("DivMMC NMI - not yet implemented");
+        break;
+    }
   }
 
   get64KFlatMemory(): Uint8Array {
@@ -592,6 +644,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
+  }
+
+  /**
+   * The machine frame loop invokes this method before executing a CPU instruction.
+   */
+  beforeInstructionExecuted(): void {
+    // --- Set the interrupt signal, if required so
+    super.beforeInstructionExecuted();
+    this.clockMultiplier = this.cpuSpeedDevice.effectiveClockMultiplier;
   }
 
   /**

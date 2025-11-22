@@ -6,20 +6,64 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
  * This implementation does not support external ROMs or expansion devices.
  */
 export class ExpansionBusDevice implements IGenericDevice<IZxNextMachine> {
-  private enabled: boolean;
-  private romcsReplacement: boolean;
-  private disableIoCycles: boolean;
-  private disableMemCycles: boolean;
-  private softResetPersistence: number;
-  private romcsStatus: boolean;
-  private ulaOverrideEnabled: boolean;
-  private nmiDebounceDisabled: boolean;
-  private clockAlwaysOn: boolean;
-  private p3FDCEnabled: boolean;
-  private reservedBits: number;
+  private _enabled: boolean;
+  private _romcsReplacement: boolean;
+  private _disableIoCycles: boolean;
+  private _disableMemCycles: boolean;
+  private _softResetPersistence: number;
+  private _romcsStatus: boolean;
+  private _ulaOverrideEnabled: boolean;
+  private _nmiDebounceDisabled: boolean;
+  private _clockAlwaysOn: boolean;
+  private _p3FDCEnabled: boolean;
+  private _reservedBits: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.hardReset();
+  }
+
+  get enabled(): boolean {
+    return this._enabled;
+  }
+  
+  get romcsReplacement(): boolean {
+    return this._romcsReplacement;
+  }
+
+  get disableIoCycles(): boolean {
+    return this._disableIoCycles;
+  }
+
+  get disableMemCycles(): boolean {
+    return this._disableMemCycles;
+  }
+  
+  get softResetPersistence(): number {
+    return this._softResetPersistence;
+  }
+
+  get romcsStatus(): boolean {
+    return this._romcsStatus;
+  }
+
+  get ulaOverrideEnabled(): boolean {
+    return this._ulaOverrideEnabled;
+  }
+
+  get nmiDebounceDisabled(): boolean {
+    return this._nmiDebounceDisabled;
+  }
+
+  get clockAlwaysOn(): boolean {
+    return this._clockAlwaysOn;
+  }
+  
+  get p3FDCEnabled(): boolean {
+    return this._p3FDCEnabled;
+  }
+
+  get reservedBits(): number {
+    return this._reservedBits;
   }
 
   hardReset(): void {
@@ -33,40 +77,41 @@ export class ExpansionBusDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextReg80Value(value: number) {
-    this.enabled = (value & 0x80) !== 0;
-    this.romcsReplacement = (value & 0x40) !== 0;
-    this.disableIoCycles = (value & 0x20) !== 0;
-    this.disableMemCycles = (value & 0x10) !== 0;
-    this.softResetPersistence = value & 0x0f;
+    this._enabled = (value & 0x80) !== 0;
+    this._romcsReplacement = (value & 0x40) !== 0;
+    this._disableIoCycles = (value & 0x20) !== 0;
+    this._disableMemCycles = (value & 0x10) !== 0;
+    this._softResetPersistence = value & 0x0f;
+    this.machine.cpuSpeedDevice?.requestSpeedUpdate();
   }
 
   get nextReg80Value(): number {
     return (
-      (this.enabled ? 0x80 : 0) |
-      (this.romcsReplacement ? 0x40 : 0) |
-      (this.disableIoCycles ? 0x20 : 0) |
-      (this.disableMemCycles ? 0x10 : 0) |
-      (this.softResetPersistence & 0x0f)
+      (this._enabled ? 0x80 : 0) |
+      (this._romcsReplacement ? 0x40 : 0) |
+      (this._disableIoCycles ? 0x20 : 0) |
+      (this._disableMemCycles ? 0x10 : 0) |
+      (this._softResetPersistence & 0x0f)
     );
   }
 
   set nextReg81Value(value: number) {
-    this.romcsStatus = (value & 0x80) !== 0;
-    this.ulaOverrideEnabled = (value & 0x40) !== 0;
-    this.nmiDebounceDisabled = (value & 0x20) !== 0;
-    this.clockAlwaysOn = (value & 0x10) !== 0;
-    this.p3FDCEnabled = (value & 0x08) !== 0;
-    this.reservedBits = value & 0x07;
+    this._romcsStatus = (value & 0x80) !== 0;
+    this._ulaOverrideEnabled = (value & 0x40) !== 0;
+    this._nmiDebounceDisabled = (value & 0x20) !== 0;
+    this._clockAlwaysOn = (value & 0x10) !== 0;
+    this._p3FDCEnabled = (value & 0x08) !== 0;
+    this._reservedBits = value & 0x07;
   }
 
   get nextReg81Value(): number {
     return (
-      (this.romcsStatus ? 0x80 : 0) |
-      (this.ulaOverrideEnabled ? 0x40 : 0) |
-      (this.nmiDebounceDisabled ? 0x20 : 0) |
-      (this.clockAlwaysOn ? 0x10 : 0) |
-      (this.p3FDCEnabled ? 0x08 : 0) |
-      (this.reservedBits & 0x07)
+      (this._romcsStatus ? 0x80 : 0) |
+      (this._ulaOverrideEnabled ? 0x40 : 0) |
+      (this._nmiDebounceDisabled ? 0x20 : 0) |
+      (this._clockAlwaysOn ? 0x10 : 0) |
+      (this._p3FDCEnabled ? 0x08 : 0) |
+      (this._reservedBits & 0x07)
     );
   }
 }

@@ -71,7 +71,7 @@ export interface IZxNextMachine extends IZ80Machine {
 
   loResDevice: LoResDevice;
 
-  expansionBusDevice: ExpansionBusDevice; 
+  expansionBusDevice: ExpansionBusDevice;
 
   /**
    * Reads the screen memory byte

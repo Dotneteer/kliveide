@@ -754,7 +754,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Executes the specified custom command
    * @param command Command to execute
    */
-  async executeCustomCommand(command: string): Promise<void> {
+  async executeCustomCommand(command: string): Promise<any> {
     const machine = this;
     switch (command) {
       case "battery_low":

@@ -845,7 +845,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x05, 0x00);
 
     // --- Assert
-    expect(scrDevice.scanDoublerEnabled).toBe(false);
+    expect(scrDevice.scandoublerEnabled).toBe(false);
   });
 
   it("Reg $05 scandoubler #2", async () => {
@@ -857,7 +857,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x05, 0x01);
 
     // --- Assert
-    expect(scrDevice.scanDoublerEnabled).toBe(true);
+    expect(scrDevice.scandoublerEnabled).toBe(true);
   });
 
   it("Reg $06 hotkeyCpuSpeedEnabled", async () => {
@@ -1050,8 +1050,8 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x00);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x00);
-    expect(nrDevice.actualCpuSpeed).toBe(0x00);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x00);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x00);
   });
 
   it("Reg $07 cpu speed #2", async () => {
@@ -1064,8 +1064,8 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x11);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x01);
-    expect(nrDevice.actualCpuSpeed).toBe(0x01);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x01);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x01);
   });
 
   it("Reg $07 cpu speed #3", async () => {
@@ -1078,8 +1078,8 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x22);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x02);
-    expect(nrDevice.actualCpuSpeed).toBe(0x02);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x02);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x02);
   });
 
   it("Reg $07 cpu speed #4", async () => {
@@ -1092,8 +1092,8 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x33);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x03);
-    expect(nrDevice.actualCpuSpeed).toBe(0x03);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x03);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x03);
   });
 
   it("Reg $08 unlockPort7ffd", async () => {

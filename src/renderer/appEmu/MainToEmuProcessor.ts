@@ -71,45 +71,35 @@ class EmuMessageProcessor {
    * @param command The machine command to issue.
    * @param customCommand Optional custom command string.
    */
-  issueMachineCommand(command: MachineCommand, customCommand?: string) {
+  issueMachineCommand(command: MachineCommand, customCommand?: string): Promise<any> {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
     switch (command) {
       case "start":
-        controller.start();
-        break;
+        return controller.start();
       case "pause":
-        controller.pause();
-        break;
+        return controller.pause();
       case "stop":
-        controller.stop();
-        break;
+        return controller.stop();
       case "reset":
-        controller.cpuReset();
-        break;
+        return controller.cpuReset();
       case "restart":
-        controller.restart();
-        break;
+        return controller.restart();
       case "debug":
-        controller.startDebug();
-        break;
+        return controller.startDebug();
       case "stepInto":
-        controller.stepInto();
-        break;
+        return controller.stepInto();
       case "stepOver":
-        controller.stepOver();
-        break;
+        return controller.stepOver();
       case "stepOut":
-        controller.stepOut();
-        break;
+        return controller.stepOut();
       case "rewind":
         controller.machine.setMachineProperty(REWIND_REQUESTED, true);
-        break;
+        return Promise.resolve();
       case "custom":
-        controller.customCommand(customCommand);
-        break;
+        return controller.customCommand(customCommand);
     }
   }
 

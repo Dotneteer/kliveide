@@ -64,10 +64,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   hotkey50_60HzEnabled: boolean;
   ps2Mode: boolean;
 
-  // --- Reg $07 state
-  actualCpuSpeed = 0;
-  programmedCpuSpeed = 0;
-
   // --- Reg $08 state
   unlockPort7ffd: boolean;
   disableRamPortContention: boolean;
@@ -272,7 +268,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.joystickDevice.joystick1Mode = ((v & 0xc0) >> 6) | ((v & 0x08) >> 1);
         machine.joystickDevice.joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
         machine.screenDevice.hz60Mode = (v & 0x04) !== 0;
-        machine.screenDevice.scanDoublerEnabled = (v & 0x01) !== 0;
+        machine.screenDevice.scandoublerEnabled = (v & 0x01) !== 0;
       },
       slices: [
         {
@@ -382,11 +378,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x07,
       description: "CPU speed",
-      readFn: () => (this.actualCpuSpeed << 4) | this.programmedCpuSpeed,
+      readFn: () => machine.cpuSpeedDevice.nextReg07Value,
       writeFn: (v) => {
-        this.programmedCpuSpeed = v & 0x03;
-        this.actualCpuSpeed = this.programmedCpuSpeed;
-        this.machine.clockMultiplier = 1 << this.programmedCpuSpeed;
+        machine.cpuSpeedDevice.nextReg07Value = v;
       },
       slices: [
         {

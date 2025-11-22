@@ -375,7 +375,7 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     };
   }
 
-  async executeCustomCommand(_command: string): Promise<void> {
+  async executeCustomCommand(_command: string): Promise<any> {
     // Handle custom commands if needed
   }
 
