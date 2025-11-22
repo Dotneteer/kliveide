@@ -17,32 +17,35 @@ export function MachineInfoNative({
   const store = getRendererStore();
   const { machineService } = useEmuAppServices();
   const prevMachineIdRef = useRef<string | undefined>(undefined);
+  const prevModelIdRef = useRef<string | undefined>(undefined);
   const currentMachineInfoRef = useRef<any>(null);
   const currentMachineIdRef = useRef<string | null>(null);
+  const currentModelIdRef = useRef<string | null>(null);
   
   // Use refs to store stable references to prop functions
-  const updateStateRef = useRef(updateState);
   const registerComponentApiRef = useRef(registerComponentApi);
   
   // Update refs when props change
-  updateStateRef.current = updateState;
   registerComponentApiRef.current = registerComponentApi;
 
-  // Subscribe to store changes and update state when machineId changes
+  // Subscribe to store changes and update state when machineId or modelId changes
   useLayoutEffect(() => {
     // Helper function to update component state with current machine info
     const updateComponentState = () => {
       const currentState = store.getState();
       const machineId = currentState?.emulatorState?.machineId;
+      const modelId = currentState?.emulatorState?.modelId;
       const machineInfo = machineService.getMachineInfo();
       
       // Store in refs for API access
       currentMachineInfoRef.current = machineInfo || null;
       currentMachineIdRef.current = machineId || null;
+      currentModelIdRef.current = modelId || null;
       
-      updateStateRef.current({
+      updateState({
         machine: machineInfo || null,
         machineId: machineId || null,
+        modelId: modelId || null,
       });
     };
 
@@ -51,6 +54,7 @@ export function MachineInfoNative({
       registerComponentApiRef.current({
         getMachine: () => currentMachineInfoRef.current,
         getMachineId: () => currentMachineIdRef.current,
+        getModelId: () => currentModelIdRef.current,
       });
     }
 
@@ -58,17 +62,21 @@ export function MachineInfoNative({
     const unsubscribe = store.subscribe(() => {
       const newState = store.getState();
       const newMachineId = newState?.emulatorState?.machineId;
+      const newModelId = newState?.emulatorState?.modelId;
 
-      // Only update if machineId has changed
-      if (newMachineId !== prevMachineIdRef.current) {
+      // Only update if machineId or modelId has changed
+      if (newMachineId !== prevMachineIdRef.current || newModelId !== prevModelIdRef.current) {
         prevMachineIdRef.current = newMachineId;
+        prevModelIdRef.current = newModelId;
         updateComponentState();
       }
     });
 
     // Initial state update
     const initialMachineId = store.getState()?.emulatorState?.machineId;
+    const initialModelId = store.getState()?.emulatorState?.modelId;
     prevMachineIdRef.current = initialMachineId;
+    prevModelIdRef.current = initialModelId;
     updateComponentState();
 
     return () => {

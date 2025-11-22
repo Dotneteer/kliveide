@@ -18,9 +18,9 @@ declare const window: Window & {
  */
 export function createIpcActionForwarder(processId: string): ActionForwarder {
   return async (action: Action, source: MessageSource) => {
-    // Only forward actions that originated locally (source === "main")
+    // Only forward actions that originated locally (source matches this process OR source === "main")
     // Don't forward actions that came from other processes via IPC (avoid loops)
-    if (source !== "main") {
+    if (source !== processId && source !== "main") {
       return;
     }
 

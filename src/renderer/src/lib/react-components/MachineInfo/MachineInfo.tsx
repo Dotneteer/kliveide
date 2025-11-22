@@ -8,14 +8,16 @@ export const MachineInfoMd = createMetadata({
   description:
     "`MachineInfo` is an invisible component that provides reactive access to the current " +
     "emulated machine's information. It monitors the `AppState.emulatorState.machineId` and " +
-    "exposes detailed machine metadata through a `machine` state property.\n\n" +
-    "The component automatically updates when the machine type changes and provides information " +
+    "`AppState.emulatorState.modelId` and exposes detailed machine metadata through a `machine` " +
+    "state property.\n\n" +
+    "The component automatically updates when the machine type or model changes and provides information " +
     "such as machine display name, character set, features, configuration, models, and media IDs.\n\n" +
     "**Usage Example:**\n" +
     "```xmlui\n" +
     "<EmuAppContext>\n" +
     "  <MachineInfo id=\"machineInfo\" />\n" +
     "  <Text text={machineInfo.machine?.machine?.displayName ?? 'No machine'} />\n" +
+    "  <Text text={machineInfo.machine?.model?.displayName ?? 'No model'} />\n" +
     "</EmuAppContext>\n" +
     "```\n\n" +
     "**Important:** This component must be used within an `EmuAppContext` to access the machine service.",
@@ -47,6 +49,13 @@ export const MachineInfoMd = createMetadata({
       description:
         "Gets the current machine type ID from AppState.emulatorState.machineId. " +
         "Returns `null` if no machine is set.",
+      args: [],
+      returns: "string | null",
+    },
+    getModelId: {
+      description:
+        "Gets the current machine model ID from AppState.emulatorState.modelId. " +
+        "Returns `null` if no model is set or if the machine has no models.",
       args: [],
       returns: "string | null",
     },

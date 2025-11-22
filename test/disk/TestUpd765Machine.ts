@@ -1,4 +1,4 @@
-import { SysVar } from "@abstractions/SysVar";
+import { SysVar } from "@abstr/SysVar";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
@@ -10,6 +10,12 @@ import { IFloppyControllerDeviceTest } from "@emu/machines/disk/IFloppyContorlle
 import { TapeDevice } from "@emu/machines/tape/TapeDevice";
 
 export class TestUpd765Machine extends ZxSpectrumBase {
+  getSelectedRomPage(): number {
+    throw new Error("Method not implemented.");
+  }
+  getSelectedRamBank(): number {
+    throw new Error("Method not implemented.");
+  }
   readonly machineId = "test-upd765";
 
   /**
@@ -69,7 +75,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
   }
 
   // --- We do not neet to use these methods in this test
-  readScreenMemory(offset: number): number {
+  readScreenMemory(_offset: number): number {
     throw new Error("Method not implemented.");
   }
 
@@ -77,7 +83,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     throw new Error("Method not implemented.");
   }
 
-  getMemoryPartition(index: number): Uint8Array {
+  getMemoryPartition(_index: number): Uint8Array {
     throw new Error("Method not implemented.");
   }
 
@@ -89,7 +95,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     throw new Error("Method not implemented.");
   }
 
-  getCodeInjectionFlow(model: string): CodeInjectionFlow {
+  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
     throw new Error("Method not implemented.");
   }
 

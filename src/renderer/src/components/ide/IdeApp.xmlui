@@ -8,7 +8,7 @@
     <VStack gap="0" height="100%" padding="0">
       <Toolbar isIde="{true}" when="{gs.ideViewOptions.showToolbar ?? true}" />
       <CVStack backgroundColor="purple" height="*">IDE Content</CVStack>
-      <StatusBar when="{gs.ideViewOptions.showStatusBar ?? true}" />
+      <IdeStatusBar when="{gs.ideViewOptions.showStatusBar ?? true}" />
     </VStack>
   </App>
 </Component>

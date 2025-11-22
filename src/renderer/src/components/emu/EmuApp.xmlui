@@ -13,7 +13,7 @@
       <VStack gap="0" height="100%" padding="0">
         <Toolbar isIde="{false}" when="{gs.emuViewOptions.showToolbar ?? true}" />
         <EmulatorArea backgroundColor="gray" />
-        <StatusBar when="{gs.emuViewOptions.showStatusBar ?? true}" />
+        <EmuStatusBar when="{gs.emuViewOptions.showStatusBar ?? true}" />
       </VStack>
     </App>
   </EmuAppContext>

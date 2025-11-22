@@ -97,7 +97,6 @@ class MachineService implements IMachineService {
     this.store.dispatch(setMachineTypeAction(machineId), this.messageSource);
     this.store.dispatch(setModelTypeAction(modelId), this.messageSource);
     this.store.dispatch(setMachineConfigAction(config || modelInfo?.config), this.messageSource);
-    console.log(`[MachineService] Machine type set to '${machineId}' successfully.`);
   }
 
   /**
@@ -122,7 +121,7 @@ class MachineService implements IMachineService {
       return undefined;
     }
     const model = machine.models?.find((m) => m.modelId === currentModel);
-    return { machine, model };
+    return { machine: {...machine}, model: model ? {...model} : undefined };
   }
 
   /**
