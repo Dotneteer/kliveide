@@ -1,19 +1,20 @@
 <Component name="EmuApp">
   <SharedAppState id="appState" />
-  <App 
-    name="Klive Emulator"
-    gap="0"
-    padding="0"
-    noScrollbarGutters
-    scrollWholePage="false"
-    height="*"
-    onReady="() => { delay(0); appState.emuLoaded(); }">
-    <!-- No pages, we can stretch to content to the full width and height -->
-    <Pages />
-    <VStack gap="0" height="100%" padding="0">
-      <Toolbar isIde="{false}" />
-      <EmulatorArea backgroundColor="gray" />
-      <StatusBar />
-    </VStack>
-  </App>
+  <variable name="gs" value="{appState.globalSettings}" />
+  <EmuAppContext>
+    <App
+      layout="desktop"
+      name="Klive Emulator"
+      onReady="() => { delay(0); appState.emuLoaded(); }"
+    >
+      <EmuMessageProcessor
+        onMessage="(e) => console.log('API call:', e.method, e.args)"
+      />
+      <VStack gap="0" height="100%" padding="0">
+        <Toolbar isIde="{false}" when="{gs.emuViewOptions.showToolbar ?? true}" />
+        <EmulatorArea backgroundColor="gray" />
+        <EmuStatusBar when="{gs.emuViewOptions.showStatusBar ?? true}" />
+      </VStack>
+    </App>
+  </EmuAppContext>
 </Component>

@@ -1,0 +1,13 @@
+<Component name="IdeStatusBar">
+  <HStack
+    backgroundColor="$backgroundColor-StatusBar"
+    color="$colorText-StatusBar"
+    height="$height-StatusBar"
+    verticalAlignment="center"
+    paddingHorizontal="$space-4"
+    >
+    <StatusBarItem icon="vm" label="Ready"/>
+    <SpaceFiller />
+    <StatusBarItem label="Something"/>
+  </HStack>
+</Component>

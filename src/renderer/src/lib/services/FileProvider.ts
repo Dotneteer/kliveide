@@ -30,7 +30,8 @@ export class FileProvider implements IFileProvider {
    */
   async readBinaryFile(path: string): Promise<Uint8Array | null> {
     try {
-      return await createMainApi(this.messenger).readBinaryFile(path);
+      const mainApi = createMainApi(this.messenger);
+      return await mainApi.readBinaryFile(path);
     } catch (err: any) {
       reportMessagingError(`readBinaryFile call failed: ${err.message}`);
       return null;

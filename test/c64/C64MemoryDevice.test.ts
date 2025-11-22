@@ -1,7 +1,7 @@
-import { C64Machine } from "../../src/emu/machines/c64/C64Machine";
+import { C64Machine } from "@emu/machines/c64/C64Machine";
 import { describe, expect, it, beforeEach } from "vitest";
-import { C64MemoryDevice } from "../../src/emu/machines/c64/C64MemoryDevice";
-import { C64IoExpansionDevice } from "../../src/emu/machines/c64/C64IoExpansionDevice";
+import { C64MemoryDevice } from "@emu/machines/c64/C64MemoryDevice";
+import { C64IoExpansionDevice } from "@emu/machines/c64/C64IoExpansionDevice";
 import { 
   createTestC64Machine, 
   checkBasicRomSignature, 

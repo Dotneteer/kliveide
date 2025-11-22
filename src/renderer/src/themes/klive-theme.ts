@@ -57,7 +57,7 @@ export const theme: ThemeDefinition = {
     "padding-Tooltip": "$space-1",
 
     // --- Select
-    "fontSize-Select--default": "8px"
+    "fontSize-Select": "12px"
   }
 };
 

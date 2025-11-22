@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DIS_EXEC_BP, DebugSupport, EXEC_BP, PART_BP } from "@emu/machines/DebugSupport";
 import { getBreakpointKey } from "@common/utils/breakpoints";
-import { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import { BreakpointInfo } from "@emu/abstractions/BreakpointInfo";
 
 describe("DebugSupport", () => {
   it("Constructor works", () => {

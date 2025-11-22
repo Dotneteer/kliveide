@@ -32,4 +32,5 @@ export interface ActionTypes {
   SET_MACHINE_CONFIG: null;
   SET_MACHINE_TYPE: null;
   SET_MODEL_TYPE: null;
+  DIM_MENU: null;
 }

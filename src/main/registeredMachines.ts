@@ -24,8 +24,8 @@ export async function setMachineType(
 
   // --- Set the emulator to the selected machine type and log the event
   await getEmuApi().setMachineType(machineId, modelId, config);
-  const machineName = getMachineName(machineId, modelId);
-  await logEmuEvent(`Machine type changed to ${machineName}`, "bright-cyan");
+  //const machineName = getMachineName(machineId, modelId);
+  //await logEmuEvent(`Machine type changed to ${machineName}`, "bright-cyan");
 }
 
 // --- The number of events logged with the emulator

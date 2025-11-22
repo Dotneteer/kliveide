@@ -123,3 +123,8 @@ export const setModelTypeAction: ActionCreator = (id: string) => ({
   type: "SET_MODEL_TYPE",
   payload: { id }
 });
+
+export const dimMenuAction: ActionCreator = (flag: boolean) => ({
+  type: "DIM_MENU",
+  payload: { flag }
+});

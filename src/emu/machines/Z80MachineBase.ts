@@ -207,7 +207,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     const filename = romName.startsWith("/")
       ? romName
       : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
-    return await fileProvider.readBinaryFile(filename);
+    console.log(`Loading ROM from resource: ${filename}`);
+    console.log(`Using file provider:`, fileProvider);
+    const contents = await fileProvider.readBinaryFile(filename);
+    console.log(`ROM loaded, ${contents.length} bytes read`);
+    return contents;
   }
 
   /**

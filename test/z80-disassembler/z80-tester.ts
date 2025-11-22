@@ -1,9 +1,8 @@
 import { expect } from "vitest";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
-import { MemoryMap, MemorySection } from "@renderer/appIde/disassemblers/common-types";
-import { intToX2 } from "@renderer/appIde/disassemblers/utils";
-import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
-import { ICustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/custom-disassembly";
+import { toHexa2 } from "@common/utils/conversions";
+import { MemoryMap, MemorySection } from "@/common/disassemblers/common-types";
+import { Z80Disassembler } from "@common/disassemblers/z80-disassembler/z80-disassembler";
+import { ICustomDisassembler } from "@common/disassemblers/z80-disassembler/custom-disassembly";
 
 /**
  * Helper class for Z80 Disassembler testing
@@ -360,7 +359,7 @@ export class Z80Tester {
       if (i > 0) {
         result += " ";
       }
-      result += intToX2(opCodes[i]);
+      result += toHexa2(opCodes[i]);
     }
     return result;
   }

@@ -121,7 +121,7 @@ class MachineService implements IMachineService {
       return undefined;
     }
     const model = machine.models?.find((m) => m.modelId === currentModel);
-    return { machine, model };
+    return { machine: {...machine}, model: model ? {...model} : undefined };
   }
 
   /**

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { calculateCRC7 } from "@emu/utils/crc";
 
 describe("CRC7", () => {

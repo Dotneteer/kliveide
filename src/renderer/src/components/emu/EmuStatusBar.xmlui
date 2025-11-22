@@ -1,4 +1,6 @@
-<Component name="StatusBar">
+<Component name="EmuStatusBar">
+  <MachineInfo id="machineInfo" />
+  <variable name="machineName" value="{machineInfo.machine.model.displayName ?? machineInfo.machine.machine.displayName ?? 'No machine'}" />
   <HStack
     backgroundColor="$backgroundColor-StatusBar"
     color="$colorText-StatusBar"
@@ -8,6 +10,6 @@
     >
     <StatusBarItem icon="vm" label="Ready"/>
     <SpaceFiller />
-    <StatusBarItem label="ZX Spectrum 48K"/>
+    <StatusBarItem label="{machineName}"/>
   </HStack>
 </Component>
