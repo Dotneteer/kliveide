@@ -53,8 +53,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this.resetDivMmcMapramFlag = false;
   }
 
-  dispose(): void {}
-
   // Is the DivMMC device enabled?
   get enabled(): boolean {
     return this._enabled;

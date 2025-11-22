@@ -112,6 +112,14 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     this.memoryDevice = new C64MemoryDevice(this);
     this.config = {};
   }
+  getAspectRatio?: () => [number, number];
+  getSelectedRomPage(): number {
+    throw new Error("Method not implemented.");
+  }
+  getSelectedRamBank(): number {
+    throw new Error("Method not implemented.");
+  }
+  beforeTactIncremented?: () => void;
 
   /**
    * Creates the machine frame runner for the emulated machine.

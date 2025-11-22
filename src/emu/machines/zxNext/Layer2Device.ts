@@ -57,8 +57,6 @@ export class Layer2Device implements IGenericDevice<IZxNextMachine> {
     this.clipIndex = 0;
   }
 
-  dispose(): void {}
-
   /**
    * Gets the value of the 0x123b port
    */

@@ -55,8 +55,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._dataIndex = 0;
   }
 
-  dispose(): void {}
-
   get selectedCard(): number {
     return this._selectedCard;
   }

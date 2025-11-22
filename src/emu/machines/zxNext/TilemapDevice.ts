@@ -58,8 +58,6 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
     this.definitionAddressMsb = 0;
   }
 
-  dispose(): void {}
-
   /**
    * Gets the clip window coordinate according to the current clip index
    */

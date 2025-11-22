@@ -40,6 +40,8 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { CpuState } from "@common/messaging/EmuApi";
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
+import { CpuSpeedDevice } from "./CpuSpeedDevice";
+import { ExpansionBusDevice } from "./ExpansionBusDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -49,6 +51,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * The unique identifier of the machine type
    */
   public readonly machineId = "zxnext";
+
+  cpuSpeedDevice: CpuSpeedDevice;
 
   portManager: NextIoPortManager;
 
@@ -108,6 +112,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Represents the tape device of ZX Spectrum 48K
    */
   tapeDevice: ITapeDevice;
+  
+  expansionBusDevice: ExpansionBusDevice;
 
   /**
    * Initialize the machine
@@ -119,6 +125,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.baseClockFrequency = 3_500_000;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
+
+    this.cpuSpeedDevice = new CpuSpeedDevice(this);
 
     // --- Create and initialize the I/O port manager
     this.portManager = new NextIoPortManager(this);
@@ -145,6 +153,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.soundDevice = new NextSoundDevice(this);
     this.ulaDevice = new UlaDevice(this);
     this.loResDevice = new LoResDevice(this);
+    this.expansionBusDevice = new ExpansionBusDevice(this);
     this.hardReset();
   }
 
@@ -189,6 +198,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   reset(): void {
     super.reset();
+    this.cpuSpeedDevice.reset();
     this.memoryDevice.reset();
     this.interruptDevice.reset();
     this.divMmcDevice.reset();
@@ -207,6 +217,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.ulaDevice.reset();
     this.loResDevice.reset();
     this.beeperDevice.reset();
+    this.expansionBusDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices
     this.nextRegDevice.reset();

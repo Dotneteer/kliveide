@@ -17,13 +17,6 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   constructor (public readonly machine: T) {}
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose (): void {
-    // --- Nothing to dispose
-  }
-
-  /**
    * Reset the device to its initial state.
    */
   reset (): void {

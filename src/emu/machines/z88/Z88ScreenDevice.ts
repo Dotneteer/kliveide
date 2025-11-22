@@ -153,13 +153,6 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
   }
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose (): void {
-    // TODO: Implement this
-  }
-
-  /**
    * Get the width of the rendered screen.
    */
   screenWidth: number;

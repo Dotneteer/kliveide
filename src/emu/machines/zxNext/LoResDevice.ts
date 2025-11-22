@@ -20,8 +20,6 @@ export class LoResDevice implements IGenericDevice<IZxNextMachine> {
     this.paletteOffset = 0;
   }
 
-  dispose(): void {}
-
   get nextReg6aValue(): number {
     return (
       (this.isRadastanMode ? 0x20 : 0) |

@@ -60,8 +60,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this.ulaScreenStartOffset = this.machine.memoryDevice.getUlaScreenOffset(false);
   }
 
-  dispose(): void {}
-
   // --- The current configuration
   private _configuration: ScreenConfiguration;
 

@@ -100,14 +100,6 @@ export class C64IoExpansionDevice implements IGenericDevice<IC64Machine> {
   };
 
   /**
-   * Disposes of resources held by the I/O Expansion device.
-   */
-  dispose(): void {
-    // Clean up resources if necessary
-    // For now, nothing to dispose
-  }
-  
-  /**
    * Gets the current state of the GAME line
    * false (0) = enabled, true (1) = disabled
    */

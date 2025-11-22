@@ -7,6 +7,4 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {}
-
-  dispose(): void {}
 }
