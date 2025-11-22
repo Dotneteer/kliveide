@@ -1,15 +1,16 @@
 import path from "path";
 import fs from "fs";
 
-import { MachineControllerState } from "@abstr/MachineControllerState";
 import { MachineMenuItem, MachineMenuRenderer } from "@common/machines/info-types";
-import { AppState } from "@state/AppState";
+import { AppState } from "@common/state/AppState";
 import { KLIVE_HOME_FOLDER, MEDIA_SD_CARD } from "@common/structs/project-const";
-import { mainStore } from "@main/mainStore";
 import { app, BrowserWindow, dialog } from "electron";
-import { setMediaAction } from "@state/actions";
+import { setMediaAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
+import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
+import { MachineControllerState } from "@/common/abstractions/MachineControllerState";
+import { mainStore } from "../mainStore";
 import { saveAppSettings, appSettings } from "../settingsManager";
 
 const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
@@ -26,26 +27,22 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   items.push({
     id: "select_sd_card",
     label: "Select SD Card Image...",
-    enabled:
-      appState.emulatorState?.machineState === MachineControllerState.Stopped ||
-      appState.emulatorState?.machineState === MachineControllerState.None,
+    enabled: isMachineStopped(),
     click: async () => {
       await setSdCardFile(emuWindow, appState);
-      // TODO: await saveKliveProject();
+      // await saveKliveProject();
       saveAppSettings();
     }
   });
   items.push({
     id: "default_sd_card",
     label: "Use the default SD Card Image",
-    enabled:
-      appState.emulatorState?.machineState === MachineControllerState.Stopped ||
-      appState.emulatorState?.machineState === MachineControllerState.None,
+    enabled: isMachineStopped(),
     click: async () => {
       // --- Store the last selected tape file
       mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, undefined));
       logSdCardEvent(getDefaultSdCardFile());
-      // TODO: await saveKliveProject();
+      // await saveKliveProject();
       saveAppSettings();
     }
   });
@@ -73,6 +70,108 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
       }
     }
   });
+  return items;
+};
+
+export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
+  const items: MachineMenuItem[] = [
+    {
+      id: "zx_next_hotkeys",
+      label: "Hotkeys",
+      submenu: [
+        {
+          id: "zx_next_hotkey_f1",
+          label: "F1 - Hard Reset",
+          enabled: isMachineRunning(),
+          click: async () => {
+            await getEmuApi().issueMachineCommand("restart");
+          }
+        },
+        {
+          id: "zx_next_hotkey_f2",
+          label: "F2 - Toggle Scandoubler",
+          enabled: isMachineRunning(),
+          click: async () => {
+            const enabled = await getEmuApi().issueMachineCommand("custom", "toggleScandoubler");
+            await logEmuEvent(`Scandoubler ${enabled ? "enabled" : "disabled"}`);
+          }
+        },
+        {
+          id: "zx_next_hotkey_f3",
+          label: "F3 - Toggle 50Hz/60Hz Display",
+          enabled: isMachineRunning(),
+          click: async () => {
+            const hz60Mode = await getEmuApi().issueMachineCommand("custom", "toggle5060Hz");
+            await logEmuEvent(`Display mode ${hz60Mode ? "60Hz" : "50Hz"}`);
+          }
+        },
+        {
+          id: "zx_next_hotkey_f4",
+          label: "F4 - Soft Reset",
+          enabled: isMachineRunning(),
+          click: async () => {
+            await getEmuApi().issueMachineCommand("reset");
+          }
+        },
+        {
+          id: "zx_next_hotkey_f5",
+          label: "F5 - Enable Expansion Bus",
+          enabled: isMachineRunning(),
+          click: async () => {
+            const result = await getEmuApi().issueMachineCommand("custom", "enableExpansionBus");
+            if (result === true) await logEmuEvent("Expansion Bus enabled");
+          }
+        },
+        {
+          id: "zx_next_hotkey_f6",
+          label: "F6 - Disable Expansion Bus",
+          enabled: isMachineRunning(),
+          click: async () => {
+            const result = await getEmuApi().issueMachineCommand("custom", "disableExpansionBus");
+            if (result === false) await logEmuEvent("Expansion Bus disabled");
+          }
+        },
+        {
+          id: "zx_next_hotkey_f7",
+          label: "F7 - Adjust Scanline Weight",
+          enabled: isMachineRunning(),
+          click: async () => {
+            const values = ["off", "50%", "25%", "12.5%"];
+            const scanLineValue = await getEmuApi().issueMachineCommand(
+              "custom",
+              "adjustScanlineWeight"
+            );
+            await logEmuEvent(`Scanline weight set to ${values[scanLineValue]}`);
+          }
+        },
+        {
+          id: "zx_next_hotkey_f8",
+          label: "F8 - Cycle CPU Speed",
+          enabled: isMachineRunning(),
+          click: async () => {
+            await getEmuApi().issueMachineCommand("custom", "cycleCpuSpeed");
+          }
+        },
+        {
+          id: "zx_next_hotkey_f9",
+          label: "F9 - Multiface NMI",
+          enabled: isMachineRunning(),
+          click: async () => {
+            await getEmuApi().issueMachineCommand("custom", "multifaceNmi");
+          }
+        },
+        {
+          id: "zx_next_hotkey_f10",
+          label: "F10 - DivMMC NMI",
+          enabled: isMachineRunning(),
+          click: async () => {
+            await getEmuApi().issueMachineCommand("custom", "divmmcNmi");
+          }
+        }
+      ]
+    },
+    { type: "separator" }
+  ];
   return items;
 };
 
@@ -138,7 +237,7 @@ async function resetToDefaultSdCardFile(): Promise<void> {
   cimHandler.setReadOnly(false);
 
   mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, undefined));
-  // TODO: await saveKliveProject();
+  // await saveKliveProject();
   saveAppSettings();
   await logEmuEvent(`Default SD card image is reset to its original state`);
   await logSdCardEvent(getDefaultSdCardFile());
@@ -195,4 +294,20 @@ export async function setSelectedSdCardFile(filename: string): Promise<void> {
   // // --- Save the folder into settings
   // appSettings.folders ??= {};
   // appSettings.folders[SD_CARD_FILE_FOLDER] = sdCardFolder;
+}
+
+function isMachineRunning(): boolean {
+  const state = mainStore.getState();
+  return (
+    state.emulatorState?.machineState === MachineControllerState.Running ||
+    state.emulatorState?.machineState === MachineControllerState.Paused
+  );
+}
+
+function isMachineStopped(): boolean {
+  const state = mainStore.getState();
+  return (
+    state.emulatorState?.machineState === MachineControllerState.Stopped ||
+    state.emulatorState?.machineState === MachineControllerState.None
+  );
 }

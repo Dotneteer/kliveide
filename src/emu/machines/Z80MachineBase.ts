@@ -1,24 +1,24 @@
-import type { KeyMapping } from "@abstr/KeyMapping";
-import type { IFileProvider } from "@abstr/IFileProvider";
-import type { ExecutionContext } from "@emuabstr/ExecutionContext";
-import type { IZ80Machine } from "@emuabstr/IZ80Machine";
-import type { CodeToInject } from "@emuabstr/CodeToInject";
-import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
-import type { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
+import type { ExecutionContext } from "../abstractions/ExecutionContext";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import type { MachineConfigSet } from "@common/machines/info-types";
 
-import { DebugStepMode } from "@emuabstr/DebugStepMode";
-import { FrameTerminationMode } from "@emuabstr/FrameTerminationMode";
-import { TapeMode } from "@emuabstr/TapeMode";
-import { LiteEvent } from "@emu/utils/lite-event";
-import { Z80Cpu } from "@emu/z80/Z80Cpu";
+import { DebugStepMode } from "../abstractions/DebugStepMode";
+import { FrameTerminationMode } from "../abstractions/FrameTerminationMode";
+import { TapeMode } from "../abstractions/TapeMode";
+import { LiteEvent } from "../utils/lite-event";
+import { Z80Cpu } from "../z80/Z80Cpu";
 import { FILE_PROVIDER, TAPE_MODE, REWIND_REQUESTED } from "./machine-props";
-import { CallStackInfo } from "@emuabstr/CallStack";
-import { CpuState } from "@messaging/EmuApi";
-import { SysVar } from "@abstr/SysVar";
-import { QueuedEvent } from "@emuabstr/QueuedEvent";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { CpuState } from "@common/messaging/EmuApi";
+import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "./MachineFrameRunner";
-import { IMemorySection } from "@abstr/MemorySection";
+import { IFileProvider } from "@common/abstractions/IFileProvider";
+import { KeyMapping } from "@common/abstractions/KeyMapping";
+import { IMemorySection } from "@common/abstractions/MemorySection";
+import { SysVar } from "@common/abstractions/SysVar";
+import { CodeToInject } from "../abstractions/CodeToInject";
+import { IZ80Machine } from "../abstractions/IZ80Machine";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -207,11 +207,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     const filename = romName.startsWith("/")
       ? romName
       : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
-    console.log(`Loading ROM from resource: ${filename}`);
-    console.log(`Using file provider:`, fileProvider);
-    const contents = await fileProvider.readBinaryFile(filename);
-    console.log(`ROM loaded, ${contents.length} bytes read`);
-    return contents;
+    return await fileProvider.readBinaryFile(filename);
   }
 
   /**
@@ -506,7 +502,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Executes the specified custom command
    * @param _command Command to execute
    */
-  async executeCustomCommand(_command: string): Promise<void> {
+  async executeCustomCommand(_command: string): Promise<any> {
     // --- Override in derived classes
   }
 

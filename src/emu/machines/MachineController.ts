@@ -1,23 +1,13 @@
-import type {
-  FrameCompletedArgs,
-  IMachineController
-} from "@emuabstr/IMachineController";
-import type { CodeToInject } from "@emuabstr/CodeToInject";
-import type { ExecutionContext } from "@emuabstr/ExecutionContext";
-import type { FrameStats } from "@abstr/FrameStats";
-import type { IDebugSupport } from "@emuabstr/IDebugSupport";
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
-import type { SavedFileInfo } from "@emuabstr/ITapeDevice";
-import type { BreakpointInfo } from "@emuabstr/BreakpointInfo";
-import type { ResolvedBreakpoint } from "@emuabstr/ResolvedBreakpoint";
-import type { SectorChanges } from "@emuabstr/IFloppyDiskDrive";
+import type { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
+import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";
 
-import { DebugStepMode } from "@emuabstr/DebugStepMode";
-import { FrameTerminationMode } from "@emuabstr/FrameTerminationMode";
+import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { LiteEvent } from "@emu/utils/lite-event";
-import { MachineControllerState } from "@abstr/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
   setDebuggingAction,
@@ -25,16 +15,23 @@ import {
   setProjectDebuggingAction
 } from "@state/actions";
 import { DISK_A_CHANGES, DISK_B_CHANGES, FAST_LOAD, SAVED_TO_TAPE } from "./machine-props";
-import { delay } from "@common/utils/timing";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
-import { createIdeApi } from "@messaging/IdeApi";
+import { createIdeApi } from "@common/messaging/IdeApi";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
-import { IAnyMachine } from "@emuabstr/IAnyMachine";
-import { IOutputBuffer, OutputColor } from "@abstr/OutputBuffer";
-import { toHexa4 } from "@common/utils/conversions";
+import { FrameStats } from "@common/abstractions/FrameStats";
+import { MachineControllerState } from "@common/abstractions/MachineControllerState";
+import { IOutputBuffer, OutputColor } from "@common/abstractions/OutputBuffer";
 import { getGlobalSetting } from "@common/settings/utils";
+import { toHexa4 } from "@common/utils/conversions";
+import { BreakpointInfo } from "../abstractions/BreakpointInfo";
+import { CodeToInject } from "../abstractions/CodeToInject";
+import { ExecutionContext } from "../abstractions/ExecutionContext";
+import { IAnyMachine } from "../abstractions/IAnyMachine";
+import { IDebugSupport } from "../abstractions/IDebugSupport";
+import { IMachineController, FrameCompletedArgs } from "../abstractions/IMachineController";
+import { delay } from "@common/utils/timing";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -265,8 +262,8 @@ export class MachineController implements IMachineController {
    * Executes a custom command
    * @param command Custom command string
    */
-  async customCommand(command: string): Promise<void> {
-    await this.machine.executeCustomCommand(command);
+  async customCommand(command: string): Promise<any> {
+    return await this.machine.executeCustomCommand(command);
   }
 
   /**

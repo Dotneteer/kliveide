@@ -151,11 +151,4 @@ export class C64KeyboardDevice implements IGenericKeyboardDevice<IC64Machine> {
     this.isCommodoreKeyDown = false;
     this.isCtrlKeyDown = false;
   }
-
-  /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {
-    // No resources to clean up in this implementation
-  }
 }

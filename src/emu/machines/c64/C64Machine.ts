@@ -1,12 +1,10 @@
-import { CodeToInject } from "@emuabstr/CodeToInject";
-import { KeyMapping } from "@abstr/KeyMapping";
-import { MachineConfigSet, MachineModel } from "@abstr/info-types";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { CallStackInfo } from "@emuabstr/CallStack";
-import { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
-import { ExecutionContext } from "@emuabstr/ExecutionContext";
-import { FrameTerminationMode } from "@emuabstr/FrameTerminationMode";
-import { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
+import { MachineConfigSet, MachineModel } from "@common/machines/info-types";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
+import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { C64Cia1Device } from "./C64Cia1Device";
 import { C64Cia2Device } from "./C64Cia2Device";
 import { C64IoExpansionDevice } from "./C64IoExpansionDevice";
@@ -20,19 +18,21 @@ import { C64KeyCode } from "./C64KeyCode";
 import { c64KeyMappings } from "./C64KeyMappings";
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
 import { MC_SCREEN_FREQ } from "@common/machines/constants";
-import { DebugStepMode } from "@emuabstr/DebugStepMode";
+import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FILE_PROVIDER } from "../machine-props";
-import { IFileProvider } from "@abstr/IFileProvider";
-import { M6510CpuState, VicState } from "@messaging/EmuApi";
-import { SysVar } from "@abstr/SysVar";
+import { M6510CpuState, VicState } from "@common/messaging/EmuApi";
+import { SysVar } from "@common/abstractions/SysVar";
 import { C64CpuPortDevice } from "./C64CpuPortDevice";
 import { C64TapeDevice } from "./C64TapeDevice";
 import { vicMos6569r3, vicMos8562 } from "./vic/vic-models";
-import { QueuedEvent } from "@emuabstr/QueuedEvent";
+import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
-import { IMemorySection, MemorySectionType } from "@abstr/MemorySection";
 import { c64SysVars } from "./C64SysVars";
 import { M6510VaCpu } from "@emu/m6510Va/M6510VaCpu";
+import { IFileProvider } from "@common/abstractions/IFileProvider";
+import { KeyMapping } from "@common/abstractions/KeyMapping";
+import { IMemorySection, MemorySectionType } from "@common/abstractions/MemorySection";
+import { CodeToInject } from "@emu/abstractions/CodeToInject";
 
 export class C64Machine extends M6510VaCpu implements IC64Machine {
   // --- This instance runs the machine frame
@@ -112,6 +112,14 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     this.memoryDevice = new C64MemoryDevice(this);
     this.config = {};
   }
+  getAspectRatio?: () => [number, number];
+  getSelectedRomPage(): number {
+    throw new Error("Method not implemented.");
+  }
+  getSelectedRamBank(): number {
+    throw new Error("Method not implemented.");
+  }
+  beforeTactIncremented?: () => void;
 
   /**
    * Creates the machine frame runner for the emulated machine.
@@ -367,21 +375,7 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     };
   }
 
-  /**
-   * Gets the selected ROM page number
-   */
-  getSelectedRomPage(): number {
-    return -1;
-  }
-
-  /**
-   * Gets the selected RAM bank number
-   */
-  getSelectedRamBank(): number {
-    return -1;
-  }
-
-  async executeCustomCommand(_command: string): Promise<void> {
+  async executeCustomCommand(_command: string): Promise<any> {
     // Handle custom commands if needed
   }
 
@@ -585,7 +579,7 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
    */
   removeEvent(eventFn: (data: any) => void): void {
     if (!this._queuedEvents) return;
-    const idx = this._queuedEvents.findIndex(item => item.eventFn === eventFn);
+    const idx = this._queuedEvents.findIndex((item) => item.eventFn === eventFn);
     if (idx < 0) return;
 
     // --- Event found, remove it

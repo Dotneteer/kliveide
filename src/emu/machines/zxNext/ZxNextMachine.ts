@@ -1,17 +1,13 @@
-import type { KeyMapping } from "@abstr/KeyMapping";
-import type { SysVar } from "@abstr/SysVar";
-import type { ISpectrumBeeperDevice } from "../../machines/zxSpectrum/ISpectrumBeeperDevice";
-import type { IFloatingBusDevice } from "@emuabstr/IFloatingBusDevice";
-import type { ITapeDevice } from "@emuabstr/ITapeDevice";
-import type { CodeToInject } from "@emuabstr/CodeToInject";
-import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
-import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
+import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
+import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
+import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { MachineModel } from "@common/machines/info-types";
 
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
-import { SpectrumKeyCode } from "../../machines/zxSpectrum/SpectrumKeyCode";
-import { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
-import { spectrumKeyMappings } from "../../machines/zxSpectrum/SpectrumKeyMappings";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
+import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 import { Z80NMachineBase } from "./Z80NMachineBase";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
@@ -32,14 +28,20 @@ import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
 import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
-import { CallStackInfo } from "@emuabstr/CallStack";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
-import { createMainApi } from "@messaging/MainApi";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { CpuState } from "@messaging/EmuApi";
-import { IMemorySection, MemorySectionType } from "@abstr/MemorySection";
+import { createMainApi } from "@common/messaging/MainApi";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { CpuState } from "@common/messaging/EmuApi";
 import { zxNextSysVars } from "./ZxNextSysVars";
-import { toHexa2 } from "../../../common/utils/conversions";
+import { CpuSpeedDevice } from "./CpuSpeedDevice";
+import { ExpansionBusDevice } from "./ExpansionBusDevice";
+import { IZxNextMachine } from "@emu/abstractions/IZxNextMachine";
+import { KeyMapping } from "@common/abstractions/KeyMapping";
+import { IMemorySection, MemorySectionType } from "@common/abstractions/MemorySection";
+import { SysVar } from "@common/abstractions/SysVar";
+import { toHexa2 } from "@common/utils/conversions";
+import { CodeToInject } from "@emu/abstractions/CodeToInject";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -49,6 +51,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * The unique identifier of the machine type
    */
   public readonly machineId = "zxnext";
+
+  cpuSpeedDevice: CpuSpeedDevice;
 
   portManager: NextIoPortManager;
 
@@ -109,6 +113,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   tapeDevice: ITapeDevice;
 
+  expansionBusDevice: ExpansionBusDevice;
+
   /**
    * Initialize the machine
    */
@@ -119,6 +125,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.baseClockFrequency = 3_500_000;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
+
+    this.expansionBusDevice = new ExpansionBusDevice(this);
+    this.cpuSpeedDevice = new CpuSpeedDevice(this);
 
     // --- Create and initialize the I/O port manager
     this.portManager = new NextIoPortManager(this);
@@ -189,6 +198,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   reset(): void {
     super.reset();
+    this.cpuSpeedDevice.reset();
     this.memoryDevice.reset();
     this.interruptDevice.reset();
     this.divMmcDevice.reset();
@@ -207,6 +217,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.ulaDevice.reset();
     this.loResDevice.reset();
     this.beeperDevice.reset();
+    this.expansionBusDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices
     this.nextRegDevice.reset();
@@ -238,6 +249,58 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.reset();
     this.nextRegDevice.hardReset();
     this.memoryDevice.hardReset();
+  }
+
+  /**
+   * Executes the specified custom command
+   * @param command Command to execute
+   */
+  async executeCustomCommand(command: string): Promise<any> {
+    switch (command) {
+      case "toggleScandoubler":
+        return (this.screenDevice.scandoublerEnabled = !this.screenDevice.scandoublerEnabled);
+
+      case "toggle5060Hz":
+        return (this.screenDevice.hz60Mode = !this.screenDevice.hz60Mode);
+
+      case "cycleCpuSpeed":
+        if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
+          this.cpuSpeedDevice.nextReg07Value = (this.cpuSpeedDevice.nextReg07Value + 1) % 4;
+        }
+        break;
+
+      case "enableExpansionBus":
+        if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
+          this.expansionBusDevice.nextReg80Value ^= 0x80;
+          return this.expansionBusDevice.enabled;
+        }
+        break;
+
+      case "disableExpansionBus":
+        if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
+          this.expansionBusDevice.nextReg80Value &= 0x7f;
+          return this.expansionBusDevice.enabled;
+        }
+        break;
+
+      case "adjustScanlineWeight":
+        return (this.screenDevice.scanlineWeight = (this.screenDevice.scanlineWeight + 1) % 4);
+
+      case "cycleCpuSpeed":
+        // TODO: Implement cycling CPU speed
+        console.log("Cycling CPU speed - not yet implemented");
+        break;
+
+      case "multifaceNmi":
+        // TODO: Implement multiface NMI
+        console.log("Multiface NMI - not yet implemented");
+        break;
+
+      case "divmmcNmi":
+        // TODO: Implement divmmc NMI
+        console.log("DivMMC NMI - not yet implemented");
+        break;
+    }
   }
 
   get64KFlatMemory(): Uint8Array {
@@ -581,6 +644,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
+  }
+
+  /**
+   * The machine frame loop invokes this method before executing a CPU instruction.
+   */
+  beforeInstructionExecuted(): void {
+    // --- Set the interrupt signal, if required so
+    super.beforeInstructionExecuted();
+    this.clockMultiplier = this.cpuSpeedDevice.effectiveClockMultiplier;
   }
 
   /**

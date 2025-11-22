@@ -54,13 +54,6 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
   }
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {
-    // --- Nothing to dispose
-  }
-
-  /**
    * Segment register 0 (8-bit)
    */
   SR0: number;

@@ -80,8 +80,6 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.transparencyIndex = 0xe3;
   }
 
-  dispose(): void {}
-
   readPort303bValue(): number {
     const result = (this.tooManySpritesPerLine ? 0x02 : 0) | (this.collisionDetected ? 0x01 : 0);
     this.tooManySpritesPerLine = false;

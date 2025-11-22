@@ -1,16 +1,16 @@
-import { PsgChipState } from "@emuabstr/PsgChipState";
+import { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { MachineCommand } from "@abstr/MachineCommand";
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
-import { BreakpointInfo } from "@emuabstr/BreakpointInfo";
 import { SysVar } from "@abstr/SysVar";
-import { CodeToInject } from "@emuabstr/CodeToInject";
-import { ResolvedBreakpoint } from "@emuabstr/ResolvedBreakpoint";
-import { FloppyLogEntry } from "@emuabstr/FloppyLogEntry";
+import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
-import { CallStackInfo } from "@emuabstr/CallStack";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MachineControllerState } from "@abstr/MachineControllerState";
 import { IMemorySection } from "@abstr/MemorySection";
+import { BreakpointInfo } from "@emu/abstractions/BreakpointInfo";
+import { CodeToInject } from "@emu/abstractions/CodeToInject";
+import { FloppyLogEntry } from "@emu/abstractions/FloppyLogEntry";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -38,7 +38,7 @@ class EmuApiImpl {
    * @param _command The machine command to issue.
    * @param _customCommand Optional custom command string.
    */
-  async issueMachineCommand(_command: MachineCommand, _customCommand?: string): Promise<void> {
+  async issueMachineCommand(_command: MachineCommand, _customCommand?: string): Promise<any> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -184,7 +184,7 @@ class EmuApiImpl {
   async runCodeCommand(
     _codeToInject: CodeToInject,
     _debug: boolean,
-    _projectDebug?: boolean
+    _projectDebug: boolean
   ): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }

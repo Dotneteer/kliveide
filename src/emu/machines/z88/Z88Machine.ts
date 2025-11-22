@@ -1,17 +1,14 @@
-import type { KeyMapping } from "@abstr/KeyMapping";
-import type { IZ88Machine } from "@emuabstr/IZ88Machine";
 import type { IZ88BeeperDevice } from "./IZ88BeeperDevice";
 import type { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
 import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
-import type { CodeInjectionFlow } from "@emuabstr/CodeInjectionFlow";
-import type { CodeToInject } from "@emuabstr/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { IZ88MemoryCard } from "./memory/IZ88MemoryCard";
 import type { CardSlotState } from "./memory/CardSlotState";
 
 import { Z80MachineBase } from "../Z80MachineBase";
 import { Z88KeyCode } from "./Z88KeyCode";
-import { KeyCodeSet } from "@emuabstr/IGenericKeyboardDevice";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { z88KeyMappings } from "./Z88KeyMappings";
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
 import { Z88KeyboardDevice } from "./Z88KeyboardDevice";
@@ -32,16 +29,25 @@ import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { createZ88MemoryCard } from "./memory/CardType";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { createMainApi } from "@messaging/MainApi";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
-import { IMemorySection, MemorySectionType } from "@abstr/MemorySection";
-import { toHexa2 } from "@common/utils/conversions";
+import { IZ88Machine } from "@/emu/abstractions/IZ88Machine";
+import { KeyMapping } from "@/common/abstractions/KeyMapping";
+import { IMemorySection, MemorySectionType } from "@/common/abstractions/MemorySection";
+import { toHexa2 } from "@/common/utils/conversions";
+import { CodeToInject } from "@/emu/abstractions/CodeToInject";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
+  getSelectedRomPage(): number {
+    throw new Error("Method not implemented.");
+  }
+  getSelectedRamBank(): number {
+    throw new Error("Method not implemented.");
+  }
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
   private _shiftsReleased = false;
 
@@ -173,20 +179,6 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       labels.push(toHexa2(i));
     }
     return labels;
-  }
-
-  /**
-   * Gets the selected ROM page number
-   */
-  getSelectedRomPage(): number {
-    return -1;
-  }
-
-  /**
-   * Gets the selected RAM bank number
-   */
-  getSelectedRamBank(): number {
-    return -1;
   }
 
   /**
@@ -762,7 +754,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Executes the specified custom command
    * @param command Command to execute
    */
-  async executeCustomCommand(command: string): Promise<void> {
+  async executeCustomCommand(command: string): Promise<any> {
     const machine = this;
     switch (command) {
       case "battery_low":
@@ -785,7 +777,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     async function pressShifts(): Promise<void> {
       machine.setKeyStatus(Z88KeyCode.ShiftL, true);
       machine.setKeyStatus(Z88KeyCode.ShiftR, true);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, 400));
       machine.setKeyStatus(Z88KeyCode.ShiftL, false);
       machine.setKeyStatus(Z88KeyCode.ShiftR, false);
     }

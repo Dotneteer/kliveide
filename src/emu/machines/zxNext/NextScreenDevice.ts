@@ -1,10 +1,10 @@
-import type { IGenericDevice } from "@emuabstr/IGenericDevice";
-import type { RenderingTact } from "@emuabstr/RenderingTact";
-import type { ScreenConfiguration } from "@emuabstr/ScreenConfiguration";
-import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import type { RenderingTact } from "@emu/abstractions/RenderingTact";
+import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
 
-import { RenderingPhase } from "@emuabstr/RenderingPhase";
 import { zxNext9BitColorCodes } from "./PaletteDevice";
+import { IZxNextMachine } from "@emu/abstractions/IZxNextMachine";
+import { RenderingPhase } from "@emu/abstractions/RenderingPhase";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   displayTiming: number;
@@ -13,7 +13,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   timexScreenMode: number;
   timexColorCombination: number;
   hz60Mode: boolean;
-  scanDoublerEnabled: boolean;
+  scandoublerEnabled: boolean;
   scanlineWeight: number;
   videoTimingMode: number;
   enableLoresMode: boolean;
@@ -40,7 +40,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this.userLockOnDisplayTiming = false;
     this.machineType = 0;
     this.hz60Mode = false;
-    this.scanDoublerEnabled = false;
+    this.scandoublerEnabled = false;
     this.scanlineWeight = 0;
     this.videoTimingMode = 0;
     this.enableLoresMode = false;
@@ -59,8 +59,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     // --- Set the screen start offset
     this.ulaScreenStartOffset = this.machine.memoryDevice.getUlaScreenOffset(false);
   }
-
-  dispose(): void {}
 
   // --- The current configuration
   private _configuration: ScreenConfiguration;

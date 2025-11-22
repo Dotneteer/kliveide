@@ -30,6 +30,4 @@ export class JoystickDevice implements IGenericDevice<IZxNextMachine> {
     this.ioMode = 0;
     this.ioModeParam = true;
   }
-
-  dispose(): void {}
 }

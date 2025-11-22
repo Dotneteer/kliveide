@@ -82,8 +82,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
-  dispose(): void {}
-
   get nextReg40Value(): number {
     return this._paletteIndex;
   }

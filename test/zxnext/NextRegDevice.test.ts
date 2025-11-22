@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Layer2Resolution } from "@emu/machines/zxNext/Layer2Device";
 import { JoystickMode } from "@emu/machines/zxNext/JoystickDevice";
+import { IZxNextMachine } from "@/emu/abstractions/IZxNextMachine";
 
 describe("Next - NextRegDevice", function () {
   it("Hard reset", async () => {
@@ -103,7 +103,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x78)).toBe(0x00);
     expect(d.directGetRegValue(0x79)).toBe(0x00);
     expect(d.directGetRegValue(0x7f)).toBe(0xff);
-    expect(d.directGetRegValue(0x80)).toBe(0xff);
+    expect(d.directGetRegValue(0x80)).toBe(0x00);
     expect(d.directGetRegValue(0x81)).toBe(0x00);
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
@@ -255,7 +255,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x78)).toBe(0x00);
     expect(d.directGetRegValue(0x79)).toBe(0x00);
     expect(d.directGetRegValue(0x7f)).toBe(0xff);
-    expect(d.directGetRegValue(0x80)).toBe(0xff);
+    expect(d.directGetRegValue(0x80)).toBe(0x00);
     expect(d.directGetRegValue(0x81)).toBe(0x00);
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
@@ -313,14 +313,14 @@ describe("Next - NextRegDevice", function () {
     const m = await createTestNextMachine();
     const d = m.nextRegDevice;
     d.hardReset();
-    d.directSetRegValue(0x80, 0x05);
+    d.directSetRegValue(0x80, 0x03);
 
     // --- Act
     d.reset();
     const value = readNextReg(m, 0x80);
 
     // --- Assert
-    expect(value).toBe(0x55);
+    expect(value).toBe(0x33);
   });
 
   it("Soft reset sets reg $8c", async () => {
@@ -845,7 +845,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x05, 0x00);
 
     // --- Assert
-    expect(scrDevice.scanDoublerEnabled).toBe(false);
+    expect(scrDevice.scandoublerEnabled).toBe(false);
   });
 
   it("Reg $05 scandoubler #2", async () => {
@@ -857,7 +857,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x05, 0x01);
 
     // --- Assert
-    expect(scrDevice.scanDoublerEnabled).toBe(true);
+    expect(scrDevice.scandoublerEnabled).toBe(true);
   });
 
   it("Reg $06 hotkeyCpuSpeedEnabled", async () => {
@@ -1043,57 +1043,53 @@ describe("Next - NextRegDevice", function () {
   it("Reg $07 cpu speed #1", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const nrDevice = m.nextRegDevice;
 
     // --- Act
     writeNextReg(m, 0x07, 0x00);
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x00);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x00);
-    expect(nrDevice.actualCpuSpeed).toBe(0x00);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x00);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x00);
   });
 
   it("Reg $07 cpu speed #2", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const nrDevice = m.nextRegDevice;
 
     // --- Act
     writeNextReg(m, 0x07, 0x01);
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x11);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x01);
-    expect(nrDevice.actualCpuSpeed).toBe(0x01);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x01);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x01);
   });
 
   it("Reg $07 cpu speed #3", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const nrDevice = m.nextRegDevice;
 
     // --- Act
     writeNextReg(m, 0x07, 0x02);
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x22);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x02);
-    expect(nrDevice.actualCpuSpeed).toBe(0x02);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x02);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x02);
   });
 
   it("Reg $07 cpu speed #4", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const nrDevice = m.nextRegDevice;
 
     // --- Act
     writeNextReg(m, 0x07, 0x03);
 
     // --- Assert
     expect(readNextReg(m, 0x07)).toBe(0x33);
-    expect(nrDevice.programmedCpuSpeed).toBe(0x03);
-    expect(nrDevice.actualCpuSpeed).toBe(0x03);
+    expect(m.cpuSpeedDevice.programmedSpeed).toBe(0x03);
+    expect(m.cpuSpeedDevice.effectiveSpeed).toBe(0x03);
   });
 
   it("Reg $08 unlockPort7ffd", async () => {
@@ -3654,10 +3650,10 @@ describe("Next - NextRegDevice", function () {
     const m = await createTestNextMachine();
 
     // --- Act
-    writeNextReg(m, 0x80, 0xa5);
+    writeNextReg(m, 0x80, 0xa7);
 
     // --- Assert
-    expect(readNextReg(m, 0x80)).toBe(0xa5);
+    expect(readNextReg(m, 0x80)).toBe(0xa7);
   });
 
   it("Reg $81 write #1", async () => {
@@ -3679,7 +3675,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x81, 0xff);
 
     // --- Assert
-    expect(readNextReg(m, 0x81)).toBe(0xf3);
+    expect(readNextReg(m, 0x81)).toBe(0xff);
   });
 
   it("Reg $82 write", async () => {

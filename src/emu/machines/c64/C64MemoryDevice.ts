@@ -75,14 +75,6 @@ export class C64MemoryDevice implements IGenericDevice<IC64Machine> {
   };
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {
-    // Clean up resources if necessary
-    // For now, nothing to dispose
-  }
-
-  /**
    * Gets the current state of the BASIC ROM visibility
    */
   get loram(): boolean {

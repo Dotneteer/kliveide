@@ -9,7 +9,12 @@ import {
 } from "@common/machines/constants";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer } from "./zx-spectrum-menus";
 import { z88KeyboardLayoutRenderer, z88LcdRenderer, z88ResetRenderer } from "./z88-menus";
-import { initializeZxSpectrumNext, sdCardMenuRenderer, setupZxSpectrumNext } from "./zx-next-menus";
+import {
+  hotkeyMenuRenderer,
+  initializeZxSpectrumNext,
+  sdCardMenuRenderer,
+  setupZxSpectrumNext
+} from "./zx-next-menus";
 
 /**
  * Machine-specific menu information
@@ -66,7 +71,8 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   },
   [MI_ZXNEXT]: {
     machineItems: (windowInfo, machine, model) => [
-      ...sdCardMenuRenderer(windowInfo, machine, model)
+      ...hotkeyMenuRenderer(windowInfo, machine, model),
+      ...sdCardMenuRenderer(windowInfo, machine, model),
     ],
     ideItems: spectrumIdeRenderer,
     initializer: initializeZxSpectrumNext,
