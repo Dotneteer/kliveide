@@ -73,6 +73,4 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
     this._storedByte = value;
     this._instructionAddress = (this._instructionAddress + 1) & 0x7ff;
   }
-
-  dispose(): void {}
 }

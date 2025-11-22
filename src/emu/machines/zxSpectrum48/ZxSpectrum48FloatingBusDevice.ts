@@ -14,13 +14,6 @@ export class ZxSpectrum48FloatingBusDevice implements IFloatingBusDevice {
   constructor (public readonly machine: IZxSpectrumMachine) {}
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose (): void {
-    // --- Nothing to dispose
-  }
-
-  /**
    * Reset the device to its initial state.
    */
   reset (): void {

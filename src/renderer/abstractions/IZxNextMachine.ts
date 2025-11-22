@@ -18,6 +18,8 @@ import { SpriteDevice } from "@emu/machines/zxNext/SpriteDevice";
 import { TilemapDevice } from "@emu/machines/zxNext/TilemapDevice";
 import { UlaDevice } from "@emu/machines/zxNext/UlaDevice";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
+import { CpuSpeedDevice } from "@emu/machines/zxNext/CpuSpeedDevice";
+import { ExpansionBusDevice } from "@emu/machines/zxNext/ExpansionBusDevice";
 
 /**
  * This interface defines the behavior of a ZX Spectrum 48K virtual machine that integrates the emulator built from
@@ -28,6 +30,8 @@ export interface IZxNextMachine extends IZ80Machine {
    * Gets the ROM ID to load the ROM file
    */
   get romId(): string;
+
+  cpuSpeedDevice: CpuSpeedDevice;
 
   portManager: NextIoPortManager;
 
@@ -66,6 +70,8 @@ export interface IZxNextMachine extends IZ80Machine {
   ulaDevice: UlaDevice;
 
   loResDevice: LoResDevice;
+
+  expansionBusDevice: ExpansionBusDevice;
 
   /**
    * Reads the screen memory byte

@@ -220,7 +220,7 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Executes the specified custom command
    * @param command Command to execute
    */
-  executeCustomCommand(command: string): Promise<void>;
+  executeCustomCommand(command: string): Promise<any>;
 
   /**
    * Get the 64K of addressable memory of the computer

@@ -13,7 +13,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   timexScreenMode: number;
   timexColorCombination: number;
   hz60Mode: boolean;
-  scanDoublerEnabled: boolean;
+  scandoublerEnabled: boolean;
   scanlineWeight: number;
   videoTimingMode: number;
   enableLoresMode: boolean;
@@ -40,7 +40,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this.userLockOnDisplayTiming = false;
     this.machineType = 0;
     this.hz60Mode = false;
-    this.scanDoublerEnabled = false;
+    this.scandoublerEnabled = false;
     this.scanlineWeight = 0;
     this.videoTimingMode = 0;
     this.enableLoresMode = false;
@@ -59,8 +59,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     // --- Set the screen start offset
     this.ulaScreenStartOffset = this.machine.memoryDevice.getUlaScreenOffset(false);
   }
-
-  dispose(): void {}
 
   // --- The current configuration
   private _configuration: ScreenConfiguration;

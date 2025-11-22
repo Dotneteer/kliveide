@@ -278,14 +278,6 @@ export class C64Cia2Device implements IGenericDevice<IC64Machine> {
     // Additional hard reset logic can be added here
   };
 
-  /**
-   * Disposes of resources held by the CIA #2 device.
-   */
-  dispose(): void {
-    // Clean up resources if necessary
-    // For now, nothing to dispose
-  }
-
   getFlatMemory(): Uint8Array {
     const flatMemory = new Uint8Array(0x100);
     for (let i = 0; i < 0x10; i++) {

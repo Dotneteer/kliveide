@@ -42,6 +42,12 @@ import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 const DEFAULT_ROM = "z88v50-r1f99aaae";
 
 export class Z88Machine extends Z80MachineBase implements IZ88Machine {
+  getSelectedRomPage(): number {
+    throw new Error("Method not implemented.");
+  }
+  getSelectedRamBank(): number {
+    throw new Error("Method not implemented.");
+  }
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
   private _shiftsReleased = false;
 
@@ -748,7 +754,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Executes the specified custom command
    * @param command Command to execute
    */
-  async executeCustomCommand(command: string): Promise<void> {
+  async executeCustomCommand(command: string): Promise<any> {
     const machine = this;
     switch (command) {
       case "battery_low":

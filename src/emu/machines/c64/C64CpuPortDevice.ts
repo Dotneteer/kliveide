@@ -78,10 +78,6 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
     this.updateExternalSignals();
   }
 
-  dispose(): void {
-    // --- Nothing to dispose
-  }
-
   /**
    * Read CPU port direction register ($00)
    * @returns The current direction register value

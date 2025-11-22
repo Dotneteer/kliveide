@@ -44,13 +44,6 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
   }
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose (): void {
-    // --- Nothing to dispose
-  }
-
-  /**
    * Set the status of the specified keyboard key.
    * @param key Key code
    * @param isDown Indicates if the key is pressed down.

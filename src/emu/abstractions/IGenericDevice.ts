@@ -21,9 +21,9 @@ export interface IGenericDevice<TMachine extends IAnyMachine> {
   hardReset?: () => void;
 
   /**
-   * Dispose the resources held by the device
+   * Dispose the resources held by the device (optional)
    */
-  dispose(): void;
+  dispose?(): void;
 
   /**
    * Check if the device asks for a non-maskable interrupt (NMI).

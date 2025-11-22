@@ -265,8 +265,8 @@ export class MachineController implements IMachineController {
    * Executes a custom command
    * @param command Custom command string
    */
-  async customCommand(command: string): Promise<void> {
-    await this.machine.executeCustomCommand(command);
+  async customCommand(command: string): Promise<any> {
+    return await this.machine.executeCustomCommand(command);
   }
 
   /**
