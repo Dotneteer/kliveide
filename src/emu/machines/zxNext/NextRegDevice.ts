@@ -1,7 +1,7 @@
-import type { IGenericDevice } from "@emuabstr/IGenericDevice";
-import type { IZxNextMachine } from "@emuabstr/IZxNextMachine";
+import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 
 import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
+import { IZxNextMachine } from "@/emu/abstractions/IZxNextMachine";
 
 const CORE_VERSION_MAJOR = 3;
 const CORE_VERSION_MINOR = 2;
@@ -63,10 +63,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   hotkeyCpuSpeedEnabled: boolean;
   hotkey50_60HzEnabled: boolean;
   ps2Mode: boolean;
-
-  // --- Reg $07 state
-  actualCpuSpeed = 0;
-  programmedCpuSpeed = 0;
 
   // --- Reg $08 state
   unlockPort7ffd: boolean;
@@ -272,7 +268,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.joystickDevice.joystick1Mode = ((v & 0xc0) >> 6) | ((v & 0x08) >> 1);
         machine.joystickDevice.joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
         machine.screenDevice.hz60Mode = (v & 0x04) !== 0;
-        machine.screenDevice.scanDoublerEnabled = (v & 0x01) !== 0;
+        machine.screenDevice.scandoublerEnabled = (v & 0x01) !== 0;
       },
       slices: [
         {
@@ -382,11 +378,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x07,
       description: "CPU speed",
-      readFn: () => (this.actualCpuSpeed << 4) | this.programmedCpuSpeed,
+      readFn: () => machine.cpuSpeedDevice.nextReg07Value,
       writeFn: (v) => {
-        this.programmedCpuSpeed = v & 0x03;
-        this.actualCpuSpeed = this.programmedCpuSpeed;
-        this.machine.clockMultiplier = 1 << (this.programmedCpuSpeed);
+        machine.cpuSpeedDevice.nextReg07Value = v;
       },
       slices: [
         {
@@ -1545,7 +1539,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x80,
       description: "Expansion Bus Enable",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.nextReg80Value,
+      writeFn: (v) => {
+        machine.expansionBusDevice.nextReg80Value = v & 0xff;
+      },
       slices: [
         {
           mask: 0x80,
@@ -1591,8 +1588,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x81,
       description: "Expansion Bus Control",
-      readFn: () => (this.regValues[0x81] ?? 0x00) & 0xf3,
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.nextReg81Value,
+      writeFn: (v) => {
+        machine.expansionBusDevice.nextReg81Value = v & 0xff;
+      },
       slices: [
         {
           mask: 0x80,
@@ -2996,11 +2995,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
   }
 
-  /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {}
-
   // --- Common reset operation for soft and hard reset
   private commonReset(): void {
     this.directSetRegValue(0x00, 0x08); // --- Machine type: Emulators
@@ -3072,8 +3066,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
 
     // --- Sign soft reset
-    this.machine.interruptDevice.lastWasHardReset = false;
-    this.machine.interruptDevice.lastWasSoftReset = true;
+    const machine = this.machine;
+    machine.interruptDevice.lastWasHardReset = false;
+    machine.interruptDevice.lastWasSoftReset = true;
 
     this.directSetRegValue(0x50, 0xff); // --- MMU0: Map ROM into 0x0000-0x1fff
     this.directSetRegValue(0x51, 0xff); // --- MMU1: Map ROM into 0x2000-0x3fff
@@ -3083,6 +3078,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x55, 0x05); // --- MMU5: Map Bank 05 into 0xa000-0xbfff
     this.directSetRegValue(0x56, 0x00); // --- MMU6: Map Bank 00 into 0xc000-0xdfff
     this.directSetRegValue(0x57, 0x01); // --- MMU7: Map Bank 01 into 0xe000-0xffff
+
+    machine.expansionBusDevice.reset(); // --- Reg 0x80 and 0x81
+
     this.directSetRegValue(0xa9, 0x05); // --- Write ESP GPIO2, Write ESP GPIO0
     this.directSetRegValue(0xb8, 0x83); // --- Enable DivMMC automap for $0000, $0000, and $0038
     this.directSetRegValue(0xb9, 0x01); // --- Enable DivMMC automap for $0000 only when ROM3 is present
@@ -3114,8 +3112,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x02, 0x00); // --- Generate DivMMC interrupt & hard reset
 
     // --- Sign hard reset
-    this.machine.interruptDevice.lastWasHardReset = true;
-    this.machine.interruptDevice.lastWasSoftReset = false;
+    const machine = this.machine;
+    machine.interruptDevice.lastWasHardReset = true;
+    machine.interruptDevice.lastWasSoftReset = false;
 
     this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
@@ -3129,6 +3128,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- Use default mouse DPI
     this.directSetRegValue(0x50, 0xff); // --- Map ROM into 0x0000-0x1fff
     this.directSetRegValue(0x51, 0xff); // --- Map ROM into 0x2000-0x3fff
+
+    machine.expansionBusDevice.hardReset(); // --- Reg 0x80 and 0x81
+
     this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
 
     // --- Apply soft reset

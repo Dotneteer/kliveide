@@ -20,11 +20,6 @@ export class DivMmc implements IDivMmcDevice {
   constructor(public readonly machine: IZxNextMachine) {}
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {}
-
-  /**
    * Initializes the DivIDE/DIVMMC interface
    */
   reset(): void {

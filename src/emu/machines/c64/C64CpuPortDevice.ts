@@ -35,7 +35,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
 
   // Per-bit capacitor state (bits 3-7 can have capacitor effect)
   private _capacitorBits: CapacitorBit[] = [];
-  
+
   /**
    * Get the current capacitor bit states (readonly)
    * This is primarily intended for testing purposes.
@@ -57,9 +57,9 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
    */
   reset(): void {
     // Reset registers to default values
-    this._direction = 0x2F; // Default CPU port direction after reset (bits 5 and 6 are inputs)
-    this._data = 0x17;      // Default CPU port data after reset
-    
+    this._direction = 0x2f; // Default CPU port direction after reset (bits 5 and 6 are inputs)
+    this._data = 0x17; // Default CPU port data after reset
+
     // --- Initialize capacitor bits to power-on state
     // --- At power-on/reset, ALL capacitor variables are set to 0
     // --- No capacitor effect is initially active
@@ -73,13 +73,9 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
 
     // --- Initialize with default values
     this.updateDataRead();
-    
+
     // Update external signals
     this.updateExternalSignals();
-  }
-
-  dispose(): void {
-    // --- Nothing to dispose
   }
 
   /**
@@ -102,7 +98,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
     this.checkCapacitorTriggers(oldDirection, this._direction, this._data);
 
     this.updateDataRead();
-    
+
     // Update external signals when direction changes
     // This is important for IEC bus lines when they switch between input/output
     this.updateExternalSignals();
@@ -156,7 +152,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
   private updateDataRead(): void {
     // Update capacitor states first
     this.updateCapacitorStates();
-    
+
     let result = 0;
 
     // Process each bit
@@ -196,7 +192,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
    */
   private getExternalInput(bit: number): number {
     const bitMask = 1 << bit;
-    
+
     switch (bit) {
       // --- Cassette sense (input)
       case 4:
@@ -226,11 +222,11 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
   private updateExternalSignals(): void {
     // Handle cassette-related signals
     this.updateCassetteSignals();
-    
+
     // Handle IEC bus signals
     this.updateIecBusSignals();
   }
-  
+
   /**
    * Updates cassette-related signals
    */
@@ -247,7 +243,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
       this.machine.tapeDevice.motorOn = (this._data & 0x20) === 0;
     }
   }
-  
+
   /**
    * Updates IEC bus signals based on CPU port state
    */
@@ -258,7 +254,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
     const isBit6Output = (this._direction & 0x40) !== 0;
     const dataOut = isBit6Output ? (this._data & 0x40) === 0 : false;
     this.machine.cia2Device.cpuPortDrivingDataLow = dataOut;
-    
+
     // --- IEC CLOCK line (bit 7)
     const isBit7Output = (this._direction & 0x80) !== 0;
     const clockOut = isBit7Output ? (this._data & 0x80) === 0 : false;
@@ -287,13 +283,13 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
       if (wasOutput && isInput && dataHigh) {
         const randomOffset = this.getRandomOffset();
         const falloffTime = C64_CAPACITOR_CONSTANTS.FALL_OFF_CYCLES + randomOffset;
-        
+
         this._capacitorBits[bit] = {
           value: bitMask,
           setTacts: this.machine.tacts + falloffTime,
           falloffActive: true
         };
-      } 
+      }
       // Output=0 to input transition doesn't trigger capacitor effect
       else if (wasOutput && isInput && !dataHigh) {
         this._capacitorBits[bit] = {
@@ -310,7 +306,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
    */
   private updateCapacitorStates(): void {
     const currentTacts = this.machine.tacts;
-    
+
     // --- Check if any capacitor bits have expired
     for (let bit = 3; bit <= 7; bit++) {
       const cap = this._capacitorBits[bit];
@@ -318,7 +314,7 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
         // --- Capacitor has discharged
         cap.falloffActive = false;
         cap.value = 0;
-        
+
         // Ensure that the data read gets updated to reflect discharged capacitor
         this.updateDataRead();
       }
@@ -340,7 +336,8 @@ export class C64CpuPortDevice implements IGenericDevice<IC64Machine> {
         // --- Reset/extend capacitor effect for this bit
         this._capacitorBits[bit] = {
           value: bitMask,
-          setTacts: this.machine.tacts + C64_CAPACITOR_CONSTANTS.FALL_OFF_CYCLES + this.getRandomOffset(),
+          setTacts:
+            this.machine.tacts + C64_CAPACITOR_CONSTANTS.FALL_OFF_CYCLES + this.getRandomOffset(),
           falloffActive: true
         };
       }

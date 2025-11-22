@@ -671,14 +671,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
   };
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {
-    // Clean up resources if necessary
-    // For now, nothing to dispose
-  }
-
-  /**
    * Read a VIC-II register value
    * @param regIndex Register index (0-47, corresponding to $D000-$D02E)
    * @returns The value of the register

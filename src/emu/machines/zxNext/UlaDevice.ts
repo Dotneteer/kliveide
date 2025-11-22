@@ -41,8 +41,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
     this.scrollY = 0;
   }
 
-  dispose(): void {}
-
   /**
    * Gets the clip window coordinate according to the current clip index
    */

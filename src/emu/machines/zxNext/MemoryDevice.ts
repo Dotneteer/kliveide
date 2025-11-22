@@ -133,8 +133,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   hardReset(): void {}
 
-  dispose(): void {}
-
   /**
    * Sets the page information for the specified 8K memory page
    * @param pageIndex Page index

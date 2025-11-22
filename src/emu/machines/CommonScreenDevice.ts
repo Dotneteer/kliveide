@@ -1,9 +1,9 @@
 import type { IScreenDevice } from "../abstractions/IScreenDevice";
-import type { IZxSpectrumMachine } from "../abstractions/IZxSpectrumMachine";
 
-import { RenderingPhase } from "../abstractions/RenderingPhase";
-import { RenderingTact } from "../abstractions/RenderingTact";
-import { ScreenConfiguration } from "../abstractions/ScreenConfiguration";
+import { RenderingTact } from "@emu/abstractions/RenderingTact";
+import { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
+import { IZxSpectrumMachine } from "@emu/abstractions/IZxSpectrumMachine";
+import { RenderingPhase } from "@emu/abstractions/RenderingPhase";
 
 /**
  * This class implements the ZX Spectrum screen device.
@@ -192,13 +192,6 @@ export class CommonScreenDevice implements IScreenDevice {
   ) {
     this._configuration = configuration;
     this._flashFlag = false;
-  }
-
-  /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {
-    // --- Nothing to dispose
   }
 
   /**

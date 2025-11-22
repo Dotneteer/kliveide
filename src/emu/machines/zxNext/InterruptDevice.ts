@@ -72,8 +72,6 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     this.lastWasSoftReset = false;
   }
 
-  dispose(): void {}
-
   get nextReg02Value(): number {
     return (
       (this.busResetRequested ? 0x80 : 0x00) |

@@ -1,19 +1,19 @@
-import { CodeToInject } from "./CodeToInject";
-import { ILiteEvent } from "@abstr/ILiteEvent";
-import { KeyMapping } from "@abstr/KeyMapping";
-import { MachineConfigSet } from "@abstr/info-types";
-import { MessengerBase } from "@messaging/MessengerBase";
-import { CallStackInfo } from "./CallStack";
-import { CodeInjectionFlow } from "./CodeInjectionFlow";
-import { ExecutionContext } from "./ExecutionContext";
-import { FrameTerminationMode } from "./FrameTerminationMode";
-import { KeyCodeSet } from "./IGenericKeyboardDevice";
+import { MachineConfigSet } from "@common/machines/info-types";
+import { MessengerBase } from "@common/messaging/MessengerBase";
+import { CallStackInfo } from "@emu/abstractions/CallStack";
+import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import { ExecutionContext } from "@emu/abstractions/ExecutionContext";
+import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { IMachineEventHandler } from "./IMachineEventHandler";
-import { IAnyCpu } from "./IAnyCpu";
-import { CpuState } from "@messaging/EmuApi";
-import { SysVar } from "@abstr/SysVar";
+import { IAnyCpu } from "@emu/abstractions/IAnyCpu";
+import { CpuState } from "@common/messaging/EmuApi";
 import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
-import { IMemorySection } from "@abstr/MemorySection";
+import { ILiteEvent } from "@/common/abstractions/ILiteEvent";
+import { KeyMapping } from "@/common/abstractions/KeyMapping";
+import { IMemorySection } from "@/common/abstractions/MemorySection";
+import { SysVar } from "@/common/abstractions/SysVar";
+import { CodeToInject } from "./CodeToInject";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -220,7 +220,7 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Executes the specified custom command
    * @param command Command to execute
    */
-  executeCustomCommand(command: string): Promise<void>;
+  executeCustomCommand(command: string): Promise<any>;
 
   /**
    * Get the 64K of addressable memory of the computer

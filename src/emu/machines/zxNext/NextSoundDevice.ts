@@ -29,6 +29,4 @@ export class NextSoundDevice implements IGenericDevice<IZxNextMachine> {
     this.ay0Mono = false;
     this.silenceHdmiAudio = false;
   }
-
-  dispose(): void {}
 }

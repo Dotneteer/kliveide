@@ -150,13 +150,6 @@ export class TapeDevice implements ITapeDevice {
   }
 
   /**
-   * Dispose the resources held by the device
-   */
-  dispose(): void {
-    // --- Nothing to dispose
-  }
-
-  /**
    * Get or set the current operation mode of the tape device.
    */
   get tapeMode(): TapeMode {

@@ -27,10 +27,6 @@ export class C64TapeDevice implements IGenericDevice<IC64Machine> {
     this._cassetteSwitchSense = false;
   }
 
-  dispose(): void {
-    // Clean up resources if needed
-  }
-
   /**
    * Gets the current state of the cassette switch.
    */
