@@ -184,7 +184,8 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_BANK]: 256,
-      [MF_BLINK]: true
+      [MF_BLINK]: true,
+      [MF_ALLOW_SCAN_LINES]: false
     },
     models: [
       {

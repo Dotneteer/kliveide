@@ -286,11 +286,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       case "adjustScanlineWeight":
         return (this.screenDevice.scanlineWeight = (this.screenDevice.scanlineWeight + 1) % 4);
 
-      case "cycleCpuSpeed":
-        // TODO: Implement cycling CPU speed
-        console.log("Cycling CPU speed - not yet implemented");
-        break;
-
       case "multifaceNmi":
         // TODO: Implement multiface NMI
         console.log("Multiface NMI - not yet implemented");

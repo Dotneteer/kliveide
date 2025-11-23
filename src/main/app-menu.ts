@@ -674,6 +674,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             appState.emulatorState?.modelId === m.modelId,
           click: async () => {
             await setMachineType(mt.machineId, m.modelId);
+            const newMachine = machineRegistry.find((m) => m.machineId === mt.machineId);
+            if (newMachine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
+              // --- Turn off scanline effect for machines that support it by default
+              setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
+            }
             await saveKliveProject();
           }
         });
