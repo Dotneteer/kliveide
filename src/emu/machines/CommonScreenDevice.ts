@@ -43,17 +43,14 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly ZxSpectrum48PalScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 7,
-    borderTopLines: 49,
+    verticalSyncLines: 40,
+    borderTopLines: 48,
     borderBottomLines: 48,
-    nonVisibleBorderBottomLines: 8,
     displayLines: 192,
     borderLeftTime: 24,
     borderRightTime: 24,
     displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 8,
+    horizontalBlankingTime: 48,
     pixelDataPrefetchTime: 2,
     attributeDataPrefetchTime: 1,
     contentionValues: [6, 5, 4, 3, 2, 1, 0, 0]
@@ -63,17 +60,14 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (NTSC)
    */
   static readonly ZxSpectrum48NtscScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 15,
-    borderTopLines: 25,
+    verticalSyncLines: 26,
+    borderTopLines: 24,
     borderBottomLines: 24,
-    nonVisibleBorderBottomLines: 0,
     displayLines: 192,
     borderLeftTime: 24,
     borderRightTime: 24,
     displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 8,
+    horizontalBlankingTime: 48,
     pixelDataPrefetchTime: 2,
     attributeDataPrefetchTime: 1,
     contentionValues: [6, 5, 4, 3, 2, 1, 0, 0]
@@ -83,17 +77,14 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly ZxSpectrum128ScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 7,
+    verticalSyncLines: 23,
     borderTopLines: 48,
     borderBottomLines: 48,
-    nonVisibleBorderBottomLines: 8,
     displayLines: 192,
     borderLeftTime: 24,
     borderRightTime: 24,
     displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 12,
+    horizontalBlankingTime: 53,
     pixelDataPrefetchTime: 2,
     attributeDataPrefetchTime: 1,
     contentionValues: [4, 3, 2, 1, 0, 0, 6, 5]
@@ -103,17 +94,14 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly ZxSpectrumP3EScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 7,
+    verticalSyncLines: 23,
     borderTopLines: 48,
     borderBottomLines: 48,
-    nonVisibleBorderBottomLines: 8,
     displayLines: 192,
     borderLeftTime: 24,
     borderRightTime: 24,
     displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 12,
+    horizontalBlankingTime: 52,
     pixelDataPrefetchTime: 2,
     attributeDataPrefetchTime: 1,
     contentionValues: [0, 7, 6, 5, 4, 3, 2, 1]
@@ -161,12 +149,6 @@ export class CommonScreenDevice implements IScreenDevice {
    * This buffer stores the bitmap of the screen being rendered. Each 32-bit value represents an ARGB pixel.
    */
   private _pixelBuffer: Uint32Array;
-
-  /**
-   * This value shows the refresh rate calculated from the base clock frequency of the CPU and the screen
-   * configuration (total #of screen rendering tacts per frame).
-   */
-  refreshRate: number;
 
   /**
    * This value shows the number of frames after which the ULA toggles the flash flag. In the hardware machine,
@@ -315,17 +297,14 @@ export class CommonScreenDevice implements IScreenDevice {
     // --- Shortcut to the memory device
     // --- Calculate helper screen dimensions
     this.firstDisplayLine =
-      this._configuration.verticalSyncLines +
-      this._configuration.nonVisibleBorderTopLines +
-      this._configuration.borderTopLines;
+      this._configuration.verticalSyncLines + this._configuration.borderTopLines;
     const lastDisplayLine = this.firstDisplayLine + this._configuration.displayLines - 1;
 
     // --- Calculate the rendered screen size in pixels
     this.rasterLines =
       this.firstDisplayLine +
       this._configuration.displayLines +
-      this._configuration.borderBottomLines +
-      this._configuration.nonVisibleBorderBottomLines;
+      this._configuration.borderBottomLines;
     this.screenLines =
       this._configuration.borderTopLines +
       this._configuration.displayLines +
@@ -345,7 +324,6 @@ export class CommonScreenDevice implements IScreenDevice {
       this._configuration.borderLeftTime +
       this._configuration.displayLineTime +
       this._configuration.borderRightTime +
-      this._configuration.nonVisibleBorderRightTime +
       this._configuration.horizontalBlankingTime;
 
     // --- Determine the number of tacts in a machine frame
@@ -355,13 +333,11 @@ export class CommonScreenDevice implements IScreenDevice {
     this.machine.setTactsInFrame(tactsInFrame);
 
     // --- Calculate the refresh rate and the flash toggle rate
-    this.refreshRate = this.machine.baseClockFrequency / tactsInFrame;
-    this.flashToggleFrames = Math.round(this.refreshRate / 2);
+    this.flashToggleFrames = 16;
 
     // --- Calculate the first and last visible lines
-    this.firstVisibleLine =
-      this._configuration.verticalSyncLines + this._configuration.nonVisibleBorderTopLines;
-    const lastVisibleLine = this.rasterLines - this._configuration.nonVisibleBorderBottomLines;
+    this.firstVisibleLine = this._configuration.verticalSyncLines;
+    const lastVisibleLine = this.rasterLines;
     this.firstVisibleBorderTact = screenLineTime - this._configuration.borderLeftTime;
 
     // --- Calculate the last visible line tact

@@ -127,17 +127,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly NextScreenConfiguration: ScreenConfiguration = {
-    verticalSyncLines: 8,
-    nonVisibleBorderTopLines: 7,
+    verticalSyncLines: 23,
     borderTopLines: 49,
     borderBottomLines: 48,
-    nonVisibleBorderBottomLines: 8,
     displayLines: 192,
     borderLeftTime: 24,
     borderRightTime: 24,
     displayLineTime: 128,
-    horizontalBlankingTime: 40,
-    nonVisibleBorderRightTime: 8,
+    horizontalBlankingTime: 48,
     pixelDataPrefetchTime: 2,
     attributeDataPrefetchTime: 1,
     contentionValues: [6, 5, 4, 3, 2, 1, 0, 0]
@@ -298,17 +295,14 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     // --- Shortcut to the memory device
     // --- Calculate helper screen dimensions
     this.firstDisplayLine =
-      this._configuration.verticalSyncLines +
-      this._configuration.nonVisibleBorderTopLines +
-      this._configuration.borderTopLines;
+      this._configuration.verticalSyncLines + this._configuration.borderTopLines;
     const lastDisplayLine = this.firstDisplayLine + this._configuration.displayLines - 1;
 
     // --- Calculate the rendered screen size in pixels
     this.rasterLines =
       this.firstDisplayLine +
       this._configuration.displayLines +
-      this._configuration.borderBottomLines +
-      this._configuration.nonVisibleBorderBottomLines;
+      this._configuration.borderBottomLines;
     this.screenLines =
       this._configuration.borderTopLines +
       this._configuration.displayLines +
@@ -328,7 +322,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
       this._configuration.borderLeftTime +
       this._configuration.displayLineTime +
       this._configuration.borderRightTime +
-      this._configuration.nonVisibleBorderRightTime +
       this._configuration.horizontalBlankingTime;
 
     // --- Determine the number of tacts in a machine frame
@@ -342,9 +335,8 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this.flashToggleFrames = Math.round(this.refreshRate / 2);
 
     // --- Calculate the first and last visible lines
-    this.firstVisibleLine =
-      this._configuration.verticalSyncLines + this._configuration.nonVisibleBorderTopLines;
-    const lastVisibleLine = this.rasterLines - this._configuration.nonVisibleBorderBottomLines;
+    this.firstVisibleLine = this._configuration.verticalSyncLines;
+    const lastVisibleLine = this.rasterLines;
     this.firstVisibleBorderTact = screenLineTime - this._configuration.borderLeftTime;
 
     // --- Calculate the last visible line tact

@@ -8,12 +8,6 @@ export type ScreenConfiguration = {
   verticalSyncLines: number;
 
   /**
-   * The number of top border lines that are not visible
-   * when rendering the screen
-   */
-  nonVisibleBorderTopLines: number;
-
-  /**
    * The number of border lines before the display
    */
   borderTopLines: number;
@@ -27,12 +21,6 @@ export type ScreenConfiguration = {
    * The number of border lines after the display
    */
   borderBottomLines: number;
-
-  /**
-   * The number of bottom border lines that are not visible
-   * when rendering the screen
-   */
-  nonVisibleBorderBottomLines: number;
 
   /**
    * Horizontal blanking time (HSync+blanking).
@@ -57,12 +45,6 @@ export type ScreenConfiguration = {
    * Given in Z80 clock cycles.
    */
   borderRightTime: number;
-
-  /**
-   * The time used to render the nonvisible right part of the border.
-   * Given in Z80 clock cycles.
-   */
-  nonVisibleBorderRightTime: number;
 
   /**
    * The time the data of a particular pixel should be prefetched

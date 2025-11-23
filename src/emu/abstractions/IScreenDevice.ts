@@ -23,12 +23,6 @@ export interface IScreenDevice extends IGenericDevice<IZxSpectrumMachine> {
   renderingTactTable: RenderingTact[];
 
   /**
-   * This value shows the refresh rate calculated from the base clock frequency of the CPU and the screen
-   * configuration (total #of screen rendering tacts per frame).
-   */
-  refreshRate: number;
-
-  /**
    * This value shows the number of frames after which the ULA toggles the flash flag. In the hardware machine,
    * the flash flag toggles twice in a second.
    */
