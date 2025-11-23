@@ -8,6 +8,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
@@ -69,6 +70,15 @@ const settingDefinitions: Setting[] = [
     description: "Show or hide the instant screen in the Emulator view.",
     type: "boolean",
     defaultValue: false,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SCANLINE_EFFECT,
+    title: "Scanline Effect Intensity",
+    description: "Intensity of the CRT scanline effect (off, 50%, 25%, or 12.5%).",
+    type: "string",
+    defaultValue: "off",
     saveWithIde: true,
     boundTo: "emu"
   },

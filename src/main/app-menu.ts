@@ -50,6 +50,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
@@ -99,6 +100,7 @@ const STEP_OVER = "step_over";
 const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
+const SCANLINE_EFFECT = "scanline_effect";
 const SELECT_KEY_MAPPING = "select_key_mapping";
 const RESET_KEY_MAPPING = "reset_key_mapping";
 
@@ -619,6 +621,28 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     };
   });
 
+  // --- Prepare the scanline effect submenus
+  const scanlineEffectValues = [
+    { value: "off", label: "Off" },
+    { value: "50%", label: "50%" },
+    { value: "25%", label: "25%" },
+    { value: "12.5%", label: "12.5%" }
+  ];
+  const currentScanlineEffect = getSettingValue(SETTING_EMU_SCANLINE_EFFECT) ?? "off";
+  const scanlineEffectMenu: MenuItemConstructorOptions[] = scanlineEffectValues.map((v) => {
+    return {
+      id: `${SCANLINE_EFFECT}_${v.value}`,
+      label: v.label,
+      type: "checkbox",
+      checked: currentScanlineEffect === v.value,
+      click: async () => {
+        setSettingValue(SETTING_EMU_SCANLINE_EFFECT, v.value);
+        await logEmuEvent(`Scanline effect set to ${v.label}`);
+        await saveKliveProject();
+      }
+    };
+  });
+
   // --- Machine types submenu (use the registered machines)
   const machineTypesMenu: MenuItemConstructorOptions[] = [];
   machineRegistry.forEach((mt) => {
@@ -768,6 +792,12 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       id: SOUND_LEVEL,
       label: "Sound Level",
       submenu: soundLeveMenu
+    },
+    { type: "separator" },
+    {
+      id: SCANLINE_EFFECT,
+      label: "Scanline Effect",
+      submenu: scanlineEffectMenu
     },
     { type: "separator" },
     ...specificMachineMenus,

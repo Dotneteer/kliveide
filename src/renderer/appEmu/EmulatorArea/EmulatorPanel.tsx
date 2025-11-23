@@ -18,7 +18,7 @@ import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 import { machineEmuToolRegistry } from "../tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN } from "@common/settings/setting-const";
+import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN, SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -59,6 +59,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
+  const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
@@ -73,6 +74,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const imageBuffer = useRef<ArrayBuffer>();
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
+  const currentScanlineEffect = useRef<string>("off");
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -120,6 +122,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       `Paused (PC: $${toHexa4(controller.machine.pc)})${showInstantScreen ? " - Instant screen" : ""}`
     );
   };
+
+  useEffect(() => {
+    console.log("Scanline effect changed to:", scanlineEffect);
+  }, [scanlineEffect]);
 
   // --- Prepare the key mappings
   useEffect(() => {
@@ -192,6 +198,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       }
     }
   }, [showInstantScreen]);
+
+  // --- Respond to scanline effect setting changes
+  useEffect(() => {
+    currentScanlineEffect.current = scanlineEffect as string;
+    displayScreenData();
+  }, [scanlineEffect]);
 
   // --- Respond to resizing the main container
   useResizeObserver(hostElement, () => {
@@ -418,6 +430,110 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     pixelData.current = new Uint32Array(imageBuffer.current);
   }
 
+  // --- Applies scanline effect based on zoom factor and intensity setting
+  function applyScanlineEffect(
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    sourceCanvas: HTMLCanvasElement,
+    scanlineIntensity: string = "off"
+  ): void {
+    const sourceHeight = sourceCanvas.height;
+    const targetWidth = canvas.width;
+    const targetHeight = canvas.height;
+
+    // Determine scanline darkening intensity from setting
+    let scanlineDarkening = 0.0; // Default: off (0% darkening)
+    switch (scanlineIntensity) {
+      case "50%":
+        scanlineDarkening = 0.75;
+        break;
+      case "25%":
+        scanlineDarkening = 0.5;
+        break;
+      case "12.5%":
+        scanlineDarkening = 0.25;
+        break;
+      case "off":
+      default:
+        scanlineDarkening = 0.0;
+    }
+
+    // If scanline effect is off, just draw the image
+    if (scanlineDarkening === 0.0) {
+      ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+      return;
+    }
+
+    // Calculate zoom factor (approximate)
+    const zoomFactorY = targetHeight / sourceHeight;
+
+    // Draw source image normally first
+    ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+
+    // Get image data to apply scanline effect
+    const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+    const data = imageData.data;
+
+    // Apply scanline effect based on zoom factor
+    for (let bufferLineIdx = 0; bufferLineIdx < sourceHeight; bufferLineIdx++) {
+      const startCanvasLine = Math.floor(bufferLineIdx * zoomFactorY);
+      const endCanvasLine = Math.floor((bufferLineIdx + 1) * zoomFactorY);
+      const numCanvasLines = endCanvasLine - startCanvasLine;
+
+      for (
+        let canvasLineInBuffer = 0;
+        canvasLineInBuffer < numCanvasLines;
+        canvasLineInBuffer++
+      ) {
+        const canvasLineIdx = startCanvasLine + canvasLineInBuffer;
+        let opacity = 1.0; // Default: no scanline effect
+
+        // Determine opacity based on position within the buffer line
+        if (numCanvasLines === 1) {
+          // Single line per buffer line - no effect
+          opacity = 1.0;
+        } else if (numCanvasLines === 2) {
+          // Zoom 2: First normal, second with scanline darkening
+          opacity = canvasLineInBuffer === 0 ? 1.0 : 1.0 - scanlineDarkening;
+        } else if (numCanvasLines === 3) {
+          // Zoom 3: First normal, second antialiasing, third scanline
+          if (canvasLineInBuffer === 0) {
+            opacity = 1.0; // First line: normal
+          } else if (canvasLineInBuffer === 1) {
+            opacity = 1.0 - scanlineDarkening * 0.5; // Second line: half scanline darkening
+          } else {
+            opacity = 1.0 - scanlineDarkening; // Third line: full scanline effect
+          }
+        } else if (numCanvasLines >= 4) {
+          // Zoom 4+: Pattern - normal, antialiasing (multiple), scanline
+          // First line is always normal, last line is scanline, middle are antialiasing
+          if (canvasLineInBuffer === 0) {
+            opacity = 1.0; // First line: normal
+          } else if (canvasLineInBuffer === numCanvasLines - 1) {
+            opacity = 1.0 - scanlineDarkening; // Last line: scanline effect
+          } else {
+            // Middle lines: gradient antialiasing from 1.0 to (1.0 - scanlineDarkening)
+            const middleCount = numCanvasLines - 2;
+            const middleIdx = canvasLineInBuffer - 1;
+            opacity = 1.0 - (scanlineDarkening * middleIdx) / middleCount;
+          }
+        }
+
+        // Apply opacity to this line
+        if (opacity < 1.0) {
+          const lineStartIdx = canvasLineIdx * targetWidth * 4;
+          const lineEndIdx = lineStartIdx + targetWidth * 4;
+          for (let pixelIdx = lineStartIdx; pixelIdx < lineEndIdx; pixelIdx += 4) {
+            // Apply opacity by reducing alpha channel
+            data[pixelIdx + 3] = Math.round(data[pixelIdx + 3] * opacity);
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+
   // --- Displays the screen
   function displayScreenData(): void {
     if (!pixelData.current) {
@@ -461,7 +577,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
       screenCtx.imageSmoothingEnabled = false;
-      screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
+      applyScanlineEffect(screenCtx, screenEl, shadowScreenEl, currentScanlineEffect.current);
     }
   }
 
