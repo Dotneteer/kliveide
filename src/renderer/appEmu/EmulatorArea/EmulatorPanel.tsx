@@ -54,15 +54,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Element references
   const hostElement = useRef<HTMLDivElement>();
   const screenElement = useRef<HTMLCanvasElement>();
-  const shadowScreenElement = useRef<HTMLCanvasElement>();
   const hostRectangle = useRef<DOMRect>();
   const screenRectangle = useRef<DOMRect>();
 
   // --- State variables
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
-  const shadowCanvasWidth = useRef(0);
-  const shadowCanvasHeight = useRef(0);
+  const sourceWidth = useRef(0);
+  const sourceHeight = useRef(0);
   const xRatio = useRef(1);
   const yRatio = useRef(1);
   
@@ -96,7 +95,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const imageBuffer = useRef<ArrayBuffer>();
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
-  const shadowCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
   const screenCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
   const currentScanlineEffectRef = useRef<string>("off");
 
@@ -175,8 +173,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Respond to screen dimension changes
   const updateScreenDimensions = () => {
-    shadowCanvasWidth.current = controller?.machine?.screenWidthInPixels;
-    shadowCanvasHeight.current = controller?.machine?.screenHeightInPixels;
+    sourceWidth.current = controller?.machine?.screenWidthInPixels;
+    sourceHeight.current = controller?.machine?.screenHeightInPixels;
     if (controller?.machine?.getAspectRatio) {
       const [ratX, ratY] = controller?.machine?.getAspectRatio();
       xRatio.current = ratX ?? 1;
@@ -262,12 +260,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           />
         )}
         <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
-        <canvas
-          ref={shadowScreenElement}
-          style={{ display: "none" }}
-          width={shadowCanvasWidth.current}
-          height={shadowCanvasHeight.current}
-        />
         {machineTools.current}
       </div>
     </div>
@@ -431,8 +423,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     screenRectangle.current = screenElement.current.getBoundingClientRect();
     const clientWidth = hostElement.current.offsetWidth;
     const clientHeight = hostElement.current.offsetHeight;
-    const width = shadowCanvasWidth.current ?? 1;
-    const height = shadowCanvasHeight.current ?? 1;
+    const width = sourceWidth.current ?? 1;
+    const height = sourceHeight.current ?? 1;
     let widthRatio = Math.floor((1 * (clientWidth - 8)) / width) / 1 / xRatio.current;
     if (widthRatio < 1) widthRatio = 1;
     let heightRatio = Math.floor((1 * (clientHeight - 8)) / height) / 1 / yRatio.current;
@@ -440,20 +432,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const ratio = Math.min(widthRatio, heightRatio);
     setCanvasWidth(width * ratio * xRatio.current);
     setCanvasHeight(height * ratio * yRatio.current);
-    if (shadowScreenElement.current) {
-      shadowScreenElement.current.width = width;
-      shadowScreenElement.current.height = height;
-    }
   }
 
   // --- Setup the screen buffers
   function configureScreen(): void {
-    const dataLen = (shadowCanvasWidth.current ?? 0) * (shadowCanvasHeight.current ?? 0) * 4;
+    const dataLen = (sourceWidth.current ?? 0) * (sourceHeight.current ?? 0) * 4;
     imageBuffer.current = new ArrayBuffer(dataLen);
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
     pixelData.current = new Uint32Array(imageBuffer.current);
-    // Reset cached contexts to ensure they're re-initialized
-    shadowCanvasContext.current = null;
+    // Reset cached context to ensure it's re-initialized
     screenCanvasContext.current = null;
   }
 
@@ -463,36 +450,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       return;
     }
     const screenEl = screenElement.current;
-    const shadowScreenEl = shadowScreenElement.current;
-    if (!screenEl || !shadowScreenEl) {
+    if (!screenEl) {
       return;
     }
-
-    // Get or initialize cached shadow context
-    let shadowCtx = shadowCanvasContext.current;
-    if (!shadowCtx) {
-      shadowCtx = shadowScreenEl.getContext("2d", {
-        willReadFrequently: true
-      });
-      if (!shadowCtx) {
-        return;
-      }
-      shadowCanvasContext.current = shadowCtx;
-    }
-
-    shadowCtx.imageSmoothingEnabled = false;
-    const shadowImageData = shadowCtx.getImageData(
-      0,
-      0,
-      shadowScreenEl.width,
-      shadowScreenEl.height
-    );
 
     // Get or initialize cached screen context
     let screenCtx = screenCanvasContext.current;
     if (!screenCtx) {
       screenCtx = screenEl.getContext("2d", {
-        willReadFrequently: true
+        willReadFrequently: false
       });
       if (!screenCtx) {
         return;
@@ -505,24 +471,34 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       return;
     }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
-    const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
+    const endIndex = sourceWidth.current * sourceHeight.current + startIndex;
     
     // Optimized pixel buffer copy using subarray
     pixelData.current.set(screenData.subarray(startIndex, endIndex));
     
-    shadowImageData.data.set(imageBuffer8.current);
-    shadowCtx.putImageData(shadowImageData, 0, 0);
+    // Create image data from pixel buffer
+    const imageData = screenCtx.createImageData(sourceWidth.current, sourceHeight.current);
+    imageData.data.set(imageBuffer8.current);
     
-    // Apply scanline effect from shadow canvas to screen canvas
-    if (screenCtx) {
-      screenCtx.imageSmoothingEnabled = false;
-      applyScanlineEffectToCanvas(
-        screenCtx,
-        screenEl,
-        shadowScreenEl,
-        currentScanlineEffectRef.current
-      );
+    // Create temporary canvas for source image at native resolution
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = sourceWidth.current;
+    tempCanvas.height = sourceHeight.current;
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) {
+      return;
     }
+    tempCtx.imageSmoothingEnabled = false;
+    tempCtx.putImageData(imageData, 0, 0);
+    
+    // Draw directly to screen canvas with scaling and scanline effect
+    screenCtx.imageSmoothingEnabled = false;
+    applyScanlineEffectToCanvas(
+      screenCtx,
+      screenEl,
+      tempCanvas,
+      currentScanlineEffectRef.current
+    );
   }
 
   // --- Hanldles key events

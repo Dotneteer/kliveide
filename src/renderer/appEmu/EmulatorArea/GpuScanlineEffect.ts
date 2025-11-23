@@ -1,9 +1,71 @@
 /**
  * GPU-accelerated scanline effect using canvas operations
  * Eliminates expensive CPU readback (getImageData/putImageData)
+ * Can work with or without intermediate shadow canvas
  */
 
 type ScanlineIntensity = "off" | "50%" | "25%" | "12.5%";
+
+/**
+ * Renders pixel buffer directly to canvas with zoom and optional scanline effect
+ * Eliminates the need for an intermediate shadow canvas
+ */
+export function renderPixelBufferDirectToCanvas(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  pixelBuffer: Uint32Array,
+  sourceWidth: number,
+  sourceHeight: number,
+  scanlineIntensity: ScanlineIntensity = "off"
+): void {
+  // Create image data from pixel buffer
+  const imageData = ctx.createImageData(sourceWidth, sourceHeight);
+  const data = imageData.data;
+
+  // Copy pixel buffer to image data
+  for (let i = 0; i < pixelBuffer.length; i++) {
+    const pixel = pixelBuffer[i];
+    const idx = i * 4;
+    data[idx] = (pixel >> 16) & 0xff; // R
+    data[idx + 1] = (pixel >> 8) & 0xff; // G
+    data[idx + 2] = pixel & 0xff; // B
+    data[idx + 3] = (pixel >> 24) & 0xff; // A
+  }
+
+  // Draw to temporary canvas at source size
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = sourceWidth;
+  tempCanvas.height = sourceHeight;
+  const tempCtx = tempCanvas.getContext("2d");
+  if (!tempCtx) return;
+
+  tempCtx.imageSmoothingEnabled = false;
+  tempCtx.putImageData(imageData, 0, 0);
+
+  // Draw with scaling and apply scanline effect
+  const darkening = getScanlineDarkening(scanlineIntensity);
+  
+  if (darkening === 0) {
+    // No scanlines - just scale and draw
+    ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+  } else {
+    // Apply GPU-accelerated scanline effect
+    ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+
+    // Apply scanline pattern overlay
+    const scanlinePattern = createZoomAwareScanlinePatternCanvas(
+      canvas.width,
+      canvas.height,
+      sourceHeight,
+      scanlineIntensity
+    );
+
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(scanlinePattern, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+  }
+}
+
 
 /**
  * Creates a zoom-aware scanline pattern canvas
