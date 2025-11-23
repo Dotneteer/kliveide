@@ -8,6 +8,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
+import { useDisplayRenderer } from "./useDisplayRenderer";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
 import { reportMessagingError } from "@renderer/reportError";
@@ -19,14 +20,6 @@ import { machineEmuToolRegistry } from "../tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
 import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN } from "@common/settings/setting-const";
-
-let machineStateHandlerQueue: {
-  oldState: MachineControllerState;
-  newState: MachineControllerState;
-}[] = [];
-let machineStateProcessing = false;
-let currentDialogId = 0;
-let savedPixelBuffer: Uint32Array | null = null;
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
@@ -44,18 +37,31 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Element references
   const hostElement = useRef<HTMLDivElement>();
-  const screenElement = useRef<HTMLCanvasElement>();
-  const shadowScreenElement = useRef<HTMLCanvasElement>();
   const hostRectangle = useRef<DOMRect>();
   const screenRectangle = useRef<DOMRect>();
+
+  // --- Display renderer (encapsulated display state management)
+  const display = useDisplayRenderer();
+  const {
+    screenElement,
+    canvasWidth: nativeCanvasWidth,
+    canvasHeight: nativeCanvasHeight,
+    displayScaleX,
+    displayScaleY,
+    screenContext,
+    imageBuffer,
+    imageBuffer8,
+    pixelData,
+    screenImageData,
+    previousPixelData,
+    rafId,
+    pendingDisplayUpdate,
+    lastMachineHash,
+  } = display;
 
   // --- State variables
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
-  const shadowCanvasWidth = useRef(0);
-  const shadowCanvasHeight = useRef(0);
-  const xRatio = useRef(1);
-  const yRatio = useRef(1);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
@@ -69,24 +75,22 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const currentKeyMappings = useRef<KeyMapping>();
   const keyCodeSet = useRef<KeyCodeSet>();
 
-  // --- Variables for display management
-  const imageBuffer = useRef<ArrayBuffer>();
-  const imageBuffer8 = useRef<Uint8Array>();
-  const pixelData = useRef<Uint32Array>();
-  const shadowContext = useRef<CanvasRenderingContext2D | null>(null);
-  const screenContext = useRef<CanvasRenderingContext2D | null>(null);
-  const shadowImageData = useRef<ImageData | null>(null);
-  const previousPixelData = useRef<Uint32Array | null>(null);
-  const rafId = useRef<number | null>(null);
-  const pendingDisplayUpdate = useRef(false);
+  // --- Variables for machine state management (moved from global scope)
+  const machineStateHandlerQueue = useRef<Array<{
+    oldState: MachineControllerState;
+    newState: MachineControllerState;
+  }>>([]);
+  const machineStateProcessing = useRef(false);
+  const currentDialogId = useRef(0);
+  const savedPixelBuffer = useRef<Uint32Array | null>(null);
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
   const _handleKeyDown = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId, true);
+    handleKey(e, currentKeyMappings.current, currentDialogId.current, true);
   };
   const _handleKeyUp = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId, false);
+    handleKey(e, currentKeyMappings.current, currentDialogId.current, false);
   };
 
   // --- Variables for audio management
@@ -119,6 +123,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     return controller?.machine?.renderInstantScreen(savedPixelBuffer);
   };
 
+  // --- Helper: Render instant screen and schedule display update
+  const renderAndScheduleUpdate = (force = false) => {
+    if (force || !savedPixelBuffer.current) {
+      savedPixelBuffer.current = new Uint32Array(renderInstantScreen());
+    }
+    scheduleDisplayUpdate();
+  };
+
   // --- Sets the overlay for paused mode
   const setPauseOverlay = () => {
     const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
@@ -134,7 +146,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Let the key handler know about the current dialog
   useEffect(() => {
-    currentDialogId = dialogToDisplay ?? 0;
+    currentDialogId.current = dialogToDisplay ?? 0;
   }, [dialogToDisplay]);
 
   // --- Set up keyboard handling
@@ -151,15 +163,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Respond to screen dimension changes
   const updateScreenDimensions = () => {
-    shadowCanvasWidth.current = controller?.machine?.screenWidthInPixels;
-    shadowCanvasHeight.current = controller?.machine?.screenHeightInPixels;
+    nativeCanvasWidth.current = controller?.machine?.screenWidthInPixels;
+    nativeCanvasHeight.current = controller?.machine?.screenHeightInPixels;
     if (controller?.machine?.getAspectRatio) {
       const [ratX, ratY] = controller?.machine?.getAspectRatio();
-      xRatio.current = ratX ?? 1;
-      yRatio.current = ratY ?? 1;
+      displayScaleX.current = ratX ?? 1;
+      displayScaleY.current = ratY ?? 1;
     } else {
-      xRatio.current = 1;
-      yRatio.current = 1;
+      displayScaleX.current = 1;
+      displayScaleY.current = 1;
     }
     configureScreen();
     calculateDimensions();
@@ -184,16 +196,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (showInstantScreen) {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
-        const shadow = renderInstantScreen();
-        if (!savedPixelBuffer) {
-          savedPixelBuffer = new Uint32Array(shadow);
-        }
-        scheduleDisplayUpdate();
+        renderAndScheduleUpdate();
       }
     } else {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
-        renderInstantScreen(savedPixelBuffer);
+        renderInstantScreen(savedPixelBuffer.current ?? undefined);
         scheduleDisplayUpdate();
       }
     }
@@ -213,18 +221,18 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         cancelAnimationFrame(rafId.current);
         rafId.current = null;
       }
-      shadowContext.current = null;
       screenContext.current = null;
-      shadowImageData.current = null;
+      screenImageData.current = null;
       previousPixelData.current = null;
+      savedPixelBuffer.current = null;
+      machineStateHandlerQueue.current = [];
     };
   }, []);
 
   useEffect(() => {
     const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
     if (showInstantScreen) {
-      renderInstantScreen();
-      scheduleDisplayUpdate();
+      renderAndScheduleUpdate(true);
     }
   }, [emuViewVersion]);
 
@@ -246,12 +254,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             }}
           />
         )}
-        <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
-        <canvas
-          ref={shadowScreenElement}
-          style={{ display: "none" }}
-          width={shadowCanvasWidth.current}
-          height={shadowCanvasHeight.current}
+        <canvas 
+          ref={screenElement} 
+          width={nativeCanvasWidth.current} 
+          height={nativeCanvasHeight.current}
+          style={{
+            width: `${canvasWidth ?? 0}px`,
+            height: `${canvasHeight ?? 0}px`,
+            imageRendering: "pixelated"
+          }}
         />
         {machineTools.current}
       </div>
@@ -278,6 +289,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Preapre screen
     updateScreenDimensions();
 
+    // --- Reset display state for new machine to ensure screen renders
+    lastMachineHash.current = 0;
+    previousPixelData.current = null;
+    savedPixelBuffer.current = null;
+
     // --- Prepare key codes
     keyCodeSet.current = ctrl.machine.getKeyCodeSet();
     defaultKeyMappings.current = ctrl.machine.getDefaultKeyMapping();
@@ -302,12 +318,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }): Promise<void> {
     // --- Because event triggering does not await async methods, we have to queue
     // --- change events and serialize their processing
-    machineStateHandlerQueue.push(stateInfo);
-    if (machineStateProcessing) return;
-    machineStateProcessing = true;
+    machineStateHandlerQueue.current.push(stateInfo);
+    if (machineStateProcessing.current) return;
+    machineStateProcessing.current = true;
     try {
-      while (machineStateHandlerQueue.length > 0) {
-        const toProcess = machineStateHandlerQueue.shift();
+      while (machineStateHandlerQueue.current.length > 0) {
+        const toProcess = machineStateHandlerQueue.current.shift();
         switch (toProcess.newState) {
           case MachineControllerState.Running:
             setOverlay(controller?.isDebugging ? "Debug mode" : "");
@@ -319,19 +335,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             await beeperRenderer?.current?.suspend();
             const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
             if (showInstantScreen) {
-              const shadow = renderInstantScreen();
-              if (!savedPixelBuffer) {
-                savedPixelBuffer = new Uint32Array(shadow);
-              }
-              scheduleDisplayUpdate();
+              renderAndScheduleUpdate();
             }
             break;
 
           case MachineControllerState.Stopped:
-            savedPixelBuffer = null;
+            savedPixelBuffer.current = null;
             setOverlay(`Stopped (PC: $${toHexa4(controller.machine.pc)})`);
             await beeperRenderer?.current?.suspend();
-            machineStateHandlerQueue.length = 0;
+            machineStateHandlerQueue.current.length = 0;
             break;
 
           default:
@@ -340,7 +352,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         }
       }
     } finally {
-      machineStateProcessing = false;
+      machineStateProcessing.current = false;
     }
   }
 
@@ -352,7 +364,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     if (args.fullFrame) {
-      savedPixelBuffer = renderInstantScreen();
+      savedPixelBuffer.current = renderInstantScreen();
     }
 
     // --- Stop sound rendering when fast load has been invoked
@@ -416,44 +428,45 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     screenRectangle.current = screenElement.current.getBoundingClientRect();
     const clientWidth = hostElement.current.offsetWidth;
     const clientHeight = hostElement.current.offsetHeight;
-    const width = shadowCanvasWidth.current ?? 1;
-    const height = shadowCanvasHeight.current ?? 1;
-    let widthRatio = Math.floor((1 * (clientWidth - 8)) / width) / 1 / xRatio.current;
+    const width = nativeCanvasWidth.current ?? 1;
+    const height = nativeCanvasHeight.current ?? 1;
+    
+    // --- Calculate display scale to fit window
+    let widthRatio = (clientWidth - 8) / width / displayScaleX.current;
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = Math.floor((1 * (clientHeight - 8)) / height) / 1 / yRatio.current;
+    let heightRatio = (clientHeight - 8) / height / displayScaleY.current;
     if (heightRatio < 1) heightRatio = 1;
-    const ratio = Math.min(widthRatio, heightRatio);
-    setCanvasWidth(width * ratio * xRatio.current);
-    setCanvasHeight(height * ratio * yRatio.current);
-    if (shadowScreenElement.current) {
-      shadowScreenElement.current.width = width;
-      shadowScreenElement.current.height = height;
-    }
+    let ratio = Math.min(widthRatio, heightRatio);
+    
+    // --- Snap to integer multipliers for pixel-perfect rendering
+    ratio = Math.floor(ratio);
+    if (ratio < 1) ratio = 1;
+    
+    // --- Store display dimensions (CSS will scale the canvas with integer multiplier)
+    const displayWidth = width * ratio * displayScaleX.current;
+    const displayHeight = height * ratio * displayScaleY.current;
+    setCanvasWidth(displayWidth);
+    setCanvasHeight(displayHeight);
   }
 
   // --- Setup the screen buffers
   function configureScreen(): void {
-    const dataLen = (shadowCanvasWidth.current ?? 0) * (shadowCanvasHeight.current ?? 0) * 4;
+    const dataLen = (nativeCanvasWidth.current ?? 0) * (nativeCanvasHeight.current ?? 0) * 4;
     imageBuffer.current = new ArrayBuffer(dataLen);
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
     pixelData.current = new Uint32Array(imageBuffer.current);
     
-    // --- Cache canvas contexts
-    if (shadowScreenElement.current) {
-      shadowContext.current = shadowScreenElement.current.getContext("2d", {
-        willReadFrequently: true
-      });
-      // --- Pre-create ImageData object to reuse across frames (only if canvas has valid dimensions)
-      const width = shadowScreenElement.current.width;
-      const height = shadowScreenElement.current.height;
-      if (width > 0 && height > 0 && shadowContext.current) {
-        shadowImageData.current = shadowContext.current.createImageData(width, height);
-      }
-    }
+    // --- Cache canvas context
     if (screenElement.current) {
       screenContext.current = screenElement.current.getContext("2d", {
         willReadFrequently: true
       });
+      // --- Pre-create ImageData object to reuse across frames (only if canvas has valid dimensions)
+      const width = screenElement.current.width;
+      const height = screenElement.current.height;
+      if (width > 0 && height > 0 && screenContext.current) {
+        screenImageData.current = screenContext.current.createImageData(width, height);
+      }
     }
   }
 
@@ -473,41 +486,48 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Displays the screen
   function displayScreenData(): void {
-    if (!pixelData.current) {
+    if (!pixelData.current || !controller?.machine) {
       return;
     }
+
+    // --- Machine change detection: Create a simple hash of machine state
+    // --- to skip rendering if nothing changed
+    const currentMachineHash = (controller.machine.pc ^ controller.machine.frames) >>> 0;
+    if (lastMachineHash.current === currentMachineHash && previousPixelData.current) {
+      // --- Machine state hasn't changed and we have previous pixel data
+      return; // Skip rendering
+    }
+    lastMachineHash.current = currentMachineHash;
+
     const screenEl = screenElement.current;
-    const shadowScreenEl = shadowScreenElement.current;
-    if (!screenEl || !shadowScreenEl) {
+    if (!screenEl) {
       return;
     }
 
-    const shadowCtx = shadowContext.current;
-    if (!shadowCtx) {
+    const screenCtx = screenContext.current;
+    if (!screenCtx) {
       return;
     }
 
-    shadowCtx.imageSmoothingEnabled = false;
-    let cachedImageData = shadowImageData.current;
+    screenCtx.imageSmoothingEnabled = false;
+    let cachedImageData = screenImageData.current;
     
     // --- Create ImageData on first render if it wasn't created during setup
-    if (!cachedImageData && shadowScreenEl.width > 0 && shadowScreenEl.height > 0) {
-      cachedImageData = shadowCtx.createImageData(shadowScreenEl.width, shadowScreenEl.height);
-      shadowImageData.current = cachedImageData;
+    if (!cachedImageData && screenEl.width > 0 && screenEl.height > 0) {
+      cachedImageData = screenCtx.createImageData(screenEl.width, screenEl.height);
+      screenImageData.current = cachedImageData;
     }
     
     if (!cachedImageData) {
       return;
     }
 
-    const screenCtx = screenContext.current;
-
     const screenData = controller?.machine?.getPixelBuffer();
     if (!screenData) {
       return;
     }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
-    const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
+    const endIndex = screenEl.width * screenEl.height + startIndex;
     
     // --- Optimized pixel buffer transfer using TypedArray.set() for faster memory copy
     pixelData.current.set(screenData.subarray(startIndex, endIndex));
@@ -535,11 +555,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Only update canvas if there are actual changes
     if (hasChanges) {
       cachedImageData.data.set(imageBuffer8.current);
-      shadowCtx.putImageData(cachedImageData, 0, 0);
-      if (screenCtx) {
-        screenCtx.imageSmoothingEnabled = false;
-        screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
-      }
+      screenCtx.putImageData(cachedImageData, 0, 0);
     }
   }
 

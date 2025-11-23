@@ -3,10 +3,10 @@
 ## Current Architecture
 
 ### Component Structure
-- **597 lines** of mixed concerns: rendering, input handling, state management, audio
-- **Global state variables**: mutable module-level variables for machine state, dialog, saved buffers
-- **React + Ref hybrid**: Excessive use of refs instead of React state for display coordination
-- **Dual-canvas pattern**: Shadow canvas (native res) + Display canvas (scaled)
+- **611 lines** of mixed concerns: rendering, input handling, state management, audio
+- **Single canvas** (refactored from dual-canvas pattern)
+- **React + Ref hybrid**: Optimized use of refs for display coordination
+- **Direct pixel rendering**: Native resolution canvas with CSS scaling
 
 ### Current Optimizations (Implemented)
 1. ✅ Canvas context caching
@@ -14,6 +14,11 @@
 3. ✅ Optimized pixel buffer transfer (TypedArray.set)
 4. ✅ Selective canvas updates (with every() comparison)
 5. ✅ RequestAnimationFrame synchronization
+6. ✅ Machine change detection (hash-based)
+7. ✅ Global state moved to component refs
+8. ✅ Display renderer custom hook
+9. ✅ Unified update scheduler
+10. ✅ Consolidated dual-canvas to single canvas
 
 ---
 
