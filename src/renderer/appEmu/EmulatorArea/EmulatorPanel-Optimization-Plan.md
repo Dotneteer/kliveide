@@ -19,6 +19,10 @@
 8. ✅ Display renderer custom hook
 9. ✅ Unified update scheduler
 10. ✅ Consolidated dual-canvas to single canvas
+11. ✅ Integer-multiplier canvas scaling (pixel-perfect)
+12. ✅ Memoized key mapping merge (Phase 2)
+13. ✅ Conditional canvas smoothing (Phase 2)
+14. ✅ Smart pixel comparison (Phase 2)
 
 ---
 
@@ -229,11 +233,11 @@ let heightRatio = Math.floor((1 * (clientHeight - 8)) / height) / 1 / yRatio.cur
 3. **Extract custom hooks** - Improve maintainability
 4. **Unify update scheduler** - Prevent race conditions
 
-### Phase 2: Important (Performance & Quality)
-5. **Smart pixel comparison** - Region-based or machine-aware
-6. **Extract display manager hook** - Encapsulation
-7. **Memoize key mapping merge** - Reduce allocations
-8. **Clean dimension math** - Micro-optimization
+### Phase 2: Important (Performance & Quality) - IN PROGRESS
+5. ✅ **Smart pixel comparison** - Machine state aware (skip unnecessary comparisons)
+6. ✅ **Memoize key mapping merge** - Reduce object allocations
+7. ✅ **Optimize canvas smoothing** - Cache state, only set when changed
+8. ⏳ **Clean dimension math** - Micro-optimization (pending)
 
 ### Phase 3: Polish (Code Quality)
 9. **Remove code duplication** - Instant screen helpers

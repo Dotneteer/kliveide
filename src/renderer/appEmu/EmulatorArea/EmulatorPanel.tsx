@@ -5,7 +5,7 @@ import { useMachineController } from "@renderer/core/useMachineController";
 import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState, useMemo } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
 import { useDisplayRenderer } from "./useDisplayRenderer";
@@ -59,6 +59,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     lastMachineHash,
   } = display;
 
+  // --- Cache for canvas smoothing state to avoid redundant GPU state updates
+  const canvasSmoothingEnabled = useRef(true);
+
   // --- State variables
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
@@ -72,7 +75,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector((s) => s.keyMappings);
   const defaultKeyMappings = useRef<KeyMapping>();
-  const currentKeyMappings = useRef<KeyMapping>();
   const keyCodeSet = useRef<KeyCodeSet>();
 
   // --- Variables for machine state management (moved from global scope)
@@ -86,11 +88,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
+  const currentKeyMappingsRef = useRef<KeyMapping>();
   const _handleKeyDown = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId.current, true);
+    handleKey(e, currentKeyMappingsRef.current, currentDialogId.current, true);
   };
   const _handleKeyUp = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId.current, false);
+    handleKey(e, currentKeyMappingsRef.current, currentDialogId.current, false);
   };
 
   // --- Variables for audio management
@@ -107,16 +110,20 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   );
   const controllerRef = useRef<IMachineController>(controller);
 
-  // --- Update key mappings
-  const updateKeyMappings = () => {
+  // --- Update key mappings (memoized to avoid recreating object on every change)
+  const currentKeyMappings = useMemo(() => {
     if (!keyMappings) {
-      currentKeyMappings.current = defaultKeyMappings.current;
-    } else {
-      currentKeyMappings.current = keyMappings.merge
-        ? { ...defaultKeyMappings.current, ...keyMappings.mapping }
-        : keyMappings.mapping;
+      return defaultKeyMappings.current;
     }
-  };
+    return keyMappings.merge
+      ? { ...defaultKeyMappings.current, ...keyMappings.mapping }
+      : keyMappings.mapping;
+  }, [keyMappings, defaultKeyMappings.current]);
+
+  // --- Keep key mapping ref in sync with memoized value
+  useEffect(() => {
+    currentKeyMappingsRef.current = currentKeyMappings;
+  }, [currentKeyMappings]);
 
   // --- Render shadow screen according to the current state
   const renderInstantScreen = (savedPixelBuffer?: Uint32Array) => {
@@ -138,11 +145,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       `Paused (PC: $${toHexa4(controller.machine.pc)})${showInstantScreen ? " - Instant screen" : ""}`
     );
   };
-
-  // --- Prepare the key mappings
-  useEffect(() => {
-    updateKeyMappings();
-  }, [keyMappings]);
 
   // --- Let the key handler know about the current dialog
   useEffect(() => {
@@ -297,7 +299,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Prepare key codes
     keyCodeSet.current = ctrl.machine.getKeyCodeSet();
     defaultKeyMappings.current = ctrl.machine.getDefaultKeyMapping();
-    updateKeyMappings();
 
     // --- Obtain machine tools
     const toolInfo = machineEmuToolRegistry.find(
@@ -493,9 +494,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Machine change detection: Create a simple hash of machine state
     // --- to skip rendering if nothing changed
     const currentMachineHash = (controller.machine.pc ^ controller.machine.frames) >>> 0;
-    if (lastMachineHash.current === currentMachineHash && previousPixelData.current) {
+    
+    // --- Check if machine state changed BEFORE updating the hash
+    const machineStateChanged = lastMachineHash.current !== currentMachineHash;
+    
+    if (!machineStateChanged && previousPixelData.current) {
       // --- Machine state hasn't changed and we have previous pixel data
-      return; // Skip rendering
+      return; // Skip rendering entirely
     }
     lastMachineHash.current = currentMachineHash;
 
@@ -509,7 +514,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       return;
     }
 
-    screenCtx.imageSmoothingEnabled = false;
+    // --- Only update canvas smoothing if it's changed (avoid GPU state updates)
+    if (screenCtx.imageSmoothingEnabled !== false) {
+      screenCtx.imageSmoothingEnabled = false;
+      canvasSmoothingEnabled.current = false;
+    }
     let cachedImageData = screenImageData.current;
     
     // --- Create ImageData on first render if it wasn't created during setup
@@ -534,23 +543,18 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     
     // --- Selective canvas update: only redraw if pixel data changed
     let hasChanges = false;
+    
     if (!previousPixelData.current) {
       // --- First render, always update
       hasChanges = true;
       previousPixelData.current = new Uint32Array(pixelData.current);
-    } else {
-      // --- Compare current and previous pixel data using native typed array comparison
-      const current = pixelData.current;
-      const previous = previousPixelData.current;
-      
-      // --- Use every() for early exit on first difference
-      hasChanges = !current.every((val, idx) => val === previous[idx]);
-      
-      // --- Update the snapshot if there were changes
-      if (hasChanges) {
-        previous.set(current);
-      }
+    } else if (machineStateChanged) {
+      // --- Machine state changed, so pixels must have changed
+      hasChanges = true;
+      previousPixelData.current.set(pixelData.current);
     }
+    // --- If machine state hasn't changed and we have previous data, skip pixel comparison
+    // --- (no changes needed, visual output is identical)
     
     // --- Only update canvas if there are actual changes
     if (hasChanges) {
