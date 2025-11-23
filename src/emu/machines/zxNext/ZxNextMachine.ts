@@ -36,12 +36,12 @@ import { CpuState } from "@common/messaging/EmuApi";
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
-import { IZxNextMachine } from "@emu/abstractions/IZxNextMachine";
-import { KeyMapping } from "@common/abstractions/KeyMapping";
-import { IMemorySection, MemorySectionType } from "@common/abstractions/MemorySection";
-import { SysVar } from "@common/abstractions/SysVar";
-import { toHexa2 } from "@common/utils/conversions";
-import { CodeToInject } from "@emu/abstractions/CodeToInject";
+import { IZxNextMachine } from "@/emu/abstractions/IZxNextMachine";
+import { KeyMapping } from "@/common/abstractions/KeyMapping";
+import { IMemorySection, MemorySectionType } from "@/common/abstractions/MemorySection";
+import { SysVar } from "@/common/abstractions/SysVar";
+import { toHexa2 } from "@/common/utils/conversions";
+import { CodeToInject } from "@/emu/abstractions/CodeToInject";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -285,11 +285,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case "adjustScanlineWeight":
         return (this.screenDevice.scanlineWeight = (this.screenDevice.scanlineWeight + 1) % 4);
-
-      case "cycleCpuSpeed":
-        // TODO: Implement cycling CPU speed
-        console.log("Cycling CPU speed - not yet implemented");
-        break;
 
       case "multifaceNmi":
         // TODO: Implement multiface NMI

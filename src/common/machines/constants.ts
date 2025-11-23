@@ -32,6 +32,7 @@ export const MF_BLINK = "blink";
 export const MF_Z80 = "z80Cpu";
 export const MF_M6510 = "m6510Cpu";
 export const MF_ALLOW_CLOCK_MULTIPLIER = "allowClockMultiplier";
+export const MF_ALLOW_SCAN_LINES = "allowScanLines";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";
