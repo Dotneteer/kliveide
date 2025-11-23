@@ -7,7 +7,7 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
-import { applyScanlineEffectToCanvas } from "./ScanlineOverlay";
+import { applyScanlineEffectToCanvas, type ScanlineIntensity } from "./scanlineEffect";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
@@ -96,7 +96,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
   const screenCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
-  const currentScanlineEffectRef = useRef<string>("off");
+  const currentScanlineEffectRef = useRef<ScanlineIntensity>("off");
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -223,7 +223,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Respond to scanline effect setting changes
   useEffect(() => {
-    currentScanlineEffectRef.current = scanlineEffect as string;
+    currentScanlineEffectRef.current = scanlineEffect as ScanlineIntensity;
     displayScreenData();
   }, [scanlineEffect]);
 
