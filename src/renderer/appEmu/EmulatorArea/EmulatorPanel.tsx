@@ -169,7 +169,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       window.removeEventListener("keydown", _handleKeyDown);
       window.removeEventListener("keyup", _handleKeyUp);
     };
-  }, [hostElement.current]);
+  }, [_handleKeyDown, _handleKeyUp]);
 
   // --- Respond to screen dimension changes
   const updateScreenDimensions = () => {
@@ -533,22 +533,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const mapping = keyMapping[code];
     if (!mapping) return;
     const machine = controllerRef.current?.machine;
-    if (typeof mapping === "string") {
-      machine?.setKeyStatus(keyCodeSet.current[mapping], isDown);
-      keyStatusSet?.(keyCodeSet.current[mapping], isDown);
-    } else {
-      if (mapping.length > 0) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[0]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[0]], isDown);
-      }
-      if (mapping.length > 1) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[1]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[1]], isDown);
-      }
-      if (mapping.length > 2) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[2]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[2]], isDown);
-      }
-    }
+    const keyArray = typeof mapping === "string" ? [mapping] : mapping;
+    keyArray.forEach(key => {
+      machine?.setKeyStatus(keyCodeSet.current[key], isDown);
+      keyStatusSet?.(keyCodeSet.current[key], isDown);
+    });
   }
 };
