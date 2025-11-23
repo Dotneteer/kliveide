@@ -5,7 +5,7 @@ import { useMachineController } from "@renderer/core/useMachineController";
 import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { applyScanlineEffectToCanvas } from "./ScanlineOverlay";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
@@ -100,12 +100,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
-  const _handleKeyDown = (e: KeyboardEvent) => {
+  const _handleKeyDown = useCallback((e: KeyboardEvent) => {
     handleKey(e, currentKeyMappings.current, globalStateRef.current.currentDialogId, true);
-  };
-  const _handleKeyUp = (e: KeyboardEvent) => {
+  }, []);
+  const _handleKeyUp = useCallback((e: KeyboardEvent) => {
     handleKey(e, currentKeyMappings.current, globalStateRef.current.currentDialogId, false);
-  };
+  }, []);
 
   // --- Variables for audio management
   const beeperRenderer = useRef<AudioRenderer>();
