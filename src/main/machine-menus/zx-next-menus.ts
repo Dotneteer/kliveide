@@ -12,8 +12,9 @@ import { KLIVE_HOME_FOLDER } from "@main/settings";
 import { setMediaAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
-import { appSettings, saveAppSettings } from "@main/settings-utils";
+import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
+import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 
 const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 const DEFAULT_SC_CARD_FILE = "ks2.cim";
@@ -143,6 +144,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
               "custom",
               "adjustScanlineWeight"
             );
+            setSettingValue(SETTING_EMU_SCANLINE_EFFECT, values[scanLineValue]);
             await logEmuEvent(`Scanline weight set to ${values[scanLineValue]}`);
           }
         },

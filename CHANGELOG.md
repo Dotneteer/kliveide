@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.51.0
+
+### Features
+
+- Add scanline effect to machines supporting it
+
 ## 0.50.4
 
 ### Features

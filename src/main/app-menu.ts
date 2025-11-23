@@ -41,15 +41,22 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
-import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
+import { MF_ALLOW_CLOCK_MULTIPLIER, MF_ALLOW_SCAN_LINES } from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import { appSettings, getSettingDefinition, getSettingValue, saveAppSettings, setSettingValue } from "./settings-utils";
+import {
+  appSettings,
+  getSettingDefinition,
+  getSettingValue,
+  saveAppSettings,
+  setSettingValue
+} from "./settings-utils";
 import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
   SETTING_IDE_MAXIMIZE_TOOLS,
@@ -99,6 +106,7 @@ const STEP_OVER = "step_over";
 const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
+const SCANLINE_EFFECT = "scanline_effect";
 const SELECT_KEY_MAPPING = "select_key_mapping";
 const RESET_KEY_MAPPING = "reset_key_mapping";
 
@@ -619,6 +627,28 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     };
   });
 
+  // --- Prepare the scanline effect submenus
+  const scanlineEffectValues = [
+    { value: "off", label: "Off" },
+    { value: "50%", label: "50%" },
+    { value: "25%", label: "25%" },
+    { value: "12.5%", label: "12.5%" }
+  ];
+  const currentScanlineEffect = getSettingValue(SETTING_EMU_SCANLINE_EFFECT) ?? "off";
+  const scanlineEffectMenu: MenuItemConstructorOptions[] = scanlineEffectValues.map((v) => {
+    return {
+      id: `${SCANLINE_EFFECT}_${v.value}`,
+      label: v.label,
+      type: "checkbox",
+      checked: currentScanlineEffect === v.value,
+      click: async () => {
+        setSettingValue(SETTING_EMU_SCANLINE_EFFECT, v.value);
+        await logEmuEvent(`Scanline effect set to ${v.label}`);
+        await saveKliveProject();
+      }
+    };
+  });
+
   // --- Machine types submenu (use the registered machines)
   const machineTypesMenu: MenuItemConstructorOptions[] = [];
   machineRegistry.forEach((mt) => {
@@ -644,6 +674,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             appState.emulatorState?.modelId === m.modelId,
           click: async () => {
             await setMachineType(mt.machineId, m.modelId);
+            const newMachine = machineRegistry.find((m) => m.machineId === mt.machineId);
+            if (newMachine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
+              // --- Turn off scanline effect for machines that support it by default
+              setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
+            }
             await saveKliveProject();
           }
         });
@@ -769,6 +804,18 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       label: "Sound Level",
       submenu: soundLeveMenu
     },
+    { type: "separator" }
+  );
+
+  if (currentMachine?.features?.[MF_ALLOW_SCAN_LINES] !== false) {
+    machineSubMenu.push({
+      id: SCANLINE_EFFECT,
+      label: "Scanline Effect",
+      submenu: scanlineEffectMenu
+    });
+  }
+
+  machineSubMenu.push(
     { type: "separator" },
     ...specificMachineMenus,
     { type: "separator" },
