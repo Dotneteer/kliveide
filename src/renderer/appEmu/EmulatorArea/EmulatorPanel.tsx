@@ -77,6 +77,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const screenContext = useRef<CanvasRenderingContext2D | null>(null);
   const shadowImageData = useRef<ImageData | null>(null);
   const previousPixelData = useRef<Uint32Array | null>(null);
+  const rafId = useRef<number | null>(null);
+  const pendingDisplayUpdate = useRef(false);
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -186,13 +188,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         if (!savedPixelBuffer) {
           savedPixelBuffer = new Uint32Array(shadow);
         }
-        displayScreenData();
+        scheduleDisplayUpdate();
       }
     } else {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
         renderInstantScreen(savedPixelBuffer);
-        displayScreenData();
+        scheduleDisplayUpdate();
       }
     }
   }, [showInstantScreen]);
@@ -200,12 +202,17 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Respond to resizing the main container
   useResizeObserver(hostElement, () => {
     calculateDimensions();
-    displayScreenData();
+    scheduleDisplayUpdate();
   });
 
   // --- Cleanup cached contexts and ImageData on unmount
   useEffect(() => {
     return () => {
+      // --- Cancel any pending RAF
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
       shadowContext.current = null;
       screenContext.current = null;
       shadowImageData.current = null;
@@ -217,7 +224,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
     if (showInstantScreen) {
       renderInstantScreen();
-      displayScreenData();
+      scheduleDisplayUpdate();
     }
   }, [emuViewVersion]);
 
@@ -316,7 +323,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               if (!savedPixelBuffer) {
                 savedPixelBuffer = new Uint32Array(shadow);
               }
-              displayScreenData();
+              scheduleDisplayUpdate();
             }
             break;
 
@@ -341,7 +348,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   async function machineFrameCompleted(args: FrameCompletedArgs): Promise<void> {
     // --- Update the screen
     if (controller.machine.frames % controller.machine.uiFrameFrequency === 0) {
-      displayScreenData();
+      scheduleDisplayUpdate();
     }
 
     if (args.fullFrame) {
@@ -450,6 +457,20 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
   }
 
+  // --- Schedule display update synchronized with browser refresh rate
+  function scheduleDisplayUpdate(): void {
+    if (pendingDisplayUpdate.current) {
+      return; // Already scheduled
+    }
+    pendingDisplayUpdate.current = true;
+    
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null;
+      pendingDisplayUpdate.current = false;
+      displayScreenData();
+    });
+  }
+
   // --- Displays the screen
   function displayScreenData(): void {
     if (!pixelData.current) {
@@ -498,17 +519,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       hasChanges = true;
       previousPixelData.current = new Uint32Array(pixelData.current);
     } else {
-      // --- Compare current and previous pixel data to detect changes
+      // --- Compare current and previous pixel data using native typed array comparison
       const current = pixelData.current;
       const previous = previousPixelData.current;
-      const length = current.length;
       
-      for (let i = 0; i < length; i++) {
-        if (current[i] !== previous[i]) {
-          hasChanges = true;
-          break;
-        }
-      }
+      // --- Use every() for early exit on first difference
+      hasChanges = !current.every((val, idx) => val === previous[idx]);
       
       // --- Update the snapshot if there were changes
       if (hasChanges) {
