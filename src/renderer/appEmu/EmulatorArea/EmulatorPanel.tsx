@@ -76,6 +76,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const shadowContext = useRef<CanvasRenderingContext2D | null>(null);
   const screenContext = useRef<CanvasRenderingContext2D | null>(null);
   const shadowImageData = useRef<ImageData | null>(null);
+  const previousPixelData = useRef<Uint32Array | null>(null);
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -208,6 +209,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       shadowContext.current = null;
       screenContext.current = null;
       shadowImageData.current = null;
+      previousPixelData.current = null;
     };
   }, []);
 
@@ -478,7 +480,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     const screenCtx = screenContext.current;
-    let j = 0;
 
     const screenData = controller?.machine?.getPixelBuffer();
     if (!screenData) {
@@ -486,14 +487,43 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
     const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
-    for (let i = startIndex; i < endIndex; i++) {
-      pixelData.current[j++] = screenData[i];
+    
+    // --- Optimized pixel buffer transfer using TypedArray.set() for faster memory copy
+    pixelData.current.set(screenData.subarray(startIndex, endIndex));
+    
+    // --- Selective canvas update: only redraw if pixel data changed
+    let hasChanges = false;
+    if (!previousPixelData.current) {
+      // --- First render, always update
+      hasChanges = true;
+      previousPixelData.current = new Uint32Array(pixelData.current);
+    } else {
+      // --- Compare current and previous pixel data to detect changes
+      const current = pixelData.current;
+      const previous = previousPixelData.current;
+      const length = current.length;
+      
+      for (let i = 0; i < length; i++) {
+        if (current[i] !== previous[i]) {
+          hasChanges = true;
+          break;
+        }
+      }
+      
+      // --- Update the snapshot if there were changes
+      if (hasChanges) {
+        previous.set(current);
+      }
     }
-    cachedImageData.data.set(imageBuffer8.current);
-    shadowCtx.putImageData(cachedImageData, 0, 0);
-    if (screenCtx) {
-      screenCtx.imageSmoothingEnabled = false;
-      screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
+    
+    // --- Only update canvas if there are actual changes
+    if (hasChanges) {
+      cachedImageData.data.set(imageBuffer8.current);
+      shadowCtx.putImageData(cachedImageData, 0, 0);
+      if (screenCtx) {
+        screenCtx.imageSmoothingEnabled = false;
+        screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
+      }
     }
   }
 
