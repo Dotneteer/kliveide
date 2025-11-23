@@ -74,7 +74,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const imageBuffer = useRef<ArrayBuffer>();
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
-  const currentScanlineEffect = useRef<string>("off");
+  const shadowCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
+  const screenCanvasContext = useRef<CanvasRenderingContext2D | null>(null);
+  const currentScanlineEffectRef = useRef<string>("off");
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -201,7 +203,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Respond to scanline effect setting changes
   useEffect(() => {
-    currentScanlineEffect.current = scanlineEffect as string;
+    currentScanlineEffectRef.current = scanlineEffect as string;
     displayScreenData();
   }, [scanlineEffect]);
 
@@ -428,6 +430,24 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     imageBuffer.current = new ArrayBuffer(dataLen);
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
     pixelData.current = new Uint32Array(imageBuffer.current);
+    // Reset cached contexts to ensure they're re-initialized
+    shadowCanvasContext.current = null;
+    screenCanvasContext.current = null;
+  }
+
+  // --- Calculate and cache scanline darkening intensity
+  function calculateScanlineDarkening(scanlineIntensity: string): number {
+    switch (scanlineIntensity) {
+      case "50%":
+        return 0.75;
+      case "25%":
+        return 0.5;
+      case "12.5%":
+        return 0.25;
+      case "off":
+      default:
+        return 0.0;
+    }
   }
 
   // --- Applies scanline effect based on zoom factor and intensity setting
@@ -441,22 +461,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const targetWidth = canvas.width;
     const targetHeight = canvas.height;
 
-    // Determine scanline darkening intensity from setting
-    let scanlineDarkening = 0.0; // Default: off (0% darkening)
-    switch (scanlineIntensity) {
-      case "50%":
-        scanlineDarkening = 0.75;
-        break;
-      case "25%":
-        scanlineDarkening = 0.5;
-        break;
-      case "12.5%":
-        scanlineDarkening = 0.25;
-        break;
-      case "off":
-      default:
-        scanlineDarkening = 0.0;
-    }
+    // Calculate scanline darkening intensity from setting
+    let scanlineDarkening = calculateScanlineDarkening(scanlineIntensity);
 
     // If scanline effect is off, just draw the image
     if (scanlineDarkening === 0.0) {
@@ -545,11 +551,17 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       return;
     }
 
-    const shadowCtx = shadowScreenEl.getContext("2d", {
-      willReadFrequently: true
-    });
+    // Get or initialize cached shadow context
+    let shadowCtx = shadowCanvasContext.current;
     if (!shadowCtx) {
-      return;}
+      shadowCtx = shadowScreenEl.getContext("2d", {
+        willReadFrequently: true
+      });
+      if (!shadowCtx) {
+        return;
+      }
+      shadowCanvasContext.current = shadowCtx;
+    }
 
     shadowCtx.imageSmoothingEnabled = false;
     const shadowImageData = shadowCtx.getImageData(
@@ -559,10 +571,17 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       shadowScreenEl.height
     );
 
-    const screenCtx = screenEl.getContext("2d", {
-      willReadFrequently: true
-    });
-    let j = 0;
+    // Get or initialize cached screen context
+    let screenCtx = screenCanvasContext.current;
+    if (!screenCtx) {
+      screenCtx = screenEl.getContext("2d", {
+        willReadFrequently: true
+      });
+      if (!screenCtx) {
+        return;
+      }
+      screenCanvasContext.current = screenCtx;
+    }
 
     const screenData = controller?.machine?.getPixelBuffer();
     if (!screenData) {
@@ -570,14 +589,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
     const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
-    for (let i = startIndex; i < endIndex; i++) {
-      pixelData.current[j++] = screenData[i];
-    }
+    
+    // Optimized pixel buffer copy using subarray
+    pixelData.current.set(screenData.subarray(startIndex, endIndex));
+    
     shadowImageData.data.set(imageBuffer8.current);
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
       screenCtx.imageSmoothingEnabled = false;
-      applyScanlineEffect(screenCtx, screenEl, shadowScreenEl, currentScanlineEffect.current);
+      applyScanlineEffect(screenCtx, screenEl, shadowScreenEl, currentScanlineEffectRef.current);
     }
   }
 
