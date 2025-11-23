@@ -73,6 +73,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const imageBuffer = useRef<ArrayBuffer>();
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
+  const shadowContext = useRef<CanvasRenderingContext2D | null>(null);
+  const screenContext = useRef<CanvasRenderingContext2D | null>(null);
+  const shadowImageData = useRef<ImageData | null>(null);
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -198,6 +201,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     calculateDimensions();
     displayScreenData();
   });
+
+  // --- Cleanup cached contexts and ImageData on unmount
+  useEffect(() => {
+    return () => {
+      shadowContext.current = null;
+      screenContext.current = null;
+      shadowImageData.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
@@ -416,6 +428,24 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     imageBuffer.current = new ArrayBuffer(dataLen);
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
     pixelData.current = new Uint32Array(imageBuffer.current);
+    
+    // --- Cache canvas contexts
+    if (shadowScreenElement.current) {
+      shadowContext.current = shadowScreenElement.current.getContext("2d", {
+        willReadFrequently: true
+      });
+      // --- Pre-create ImageData object to reuse across frames (only if canvas has valid dimensions)
+      const width = shadowScreenElement.current.width;
+      const height = shadowScreenElement.current.height;
+      if (width > 0 && height > 0 && shadowContext.current) {
+        shadowImageData.current = shadowContext.current.createImageData(width, height);
+      }
+    }
+    if (screenElement.current) {
+      screenContext.current = screenElement.current.getContext("2d", {
+        willReadFrequently: true
+      });
+    }
   }
 
   // --- Displays the screen
@@ -429,23 +459,25 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       return;
     }
 
-    const shadowCtx = shadowScreenEl.getContext("2d", {
-      willReadFrequently: true
-    });
+    const shadowCtx = shadowContext.current;
     if (!shadowCtx) {
-      return;}
+      return;
+    }
 
     shadowCtx.imageSmoothingEnabled = false;
-    const shadowImageData = shadowCtx.getImageData(
-      0,
-      0,
-      shadowScreenEl.width,
-      shadowScreenEl.height
-    );
+    let cachedImageData = shadowImageData.current;
+    
+    // --- Create ImageData on first render if it wasn't created during setup
+    if (!cachedImageData && shadowScreenEl.width > 0 && shadowScreenEl.height > 0) {
+      cachedImageData = shadowCtx.createImageData(shadowScreenEl.width, shadowScreenEl.height);
+      shadowImageData.current = cachedImageData;
+    }
+    
+    if (!cachedImageData) {
+      return;
+    }
 
-    const screenCtx = screenEl.getContext("2d", {
-      willReadFrequently: true
-    });
+    const screenCtx = screenContext.current;
     let j = 0;
 
     const screenData = controller?.machine?.getPixelBuffer();
@@ -457,8 +489,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     for (let i = startIndex; i < endIndex; i++) {
       pixelData.current[j++] = screenData[i];
     }
-    shadowImageData.data.set(imageBuffer8.current);
-    shadowCtx.putImageData(shadowImageData, 0, 0);
+    cachedImageData.data.set(imageBuffer8.current);
+    shadowCtx.putImageData(cachedImageData, 0, 0);
     if (screenCtx) {
       screenCtx.imageSmoothingEnabled = false;
       screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
