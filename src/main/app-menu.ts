@@ -32,6 +32,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_SCANLINE_EFFECT,
   SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
@@ -54,7 +55,7 @@ import {
   setThemeAction
 } from "@state/actions";
 import { mainStore } from "./mainStore";
-import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
+import { MF_ALLOW_CLOCK_MULTIPLIER, MF_ALLOW_SCAN_LINES } from "@common/machines/constants";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
@@ -70,6 +71,7 @@ const TOGGLE_DEVTOOLS = "toggle_devtools";
 const SHOW_IDE_WINDOW = "show_ide_window";
 const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
+const SCANLINE_EFFECT = "scanline_effect";
 
 /**
  * Sets up the application menu based on current app state
@@ -538,6 +540,28 @@ export function setupMenu(state: AppState): void {
     };
   });
 
+  // --- Prepare the scanline effect submenus
+  const scanlineEffectValues = [
+    { value: "off", label: "Off" },
+    { value: "50%", label: "50%" },
+    { value: "25%", label: "25%" },
+    { value: "12.5%", label: "12.5%" }
+  ];
+  const currentScanlineEffect = getSettingValue(SETTING_EMU_SCANLINE_EFFECT) ?? "off";
+  const scanlineEffectMenu: MenuItemConstructorOptions[] = scanlineEffectValues.map(v => {
+    return {
+      id: `${SCANLINE_EFFECT}_${v.value}`,
+      label: v.label,
+      type: "checkbox",
+      checked: currentScanlineEffect === v.value,
+      click: async () => {
+        setSettingValue(SETTING_EMU_SCANLINE_EFFECT, v.value);
+        // await logEmuEvent(`Scanline effect set to ${v.label}`);
+        // await saveKliveProject();
+      }
+    };
+  });
+
   // --- Machine types submenu (use the registered machines)
   const machineTypesMenu: MenuItemConstructorOptions[] = [];
   machineRegistry.forEach(mt => {
@@ -688,6 +712,18 @@ export function setupMenu(state: AppState): void {
       label: "Sound Level",
       submenu: soundLeveMenu
     },
+    { type: "separator" }
+  );
+
+  if (currentMachine?.features?.[MF_ALLOW_SCAN_LINES] !== false) {
+    machineSubMenu.push({
+      id: SCANLINE_EFFECT,
+      label: "Scanline Effect",
+      submenu: scanlineEffectMenu
+    });
+  }
+
+  machineSubMenu.push(
     { type: "separator" },
     ...specificMachineMenus,
     { type: "separator" },

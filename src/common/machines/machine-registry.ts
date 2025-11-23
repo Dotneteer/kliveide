@@ -26,16 +26,17 @@ import {
   MF_Z80,
   MF_M6510,
   CT_DISASSEMBLER,
-  MF_VIC
+  MF_VIC,
+  MF_ALLOW_SCAN_LINES
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
-import { DisassemblyOptions, MemorySection } from "@common/disassemblers/common-types";
-import { Z80Disassembler } from "@common/disassemblers/z80-disassembler/z80-disassembler";
-import { ZxSpectrum48CustomDisassembler } from "@common/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
-import { ZxSpectrumNextCustomDisassembler } from "@common/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
-import { Z88CustomDisassembler } from "@common/disassemblers/z80-disassembler/z88-custom.disassembler";
-import { M6510Disassembler } from "@common/disassemblers/6510-disassembler/m6510-disassembler";
+import { M6510Disassembler } from "../disassemblers/6510-disassembler/m6510-disassembler";
+import { MemorySection, DisassemblyOptions } from "../disassemblers/common-types";
+import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
+import { Z88CustomDisassembler } from "../disassemblers/z80-disassembler/z88-custom.disassembler";
+import { ZxSpectrum48CustomDisassembler } from "../disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
+import { ZxSpectrumNextCustomDisassembler } from "../disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
 
 /**
  * The registry of available machine types with their available models
@@ -162,7 +163,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ULA]: true,
       [MF_ROM]: 7,
       [MF_BANK]: 224,
-      [MF_ALLOW_CLOCK_MULTIPLIER]: false
+      [MF_ALLOW_CLOCK_MULTIPLIER]: false,
+      [MF_ALLOW_SCAN_LINES]: false
     },
     mediaIds: [MEDIA_TAPE],
     toolInfo: {
@@ -182,7 +184,8 @@ export const machineRegistry: MachineInfo[] = [
     features: {
       [MF_Z80]: true,
       [MF_BANK]: 256,
-      [MF_BLINK]: true
+      [MF_BLINK]: true,
+      [MF_ALLOW_SCAN_LINES]: false
     },
     models: [
       {

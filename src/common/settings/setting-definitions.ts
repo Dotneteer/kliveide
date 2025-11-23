@@ -1,3 +1,4 @@
+import { PANE_ID_EMU } from "@common/integration/constants";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_KEYBOARD_LAYOUT,
@@ -6,6 +7,8 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
   SETTING_EDITOR_FONT_SIZE,
@@ -29,10 +32,9 @@ import {
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EMU_KEYBOARD_HEIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
-  SETTING_EMU_SOUND_MUTED
-} from "./setting-const";
-import { SettingDescription } from "@abstr/SettingDescription";
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
+} from "@common/settings/setting-const";
+import { SettingDescription } from "../abstractions/SettingDescription";
 
 const settingDefinitions: SettingDescription[] = [
   {
@@ -72,18 +74,18 @@ const settingDefinitions: SettingDescription[] = [
     boundTo: "emu"
   },
   {
-    id: SETTING_EMU_FAST_LOAD,
-    title: "Fast load",
-    description: "Allows the emulator fast tape load mode.",
-    type: "boolean",
-    defaultValue: true,
+    id: SETTING_EMU_SCANLINE_EFFECT,
+    title: "Scanline Effect Intensity",
+    description: "Intensity of the CRT scanline effect (off, 50%, 25%, or 12.5%).",
+    type: "string",
+    defaultValue: "off",
     saveWithIde: true,
     boundTo: "emu"
   },
   {
-    id: SETTING_EMU_SOUND_MUTED,
-    title: "Mute/Unmute Sound",
-    description: "Allows the emulator sound to be muted or unmuted.",
+    id: SETTING_EMU_FAST_LOAD,
+    title: "Fast load",
+    description: "Allows the emulator fast tape load mode.",
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
@@ -208,6 +210,14 @@ const settingDefinitions: SettingDescription[] = [
     title: "(active tool)",
     type: "string",
     defaultValue: "commands",
+    saveWithIde: true,
+    volatile: true
+  },
+  {
+    id: SETTING_IDE_ACTIVE_OUTPUT_PANE,
+    title: "(active output pane)",
+    type: "string",
+    defaultValue: PANE_ID_EMU,
     saveWithIde: true,
     volatile: true
   },
