@@ -26,7 +26,8 @@ import {
   MF_Z80,
   MF_M6510,
   CT_DISASSEMBLER,
-  MF_VIC
+  MF_VIC,
+  MF_ALLOW_SCAN_LINES
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -162,7 +163,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ULA]: true,
       [MF_ROM]: 7,
       [MF_BANK]: 224,
-      [MF_ALLOW_CLOCK_MULTIPLIER]: false
+      [MF_ALLOW_CLOCK_MULTIPLIER]: false,
+      [MF_ALLOW_SCAN_LINES]: false
     },
     mediaIds: [MEDIA_TAPE],
     toolInfo: {

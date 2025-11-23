@@ -15,9 +15,9 @@ function calculateScanlineDarkening(scanlineIntensity: string): number {
     case "50%":
       return 0.75;
     case "25%":
-      return 0.5;
+      return 0.8;
     case "12.5%":
-      return 0.25;
+      return 1.0;
     case "off":
     default:
       return 0.0;

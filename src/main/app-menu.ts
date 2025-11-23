@@ -41,9 +41,15 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
-import { MF_ALLOW_CLOCK_MULTIPLIER } from "@common/machines/constants";
+import { MF_ALLOW_CLOCK_MULTIPLIER, MF_ALLOW_SCAN_LINES } from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
-import { appSettings, getSettingDefinition, getSettingValue, saveAppSettings, setSettingValue } from "./settings-utils";
+import {
+  appSettings,
+  getSettingDefinition,
+  getSettingValue,
+  saveAppSettings,
+  setSettingValue
+} from "./settings-utils";
 import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -793,12 +799,18 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       label: "Sound Level",
       submenu: soundLeveMenu
     },
-    { type: "separator" },
-    {
+    { type: "separator" }
+  );
+
+  if (currentMachine?.features?.[MF_ALLOW_SCAN_LINES] !== false) {
+    machineSubMenu.push({
       id: SCANLINE_EFFECT,
       label: "Scanline Effect",
       submenu: scanlineEffectMenu
-    },
+    });
+  }
+
+  machineSubMenu.push(
     { type: "separator" },
     ...specificMachineMenus,
     { type: "separator" },
