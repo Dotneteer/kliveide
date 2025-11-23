@@ -57,13 +57,26 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const shadowCanvasHeight = useRef(0);
   const xRatio = useRef(1);
   const yRatio = useRef(1);
-  const machineState = useSelector((s) => s.emulatorState?.machineState);
-  const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
+  
+  // --- Optimized state selectors combining related state from same slices
+  const emulatorState = useSelector((s) => ({
+    machineState: s.emulatorState?.machineState,
+    audioSampleRate: s.emulatorState?.audioSampleRate,
+    emuViewVersion: s.emulatorState?.emuViewVersion
+  }));
+  const machineState = emulatorState?.machineState;
+  const audioSampleRate = emulatorState?.audioSampleRate;
+  const emuViewVersion = emulatorState?.emuViewVersion;
+  
+  const ideViewState = useSelector((s) => ({
+    dialogToDisplay: s.ideView?.dialogToDisplay
+  }));
+  const dialogToDisplay = ideViewState?.dialogToDisplay;
+  
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
-  const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
-  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
+  
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector((s) => s.keyMappings);
