@@ -237,16 +237,16 @@ window.addEventListener("keyup", _handleKeyUp);
 
 ## Implementation Checklist
 
-- [ ] Phase 1 complete
-  - [ ] Canvas context caching
-  - [ ] Pixel buffer optimization
-  - [ ] Scanline intensity memoization
-- [ ] Phase 2 complete
-  - [ ] ScanlineOverlay component extraction
-  - [ ] State selector optimization
-  - [ ] Global state encapsulation
+- [x] Phase 1 complete
+  - [x] Canvas context caching
+  - [x] Pixel buffer optimization
+  - [x] Scanline intensity memoization
+- [x] Phase 2 complete
+  - [x] ScanlineOverlay component extraction
+  - [x] State selector optimization
+  - [x] Global state encapsulation
 - [ ] Phase 3 complete
-  - [ ] GPU scanline effect
+  - [x] GPU scanline effect
   - [ ] Shadow canvas review
   - [ ] Worker thread implementation
 - [ ] Performance metrics collected

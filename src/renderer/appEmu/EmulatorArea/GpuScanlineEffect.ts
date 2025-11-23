@@ -6,12 +6,14 @@
 type ScanlineIntensity = "off" | "50%" | "25%" | "12.5%";
 
 /**
- * Creates a scanline pattern canvas that can be composited onto the screen
- * This approach uses GPU blending instead of CPU pixel manipulation
+ * Creates a zoom-aware scanline pattern canvas
+ * For zoom factor N, renders N-1 normal lines followed by 1 scanline
+ * This matches the CPU-based approach for consistent visual output
  */
-export function createScanlinePatternCanvas(
+export function createZoomAwareScanlinePatternCanvas(
   width: number,
   height: number,
+  sourceHeight: number,
   intensity: ScanlineIntensity
 ): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
@@ -21,27 +23,73 @@ export function createScanlinePatternCanvas(
   const ctx = canvas.getContext("2d");
   if (!ctx) return canvas;
 
-  // Get darkening intensity from setting
   const darkening = getScanlineDarkening(intensity);
   if (darkening === 0) return canvas; // No effect needed
 
-  // Create scanline pattern - alternating lines with transparency
+  // Calculate zoom factor
+  const zoomFactorY = height / sourceHeight;
+  
   const imageData = ctx.createImageData(width, height);
   const data = imageData.data;
 
-  // Fill with alternating scanlines
-  // Every other line is darkened, creating the scanline effect
-  for (let y = 0; y < height; y++) {
-    const isScanline = y % 2 === 1; // Every odd line is a scanline
-    const opacity = isScanline ? darkening : 0;
+  // For each source buffer row, determine which output canvas lines it maps to
+  for (let bufferLineIdx = 0; bufferLineIdx < sourceHeight; bufferLineIdx++) {
+    const startCanvasLine = Math.floor(bufferLineIdx * zoomFactorY);
+    const endCanvasLine = Math.floor((bufferLineIdx + 1) * zoomFactorY);
+    const numCanvasLines = endCanvasLine - startCanvasLine;
 
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 4;
-      // Black scanlines with varying opacity
-      data[idx] = 0; // R
-      data[idx + 1] = 0; // G
-      data[idx + 2] = 0; // B
-      data[idx + 3] = Math.round(255 * opacity); // A
+    // Apply opacity to each line within this buffer row
+    for (
+      let canvasLineInBuffer = 0;
+      canvasLineInBuffer < numCanvasLines;
+      canvasLineInBuffer++
+    ) {
+      const canvasLineIdx = startCanvasLine + canvasLineInBuffer;
+      let opacity = 0; // Default: transparent (no darkening)
+
+      // Determine opacity based on position within the buffer line
+      if (numCanvasLines === 1) {
+        // Single line per buffer line - no scanline effect
+        opacity = 0;
+      } else if (numCanvasLines === 2) {
+        // Zoom 2: First normal, second with scanline darkening
+        opacity = canvasLineInBuffer === 0 ? 0 : darkening;
+      } else if (numCanvasLines === 3) {
+        // Zoom 3: First normal, second antialiasing, third scanline
+        if (canvasLineInBuffer === 0) {
+          opacity = 0; // First line: normal
+        } else if (canvasLineInBuffer === 1) {
+          opacity = darkening * 0.5; // Second line: half scanline darkening
+        } else {
+          opacity = darkening; // Third line: full scanline effect
+        }
+      } else if (numCanvasLines >= 4) {
+        // Zoom 4+: Pattern - normal, antialiasing (multiple), scanline
+        // First line is always normal, last line is scanline, middle are antialiasing
+        if (canvasLineInBuffer === 0) {
+          opacity = 0; // First line: normal
+        } else if (canvasLineInBuffer === numCanvasLines - 1) {
+          opacity = darkening; // Last line: scanline effect
+        } else {
+          // Middle lines: gradient antialiasing from 0 to darkening
+          const middleCount = numCanvasLines - 2;
+          const middleIdx = canvasLineInBuffer - 1;
+          opacity = (darkening * middleIdx) / middleCount;
+        }
+      }
+
+      // Apply opacity to this line
+      if (opacity > 0) {
+        const lineStartIdx = canvasLineIdx * width * 4;
+        const lineEndIdx = lineStartIdx + width * 4;
+        for (let pixelIdx = lineStartIdx; pixelIdx < lineEndIdx; pixelIdx += 4) {
+          // Black scanlines with opacity
+          data[pixelIdx] = 0; // R
+          data[pixelIdx + 1] = 0; // G
+          data[pixelIdx + 2] = 0; // B
+          data[pixelIdx + 3] = Math.round(255 * opacity); // A
+        }
+      }
     }
   }
 
@@ -52,14 +100,15 @@ export function createScanlinePatternCanvas(
 /**
  * Applies scanline effect using GPU compositing (multiply blend mode)
  * Much faster than CPU pixel manipulation
+ * Now with zoom-aware scanline positioning
  */
 export function applyGpuScanlineEffect(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   sourceCanvas: HTMLCanvasElement,
   scanlineIntensity: ScanlineIntensity = "off",
-  scanlinePatternCache?: { canvas: HTMLCanvasElement; intensity: ScanlineIntensity }
-): { canvas: HTMLCanvasElement; intensity: ScanlineIntensity } | undefined {
+  scanlinePatternCache?: { canvas: HTMLCanvasElement; intensity: ScanlineIntensity; sourceHeight: number }
+): { canvas: HTMLCanvasElement; intensity: ScanlineIntensity; sourceHeight: number } | undefined {
   const darkening = getScanlineDarkening(scanlineIntensity);
 
   if (darkening === 0) {
@@ -71,20 +120,24 @@ export function applyGpuScanlineEffect(
   // Draw source image
   ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
 
-  // Use cached scanline pattern if available and intensity matches
+  const sourceHeight = sourceCanvas.height;
+
+  // Use cached scanline pattern if available and conditions match
   let scanlinePattern: HTMLCanvasElement;
   if (
     scanlinePatternCache &&
     scanlinePatternCache.intensity === scanlineIntensity &&
+    scanlinePatternCache.sourceHeight === sourceHeight &&
     scanlinePatternCache.canvas.width === canvas.width &&
     scanlinePatternCache.canvas.height === canvas.height
   ) {
     scanlinePattern = scanlinePatternCache.canvas;
   } else {
-    // Create new scanline pattern
-    scanlinePattern = createScanlinePatternCanvas(
+    // Create new zoom-aware scanline pattern
+    scanlinePattern = createZoomAwareScanlinePatternCanvas(
       canvas.width,
       canvas.height,
+      sourceHeight,
       scanlineIntensity
     );
   }
@@ -96,7 +149,8 @@ export function applyGpuScanlineEffect(
 
   return {
     canvas: scanlinePattern,
-    intensity: scanlineIntensity
+    intensity: scanlineIntensity,
+    sourceHeight: sourceHeight
   };
 }
 
@@ -111,9 +165,9 @@ export function createScanlineFilter(
   // In a real implementation, this could be a custom WebGL shader
   const opacityMap: Record<ScanlineIntensity, number> = {
     "off": 0,
-    "50%": 0.5,
-    "25%": 0.75,
-    "12.5%": 0.875
+    "50%": 0.66,
+    "25%": 0.85,
+    "12.5%": 0.925
   };
 
   const opacity = opacityMap[intensity];
