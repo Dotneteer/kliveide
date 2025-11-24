@@ -338,15 +338,20 @@ export class CommonScreenDevice implements IScreenDevice {
     // --- Calculate the first and last visible lines
     this.firstVisibleLine = this._configuration.verticalSyncLines;
     const lastVisibleLine = this.rasterLines;
-    this.firstVisibleBorderTact = screenLineTime - this._configuration.borderLeftTime;
+    this.firstVisibleBorderTact = this._configuration.horizontalBlankingTime;
 
     // --- Calculate the last visible line tact
-    const lastVisibleLineTact =
-      this._configuration.displayLineTime + this._configuration.borderRightTime;
+    const lastVisibleLineTact = screenLineTime;
 
     // --- Calculate border pixel and attribute fetch tacts
-    const borderPixelFetchTact = screenLineTime - this._configuration.pixelDataPrefetchTime;
-    var borderAttrFetchTact = screenLineTime - this._configuration.attributeDataPrefetchTime;
+    const borderPixelFetchTact =
+      this.firstVisibleBorderTact +
+      this._configuration.borderLeftTime -
+      this._configuration.pixelDataPrefetchTime;
+    var borderAttrFetchTact =
+      this.firstVisibleBorderTact +
+      this._configuration.borderLeftTime -
+      this._configuration.attributeDataPrefetchTime;
 
     // --- Iterate through all tacts to create the rendering table
     this.renderingTactTable = [];
@@ -369,43 +374,50 @@ export class CommonScreenDevice implements IScreenDevice {
       if (
         line >= this.firstVisibleLine &&
         line <= lastVisibleLine &&
-        (tactInLine < lastVisibleLineTact || tactInLine >= this.firstVisibleBorderTact)
+        tactInLine < lastVisibleLineTact &&
+        tactInLine >= this.firstVisibleBorderTact
       ) {
         // --- Yes, the tact is visible.
         // --- Is it the first pixel/attr prefetch?
         var calculated = false;
-        if (line === this.firstDisplayLine - 1) {
-          if (tactInLine == borderPixelFetchTact - 1) {
-            currentTact.phase = RenderingPhase.Border;
-            currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
-            this.machine.setContentionValue(tact, this.contentionValues[6]);
-            calculated = true;
-          } else if (tactInLine == borderPixelFetchTact) {
-            // --- Yes, prefetch pixel data
-            currentTact.phase = RenderingPhase.BorderFetchPixel;
-            currentTact.pixelAddress = this.calcPixelAddress(line + 1, 0);
-            currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
-            this.machine.setContentionValue(tact, this.contentionValues[7]);
-            calculated = true;
-          } else if (tactInLine == borderAttrFetchTact) {
-            currentTact.phase = RenderingPhase.BorderFetchAttr;
-            currentTact.attributeAddress = this.calcAttrAddress(line + 1, 0);
-            currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
-            this.machine.setContentionValue(tact, this.contentionValues[0]);
-            calculated = true;
-          }
-        }
+        // if (line === this.firstDisplayLine - 1) {
+        //   if (tactInLine == borderPixelFetchTact - 1) {
+        //     currentTact.phase = RenderingPhase.Border;
+        //     currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
+        //     this.machine.setContentionValue(tact, this.contentionValues[6]);
+        //     calculated = true;
+        //   } else if (tactInLine == borderPixelFetchTact) {
+        //     // --- Yes, prefetch pixel data
+        //     currentTact.phase = RenderingPhase.BorderFetchPixel;
+        //     currentTact.pixelAddress = this.calcPixelAddress(line, 0);
+        //     currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
+        //     this.machine.setContentionValue(tact, this.contentionValues[7]);
+        //     calculated = true;
+        //   } else if (tactInLine == borderAttrFetchTact) {
+        //     currentTact.phase = RenderingPhase.BorderFetchAttr;
+        //     currentTact.attributeAddress = this.calcAttrAddress(line, 0);
+        //     currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
+        //     this.machine.setContentionValue(tact, this.contentionValues[0]);
+        //     calculated = true;
+        //   }
+        // }
 
         if (!calculated) {
           // --- Test, if the tact is in the display area
           if (
             line >= this.firstDisplayLine &&
             line <= lastDisplayLine &&
-            tactInLine < this._configuration.displayLineTime
+            tactInLine >= this.firstVisibleBorderTact + this._configuration.borderLeftTime &&
+            tactInLine <
+              this.firstVisibleBorderTact +
+                this._configuration.borderLeftTime +
+                this._configuration.displayLineTime
           ) {
             // --- Yes, it is the display area
             // --- Carry out actions according to pixel tact
-            const pixelTact = tactInLine & 0x07;
+            const pixelTact =
+              (tactInLine - this.firstVisibleBorderTact - this._configuration.borderLeftTime) &
+              0x07;
             switch (pixelTact) {
               case 0:
                 currentTact.phase = RenderingPhase.DisplayB1FetchB2;
@@ -443,7 +455,7 @@ export class CommonScreenDevice implements IScreenDevice {
                 // --- Test, if there are more pixels to display in this line
                 if (
                   tactInLine <
-                  this._configuration.displayLineTime - this._configuration.pixelDataPrefetchTime
+                  lastVisibleLineTact - this._configuration.borderRightTime
                 ) {
                   // --- Yes, there are still more bytes
                   currentTact.phase = RenderingPhase.DisplayB2FetchB1;
@@ -487,18 +499,21 @@ export class CommonScreenDevice implements IScreenDevice {
             currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
 
             // --- Left or right border?
-            if (line >= this.firstDisplayLine && line < lastDisplayLine) {
+            if (line >= this.firstDisplayLine && line <= lastDisplayLine) {
               // -- Yes, it is left or right border
               // --- Is it pixel data prefetch time?
+              const pixel0Tact =
+                this._configuration.horizontalBlankingTime +
+                this._configuration.borderLeftTime;
               if (tactInLine === borderPixelFetchTact) {
                 // --- Yes, prefetch pixel data
                 currentTact.phase = RenderingPhase.BorderFetchPixel;
-                currentTact.pixelAddress = this.calcPixelAddress(line + 1, 0);
+                currentTact.pixelAddress = this.calcPixelAddress(line, pixel0Tact);
                 currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[7]);
               } else if (tactInLine === borderAttrFetchTact) {
                 currentTact.phase = RenderingPhase.BorderFetchAttr;
-                currentTact.attributeAddress = this.calcAttrAddress(line + 1, 0);
+                currentTact.attributeAddress = this.calcAttrAddress(line, pixel0Tact);
                 currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
                 this.machine.setContentionValue(tact, this.contentionValues[0]);
               }
@@ -525,7 +540,15 @@ export class CommonScreenDevice implements IScreenDevice {
    */
   private calcPixelAddress(line: number, tactInLine: number): number {
     const row = line - this.firstDisplayLine;
-    return ((row & 0xc0) << 5) + ((row & 0x07) << 8) + ((row & 0x38) << 2) + (tactInLine >> 2);
+    return (
+      ((row & 0xc0) << 5) +
+      ((row & 0x07) << 8) +
+      ((row & 0x38) << 2) +
+      ((tactInLine -
+        this._configuration.horizontalBlankingTime -
+        this._configuration.borderLeftTime) >>
+        2)
+    );
   }
 
   /**
@@ -535,7 +558,14 @@ export class CommonScreenDevice implements IScreenDevice {
    * @returns The calculated attribute address
    */
   private calcAttrAddress(line: number, tactInLine: number): number {
-    return (tactInLine >> 2) + (((line - this.firstDisplayLine) >> 3) << 5) + 0x1800;
+    return (
+      ((tactInLine -
+        this._configuration.horizontalBlankingTime -
+        this._configuration.borderLeftTime) >>
+        2) +
+      (((line - this.firstDisplayLine) >> 3) << 5) +
+      0x1800
+    );
   }
 
   /**
@@ -547,17 +577,11 @@ export class CommonScreenDevice implements IScreenDevice {
    * Remember, a single tact represents two consecutive pixels.
    */
   private calculateBufferIndex(line: number, tactInLine: number): number {
-    if (tactInLine >= this.firstVisibleBorderTact) {
-      // --- This part is the left border
-      line++;
-      tactInLine -= this.firstVisibleBorderTact;
-    } else {
-      tactInLine += this._configuration.borderLeftTime;
-    }
-
-    // --- At this point, tactInLine and line contain the X and Y coordinates of the corresponding pixel pair.
     return line >= this.firstVisibleLine
-      ? 2 * (((line - this.firstVisibleLine) * this.screenWidth) / 2 + tactInLine)
+      ? 2 *
+          (((line - this.firstVisibleLine) * this.screenWidth) / 2 +
+            tactInLine -
+            this.firstVisibleBorderTact)
       : 0;
   }
 
