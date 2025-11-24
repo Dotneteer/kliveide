@@ -453,10 +453,7 @@ export class CommonScreenDevice implements IScreenDevice {
                 break;
               case 6:
                 // --- Test, if there are more pixels to display in this line
-                if (
-                  tactInLine <
-                  lastVisibleLineTact - this._configuration.borderRightTime
-                ) {
+                if (tactInLine < lastVisibleLineTact - this._configuration.borderRightTime) {
                   // --- Yes, there are still more bytes
                   currentTact.phase = RenderingPhase.DisplayB2FetchB1;
                   currentTact.pixelAddress = this.calcPixelAddress(
@@ -473,11 +470,7 @@ export class CommonScreenDevice implements IScreenDevice {
                 break;
               case 7:
                 // --- Test, if there are more pixels to display in this line
-                if (
-                  tactInLine <
-                  this._configuration.displayLineTime -
-                    this._configuration.attributeDataPrefetchTime
-                ) {
+                if (tactInLine < lastVisibleLineTact - this._configuration.borderRightTime) {
                   // --- Yes, there are still more bytes
                   currentTact.phase = RenderingPhase.DisplayB2FetchA1;
                   currentTact.attributeAddress = this.calcAttrAddress(
@@ -503,8 +496,7 @@ export class CommonScreenDevice implements IScreenDevice {
               // -- Yes, it is left or right border
               // --- Is it pixel data prefetch time?
               const pixel0Tact =
-                this._configuration.horizontalBlankingTime +
-                this._configuration.borderLeftTime;
+                this._configuration.horizontalBlankingTime + this._configuration.borderLeftTime;
               if (tactInLine === borderPixelFetchTact) {
                 // --- Yes, prefetch pixel data
                 currentTact.phase = RenderingPhase.BorderFetchPixel;
