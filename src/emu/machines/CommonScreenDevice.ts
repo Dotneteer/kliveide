@@ -43,6 +43,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly ZxSpectrum48PalScreenConfiguration: ScreenConfiguration = {
+    irqTact: 14336,
     verticalSyncLines: 40,
     borderTopLines: 48,
     borderBottomLines: 48,
@@ -60,6 +61,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (NTSC)
    */
   static readonly ZxSpectrum48NtscScreenConfiguration: ScreenConfiguration = {
+    irqTact: 10752,
     verticalSyncLines: 26,
     borderTopLines: 24,
     borderBottomLines: 24,
@@ -77,6 +79,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly ZxSpectrum128ScreenConfiguration: ScreenConfiguration = {
+    irqTact: 14364,
     verticalSyncLines: 23,
     borderTopLines: 48,
     borderBottomLines: 48,
@@ -94,6 +97,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly ZxSpectrumP3EScreenConfiguration: ScreenConfiguration = {
+    irqTact: 14364,
     verticalSyncLines: 23,
     borderTopLines: 48,
     borderBottomLines: 48,

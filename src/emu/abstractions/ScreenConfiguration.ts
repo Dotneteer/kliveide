@@ -3,6 +3,11 @@
  */
 export type ScreenConfiguration = {
   /**
+   * The tact when the IRQ signal is generated
+   */
+  irqTact: number;
+  
+  /**
    * Number of lines used for vertical synch
    */
   verticalSyncLines: number;

@@ -127,6 +127,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly NextScreenConfiguration: ScreenConfiguration = {
+    irqTact: 14336,
     verticalSyncLines: 23,
     borderTopLines: 49,
     borderBottomLines: 48,

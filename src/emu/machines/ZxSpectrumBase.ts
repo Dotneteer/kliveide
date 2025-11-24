@@ -72,6 +72,11 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
   protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
   /**
+   * The tact when the IRQ signal is generated
+   */
+  protected irqTact: number = 0;
+
+  /**
    * Represents the keyboard device of ZX Spectrum 48K
    */
   keyboardDevice: ISpectrumKeyboardDevice;
@@ -545,7 +550,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt(): boolean {
-    return this.currentFrameTact < 32;
+    return this.currentFrameTact >= this.irqTact && this.currentFrameTact < this.irqTact + 32;
   }
 
   /**

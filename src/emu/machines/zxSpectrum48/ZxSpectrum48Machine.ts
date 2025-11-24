@@ -48,6 +48,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
         ? CommonScreenDevice.ZxSpectrum48NtscScreenConfiguration
         : CommonScreenDevice.ZxSpectrum48PalScreenConfiguration
     );
+    this.irqTact = this.screenDevice.configuration.irqTact;
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.floatingBusDevice = new ZxSpectrum48FloatingBusDevice(this);
     this.tapeDevice = new TapeDevice(this);
