@@ -380,27 +380,27 @@ export class CommonScreenDevice implements IScreenDevice {
         // --- Yes, the tact is visible.
         // --- Is it the first pixel/attr prefetch?
         var calculated = false;
-        // if (line === this.firstDisplayLine - 1) {
-        //   if (tactInLine == borderPixelFetchTact - 1) {
-        //     currentTact.phase = RenderingPhase.Border;
-        //     currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
-        //     this.machine.setContentionValue(tact, this.contentionValues[6]);
-        //     calculated = true;
-        //   } else if (tactInLine == borderPixelFetchTact) {
-        //     // --- Yes, prefetch pixel data
-        //     currentTact.phase = RenderingPhase.BorderFetchPixel;
-        //     currentTact.pixelAddress = this.calcPixelAddress(line, 0);
-        //     currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
-        //     this.machine.setContentionValue(tact, this.contentionValues[7]);
-        //     calculated = true;
-        //   } else if (tactInLine == borderAttrFetchTact) {
-        //     currentTact.phase = RenderingPhase.BorderFetchAttr;
-        //     currentTact.attributeAddress = this.calcAttrAddress(line, 0);
-        //     currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
-        //     this.machine.setContentionValue(tact, this.contentionValues[0]);
-        //     calculated = true;
-        //   }
-        // }
+        if (line === this.firstDisplayLine - 1) {
+          if (tactInLine == borderPixelFetchTact - 1) {
+            currentTact.phase = RenderingPhase.Border;
+            currentTact.renderingAction = (rt) => this.renderTactBorder(rt);
+            this.machine.setContentionValue(tact, this.contentionValues[6]);
+            calculated = true;
+          } else if (tactInLine == borderPixelFetchTact) {
+            // --- Yes, prefetch pixel data
+            currentTact.phase = RenderingPhase.BorderFetchPixel;
+            currentTact.pixelAddress = this.calcPixelAddress(line, 0);
+            currentTact.renderingAction = (rt) => this.renderTactBorderFetchPixel(rt);
+            this.machine.setContentionValue(tact, this.contentionValues[7]);
+            calculated = true;
+          } else if (tactInLine == borderAttrFetchTact) {
+            currentTact.phase = RenderingPhase.BorderFetchAttr;
+            currentTact.attributeAddress = this.calcAttrAddress(line, 0);
+            currentTact.renderingAction = (rt) => this.renderTactBorderFetchAttr(rt);
+            this.machine.setContentionValue(tact, this.contentionValues[0]);
+            calculated = true;
+          }
+        }
 
         if (!calculated) {
           // --- Test, if the tact is in the display area
