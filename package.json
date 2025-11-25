@@ -48,20 +48,21 @@
     "@electron-toolkit/eslint-config-ts": "^2.0.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@eslint-community/regexpp": "^4.10.0",
-    "@monaco-editor/react": "^4.6.0",
+    "@monaco-editor/react": "^4.7.0",
     "@playwright/test": "^1.56.1",
     "@types/lodash": "^4.17.0",
     "@types/react": "^18.0.25",
     "@types/react-dom": "^18.0.8",
     "@typescript-eslint/parser": "^5.47.1",
     "@vitejs/plugin-react": "^4.4.1",
-    "electron": "^35.7.5",
+    "electron": "^39.2.3",
     "electron-builder": "^26.0.12",
     "electron-vite": "^3.1.0",
     "eslint": "^8.31.0",
     "execa": "^8.0.1",
     "expect": "^29.3.1",
     "lodash": "^4.17.21",
+    "monaco-editor": "^0.55.1",
     "nextra": "^3.3.0",
     "nextra-theme-docs": "^3.3.0",
     "prettier": "^3.2.5",
@@ -114,7 +115,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "asar": false,
@@ -180,8 +183,7 @@
         "filter": [
           "**/*"
         ]
-      },
-      "node_modules/monaco-editor/min/vs/**/*"
+      }
     ]
   }
 }

@@ -158,7 +158,7 @@ const IdeApp = () => {
   }
 
   // --- Visual state
-  const appPath = decodeURI(location.search.split("=")?.[1]);
+  const appPath = decodeURIComponent(location.search.split("=")?.[1]);
   const ideLoaded = useSelector((s) => s.ideLoaded ?? false);
   const dimmed = useSelector((s) => s.dimMenu ?? false);
   const isWindows = useSelector((s) => s.isWindows ?? false);
@@ -181,7 +181,7 @@ const IdeApp = () => {
 
   useLayoutEffect(() => {
     console.log("AppPath", appPath);
-    initializeMonaco(appPath);
+    initializeMonaco();
 
     setCachedAppServices(appServices);
     setCachedStore(store);
