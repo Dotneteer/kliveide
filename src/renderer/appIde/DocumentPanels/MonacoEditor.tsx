@@ -6,7 +6,7 @@ import 'monaco-editor/esm/vs/language/json/monaco.contribution';
 import 'monaco-editor/esm/vs/language/css/monaco.contribution';
 import 'monaco-editor/esm/vs/language/html/monaco.contribution';
 import 'monaco-editor/esm/vs/language/typescript/monaco.contribution';
-import 'monaco-editor/esm/vs/basic-languages/monaco.contribution';
+import 'monaco-editor/esm/vs/basic-languages/_.contribution';
 
 // Import and configure Monaco workers
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
@@ -86,7 +86,7 @@ type MarkdownString = monacoEditor.IMarkdownString;
 
 // --- We need to invoke this function while initializing the app. This is required to
 // --- render the Monaco editor with the supported language syntax highlighting.
-export async function initializeMonaco(appPath: string) {
+export async function initializeMonaco() {
   // --- Use the ESM version of monaco-editor which is bundled by Vite
   // --- This avoids the AMD loader issues in production builds
   loader.config({ monaco: monacoEditor });
@@ -97,7 +97,7 @@ export async function initializeMonaco(appPath: string) {
   customLanguagesRegistry.forEach((entry) => ensureLanguage(monaco, entry.id));
   monacoInitialized = true;
 
-  function ensureLanguage(monaco: typeof monacoEditor, language: string) {
+  function ensureLanguage(monaco: any, language: string) {
     if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
       // --- Do we support that custom language?
       const languageInfo = customLanguagesRegistry.find((l) => l.id === language);

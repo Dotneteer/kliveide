@@ -181,7 +181,7 @@ const IdeApp = () => {
 
   useLayoutEffect(() => {
     console.log("AppPath", appPath);
-    initializeMonaco(appPath);
+    initializeMonaco();
 
     setCachedAppServices(appServices);
     setCachedStore(store);

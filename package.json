@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.51.5",
+  "version": "0.51.0",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -48,7 +48,7 @@
     "@electron-toolkit/eslint-config-ts": "^2.0.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@eslint-community/regexpp": "^4.10.0",
-    "@monaco-editor/react": "^4.6.0",
+    "@monaco-editor/react": "^4.7.0",
     "@playwright/test": "^1.56.1",
     "@types/lodash": "^4.17.0",
     "@types/react": "^18.0.25",
@@ -62,6 +62,7 @@
     "execa": "^8.0.1",
     "expect": "^29.3.1",
     "lodash": "^4.17.21",
+    "monaco-editor": "^0.55.1",
     "nextra": "^3.3.0",
     "nextra-theme-docs": "^3.3.0",
     "prettier": "^3.2.5",
