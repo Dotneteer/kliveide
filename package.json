@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.51.0",
+  "version": "0.51.3",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -180,8 +180,7 @@
         "filter": [
           "**/*"
         ]
-      },
-      "node_modules/monaco-editor/min/vs/**/*"
+      }
     ]
   }
 }

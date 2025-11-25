@@ -53,11 +53,9 @@ type MarkdownString = monacoEditor.IMarkdownString;
 // --- We need to invoke this function while initializing the app. This is required to
 // --- render the Monaco editor with the supported language syntax highlighting.
 export async function initializeMonaco(appPath: string) {
-  loader.config({
-    paths: {
-      vs: `${appPath}/node_modules/monaco-editor/min/vs`
-    }
-  });
+  // --- Use the ESM version of monaco-editor which is bundled by Vite
+  // --- This avoids the AMD loader issues in production builds
+  loader.config({ monaco: monacoEditor });
   const monaco = await loader.init();
   customLanguagesRegistry.forEach((entry) => ensureLanguage(monaco, entry.id));
   monacoInitialized = true;

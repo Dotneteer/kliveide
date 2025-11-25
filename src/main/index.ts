@@ -362,8 +362,8 @@ async function createAppWindows() {
   // --- We use a little hack here. We pass the application path value in the query parameter
   // --- of the URL we pass to the browser windows. The IDE window will use this parameter to
   // --- initialize the Monaco editor as soon as the IDE app starts.
-  const devAppPath = `&apppath=${encodeURI(app.getAppPath())}`;
-  const prodAppPath = `&apppath=${process.resourcesPath}`;
+  const devAppPath = `&apppath=${encodeURIComponent(app.getAppPath())}`;
+  const prodAppPath = `&apppath=${encodeURIComponent(process.resourcesPath)}`;
 
   // --- HMR for renderer base on electron-vite cli.
   // --- Load the remote URL for development or the local html file for production.
