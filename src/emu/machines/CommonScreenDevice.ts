@@ -43,7 +43,7 @@ export class CommonScreenDevice implements IScreenDevice {
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)
    */
   static readonly ZxSpectrum48PalScreenConfiguration: ScreenConfiguration = {
-    irqTact: 14336,
+    irqTact: 11248,
     verticalSyncLines: 40,
     borderTopLines: 48,
     borderBottomLines: 48,
