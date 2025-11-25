@@ -1,5 +1,39 @@
 import Editor, { loader } from "@monaco-editor/react";
-import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+import * as monacoEditor from "monaco-editor";
+
+// Import Monaco language workers for built-in language support
+import 'monaco-editor/esm/vs/language/json/monaco.contribution';
+import 'monaco-editor/esm/vs/language/css/monaco.contribution';
+import 'monaco-editor/esm/vs/language/html/monaco.contribution';
+import 'monaco-editor/esm/vs/language/typescript/monaco.contribution';
+import 'monaco-editor/esm/vs/basic-languages/monaco.contribution';
+
+// Import and configure Monaco workers
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+
+// Configure worker creation
+(self as any).MonacoEnvironment = {
+  getWorker(_: any, label: string) {
+    if (label === 'json') {
+      return new jsonWorker();
+    }
+    if (label === 'css' || label === 'scss' || label === 'less') {
+      return new cssWorker();
+    }
+    if (label === 'html' || label === 'handlebars' || label === 'razor') {
+      return new htmlWorker();
+    }
+    if (label === 'typescript' || label === 'javascript') {
+      return new tsWorker();
+    }
+    return new editorWorker();
+  },
+};
+
 import AutoSizer from "../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
@@ -56,7 +90,10 @@ export async function initializeMonaco(appPath: string) {
   // --- Use the ESM version of monaco-editor which is bundled by Vite
   // --- This avoids the AMD loader issues in production builds
   loader.config({ monaco: monacoEditor });
+  
+  // --- Wait for monaco to initialize
   const monaco = await loader.init();
+  
   customLanguagesRegistry.forEach((entry) => ensureLanguage(monaco, entry.id));
   monacoInitialized = true;
 
