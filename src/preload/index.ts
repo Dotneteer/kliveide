@@ -60,21 +60,6 @@ function useLoading() {
   50% { transform: scale(1.05); opacity: 0.8; }
 }
 
-@keyframes slideDown {
-  from { transform: translateY(-100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes colorBarGlow {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
-}
-
 .app-loading-wrap {
   position: fixed;
   top: 0;
@@ -103,36 +88,6 @@ function useLoading() {
   filter: drop-shadow(0 0 20px rgba(0, 180, 204, 0.5));
 }
 
-.color-bars-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  display: flex;
-  animation: slideDown 0.5s ease-out;
-}
-
-.color-bars-bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  display: flex;
-  animation: slideUp 0.5s ease-out;
-}
-
-.color-bar {
-  flex: 1;
-  animation: colorBarGlow 2s ease-in-out infinite;
-}
-
-.color-bar:nth-child(1) { background: #0ff; animation-delay: 0s; }
-.color-bar:nth-child(2) { background: #0f0; animation-delay: 0.1s; }
-.color-bar:nth-child(3) { background: #ff0; animation-delay: 0.2s; }
-.color-bar:nth-child(4) { background: #f00; animation-delay: 0.3s; }
-
 .loading-text {
   color: #00B4CC;
   font-family: 'Courier New', monospace;
@@ -156,13 +111,6 @@ function useLoading() {
   oStyle.innerHTML = styleContent;
   oDiv.className = "app-loading-wrap";
   oDiv.innerHTML = `
-    <div class="color-bars-top">
-      <div class="color-bar"></div>
-      <div class="color-bar"></div>
-      <div class="color-bar"></div>
-      <div class="color-bar"></div>
-    </div>
-    
     <div class="klive-logo-container">
       <svg width="200" height="200" viewBox='0 0 200 200' fill='none' xmlns='http://www.w3.org/2000/svg'>
         <rect width='100%' height='100%' fill='#000' />
@@ -192,13 +140,6 @@ function useLoading() {
     
     <div class="loading-text">
       LOADING<span class="loading-dots" id="loading-dots"></span>
-    </div>
-    
-    <div class="color-bars-bottom">
-      <div class="color-bar"></div>
-      <div class="color-bar"></div>
-      <div class="color-bar"></div>
-      <div class="color-bar"></div>
     </div>
   `;
 

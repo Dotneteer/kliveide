@@ -159,12 +159,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   private _pixelBuffer: Uint32Array;
 
   /**
-   * This value shows the refresh rate calculated from the base clock frequency of the CPU and the screen
-   * configuration (total #of screen rendering tacts per frame).
-   */
-  refreshRate: number;
-
-  /**
    * This value shows the number of frames after which the ULA toggles the flash flag. In the hardware machine,
    * the flash flag toggles twice in a second.
    */
@@ -338,8 +332,7 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
     this.machine.setTactsInFrame(tactsInFrame);
 
     // --- Calculate the refresh rate and the flash toggle rate
-    this.refreshRate = this.machine.baseClockFrequency / tactsInFrame;
-    this.flashToggleFrames = Math.round(this.refreshRate / 2);
+    this.flashToggleFrames = 16;
 
     // --- Calculate the first and last visible lines
     this.firstVisibleLine =
