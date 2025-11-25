@@ -79,6 +79,9 @@ const EmuApp = () => {
     // --- Run the app initialiation sequence
     mounted.current = true;
     dispatch(emuLoadedAction());
+    
+    // --- Remove the loading screen
+    window.postMessage({ payload: "removeLoading" }, "*");
 
     // --- Set the audio sample rate to use
     const audioCtx = new AudioContext();
