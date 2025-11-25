@@ -438,9 +438,10 @@ async function createAppWindows() {
     } else {
       // --- Do not allow the IDE close, instead, hide it.
       ideWindow.hide();
-      if (appSettings.windowStates && !ideWindowStateSaved) {
+      if (appSettings.windowStates) {
         // --- Make sure to save the last IDE settings
         appSettings.windowStates.showIdeOnStartup = false;
+        saveAppSettings();
       }
 
       // --- IDE id hidden, so it's not focused

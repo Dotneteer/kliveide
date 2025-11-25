@@ -212,6 +212,9 @@ const IdeApp = () => {
     });
     dispatch(setToolsAction(regTools));
     dispatch(ideLoadedAction());
+    
+    // --- Remove the loading screen
+    window.postMessage({ payload: "removeLoading" }, "*");
   }, [appPath, appServices, store, messenger]);
 
   useEffect(() => {

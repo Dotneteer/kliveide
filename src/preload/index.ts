@@ -46,29 +46,20 @@ const safeDOM = {
 };
 
 /**
- * Loading animation
- * 
- * https://tobiasahlin.com/spinkit
- * https://connoratherton.com/loaders
- * https://projects.lukehaas.me/css-loaders
- * https://matejkustec.github.io/SpinThatShit
+ * Loading animation with Klive logo
  */
 function useLoading() {
-  const className = `loaders-css__square-spin`;
   const styleContent = `
-@keyframes square-spin {
-  25% { transform: perspective(100px) rotateX(180deg) rotateY(0); }
-  50% { transform: perspective(100px) rotateX(180deg) rotateY(180deg); }
-  75% { transform: perspective(100px) rotateX(0) rotateY(180deg); }
-  100% { transform: perspective(100px) rotateX(0) rotateY(0); }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.${className} > div {
-  animation-fill-mode: both;
-  width: 50px;
-  height: 50px;
-  background: #fff;
-  animation: square-spin 3s 0s cubic-bezier(0.09, 0.57, 0.49, 0.9) infinite;
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
 }
+
 .app-loading-wrap {
   position: fixed;
   top: 0;
@@ -76,10 +67,41 @@ function useLoading() {
   width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #282c34;
+  background: #000;
   z-index: 9;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.klive-logo-container {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 40px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.klive-logo-container svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 20px rgba(0, 180, 204, 0.5));
+}
+
+.loading-text {
+  color: #00B4CC;
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  animation: pulse 2s ease-in-out infinite;
+  text-shadow: 0 0 10px rgba(0, 180, 204, 0.8);
+}
+
+.loading-dots {
+  display: inline-block;
+  width: 40px;
+  text-align: left;
 }
     `;
   const oStyle = document.createElement("style");
@@ -88,7 +110,48 @@ function useLoading() {
   oStyle.id = "app-loading-style";
   oStyle.innerHTML = styleContent;
   oDiv.className = "app-loading-wrap";
-  oDiv.innerHTML = `<div class="${className}"><div></div></div>`;
+  oDiv.innerHTML = `
+    <div class="klive-logo-container">
+      <svg width="200" height="200" viewBox='0 0 200 200' fill='none' xmlns='http://www.w3.org/2000/svg'>
+        <rect width='100%' height='100%' fill='#000' />
+        <path d='M 200 149 l 0 -20 l -70 70 l 20 0' fill='#0ff' />
+        <path d='M 200 129 l 0 -20 l -90 90 l 20 0' fill='#0f0' />
+        <path d='M 200 109 l 0 -20 l -110 110 l 20 0' fill='#ff0' />
+        <path d='M 200 89 l 0 -20 l -130 130 l 20 0' fill='#f00' />
+        <path d='M 0 0 l 200 0 l 0 8 l -200 0' fill='#00B4CC' />
+        <path d='M 0 200 l 200 0 l 0 -8 l -200 0' fill='#00B4CC' />
+        <path d='M 0 0 l 0 200 l 8 0 l 0 -200' fill='#00B4CC' />
+        <path d='M 192 0 l 0 200 l 8 0 l 0 -200' fill='#00B4CC' />
+        <path d='M 40 40 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 40 60 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 40 80 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 40 100 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 40 120 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 40 140 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 60 80 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 80 80 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 100 100 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 120 120 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 140 140 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 100 60 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+        <path d='M 120 40 l 20 0 l 0 20 l -20 0 l 0 -20' fill='#00B4CC' />
+      </svg>
+    </div>
+    
+    <div class="loading-text">
+      LOADING<span class="loading-dots" id="loading-dots"></span>
+    </div>
+  `;
+
+  // Animate loading dots
+  let dotCount = 0;
+  const dotsInterval = setInterval(() => {
+    const dotsElement = document.getElementById('loading-dots');
+    if (dotsElement) {
+      dotCount = (dotCount + 1) % 4;
+      dotsElement.textContent = '.'.repeat(dotCount);
+    }
+  }, 500);
 
   return {
     appendLoading() {
@@ -96,6 +159,7 @@ function useLoading() {
       safeDOM.append(document.body, oDiv);
     },
     removeLoading() {
+      clearInterval(dotsInterval);
       safeDOM.remove(document.head, oStyle);
       safeDOM.remove(document.body, oDiv);
     }
@@ -106,9 +170,19 @@ function useLoading() {
 const { appendLoading, removeLoading } = useLoading();
 domReady().then(appendLoading);
 
+let loadingRemoved = false;
+
 window.onmessage = (ev: { data: { payload: string } }) => {
-  ev.data.payload === "removeLoading" && removeLoading();
+  if (ev.data.payload === "removeLoading" && !loadingRemoved) {
+    loadingRemoved = true;
+    removeLoading();
+  }
 };
 
-// --- Remove the loading animation after 2 seconds
-setTimeout(removeLoading, 1999);
+// --- Remove the loading animation after 10 seconds maximum
+setTimeout(() => {
+  if (!loadingRemoved) {
+    loadingRemoved = true;
+    removeLoading();
+  }
+}, 10000);

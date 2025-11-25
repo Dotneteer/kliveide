@@ -5,6 +5,12 @@
 ### Features
 
 - Add scanline effect to machines supporting it
+- Preload screen changed
+
+### Fixes
+
+- Monaco editor loading issue fixed
+- Flash rate fixed
 
 ## 0.50.4
 
