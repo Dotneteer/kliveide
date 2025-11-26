@@ -517,77 +517,77 @@
 ;
 026A 32 69 5B                   ld (LBANK),a               ; Store it to LBANK
 026D 22 7B 5C                   ld (UDG),hl                ; Store UDG again
-
+;
+; --- Initialize NextOS, display system and BASIC workspace ---
+;
 0270 C5                         push bc                    ; Save BC (B = 0 at this point)
-0271 CD 29 23                   call L2329
-0274 DF                         rst $18                    ; ROM1: $14b9
-0275 B9 14                      .defw $14b9                ; Initialize the display
-0277 21 00 3C                   ld hl,$3C00
-027A 22 36 5C                   ld ($5C36),hl
-027D FD CB 01 E6                set 4,(iy+$01)
-0281 3E FF                      ld a,$FF
-0283 FD 77 00                   ld (iy),a
-0286 32 77 5B                   ld ($5B77),a
-0289 32 78 5B                   ld ($5B78),a
-028C 32 88 5B                   ld ($5B88),a
-028F 32 89 5B                   ld ($5B89),a
-0292 3E 54                      ld a,$54
-0294 32 79 5B                   ld ($5B79),a
-0297 32 7A 5B                   ld ($5B7A),a
-029A 21 B6 5C                   ld hl,$5CB6
-029D 22 4F 5C                   ld ($5C4F),hl
-02A0 11 AF 15                   ld de,$15AF
-02A3 01 15 00                   ld bc,$0015
-02A6 EB                         ex de,hl
-02A7 EF                         rst $28
-02A8 C3 33 EB                   jp LEB33
-02AB 2B                         dec hl
-02AC 22 57 5C                   ld (DATADD),hl
-02AF 23                         inc hl
-02B0 22 53 5C                   ld (PROG),hl
-02B3 22 4B 5C                   ld ($5C4B),hl
-02B6 36 80                      ld (hl),$80
-02B8 23                         inc hl
-02B9 22 59 5C                   ld ($5C59),hl
-02BC 36 0D                      ld (hl),$0D
-02BE 23                         inc hl
-02BF 36 80                      ld (hl),$80
-02C1 23                         inc hl
-02C2 22 61 5C                   ld ($5C61),hl
-02C5 22 63 5C                   ld ($5C63),hl
-02C8 22 65 5C                   ld ($5C65),hl
-02CB 3E 38                      ld a,$38
-02CD 32 8D 5C                   ld ($5C8D),a
-02D0 32 8F 5C                   ld ($5C8F),a
-02D3 32 61 5B                   ld ($5B61),a
-02D6 32 63 5B                   ld ($5B63),a
-02D9 32 48 5C                   ld ($5C48),a
-02DC 3E 07                      ld a,$07
-02DE D3 FE                      out ($FE),a
-02E0 21 23 05                   ld hl,$0523
-02E3 22 09 5C                   ld ($5C09),hl
-02E6 FD 35 C6                   dec (iy-$3A)
-02E9 FD 35 CA                   dec (iy-$36)
-02EC 21 C6 15                   ld hl,$15C6
-02EF 11 10 5C                   ld de,STRMS
-02F2 01 0E 00                   ld bc,$000E
-02F5 EF                         rst $28
-02F6 C3 33 FD                   jp LFD33
-02F9 36 31                      ld (hl),$31
-02FB 02                         ld (bc),a
-02FC FB                         ei
-02FD EF                         rst $28
-02FE 6B                         ld l,e
-02FF 0D                         dec c
-0300 F1                         pop af
-0301 CF                         rst $08
-0302 F5                         push af
-0303 CD 60 03                   call L0360
-0306 DF                         rst $18
-0307 11 15 21                   ld de,$2115
-030A 5A                         ld e,d
-030B 03                         inc bc
-030C 11 B8 D5                   ld de,$D5B8
+0271 CD 29 23                   call L2329                 ; Initialize NextOS structures
+0274 DF                         rst $18                    ; Call ROM1 routine
+0275 B9 14                      .defw $14b9                ; ROM1: InitDisp - Initialize display system
+0277 21 00 3C                   ld hl,$3C00                ; HL = $3C00 (CHARS - character set address)
+027A 22 36 5C                   ld ($5C36),hl              ; Store CHARS address
+027D FD CB 01 E6                set 4,(iy+$01)             ; Set FLAGS bit 4 (K mode)
+0281 3E FF                      ld a,$FF                   ; A = $FF
+0283 FD 77 00                   ld (iy),a                  ; Set ERR_NR = $FF (no error)
+0286 32 77 5B                   ld ($5B77),a               ; Store $FF at $5B77
+0289 32 78 5B                   ld ($5B78),a               ; Store $FF at $5B78
+028C 32 88 5B                   ld ($5B88),a               ; Store $FF at $5B88
+028F 32 89 5B                   ld ($5B89),a               ; Store $FF at $5B89
+0292 3E 54                      ld a,$54                   ; A = $54
+0294 32 79 5B                   ld ($5B79),a               ; Store $54 at $5B79
+0297 32 7A 5B                   ld ($5B7A),a               ; Store $54 at $5B7A
+029A 21 B6 5C                   ld hl,$5CB6                ; HL = $5CB6 (start of channel info area)
+029D 22 4F 5C                   ld ($5C4F),hl              ; Store in CHANS (channel information)
+02A0 11 AF 15                   ld de,$15AF                ; DE = $15AF (source: channel data in ROM)
+02A3 01 15 00                   ld bc,$0015                ; BC = $0015 (21 bytes to copy)
+02A6 EB                         ex de,hl                   ; Swap: HL = source, DE = dest
+02A7 EF                         rst $28                    ; Call ROM3 routine
+02A8 C3 33                      .defw $33C3                ; ROM3: LDIR - copy 21 bytes from ROM to RAM
+02AA EB                         ex de,hl                   ; HL = end of copied data ($5CB6 + 21)
+02AB 2B                         dec hl                     ; HL points to last byte of channel data
+02AC 22 57 5C                   ld (DATADD),hl             ; Store in DATADD (end of variables)
+02AF 23                         inc hl                     ; HL = start of BASIC program area
+02B0 22 53 5C                   ld (PROG),hl               ; Store in PROG (start of BASIC program)
+02B3 22 4B 5C                   ld (VARS),hl               ; Store in VARS (start of variables)
+02B6 36 80                      ld (hl),$80                ; Write $80 (VARS end marker)
+02B8 23                         inc hl                     ; Advance pointer
+02B9 22 59 5C                   ld (E_LINE),hl             ; Store in E_LINE (edit line address)
+02BC 36 0D                      ld (hl),$0D                ; Write $0D (ENTER character)
+02BE 23                         inc hl                     ; Advance pointer
+02BF 36 80                      ld (hl),$80                ; Write $80 (end marker)
+02C1 23                         inc hl                     ; Advance pointer
+02C2 22 61 5C                   ld (WORKSP),hl             ; Store in WORKSP (workspace address)
+02C5 22 63 5C                   ld (STKBOT),hl             ; Store in STKBOT (stack bottom)
+02C8 22 65 5C                   ld (STKEND),hl             ; Store in STKEND (stack end)
+02CB 3E 38                      ld a,$38                   ; A = $38 (white INK, black PAPER)
+02CD 32 8D 5C                   ld (ATTR_P),a              ; Store in ATTR_P (permanent attributes)
+02D0 32 8F 5C                   ld (ATTR_T),a              ; Store in ATTR_T (temporary attributes)
+02D3 32 61 5B                   ld ($5B61),a               ; Store $38 at $5B61
+02D6 32 63 5B                   ld ($5B63),a               ; Store $38 at $5B63
+02D9 32 48 5C                   ld (BORDCR),a              ; Store in BORDCR (border color)
+02DC 3E 07                      ld a,$07                   ; A = $07 (white border)
+02DE D3 FE                      out ($FE),a                ; Set border color via ULA port
+02E0 21 23 05                   ld hl,$0523                ; HL = $0523 (REPDEL=$23, REPPER=$05)
+02E3 22 09 5C                   ld (REPDEL),hl             ; Set REPDEL and REPPER (key repeat timing)
+02E6 FD 35 C6                   dec (iy-$3A)               ; Decrement KSTATE+0 ($5C00): set to $FF (unused)
+02E9 FD 35 CA                   dec (iy-$36)               ; Decrement KSTATE+4 ($5C04): set to $FF (unused)
+02EC 21 C6 15                   ld hl,$15C6                ; HL = $15C6 (source: stream data)
+02EF 11 10 5C                   ld de,STRMS                ; DE = $5C10 (STRMS - streams data)
+02F2 01 0E 00                   ld bc,$000E                ; BC = $000E (14 bytes to copy)
+02F5 EF                         rst $28                    ; Call ROM3 routine
+02F6 C3 33                      .defw $33C3                ; ROM3: LDIR copy routine
+02F8 FD 36 31 02                ld (iy+$31),$02            ; Set DF_SZ = $02 (display file size)
+02FC FB                         ei                         ; Enable interrupts
+02FD EF                         rst $28                    ; Call ROM3 routine
+02FE 6B 0D                      .defw $0D6B                ; ROM3: routine at $0D6B
+0300 F1                         pop af                     ; Restore AF (from PUSH BC at $0270)
+0301 CF                         rst $08                    ; ERROR-1 routine
+0302 F5                         push af                    ; Save AF
+0303 CD 60 03                   call L0360                 ; Call initialization routine
+0306 DF                         rst $18                    ; Call ROM1 routine
+0307 11 15                      .defw $1511                ; ROM1: routine at $1511
+0309 21 5A 03                   ld hl,$035A                ; HL = $035A (copyright message address)
+030C 11 B8 D5                   ld de,$D5B8                ; DE = $D5B8 (display destination)
 030F 01 06 00                   ld bc,$0006
 0312 ED B0                      ldir
 0314 EB                         ex de,hl
@@ -1141,7 +1141,7 @@
 06AC 3C                         inc a
 06AD 5C                         ld e,h
 06AE CB 86                      res 0,(hl)
-06B0 21 8F 5C                   ld hl,$5C8F
+06B0 21 8F 5C                   ld hl,ATTR_T
 06B3 3A E0 D6                   ld a,($D6E0)
 06B6 77                         ld (hl),a
 06B7 AF                         xor a
@@ -1163,7 +1163,7 @@
 06D6 D7                         rst $10
 06D7 E1                         pop hl
 06D8 3A E3 D6                   ld a,($D6E3)
-06DB 32 8F 5C                   ld ($5C8F),a
+06DB 32 8F 5C                   ld (ATTR_T),a
 06DE AF            L06DE:       xor a
 06DF 01 01 F7                   ld bc,$F701
 06E2 11 0B F7                   ld de,$F70B
@@ -2478,14 +2478,14 @@
 0E36 11 DB D6                   ld de,$D6DB
 0E39 1A            L0E39:       ld a,(de)
 0E3A 13                         inc de
-0E3B 32 8F 5C                   ld ($5C8F),a
+0E3B 32 8F 5C                   ld (ATTR_T),a
 0E3E 79                         ld a,c
 0E3F EE 01                      xor $01
 0E41 4F                         ld c,a
 0E42 D7                         rst $10
 0E43 10 F4                      djnz L0E39
 0E45 1A                         ld a,(de)
-0E46 32 8F 5C                   ld ($5C8F),a
+0E46 32 8F 5C                   ld (ATTR_T),a
 0E49 3E 20                      ld a,$20
 0E4B D7                         rst $10
 0E4C D1                         pop de
@@ -2763,13 +2763,13 @@
 102B CD DE 12                   call GetNxRegA
 102E 77                         ld (hl),a
 102F 23                         inc hl
-1030 3A 8D 5C                   ld a,($5C8D)
+1030 3A 8D 5C                   ld a,(ATTR_P)
 1033 77                         ld (hl),a
 1034 23                         inc hl
 1035 3A 62 5B                   ld a,($5B62)
 1038 77                         ld (hl),a
 1039 23                         inc hl
-103A 3A 48 5C                   ld a,($5C48)
+103A 3A 48 5C                   ld a,(BORDCR)
 103D 77                         ld (hl),a
 103E 23                         inc hl
 103F CD 92 0F                   call L0F92
@@ -2782,8 +2782,8 @@
 104D CD BA 0F                   call L0FBA
 1050 E1                         pop hl
 1051 7E                         ld a,(hl)
-1052 32 8D 5C                   ld ($5C8D),a
-1055 32 48 5C                   ld ($5C48),a
+1052 32 8D 5C                   ld (ATTR_P),a
+1055 32 48 5C                   ld (BORDCR),a
 1058 F5                         push af
 1059 1F                         rra
 105A 1F                         rra
@@ -2812,13 +2812,13 @@
 1084 ED 92 14                   nextreg $14,a
 1087 23                         inc hl
 1088 7E                         ld a,(hl)
-1089 32 8D 5C                   ld ($5C8D),a
+1089 32 8D 5C                   ld (ATTR_P),a
 108C 23                         inc hl
 108D 7E                         ld a,(hl)
 108E 32 62 5B                   ld ($5B62),a
 1091 23                         inc hl
 1092 7E                         ld a,(hl)
-1093 32 48 5C                   ld ($5C48),a
+1093 32 48 5C                   ld (BORDCR),a
 1096 1F                         rra
 1097 1F                         rra
 1098 1F                         rra
@@ -2946,7 +2946,7 @@
 1153 ED 92 15                   nextreg $15,a
 1156 7D                         ld a,l
 1157 D3 FF                      out ($FF),a
-1159 3A 48 5C                   ld a,($5C48)
+1159 3A 48 5C                   ld a,(BORDCR)
 115C 0F                         rrca
 115D 0F                         rrca
 115E 0F                         rrca
@@ -3151,7 +3151,7 @@
 12BF 88                         adc a,b
 12C0 0E EB                      ld c,$EB
 12C2 C1                         pop bc
-12C3 3A 8D 5C                   ld a,($5C8D)
+12C3 3A 8D 5C                   ld a,(ATTR_P)
 12C6 77            L12C6:       ld (hl),a
 12C7 23                         inc hl
 12C8 10 FC                      djnz L12C6
@@ -3765,6 +3765,9 @@
 15AC 23                         inc hl
 15AD 5E                         ld e,(hl)
 15AE 23                         inc hl
+;
+;
+;
 15AF 56                         ld d,(hl)
 15B0 23                         inc hl
 15B1 B8                         cp b
@@ -4308,7 +4311,7 @@
 1962 16 54         L1962:       ld d,$54
 1964 CD BA 27                   call SetMMU100B
 1967 E5                         push hl
-1968 CD 9B 23                   call L239B
+1968 CD 9B 23                   call ExpFont
 196B 18 CF                      jr L193C
 196D DD CB 19 66                bit 4,(ix+$19)
 1971 20 9F                      jr nz,L1912
@@ -5727,7 +5730,7 @@
 2378 01 00 03                   ld bc,$0300                 ; BC = $0300 (768 bytes)
 237B EF                         rst $28                     ; Call ROM1 routine
 237C C3 33                      .defw $33C3                 ; ROM1 address: copy routine
-237E CD 9B 23                   call L239B                  ; Process font data
+237E CD 9B 23                   call ExpFont                ; Process font data
 2381 16 54                      ld d,$54                    ; D = $54 (MMU slot)
 2383 C3 99 27                   jp L2799                    ; Jump to cleanup/return
 2386 CD 08 27                   call L2708                  ; Additional initialization
@@ -5740,11 +5743,15 @@
 ;
 ; --- Subroutine: Process and expand font data ---
 ; Converts compressed font data from $BC00 to expanded format at $B800,
-; and generates character patterns at $AD00 using lookup table at $2632.
+; and generates character patterns at $AD00 using lookup table at ChLUT.
+; The lookup table contains 9 special characters that use custom pattern bytes
+; for their first row (top scanline), while the remaining rows use standard
+; pattern data from $23F2. This allows specific characters to have unique
+; top row patterns for special symbols, accented characters, or graphical elements.
 ; Entry: None (expects font data at $BC00)
 ; Exit: Processed font at $B800, character patterns at $AD00
 ;
-239B 21 00 BC      L239B:       ld hl,$BC00                 ; HL = $BC00 (source: compressed font)
+239B 21 00 BC      ExpFont:     ld hl,$BC00                 ; HL = $BC00 (source: compressed font)
 239E 11 00 B8                   ld de,$B800                 ; DE = $B800 (dest: expanded font)
 23A1 01 03 00                   ld bc,$0003                 ; BC = $0300 (768 bytes)
 23A4 7E            L23A4:       ld a,(hl)                   ; Load byte from compressed font
@@ -5756,7 +5763,7 @@
 23AB 0D                         dec c                       ; Decrement page counter
 23AC 20 F6                      jr nz,L23A4                 ; Continue if more pages
 23AE DD E5                      push ix                     ; Save IX
-23B0 DD 21 32 26                ld ix,$2632                 ; IX = $2632 (lookup table pointer)
+23B0 DD 21 32 26                ld ix,ChLUT                 ; IX = ChLUT (lookup table pointer)
 23B4 21 F2 23                   ld hl,$23F2                 ; HL = $23F2 (pattern data)
 23B7 11 00 AD                   ld de,$AD00                 ; DE = $AD00 (character patterns)
 23BA 06 60                      ld b,$60                    ; B = $60 (96 characters)
@@ -6270,22 +6277,19 @@
 2630 F3                         di
 2631 B1                         or c
 ;
+; --- Lookup table for special character patterns (9 entries x 2 bytes) ---
+; Format: character_number, special_pattern_byte
 ;
-;
-2632 5C                         ld e,h
-2633 42                         ld b,d
-2634 2F                         cpl
-2635 20 21                      jr nz,L2658
-2637 FF                         rst $38
-2638 19                         add hl,de
-2639 C6 16                      add a,$16
-263B 46                         ld b,(hl)
-263C 10 88                      djnz L25C6
-263E 0F                         rrca
-263F 21 07 C6                   ld hl,$C607
-2642 01 EE CD                   ld bc,$CDEE
-2645 08                         ex af,af'
-2646 27                         daa
+2632                   ChLUT:   .defb $5C, $42
+2634                            .defb $2F, $20
+2636                            .defb $21, $FF
+2638                            .defb $19, $C6
+263A                            .defb $16, $46
+263C                            .defb $10, $88
+263E                            .defb $0F, $21
+2640                            .defb $07, $C6
+2642                            .defb $01, $EE
+2644 CD 08 27                   call L2708
 2647 CD 4D 26                   call L264D
 264A C3 97 27                   jp L2797
 264D 21 F2 22      L264D:       ld hl,$22F2
@@ -9778,15 +9782,15 @@
 3E33 18 F0                      jr L3E25
 3E35 F5                         push af
 3E36 E5                         push hl
-3E37 3A 8D 5C                   ld a,($5C8D)
+3E37 3A 8D 5C                   ld a,(ATTR_P)
 3E3A F5                         push af
-3E3B 3A 48 5C                   ld a,($5C48)
-3E3E 32 8D 5C                   ld ($5C8D),a
+3E3B 3A 48 5C                   ld a,(BORDCR)
+3E3E 32 8D 5C                   ld (ATTR_P),a
 3E41 CD C9 0E                   call L0EC9
 3E44 3E FD                      ld a,$FD
 3E46 EF                         rst $28
 3E47 01 16 F1                   ld bc,$F116
-3E4A 32 8D 5C                   ld ($5C8D),a
+3E4A 32 8D 5C                   ld (ATTR_P),a
 3E4D E1                         pop hl
 3E4E 7E            L3E4E:       ld a,(hl)
 3E4F 23                         inc hl

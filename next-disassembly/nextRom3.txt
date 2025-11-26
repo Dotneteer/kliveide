@@ -3583,18 +3583,16 @@
 15AA D0                         ret nc
 15AB C3 15 1F                   jp L1F15
 15AE FF                         rst $38
-15AF F4 09 A8                   call p,LA809
-15B2 10 4B                      djnz L15FF
-15B4 F4 09 C4                   call p,LC409
-15B7 15                         dec d
-15B8 53                         ld d,e
-15B9 81                         add a,c
-15BA 0F                         rrca
-15BB C4 15 52                   call nz,L5215
-15BE CD 0E C4                   call LC40E
-15C1 15                         dec d
-15C2 50                         ld d,b
-15C3 80                         add a,b
+;
+; --- Initial channel data (21 bytes) ---
+; Copied to RAM at $5CB6 during initialization
+;
+15AF                   ChInit:  .defb $F4, $09, $A8, $10    ; Channel data bytes 0-3
+15B3                            .defb $4B, $F4, $09, $C4    ; Channel data bytes 4-7
+15B7                            .defb $15, $53, $81, $0F    ; Channel data bytes 8-11
+15BB                            .defb $C4, $15, $52, $CD    ; Channel data bytes 12-15
+15BF                            .defb $0E, $C4, $15, $50    ; Channel data bytes 16-19
+15C3                            .defb $80                   ; Channel data byte 20 (end marker)
 15C4 CF                         rst $08
 15C5 12                         ld (de),a
 15C6 01 00 06                   ld bc,$0600
