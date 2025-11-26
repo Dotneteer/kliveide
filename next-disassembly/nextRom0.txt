@@ -520,9 +520,8 @@
 
 0270 C5                         push bc                    ; Save BC (B = 0 at this point)
 0271 CD 29 23                   call L2329
-0274 DF                         rst $18
-0275 B9                         cp c
-0276 14                         inc d
+0274 DF                         rst $18                    ; ROM1: $14b9
+0275 B9 14                      .defw $14b9                ; Initialize the display
 0277 21 00 3C                   ld hl,$3C00
 027A 22 36 5C                   ld ($5C36),hl
 027D FD CB 01 E6                set 4,(iy+$01)
@@ -5680,111 +5679,124 @@
 2326 0D            L2326:       dec c
 2327 38 00                      jr c,L2329
 ;
+; --- Subroutine: Initialize NextOS structures and copy font data ---
+; This routine sets up NextOS data structures in banks $0B and $10, 
+; initializes memory regions, and copies/processes font data.
+; Entry: B = initialization flag (0 = full init, non-zero = skip init)
+; Exit: NextOS structures initialized, font data copied
 ;
+2329 ED 8A 23 86   L2329:       push $2386                  ; Push return address $2386
+232D 58                         ld e,b                      ; E = initialization flag from B
+232E 16 54         L232E:       ld d,$54                    ; D = $54 (use MMU Slots 4 and 5)
+2330 CD 0A 27                   call PgIn100B               ; Page in banks $0B and $10 to slots 4/5
+2333 1D                         dec e                       ; Decrement init flag
+2334 28 3C                      jr z,L2372                  ; If flag was 1, skip initialization
 ;
-2329 ED 8A 23 86   L2329:       push $2386                  ; Return to $2386
-232D 58                         ld e,b      
-232E 16 54         L232E:       ld d,$54                    ; Use MMU Slot 4 and 5
-2330 CD 0A 27                   call PgIn100B               ; Page in $0b, and $10
-2333 1D                         dec e                       ;
-2334 28 3C                      jr z,L2372                  ; Skip init, if ...
+; --- Initialize NextOS data structure at $A000 ---
 ;
-; Initializes some structure (perhaps, NextOS)
+2336 21 00 A0                   ld hl,$A000                 ; HL = $A000 (start of structure)
+2339 11 01 A0                   ld de,$A001                 ; DE = $A001 (for LDIR fill)
+233C 01 51 01                   ld bc,$0151                 ; BC = $0151 (337 bytes)
+233F 75                         ld (hl),l                   ; Store $00 at $A000
+2340 ED B0                      ldir                        ; Fill $A000-$A151 with $00
+2342 3A 69 5B                   ld a,(LBANK)                ; A = last RAM bank number
+2345 3C                         inc a                       ; A = number of RAM banks
+2346 87                         add a,a                     ; A = number of 8K pages (banks * 2)
+2347 32 50 A0                   ld ($A050),a                ; Store number of pages
+234A 3E 10                      ld a,$10                    ; A = $10
+234C 32 51 A0                   ld ($A051),a                ; Store $10 at $A051
+234F 21 FF FF                   ld hl,$FFFF                 ; HL = $FFFF
+2352 22 00 A0                   ld ($A000),hl               ; Store $FFFF at $A000
+2355 22 28 A0                   ld ($A028),hl               ; Store $FFFF at $A028
+2358 7D                         ld a,l                      ; A = $FF
+2359 32 02 A0                   ld ($A002),a                ; Store $FF at $A002
+235C 32 2A A0                   ld ($A02A),a                ; Store $FF at $A02A
+235F 21 F7 3F                   ld hl,$3FF7                 ; HL = $3FF7
+2362 22 20 A0                   ld ($A020),hl               ; Store $3FF7 at $A020
+2365 22 48 A0                   ld ($A048),hl               ; Store $3FF7 at $A048
+2368 21 01 00                   ld hl,$0001                 ; HL = $0001
+236B E7                         rst $20                     ; Call ROM2 routine
+236C BD 01                      .defw $01BD                 ; ROM2 address: IDE_WINDOW_MENU
+236E 7B                         ld a,e                      ; A = E (init flag)
+236F 32 58 5B                   ld ($5B58),a                ; Store init flag at $5B58
 ;
-2336 21 00 A0                   ld hl,$A000                 ;
-2339 11 01 A0                   ld de,$A001                 ;
-233C 01 51 01                   ld bc,$0151                 ;
-233F 75                         ld (hl),l                   ;
-2340 ED B0                      ldir                        ; Fill $A000-$A151 with 0
-2342 3A 69 5B                   ld a,(LBANK)                ;
-2345 3C                         inc a                       ; A := Number of RAM banks
-2346 87                         add a,a                     ; A := Number of pages
-2347 32 50 A0                   ld ($A050),a                ; Store the number of pages
-234A 3E 10                      ld a,$10
-234C 32 51 A0                   ld ($A051),a
-234F 21 FF FF                   ld hl,$FFFF
-2352 22 00 A0                   ld ($A000),hl
-2355 22 28 A0                   ld ($A028),hl
-2358 7D                         ld a,l
-2359 32 02 A0                   ld ($A002),a
-235C 32 2A A0                   ld ($A02A),a
-235F 21 F7 3F                   ld hl,$3FF7
-2362 22 20 A0                   ld ($A020),hl
-2365 22 48 A0                   ld ($A048),hl
-2368 21 01 00                   ld hl,$0001
-236B E7                         rst $20                     ; ROM2: IDE_WINDOW_MENU
-236C BD 01                      .defw $01BD
-235E 7B                         ld a,e
-235F 32 58 5B                   ld ($5B58),a
-2372 21 00 3D      L2372:       ld hl,$3D00
-2375 11 00 BC                   ld de,$BC00
-2378 01 00 03                   ld bc,$0300
-237B EF                         rst $28
-237C C3 33 CD                   jp LCD33
-237F 9B                         sbc a,e
-2380 23                         inc hl
-2381 16 54                      ld d,$54
-2383 C3 99 27                   jp L2799
-2386 CD 08 27                   call L2708
-2389 CD 4D 26                   call L264D
-238C 21 00 F7                   ld hl,$F700
-238F CD 54 0F                   call L0F54
-2392 21 00 FB                   ld hl,$FB00
-2395 CD 54 0F                   call L0F54
-2398 C3 97 27                   jp L2797
-239B 21 00 BC      L239B:       ld hl,$BC00
-239E 11 00 B8                   ld de,$B800
-23A1 01 03 00                   ld bc,$0003
-23A4 7E            L23A4:       ld a,(hl)
-23A5 23                         inc hl
-23A6 87                         add a,a
-23A7 12                         ld (de),a
-23A8 13                         inc de
-23A9 10 F9                      djnz L23A4
-23AB 0D                         dec c
-23AC 20 F6                      jr nz,L23A4
-23AE DD E5                      push ix
-23B0 DD 21 32 26                ld ix,$2632
-23B4 21 F2 23                   ld hl,$23F2
-23B7 11 00 AD                   ld de,$AD00
-23BA 06 60                      ld b,$60
-23BC 0E 08         L23BC:       ld c,$08
-23BE AF            L23BE:       xor a
-23BF CB 59                      bit 3,c
-23C1 20 17                      jr nz,L23DA
-23C3 79                         ld a,c
-23C4 3D                         dec a
-23C5 20 11                      jr nz,L23D8
-23C7 78                         ld a,b
-23C8 DD BE 00                   cp (ix)
-23CB 3E 00                      ld a,$00
-23CD 20 0B                      jr nz,L23DA
-23CF DD 23                      inc ix
-23D1 DD 7E 00                   ld a,(ix)
-23D4 DD 23                      inc ix
-23D6 18 02                      jr L23DA
-23D8 7E            L23D8:       ld a,(hl)
-23D9 23                         inc hl
-23DA F5            L23DA:       push af
-23DB E6 E0                      and $E0
-23DD 12                         ld (de),a
-23DE 14                         inc d
-23DF 14                         inc d
-23E0 14                         inc d
-23E1 F1                         pop af
-23E2 87                         add a,a
-23E3 87                         add a,a
-23E4 87                         add a,a
-23E5 12                         ld (de),a
-23E6 15                         dec d
-23E7 15                         dec d
-23E8 15                         dec d
-23E9 13                         inc de
-23EA 0D                         dec c
-23EB 20 D1                      jr nz,L23BE
-23ED 10 CD                      djnz L23BC
-23EF DD E1                      pop ix
-23F1 C9                         ret
+; --- Copy and decompress font data ---
+;
+2372 21 00 3D      L2372:       ld hl,$3D00                 ; HL = $3D00 (source: font data in ROM)
+2375 11 00 BC                   ld de,$BC00                 ; DE = $BC00 (dest in paged RAM)
+2378 01 00 03                   ld bc,$0300                 ; BC = $0300 (768 bytes)
+237B EF                         rst $28                     ; Call ROM1 routine
+237C C3 33                      .defw $33C3                 ; ROM1 address: copy routine
+237E CD 9B 23                   call L239B                  ; Process font data
+2381 16 54                      ld d,$54                    ; D = $54 (MMU slot)
+2383 C3 99 27                   jp L2799                    ; Jump to cleanup/return
+2386 CD 08 27                   call L2708                  ; Additional initialization
+2389 CD 4D 26                   call L264D                  ; More initialization
+238C 21 00 F7                   ld hl,$F700                 ; HL = $F700
+238F CD 54 0F                   call L0F54                  ; Initialize memory region
+2392 21 00 FB                   ld hl,$FB00                 ; HL = $FB00
+2395 CD 54 0F                   call L0F54                  ; Initialize memory region
+2398 C3 97 27                   jp L2797                    ; Jump to final return
+;
+; --- Subroutine: Process and expand font data ---
+; Converts compressed font data from $BC00 to expanded format at $B800,
+; and generates character patterns at $AD00 using lookup table at $2632.
+; Entry: None (expects font data at $BC00)
+; Exit: Processed font at $B800, character patterns at $AD00
+;
+239B 21 00 BC      L239B:       ld hl,$BC00                 ; HL = $BC00 (source: compressed font)
+239E 11 00 B8                   ld de,$B800                 ; DE = $B800 (dest: expanded font)
+23A1 01 03 00                   ld bc,$0003                 ; BC = $0300 (768 bytes)
+23A4 7E            L23A4:       ld a,(hl)                   ; Load byte from compressed font
+23A5 23                         inc hl                      ; Advance source pointer
+23A6 87                         add a,a                     ; Shift left (multiply by 2)
+23A7 12                         ld (de),a                   ; Store expanded byte
+23A8 13                         inc de                      ; Advance dest pointer
+23A9 10 F9                      djnz L23A4                  ; Loop for B bytes
+23AB 0D                         dec c                       ; Decrement page counter
+23AC 20 F6                      jr nz,L23A4                 ; Continue if more pages
+23AE DD E5                      push ix                     ; Save IX
+23B0 DD 21 32 26                ld ix,$2632                 ; IX = $2632 (lookup table pointer)
+23B4 21 F2 23                   ld hl,$23F2                 ; HL = $23F2 (pattern data)
+23B7 11 00 AD                   ld de,$AD00                 ; DE = $AD00 (character patterns)
+23BA 06 60                      ld b,$60                    ; B = $60 (96 characters)
+23BC 0E 08         L23BC:       ld c,$08                    ; C = $08 (8 rows per character)
+23BE AF            L23BE:       xor a                       ; A = $00 (default pattern byte)
+23BF CB 59                      bit 3,c                     ; Test bit 3 of row counter
+23C1 20 17                      jr nz,L23DA                 ; If set, use default $00
+23C3 79                         ld a,c                      ; A = row counter
+23C4 3D                         dec a                       ; A = row - 1
+23C5 20 11                      jr nz,L23D8                 ; If not first row, use pattern data
+23C7 78                         ld a,b                      ; A = character counter
+23C8 DD BE 00                   cp (ix)                     ; Compare with lookup table entry
+23CB 3E 00                      ld a,$00                    ; A = $00 (default)
+23CD 20 0B                      jr nz,L23DA                 ; If no match, use default
+23CF DD 23                      inc ix                      ; Advance to next lookup entry
+23D1 DD 7E 00                   ld a,(ix)                   ; Load special pattern byte
+23D4 DD 23                      inc ix                      ; Advance lookup pointer
+23D6 18 02                      jr L23DA                    ; Use special pattern
+23D8 7E            L23D8:       ld a,(hl)                   ; Load pattern from data
+23D9 23                         inc hl                      ; Advance pattern pointer
+23DA F5            L23DA:       push af                     ; Save pattern byte
+23DB E6 E0                      and $E0                     ; Mask upper 3 bits
+23DD 12                         ld (de),a                   ; Store in character pattern (byte 0)
+23DE 14                         inc d                       ; D += 1 (skip 768 bytes)
+23DF 14                         inc d                       ; D += 1 (skip 768 bytes)
+23E0 14                         inc d                       ; D += 1 (skip 768 bytes)
+23E1 F1                         pop af                      ; Restore pattern byte
+23E2 87                         add a,a                     ; Shift left 1 bit
+23E3 87                         add a,a                     ; Shift left 1 bit
+23E4 87                         add a,a                     ; Shift left 1 bit
+23E5 12                         ld (de),a                   ; Store in character pattern (byte 1)
+23E6 15                         dec d                       ; Restore D
+23E7 15                         dec d                       ; Restore D
+23E8 15                         dec d                       ; Restore D
+23E9 13                         inc de                      ; Advance to next row
+23EA 0D                         dec c                       ; Decrement row counter
+23EB 20 D1                      jr nz,L23BE                 ; Loop for all 8 rows
+23ED 10 CD                      djnz L23BC                  ; Loop for all 96 characters
+23EF DD E1                      pop ix                      ; Restore IX
+23F1 C9                         ret                         ; Return
 23F2 00                         nop
 23F3 00                         nop
 23F4 00                         nop
@@ -6257,6 +6269,9 @@
 262F B5                         or l
 2630 F3                         di
 2631 B1                         or c
+;
+;
+;
 2632 5C                         ld e,h
 2633 42                         ld b,d
 2634 2F                         cpl
