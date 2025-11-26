@@ -1741,7 +1741,7 @@
 0B04 E1                         pop hl
 0B05 FD CB 02 76                bit 6,(iy+$02)
 0B09 20 05                      jr nz,L0B10
-0B0B CD 80 3E                   call L3E80
+0B0B CD 80 3E                   call CallRom2
 0B0E C9                         ret
 0B0F 0E FD                      ld c,$FD
 0B11 CB 02                      rlc d
@@ -1758,7 +1758,7 @@
 0B2A 28 0C                      jr z,L0B38
 0B2C DD 21 00 FB                ld ix,$FB00
 0B30 21 48 00                   ld hl,$0048
-0B33 CD 80 3E                   call L3E80
+0B33 CD 80 3E                   call CallRom2
 0B36 2B                         dec hl
 0B37 27                         daa
 0B38 2A B7 D5      L0B38:       ld hl,($D5B7)
@@ -1767,7 +1767,7 @@
 0B3E B4                         or h
 0B3F F5                         push af
 0B40 CC 89 36                   call z,L3689
-0B43 CD 80 3E                   call L3E80
+0B43 CD 80 3E                   call CallRom2
 0B46 DD 0E F1                   ld c,$F1
 0B49 CC 89 36                   call z,L3689
 0B4C F7                         rst $30
@@ -1801,7 +1801,7 @@
 0B8D E1                         pop hl
 0B8E C3 46 09                   jp L0946
 0B91 DF                         rst $18
-0B92 CD 80 3E                   call L3E80
+0B92 CD 80 3E                   call CallRom2
 0B95 DD 0E F7                   ld c,$F7
 0B98 FD 36 00 0F   L0B98:       ld (iy),$0F
 0B9C 18 7E                      jr L0C1C
@@ -1900,7 +1900,7 @@
 0C69 20 0E                      jr nz,L0C79
 0C6B DD 21 00 FB                ld ix,$FB00
 0C6F 21 4C 00                   ld hl,$004C
-0C72 CD 80 3E                   call L3E80
+0C72 CD 80 3E                   call CallRom2
 0C75 27                         daa
 0C76 27                         daa
 0C77 18 03                      jr L0C7C
@@ -1992,7 +1992,7 @@
 0D0F 1A                         ld a,(de)
 0D10 21 FF 5B      L0D10:       ld hl,$5BFF
 0D13 22 6A 5B                   ld ($5B6A),hl
-0D16 CD 80 3E                   call L3E80
+0D16 CD 80 3E                   call CallRom2
 0D19 60                         ld h,b
 0D1A 0E FE                      ld c,$FE
 0D1C 1D                         dec e
@@ -2502,7 +2502,7 @@
 106B FD CB 30 AE   L106B:       res 5,(iy+$30)
 106F FD CB 01 86                res 0,(iy+$01)
 1073 3E 07         L1073:       ld a,$07
-1075 CD 7D 12                   call L127D
+1075 CD 7D 12                   call RdNxReg
 1078 E6 03                      and $03
 107A F5                         push af
 107B ED 91 07 03                nextreg $07,$03
@@ -2837,11 +2837,17 @@
 127A 15            L127A:       dec d
 127B 37                         scf
 127C C9                         ret
-127D 01 3B 24      L127D:       ld bc,$243B
-1280 ED 79                      out (c),a
-1282 04                         inc b
-1283 ED 78                      in a,(c)
-1285 C9                         ret
+;
+; --- Subroutine: Read ZX Spectrum Next register (nextreg) ---
+; This routine reads a nextreg value using the I/O port interface.
+; Entry: A = nextreg number (0-255)
+; Exit: A = nextreg value read, BC = $253B
+;
+127D 01 3B 24      RdNxReg:     ld bc,$243B                ; BC = $243B (Nextreg select port)
+1280 ED 79                      out (c),a                  ; Write nextreg number to select port
+1282 04                         inc b                      ; BC = $253B (Nextreg data/read port)
+1283 ED 78                      in a,(c)                   ; Read nextreg value into A
+1285 C9                         ret                        ; Return with value in A
 1286 ED 73 92 5B   L1286:       ld ($5B92),sp
 128A 08                         ex af,af'
 128B F1                         pop af
@@ -3128,41 +3134,53 @@
 146B D3 FF                      out ($FF),a
 146D 16 7F                      ld d,$7F
 146F 3E 15         L146F:       ld a,$15
-1471 CD 7D 12      L1471:       call L127D
-1474 A2                         and d
-1475 B3                         or e
-1476 ED 79                      out (c),a
-1478 C9                         ret
-1479 01 3B 24      L1479:       ld bc,$243B
-147C 11 54 53                   ld de,$5354
-147F ED 51                      out (c),d
-1481 04                         inc b
-1482 ED 78                      in a,(c)
-1484 BC                         cp h
-1485 C8                         ret z
-1486 F3                         di
-1487 ED 61                      out (c),h
-1489 05                         dec b
-148A ED 59                      out (c),e
-148C 04                         inc b
-148D ED 78                      in a,(c)
-148F ED 69                      out (c),l
-1491 21 00 80                   ld hl,$8000
-1494 11 00 60                   ld de,$6000
-1497 47                         ld b,a
-1498 1A            L1498:       ld a,(de)
-1499 4E                         ld c,(hl)
-149A 77                         ld (hl),a
-149B 79                         ld a,c
-149C 12                         ld (de),a
-149D 13                         inc de
-149E 23                         inc hl
-149F CB 7A                      bit 7,d
-14A1 28 F5                      jr z,L1498
-14A3 78                         ld a,b
-14A4 ED 92 54                   nextreg $54,a
-14A7 FB                         ei
-14A8 C9                         ret
+;
+; --- Subroutine: Read/modify/write nextreg via I/O ports ---
+; Entry: A = nextreg number, D = mask bits to clear, E = mask bits to set
+; Exit: Current nextreg value written back with modifications
+;
+1471 CD 7D 12      UpdNxReg:    call RdNxReg               ; Read nextreg A value (via port $243B/$253B)
+1474 A2                         and d                      ; Clear bits specified in D
+1475 B3                         or e                       ; Set bits specified in E
+1476 ED 79                      out (c),a                  ; Write modified value back to nextreg
+1478 C9                         ret                        ; Return
+;
+; --- Subroutine: Swap display timing configuration ---
+; This routine swaps screen configuration data between RAM banks by temporarily
+; remapping memory and exchanging data between $6000-$7FFF and $8000-$9FFF regions.
+; Entry: H = desired timing configuration value, L = timing data to set
+; Exit: Memory banks restored, timing applied
+;
+1479 01 3B 24      L1479:       ld bc,$243B                ; BC = $243B (Nextreg select port)
+147C 11 54 53                   ld de,$5354                ; DE = $5354 (check values for nextreg $53,$54)
+147F ED 51                      out (c),d                  ; Select nextreg $53 (MMU slot 3)
+1481 04                         inc b                      ; BC = $253B (Nextreg data port)
+1482 ED 78                      in a,(c)                   ; Read current MMU slot 3 bank
+1484 BC                         cp h                       ; Compare with desired bank in H
+1485 C8                         ret z                      ; If already correct, nothing to do, return
+1486 F3                         di                         ; Disable interrupts (critical section)
+1487 ED 61                      out (c),h                  ; Map desired bank H to MMU slot 3 ($6000-$7FFF)
+1489 05                         dec b                      ; BC = $243B (Nextreg select port)
+148A ED 59                      out (c),e                  ; Select nextreg $54 (MMU slot 4)
+148C 04                         inc b                      ; BC = $253B (Nextreg data port)
+148D ED 78                      in a,(c)                   ; Read current MMU slot 4 bank
+148F ED 69                      out (c),l                  ; Map bank L to MMU slot 4 ($8000-$9FFF)
+1491 21 00 80                   ld hl,$8000                ; HL = $8000 (source address in slot 4)
+1494 11 00 60                   ld de,$6000                ; DE = $6000 (dest address in slot 3)
+1497 47                         ld b,a                     ; B = old MMU slot 4 bank (saved)
+1498 1A            L1498:       ld a,(de)                  ; Load byte from $6000-$7FFF range
+1499 4E                         ld c,(hl)                  ; Load byte from $8000-$9FFF range
+149A 77                         ld (hl),a                  ; Store first byte to $8000-$9FFF
+149B 79                         ld a,c                     ; Get second byte
+149C 12                         ld (de),a                  ; Store second byte to $6000-$7FFF
+149D 13                         inc de                     ; Advance dest pointer
+149E 23                         inc hl                     ; Advance source pointer
+149F CB 7A                      bit 7,d                    ; Test if DE passed $7FFF (D >= $80)
+14A1 28 F5                      jr z,L1498                 ; Continue while D < $80 (8KB swap)
+14A3 78                         ld a,b                     ; A = original slot 4 bank
+14A4 ED 92 54                   nextreg $54,a              ; Restore original MMU slot 4 mapping
+14A7 FB                         ei                         ; Re-enable interrupts
+14A8 C9                         ret                        ; Return
 14A9 DD E5         L14A9:       push ix
 14AB E6 0F                      and $0F
 14AD 5F                         ld e,a
@@ -3172,147 +3190,214 @@
 14B3 CD 1F 14                   call L141F
 14B6 DD E1                      pop ix
 14B8 C9                         ret
-14B9 CD 6F 15                   call L156F
-14BC CD 48 15                   call L1548
-14BF CD 80 3E                   call L3E80
-14C2 44                         ld b,h
-14C3 26 11                      ld h,$11
-14C5 09                         add hl,bc
-14C6 09                         add hl,bc
-14C7 2E 12                      ld l,$12
-14C9 CD 01 15                   call L1501
-14CC 11 00 00                   ld de,$0000
-14CF 2E 32                      ld l,$32
-14D1 CD 01 15                   call L1501
-14D4 2E 26                      ld l,$26
-14D6 CD 01 15                   call L1501
-14D9 2E 16                      ld l,$16
-14DB CD 01 15                   call L1501
-14DE 2E 2F                      ld l,$2F
-14E0 CD 01 15                   call L1501
-14E3 AF                         xor a
-14E4 ED 92 31                   nextreg $31,a
-14E7 ED 92 68                   nextreg $68,a
-14EA ED 92 6B                   nextreg $6B,a
-14ED CD 1F 14                   call L141F
-14F0 01 3B 12                   ld bc,$123B
-14F3 AF                         xor a
-14F4 ED 79                      out (c),a
-14F6 32 7B 5B                   ld ($5B7B),a
-14F9 16 E3                      ld d,$E3
-14FB 5F                         ld e,a
-14FC CD 6F 14                   call L146F
-14FF 18 17                      jr L1518
-1501 01 3B 24      L1501:       ld bc,$243B
-1504 ED 69                      out (c),l
-1506 04                         inc b
-1507 ED 59                      out (c),e
-1509 2C                         inc l
-150A 05                         dec b
-150B ED 69                      out (c),l
-150D 04                         inc b
-150E ED 51                      out (c),d
-1510 C9                         ret
-1511 CD 18 15                   call L1518
-1514 2E 19         L1514:       ld l,$19
-1516 18 0F                      jr L1527
-1518 2E 1B         L1518:       ld l,$1B
-151A 11 FF 9F                   ld de,$9FFF
-151D CD 2A 15                   call L152A
-1520 2E 18                      ld l,$18
-1522 CD 27 15                   call L1527
-1525 2E 1A                      ld l,$1A
-1527 11 BF FF      L1527:       ld de,$FFBF
-152A 01 00 00      L152A:       ld bc,$0000
-152D C5                         push bc
-152E 01 3B 24                   ld bc,$243B
-1531 3E 1C                      ld a,$1C
-1533 ED 79                      out (c),a
-1535 04                         inc b
-1536 3E 0F                      ld a,$0F
-1538 ED 79                      out (c),a
-153A 05                         dec b
-153B ED 69                      out (c),l
-153D 04                         inc b
-153E E1                         pop hl
-153F ED 61                      out (c),h
-1541 ED 51                      out (c),d
-1543 ED 69                      out (c),l
-1545 ED 59                      out (c),e
-1547 C9                         ret
-1548 11 00 FC      L1548:       ld de,$FC00
-154B CD 6F 14                   call L146F
-154E ED 92 34                   nextreg $34,a
-1551 06 80                      ld b,$80
-1553 ED 91 78 00   L1553:       nextreg $78,$00
-1557 10 FA                      djnz L1553
-1559 ED 91 51 10                nextreg $51,$10
-155D 11 DF 24                   ld de,$24DF
-1560 62                         ld h,d
-1561 6B                         ld l,e
-1562 13                         inc de
-1563 70                         ld (hl),b
-1564 01 20 08                   ld bc,$0820
-1567 ED B0                      ldir
-1569 ED 91 51 FF                nextreg $51,$FF
-156D 18 A5                      jr L1514
-156F AF            L156F:       xor a
-1570 F5            L1570:       push af
-1571 ED 92 43                   nextreg $43,a
-1574 AF                         xor a
-1575 67                         ld h,a
-1576 ED 92 40                   nextreg $40,a
-1579 11 E3 3D      L1579:       ld de,$3DE3
-157C 1A            L157C:       ld a,(de)
-157D 13                         inc de
-157E FE AA                      cp $AA
-1580 28 F7                      jr z,L1579
-1582 ED 92 41                   nextreg $41,a
-1585 25                         dec h
-1586 20 F4                      jr nz,L157C
-1588 F1                         pop af
-1589 EE 40                      xor $40
-158B 20 E3                      jr nz,L1570
-158D 11 02 10                   ld de,$1002
-1590 7A            L1590:       ld a,d
-1591 ED 92 43                   nextreg $43,a
-1594 AF                         xor a
-1595 ED 92 40                   nextreg $40,a
-1598 ED 92 41      L1598:       nextreg $41,a
-159B 3C                         inc a
-159C 20 FA                      jr nz,L1598
-159E CB 72                      bit 6,d
-15A0 CB F2                      set 6,d
-15A2 28 EC                      jr z,L1590
-15A4 16 20                      ld d,$20
-15A6 1D                         dec e
-15A7 20 E7                      jr nz,L1590
-15A9 FD CB 45 E6                set 4,(iy+$45)
-15AD AF                         xor a
-15AE ED 92 43                   nextreg $43,a
-15B1 ED 92 4A                   nextreg $4A,a
-15B4 ED 91 4C 0F                nextreg $4C,$0F
-15B8 AF                         xor a
-15B9 CD C5 15                   call L15C5
-15BC 3E E3                      ld a,$E3
-15BE ED 92 14                   nextreg $14,a
-15C1 ED 92 4B                   nextreg $4B,a
-15C4 C9                         ret
-15C5 67            L15C5:       ld h,a
-15C6 A7                         and a
-15C7 28 06                      jr z,L15CF
-15C9 3C                         inc a
-15CA A4                         and h
-15CB C2 BC 30                   jp nz,L30BC
-15CE 3C                         inc a
-15CF 16 FE         L15CF:       ld d,$FE
-15D1 5F                         ld e,a
-15D2 3E 43                      ld a,$43
-15D4 CD 71 14                   call L1471
-15D7 7C                         ld a,h
-15D8 32 64 5B                   ld ($5B64),a
-15DB ED 92 42                   nextreg $42,a
-15DE C9                         ret
+;
+; --- Subroutine: Initialize display system ---
+; This routine initializes palettes, sprites, and display layer configurations
+; including scroll positions and clip windows for all graphics layers.
+; Entry: None
+; Exit: Display system fully initialized
+;
+14B9 CD 6F 15      InitDisp:    call InitPals              ; Initialize the palettes
+14BC CD 48 15                   call InitSprs              ; Initialize the sprite system
+14BF CD 80 3E                   call CallRom2              ; Call ROM2 routine at $2644
+14C2 44 26                      .defw $2644                ; ROM2 routine address
+14C4 11 09 09                   ld de,$0909                ; DE = $0909 (scroll values)
+14C7 2E 12                      ld l,$12                   ; L = $12 (Layer2 X Scroll LSB)
+14C9 CD 01 15                   call WNReg2                ; Write to nextregs $12/$13
+14CC 11 00 00                   ld de,$0000                ; DE = $0000 (no scroll)
+14CF 2E 32                      ld l,$32                   ; L = $32 (LoRes X Scroll)
+14D1 CD 01 15                   call WNReg2                ; Write to nextregs $32/$33
+14D4 2E 26                      ld l,$26                   ; L = $26 (ULA X Scroll)
+14D6 CD 01 15                   call WNReg2                ; Write to nextregs $26/$27
+14D9 2E 16                      ld l,$16                   ; L = $16 (Layer2 X Scroll MSB)
+14DB CD 01 15                   call WNReg2                ; Write to nextregs $16/$17
+14DE 2E 2F                      ld l,$2F                   ; L = $2F (Tilemap X Scroll MSB)
+14E0 CD 01 15                   call WNReg2                ; Write to nextregs $2F/$30
+14E3 AF                         xor a                      ; A = 0
+14E4 ED 92 31                   nextreg $31,a              ; Set Nextreg $31 = 0 (Tilemap Y Scroll)
+14E7 ED 92 68                   nextreg $68,a              ; Set Nextreg $68 = 0 (ULA Control)
+14EA ED 92 6B                   nextreg $6B,a              ; Set Nextreg $6B = 0 (Tilemap Control)
+14ED CD 1F 14                   call L141F                 ; Set up screen mode and attributes
+14F0 01 3B 12                   ld bc,$123B                ; BC = $123B (port for screen config)
+14F3 AF                         xor a                      ; A = 0
+14F4 ED 79                      out (c),a                  ; Write 0 to port $123B
+14F6 32 7B 5B                   ld ($5B7B),a               ; Store 0 in system variable $5B7B
+14F9 16 E3                      ld d,$E3                   ; D = $E3 (transparency color)
+14FB 5F                         ld e,a                     ; E = 0
+14FC CD 6F 14                   call L146F                 ; Set nextreg $15 with transparency
+14FF 18 17                      jr ClipTMap                ; Jump to set clip windows
+;
+; --- Subroutine: Write two consecutive nextreg values ---
+; This routine writes values to two consecutive nextregs using I/O ports.
+; Entry: L = first nextreg number, D = value for first nextreg, E = value for second nextreg
+; Exit: Two consecutive nextregs (L and L+1) written
+; Uses: BC = nextreg port addresses
+;
+1501 01 3B 24      WNReg2:      ld bc,$243B                ; BC = $243B (Nextreg select port)
+1504 ED 69                      out (c),l                  ; Select nextreg L
+1506 04                         inc b                      ; BC = $253B (Nextreg data port)
+1507 ED 59                      out (c),e                  ; Write E to nextreg L
+1509 2C                         inc l                      ; L = next nextreg (L+1)
+150A 05                         dec b                      ; BC = $243B (Nextreg select port)
+150B ED 69                      out (c),l                  ; Select nextreg L+1
+150D 04                         inc b                      ; BC = $253B (Nextreg data port)
+150E ED 51                      out (c),d                  ; Write D to nextreg L+1
+1510 C9                         ret                        ; Return
+;
+; Initialize Clip Windows and Display
+; Called during boot initialization from ROM0 at $0306.
+; Sets up clip windows for Tilemap, Layer2, ULA, and Sprites.
+; Entry: None
+; Exit: All clip windows configured
+;
+1511 CD 18 15                   call ClipTMap
+;
+; --- Subroutine: Set clip window for Sprites ---
+; Entry: None
+; Exit: Nextreg $19 clip window configured
+;
+1514 2E 19         ClipSprs:    ld l,$19                   ; L = $19 (Sprites clip window nextreg)
+1516 18 0F                      jr FullClipW               ; Jump to set clip window
+;
+; --- Subroutine: Set clip window for Tilemap ---
+; Entry: None
+; Exit: Nextreg $1B and $18 clip windows configured
+;
+1518 2E 1B         ClipTMap:    ld l,$1B                   ; L = $1B (Tilemap clip window nextreg)
+151A 11 FF 9F                   ld de,$9FFF                ; D = $9F (left/top), E = $FF (right/bottom)
+151D CD 2A 15                   call SetClipW              ; Set clip window parameters
+1520 2E 18                      ld l,$18                   ; L = $18 (Layer2 clip window nextreg)
+1522 CD 27 15                   call FullClipW             ; Set clip window
+1525 2E 1A                      ld l,$1A                   ; L = $1A (ULA clip window nextreg)
+;
+; --- Subroutine: Set clip window with specific bounds ---
+; Entry: L = nextreg number for clip window, DE preset or default
+; Exit: Clip window configured
+;
+1527 11 BF FF      FullClipW:       ld de,$FFBF            ; D = $FF (left/top), E = $BF (right/bottom)
+;
+; --- Subroutine: Configure clip window via nextreg ---
+; Entry: L = clip window nextreg number, DE = clip bounds, BC stack holds initial 0
+; Exit: Clip window fully configured with 4 coordinate writes
+;
+152A 01 00 00      SetClipW:    ld bc,$0000                ; BC = $0000 (pushed for later)
+152D C5                         push bc                    ; Save $0000 on stack
+152E 01 3B 24                   ld bc,$243B                ; BC = $243B (Nextreg select port)
+1531 3E 1C                      ld a,$1C                   ; A = $1C (Clip Window control nextreg)
+1533 ED 79                      out (c),a                  ; Select Clip Window control register
+1535 04                         inc b                      ; BC = $253B (Nextreg data port)
+1536 3E 0F                      ld a,$0F                   ; A = $0F (reset clip index, write enable)
+1538 ED 79                      out (c),a                  ; Reset clip window index to 0
+153A 05                         dec b                      ; BC = $243B (Nextreg select port)
+153B ED 69                      out (c),l                  ; Select clip window nextreg L
+153D 04                         inc b                      ; BC = $253B (Nextreg data port)
+153E E1                         pop hl                     ; HL = $0000 from stack
+153F ED 61                      out (c),h                  ; Write clip coordinate 0 (H = $00)
+1541 ED 51                      out (c),d                  ; Write clip coordinate 1 (D = left/top)
+1543 ED 69                      out (c),l                  ; Write clip coordinate 2 (L = $00)
+1545 ED 59                      out (c),e                  ; Write clip coordinate 3 (E = right/bottom)
+1547 C9                         ret                        ; Return
+;
+; --- Subroutine: Initialize sprite system ---
+; This routine sets up the sprite system by:
+; 1. Setting sprite attributes to use transparent color $FC
+; 2. Clearing all sprite attribute data (128 sprites)
+; 3. Clearing sprite pattern memory in bank $10
+; Entry: None
+; Exit: Sprite system initialized, B = 0
+;
+1548 11 00 FC      InitSprs:    ld de,$FC00                ; D = $FC (transparent), E = $00
+154B CD 6F 14                   call L146F                 ; Set nextreg $15 bits for sprite config
+154E ED 92 34                   nextreg $34,a              ; Set Nextreg $34 = Sprite Number to 0
+1551 06 80                      ld b,$80                   ; B = 128 (number of sprites)
+1553 ED 91 78 00   `Init1:      nextreg $78,$00            ; Make the srpite hidden, using pattern 0
+1557 10 FA                      djnz `Init1                ; Loop for all 128 sprites
+1559 ED 91 51 10                nextreg $51,$10            ; Map bank $10 to MMU slot 1 ($2000-$3FFF)
+155D 11 DF 24                   ld de,$24DF                ; DE = $24DF (dest: end of sprite pattern area)
+1560 62                         ld h,d                     ; H = $24
+1561 6B                         ld l,e                     ; HL = $24DF (source = dest for fill)
+1562 13                         inc de                     ; DE = $24E0
+1563 70                         ld (hl),b                  ; Write 0 to $24DF (B = 0 from loop)
+1564 01 20 08                   ld bc,$0820                ; BC = $0820 (2080 bytes to clear)
+1567 ED B0                      ldir                       ; Clear sprite pattern memory
+1569 ED 91 51 FF                nextreg $51,$FF            ; Restore MMU slot 1 to default bank $FF
+156D 18 A5                      jr L1514                   ; Jump to continue initialization
+;
+; --- Subroutine: Initialize all palettes ---
+; This routine initializes the ULA, Sprites, Layer2, and Tilemap palettes
+; by loading default color values from ROM data at $3DE3
+;
+156F AF            InitPals:    xor a                      ; A = 0 (select first palette)
+;
+; The `Init1 loop initializes the first and second ULA palette
+;
+1570 F5            `Init1:      push af                    ; Save palette selector
+1571 ED 92 43                   nextreg $43,a              ; Set Nextreg $43 = Palette Control (select palette type)
+1574 AF                         xor a                      ; A = 0
+1575 67                         ld h,a                     ; H = 0 (counter for 256 colors)
+1576 ED 92 40                   nextreg $40,a              ; Set Nextreg $40 = Palette Index to 0
+1579 11 E3 3D      `Init2:      ld de,PAL_INIT             ; DE = $3DE3 (pointer to palette data in ROM)
+157C 1A            `Init3:      ld a,(de)                  ; Load color value from ROM
+157D 13                         inc de                     ; Advance to next color
+157E FE AA                      cp $AA                     ; Check if value is $AA (skip marker)
+1580 28 F7                      jr z,`Init2                ; If $AA, reset pointer and continue
+1582 ED 92 41                   nextreg $41,a              ; Write color to Nextreg $41 (Palette Value 8-bit)
+1585 25                         dec h                      ; Decrement color counter
+1586 20 F4                      jr nz,`Init3               ; Loop until all 256 colors written
+1588 F1                         pop af                     ; Restore palette selector
+1589 EE 40                      xor $40                    ; Toggle bit 6 (switch between first/second palette)
+158B 20 E3                      jr nz,`Init1               ; If not done both palettes, loop again
+;
+; Initialize the Sprites and Tilemap palettes with values $00..$FF
+;
+158D 11 02 10                   ld de,$1002                ; D = $10 (Sprites first), E = 2 (loop counter)
+1590 7A            `Init4:      ld a,d                     ; A = palette type selector
+1591 ED 92 43                   nextreg $43,a              ; Set Nextreg $43 = Palette Control
+1594 AF                         xor a                      ; A = 0 (start color index)
+1595 ED 92 40                   nextreg $40,a              ; Set Nextreg $40 = Palette Index to 0
+1598 ED 92 41      `Init5:      nextreg $41,a              ; Write color value (A) to palette
+159B 3C                         inc a                      ; Increment color value
+159C 20 FA                      jr nz,`Init5               ; Loop for all 256 colors
+159E CB 72                      bit 6,d                    ; Test if bit 6 is set
+15A0 CB F2                      set 6,d                    ; Set bit 6 (switch to second palette)
+15A2 28 EC                      jr z,`Init4                ; If bit wasn't set, process second palette
+15A4 16 20                      ld d,$20                   ; D = $20 (Tilemap palette)
+15A6 1D                         dec e                      ; Decrement loop counter
+15A7 20 E7                      jr nz,`Init4               ; If more palette types, loop again
+;
+; Finalize palette initialization
+;
+15A9 FD CB 45 E6                set 4,(iy+$45)             ; Set system flag bit 4
+15AD AF                         xor a                      ; A = 0
+15AE ED 92 43                   nextreg $43,a              ; Set Nextreg $43 = 0 (select ULA first palette)
+15B1 ED 92 4A                   nextreg $4A,a              ; Set Nextreg $4A = 0 (Fallback Colour)
+15B4 ED 91 4C 0F                nextreg $4C,$0F            ; Set Nextreg $4C = $0F (Tilemap Transparency Index)
+15B8 AF                         xor a                      ; A = 0
+15B9 CD C5 15                   call ULANxF                ; Call subroutine to set ULANext format to 0
+15BC 3E E3                      ld a,$E3                   ; A = $E3 (transparency color)
+15BE ED 92 14                   nextreg $14,a              ; Set Nextreg $14 = $E3 (Global Transparency Colour)
+15C1 ED 92 4B                   nextreg $4B,a              ; Set Nextreg $4B = $E3 (Sprite Transparency Index)
+15C4 C9                         ret                        ; Return from palette initialization
+;
+; --- Subroutine: Set ULANext attribute byte format ---
+; Entry: A = attribute format value (0 or 2)
+; Exit: A = modified format value
+;
+15C5 67            ULANxF:      ld h,a                     ; Save format in H
+15C6 A7                         and a                      ; Test if A is zero
+15C7 28 06                      jr z,`Ula1                 ; If zero, skip validation
+15C9 3C                         inc a                      ; A = A + 1
+15CA A4                         and h                      ; Test if multiple bits set
+15CB C2 BC 30                   jp nz,L30BC                ; Invalid format -> error handler
+15CE 3C                         inc a                      ; A = A + 1 (restore modified value)
+15CF 16 FE         `Ula1:       ld d,$FE                   ; D = $FE (high byte for palette select)
+15D1 5F                         ld e,a                     ; E = format value (low byte)
+15D2 3E 43                      ld a,$43                   ; A = Nextreg $43 (Palette Control)
+15D4 CD 71 14                   call UpdNxReg              ; Set palette control register
+15D7 7C                         ld a,h                     ; Get format value from H
+15D8 32 64 5B                   ld ($5B64),a               ; Store in system variable
+15DB ED 92 42                   nextreg $42,a              ; Set Nextreg $42 (ULANext Attribute Byte Format)
+15DE C9                         ret                        ; Return
 15DF F1            L15DF:       pop af
 15E0 21 74 5C                   ld hl,$5C74
 15E3 36 03                      ld (hl),$03
@@ -6447,7 +6532,7 @@
 2B8B 20 ED                      jr nz,L2B7A
 2B8D A7                         and a
 2B8E F5            L2B8E:       push af
-2B8F CD 80 3E                   call L3E80
+2B8F CD 80 3E                   call CallRom2
 2B92 C9                         ret
 2B93 0E F1                      ld c,$F1
 2B95 C9                         ret
@@ -6465,12 +6550,12 @@
 2BA8 C5                         push bc
 2BA9 21 4A 2C                   ld hl,$2C4A
 2BAC CD B9 37                   call L37B9
-2BAF CD 80 3E      L2BAF:       call L3E80
+2BAF CD 80 3E      L2BAF:       call CallRom2
 2BB2 E0                         ret po
 2BB3 11 E6 DF                   ld de,$DFE6
 2BB6 FE 59                      cp $59
 2BB8 20 F5                      jr nz,L2BAF
-2BBA CD 80 3E                   call L3E80
+2BBA CD 80 3E                   call CallRom2
 2BBD C9                         ret
 2BBE 0E C1                      ld c,$C1
 2BC0 79                         ld a,c
@@ -6478,74 +6563,79 @@
 2BC3 20 05                      jr nz,L2BCA
 2BC5 CD 53 13                   call L1353
 2BC8 3E 02                      ld a,$02
-2BCA F5            L2BCA:       push af
-2BCB C7                         rst $00
-2BCC EB                         ex de,hl
-2BCD 1A                         ld a,(de)
-2BCE F1                         pop af
-2BCF CD E5 26                   call L26E5
-2BD2 6B                         ld l,e
-2BD3 30 F5                      jr nc,L2BCA
-2BD5 FE 02                      cp $02
-2BD7 30 05                      jr nc,L2BDE
-2BD9 CD CB 26                   call L26CB
-2BDC FA 29 F1                   jp m,LF129
-2BDF FE 03                      cp $03
-2BE1 37                         scf
-2BE2 C8                         ret z
-2BE3 FE 02                      cp $02
-2BE5 30 2A                      jr nc,L2C11
-2BE7 CD 80 3E                   call L3E80
-2BEA DD 0E F7                   ld c,$F7
-2BED ED 91 07 00                nextreg $07,$00
-2BF1 21 34 20                   ld hl,$2034
-2BF4 C7                         rst $00
-2BF5 82                         add a,d
-2BF6 0F                         rrca
-2BF7 21 50 20                   ld hl,$2050
-2BFA C7                         rst $00
-2BFB 82                         add a,d
-2BFC 0F                         rrca
-2BFD DF                         rst $18
-2BFE CD 80 3E                   call L3E80
-2C01 03                         inc bc
-2C02 10 EF                      djnz L2BF3
-2C04 6B                         ld l,e
-2C05 0D                         dec c
-2C06 CD CB 26                   call L26CB
-2C09 1B                         dec de
-2C0A 2A 21 A4                   ld hl,($A421)
-2C0D 2A CD F5                   ld hl,($F5CD)
-2C10 36 21                      ld (hl),$21
-2C12 EA 29 CD                   jp pe,LCD29
-2C15 F5                         push af
-2C16 36 01                      ld (hl),$01
-2C18 41                         ld b,c
-2C19 10 79                      djnz L2C94
-2C1B D6 41                      sub $41
-2C1D C7                         rst $00
-2C1E C4 03 38                   call nz,L3803
-2C21 1E 3E                      ld e,$3E
-2C23 14                         inc d
-2C24 CD 08 37                   call L3708
-2C27 3A 79 5B                   ld a,($5B79)
-2C2A B9                         cp c
-2C2B 3E 00                      ld a,$00
-2C2D 20 01                      jr nz,L2C30
-2C2F 3C                         inc a
-2C30 CD 08 37      L2C30:       call L3708
-2C33 79                         ld a,c
-2C34 CD 08 37                   call L3708
-2C37 3E 14                      ld a,$14
-2C39 CD 08 37                   call L3708
-2C3C AF                         xor a
-2C3D CD 08 37                   call L3708
-2C40 0C                         inc c
-2C41 10 D7                      djnz L2C1A
-2C43 3E 0D                      ld a,$0D
-2C45 CD 08 37                   call L3708
-2C48 37                         scf
-2C49 C9                         ret
+;
+; Initialize Display and Banking
+; Called from ROM0 at $034C during boot initialization.
+; Sets up display mode, clears screen areas, and configures memory banking.
+; Entry: None
+; Exit: Display initialized, banking configured
+;
+2BCA F5            L2BCA:       push af                    ; Save AF
+2BCB C7                         rst $00                    ; Call ROM routine at $0000
+2BCC EB                         ex de,hl                   ; Swap DE and HL
+2BCD 1A                         ld a,(de)                  ; A = (DE)
+2BCE F1                         pop af                     ; Restore AF
+2BCF CD E5 26                   call L26E5                 ; Store A to $5B56
+2BD2 6B                         ld l,e                     ; L = E
+2BD3 30 F5                      jr nc,L2BCA                ; If no carry, loop back
+2BD5 FE 02                      cp $02                     ; Compare A with $02
+2BD7 30 05                      jr nc,L2BDE                ; If A >= 2, skip ahead
+2BD9 CD CB 26                   call L26CB                 ; Call banking/MMU routine
+2BDC FA 29 F1                   jp m,LF129                 ; If negative, jump to error handler
+2BDF FE 03         L2BDE:       cp $03                     ; Compare A with $03
+2BE1 37                         scf                        ; Set carry flag
+2BE2 C8                         ret z                      ; If A = $03, return with carry
+2BE3 FE 02                      cp $02                     ; Compare A with $02
+2BE5 30 2A                      jr nc,L2C11                ; If A >= $02, jump to L2C11
+2BE7 CD 80 3E                   call CallRom2              ; Call ROM2 routine
+2BEA DD 0E                      .defw $0EDD                ; ROM2: routine at $0EDD
+2BEC F7                         rst $30                    ; Error handling
+2BED ED 91 07 00                nextreg $07,$00            ; Set nextreg $07 = $00 (CPU speed: 3.5MHz)
+2BF1 21 34 20                   ld hl,$2034                ; HL = $2034 (data table address)
+2BF4 C7                         rst $00                    ; Call ROM routine
+2BF5 82 0F                      .defw $0F82                ; ROM0: routine at $0F82
+2BF7 21 50 20                   ld hl,$2050                ; HL = $2050 (data table address)
+2BFA C7                         rst $00                    ; Call ROM routine
+2BFB 82 0F                      .defw $0F82                ; ROM0: routine at $0F82
+2BFD DF                         rst $18                    ; Call ROM1 routine
+2BFE CD 80 3E                   call CallRom2              ; Call ROM2 routine
+2C01 03 10                      .defw $1003                ; ROM2: routine at $1003
+2C03 EF                         rst $28                    ; Call ROM3 routine
+2C04 6B 0D                      .defw $0D6B                ; ROM3: CLS48 (clear screen)
+2C06 CD CB 26                   call L26CB                 ; Call banking/MMU routine
+2C09 1B                         dec de                     ; DE = DE - 1
+2C0A 2A 21 A4                   ld hl,($A421)              ; HL = ($A421)
+2C0D 2A CD F5                   ld hl,($F5CD)              ; HL = ($F5CD)
+2C10 36 21                      ld (hl),$21                ; (HL) = $21
+2C11 C7            L2C11:       rst $00                    ; Call ROM routine
+2C12 EA 29                      .defw $29EA                ; ROM0: routine at $29EA
+2C14 CD F5 36                   call L36F5                 ; Call screen setup routine
+2C17 01 41 10                   ld bc,$1041                ; BC = $1041 (B=16 iterations, C=$41)
+2C1A 79            L2C1A:       ld a,c                     ; A = C (counter value)
+2C1B D6 41                      sub $41                    ; A = A - $41 (normalize to 0-15)
+2C1D C7                         rst $00                    ; Call ROM routine
+2C1E C4 03                      .defw $03C4                ; ROM0: routine at $03C4
+2C20 38 1E                      jr c,L2C40                 ; If carry, skip ahead
+2C22 3E 14                      ld a,$14                   ; A = $14 (20)
+2C24 CD 08 37                   call L3708                 ; Print/output character
+2C27 3A 79 5B                   ld a,($5B79)               ; A = ($5B79) - current stream
+2C2A B9                         cp c                       ; Compare with C
+2C2B 3E 00                      ld a,$00                   ; A = $00
+2C2D 20 01                      jr nz,L2C30                ; If not equal, skip inc
+2C2F 3C                         inc a                      ; A = A + 1
+2C30 CD 08 37      L2C30:       call L3708                 ; Print/output character
+2C33 79                         ld a,c                     ; A = C
+2C34 CD 08 37                   call L3708                 ; Print/output character
+2C37 3E 14                      ld a,$14                   ; A = $14
+2C39 CD 08 37                   call L3708                 ; Print/output character
+2C3C AF                         xor a                      ; A = $00
+2C3D CD 08 37                   call L3708                 ; Print/output character
+2C40 0C            L2C40:       inc c                      ; C = C + 1
+2C41 10 D7                      djnz L2C1A                 ; Loop B times (16 iterations)
+2C43 3E 0D                      ld a,$0D                   ; A = $0D (carriage return)
+2C45 CD 08 37                   call L3708                 ; Print/output character
+2C48 37                         scf                        ; Set carry flag
+2C49 C9                         ret                        ; Return
 2C4A 52                         ld d,d
 2C4B 65                         ld h,l
 2C4C 6D                         ld l,l
@@ -6945,7 +7035,7 @@
 2E87 C6 F2                      add a,$F2
 2E89 DD 67                      ld xh,a
 2E8B DD 2E 00                   ld xl,$00
-2E8E CD 80 3E      L2E8E:       call L3E80
+2E8E CD 80 3E      L2E8E:       call CallRom2
 2E91 88                         adc a,b
 2E92 27                         daa
 2E93 C9                         ret
@@ -7007,7 +7097,7 @@
 2EFF CD 53 13                   call L1353
 2F02 CD E8 0D                   call L0DE8
 2F05 28 05                      jr z,L2F0C
-2F07 CD 80 3E                   call L3E80
+2F07 CD 80 3E                   call CallRom2
 2F0A C9                         ret
 2F0B 0E CD                      ld c,$CD
 2F0D 1C                         inc e
@@ -7143,7 +7233,7 @@
 3017 AF            L3017:       xor a
 3018 21 52 E1                   ld hl,$E152
 301B C5                         push bc
-301C CD 80 3E                   call L3E80
+301C CD 80 3E                   call CallRom2
 301F D9                         exx
 3020 27                         daa
 3021 D5                         push de
@@ -7158,7 +7248,7 @@
 302E 22 8A 5B                   ld ($5B8A),hl
 3031 21 52 E1                   ld hl,$E152
 3034 CD F2 2A                   call L2AF2
-3037 CD 80 3E                   call L3E80
+3037 CD 80 3E                   call CallRom2
 303A 47                         ld b,a
 303B 19                         add hl,de
 303C CD F2 2A                   call L2AF2
@@ -7186,7 +7276,7 @@
 306C D1                         pop de
 306D C1                         pop bc
 306E C9                         ret
-306F CD 80 3E                   call L3E80
+306F CD 80 3E                   call CallRom2
 3072 18 3E                      jr L30B2
 3074 EF                         rst $28
 3075 BF                         cp a
@@ -7382,11 +7472,11 @@
 31E9 CB B4                      res 6,h
 31EB 22 9B 5B                   ld ($5B9B),hl
 31EE 3E 14                      ld a,$14
-31F0 CD 7D 12                   call L127D
+31F0 CD 7D 12                   call RdNxReg
 31F3 32 93 5C                   ld ($5C93),a
 31F6 DD 21 92 5C                ld ix,$5C92
 31FA 21 8A 21                   ld hl,$218A
-31FD CD 80 3E                   call L3E80
+31FD CD 80 3E                   call CallRom2
 3200 C4 20 C3                   call nz,LC320
 3203 91                         sub c
 3204 31 EF 07                   ld sp,$07EF
@@ -7720,7 +7810,7 @@
 3439 F3            L3439:       di
 343A ED 91 07 03                nextreg $07,$03
 343E 06 01                      ld b,$01
-3440 CD 80 3E                   call L3E80
+3440 CD 80 3E                   call CallRom2
 3443 FB                         ei
 3444 01 CD CB                   ld bc,$CBCD
 3447 26 06                      ld h,$06
@@ -8002,7 +8092,7 @@
 369F 22 86 5B                   ld ($5B86),hl
 36A2 CD 6B 13                   call L136B
 36A5 3E 0E                      ld a,$0E
-36A7 CD 80 3E                   call L3E80
+36A7 CD 80 3E                   call CallRom2
 36AA 5B                         ld e,e
 36AB 27                         daa
 36AC DD E1                      pop ix
@@ -8046,7 +8136,7 @@
 36EA 3D                         dec a
 36EB 1F                         rra
 36EC C9                         ret
-36ED CD 80 3E      L36ED:       call L3E80
+36ED CD 80 3E      L36ED:       call CallRom2
 36F0 E0                         ret po
 36F1 11 C9 CF                   ld de,$CFC9
 36F4 08                         ex af,af'
@@ -9126,20 +9216,14 @@
 3DDA CA AF 09                   jp z,L09AF
 3DDD 01 FF 2A      L3DDD:       ld bc,$2AFF
 3DE0 C3 C1 3E                   jp L3EC1
-3DE3 00                         nop
-3DE4 02                         ld (bc),a
-3DE5 A0                         and b
-3DE6 A2                         and d
-3DE7 14                         inc d
-3DE8 16 B4                      ld d,$B4
-3DEA B6                         or (hl)
-3DEB 00                         nop
-3DEC 03                         inc bc
-3DED E0                         ret po
-3DEE E7                         rst $20
-3DEF 1C                         inc e
-3DF0 1F                         rra
-3DF1 FC FF AA                   call m,LAAFF
+;
+; This tables contains the initial values for palettes
+;
+3DE3 00 02 A0 A2   PAL_INIT:    .defb $00, $02, $A0, $A2
+3DE7 14 16 B4 B6                .defb $14, $16, $B4, $B6
+3DEB 00 03 E0 E7                .defb $00, $03, $E0, $E7
+3DEF 1C 1F FC FF                .defb $1C, $1F, $FC, $FF 
+3DF3 AA                         .defb $AA                  ; End marker
 3DF4 00                         nop
 3DF5 00                         nop
 3DF6 00                         nop
@@ -9222,23 +9306,32 @@
 3E7D 00                         nop
 3E7E 00                         nop
 3E7F 00                         nop
-3E80 ED 43 54 5B   L3E80:       ld ($5B54),bc
-3E84 E3                         ex (sp),hl
-3E85 4E                         ld c,(hl)
-3E86 23                         inc hl
-3E87 46                         ld b,(hl)
-3E88 23            L3E88:       inc hl
-3E89 E3                         ex (sp),hl
-3E8A ED 8A 3E 93                push $3E93
-3E8E C5                         push bc
-3E8F ED 4B 54 5B   L3E8F:       ld bc,($5B54)
 ;
-; When a ROM2 routine called from ROM0 returns, this address is used. The nextreg
-; statement switches back to ROM0. The next statement in ROM0 is a ret, and that 
-; returns to the caller in ROM0.
+; --- Subroutine: Call routine in ROM2 from ROM1 ---
+; This is similar to the ROM0 paging routine at $0068. When called from ROM1,
+; it reads a 16-bit address from the code following the CALL instruction,
+; pages in ROM2, executes the routine there, then returns to ROM1.
+; Entry: (return address on stack points to 16-bit ROM2 routine address)
+; Exit: Returns to caller in ROM1 after executing ROM2 routine
+; Uses: TMPBC ($5B54) to preserve BC register
 ;
-3E93 ED 91 8E 00                nextreg $8E,$00
-3E97 C9                         ret
+3E80 ED 43 54 5B   CallRom2:    ld ($5B54),bc              ; Save the value of BC temporarily in TMPBC
+3E84 E3                         ex (sp),hl                 ; HL = Return address from stack
+3E85 4E                         ld c,(hl)                  ; Read low byte of ROM2 routine address
+3E86 23                         inc hl                     ; Advance to high byte
+3E87 46                         ld b,(hl)                  ; Read high byte of ROM2 routine address
+3E88 23            L3E88:       inc hl                     ; Advance past the address
+3E89 E3                         ex (sp),hl                 ; Put updated return address back on stack
+3E8A ED 8A 3E 93                push $3E93                 ; Push return address (ROM1 return handler)
+3E8E C5                         push bc                    ; Push ROM2 routine address to execute
+3E8F ED 4B 54 5B   L3E8F:       ld bc,($5B54)              ; Restore the original value of BC
+;
+; When a ROM2 routine called from ROM1 returns, this address is used. The nextreg
+; statement switches back to ROM1. The next statement in ROM1 is a ret, and that 
+; returns to the caller in ROM1.
+;
+3E93 ED 91 8E 00                nextreg $8E,$00            ; Switch to ROM0/ROM1 (disable ROM2)
+3E97 C9                         ret                        ; Return to caller in ROM1
 ;
 ;
 ;

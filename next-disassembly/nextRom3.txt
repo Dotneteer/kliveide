@@ -687,7 +687,7 @@
 03BF 06 00                      ld b,$00
 03C1 DD 21 D1 03   L03C1:       ld ix,$03D1
 03C5 DD 09                      add ix,bc
-03C7 3A 48 5C                   ld a,($5C48)
+03C7 3A 48 5C                   ld a,(BORDCR)
 03CA E6 38                      and $38
 03CC 0F                         rrca
 03CD 0F                         rrca
@@ -947,7 +947,7 @@
 053C 10 FE         L053C:       djnz L053C
 053E C9                         ret
 053F F5                         push af
-0540 3A 48 5C                   ld a,($5C48)
+0540 3A 48 5C                   ld a,(BORDCR)
 0543 E6 38                      and $38
 0545 0F                         rrca
 0546 0F                         rrca
@@ -1807,13 +1807,13 @@
 0A37 05                         dec b
 0A38 0E 21         L0A38:       ld c,$21
 0A3A C3 D9 0D      L0A3A:       jp L0DD9
-0A3D 3A 91 5C                   ld a,($5C91)
+0A3D 3A 91 5C                   ld a,(P_FLAG)
 0A40 F5                         push af
 0A41 FD 36 57 01                ld (iy+$57),$01
 0A45 3E 20                      ld a,$20
 0A47 CD D9 0A      L0A47:       call L0AD9
 0A4A F1                         pop af
-0A4B 32 91 5C                   ld ($5C91),a
+0A4B 32 91 5C                   ld (P_FLAG),a
 0A4E C9                         ret
 0A4F FD CB 01 4E                bit 1,(iy+$01)
 0A53 C2 CD 0E                   jp nz,L0ECD
@@ -1836,7 +1836,7 @@
 0A78 18 03                      jr L0A7D
 0A7A 11 87 0A                   ld de,$0A87
 0A7D 32 0E 5C      L0A7D:       ld ($5C0E),a
-0A80 2A 51 5C      L0A80:       ld hl,($5C51)
+0A80 2A 51 5C      L0A80:       ld hl,(CURCHL)
 0A83 73                         ld (hl),e
 0A84 23                         inc hl
 0A85 72                         ld (hl),d
@@ -1883,32 +1883,61 @@
 0AD6 20 F8                      jr nz,L0AD0
 0AD8 C9                         ret
 0AD9 CD 24 0B      L0AD9:       call L0B24
-0ADC FD CB 01 4E   L0ADC:       bit 1,(iy+$01)
-0AE0 20 1A                      jr nz,L0AFC
-0AE2 FD CB 02 46                bit 0,(iy+$02)
-0AE6 20 08                      jr nz,L0AF0
-0AE8 ED 43 88 5C                ld ($5C88),bc
-0AEC 22 84 5C                   ld ($5C84),hl
-0AEF C9                         ret
-0AF0 ED 43 8A 5C   L0AF0:       ld ($5C8A),bc
-0AF4 ED 43 82 5C                ld ($5C82),bc
-0AF8 22 86 5C                   ld ($5C86),hl
-0AFB C9                         ret
-0AFC FD 71 45      L0AFC:       ld (iy+$45),c
-0AFF 22 80 5C                   ld ($5C80),hl
-0B02 C9                         ret
-0B03 FD CB 01 4E   L0B03:       bit 1,(iy+$01)
-0B07 20 14                      jr nz,L0B1D
-0B09 ED 4B 88 5C                ld bc,($5C88)
-0B0D 2A 84 5C                   ld hl,($5C84)
-0B10 FD CB 02 46                bit 0,(iy+$02)
-0B14 C8                         ret z
-0B15 ED 4B 8A 5C                ld bc,($5C8A)
-0B19 2A 86 5C                   ld hl,($5C86)
-0B1C C9                         ret
-0B1D FD 4E 45      L0B1D:       ld c,(iy+$45)
-0B20 2A 80 5C                   ld hl,($5C80)
-0B23 C9                         ret
+;
+; Store Cursor Position and Display Address
+; Stores BC (column/row) and HL (screen address) into appropriate system variables
+; depending on whether printer output (FLAGS bit 1) or lower screen (TV_FLAG bit 0) is active.
+; Entry: BC = cursor position (B=row, C=column), HL = screen/display address
+; Exit: Position stored in S_POSN/SPOSNL, address in DF_CC or ECHO_E
+;
+0ADC FD CB 01 4E   StorePos:    bit 1,(iy+$01)              ; Test bit 1 of FLAGS ($5C3B) - printer in use?
+0AE0 20 1A                      jr nz,`Store3               ; Jump if printer active
+0AE2 FD CB 02 46                bit 0,(iy+$02)              ; Test bit 0 of TV_FLAG ($5C3C) - lower screen?
+0AE6 20 08                      jr nz,`Store2               ; Jump if lower screen
+;
+; Store for upper screen
+;
+0AE8 ED 43 88 5C                ld (S_POSN),bc              ; Store position to S_POSN
+0AEC 22 84 5C                   ld (DF_CC),hl               ; Store display address to DF_CC
+0AEF C9                         ret                         ; Return
+;
+; Store for lower screen
+;
+0AF0 ED 43 8A 5C   `Store2:     ld (SPOSNL),bc              ; Store position to SPOSNL
+0AF4 ED 43 82 5C                ld (ECHO_E),bc              ; Also store position to ECHO_E
+0AF8 22 86 5C                   ld (DF_CC_L),hl             ; Store display address to DF_CC_L
+0AFB C9                         ret                         ; Return
+;
+; Store for printer output
+;
+0AFC FD 71 45      `Store3:     ld (iy+$45),c               ; Store column to (IY+$45) = $5C7F (P_POSN_L?)
+0AFF 22 80 5C                   ld (ECHO_E),hl              ; Store address to ECHO_E ($5C80)
+0B02 C9                         ret                         ; Return
+;
+; Retrieve Cursor Position and Display Address
+; Loads BC (column/row) and HL (screen address) from appropriate system variables
+; depending on whether printer output (FLAGS bit 1) or lower screen (TV_FLAG bit 0) is active.
+; Entry: None
+; Exit: BC = cursor position, HL = screen/display address from system variables
+;
+0B03 FD CB 01 4E   LoadPos:     bit 1,(iy+$01)              ; Test bit 1 of FLAGS ($5C3B) - printer in use?
+0B07 20 14                      jr nz,`Load3                ; Jump if printer active
+0B09 ED 4B 88 5C                ld bc,(S_POSN)              ; BC := (S_POSN) - upper screen position
+0B0D 2A 84 5C                   ld hl,(DF_CC)               ; HL := (DF_CC) - upper screen address
+0B10 FD CB 02 46                bit 0,(iy+$02)              ; Test bit 0 of TV_FLAG ($5C3C) - lower screen?
+0B14 C8                         ret z                       ; Return if upper screen
+;
+; Load for lower screen
+;
+0B15 ED 4B 8A 5C                ld bc,(SPOSNL)              ; BC := (SPOSNL) - lower screen position
+0B19 2A 86 5C                   ld hl,(DF_CC_L)             ; HL := (DF_CC_L) - lower screen address
+0B1C C9                         ret                         ; Return
+;
+; Load for printer
+;
+0B1D FD 4E 45      `Load3:      ld c,(iy+$45)               ; C := (IY+$45) = $5C7F (P_POSN_L?)
+0B20 2A 80 5C                   ld hl,(ECHO_E)              ; HL := ECHO_E ($5C80) - printer address
+0B23 C9                         ret                         ; Return
 0B24 FE 80         L0B24:       cp $80
 0B26 38 3D                      jr c,L0B65
 0B28 FE 90                      cp $90
@@ -1976,7 +2005,7 @@
 0B98 D1                         pop de
 0B99 C5                         push bc
 0B9A E5                         push hl
-0B9B 3A 91 5C                   ld a,($5C91)
+0B9B 3A 91 5C                   ld a,(P_FLAG)
 0B9E 06 FF                      ld b,$FF
 0BA0 1F                         rra
 0BA1 38 01                      jr c,L0BA4
@@ -2026,7 +2055,7 @@
 0BDF E6 03                      and $03
 0BE1 F6 58                      or $58
 0BE3 67                         ld h,a
-0BE4 ED 5B 8F 5C                ld de,($5C8F)
+0BE4 ED 5B 8F 5C                ld de,(ATTR_T)
 0BE8 7E                         ld a,(hl)
 0BE9 AB                         xor e
 0BEA A2                         and d
@@ -2109,7 +2138,7 @@
 0C70 CD D4 15                   call L15D4
 0C73 F5                         push af
 0C74 D9                         exx
-0C75 CD 6E 0D                   call L0D6E
+0C75 CD 6E 0D                   call CLS
 0C78 D9                         exx
 0C79 F1                         pop af
 0C7A D1                         pop de
@@ -2127,9 +2156,9 @@
 0C8D 3E 18                      ld a,$18
 0C8F 90                         sub b
 0C90 32 8C 5C                   ld ($5C8C),a
-0C93 2A 8F 5C                   ld hl,($5C8F)
+0C93 2A 8F 5C                   ld hl,(ATTR_T)
 0C96 E5                         push hl
-0C97 3A 91 5C                   ld a,($5C91)
+0C97 3A 91 5C                   ld a,(P_FLAG)
 0C9A F5                         push af
 0C9B 3E FD                      ld a,$FD
 0C9D CD 01 16                   call L1601
@@ -2156,9 +2185,9 @@
 0CC5 3E FE                      ld a,$FE
 0CC7 CD 01 16                   call L1601
 0CCA F1                         pop af
-0CCB 32 91 5C                   ld ($5C91),a
+0CCB 32 91 5C                   ld (P_FLAG),a
 0CCE E1                         pop hl
-0CCF 22 8F 5C                   ld ($5C8F),hl
+0CCF 22 8F 5C                   ld (ATTR_T),hl
 0CD2 CD FE 0D      L0CD2:       call L0DFE
 0CD5 FD 46 31                   ld b,(iy+$31)
 0CD8 04                         inc b
@@ -2202,11 +2231,11 @@
 0D0C ED 44                      neg
 0D0E C5                         push bc
 0D0F 47                         ld b,a
-0D10 2A 8F 5C                   ld hl,($5C8F)
+0D10 2A 8F 5C                   ld hl,(ATTR_T)
 0D13 E5                         push hl
-0D14 2A 91 5C                   ld hl,($5C91)
+0D14 2A 91 5C                   ld hl,(P_FLAG)
 0D17 E5                         push hl
-0D18 CD 4D 0D                   call L0D4D
+0D18 CD 4D 0D                   call SetAttrs
 0D1B 78                         ld a,b
 0D1C F5            L0D1C:       push af
 0D1D 21 6B 5C                   ld hl,$5C6B
@@ -2226,95 +2255,131 @@
 0D34 E1                         pop hl
 0D35 FD 75 57                   ld (iy+$57),l
 0D38 E1                         pop hl
-0D39 22 8F 5C                   ld ($5C8F),hl
-0D3C ED 4B 88 5C                ld bc,($5C88)
+0D39 22 8F 5C                   ld (ATTR_T),hl
+0D3C ED 4B 88 5C                ld bc,(S_POSN)
 0D40 FD CB 02 86                res 0,(iy+$02)
 0D44 CD D9 0D                   call L0DD9
 0D47 FD CB 02 C6                set 0,(iy+$02)
 0D4B C1                         pop bc
 0D4C C9                         ret
-0D4D AF            L0D4D:       xor a
-0D4E 2A 8D 5C                   ld hl,($5C8D)
-0D51 FD CB 02 46                bit 0,(iy+$02)
-0D55 28 04                      jr z,L0D5B
-0D57 67                         ld h,a
-0D58 FD 6E 0E                   ld l,(iy+$0E)
-0D5B 22 8F 5C      L0D5B:       ld ($5C8F),hl
-0D5E 21 91 5C                   ld hl,$5C91
-0D61 20 02                      jr nz,L0D65
-0D63 7E                         ld a,(hl)
-0D64 0F                         rrca
-0D65 AE            L0D65:       xor (hl)
-0D66 E6 55                      and $55
-0D68 AE                         xor (hl)
-0D69 77                         ld (hl),a
-0D6A C9                         ret
-0D6B CD AF 0D                   call L0DAF
-0D6E 21 3C 5C      L0D6E:       ld hl,$5C3C
-0D71 CB AE                      res 5,(hl)
-0D73 CB C6                      set 0,(hl)
-0D75 CD 4D 0D                   call L0D4D
-0D78 FD 46 31                   ld b,(iy+$31)
-0D7B CD 44 0E                   call L0E44
-0D7E 21 C0 5A                   ld hl,$5AC0
-0D81 3A 8D 5C                   ld a,($5C8D)
-0D84 05                         dec b
-0D85 18 07                      jr L0D8E
-0D87 0E 20         L0D87:       ld c,$20
-0D89 2B            L0D89:       dec hl
-0D8A 77                         ld (hl),a
-0D8B 0D                         dec c
-0D8C 20 FB                      jr nz,L0D89
-0D8E 10 F7         L0D8E:       djnz L0D87
-0D90 FD 36 31 02                ld (iy+$31),$02
-0D94 3E FD         L0D94:       ld a,$FD
-0D96 CD 01 16                   call L1601
-0D99 2A 51 5C                   ld hl,($5C51)
-0D9C 11 F4 09                   ld de,$09F4
-0D9F A7                         and a
-0DA0 73            L0DA0:       ld (hl),e
-0DA1 23                         inc hl
-0DA2 72                         ld (hl),d
-0DA3 23                         inc hl
-0DA4 11 A8 10                   ld de,$10A8
-0DA7 3F                         ccf
-0DA8 38 F6                      jr c,L0DA0
-0DAA 01 21 17                   ld bc,$1721
-0DAD 18 2A                      jr L0DD9
-0DAF 21 00 00      L0DAF:       ld hl,$0000
-0DB2 22 7D 5C                   ld ($5C7D),hl
-0DB5 FD CB 30 86                res 0,(iy+$30)
-0DB9 CD 94 0D                   call L0D94
-0DBC 3E FE                      ld a,$FE
-0DBE CD 01 16                   call L1601
-0DC1 CD 4D 0D                   call L0D4D
-0DC4 06 18                      ld b,$18
-0DC6 CD 44 0E                   call L0E44
-0DC9 2A 51 5C                   ld hl,($5C51)
-0DCC 11 F4 09                   ld de,$09F4
-0DCF 73                         ld (hl),e
-0DD0 23                         inc hl
-0DD1 72                         ld (hl),d
-0DD2 FD 36 52 01                ld (iy+$52),$01
-0DD6 01 21 18                   ld bc,$1821
-0DD9 21 00 5B      L0DD9:       ld hl,$5B00
-0DDC FD CB 01 4E                bit 1,(iy+$01)
-0DE0 20 12                      jr nz,L0DF4
-0DE2 78                         ld a,b
-0DE3 FD CB 02 46                bit 0,(iy+$02)
-0DE7 28 05                      jr z,L0DEE
-0DE9 FD 86 31                   add a,(iy+$31)
-0DEC D6 18                      sub $18
-0DEE C5            L0DEE:       push bc
-0DEF 47                         ld b,a
-0DF0 CD 9B 0E                   call L0E9B
-0DF3 C1                         pop bc
-0DF4 3E 21         L0DF4:       ld a,$21
-0DF6 91                         sub c
-0DF7 5F                         ld e,a
-0DF8 16 00                      ld d,$00
-0DFA 19                         add hl,de
-0DFB C3 DC 0A                   jp L0ADC
+;
+; Get Screen Parameters and Set Attributes
+; Determines screen attributes based on TV_FLAGS2 bit 0 (lower/upper screen mode).
+; If bit 0 is set, uses special attributes; otherwise uses ATTR_P/ATTR_T.
+; Also manipulates P_FLAG for proper screen/printer handling.
+; Entry: None
+; Exit: (ATTR_T) = ATTR_T set appropriately, P_FLAG bit 0 manipulated
+;
+0D4D AF            SetAttrs:    xor a                       ; A := 0
+0D4E 2A 8D 5C                   ld hl,(ATTR_P)              ; HL := ATTR_P/ATTR_T ($5C8D/$5C8E)
+0D51 FD CB 02 46                bit 0,(iy+$02)              ; Test bit 0 of TV_FLAG ($5C3C, IY+$02=$5C3C)
+0D55 28 04                      jr z,`SetAttrs1             ; Jump if bit 0 clear (normal mode)
+0D57 67                         ld h,a                      ; H := 0 (clear ATTR_T high byte)
+0D58 FD 6E 0E                   ld l,(iy+$0E)               ; L := BORDCR (BORDCR, IY+$0E) - border/paper color
+0D5B 22 8F 5C      `SetAttrs1:  ld (ATTR_T),hl              ; Store to ATTR_T (ATTR_T)
+0D5E 21 91 5C                   ld hl,P_FLAG                ; HL := P_FLAG address (P_FLAG)
+0D61 20 02                      jr nz,L0D65                 ; Jump if bit 0 was set (lower screen)
+0D63 7E                         ld a,(hl)                   ; A := P_FLAG value
+0D64 0F                         rrca                        ; Rotate right (move bit 0 to bit 7, carry)
+0D65 AE            `SetAttrs2:  xor (hl)                    ; XOR with P_FLAG
+0D66 E6 55                      and $55                     ; Mask bits: 01010101 (bits 0,2,4,6)
+0D68 AE                         xor (hl)                    ; XOR again to toggle masked bits
+0D69 77                         ld (hl),a                   ; Store updated P_FLAG
+0D6A C9                         ret                         ; Return
+;
+; CLS (Clear Screen) - 48K ROM Compatibility Routine
+; Clears the display file and attribute file, resets cursor position, and initializes
+; screen-related system variables. This is called from ROM0 ($02FE) for CLS operations.
+; Entry: None
+; Exit: Screen cleared, cursor at top-left, system variables initialized
+;
+0D6B CD AF 0D      CLS48:       call InitScrVs              ; Initialize screen variables
+0D6E 21 3C 5C      CLS:         ld hl,$5C3C                 ; HL := TV_FLAG ($5C3C)
+0D71 CB AE                      res 5,(hl)                  ; Clear bit 5 of TV_FLAG
+0D73 CB C6                      set 0,(hl)                  ; Set bit 0 of TV_FLAG (lower screen in use)
+0D75 CD 4D 0D                   call SetAttrs               ; Get screen address/parameters
+0D78 FD 46 31                   ld b,(iy+$31)               ; B := (IY+$31) - number of rows
+0D7B CD 44 0E                   call ClrRows                ; Process display rows
+0D7E 21 C0 5A                   ld hl,$5AC0                 ; HL := $5AC0 (attribute file end)
+0D81 3A 8D 5C                   ld a,(ATTR_P)               ; A := ATTR_P (permanent attributes)
+0D84 05                         dec b                       ; Decrement row counter
+0D85 18 07                      jr `Cls3                    ; Jump to fill loop
+0D87 0E 20         `Cls1:       ld c,$20                    ; C := 32 (characters per row)
+0D89 2B            `Cls2:       dec hl                      ; Move backward through attribute file
+0D8A 77                         ld (hl),a                   ; Set attribute byte
+0D8B 0D                         dec c                       ; Decrement character counter
+0D8C 20 FB                      jr nz,`Cls2                 ; Loop for all 32 characters in row
+0D8E 10 F7         `Cls3:       djnz `Cls1                  ; Loop for all rows
+0D90 FD 36 31 02                ld (iy+$31),$02             ; Set (IY+$31) to 2 (rows in lower screen)
+;
+; Initialize Channel Data and Display Pointers
+; Sets up channel addresses and display file pointers for screen I/O.
+; Alternates between two channel offsets ($09F4 and $10A8) to initialize
+; the channel data area. Used during screen initialization.
+; Entry: None
+; Exit: Channel pointers initialized, BC=$1721 (23 rows, 33 columns)
+;
+0D94 3E FD         InitChData:  ld a,$FD                    ; A := $FD (lower screen channel descriptor)
+0D96 CD 01 16                   call L1601                  ; Select lower screen channel
+0D99 2A 51 5C                   ld hl,(CURCHL)              ; HL := CURCHL (current channel address)
+0D9C 11 F4 09                   ld de,$09F4                 ; DE := $09F4 (first channel data offset)
+0D9F A7                         and a                       ; Clear carry flag (start with first offset)
+0DA0 73            `InitCh1:    ld (hl),e                   ; Store low byte of channel offset
+0DA1 23                         inc hl                      ; Move to next byte
+0DA2 72                         ld (hl),d                   ; Store high byte of channel offset
+0DA3 23                         inc hl                      ; Move to next channel entry (2 bytes per entry)
+0DA4 11 A8 10                   ld de,$10A8                 ; DE := $10A8 (second channel data offset)
+0DA7 3F                         ccf                         ; Complement carry flag (toggle offset selection)
+0DA8 38 F6                      jr c,`InitCh1               ; Loop if carry set (write another entry)
+0DAA 01 21 17                   ld bc,$1721                 ; BC := $1721 (B=23 rows, C=33 columns)
+0DAD 18 2A                      jr SetScrPos                ; Jump to set screen position ($0DD9)
+;
+; Initialize Screen Variables and Clear Display
+; Sets up screen-related system variables, clears channel data, and initializes
+; the display file and attribute area. Called during CLS operations.
+; Entry: None
+; Exit: Screen variables initialized, display cleared, BC=$1821 (24 rows, 33 cols)
+;
+0DAF 21 00 00      InitScrVs:   ld hl,$0000                 ; HL := $0000
+0DB2 22 7D 5C                   ld (COORDS),hl              ; Clear COORDS (COORDS) - cursor position (X,Y)
+0DB5 FD CB 30 86                res 0,(iy+$30)              ; Clear bit 0 of FLAGS2 ($5C70) - keyboard mode
+0DB9 CD 94 0D                   call InitChData             ; Initialize channel data
+0DBC 3E FE                      ld a,$FE                    ; A := $FE (upper screen channel descriptor)
+0DBE CD 01 16                   call L1601                  ; Open/select upper screen channel for output
+0DC1 CD 4D 0D                   call SetAttrs               ; Set screen attributes
+0DC4 06 18                      ld b,$18                    ; B := 24 (number of rows to clear)
+0DC6 CD 44 0E                   call ClrRows                ; Clear display file
+0DC9 2A 51 5C                   ld hl,(CURCHL)              ; HL := CURCHL (current channel address)
+0DCC 11 F4 09                   ld de,$09F4                 ; DE := $09F4 (screen channel offset)
+0DCF 73                         ld (hl),e                   ; Store low byte of channel offset
+0DD0 23                         inc hl                      ; Move to next byte
+0DD1 72                         ld (hl),d                   ; Store high byte of channel offset
+0DD2 FD 36 52 01                ld (iy+$52),$01             ; Set BORDCR ($5C92) to $01 (blue border/black paper)
+0DD6 01 21 18                   ld bc,$1821                 ; BC := $1821 (B=24 rows, C=33 columns)
+;
+; Set Screen Position and Update System Variables
+; Common entry point for setting screen cursor position and updating display variables.
+; Entry: BC = row/column counts, HL = $5B00 (or other base address)
+; Exit: System variables updated, jumps to StorePos for final processing
+;
+0DD9 21 00 5B      SetScrPos:   ld hl,$5B00                 ; HL := $5B00 (base of screen area)
+0DDC FD CB 01 4E                bit 1,(iy+$01)              ; Test bit 1 of FLAGS ($5C3B) - printer in use?
+0DE0 20 12                      jr nz,`SetScrP2                 ; Jump if printer active
+0DE2 78                         ld a,b                      ; A := B (row count)
+0DE3 FD CB 02 46                bit 0,(iy+$02)              ; Test bit 0 of TV_FLAG ($5C3C) - lower screen?
+0DE7 28 05                      jr z,`SetScrP1              ; Jump if upper screen (bit clear)
+0DE9 FD 86 31                   add a,(iy+$31)              ; Add DF_SZ ($5C71) - lower screen rows
+0DEC D6 18                      sub $18                     ; Subtract 24 (adjust for lower screen offset)
+0DEE C5            `SetScrP1:   push bc                     ; Save BC (row/column counts)
+0DEF 47                         ld b,a                      ; B := adjusted row count
+0DF0 CD 9B 0E                   call L0E9B                  ; Calculate screen address
+0DF3 C1                         pop bc                      ; Restore BC
+0DF4 3E 21         `SetScrP2:   ld a,$21                    ; A := 33 (max columns)
+0DF6 91                         sub c                       ; Subtract C (column count)
+0DF7 5F                         ld e,a                      ; E := offset to column position
+0DF8 16 00                      ld d,$00                    ; D := 0 (DE = column offset)
+0DFA 19                         add hl,de                   ; HL += DE (adjust to column position)
+0DFB C3 DC 0A                   jp StorePos                 ; Jump to store position in system variables
 0DFE 06 17         L0DFE:       ld b,$17
 0E00 CD 9B 0E      L0E00:       call L0E9B
 0E03 0E 08                      ld c,$08
@@ -2359,81 +2424,102 @@
 0E3F EB                         ex de,hl
 0E40 ED B0                      ldir
 0E42 06 01                      ld b,$01
-0E44 C5            L0E44:       push bc
-0E45 CD 9B 0E                   call L0E9B
-0E48 0E 08                      ld c,$08
-0E4A C5            L0E4A:       push bc
-0E4B E5                         push hl
-0E4C 78                         ld a,b
-0E4D E6 07         L0E4D:       and $07
-0E4F 0F                         rrca
-0E50 0F                         rrca
-0E51 0F                         rrca
-0E52 4F                         ld c,a
-0E53 78                         ld a,b
-0E54 06 00                      ld b,$00
-0E56 0D                         dec c
-0E57 54                         ld d,h
-0E58 5D                         ld e,l
-0E59 36 00                      ld (hl),$00
-0E5B 13                         inc de
-0E5C ED B0                      ldir
-0E5E 11 01 07                   ld de,$0701
-0E61 19                         add hl,de
-0E62 3D                         dec a
-0E63 E6 F8                      and $F8
-0E65 47                         ld b,a
-0E66 20 E5                      jr nz,L0E4D
-0E68 E1                         pop hl
-0E69 24                         inc h
-0E6A C1                         pop bc
-0E6B 0D                         dec c
-0E6C 20 DC                      jr nz,L0E4A
-0E6E CD 88 0E                   call L0E88
-0E71 62                         ld h,d
-0E72 6B                         ld l,e
-0E73 13                         inc de
-0E74 3A 8D 5C                   ld a,($5C8D)
-0E77 FD CB 02 46                bit 0,(iy+$02)
-0E7B 28 03                      jr z,L0E80
-0E7D 3A 48 5C                   ld a,($5C48)
-0E80 77            L0E80:       ld (hl),a
-0E81 0B                         dec bc
-0E82 ED B0                      ldir
-0E84 C1                         pop bc
-0E85 0E 21                      ld c,$21
-0E87 C9                         ret
-0E88 7C            L0E88:       ld a,h
-0E89 0F                         rrca
-0E8A 0F                         rrca
-0E8B 0F                         rrca
-0E8C 3D                         dec a
-0E8D F6 50                      or $50
-0E8F 67                         ld h,a
-0E90 EB                         ex de,hl
-0E91 61                         ld h,c
-0E92 68                         ld l,b
-0E93 29                         add hl,hl
-0E94 29                         add hl,hl
-0E95 29                         add hl,hl
-0E96 29                         add hl,hl
-0E97 29                         add hl,hl
-0E98 44                         ld b,h
-0E99 4D                         ld c,l
-0E9A C9                         ret
-0E9B 3E 18         L0E9B:       ld a,$18
-0E9D 90                         sub b
-0E9E 57                         ld d,a
-0E9F 0F                         rrca
-0EA0 0F                         rrca
-0EA1 0F                         rrca
-0EA2 E6 E0                      and $E0
-0EA4 6F                         ld l,a
-0EA5 7A                         ld a,d
-0EA6 E6 18                      and $18
-0EA8 F6 40                      or $40
-0EAA 67                         ld h,a
-0EAB C9                         ret
+;
+; Clear Display Rows
+; Clears B rows of the display file (192 scan lines = 24 rows × 8 scan lines each).
+; Each character row consists of 8 scan lines of 32 bytes each (256 bytes per row).
+; Also fills the corresponding attribute bytes with ATTR_P or BORDCR.
+; Entry: B = number of character rows to clear (typically 24 for full screen)
+; Exit: C = $21 (33), attributes set
+;
+0E44 C5            ClrRows:     push bc                     ; Save row count
+0E45 CD 9B 0E                   call CalcScr                ; Calculate screen address for row B
+0E48 0E 08                      ld c,$08                    ; C := 8 (scan lines per character row)
+0E4A C5            `ClrRow1:    push bc                     ; Save counters
+0E4B E5                         push hl                     ; Save screen address
+0E4C 78                         ld a,b                      ; A := row number
+0E4D E6 07         `ClrRow2:    and $07                     ; Mask to get scan line within third (0-7)
+0E4F 0F                         rrca                        ; Divide by 8 (shift right 3 times)
+0E50 0F                         rrca                        ; to get number of 256-byte blocks
+0E51 0F                         rrca                        ; (each scan line = 32 bytes)
+0E52 4F                         ld c,a                      ; C := block count
+0E53 78                         ld a,b                      ; A := row number again
+0E54 06 00                      ld b,$00                    ; B := 0 (for 16-bit BC)
+0E56 0D                         dec c                       ; Adjust count
+0E57 54                         ld d,h                      ; DE := HL (source = destination + 1)
+0E58 5D                         ld e,l                      ; for fill operation
+0E59 36 00                      ld (hl),$00                 ; Clear first byte
+0E5B 13                         inc de                      ; DE := HL + 1
+0E5C ED B0                      ldir                        ; Fill rest of scan line with zeros
+0E5E 11 01 07                   ld de,$0701                 ; DE := $0701 (skip to next scan line)
+0E61 19                         add hl,de                   ; HL += $0701 (move to next third)
+0E62 3D                         dec a                       ; Decrement row counter
+0E63 E6 F8                      and $F8                     ; Mask to check if done with thirds
+0E65 47                         ld b,a                      ; B := masked value
+0E66 20 E5                      jr nz,`ClrRow2              ; Loop if more thirds to clear
+0E68 E1                         pop hl                      ; Restore original screen address
+0E69 24                         inc h                       ; Move to next scan line (next 256-byte block)
+0E6A C1                         pop bc                      ; Restore counters
+0E6B 0D                         dec c                       ; Decrement scan line counter
+0E6C 20 DC                      jr nz,`ClrRow1              ; Loop for all 8 scan lines
+0E6E CD 88 0E                   call CalcAttr               ; Calculate attribute address
+0E71 62                         ld h,d                      ; HL := DE (attribute address)
+0E72 6B                         ld l,e                      ; 
+0E73 13                         inc de                      ; DE := HL + 1 (for fill)
+0E74 3A 8D 5C                   ld a,(ATTR_P)               ; A := ATTR_P (permanent attributes)
+0E77 FD CB 02 46                bit 0,(iy+$02)              ; Test bit 0 of TV_FLAG ($5C3C) - lower screen?
+0E7B 28 03                      jr z,`ClrRow3               ; Jump if upper screen
+0E7D 3A 48 5C                   ld a,(BORDCR)               ; A := BORDCR (border/paper for lower screen)
+0E80 77            `ClrRow3:    ld (hl),a                   ; Store attribute byte
+0E81 0B                         dec bc                      ; BC-- (adjust for LDIR)
+0E82 ED B0                      ldir                        ; Fill 32 attribute bytes
+0E84 C1                         pop bc                      ; Restore original row count
+0E85 0E 21                      ld c,$21                    ; C := 33 (standard return value)
+0E87 C9                         ret                         ; Return
+;
+; Calculate Attribute Address from Screen Address
+; Converts a display file address to the corresponding attribute file address.
+; Entry: H = display file high byte (e.g., $40-$57)
+; Exit: DE = attribute address ($5800-$5AFF), BC = 32 (bytes per row)
+;
+0E88 7C            CalcAttr:    ld a,h                      ; A := high byte of screen address
+0E89 0F                         rrca                        ; Rotate right 3 times
+0E8A 0F                         rrca                        ; to divide by 8
+0E8B 0F                         rrca                        ; (get character row)
+0E8C 3D                         dec a                       ; Adjust offset
+0E8D F6 50                      or $50                      ; Set high byte for attribute area ($58/$59/$5A)
+0E8F 67                         ld h,a                      ; H := attribute high byte
+0E90 EB                         ex de,hl                    ; DE := attribute address
+0E91 61                         ld h,c                      ; HL := BC (row count)
+0E92 68                         ld l,b                      ; 
+0E93 29                         add hl,hl                   ; HL := BC × 32 (multiply by 32)
+0E94 29                         add hl,hl                   ; (5 left shifts)
+0E95 29                         add hl,hl                   ; 
+0E96 29                         add hl,hl                   ; 
+0E97 29                         add hl,hl                   ; 
+0E98 44                         ld b,h                      ; BC := HL (32 bytes)
+0E99 4D                         ld c,l                      ; 
+0E9A C9                         ret                         ; Return
+;
+; Calculate Screen Address from Row Number
+; Converts a character row number (0-23) to the corresponding display file address.
+; Uses the Spectrum's interleaved screen format where each row is split into thirds.
+; Entry: B = row number (0-23, where 0 is bottom, 23 is top)
+; Exit: HL = screen address for start of that row
+;
+0E9B 3E 18         CalcScr:     ld a,$18                    ; A := 24 (total rows)
+0E9D 90                         sub b                       ; A := 24 - B (invert row number)
+0E9E 57                         ld d,a                      ; D := inverted row
+0E9F 0F                         rrca                        ; Rotate right 3 times
+0EA0 0F                         rrca                        ; to get row / 8 (which third)
+0EA1 0F                         rrca                        ; 
+0EA2 E6 E0                      and $E0                     ; Mask to get low byte offset (0, $20, $40...)
+0EA4 6F                         ld l,a                      ; L := low byte
+0EA5 7A                         ld a,d                      ; A := inverted row again
+0EA6 E6 18                      and $18                     ; Mask bits 3-4 (row within third × 8)
+0EA8 F6 40                      or $40                      ; Set base address $40xx (display file start)
+0EAA 67                         ld h,a                      ; H := high byte ($40-$57)
+0EAB C9                         ret                         ; Return
 0EAC 01 50 F6                   ld bc,$F650
 0EAF CF                         rst $08
 0EB0 92                         sub d
@@ -2717,7 +2803,7 @@
 10B8 FD CB 01 AE                res 5,(iy+$01)
 10BC F5                         push af
 10BD FD CB 02 6E                bit 5,(iy+$02)
-10C1 C4 6E 0D                   call nz,L0D6E
+10C1 C4 6E 0D                   call nz,CLS
 10C4 F1                         pop af
 10C5 FE 20                      cp $20
 10C7 30 52                      jr nc,L111B
@@ -2769,17 +2855,17 @@
 111A 72                         ld (hl),d
 111B 37            L111B:       scf
 111C C9                         ret
-111D CD 4D 0D                   call L0D4D
+111D CD 4D 0D                   call SetAttrs
 1120 FD CB 02 9E                res 3,(iy+$02)
 1124 FD CB 02 AE                res 5,(iy+$02)
-1128 2A 8A 5C                   ld hl,($5C8A)
+1128 2A 8A 5C                   ld hl,(SPOSNL)
 112B E5                         push hl
 112C 2A 3D 5C                   ld hl,($5C3D)
 112F E5                         push hl
 1130 21 67 11                   ld hl,$1167
 1133 E5                         push hl
 1134 ED 73 3D 5C                ld ($5C3D),sp
-1138 2A 82 5C                   ld hl,($5C82)
+1138 2A 82 5C                   ld hl,(ECHO_E)
 113B E5                         push hl
 113C 37                         scf
 113D CD 95 11                   call L1195
@@ -2787,10 +2873,10 @@
 1141 CD 7D 18                   call L187D
 1144 EB                         ex de,hl
 1145 CD E1 18                   call L18E1
-1148 2A 8A 5C                   ld hl,($5C8A)
+1148 2A 8A 5C                   ld hl,(SPOSNL)
 114B E3                         ex (sp),hl
 114C EB                         ex de,hl
-114D CD 4D 0D                   call L0D4D
+114D CD 4D 0D                   call SetAttrs
 1150 3A 8B 5C      L1150:       ld a,($5C8B)
 1153 92                         sub d
 1154 38 26                      jr c,L117C
@@ -2808,7 +2894,7 @@
 116C 21 90 1A                   ld hl,$1A90
 116F CD B5 03                   call L03B5
 1172 FD 36 00 FF                ld (iy),$FF
-1176 ED 5B 8A 5C                ld de,($5C8A)
+1176 ED 5B 8A 5C                ld de,(SPOSNL)
 117A 18 02                      jr L117E
 117C D1            L117C:       pop de
 117D E1                         pop hl
@@ -2818,7 +2904,7 @@
 1183 D5                         push de
 1184 CD D9 0D                   call L0DD9
 1187 E1                         pop hl
-1188 22 82 5C                   ld ($5C82),hl
+1188 22 82 5C                   ld (ECHO_E),hl
 118B FD 36 26 00                ld (iy+$26),$00
 118F C9                         ret
 1190 2A 61 5C      L1190:       ld hl,($5C61)
@@ -3583,28 +3669,25 @@
 15AA D0                         ret nc
 15AB C3 15 1F                   jp L1F15
 15AE FF                         rst $38
-15AF F4 09 A8                   call p,LA809
-15B2 10 4B                      djnz L15FF
-15B4 F4 09 C4                   call p,LC409
-15B7 15                         dec d
-15B8 53                         ld d,e
-15B9 81                         add a,c
-15BA 0F                         rrca
-15BB C4 15 52                   call nz,L5215
-15BE CD 0E C4                   call LC40E
-15C1 15                         dec d
-15C2 50                         ld d,b
-15C3 80                         add a,b
+;
+; --- Initial channel data (21 bytes) ---
+; Copied to RAM at $5CB6 during initialization
+;
+15AF                   ChInit:  .defb $F4, $09, $A8, $10    ; Channel data bytes 0-3
+15B3                            .defb $4B, $F4, $09, $C4    ; Channel data bytes 4-7
+15B7                            .defb $15, $53, $81, $0F    ; Channel data bytes 8-11
+15BB                            .defb $C4, $15, $52, $CD    ; Channel data bytes 12-15
+15BF                            .defb $0E, $C4, $15, $50    ; Channel data bytes 16-19
+15C3                            .defb $80                   ; Channel data byte 20 (end marker)
 15C4 CF                         rst $08
 15C5 12                         ld (de),a
-15C6 01 00 06                   ld bc,$0600
-15C9 00                         nop
-15CA 0B                         dec bc
-15CB 00                         nop
-15CC 01 00 01                   ld bc,$0100
-15CF 00                         nop
-15D0 06 00                      ld b,$00
-15D2 10 00                      djnz L15D4
+15C6                   StrmIn:  .defw $0001                ; Stream 0: offset to channel 'K'
+15C8                            .defw $0006                ; Stream 1: offset to channel 'K'
+15CA                            .defw $000B                ; Stream 2: offset to channel 'K'
+15CC                            .defw $0001                ; Stream 3: offset to channel 'K'
+15CE                            .defw $0001                ; Stream 4: offset to channel 'K'
+15D0                            .defw $0006                ; Stream 5: offset to channel 'S'
+15D2                            .defw $0010                ; Stream 6: offset to channel 'R'
 15D4 FD CB 02 6E   L15D4:       bit 5,(iy+$02)
 15D8 20 04                      jr nz,L15DE
 15DA FD CB 02 DE                set 3,(iy+$02)
@@ -3615,7 +3698,7 @@
 15E5 07                         rlca
 15E6 D9            L15E6:       exx
 15E7 E5                         push hl
-15E8 2A 51 5C                   ld hl,($5C51)
+15E8 2A 51 5C                   ld hl,(CURCHL)
 15EB 23                         inc hl
 15EC 23                         inc hl
 15ED 18 08                      jr L15F7
@@ -3623,7 +3706,7 @@
 15F1 83                         add a,e
 15F2 D9            L15F2:       exx
 15F3 E5                         push hl
-15F4 2A 51 5C                   ld hl,($5C51)
+15F4 2A 51 5C                   ld hl,(CURCHL)
 15F7 5E            L15F7:       ld e,(hl)
 15F8 23                         inc hl
 15F9 56                         ld d,(hl)
@@ -3647,7 +3730,7 @@
 1610 1B            L1610:       dec de
 1611 2A 4F 5C                   ld hl,($5C4F)
 1614 19                         add hl,de
-1615 22 51 5C      L1615:       ld ($5C51),hl
+1615 22 51 5C      L1615:       ld (CURCHL),hl
 1618 FD CB 30 A6                res 4,(iy+$30)
 161C 23                         inc hl
 161D 23                         inc hl
@@ -3673,7 +3756,7 @@
 1640 18 04                      jr L1646
 1642 FD CB 02 86                res 0,(iy+$02)
 1646 FD CB 01 8E   L1646:       res 1,(iy+$01)
-164A C3 4D 0D                   jp L0D4D
+164A C3 4D 0D                   jp SetAttrs
 164D FD CB 01 CE                set 1,(iy+$01)
 1651 C9                         ret
 1652 01 01 00      L1652:       ld bc,$0001
@@ -4053,12 +4136,12 @@
 18BF 7E                         ld a,(hl)
 18C0 C9                         ret
 18C1 D9            L18C1:       exx
-18C2 2A 8F 5C                   ld hl,($5C8F)
+18C2 2A 8F 5C                   ld hl,(ATTR_T)
 18C5 E5                         push hl
 18C6 CB BC                      res 7,h
 18C8 CB FD                      set 7,l
-18CA 22 8F 5C                   ld ($5C8F),hl
-18CD 21 91 5C                   ld hl,$5C91
+18CA 22 8F 5C                   ld (ATTR_T),hl
+18CD 21 91 5C                   ld hl,P_FLAG
 18D0 56                         ld d,(hl)
 18D1 D5                         push de
 18D2 36 00                      ld (hl),$00
@@ -4066,7 +4149,7 @@
 18D7 E1                         pop hl
 18D8 FD 74 57                   ld (iy+$57),h
 18DB E1                         pop hl
-18DC 22 8F 5C                   ld ($5C8F),hl
+18DC 22 8F 5C                   ld (ATTR_T),hl
 18DF D9                         exx
 18E0 C9                         ret
 18E1 2A 5B 5C      L18E1:       ld hl,($5C5B)
@@ -4737,15 +4820,15 @@
 1C94 18 F4                      jr L1C8A
 1C96 FD CB 01 7E                bit 7,(iy+$01)
 1C9A FD CB 02 86                res 0,(iy+$02)
-1C9E C4 4D 0D                   call nz,L0D4D
+1C9E C4 4D 0D                   call nz,SetAttrs
 1CA1 F1                         pop af
 1CA2 3A 74 5C                   ld a,($5C74)
 1CA5 D6 13                      sub $13
 1CA7 CD FC 21                   call L21FC
 1CAA CD EE 1B                   call L1BEE
-1CAD 2A 8F 5C                   ld hl,($5C8F)
-1CB0 22 8D 5C                   ld ($5C8D),hl
-1CB3 21 91 5C                   ld hl,$5C91
+1CAD 2A 8F 5C                   ld hl,(ATTR_T)
+1CB0 22 8D 5C                   ld (ATTR_P),hl
+1CB3 21 91 5C                   ld hl,P_FLAG
 1CB6 7E                         ld a,(hl)
 1CB7 07            L1CB7:       rlca
 1CB8 AE                         xor (hl)
@@ -4756,7 +4839,7 @@
 1CBE CD 30 25                   call L2530
 1CC1 28 13                      jr z,L1CD6
 1CC3 FD CB 02 86   L1CC3:       res 0,(iy+$02)
-1CC7 CD 4D 0D                   call L0D4D
+1CC7 CD 4D 0D                   call SetAttrs
 1CCA 21 90 5C                   ld hl,$5C90
 1CCD 7E                         ld a,(hl)
 1CCE F6 F8                      or $F8
@@ -5323,19 +5406,19 @@
 209B CD CD 32                   call L32CD
 209E C9                         ret
 209F FF                         rst $38
-20A0 ED 4B 88 5C                ld bc,($5C88)
+20A0 ED 4B 88 5C                ld bc,(S_POSN)
 20A4 3A 6B 5C                   ld a,($5C6B)
 20A7 B8                         cp b
 20A8 38 03                      jr c,L20AD
 20AA 0E 21                      ld c,$21
 20AC 47                         ld b,a
-20AD ED 43 88 5C   L20AD:       ld ($5C88),bc
+20AD ED 43 88 5C   L20AD:       ld (S_POSN),bc
 20B1 3E 19                      ld a,$19
 20B3 90                         sub b
 20B4 32 8C 5C                   ld ($5C8C),a
 20B7 FD CB 02 86                res 0,(iy+$02)
 20BB CD D9 0D                   call L0DD9
-20BE C3 6E 0D                   jp L0D6E
+20BE C3 6E 0D                   jp CLS
 20C1 DD 21 A5 34   L20C1:       ld ix,$34A5
 20C5 CA A1 17                   jp z,L17A1
 20C8 CB 76                      bit 6,(hl)
@@ -5510,7 +5593,7 @@
 21D1 C3 87 29                   jp L2987
 21D4 FF                         rst $38
 21D5 FF                         rst $38
-21D6 2A 51 5C                   ld hl,($5C51)
+21D6 2A 51 5C                   ld hl,(CURCHL)
 21D9 23                         inc hl
 21DA 23                         inc hl
 21DB 23                         inc hl
@@ -5567,7 +5650,7 @@
 222A FE 02                      cp $02
 222C 30 16                      jr nc,L2244
 222E 79                         ld a,c
-222F 21 91 5C                   ld hl,$5C91
+222F 21 91 5C                   ld hl,P_FLAG
 2232 18 38                      jr L226C
 2234 7A            L2234:       ld a,d
 2235 06 07                      ld b,$07
@@ -5582,7 +5665,7 @@
 2242 38 02                      jr c,L2246
 2244 CF            L2244:       rst $08
 2245 13                         inc de
-2246 21 8F 5C      L2246:       ld hl,$5C8F
+2246 21 8F 5C      L2246:       ld hl,ATTR_T
 2249 FE 08                      cp $08
 224B 38 0B                      jr c,L2258
 224D 7E                         ld a,(hl)
@@ -5627,7 +5710,7 @@
 2283 FE 02                      cp $02
 2285 30 BD                      jr nc,L2244
 2287 79            L2287:       ld a,c
-2288 21 8F 5C                   ld hl,$5C8F
+2288 21 8F 5C                   ld hl,ATTR_T
 228B CD 6C 22                   call L226C
 228E 79                         ld a,c
 228F 0F                         rrca
@@ -5644,7 +5727,7 @@
 22A0 CB 6F                      bit 5,a
 22A2 20 02                      jr nz,L22A6
 22A4 EE 07                      xor $07
-22A6 32 48 5C      L22A6:       ld ($5C48),a
+22A6 32 48 5C      L22A6:       ld (BORDCR),a
 22A9 C9                         ret
 22AA 3E AF         L22AA:       ld a,$AF
 22AC 90                         sub b
@@ -5684,8 +5767,8 @@
 22D9 C3 28 2D                   jp L2D28
 22DC CD 07 23      L22DC:       call L2307
 22DF CD E5 22                   call L22E5
-22E2 C3 4D 0D                   jp L0D4D
-22E5 ED 43 7D 5C   L22E5:       ld ($5C7D),bc
+22E2 C3 4D 0D                   jp SetAttrs
+22E5 ED 43 7D 5C   L22E5:       ld (COORDS),bc
 22E9 CD AA 22                   call L22AA
 22EC 47                         ld b,a
 22ED 04                         inc b
@@ -5775,7 +5858,7 @@
 2376 CD 94 1E                   call L1E94
 2379 E1                         pop hl
 237A 67                         ld h,a
-237B 22 7D 5C                   ld ($5C7D),hl
+237B 22 7D 5C                   ld (COORDS),hl
 237E C1                         pop bc
 237F C3 20 24                   jp L2420
 2382 DF            L2382:       rst $18
@@ -5929,7 +6012,7 @@
 2476 38 CD                      jr c,L2445
 2478 B7                         or a
 2479 24                         inc h
-247A C3 4D 0D                   jp L0D4D
+247A C3 4D 0D                   jp SetAttrs
 247D EF            L247D:       rst $28
 247E 31 28 34                   ld sp,$3428
 2481 32 00 01                   ld ($0100),a
@@ -5996,7 +6079,7 @@
 24DC D5                         push de
 24DD D9                         exx
 24DE C1                         pop bc
-24DF 2A 7D 5C      L24DF:       ld hl,($5C7D)
+24DF 2A 7D 5C      L24DF:       ld hl,(COORDS)
 24E2 78                         ld a,b
 24E3 84                         add a,h
 24E4 47                         ld b,a
@@ -8856,7 +8939,7 @@
 3627 22 5B 5C                   ld ($5C5B),hl
 362A E3                         ex (sp),hl
 362B E5                         push hl
-362C 2A 51 5C                   ld hl,($5C51)
+362C 2A 51 5C                   ld hl,(CURCHL)
 362F E3                         ex (sp),hl
 3630 3E FF                      ld a,$FF
 3632 CD E2 34                   call L34E2
@@ -8872,7 +8955,7 @@
 3645 CD 94 1E                   call L1E94
 3648 FE 10                      cp $10
 364A D2 9F 1E                   jp nc,L1E9F
-364D 2A 51 5C                   ld hl,($5C51)
+364D 2A 51 5C                   ld hl,(CURCHL)
 3650 E5                         push hl
 3651 CD 01 16                   call L1601
 3654 CD E6 15                   call L15E6
@@ -9328,7 +9411,7 @@
 3900 FF                         rst $38
 3901 FF                         rst $38
 3902 C5                         push bc
-3903 2A 51 5C                   ld hl,($5C51)
+3903 2A 51 5C                   ld hl,(CURCHL)
 3906 E5                         push hl
 3907 C5                         push bc
 3908 CD 94 1E                   call L1E94
