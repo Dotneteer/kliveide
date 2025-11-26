@@ -7,7 +7,7 @@
 ; RST $00: Infinite loop
 ;
 0000 00            StartLoop:   nop
-0001 18 FD                      jr StartLop
+0001 18 FD                      jr StartLoop
 
 ; Filler bytes (unused)
 ;
@@ -4912,7 +4912,7 @@
 1E5B ED 42                      sbc hl,bc                  ; HL = HL - BC (compare versions)
 1E5D 21 8D 20                   ld hl,$208D                ; HL = "Core 3.01.10 needed" message
 1E60 38 4E                      jr c,L1EB0                 ; If core < 3.01.10, show error and halt
-1E62 21 B9 1E      L1E62:       ld hl,$1EB9                ; HL = $1EB9 (code to copy to RAM)
+1E62 21 B9 1E      L1E62:       ld hl,$1EB9                ; HL = $1EB9 (ROM signature checker code to copy to RAM)
 1E65 11 27 ED                   ld de,$ED27                ; DE = $ED27 (destination in upper RAM)
 1E68 01 14 00                   ld bc,$0014                ; BC = $0014 (20 bytes)
 1E6B ED B0                      ldir                       ; Copy 20 bytes of code to RAM
@@ -4955,15 +4955,20 @@
 1EB3 3E 02                      ld a,$02                   ; A = $02 (red)
 1EB5 D3 FE                      out ($FE),a                ; Set border to red
 1EB7 18 FE         L1EB7:       jr L1EB7                   ; Halt: infinite loop
-1EB9 3E 80                      ld a,$80
-1EBB D3 E3                      out ($E3),a
-1EBD 2A 04 00                   ld hl,($0004)
-1EC0 ED 5B 06 00                ld de,($0006)
-1EC4 AF                         xor a
-1EC5 D3 E3                      out ($E3),a
-1EC7 01 44 56                   ld bc,$5644
-1ECA ED 42                      sbc hl,bc
-1ECC C9                         ret
+;
+; Code Block Copied to RAM at $ED27 (20 bytes)
+; This code checks ROM signature by reading from flash memory at $0004-$0007.
+; Returns Z flag set if signature matches $5644 (expected ROM signature).
+;
+1EB9 3E 80                      .defb $3E,$80              ; ld a,$80
+1EBB D3 E3                      .defb $D3,$E3              ; out ($E3),a - Enable flash read mode
+1EBD 2A 04 00                   .defb $2A,$04,$00          ; ld hl,($0004) - Read signature word 1
+1EC0 ED 5B 06 00                .defb $ED,$5B,$06,$00      ; ld de,($0006) - Read signature word 2
+1EC4 AF                         .defb $AF                  ; xor a - A = $00
+1EC5 D3 E3                      .defb $D3,$E3              ; out ($E3),a - Disable flash read mode
+1EC7 01 44 56                   .defb $01,$44,$56          ; ld bc,$5644 - Expected signature
+1ECA ED 42                      .defb $ED,$42              ; sbc hl,bc - Compare HL with BC
+1ECC C9                         .defb $C9                  ; ret - Return (Z if match)
 1ECD D5            L1ECD:       push de
 1ECE 11 90 E0                   ld de,$E090
 1ED1 01 00 02                   ld bc,$0200
@@ -5269,81 +5274,35 @@
 2087 20 20                      jr nz,L20A9
 2089 20 20                      jr nz,L20AB
 208B 20 20                      jr nz,L20AD
-208D 43                         ld b,e
-208E 6F                         ld l,a
-208F 72                         ld (hl),d
-2090 65                         ld h,l
-2091 20 33                      jr nz,L20C6
-2093 2E 30                      ld l,$30
-2095 31 2E 31                   ld sp,$312E
-2098 30 20                      jr nc,L20BA
-209A 6E                         ld l,(hl)
-209B 65                         ld h,l
-209C 65                         ld h,l
-209D 64                         ld h,h
-209E 65                         ld h,l
-209F 64                         ld h,h
-20A0 FF                         rst $38
-20A1 20 69                      jr nz,L210C
-20A3 6E                         ld l,(hl)
-20A4 76                         halt
-20A5 61                         ld h,c
-20A6 6C                         ld l,h
-20A7 69                         ld l,c
-20A8 64                         ld h,h
-20A9 FF            L20A9:       rst $38
-20AA 45                         ld b,l
-20AB 72            L20AB:       ld (hl),d
-20AC 72                         ld (hl),d
-20AD 6F            L20AD:       ld l,a
-20AE 72                         ld (hl),d
-20AF 20 72                      jr nz,L2123
-20B1 65                         ld h,l
-20B2 61                         ld h,c
-20B3 64                         ld h,h
-20B4 69                         ld l,c
-20B5 6E                         ld l,(hl)
-20B6 67                         ld h,a
-20B7 20 66                      jr nz,L211F
-20B9 69                         ld l,c
-20BA 6C            L20BA:       ld l,h
-20BB 65                         ld h,l
-20BC 3A 0D FF                   ld a,($FF0D)
-20BF 56                         ld d,(hl)
-20C0 65                         ld h,l
-20C1 72                         ld (hl),d
-20C2 73                         ld (hl),e
-20C3 69                         ld l,c
-20C4 6F                         ld l,a
-20C5 6E                         ld l,(hl)
-20C6 20 6D         L20C6:       jr nz,L2135
-20C8 69                         ld l,c
-20C9 73                         ld (hl),e
-20CA 6D                         ld l,l
-20CB 61                         ld h,c
-20CC 74                         ld (hl),h
-20CD 63                         ld h,e
-20CE 68                         ld l,b
-20CF 3A 0D 30                   ld a,($300D)
-20D2 32 30 38                   ld ($3830),a
-20D5 20 65                      jr nz,L213C
-20D7 6E                         ld l,(hl)
-20D8 4E                         ld c,(hl)
-20D9 65                         ld h,l
-20DA 78                         ld a,b
-20DB 74                         ld (hl),h
-20DC 5A                         ld e,d
-20DD 58                         ld e,b
-20DE 2E 72                      ld l,$72
-20E0 6F                         ld l,a
-20E1 6D                         ld l,l
-20E2 0D                         dec c
-20E3 FF                         rst $38
+208D 43 6F 72 65 20 33 2E 30   .defm "Core 3.01.10 needed"
+2095 31 2E 31 30 20 6E 65 65
+209D 64 65 64
+20A0 FF                         .defb $FF                  ; String terminator
+;
+20A1 20 69 6E 76 61 6C 69 64   .defm " invalid"
+20A9 FF            L20A9:       .defb $FF                  ; String terminator
+;
+20AA 45 72 72 6F 72 20 72 65   .defm "Error reading file:"
+20B2 61 64 69 6E 67 20 66 69
+20BA 6C 65 3A
+20BD 0D                         .defb $0D                  ; Carriage return
+20BE FF                         .defb $FF                  ; String terminator
+;
+20BF 56 65 72 73 69 6F 6E 20   .defm "Version mismatch:"
+20C7 6D 69 73 6D 61 74 63 68
+20CF 3A
+20D0 0D                         .defb $0D                  ; Carriage return
+20D1 FF                         .defb $FF                  ; String terminator
+;
+20D2 65 6E 4E 65 78 74 5A 58   .defm "enNextZX.rom"
+20DA 2E 72 6F 6D
+20DE 0D                         .defb $0D                  ; Carriage return
+20DF FF                         .defb $FF                  ; String terminator
 
 ;
 ; DOS_REF_XDPB: Point at XDPB for low level disk access
 ;
-20E4 E6 DF         DosRefXdpb:  and $DF
+20E0 E6 DF         DosRefXdpb:  and $DF
 20E6 D6 41                      sub $41
 20E8 3F                         ccf
 20E9 30 0F                      jr nc,L20FA

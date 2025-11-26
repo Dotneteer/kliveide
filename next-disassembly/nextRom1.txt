@@ -6563,74 +6563,79 @@
 2BC3 20 05                      jr nz,L2BCA
 2BC5 CD 53 13                   call L1353
 2BC8 3E 02                      ld a,$02
-2BCA F5            L2BCA:       push af
-2BCB C7                         rst $00
-2BCC EB                         ex de,hl
-2BCD 1A                         ld a,(de)
-2BCE F1                         pop af
-2BCF CD E5 26                   call L26E5
-2BD2 6B                         ld l,e
-2BD3 30 F5                      jr nc,L2BCA
-2BD5 FE 02                      cp $02
-2BD7 30 05                      jr nc,L2BDE
-2BD9 CD CB 26                   call L26CB
-2BDC FA 29 F1                   jp m,LF129
-2BDF FE 03                      cp $03
-2BE1 37                         scf
-2BE2 C8                         ret z
-2BE3 FE 02                      cp $02
-2BE5 30 2A                      jr nc,L2C11
-2BE7 CD 80 3E                   call CallRom2
-2BEA DD 0E F7                   ld c,$F7
-2BED ED 91 07 00                nextreg $07,$00
-2BF1 21 34 20                   ld hl,$2034
-2BF4 C7                         rst $00
-2BF5 82                         add a,d
-2BF6 0F                         rrca
-2BF7 21 50 20                   ld hl,$2050
-2BFA C7                         rst $00
-2BFB 82                         add a,d
-2BFC 0F                         rrca
-2BFD DF                         rst $18
-2BFE CD 80 3E                   call CallRom2
-2C01 03                         inc bc
-2C02 10 EF                      djnz L2BF3
-2C04 6B                         ld l,e
-2C05 0D                         dec c
-2C06 CD CB 26                   call L26CB
-2C09 1B                         dec de
-2C0A 2A 21 A4                   ld hl,($A421)
-2C0D 2A CD F5                   ld hl,($F5CD)
-2C10 36 21                      ld (hl),$21
-2C12 EA 29 CD                   jp pe,LCD29
-2C15 F5                         push af
-2C16 36 01                      ld (hl),$01
-2C18 41                         ld b,c
-2C19 10 79                      djnz L2C94
-2C1B D6 41                      sub $41
-2C1D C7                         rst $00
-2C1E C4 03 38                   call nz,L3803
-2C21 1E 3E                      ld e,$3E
-2C23 14                         inc d
-2C24 CD 08 37                   call L3708
-2C27 3A 79 5B                   ld a,($5B79)
-2C2A B9                         cp c
-2C2B 3E 00                      ld a,$00
-2C2D 20 01                      jr nz,L2C30
-2C2F 3C                         inc a
-2C30 CD 08 37      L2C30:       call L3708
-2C33 79                         ld a,c
-2C34 CD 08 37                   call L3708
-2C37 3E 14                      ld a,$14
-2C39 CD 08 37                   call L3708
-2C3C AF                         xor a
-2C3D CD 08 37                   call L3708
-2C40 0C                         inc c
-2C41 10 D7                      djnz L2C1A
-2C43 3E 0D                      ld a,$0D
-2C45 CD 08 37                   call L3708
-2C48 37                         scf
-2C49 C9                         ret
+;
+; Initialize Display and Banking
+; Called from ROM0 at $034C during boot initialization.
+; Sets up display mode, clears screen areas, and configures memory banking.
+; Entry: None
+; Exit: Display initialized, banking configured
+;
+2BCA F5            L2BCA:       push af                    ; Save AF
+2BCB C7                         rst $00                    ; Call ROM routine at $0000
+2BCC EB                         ex de,hl                   ; Swap DE and HL
+2BCD 1A                         ld a,(de)                  ; A = (DE)
+2BCE F1                         pop af                     ; Restore AF
+2BCF CD E5 26                   call L26E5                 ; Store A to $5B56
+2BD2 6B                         ld l,e                     ; L = E
+2BD3 30 F5                      jr nc,L2BCA                ; If no carry, loop back
+2BD5 FE 02                      cp $02                     ; Compare A with $02
+2BD7 30 05                      jr nc,L2BDE                ; If A >= 2, skip ahead
+2BD9 CD CB 26                   call L26CB                 ; Call banking/MMU routine
+2BDC FA 29 F1                   jp m,LF129                 ; If negative, jump to error handler
+2BDF FE 03         L2BDE:       cp $03                     ; Compare A with $03
+2BE1 37                         scf                        ; Set carry flag
+2BE2 C8                         ret z                      ; If A = $03, return with carry
+2BE3 FE 02                      cp $02                     ; Compare A with $02
+2BE5 30 2A                      jr nc,L2C11                ; If A >= $02, jump to L2C11
+2BE7 CD 80 3E                   call CallRom2              ; Call ROM2 routine
+2BEA DD 0E                      .defw $0EDD                ; ROM2: routine at $0EDD
+2BEC F7                         rst $30                    ; Error handling
+2BED ED 91 07 00                nextreg $07,$00            ; Set nextreg $07 = $00 (CPU speed: 3.5MHz)
+2BF1 21 34 20                   ld hl,$2034                ; HL = $2034 (data table address)
+2BF4 C7                         rst $00                    ; Call ROM routine
+2BF5 82 0F                      .defw $0F82                ; ROM0: routine at $0F82
+2BF7 21 50 20                   ld hl,$2050                ; HL = $2050 (data table address)
+2BFA C7                         rst $00                    ; Call ROM routine
+2BFB 82 0F                      .defw $0F82                ; ROM0: routine at $0F82
+2BFD DF                         rst $18                    ; Call ROM1 routine
+2BFE CD 80 3E                   call CallRom2              ; Call ROM2 routine
+2C01 03 10                      .defw $1003                ; ROM2: routine at $1003
+2C03 EF                         rst $28                    ; Call ROM3 routine
+2C04 6B 0D                      .defw $0D6B                ; ROM3: CLS48 (clear screen)
+2C06 CD CB 26                   call L26CB                 ; Call banking/MMU routine
+2C09 1B                         dec de                     ; DE = DE - 1
+2C0A 2A 21 A4                   ld hl,($A421)              ; HL = ($A421)
+2C0D 2A CD F5                   ld hl,($F5CD)              ; HL = ($F5CD)
+2C10 36 21                      ld (hl),$21                ; (HL) = $21
+2C11 C7            L2C11:       rst $00                    ; Call ROM routine
+2C12 EA 29                      .defw $29EA                ; ROM0: routine at $29EA
+2C14 CD F5 36                   call L36F5                 ; Call screen setup routine
+2C17 01 41 10                   ld bc,$1041                ; BC = $1041 (B=16 iterations, C=$41)
+2C1A 79            L2C1A:       ld a,c                     ; A = C (counter value)
+2C1B D6 41                      sub $41                    ; A = A - $41 (normalize to 0-15)
+2C1D C7                         rst $00                    ; Call ROM routine
+2C1E C4 03                      .defw $03C4                ; ROM0: routine at $03C4
+2C20 38 1E                      jr c,L2C40                 ; If carry, skip ahead
+2C22 3E 14                      ld a,$14                   ; A = $14 (20)
+2C24 CD 08 37                   call L3708                 ; Print/output character
+2C27 3A 79 5B                   ld a,($5B79)               ; A = ($5B79) - current stream
+2C2A B9                         cp c                       ; Compare with C
+2C2B 3E 00                      ld a,$00                   ; A = $00
+2C2D 20 01                      jr nz,L2C30                ; If not equal, skip inc
+2C2F 3C                         inc a                      ; A = A + 1
+2C30 CD 08 37      L2C30:       call L3708                 ; Print/output character
+2C33 79                         ld a,c                     ; A = C
+2C34 CD 08 37                   call L3708                 ; Print/output character
+2C37 3E 14                      ld a,$14                   ; A = $14
+2C39 CD 08 37                   call L3708                 ; Print/output character
+2C3C AF                         xor a                      ; A = $00
+2C3D CD 08 37                   call L3708                 ; Print/output character
+2C40 0C            L2C40:       inc c                      ; C = C + 1
+2C41 10 D7                      djnz L2C1A                 ; Loop B times (16 iterations)
+2C43 3E 0D                      ld a,$0D                   ; A = $0D (carriage return)
+2C45 CD 08 37                   call L3708                 ; Print/output character
+2C48 37                         scf                        ; Set carry flag
+2C49 C9                         ret                        ; Return
 2C4A 52                         ld d,d
 2C4B 65                         ld h,l
 2C4C 6D                         ld l,l

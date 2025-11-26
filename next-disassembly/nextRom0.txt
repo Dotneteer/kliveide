@@ -621,14 +621,14 @@
 032B 43 1E                      .defw $1E43                ; ROM2: Check core version and initialize
 032D 21 A5 10                   ld hl,$10A5                ; HL = $10A5 (source: data table 1)
 0330 11 33 D6                   ld de,$D633
-0333 01 00 37                   ld bc,$3700                ; BC = $3700 (parameter for L0FD5)
-0336 CD D5 0F                   call L0FD5                 ; Copy 32 bytes and initialize
+0333 01 00 37                   ld bc,$3700                ; BC = $3700 (parameter for SavePal)
+0336 CD D5 0F                   call SavePal               ; Copy 32 bytes and initialize
 0339 21 C5 10                   ld hl,$10C5                ; HL = $10C5 (source: data table 2)
 033C 11 DA D6                   ld de,$D6DA                ; DE = $D6DA (destination in upper RAM)
-033F 01 60 37                   ld bc,$3760                ; BC = $3760 (parameter for L0FD5)
-0342 CD D5 0F      L0342:       call L0FD5                 ; Copy 32 bytes and initialize
-0345 CD 03 10                   call L1003                 ; Save display state to upper RAM
-0348 CD 82 0F                   call L0F82                 ; Initialize system flags
+033F 01 60 37                   ld bc,$3760                ; BC = $3760 (parameter for SavePal)
+0342 CD D5 0F      L0342:       call SavePal               ; Copy 32 bytes and initialize
+0345 CD 03 10                   call SvDispState           ; Save display state to upper RAM
+0348 CD 82 0F                   call InSysFlags            ; Initialize system flags
 034B F1                         pop af                     ; Restore AF (from PUSH AF at $0302)
 034C DF                         rst $18                    ; Call ROM1 routine
 034D CA 2B                      .defw $2BCA                ; ROM1: routine at $2BCA
@@ -2542,7 +2542,7 @@
 0E7B 3A 3A 5C                   ld a,($5C3A)
 0E7E FE FF                      cp $FF
 0E80 DC E0 11      L0E80:       call c,L11E0
-0E83 CD 03 10                   call L1003
+0E83 CD 03 10                   call SvDispState
 0E86 F1                         pop af
 0E87 CA 1F 2C                   jp z,L2C1F
 0E8A D2 B8 11                   jp nc,L11B8
@@ -2709,41 +2709,52 @@
 0F80 1C                         inc e                      ; E = E + 1 (next pattern index)
 0F81 C9                         ret                        ; Return
 ;
+; Initialize System Flags
+; Sets up system flags during initialization.
+; Clears channel flags and sets FLAGS bits for keyboard/printer mode.
+; Entry: None
+; Exit: System flags configured
 ;
+0F82 AF            InSysFlags:  xor a                      ; A = $00
+0F83 32 41 5C                   ld ($5C41),a               ; CDFLAG = $00 (clear channel/display flags)
+0F86 FD 36 D0 02                ld (iy-$30),$02            ; Set ($5C0A) = $02 (STRMS+26 offset)
+0F8A 21 3B 5C                   ld hl,$5C3B                ; HL = $5C3B (FLAGS system variable)
+0F8D 7E                         ld a,(hl)                  ; A = current FLAGS value
+0F8E F6 0C                      or $0C                     ; Set bits 2-3 (keyboard mode, K channel)
+0F90 77                         ld (hl),a                  ; Store back to FLAGS
+0F91 C9                         ret                        ; Return
 ;
-0F82 AF            L0F82:       xor a
-0F83 32 41 5C                   ld ($5C41),a
-0F86 FD 36 D0 02                ld (iy-$30),$02
-0F8A 21 3B 5C                   ld hl,$5C3B
-0F8D 7E                         ld a,(hl)
-0F8E F6 0C                      or $0C
-0F90 77                         ld (hl),a
-0F91 C9                         ret
-0F92 AF            L0F92:       xor a
-0F93 16 20                      ld d,$20
-0F95 01 3B 24                   ld bc,$243B
-0F98 ED 92 43                   nextreg $43,a
-0F9B 1E 00                      ld e,$00
-0F9D 7B            L0F9D:       ld a,e
-0F9E ED 92 40                   nextreg $40,a
-0FA1 3E 41                      ld a,$41
-0FA3 ED 79                      out (c),a
-0FA5 04                         inc b
-0FA6 ED 78                      in a,(c)
-0FA8 05                         dec b
-0FA9 77                         ld (hl),a
-0FAA 23                         inc hl
-0FAB 3E 44                      ld a,$44
-0FAD ED 79                      out (c),a
-0FAF 04                         inc b
-0FB0 ED 78                      in a,(c)
-0FB2 05                         dec b
-0FB3 77                         ld (hl),a
-0FB4 23                         inc hl
-0FB5 1C                         inc e
-0FB6 15                         dec d
-0FB7 20 E4                      jr nz,L0F9D
-0FB9 C9                         ret
+; Read Palette Data to Memory
+; Reads all 32 palette entries (64 bytes) from hardware palette to memory at HL.
+; Each palette entry is 2 bytes (9-bit color: RRRGGGBBB).
+; Entry: HL = destination address for palette data
+; Exit: HL = HL + 64, palette data saved
+;
+0F92 AF            L0F92:       xor a                      ; A = $00
+0F93 16 20                      ld d,$20                   ; D = $20 (32 palette entries)
+0F95 01 3B 24                   ld bc,$243B                ; BC = $243B (Nextreg select port)
+0F98 ED 92 43                   nextreg $43,a              ; Nextreg $43 = $00 (palette control: standard palette)
+0F9B 1E 00                      ld e,$00                   ; E = $00 (palette index)
+0F9D 7B            L0F9D:       ld a,e                     ; A = E (current palette index)
+0F9E ED 92 40                   nextreg $40,a              ; Nextreg $40 = palette index
+0FA1 3E 41                      ld a,$41                   ; A = $41 (palette value register)
+0FA3 ED 79                      out (c),a                  ; Select nextreg $41
+0FA5 04                         inc b                      ; BC = $253B (Nextreg data port)
+0FA6 ED 78                      in a,(c)                   ; A = read first byte of palette entry
+0FA8 05                         dec b                      ; BC = $243B (Nextreg select port)
+0FA9 77                         ld (hl),a                  ; Save first byte to (HL)
+0FAA 23                         inc hl                     ; HL = HL + 1
+0FAB 3E 44                      ld a,$44                   ; A = $44 (enhanced palette register)
+0FAD ED 79                      out (c),a                  ; Select nextreg $44
+0FAF 04                         inc b                      ; BC = $253B (Nextreg data port)
+0FB0 ED 78                      in a,(c)                   ; A = read second byte of palette entry
+0FB2 05                         dec b                      ; BC = $243B (Nextreg select port)
+0FB3 77                         ld (hl),a                  ; Save second byte to (HL)
+0FB4 23                         inc hl                     ; HL = HL + 1
+0FB5 1C                         inc e                      ; E = E + 1 (next palette index)
+0FB6 15                         dec d                      ; D = D - 1 (decrement counter)
+0FB7 20 E4                      jr nz,L0F9D                ; Loop for all 32 entries
+0FB9 C9                         ret                        ; Return
 0FBA AF            L0FBA:       xor a
 0FBB 16 20                      ld d,$20
 0FBD 1E 00                      ld e,$00
@@ -2760,92 +2771,111 @@
 0FD1 15                         dec d
 0FD2 20 EE                      jr nz,L0FC2
 0FD4 C9                         ret
-0FD5 C5            L0FD5:       push bc
-0FD6 01 20 00                   ld bc,$0020
-0FD9 D5                         push de
-0FDA ED B0                      ldir
-0FDC EB                         ex de,hl
-0FDD CD 92 0F                   call L0F92
-0FE0 E1                         pop hl
-0FE1 D1                         pop de
-0FE2 18 17                      jr L0FFB
-0FE4 11 00 37      L0FE4:       ld de,$3700
-0FE7 3D                         dec a
-0FE8 28 10                      jr z,L0FFA
-0FEA 3D                         dec a
-0FEB 28 0E                      jr z,L0FFB
-0FED 3D                         dec a
-0FEE 28 24                      jr z,L1014
-0FF0 3D                         dec a
-0FF1 CA 78 10                   jp z,L1078
-0FF4 11 60 37                   ld de,$3760
-0FF7 3D                         dec a
-0FF8 20 01                      jr nz,L0FFB
-0FFA EB            L0FFA:       ex de,hl
-0FFB 01 60 00      L0FFB:       ld bc,$0060
-0FFE E7                         rst $20
-0FFF 68                         ld l,b
-1000 00                         nop
-1001 37                         scf
-1002 C9                         ret
-1003 3A B8 D5      L1003:       ld a,($D5B8)
-1006 FE 04                      cp $04
-1008 C8                         ret z
-1009 CD E8 0E                   call L0EE8
-100C 21 94 D6                   ld hl,$D694
-100F 11 60 37                   ld de,$3760
-1012 18 06                      jr L101A
-1014 21 ED D5      L1014:       ld hl,$D5ED
-1017 11 00 37                   ld de,$3700
-101A D5            L101A:       push de
-101B 3E 43                      ld a,$43
-101D CD DE 12                   call GetNxRegA
-1020 77                         ld (hl),a
-1021 23                         inc hl
-1022 3E 15                      ld a,$15
-1024 CD DE 12                   call GetNxRegA
-1027 77                         ld (hl),a
-1028 23                         inc hl
-1029 3E 14                      ld a,$14
-102B CD DE 12                   call GetNxRegA
-102E 77                         ld (hl),a
-102F 23                         inc hl
-1030 3A 8D 5C                   ld a,(ATTR_P)
-1033 77                         ld (hl),a
-1034 23                         inc hl
-1035 3A 62 5B                   ld a,($5B62)
-1038 77                         ld (hl),a
-1039 23                         inc hl
-103A 3A 48 5C                   ld a,(BORDCR)
-103D 77                         ld (hl),a
-103E 23                         inc hl
-103F CD 92 0F                   call L0F92
-1042 D1                         pop de
-1043 E5                         push hl
-1044 CD FA 0F                   call L0FFA
-1047 E1                         pop hl
-1048 E5                         push hl
-1049 ED 34 20 00                add hl,$0020
-104D CD BA 0F                   call L0FBA
-1050 E1                         pop hl
-1051 7E                         ld a,(hl)
-1052 32 8D 5C                   ld (ATTR_P),a
-1055 32 48 5C                   ld (BORDCR),a
-1058 F5                         push af
-1059 1F                         rra
+;
+; Copy Data and Save Palette
+; Copies 32 bytes from HL to DE, then saves current palette to (HL).
+; Called during initialization to set up data structures and preserve palette state.
+; Entry: HL = source address, DE = destination address, BC = parameter (high byte used)
+; Exit: Palette data saved at original HL location
+;
+0FD5 C5            SavePal:     push bc                    ; Save BC (parameter)
+0FD6 01 20 00                   ld bc,$0020                ; BC = $0020 (32 bytes)
+0FD9 D5                         push de                    ; Save DE (destination)
+0FDA ED B0                      ldir                       ; Copy 32 bytes from HL to DE
+0FDC EB                         ex de,hl                   ; HL = end of destination
+0FDD CD 92 0F                   call L0F92                 ; Save palette data to HL
+0FE0 E1                         pop hl                     ; HL = original DE (start of copied data)
+0FE1 D1                         pop de                     ; DE = original BC parameter
+0FE2 18 17                      jr L0FFB                   ; Jump to continue
+;
+; Palette Restoration Dispatcher
+; Selects destination address based on A value and calls ROM2 palette routine.
+; Entry: A = mode selector (1-5)
+; Exit: Palette restored to hardware, carry set
+;
+0FE4 11 00 37      L0FE4:       ld de,$3700                ; DE = $3700 (default destination)
+0FE7 3D                         dec a                      ; A = A - 1
+0FE8 28 10                      jr z,L0FFA                 ; If A was 1, exchange DE/HL
+0FEA 3D                         dec a                      ; A = A - 1
+0FEB 28 0E                      jr z,L0FFB                 ; If A was 2, use $3700
+0FED 3D                         dec a                      ; A = A - 1
+0FEE 28 24                      jr z,L1014                 ; If A was 3, jump to L1014
+0FF0 3D                         dec a                      ; A = A - 1
+0FF1 CA 78 10                   jp z,L1078                 ; If A was 4, jump to L1078
+0FF4 11 60 37                   ld de,$3760                ; DE = $3760 (alternate destination)
+0FF7 3D                         dec a                      ; A = A - 1
+0FF8 20 01                      jr nz,L0FFB                ; If A was not 5, continue
+0FFA EB            L0FFA:       ex de,hl                   ; Swap HL and DE
+0FFB 01 60 00      L0FFB:       ld bc,$0060                ; BC = $0060 (96 bytes)
+0FFE E7                         rst $20                    ; Call ROM2 routine
+0FFF 68 00                      .defw $0068                ; ROM2: Restore palette (96 bytes at $3700/$3760)
+1001 37                         scf                        ; Set carry flag
+1002 C9                         ret                        ; Return
+;
+; Save Display State and Palette
+; Saves current display hardware state (nextreg values, attributes, border, palette)
+; to RAM buffer. Called during initialization to preserve display configuration.
+; Entry: None
+; Exit: Display state saved to $D694 or $D5ED, palette saved, carry set
+;
+1003 3A B8 D5      SvDispState: ld a,($D5B8)               ; A = display mode indicator
+1006 FE 04                      cp $04                     ; Compare with $04
+1008 C8                         ret z                      ; If mode 4, return (no save needed)
+1009 CD E8 0E                   call L0EE8                 ; Save and restore display settings
+100C 21 94 D6                   ld hl,$D694                ; HL = $D694 (default buffer address)
+100F 11 60 37                   ld de,$3760                ; DE = $3760 (palette destination)
+1012 18 06                      jr L101A                   ; Jump to save routine
+1014 21 ED D5      L1014:       ld hl,$D5ED                ; HL = $D5ED (alternate buffer address)
+1017 11 00 37                   ld de,$3700                ; DE = $3700 (alternate palette destination)
+101A D5            L101A:       push de                    ; Save DE (palette destination)
+101B 3E 43                      ld a,$43                   ; A = $43 (palette control nextreg)
+101D CD DE 12                   call GetNxRegA             ; Read nextreg $43
+1020 77                         ld (hl),a                  ; Save to buffer
+1021 23                         inc hl                     ; HL = HL + 1
+1022 3E 15                      ld a,$15                   ; A = $15 (sprite/layer control)
+1024 CD DE 12                   call GetNxRegA             ; Read nextreg $15
+1027 77                         ld (hl),a                  ; Save to buffer
+1028 23                         inc hl                     ; HL = HL + 1
+1029 3E 14                      ld a,$14                   ; A = $14 (transparency control)
+102B CD DE 12                   call GetNxRegA             ; Read nextreg $14
+102E 77                         ld (hl),a                  ; Save to buffer
+102F 23                         inc hl                     ; HL = HL + 1
+1030 3A 8D 5C                   ld a,(ATTR_P)              ; A = permanent attributes
+1033 77                         ld (hl),a                  ; Save to buffer
+1034 23                         inc hl                     ; HL = HL + 1
+1035 3A 62 5B                   ld a,($5B62)               ; A = system variable
+1038 77                         ld (hl),a                  ; Save to buffer
+1039 23                         inc hl                     ; HL = HL + 1
+103A 3A 48 5C                   ld a,(BORDCR)              ; A = border color
+103D 77                         ld (hl),a                  ; Save to buffer
+103E 23                         inc hl                     ; HL = HL + 1
+103F CD 92 0F                   call L0F92                 ; Save palette data (64 bytes) to HL
+1042 D1                         pop de                     ; DE = palette destination
+1043 E5                         push hl                    ; Save HL (end of buffer)
+1044 CD FA 0F                   call L0FFA                 ; Restore palette from buffer to hardware
+1047 E1                         pop hl                     ; Restore HL
+1048 E5                         push hl                    ; Save HL again
+1049 ED 34 20 00                add hl,$0020               ; HL = HL + $20 (skip 32 bytes)
+104D CD BA 0F                   call L0FBA                 ; Write palette data from HL
+1050 E1                         pop hl                     ; Restore HL
+1051 7E                         ld a,(hl)                  ; A = first saved byte (ATTR_P)
+1052 32 8D 5C                   ld (ATTR_P),a              ; Restore ATTR_P
+1055 32 48 5C                   ld (BORDCR),a              ; Set BORDCR = ATTR_P
+1058 F5                         push af                    ; Save AF
+1059 1F                         rra                        ; Rotate right (extract border bits)
 105A 1F                         rra
 105B 1F                         rra
-105C D3 FE                      out ($FE),a
-105E F1                         pop af
-105F 2F                         cpl
-1060 E6 38                      and $38
-1062 32 62 5B                   ld ($5B62),a
-1065 3E 4A                      ld a,$4A
-1067 CD DE 12                   call GetNxRegA
-106A ED 92 14                   nextreg $14,a
-106D ED 91 15 00                nextreg $15,$00
-1071 37                         scf
-1072 C9                         ret
+105C D3 FE                      out ($FE),a                ; Set hardware border color
+105E F1                         pop af                     ; Restore AF
+105F 2F                         cpl                        ; Complement A
+1060 E6 38                      and $38                    ; Mask bits 3-5
+1062 32 62 5B                   ld ($5B62),a               ; Save to $5B62
+1065 3E 4A                      ld a,$4A                   ; A = $4A (nextreg: transparency fallback)
+1067 CD DE 12                   call GetNxRegA             ; Read nextreg $4A
+106A ED 92 14                   nextreg $14,a              ; Write to nextreg $14
+106D ED 91 15 00                nextreg $15,$00            ; Clear nextreg $15
+1071 37                         scf                        ; Set carry flag
+1072 C9                         ret                        ; Return
 1073 21 94 D6      L1073:       ld hl,$D694
 1076 18 03                      jr L107B
 1078 21 ED D5      L1078:       ld hl,$D5ED
@@ -2876,58 +2906,30 @@
 10A0 ED 92 43                   nextreg $43,a
 10A3 37                         scf
 10A4 C9                         ret
-10A5 38 50                      jr c,L10F7
-10A7 56                         ld d,(hl)
-10A8 66                         ld h,(hl)
-10A9 65                         ld h,l
-10AA 45                         ld b,l
-10AB 47                         ld b,a
-10AC 07                         rlca
-10AD 30 28                      jr nc,L10D7
-10AF 28 28                      jr z,L10D9
-10B1 28 00                      jr z,L10B3
-10B3 00            L10B3:       nop
-10B4 00                         nop
-10B5 38 38                      jr c,L10EF
-10B7 38 38                      jr c,L10F1
-10B9 38 00                      jr c,L10BB
-10BB 00            L10BB:       nop
-10BC 00                         nop
-10BD 00                         nop
-10BE 00                         nop
-10BF 00                         nop
-10C0 00                         nop
-10C1 00                         nop
-10C2 00                         nop
-10C3 00                         nop
-10C4 00                         nop
-10C5 38 50                      jr c,L1117
-10C7 56                         ld d,(hl)
-10C8 66                         ld h,(hl)
-10C9 65                         ld h,l
-10CA 45                         ld b,l
-10CB 47                         ld b,a
-10CC 07                         rlca
-10CD 68                         ld l,b
-10CE 78                         ld a,b
-10CF 69                         ld l,c
-10D0 79                         ld a,c
-10D1 29                         add hl,hl
-10D2 39                         add hl,sp
-10D3 CF                         rst $08
-10D4 E7                         rst $20
-10D5 DF                         rst $18
-10D6 EF                         rst $28
-10D7 D7            L10D7:       rst $10
-10D8 3D                         dec a
-10D9 38 3B         L10D9:       jr c,L1116
-10DB 3C                         inc a
-10DC 3A 39 3D                   ld a,($3D39)
-10DF 38 38                      jr c,L1119
-10E1 00                         nop
-10E2 00                         nop
-10E3 00                         nop
-10E4 00                         nop
+;
+; Palette Data Table 1 (32 bytes)
+; Default palette configuration copied to $D633 during initialization
+;
+10A5 38 50 56 66                .defb $38,$50,$56,$66      ; Palette entries 0-1
+10A9 65 45 47 07                .defb $65,$45,$47,$07      ; Palette entries 2-3
+10AD 30 28 28 28                .defb $30,$28,$28,$28      ; Palette entries 4-5
+10B1 28 00 00 00                .defb $28,$00,$00,$00      ; Palette entries 6-7
+10B5 38 38 38 38                .defb $38,$38,$38,$38      ; Palette entries 8-9
+10B9 38 00 00 00                .defb $38,$00,$00,$00      ; Palette entries 10-11
+10BD 00 00 00 00                .defb $00,$00,$00,$00      ; Palette entries 12-13
+10C1 00 00 00 00                .defb $00,$00,$00,$00      ; Palette entries 14-15
+;
+; Palette Data Table 2 (32 bytes)
+; Alternate palette configuration copied to $D6DA during initialization
+;
+10C5 38 50 56 66                .defb $38,$50,$56,$66      ; Palette entries 0-1
+10C9 65 45 47 07                .defb $65,$45,$47,$07      ; Palette entries 2-3
+10CD 68 78 69 79                .defb $68,$78,$69,$79      ; Palette entries 4-5
+10D1 29 39 CF E7                .defb $29,$39,$CF,$E7      ; Palette entries 6-7
+10D5 DF EF D7 3D                .defb $DF,$EF,$D7,$3D      ; Palette entries 8-9
+10D9 38 3B 3C 3A                .defb $38,$3B,$3C,$3A      ; Palette entries 10-11
+10DD 39 3D 38 38                .defb $39,$3D,$38,$38      ; Palette entries 12-13
+10E1 00 00 00 00                .defb $00,$00,$00,$00      ; Palette entries 14-15
 10E5 ED 91 51 10   L10E5:       nextreg $51,$10
 10E9 21 B7 23                   ld hl,$23B7
 10EC 37                         scf
@@ -3045,9 +3047,12 @@
 11B2 D1                         pop de
 11B3 E1                         pop hl
 11B4 C9                         ret
-11B5 CD 03 10                   call L1003
+11B5 CD 03 10                   call SvDispState
 11B8 01 17 00      L11B8:       ld bc,$0017
 11BB CD 77 12                   call L1277
+;
+;
+;
 11BE 3E FF         L11BE:       ld a,$FF
 11C0 32 B8 D5                   ld ($D5B8),a
 11C3 31 FF 5B                   ld sp,$5BFF
@@ -7236,7 +7241,7 @@
 2C05 0E DF                      ld c,$DF
 2C07 B9                         cp c
 2C08 14                         inc d
-2C09 CD 03 10                   call L1003
+2C09 CD 03 10                   call SvDispState
 2C0C CD 92 3B                   call L3B92
 2C0F 21 00 F7                   ld hl,$F700
 2C12 11 E7 12                   ld de,$12E7
