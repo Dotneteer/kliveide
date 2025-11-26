@@ -1411,7 +1411,7 @@
 0855 E6 E7                      and $E7
 0857 ED 79                      out (c),a
 0859 3E 07                      ld a,$07
-085B CD 0B 0E                   call L0E0B
+085B CD 0B 0E                   call RdNextReg
 085E E6 03                      and $03
 0860 32 93 5C                   ld ($5C93),a
 0863 FE 04                      cp $04
@@ -1580,7 +1580,7 @@
 09B9 CD D2 0A                   call L0AD2
 09BC CD F0 0A                   call L0AF0
 09BF 3E 08                      ld a,$08
-09C1 CD 0B 0E                   call L0E0B
+09C1 CD 0B 0E                   call RdNextReg
 09C4 E6 FE                      and $FE
 09C6 21 40 5D                   ld hl,$5D40
 09C9 CB 56                      bit 2,(hl)
@@ -1686,19 +1686,19 @@
 0A8F CB 57                      bit 2,a
 0A91 28 09                      jr z,L0A9C
 0A93 3E 84         L0A93:       ld a,$84
-0A95 CD 0B 0E                   call L0E0B
+0A95 CD 0B 0E                   call RdNextReg
 0A98 F6 01                      or $01
 0A9A ED 79                      out (c),a
 0A9C F1            L0A9C:       pop af
 0A9D FE 09                      cp $09
 0A9F 30 09                      jr nc,L0AAA
 0AA1 3E 0A                      ld a,$0A
-0AA3 CD 0B 0E                   call L0E0B
+0AA3 CD 0B 0E                   call RdNextReg
 0AA6 E6 EF                      and $EF
 0AA8 ED 79                      out (c),a
 0AAA CD 09 08      L0AAA:       call L0809
 0AAD 3E 02                      ld a,$02
-0AAF CD 0B 0E                   call L0E0B
+0AAF CD 0B 0E                   call RdNextReg
 0AB2 E6 80                      and $80
 0AB4 F6 08                      or $08
 0AB6 ED 79                      out (c),a
@@ -1739,7 +1739,7 @@
 0AF9 ED B0                      ldir
 0AFB ED 43 03 5D                ld ($5D03),bc
 0AFF 3E 12                      ld a,$12
-0B01 CD 0B 0E                   call L0E0B
+0B01 CD 0B 0E                   call RdNextReg
 0B04 21 01 5D                   ld hl,$5D01
 0B07 77                         ld (hl),a
 0B08 23                         inc hl
@@ -1852,7 +1852,7 @@
 0BBC 12                         ld (de),a
 0BBD 10 F9                      djnz L0BB8
 0BBF 3E 05         L0BBF:       ld a,$05
-0BC1 CD 0B 0E                   call L0E0B
+0BC1 CD 0B 0E                   call RdNextReg
 0BC4 E6 05                      and $05
 0BC6 F6 42                      or $42
 0BC8 ED 79                      out (c),a
@@ -2033,7 +2033,7 @@
 0CDC ED B0                      ldir
 0CDE F3                         di
 0CDF 3E 0A                      ld a,$0A
-0CE1 CD 0B 0E                   call L0E0B
+0CE1 CD 0B 0E                   call RdNextReg
 0CE4 E6 EF                      and $EF
 0CE6 ED 79                      out (c),a
 0CE8 01 FD 7F                   ld bc,$7FFD
@@ -2151,7 +2151,7 @@
 0DC7 F6 80                      or $80
 0DC9 F5                         push af
 0DCA 3E 83                      ld a,$83
-0DCC CD 0B 0E                   call L0E0B
+0DCC CD 0B 0E                   call RdNextReg
 0DCF 3C                         inc a
 0DD0 20 0E                      jr nz,L0DE0
 0DD2 ED 91 83 3F                nextreg $83,$3F
@@ -2160,7 +2160,7 @@
 0DDA ED 91 85 01                nextreg $85,$01
 0DDE 18 09                      jr L0DE9
 0DE0 3E 82         L0DE0:       ld a,$82
-0DE2 CD 0B 0E                   call L0E0B
+0DE2 CD 0B 0E                   call RdNextReg
 0DE5 E6 25                      and $25
 0DE7 B3                         or e
 0DE8 5F                         ld e,a
@@ -2174,18 +2174,27 @@
 0DFA ED 79                      out (c),a
 0DFC 05                         dec b
 0DFD 3E 08                      ld a,$08
-0DFF CD 0B 0E                   call L0E0B
+0DFF CD 0B 0E                   call RdNextReg
 0E02 E6 BF                      and $BF
 0E04 ED 79                      out (c),a
 0E06 F1                         pop af
 0E07 37                         scf
 0E08 C9                         ret
 0E09 3E 06         L0E09:       ld a,$06
-0E0B 01 3B 24      L0E0B:       ld bc,$243B
-0E0E ED 79                      out (c),a
-0E10 04                         inc b
-0E11 ED 78                      in a,(c)
-0E13 C9                         ret
+;
+; Read Nextreg Register
+; Reads the value of a nextreg register specified in A.
+; Entry: A = nextreg register number to read
+; Exit: A = value read from nextreg, BC = $253B (data port)
+;
+0E0B 01 3B 24      RdNextReg:   ld bc,$243B                ; BC = $243B (Nextreg select port)
+0E0E ED 79                      out (c),a                  ; Select nextreg register A
+0E10 04                         inc b                      ; BC = $253B (Nextreg data port)
+0E11 ED 78                      in a,(c)                   ; A = read value from nextreg
+0E13 C9                         ret                        ; Return with value in A
+;
+;
+;
 0E14 ED 91 82 DA   L0E14:       nextreg $82,$DA
 0E18 ED 91 83 2B                nextreg $83,$2B
 0E1C ED 91 84 01                nextreg $84,$01
@@ -2195,7 +2204,7 @@
 0E29 F6 01                      or $01
 0E2B ED 79                      out (c),a
 0E2D 3E 08                      ld a,$08
-0E2F CD 0B 0E                   call L0E0B
+0E2F CD 0B 0E                   call RdNextReg
 0E32 E6 BB                      and $BB
 0E34 ED 79                      out (c),a
 0E36 C9                         ret
@@ -4880,31 +4889,39 @@
 1E3E 12                         ld (de),a
 1E3F 21 27 D8                   ld hl,$D827
 1E42 C9                         ret
-1E43 AF                         xor a
-1E44 CD 0B 0E                   call L0E0B
-1E47 FE 08                      cp $08
-1E49 28 17                      jr z,L1E62
-1E4B 3E 01                      ld a,$01
-1E4D CD 0B 0E                   call L0E0B
-1E50 67                         ld h,a
-1E51 3E 0E                      ld a,$0E
-1E53 CD 0B 0E                   call L0E0B
-1E56 6F                         ld l,a
-1E57 01 0A 31                   ld bc,$310A
-1E5A A7                         and a
-1E5B ED 42                      sbc hl,bc
-1E5D 21 8D 20                   ld hl,$208D
-1E60 38 4E                      jr c,L1EB0
-1E62 21 B9 1E      L1E62:       ld hl,$1EB9
-1E65 11 27 ED                   ld de,$ED27
-1E68 01 14 00                   ld bc,$0014
-1E6B ED B0                      ldir
-1E6D CD 27 ED                   call LED27
-1E70 21 F0 1F                   ld hl,$1FF0
-1E73 28 08                      jr z,L1E7D
-1E75 CD CD 1E                   call L1ECD
-1E78 21 A1 20                   ld hl,$20A1
-1E7B 18 33                      jr L1EB0
+;
+; Check ZX Spectrum Next Core Version
+; Verifies that the core version is compatible (3.01.10 or higher).
+; If incompatible, displays error message and halts with red border.
+; Called from ROM0 initialization at $032A.
+; Entry: None
+; Exit: Returns if core >= 3.01.10, otherwise halts with error
+;
+1E43 AF            ChkCoreVer:  xor a                      ; A = $00 (nextreg $00 = Machine ID)
+1E44 CD 0B 0E                   call RdNextReg             ; Read nextreg $00
+1E47 FE 08                      cp $08                     ; Is it $08 (ZX Spectrum Next)?
+1E49 28 17                      jr z,L1E62                 ; If yes, skip version check (assume compatible)
+1E4B 3E 01                      ld a,$01                   ; A = $01 (nextreg $01 = Core version major)
+1E4D CD 0B 0E                   call RdNextReg             ; Read nextreg $01
+1E50 67                         ld h,a                     ; H = major version
+1E51 3E 0E                      ld a,$0E                   ; A = $0E (nextreg $0E = Core version minor)
+1E53 CD 0B 0E                   call RdNextReg             ; Read nextreg $0E
+1E56 6F                         ld l,a                     ; L = minor version (HL = version)
+1E57 01 0A 31                   ld bc,$310A                ; BC = $310A (version 3.01.10)
+1E5A A7                         and a                      ; Clear carry
+1E5B ED 42                      sbc hl,bc                  ; HL = HL - BC (compare versions)
+1E5D 21 8D 20                   ld hl,$208D                ; HL = "Core 3.01.10 needed" message
+1E60 38 4E                      jr c,L1EB0                 ; If core < 3.01.10, show error and halt
+1E62 21 B9 1E      L1E62:       ld hl,$1EB9                ; HL = $1EB9 (code to copy to RAM)
+1E65 11 27 ED                   ld de,$ED27                ; DE = $ED27 (destination in upper RAM)
+1E68 01 14 00                   ld bc,$0014                ; BC = $0014 (20 bytes)
+1E6B ED B0                      ldir                       ; Copy 20 bytes of code to RAM
+1E6D CD 27 ED                   call LED27                 ; Call copied code in RAM
+1E70 21 F0 1F                   ld hl,$1FF0                ; HL = $1FF0 ("enNxtmmc.rom" message)
+1E73 28 08                      jr z,L1E7D                 ; If Z, check version further
+1E75 CD CD 1E                   call L1ECD                 ; Display message
+1E78 21 A1 20                   ld hl,$20A1                ; HL = " invalid" message
+1E7B 18 33                      jr L1EB0                   ; Show error and halt
 1E7D E5            L1E7D:       push hl
 1E7E 21 08 02                   ld hl,$0208
 1E81 A7                         and a
@@ -4920,24 +4937,24 @@
 1E91 ED 23                      swapnib
 1E93 E6 0F                      and $0F
 1E95 C6 30                      add a,$30
-1E97 FE 3A                      cp $3A
-1E99 38 02                      jr c,L1E9D
-1E9B C6 27                      add a,$27
-1E9D CD 00 3E      L1E9D:       call CallRom0              ; Call ROM0 routine $0010
+1E97 FE 3A                      cp $3A                     ; Is it > '9'?
+1E99 38 02                      jr c,L1E9D                 ; If <= '9', skip adjustment
+1E9B C6 27                      add a,$27                  ; Adjust for hex 'A'-'F'
+1E9D CD 00 3E      L1E9D:       call CallRom0              ; Call ROM0 routine $0010 (print char)
 1EA0 10 00                      .defw $0010
-1EA2 29            L1EA2:       add hl,hl
+1EA2 29            L1EA2:       add hl,hl                  ; Shift HL left 4 bits (next nibble)
 1EA3 29                         add hl,hl
 1EA4 29                         add hl,hl
 1EA5 29                         add hl,hl
-1EA6 10 E8                      djnz L1E90
-1EA8 3E 20                      ld a,$20
-1EAA CD 00 3E                   call CallRom0              ; Call ROM0 routine $0010
+1EA6 10 E8                      djnz L1E90                 ; Loop 4 times for 4 hex digits
+1EA8 3E 20                      ld a,$20                   ; A = space character
+1EAA CD 00 3E                   call CallRom0              ; Call ROM0 $0010 (print space)
 1EAD 10 00                      .defw $0010
-1EAF E1            L1EAF:       pop hl
-1EB0 CD CD 1E      L1EB0:       call L1ECD
-1EB3 3E 02                      ld a,$02
-1EB5 D3 FE                      out ($FE),a
-1EB7 18 FE         L1EB7:       jr L1EB7
+1EAF E1            L1EAF:       pop hl                     ; Restore HL (error message)
+1EB0 CD CD 1E      L1EB0:       call L1ECD                 ; Display error message
+1EB3 3E 02                      ld a,$02                   ; A = $02 (red)
+1EB5 D3 FE                      out ($FE),a                ; Set border to red
+1EB7 18 FE         L1EB7:       jr L1EB7                   ; Halt: infinite loop
 1EB9 3E 80                      ld a,$80
 1EBB D3 E3                      out ($E3),a
 1EBD 2A 04 00                   ld hl,($0004)

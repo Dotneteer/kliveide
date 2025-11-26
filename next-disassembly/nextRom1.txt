@@ -3225,7 +3225,7 @@
 14F9 16 E3                      ld d,$E3                   ; D = $E3 (transparency color)
 14FB 5F                         ld e,a                     ; E = 0
 14FC CD 6F 14                   call L146F                 ; Set nextreg $15 with transparency
-14FF 18 17                      jr L1518                   ; Jump to set clip windows
+14FF 18 17                      jr ClipTMap                ; Jump to set clip windows
 ;
 ; --- Subroutine: Write two consecutive nextreg values ---
 ; This routine writes values to two consecutive nextregs using I/O ports.
@@ -3243,7 +3243,14 @@
 150D 04                         inc b                      ; BC = $253B (Nextreg data port)
 150E ED 51                      out (c),d                  ; Write D to nextreg L+1
 1510 C9                         ret                        ; Return
-1511 CD 18 15                   call L1518
+;
+; Initialize Clip Windows and Display
+; Called during boot initialization from ROM0 at $0306.
+; Sets up clip windows for Tilemap, Layer2, ULA, and Sprites.
+; Entry: None
+; Exit: All clip windows configured
+;
+1511 CD 18 15                   call ClipTMap
 ;
 ; --- Subroutine: Set clip window for Sprites ---
 ; Entry: None

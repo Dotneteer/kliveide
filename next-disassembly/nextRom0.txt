@@ -14,7 +14,12 @@
 000B 2A 2E 2A FF                .defb $2A, $2E, $2A, $FF.  ; "*", ".", "*", copyright
 000F 00                         .defb $00                  ; 00
 ; 
-; RST $10: Calls the RST $10 routine in ROM3
+; RST $08: Page in RAM bank 7 and switch to work area stack
+; This routine pages RAM bank 7 into slot 7 ($C000-$FFFF) and switches the stack pointer
+; to the work area near system variables (TMPSP, typically $5BFF). This provides a workspace
+; with RAM at $C000 and a stack below the system variables area at $5C00.
+; Entry: None
+; Exit: RAM bank 7 paged at $C000, SP switched to TMPSP area, continues at L15E0
 ;
 0010 EF                         rst $28
 0011 10 00                      .defw $0010;
@@ -85,9 +90,14 @@
 ;
 ; NMI routine
 ;
-0066 ED 45         NMI:         retn                       ; ROM1 does not do anything with NMI
+0066 ED 45         NMI:         retn                       ; ROM0 does not do anything with NMI
 ;
-;
+; Call Alternate ROM Routine
+; Similar to ROM3 call mechanism, but switches to the alternate ROM. The address to call
+; follows the CALL instruction (inline parameter). Saves BC, reads the target address,
+; enables AltROM via nextreg $8C,$80, and executes the routine.
+; Entry: (SP) = return address, (SP+0,SP+1) = target routine address in AltROM
+; Exit: Returns after executing AltROM routine, BC preserved
 ;
 0068 ED 43 54 5B   L0068:       ld (TMPBC),bc              ; Save the value of BC temporarily
 006C E3                         ex (sp),hl                 ; HL := Return address
@@ -102,7 +112,13 @@
 007B ED 91 8C 80                nextreg $8C,$80            ; Enable AltROM (for reads)
 007F C9                         ret    
 ;
-; 
+; RST $28 Continuation: Call ROM3 Routine
+; This is the target of RST $28 (JP Rom3Cont at $002D). RST $28 has already saved BC to TMPBC
+; and loaded HL with the return address. This routine reads the inline 16-bit target address,
+; adjusts the return address, and jumps to L5B48 (RAM routine) which switches to ROM3 and
+; executes the target routine. Returns via $5B4D which switches back to ROM0.
+; Entry: HL = return address (pointing to inline target address), BC saved in TMPBC
+; Exit: Executes ROM3 routine and returns to adjusted return address, BC preserved
 ;                 
 0080 4E            Rom3Cont:    ld c,(hl)                  ; When entering, HL is the return addrss of the caller
 0081 23                         inc hl
@@ -571,7 +587,7 @@
 02E3 22 09 5C                   ld (REPDEL),hl             ; Set REPDEL and REPPER (key repeat timing)
 02E6 FD 35 C6                   dec (iy-$3A)               ; Decrement KSTATE+0 ($5C00): set to $FF (unused)
 02E9 FD 35 CA                   dec (iy-$36)               ; Decrement KSTATE+4 ($5C04): set to $FF (unused)
-02EC 21 C6 15                   ld hl,$15C6                ; HL = $15C6 (source: stream data)
+02EC 21 C6 15                   ld hl,StrmIn               ; HL = $15C6 (source: stream data)
 02EF 11 10 5C                   ld de,STRMS                ; DE = $5C10 (STRMS - streams data)
 02F2 01 0E 00                   ld bc,$000E                ; BC = $000E (14 bytes to copy)
 02F5 EF                         rst $28                    ; Call ROM3 routine
@@ -579,63 +595,66 @@
 02F8 FD 36 31 02                ld (iy+$31),$02            ; Set DF_SZ = $02 (display file size)
 02FC FB                         ei                         ; Enable interrupts
 02FD EF                         rst $28                    ; Call ROM3 routine
-02FE 6B 0D                      .defw $0D6B                ; ROM3: routine at $0D6B
+02FE 6B 0D                      .defw $0D6B                ; CLS48: 48K compatible CLS
 0300 F1                         pop af                     ; Restore AF (from PUSH BC at $0270)
 0301 CF                         rst $08                    ; ERROR-1 routine
 0302 F5                         push af                    ; Save AF
-0303 CD 60 03                   call L0360                 ; Call initialization routine
+0303 CD 60 03                   call CpyBits               ; Call stripe pattern initialization
 0306 DF                         rst $18                    ; Call ROM1 routine
-0307 11 15                      .defw $1511                ; ROM1: routine at $1511
-0309 21 5A 03                   ld hl,$035A                ; HL = $035A (copyright message address)
-030C 11 B8 D5                   ld de,$D5B8                ; DE = $D5B8 (display destination)
-030F 01 06 00                   ld bc,$0006
-0312 ED B0                      ldir
-0314 EB                         ex de,hl
-0315 37                         scf
-0316 CD 3C 0F                   call L0F3C
-0319 21 20 00                   ld hl,$0020
-031C 22 3D D7                   ld ($D73D),hl
-031F 2C                         inc l
-0320 2C                         inc l
-0321 2C                         inc l
-0322 22 3F D7                   ld ($D73F),hl
-0325 3E 03                      ld a,$03
-0327 32 81 5C                   ld ($5C81),a
-032A E7                         rst $20
-032B 43                         ld b,e
-032C 1E 21                      ld e,$21
-032E A5                         and l
-032F 10 11                      djnz L0342
-0331 33                         inc sp
-0332 D6 01                      sub $01
-0334 00                         nop
-0335 37                         scf
-0336 CD D5 0F                   call L0FD5
-0339 21 C5 10                   ld hl,$10C5
-033C 11 DA D6                   ld de,$D6DA
-033F 01 60 37                   ld bc,$3760
-0342 CD D5 0F      L0342:       call L0FD5
-0345 CD 03 10                   call L1003
-0348 CD 82 0F                   call L0F82
-034B F1                         pop af
-034C DF                         rst $18
-034D CA 2B FD                   jp z,LFD2B
-0350 CB 02                      rlc d
-0352 EE FD                      xor $FD
-0354 36 31                      ld (hl),$31
-0356 02                         ld (bc),a
-0357 C3 BE 11                   jp L11BE
-035A 00                         nop
-035B 00                         nop
-035C 00                         nop
-035D 03                         inc bc
-035E 00                         nop
-035F 3C                         inc a
-0360 21 F7 0D      L0360:       ld hl,$0DF7
-0363 11 50 D7                   ld de,$D750
-0366 01 10 00                   ld bc,$0010
-0369 ED B0                      ldir
-036B C9                         ret
+0307 11 15                      .defw $1511                ; Initialize Clip Windows and Display
+0309 21 5A 03                   ld hl,$035A                ; HL = $035A ???
+030C 11 B8 D5                   ld de,$D5B8                ; DE = $D5B8 ???
+030F 01 06 00                   ld bc,$0006                ; BC = 6
+0312 ED B0                      ldir                       ; Copy 6 bytes
+0314 EB                         ex de,hl                   ; HL = $D5BE (after copy destination)
+0315 37                         scf                        ; Set carry flag (use nextreg read mode)
+0316 CD 3C 0F                   call InitSprPat            ; Initialize sprite patterns
+0319 21 20 00                   ld hl,$0020                ; HL = $0020
+031C 22 3D D7                   ld ($D73D),hl              ; Store $0020 at $D73D
+031F 2C                         inc l                      ; L = $21
+0320 2C                         inc l                      ; L = $22
+0321 2C                         inc l                      ; L = $23
+0322 22 3F D7                   ld ($D73F),hl              ; Store $0023 at $D73F
+0325 3E 03                      ld a,$03                   ; A = $03
+0327 32 81 5C                   ld ($5C81),a               ; Store $03 at $5C81 (system variable)
+032A E7                         rst $20                    ; Call ROM2 routine
+032B 43 1E                      .defw $1E43                ; ROM2: Check core version and initialize
+032D 21 A5 10                   ld hl,$10A5                ; HL = $10A5 (source: data table 1)
+0330 11 33 D6                   ld de,$D633
+0333 01 00 37                   ld bc,$3700                ; BC = $3700 (parameter for L0FD5)
+0336 CD D5 0F                   call L0FD5                 ; Copy 32 bytes and initialize
+0339 21 C5 10                   ld hl,$10C5                ; HL = $10C5 (source: data table 2)
+033C 11 DA D6                   ld de,$D6DA                ; DE = $D6DA (destination in upper RAM)
+033F 01 60 37                   ld bc,$3760                ; BC = $3760 (parameter for L0FD5)
+0342 CD D5 0F      L0342:       call L0FD5                 ; Copy 32 bytes and initialize
+0345 CD 03 10                   call L1003                 ; Save display state to upper RAM
+0348 CD 82 0F                   call L0F82                 ; Initialize system flags
+034B F1                         pop af                     ; Restore AF (from PUSH AF at $0302)
+034C DF                         rst $18                    ; Call ROM1 routine
+034D CA 2B                      .defw $2BCA                ; ROM1: routine at $2BCA
+034F FD CB 02 50                set 2,(iy+$02)             ; Set bit 2 of FLAGS2 ($5C3C)
+0353 EE FD                      xor $FD                    ; A = A XOR $FD
+0355 36 31                      ld (hl),$31                ; (HL) = $31 (ASCII '1')
+0357 02                         ld (bc),a                  ; (BC) = A
+0358 C3 BE 11                   jp L11BE                   ; Jump to L11BE
+;\n; Data Block: 6 bytes copied to $D5B8 during initialization at $030F\n; Binary configuration data for display/graphics setup\n;
+035B 00                         .defb $00                  ; Byte 0
+035C 00                         .defb $00                  ; Byte 1
+035D 03                         .defb $03                  ; Byte 2
+035E 00                         .defb $00                  ; Byte 3
+035F 3C                         .defb $3C                  ; Byte 4
+;
+; Copy Bit Pattern Table to RAM
+; Copies a 16-byte lookup table from ROM (StripePtr) to upper RAM ($D750).
+; The table contains bit patterns used for graphics operations (bit masks).
+; Entry: None
+; Exit: 16 bytes copied to $D750
+;
+0360 21 F7 0D      CpyBits:     ld hl,StripePtr            ; HL := StripePtr (source: bit pattern table)
+0363 11 50 D7                   ld de,$D750                ; DE := $D750 (destination in upper RAM)
+0366 01 10 00                   ld bc,$0010                ; BC := 16 bytes to copy
+0369 ED B0                      ldir                       ; Copy 16 bytes from ROM to RAM
+036B C9                         ret                        ; Return
 036C ED 34 04 00   L036C:       add hl,$0004
 0370 47                         ld b,a
 0371 7E                         ld a,(hl)
@@ -2426,20 +2445,28 @@
 0DF4 66                         ld h,(hl)
 0DF5 67                         ld h,a
 0DF6 00                         nop
-0DF7 01 03 07                   ld bc,$0703
-0DFA 0F                         rrca
-0DFB 1F            L0DFB:       rra
-0DFC 3F                         ccf
-0DFD 7F                         ld a,a
-0DFE FF                         rst $38
-0DFF FE FC                      cp $FC
-0E01 F8                         ret m
-0E02 F0                         ret p
-0E03 E0                         ret po
-0E04 C0                         ret nz
-0E05 80                         add a,b
-0E06 00                         nop
-0E07 00                         nop
+;
+; Bit Pattern Lookup Table (16 bytes)
+; Used for graphics operations - contains progressive bit masks.
+; Copied to RAM at $D750 during initialization by routine at $0360.
+; Pattern: ascending bits (01,03,07,0F...) followed by descending bits (FF,FE,FC...)
+;
+0DF7 01                         .defb $01                  ; 00000001
+0DF8 03                         .defb $03                  ; 00000011
+0DF9 07                         .defb $07                  ; 00000111
+0DFA 0F                         .defb $0F                  ; 00001111
+0DFB 1F            L0DFB:       .defb $1F                  ; 00011111
+0DFC 3F                         .defb $3F                  ; 00111111
+0DFD 7F                         .defb $7F                  ; 01111111
+0DFE FF                         .defb $FF                  ; 11111111
+0DFF FE                         .defb $FE                  ; 11111110
+0E01 F8                         .defb $F8                  ; 11111000
+0E02 F0                         .defb $F0                  ; 11110000
+0E03 E0                         .defb $E0                  ; 11100000
+0E04 C0                         .defb $C0                  ; 11000000
+0E05 80                         .defb $80                  ; 10000000
+0E06 00                         .defb $00                  ; 00000000
+0E07 00                         .defb $00                  ; 00000000
 0E08 00                         nop
 0E09 00            L0E09:       nop
 0E0A 00                         nop
@@ -2490,7 +2517,7 @@
 0E4B D7                         rst $10
 0E4C D1                         pop de
 0E4D C3 58 0E                   jp L0E58
-0E50 11 F7 0D      L0E50:       ld de,$0DF7
+0E50 11 F7 0D      L0E50:       ld de,StripePtr
 0E53 18 03         L0E53:       jr L0E58
 0E55 11 50 D7      L0E55:       ld de,$D750
 0E58 2A 7B 5C      L0E58:       ld hl,(UDG)
@@ -2616,20 +2643,30 @@
 0F35 CD 5F 0F                   call L0F5F
 0F38 C3 97 27                   jp L2797
 0F3B A7            L0F3B:       and a
-0F3C 11 18 04      L0F3C:       ld de,$0418
-0F3F ED 91 1C 0F                nextreg $1C,$0F
-0F43 D5            L0F43:       push de
-0F44 06 04                      ld b,$04
-0F46 C5            L0F46:       push bc
-0F47 CD 70 0F                   call L0F70
-0F4A 1D                         dec e
-0F4B C1                         pop bc
-0F4C 10 F8                      djnz L0F46
-0F4E D1                         pop de
-0F4F 1C                         inc e
-0F50 15                         dec d
-0F51 20 F0                      jr nz,L0F43
-0F53 C9                         ret
+;
+; Initialize Sprite Patterns
+; Writes sprite pattern data from HL to sprite pattern memory.
+; Uses nextreg $1C (Clip Window) and double nested loop.
+; Entry: HL = pointer to sprite pattern data (or after EX DE,HL and CF)
+; Exit: Sprite patterns initialized
+;
+0F3C 11 18 04      InitSprPat:  ld de,$0418                ; D = $04 (outer loop: 4 iterations), E = $18 (pattern index)
+0F3F ED 91 1C 0F                nextreg $1C,$0F            ; Set nextreg $1C (Clip Window Tilemap) = $0F
+0F43 D5            `InitSpr1:   push de                    ; Save DE (outer loop counter and pattern index)
+0F44 06 04                      ld b,$04                   ; B = $04 (inner loop: 4 iterations)
+0F46 C5            `InitSpr2:   push bc                    ; Save BC (inner loop counter)
+0F47 CD 70 0F                   call WSprPat               ; Call sprite pattern write routine
+0F4A 1D                         dec e                      ; E = E - 1 (decrement pattern index)
+0F4B C1                         pop bc                     ; Restore BC (inner loop counter)
+0F4C 10 F8                      djnz `InitSpr2             ; Loop 4 times (inner loop)
+0F4E D1                         pop de                     ; Restore DE (outer loop counter)
+0F4F 1C                         inc e                      ; E = E + 1 (adjust pattern index)
+0F50 15                         dec d                      ; D = D - 1 (decrement outer loop counter)
+0F51 20 F0                      jr nz,`InitSpr1            ; Loop 4 times (outer loop)
+0F53 C9                         ret                        ; Return
+;
+;
+;
 0F54 54            L0F54:       ld d,h
 0F55 7D                         ld a,l
 0F56 0E 30                      ld c,$30
@@ -2652,18 +2689,28 @@
 0F6C 10 F7                      djnz L0F65
 0F6E C9                         ret
 0F6F A7                         and a
-0F70 7E            L0F70:       ld a,(hl)
-0F71 01 3B 24                   ld bc,$243B
-0F74 ED 59                      out (c),e
-0F76 04                         inc b
-0F77 ED 50                      in d,(c)
-0F79 30 01                      jr nc,L0F7C
-0F7B 7A                         ld a,d
-0F7C ED 79         L0F7C:       out (c),a
-0F7E 72                         ld (hl),d
-0F7F 23                         inc hl
-0F80 1C                         inc e
-0F81 C9                         ret
+;
+; Write Sprite Pattern Byte
+; Writes a single byte to sprite pattern memory via nextreg interface.
+; Uses carry flag to determine whether to use data from HL or read from nextreg.
+; Entry: HL = pointer to source data, E = sprite pattern index, Carry flag
+; Exit: HL incremented, E incremented, D = value read from nextreg
+;
+0F70 7E            WSprPat:     ld a,(hl)                  ; A = byte from source data
+0F71 01 3B 24                   ld bc,$243B                ; BC = $243B (Nextreg select port)
+0F74 ED 59                      out (c),e                  ; Select sprite pattern register E
+0F76 04                         inc b                      ; BC = $253B (Nextreg data port)
+0F77 ED 50                      in d,(c)                   ; D = read current value from nextreg
+0F79 30 01                      jr nc,`WSpr1               ; If NC (carry clear), jump to write A
+0F7B 7A                         ld a,d                     ; If C (carry set), A = D (use read value)
+0F7C ED 79         `WSpr1:      out (c),a                  ; Write A to nextreg data port
+0F7E 72                         ld (hl),d                  ; Store D back to (HL)
+0F7F 23                         inc hl                     ; HL = HL + 1
+0F80 1C                         inc e                      ; E = E + 1 (next pattern index)
+0F81 C9                         ret                        ; Return
+;
+;
+;
 0F82 AF            L0F82:       xor a
 0F83 32 41 5C                   ld ($5C41),a
 0F86 FD 36 D0 02                ld (iy-$30),$02
@@ -2884,7 +2931,7 @@
 10E5 ED 91 51 10   L10E5:       nextreg $51,$10
 10E9 21 B7 23                   ld hl,$23B7
 10EC 37                         scf
-10ED CD 3C 0F                   call L0F3C
+10ED CD 3C 0F                   call InitSprPat
 10F0 AF                         xor a
 10F1 D3 FE         L10F1:       out ($FE),a
 10F3 01 3B 24                   ld bc,$243B
@@ -3784,33 +3831,50 @@
 15BE E3                         ex (sp),hl
 15BF EB                         ex de,hl
 15C0 C9                         ret
-15C1 CD C8 15      L15C1:       call L15C8
-15C4 26 01                      ld h,$01
-15C6 25                         dec h
-15C7 C9                         ret
-15C8 E9            L15C8:       jp (hl)
-15C9 ED 91 8E 08   L15C9:       nextreg $8E,$08
-15CD 08            L15CD:       ex af,af'
-15CE F1                         pop af
-15CF 22 52 5B                   ld (TMPHL),hl
-15D2 2A 6A 5B                   ld hl,(TMPSP)
-15D5 ED 73 6A 5B   L15D5:       ld (TMPSP),sp
-15D9 F9                         ld sp,hl
-15DA 2A 52 5B                   ld hl,(TMPHL)
-15DD F5                         push af
-15DE 08                         ex af,af'
-15DF C9                         ret
-15E0 08            L15E0:       ex af,af'
-15E1 F1                         pop af
-15E2 22 52 5B                   ld (TMPHL),hl
-15E5 2A 6A 5B                   ld hl,(TMPSP)
-15E8 ED 73 6A 5B                ld (TMPSP),sp
-15EC F9                         ld sp,hl
-15ED 2A 52 5B                   ld hl,(TMPHL)
-15F0 F5                         push af
-15F1 08                         ex af,af'
-15F2 ED 91 8E 78                nextreg $8E,$78
-15F6 C9                         ret
+15C1 CD C8 15      L15C1:       call L15C8                  ; Call JP (HL) routine - execute code at address in HL
+15C4 26 01                      ld h,$01                    ; Set H := $01 (prepare high byte)
+15C6 25                         dec h                       ; Decrement H (H := $00)
+15C7 C9                         ret                         ; Return (HL now contains $00xx where xx is original L)
+;
+; Jump (HL): Execute code at address in HL
+; Entry: HL = address to jump to
+; Exit: None (jumps to address)
+;
+15C8 E9            L15C8:       jp (hl)                     ; Jump to address in HL
+;
+; Stack Switch with ROM Page Change to $08
+; Entry: None
+; Exit: SP swapped, nextreg $8E set to $08, AF preserved via AF'
+;
+15C9 ED 91 8E 08   L15C9:       nextreg $8E,$08             ; 128K paging: bit 3=1 (no RAM bank change), ROM0 selected
+15CD 08            L15CD:       ex af,af'                   ; Swap to alternate AF register
+15CE F1                         pop af                      ; Retrieve AF from stack
+15CF 22 52 5B                   ld (TMPHL),hl               ; Save HL to temporary storage ($5B52)
+15D2 2A 6A 5B                   ld hl,(TMPSP)               ; HL := saved stack pointer from TMPSP ($5B6A)
+15D5 ED 73 6A 5B   L15D5:       ld (TMPSP),sp               ; Save current SP to TMPSP
+15D9 F9                         ld sp,hl                    ; Switch to saved stack pointer (SP := HL)
+15DA 2A 52 5B                   ld hl,(TMPHL)               ; Restore HL from temporary storage
+15DD F5                         push af                     ; Preserve AF on stack
+15DE 08                         ex af,af'                   ; Swap to alternate AF register
+15DF C9                         ret                         ; Return from subroutine
+;
+; RST $08 Continuation: Stack Switch and Page RAM Bank 7
+; This is the target of RST $08 (JP L15E0 at $0008). It switches the stack pointer to the
+; work area (TMPSP, typically $5BFF) and pages RAM bank 7 into $C000-$FFFF.
+; Entry: Called via RST $08
+; Exit: RAM bank 7 paged at $C000, SP pointing to work area below sysvars, AF preserved via AF'
+;
+15E0 08            L15E0:       ex af,af'                   ; Restore primary AF register set
+15E1 F1                         pop af                      ; Retrieve AF from stack
+15E2 22 52 5B                   ld (TMPHL),hl               ; Save HL to temporary storage ($5B52)
+15E5 2A 6A 5B                   ld hl,(TMPSP)               ; HL := saved stack pointer from TMPSP ($5B6A)
+15E8 ED 73 6A 5B                ld (TMPSP),sp               ; Save current SP to TMPSP
+15EC F9                         ld sp,hl                    ; Switch to saved stack pointer (SP := HL)
+15ED 2A 52 5B                   ld hl,(TMPHL)               ; Restore HL from temporary storage
+15F0 F5                         push af                     ; Preserve AF on new stack
+15F1 08                         ex af,af'                   ; Swap to alternate AF register
+15F2 ED 91 8E 78                nextreg $8E,$78             ; 128K paging: bits 6-4=%111 (RAM bank 7), bit 3=1 (change bank), ROM0
+15F6 C9                         ret                         ; Return with new stack and ROM page active
 15F7 00                         nop
 15F8 00                         nop
 15F9 00                         nop
@@ -6975,7 +7039,7 @@
 2AB5 87                         add a,a
 2AB6 87                         add a,a
 2AB7 01 08 00                   ld bc,$0008
-2ABA 21 F7 0D                   ld hl,$0DF7
+2ABA 21 F7 0D                   ld hl,StripePtr
 2ABD 5F                         ld e,a
 2ABE 50                         ld d,b
 2ABF 19                         add hl,de
