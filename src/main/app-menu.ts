@@ -76,7 +76,8 @@ import {
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
+  SETTING_EDITOR_LIVE_RELOAD
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
 
@@ -261,17 +262,6 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
               }
             }
           ] as MenuItemConstructorOptions[])),
-      { type: "separator" },
-      {
-        id: "bkg_compile",
-        label: "Compile in background",
-        click: async () => {}
-      },
-      {
-        id: "bkg_compile_stop",
-        label: "Stop background compilation",
-        click: async () => {}
-      },
       ...(__DARWIN__
         ? []
         : ([{ type: "separator" }, { role: "quit" }] as MenuItemConstructorOptions[]))
@@ -937,7 +927,9 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         submenu: [
           createBooleanSettingsMenu(SETTING_IDE_OPEN_LAST_PROJECT),
           { type: "separator" },
-          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU)
+          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU),
+          { type: "separator" },
+          createBooleanSettingsMenu(SETTING_EDITOR_LIVE_RELOAD)
         ]
       }
     ]

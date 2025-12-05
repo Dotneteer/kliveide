@@ -62,6 +62,7 @@ import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
@@ -260,6 +261,9 @@ async function createAppWindows() {
   }
 
   ideWindowStateManager.manage(ideWindow);
+
+  // --- Set IDE window in file watcher
+  fileChangeWatcher.setIdeWindow(ideWindow);
 
   // --- Initialize messaging
   registerMainToEmuMessenger(emuWindow);
@@ -584,6 +588,15 @@ ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
   if (ideWindow?.isDestroyed() === false) {
     ideWindow.webContents.send("IdeToMainResponse", response);
   }
+});
+
+// --- File watching IPC handlers
+ipcMain.on("watch-file", (_ev, { filePath }: { filePath: string }) => {
+  fileChangeWatcher.startWatchingFile(filePath);
+});
+
+ipcMain.on("unwatch-file", (_ev, { filePath }: { filePath: string }) => {
+  fileChangeWatcher.stopWatchingFile(filePath);
 });
 
 // --- Process an action forward message coming from any of the renderers
