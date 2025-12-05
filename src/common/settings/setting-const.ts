@@ -31,3 +31,4 @@ export const SETTING_EDITOR_SELECTION_HIGHLIGHT = "editorOptions.enableSelection
 export const SETTING_EDITOR_OCCURRENCES_HIGHLIGHT = "editorOptions.enableOccurrencesHighlight";
 export const SETTING_EDITOR_QUICK_SUGGESTION_DELAY = "editorOptions.quickSuggestionDelay";
 export const SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE = "editorOptions.allowBackgroundCompile";
+export const SETTING_EDITOR_LIVE_RELOAD = "editorOptions.liveReload";

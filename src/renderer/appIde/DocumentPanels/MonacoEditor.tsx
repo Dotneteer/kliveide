@@ -630,6 +630,34 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
         store.dispatch(incEditorVersionAction());
       },
 
+      // --- Reload content from external file change
+      reloadContent: (contents: string | Uint8Array) => {
+        if (typeof contents === "string") {
+          const model = editor.current.getModel();
+          if (model) {
+            // Save current cursor position
+            const position = editor.current.getPosition();
+            const selection = editor.current.getSelection();
+            
+            // Update content
+            model.setValue(contents);
+            
+            // Restore cursor position if possible
+            if (position) {
+              editor.current.setPosition(position);
+              if (selection) {
+                editor.current.setSelection(selection);
+              }
+            }
+            
+            // Update document state
+            document.contents = contents;
+            document.savedVersionCount = document.editVersionCount;
+            store.dispatch(incEditorVersionAction());
+          }
+        }
+      },
+
       // --- Editor API specific
       setPosition: (lineNumber: number, column: number) => {
         ed.revealLineInCenter(lineNumber);
