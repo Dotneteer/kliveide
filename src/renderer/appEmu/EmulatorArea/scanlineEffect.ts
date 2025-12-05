@@ -129,9 +129,7 @@ export function applyScanlineEffectToCanvas(
   sourceCanvas: HTMLCanvasElement,
   scanlineIntensity: ScanlineIntensity = "off"
 ): void {
-  console.log("applyScanlineEffectToCanvas called with:", scanlineIntensity);
   const darkening = getScanlineDarkening(scanlineIntensity);
-  console.log("Darkening value:", darkening);
 
   // Use 'copy' mode to completely replace canvas content without compositing
   // This prevents flickering by ensuring a complete frame replacement
@@ -144,7 +142,6 @@ export function applyScanlineEffectToCanvas(
     return;
   }
 
-  console.log("Creating scanline pattern:", canvas.width, canvas.height, sourceCanvas.height);
   // Create zoom-aware scanline pattern and apply it
   const scanlinePattern = createZoomAwareScanlinePatternCanvas(
     canvas.width,
@@ -157,5 +154,4 @@ export function applyScanlineEffectToCanvas(
   ctx.globalCompositeOperation = "multiply";
   ctx.drawImage(scanlinePattern, 0, 0);
   ctx.globalCompositeOperation = "source-over"; // Reset to default
-  console.log("Scanline pattern applied");
 }

@@ -66,7 +66,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // Update the ref whenever scanlineEffect changes
   useEffect(() => {
     currentScanlineEffect.current = (scanlineEffect || "off") as ScanlineIntensity;
-    console.log("Scanline effect setting changed to:", currentScanlineEffect.current);
   }, [scanlineEffect]);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
