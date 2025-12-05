@@ -8,7 +8,7 @@ export type ScanlineIntensity = "off" | "50%" | "25%" | "12.5%";
 /**
  * Calculates scanline darkening intensity from setting
  */
-function getScanlineDarkening(scanlineIntensity: ScanlineIntensity): number {
+export function getScanlineDarkening(scanlineIntensity: ScanlineIntensity): number {
   switch (scanlineIntensity) {
     case "50%":
       return 0.5;
@@ -120,31 +120,50 @@ function createZoomAwareScanlinePatternCanvas(
  * 
  * @param ctx Canvas context to draw to
  * @param canvas Target canvas element
- * @param sourceCanvas Source canvas with the image to apply scanlines to
+ * @param sourceImageData Source ImageData with the raw pixel data
+ * @param sourceWidth Original width of the pixel data
+ * @param sourceHeight Original height of the pixel data
  * @param scanlineIntensity Scanline intensity setting ("off", "50%", "25%", "12.5%")
+ * @param tempCanvas Reusable temporary canvas for rendering (avoids allocations)
  */
 export function applyScanlineEffectToCanvas(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
-  sourceCanvas: HTMLCanvasElement,
-  scanlineIntensity: ScanlineIntensity = "off"
+  sourceImageData: ImageData,
+  sourceWidth: number,
+  sourceHeight: number,
+  scanlineIntensity: ScanlineIntensity = "off",
+  tempCanvas?: HTMLCanvasElement
 ): void {
   const darkening = getScanlineDarkening(scanlineIntensity);
 
-  // If scanline effect is off, just draw the image
+  // Use provided temp canvas or create one
+  const useCanvas = tempCanvas || document.createElement("canvas");
+  if (useCanvas.width !== sourceWidth || useCanvas.height !== sourceHeight) {
+    useCanvas.width = sourceWidth;
+    useCanvas.height = sourceHeight;
+  }
+  const tempCtx = useCanvas.getContext("2d");
+  if (!tempCtx) return;
+  
+  tempCtx.putImageData(sourceImageData, 0, 0);
+
+  // Use 'copy' mode to completely replace canvas content without compositing
+  // This prevents flickering by ensuring a complete frame replacement
+  ctx.globalCompositeOperation = "copy";
+  ctx.drawImage(useCanvas, 0, 0, canvas.width, canvas.height);
+  
+  // If scanline effect is off, we're done
   if (darkening === 0.0) {
-    ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "source-over"; // Reset to default
     return;
   }
-
-  // Draw source image
-  ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
 
   // Create zoom-aware scanline pattern and apply it
   const scanlinePattern = createZoomAwareScanlinePatternCanvas(
     canvas.width,
     canvas.height,
-    sourceCanvas.height,
+    sourceHeight,
     scanlineIntensity
   );
 

@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.51.1
+
+### Fixes
+
+- Remove screen flickering
+
 ## 0.51.0
 
 ### Features
