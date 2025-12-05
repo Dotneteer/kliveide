@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.52.0
+
+### Features
+
+- Add live reload functionality for externally changed files
+
 ## 0.51.1
 
 ### Fixes
