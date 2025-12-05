@@ -84,6 +84,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const currentScanlineEffect = useRef<ScanlineIntensity>("off");
   const shadowCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const screenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const shadowImageDataRef = useRef<ImageData | null>(null);
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -427,9 +428,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     imageBuffer.current = new ArrayBuffer(dataLen);
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
     pixelData.current = new Uint32Array(imageBuffer.current);
-    // Reset cached contexts when screen is reconfigured
+    // Reset cached contexts and ImageData when screen is reconfigured
     shadowCtxRef.current = null;
     screenCtxRef.current = null;
+    shadowImageDataRef.current = null;
   }
 
   // --- Displays the screen
@@ -456,12 +458,18 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     shadowCtx.imageSmoothingEnabled = false;
-    const shadowImageData = shadowCtx.getImageData(
-      0,
-      0,
-      shadowScreenEl.width,
-      shadowScreenEl.height
-    );
+    
+    // Get or create cached ImageData
+    let shadowImageData = shadowImageDataRef.current;
+    if (!shadowImageData || 
+        shadowImageData.width !== shadowScreenEl.width || 
+        shadowImageData.height !== shadowScreenEl.height) {
+      shadowImageData = shadowCtx.createImageData(
+        shadowScreenEl.width,
+        shadowScreenEl.height
+      );
+      shadowImageDataRef.current = shadowImageData;
+    }
 
     // Get or initialize cached screen context
     let screenCtx = screenCtxRef.current;
