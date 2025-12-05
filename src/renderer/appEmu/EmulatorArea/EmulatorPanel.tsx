@@ -5,7 +5,7 @@ import { useMachineController } from "@renderer/core/useMachineController";
 import { getGlobalSetting, useGlobalSetting, useSelector, useStore } from "@renderer/core/RendererProvider";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { applyScanlineEffectToCanvas, type ScanlineIntensity } from "./scanlineEffect";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
@@ -20,14 +20,6 @@ import { machineEmuToolRegistry } from "../tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
 import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN, SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
-
-let machineStateHandlerQueue: {
-  oldState: MachineControllerState;
-  newState: MachineControllerState;
-}[] = [];
-let machineStateProcessing = false;
-let currentDialogId = 0;
-let savedPixelBuffer: Uint32Array | null = null;
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
@@ -86,15 +78,26 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const shadowCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const screenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const shadowImageDataRef = useRef<ImageData | null>(null);
+  
+  // --- Component state (previously module-level)
+  const componentStateRef = useRef({
+    machineStateHandlerQueue: [] as {
+      oldState: MachineControllerState;
+      newState: MachineControllerState;
+    }[],
+    machineStateProcessing: false,
+    currentDialogId: 0,
+    savedPixelBuffer: null as Uint32Array | null
+  });
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
-  const _handleKeyDown = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId, true);
-  };
-  const _handleKeyUp = (e: KeyboardEvent) => {
-    handleKey(e, currentKeyMappings.current, currentDialogId, false);
-  };
+  const _handleKeyDown = useCallback((e: KeyboardEvent) => {
+    handleKey(e, currentKeyMappings.current, componentStateRef.current.currentDialogId, true);
+  }, []);
+  const _handleKeyUp = useCallback((e: KeyboardEvent) => {
+    handleKey(e, currentKeyMappings.current, componentStateRef.current.currentDialogId, false);
+  }, []);
 
   // --- Variables for audio management
   const beeperRenderer = useRef<AudioRenderer>();
@@ -141,7 +144,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Let the key handler know about the current dialog
   useEffect(() => {
-    currentDialogId = dialogToDisplay ?? 0;
+    componentStateRef.current.currentDialogId = dialogToDisplay ?? 0;
   }, [dialogToDisplay]);
 
   // --- Set up keyboard handling
@@ -192,15 +195,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
         const shadow = renderInstantScreen();
-        if (!savedPixelBuffer) {
-          savedPixelBuffer = new Uint32Array(shadow);
+        if (!componentStateRef.current.savedPixelBuffer) {
+          componentStateRef.current.savedPixelBuffer = new Uint32Array(shadow);
         }
         displayScreenData();
       }
     } else {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
-        renderInstantScreen(savedPixelBuffer);
+        renderInstantScreen(componentStateRef.current.savedPixelBuffer);
         displayScreenData();
       }
     }
@@ -294,12 +297,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   }): Promise<void> {
     // --- Because event triggering does not await async methods, we have to queue
     // --- change events and serialize their processing
-    machineStateHandlerQueue.push(stateInfo);
-    if (machineStateProcessing) return;
-    machineStateProcessing = true;
+    componentStateRef.current.machineStateHandlerQueue.push(stateInfo);
+    if (componentStateRef.current.machineStateProcessing) return;
+    componentStateRef.current.machineStateProcessing = true;
     try {
-      while (machineStateHandlerQueue.length > 0) {
-        const toProcess = machineStateHandlerQueue.shift();
+      while (componentStateRef.current.machineStateHandlerQueue.length > 0) {
+        const toProcess = componentStateRef.current.machineStateHandlerQueue.shift();
         switch (toProcess.newState) {
           case MachineControllerState.Running:
             setOverlay(controller?.isDebugging ? "Debug mode" : "");
@@ -312,18 +315,18 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
             if (showInstantScreen) {
               const shadow = renderInstantScreen();
-              if (!savedPixelBuffer) {
-                savedPixelBuffer = new Uint32Array(shadow);
+              if (!componentStateRef.current.savedPixelBuffer) {
+                componentStateRef.current.savedPixelBuffer = new Uint32Array(shadow);
               }
               displayScreenData();
             }
             break;
 
           case MachineControllerState.Stopped:
-            savedPixelBuffer = null;
+            componentStateRef.current.savedPixelBuffer = null;
             setOverlay(`Stopped (PC: $${toHexa4(controller.machine.pc)})`);
             await beeperRenderer?.current?.suspend();
-            machineStateHandlerQueue.length = 0;
+            componentStateRef.current.machineStateHandlerQueue.length = 0;
             break;
 
           default:
@@ -332,7 +335,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         }
       }
     } finally {
-      machineStateProcessing = false;
+      componentStateRef.current.machineStateProcessing = false;
     }
   }
 
@@ -344,7 +347,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     if (args.fullFrame) {
-      savedPixelBuffer = renderInstantScreen();
+      componentStateRef.current.savedPixelBuffer = renderInstantScreen();
     }
 
     // --- Stop sound rendering when fast load has been invoked
