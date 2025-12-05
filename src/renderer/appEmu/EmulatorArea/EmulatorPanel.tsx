@@ -7,6 +7,7 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
+import { applyScanlineEffectToCanvas, type ScanlineIntensity } from "./scanlineEffect";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
@@ -18,7 +19,7 @@ import { EMU_DIALOG_BASE } from "@common/messaging/dialog-ids";
 import { machineEmuToolRegistry } from "../tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN } from "@common/settings/setting-const";
+import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN, SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 
 let machineStateHandlerQueue: {
   oldState: MachineControllerState;
@@ -59,7 +60,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
+  const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
+  
+  // Update the ref whenever scanlineEffect changes
+  useEffect(() => {
+    currentScanlineEffect.current = (scanlineEffect || "off") as ScanlineIntensity;
+    console.log("Scanline effect setting changed to:", currentScanlineEffect.current);
+  }, [scanlineEffect]);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const [overlay, setOverlay] = useState(null);
@@ -73,6 +81,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const imageBuffer = useRef<ArrayBuffer>();
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
+  const currentScanlineEffect = useRef<ScanlineIntensity>("off");
 
   // --- Variables for key management
   const pressedKeys = useRef<Record<string, boolean>>({});
@@ -461,7 +470,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
       screenCtx.imageSmoothingEnabled = false;
-      screenCtx.drawImage(shadowScreenEl, 0, 0, screenEl.width, screenEl.height);
+      applyScanlineEffectToCanvas(
+        screenCtx,
+        screenEl,
+        shadowScreenEl,
+        currentScanlineEffect.current
+      );
     }
   }
 
