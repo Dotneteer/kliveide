@@ -482,7 +482,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       }
       screenCtxRef.current = screenCtx;
     }
-    let j = 0;
 
     const screenData = controller?.machine?.getPixelBuffer();
     if (!screenData) {
@@ -490,9 +489,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
     const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
-    for (let i = startIndex; i < endIndex; i++) {
-      pixelData.current[j++] = screenData[i];
-    }
+    
+    // Optimized bulk copy using subarray and set
+    pixelData.current.set(screenData.subarray(startIndex, endIndex));
+    
     shadowImageData.data.set(imageBuffer8.current);
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
