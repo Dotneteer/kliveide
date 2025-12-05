@@ -123,11 +123,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
   };
 
-  // --- Render shadow screen according to the current state
-  const renderInstantScreen = (savedPixelBuffer?: Uint32Array) => {
-    return controller?.machine?.renderInstantScreen(savedPixelBuffer);
-  };
-
   // --- Sets the overlay for paused mode
   const setPauseOverlay = () => {
     const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
@@ -193,7 +188,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (showInstantScreen) {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
-        const shadow = renderInstantScreen();
+        const shadow = controller?.machine?.renderInstantScreen();
         if (!componentStateRef.current.savedPixelBuffer) {
           componentStateRef.current.savedPixelBuffer = new Uint32Array(shadow);
         }
@@ -202,7 +197,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     } else {
       if (machineState === MachineControllerState.Paused) {
         setPauseOverlay();
-        renderInstantScreen(componentStateRef.current.savedPixelBuffer);
+        controller?.machine?.renderInstantScreen(componentStateRef.current.savedPixelBuffer);
         displayScreenData();
       }
     }
@@ -217,7 +212,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   useEffect(() => {
     const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
     if (showInstantScreen) {
-      renderInstantScreen();
+      controller?.machine?.renderInstantScreen();
       displayScreenData();
     }
   }, [emuViewVersion]);
@@ -307,7 +302,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             await beeperRenderer?.current?.suspend();
             const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
             if (showInstantScreen) {
-              const shadow = renderInstantScreen();
+              const shadow = controller?.machine?.renderInstantScreen();
               if (!componentStateRef.current.savedPixelBuffer) {
                 componentStateRef.current.savedPixelBuffer = new Uint32Array(shadow);
               }
@@ -340,7 +335,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
 
     if (args.fullFrame) {
-      componentStateRef.current.savedPixelBuffer = renderInstantScreen();
+      componentStateRef.current.savedPixelBuffer = controller?.machine?.renderInstantScreen();
     }
 
     // --- Stop sound rendering when fast load has been invoked
@@ -383,14 +378,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (args.clockMultiplier) {
       store.dispatch(setClockMultiplierAction(args.clockMultiplier));
     }
+  }
 
-    // --- Sends disk changes to the main process
-    async function saveDiskChanges(diskIndex: number, changes: SectorChanges): Promise<void> {
-      try {
-        await mainApi.saveDiskChanges(diskIndex, changes);
-      } catch (err) {
-        reportMessagingError(`Saving disk changes failed: ${err.toString()}.`);
-      }
+  // --- Sends disk changes to the main process
+  async function saveDiskChanges(diskIndex: number, changes: SectorChanges): Promise<void> {
+    try {
+      await mainApi.saveDiskChanges(diskIndex, changes);
+    } catch (err) {
+      reportMessagingError(`Saving disk changes failed: ${err.toString()}.`);
     }
   }
 
@@ -476,35 +471,54 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // Write pixel data to ImageData
     screenImageData.data.set(imageBuffer8.current);
 
-    // Check if scanline effect is enabled
-    const scanlineIntensity = currentScanlineEffect.current;
-    const darkening = getScanlineDarkening(scanlineIntensity);
-
     // Get or create temp canvas (reused for both paths)
     const tempCanvas = getTempCanvas();
     if (!tempCanvas) return;
 
+    // Check if scanline effect is enabled and render accordingly
+    const scanlineIntensity = currentScanlineEffect.current;
+    const darkening = getScanlineDarkening(scanlineIntensity);
+
     if (darkening === 0.0) {
-      // No scanline effect - draw directly with scaling
-      const tempCtx = tempCanvas.getContext("2d");
-      if (!tempCtx) return;
-      
-      tempCtx.putImageData(screenImageData, 0, 0);
-      screenCtx.globalCompositeOperation = "copy";
-      screenCtx.drawImage(tempCanvas, 0, 0, screenEl.width, screenEl.height);
-      screenCtx.globalCompositeOperation = "source-over";
+      renderWithoutScanlines(screenCtx, screenEl, screenImageData, tempCanvas);
     } else {
-      // With scanline effect - pass temp canvas for reuse
-      applyScanlineEffectToCanvas(
-        screenCtx,
-        screenEl,
-        screenImageData,
-        shadowCanvasWidth.current,
-        shadowCanvasHeight.current,
-        scanlineIntensity,
-        tempCanvas
-      );
+      renderWithScanlines(screenCtx, screenEl, screenImageData, tempCanvas, scanlineIntensity);
     }
+  }
+
+  // --- Render screen without scanline effect
+  function renderWithoutScanlines(
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    imageData: ImageData,
+    tempCanvas: HTMLCanvasElement
+  ): void {
+    const tempCtx = tempCanvas.getContext("2d");
+    if (!tempCtx) return;
+    
+    tempCtx.putImageData(imageData, 0, 0);
+    ctx.globalCompositeOperation = "copy";
+    ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  // --- Render screen with scanline effect
+  function renderWithScanlines(
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    imageData: ImageData,
+    tempCanvas: HTMLCanvasElement,
+    scanlineIntensity: ScanlineIntensity
+  ): void {
+    applyScanlineEffectToCanvas(
+      ctx,
+      canvas,
+      imageData,
+      shadowCanvasWidth.current,
+      shadowCanvasHeight.current,
+      scanlineIntensity,
+      tempCanvas
+    );
   }
 
   // --- Get or create temporary canvas for pixel data
