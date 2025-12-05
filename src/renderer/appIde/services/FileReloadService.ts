@@ -34,14 +34,14 @@ export class FileReloadService {
   private async handleFileChanged(filePath: string): Promise<void> {
     // Find the document in all document hubs
     const documentHubs = this.projectService.getDocumentHubServiceInstances();
-    
+
     for (const hub of documentHubs) {
       const documents = hub.getOpenDocuments();
       const document = documents.find((doc) => doc.path === filePath || doc.id === filePath);
-      
+
       if (document) {
         // Check if document has unsaved changes
-        const hasUnsavedChanges = 
+        const hasUnsavedChanges =
           document.editVersionCount !== undefined &&
           document.savedVersionCount !== undefined &&
           document.editVersionCount !== document.savedVersionCount;
@@ -98,4 +98,3 @@ export class FileReloadService {
     this.unwatchAllFiles();
   }
 }
-

@@ -40,7 +40,7 @@ class DocumentHubService implements IDocumentHubService {
     private readonly projectService: IProjectService
   ) {
     projectService.projectClosed.on(this.onProjectClosed);
-    
+
     // Initialize file reload service
     this._fileReloadService = new FileReloadService(
       projectService,
@@ -88,16 +88,16 @@ class DocumentHubService implements IDocumentHubService {
     try {
       // Read the file content
       const contents = await this.projectService.readFileContent(document.path);
-      
+
       // Update the document content
       document.contents = contents;
-      
+
       // Notify the document API to reload
       const api = this._documentApi.get(documentId);
       if (api && api.reloadContent) {
         api.reloadContent(contents);
       }
-      
+
       // Sign that the hub changed
       this.signHubStateChanged();
     } catch (err) {

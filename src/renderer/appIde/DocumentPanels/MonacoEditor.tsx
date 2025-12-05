@@ -90,10 +90,10 @@ export async function initializeMonaco() {
   // --- Use the ESM version of monaco-editor which is bundled by Vite
   // --- This avoids the AMD loader issues in production builds
   loader.config({ monaco: monacoEditor });
-  
+
   // --- Wait for monaco to initialize
   const monaco = await loader.init();
-  
+
   customLanguagesRegistry.forEach((entry) => ensureLanguage(monaco, entry.id));
   monacoInitialized = true;
 
@@ -638,10 +638,10 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
             // Save current cursor position
             const position = editor.current.getPosition();
             const selection = editor.current.getSelection();
-            
+
             // Update content
             model.setValue(contents);
-            
+
             // Restore cursor position if possible
             if (position) {
               editor.current.setPosition(position);
@@ -649,7 +649,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
                 editor.current.setSelection(selection);
               }
             }
-            
+
             // Update document state
             document.contents = contents;
             document.savedVersionCount = document.editVersionCount;
