@@ -7,7 +7,7 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
-import { applyScanlineEffectToCanvas, type ScanlineIntensity } from "./scanlineEffect";
+import { applyScanlineEffectToCanvas, getScanlineDarkening, type ScanlineIntensity } from "./scanlineEffect";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
 import { FAST_LOAD } from "@emu/machines/machine-props";
 import { FrameCompletedArgs, IMachineController } from "../../abstractions/IMachineController";
@@ -38,7 +38,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Element references
   const hostElement = useRef<HTMLDivElement>();
   const screenElement = useRef<HTMLCanvasElement>();
-  const shadowScreenElement = useRef<HTMLCanvasElement>();
   const hostRectangle = useRef<DOMRect>();
   const screenRectangle = useRef<DOMRect>();
 
@@ -75,9 +74,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const imageBuffer8 = useRef<Uint8Array>();
   const pixelData = useRef<Uint32Array>();
   const currentScanlineEffect = useRef<ScanlineIntensity>("off");
-  const shadowCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const screenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
-  const shadowImageDataRef = useRef<ImageData | null>(null);
+  const screenImageDataRef = useRef<ImageData | null>(null);
+  const tempCanvasRef = useRef<HTMLCanvasElement | null>(null);
   
   // --- Component state (previously module-level)
   const componentStateRef = useRef({
@@ -242,12 +241,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           />
         )}
         <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
-        <canvas
-          ref={shadowScreenElement}
-          style={{ display: "none" }}
-          width={shadowCanvasWidth.current}
-          height={shadowCanvasHeight.current}
-        />
         {machineTools.current}
       </div>
     </div>
@@ -420,10 +413,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     const ratio = Math.min(widthRatio, heightRatio);
     setCanvasWidth(width * ratio * xRatio.current);
     setCanvasHeight(height * ratio * yRatio.current);
-    if (shadowScreenElement.current) {
-      shadowScreenElement.current.width = width;
-      shadowScreenElement.current.height = height;
-    }
   }
 
   // --- Setup the screen buffers
@@ -433,9 +422,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     imageBuffer8.current = new Uint8Array(imageBuffer.current);
     pixelData.current = new Uint32Array(imageBuffer.current);
     // Reset cached contexts and ImageData when screen is reconfigured
-    shadowCtxRef.current = null;
     screenCtxRef.current = null;
-    shadowImageDataRef.current = null;
+    screenImageDataRef.current = null;
+    tempCanvasRef.current = null;
   }
 
   // --- Displays the screen
@@ -444,35 +433,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       return;
     }
     const screenEl = screenElement.current;
-    const shadowScreenEl = shadowScreenElement.current;
-    if (!screenEl || !shadowScreenEl) {
+    if (!screenEl) {
       return;
-    }
-
-    // Get or initialize cached shadow context
-    let shadowCtx = shadowCtxRef.current;
-    if (!shadowCtx) {
-      shadowCtx = shadowScreenEl.getContext("2d", {
-        willReadFrequently: true
-      });
-      if (!shadowCtx) {
-        return;
-      }
-      shadowCtxRef.current = shadowCtx;
-    }
-
-    shadowCtx.imageSmoothingEnabled = false;
-    
-    // Get or create cached ImageData
-    let shadowImageData = shadowImageDataRef.current;
-    if (!shadowImageData || 
-        shadowImageData.width !== shadowScreenEl.width || 
-        shadowImageData.height !== shadowScreenEl.height) {
-      shadowImageData = shadowCtx.createImageData(
-        shadowScreenEl.width,
-        shadowScreenEl.height
-      );
-      shadowImageDataRef.current = shadowImageData;
     }
 
     // Get or initialize cached screen context
@@ -487,27 +449,75 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       screenCtxRef.current = screenCtx;
     }
 
+    screenCtx.imageSmoothingEnabled = false;
+    
+    // Get or create cached ImageData for the screen canvas
+    let screenImageData = screenImageDataRef.current;
+    if (!screenImageData || 
+        screenImageData.width !== shadowCanvasWidth.current || 
+        screenImageData.height !== shadowCanvasHeight.current) {
+      screenImageData = screenCtx.createImageData(
+        shadowCanvasWidth.current,
+        shadowCanvasHeight.current
+      );
+      screenImageDataRef.current = screenImageData;
+    }
+
     const screenData = controller?.machine?.getPixelBuffer();
     if (!screenData) {
       return;
     }
     const startIndex = controller?.machine?.getBufferStartOffset() ?? 0;
-    const endIndex = shadowScreenEl.width * shadowScreenEl.height + startIndex;
+    const endIndex = shadowCanvasWidth.current * shadowCanvasHeight.current + startIndex;
     
     // Optimized bulk copy using subarray and set
     pixelData.current.set(screenData.subarray(startIndex, endIndex));
     
-    shadowImageData.data.set(imageBuffer8.current);
-    shadowCtx.putImageData(shadowImageData, 0, 0);
-    if (screenCtx) {
-      screenCtx.imageSmoothingEnabled = false;
+    // Write pixel data to ImageData
+    screenImageData.data.set(imageBuffer8.current);
+
+    // Check if scanline effect is enabled
+    const scanlineIntensity = currentScanlineEffect.current;
+    const darkening = getScanlineDarkening(scanlineIntensity);
+
+    // Get or create temp canvas (reused for both paths)
+    const tempCanvas = getTempCanvas();
+    if (!tempCanvas) return;
+
+    if (darkening === 0.0) {
+      // No scanline effect - draw directly with scaling
+      const tempCtx = tempCanvas.getContext("2d");
+      if (!tempCtx) return;
+      
+      tempCtx.putImageData(screenImageData, 0, 0);
+      screenCtx.globalCompositeOperation = "copy";
+      screenCtx.drawImage(tempCanvas, 0, 0, screenEl.width, screenEl.height);
+      screenCtx.globalCompositeOperation = "source-over";
+    } else {
+      // With scanline effect - pass temp canvas for reuse
       applyScanlineEffectToCanvas(
         screenCtx,
         screenEl,
-        shadowScreenEl,
-        currentScanlineEffect.current
+        screenImageData,
+        shadowCanvasWidth.current,
+        shadowCanvasHeight.current,
+        scanlineIntensity,
+        tempCanvas
       );
     }
+  }
+
+  // --- Get or create temporary canvas for pixel data
+  function getTempCanvas(): HTMLCanvasElement | null {
+    if (!tempCanvasRef.current || 
+        tempCanvasRef.current.width !== shadowCanvasWidth.current ||
+        tempCanvasRef.current.height !== shadowCanvasHeight.current) {
+      const canvas = document.createElement("canvas");
+      canvas.width = shadowCanvasWidth.current;
+      canvas.height = shadowCanvasHeight.current;
+      tempCanvasRef.current = canvas;
+    }
+    return tempCanvasRef.current;
   }
 
   // --- Hanldles key events
