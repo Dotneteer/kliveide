@@ -57,8 +57,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const shadowCanvasHeight = useRef(0);
   const xRatio = useRef(1);
   const yRatio = useRef(1);
+  
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const audioSampleRate = useSelector((s) => s.emulatorState?.audioSampleRate);
+  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
+  
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
   const dialogToDisplay = useSelector((s) => s.ideView?.dialogToDisplay);
@@ -68,7 +71,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     currentScanlineEffect.current = (scanlineEffect || "off") as ScanlineIntensity;
   }, [scanlineEffect]);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
-  const emuViewVersion = useSelector((s) => s.emulatorState?.emuViewVersion);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const keyMappings = useSelector((s) => s.keyMappings);
