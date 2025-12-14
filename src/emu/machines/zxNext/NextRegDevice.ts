@@ -86,6 +86,43 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   // --- Reg $7f state
   userRegister0: number;
 
+  // --- Reg $82 state
+  port0xffEnabled: boolean;
+  port0x7ffdEnabled: boolean;
+  port0xdffdEnabled: boolean;
+  port0x1ffdEnabled: boolean;
+  plus3FloatingBusEnabled: boolean;
+  port0x6bEnabled: boolean;
+  port0x1fEnabled: boolean;
+  port0x37Enabled: boolean;
+
+  // --- Reg $83 state
+  portDivMmcEnabled: boolean;
+  portMultifaceEnabled: boolean;
+  portI2CEnabled: boolean;
+  portSpiEnabled: boolean;
+  portUartEnabled: boolean;
+  portMouseEnabled: boolean;
+  portSpritesEnabled: boolean;
+  portLayer2Enabled: boolean;
+
+  // --- Reg $84 state
+  portAyEnabled: boolean;
+  portDacMode1Enabled: boolean;
+  portDacMode2Enabled: boolean;
+  portDacStereoProfiCovoxEnabled: boolean;
+  portDacStereoCovoxEnabled: boolean;
+  portDacMonoPentagonEnabled: boolean;
+  portDacMonoGsCovoxEnabled: boolean;
+  portDacMonoSpecdrumEnabled: boolean;
+
+  // --- Reg $85 state
+  portUlaPlusEnabled: boolean;
+  portZ80DmaEnabled: boolean;
+  portPentagon1024MemoryEnabled: boolean;
+  portZ80CtcEnabled: boolean;
+  registerSoftResetMode: boolean;
+
   // --- Reg $d8 state
   fdcIoTrap: boolean;
 
@@ -269,6 +306,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.joystickDevice.joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
         machine.screenDevice.hz60Mode = (v & 0x04) !== 0;
         machine.screenDevice.scandoublerEnabled = (v & 0x01) !== 0;
+        machine.composedScreenDevice.nextReg0x05Value = v;
       },
       slices: [
         {
@@ -1285,10 +1323,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x68,
       description: "ULA Control",
       readFn: () =>
-        machine.ulaDevice.nextReg68Value |
+        machine.composedScreenDevice.nextReg0x68Value |
         (machine.keyboardDevice.cancelExtendedKeyEntries ? 0x10 : 0),
       writeFn: (v) => {
         machine.ulaDevice.nextReg68Value = v & 0xff;
+        machine.composedScreenDevice.nextReg0x68Value = v & 0xff;
         machine.keyboardDevice.cancelExtendedKeyEntries = !!(v & 0x10);
       },
       slices: [
@@ -1638,7 +1677,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x82,
       description: "Internal Port Decoding Enables #1 (LSB)",
-      writeFn: () => {},
+      writeFn: (v) => {
+        this.port0xffEnabled = !!(v & 0x01);
+        this.port0x7ffdEnabled = !!(v & 0x02);
+        this.port0xdffdEnabled = !!(v & 0x04);
+        this.port0x1ffdEnabled = !!(v & 0x08);
+        this.plus3FloatingBusEnabled = !!(v & 0x10);
+        this.port0x6bEnabled = !!(v & 0x20);
+        this.port0x1fEnabled = !!(v & 0x40);
+        this.port0x37Enabled = !!(v & 0x80);
+      },
       slices: [
         {
           mask: 0x80,
@@ -1684,7 +1732,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x83,
       description: "Internal Port Decoding Enables #2",
-      writeFn: (v) => (machine.divMmcDevice.nextReg83Value = v & 0xff),
+      writeFn: (v) => (
+        (this.portDivMmcEnabled = !!(v & 0x01)),
+        (this.portMultifaceEnabled = !!(v & 0x02)),
+        (this.portI2CEnabled = !!(v & 0x04)),
+        (this.portSpiEnabled = !!(v & 0x08)),
+        (this.portUartEnabled = !!(v & 0x10)),
+        (this.portMouseEnabled = !!(v & 0x20)),
+        (this.portSpritesEnabled = !!(v & 0x40)),
+        (this.portLayer2Enabled = !!(v & 0x80)),
+        (machine.divMmcDevice.nextReg83Value = v & 0xff)
+      ),
       slices: [
         {
           mask: 0x80,
@@ -1730,7 +1788,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x84,
       description: "Internal Port Decoding Enables #3",
-      writeFn: () => {},
+      writeFn: (v) => {
+        this.portAyEnabled = !!(v & 0x01);
+        this.portDacMode1Enabled = !!(v & 0x02);
+        this.portDacMode2Enabled = !!(v & 0x04);
+        this.portDacStereoProfiCovoxEnabled = !!(v & 0x08);
+        this.portDacStereoCovoxEnabled = !!(v & 0x10);
+        this.portDacMonoPentagonEnabled = !!(v & 0x20);
+        this.portDacMonoGsCovoxEnabled = !!(v & 0x40);
+        this.portDacMonoSpecdrumEnabled = !!(v & 0x80);
+      },
       slices: [
         {
           mask: 0x80,
@@ -1776,8 +1843,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x85,
       description: "Internal Port Decoding Enables #4 (MSB)",
-      readFn: () => (this.regValues[0x85] ?? 0x00) & 0x8f,
-      writeFn: () => {},
+      writeFn: (v) => {
+        this.regValues[0x85] = v & 0x8f;
+        this.portUlaPlusEnabled = !!(v & 0x01);
+        this.portZ80DmaEnabled = !!(v & 0x02);
+        this.portPentagon1024MemoryEnabled = !!(v & 0x04);
+        this.portZ80CtcEnabled = !!(v & 0x08);
+        this.registerSoftResetMode = !!(v & 0x80);
+      },
       slices: [
         {
           mask: 0x80,

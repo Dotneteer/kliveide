@@ -42,6 +42,7 @@ import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
+import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -87,6 +88,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Represents the screen device of ZX Spectrum 48K
    */
   screenDevice: NextScreenDevice;
+  composedScreenDevice: NextComposedScreenDevice;
 
   mouseDevice: MouseDevice;
 
@@ -148,6 +150,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.copperDevice = new CopperDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
     this.screenDevice = new NextScreenDevice(this, NextScreenDevice.NextScreenConfiguration);
+    this.composedScreenDevice = new NextComposedScreenDevice(this);
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.mouseDevice = new MouseDevice(this);
     this.joystickDevice = new JoystickDevice(this);
@@ -504,7 +507,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Get the number of T-states in a display line (use -1, if this info is not available)
    */
   get tactsInDisplayLine(): number {
-    return this.screenDevice.screenWidth;
+    return this.composedScreenDevice.screenWidth;
   }
 
   /**
@@ -669,14 +672,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Width of the screen in native machine screen pixels
    */
   get screenWidthInPixels() {
-    return this.screenDevice.screenWidth;
+    return this.composedScreenDevice.screenWidth;
   }
 
   /**
    * Height of the screen in native machine screen pixels
    */
   get screenHeightInPixels() {
-    return this.screenDevice.screenLines;
+    return this.composedScreenDevice.screenLines;
   }
 
   /**
@@ -684,7 +687,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns The aspect ratio of the screen
    */
   getAspectRatio(): [number, number] {
-    return this.screenDevice.getAspectRatio();
+    return this.composedScreenDevice.getAspectRatio();
   }
 
   /**
@@ -701,7 +704,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns The pixel buffer that represents the previous screen
    */
   renderInstantScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
-    return this.screenDevice.renderInstantScreen(savedPixelBuffer);
+    return this.composedScreenDevice.renderInstantScreen(savedPixelBuffer);
   }
 
   /*
@@ -851,6 +854,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Prepare the screen device for the new machine frame
     this.screenDevice.onNewFrame();
+    this.composedScreenDevice.onNewFrame();
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
@@ -871,6 +875,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   onTactIncremented(): void {
     const machineTact = this.currentFrameTact;
     while (this.lastRenderedFrameTact <= machineTact) {
+      this.composedScreenDevice.renderTact(this.lastRenderedFrameTact);
       this.screenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();

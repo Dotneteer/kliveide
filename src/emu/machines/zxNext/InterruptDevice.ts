@@ -2,38 +2,38 @@ import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
-  private _intSignalActive: boolean;
-  private _ulaInterruptDisabled: boolean;
-  private _lineInterruptEnabled: boolean;
-  private _lineInterrupt: number;
-  private _im2TopBits: number;
-  private _enableStacklessNmi: boolean;
-  private _hwIm2Mode: boolean;
-  private _nmiReturnAddress: number;
-  private _expBusIntSignalActive: boolean;
-  private _uart0TxEmpty: boolean;
-  private _uart0RxNearFull: boolean;
-  private _uart0RxAvailable: boolean;
-  private _uart1TxEmpty: boolean;
-  private _uart1RxNearFull: boolean;
-  private _uart1RxAvailable: boolean;
-  private _lineInterruptStatus: boolean; // --- im2_int_status(0)
-  private _ulaInterruptStatus: boolean;  // --- im2_int_status(11)
-  private _uart0TxEmptyStatus: boolean;  // --- im2_int_status(12)
-  private _uart0RxNearFullStatus: boolean; // --- im2_int_status(1) (shared with uart0RxAvailable)
-  private _uart0RxAvailableStatus: boolean; // --- im2_int_status(1)
-  private _uart1TxEmptyStatus: boolean; // --- im2_int_status(13)
-  private _uart1RxNearFullStatus: boolean; // --- im2_int_status(2) (shared with uart1RxAvailable)
-  private _uart1RxAvailableStatus: boolean; // --- im2_int_status(2)
-  private _enableNmiToIntDma: boolean;
-  private _enableLineIntToIntDma: boolean;
-  private _enableUlaIntToIntDma: boolean;
-  private _enableUart0TxEmptyToIntDma: boolean;
-  private _enableUart0RxNearFullToIntDma: boolean;
-  private _enableUart0RxAvailableToIntDma: boolean;
-  private _enableUart1TxEmptyToIntDma: boolean;
-  private _enableUart1RxNearFullToIntDma: boolean;
-  private _enableUart1RxAvailableToIntDma: boolean;
+  intSignalActive: boolean;
+  ulaInterruptDisabled: boolean;
+  lineInterruptEnabled: boolean;
+  expBusInterruptEnabled: boolean;
+  lineInterrupt: number;
+  im2TopBits: number;
+  enableStacklessNmi: boolean;
+  hwIm2Mode: boolean;
+  nmiReturnAddress: number;
+  uart0TxEmpty: boolean;
+  uart0RxNearFull: boolean;
+  uart0RxAvailable: boolean;
+  uart1TxEmpty: boolean;
+  uart1RxNearFull: boolean;
+  uart1RxAvailable: boolean;
+  lineInterruptStatus: boolean; // --- im2_int_status(0)
+  ulaInterruptStatus: boolean;  // --- im2_int_status(11)
+  uart0TxEmptyStatus: boolean;  // --- im2_int_status(12)
+  uart0RxNearFullStatus: boolean; // --- im2_int_status(1) (shared with uart0RxAvailable)
+  uart0RxAvailableStatus: boolean; // --- im2_int_status(1)
+  uart1TxEmptyStatus: boolean; // --- im2_int_status(13)
+  uart1RxNearFullStatus: boolean; // --- im2_int_status(2) (shared with uart1RxAvailable)
+  uart1RxAvailableStatus: boolean; // --- im2_int_status(2)
+  enableNmiToIntDma: boolean;
+  enableLineIntToIntDma: boolean;
+  enableUlaIntToIntDma: boolean;
+  enableUart0TxEmptyToIntDma: boolean;
+  enableUart0RxNearFullToIntDma: boolean;
+  enableUart0RxAvailableToIntDma: boolean;
+  enableUart1TxEmptyToIntDma: boolean;
+  enableUart1RxNearFullToIntDma: boolean;
+  enableUart1RxAvailableToIntDma: boolean;
 
   readonly ctcIntEnabled: boolean[] = [];
   readonly ctcIntStatus: boolean[] = []; // --- im2_int_status(3-10)
@@ -51,14 +51,14 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
-    this._intSignalActive = false;
-    this._ulaInterruptDisabled = false;
-    this._lineInterruptEnabled = false;
-    this._lineInterrupt = 0x00;
-    this._im2TopBits = 0x00;
-    this._enableStacklessNmi = false;
-    this._hwIm2Mode = false;
-    this._nmiReturnAddress = 0x00;
+    this.intSignalActive = false;
+    this.ulaInterruptDisabled = false;
+    this.lineInterruptEnabled = false;
+    this.lineInterrupt = 0x00;
+    this.im2TopBits = 0x00;
+    this.enableStacklessNmi = false;
+    this.hwIm2Mode = false;
+    this.nmiReturnAddress = 0x00;
     for (let i = 0; i < 8; i++) {
       this.ctcIntEnabled[i] = false;
       this.ctcIntStatus[i] = false;
@@ -84,8 +84,8 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextReg20Value(): number {
-    return (this._lineInterruptStatus ? 0x80 : 0x00) |
-    (this._ulaInterruptStatus ? 0x40 : 0x00) |
+    return (this.lineInterruptStatus ? 0x80 : 0x00) |
+    (this.ulaInterruptStatus ? 0x40 : 0x00) |
     (this.ctcIntStatus[3] ? 0x08 : 0x00) |
     (this.ctcIntStatus[2] ? 0x04 : 0x00) |
     (this.ctcIntStatus[1] ? 0x02 : 0x00) |
@@ -94,63 +94,63 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
 
   get nextReg22Value(): number {
     return (
-      (this._intSignalActive ? 0x80 : 0x00) |
-      (this._ulaInterruptDisabled ? 0x04 : 0x00) |
-      (this._lineInterruptEnabled ? 0x02 : 0x00) |
-      ((this._lineInterrupt & 0x100) ? 0x01 : 0x00)
+      (this.intSignalActive ? 0x80 : 0x00) |
+      (this.ulaInterruptDisabled ? 0x04 : 0x00) |
+      (this.lineInterruptEnabled ? 0x02 : 0x00) |
+      ((this.lineInterrupt & 0x100) ? 0x01 : 0x00)
     );
   }
 
   set nextReg22Value(value: number) {
-    this._intSignalActive = (value & 0x80) !== 0;
-    this._ulaInterruptDisabled = (value & 0x04) !== 0;
-    this._lineInterruptEnabled = (value & 0x02) !== 0;
-    this._lineInterrupt = ((value & 0x01) << 8) | (this._lineInterrupt & 0xff);
+    this.intSignalActive = (value & 0x80) !== 0;
+    this.ulaInterruptDisabled = (value & 0x04) !== 0;
+    this.lineInterruptEnabled = (value & 0x02) !== 0;
+    this.lineInterrupt = ((value & 0x01) << 8) | (this.lineInterrupt & 0xff);
   }
 
   get nextReg23Value(): number {
-    return this._lineInterrupt & 0xff;
+    return this.lineInterrupt & 0xff;
   }
 
   set nextReg23Value(value: number) {
-    this._lineInterrupt = (this._lineInterrupt & 0x100) | (value & 0xff);
+    this.lineInterrupt = (this.lineInterrupt & 0x100) | (value & 0xff);
   }
 
   get nextRegC0Value(): number {
     return (
-      this._im2TopBits |
-      (this._enableStacklessNmi ? 0x08 : 0x00) |
+      this.im2TopBits |
+      (this.enableStacklessNmi ? 0x08 : 0x00) |
       (this.currentInterruptMode << 1) |
-      (this._hwIm2Mode ? 0x01 : 0x00)
+      (this.hwIm2Mode ? 0x01 : 0x00)
     );
   }
 
   set nextRegC0Value(value: number) {
-    this._im2TopBits = value & 0xe0;
-    this._enableStacklessNmi = (value & 0x08) !== 0;
-    this._hwIm2Mode = (value & 0x01) !== 0;
+    this.im2TopBits = value & 0xe0;
+    this.enableStacklessNmi = (value & 0x08) !== 0;
+    this.hwIm2Mode = (value & 0x01) !== 0;
   }
 
   set nextRegC2Value(value: number) {
-    this._nmiReturnAddress = (this._nmiReturnAddress & 0xff00) | value;
+    this.nmiReturnAddress = (this.nmiReturnAddress & 0xff00) | value;
   }
 
   set nextRegC3Value(value: number) {
-    this._nmiReturnAddress = ((value & 0xff) << 8) | (this._nmiReturnAddress & 0xff);
+    this.nmiReturnAddress = ((value & 0xff) << 8) | (this.nmiReturnAddress & 0xff);
   }
 
   get nextRegC4Value(): number {
     return (
-      (this._expBusIntSignalActive ? 0x80 : 0x00) |
-      (this._lineInterruptEnabled ? 0x02 : 0x00) |
-      (!this._ulaInterruptDisabled ? 0x01 : 0x00)
+      (this.expBusInterruptEnabled ? 0x80 : 0x00) |
+      (this.lineInterruptEnabled ? 0x02 : 0x00) |
+      (this.ulaInterruptDisabled ? 0x01 : 0x00)
     );
   }
 
   set nextRegC4Value(value: number) {
-    this._expBusIntSignalActive = (value & 0x80) !== 0;
-    this._lineInterruptEnabled = (value & 0x02) !== 0;
-    this._ulaInterruptDisabled = (value & 0x01) === 0;
+    this.expBusInterruptEnabled = (value & 0x80) !== 0;
+    this.lineInterruptEnabled = (value & 0x02) !== 0;
+    this.ulaInterruptDisabled = (value & 0x01) !== 0;
   }
 
   get nextRegC5Value(): number {
@@ -179,34 +179,34 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
 
   get nextRegC6Value(): number {
     return (
-      (this._uart1TxEmpty ? 0x40 : 0x00) |
-      (this._uart1RxNearFull ? 0x20 : 0x00) |
-      (this._uart1RxAvailable ? 0x10 : 0x00) |
-      (this._uart0TxEmpty ? 0x04 : 0x00) |
-      (this._uart0RxNearFull ? 0x02 : 0x00) |
-      (this._uart0RxAvailable ? 0x01 : 0x00)
+      (this.uart1TxEmpty ? 0x40 : 0x00) |
+      (this.uart1RxNearFull ? 0x20 : 0x00) |
+      (this.uart1RxAvailable ? 0x10 : 0x00) |
+      (this.uart0TxEmpty ? 0x04 : 0x00) |
+      (this.uart0RxNearFull ? 0x02 : 0x00) |
+      (this.uart0RxAvailable ? 0x01 : 0x00)
     );
   }
 
   set nextRegC6Value(value: number) {
-    this._uart1TxEmpty = (value & 0x40) !== 0;
-    this._uart1RxNearFull = (value & 0x20) !== 0;
-    this._uart1RxAvailable = (value & 0x10) !== 0;
-    this._uart0TxEmpty = (value & 0x04) !== 0;
-    this._uart0RxNearFull = (value & 0x02) !== 0;
-    this._uart0RxAvailable = (value & 0x01) !== 0;
+    this.uart1TxEmpty = (value & 0x40) !== 0;
+    this.uart1RxNearFull = (value & 0x20) !== 0;
+    this.uart1RxAvailable = (value & 0x10) !== 0;
+    this.uart0TxEmpty = (value & 0x04) !== 0;
+    this.uart0RxNearFull = (value & 0x02) !== 0;
+    this.uart0RxAvailable = (value & 0x01) !== 0;
   }
 
   get nextRegC8Value(): number {
-    return (this._lineInterruptStatus ? 0x02 : 0x00) | (this._ulaInterruptStatus ? 0x01 : 0x00);
+    return (this.lineInterruptStatus ? 0x02 : 0x00) | (this.ulaInterruptStatus ? 0x01 : 0x00);
   }
 
   set nextRegC8Value(value: number) {
-    if (value & 0x02 && !this._hwIm2Mode) {
-      this._lineInterruptStatus = false;
+    if (value & 0x02 && !this.hwIm2Mode) {
+      this.lineInterruptStatus = false;
     }
-    if (value & 0x01 && !this._hwIm2Mode) {
-      this._ulaInterruptStatus = false;
+    if (value & 0x01 && !this.hwIm2Mode) {
+      this.ulaInterruptStatus = false;
     }
   }
 
@@ -224,76 +224,76 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextRegC9Value(value: number) {
-    if (value & 0x01 && !this._hwIm2Mode) {
+    if (value & 0x01 && !this.hwIm2Mode) {
       this.ctcIntStatus[0] = false;
     }
-    if (value & 0x02 && !this._hwIm2Mode) {
+    if (value & 0x02 && !this.hwIm2Mode) {
       this.ctcIntStatus[1] = false;
     }
-    if (value & 0x04 && !this._hwIm2Mode) {
+    if (value & 0x04 && !this.hwIm2Mode) {
       this.ctcIntStatus[2] = false;
     }
-    if (value & 0x08 && !this._hwIm2Mode) {
+    if (value & 0x08 && !this.hwIm2Mode) {
       this.ctcIntStatus[3] = false;
     }
-    if (value & 0x10 && !this._hwIm2Mode) {
+    if (value & 0x10 && !this.hwIm2Mode) {
       this.ctcIntStatus[4] = false;
     }
-    if (value & 0x20 && !this._hwIm2Mode) {
+    if (value & 0x20 && !this.hwIm2Mode) {
       this.ctcIntStatus[5] = false;
     }
-    if (value & 0x40 && !this._hwIm2Mode) {
+    if (value & 0x40 && !this.hwIm2Mode) {
       this.ctcIntStatus[6] = false;
     }
-    if (value & 0x80 && !this._hwIm2Mode) {
+    if (value & 0x80 && !this.hwIm2Mode) {
       this.ctcIntStatus[7] = false;
     }
   }
 
   get nextRegCAValue(): number {
     return (
-      (this._uart1TxEmptyStatus ? 0x40 : 0x00) |
-      (this._uart1TxEmptyStatus ? 0x20 : 0x00) |
-      (this._uart1RxAvailableStatus ? 0x10 : 0x00) |
-      (this._uart0TxEmptyStatus ? 0x04 : 0x00) |
-      (this._uart0RxNearFullStatus ? 0x02 : 0x00) |
-      (this._uart0RxNearFullStatus ? 0x01 : 0x00)
+      (this.uart1TxEmptyStatus ? 0x40 : 0x00) |
+      (this.uart1TxEmptyStatus ? 0x20 : 0x00) |
+      (this.uart1RxAvailableStatus ? 0x10 : 0x00) |
+      (this.uart0TxEmptyStatus ? 0x04 : 0x00) |
+      (this.uart0RxNearFullStatus ? 0x02 : 0x00) |
+      (this.uart0RxNearFullStatus ? 0x01 : 0x00)
     );
   }
 
   set nextRegCAValue(value: number) {
-    if (value & 0x40 && !this._hwIm2Mode) {
-      this._uart1TxEmptyStatus = false;
+    if (value & 0x40 && !this.hwIm2Mode) {
+      this.uart1TxEmptyStatus = false;
     }
-    if (value & 0x20 && !this._hwIm2Mode) {
-      this._uart1RxNearFullStatus = false;
+    if (value & 0x20 && !this.hwIm2Mode) {
+      this.uart1RxNearFullStatus = false;
     }
-    if (value & 0x10 && !this._hwIm2Mode) {
-      this._uart1RxAvailableStatus = false;
+    if (value & 0x10 && !this.hwIm2Mode) {
+      this.uart1RxAvailableStatus = false;
     }
-    if (value & 0x04 && !this._hwIm2Mode) {
-      this._uart0TxEmptyStatus = false;
+    if (value & 0x04 && !this.hwIm2Mode) {
+      this.uart0TxEmptyStatus = false;
     }
-    if (value & 0x02 && !this._hwIm2Mode) {
-      this._uart0RxNearFullStatus = false;
+    if (value & 0x02 && !this.hwIm2Mode) {
+      this.uart0RxNearFullStatus = false;
     }
-    if (value & 0x01 && !this._hwIm2Mode) {
-      this._uart0RxAvailableStatus = false;
+    if (value & 0x01 && !this.hwIm2Mode) {
+      this.uart0RxAvailableStatus = false;
     }
   }
 
   get nextRegCCValue(): number {
     return (
-      (this._enableNmiToIntDma ? 0x80 : 0x00) |
-      (this._enableLineIntToIntDma ? 0x02 : 0x00) |
-      (this._enableUlaIntToIntDma ? 0x01 : 0x00)
+      (this.enableNmiToIntDma ? 0x80 : 0x00) |
+      (this.enableLineIntToIntDma ? 0x02 : 0x00) |
+      (this.enableUlaIntToIntDma ? 0x01 : 0x00)
     );
   }
 
   set nextRegCCValue(value: number) {
-    this._enableNmiToIntDma = (value & 0x80) !== 0;
-    this._enableLineIntToIntDma = (value & 0x02) !== 0;
-    this._enableUlaIntToIntDma = (value & 0x01) !== 0;
+    this.enableNmiToIntDma = (value & 0x80) !== 0;
+    this.enableLineIntToIntDma = (value & 0x02) !== 0;
+    this.enableUlaIntToIntDma = (value & 0x01) !== 0;
   }
 
   get nextRegCDValue(): number {
@@ -322,189 +322,29 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
 
   get nextRegCEValue(): number {
     return (
-      (this._enableUart1TxEmptyToIntDma ? 0x40 : 0x00) |
-      (this._enableUart1RxNearFullToIntDma ? 0x20 : 0x00) |
-      (this._enableUart1RxAvailableToIntDma ? 0x10 : 0x00) |
-      (this._enableUart0TxEmptyToIntDma ? 0x04 : 0x00) |
-      (this._enableUart0RxNearFullToIntDma ? 0x02 : 0x00) |
-      (this._enableUart0RxAvailableToIntDma ? 0x01 : 0x00)
+      (this.enableUart1TxEmptyToIntDma ? 0x40 : 0x00) |
+      (this.enableUart1RxNearFullToIntDma ? 0x20 : 0x00) |
+      (this.enableUart1RxAvailableToIntDma ? 0x10 : 0x00) |
+      (this.enableUart0TxEmptyToIntDma ? 0x04 : 0x00) |
+      (this.enableUart0RxNearFullToIntDma ? 0x02 : 0x00) |
+      (this.enableUart0RxAvailableToIntDma ? 0x01 : 0x00)
     );
   }
 
   set nextRegCEValue(value: number) {
-    this._enableUart1TxEmptyToIntDma = (value & 0x40) !== 0;
-    this._enableUart1RxNearFullToIntDma = (value & 0x20) !== 0;
-    this._enableUart1RxAvailableToIntDma = (value & 0x10) !== 0;
-    this._enableUart0TxEmptyToIntDma = (value & 0x04) !== 0;
-    this._enableUart0RxNearFullToIntDma = (value & 0x02) !== 0;
-    this._enableUart0RxAvailableToIntDma = (value & 0x01) !== 0;
-  }
-
-  get intSignalActive(): boolean {
-    return this._intSignalActive;
-  }
-
-  get ulaInterruptDisabled(): boolean {
-    return this._ulaInterruptDisabled;
-  }
-
-  get lineInterruptEnabled(): boolean {
-    return this._lineInterruptEnabled;
-  }
-
-  get lineInterrupt(): number {
-    return this._lineInterrupt;
-  }
-
-  get im2TopBits(): number {
-    return this._im2TopBits;
-  }
-
-  get enableStacklessNmi(): boolean {
-    return this._enableStacklessNmi;
+    this.enableUart1TxEmptyToIntDma = (value & 0x40) !== 0;
+    this.enableUart1RxNearFullToIntDma = (value & 0x20) !== 0;
+    this.enableUart1RxAvailableToIntDma = (value & 0x10) !== 0;
+    this.enableUart0TxEmptyToIntDma = (value & 0x04) !== 0;
+    this.enableUart0RxNearFullToIntDma = (value & 0x02) !== 0;
+    this.enableUart0RxAvailableToIntDma = (value & 0x01) !== 0;
   }
 
   get currentInterruptMode(): number {
     return this.machine.interruptMode;
   }
 
-  get hwIm2Mode(): boolean {
-    return this._hwIm2Mode;
-  }
-
-  get nmiReturnAddress(): number {
-    return this._nmiReturnAddress;
-  }
-
-  get expBusIntSignalActive(): boolean {
-    return this._expBusIntSignalActive;
-  }
-
-  get uart0TxEmpty(): boolean {
-    return this._uart0TxEmpty;
-  }
-
-  get uart0RxNearFull(): boolean {
-    return this._uart0RxNearFull;
-  }
-
-  get uart0RxAvailable(): boolean {
-    return this._uart0RxAvailable;
-  }
-
-  get uart1TxEmpty(): boolean {
-    return this._uart1TxEmpty;
-  }
-
-  get uart1RxNearFull(): boolean {
-    return this._uart1RxNearFull;
-  }
-
-  get uart1RxAvailable(): boolean {
-    return this._uart1RxAvailable;
-  }
-
-  get lineInterruptStatus(): boolean {
-    return this._lineInterruptStatus;
-  }
-
-  set lineInterruptStatus(value: boolean) {
-    this._lineInterruptStatus = value;
-  }
-
-  get ulaInterruptStatus(): boolean {
-    return this._ulaInterruptStatus;
-  }
-
-  set ulaInterruptStatus(value: boolean) {
-    this._ulaInterruptStatus = value;
-  }
-
   setCtcChannelInterruptStatus(channel: number, value: boolean) {
     this.ctcIntStatus[channel] = value;
-  }
-
-  get uart0TxEmptyStatus(): boolean {
-    return this._uart0TxEmptyStatus;
-  }
-
-  set uart0TxEmptyStatus(value: boolean) {
-    this._uart0TxEmptyStatus = value;
-  }
-
-  get uart0RxNearFullStatus(): boolean {
-    return this._uart0RxNearFullStatus;
-  }
-
-  set uart0RxNearFullStatus(value: boolean) {
-    this._uart0RxNearFullStatus = value;
-  }
-
-  get uart0RxAvailableStatus(): boolean {
-    return this._uart0RxAvailableStatus;
-  }
-
-  set uart0RxAvailableStatus(value: boolean) {
-    this._uart0RxAvailableStatus = value;
-  }
-
-  get uart1TxEmptyStatus(): boolean {
-    return this._uart1TxEmptyStatus;
-  }
-
-  set uart1TxEmptyStatus(value: boolean) {
-    this._uart1TxEmptyStatus = value;
-  }
-
-  get uart1RxNearFullStatus(): boolean {
-    return this._uart1RxNearFullStatus;
-  }
-
-  set uart1RxNearFullStatus(value: boolean) {
-    this._uart1RxNearFullStatus = value;
-  }
-
-  get uart1RxAvailableStatus(): boolean {
-    return this._uart1RxAvailableStatus;
-  }
-
-  set uart1RxAvailableStatus(value: boolean) {
-    this._uart1RxAvailableStatus = value;
-  }
-
-  get enableNmiToIntDma(): boolean {
-    return this._enableNmiToIntDma;
-  }
-
-  get enableLineIntToIntDma(): boolean {
-    return this._enableLineIntToIntDma;
-  }
-
-  get enableUlaIntToIntDma(): boolean {
-    return this._enableUlaIntToIntDma;
-  }
-
-  get enableUart0TxEmptyToIntDma(): boolean {
-    return this._enableUart0TxEmptyToIntDma;
-  }
-
-  get enableUart0RxNearFullToIntDma(): boolean {
-    return this._enableUart0RxNearFullToIntDma;
-  }
-
-  get enableUart0RxAvailableToIntDma(): boolean {
-    return this._enableUart0RxAvailableToIntDma;
-  }
-
-  get enableUart1TxEmptyToIntDma(): boolean {
-    return this._enableUart1TxEmptyToIntDma;
-  }
-
-  get enableUart1RxNearFullToIntDma(): boolean {
-    return this._enableUart1RxNearFullToIntDma;
-  }
-
-  get enableUart1RxAvailableToIntDma(): boolean {
-    return this._enableUart1RxAvailableToIntDma;
   }
 }
