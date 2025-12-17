@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
+import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 describe("Next - PaletteDevice", async function () {
   it("After cold start", async () => {
@@ -37,7 +38,6 @@ describe("Next - PaletteDevice", async function () {
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x1c);
 
-
     // --- Assert
     expect(pal.paletteIndex).toBe(0x1c);
     expect(secondWriteBefore).toBe(false);
@@ -49,7 +49,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -57,7 +57,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -74,7 +73,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x40)
+    nrDevice.directSetRegValue(0x43, 0x40);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -82,7 +81,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -99,7 +97,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x10)
+    nrDevice.directSetRegValue(0x43, 0x10);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -107,7 +105,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -124,7 +121,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x50)
+    nrDevice.directSetRegValue(0x43, 0x50);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -132,7 +129,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -149,7 +145,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x20)
+    nrDevice.directSetRegValue(0x43, 0x20);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -157,7 +153,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -174,7 +169,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x60)
+    nrDevice.directSetRegValue(0x43, 0x60);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -182,7 +177,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -199,7 +193,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x30)
+    nrDevice.directSetRegValue(0x43, 0x30);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -207,7 +201,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -224,7 +217,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x70)
+    nrDevice.directSetRegValue(0x43, 0x70);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -232,7 +225,6 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x41, 0x21);
     nrDevice.directSetRegValue(0x41, 0x22);
     nrDevice.directSetRegValue(0x41, 0x23);
-
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x24);
@@ -249,7 +241,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -268,7 +260,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
     const secondWriteBefore = pal.secondWrite;
     nrDevice.directSetRegValue(0x40, 0x1c);
     nrDevice.directSetRegValue(0x44, 0x20);
@@ -289,7 +281,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -309,7 +301,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -329,7 +321,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -349,7 +341,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -369,7 +361,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x10)
+    nrDevice.directSetRegValue(0x43, 0x10);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -389,7 +381,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x10)
+    nrDevice.directSetRegValue(0x43, 0x10);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -409,7 +401,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x10)
+    nrDevice.directSetRegValue(0x43, 0x10);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -429,7 +421,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x10)
+    nrDevice.directSetRegValue(0x43, 0x10);
     const secondWriteBefore = pal.secondWrite;
 
     // --- Act
@@ -449,7 +441,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
     nrDevice.directSetRegValue(0x40, 0x1c);
     nrDevice.directSetRegValue(0x44, 0x20);
     const secondWriteBefore = pal.secondWrite;
@@ -469,7 +461,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x00)
+    nrDevice.directSetRegValue(0x43, 0x00);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -497,7 +489,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x40)
+    nrDevice.directSetRegValue(0x43, 0x40);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -525,7 +517,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x10)
+    nrDevice.directSetRegValue(0x43, 0x10);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -553,7 +545,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x50)
+    nrDevice.directSetRegValue(0x43, 0x50);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -581,7 +573,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x20)
+    nrDevice.directSetRegValue(0x43, 0x20);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -609,7 +601,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x60)
+    nrDevice.directSetRegValue(0x43, 0x60);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -637,7 +629,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x30)
+    nrDevice.directSetRegValue(0x43, 0x30);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -665,7 +657,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    nrDevice.directSetRegValue(0x43, 0x70)
+    nrDevice.directSetRegValue(0x43, 0x70);
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x20);
@@ -779,7 +771,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    
+
     // Set different values in first and second palettes
     nrDevice.directSetRegValue(0x43, 0x00); // Select ULA first
     nrDevice.directSetRegValue(0x40, 0x05);
@@ -801,7 +793,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    
+
     // Set different values in first and second palettes
     nrDevice.directSetRegValue(0x43, 0x00); // Select ULA first
     nrDevice.directSetRegValue(0x40, 0x05);
@@ -1030,7 +1022,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    
+
     // Set different values in first and second palettes
     nrDevice.directSetRegValue(0x43, 0x10); // Select Layer2 first
     nrDevice.directSetRegValue(0x40, 0x05);
@@ -1054,7 +1046,7 @@ describe("Next - PaletteDevice", async function () {
     const m = await createTestNextMachine();
     const nrDevice = m.nextRegDevice;
     const pal = m.paletteDevice;
-    
+
     // Set different values in first and second palettes
     nrDevice.directSetRegValue(0x43, 0x20); // Select Sprite first
     nrDevice.directSetRegValue(0x40, 0x07);
@@ -1094,4 +1086,313 @@ describe("Next - PaletteDevice", async function () {
     expect(sprite512).toBe(sprite0);
     expect(tilemap400).toBe(tilemap144);
   });
+
+  describe("Reg 0x40 - Palette Index", () => {
+    it("write #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x40, 0x5a);
+
+      // --- Assert
+      expect(pal.paletteIndex).toBe(0x5a);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("write #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x40, 0xa5);
+
+      // --- Assert
+      expect(pal.paletteIndex).toBe(0xa5);
+    });
+  });
+
+  describe("Reg 0x43 - Palette control", () => {
+    it("disablePaletteWriteAutoInc", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x80);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x80);
+      expect(pal.disablePaletteWriteAutoInc).toBe(true);
+      expect(pal.selectedPalette).toBe(0x00);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x00);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x00);
+      expect(pal.getCurrentPalette()).toBe(pal.ulaFirst);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x00);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x10);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x10);
+      expect(pal.getCurrentPalette()).toBe(pal.layer2First);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x01);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #3", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x20);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x20);
+      expect(pal.getCurrentPalette()).toBe(pal.spriteFirst);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x02);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #4", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x30);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x30);
+      expect(pal.getCurrentPalette()).toBe(pal.tilemapFirst);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x03);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #5", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x40);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x40);
+      expect(pal.getCurrentPalette()).toBe(pal.ulaSecond);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x04);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #6", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x50);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x50);
+      expect(pal.getCurrentPalette()).toBe(pal.layer2Second);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x05);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #7", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x60);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x60);
+      expect(pal.getCurrentPalette()).toBe(pal.spriteSecond);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x06);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("selectedPalette #8", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x70);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x70);
+      expect(pal.getCurrentPalette()).toBe(pal.tilemapSecond);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x07);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("secondSpritePalette", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x08);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x08);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x00);
+      expect(pal.secondSpritePalette).toBe(true);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("secondLayer2Palette", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x04);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x04);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x00);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(true);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("secondUlaPalette", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x02);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x02);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x00);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(true);
+      expect(pal.enableUlaNextMode).toBe(false);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("enableUlaNextMode", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x01);
+
+      // --- Assert
+      expect(readNextReg(m, 0x43)).toBe(0x01);
+      expect(pal.disablePaletteWriteAutoInc).toBe(false);
+      expect(pal.selectedPalette).toBe(0x00);
+      expect(pal.secondSpritePalette).toBe(false);
+      expect(pal.secondLayer2Palette).toBe(false);
+      expect(pal.secondUlaPalette).toBe(false);
+      expect(pal.enableUlaNextMode).toBe(true);
+      expect(pal.secondWrite).toBe(false);
+    });
+  });
+
+  describe("Reg 0x6b - Tilemap controls", () => {
+    it("paletteSelect", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const paletteDevice = m.paletteDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6b, 0x10);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6b)).toBe(0x10);
+      expect(paletteDevice.secondTilemapPalette).toBe(true);
+    });
+  });
 });
+
+function writeNextReg(m: IZxNextMachine, reg: number, value: number) {
+  m.nextRegDevice.setNextRegisterIndex(reg);
+  m.nextRegDevice.setNextRegisterValue(value);
+}
+
+function readNextReg(m: IZxNextMachine, reg: number): number {
+  m.nextRegDevice.setNextRegisterIndex(reg);
+  return m.nextRegDevice.getNextRegisterValue();
+}

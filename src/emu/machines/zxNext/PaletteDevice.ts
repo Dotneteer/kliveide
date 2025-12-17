@@ -29,6 +29,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   private _secondSpritePalette: boolean;
   private _secondLayer2Palette: boolean;
   private _secondUlaPalette: boolean;
+  private _secondTilemapPalette: boolean;
   private _enableUlaNextMode: boolean;
   private _secondWrite: boolean;
 
@@ -62,6 +63,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     this._secondUlaPalette = false;
     this._secondLayer2Palette = false;
     this._secondSpritePalette = false;
+    this._secondTilemapPalette = false;
     this._enableUlaNextMode = false;
     this._secondWrite = false;
     this.storedPaletteValue = 0;
@@ -243,6 +245,14 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   get secondUlaPalette(): boolean {
     return this._secondUlaPalette;
+  }
+
+  get secondTilemapPalette(): boolean {
+    return this._secondTilemapPalette;  
+  }
+
+  set secondTilemapPalette(value: boolean) {
+    this._secondTilemapPalette = value;
   }
 
   get enableUlaNextMode(): boolean {

@@ -267,6 +267,34 @@ describe("Next - ComposedScreenDevice", function () {
     });
   });
 
+  describe("Reg $26 - ULA X Scroll", () => {
+      it("write", async () => {
+        // --- Arrange
+        const m = await createTestNextMachine();
+    
+        // --- Act
+        writeNextReg(m, 0x26, 0x5a);
+    
+        // --- Assert
+        expect(readNextReg(m, 0x26)).toBe(0x5a);
+        expect(m.composedScreenDevice.ulaScrollX).toBe(0x5a);
+      });
+  });
+
+  describe("Reg $27 - ULA Y Scroll", () => {
+    it("write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x27, 0x3c);
+
+      // --- Assert
+      expect(readNextReg(m, 0x27)).toBe(0x3c);
+      expect(m.composedScreenDevice.ulaScrollY).toBe(0x3c);
+    });
+  }); 
+
   describe("Reg $68 - ULA Control", () => {
     it("disableUlaOutput", async () => {
       // --- Arrange
@@ -351,6 +379,56 @@ describe("Next - ComposedScreenDevice", function () {
       expect(srcDevice.enableUlaPlus).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
       expect(srcDevice.enableStencilMode).toBe(true);
+    });
+  });
+
+  describe("Reg $70 - Layer 2 Control", () => {
+    it("resolution #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x70, 0x20);
+
+      // --- Assert
+      expect(scrDevice.layer2Resolution).toBe(2);
+    });
+
+    it("resolution #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x70, 0xa0);
+
+      // --- Assert
+      expect(scrDevice.layer2Resolution).toBe(2);
+    });
+
+    it("paletteOffset #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x70, 0x2a);
+
+      // --- Assert
+      expect(scrDevice.layer2PaletteOffset).toBe(0x0a);
+    });
+
+    it("paletteOffset #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const srcDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x70, 0xca);
+
+      // --- Assert
+      expect(srcDevice.layer2PaletteOffset).toBe(0x0a);
     });
   });
 
