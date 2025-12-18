@@ -263,7 +263,6 @@ async function createAppWindows() {
   ideWindowStateManager.manage(ideWindow);
 
   // --- Set IDE window in file watcher
-  fileChangeWatcher.setIdeWindow(ideWindow);
 
   // --- Initialize messaging
   registerMainToEmuMessenger(emuWindow);
@@ -590,14 +589,6 @@ ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
   }
 });
 
-// --- File watching IPC handlers
-ipcMain.on("watch-file", (_ev, { filePath }: { filePath: string }) => {
-  fileChangeWatcher.startWatchingFile(filePath);
-});
-
-ipcMain.on("unwatch-file", (_ev, { filePath }: { filePath: string }) => {
-  fileChangeWatcher.stopWatchingFile(filePath);
-});
 
 // --- Process an action forward message coming from any of the renderers
 async function forwardActions(message: RequestMessage): Promise<ResponseMessage | null> {

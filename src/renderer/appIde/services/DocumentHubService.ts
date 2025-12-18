@@ -8,9 +8,6 @@ import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getFileTypeEntry, getNodeFile } from "../project/project-node";
-import { FileReloadService } from "./FileReloadService";
-import { getGlobalSetting } from "@renderer/core/RendererProvider";
-import { SETTING_EDITOR_LIVE_RELOAD } from "@common/settings/setting-const";
 
 /**
  * This class provides the default implementation of the document service
@@ -21,13 +18,9 @@ class DocumentHubService implements IDocumentHubService {
 
   private _openDocs: ProjectDocumentState[] = [];
   private _activeDocIndex = -1;
-  private _fileReloadService: FileReloadService | null = null;
 
   onProjectClosed = () => {
     this._documentViewState.clear();
-    if (this._fileReloadService) {
-      this._fileReloadService.unwatchAllFiles();
-    }
   };
 
   /**
@@ -40,48 +33,12 @@ class DocumentHubService implements IDocumentHubService {
     private readonly projectService: IProjectService
   ) {
     projectService.projectClosed.on(this.onProjectClosed);
-
-    // Initialize file reload service
-    this._fileReloadService = new FileReloadService(
-      projectService,
-      (filePath, document) => {
-        this.handleFileChangedExternally(filePath, document);
-      }
-    );
-  }
-
-  /**
-   * Handles when a file is changed externally
-   */
-  private async handleFileChangedExternally(
-    filePath: string,
-    document: ProjectDocumentState
-  ): Promise<void> {
-    // Check if live reload is enabled
-    const liveReloadEnabled = getGlobalSetting(this.store, SETTING_EDITOR_LIVE_RELOAD) ?? false;
-    if (!liveReloadEnabled) {
-      return;
-    }
-
-    // Check if document has unsaved changes
-    const hasUnsavedChanges =
-      document.editVersionCount !== undefined &&
-      document.savedVersionCount !== undefined &&
-      document.editVersionCount !== document.savedVersionCount;
-
-    // Auto-reload if there are no unsaved changes
-    if (!hasUnsavedChanges) {
-      await this.reloadDocument(document.id);
-    } else {
-      // File changed but has unsaved changes - log for now
-      console.log(`File ${filePath} changed externally but has unsaved changes`);
-    }
   }
 
   /**
    * Reloads a document from disk
    */
-  private async reloadDocument(documentId: string): Promise<void> {
+  async reloadDocument(documentId: string): Promise<void> {
     const document = this.getDocument(documentId);
     if (!document || !document.path) return;
 
@@ -182,11 +139,6 @@ class DocumentHubService implements IDocumentHubService {
     // --- Now, activate the newly opened document
     this.projectService.openInDocumentHub(document.id, this);
     await this.setActiveDocument(document.id);
-
-    // --- Start watching the file if it has a path
-    if (document.path && this._fileReloadService) {
-      this._fileReloadService.watchFile(document.path);
-    }
   }
 
   /**
@@ -339,11 +291,6 @@ class DocumentHubService implements IDocumentHubService {
 
       // --- Release the document view data
       this._documentViewState.delete(doc.id);
-
-      // --- Stop watching the file
-      if (doc.path && this._fileReloadService) {
-        this._fileReloadService.unwatchFile(doc.path);
-      }
 
       // --- Notify the project service about closing the document
       this.projectService.closeInDocumentHub(doc.id, this);

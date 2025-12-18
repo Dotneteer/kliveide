@@ -33,8 +33,7 @@ import {
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EMU_KEYBOARD_HEIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
-  SETTING_EDITOR_LIVE_RELOAD
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
 
 const settingDefinitions: Setting[] = [
@@ -314,14 +313,6 @@ const settingDefinitions: Setting[] = [
     id: SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
     title: "Allow Background Compile",
     description: "Enable or disable background compilation in the editor.",
-    type: "boolean",
-    defaultValue: false,
-    saveWithIde: true,
-  },
-  {
-    id: SETTING_EDITOR_LIVE_RELOAD,
-    title: "Live Reload",
-    description: "Automatically reload files when they are changed externally.",
     type: "boolean",
     defaultValue: false,
     saveWithIde: true,

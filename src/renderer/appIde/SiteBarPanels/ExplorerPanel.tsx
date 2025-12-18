@@ -114,10 +114,12 @@ const ExplorerPanel = () => {
         <>
           <ContextMenuItem
             text="Refresh"
-            clicked={() => {
+            clicked={async () => {
               contextMenuApi.conceal();
               folderCache.clear();
               store.dispatch(incExploreViewVersionAction());
+              // Reload all open documents after refreshing the folder
+              await reloadAllOpenDocuments();
             }}
           />
         </>
@@ -477,6 +479,26 @@ const ExplorerPanel = () => {
     setVisibleNodes(projectTree.getVisibleNodes());
     projectService.setProjectTree(projectTree);
     folderCache.set(folderPath, projectTree);
+  };
+
+  // --- Reload all open documents in all document hubs
+  const reloadAllOpenDocuments = async () => {
+    const documentHubs = projectService.getDocumentHubServiceInstances();
+    for (const hub of documentHubs) {
+      const openDocs = hub.getOpenDocuments();
+      for (const doc of openDocs) {
+        if (doc.path) {
+          // Only reload if document has no unsaved changes
+          const hasUnsavedChanges =
+            doc.editVersionCount !== undefined &&
+            doc.savedVersionCount !== undefined &&
+            doc.editVersionCount !== doc.savedVersionCount;
+          if (!hasUnsavedChanges) {
+            await hub.reloadDocument(doc.id);
+          }
+        }
+      }
+    }
   };
 
   // --- Set up the project service to handle project events
