@@ -2,7 +2,6 @@ import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import {
   LayerOutput,
-  LayersOutput,
   ULAStandardCell,
   ULAStandardMatrix,
   ULA_DISPLAY_AREA,
@@ -372,7 +371,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let ulaOutput1: LayerOutput | null = null;
     let ulaOutput2: LayerOutput | null = null;
 
-    if (!this.disableUlaOutput) {
+    if (this.loResEnabled) {
+      // LoRes mode (128×96, replaces ULA output)
+      const loresCell = this._renderingFlagsLoRes[tact];
+      ulaOutput1 = this.renderLoResPixel(vc, hc, loresCell);
+      ulaOutput2 = ulaOutput1; // Standard resolution base (4x replication handled by caller)
+    } else if (!this.disableUlaOutput) {
       if (this.ulaHiResMode || this.ulaHiColorMode) {
         // ULA Hi-Res and Hi-Color modes
         if (this.ulaHiResMode) {
@@ -445,37 +449,53 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
     }
 
-    // Render LoRes pixel(s) if enabled
-    let loresOutput1: LayerOutput | null = null;
-    let loresOutput2: LayerOutput | null = null;
+    // Stage 2: Merge ULA+Tilemap, then compose all layers and write to bitmap
+    // Apply the ULA/Tilemap merging process from Section 4.2.1
+    // LoRes is already integrated into ulaOutput (not kept separate)
 
-    if (this.loResEnabled) {
-      const loresCell = this._renderingFlagsLoRes[tact];
-      loresOutput1 = this.renderLoResPixel(vc, hc, loresCell);
-      loresOutput2 = loresOutput1; // Standard resolution base (4x replication handled by caller)
+    // TODO: Apply the complete merging logic from Section 4.2.1 here:
+    // 1. Calculate ula_transparent, tm_transparent
+    // 2. If stencil mode: ula_final = ula & tilemap (bitwise AND)
+    // 3. Else: ula_final = tm_pixel_below ? (ula or tm) : (tm or ula)
+    // 4. Calculate mix_rgb, mix_top_rgb, mix_bot_rgb based on blend mode
+    // For now, using simplified approach (incomplete implementation)
+
+    // Merge tilemap into ULA if both enabled (simplified version)
+    if (this.tilemapEnabled && tilemapOutput1) {
+      if (ulaOutput1 && !ulaOutput1.transparent && !tilemapOutput1.transparent) {
+        // Both non-transparent: apply tm_pixel_below logic
+        // TODO: Read tm_pixel_below from tilemap attributes
+        // For now, tilemap on top (simplified)
+        ulaOutput1 = tilemapOutput1;
+      } else if (!tilemapOutput1.transparent) {
+        // Only tilemap non-transparent
+        ulaOutput1 = tilemapOutput1;
+      }
+      // If only ULA non-transparent, keep ulaOutput1 as-is
     }
 
-    // Stage 2: Compose all layer outputs and write to bitmap
-    // Always pass exactly 5 layers in fixed order: ULA, Layer2, Sprites, Tilemap, LoRes
-    // Use null for disabled/inactive layers
-    const layerOutputs1: LayersOutput = [
-      ulaOutput1,
-      layer2Output1,
-      spritesOutput1,
-      tilemapOutput1,
-      loresOutput1
-    ];
+    if (this.tilemapEnabled && tilemapOutput2) {
+      if (ulaOutput2 && !ulaOutput2.transparent && !tilemapOutput2.transparent) {
+        ulaOutput2 = tilemapOutput2;
+      } else if (!tilemapOutput2.transparent) {
+        ulaOutput2 = tilemapOutput2;
+      }
+    }
 
-    const layerOutputs2: LayersOutput = [
-      ulaOutput2,
-      layer2Output2,
-      spritesOutput2,
-      tilemapOutput2,
-      loresOutput2
-    ];
+    // Calculate bitmap Y coordinate
+    const bitmapY = vc - this.config.firstBitmapVC;
+    if (bitmapY >= 0 && bitmapY < BITMAP_HEIGHT) {
+      // Calculate base X position in 720-pixel bitmap (2 pixels per HC)
+      const bitmapXBase = (hc - this.config.firstVisibleHC) * 2;
 
-    // Compose and output two pixels to bitmap
-    this.composeAndOutputPixels(vc, hc, layerOutputs1, layerOutputs2);
+      // Compose and write first pixel
+      const pixelRGBA1 = this.composeSinglePixel(ulaOutput1, layer2Output1, spritesOutput1);
+      this._pixelBuffer[bitmapY * BITMAP_WIDTH + bitmapXBase] = pixelRGBA1;
+
+      // Compose and write second pixel
+      const pixelRGBA2 = this.composeSinglePixel(ulaOutput2, layer2Output2, spritesOutput2);
+      this._pixelBuffer[bitmapY * BITMAP_WIDTH + bitmapXBase + 1] = pixelRGBA2;
+    }
 
     // --- Visible pixel rendered
     return true;
@@ -1179,53 +1199,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
-   * Compose all layer outputs and write two final pixels to display bitmap (Stage 2: Composition).
-   *
-   * This method implements Stage 2 of the rendering pipeline as described in Section 1.3.
-   * Since the bitmap width is doubled (720 pixels) to support HiRes mode, this method processes
-   * TWO sets of layer outputs and writes TWO consecutive pixels per call.
-   *
-   * For each set of layer outputs, the method combines them based on:
-   * - Transparency and clipping
-   * - Stencil mode (optional ULA + Tilemap AND)
-   * - Blend modes (color addition, darkening)
-   * - Priority order (configurable via NextReg 0x15)
-   * - Layer 2 priority bit override
-   * - Fallback/backdrop color
-   *
-   * Resolution mode handling:
-   * - HiRes: layerOutputs1 and layerOutputs2 contain different pixels
-   * - Standard: layerOutputs1 and layerOutputs2 contain the same pixel (replicated)
-   * - LoRes: Caller sends same pixel and calls this method multiple times for 4x replication
-   *
-   * @param vc - Vertical counter position
-   * @param hc - Horizontal counter position
-   * @param layerOutputs1 - First pixel: Fixed 5-layer tuple [ULA, Layer2, Sprites, Tilemap, LoRes]
-   * @param layerOutputs2 - Second pixel: Fixed 5-layer tuple [ULA, Layer2, Sprites, Tilemap, LoRes]
-   */
-  private composeAndOutputPixels(
-    vc: number,
-    hc: number,
-    layerOutputs1: LayersOutput,
-    layerOutputs2: LayersOutput
-  ): void {
-    // Calculate bitmap Y coordinate
-    const bitmapY = vc - this.config.firstBitmapVC;
-    if (bitmapY < 0 || bitmapY >= BITMAP_HEIGHT) return;
-
-    // Calculate base X position in 720-pixel bitmap (2 pixels per HC)
-    const bitmapXBase = (hc - this.config.firstVisibleHC) * 2;
-
-    // Compose and write first pixel
-    const pixelRGBA1 = this.composeSinglePixel(layerOutputs1);
-    this._pixelBuffer[bitmapY * BITMAP_WIDTH + bitmapXBase] = pixelRGBA1;
-
-    // Compose and write second pixel
-    const pixelRGBA2 = this.composeSinglePixel(layerOutputs2);
-    this._pixelBuffer[bitmapY * BITMAP_WIDTH + bitmapXBase + 1] = pixelRGBA2;
-  }
-
-  /**
    * Compose a single pixel from layer outputs.
    *
    * Helper method that performs the composition logic for one pixel.
@@ -1235,39 +1208,79 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param layerOutputs - Fixed 5-layer tuple [ULA, Layer2, Sprites, Tilemap, LoRes]
    * @returns RGBA pixel value (format: 0xAABBGGRR)
    */
-  private composeSinglePixel(layerOutputs: LayersOutput): number {
-    // Destructure layer outputs for clarity
-    const [ulaOutput, layer2Output, spritesOutput, tilemapOutput, loresOutput] = layerOutputs;
-
-    // === Priority Evaluation ===
-    // Define priority orders (first non-transparent layer wins)
-    // S=Sprites, L=Layer2, U=ULA, T=Tilemap (LoRes shares ULA priority)
-    // Note: null layers are skipped during evaluation
-    const priorityOrders = [
-      [spritesOutput, layer2Output, ulaOutput], // 000: SLU
-      [layer2Output, spritesOutput, ulaOutput], // 001: LSU
-      [spritesOutput, ulaOutput, layer2Output], // 010: SUL
-      [layer2Output, ulaOutput, spritesOutput], // 011: LUS
-      [ulaOutput, spritesOutput, layer2Output], // 100: USL
-      [ulaOutput, layer2Output, spritesOutput], // 101: ULS
-      [ulaOutput, layer2Output, spritesOutput], // 110: (reserved)
-      [ulaOutput, layer2Output, spritesOutput] // 111: (reserved)
-    ];
-
-    const priorityOrder = priorityOrders[this.layerPriority];
-
+  private composeSinglePixel(
+    ulaOutput: LayerOutput,
+    layer2Output: LayerOutput,
+    spritesOutput: LayerOutput
+  ): number {
+    // --- Combine sprites, Layer 2, and ULA outputs
+    let selectedOutput: LayerOutput | null = null;
     // === Layer 2 Priority Override ===
     // If Layer 2 priority bit is set, it renders on top regardless of priority setting
-    let selectedOutput: LayerOutput | null = null;
     if (layer2Output && layer2Output.priority && !layer2Output.transparent) {
       selectedOutput = layer2Output;
     } else {
       // Select first non-transparent, non-null layer in priority order
-      for (const layerOutput of priorityOrder) {
-        if (layerOutput && !layerOutput.transparent) {
-          selectedOutput = layerOutput;
+      switch (this.layerPriority) {
+        case 0: // SLU
+          if (spritesOutput && !spritesOutput.transparent) {
+            selectedOutput = spritesOutput;
+          } else if (layer2Output && !layer2Output.transparent) {
+            selectedOutput = layer2Output;
+          } else {
+            selectedOutput = ulaOutput;
+          }
           break;
-        }
+
+        case 1: // LSU
+          if (layer2Output && !layer2Output.transparent) {
+            selectedOutput = layer2Output;
+          } else if (spritesOutput && !spritesOutput.transparent) {
+            selectedOutput = spritesOutput;
+          } else {
+            selectedOutput = ulaOutput;
+          }
+          break;
+
+        case 2: // SUL
+          if (spritesOutput && !spritesOutput.transparent) {
+            selectedOutput = spritesOutput;
+          } else if (ulaOutput && !ulaOutput.transparent) {
+            selectedOutput = ulaOutput;
+          } else {
+            selectedOutput = layer2Output;
+          }
+          break;
+
+        case 3: // LUS
+          if (layer2Output && !layer2Output.transparent) {
+            selectedOutput = layer2Output;
+          } else if (ulaOutput && !ulaOutput.transparent) {
+            selectedOutput = ulaOutput;
+          } else {
+            selectedOutput = spritesOutput;
+          }
+          break;
+
+        case 4: // USL
+          if (ulaOutput && !ulaOutput.transparent) {
+            selectedOutput = ulaOutput;
+          } else if (spritesOutput && !spritesOutput.transparent) {
+            selectedOutput = spritesOutput;
+          } else {
+            selectedOutput = layer2Output;
+          }
+          break;
+
+        default:
+          if (ulaOutput && !ulaOutput.transparent) {
+            selectedOutput = ulaOutput;
+          } else if (layer2Output && !layer2Output.transparent) {
+            selectedOutput = layer2Output;
+          } else {
+            selectedOutput = spritesOutput;
+          }
+          break;
       }
     }
 

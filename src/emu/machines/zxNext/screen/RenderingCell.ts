@@ -203,15 +203,3 @@ export type LayerOutput = {
   // Optional: Layer 2 priority bit (overrides priority order)
   priority?: boolean;
 };
-
-/**
- * Fixed 5-layer tuple type for composition.
- * Null indicates layer is disabled or inactive.
- */
-export type LayersOutput = [
-  ula: LayerOutput | null,
-  layer2: LayerOutput | null,
-  sprites: LayerOutput | null,
-  tilemap: LayerOutput | null,
-  lores: LayerOutput | null
-];
