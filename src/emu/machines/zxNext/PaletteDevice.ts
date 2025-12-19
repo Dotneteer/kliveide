@@ -35,20 +35,20 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   ulaFirst: number[] = [];
   ulaSecond: number[] = [];
-  private ulaRgb333First: number[] = [];
-  private ulaRgb333Second: number[] = [];
+  private ulaRgbFirst: number[] = [];
+  private ulaRgbSecond: number[] = [];
   layer2First: number[] = [];
   layer2Second: number[] = [];
-  private layer2Rgb333First: number[] = [];
-  private layer2Rgb333Second: number[] = [];
+  private layer2RgbFirst: number[] = [];
+  private layer2RgbSecond: number[] = [];
   spriteFirst: number[] = [];
   spriteSecond: number[] = [];
-  private spriteRgb333First: number[] = [];
-  private spriteRgb333Second: number[] = [];
+  private spriteRgbFirst: number[] = [];
+  private spriteRgbSecond: number[] = [];
   tilemapFirst: number[] = [];
   tilemapSecond: number[] = [];
-  private tilemapRgb333First: number[] = [];
-  private tilemapRgb333Second: number[] = [];
+  private tilemapRgbFirst: number[] = [];
+  private tilemapRgbSecond: number[] = [];
   ulaNextByteFormat: number;
   storedPaletteValue: number;
 
@@ -74,11 +74,11 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
       // --- They set Bit 0 as the initial Bit 1.
       // --- It does not follow the logic of mixing bit 0 and bit 1 used in register 41H.
       this.layer2First[i] = this.layer2Second[i] = color;
-      this.layer2Rgb333First[i] = this.layer2Rgb333Second[i] = zxNext9BitColorCodes[color];
+      this.layer2RgbFirst[i] = this.layer2RgbSecond[i] = zxNext9BitColorCodes[color];
       this.spriteFirst[i] = this.spriteSecond[i] = color;
-      this.spriteRgb333First[i] = this.spriteRgb333Second[i] = zxNext9BitColorCodes[color];
+      this.spriteRgbFirst[i] = this.spriteRgbSecond[i] = zxNext9BitColorCodes[color];
       this.tilemapFirst[i] = this.tilemapSecond[i] = color;
-      this.tilemapRgb333First[i] = this.tilemapRgb333Second[i] = zxNext9BitColorCodes[color];
+      this.tilemapRgbFirst[i] = this.tilemapRgbSecond[i] = zxNext9BitColorCodes[color];
     }
 
     // --- The ULA palette is a bit more complex, it repeats every 16 colors
@@ -92,7 +92,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
         const idx = j * 16 + i;
         const colorValue = i !== 11 ? defaultUlaColors[i] : 0x1cf;
         this.ulaFirst[idx] = this.ulaSecond[idx] = colorValue;
-        this.ulaRgb333First[idx] = this.ulaRgb333Second[idx] = zxNext9BitColorCodes[colorValue];
+        this.ulaRgbFirst[idx] = this.ulaRgbSecond[idx] = zxNext9BitColorCodes[colorValue];
       }
     }
   }
@@ -114,31 +114,31 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     this.storedPaletteValue = value & 0xff;
     const regValue = (value << 1) | (value & 0x03 ? 1 : 0);
     this.getCurrentPalette()[this._paletteIndex] = regValue;
-    // Update RGB333 arrays based on selected palette
+    // Update RGB arrays based on selected palette
     switch (this._selectedPalette) {
       case 0:
-        this.ulaRgb333First[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.ulaRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
       case 1:
-        this.layer2Rgb333First[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.layer2RgbFirst[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
       case 2:
-        this.spriteRgb333First[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.spriteRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
       case 3:
-        this.tilemapRgb333First[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.tilemapRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
       case 4:
-        this.ulaRgb333Second[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.ulaRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
       case 5:
-        this.layer2Rgb333Second[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.layer2RgbSecond[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
       case 6:
-        this.spriteRgb333Second[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.spriteRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
       case 7:
-        this.tilemapRgb333Second[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        this.tilemapRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[regValue];
         break;
     }
     if (!this._disablePaletteWriteAutoInc) {
@@ -188,31 +188,31 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
           palette[this._paletteIndex] |= 0x200;
         }
       }
-      // --- Update RGB333 arrays after the second write
+      // --- Update RGB arrays after the second write
       switch (this._selectedPalette) {
         case 0:
-          this.ulaRgb333First[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          this.ulaRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
           break;
         case 1:
-          this.layer2Rgb333First[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex] & 0x1ff];
+          this.layer2RgbFirst[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex] & 0x1ff];
           break;
         case 2:
-          this.spriteRgb333First[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          this.spriteRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
           break;
         case 3:
-          this.tilemapRgb333First[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          this.tilemapRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
           break;
         case 4:
-          this.ulaRgb333Second[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          this.ulaRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
           break;
         case 5:
-          this.layer2Rgb333Second[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex] & 0x1ff];
+          this.layer2RgbSecond[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex] & 0x1ff];
           break;
         case 6:
-          this.spriteRgb333Second[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          this.spriteRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
           break;
         case 7:
-          this.tilemapRgb333Second[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          this.tilemapRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
           break;
       }
       if (!this._disablePaletteWriteAutoInc) {
@@ -284,26 +284,26 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
-  getUlaRgb333(index: number): number {
+  getUlaRgb(index: number): number {
     return this._secondUlaPalette
-      ? this.ulaRgb333Second[index & 0xff]
-      : this.ulaRgb333First[index & 0xff];
+      ? this.ulaRgbSecond[index & 0xff]
+      : this.ulaRgbFirst[index & 0xff];
   }
 
-  getLayer2Rgb333(index: number): number {
+  getLayer2Rgb(index: number): number {
     return this._secondLayer2Palette
-      ? this.layer2Rgb333Second[index & 0xff]
-      : this.layer2Rgb333First[index & 0xff];
+      ? this.layer2RgbSecond[index & 0xff]
+      : this.layer2RgbFirst[index & 0xff];
   }
 
-  getSpriteRgb333(index: number): number {
+  getSpriteRgb(index: number): number {
     return this._secondSpritePalette
-      ? this.spriteRgb333Second[index & 0xff]
-      : this.spriteRgb333First[index & 0xff];
+      ? this.spriteRgbSecond[index & 0xff]
+      : this.spriteRgbFirst[index & 0xff];
   }
 
-  getTilemapRgb333(index: number): number {
-    return this.tilemapRgb333Second[index & 0xff];
+  getTilemapRgb(index: number): number {
+    return this.tilemapRgbSecond[index & 0xff];
   }
 
   private updateUlaPalette(): void {

@@ -21,6 +21,7 @@ import {
 import { generateSpritesCell } from "./SpritesMatrix";
 import { generateTilemap40x32Cell, generateTilemap80x32Cell } from "./TilemapMatrix";
 import { generateLoResCell } from "./LoResMatrix";
+import { zxNext9BitColorCodes } from "../PaletteDevice";
 
 /**
  * For emulation purposes, a **fixed-size bitmap** represents the visible portion of the display across all timing modes and rendering modes.
@@ -943,7 +944,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * - VRAM pixel/attribute reads (at specific HC subcycles)
    * - Shift register operations
    * - Pixel generation from shift register
-   * - Palette lookup (RGB333 output)
+   * - Palette lookup (RGB output)
    * - Clipping test
    * - Transparency determination
    * - Contention and floating bus simulation
@@ -951,17 +952,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param vc - Vertical counter position
    * @param hc - Horizontal counter position
    * @param cell - ULA Standard rendering cell flags (Uint16 bit flags)
-   * @returns Layer output (RGB333 + flags) for composition stage
+   * @returns Layer output (RGB + flags) for composition stage
    */
   private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): LayerOutput {
     // === Border Area ===
     if ((cell & ULA_DISPLAY_AREA) === 0) {
       // Lookup border color in ULA palette (first 8 entries)
       // TODO: Consider ULA+ border color modes
-      const borderRGB333 = this.machine.paletteDevice.getUlaRgb333(this.borderColor);
+      const borderRGB = this.machine.paletteDevice.getUlaRgb(this.borderColor);
 
       return {
-        rgb: borderRGB333,
+        rgb: borderRGB,
         transparent: false,
         clipped: false
       };
@@ -1064,7 +1065,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const paletteIndex = colorIndex + (bright << 3);
 
     // Lookup color in ULA palette (16 entries for standard + bright colors)
-    const pixelRGB333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    const pixelRGB = this.machine.paletteDevice.getUlaRgb(paletteIndex);
 
     // --- Clipping Test ---
     // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
@@ -1075,7 +1076,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       displayVC > this.ulaClipWindowY2;
 
     // --- Transparency Check ---
-    const transparent = pixelRGB333 >> 1 === this.globalTransparencyColor;
+    const transparent = pixelRGB >> 1 === this.globalTransparencyColor;
 
     // --- Contention Simulation ---
     // if (cell.contentionWindow && this.contentionEnabled) {
@@ -1087,7 +1088,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Return layer output for composition stage
     return {
-      rgb: pixelRGB333,
+      rgb: pixelRGB,
       transparent: transparent || clipped, // Treat clipped pixels as transparent
       clipped: clipped
     };
@@ -1251,7 +1252,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * Compose a single pixel from layer outputs.
    *
    * Helper method that performs the composition logic for one pixel.
-   * Evaluates priority, transparency, and fallback color to select the final RGB333 value,
+   * Evaluates priority, transparency, and fallback color to select the final RGB value,
    * then converts it to RGBA format for the bitmap.
    *
    * @param layerOutputs - Fixed 5-layer tuple [ULA, Layer2, Sprites, Tilemap, LoRes]
@@ -1334,16 +1335,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // === Fallback/Backdrop Color ===
-    let finalRGB333: number;
+    let finalRGB: number;
     if (selectedOutput === null) {
       // All layers transparent: use fallback color (NextReg 0x4A)
-      // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB333
+      // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
       const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
-      finalRGB333 = (this.fallbackColor << 1) | blueLSB; // Extend to 9-bit RGB333
+      finalRGB = zxNext9BitColorCodes[(this.fallbackColor << 1) | blueLSB]; // Extend to 24-bit RGB
     } else {
-      finalRGB333 = selectedOutput.rgb;
+      finalRGB = selectedOutput.rgb;
     }
 
-    return 0xff000000 | finalRGB333;
+    return 0xff000000 | finalRGB;
   }
 }
