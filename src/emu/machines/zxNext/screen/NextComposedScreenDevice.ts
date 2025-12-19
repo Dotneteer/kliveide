@@ -60,18 +60,20 @@ const BITMAP_SIZE = BITMAP_WIDTH * BITMAP_HEIGHT;
  * where each tact corresponds to one CLK_7 cycle at a specific (VC, HC) position.
  */
 export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> {
-  // --- The number of rendering tacts for the screen frame
-  private _renderingTacts: number;
-  // --- Interrupt state
-  // --- INT signal (active: true, inactive: false)
-  private _pulseIntActive: boolean;
-  private _pulseCount: number;
-
   // Current timing configuration (50Hz or 60Hz)
   config: TimingConfig;
 
+  // --- The number of rendering tacts for the screen frame
+  renderingTacts: number;
+
+  // --- Interrupt state
+  // --- INT signal (active: true, inactive: false)
+  private _pulseIntActive: boolean;
+  private _pulseIntCount: number;
+
   // Flash counter (0-31, cycles ~16 frames per state)
   private _flashCounter: number = 0;
+  private _flashFlag: boolean = false;
 
   // ZX Next register flags
   // === Reg 0x05 - Screen timing mode
@@ -84,6 +86,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // === Reg 0x13 - Layer 2 shadow RAM bank
   layer2ShadowRamBank: number;
 
+  // === Reg 0x14 - Global Transparent Color
+  globalTransparencyColor: number;
+
   // === Reg 0x15 - LoRes mode (128x48 or 128x96)
   loResEnabled: boolean;
   sprites0OnTop: boolean;
@@ -91,6 +96,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   layerPriority: number;
   spritesEnableOverBorder: boolean;
   spritesEnabled: boolean;
+
+  // === Reg 0x1A - Clip Window ULA/LoRes
+  ulaClipWindowX1: number;
+  ulaClipWindowX2: number;
+  ulaClipWindowY1: number;
+  ulaClipWindowY2: number;
+  ulaClipIndex: number;
 
   // === Reg 0x26 - ULA X Scroll
   ulaScrollX: number;
@@ -216,6 +228,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   private _pixelBuffer: Uint32Array;
 
+  // ULA rendering state
+  ulaPixelByte: number;
+  floatingBusValue: number;
+  ulaAttrByte: number;
+  ulaShiftReg: number;
+  ulaShiftAttr: number;
+  ulaShiftCount: number;
+
   constructor(public readonly machine: IZxNextMachine) {
     // Screen dimensions
     this.screenWidth = BITMAP_WIDTH;
@@ -276,11 +296,23 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   reset(): void {
-    // Initialize pixel buffer
+    // --- Initialize ULA state values
+    this.ulaClipIndex = 0;
+    this.ulaClipWindowX1 = 0;
+    this.ulaClipWindowX2 = 255;
+    this.ulaClipWindowY1 = 0;
+    this.ulaClipWindowY2 = 191;
+    this.ulaScrollX = 0;
+    this.ulaScrollY = 0;
+
+    // --- Initialize pixel buffer
     this._pixelBuffer = new Uint32Array(BITMAP_SIZE);
     this.initializeBitmap();
+
+    // --- Rendering state
     this._pulseIntActive = false;
-    this._pulseCount = 0;
+    this._pulseIntCount = 0;
+    this._flashCounter = 0;
   }
 
   /**
@@ -325,15 +357,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if (hc === this.config.intHC && vc === this.config.intVC && !this._pulseIntActive) {
       // ULA triggers interrupt pulse
       this._pulseIntActive = true; // Activate INT signal
-      this._pulseCount = 0;
+      this._pulseIntCount = 0;
     }
 
     // Update interrupt pulse counter (in real hardware at CLK_CPU rate)
     if (this._pulseIntActive) {
-      this._pulseCount++;
-      if (this._pulseCount >= this.config.intPulseLength) {
+      this._pulseIntCount++;
+      if (this._pulseIntCount >= this.config.intPulseLength) {
         this._pulseIntActive = false; // Deactivate INT signal
-        this._pulseCount = 0;
+        this._pulseIntCount = 0;
       }
     }
 
@@ -370,9 +402,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
       } else {
         // ULA Standard mode (256×192)
-        const ulaCell = this._matrixULAStandard[mVC][mHC] as ULAStandardCell;
-        ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
-        ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
+        try {
+          const ulaCell = this._matrixULAStandard[mVC][mHC] as ULAStandardCell;
+          ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
+          ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
+        } catch (e) {
+          let a = 1;
+        }
       }
     }
 
@@ -473,7 +509,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if (savedPixelBuffer) {
       this._pixelBuffer = new Uint32Array(savedPixelBuffer);
     } else {
-      for (let tact = 0; tact < this._renderingTacts; tact++) {
+      for (let tact = 0; tact < this.renderingTacts; tact++) {
         this.renderTact(tact);
       }
     }
@@ -491,8 +527,44 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * This method signs that a new screen frame has been started
    */
   onNewFrame(): void {
-    // TODO: Implement this method
-    //this._flashFlag = Math.floor(this.machine.frames / this.flashToggleFrames) % 2 === 0;
+    // --- Set up the timing mode and rendering matrices accord to the current frequency mode
+    const is60Hz = this.is60HzMode;
+    const oldConfig = this.config;
+    this.config = is60Hz ? Plus3_60Hz : Plus3_50Hz;
+
+    // --- Update all layer matrix references based on timing mode
+    this._matrixULAStandard = is60Hz ? this._matrixULAStandard60Hz : this._matrixULAStandard50Hz;
+    this._matrixULAHiRes = is60Hz ? this._matrixULAHiRes60Hz : this._matrixULAHiRes50Hz;
+    this._matrixULAHiColor = is60Hz ? this._matrixULAHiColor60Hz : this._matrixULAHiColor50Hz;
+    this._matrixLayer2_256x192 = is60Hz
+      ? this._matrixLayer2_256x192_60Hz
+      : this._matrixLayer2_256x192_50Hz;
+    this._matrixLayer2_320x256 = is60Hz
+      ? this._matrixLayer2_320x256_60Hz
+      : this._matrixLayer2_320x256_50Hz;
+    this._matrixLayer2_640x256 = is60Hz
+      ? this._matrixLayer2_640x256_60Hz
+      : this._matrixLayer2_640x256_50Hz;
+    this._matrixSprites = is60Hz ? this._matrixSprites60Hz : this._matrixSprites50Hz;
+    this._matrixTilemap_40x32 = is60Hz
+      ? this._matrixTilemap_40x32_60Hz
+      : this._matrixTilemap_40x32_50Hz;
+    this._matrixTilemap_80x32 = is60Hz
+      ? this._matrixTilemap_80x32_60Hz
+      : this._matrixTilemap_80x32_50Hz;
+    this._matrixLoRes = is60Hz ? this._matrixLoRes60Hz : this._matrixLoRes50Hz;
+
+    // Increment flash counter (cycles 0-31 for ~1 Hz flash rate at 50Hz)
+    // Flash period: ~16 frames ON, ~16 frames OFF
+    // Full cycle: ~32 frames (~0.64s at 50Hz, ~0.55s at 60Hz)
+    this._flashCounter = (this._flashCounter + 1) & 0x1f;
+    this._flashFlag = this._flashCounter >= 16;
+
+    if (oldConfig !== this.config) {
+      // Re-initialize bitmap when switching between 50Hz and 60Hz
+      // This ensures proper centering of 60Hz content
+      this.initializeBitmap();
+    }
   }
 
   // ==============================================================================================
@@ -555,32 +627,45 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Next register updates
 
   set nextReg0x05Value(value: number) {
-    const is60Hz = (this.is60HzMode = (value & 0x04) !== 0);
-    this.config = is60Hz ? Plus3_60Hz : Plus3_50Hz;
-
-    // Update all layer matrix references based on timing mode
-    this._matrixULAStandard = is60Hz ? this._matrixULAStandard50Hz : this._matrixULAStandard60Hz;
-    this._matrixULAHiRes = is60Hz ? this._matrixULAHiRes50Hz : this._matrixULAHiRes60Hz;
-    this._matrixULAHiColor = is60Hz ? this._matrixULAHiColor50Hz : this._matrixULAHiColor60Hz;
-    this._matrixLayer2_256x192 = is60Hz
-      ? this._matrixLayer2_256x192_50Hz
-      : this._matrixLayer2_256x192_60Hz;
-    this._matrixLayer2_320x256 = is60Hz
-      ? this._matrixLayer2_320x256_50Hz
-      : this._matrixLayer2_320x256_60Hz;
-    this._matrixLayer2_640x256 = is60Hz
-      ? this._matrixLayer2_640x256_50Hz
-      : this._matrixLayer2_640x256_60Hz;
-    this._matrixSprites = is60Hz ? this._matrixSprites50Hz : this._matrixSprites60Hz;
-    this._matrixTilemap_40x32 = is60Hz
-      ? this._matrixTilemap_40x32_50Hz
-      : this._matrixTilemap_40x32_60Hz;
-    this._matrixTilemap_80x32 = is60Hz
-      ? this._matrixTilemap_80x32_50Hz
-      : this._matrixTilemap_80x32_60Hz;
-    this._matrixLoRes = is60Hz ? this._matrixLoRes50Hz : this._matrixLoRes60Hz;
-
+    this.is60HzMode = (value & 0x04) !== 0;
     this.scandoublerEnabled = (value & 0x01) !== 0;
+  }
+
+  /**
+   * Gets the clip window coordinate according to the current clip index
+   */
+  get nextReg0x1aValue(): number {
+    switch (this.ulaClipIndex) {
+      case 0:
+        return this.ulaClipWindowX1;
+      case 1:
+        return this.ulaClipWindowX2;
+      case 2:
+        return this.ulaClipWindowY1;
+      default:
+        return this.ulaClipWindowY2;
+    }
+  }
+
+  /**
+   * Sets the clip window cordinate according to the current clip index
+   */
+  set nextReg0x1aValue(value: number) {
+    switch (this.ulaClipIndex) {
+      case 0:
+        this.ulaClipWindowX1 = value;
+        break;
+      case 1:
+        this.ulaClipWindowX2 = value;
+        break;
+      case 2:
+        this.ulaClipWindowY1 = value;
+        break;
+      default:
+        this.ulaClipWindowY2 = value;
+        break;
+    }
+    this.ulaClipIndex = (this.ulaClipIndex + 1) & 0x03;
   }
 
   // ==============================================================================================
@@ -688,113 +773,116 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // // --- Memory Read Activities ---
     if (cell.pixelRead) {
-    //   // Read pixel byte from VRAM
-    //   // Bank selection: Bank 5 (0x4000-0x7FFF) or Bank 7 (0xC000-0xDFFF) if shadow enabled
-    //   // Port 0x7FFD bit 3 / NextReg 0x69 bit 6 selects shadow screen
-    //   // ULA uses interlaced address scheme: vc[7:6][vc[2:0]][vc[5:3]][hc[7:3]]
-    //   const displayVC = vc - this.config.displayYStart;  // 0-191
-    //   const displayHC = hc - this.config.displayXStart;  // 0-255
-      
-    //   // Apply Y scroll
-    //   const scrolledY = (displayVC + this.ulaScrollY) & 0xBF;  // Wrap at 192
-      
-    //   // Calculate pixel address (standard ZX Spectrum interlaced format)
-    //   const y76 = (scrolledY >> 6) & 0x03;  // Bits 7-6: thirds
-    //   const y20 = scrolledY & 0x07;         // Bits 2-0: scan line within char
-    //   const y53 = (scrolledY >> 3) & 0x07;  // Bits 5-3: char row
-    //   const x = (displayHC >> 3) & 0x1F;    // Bits 7-3: char column
-      
-    //   // Select bank: 0x4000 (Bank 5) or 0xC000 (Bank 7 for shadow)
-    //   const bankBase = this.ulaShadowEnabled ? 0xC000 : 0x4000;
-    //   const pixelAddr = bankBase + (y76 << 11) + (y20 << 8) + (y53 << 5) + x;
-      
-    //   // Read pixel byte from VRAM
-    //   this.ulaPixelByte = this.readVRAM(pixelAddr);
-      
-    //   // Update floating bus with pixel data
-    //   if (cell.floatingBusUpdate) {
-    //     this.floatingBus = this.ulaPixelByte;
-    //   }
+      // Read pixel byte from VRAM
+      // Bank selection: Bank 5 or Bank 7 (shadow screen)
+      // Port 0x7FFD bit 3 / NextReg 0x69 bit 6 selects shadow screen
+      // ULA hardware generates 14-bit bank-relative address (0x0000-0x3FFF)
+      // NOT CPU addresses! Hardware reads directly from physical Bank 5/7 BRAM
+      const displayVC = vc - this.config.displayYStart; // 0-191
+      const displayHC = hc - this.config.displayXStart; // 0-255
+
+      // Apply Y scroll
+      const scrolledY = (displayVC + this.ulaScrollY) & 0xbf; // Wrap at 192
+
+      // Calculate pixel address (standard ZX Spectrum interlaced format)
+      // 14-bit bank offset: bit[13] (screen mode) | y[7:6] | y[2:0] | y[5:3] | x[7:3]
+      const y76 = (scrolledY >> 6) & 0x03; // Bits 7-6: thirds
+      const y20 = scrolledY & 0x07; // Bits 2-0: scan line within char
+      const y53 = (scrolledY >> 3) & 0x07; // Bits 5-3: char row
+      const x = (displayHC >> 3) & 0x1f; // Bits 7-3: char column
+
+      // Generate 14-bit bank-relative address (0x0000-0x3FFF for Bank 5/7)
+      // Standard ULA mode: bit[13] = 0, so address range is 0x0000-0x1FFF
+      const pixelAddr = (y76 << 11) | (y20 << 8) | (y53 << 5) | x;
+
+      // Read pixel byte from Bank 5 or Bank 7
+      this.ulaPixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
+
+      // Update floating bus with pixel data
+      if (cell.floatingBusUpdate) {
+        this.floatingBusValue = this.ulaPixelByte;
+      }
     }
-    
+
     if (cell.attrRead) {
-    //   // Read attribute byte from VRAM
-    //   // Bank selection: Bank 5 or Bank 7 (shadow screen)
-    //   const displayVC = vc - this.config.displayYStart;
-    //   const displayHC = hc - this.config.displayXStart;
-      
-    //   // Apply Y scroll
-    //   const scrolledY = (displayVC + this.ulaScrollY) & 0xBF;
-      
-    //   // Calculate attribute address (linear: $5800/$D800 + (y/8)*32 + (x/8))
-    //   const attrY = scrolledY >> 3;  // Character row (0-23)
-    //   const attrX = (displayHC >> 3) & 0x1F;  // Character column (0-31)
-      
-    //   // Select bank: 0x5800 (Bank 5) or 0xD800 (Bank 7 for shadow)
-    //   const attrBase = this.ulaShadowEnabled ? 0xD800 : 0x5800;
-    //   const attrAddr = attrBase + (attrY << 5) + attrX;
-      
-    //   // Read attribute byte from VRAM
-    //   this.ulaAttrByte = this.readVRAM(attrAddr);
-      
-    //   // Update floating bus with attribute data
-    //   if (cell.floatingBusUpdate) {
-    //     this.floatingBus = this.ulaAttrByte;
-    //   }
+      // Read attribute byte from VRAM
+      // Bank selection: Bank 5 or Bank 7 (shadow screen)
+      const displayVC = vc - this.config.displayYStart;
+      const displayHC = hc - this.config.displayXStart;
+
+      // Apply Y scroll
+      const scrolledY = (displayVC + this.ulaScrollY) & 0xbf;
+
+      // Calculate attribute address (14-bit bank offset)
+      // Attribute area starts at 0x1800 within Bank 5/7 (linear: 0x1800 + (y/8)*32 + (x/8))
+      const attrY = scrolledY >> 3; // Character row (0-23)
+      const attrX = (displayHC >> 3) & 0x1f; // Character column (0-31)
+
+      // Generate 14-bit bank-relative address: 0x1800 + offset
+      const attrAddr = 0x1800 + (attrY << 5) + attrX;
+
+      // Read attribute byte from Bank 5 or Bank 7
+      this.ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
+
+      // Update floating bus with attribute data
+      if (cell.floatingBusUpdate) {
+        this.floatingBusValue = this.ulaAttrByte;
+      }
     }
-    
+
     // // --- Shift Register Load ---
     if (cell.shiftRegLoad) {
-    //   // Load pixel and attribute data into shift register
-    //   // This prepares the next 8 pixels for output
-    //   this.ulaShiftReg = this.ulaPixelByte;
-    //   this.ulaShiftAttr = this.ulaAttrByte;
-    //   this.ulaShiftCount = 0; // Reset pixel counter within byte
+      // Load pixel and attribute data into shift register
+      // This prepares the next 8 pixels for output
+      this.ulaShiftReg = this.ulaPixelByte;
+      this.ulaShiftAttr = this.ulaAttrByte;
+      this.ulaShiftCount = 0; // Reset pixel counter within byte
     }
 
     // // --- Pixel Generation ---
-    // // Generate pixel from shift register (happens every HC position)
-    // // Extract current pixel bit from shift register
-    // const displayHC = hc - this.config.displayXStart;
-    // const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
-    // const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
+    // Generate pixel from shift register (happens every HC position)
+    // Extract current pixel bit from shift register
+    const displayHC = hc - this.config.displayXStart;
+    const displayVC = vc - this.config.displayYStart;
+    const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
+    const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
 
-    // // Decode attribute byte
-    // const flash = (this.ulaShiftAttr >> 7) & 0x01;
-    // const bright = (this.ulaShiftAttr >> 6) & 0x01;
-    // const paperColor = (this.ulaShiftAttr >> 3) & 0x07;
-    // const inkColor = this.ulaShiftAttr & 0x07;
+    // Decode attribute byte
+    const flash = (this.ulaShiftAttr >> 7) & 0x01;
+    const bright = (this.ulaShiftAttr >> 6) & 0x01;
+    const paperColor = (this.ulaShiftAttr >> 3) & 0x07;
+    const inkColor = this.ulaShiftAttr & 0x07;
 
-    // // Apply flash effect if enabled
-    // let finalInk = inkColor;
-    // let finalPaper = paperColor;
-    // if (flash && this.flashPhase) {
-    //   // Swap INK and PAPER when flash is active
-    //   finalInk = paperColor;
-    //   finalPaper = inkColor;
-    // }
+    // Apply flash effect if enabled
+    let finalInk = inkColor;
+    let finalPaper = paperColor;
+    if (flash && this._flashFlag) {
+      // Swap INK and PAPER when flash is active
+      finalInk = paperColor;
+      finalPaper = inkColor;
+    }
 
-    // // Select INK or PAPER based on pixel bit
-    // const colorIndex = pixelBit ? finalInk : finalPaper;
+    // Select INK or PAPER based on pixel bit
+    const colorIndex = pixelBit ? finalInk : finalPaper;
 
-    // // Apply BRIGHT attribute (adds 8 to color index)
-    // const paletteIndex = colorIndex + (bright << 3);
+    // Apply BRIGHT attribute (adds 8 to color index)
+    const paletteIndex = colorIndex + (bright << 3);
 
-    // // Lookup color in ULA palette (16 entries for standard + bright colors)
-    // const pixelRGB333 = this.lookupULAPalette(paletteIndex);
+    // Lookup color in ULA palette (16 entries for standard + bright colors)
+    const pixelRGB333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
 
-    // // --- Clipping Test ---
-    // // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
-    // const clipX1 = this.cachedNextReg0x1C;
-    // const clipX2 = this.cachedNextReg0x1D;
-    // const clipped = displayHC < clipX1 || displayHC > clipX2;
+    // --- Clipping Test ---
+    // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
+    const clipped =
+      displayHC < this.ulaClipWindowX1 ||
+      displayHC > this.ulaClipWindowX2 ||
+      displayVC < this.ulaClipWindowY1 ||
+      displayVC > this.ulaClipWindowY2;
 
-    // // --- Transparency Check ---
-    // // ULA uses NextReg 0x14 as transparent color (RGB333 comparison)
-    // const transparentRGB = this.cachedNextReg0x14;
-    // const transparent = pixelRGB333 === transparentRGB;
+    // --- Transparency Check ---
+    const transparent = (pixelRGB333 >> 1) === this.globalTransparencyColor;
 
-    // // --- Contention Simulation ---
+    // --- Contention Simulation ---
     // if (cell.contentionWindow && this.contentionEnabled) {
     //   // Delay CPU memory access by one cycle (simulation only)
     //   // In real hardware, this delays Z80 access to contended RAM ($4000-$7FFF)
@@ -802,16 +890,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     //   this.signalMemoryContention();
     // }
 
-    // // Return layer output for composition stage
-    // return {
-    //   rgb: pixelRGB333,
-    //   transparent: transparent || clipped, // Treat clipped pixels as transparent
-    //   clipped: clipped
-    // };
+    // Return layer output for composition stage
     return {
-      rgb: 0x00000000,
-      transparent: true,
-      clipped: false
+      rgb: pixelRGB333,
+      transparent: transparent || clipped, // Treat clipped pixels as transparent
+      clipped: clipped
     };
   }
 

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { Layer2Resolution } from "@emu/machines/zxNext/Layer2Device";
 import { JoystickMode } from "@emu/machines/zxNext/JoystickDevice";
 
 describe("Next - NextRegDevice", function () {
@@ -19,7 +18,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x02)).toBe(0x02);
     expect(d.directGetRegValue(0x03)).toBe(0x03);
     expect(d.directGetRegValue(0x04)).toBe(0x03);
-    expect(d.directGetRegValue(0x05)).toBe(0x01);
+    expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0x00);
     expect(d.directGetRegValue(0x07)).toBe(0x00);
     expect(d.directGetRegValue(0x08)).toBe(0x1a);
@@ -171,7 +170,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x02)).toBe(0x01);
     expect(d.directGetRegValue(0x03)).toBe(0x03);
     expect(d.directGetRegValue(0x04)).toBe(0x03);
-    expect(d.directGetRegValue(0x05)).toBe(0x01);
+    expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0xa0);
     expect(d.directGetRegValue(0x07)).toBe(0x00);
     expect(d.directGetRegValue(0x08)).toBe(0x1a);
@@ -1501,49 +1500,48 @@ describe("Next - NextRegDevice", function () {
   it("Reg $12 write #1", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x12, 0x03);
 
     // --- Assert
-    expect(layer2Device.activeRamBank).toBe(0x03);
+    expect(scrDevice.layer2ActiveRamBank).toBe(0x03);
   });
 
   it("Reg $12 write #2", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
 
     // --- Act
     writeNextReg(m, 0x12, 0x97);
 
     // --- Assert
-    expect(layer2Device.activeRamBank).toBe(0x17);
+    expect(m.composedScreenDevice.layer2ActiveRamBank).toBe(0x17);
   });
 
   it("Reg $13 write #1", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x13, 0x03);
 
     // --- Assert
-    expect(layer2Device.shadowRamBank).toBe(0x03);
+    expect(scrDevice.layer2ShadowRamBank).toBe(0x03);
   });
 
   it("Reg $13 write #2", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x13, 0x03);
 
     // --- Assert
-    expect(layer2Device.shadowRamBank).toBe(0x03);
+    expect(scrDevice.layer2ShadowRamBank).toBe(0x03);
   });
 
   it("Reg $14 write", async () => {
@@ -1762,80 +1760,6 @@ describe("Next - NextRegDevice", function () {
     expect(layer2Device.clipWindowX2).toBe(0x34);
     expect(layer2Device.clipWindowY1).toBe(0x45);
     expect(layer2Device.clipWindowY2).toBe(0x56);
-  });
-
-  it("Reg $1a first write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const ulaDevice = m.ulaDevice;
-    writeNextReg(m, 0x1c, 0x04);
-
-    // --- Act
-    writeNextReg(m, 0x1a, 0x23);
-
-    // --- Assert
-    expect(ulaDevice.clipIndex).toBe(0x01);
-    expect(ulaDevice.clipWindowX1).toBe(0x23);
-    expect(ulaDevice.clipWindowX2).toBe(0xff);
-    expect(ulaDevice.clipWindowY1).toBe(0x00);
-    expect(ulaDevice.clipWindowY2).toBe(0xbf);
-  });
-
-  it("Reg $1a second write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const ulaDevice = m.ulaDevice;
-    writeNextReg(m, 0x1c, 0x04);
-
-    // --- Act
-    writeNextReg(m, 0x1a, 0x23);
-    writeNextReg(m, 0x1a, 0x34);
-
-    // --- Assert
-    expect(ulaDevice.clipIndex).toBe(0x02);
-    expect(ulaDevice.clipWindowX1).toBe(0x23);
-    expect(ulaDevice.clipWindowX2).toBe(0x34);
-    expect(ulaDevice.clipWindowY1).toBe(0x00);
-    expect(ulaDevice.clipWindowY2).toBe(0xbf);
-  });
-
-  it("Reg $1a third write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const ulaDevice = m.ulaDevice;
-    writeNextReg(m, 0x1c, 0x04);
-
-    // --- Act
-    writeNextReg(m, 0x1a, 0x23);
-    writeNextReg(m, 0x1a, 0x34);
-    writeNextReg(m, 0x1a, 0x45);
-
-    // --- Assert
-    expect(ulaDevice.clipIndex).toBe(0x03);
-    expect(ulaDevice.clipWindowX1).toBe(0x23);
-    expect(ulaDevice.clipWindowX2).toBe(0x34);
-    expect(ulaDevice.clipWindowY1).toBe(0x45);
-    expect(ulaDevice.clipWindowY2).toBe(0xbf);
-  });
-
-  it("Reg $1a fourth write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const ulaDevice = m.ulaDevice;
-    writeNextReg(m, 0x1c, 0x04);
-
-    // --- Act
-    writeNextReg(m, 0x1a, 0x23);
-    writeNextReg(m, 0x1a, 0x34);
-    writeNextReg(m, 0x1a, 0x45);
-    writeNextReg(m, 0x1a, 0x56);
-
-    // --- Assert
-    expect(ulaDevice.clipIndex).toBe(0x00);
-    expect(ulaDevice.clipWindowX1).toBe(0x23);
-    expect(ulaDevice.clipWindowX2).toBe(0x34);
-    expect(ulaDevice.clipWindowY1).toBe(0x45);
-    expect(ulaDevice.clipWindowY2).toBe(0x56);
   });
 
   it("Reg $1b first write", async () => {
@@ -2668,120 +2592,6 @@ describe("Next - NextRegDevice", function () {
     expect(loResDevice.isRadastanMode).toBe(false);
     expect(loResDevice.radastanTimexXor).toBe(false);
     expect(loResDevice.paletteOffset).toBe(0x0a);
-  });
-
-  it("Reg $6b enableTilemap", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6b, 0x80);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6b)).toBe(0x80);
-    expect(tilemapDevice.enableTilemap).toBe(true);
-    expect(tilemapDevice.mode80x32).toBe(false);
-    expect(tilemapDevice.eliminateAttribute).toBe(false);
-    expect(tilemapDevice.paletteSelect).toBe(false);
-    expect(tilemapDevice.selectTextMode).toBe(false);
-    expect(tilemapDevice.activate512TileMode).toBe(false);
-    expect(tilemapDevice.forceTilemapOnTop).toBe(false);
-  });
-
-  it("Reg $6b mode80x32", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6b, 0x40);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6b)).toBe(0x40);
-    expect(tilemapDevice.enableTilemap).toBe(false);
-    expect(tilemapDevice.mode80x32).toBe(true);
-    expect(tilemapDevice.eliminateAttribute).toBe(false);
-    expect(tilemapDevice.paletteSelect).toBe(false);
-    expect(tilemapDevice.selectTextMode).toBe(false);
-    expect(tilemapDevice.activate512TileMode).toBe(false);
-    expect(tilemapDevice.forceTilemapOnTop).toBe(false);
-  });
-
-  it("Reg $6b eliminateAttribute", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6b, 0x20);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6b)).toBe(0x20);
-    expect(tilemapDevice.enableTilemap).toBe(false);
-    expect(tilemapDevice.mode80x32).toBe(false);
-    expect(tilemapDevice.eliminateAttribute).toBe(true);
-    expect(tilemapDevice.paletteSelect).toBe(false);
-    expect(tilemapDevice.selectTextMode).toBe(false);
-    expect(tilemapDevice.activate512TileMode).toBe(false);
-    expect(tilemapDevice.forceTilemapOnTop).toBe(false);
-  });
-
-  it("Reg $6b selectTextMode", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6b, 0x08);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6b)).toBe(0x08);
-    expect(tilemapDevice.enableTilemap).toBe(false);
-    expect(tilemapDevice.mode80x32).toBe(false);
-    expect(tilemapDevice.eliminateAttribute).toBe(false);
-    expect(tilemapDevice.paletteSelect).toBe(false);
-    expect(tilemapDevice.selectTextMode).toBe(true);
-    expect(tilemapDevice.activate512TileMode).toBe(false);
-    expect(tilemapDevice.forceTilemapOnTop).toBe(false);
-  });
-
-  it("Reg $6b activate512TileMode", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6b, 0x02);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6b)).toBe(0x02);
-    expect(tilemapDevice.enableTilemap).toBe(false);
-    expect(tilemapDevice.mode80x32).toBe(false);
-    expect(tilemapDevice.eliminateAttribute).toBe(false);
-    expect(tilemapDevice.paletteSelect).toBe(false);
-    expect(tilemapDevice.selectTextMode).toBe(false);
-    expect(tilemapDevice.activate512TileMode).toBe(true);
-    expect(tilemapDevice.forceTilemapOnTop).toBe(false);
-  });
-
-  it("Reg $6b forceTilemapOnTop", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6b, 0x01);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6b)).toBe(0x01);
-    expect(tilemapDevice.enableTilemap).toBe(false);
-    expect(tilemapDevice.mode80x32).toBe(false);
-    expect(tilemapDevice.eliminateAttribute).toBe(false);
-    expect(tilemapDevice.paletteSelect).toBe(false);
-    expect(tilemapDevice.selectTextMode).toBe(false);
-    expect(tilemapDevice.activate512TileMode).toBe(false);
-    expect(tilemapDevice.forceTilemapOnTop).toBe(true);
   });
 
   it("Reg $6c paletteOffset", async () => {

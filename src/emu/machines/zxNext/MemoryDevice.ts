@@ -296,6 +296,11 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.memory[writeOffset + offset] = data;
   }
 
+  readScreenMemory(offset: number): number {
+    const address = (this.useShadowScreen ? 0x07 : 0x05) * 0x4000 + (offset & 0x3fff);
+    return this.memory[OFFS_NEXT_RAM + address];
+  }
+
   /**
    * Uploads the contents to the specified memory location
    * @param contents Contents to upload

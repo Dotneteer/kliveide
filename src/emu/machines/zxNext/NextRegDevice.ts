@@ -752,8 +752,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x14,
       description: "Global Transparency Colour",
-      readFn: () => machine.layer2Device.transparencyColor,
-      writeFn: (v) => (machine.layer2Device.transparencyColor = v & 0xff)
+      readFn: () => machine.composedScreenDevice.globalTransparencyColor,
+      writeFn: (v) => (machine.composedScreenDevice.globalTransparencyColor = v & 0xff)
     });
     r({
       id: 0x15,
@@ -845,8 +845,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x1a,
       description: "Clip Window ULA",
-      readFn: () => machine.ulaDevice.nextReg1aValue,
-      writeFn: (v) => (machine.ulaDevice.nextReg1aValue = v & 0xff)
+      readFn: () => machine.composedScreenDevice.nextReg0x1aValue,
+      writeFn: (v) => (machine.composedScreenDevice.nextReg0x1aValue = v & 0xff)
     });
     r({
       id: 0x1b,
@@ -3166,6 +3166,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
 
+    // --- Next reg $05
+    const reg0x05BitsKept = this.directGetRegValue(0x05) & 0x05; // --- Keep bits 0 and 2
+    this.directSetRegValue(0x05, reg0x05BitsKept | 0x40); // --- Cursor mode, Sinclair 2, keep scandoubler setting
+
     // --- Sign soft reset
     const machine = this.machine;
     machine.interruptDevice.lastWasHardReset = false;
@@ -3219,7 +3223,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
     this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
-    this.directSetRegValue(0x05, 0x01); // --- Enable scandoubler for VGA
+    this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
     this.directSetRegValue(0x06, 0x00); // --- All Peripheral settings #2 are 0
     this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
     this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound
