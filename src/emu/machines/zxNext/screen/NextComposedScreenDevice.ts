@@ -153,7 +153,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   layer2PaletteOffset: number;
 
   // === Standard 0xFE port border value
-  borderColor: number;
+  private _borderColor: number;
+  private _borderRgbCache: number;
 
   // === Timex port (0xff) ULA flags
   // The last 6 bit of the Timex port
@@ -331,6 +332,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaScrollX = 0;
     this.ulaScrollY = 0;
 
+    // --- Initialize border color (use setter to update cache)
+    this.borderColor = 7; // Default white border
+
     // --- Initialize timing mode, matrices, and the pixel bitmap
     this.onNewFrame();
 
@@ -369,10 +373,48 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
+   * Get the current border color value
+   */
+  get borderColor(): number {
+    return this._borderColor;
+  }
+
+  /**
+   * Set the border color and update the cached RGB value
+   * This optimization eliminates method calls for border pixels (~30% of pixels)
+   */
+  set borderColor(value: number) {
+    this._borderColor = value;
+    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb(value);
+  }
+
+  /**
+   * Update the cached border RGB value from the current palette
+   * Called by PaletteDevice when:
+   * - ULA palette colors change
+   * - Active palette switches (first <-> second)
+   */
+  updateBorderRgbCache(): void {
+    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb(this._borderColor);
+  }
+
+  /**
    * Render the pixel pair belonging to the specified frame tact.
    * @param tact Frame tact to render
    */
   renderTact(tact: number): boolean {
+    // === LOCAL VARIABLE HOISTING (Performance Optimization) ===
+    // Cache frequently accessed properties to reduce property dereferencing overhead
+    const loResEnabled = this.loResEnabled;
+    const disableUlaOutput = this.disableUlaOutput;
+    const ulaHiResMode = this.ulaHiResMode;
+    const ulaHiColorMode = this.ulaHiColorMode;
+    const layer2Enabled = this.layer2Enabled;
+    const layer2Resolution = this.layer2Resolution;
+    const spritesEnabled = this.spritesEnabled;
+    const tilemapEnabled = this.tilemapEnabled;
+    const tilemap80x32Resolution = this.tilemap80x32Resolution;
+
     // Check if interrupt signal is active (simple range check)
     this._pulseIntActive = tact >= this.config.intStartTact && tact < this.config.intEndTact;
 
@@ -394,15 +436,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let ulaOutput1: LayerOutput | null = null;
     let ulaOutput2: LayerOutput | null = null;
 
-    if (this.loResEnabled) {
+    if (loResEnabled) {
       // LoRes mode (128×96, replaces ULA output)
       const loresCell = this._renderingFlagsLoRes[tact];
       ulaOutput1 = this.renderLoResPixel(vc, hc, loresCell);
       ulaOutput2 = ulaOutput1; // Standard resolution base (4x replication handled by caller)
-    } else if (!this.disableUlaOutput) {
-      if (this.ulaHiResMode || this.ulaHiColorMode) {
+    } else if (!disableUlaOutput) {
+      if (ulaHiResMode || ulaHiColorMode) {
         // ULA Hi-Res and Hi-Color modes
-        if (this.ulaHiResMode) {
+        if (ulaHiResMode) {
           // ULA Hi-Res mode (512×192, 2 pixels per HC)
           const ulaCell = this._renderingFlagsULAHiRes[tact];
           ulaOutput1 = this.renderULAHiResPixel(vc, hc, ulaCell, 0);
@@ -425,18 +467,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let layer2Output1: LayerOutput | null = null;
     let layer2Output2: LayerOutput | null = null;
 
-    if (this.layer2Enabled) {
-      if (this.layer2Resolution === 0) {
+    if (layer2Enabled) {
+      if (layer2Resolution === 0) {
         // Layer 2 256×192 mode
         const layer2Cell = this._renderingFlagsLayer2_256x192[tact];
         layer2Output1 = this.renderLayer2_256x192Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
-      } else if (this.layer2Resolution === 1) {
+      } else if (layer2Resolution === 1) {
         // Layer 2 320×256 mode
         const layer2Cell = this._renderingFlagsLayer2_320x256[tact];
         layer2Output1 = this.renderLayer2_320x256Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
-      } else if (this.layer2Resolution === 2) {
+      } else if (layer2Resolution === 2) {
         // Layer 2 640×256 mode (Hi-Res, 2 pixels per HC)
         const layer2Cell = this._renderingFlagsLayer2_640x256[tact];
         layer2Output1 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 0);
@@ -448,7 +490,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let spritesOutput1: LayerOutput | null = null;
     let spritesOutput2: LayerOutput | null = null;
 
-    if (this.spritesEnabled) {
+    if (spritesEnabled) {
       const spritesCell = this._renderingFlagsSprites[tact];
       spritesOutput1 = this.renderSpritesPixel(vc, hc, spritesCell);
       spritesOutput2 = spritesOutput1; // Standard resolution: duplicate pixel
@@ -458,8 +500,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let tilemapOutput1: LayerOutput | null = null;
     let tilemapOutput2: LayerOutput | null = null;
 
-    if (this.tilemapEnabled) {
-      if (this.tilemap80x32Resolution) {
+    if (tilemapEnabled) {
+      if (tilemap80x32Resolution) {
         // Tilemap 80×32 mode (Hi-Res, 2 pixels per HC)
         const tilemapCell = this._renderingFlagsTilemap_80x32[tact];
         tilemapOutput1 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 0);
@@ -484,7 +526,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // For now, using simplified approach (incomplete implementation)
 
     // Merge tilemap into ULA if both enabled (simplified version)
-    if (this.tilemapEnabled && tilemapOutput1) {
+    if (tilemapEnabled && tilemapOutput1) {
       if (ulaOutput1 && !ulaOutput1.transparent && !tilemapOutput1.transparent) {
         // Both non-transparent: apply tm_pixel_below logic
         // TODO: Read tm_pixel_below from tilemap attributes
@@ -497,7 +539,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // If only ULA non-transparent, keep ulaOutput1 as-is
     }
 
-    if (this.tilemapEnabled && tilemapOutput2) {
+    if (tilemapEnabled && tilemapOutput2) {
       if (ulaOutput2 && !ulaOutput2.transparent && !tilemapOutput2.transparent) {
         ulaOutput2 = tilemapOutput2;
       } else if (!tilemapOutput2.transparent) {
@@ -1000,12 +1042,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): LayerOutput {
     // === Border Area ===
     if ((cell & ULA_DISPLAY_AREA) === 0) {
-      // Lookup border color in ULA palette (first 8 entries)
-      // TODO: Consider ULA+ border color modes
-      const borderRGB = this.machine.paletteDevice.getUlaRgb(this.borderColor);
-
+      // Use cached border RGB value (updated when borderColor changes)
+      // This eliminates method call overhead for ~30% of pixels
       return {
-        rgb: borderRGB,
+        rgb: this._borderRgbCache,
         transparent: false,
         clipped: false
       };

@@ -118,6 +118,8 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     switch (this._selectedPalette) {
       case 0:
         this.ulaRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        // Update border cache if ULA first palette changed
+        this.machine.composedScreenDevice.updateBorderRgbCache();
         break;
       case 1:
         this.layer2RgbFirst[this._paletteIndex] = zxNext9BitColorCodes[regValue];
@@ -130,6 +132,8 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
         break;
       case 4:
         this.ulaRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[regValue];
+        // Update border cache if ULA second palette changed
+        this.machine.composedScreenDevice.updateBorderRgbCache();
         break;
       case 5:
         this.layer2RgbSecond[this._paletteIndex] = zxNext9BitColorCodes[regValue];
@@ -164,10 +168,15 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     this._selectedPalette = (value & 0x70) >> 4;
     this._secondSpritePalette = (value & 0x08) !== 0;
     this._secondLayer2Palette = (value & 0x04) !== 0;
+    const oldSecondUlaPalette = this._secondUlaPalette;
     this._secondUlaPalette = (value & 0x02) !== 0;
     this._enableUlaNextMode = (value & 0x01) !== 0;
     this._secondWrite = false;
     this.updateUlaPalette();
+    // Update border cache if active ULA palette switched
+    if (oldSecondUlaPalette !== this._secondUlaPalette) {
+      this.machine.composedScreenDevice.updateBorderRgbCache();
+    }
   }
 
   get nextReg44Value(): number {
@@ -192,6 +201,8 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
       switch (this._selectedPalette) {
         case 0:
           this.ulaRgbFirst[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          // Update border cache if ULA first palette changed
+          this.machine.composedScreenDevice.updateBorderRgbCache();
           break;
         case 1:
           this.layer2RgbFirst[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex] & 0x1ff];
@@ -204,6 +215,8 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
           break;
         case 4:
           this.ulaRgbSecond[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex]];
+          // Update border cache if ULA second palette changed
+          this.machine.composedScreenDevice.updateBorderRgbCache();
           break;
         case 5:
           this.layer2RgbSecond[this._paletteIndex] = zxNext9BitColorCodes[palette[this._paletteIndex] & 0x1ff];
