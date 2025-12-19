@@ -1,5 +1,10 @@
 import { isDisplayArea } from "./matrix-helpers";
-import { Layer2Cell } from "./RenderingCell";
+import { 
+  Layer2Cell,
+  LAYER2_DISPLAY_AREA,
+  LAYER2_PIXEL_FETCH,
+  LAYER2_PALETTE_INDEX
+} from "./RenderingCell";
 import { TimingConfig } from "./TimingConfig";
 
 /**
@@ -16,12 +21,12 @@ export function generateLayer2_256x192Cell(
 ): Layer2Cell {
   const displayArea = isDisplayArea(config, vc, hc);
   
-  return {
-    displayArea,
-    contentionWindow: false, // Layer 2 uses SRAM, no contention
-    pixelFetch: displayArea,
-    paletteIndex: displayArea
-  };
+  let flags = 0;
+  if (displayArea) {
+    flags |= LAYER2_DISPLAY_AREA | LAYER2_PIXEL_FETCH | LAYER2_PALETTE_INDEX;
+  }
+  // Layer 2 uses SRAM, no contention window
+  return flags;
 }
 
 /**
@@ -38,12 +43,11 @@ export function generateLayer2_320x256Cell(
 ): Layer2Cell {
   const displayArea = isDisplayArea(config, vc, hc);
   
-  return {
-    displayArea,
-    contentionWindow: false,
-    pixelFetch: displayArea,
-    paletteIndex: displayArea
-  };
+  let flags = 0;
+  if (displayArea) {
+    flags |= LAYER2_DISPLAY_AREA | LAYER2_PIXEL_FETCH | LAYER2_PALETTE_INDEX;
+  }
+  return flags;
 }
 
 /**
@@ -60,12 +64,11 @@ export function generateLayer2_640x256Cell(
 ): Layer2Cell {
   const displayArea = isDisplayArea(config, vc, hc);
   
-  return {
-    displayArea,
-    contentionWindow: false,
-    pixelFetch: displayArea,
-    paletteIndex: displayArea
-  };
+  let flags = 0;
+  if (displayArea) {
+    flags |= LAYER2_DISPLAY_AREA | LAYER2_PIXEL_FETCH | LAYER2_PALETTE_INDEX;
+  }
+  return flags;
 }
 
 

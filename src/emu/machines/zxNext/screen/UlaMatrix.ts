@@ -1,4 +1,4 @@
-import { isDisplayArea, isContentionWindow } from "./matrix-helpers";
+import { isDisplayArea, isVisibleArea, isContentionWindow } from "./matrix-helpers";
 import {
   ULAHiColorCell,
   ULAHiResCell,
@@ -9,7 +9,20 @@ import {
   ULA_PIXEL_READ,
   ULA_ATTR_READ,
   ULA_SHIFT_REG_LOAD,
-  ULA_FLOATING_BUS_UPDATE
+  ULA_FLOATING_BUS_UPDATE,
+  ULA_BORDER_AREA,
+  ULA_HIRES_DISPLAY_AREA,
+  ULA_HIRES_CONTENTION_WINDOW,
+  ULA_HIRES_PIXEL_READ_0,
+  ULA_HIRES_PIXEL_READ_1,
+  ULA_HIRES_SHIFT_REG_LOAD,
+  ULA_HIRES_BORDER_AREA,
+  ULA_HICOLOR_DISPLAY_AREA,
+  ULA_HICOLOR_CONTENTION_WINDOW,
+  ULA_HICOLOR_PIXEL_READ,
+  ULA_HICOLOR_COLOR_READ,
+  ULA_HICOLOR_SHIFT_REG_LOAD,
+  ULA_HICOLOR_BORDER_AREA
 } from "./RenderingCell";
 import { TimingConfig } from "./TimingConfig";
 
@@ -25,10 +38,21 @@ export function generateULAStandardCell(
   vc: number,
   hc: number
 ): ULAStandardCell {
+  // Check if we're in blanking area (not visible)
+  const visibleArea = isVisibleArea(config, vc, hc);
+  
+  // If we're in blanking area, return 0 (no rendering activity)
+  if (!visibleArea) {
+    return 0;
+  }
+
   // Display area: where ULA layer renders (256×192 in ULA coordinates)
   // ULA internally uses HC 0-255 for the 256-pixel-wide display
   // In our coordinate system, this maps to HC 144-399
   const displayArea = isDisplayArea(config, vc, hc);
+
+  // Border area: visible but not display area
+  const borderArea = !displayArea;
 
   // Contention window calculation (for +3 timing)
   const contentionWindow = isContentionWindow(hc, displayArea);
@@ -38,6 +62,7 @@ export function generateULAStandardCell(
 
   // Set base flags
   if (displayArea) flags |= ULA_DISPLAY_AREA;
+  if (borderArea) flags |= ULA_BORDER_AREA;
   if (contentionWindow) flags |= ULA_CONTENTION_WINDOW;
 
   // === ULA-Specific Activities (only in display area) ===
@@ -77,51 +102,94 @@ export function generateULAStandardCell(
 /**
  * Generate a single ULA Hi-Res rendering cell for the given (vc, hc) position.
  * @param config Timing configuration (50Hz or 60Hz)
- * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
- * @param hc Horizontal counter position (firstVisibleHC to maxHC)
- * @returns ULA Standard rendering cell with all activity flags
+ * @param vc Vertical counter position (0 to maxVC, includes blanking)
+ * @param hc Horizontal counter position (0 to maxHC, includes blanking)
+ * @returns ULA Hi-Res rendering cell as Uint16 bit flags
  */
 export function generateULAHiResCell(config: TimingConfig, vc: number, hc: number): ULAHiResCell {
-  // Note: Blanking cells are not generated (sparse matrix optimization)
-  // This function is only called for visible positions where:
-  // vc >= firstBitmapVC && vc <= lastBitmapVC && hc >= firstVisibleHC
-  const displayArea = isDisplayArea(config, vc, hc);
-  const contentionWindow = isContentionWindow(hc, displayArea);
-  const hcSub = hc & 0xf;
+  // Check if we're in blanking area (not visible)
+  const visibleArea = isVisibleArea(config, vc, hc);
+  
+  // If we're in blanking area, return 0 (no rendering activity)
+  if (!visibleArea) {
+    return 0;
+  }
 
-  return {
-    displayArea,
-    contentionWindow,
-    pixelRead0: displayArea && (hcSub === 0x0 || hcSub === 0x4 || hcSub === 0x8 || hcSub === 0xc),
-    pixelRead1: displayArea && (hcSub === 0x2 || hcSub === 0x6 || hcSub === 0xa || hcSub === 0xe),
-    shiftRegLoad: displayArea && (hcSub === 0xc || hcSub === 0x4)
-  };
+  const displayArea = isDisplayArea(config, vc, hc);
+  const borderArea = !displayArea;
+  const contentionWindow = isContentionWindow(hc, displayArea);
+
+  let flags = 0;
+
+  if (displayArea) flags |= ULA_HIRES_DISPLAY_AREA;
+  if (borderArea) flags |= ULA_HIRES_BORDER_AREA;
+  if (contentionWindow) flags |= ULA_HIRES_CONTENTION_WINDOW;
+
+  if (displayArea) {
+    const hcSub = hc & 0xf;
+
+    if (hcSub === 0x0 || hcSub === 0x4 || hcSub === 0x8 || hcSub === 0xc) {
+      flags |= ULA_HIRES_PIXEL_READ_0;
+    }
+
+    if (hcSub === 0x2 || hcSub === 0x6 || hcSub === 0xa || hcSub === 0xe) {
+      flags |= ULA_HIRES_PIXEL_READ_1;
+    }
+
+    if (hcSub === 0xc || hcSub === 0x4) {
+      flags |= ULA_HIRES_SHIFT_REG_LOAD;
+    }
+  }
+
+  return flags;
 }
 
 /**
  * Generate a single ULA Hi-Color rendering cell for the given (vc, hc) position.
  * @param config Timing configuration (50Hz or 60Hz)
- * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
- * @param hc Horizontal counter position (firstVisibleHC to maxHC)
- * @returns ULA Hi-Color rendering cell with all activity flags
+ * @param vc Vertical counter position (0 to maxVC, includes blanking)
+ * @param hc Horizontal counter position (0 to maxHC, includes blanking)
+ * @returns ULA Hi-Color rendering cell as Uint16 bit flags
  */
 export function generateULAHiColorCell(
   config: TimingConfig,
   vc: number,
   hc: number
 ): ULAHiColorCell {
-  // Note: Blanking cells are not generated (sparse matrix optimization)
-  // This function is only called for visible positions where:
-  // vc >= firstBitmapVC && vc <= lastBitmapVC && hc >= firstVisibleHC
-  const displayArea = isDisplayArea(config, vc, hc);
-  const contentionWindow = isContentionWindow(hc, displayArea);
-  const hcSub = hc & 0xf;
+  // Check if we're in blanking area (not visible)
+  const visibleArea = isVisibleArea(config, vc, hc);
+  
+  // If we're in blanking area, return 0 (no rendering activity)
+  if (!visibleArea) {
+    return 0;
+  }
 
-  return {
-    displayArea,
-    contentionWindow,
-    pixelRead: displayArea && (hcSub === 0x0 || hcSub === 0x4 || hcSub === 0x8 || hcSub === 0xc),
-    colorRead: displayArea && (hcSub === 0x2 || hcSub === 0x6 || hcSub === 0xa || hcSub === 0xe),
-    shiftRegLoad: displayArea && (hcSub === 0xc || hcSub === 0x4)
-  };
+  const displayArea = isDisplayArea(config, vc, hc);
+  const borderArea = !displayArea;
+  const contentionWindow = isContentionWindow(hc, displayArea);
+
+  let flags = 0;
+
+  if (displayArea) flags |= ULA_HICOLOR_DISPLAY_AREA;
+  if (borderArea) flags |= ULA_HICOLOR_BORDER_AREA;
+  if (contentionWindow) flags |= ULA_HICOLOR_CONTENTION_WINDOW;
+
+  if (displayArea) {
+    const hcSub = hc & 0xf;
+
+    if (hcSub === 0x0 || hcSub === 0x4 || hcSub === 0x8 || hcSub === 0xc) {
+      flags |= ULA_HICOLOR_PIXEL_READ;
+    }
+
+    if (hcSub === 0x2 || hcSub === 0x6 || hcSub === 0xa || hcSub === 0xe) {
+      flags |= ULA_HICOLOR_COLOR_READ;
+    }
+
+    if (hcSub === 0xc || hcSub === 0x4) {
+      flags |= ULA_HICOLOR_SHIFT_REG_LOAD;
+    }
+  }
+
+  return flags;
 }
+

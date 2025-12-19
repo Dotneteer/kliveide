@@ -1,16 +1,8 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import {
-  Layer2Cell,
-  LayerMatrix,
   LayerOutput,
   LayersOutput,
-  LoResCell,
-  RenderingCell,
-  SpritesCell,
-  TilemapCell,
-  ULAHiColorCell,
-  ULAHiResCell,
   ULAStandardCell,
   ULAStandardMatrix,
   ULA_DISPLAY_AREA,
@@ -60,10 +52,10 @@ const BITMAP_HEIGHT = 288;
 const BITMAP_SIZE = BITMAP_WIDTH * BITMAP_HEIGHT;
 
 // ============================================================================
-// ULA Standard Matrix Dimensions (1D Uint16Array with full scanline storage)
+// Rendering Flags Dimensions (1D Uint16Array with full scanline storage)
 // ============================================================================
 // Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
-const MATRIX_HC_COUNT = 456;  // 0 to maxHC (455)
+const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
 
 /**
  * ZX Spectrum Next Rendering Device
@@ -194,52 +186,56 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   layer2EnableMappingForReads: boolean;
   layer2EnableMappingForWrites: boolean;
 
-  // Rendering matrixes for all layers and modes
-  private _matrixULAStandard: ULAStandardMatrix;
-  private _matrixULAStandard50Hz: ULAStandardMatrix;
-  private _matrixULAStandard60Hz: ULAStandardMatrix;
-  private readonly _matrixHCCount = MATRIX_HC_COUNT;  // For index calculation
+  // Rendering flags for all layers and modes
+  private _renderingFlagsULAStandard: ULAStandardMatrix;
+  private _renderingFlagsULAStandard50Hz: ULAStandardMatrix;
+  private _renderingFlagsULAStandard60Hz: ULAStandardMatrix;
 
-  private _matrixULAHiRes: LayerMatrix;
-  private _matrixULAHiRes50Hz: LayerMatrix;
-  private _matrixULAHiRes60Hz: LayerMatrix;
+  private _renderingFlagsULAHiRes: Uint16Array;
+  private _renderingFlagsULAHiRes50Hz: Uint16Array;
+  private _renderingFlagsULAHiRes60Hz: Uint16Array;
 
-  private _matrixULAHiColor: LayerMatrix;
-  private _matrixULAHiColor50Hz: LayerMatrix;
-  private _matrixULAHiColor60Hz: LayerMatrix;
+  private _renderingFlagsULAHiColor: Uint16Array;
+  private _renderingFlagsULAHiColor50Hz: Uint16Array;
+  private _renderingFlagsULAHiColor60Hz: Uint16Array;
 
-  private _matrixLayer2_256x192: LayerMatrix;
-  private _matrixLayer2_256x192_50Hz: LayerMatrix;
-  private _matrixLayer2_256x192_60Hz: LayerMatrix;
+  private _renderingFlagsLayer2_256x192: Uint16Array;
+  private _renderingFlagsLayer2_256x192_50Hz: Uint16Array;
+  private _renderingFlagsLayer2_256x192_60Hz: Uint16Array;
 
-  private _matrixLayer2_320x256: LayerMatrix;
-  private _matrixLayer2_320x256_50Hz: LayerMatrix;
-  private _matrixLayer2_320x256_60Hz: LayerMatrix;
+  private _renderingFlagsLayer2_320x256: Uint16Array;
+  private _renderingFlagsLayer2_320x256_50Hz: Uint16Array;
+  private _renderingFlagsLayer2_320x256_60Hz: Uint16Array;
 
-  private _matrixLayer2_640x256: LayerMatrix;
-  private _matrixLayer2_640x256_50Hz: LayerMatrix;
-  private _matrixLayer2_640x256_60Hz: LayerMatrix;
+  private _renderingFlagsLayer2_640x256: Uint16Array;
+  private _renderingFlagsLayer2_640x256_50Hz: Uint16Array;
+  private _renderingFlagsLayer2_640x256_60Hz: Uint16Array;
 
-  private _matrixSprites: LayerMatrix;
-  private _matrixSprites50Hz: LayerMatrix;
-  private _matrixSprites60Hz: LayerMatrix;
+  private _renderingFlagsSprites: Uint16Array;
+  private _renderingFlagsSprites50Hz: Uint16Array;
+  private _renderingFlagsSprites60Hz: Uint16Array;
 
-  private _matrixTilemap_40x32: LayerMatrix;
-  private _matrixTilemap_40x32_50Hz: LayerMatrix;
-  private _matrixTilemap_40x32_60Hz: LayerMatrix;
+  private _renderingFlagsTilemap_40x32: Uint16Array;
+  private _renderingFlagsTilemap_40x32_50Hz: Uint16Array;
+  private _renderingFlagsTilemap_40x32_60Hz: Uint16Array;
 
-  private _matrixTilemap_80x32: LayerMatrix;
-  private _matrixTilemap_80x32_50Hz: LayerMatrix;
-  private _matrixTilemap_80x32_60Hz: LayerMatrix;
+  private _renderingFlagsTilemap_80x32: Uint16Array;
+  private _renderingFlagsTilemap_80x32_50Hz: Uint16Array;
+  private _renderingFlagsTilemap_80x32_60Hz: Uint16Array;
 
-  private _matrixLoRes: LayerMatrix;
-  private _matrixLoRes50Hz: LayerMatrix;
-  private _matrixLoRes60Hz: LayerMatrix;
+  private _renderingFlagsLoRes: Uint16Array;
+  private _renderingFlagsLoRes50Hz: Uint16Array;
+  private _renderingFlagsLoRes60Hz: Uint16Array;
 
   /**
    * This buffer stores the bitmap of the screen being rendered. Each 32-bit value represents an ARGB pixel.
    */
   private _pixelBuffer: Uint32Array;
+
+  // Pre-calculated ULA address lookup tables (192 entries for Y coordinates 0-191)
+  // Stores base addresses before X coordinate is added
+  private _ulaPixelLineBaseAddr: Uint16Array; // Pixel base address for each Y
+  private _ulaAttrLineBaseAddr: Uint16Array; // Attribute base address for each Y
 
   // ULA rendering state
   ulaPixelByte: number;
@@ -254,57 +250,46 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.screenWidth = BITMAP_WIDTH;
     this.screenLines = BITMAP_HEIGHT;
 
-    // Generate rendering matrixes for all layers and modes
-    this._matrixULAStandard50Hz = this.generateULAStandardMatrix(Plus3_50Hz);
-    this._matrixULAStandard60Hz = this.generateULAStandardMatrix(Plus3_60Hz);
-    this._matrixULAHiRes50Hz = this.generateRenderingMatrix(Plus3_50Hz, generateULAHiResCell);
-    this._matrixULAHiRes60Hz = this.generateRenderingMatrix(Plus3_60Hz, generateULAHiResCell);
-    this._matrixULAHiColor50Hz = this.generateRenderingMatrix(Plus3_50Hz, generateULAHiColorCell);
-    this._matrixULAHiColor60Hz = this.generateRenderingMatrix(Plus3_60Hz, generateULAHiColorCell);
-    this._matrixLayer2_256x192_50Hz = this.generateRenderingMatrix(
-      Plus3_50Hz,
-      generateLayer2_256x192Cell
-    );
-    this._matrixLayer2_256x192_60Hz = this.generateRenderingMatrix(
-      Plus3_60Hz,
-      generateLayer2_256x192Cell
-    );
-    this._matrixLayer2_320x256_50Hz = this.generateRenderingMatrix(
-      Plus3_50Hz,
-      generateLayer2_320x256Cell
-    );
-    this._matrixLayer2_320x256_60Hz = this.generateRenderingMatrix(
-      Plus3_60Hz,
-      generateLayer2_320x256Cell
-    );
-    this._matrixLayer2_640x256_50Hz = this.generateRenderingMatrix(
-      Plus3_50Hz,
-      generateLayer2_640x256Cell
-    );
-    this._matrixLayer2_640x256_60Hz = this.generateRenderingMatrix(
-      Plus3_60Hz,
-      generateLayer2_640x256Cell
-    );
-    this._matrixSprites50Hz = this.generateRenderingMatrix(Plus3_50Hz, generateSpritesCell);
-    this._matrixSprites60Hz = this.generateRenderingMatrix(Plus3_60Hz, generateSpritesCell);
-    this._matrixTilemap_40x32_50Hz = this.generateRenderingMatrix(
-      Plus3_50Hz,
-      generateTilemap40x32Cell
-    );
-    this._matrixTilemap_40x32_60Hz = this.generateRenderingMatrix(
-      Plus3_60Hz,
-      generateTilemap40x32Cell
-    );
-    this._matrixTilemap_80x32_50Hz = this.generateRenderingMatrix(
-      Plus3_50Hz,
-      generateTilemap80x32Cell
-    );
-    this._matrixTilemap_80x32_60Hz = this.generateRenderingMatrix(
-      Plus3_60Hz,
-      generateTilemap80x32Cell
-    );
-    this._matrixLoRes50Hz = this.generateRenderingMatrix(Plus3_50Hz, generateLoResCell);
-    this._matrixLoRes60Hz = this.generateRenderingMatrix(Plus3_60Hz, generateLoResCell);
+    // Initialize ULA address lookup tables (192 Y coordinates)
+    // Pre-calculate the Y-dependent part of pixel and attribute addresses
+    this._ulaPixelLineBaseAddr = new Uint16Array(192);
+    this._ulaAttrLineBaseAddr = new Uint16Array(192);
+
+    for (let y = 0; y < 192; y++) {
+      // Pixel address calculation: y[7:6] | y[2:0] | y[5:3] | x[7:3]
+      // Pre-calculate everything except x[7:3]
+      const y76 = (y >> 6) & 0x03; // Bits 7-6: thirds (0-2)
+      const y20 = y & 0x07; // Bits 2-0: scan line within char (0-7)
+      const y53 = (y >> 3) & 0x07; // Bits 5-3: char row (0-23)
+      this._ulaPixelLineBaseAddr[y] = (y76 << 11) | (y20 << 8) | (y53 << 5);
+
+      // Attribute address calculation: 0x1800 + (y/8)*32 + x/8
+      // Pre-calculate 0x1800 + (y/8)*32
+      const attrY = y >> 3; // Character row (0-23)
+      this._ulaAttrLineBaseAddr[y] = 0x1800 + (attrY << 5);
+    }
+
+    // Generate rendering flags for all layers and modes
+    this._renderingFlagsULAStandard50Hz = this.generateULAStandardRenderingFlags(Plus3_50Hz);
+    this._renderingFlagsULAStandard60Hz = this.generateULAStandardRenderingFlags(Plus3_60Hz);
+    this._renderingFlagsULAHiRes50Hz = this.generateULAHiResRenderingFlags(Plus3_50Hz);
+    this._renderingFlagsULAHiRes60Hz = this.generateULAHiResRenderingFlags(Plus3_60Hz);
+    this._renderingFlagsULAHiColor50Hz = this.generateULAHiColorRenderingFlags(Plus3_50Hz);
+    this._renderingFlagsULAHiColor60Hz = this.generateULAHiColorRenderingFlags(Plus3_60Hz);
+    this._renderingFlagsLayer2_256x192_50Hz = this.generateLayer2_256x192RenderingFlags(Plus3_50Hz);
+    this._renderingFlagsLayer2_256x192_60Hz = this.generateLayer2_256x192RenderingFlags(Plus3_60Hz);
+    this._renderingFlagsLayer2_320x256_50Hz = this.generateLayer2_320x256RenderingFlags(Plus3_50Hz);
+    this._renderingFlagsLayer2_320x256_60Hz = this.generateLayer2_320x256RenderingFlags(Plus3_60Hz);
+    this._renderingFlagsLayer2_640x256_50Hz = this.generateLayer2_640x256RenderingFlags(Plus3_50Hz);
+    this._renderingFlagsLayer2_640x256_60Hz = this.generateLayer2_640x256RenderingFlags(Plus3_60Hz);
+    this._renderingFlagsSprites50Hz = this.generateSpritesRenderingFlags(Plus3_50Hz);
+    this._renderingFlagsSprites60Hz = this.generateSpritesRenderingFlags(Plus3_60Hz);
+    this._renderingFlagsTilemap_40x32_50Hz = this.generateTilemap40x32RenderingFlags(Plus3_50Hz);
+    this._renderingFlagsTilemap_40x32_60Hz = this.generateTilemap40x32RenderingFlags(Plus3_60Hz);
+    this._renderingFlagsTilemap_80x32_50Hz = this.generateTilemap80x32RenderingFlags(Plus3_50Hz);
+    this._renderingFlagsTilemap_80x32_60Hz = this.generateTilemap80x32RenderingFlags(Plus3_60Hz);
+    this._renderingFlagsLoRes50Hz = this.generateLoResRenderingFlags(Plus3_50Hz);
+    this._renderingFlagsLoRes60Hz = this.generateLoResRenderingFlags(Plus3_60Hz);
     this.reset();
   }
 
@@ -366,64 +351,48 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param tact Frame tact to render
    */
   renderTact(tact: number): boolean {
+    // Check if interrupt signal is active (simple range check)
+    this._pulseIntActive = tact >= this.config.intStartTact && tact < this.config.intEndTact;
+
+    // === BLANKING CHECK ===
+    // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.
+    // We can use _renderingFlagsULAStandard as the blanking mask for all layers.
+    // If the cell is 0 in this flags array, it's 0 in all other flags arrays (blanking region).
+    // Since totalHC == RENDERING_FLAGS_HC_COUNT, tact directly equals the 1D array index.
+    if (this._renderingFlagsULAStandard[tact] === 0) {
+      return false; // Skip blanking tact - no visible content in any layer
+    }
+
     // --- Calculate the (HC, VC) position for the given tact
     const hc = tact % this.config.totalHC;
     const vc = Math.floor(tact / this.config.totalHC);
 
-    // Check if interrupt signal is active (simple range check)
-    this._pulseIntActive = tact >= this.config.intStartTact && tact < this.config.intEndTact;
-
+    // === LAYER RENDERING ===
     // Render ULA layer pixel(s) if enabled
     let ulaOutput1: LayerOutput | null = null;
     let ulaOutput2: LayerOutput | null = null;
 
     if (!this.disableUlaOutput) {
       if (this.ulaHiResMode || this.ulaHiColorMode) {
-        // Early exit for blanking regions (sparse matrices don't include blanking)
-        const blanking =
-          hc < this.config.firstVisibleHC ||
-          vc < this.config.firstBitmapVC ||
-          vc > this.config.lastBitmapVC;
-
-        if (blanking) {
-          return false; // Skip all rendering work during blanking
-        }
-
-        // SPARSE MATRIX: Translate absolute (VC, HC) to matrix indices
-        const mVC = vc - this.config.firstBitmapVC;
-        const mHC = hc - this.config.firstVisibleHC;
-
+        // ULA Hi-Res and Hi-Color modes
         if (this.ulaHiResMode) {
           // ULA Hi-Res mode (512×192, 2 pixels per HC)
-          const ulaCell = this._matrixULAHiRes[mVC][mHC] as ULAHiResCell;
+          const ulaCell = this._renderingFlagsULAHiRes[tact];
           ulaOutput1 = this.renderULAHiResPixel(vc, hc, ulaCell, 0);
           ulaOutput2 = this.renderULAHiResPixel(vc, hc, ulaCell, 1);
         } else {
           // ULA Hi-Color mode (256×192)
-          const ulaCell = this._matrixULAHiColor[mVC][mHC] as ULAHiColorCell;
+          const ulaCell = this._renderingFlagsULAHiColor[tact];
           ulaOutput1 = this.renderULAHiColorPixel(vc, hc, ulaCell);
           ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
         }
       } else {
-        // ULA Standard mode (256×192) - uses 1D matrix with full scanline storage
-        const cellIndex = vc * this._matrixHCCount + hc;
-        const ulaCell = this._matrixULAStandard[cellIndex];
-        
-        // Early exit for blanking regions (all flags are 0 in blanking)
-        // Border pixels have some flags set, blanking pixels have none
-        if (ulaCell === 0) {
-          return false; // Skip blanking pixels (not visible)
-        }
-
+        // ULA Standard mode (256×192)
+        const ulaCell = this._renderingFlagsULAStandard[tact];
         ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
         ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
       }
     }
-
-    // For other layers, calculate sparse matrix indices
-    // (only valid if not blanking - checked above for HiRes/HiColor, or implicit for Standard via display area)
-    const mVC = vc - this.config.firstBitmapVC;
-    const mHC = hc - this.config.firstVisibleHC;
 
     // Render Layer 2 pixel(s) if enabled
     let layer2Output1: LayerOutput | null = null;
@@ -432,17 +401,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if (this.layer2Enabled) {
       if (this.layer2Resolution === 0) {
         // Layer 2 256×192 mode
-        const layer2Cell = this._matrixLayer2_256x192[mVC][mHC] as Layer2Cell;
+        const layer2Cell = this._renderingFlagsLayer2_256x192[tact];
         layer2Output1 = this.renderLayer2_256x192Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
       } else if (this.layer2Resolution === 1) {
         // Layer 2 320×256 mode
-        const layer2Cell = this._matrixLayer2_320x256[mVC][mHC] as Layer2Cell;
+        const layer2Cell = this._renderingFlagsLayer2_320x256[tact];
         layer2Output1 = this.renderLayer2_320x256Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
       } else if (this.layer2Resolution === 2) {
         // Layer 2 640×256 mode (Hi-Res, 2 pixels per HC)
-        const layer2Cell = this._matrixLayer2_640x256[mVC][mHC] as Layer2Cell;
+        const layer2Cell = this._renderingFlagsLayer2_640x256[tact];
         layer2Output1 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 0);
         layer2Output2 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 1);
       }
@@ -453,7 +422,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let spritesOutput2: LayerOutput | null = null;
 
     if (this.spritesEnabled) {
-      const spritesCell = this._matrixSprites[mVC][mHC] as SpritesCell;
+      const spritesCell = this._renderingFlagsSprites[tact];
       spritesOutput1 = this.renderSpritesPixel(vc, hc, spritesCell);
       spritesOutput2 = spritesOutput1; // Standard resolution: duplicate pixel
     }
@@ -465,12 +434,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if (this.tilemapEnabled) {
       if (this.tilemap80x32Resolution) {
         // Tilemap 80×32 mode (Hi-Res, 2 pixels per HC)
-        const tilemapCell = this._matrixTilemap_80x32[mVC][mHC] as TilemapCell;
+        const tilemapCell = this._renderingFlagsTilemap_80x32[tact];
         tilemapOutput1 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 0);
         tilemapOutput2 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 1);
       } else {
         // Tilemap 40×32 mode
-        const tilemapCell = this._matrixTilemap_40x32[mVC][mHC] as TilemapCell;
+        const tilemapCell = this._renderingFlagsTilemap_40x32[tact];
         tilemapOutput1 = this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
         tilemapOutput2 = tilemapOutput1; // Standard resolution: duplicate pixel
       }
@@ -481,7 +450,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let loresOutput2: LayerOutput | null = null;
 
     if (this.loResEnabled) {
-      const loresCell = this._matrixLoRes[mVC][mHC] as LoResCell;
+      const loresCell = this._renderingFlagsLoRes[tact];
       loresOutput1 = this.renderLoResPixel(vc, hc, loresCell);
       loresOutput2 = loresOutput1; // Standard resolution base (4x replication handled by caller)
     }
@@ -530,6 +499,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
+   * This method renders the full screen frame into the pixel buffer
+   * @returns The pixel buffer containing the rendered screen
+   */
+  renderFullScreen(): Uint32Array {
+    this.onNewFrame();
+    for (let tact = 0; tact < this.renderingTacts; tact++) {
+      this.renderTact(tact);
+    }
+    return this._pixelBuffer;
+  }
+
+  /**
    * Gets the buffer that stores the rendered pixels
    */
   getPixelBuffer(): Uint32Array {
@@ -544,28 +525,39 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const is60Hz = this.is60HzMode;
     const oldConfig = this.config;
     this.config = is60Hz ? Plus3_60Hz : Plus3_50Hz;
+    this.renderingTacts = this.config.totalVC * this.config.totalHC;
 
-    // --- Update all layer matrix references based on timing mode
-    this._matrixULAStandard = is60Hz ? this._matrixULAStandard60Hz : this._matrixULAStandard50Hz;
-    this._matrixULAHiRes = is60Hz ? this._matrixULAHiRes60Hz : this._matrixULAHiRes50Hz;
-    this._matrixULAHiColor = is60Hz ? this._matrixULAHiColor60Hz : this._matrixULAHiColor50Hz;
-    this._matrixLayer2_256x192 = is60Hz
-      ? this._matrixLayer2_256x192_60Hz
-      : this._matrixLayer2_256x192_50Hz;
-    this._matrixLayer2_320x256 = is60Hz
-      ? this._matrixLayer2_320x256_60Hz
-      : this._matrixLayer2_320x256_50Hz;
-    this._matrixLayer2_640x256 = is60Hz
-      ? this._matrixLayer2_640x256_60Hz
-      : this._matrixLayer2_640x256_50Hz;
-    this._matrixSprites = is60Hz ? this._matrixSprites60Hz : this._matrixSprites50Hz;
-    this._matrixTilemap_40x32 = is60Hz
-      ? this._matrixTilemap_40x32_60Hz
-      : this._matrixTilemap_40x32_50Hz;
-    this._matrixTilemap_80x32 = is60Hz
-      ? this._matrixTilemap_80x32_60Hz
-      : this._matrixTilemap_80x32_50Hz;
-    this._matrixLoRes = is60Hz ? this._matrixLoRes60Hz : this._matrixLoRes50Hz;
+    // --- Update all layer rendering flags references based on timing mode
+    this._renderingFlagsULAStandard = is60Hz
+      ? this._renderingFlagsULAStandard60Hz
+      : this._renderingFlagsULAStandard50Hz;
+    this._renderingFlagsULAHiRes = is60Hz
+      ? this._renderingFlagsULAHiRes60Hz
+      : this._renderingFlagsULAHiRes50Hz;
+    this._renderingFlagsULAHiColor = is60Hz
+      ? this._renderingFlagsULAHiColor60Hz
+      : this._renderingFlagsULAHiColor50Hz;
+    this._renderingFlagsLayer2_256x192 = is60Hz
+      ? this._renderingFlagsLayer2_256x192_60Hz
+      : this._renderingFlagsLayer2_256x192_50Hz;
+    this._renderingFlagsLayer2_320x256 = is60Hz
+      ? this._renderingFlagsLayer2_320x256_60Hz
+      : this._renderingFlagsLayer2_320x256_50Hz;
+    this._renderingFlagsLayer2_640x256 = is60Hz
+      ? this._renderingFlagsLayer2_640x256_60Hz
+      : this._renderingFlagsLayer2_640x256_50Hz;
+    this._renderingFlagsSprites = is60Hz
+      ? this._renderingFlagsSprites60Hz
+      : this._renderingFlagsSprites50Hz;
+    this._renderingFlagsTilemap_40x32 = is60Hz
+      ? this._renderingFlagsTilemap_40x32_60Hz
+      : this._renderingFlagsTilemap_40x32_50Hz;
+    this._renderingFlagsTilemap_80x32 = is60Hz
+      ? this._renderingFlagsTilemap_80x32_60Hz
+      : this._renderingFlagsTilemap_80x32_50Hz;
+    this._renderingFlagsLoRes = is60Hz
+      ? this._renderingFlagsLoRes60Hz
+      : this._renderingFlagsLoRes50Hz;
 
     // Increment flash counter (cycles 0-31 for ~1 Hz flash rate at 50Hz)
     // Flash period: ~16 frames ON, ~16 frames OFF
@@ -682,69 +674,170 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   // ==============================================================================================
-  // Rendering matrix generation
+  // Rendering flags generation
 
   /**
-   * Generic helper to generate a rendering matrix by iterating through all (VC, HC) positions.
-   *
-   * SPARSE MATRIX OPTIMIZATION:
-   * Only generates cells for visible regions (non-blanking positions).
-   * - Vertical: firstBitmapVC to lastBitmapVC (50Hz: 16-303, 60Hz: 16-255)
-   * - Horizontal: firstVisibleHC to maxHC (both: 96-455)
-   * - Result: [verticalHeight][horizontalWidth] where dimensions are reduced by ~25%
-   *
-   * @param config - Timing configuration (50Hz or 60Hz)
-   * @param generateCell - Cell generation function for specific layer type
-   * @returns Complete sparse rendering matrix for the layer
-   */
-  private generateRenderingMatrix(
-    config: TimingConfig,
-    generateCell: (config: TimingConfig, vc: number, hc: number) => RenderingCell
-  ): RenderingCell[][] {
-    const renderingMatrix: RenderingCell[][] = [];
-
-    // Only generate visible rows (exclude vertical blanking)
-    for (let vc = config.firstBitmapVC; vc <= config.lastBitmapVC; vc++) {
-      const matrixRow: RenderingCell[] = [];
-
-      // Only generate visible columns (exclude horizontal blanking)
-      for (let hc = config.firstVisibleHC; hc <= config.maxHC; hc++) {
-        matrixRow.push(generateCell(config, vc, hc));
-      }
-
-      renderingMatrix.push(matrixRow);
-    }
-
-    return renderingMatrix;
-  }
-
-  /**
-   * Generate ULA Standard rendering matrix as 1D Uint16Array with bit flags.
+   * Generate ULA Standard rendering flags as 1D Uint16Array with bit flags.
    * Includes full scanline storage (blanking regions included for simplified addressing).
-   * 
-   * Matrix dimensions:
+   *
+   * Dimensions:
    * - 50Hz: 311 × 456 = ~141,816 elements (~284 KB)
    * - 60Hz: 264 × 456 = ~120,384 elements (~241 KB)
-   * 
-   * Access: matrix[vc * MATRIX_HC_COUNT + hc]
-   * 
+   *
+   * Access: renderingFlags[vc * RENDERING_FLAGS_HC_COUNT + hc]
+   *
    * @param config - Timing configuration (50Hz or 60Hz)
    * @returns 1D Uint16Array with bit flags for each cell
    */
-  private generateULAStandardMatrix(config: TimingConfig): ULAStandardMatrix {
-    const vcCount = config.totalVC;  // Total scanlines (including blanking)
-    const hcCount = MATRIX_HC_COUNT;  // Total horizontal positions (456)
-    const matrix = new Uint16Array(vcCount * hcCount);
-    
+  private generateULAStandardRenderingFlags(config: TimingConfig): ULAStandardMatrix {
+    const vcCount = config.totalVC; // Total scanlines (including blanking)
+    const hcCount = RENDERING_FLAGS_HC_COUNT; // Total horizontal positions (456)
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
     // Generate all cells including blanking regions
     for (let vc = 0; vc < vcCount; vc++) {
       for (let hc = 0; hc < hcCount; hc++) {
         const index = vc * hcCount + hc;
-        matrix[index] = generateULAStandardCell(config, vc, hc);
+        renderingFlags[index] = generateULAStandardCell(config, vc, hc);
       }
     }
-    
-    return matrix;
+
+    return renderingFlags;
+  }
+
+  private generateULAHiResRenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateULAHiResCell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateULAHiColorRenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateULAHiColorCell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateLayer2_256x192RenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateLayer2_256x192Cell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateLayer2_320x256RenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateLayer2_320x256Cell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateLayer2_640x256RenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateLayer2_640x256Cell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateSpritesCell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateTilemap40x32RenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateTilemap40x32Cell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateTilemap80x32RenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateTilemap80x32Cell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
+  }
+
+  private generateLoResRenderingFlags(config: TimingConfig): Uint16Array {
+    const vcCount = config.totalVC;
+    const hcCount = RENDERING_FLAGS_HC_COUNT;
+    const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        renderingFlags[index] = generateLoResCell(config, vc, hc);
+      }
+    }
+
+    return renderingFlags;
   }
 
   // ==============================================================================================
@@ -826,16 +919,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Apply Y scroll
       const scrolledY = (displayVC + this.ulaScrollY) & 0xbf; // Wrap at 192
 
-      // Calculate pixel address (standard ZX Spectrum interlaced format)
+      // Calculate pixel address using pre-calculated lookup table
       // 14-bit bank offset: bit[13] (screen mode) | y[7:6] | y[2:0] | y[5:3] | x[7:3]
-      const y76 = (scrolledY >> 6) & 0x03; // Bits 7-6: thirds
-      const y20 = scrolledY & 0x07; // Bits 2-0: scan line within char
-      const y53 = (scrolledY >> 3) & 0x07; // Bits 5-3: char row
-      const x = (displayHC >> 3) & 0x1f; // Bits 7-3: char column
-
-      // Generate 14-bit bank-relative address (0x0000-0x3FFF for Bank 5/7)
       // Standard ULA mode: bit[13] = 0, so address range is 0x0000-0x1FFF
-      const pixelAddr = (y76 << 11) | (y20 << 8) | (y53 << 5) | x;
+      const pixelAddr = this._ulaPixelLineBaseAddr[scrolledY] | ((displayHC >> 3) & 0x1f);
 
       // Read pixel byte from Bank 5 or Bank 7
       this.ulaPixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
@@ -855,13 +942,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Apply Y scroll
       const scrolledY = (displayVC + this.ulaScrollY) & 0xbf;
 
-      // Calculate attribute address (14-bit bank offset)
+      // Calculate attribute address using pre-calculated lookup table
       // Attribute area starts at 0x1800 within Bank 5/7 (linear: 0x1800 + (y/8)*32 + (x/8))
-      const attrY = scrolledY >> 3; // Character row (0-23)
-      const attrX = (displayHC >> 3) & 0x1f; // Character column (0-31)
-
       // Generate 14-bit bank-relative address: 0x1800 + offset
-      const attrAddr = 0x1800 + (attrY << 5) + attrX;
+      const attrAddr = (this._ulaAttrLineBaseAddr[scrolledY] + (displayHC >> 3)) & 0x1f;
 
       // Read attribute byte from Bank 5 or Bank 7
       this.ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
@@ -922,7 +1006,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       displayVC > this.ulaClipWindowY2;
 
     // --- Transparency Check ---
-    const transparent = (pixelRGB333 >> 1) === this.globalTransparencyColor;
+    const transparent = pixelRGB333 >> 1 === this.globalTransparencyColor;
 
     // --- Contention Simulation ---
     // if (cell.contentionWindow && this.contentionEnabled) {
@@ -950,7 +1034,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderULAHiResPixel(
     _vc: number,
     _hc: number,
-    _cell: ULAHiResCell,
+    _cell: number,
     _pixelIndex: number
   ): LayerOutput {
     // TODO: Implementation to be documented in a future section
@@ -967,7 +1051,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderULAHiColorPixel(_vc: number, _hc: number, _cell: ULAHiColorCell): LayerOutput {
+  private renderULAHiColorPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
       rgb: 0x00000000,
@@ -982,7 +1066,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderLayer2_256x192Pixel(_vc: number, _hc: number, _cell: Layer2Cell): LayerOutput {
+  private renderLayer2_256x192Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
       rgb: 0x00000000,
@@ -997,7 +1081,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderLayer2_320x256Pixel(_vc: number, _hc: number, _cell: Layer2Cell): LayerOutput {
+  private renderLayer2_320x256Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
       rgb: 0x00000000,
@@ -1016,7 +1100,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderLayer2_640x256Pixel(
     _vc: number,
     _hc: number,
-    _cell: Layer2Cell,
+    _cell: number,
     _pixelIndex: number
   ): LayerOutput {
     // TODO: Implementation to be documented in a future section
@@ -1033,7 +1117,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderSpritesPixel(_vc: number, _hc: number, _cell: SpritesCell): LayerOutput {
+  private renderSpritesPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
       rgb: 0x00000000,
@@ -1052,7 +1136,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderTilemap_80x32Pixel(
     _vc: number,
     _hc: number,
-    _cell: TilemapCell,
+    _cell: number,
     _pixelIndex: number
   ): LayerOutput {
     // TODO: Implementation to be documented in a future section
@@ -1069,7 +1153,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderTilemap_40x32Pixel(_vc: number, _hc: number, _cell: TilemapCell): LayerOutput {
+  private renderTilemap_40x32Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
       rgb: 0x00000000,
@@ -1085,7 +1169,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderLoResPixel(_vc: number, _hc: number, _cell: LoResCell): LayerOutput {
+  private renderLoResPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
       rgb: 0x00000000,
@@ -1198,19 +1282,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       finalRGB333 = selectedOutput.rgb;
     }
 
-    // === Convert RGB333 to RGBA ===
-    // Convert 9-bit RGB333 to 32-bit RGBA (0xAABBGGRR format)
-    const r3 = (finalRGB333 >> 6) & 0x07;
-    const g3 = (finalRGB333 >> 3) & 0x07;
-    const b3 = finalRGB333 & 0x07;
-
-    // Expand 3-bit to 8-bit (replicate MSBs: 000 -> 00000000, 111 -> 11111111)
-    const r8 = (r3 << 5) | (r3 << 2) | (r3 >> 1);
-    const g8 = (g3 << 5) | (g3 << 2) | (g3 >> 1);
-    const b8 = (b3 << 5) | (b3 << 2) | (b3 >> 1);
-
-    const pixelRGBA = 0xff000000 | (b8 << 16) | (g8 << 8) | r8;
-
-    return pixelRGBA;
+    return 0xff000000 | finalRGB333;
   }
 }

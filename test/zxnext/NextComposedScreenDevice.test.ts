@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { scriptsReducer } from "@common/state/scripts-reducer";
 
 describe("Next - ComposedScreenDevice", function () {
   it("constructor set the pixel buffer", async () => {

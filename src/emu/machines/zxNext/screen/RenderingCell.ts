@@ -1,14 +1,56 @@
 // ============================================================================
-// ULA Standard Cell Bit Flags (for Uint16Array representation)
+// Rendering Cell Bit Flags (for Uint16Array representation)
 // ============================================================================
-// Bit positions (7 flags total, fits in Uint16)
-export const ULA_DISPLAY_AREA = 0b0000001;        // bit 0
-export const ULA_CONTENTION_WINDOW = 0b0000010;   // bit 1
-export const ULA_SCROLL_SAMPLE = 0b0000100;       // bit 2
-export const ULA_PIXEL_READ = 0b0001000;          // bit 3
-export const ULA_ATTR_READ = 0b0010000;           // bit 4
-export const ULA_SHIFT_REG_LOAD = 0b0100000;      // bit 5
-export const ULA_FLOATING_BUS_UPDATE = 0b1000000; // bit 6
+
+// ULA Standard Cell (8 flags)
+export const ULA_DISPLAY_AREA = 0b00000001;        // bit 0
+export const ULA_CONTENTION_WINDOW = 0b00000010;   // bit 1
+export const ULA_SCROLL_SAMPLE = 0b00000100;       // bit 2
+export const ULA_PIXEL_READ = 0b00001000;          // bit 3
+export const ULA_ATTR_READ = 0b00010000;           // bit 4
+export const ULA_SHIFT_REG_LOAD = 0b00100000;      // bit 5
+export const ULA_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
+export const ULA_BORDER_AREA = 0b10000000;         // bit 7
+
+// ULA Hi-Res Cell (6 flags)
+export const ULA_HIRES_DISPLAY_AREA = 0b000001;      // bit 0
+export const ULA_HIRES_CONTENTION_WINDOW = 0b000010; // bit 1
+export const ULA_HIRES_PIXEL_READ_0 = 0b000100;      // bit 2
+export const ULA_HIRES_PIXEL_READ_1 = 0b001000;      // bit 3
+export const ULA_HIRES_SHIFT_REG_LOAD = 0b010000;    // bit 4
+export const ULA_HIRES_BORDER_AREA = 0b100000;       // bit 5
+
+// ULA Hi-Color Cell (6 flags)
+export const ULA_HICOLOR_DISPLAY_AREA = 0b000001;      // bit 0
+export const ULA_HICOLOR_CONTENTION_WINDOW = 0b000010; // bit 1
+export const ULA_HICOLOR_PIXEL_READ = 0b000100;        // bit 2
+export const ULA_HICOLOR_COLOR_READ = 0b001000;        // bit 3
+export const ULA_HICOLOR_SHIFT_REG_LOAD = 0b010000;    // bit 4
+export const ULA_HICOLOR_BORDER_AREA = 0b100000;       // bit 5
+
+// Layer 2 Cell (4 flags - same for all 3 resolutions)
+export const LAYER2_DISPLAY_AREA = 0b0001;        // bit 0
+export const LAYER2_CONTENTION_WINDOW = 0b0010;   // bit 1
+export const LAYER2_PIXEL_FETCH = 0b0100;         // bit 2
+export const LAYER2_PALETTE_INDEX = 0b1000;       // bit 3
+
+// Sprites Cell (4 flags)
+export const SPRITES_DISPLAY_AREA = 0b0001;        // bit 0
+export const SPRITES_CONTENTION_WINDOW = 0b0010;   // bit 1
+export const SPRITES_LINE_BUFFER_READ = 0b0100;    // bit 2
+export const SPRITES_VISIBILITY_CHECK = 0b1000;    // bit 3
+
+// Tilemap Cell (4 flags - same for both resolutions)
+export const TILEMAP_DISPLAY_AREA = 0b0001;        // bit 0
+export const TILEMAP_CONTENTION_WINDOW = 0b0010;   // bit 1
+export const TILEMAP_TILE_INDEX_FETCH = 0b0100;    // bit 2
+export const TILEMAP_PATTERN_FETCH = 0b1000;       // bit 3
+
+// LoRes Cell (4 flags)
+export const LORES_DISPLAY_AREA = 0b0001;          // bit 0
+export const LORES_CONTENTION_WINDOW = 0b0010;     // bit 1
+export const LORES_BLOCK_FETCH = 0b0100;           // bit 2
+export const LORES_PIXEL_REPLICATE = 0b1000;       // bit 3
 
 /**
  * Common timing and region information for all rendering cells.
@@ -25,15 +67,12 @@ export const ULA_FLOATING_BUS_UPDATE = 0b1000000; // bit 6
  * Note: Border area and interrupt position can be computed from (HC, VC) coordinates
  * rather than stored in each cell, further reducing memory footprint.
  */
-type RenderingCellBase = {
-  // Timing state (blanking cells not stored in matrix)
 
-  // Region classification
-  displayArea: boolean; // Active display area where layers render
-
-  // Contention simulation (if displayArea && enabled)
-  contentionWindow: boolean; // In contention window (affects CPU timing)
-};
+// Old object-based rendering cell structure (replaced by bit flags):
+// type RenderingCellBase = {
+//   displayArea: boolean;
+//   contentionWindow: boolean;
+// };
 
 /**
  * ULA Standard rendering cell represented as Uint16 bit flags.
@@ -58,66 +97,79 @@ export type ULAStandardMatrix = Uint16Array;
 /**
  * ULA Timex Hi-Res rendering cell (512×192 mode)
  */
-export type ULAHiResCell = RenderingCellBase & {
-  // First pixel byte read
-  pixelRead0: boolean;
-  // Second pixel byte read (for high resolution)
-  pixelRead1: boolean;
-  // Marks the precise timing moments when 8 pixels worth of data should be loaded
-  // into this shift register.
-  shiftRegLoad: boolean;
-};
+/**
+ * ULA Timex Hi-Res rendering cell (512×192 mode) represented as Uint16 bit flags.
+ * 
+ * Bit flags:
+ * - ULA_HIRES_DISPLAY_AREA: Active display area
+ * - ULA_HIRES_CONTENTION_WINDOW: In contention window
+ * - ULA_HIRES_PIXEL_READ_0: First pixel byte read
+ * - ULA_HIRES_PIXEL_READ_1: Second pixel byte read (for high resolution)
+ * - ULA_HIRES_SHIFT_REG_LOAD: Load shift register
+ */
+export type ULAHiResCell = number;
+export type ULAHiResMatrix = Uint16Array;
 
 /**
- * ULA Timex Hi-Color rendering cell (256×192 with per-pixel color)
+ * ULA Timex Hi-Color rendering cell (256×192 with per-pixel color) represented as Uint16 bit flags.
+ * 
+ * Bit flags:
+ * - ULA_HICOLOR_DISPLAY_AREA: Active display area
+ * - ULA_HICOLOR_CONTENTION_WINDOW: In contention window
+ * - ULA_HICOLOR_PIXEL_READ: Pixel data read
+ * - ULA_HICOLOR_COLOR_READ: Color data read (replaces attribute)
+ * - ULA_HICOLOR_SHIFT_REG_LOAD: Load shift register
  */
-export type ULAHiColorCell = RenderingCellBase & {
-  // Pixel data read
-  pixelRead: boolean;
-  // Color data read (replaces attribute)
-  colorRead: boolean;
-  // Marks the precise timing moments when 8 pixels worth of data should be loaded
-  // into this shift register.
-  shiftRegLoad: boolean;
-};
+export type ULAHiColorCell = number;
+export type ULAHiColorMatrix = Uint16Array;
 
 /**
- * Layer 2 rendering cell (all resolutions share common structure)
+ * Layer 2 rendering cell (all resolutions share common structure) represented as Uint16 bit flags.
+ * 
+ * Bit flags:
+ * - LAYER2_DISPLAY_AREA: Active display area
+ * - LAYER2_CONTENTION_WINDOW: In contention window
+ * - LAYER2_PIXEL_FETCH: Fetch pixel from SRAM
+ * - LAYER2_PALETTE_INDEX: Generate palette index from pixel data
  */
-export type Layer2Cell = RenderingCellBase & {
-  // Fetch pixel from SRAM
-  pixelFetch: boolean;
-  // Generate palette index from pixel data
-  paletteIndex: boolean;
-};
+export type Layer2Cell = number;
+export type Layer2Matrix = Uint16Array;
 
 /**
- * Sprites rendering cell extends the base cell with sprite-specific activities.
+ * Sprites rendering cell represented as Uint16 bit flags.
+ * 
+ * Bit flags:
+ * - SPRITES_DISPLAY_AREA: Active display area
+ * - SPRITES_CONTENTION_WINDOW: In contention window
+ * - SPRITES_LINE_BUFFER_READ: Read from sprite line buffer
+ * - SPRITES_VISIBILITY_CHECK: Check sprite visibility
  */
-export type SpritesCell = RenderingCellBase & {
-  // Read from sprite line buffer
-  lineBufferRead: boolean;
-  // Check sprite visibility
-  visibilityCheck: boolean;
-};
+export type SpritesCell = number;
+export type SpritesMatrix = Uint16Array;
 
 /**
- * Tilemap rendering cell (both resolutions share common structure)
+ * Tilemap rendering cell (both resolutions share common structure) represented as Uint16 bit flags.
+ * 
+ * Bit flags:
+ * - TILEMAP_DISPLAY_AREA: Active display area
+ * - TILEMAP_CONTENTION_WINDOW: In contention window
+ * - TILEMAP_TILE_INDEX_FETCH: Fetch tile index from tilemap
+ * - TILEMAP_PATTERN_FETCH: Fetch tile pattern data
  */
-export type TilemapCell = RenderingCellBase & {
-  // Fetch tile index from tilemap
-  tileIndexFetch: boolean;
-  // Fetch tile pattern data
-  patternFetch: boolean;
-};
+export type TilemapCell = number;
+export type TilemapMatrix = Uint16Array;
 
 /**
- * LoRes rendering cell (both resolutions share common structure)
+ * LoRes rendering cell (both resolutions share common structure) represented as Uint16 bit flags.
+ * 
+ * Bit flags:
+ * - LORES_DISPLAY_AREA: Active display area
+ * - LORES_CONTENTION_WINDOW: In contention window
+ * - LORES_BLOCK_FETCH: Fetch 4×4 or 4×8 block data
+ * - LORES_PIXEL_REPLICATE: Replicate pixel across block
  */
-export type LoResCell = RenderingCellBase & {
-  blockFetch: boolean; // Fetch 4×4 or 4×8 block data
-  pixelReplicate: boolean; // Replicate pixel across block
-};
+export type LoResCell = number;
+export type LoResMatrix = Uint16Array;
 
 /**
  * The union type for all rendering cell types used in ZX Next screen rendering.

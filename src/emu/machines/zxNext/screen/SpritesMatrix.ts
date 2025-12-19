@@ -1,4 +1,9 @@
-import { SpritesCell } from "./RenderingCell";
+import { 
+  SpritesCell,
+  SPRITES_DISPLAY_AREA,
+  SPRITES_LINE_BUFFER_READ,
+  SPRITES_VISIBILITY_CHECK
+} from "./RenderingCell";
 import { TimingConfig } from "./TimingConfig";
 import { isDisplayArea } from "./matrix-helpers";
 
@@ -16,10 +21,10 @@ export function generateSpritesCell(
 ): SpritesCell {
   const displayArea = isDisplayArea(config, vc, hc);
   
-  return {
-    displayArea,
-    contentionWindow: false, // Sprites use internal memory
-    lineBufferRead: displayArea,
-    visibilityCheck: displayArea
-  };
+  let flags = 0;
+  if (displayArea) {
+    flags |= SPRITES_DISPLAY_AREA | SPRITES_LINE_BUFFER_READ | SPRITES_VISIBILITY_CHECK;
+  }
+  // Sprites use internal memory, no contention window
+  return flags;
 }

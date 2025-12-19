@@ -1,7 +1,7 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { toHexa2, toHexa4, toHexa6 } from "@renderer/appIde/services/ide-commands";
+import { toHexa2, toHexa6 } from "@renderer/appIde/services/ide-commands";
 
 export const OFFS_NEXT_ROM = 0x00_0000;
 export const OFFS_DIVMMC_ROM = 0x01_0000;
@@ -296,9 +296,24 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.memory[writeOffset + offset] = data;
   }
 
+  /**
+   * Reads a byte from the screen memory area
+   * @param offset Screen memory offset
+   * @returns Byte value read from screen memory
+   */
   readScreenMemory(offset: number): number {
     const address = (this.useShadowScreen ? 0x07 : 0x05) * 0x4000 + (offset & 0x3fff);
     return this.memory[OFFS_NEXT_RAM + address];
+  }
+
+  /**
+   * Writes a byte to the screen memory area
+   * @param offset Screen memory offset
+   * @param data Data byte to write
+   */
+  writeScreenMemory(offset: number, data: number): void { 
+    const address = (this.useShadowScreen ? 0x07 : 0x05) * 0x4000 + (offset & 0x3fff);  
+    this.memory[OFFS_NEXT_RAM + address] = data;
   }
 
   /**

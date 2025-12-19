@@ -1,5 +1,10 @@
 import { isDisplayArea } from "./matrix-helpers";
-import { TilemapCell } from "./RenderingCell";
+import { 
+  TilemapCell,
+  TILEMAP_DISPLAY_AREA,
+  TILEMAP_TILE_INDEX_FETCH,
+  TILEMAP_PATTERN_FETCH
+} from "./RenderingCell";
 import { TimingConfig } from "./TimingConfig";
 
 /**
@@ -16,12 +21,12 @@ export function generateTilemap40x32Cell(
 ): TilemapCell {
   const displayArea = isDisplayArea(config, vc, hc);
 
-  return {
-    displayArea,
-    contentionWindow: false, // Tilemap uses internal memory
-    tileIndexFetch: displayArea,
-    patternFetch: displayArea
-  };
+  let flags = 0;
+  if (displayArea) {
+    flags |= TILEMAP_DISPLAY_AREA | TILEMAP_TILE_INDEX_FETCH | TILEMAP_PATTERN_FETCH;
+  }
+  // Tilemap uses internal memory, no contention window
+  return flags;
 }
 
 /**
@@ -38,10 +43,10 @@ export function generateTilemap80x32Cell(
 ): TilemapCell {
   const displayArea = isDisplayArea(config, vc, hc);
 
-  return {
-    displayArea,
-    contentionWindow: false, // Tilemap uses internal memory
-    tileIndexFetch: displayArea,
-    patternFetch: displayArea
-  };
+  let flags = 0;
+  if (displayArea) {
+    flags |= TILEMAP_DISPLAY_AREA | TILEMAP_TILE_INDEX_FETCH | TILEMAP_PATTERN_FETCH;
+  }
+  // Tilemap uses internal memory, no contention window
+  return flags;
 }

@@ -17,6 +17,23 @@ export function isDisplayArea(config: TimingConfig, vc: number, hc: number): boo
 }
 
 /**
+ * Helper: Calculate if a position is within the visible screen area (includes border + display).
+ * This excludes blanking areas (horizontal and vertical blanking).
+ * @param config Timing configuration (50Hz or 60Hz)
+ * @param vc Vertical counter position
+ * @param hc Horizontal counter position
+ * @returns true if position is within the visible screen area
+ */
+export function isVisibleArea(config: TimingConfig, vc: number, hc: number): boolean {
+  return (
+    hc >= config.firstVisibleHC &&
+    hc <= config.maxHC &&
+    vc >= config.firstBitmapVC &&
+    vc <= config.lastBitmapVC
+  );
+}
+
+/**
  * Helper: Calculate if a position is within the contention window.
  * Based on VHDL: hc_adj = (hc & 0xF) + 1
  * Contention occurs when hc_adj[3:2] != 0 OR (hc_adj[3:1] == 0 for +3)

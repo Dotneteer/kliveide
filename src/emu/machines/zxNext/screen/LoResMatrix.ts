@@ -1,5 +1,10 @@
 import { isDisplayArea } from "./matrix-helpers";
-import { LoResCell } from "./RenderingCell";
+import { 
+  LoResCell,
+  LORES_DISPLAY_AREA,
+  LORES_BLOCK_FETCH,
+  LORES_PIXEL_REPLICATE
+} from "./RenderingCell";
 import { TimingConfig } from "./TimingConfig";
 
 /**
@@ -16,10 +21,10 @@ export function generateLoResCell(
 ): LoResCell {
   const displayArea = isDisplayArea(config, vc, hc);
   
-  return {
-    displayArea,
-    contentionWindow: false, // LoRes shares VRAM but different timing
-    blockFetch: displayArea,
-    pixelReplicate: displayArea
-  };
+  let flags = 0;
+  if (displayArea) {
+    flags |= LORES_DISPLAY_AREA | LORES_BLOCK_FETCH | LORES_PIXEL_REPLICATE;
+  }
+  // LoRes shares VRAM but different timing, no contention window
+  return flags;
 }
