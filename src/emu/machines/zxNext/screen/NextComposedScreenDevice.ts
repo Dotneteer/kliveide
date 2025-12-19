@@ -235,6 +235,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private _tactToHC60Hz: Uint16Array;
   private _tactToVC60Hz: Uint16Array;
 
+  // Bitmap offset lookup tables (pre-calculated to eliminate arithmetic in renderTact)
+  private _tactToBitmapOffset: Int32Array;  // [tact] -> bitmap offset (-1 if out of bounds)
+  private _tactToBitmapOffset50Hz: Int32Array;
+  private _tactToBitmapOffset60Hz: Int32Array;
+
   /**
    * This buffer stores the bitmap of the screen being rendered. Each 32-bit value represents an ARGB pixel.
    */
@@ -302,6 +307,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Generate HC/VC lookup tables for both timing modes
     this.generateTactLookupTables(Plus3_50Hz);
     this.generateTactLookupTables(Plus3_60Hz);
+
+    // Generate bitmap offset lookup tables for both timing modes
+    this.generateBitmapOffsetTable(Plus3_50Hz);
+    this.generateBitmapOffsetTable(Plus3_60Hz);
 
     this.reset();
   }
@@ -496,19 +505,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
     }
 
-    // Calculate bitmap Y coordinate
-    const bitmapY = vc - this.config.firstBitmapVC;
-    if (bitmapY >= 0 && bitmapY < BITMAP_HEIGHT) {
-      // Calculate base X position in 720-pixel bitmap (2 pixels per HC)
-      const bitmapXBase = (hc - this.config.firstVisibleHC) * 2;
-
+    // Use pre-calculated bitmap offset to write pixels
+    const bitmapOffset = this._tactToBitmapOffset[tact];
+    if (bitmapOffset >= 0) {
       // Compose and write first pixel
       const pixelRGBA1 = this.composeSinglePixel(ulaOutput1, layer2Output1, spritesOutput1);
-      this._pixelBuffer[bitmapY * BITMAP_WIDTH + bitmapXBase] = pixelRGBA1;
+      this._pixelBuffer[bitmapOffset] = pixelRGBA1;
 
       // Compose and write second pixel
       const pixelRGBA2 = this.composeSinglePixel(ulaOutput2, layer2Output2, spritesOutput2);
-      this._pixelBuffer[bitmapY * BITMAP_WIDTH + bitmapXBase + 1] = pixelRGBA2;
+      this._pixelBuffer[bitmapOffset + 1] = pixelRGBA2;
     }
 
     // --- Visible pixel rendered
@@ -596,6 +602,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- Update HC/VC lookup tables based on timing mode
     this._tactToHC = is60Hz ? this._tactToHC60Hz : this._tactToHC50Hz;
     this._tactToVC = is60Hz ? this._tactToVC60Hz : this._tactToVC50Hz;
+    this._tactToBitmapOffset = is60Hz ? this._tactToBitmapOffset60Hz : this._tactToBitmapOffset50Hz;
 
     // Increment flash counter (cycles 0-31 for ~1 Hz flash rate at 50Hz)
     // Flash period: ~16 frames ON, ~16 frames OFF
@@ -743,7 +750,43 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
   }
 
-  // ==============================================================================================
+  /**
+   * Pre-calculate bitmap coordinate lookup table for each tact.
+   * 
+   * This eliminates the need to calculate bitmap Y, bitmap X, and perform bounds checking
+   * on every visible tact. The table stores the final bitmap buffer offset, or -1 if the
+   * tact is outside the visible bitmap area.
+   * 
+   * Memory cost: ~483 KB per timing mode (~967 KB total for 50Hz + 60Hz)
+   * Performance gain: Eliminates 2 subtractions, 1 multiplication, and 2 comparisons per tact
+   * 
+   * @param config - Timing configuration (50Hz or 60Hz)
+   */
+  private generateBitmapOffsetTable(config: TimingConfig): void {
+    const totalTacts = config.totalVC * config.totalHC;
+    const tactToBitmapOffset = new Int32Array(totalTacts);
+    
+    for (let tact = 0; tact < totalTacts; tact++) {
+      const hc = tact % config.totalHC;
+      const vc = (tact / config.totalHC) | 0;
+      const bitmapY = vc - config.firstBitmapVC;
+      
+      if (bitmapY >= 0 && bitmapY < BITMAP_HEIGHT) {
+        const bitmapXBase = (hc - config.firstVisibleHC) * 2;
+        tactToBitmapOffset[tact] = bitmapY * BITMAP_WIDTH + bitmapXBase;
+      } else {
+        tactToBitmapOffset[tact] = -1; // Out of visible bitmap area
+      }
+    }
+
+    // Store in appropriate 50Hz or 60Hz fields
+    if (config === Plus3_50Hz) {
+      this._tactToBitmapOffset50Hz = tactToBitmapOffset;
+    } else {
+      this._tactToBitmapOffset60Hz = tactToBitmapOffset;
+    }
+  }
+
   // Rendering flags generation
 
   /**
