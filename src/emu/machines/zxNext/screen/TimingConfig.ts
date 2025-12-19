@@ -17,10 +17,9 @@ export type TimingConfig = {
   maxVC: number; // Maximum VC value
   totalVC: number; // Total number of vertical lines per frame
 
-  // Interrupt timing
-  intHC: number; // HC position where interrupt triggers
-  intVC: number; // VC position where interrupt triggers
-  intPulseLength: number; // Number of CPU cycles for interrupt pulse
+  // Interrupt timing (tact-based for simplified checking)
+  intStartTact: number; // Tact when interrupt pulse starts
+  intEndTact: number; // Tact when interrupt pulse ends (exclusive)
 };
 
 /**
@@ -38,9 +37,8 @@ export const Plus3_50Hz: TimingConfig = {
   lastBitmapVC: 303,
   maxVC: 310,
   totalVC: 311,
-  intHC: 138,
-  intVC: 1,
-  intPulseLength: 32
+  intStartTact: 594, // vc(1) * totalHC(456) + hc(138) = 594
+  intEndTact: 626 // intStartTact + pulse_length(32) = 626
 };
 
 /**
@@ -58,7 +56,6 @@ export const Plus3_60Hz: TimingConfig = {
   lastBitmapVC: 255,
   maxVC: 263,
   totalVC: 264,
-  intHC: 138,
-  intVC: 0,
-  intPulseLength: 32
+  intStartTact: 138, // vc(0) * totalHC(456) + hc(138) = 138
+  intEndTact: 170 // intStartTact + pulse_length(32) = 170
 };

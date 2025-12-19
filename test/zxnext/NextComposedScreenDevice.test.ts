@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { scriptsReducer } from "@common/state/scripts-reducer";
 
 describe("Next - ComposedScreenDevice", function () {
   it("constructor set the pixel buffer", async () => {
@@ -647,29 +648,20 @@ describe("Next - ComposedScreenDevice", function () {
       const scrDevice = m.composedScreenDevice;
       writeNextReg(m, 0x05, 0x00);
       const config = scrDevice.config;
-      const intStart = config.intVC * config.totalHC + config.intHC;
+      const intStart = config.intStartTact;
+      const intEnd = config.intEndTact;
 
       // --- Act/Assert
       expect(scrDevice.is60HzMode).toBe(false);
       scrDevice.renderTact(0);
       expect(scrDevice.pulseIntActive).toBe(false);
-      for (let t = 1; t < intStart; t++) {
-        scrDevice.renderTact(t);
-      }
-      expect(scrDevice.pulseIntActive).toBe(false);
       scrDevice.renderTact(intStart);
       expect(scrDevice.pulseIntActive).toBe(true);
-      for (let t = intStart + 1; t < intStart + config.intPulseLength - 1; t++) {
-        scrDevice.renderTact(t);
-      }
+      scrDevice.renderTact(intEnd - 1);
       expect(scrDevice.pulseIntActive).toBe(true);
-      for (
-        let t = intStart + config.intPulseLength - 1;
-        t < intStart + config.intPulseLength + 100;
-        t++
-      ) {
-        scrDevice.renderTact(t);
-      }
+      scrDevice.renderTact(intEnd);
+      expect(scrDevice.pulseIntActive).toBe(false);
+      scrDevice.renderTact(intEnd + 100);
       expect(scrDevice.pulseIntActive).toBe(false);
     });
 
@@ -679,29 +671,20 @@ describe("Next - ComposedScreenDevice", function () {
       const scrDevice = m.composedScreenDevice;
       writeNextReg(m, 0x05, 0x04);
       const config = scrDevice.config;
-      const intStart = config.intVC * config.totalHC + config.intHC;
+      const intStart = config.intStartTact;
+      const intEnd = config.intEndTact;
 
       // --- Act/Assert
       expect(scrDevice.is60HzMode).toBe(true);
       scrDevice.renderTact(0);
       expect(scrDevice.pulseIntActive).toBe(false);
-      for (let t = 1; t < intStart; t++) {
-        scrDevice.renderTact(t);
-      }
-      expect(scrDevice.pulseIntActive).toBe(false);
       scrDevice.renderTact(intStart);
       expect(scrDevice.pulseIntActive).toBe(true);
-      for (let t = intStart + 1; t < intStart + config.intPulseLength - 1; t++) {
-        scrDevice.renderTact(t);
-      }
+      scrDevice.renderTact(intEnd - 1);
       expect(scrDevice.pulseIntActive).toBe(true);
-      for (
-        let t = intStart + config.intPulseLength - 1;
-        t < intStart + config.intPulseLength + 100;
-        t++
-      ) {
-        scrDevice.renderTact(t);
-      }
+      scrDevice.renderTact(intEnd);
+      expect(scrDevice.pulseIntActive).toBe(false);
+      scrDevice.renderTact(intEnd + 100);
       expect(scrDevice.pulseIntActive).toBe(false);
     });
   });

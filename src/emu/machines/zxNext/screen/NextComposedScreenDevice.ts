@@ -11,7 +11,14 @@ import {
   TilemapCell,
   ULAHiColorCell,
   ULAHiResCell,
-  ULAStandardCell
+  ULAStandardCell,
+  ULAStandardMatrix,
+  ULA_DISPLAY_AREA,
+  ULA_SCROLL_SAMPLE,
+  ULA_PIXEL_READ,
+  ULA_ATTR_READ,
+  ULA_SHIFT_REG_LOAD,
+  ULA_FLOATING_BUS_UPDATE
 } from "./RenderingCell";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import { generateULAHiColorCell, generateULAHiResCell, generateULAStandardCell } from "./UlaMatrix";
@@ -52,6 +59,12 @@ const BITMAP_HEIGHT = 288;
 // --- Total bitmap size in pixels: 207,360
 const BITMAP_SIZE = BITMAP_WIDTH * BITMAP_HEIGHT;
 
+// ============================================================================
+// ULA Standard Matrix Dimensions (1D Uint16Array with full scanline storage)
+// ============================================================================
+// Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
+const MATRIX_HC_COUNT = 456;  // 0 to maxHC (455)
+
 /**
  * ZX Spectrum Next Rendering Device
  *
@@ -69,7 +82,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // --- Interrupt state
   // --- INT signal (active: true, inactive: false)
   private _pulseIntActive: boolean;
-  private _pulseIntCount: number;
 
   // Flash counter (0-31, cycles ~16 frames per state)
   private _flashCounter: number = 0;
@@ -183,9 +195,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   layer2EnableMappingForWrites: boolean;
 
   // Rendering matrixes for all layers and modes
-  private _matrixULAStandard: LayerMatrix;
-  private _matrixULAStandard50Hz: LayerMatrix;
-  private _matrixULAStandard60Hz: LayerMatrix;
+  private _matrixULAStandard: ULAStandardMatrix;
+  private _matrixULAStandard50Hz: ULAStandardMatrix;
+  private _matrixULAStandard60Hz: ULAStandardMatrix;
+  private readonly _matrixHCCount = MATRIX_HC_COUNT;  // For index calculation
 
   private _matrixULAHiRes: LayerMatrix;
   private _matrixULAHiRes50Hz: LayerMatrix;
@@ -242,8 +255,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.screenLines = BITMAP_HEIGHT;
 
     // Generate rendering matrixes for all layers and modes
-    this._matrixULAStandard50Hz = this.generateRenderingMatrix(Plus3_50Hz, generateULAStandardCell);
-    this._matrixULAStandard60Hz = this.generateRenderingMatrix(Plus3_60Hz, generateULAStandardCell);
+    this._matrixULAStandard50Hz = this.generateULAStandardMatrix(Plus3_50Hz);
+    this._matrixULAStandard60Hz = this.generateULAStandardMatrix(Plus3_60Hz);
     this._matrixULAHiRes50Hz = this.generateRenderingMatrix(Plus3_50Hz, generateULAHiResCell);
     this._matrixULAHiRes60Hz = this.generateRenderingMatrix(Plus3_60Hz, generateULAHiResCell);
     this._matrixULAHiColor50Hz = this.generateRenderingMatrix(Plus3_50Hz, generateULAHiColorCell);
@@ -296,6 +309,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   reset(): void {
+    // --- No timing config yet
+    this.config = undefined;
+
+    // --- Create the pixel buffer
+    this._pixelBuffer = new Uint32Array(BITMAP_SIZE);
+
     // --- Initialize ULA state values
     this.ulaClipIndex = 0;
     this.ulaClipWindowX1 = 0;
@@ -305,13 +324,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaScrollX = 0;
     this.ulaScrollY = 0;
 
-    // --- Initialize pixel buffer
-    this._pixelBuffer = new Uint32Array(BITMAP_SIZE);
-    this.initializeBitmap();
+    // --- Initialize timing mode, matrices, and the pixel bitmap
+    this.onNewFrame();
 
     // --- Rendering state
     this._pulseIntActive = false;
-    this._pulseIntCount = 0;
     this._flashCounter = 0;
   }
 
@@ -353,64 +370,60 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const hc = tact % this.config.totalHC;
     const vc = Math.floor(tact / this.config.totalHC);
 
-    // Check for interrupt trigger at specific (HC, VC) position
-    if (hc === this.config.intHC && vc === this.config.intVC && !this._pulseIntActive) {
-      // ULA triggers interrupt pulse
-      this._pulseIntActive = true; // Activate INT signal
-      this._pulseIntCount = 0;
-    }
-
-    // Update interrupt pulse counter (in real hardware at CLK_CPU rate)
-    if (this._pulseIntActive) {
-      this._pulseIntCount++;
-      if (this._pulseIntCount >= this.config.intPulseLength) {
-        this._pulseIntActive = false; // Deactivate INT signal
-        this._pulseIntCount = 0;
-      }
-    }
-
-    // Early exit for blanking regions (horizontal and vertical blanking)
-    // No visible pixel output during blanking - saves ~42% of rendering cycles
-    const blanking =
-      hc < this.config.firstVisibleHC ||
-      vc < this.config.firstBitmapVC ||
-      vc > this.config.lastBitmapVC;
-
-    if (blanking) {
-      return false; // Skip all rendering work during blanking
-    }
-
-    // SPARSE MATRIX: Translate absolute (VC, HC) to matrix indices
-    // Matrices only store visible regions (exclude blanking)
-    const mVC = vc - this.config.firstBitmapVC;
-    const mHC = hc - this.config.firstVisibleHC;
+    // Check if interrupt signal is active (simple range check)
+    this._pulseIntActive = tact >= this.config.intStartTact && tact < this.config.intEndTact;
 
     // Render ULA layer pixel(s) if enabled
     let ulaOutput1: LayerOutput | null = null;
     let ulaOutput2: LayerOutput | null = null;
 
     if (!this.disableUlaOutput) {
-      if (this.ulaHiResMode) {
-        // ULA Hi-Res mode (512×192, 2 pixels per HC)
-        const ulaCell = this._matrixULAHiRes[mVC][mHC] as ULAHiResCell;
-        ulaOutput1 = this.renderULAHiResPixel(vc, hc, ulaCell, 0);
-        ulaOutput2 = this.renderULAHiResPixel(vc, hc, ulaCell, 1);
-      } else if (this.ulaHiColorMode) {
-        // ULA Hi-Color mode (256×192)
-        const ulaCell = this._matrixULAHiColor[mVC][mHC] as ULAHiColorCell;
-        ulaOutput1 = this.renderULAHiColorPixel(vc, hc, ulaCell);
-        ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
-      } else {
-        // ULA Standard mode (256×192)
-        try {
-          const ulaCell = this._matrixULAStandard[mVC][mHC] as ULAStandardCell;
-          ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
-          ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
-        } catch (e) {
-          let a = 1;
+      if (this.ulaHiResMode || this.ulaHiColorMode) {
+        // Early exit for blanking regions (sparse matrices don't include blanking)
+        const blanking =
+          hc < this.config.firstVisibleHC ||
+          vc < this.config.firstBitmapVC ||
+          vc > this.config.lastBitmapVC;
+
+        if (blanking) {
+          return false; // Skip all rendering work during blanking
         }
+
+        // SPARSE MATRIX: Translate absolute (VC, HC) to matrix indices
+        const mVC = vc - this.config.firstBitmapVC;
+        const mHC = hc - this.config.firstVisibleHC;
+
+        if (this.ulaHiResMode) {
+          // ULA Hi-Res mode (512×192, 2 pixels per HC)
+          const ulaCell = this._matrixULAHiRes[mVC][mHC] as ULAHiResCell;
+          ulaOutput1 = this.renderULAHiResPixel(vc, hc, ulaCell, 0);
+          ulaOutput2 = this.renderULAHiResPixel(vc, hc, ulaCell, 1);
+        } else {
+          // ULA Hi-Color mode (256×192)
+          const ulaCell = this._matrixULAHiColor[mVC][mHC] as ULAHiColorCell;
+          ulaOutput1 = this.renderULAHiColorPixel(vc, hc, ulaCell);
+          ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
+        }
+      } else {
+        // ULA Standard mode (256×192) - uses 1D matrix with full scanline storage
+        const cellIndex = vc * this._matrixHCCount + hc;
+        const ulaCell = this._matrixULAStandard[cellIndex];
+        
+        // Early exit for blanking regions (all flags are 0 in blanking)
+        // Border pixels have some flags set, blanking pixels have none
+        if (ulaCell === 0) {
+          return false; // Skip blanking pixels (not visible)
+        }
+
+        ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
+        ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
       }
     }
+
+    // For other layers, calculate sparse matrix indices
+    // (only valid if not blanking - checked above for HiRes/HiColor, or implicit for Standard via display area)
+    const mVC = vc - this.config.firstBitmapVC;
+    const mHC = hc - this.config.firstVisibleHC;
 
     // Render Layer 2 pixel(s) if enabled
     let layer2Output1: LayerOutput | null = null;
@@ -705,6 +718,35 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     return renderingMatrix;
   }
 
+  /**
+   * Generate ULA Standard rendering matrix as 1D Uint16Array with bit flags.
+   * Includes full scanline storage (blanking regions included for simplified addressing).
+   * 
+   * Matrix dimensions:
+   * - 50Hz: 311 × 456 = ~141,816 elements (~284 KB)
+   * - 60Hz: 264 × 456 = ~120,384 elements (~241 KB)
+   * 
+   * Access: matrix[vc * MATRIX_HC_COUNT + hc]
+   * 
+   * @param config - Timing configuration (50Hz or 60Hz)
+   * @returns 1D Uint16Array with bit flags for each cell
+   */
+  private generateULAStandardMatrix(config: TimingConfig): ULAStandardMatrix {
+    const vcCount = config.totalVC;  // Total scanlines (including blanking)
+    const hcCount = MATRIX_HC_COUNT;  // Total horizontal positions (456)
+    const matrix = new Uint16Array(vcCount * hcCount);
+    
+    // Generate all cells including blanking regions
+    for (let vc = 0; vc < vcCount; vc++) {
+      for (let hc = 0; hc < hcCount; hc++) {
+        const index = vc * hcCount + hc;
+        matrix[index] = generateULAStandardCell(config, vc, hc);
+      }
+    }
+    
+    return matrix;
+  }
+
   // ==============================================================================================
   // Rendering helpers
 
@@ -746,12 +788,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    *
    * @param vc - Vertical counter position
    * @param hc - Horizontal counter position
-   * @param cell - ULA Standard rendering cell with activity flags
+   * @param cell - ULA Standard rendering cell flags (Uint16 bit flags)
    * @returns Layer output (RGB333 + flags) for composition stage
    */
   private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): LayerOutput {
     // === Border Area ===
-    if (!cell.displayArea) {
+    if ((cell & ULA_DISPLAY_AREA) === 0) {
       // Lookup border color in ULA palette (first 8 entries)
       // TODO: Consider ULA+ border color modes
       const borderRGB333 = this.machine.paletteDevice.getUlaRgb333(this.borderColor);
@@ -765,14 +807,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === Display Area: ULA Standard Rendering ===
     // --- Scroll Sampling ---
-    if (cell.scrollSample) {
+    if ((cell & ULA_SCROLL_SAMPLE) !== 0) {
       // Sample hardware scroll registers at specific HC subcycle positions (0x3, 0xB)
       this.sampledUlaScrollX = this.ulaScrollX;
       this.sampledUlaScrollY = this.ulaScrollY;
     }
 
     // // --- Memory Read Activities ---
-    if (cell.pixelRead) {
+    if ((cell & ULA_PIXEL_READ) !== 0) {
       // Read pixel byte from VRAM
       // Bank selection: Bank 5 or Bank 7 (shadow screen)
       // Port 0x7FFD bit 3 / NextReg 0x69 bit 6 selects shadow screen
@@ -799,12 +841,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.ulaPixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
 
       // Update floating bus with pixel data
-      if (cell.floatingBusUpdate) {
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
         this.floatingBusValue = this.ulaPixelByte;
       }
     }
 
-    if (cell.attrRead) {
+    if ((cell & ULA_ATTR_READ) !== 0) {
       // Read attribute byte from VRAM
       // Bank selection: Bank 5 or Bank 7 (shadow screen)
       const displayVC = vc - this.config.displayYStart;
@@ -825,13 +867,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
 
       // Update floating bus with attribute data
-      if (cell.floatingBusUpdate) {
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
         this.floatingBusValue = this.ulaAttrByte;
       }
     }
 
     // // --- Shift Register Load ---
-    if (cell.shiftRegLoad) {
+    if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
       // Load pixel and attribute data into shift register
       // This prepares the next 8 pixels for output
       this.ulaShiftReg = this.ulaPixelByte;
