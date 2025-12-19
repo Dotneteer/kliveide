@@ -226,6 +226,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private _renderingFlagsLoRes50Hz: Uint16Array;
   private _renderingFlagsLoRes60Hz: Uint16Array;
 
+  // HC/VC lookup tables (pre-calculated to avoid modulo/division in renderTact)
+  private _tactToHC: Uint16Array;  // [tact] -> HC value
+  private _tactToVC: Uint16Array;  // [tact] -> VC value
+  private _tactToHC50Hz: Uint16Array;
+  private _tactToVC50Hz: Uint16Array;
+  private _tactToHC60Hz: Uint16Array;
+  private _tactToVC60Hz: Uint16Array;
+
   /**
    * This buffer stores the bitmap of the screen being rendered. Each 32-bit value represents an ARGB pixel.
    */
@@ -289,6 +297,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this._renderingFlagsTilemap_80x32_60Hz = this.generateTilemap80x32RenderingFlags(Plus3_60Hz);
     this._renderingFlagsLoRes50Hz = this.generateLoResRenderingFlags(Plus3_50Hz);
     this._renderingFlagsLoRes60Hz = this.generateLoResRenderingFlags(Plus3_60Hz);
+
+    // Generate HC/VC lookup tables for both timing modes
+    this.generateTactLookupTables(Plus3_50Hz);
+    this.generateTactLookupTables(Plus3_60Hz);
+
     this.reset();
   }
 
@@ -362,9 +375,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       return false; // Skip blanking tact - no visible content in any layer
     }
 
-    // --- Calculate the (HC, VC) position for the given tact
-    const hc = tact % this.config.totalHC;
-    const vc = Math.floor(tact / this.config.totalHC);
+    // --- Get pre-calculated (HC, VC) position from lookup tables
+    const hc = this._tactToHC[tact];
+    const vc = this._tactToVC[tact];
 
     // === LAYER RENDERING ===
     // Render ULA layer pixel(s) if enabled
@@ -579,6 +592,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       ? this._renderingFlagsLoRes60Hz
       : this._renderingFlagsLoRes50Hz;
 
+    // --- Update HC/VC lookup tables based on timing mode
+    this._tactToHC = is60Hz ? this._tactToHC60Hz : this._tactToHC50Hz;
+    this._tactToVC = is60Hz ? this._tactToVC60Hz : this._tactToVC50Hz;
+
     // Increment flash counter (cycles 0-31 for ~1 Hz flash rate at 50Hz)
     // Flash period: ~16 frames ON, ~16 frames OFF
     // Full cycle: ~32 frames (~0.64s at 50Hz, ~0.55s at 60Hz)
@@ -691,6 +708,38 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         break;
     }
     this.ulaClipIndex = (this.ulaClipIndex + 1) & 0x03;
+  }
+
+  // ==============================================================================================
+  // Lookup table generation
+
+  /**
+   * Generate HC/VC lookup tables to eliminate expensive modulo/division operations in renderTact.
+   * Pre-calculates HC and VC values for every tact position.
+   * 
+   * Memory cost: ~483 KB per timing mode (~967 KB total for 50Hz + 60Hz)
+   * Performance gain: Eliminates modulo and division operations in hot path
+   * 
+   * @param config - Timing configuration (50Hz or 60Hz)
+   */
+  private generateTactLookupTables(config: TimingConfig): void {
+    const totalTacts = config.totalVC * config.totalHC;
+    const tactToHC = new Uint16Array(totalTacts);
+    const tactToVC = new Uint16Array(totalTacts);
+    
+    for (let tact = 0; tact < totalTacts; tact++) {
+      tactToHC[tact] = tact % config.totalHC;
+      tactToVC[tact] = (tact / config.totalHC) | 0; // Bitwise OR for integer division
+    }
+
+    // Store in appropriate 50Hz or 60Hz fields
+    if (config === Plus3_50Hz) {
+      this._tactToHC50Hz = tactToHC;
+      this._tactToVC50Hz = tactToVC;
+    } else {
+      this._tactToHC60Hz = tactToHC;
+      this._tactToVC60Hz = tactToVC;
+    }
   }
 
   // ==============================================================================================
