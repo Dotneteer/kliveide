@@ -195,7 +195,7 @@ export type LayerMatrix = RenderingCell[][];
  */
 export type LayerOutput = {
   // RGB333 color (9 bits: bits[8:6]=R, bits[5:3]=G, bits[2:0]=B)
-  rgb: number;
+  rgb333: number;
   // True if pixel should be treated as transparent
   transparent: boolean;
   // True if pixel is outside layer's clip window

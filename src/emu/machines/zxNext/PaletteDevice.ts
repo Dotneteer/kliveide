@@ -35,8 +35,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   ulaFirst: number[] = [];
   ulaSecond: number[] = [];
-  private ulaRgbFirst: number[] = [];
-  private ulaRgbSecond: number[] = [];
   layer2First: number[] = [];
   layer2Second: number[] = [];
   private layer2RgbFirst: number[] = [];
@@ -92,7 +90,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
         const idx = j * 16 + i;
         const colorValue = i !== 11 ? defaultUlaColors[i] : 0x1cf;
         this.ulaFirst[idx] = this.ulaSecond[idx] = colorValue;
-        this.ulaRgbFirst[idx] = this.ulaRgbSecond[idx] = zxNextBgra[colorValue];
       }
     }
   }
@@ -114,37 +111,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     this.storedPaletteValue = value & 0xff;
     const regValue = (value << 1) | (value & 0x03 ? 1 : 0);
     this.getCurrentPalette()[this._paletteIndex] = regValue;
-    // Update RGB arrays based on selected palette
-    switch (this._selectedPalette) {
-      case 0:
-        this.ulaRgbFirst[this._paletteIndex] = zxNextBgra[regValue];
-        // Update border cache if ULA first palette changed
-        this.machine.composedScreenDevice.updateBorderRgbCache();
-        break;
-      case 1:
-        this.layer2RgbFirst[this._paletteIndex] = zxNextBgra[regValue];
-        break;
-      case 2:
-        this.spriteRgbFirst[this._paletteIndex] = zxNextBgra[regValue];
-        break;
-      case 3:
-        this.tilemapRgbFirst[this._paletteIndex] = zxNextBgra[regValue];
-        break;
-      case 4:
-        this.ulaRgbSecond[this._paletteIndex] = zxNextBgra[regValue];
-        // Update border cache if ULA second palette changed
-        this.machine.composedScreenDevice.updateBorderRgbCache();
-        break;
-      case 5:
-        this.layer2RgbSecond[this._paletteIndex] = zxNextBgra[regValue];
-        break;
-      case 6:
-        this.spriteRgbSecond[this._paletteIndex] = zxNextBgra[regValue];
-        break;
-      case 7:
-        this.tilemapRgbSecond[this._paletteIndex] = zxNextBgra[regValue];
-        break;
-    }
     if (!this._disablePaletteWriteAutoInc) {
       this._paletteIndex = (this._paletteIndex + 1) & 0xff;
     }
@@ -196,37 +162,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
           // --- Sign priority color for Layer 2 palettes
           palette[this._paletteIndex] |= 0x200;
         }
-      }
-      // --- Update RGB arrays after the second write
-      switch (this._selectedPalette) {
-        case 0:
-          this.ulaRgbFirst[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex]];
-          // Update border cache if ULA first palette changed
-          this.machine.composedScreenDevice.updateBorderRgbCache();
-          break;
-        case 1:
-          this.layer2RgbFirst[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex] & 0x1ff];
-          break;
-        case 2:
-          this.spriteRgbFirst[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex]];
-          break;
-        case 3:
-          this.tilemapRgbFirst[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex]];
-          break;
-        case 4:
-          this.ulaRgbSecond[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex]];
-          // Update border cache if ULA second palette changed
-          this.machine.composedScreenDevice.updateBorderRgbCache();
-          break;
-        case 5:
-          this.layer2RgbSecond[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex] & 0x1ff];
-          break;
-        case 6:
-          this.spriteRgbSecond[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex]];
-          break;
-        case 7:
-          this.tilemapRgbSecond[this._paletteIndex] = zxNextBgra[palette[this._paletteIndex]];
-          break;
       }
       if (!this._disablePaletteWriteAutoInc) {
         this._paletteIndex = (this._paletteIndex + 1) & 0xff;
@@ -297,26 +232,26 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
-  getUlaRgb(index: number): number {
+  getUlaRgb333(index: number): number {
     return this._secondUlaPalette
-      ? this.ulaRgbSecond[index & 0xff]
-      : this.ulaRgbFirst[index & 0xff];
+      ? this.ulaSecond[index & 0xff]
+      : this.ulaFirst[index & 0xff];
   }
 
-  getLayer2Rgb(index: number): number {
+  getLayer2Rgb333(index: number): number {
     return this._secondLayer2Palette
-      ? this.layer2RgbSecond[index & 0xff]
-      : this.layer2RgbFirst[index & 0xff];
+      ? this.layer2Second[index & 0xff]
+      : this.layer2First[index & 0xff];
   }
 
-  getSpriteRgb(index: number): number {
+  getSpriteRgb333(index: number): number {
     return this._secondSpritePalette
-      ? this.spriteRgbSecond[index & 0xff]
-      : this.spriteRgbFirst[index & 0xff];
+      ? this.spriteSecond[index & 0xff]
+      : this.spriteFirst[index & 0xff];
   }
 
-  getTilemapRgb(index: number): number {
-    return this.tilemapRgbSecond[index & 0xff];
+  getTilemapRgb333(index: number): number {
+    return this.tilemapSecond[index & 0xff];
   }
 
   private updateUlaPalette(): void {

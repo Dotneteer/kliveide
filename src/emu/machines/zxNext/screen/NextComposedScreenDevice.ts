@@ -397,7 +397,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   set borderColor(value: number) {
     this._borderColor = value;
-    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb(value);
+    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb333(value);
   }
 
   /**
@@ -407,7 +407,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * - Active palette switches (first <-> second)
    */
   updateBorderRgbCache(): void {
-    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb(this._borderColor);
+    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this._borderColor);
   }
 
   /**
@@ -1134,7 +1134,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Use cached border RGB value (updated when borderColor changes)
       // This eliminates method call overhead for ~30% of pixels
       return {
-        rgb: this._borderRgbCache,
+        rgb333: this._borderRgbCache,
         transparent: false,
         clipped: false
       };
@@ -1170,7 +1170,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const paletteIndex = colorIndex + (bright << 3);
 
     // Lookup color in ULA palette (16 entries for standard + bright colors)
-    const pixelRGB = this.machine.paletteDevice.getUlaRgb(paletteIndex);
+    const pixelRGB = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
 
     // --- Clipping Test ---
     // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
@@ -1185,7 +1185,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Return layer output for composition stage
     return {
-      rgb: pixelRGB,
+      rgb333: pixelRGB,
       transparent: transparent || clipped, // Treat clipped pixels as transparent
       clipped: clipped
     };
@@ -1206,7 +1206,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   ): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1221,7 +1221,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderULAHiColorPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1236,7 +1236,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderLayer2_256x192Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1251,7 +1251,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderLayer2_320x256Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1272,7 +1272,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   ): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1287,7 +1287,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderSpritesPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1308,7 +1308,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   ): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1323,7 +1323,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderTilemap_40x32Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1339,7 +1339,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private renderLoResPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
     // TODO: Implementation to be documented in a future section
     return {
-      rgb: 0x00000000,
+      rgb333: 0x00000000,
       transparent: true,
       clipped: false
     };
@@ -1432,16 +1432,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // === Fallback/Backdrop Color ===
-    let finalRGB: number;
+    let finalRGB333: number;
     if (selectedOutput === null) {
       // All layers transparent: use fallback color (NextReg 0x4A)
       // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
       const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
-      finalRGB = zxNextBgra[(this.fallbackColor << 1) | blueLSB]; // Extend to 24-bit RGB
+      finalRGB333 = (this.fallbackColor << 1) | blueLSB;
     } else {
-      finalRGB = selectedOutput.rgb;
+      finalRGB333 = selectedOutput.rgb333;
     }
 
-    return 0xff000000 | finalRGB;
+    return zxNextBgra[finalRGB333 & 0x1ff]; // Convert to RGBA format
   }
 }

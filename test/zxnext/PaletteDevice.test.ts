@@ -686,14 +686,14 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
 
     // --- Act
-    const rgb333Value0 = pal.getUlaRgb(0);
-    const rgb333Value11 = pal.getUlaRgb(11);
+    const rgb333Value0 = pal.getUlaRgb333(0);
+    const rgb333Value11 = pal.getUlaRgb333(11);
 
     // --- Assert
     // Default ULA color 0 is 0x000
     expect(rgb333Value0).toBe(0x000000);
     // Default ULA color 11 (bright magenta) is 0x1cf -> 0xff24ff
-    expect(rgb333Value11).toBe(0xff24ff);
+    expect(rgb333Value11).toBe(0x1cf);
   });
 
   it("RGB333 arrays updated via 8-bit palette write (ULA first)", async () => {
@@ -710,7 +710,7 @@ describe("Next - PaletteDevice", async function () {
     // --- Assert
     expect(pal.ulaFirst[0x10]).toBe(0x40);
     // Color 0x40 in RGB333 should be 0x240000
-    expect(pal.getUlaRgb(0x10)).toBe(0x240000);
+    expect(pal.getUlaRgb333(0x10)).toBe(0x40);
   });
 
   it("RGB333 arrays updated via 8-bit palette write (ULA second)", async () => {
@@ -727,7 +727,7 @@ describe("Next - PaletteDevice", async function () {
     // --- Assert
     expect(pal.ulaSecond[0x15]).toBe(0x60);
     // Color 0x60 in RGB333
-    expect(pal.getUlaRgb(0x15)).toBe(0x249200);
+    expect(pal.getUlaRgb333(0x15)).toBe(0x60);
   });
 
   it("RGB333 arrays updated via 9-bit palette write (ULA first)", async () => {
@@ -745,7 +745,7 @@ describe("Next - PaletteDevice", async function () {
     // --- Assert
     expect(pal.ulaFirst[0x08]).toBe(0x101);
     // Color 0x101 in RGB333 should be 0x920024
-    expect(pal.getUlaRgb(0x08)).toBe(0x920024);
+    expect(pal.getUlaRgb333(0x08)).toBe(0x101);
   });
 
   it("RGB333 arrays updated via 9-bit palette write (ULA second)", async () => {
@@ -763,7 +763,7 @@ describe("Next - PaletteDevice", async function () {
     // --- Assert
     expect(pal.ulaSecond[0x0a]).toBe(0xa0);
     // Color 0xa0 in RGB333 should be 0x499200
-    expect(pal.getUlaRgb(0x0a)).toBe(0x499200);
+    expect(pal.getUlaRgb333(0x0a)).toBe(0xa0);
   });
 
   it("getUlaRgb333 returns from first palette when secondUlaPalette is false", async () => {
@@ -785,7 +785,7 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x43, 0x00); // secondUlaPalette = false
 
     // --- Assert
-    expect(pal.getUlaRgb(0x05)).toBe(0x009200); // Color 0x20
+    expect(pal.getUlaRgb333(0x05)).toBe(0x20); // Color 0x20
   });
 
   it("getUlaRgb333 returns from second palette when secondUlaPalette is true", async () => {
@@ -807,7 +807,7 @@ describe("Next - PaletteDevice", async function () {
     nrDevice.directSetRegValue(0x43, 0x02); // secondUlaPalette = true
 
     // --- Assert
-    expect(pal.getUlaRgb(0x05)).toBe(0x240000); // Color 0x40
+    expect(pal.getUlaRgb333(0x05)).toBe(0x40); // Color 0x40
   });
 
   it("getUlaRgb333 with index wrapping", async () => {
@@ -816,9 +816,9 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
 
     // --- Act
-    const value256 = pal.getUlaRgb(256);
-    const value512 = pal.getUlaRgb(512);
-    const value0 = pal.getUlaRgb(0);
+    const value256 = pal.getUlaRgb333(256);
+    const value512 = pal.getUlaRgb333(512);
+    const value0 = pal.getUlaRgb333(0);
 
     // --- Assert
     // All should return the same value (index 0)
@@ -832,14 +832,14 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
 
     // --- Act
-    const rgb333Value0 = pal.getLayer2Rgb(0);
-    const rgb333Value64 = pal.getLayer2Rgb(64);
+    const rgb333Value0 = pal.getLayer2Rgb333(0);
+    const rgb333Value64 = pal.getLayer2Rgb333(64);
 
     // --- Assert
     // Default Layer2 color 0 is 0x000
     expect(rgb333Value0).toBe(0x000000);
     // Default Layer2 color 64 (0x40) is 0x80
-    expect(rgb333Value64).toBe(0x490000);
+    expect(rgb333Value64).toBe(0x80);
   });
 
   it("Layer2 RGB333 arrays updated via 8-bit palette write (first)", async () => {
@@ -855,7 +855,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.layer2First[0x10]).toBe(0x40);
-    expect(pal.getLayer2Rgb(0x10)).toBe(0x240000);
+    expect(pal.getLayer2Rgb333(0x10)).toBe(0x40);
   });
 
   it("Layer2 RGB333 arrays updated via 8-bit palette write (second)", async () => {
@@ -871,7 +871,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.layer2Second[0x15]).toBe(0x60);
-    expect(pal.getLayer2Rgb(0x15)).toBe(0x249200);
+    expect(pal.getLayer2Rgb333(0x15)).toBe(0x60);
   });
 
   it("Layer2 RGB333 arrays updated via 9-bit palette write", async () => {
@@ -888,7 +888,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.layer2First[0x08]).toBe(0x301); // Includes priority bit 0x200
-    expect(pal.getLayer2Rgb(0x08)).toBe(0x920024); // Masked to 9-bit for RGB lookup
+    expect(pal.getLayer2Rgb333(0x08)).toBe(0x301); // Masked to 9-bit for RGB lookup
   });
 
   it("Sprite RGB333 arrays initialized on reset", async () => {
@@ -897,12 +897,12 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
 
     // --- Act
-    const rgb333Value0 = pal.getSpriteRgb(0);
-    const rgb333Value32 = pal.getSpriteRgb(32);
+    const rgb333Value0 = pal.getSpriteRgb333(0);
+    const rgb333Value32 = pal.getSpriteRgb333(32);
 
     // --- Assert
     expect(rgb333Value0).toBe(0x000000);
-    expect(rgb333Value32).toBe(0x240000);
+    expect(rgb333Value32).toBe(0x40);
   });
 
   it("Sprite RGB333 arrays updated via 8-bit palette write (first)", async () => {
@@ -918,7 +918,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.spriteFirst[0x12]).toBe(0x4b);
-    expect(pal.getSpriteRgb(0x12)).toBe(0x24246d);
+    expect(pal.getSpriteRgb333(0x12)).toBe(0x4b);
   });
 
   it("Sprite RGB333 arrays updated via 8-bit palette write (second)", async () => {
@@ -934,7 +934,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.spriteSecond[0x20]).toBe(0x80);
-    expect(pal.getSpriteRgb(0x20)).toBe(0x490000);
+    expect(pal.getSpriteRgb333(0x20)).toBe(0x80);
   });
 
   it("Sprite RGB333 arrays updated via 9-bit palette write", async () => {
@@ -951,7 +951,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.spriteFirst[0x0c]).toBe(0x141);
-    expect(pal.getSpriteRgb(0x0c)).toBe(0xb60024);
+    expect(pal.getSpriteRgb333(0x0c)).toBe(0x141);
   });
 
   it("Tilemap RGB333 arrays initialized on reset", async () => {
@@ -960,12 +960,12 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
 
     // --- Act
-    const rgb333Value0 = pal.getTilemapRgb(0);
-    const rgb333Value48 = pal.getTilemapRgb(48);
+    const rgb333Value0 = pal.getTilemapRgb333(0);
+    const rgb333Value48 = pal.getTilemapRgb333(48);
 
     // --- Assert
     expect(rgb333Value0).toBe(0x000000);
-    expect(rgb333Value48).toBe(0x249200);
+    expect(rgb333Value48).toBe(0x60);
   });
 
   it("Tilemap RGB333 arrays updated via 8-bit palette write (first)", async () => {
@@ -981,7 +981,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.tilemapFirst[0x18]).toBe(0x6b);
-    expect(pal.getTilemapRgb(0x18)).toBe(0x00db00);
+    expect(pal.getTilemapRgb333(0x18)).toBe(0x30);
   });
 
   it("Tilemap RGB333 arrays updated via 8-bit palette write (second)", async () => {
@@ -997,7 +997,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.tilemapSecond[0x2a]).toBe(0xa0);
-    expect(pal.getTilemapRgb(0x2a)).toBe(0x499200);
+    expect(pal.getTilemapRgb333(0x2a)).toBe(0xa0);
   });
 
   it("Tilemap RGB333 arrays updated via 9-bit palette write", async () => {
@@ -1014,7 +1014,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.tilemapFirst[0x14]).toBe(0x180);
-    expect(pal.getTilemapRgb(0x14)).toBe(0x00b600);
+    expect(pal.getTilemapRgb333(0x14)).toBe(0x28);
   });
 
   it("getLayer2Rgb333 returns from correct palette based on secondLayer2Palette flag", async () => {
@@ -1034,11 +1034,11 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Act & Assert with first palette
     nrDevice.directSetRegValue(0x43, 0x10); // secondLayer2Palette = false
-    expect(pal.getLayer2Rgb(0x05)).toBe(0x009200);
+    expect(pal.getLayer2Rgb333(0x05)).toBe(0x20);
 
     // --- Act & Assert with second palette
     nrDevice.directSetRegValue(0x43, 0x14); // secondLayer2Palette = true
-    expect(pal.getLayer2Rgb(0x05)).toBe(0x240000);
+    expect(pal.getLayer2Rgb333(0x05)).toBe(0x40);
   });
 
   it("getSpriteRgb333 returns from correct palette based on secondSpritePalette flag", async () => {
@@ -1058,11 +1058,11 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Act & Assert with first palette
     nrDevice.directSetRegValue(0x43, 0x20); // secondSpritePalette = false
-    expect(pal.getSpriteRgb(0x07)).toBe(0x00db00);
+    expect(pal.getSpriteRgb333(0x07)).toBe(0x30);
 
     // --- Act & Assert with second palette
     nrDevice.directSetRegValue(0x43, 0x28); // secondSpritePalette = true
-    expect(pal.getSpriteRgb(0x07)).toBe(0x244900);
+    expect(pal.getSpriteRgb333(0x07)).toBe(0x50);
   });
 
   it("All RGB333 getters handle index wrapping correctly", async () => {
@@ -1071,14 +1071,14 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
 
     // --- Act
-    const ula256 = pal.getUlaRgb(256);
-    const ula0 = pal.getUlaRgb(0);
-    const layer2_300 = pal.getLayer2Rgb(300);
-    const layer2_44 = pal.getLayer2Rgb(44);
-    const sprite512 = pal.getSpriteRgb(512);
-    const sprite0 = pal.getSpriteRgb(0);
-    const tilemap400 = pal.getTilemapRgb(400);
-    const tilemap144 = pal.getTilemapRgb(144);
+    const ula256 = pal.getUlaRgb333(256);
+    const ula0 = pal.getUlaRgb333(0);
+    const layer2_300 = pal.getLayer2Rgb333(300);
+    const layer2_44 = pal.getLayer2Rgb333(44);
+    const sprite512 = pal.getSpriteRgb333(512);
+    const sprite0 = pal.getSpriteRgb333(0);
+    const tilemap400 = pal.getTilemapRgb333(400);
+    const tilemap144 = pal.getTilemapRgb333(144);
 
     // --- Assert
     expect(ula256).toBe(ula0);

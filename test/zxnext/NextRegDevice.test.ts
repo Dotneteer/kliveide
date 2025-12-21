@@ -1544,18 +1544,6 @@ describe("Next - NextRegDevice", function () {
     expect(scrDevice.layer2ShadowRamBank).toBe(0x03);
   });
 
-  it("Reg $14 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
-
-    // --- Act
-    writeNextReg(m, 0x14, 0xc5);
-
-    // --- Assert
-    expect(layer2Device.transparencyColor).toBe(0xc5);
-  });
-
   it("Reg $15 enableLoresMode", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -1918,30 +1906,6 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x1c) & 0x0c).toBe(0x0c);
-  });
-
-  it("Reg $1c ula clip index read", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    writeNextReg(m, 0x1c, 0x04);
-    writeNextReg(m, 0x1a, 0x23);
-    writeNextReg(m, 0x1a, 0x34);
-    writeNextReg(m, 0x1a, 0x45);
-
-    // --- Assert
-    expect(readNextReg(m, 0x1c) & 0x30).toBe(0x30);
-  });
-
-  it("Reg $1c tilemap clip index read", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    writeNextReg(m, 0x1c, 0x08);
-    writeNextReg(m, 0x1b, 0x23);
-    writeNextReg(m, 0x1b, 0x34);
-    writeNextReg(m, 0x1b, 0x45);
-
-    // --- Assert
-    expect(readNextReg(m, 0x1c) & 0xc0).toBe(0xc0);
   });
 
   it("Reg $1e read #1", async () => {

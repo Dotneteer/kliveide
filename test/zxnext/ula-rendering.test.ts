@@ -76,25 +76,27 @@ describe("Next - ULA rendering", function () {
     expect(getDisplayPixel(d.config, buffer, 13, 0)).toBe(0xff000000); // ink
     expect(getDisplayPixel(d.config, buffer, 14, 0)).toBe(0xff000000); // ink
     expect(getDisplayPixel(d.config, buffer, 15, 0)).toBe(0xff000000); // ink
-    expect(getDisplayPixel(d.config, buffer, 16, 0)).toBe(0xffff0000); // ink 
-    expect(getDisplayPixel(d.config, buffer, 17, 0)).toBe(0xffff0000); // ink 
-    expect(getDisplayPixel(d.config, buffer, 18, 0)).toBe(0xffffff00); // paper 
-    expect(getDisplayPixel(d.config, buffer, 19, 0)).toBe(0xffffff00); // paper 
-    expect(getDisplayPixel(d.config, buffer, 20, 0)).toBe(0xffff0000); // ink 
-    expect(getDisplayPixel(d.config, buffer, 21, 0)).toBe(0xffff0000); // paper 
-    expect(getDisplayPixel(d.config, buffer, 22, 0)).toBe(0xffffff00); // paper 
-    expect(getDisplayPixel(d.config, buffer, 23, 0)).toBe(0xffffff00); // ink 
-    expect(getDisplayPixel(d.config, buffer, 24, 0)).toBe(0xffff0000); // ink 
-    expect(getDisplayPixel(d.config, buffer, 25, 0)).toBe(0xffff0000); // ink 
-    expect(getDisplayPixel(d.config, buffer, 26, 0)).toBe(0xffffff00); // paper 
-    expect(getDisplayPixel(d.config, buffer, 27, 0)).toBe(0xffffff00); // paper 
-    expect(getDisplayPixel(d.config, buffer, 28, 0)).toBe(0xffff0000); // ink 
-    expect(getDisplayPixel(d.config, buffer, 29, 0)).toBe(0xffff0000); // paper 
-    expect(getDisplayPixel(d.config, buffer, 30, 0)).toBe(0xffffff00); // paper 
-    expect(getDisplayPixel(d.config, buffer, 31, 0)).toBe(0xffffff00); // ink 
+    expect(getDisplayPixel(d.config, buffer, 16, 0)).toBe(0xff0000ff); // ink 
+    expect(getDisplayPixel(d.config, buffer, 17, 0)).toBe(0xff0000ff); // ink 
+    expect(getDisplayPixel(d.config, buffer, 18, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 19, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 20, 0)).toBe(0xff0000ff); // ink 
+    expect(getDisplayPixel(d.config, buffer, 21, 0)).toBe(0xff0000ff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 22, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 23, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 24, 0)).toBe(0xff0000ff); // ink 
+    expect(getDisplayPixel(d.config, buffer, 25, 0)).toBe(0xff0000ff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 26, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 27, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 28, 0)).toBe(0xff0000ff); // ink 
+    expect(getDisplayPixel(d.config, buffer, 29, 0)).toBe(0xff0000ff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 30, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 31, 0)).toBe(0xff00ffff); // paper 
+    expect(getDisplayPixel(d.config, buffer, 32, 0)).toBe(0xffb6b6b6); // ink 
+    expect(getDisplayPixel(d.config, buffer, 33, 0)).toBe(0xffb6b6b6); // paper 
     expect(getMatchingDisplayPixels(d.config, buffer, 0xff000000)).toBe(16);
-    expect(getMatchingDisplayPixels(d.config, buffer, 0xffff0000)).toBe(8);
-    //expect(getMatchingDisplayPixels(d.config, buffer, 0xffffff00)).toBe(8);
+    expect(getMatchingDisplayPixels(d.config, buffer, 0xff0000ff)).toBe(8);
+    expect(getMatchingDisplayPixels(d.config, buffer, 0xff00ffff)).toBe(120);
   });
 });
 

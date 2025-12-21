@@ -712,7 +712,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Gets the offset of the pixel buffer in the memory
    */
   getBufferStartOffset(): number {
-    return this.screenDevice.screenWidth;
+    return 0;
+    //return this.screenDevice.screenWidth;
   }
 
   /**
@@ -876,8 +877,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   onTactIncremented(): void {
     const machineTact = this.currentFrameTact;
     while (this.lastRenderedFrameTact <= machineTact) {
-      this.composedScreenDevice.renderTact(this.lastRenderedFrameTact);
-      this.screenDevice.renderTact(this.lastRenderedFrameTact++);
+      //this.screenDevice.renderTact(this.lastRenderedFrameTact);
+      this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();
   }
