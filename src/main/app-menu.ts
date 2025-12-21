@@ -76,8 +76,7 @@ import {
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
-  SETTING_EDITOR_LIVE_RELOAD
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
 import { isEmuWindowFocused, isIdeWindowFocused, isIdeWindowVisible } from ".";
 
@@ -927,9 +926,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         submenu: [
           createBooleanSettingsMenu(SETTING_IDE_OPEN_LAST_PROJECT),
           { type: "separator" },
-          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU),
-          { type: "separator" },
-          createBooleanSettingsMenu(SETTING_EDITOR_LIVE_RELOAD)
+          createBooleanSettingsMenu(SETTING_IDE_CLOSE_EMU)
         ]
       }
     ]
