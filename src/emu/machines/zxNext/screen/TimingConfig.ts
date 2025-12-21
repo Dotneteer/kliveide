@@ -26,36 +26,36 @@ export type TimingConfig = {
  * Timing configuration for ZX Next 50Hz mode.
  */
 export const Plus3_50Hz: TimingConfig = {
-  firstVisibleHC: 96,
-  displayXStart: 144,
-  displayXEnd: 399,
-  maxHC: 455,
-  totalHC: 456,
-  firstBitmapVC: 16,
-  displayYStart: 64,
-  displayYEnd: 255,
-  lastBitmapVC: 303,
-  maxVC: 310,
-  totalVC: 311,
-  intStartTact: 594, // vc(1) * totalHC(456) + hc(138) = 594
-  intEndTact: 626 // intStartTact + pulse_length(32) = 626
+  firstVisibleHC: 0x60, // 96
+  displayXStart: 0x90,  // 144
+  displayXEnd: 0x18f,   // 399
+  maxHC: 0x1c7,         // 455
+  totalHC: 0x1c8,       // 456
+  firstBitmapVC: 0x10,  // 16
+  displayYStart: 0x40,  // 64
+  displayYEnd: 0xff,    // 255
+  lastBitmapVC: 0x12f,  // 303
+  maxVC: 0x136,         // 310
+  totalVC: 0x137,       // 311
+  intStartTact: 0x252,  // vc(1) * totalHC(456) + hc(138) = 594
+  intEndTact: 0x272     // intStartTact + pulse_length(32) = 626
 };
 
 /**
  * Timing configuration for ZX Next 60Hz mode.
  */
 export const Plus3_60Hz: TimingConfig = {
-  firstVisibleHC: 96,
-  displayXStart: 144,
-  displayXEnd: 399,
-  maxHC: 455,
-  totalHC: 456,
-  firstBitmapVC: 16,
-  displayYStart: 40,
-  displayYEnd: 231,
-  lastBitmapVC: 255,
-  maxVC: 263,
-  totalVC: 264,
-  intStartTact: 138, // vc(0) * totalHC(456) + hc(138) = 138
-  intEndTact: 170 // intStartTact + pulse_length(32) = 170
+  firstVisibleHC: 0x60, // 96
+  displayXStart: 0x90,  // 144
+  displayXEnd: 0x18f,   // 399
+  maxHC: 0x1c7,         // 455
+  totalHC: 0x1c8,       // 456
+  firstBitmapVC: 0x10,  // 16
+  displayYStart: 0x28,  // 40
+  displayYEnd: 0xe7,    // 231
+  lastBitmapVC: 0xff,   // 255
+  maxVC: 0x107,         // 263
+  totalVC: 0x108,       // 264
+  intStartTact: 0x138,  // vc(0) * totalHC(456) + hc(138) = 138
+  intEndTact: 0x158     // intStartTact + pulse_length(32) = 170
 };

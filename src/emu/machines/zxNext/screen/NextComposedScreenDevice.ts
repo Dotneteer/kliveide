@@ -110,11 +110,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // === Reg 0x26 - ULA X Scroll
   ulaScrollX: number;
-  sampledUlaScrollX: number;
 
   // === Reg 0x27 - ULA Y Scroll
   ulaScrollY: number;
-  sampledUlaScrollY: number;
 
   // === Reg 0x4A - Fallback color
   // The 8-bit color used if all layers are transparent
@@ -229,15 +227,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private _renderingFlagsLoRes60Hz: Uint16Array;
 
   // HC/VC lookup tables (pre-calculated to avoid modulo/division in renderTact)
-  private _tactToHC: Uint16Array;  // [tact] -> HC value
-  private _tactToVC: Uint16Array;  // [tact] -> VC value
+  private _tactToHC: Uint16Array; // [tact] -> HC value
+  private _tactToVC: Uint16Array; // [tact] -> VC value
   private _tactToHC50Hz: Uint16Array;
   private _tactToVC50Hz: Uint16Array;
   private _tactToHC60Hz: Uint16Array;
   private _tactToVC60Hz: Uint16Array;
 
   // Bitmap offset lookup tables (pre-calculated to eliminate arithmetic in renderTact)
-  private _tactToBitmapOffset: Int32Array;  // [tact] -> bitmap offset (-1 if out of bounds)
+  private _tactToBitmapOffset: Int32Array; // [tact] -> bitmap offset (-1 if out of bounds)
   private _tactToBitmapOffset50Hz: Int32Array;
   private _tactToBitmapOffset60Hz: Int32Array;
 
@@ -252,12 +250,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private _ulaAttrLineBaseAddr: Uint16Array; // Attribute base address for each Y
 
   // ULA rendering state
-  ulaPixelByte: number;
+  ulaScrolledX: number;
+  ulaScrolledY: number;
+  ulaPixelByte1: number;
+  ulaPixelByte2: number;
   floatingBusValue: number;
-  ulaAttrByte: number;
+  ulaAttrByte1: number;
+  ulaAttrByte2: number;
   ulaShiftReg: number;
-  ulaShiftAttr: number;
   ulaShiftCount: number;
+  ulaShiftAttr: number;
+  ulaShiftAttrCount: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     // Screen dimensions
@@ -331,6 +334,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaClipWindowY2 = 191;
     this.ulaScrollX = 0;
     this.ulaScrollY = 0;
+    this.ulaScrolledX = 0;
+    this.ulaScrolledY = 0;
+    this.ulaPixelByte1 = 0;
+    this.ulaPixelByte2 = 0;
+    this.floatingBusValue = 0;
+    this.ulaAttrByte1 = 0;
+    this.ulaAttrByte2 = 0;
+    this.ulaShiftReg = 0;
+    this.ulaShiftCount = 0;
 
     // --- Initialize border color (use setter to update cache)
     this.borderColor = 7; // Default white border
@@ -766,17 +778,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   /**
    * Generate HC/VC lookup tables to eliminate expensive modulo/division operations in renderTact.
    * Pre-calculates HC and VC values for every tact position.
-   * 
+   *
    * Memory cost: ~483 KB per timing mode (~967 KB total for 50Hz + 60Hz)
    * Performance gain: Eliminates modulo and division operations in hot path
-   * 
+   *
    * @param config - Timing configuration (50Hz or 60Hz)
    */
   private generateTactLookupTables(config: TimingConfig): void {
     const totalTacts = config.totalVC * config.totalHC;
     const tactToHC = new Uint16Array(totalTacts);
     const tactToVC = new Uint16Array(totalTacts);
-    
+
     for (let tact = 0; tact < totalTacts; tact++) {
       tactToHC[tact] = tact % config.totalHC;
       tactToVC[tact] = (tact / config.totalHC) | 0; // Bitwise OR for integer division
@@ -794,25 +806,25 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   /**
    * Pre-calculate bitmap coordinate lookup table for each tact.
-   * 
+   *
    * This eliminates the need to calculate bitmap Y, bitmap X, and perform bounds checking
    * on every visible tact. The table stores the final bitmap buffer offset, or -1 if the
    * tact is outside the visible bitmap area.
-   * 
+   *
    * Memory cost: ~483 KB per timing mode (~967 KB total for 50Hz + 60Hz)
    * Performance gain: Eliminates 2 subtractions, 1 multiplication, and 2 comparisons per tact
-   * 
+   *
    * @param config - Timing configuration (50Hz or 60Hz)
    */
   private generateBitmapOffsetTable(config: TimingConfig): void {
     const totalTacts = config.totalVC * config.totalHC;
     const tactToBitmapOffset = new Int32Array(totalTacts);
-    
+
     for (let tact = 0; tact < totalTacts; tact++) {
       const hc = tact % config.totalHC;
-      const vc = (tact / config.totalHC) | 0;
+      const vc = Math.floor(tact / config.totalHC) | 0;
       const bitmapY = vc - config.firstBitmapVC;
-      
+
       if (bitmapY >= 0 && bitmapY < BITMAP_HEIGHT) {
         const bitmapXBase = (hc - config.firstVisibleHC) * 2;
         tactToBitmapOffset[tact] = bitmapY * BITMAP_WIDTH + bitmapXBase;
@@ -1040,6 +1052,86 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @returns Layer output (RGB + flags) for composition stage
    */
   private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): LayerOutput {
+    // === Display Area: ULA Standard Rendering ===
+    // --- Scroll Sampling ---
+    if ((cell & ULA_SCROLL_SAMPLE) !== 0) {
+      // Sample hardware scroll registers at specific HC subcycle positions (0x3, 0xB)
+      // This happens at HC[3:0] = 0x3 or 0xB (falling edge of CLK_7 in hardware)
+      this.ulaScrolledX = this.ulaScrollX;
+      this.ulaScrolledY = vc - this.config.displayYStart + this.ulaScrollY;
+      if (this.ulaScrolledY >= 0xc0) {
+        this.ulaScrolledY -= 0xc0; // Wrap Y at 192 for vertical scrolling
+      }
+    }
+
+    // --- Shift Register Load ---
+    if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
+      // Load pixel and attribute data into shift register
+      // This prepares the next 8 pixels for output
+      this.ulaShiftReg =
+        ((((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrolledX & 0x07)) >> 8) &
+        0xff;
+      this.ulaShiftCount = 0; // Reset pixel counter within byte
+      this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
+      this.ulaShiftAttrCount = 8 - (this.ulaScrolledX & 0x07); // Reset attribute shift counter
+    }
+
+    // // --- Memory Read Activities ---
+    if ((cell & ULA_PIXEL_READ) !== 0) {
+      // Calculate pixel address using pre-computed Y-dependent base + X component
+      // Full address: y[7:6] | y[2:0] | y[5:3] | x[7:3]
+      // Base (Y part) already computed in _ulaPixelLineBaseAddr[this.ulaScrolledY]
+      // X part: ulaScrolledX[7:3] gives byte column (0-31)
+      const shifPixels = (hc + 0x0c - this.config.displayXStart + this.ulaScrolledX) & 0xff;
+      const pixelAddr = this._ulaPixelLineBaseAddr[this.ulaScrolledY] | (shifPixels >> 3);
+      if (vc === 64) {
+        console.log(`Pixel Addr: 0x${hc.toString(16)} | 0x${pixelAddr.toString(16)}`);
+      }
+
+      // Read pixel byte from Bank 5 or Bank 7
+      const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
+      if (hc & 0x04) {
+        this.ulaPixelByte2 = pixelByte;
+      } else {
+        this.ulaPixelByte1 = pixelByte;
+      }
+
+      // Update floating bus with pixel data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = pixelByte;
+      }
+    }
+
+    if ((cell & ULA_ATTR_READ) !== 0) {
+      // Calculate attribute address using pre-computed Y-dependent base + X component
+      // Full address: 0x1800 + (scrolledY / 8) * 32 + (scrolledX / 8)
+      // Base (Y part) already computed in _ulaAttrLineBaseAddr[scrolledY]
+      // X part: scrolledX[7:3] gives character column (0-31)
+      const shifPixels = (hc + 0x0a - this.config.displayXStart + this.ulaScrolledX) & 0xff;
+      const attrAddr = this._ulaAttrLineBaseAddr[this.ulaScrolledY] | (shifPixels >> 3);
+
+      // Read attribute byte from Bank 5 or Bank 7
+      const ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
+      if (hc & 0x04) {
+        this.ulaAttrByte2 = ulaAttrByte;
+      } else {
+        this.ulaAttrByte1 = ulaAttrByte;
+      }
+
+      // Update floating bus with attribute data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = ulaAttrByte;
+      }
+    }
+
+    // --- Contention Simulation ---
+    // if (cell.contentionWindow && this.contentionEnabled) {
+    //   // Delay CPU memory access by one cycle (simulation only)
+    //   // In real hardware, this delays Z80 access to contended RAM ($4000-$7FFF)
+    //   // This would be handled by the CPU emulation module
+    //   this.signalMemoryContention();
+    // }
+
     // === Border Area ===
     if ((cell & ULA_DISPLAY_AREA) === 0) {
       // Use cached border RGB value (updated when borderColor changes)
@@ -1049,73 +1141,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         transparent: false,
         clipped: false
       };
-    }
-
-    // === Display Area: ULA Standard Rendering ===
-    // --- Scroll Sampling ---
-    if ((cell & ULA_SCROLL_SAMPLE) !== 0) {
-      // Sample hardware scroll registers at specific HC subcycle positions (0x3, 0xB)
-      this.sampledUlaScrollX = this.ulaScrollX;
-      this.sampledUlaScrollY = this.ulaScrollY;
-    }
-
-    // // --- Memory Read Activities ---
-    if ((cell & ULA_PIXEL_READ) !== 0) {
-      // Read pixel byte from VRAM
-      // Bank selection: Bank 5 or Bank 7 (shadow screen)
-      // Port 0x7FFD bit 3 / NextReg 0x69 bit 6 selects shadow screen
-      // ULA hardware generates 14-bit bank-relative address (0x0000-0x3FFF)
-      // NOT CPU addresses! Hardware reads directly from physical Bank 5/7 BRAM
-      const displayVC = vc - this.config.displayYStart; // 0-191
-      const displayHC = hc - this.config.displayXStart; // 0-255
-
-      // Apply Y scroll
-      const scrolledY = (displayVC + this.ulaScrollY) & 0xbf; // Wrap at 192
-
-      // Calculate pixel address using pre-calculated lookup table
-      // 14-bit bank offset: bit[13] (screen mode) | y[7:6] | y[2:0] | y[5:3] | x[7:3]
-      // Standard ULA mode: bit[13] = 0, so address range is 0x0000-0x1FFF
-      const pixelAddr = this._ulaPixelLineBaseAddr[scrolledY] | ((displayHC >> 3) & 0x1f);
-
-      // Read pixel byte from Bank 5 or Bank 7
-      this.ulaPixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
-
-      // Update floating bus with pixel data
-      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
-        this.floatingBusValue = this.ulaPixelByte;
-      }
-    }
-
-    if ((cell & ULA_ATTR_READ) !== 0) {
-      // Read attribute byte from VRAM
-      // Bank selection: Bank 5 or Bank 7 (shadow screen)
-      const displayVC = vc - this.config.displayYStart;
-      const displayHC = hc - this.config.displayXStart;
-
-      // Apply Y scroll
-      const scrolledY = (displayVC + this.ulaScrollY) & 0xbf;
-
-      // Calculate attribute address using pre-calculated lookup table
-      // Attribute area starts at 0x1800 within Bank 5/7 (linear: 0x1800 + (y/8)*32 + (x/8))
-      // Generate 14-bit bank-relative address: 0x1800 + offset
-      const attrAddr = (this._ulaAttrLineBaseAddr[scrolledY] + (displayHC >> 3)) & 0x1f;
-
-      // Read attribute byte from Bank 5 or Bank 7
-      this.ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
-
-      // Update floating bus with attribute data
-      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
-        this.floatingBusValue = this.ulaAttrByte;
-      }
-    }
-
-    // // --- Shift Register Load ---
-    if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
-      // Load pixel and attribute data into shift register
-      // This prepares the next 8 pixels for output
-      this.ulaShiftReg = this.ulaPixelByte;
-      this.ulaShiftAttr = this.ulaAttrByte;
-      this.ulaShiftCount = 0; // Reset pixel counter within byte
     }
 
     // // --- Pixel Generation ---
@@ -1160,14 +1185,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Transparency Check ---
     const transparent = pixelRGB >> 1 === this.globalTransparencyColor;
-
-    // --- Contention Simulation ---
-    // if (cell.contentionWindow && this.contentionEnabled) {
-    //   // Delay CPU memory access by one cycle (simulation only)
-    //   // In real hardware, this delays Z80 access to contended RAM ($4000-$7FFF)
-    //   // This would be handled by the CPU emulation module
-    //   this.signalMemoryContention();
-    // }
 
     // Return layer output for composition stage
     return {

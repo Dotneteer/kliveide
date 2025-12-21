@@ -556,7 +556,7 @@ if (ulaOutput1 === ulaOutput2) {
 **Impact:** Half the composition calls for standard modes  
 **Memory:** None  
 **Benefit:** ~15-20% faster for duplicate pixels  
-**Note:** Requires testing for endianness and alignment
+**Status:** ❌ **TESTED - NO BENEFIT** - The overhead of checking pixel equality and conditional branching negated any savings from reduced composition calls. JIT compiler may already optimize the original code path effectively.
 
 ---
 
@@ -589,7 +589,8 @@ private renderScanline(vcStart: number) {
 **Impact:** Enables future SIMD optimization  
 **Memory:** ~11 KB scanline buffer  
 **Benefit:** ~10-15% with future SIMD, ~5% now (better cache)  
-**Trade-off:** Significant code restructuring
+**Trade-off:** Significant code restructuring  
+**Status:** ❌ **NOT FEASIBLE** - Current architecture requires per-tact processing due to timing constraints and state dependencies between tacts
 
 ---
 
@@ -665,8 +666,8 @@ const clipped = (displayHC < x1) | (displayHC > x2);  // Result is 0 or 1
 ---
 
 ### Phase 3: Advanced (5-10 days)
-10. ✅ Pixel pair processing (#5.1) - **15-20% improvement**
-11. ✅ Composition priority table (#3.3) - **4-6% improvement**
+10. ❌ Pixel pair processing (#5.1) - **Tested, no benefit**
+11. ⏳ Composition priority table (#3.3) - **4-6% improvement**
 12. ⚠️ Rendering function pointers (#3.2) - **5-8% improvement** (test JIT impact)
 
 **Phase 3 Total:** Additional ~10-15% improvement
@@ -674,7 +675,7 @@ const clipped = (displayHC < x1) | (displayHC > x2);  // Result is 0 or 1
 ---
 
 ### Phase 4: Future Work (research needed)
-13. 🔬 Scanline batch processing (#5.2) - **10-15% improvement** (major refactor)
+13. ❌ Scanline batch processing (#5.2) - **Not feasible** (architecture constraints)
 14. 🔬 SIMD vectorization - **20-30% improvement** (WebAssembly required)
 15. 🔬 Worker thread offload - **Architecture change**
 

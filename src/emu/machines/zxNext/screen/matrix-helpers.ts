@@ -45,9 +45,9 @@ export function isVisibleArea(config: TimingConfig, vc: number, hc: number): boo
 export function isContentionWindow(hc: number, inDisplayArea: boolean): boolean {
   if (!inDisplayArea) return false;
 
-  const hcAdj = ((hc & 0xf) + 1) & 0xf;
-  const hcAdj_32 = (hcAdj >> 2) & 0x3; // bits [3:2]
-  const hcAdj_31 = (hcAdj >> 1) & 0x7; // bits [3:1]
+  const hcAdj = ((hc & 0x0f) + 1) & 0x0f;
+  const hcAdj_32 = (hcAdj >> 2) & 0x03; // bits [3:2]
+  const hcAdj_31 = (hcAdj >> 1) & 0x07; // bits [3:1]
 
   // +3 mode contention: hc_adj[3:2] != 00 OR hc_adj[3:1] == 000
   return hcAdj_32 !== 0 || hcAdj_31 === 0;
