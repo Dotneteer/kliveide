@@ -21,7 +21,7 @@ import {
 import { generateSpritesCell } from "./SpritesMatrix";
 import { generateTilemap40x32Cell, generateTilemap80x32Cell } from "./TilemapMatrix";
 import { generateLoResCell } from "./LoResMatrix";
-import { zxNext9BitColorCodes } from "../PaletteDevice";
+import { zxNextBgra } from "../PaletteDevice";
 
 /**
  * For emulation purposes, a **fixed-size bitmap** represents the visible portion of the display across all timing modes and rendering modes.
@@ -1084,9 +1084,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // X part: ulaScrolledX[7:3] gives byte column (0-31)
       const shifPixels = (hc + 0x0c - this.config.displayXStart + this.ulaScrolledX) & 0xff;
       const pixelAddr = this._ulaPixelLineBaseAddr[this.ulaScrolledY] | (shifPixels >> 3);
-      if (vc === 64) {
-        console.log(`Pixel Addr: 0x${hc.toString(16)} | 0x${pixelAddr.toString(16)}`);
-      }
 
       // Read pixel byte from Bank 5 or Bank 7
       const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
@@ -1440,7 +1437,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // All layers transparent: use fallback color (NextReg 0x4A)
       // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
       const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
-      finalRGB = zxNext9BitColorCodes[(this.fallbackColor << 1) | blueLSB]; // Extend to 24-bit RGB
+      finalRGB = zxNextBgra[(this.fallbackColor << 1) | blueLSB]; // Extend to 24-bit RGB
     } else {
       finalRGB = selectedOutput.rgb;
     }

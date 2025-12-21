@@ -4,7 +4,7 @@ import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration"
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
-import { zxNext9BitColorCodes } from "./PaletteDevice";
+import { zxNextRgb333Codes } from "./PaletteDevice";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   displayTiming: number;
@@ -113,10 +113,10 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
       const bright = !!(i & 0x40);
       const ink = i & 0x07;
       const paper = (i & 0x38) >> 3;
-      let color = zxNext9BitColorCodes[palette[bright ? ink | 0x08 : ink]];
+      let color = zxNextRgb333Codes[palette[bright ? ink | 0x08 : ink]];
       this.currentInkColors[i] =
         0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
-      color = zxNext9BitColorCodes[palette[bright ? paper | 0x08 : paper]];
+      color = zxNextRgb333Codes[palette[bright ? paper | 0x08 : paper]];
       this.currentPaperColors[i] =
         0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
     }

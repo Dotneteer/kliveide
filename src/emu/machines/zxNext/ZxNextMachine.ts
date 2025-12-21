@@ -695,7 +695,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns
    */
   getPixelBuffer(): Uint32Array {
-    return this.screenDevice.getPixelBuffer();
+    //return this.screenDevice.getPixelBuffer();
+    return this.composedScreenDevice.getPixelBuffer();
   }
 
   /**
