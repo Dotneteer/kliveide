@@ -140,7 +140,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writePort0xfe(value: number): void {
     // --- Extract the border color
-    this.machine.screenDevice.borderColor = value & 0x07; // DEPRECATED
     this.machine.composedScreenDevice.borderColor = value & 0x07;
 
     // --- Store the last EAR bit

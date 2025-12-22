@@ -41,10 +41,11 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    this.frameTacts += n/this.clockMultiplier;
+    this.frameTacts += 2 * n / this.clockMultiplier;
     if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInFrame;
+      this.frameCompleted = true;
     }
     this.currentFrameTact = Math.floor(this.frameTacts);
     this.onTactIncremented();

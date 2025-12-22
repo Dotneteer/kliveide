@@ -100,6 +100,11 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   readonly uiFrameFrequency: number;
 
   /**
+   * The frame tact multiplier
+   */
+  readonly frameTactMultiplier: number;
+
+  /**
    * Cleans up machine resources on stop
    */
   onStop(): void;

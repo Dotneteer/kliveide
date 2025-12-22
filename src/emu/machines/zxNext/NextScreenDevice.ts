@@ -4,7 +4,6 @@ import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration"
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
-import { zxNextRgb333Codes } from "./PaletteDevice";
 
 export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
   displayTiming: number;
@@ -95,33 +94,6 @@ export class NextScreenDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Current ink colors
   currentInkColors: number[] = [];
-
-  /**
-   * Set the current colors from the palette.
-   * @param palette Palette to set the colors from
-   * @param _ulaNextEnabled ULA Next is enabled
-   * @param _ulaInkColorMask ULA ink color mask
-   */
-  setCurrentUlaColorsFromPalette(
-    palette: number[],
-    _ulaNextEnabled: boolean,
-    _ulaInkColorMask: number
-  ): void {
-    this.currentInkColors.length = 0x100;
-    this.currentPaperColors.length = 0x100;
-    for (let i = 0; i < 0x100; i++) {
-      const bright = !!(i & 0x40);
-      const ink = i & 0x07;
-      const paper = (i & 0x38) >> 3;
-      let color = zxNextRgb333Codes[palette[bright ? ink | 0x08 : ink]];
-      this.currentInkColors[i] =
-        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
-      color = zxNextRgb333Codes[palette[bright ? paper | 0x08 : paper]];
-      this.currentPaperColors[i] =
-        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
-    }
-    // TODO: Implement this method for ULA Next
-  }
 
   /**
    * Define the screen configuration attributes of ZX Spectrum 48K (PAL)

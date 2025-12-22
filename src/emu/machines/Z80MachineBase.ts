@@ -183,6 +183,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    */
   reset(): void {
     super.reset();
+    this.frameCompleted = false;
     this._machineFrameRunner.reset();
     this._queuedEvents = null;
   }
@@ -250,7 +251,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * Indicates that the frame has just completed
    */
   get frameJustCompleted(): boolean {
-    return this._machineFrameRunner.frameCompleted;
+    return this.frameCompleted;
   }
 
   /**
@@ -265,6 +266,11 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * The number of consequtive frames after which the UI should be refreshed
    */
   readonly uiFrameFrequency: number = 1;
+
+  /**
+   * The multiplier of tacts per frame for the machine
+   */
+  readonly frameTactMultiplier = 1;
 
   /**
    * Clean up machine resources on stop

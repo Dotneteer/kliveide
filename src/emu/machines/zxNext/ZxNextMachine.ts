@@ -214,6 +214,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.copperDevice.reset();
     this.keyboardDevice.reset();
     this.screenDevice.reset();
+    this.composedScreenDevice.reset();
     this.mouseDevice.reset();
     this.joystickDevice.reset();
     this.soundDevice.reset();
@@ -855,7 +856,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.lastRenderedFrameTact = 0;
 
     // --- Prepare the screen device for the new machine frame
-    this.screenDevice.onNewFrame();
     this.composedScreenDevice.onNewFrame();
 
     // --- Prepare the beeper device for the new frame
@@ -867,7 +867,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt(): boolean {
-    return this.currentFrameTact < 32;
+    return this.composedScreenDevice.pulseIntActive;
   }
 
   /**
@@ -875,9 +875,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param increment The tact increment value
    */
   onTactIncremented(): void {
-    const machineTact = this.currentFrameTact;
-    while (this.lastRenderedFrameTact <= machineTact) {
-      //this.screenDevice.renderTact(this.lastRenderedFrameTact);
+    if (this.frameCompleted) return;
+    while (this.lastRenderedFrameTact < this.currentFrameTact) {
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();

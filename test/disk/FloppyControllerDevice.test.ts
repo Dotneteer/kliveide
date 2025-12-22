@@ -22,7 +22,7 @@ describe("FloppyControllerDevice", () => {
     updm.emulateFrameCompletion(3);
 
     expect(updm.floppyDevice).toBeDefined();
-    expect(updm.frames).toBe(2);
+    expect(updm.frames).toBe(3);
 
     expect(fdt.currentDrive).toBe(fdt.driveA);
     expect(fdt.currentDrive.motorOn).toBe(false);

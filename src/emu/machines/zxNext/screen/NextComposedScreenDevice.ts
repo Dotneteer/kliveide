@@ -457,6 +457,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     return this._pulseIntActive;
   }
 
+  getIntSignal(): boolean {
+    return this._pulseIntActive;
+  }
+
   /**
    * Get the current border color value
    */
@@ -483,6 +487,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this._borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this._borderColor);
   }
 
+  maxTacts: number;
+
   /**
    * Render the pixel pair belonging to the specified frame tact.
    * @param tact Frame tact to render
@@ -501,6 +507,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const tilemap80x32Resolution = this.tilemap80x32Resolution;
 
     // Check if interrupt signal is active (simple range check)
+    if (tact > this.maxTacts) {
+      this.maxTacts = tact;
+    }
+
     this._pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntEndTact;
 
     // === BLANKING CHECK ===
@@ -677,39 +687,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     return this._pixelBuffer;
   }
 
-  // --- Current paper colors
-  currentPaperColors: number[] = [];
-
-  // --- Current ink colors
-  currentInkColors: number[] = [];
-
-  /**
-   * Set the current colors from the palette.
-   * @param palette Palette to set the colors from
-   * @param _ulaNextEnabled ULA Next is enabled
-   * @param _ulaInkColorMask ULA ink color mask
-   */
-  setCurrentUlaColorsFromPalette(
-    palette: number[],
-    _ulaNextEnabled: boolean,
-    _ulaInkColorMask: number
-  ): void {
-    this.currentInkColors.length = 0x100;
-    this.currentPaperColors.length = 0x100;
-    for (let i = 0; i < 0x100; i++) {
-      const bright = !!(i & 0x40);
-      const ink = i & 0x07;
-      const paper = (i & 0x38) >> 3;
-      let color = zxNextRgb333Codes[palette[bright ? ink | 0x08 : ink]];
-      this.currentInkColors[i] =
-        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
-      color = zxNextRgb333Codes[palette[bright ? paper | 0x08 : paper]];
-      this.currentPaperColors[i] =
-        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
-    }
-    // TODO: Implement this method for ULA Next
-  }
-
   /**
    * Gets the buffer that stores the rendered pixels
    */
@@ -737,6 +714,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.confFirstVisibleHC = this.config.firstVisibleHC;
 
     this.renderingTacts = this.confTotalVC * this.confTotalHC;
+    this.machine.setTactsInFrame(this.renderingTacts);
+
 
     // --- Update all layer rendering flags references based on timing mode
     this._renderingFlagsULAStandard = is60Hz

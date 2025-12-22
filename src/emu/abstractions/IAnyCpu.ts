@@ -27,6 +27,11 @@ export interface IAnyCpu {
   clockMultiplier: number;
 
   /**
+   * Indicates if the current frame has been completed
+   */
+  frameCompleted: boolean;
+
+  /**
    * The number of T-states (clock cycles) elapsed since the last reset
    */
   readonly tacts: number;
