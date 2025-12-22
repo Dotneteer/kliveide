@@ -486,6 +486,108 @@ describe("Next - ComposedScreenDevice", function () {
     });
   });
 
+  describe("Reg $16 - Layer 2 X Scroll LSB", () => {
+    it("Reg $16 write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x16, 0x2c);
+
+      // --- Assert
+      expect(m.composedScreenDevice.layer2ScrollX).toBe(0x2c);
+    });
+  });
+
+  describe("Reg $17 - Layer 2 Y Scroll", () => {
+    it("Reg $17 write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x17, 0x2c);
+
+      // --- Assert
+      expect(m.composedScreenDevice.layer2ScrollY).toBe(0x2c);
+    });
+  });
+
+  describe("Reg $18 - Clip Window Layer 2", () => {
+    it("Reg $18 first write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x01);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x9f);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x00);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+    });
+
+    it("Reg $18 second write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+      writeNextReg(m, 0x18, 0x34);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x02);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x00);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+    });
+
+    it("Reg $18 third write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+      writeNextReg(m, 0x18, 0x34);
+      writeNextReg(m, 0x18, 0x45);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x03);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x45);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+    });
+
+    it("Reg $18 fourth write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+      writeNextReg(m, 0x18, 0x34);
+      writeNextReg(m, 0x18, 0x45);
+      writeNextReg(m, 0x18, 0x56);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x00);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x45);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0x56);
+    });
+  });
+
   describe("Reg $1A - Clip Window ULA", () => {
     it("first write", async () => {
       // --- Arrange

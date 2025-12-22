@@ -1445,104 +1445,6 @@ describe("Next - NextRegDevice", function () {
     expect(spriteDevice.enableSprites).toBe(true);
   });
 
-  it("Reg $16 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
-
-    // --- Act
-    writeNextReg(m, 0x16, 0x2c);
-
-    // --- Assert
-    expect(layer2Device.scrollX).toBe(0x2c);
-  });
-
-  it("Reg $17 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
-
-    // --- Act
-    writeNextReg(m, 0x17, 0x2c);
-
-    // --- Assert
-    expect(layer2Device.scrollY).toBe(0x2c);
-  });
-
-  it("Reg $18 first write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
-    writeNextReg(m, 0x1c, 0x01);
-
-    // --- Act
-    writeNextReg(m, 0x18, 0x23);
-
-    // --- Assert
-    expect(layer2Device.clipIndex).toBe(0x01);
-    expect(layer2Device.clipWindowX1).toBe(0x23);
-    expect(layer2Device.clipWindowX2).toBe(0x9f);
-    expect(layer2Device.clipWindowY1).toBe(0x00);
-    expect(layer2Device.clipWindowY2).toBe(0xff);
-  });
-
-  it("Reg $18 second write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
-    writeNextReg(m, 0x1c, 0x01);
-
-    // --- Act
-    writeNextReg(m, 0x18, 0x23);
-    writeNextReg(m, 0x18, 0x34);
-
-    // --- Assert
-    expect(layer2Device.clipIndex).toBe(0x02);
-    expect(layer2Device.clipWindowX1).toBe(0x23);
-    expect(layer2Device.clipWindowX2).toBe(0x34);
-    expect(layer2Device.clipWindowY1).toBe(0x00);
-    expect(layer2Device.clipWindowY2).toBe(0xff);
-  });
-
-  it("Reg $18 third write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
-    writeNextReg(m, 0x1c, 0x01);
-
-    // --- Act
-    writeNextReg(m, 0x18, 0x23);
-    writeNextReg(m, 0x18, 0x34);
-    writeNextReg(m, 0x18, 0x45);
-
-    // --- Assert
-    expect(layer2Device.clipIndex).toBe(0x03);
-    expect(layer2Device.clipWindowX1).toBe(0x23);
-    expect(layer2Device.clipWindowX2).toBe(0x34);
-    expect(layer2Device.clipWindowY1).toBe(0x45);
-    expect(layer2Device.clipWindowY2).toBe(0xff);
-  });
-
-  it("Reg $18 fourth write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
-    writeNextReg(m, 0x1c, 0x01);
-
-    // --- Act
-    writeNextReg(m, 0x18, 0x23);
-    writeNextReg(m, 0x18, 0x34);
-    writeNextReg(m, 0x18, 0x45);
-    writeNextReg(m, 0x18, 0x56);
-
-    // --- Assert
-    expect(layer2Device.clipIndex).toBe(0x00);
-    expect(layer2Device.clipWindowX1).toBe(0x23);
-    expect(layer2Device.clipWindowX2).toBe(0x34);
-    expect(layer2Device.clipWindowY1).toBe(0x45);
-    expect(layer2Device.clipWindowY2).toBe(0x56);
-  });
-
   it("Reg $1b first write", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -1629,7 +1531,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x1c, 0x01);
 
     // --- Assert
-    expect(m.layer2Device.clipIndex).toBe(0x00);
+    expect(m.composedScreenDevice.layer2ClipIndex).toBe(0x00);
   });
 
   it("Reg $1c sprite clip index reset works", async () => {
@@ -2490,39 +2392,37 @@ describe("Next - NextRegDevice", function () {
   it("Reg $71 write #1", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const nrDevice = m.nextRegDevice;
-    const layer2Device = m.layer2Device;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x71, 0x01);
 
     // --- Assert
-    expect(layer2Device.scrollX).toBe(0x100);
+    expect(scrDevice.layer2ScrollX).toBe(0x100);
   });
 
   it("Reg $71 write #2", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const nrDevice = m.nextRegDevice;
-    const layer2Device = m.layer2Device;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x71, 0xb3);
 
     // --- Assert
-    expect(layer2Device.scrollX).toBe(0x100);
+    expect(scrDevice.layer2ScrollX).toBe(0x100);
   });
 
   it("Reg $71 write #3", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const layer2Device = m.layer2Device;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x71, 0xbe);
 
     // --- Assert
-    expect(layer2Device.scrollX).toBe(0x00);
+    expect(scrDevice.layer2ScrollX).toBe(0x00);
   });
 
   it("Reg $7f write", async () => {

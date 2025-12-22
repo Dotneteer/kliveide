@@ -4,7 +4,6 @@ import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
 import { InterruptDevice } from "@emu/machines/zxNext/InterruptDevice";
 import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
 import { JoystickDevice } from "@emu/machines/zxNext/JoystickDevice";
-import { Layer2Device } from "@emu/machines/zxNext/Layer2Device";
 import { LoResDevice } from "@emu/machines/zxNext/LoResDevice";
 import { MemoryDevice } from "@emu/machines/zxNext/MemoryDevice";
 import { SdCardDevice } from "@emu/machines/zxNext/SdCardDevice";
@@ -44,8 +43,6 @@ export interface IZxNextMachine extends IZ80Machine {
   divMmcDevice: DivMmcDevice;
 
   sdCardDevice: SdCardDevice;
-
-  layer2Device: Layer2Device;
 
   paletteDevice: PaletteDevice;
 

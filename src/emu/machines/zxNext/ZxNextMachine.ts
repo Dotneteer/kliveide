@@ -15,7 +15,6 @@ import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMapping
 import { Z80NMachineBase } from "./Z80NMachineBase";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
-import { Layer2Device } from "./Layer2Device";
 import { PaletteDevice } from "./PaletteDevice";
 import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
@@ -65,8 +64,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   divMmcDevice: DivMmcDevice;
 
   sdCardDevice: SdCardDevice;
-
-  layer2Device: Layer2Device;
 
   paletteDevice: PaletteDevice;
 
@@ -137,7 +134,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Create and initialize devices
     this.divMmcDevice = new DivMmcDevice(this);
     this.sdCardDevice = new SdCardDevice(this);
-    this.layer2Device = new Layer2Device(this);
     this.paletteDevice = new PaletteDevice(this);
     this.tilemapDevice = new TilemapDevice(this);
     this.spriteDevice = new SpriteDevice(this);
@@ -200,7 +196,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.interruptDevice.reset();
     this.divMmcDevice.reset();
     this.sdCardDevice.reset();
-    this.layer2Device.reset();
     this.paletteDevice.reset();
     this.tilemapDevice.reset();
     this.spriteDevice.reset();

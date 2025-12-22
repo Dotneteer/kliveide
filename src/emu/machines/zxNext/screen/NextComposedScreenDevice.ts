@@ -122,6 +122,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   spritesEnableOverBorder: boolean;
   spritesEnabled: boolean;
 
+  // === Reg 0x16 - Layer 2 X Scroll LSB
+  layer2ScrollX: number;
+
+  // === Reg 0x17 - Layer 2 Y Scroll
+  layer2ScrollY: number;
+
+  // === Reg 0x18 - Layer 2 Clip Window
+  layer2ClipWindowX1: number;
+  layer2ClipWindowX2: number;
+  layer2ClipWindowY1: number;
+  layer2ClipWindowY2: number;
+  layer2ClipIndex: number;
+
   // === Reg 0x1A - Clip Window ULA/LoRes
   ulaClipWindowX1: number;
   ulaClipWindowX2: number;
@@ -417,6 +430,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaAttrByte2 = 0;
     this.ulaShiftReg = 0;
 
+    this.layer2ClipWindowX1 = 0;
+    this.layer2ClipWindowX2 = 159;
+    this.layer2ClipWindowY1 = 0;
+    this.layer2ClipWindowY2 = 255;
+    this.layer2ClipIndex = 0;
     this.displayTiming = 0;
     this.userLockOnDisplayTiming = false;
     this.machineType = 0;
@@ -845,6 +863,43 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set nextReg0x05Value(value: number) {
     this.is60HzMode = (value & 0x04) !== 0;
     this.scandoublerEnabled = (value & 0x01) !== 0;
+  }
+
+  /**
+   * Gets the clip window coordinate according to the current clip index
+   */
+  get nextReg0x18Value(): number {
+    switch (this.layer2ClipIndex) {
+      case 0:
+        return this.layer2ClipWindowX1;
+      case 1:
+        return this.layer2ClipWindowX2;
+      case 2:
+        return this.layer2ClipWindowY1;
+      default:
+        return this.layer2ClipWindowY2;
+    }
+  }
+
+  /**
+   * Sets the clip window cordinate according to the current clip index
+   */
+  set nextReg0x18Value(value: number) {
+    switch (this.layer2ClipIndex) {
+      case 0:
+        this.layer2ClipWindowX1 = value;
+        break;
+      case 1:
+        this.layer2ClipWindowX2 = value;
+        break;
+      case 2:
+        this.layer2ClipWindowY1 = value;
+        break;
+      default:
+        this.layer2ClipWindowY2 = value;
+        break;
+    }
+    this.layer2ClipIndex = (this.layer2ClipIndex + 1) & 0x03;
   }
 
   /**

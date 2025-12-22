@@ -820,21 +820,21 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x16,
       description: "Layer2 X Scroll LSB",
-      readFn: () => machine.layer2Device.scrollX & 0xff,
+      readFn: () => machine.composedScreenDevice.layer2ScrollX & 0xff,
       writeFn: (v) =>
-        (machine.layer2Device.scrollX = (machine.layer2Device.scrollX & 0x100) | (v & 0xff))
+        (machine.composedScreenDevice.layer2ScrollX = (machine.composedScreenDevice.layer2ScrollX & 0x100) | (v & 0xff))
     });
     r({
       id: 0x17,
       description: "Layer2 Y Scroll",
-      readFn: () => machine.layer2Device.scrollY,
-      writeFn: (v) => (machine.layer2Device.scrollY = v & 0xff)
+      readFn: () => machine.composedScreenDevice.layer2ScrollY,
+      writeFn: (v) => (machine.composedScreenDevice.layer2ScrollY = v & 0xff)
     });
     r({
       id: 0x18,
       description: "Clip Window Layer 2",
-      readFn: () => machine.layer2Device.nextReg18Value,
-      writeFn: (v) => (machine.layer2Device.nextReg18Value = v & 0xff)
+      readFn: () => machine.composedScreenDevice.nextReg0x18Value,
+      writeFn: (v) => (machine.composedScreenDevice.nextReg0x18Value = v & 0xff)
     });
     r({
       id: 0x19,
@@ -861,10 +861,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.tilemapDevice.clipIndex << 6) |
         (machine.composedScreenDevice.ulaClipIndex << 4) |
         (machine.spriteDevice.clipIndex << 2) |
-        machine.layer2Device.clipIndex,
+        machine.composedScreenDevice.layer2ClipIndex,
       writeFn: (v) => {
         if (v & 0x01) {
-          this.machine.layer2Device.clipIndex = 0;
+          this.machine.composedScreenDevice.layer2ClipIndex = 0;
         }
         if (v & 0x02) {
           this.machine.spriteDevice.clipIndex = 0;
@@ -1557,7 +1557,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.composedScreenDevice.layer2Resolution << 4) |
         machine.composedScreenDevice.layer2PaletteOffset,
       writeFn: (v) => {
-        machine.layer2Device.nextReg70Value = v; // DEPRECATED
         machine.composedScreenDevice.layer2Resolution = (v >> 4) & 0x03;
         machine.composedScreenDevice.layer2PaletteOffset = v & 0x0f;
       },
@@ -1582,9 +1581,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x71,
       description: "Layer 2 X Scroll MSB",
-      readFn: () => (machine.layer2Device.scrollX & 0x100) >> 8,
+      readFn: () => (machine.composedScreenDevice.layer2ScrollX & 0x100) >> 8,
       writeFn: (v) =>
-        (machine.layer2Device.scrollX = ((v & 0x01) << 8) | (machine.layer2Device.scrollX & 0xff)),
+        (machine.composedScreenDevice.layer2ScrollX = ((v & 0x01) << 8) | (machine.composedScreenDevice.layer2ScrollX & 0xff)),
       slices: [
         {
           mask: 0x01,
