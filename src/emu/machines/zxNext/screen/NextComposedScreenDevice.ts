@@ -68,6 +68,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Current timing configuration (50Hz or 60Hz)
   config: TimingConfig;
 
+  // Flattened config properties (eliminates property access overhead in hot path)
+  confIntStartTact: number;
+  confIntEndTact: number;
+  confTotalVC: number;
+  confTotalHC: number;
+  confDisplayXStart: number;
+  confDisplayYStart: number;
+  confFirstBitmapVC: number;
+  confFirstVisibleHC: number;
+
   // --- The number of rendering tacts for the screen frame
   renderingTacts: number;
 
@@ -80,9 +90,20 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private _flashFlag: boolean = false;
 
   // ZX Next register flags
+  // === Reg 0x03 - Machine type and display timing
+  displayTiming: number;
+  userLockOnDisplayTiming: boolean;
+  machineType: number;
+
   // === Reg 0x05 - Screen timing mode
   is60HzMode: boolean;
   scandoublerEnabled: boolean;
+
+  // === Reg 0x09 - Peripheral 4 Setting
+  scanlineWeight: number;
+
+  // === Reg 0x11 - Video Timing Mode
+  videoTimingMode: number;
 
   // === Reg 0x12 - Layer 2 active RAM bank
   layer2ActiveRamBank: number;
@@ -107,6 +128,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   ulaClipWindowY1: number;
   ulaClipWindowY2: number;
   ulaClipIndex: number;
+
+  // === Reg 0x1E - Active video line MSB
+  activeVideoLine: number;
 
   // === Reg 0x26 - ULA X Scroll
   ulaScrollX: number;
@@ -258,9 +282,21 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   ulaAttrByte1: number;
   ulaAttrByte2: number;
   ulaShiftReg: number;
-  ulaShiftCount: number;
   ulaShiftAttr: number;
+  ulaShiftAttr2: number;
   ulaShiftAttrCount: number;
+
+  // Pre-calculated attribute decode lookup tables (256 entries for all attribute byte values)
+  // Two sets: one for flash off, one for flash on
+  // Values are final palette indices (0-15) with BRIGHT already applied
+  private _attrToInkFlashOff: Uint8Array; // [attr] -> ink palette index (0-15)
+  private _attrToPaperFlashOff: Uint8Array; // [attr] -> paper palette index (0-15)
+  private _attrToInkFlashOn: Uint8Array; // [attr] -> ink palette index (0-15) with flash swap
+  private _attrToPaperFlashOn: Uint8Array; // [attr] -> paper palette index (0-15) with flash swap
+
+  // Active lookup tables (switch based on _flashFlag)
+  private _activeAttrToInk: Uint8Array;
+  private _activeAttrToPaper: Uint8Array;
 
   constructor(public readonly machine: IZxNextMachine) {
     // Screen dimensions
@@ -285,6 +321,44 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const attrY = y >> 3; // Character row (0-23)
       this._ulaAttrLineBaseAddr[y] = 0x1800 + (attrY << 5);
     }
+
+    // Generate attribute decode lookup tables (256 entries for all attribute byte values)
+    // This eliminates bit operations during rendering
+    // Store final palette indices (0-15) with BRIGHT already applied
+    this._attrToInkFlashOff = new Uint8Array(256);
+    this._attrToPaperFlashOff = new Uint8Array(256);
+    this._attrToInkFlashOn = new Uint8Array(256);
+    this._attrToPaperFlashOn = new Uint8Array(256);
+
+    for (let attr = 0; attr < 256; attr++) {
+      const flash = (attr >> 7) & 0x01;
+      const bright = (attr >> 6) & 0x01;
+      const paperColor = (attr >> 3) & 0x07;
+      const inkColor = attr & 0x07;
+
+      // Apply BRIGHT: adds 8 to color index (0-7 -> 0-15)
+      const brightOffset = bright << 3;
+      const inkPaletteIndex = inkColor + brightOffset;
+      const paperPaletteIndex = paperColor + brightOffset;
+
+      if (flash) {
+        // Flash enabled: swap ink and paper when flash is active
+        this._attrToInkFlashOff[attr] = inkPaletteIndex;
+        this._attrToPaperFlashOff[attr] = paperPaletteIndex;
+        this._attrToInkFlashOn[attr] = paperPaletteIndex; // Swapped
+        this._attrToPaperFlashOn[attr] = inkPaletteIndex; // Swapped
+      } else {
+        // Flash disabled: same values for both states
+        this._attrToInkFlashOff[attr] = inkPaletteIndex;
+        this._attrToPaperFlashOff[attr] = paperPaletteIndex;
+        this._attrToInkFlashOn[attr] = inkPaletteIndex;
+        this._attrToPaperFlashOn[attr] = paperPaletteIndex;
+      }
+    }
+
+    // Initialize active lookup tables
+    this._activeAttrToInk = this._attrToInkFlashOff;
+    this._activeAttrToPaper = this._attrToPaperFlashOff;
 
     // Generate rendering flags for all layers and modes
     this._renderingFlagsULAStandard50Hz = this.generateULAStandardRenderingFlags(Plus3_50Hz);
@@ -342,7 +416,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaAttrByte1 = 0;
     this.ulaAttrByte2 = 0;
     this.ulaShiftReg = 0;
-    this.ulaShiftCount = 0;
 
     // --- Initialize border color (use setter to update cache)
     this.borderColor = 7; // Default white border
@@ -428,7 +501,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const tilemap80x32Resolution = this.tilemap80x32Resolution;
 
     // Check if interrupt signal is active (simple range check)
-    this._pulseIntActive = tact >= this.config.intStartTact && tact < this.config.intEndTact;
+    this._pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntEndTact;
 
     // === BLANKING CHECK ===
     // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.
@@ -604,6 +677,39 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     return this._pixelBuffer;
   }
 
+  // --- Current paper colors
+  currentPaperColors: number[] = [];
+
+  // --- Current ink colors
+  currentInkColors: number[] = [];
+
+  /**
+   * Set the current colors from the palette.
+   * @param palette Palette to set the colors from
+   * @param _ulaNextEnabled ULA Next is enabled
+   * @param _ulaInkColorMask ULA ink color mask
+   */
+  setCurrentUlaColorsFromPalette(
+    palette: number[],
+    _ulaNextEnabled: boolean,
+    _ulaInkColorMask: number
+  ): void {
+    this.currentInkColors.length = 0x100;
+    this.currentPaperColors.length = 0x100;
+    for (let i = 0; i < 0x100; i++) {
+      const bright = !!(i & 0x40);
+      const ink = i & 0x07;
+      const paper = (i & 0x38) >> 3;
+      let color = zxNextRgb333Codes[palette[bright ? ink | 0x08 : ink]];
+      this.currentInkColors[i] =
+        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
+      color = zxNextRgb333Codes[palette[bright ? paper | 0x08 : paper]];
+      this.currentPaperColors[i] =
+        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
+    }
+    // TODO: Implement this method for ULA Next
+  }
+
   /**
    * Gets the buffer that stores the rendered pixels
    */
@@ -619,7 +725,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const is60Hz = this.is60HzMode;
     const oldConfig = this.config;
     this.config = is60Hz ? Plus3_60Hz : Plus3_50Hz;
-    this.renderingTacts = this.config.totalVC * this.config.totalHC;
+
+    // Copy config properties to flattened fields (eliminates property access overhead)
+    this.confIntStartTact = this.config.intStartTact;
+    this.confIntEndTact = this.config.intEndTact;
+    this.confTotalVC = this.config.totalVC;
+    this.confTotalHC = this.config.totalHC;
+    this.confDisplayXStart = this.config.displayXStart;
+    this.confDisplayYStart = this.config.displayYStart;
+    this.confFirstBitmapVC = this.config.firstBitmapVC;
+    this.confFirstVisibleHC = this.config.firstVisibleHC;
+
+    this.renderingTacts = this.confTotalVC * this.confTotalHC;
 
     // --- Update all layer rendering flags references based on timing mode
     this._renderingFlagsULAStandard = is60Hz
@@ -662,7 +779,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Flash period: ~16 frames ON, ~16 frames OFF
     // Full cycle: ~32 frames (~0.64s at 50Hz, ~0.55s at 60Hz)
     this._flashCounter = (this._flashCounter + 1) & 0x1f;
-    this._flashFlag = this._flashCounter >= 16;
+    const newFlashFlag = this._flashCounter >= 16;
+
+    // Switch active attribute lookup tables when flash state changes
+    if (newFlashFlag !== this._flashFlag) {
+      this._flashFlag = newFlashFlag;
+      if (this._flashFlag) {
+        this._activeAttrToInk = this._attrToInkFlashOn;
+        this._activeAttrToPaper = this._attrToPaperFlashOn;
+      } else {
+        this._activeAttrToInk = this._attrToInkFlashOff;
+        this._activeAttrToPaper = this._attrToPaperFlashOff;
+      }
+    }
 
     if (oldConfig !== this.config) {
       // Re-initialize bitmap when switching between 50Hz and 60Hz
@@ -1058,7 +1187,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Sample hardware scroll registers at specific HC subcycle positions (0x3, 0xB)
       // This happens at HC[3:0] = 0x3 or 0xB (falling edge of CLK_7 in hardware)
       this.ulaScrolledX = this.ulaScrollX;
-      this.ulaScrolledY = vc - this.config.displayYStart + this.ulaScrollY;
+      this.ulaScrolledY = vc - this.confDisplayYStart + this.ulaScrollY;
       if (this.ulaScrolledY >= 0xc0) {
         this.ulaScrolledY -= 0xc0; // Wrap Y at 192 for vertical scrolling
       }
@@ -1071,8 +1200,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.ulaShiftReg =
         ((((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrolledX & 0x07)) >> 8) &
         0xff;
-      this.ulaShiftCount = 0; // Reset pixel counter within byte
       this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
+      this.ulaShiftAttr2 = this.ulaAttrByte2; // Load attribute byte 2
       this.ulaShiftAttrCount = 8 - (this.ulaScrolledX & 0x07); // Reset attribute shift counter
     }
 
@@ -1082,9 +1211,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Full address: y[7:6] | y[2:0] | y[5:3] | x[7:3]
       // Base (Y part) already computed in _ulaPixelLineBaseAddr[this.ulaScrolledY]
       // X part: ulaScrolledX[7:3] gives byte column (0-31)
-      const shifPixels = (hc + 0x0c - this.config.displayXStart + this.ulaScrolledX) & 0xff;
-      const pixelAddr = this._ulaPixelLineBaseAddr[this.ulaScrolledY] | (shifPixels >> 3);
-
+      const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrolledX >> 3)) & 0x1f;
+      const pixelAddr = this._ulaPixelLineBaseAddr[this.ulaScrolledY] | shiftCols;
       // Read pixel byte from Bank 5 or Bank 7
       const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
       if (hc & 0x04) {
@@ -1104,8 +1233,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Full address: 0x1800 + (scrolledY / 8) * 32 + (scrolledX / 8)
       // Base (Y part) already computed in _ulaAttrLineBaseAddr[scrolledY]
       // X part: scrolledX[7:3] gives character column (0-31)
-      const shifPixels = (hc + 0x0a - this.config.displayXStart + this.ulaScrolledX) & 0xff;
-      const attrAddr = this._ulaAttrLineBaseAddr[this.ulaScrolledY] | (shifPixels >> 3);
+      const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrolledX >> 3)) & 0x1f;
+      const attrAddr = this._ulaAttrLineBaseAddr[this.ulaScrolledY] | shiftCols;
 
       // Read attribute byte from Bank 5 or Bank 7
       const ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
@@ -1143,31 +1273,22 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // // --- Pixel Generation ---
     // Generate pixel from shift register (happens every HC position)
     // Extract current pixel bit from shift register
-    const displayHC = hc - this.config.displayXStart;
-    const displayVC = vc - this.config.displayYStart;
+    const displayHC = hc - this.confDisplayXStart;
+    const displayVC = vc - this.confDisplayYStart;
     const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
     const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
 
-    // Decode attribute byte
-    const flash = (this.ulaShiftAttr >> 7) & 0x01;
-    const bright = (this.ulaShiftAttr >> 6) & 0x01;
-    const paperColor = (this.ulaShiftAttr >> 3) & 0x07;
-    const inkColor = this.ulaShiftAttr & 0x07;
+    // Use pre-calculated lookup tables with BRIGHT already applied
+    // Direct palette index lookup (0-15) - no bit operations needed
+    const paletteIndex = pixelBit
+      ? this._activeAttrToInk[this.ulaShiftAttr]
+      : this._activeAttrToPaper[this.ulaShiftAttr];
 
-    // Apply flash effect if enabled
-    let finalInk = inkColor;
-    let finalPaper = paperColor;
-    if (flash && this._flashFlag) {
-      // Swap INK and PAPER when flash is active
-      finalInk = paperColor;
-      finalPaper = inkColor;
+    this.ulaShiftAttrCount--;
+    if (this.ulaShiftAttrCount === 0) {
+      this.ulaShiftAttrCount = 8;
+      this.ulaShiftAttr = this.ulaShiftAttr2; // Load attribute byte 2
     }
-
-    // Select INK or PAPER based on pixel bit
-    const colorIndex = pixelBit ? finalInk : finalPaper;
-
-    // Apply BRIGHT attribute (adds 8 to color index)
-    const paletteIndex = colorIndex + (bright << 3);
 
     // Lookup color in ULA palette (16 entries for standard + bright colors)
     const pixelRGB = this.machine.paletteDevice.getUlaRgb333(paletteIndex);

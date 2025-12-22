@@ -109,8 +109,7 @@ export function generateULAStandardCell(
   }
 
   // --- Pixel read: read pixel byte from VRAM at HC subcycle positions 0x1, 0x5, 0x9, 0xD
-  // --- The memory read request occurs at HC subcycle 0x0, 0x4, 0x8, 0xC.
-  // --- The data capture occurs at HC subcycle 0x01, 0x05, 0x09, 0x0d
+  // --- The memory read occurs at HC subcycle 0x0, 0x4, 0x8, 0xC.
  if (fetchActive && (hcSub === 0x00 || hcSub === 0x04 || hcSub === 0x08 || hcSub === 0x0c)) {
     flags |= ULA_PIXEL_READ;
   }

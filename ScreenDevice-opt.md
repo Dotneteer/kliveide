@@ -9,121 +9,6 @@
 
 ## Optimization Opportunities
 
-### 1. Pre-calculate Scrolled Y Coordinate
-**Location**: `renderULAStandardPixel()` lines 1069-1073
-
-**Current Code**:
-```typescript
-if ((cell & ULA_SCROLL_SAMPLE) !== 0) {
-  this.ulaScrolledX = this.ulaScrollX;
-  this.ulaScrolledY = vc - this.config.displayYStart + this.ulaScrollY;
-  if (this.ulaScrolledY >= 0xc0) {
-    this.ulaScrolledY -= 0xc0;
-  }
-}
-```
-
-**Issue**: 
-- Calculation `vc - this.config.displayYStart` is performed for every scroll sample event
-- `this.config.displayYStart` is constant per frame (50Hz=16, 60Hz=16)
-- This subtraction happens thousands of times
-
-**Solution**: Pre-calculate base scrolled Y value
-```typescript
-// In constructor or onNewFrame():
-private _baseScrolledY: Uint16Array; // [vc] -> vc - displayYStart
-
-// Pre-calculate:
-for (let vc = 0; vc < config.totalVC; vc++) {
-  this._baseScrolledY[vc] = vc - config.displayYStart;
-}
-
-// In renderULAStandardPixel():
-this.ulaScrolledY = this._baseScrolledY[vc] + this.ulaScrollY;
-```
-
-**Impact**: Eliminates 1 subtraction per scroll sample (2× per scanline in display area)
-
----
-
-### 2. Pre-calculate Shifted Pixel/Attribute HC Offsets
-**Location**: Lines 1093-1094, 1108-1109
-
-**Current Code**:
-```typescript
-const shifPixels = (hc + 0x0c - this.config.displayXStart + this.ulaScrolledX) & 0xff;
-// ... later ...
-const shifPixels = (hc + 0x0a - this.config.displayXStart + this.ulaScrolledX) & 0xff;
-```
-
-**Issue**:
-- `hc - this.config.displayXStart` calculated for every pixel/attr read
-- `displayXStart` is constant per frame (96 for both 50Hz/60Hz)
-- Offset constants (0x0c, 0x0a) never change
-
-**Solution**: Pre-calculate HC-based offset tables
-```typescript
-// Pre-calculated lookup tables (456 entries each)
-private _pixelFetchOffset: Uint16Array; // [hc] -> (hc + 0x0c - displayXStart) & 0xff
-private _attrFetchOffset: Uint16Array;  // [hc] -> (hc + 0x0a - displayXStart) & 0xff
-
-// Generate in constructor:
-for (let hc = 0; hc < 456; hc++) {
-  this._pixelFetchOffset[hc] = (hc + 0x0c - config.displayXStart) & 0xff;
-  this._attrFetchOffset[hc] = (hc + 0x0a - config.displayXStart) & 0xff;
-}
-
-// Usage:
-const shifPixels = this._pixelFetchOffset[hc] + this.ulaScrolledX;
-const pixelAddr = this._ulaPixelLineBaseAddr[this.ulaScrolledY] | ((shifPixels & 0xff) >> 3);
-```
-
-**Impact**: Eliminates 2 additions + 1 subtraction per memory read
-
----
-
-### 3. Pre-calculate Display HC/VC Offsets
-**Location**: Lines 1136-1137, 1164-1169
-
-**Current Code**:
-```typescript
-const displayHC = hc - this.config.displayXStart;
-const displayVC = vc - this.config.displayYStart;
-// ... later used for clipping:
-const clipped =
-  displayHC < this.ulaClipWindowX1 ||
-  displayHC > this.ulaClipWindowX2 ||
-  displayVC < this.ulaClipWindowY1 ||
-  displayVC > this.ulaClipWindowY2;
-```
-
-**Issue**:
-- Calculated for every pixel in display area
-- Constants `displayXStart` and `displayYStart` never change during frame
-
-**Solution**: Pre-calculate with existing lookup tables
-```typescript
-// Extend _tactToHC/_tactToVC to store display-relative coordinates
-private _tactToDisplayHC: Int16Array; // [tact] -> hc - displayXStart (or -1 if outside)
-private _tactToDisplayVC: Int16Array; // [tact] -> vc - displayYStart (or -1 if outside)
-
-// In generateTactLookupTables():
-for (let tact = 0; tact < totalTacts; tact++) {
-  const hc = tact % config.totalHC;
-  const vc = Math.floor(tact / config.totalHC);
-  this._tactToDisplayHC[tact] = hc - config.displayXStart;
-  this._tactToDisplayVC[tact] = vc - config.displayYStart;
-}
-
-// Usage in renderULAStandardPixel():
-const displayHC = this._tactToDisplayHC[tact];
-const displayVC = this._tactToDisplayVC[tact];
-```
-
-**Impact**: Eliminates 2 subtractions per display area pixel
-
----
-
 ### 4. Optimize Pixel Shift Calculation
 **Location**: Line 1138
 
@@ -351,18 +236,15 @@ const selectedOutput = this._composeFn(ulaOutput, layer2Output, spritesOutput);
 
 ### Recommended Optimizations (High ROI)
 1. **Cache decoded attributes** (#5): ~0 bytes, eliminates 6 operations × 100K pixels = 600K ops
-2. **Pre-calculate HC/VC display offsets** (#3): ~967KB total, eliminates 200K subtractions
-3. **Pixel shift lookup** (#4): 8 bytes, eliminates 100K subtractions
-4. **Border RGB cache**: Already implemented ✓
+2. **Pixel shift lookup** (#4): 8 bytes, eliminates 100K subtractions
+3. **Border RGB cache**: Already implemented ✓
 
 ### Medium Priority (Good ROI)
-5. **Pre-calculate scroll Y base** (#1): ~622 bytes (311 × 2), eliminates ~10K subtractions
-6. **Shifted HC offsets** (#2): ~3.6KB (456 × 2 × 4 bytes), eliminates ~20K operations
-7. **Composition function pointers** (#8): ~48 bytes, eliminates ~100K switch statements
+4. **Composition function pointers** (#8): ~48 bytes, eliminates ~100K switch statements
+5. **Clipping pre-calculation** (#6): Depends on approach, but clipping is relatively rare
 
-### Lower Priority (High memory cost or low frequency)
-8. **Clipping pre-calculation** (#6): Depends on approach, but clipping is relatively rare
-9. **Transparency lookup** (#7): Requires PaletteDevice changes
+### Lower Priority (Requires changes to other modules)
+6. **Transparency lookup** (#7): Requires PaletteDevice changes
 
 ---
 
@@ -370,21 +252,18 @@ const selectedOutput = this._composeFn(ulaOutput, layer2Output, spritesOutput);
 
 ### Total Operations Eliminated Per Frame
 - **~600,000 operations** from cached attribute decoding
-- **~200,000 operations** from display HC/VC pre-calculation  
 - **~100,000 operations** from pixel shift lookup
 - **~100,000 operations** from composition optimization
-- **~30,000 operations** from HC offset pre-calculation
 
-**Total**: ~1,030,000 eliminated operations per frame
+**Total**: ~800,000 eliminated operations per frame
 
 ### Memory Cost
-- **High-value optimizations**: ~1-2 MB (mostly existing lookup tables extended)
-- Negligible for modern systems
+- **High-value optimizations**: Minimal (<1 KB)
 - All memory allocated once at startup
 
 ### Expected Speedup
-- Current hot path: ~15-20% faster
-- Overall frame rendering: ~10-15% faster
+- Current hot path: ~10-15% faster (primarily from attribute caching)
+- Overall frame rendering: ~8-12% faster
 - Most impactful when ULA standard mode is active (most common case)
 
 ---
@@ -396,14 +275,9 @@ const selectedOutput = this._composeFn(ulaOutput, layer2Output, spritesOutput);
 2. Add pixel shift lookup table (#4)
 3. Composition function pointers (#8)
 
-**Phase 2 - Lookup Tables** (2-3 hours):
-4. Extend tact lookup tables for display HC/VC (#3)
-5. Pre-calculate HC fetch offsets (#2)
-6. Pre-calculate scrolled Y base (#1)
-
-**Phase 3 - Advanced** (3-4 hours):
-7. Clipping optimization (#6)
-8. Transparency lookup integration (#7)
+**Phase 2 - Advanced** (2-3 hours):
+4. Clipping optimization (#6)
+5. Transparency lookup integration (#7)
 
 ---
 
