@@ -24,7 +24,6 @@ import { CopperDevice } from "./CopperDevice";
 import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
-import { NextScreenDevice } from "./NextScreenDevice";
 import { MouseDevice } from "./MouseDevice";
 import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
@@ -84,10 +83,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   keyboardDevice: NextKeyboardDevice;
 
-  /**
-   * Represents the screen device of ZX Spectrum 48K
-   */
-  screenDevice: NextScreenDevice;
   composedScreenDevice: NextComposedScreenDevice;
 
   mouseDevice: MouseDevice;
@@ -149,7 +144,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
-    this.screenDevice = new NextScreenDevice(this, NextScreenDevice.NextScreenConfiguration);
     this.composedScreenDevice = new NextComposedScreenDevice(this);
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.mouseDevice = new MouseDevice(this);
@@ -213,7 +207,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.dmaDevice.reset();
     this.copperDevice.reset();
     this.keyboardDevice.reset();
-    this.screenDevice.reset();
     this.composedScreenDevice.reset();
     this.mouseDevice.reset();
     this.joystickDevice.reset();
@@ -228,7 +221,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Set default machine type
     this.nextRegDevice.configMode = false;
-    this.screenDevice.machineType = 0x03; // ZX Spectrum Next
+    this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
   }
 
   async setup(): Promise<void> {
@@ -262,10 +255,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   async executeCustomCommand(command: string): Promise<any> {
     switch (command) {
       case "toggleScandoubler":
-        return (this.screenDevice.scandoublerEnabled = !this.screenDevice.scandoublerEnabled);
+        return (this.composedScreenDevice.scandoublerEnabled = !this.composedScreenDevice.scandoublerEnabled);
 
       case "toggle5060Hz":
-        return (this.screenDevice.hz60Mode = !this.screenDevice.hz60Mode);
+        return (this.composedScreenDevice.is60HzMode = !this.composedScreenDevice.is60HzMode);
 
       case "cycleCpuSpeed":
         if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
@@ -288,7 +281,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         break;
 
       case "adjustScanlineWeight":
-        return (this.screenDevice.scanlineWeight = (this.screenDevice.scanlineWeight + 1) % 4);
+        return (this.composedScreenDevice.scanlineWeight = (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
         // TODO: Implement multiface NMI
@@ -696,7 +689,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns
    */
   getPixelBuffer(): Uint32Array {
-    //return this.screenDevice.getPixelBuffer();
     return this.composedScreenDevice.getPixelBuffer();
   }
 
@@ -714,7 +706,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   getBufferStartOffset(): number {
     return 0;
-    //return this.screenDevice.screenWidth;
   }
 
   /**

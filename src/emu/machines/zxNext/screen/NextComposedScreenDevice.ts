@@ -417,6 +417,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaAttrByte2 = 0;
     this.ulaShiftReg = 0;
 
+    this.displayTiming = 0;
+    this.userLockOnDisplayTiming = false;
+    this.machineType = 0;
+    this.videoTimingMode = 0;
+
     // --- Initialize border color (use setter to update cache)
     this.borderColor = 7; // Default white border
 
@@ -715,7 +720,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     this.renderingTacts = this.confTotalVC * this.confTotalHC;
     this.machine.setTactsInFrame(this.renderingTacts);
-
 
     // --- Update all layer rendering flags references based on timing mode
     this._renderingFlagsULAStandard = is60Hz

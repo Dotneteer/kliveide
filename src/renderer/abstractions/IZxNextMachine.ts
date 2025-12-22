@@ -11,7 +11,6 @@ import { SdCardDevice } from "@emu/machines/zxNext/SdCardDevice";
 import { MouseDevice } from "@emu/machines/zxNext/MouseDevice";
 import { NextKeyboardDevice } from "@emu/machines/zxNext/NextKeyboardDevice";
 import { NextRegDevice } from "@emu/machines/zxNext/NextRegDevice";
-import { NextScreenDevice } from "@emu/machines/zxNext/NextScreenDevice";
 import { NextSoundDevice } from "@emu/machines/zxNext/NextSoundDevice";
 import { PaletteDevice } from "@emu/machines/zxNext/PaletteDevice";
 import { SpriteDevice } from "@emu/machines/zxNext/SpriteDevice";
@@ -58,7 +57,6 @@ export interface IZxNextMachine extends IZ80Machine {
 
   copperDevice: CopperDevice;
 
-  screenDevice: NextScreenDevice
   composedScreenDevice: NextComposedScreenDevice;
 
   keyboardDevice: NextKeyboardDevice
