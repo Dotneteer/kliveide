@@ -20,6 +20,7 @@ import { UlaDevice } from "@emu/machines/zxNext/UlaDevice";
 import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { CpuSpeedDevice } from "@emu/machines/zxNext/CpuSpeedDevice";
 import { ExpansionBusDevice } from "@emu/machines/zxNext/ExpansionBusDevice";
+import { NextComposedScreenDevice } from "@emu/machines/zxNext/screen/NextComposedScreenDevice";
 
 /**
  * This interface defines the behavior of a ZX Spectrum 48K virtual machine that integrates the emulator built from
@@ -58,6 +59,7 @@ export interface IZxNextMachine extends IZ80Machine {
   copperDevice: CopperDevice;
 
   screenDevice: NextScreenDevice
+  composedScreenDevice: NextComposedScreenDevice;
 
   keyboardDevice: NextKeyboardDevice
 

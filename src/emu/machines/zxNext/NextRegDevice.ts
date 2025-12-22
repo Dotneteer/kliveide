@@ -86,6 +86,43 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   // --- Reg $7f state
   userRegister0: number;
 
+  // --- Reg $82 state
+  port0xffEnabled: boolean;
+  port0x7ffdEnabled: boolean;
+  port0xdffdEnabled: boolean;
+  port0x1ffdEnabled: boolean;
+  plus3FloatingBusEnabled: boolean;
+  port0x6bEnabled: boolean;
+  port0x1fEnabled: boolean;
+  port0x37Enabled: boolean;
+
+  // --- Reg $83 state
+  portDivMmcEnabled: boolean;
+  portMultifaceEnabled: boolean;
+  portI2CEnabled: boolean;
+  portSpiEnabled: boolean;
+  portUartEnabled: boolean;
+  portMouseEnabled: boolean;
+  portSpritesEnabled: boolean;
+  portLayer2Enabled: boolean;
+
+  // --- Reg $84 state
+  portAyEnabled: boolean;
+  portDacMode1Enabled: boolean;
+  portDacMode2Enabled: boolean;
+  portDacStereoProfiCovoxEnabled: boolean;
+  portDacStereoCovoxEnabled: boolean;
+  portDacMonoPentagonEnabled: boolean;
+  portDacMonoGsCovoxEnabled: boolean;
+  portDacMonoSpecdrumEnabled: boolean;
+
+  // --- Reg $85 state
+  portUlaPlusEnabled: boolean;
+  portZ80DmaEnabled: boolean;
+  portPentagon1024MemoryEnabled: boolean;
+  portZ80CtcEnabled: boolean;
+  registerSoftResetMode: boolean;
+
   // --- Reg $d8 state
   fdcIoTrap: boolean;
 
@@ -267,8 +304,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn: (v) => {
         machine.joystickDevice.joystick1Mode = ((v & 0xc0) >> 6) | ((v & 0x08) >> 1);
         machine.joystickDevice.joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
-        machine.screenDevice.hz60Mode = (v & 0x04) !== 0;
-        machine.screenDevice.scandoublerEnabled = (v & 0x01) !== 0;
+        machine.screenDevice.hz60Mode = (v & 0x04) !== 0; // DEPRECATED
+        machine.screenDevice.scandoublerEnabled = (v & 0x01) !== 0; // DEPRECATED
+        machine.composedScreenDevice.nextReg0x05Value = v & 0xff;
       },
       slices: [
         {
@@ -688,8 +726,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x12,
       description: "Layer 2 Active RAM bank",
-      readFn: () => machine.layer2Device.activeRamBank,
-      writeFn: (v) => (machine.layer2Device.activeRamBank = v & 0x7f),
+      readFn: () => machine.composedScreenDevice.layer2ActiveRamBank,
+      writeFn: (v) => (machine.composedScreenDevice.layer2ActiveRamBank = v & 0x7f),
       slices: [
         {
           mask: 0x7f,
@@ -701,8 +739,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x13,
       description: "Layer 2 Shadow RAM bank",
-      readFn: () => machine.layer2Device.shadowRamBank,
-      writeFn: (v) => (machine.layer2Device.shadowRamBank = v & 0x7f),
+      readFn: () => machine.composedScreenDevice.layer2ShadowRamBank,
+      writeFn: (v) => (machine.composedScreenDevice.layer2ShadowRamBank = v & 0x7f),
       slices: [
         {
           mask: 0x7f,
@@ -714,26 +752,26 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x14,
       description: "Global Transparency Colour",
-      readFn: () => machine.layer2Device.transparencyColor,
-      writeFn: (v) => (machine.layer2Device.transparencyColor = v & 0xff)
+      readFn: () => machine.composedScreenDevice.globalTransparencyColor,
+      writeFn: (v) => (machine.composedScreenDevice.globalTransparencyColor = v & 0xff)
     });
     r({
       id: 0x15,
       description: "Sprite and Layers System",
-      readFn: () =>
-        (machine.screenDevice.enableLoresMode ? 0x80 : 0x00) |
-        (machine.spriteDevice.sprite0OnTop ? 0x40 : 0x00) |
-        (machine.spriteDevice.enableSpriteClipping ? 0x20 : 0x00) |
-        (machine.screenDevice.layerPriority << 2) |
-        (machine.spriteDevice.enableSpritesOverBorder ? 0x02 : 0x00) |
-        (machine.spriteDevice.enableSprites ? 0x01 : 0x00),
       writeFn: (v) => {
-        machine.screenDevice.enableLoresMode = (v & 0x80) !== 0;
-        machine.spriteDevice.sprite0OnTop = (v & 0x40) !== 0;
-        machine.spriteDevice.enableSpriteClipping = (v & 0x20) !== 0;
-        machine.screenDevice.layerPriority = (v & 0x1c) >> 2;
-        machine.spriteDevice.enableSpritesOverBorder = (v & 0x02) !== 0;
-        machine.spriteDevice.enableSprites = (v & 0x01) !== 0;
+        machine.screenDevice.enableLoresMode = (v & 0x80) !== 0; // DEPRECATED
+        machine.spriteDevice.sprite0OnTop = (v & 0x40) !== 0; // DEPRECATED
+        machine.spriteDevice.enableSpriteClipping = (v & 0x20) !== 0; // DEPRECATED
+        machine.screenDevice.layerPriority = (v & 0x1c) >> 2; // DEPRECATED
+        machine.spriteDevice.enableSpritesOverBorder = (v & 0x02) !== 0; // DEPRECATED
+        machine.spriteDevice.enableSprites = (v & 0x01) !== 0; // DEPRECATED
+
+        machine.composedScreenDevice.loResEnabled = (v & 0x80) !== 0;
+        machine.composedScreenDevice.sprites0OnTop = (v & 0x40) !== 0;
+        machine.composedScreenDevice.spritesEnableClipping = (v & 0x20) !== 0;
+        machine.composedScreenDevice.layerPriority = (v & 0x1c) >> 2;
+        machine.composedScreenDevice.spritesEnableOverBorder = (v & 0x02) !== 0;
+        machine.composedScreenDevice.spritesEnabled = (v & 0x01) !== 0;
       },
       slices: [
         {
@@ -807,8 +845,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x1a,
       description: "Clip Window ULA",
-      readFn: () => machine.ulaDevice.nextReg1aValue,
-      writeFn: (v) => (machine.ulaDevice.nextReg1aValue = v & 0xff)
+      readFn: () => machine.composedScreenDevice.nextReg0x1aValue,
+      writeFn: (v) => (machine.composedScreenDevice.nextReg0x1aValue = v & 0xff)
     });
     r({
       id: 0x1b,
@@ -942,14 +980,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x26,
       description: "ULA X Scroll",
-      readFn: () => machine.ulaDevice.scrollX,
-      writeFn: (v) => (machine.ulaDevice.scrollX = v & 0xff)
+      readFn: () => machine.composedScreenDevice.ulaScrollX,
+      writeFn: (v) => (machine.composedScreenDevice.ulaScrollX = v & 0xff)
     });
     r({
       id: 0x27,
       description: "ULA Y Scroll",
-      readFn: () => machine.ulaDevice.scrollY,
-      writeFn: (v) => (machine.ulaDevice.scrollY = v & 0xff)
+      readFn: () => machine.composedScreenDevice.ulaScrollY,
+      writeFn: (v) => (machine.composedScreenDevice.ulaScrollY = v & 0xff)
     });
     r({
       id: 0x28,
@@ -1284,12 +1322,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x68,
       description: "ULA Control",
-      readFn: () =>
-        machine.ulaDevice.nextReg68Value |
-        (machine.keyboardDevice.cancelExtendedKeyEntries ? 0x10 : 0),
+      readFn: () => this.regValues[0x68] & 0xfd,
       writeFn: (v) => {
-        machine.ulaDevice.nextReg68Value = v & 0xff;
+        machine.ulaDevice.nextReg68Value = v & 0xff; // DEPRECATED
         machine.keyboardDevice.cancelExtendedKeyEntries = !!(v & 0x10);
+
+        machine.composedScreenDevice.disableUlaOutput = !!(v & 0x80);
+        machine.composedScreenDevice.blendingInSLUModes6And7 = (v >> 5) & 0x03;
+        machine.composedScreenDevice.enableUlaPlus = !!(v & 0x08);
+        machine.composedScreenDevice.ulaHalfPixelScroll = !!(v & 0x04);
+        machine.composedScreenDevice.enableStencilMode = !!(v & 0x01);
       },
       slices: [
         {
@@ -1334,15 +1376,19 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x69,
       description: "Display Control 1",
       readFn: () =>
-        (machine.layer2Device.visible ? 0x80 : 0) |
+        // DEPRECATED VALUES BELOW
+        (machine.layer2Device.visible ? 0x80 : 0) | // DEPRECATED
         (machine.memoryDevice.useShadowScreen ? 0x40 : 0) |
-        (machine.screenDevice.timexColorCombination << 3) |
-        machine.screenDevice.timexScreenMode,
+        (machine.screenDevice.timexColorCombination << 3) | // DEPRECATED
+        machine.screenDevice.timexScreenMode, // DEPRECATED
       writeFn: (v) => {
-        machine.layer2Device.visible = !!(v & 0x80);
+        machine.layer2Device.visible = !!(v & 0x80); // DEPRECATED
         machine.memoryDevice.useShadowScreen = !!(v & 0x40);
-        machine.screenDevice.timexColorCombination = (v & 0x38) >> 3;
-        machine.screenDevice.timexScreenMode = v & 0x07;
+        machine.screenDevice.timexColorCombination = (v & 0x38) >> 3; // DEPRECATED
+        machine.screenDevice.timexScreenMode = v & 0x07; // DEPRECATED
+
+        machine.composedScreenDevice.layer2Enabled = !!(v & 0x80);
+        machine.composedScreenDevice.timexPortValue = v & 0x3f;
       },
       slices: [
         {
@@ -1388,8 +1434,23 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6b,
       description: "Tilemap Control",
-      readFn: () => machine.tilemapDevice.nextReg6bValue,
-      writeFn: (v) => (machine.tilemapDevice.nextReg6bValue = v & 0xff),
+      readFn: () =>
+        (machine.composedScreenDevice.tilemapEnabled ? 0x80 : 0) |
+        (machine.composedScreenDevice.tilemap80x32Resolution ? 0x40 : 0) |
+        (machine.composedScreenDevice.tilemapEliminateAttributes ? 0x20 : 0) |
+        (machine.paletteDevice.secondTilemapPalette ? 0x10 : 0) |
+        (machine.composedScreenDevice.tilemapTextMode ? 0x08 : 0) |
+        (machine.composedScreenDevice.tilemap512TileMode ? 0x02 : 0) |
+        (machine.composedScreenDevice.tilemapForceOnTopOfUla ? 0x01 : 0),
+      writeFn: (v) => {
+        machine.composedScreenDevice.tilemapEnabled = (v & 0x80) !== 0;
+        machine.composedScreenDevice.tilemap80x32Resolution = (v & 0x40) !== 0;
+        machine.composedScreenDevice.tilemapEliminateAttributes = (v & 0x20) !== 0;
+        machine.paletteDevice.secondTilemapPalette = (v & 0x10) !== 0;
+        machine.composedScreenDevice.tilemapTextMode = (v & 0x08) !== 0;
+        machine.composedScreenDevice.tilemap512TileMode = (v & 0x02) !== 0;
+        machine.composedScreenDevice.tilemapForceOnTopOfUla = (v & 0x01) !== 0;
+      },
       slices: [
         {
           mask: 0x80,
@@ -1498,8 +1559,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x70,
       description: "Layer 2 Control",
-      readFn: () => machine.layer2Device.nextReg70Value,
-      writeFn: (v) => (machine.layer2Device.nextReg70Value = v),
+      readFn: () =>
+        (machine.composedScreenDevice.layer2Resolution << 4) |
+        machine.composedScreenDevice.layer2PaletteOffset,
+      writeFn: (v) => {
+        machine.layer2Device.nextReg70Value = v; // DEPRECATED
+        machine.composedScreenDevice.layer2Resolution = (v >> 4) & 0x03;
+        machine.composedScreenDevice.layer2PaletteOffset = v & 0x0f;
+      },
       slices: [
         {
           mask: 0x30,
@@ -1638,7 +1705,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x82,
       description: "Internal Port Decoding Enables #1 (LSB)",
-      writeFn: () => {},
+      writeFn: (v) => {
+        this.port0xffEnabled = !!(v & 0x01);
+        this.port0x7ffdEnabled = !!(v & 0x02);
+        this.port0xdffdEnabled = !!(v & 0x04);
+        this.port0x1ffdEnabled = !!(v & 0x08);
+        this.plus3FloatingBusEnabled = !!(v & 0x10);
+        this.port0x6bEnabled = !!(v & 0x20);
+        this.port0x1fEnabled = !!(v & 0x40);
+        this.port0x37Enabled = !!(v & 0x80);
+      },
       slices: [
         {
           mask: 0x80,
@@ -1684,7 +1760,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x83,
       description: "Internal Port Decoding Enables #2",
-      writeFn: (v) => (machine.divMmcDevice.nextReg83Value = v & 0xff),
+      writeFn: (v) => (
+        (this.portDivMmcEnabled = !!(v & 0x01)),
+        (this.portMultifaceEnabled = !!(v & 0x02)),
+        (this.portI2CEnabled = !!(v & 0x04)),
+        (this.portSpiEnabled = !!(v & 0x08)),
+        (this.portUartEnabled = !!(v & 0x10)),
+        (this.portMouseEnabled = !!(v & 0x20)),
+        (this.portSpritesEnabled = !!(v & 0x40)),
+        (this.portLayer2Enabled = !!(v & 0x80)),
+        (machine.divMmcDevice.nextReg83Value = v & 0xff)
+      ),
       slices: [
         {
           mask: 0x80,
@@ -1730,7 +1816,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x84,
       description: "Internal Port Decoding Enables #3",
-      writeFn: () => {},
+      writeFn: (v) => {
+        this.portAyEnabled = !!(v & 0x01);
+        this.portDacMode1Enabled = !!(v & 0x02);
+        this.portDacMode2Enabled = !!(v & 0x04);
+        this.portDacStereoProfiCovoxEnabled = !!(v & 0x08);
+        this.portDacStereoCovoxEnabled = !!(v & 0x10);
+        this.portDacMonoPentagonEnabled = !!(v & 0x20);
+        this.portDacMonoGsCovoxEnabled = !!(v & 0x40);
+        this.portDacMonoSpecdrumEnabled = !!(v & 0x80);
+      },
       slices: [
         {
           mask: 0x80,
@@ -1776,8 +1871,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x85,
       description: "Internal Port Decoding Enables #4 (MSB)",
-      readFn: () => (this.regValues[0x85] ?? 0x00) & 0x8f,
-      writeFn: () => {},
+      writeFn: (v) => {
+        this.regValues[0x85] = v & 0x8f;
+        this.portUlaPlusEnabled = !!(v & 0x01);
+        this.portZ80DmaEnabled = !!(v & 0x02);
+        this.portPentagon1024MemoryEnabled = !!(v & 0x04);
+        this.portZ80CtcEnabled = !!(v & 0x08);
+        this.registerSoftResetMode = !!(v & 0x80);
+      },
       slices: [
         {
           mask: 0x80,
@@ -3065,6 +3166,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
 
+    // --- Next reg $05
+    const reg0x05BitsKept = this.directGetRegValue(0x05) & 0x05; // --- Keep bits 0 and 2
+    this.directSetRegValue(0x05, reg0x05BitsKept | 0x40); // --- Cursor mode, Sinclair 2, keep scandoubler setting
+
     // --- Sign soft reset
     const machine = this.machine;
     machine.interruptDevice.lastWasHardReset = false;
@@ -3118,7 +3223,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
     this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
-    this.directSetRegValue(0x05, 0x01); // --- Enable scandoubler for VGA
+    this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
     this.directSetRegValue(0x06, 0x00); // --- All Peripheral settings #2 are 0
     this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
     this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound

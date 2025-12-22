@@ -82,9 +82,20 @@ export class NextIoPortManager {
       port: 0xff,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
-      readerFns: () => this._portTimexValue,
+      readerFns: () => {
+        if (this.machine.nextRegDevice.port0xffEnabled) {
+          // Timex port is enabled
+          return this._portTimexValue;
+        }
+        return 0xff;
+      },
       writerFns: (_, v) => {
-        this._portTimexValue = v & 0xff;
+        if (this.machine.nextRegDevice.port0xffEnabled) {
+          // Timex port is enabled
+          this._portTimexValue = v & 0xff;
+          this.machine.interruptDevice.ulaInterruptDisabled = (v & 0x40) !== 0;
+          this.machine.composedScreenDevice.timexPortValue = v & 0x3f;
+        }
       }
     });
     r({
@@ -173,9 +184,9 @@ export class NextIoPortManager {
       port: 0x123b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0010_0011_1011,
-      readerFns: () => machine.layer2Device.port123bValue,
+      readerFns: () => machine.composedScreenDevice.port0x123bValue,
       writerFns: (_, v) => {
-        machine.layer2Device.port123bValue = v;
+        machine.composedScreenDevice.port0x123bValue = v;
       }
     });
     r({

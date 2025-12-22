@@ -46,6 +46,11 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
     this._machineFrameRunner = this.createMachineFrameRunner();
   }
 
+  abstract getAspectRatio(): [number, number];
+  abstract getSelectedRomPage(): number;
+  abstract getSelectedRamBank(): number;
+  beforeTactIncremented?(): void;
+
   softResetOnFirstStart?: boolean;
 
   /**

@@ -12,7 +12,7 @@ export async function createTestNextMachine(modelInfo?: MachineModel): Promise<T
 }
 
 // --- ZX Next machine for test purposes
-class TestZxNextMachine extends ZxNextMachine {
+export class TestZxNextMachine extends ZxNextMachine {
   constructor(modelInfo?: MachineModel) {
     super(modelInfo);
   }

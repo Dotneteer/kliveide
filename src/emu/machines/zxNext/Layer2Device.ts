@@ -9,12 +9,12 @@ export enum Layer2Resolution {
 }
 
 export class Layer2Device implements IGenericDevice<IZxNextMachine> {
-  bank: number;
+  bank: number; // OK
   bankOffset: number;
-  useShadowScreen: boolean;
-  enableMappingForReads: boolean;
-  visible: boolean;
-  enableMappingForWrites: boolean;
+  useShadowScreen: boolean; // OK
+  enableMappingForReads: boolean; // OK
+  visible: boolean; // OK
+  enableMappingForWrites: boolean; // OK
 
   activeRamBank: number;
   shadowRamBank: number;

@@ -1,5 +1,5 @@
 import { toHexa6 } from "@renderer/appIde/services/ide-commands";
-import { zxNext9BitColorCodes } from "./PaletteDevice";
+import { zxNextRgb333Codes } from "./PaletteDevice";
 
 const colorIntensity = [0x00, 0x25, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff];
 
@@ -34,7 +34,7 @@ export function getCssStringForPaletteCode(code: number): string {
   if (code & 0x100) {
     index |= 0x01;
   }
-  return `#${toHexa6(zxNext9BitColorCodes[index])}`;
+  return `#${toHexa6(zxNextRgb333Codes[index])}`;
 }
 
 export function getLuminanceForPaletteCode(code: number): number {

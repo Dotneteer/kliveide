@@ -19,8 +19,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
   clipWindowY1: number;
   clipWindowY2: number;
   clipIndex: number;
-  scrollX: number;
-  scrollY: number;
   disableUlaOutput: boolean;
   blendingInSluMode: number;
   enableUlaPlus: boolean;
@@ -37,8 +35,6 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowX2 = 255;
     this.clipWindowY1 = 0;
     this.clipWindowY2 = 191;
-    this.scrollX = 0;
-    this.scrollY = 0;
   }
 
   /**
@@ -144,7 +140,8 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writePort0xfe(value: number): void {
     // --- Extract the border color
-    this.machine.screenDevice.borderColor = value & 0x07;
+    this.machine.screenDevice.borderColor = value & 0x07; // DEPRECATED
+    this.machine.composedScreenDevice.borderColor = value & 0x07;
 
     // --- Store the last EAR bit
     var bit4 = value & 0x10;
