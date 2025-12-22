@@ -241,45 +241,350 @@ describe("Next - ComposedScreenDevice", function () {
     });
   });
 
+  describe("Reg $09 - Peripheral 4 Setting", () => {
+    it("scanlineWeight", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x09, 0x02);
+
+      // --- Assert
+      expect(readNextReg(m, 0x09)).toBe(0x02);
+      expect(m.composedScreenDevice.scanlineWeight).toBe(2);
+    });
+  });
+
   describe("Reg $14 - Global Transparency Colour", () => {
-      it("write", async () => {
-        // --- Arrange
-        const m = await createTestNextMachine();
-        const scrDevice = m.composedScreenDevice;
-    
-        // --- Act
-        writeNextReg(m, 0x14, 0xc5);
-    
-        // --- Assert
-        expect(scrDevice.globalTransparencyColor).toBe(0xc5);
-      });
-    
-    
+    it("write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x14, 0xc5);
+
+      // --- Assert
+      expect(scrDevice.globalTransparencyColor).toBe(0xc5);
+    });
+  });
+
+  describe("Reg $03 - Machine Type", () => {
+    it("Reg $03 keep userLockDisplayTime #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      scrDevice.userLockOnDisplayTiming = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x00);
+
+      // --- Assert
+      expect(scrDevice.userLockOnDisplayTiming).toBe(true);
+    });
+
+    it("Reg $03 keep userLockDisplayTime #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      scrDevice.userLockOnDisplayTiming = false;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x00);
+
+      // --- Assert
+      expect(scrDevice.userLockOnDisplayTiming).toBe(false);
+    });
+
+    it("Reg $03 toggles userLockDisplayTime #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      scrDevice.userLockOnDisplayTiming = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x08);
+
+      // --- Assert
+      expect(scrDevice.userLockOnDisplayTiming).toBe(false);
+    });
+
+    it("Reg $03 toggles userLockDisplayTime #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      scrDevice.userLockOnDisplayTiming = false;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x08);
+
+      // --- Assert
+      expect(scrDevice.userLockOnDisplayTiming).toBe(true);
+    });
+
+    it("Reg $03 keeps machine type when not in config mode", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      m.nextRegDevice.configMode = false;
+
+      // --- Act
+      for (let i = 0; i < 8; i++) {
+        writeNextReg(m, 0x03, i);
+      }
+
+      // --- Assert
+      expect(scrDevice.machineType).toBe(0x03);
+    });
+
+    it("Reg $03 set machine type in config mode #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      m.nextRegDevice.configMode = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x01);
+
+      // --- Assert
+      expect(scrDevice.machineType).toBe(0x01);
+    });
+
+    it("Reg $03 set machine type in config mode #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      m.nextRegDevice.configMode = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x02);
+
+      // --- Assert
+      expect(scrDevice.machineType).toBe(0x02);
+    });
+
+    it("Reg $03 set machine type in config mode #3", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      m.nextRegDevice.configMode = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x03);
+
+      // --- Assert
+      expect(scrDevice.machineType).toBe(0x03);
+    });
+
+    it("Reg $03 set machine typr in config mode #4", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      m.nextRegDevice.configMode = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x04);
+
+      // --- Assert
+      expect(scrDevice.machineType).toBe(0x04);
+    });
+
+    it("Reg $03 ignores invalid machine type in config mode #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      m.nextRegDevice.configMode = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x05);
+
+      // --- Assert
+      expect(scrDevice.machineType).toBe(0x03);
+    });
+
+    it("Reg $03 ignores invalid machine type in config mode #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      m.nextRegDevice.configMode = true;
+
+      // --- Act
+      writeNextReg(m, 0x03, 0x06);
+
+      // --- Assert
+      expect(scrDevice.machineType).toBe(0x03);
+    });
+
+    it("Reg $03 keeps displayTiming with no changes allowed", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      scrDevice.displayTiming = 0x00;
+      m.nextRegDevice.configMode = false;
+
+      // --- Act
+      for (let i = 0; i < 8; i++) {
+        writeNextReg(m, 0x03, i << 4);
+        expect(scrDevice.displayTiming).toBe(0x00);
+      }
+    });
+
+    it("Reg $03 keeps displayTiming with userLockDisplayTiming", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      scrDevice.displayTiming = 0x00;
+      scrDevice.userLockOnDisplayTiming = true;
+      m.nextRegDevice.configMode = false;
+
+      // --- Act
+      for (let i = 0; i < 8; i++) {
+        writeNextReg(m, 0x03, 0x80 | (i << 4));
+        expect(scrDevice.displayTiming).toBe(0x00);
+      }
+    });
+
+    it("Reg $03 keeps displayTiming with no userLockDisplayTiming and Bit 3 set to 1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      scrDevice.displayTiming = 0x00;
+      scrDevice.userLockOnDisplayTiming = false;
+      m.nextRegDevice.configMode = false;
+
+      // --- Act
+      for (let i = 0; i < 8; i++) {
+        writeNextReg(m, 0x03, 0x80 | (i << 4) | 0x08);
+        expect(scrDevice.displayTiming).toBe(0x00);
+      }
+    });
   });
 
   describe("Reg $15 - Sprite and Layers System", () => {
     it("Reg $15 enableLoresMode (false)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
-      const screenDevice = m.screenDevice;
+      const screenDevice = m.composedScreenDevice;
 
       // --- Act
       writeNextReg(m, 0x15, 0x00);
 
       // --- Assert
-      expect(screenDevice.enableLoresMode).toBe(false);
+      expect(screenDevice.loResEnabled).toBe(false);
     });
 
     it("Reg $15 enableLoresMode (true)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
-      const screenDevice = m.screenDevice;
+      const screenDevice = m.composedScreenDevice;
 
       // --- Act
       writeNextReg(m, 0x15, 0x80);
 
       // --- Assert
-      expect(screenDevice.enableLoresMode).toBe(true);
+      expect(screenDevice.loResEnabled).toBe(true);
+    });
+  });
+
+  describe("Reg $16 - Layer 2 X Scroll LSB", () => {
+    it("Reg $16 write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x16, 0x2c);
+
+      // --- Assert
+      expect(m.composedScreenDevice.layer2ScrollX).toBe(0x2c);
+    });
+  });
+
+  describe("Reg $17 - Layer 2 Y Scroll", () => {
+    it("Reg $17 write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x17, 0x2c);
+
+      // --- Assert
+      expect(m.composedScreenDevice.layer2ScrollY).toBe(0x2c);
+    });
+  });
+
+  describe("Reg $18 - Clip Window Layer 2", () => {
+    it("Reg $18 first write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x01);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x9f);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x00);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+    });
+
+    it("Reg $18 second write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+      writeNextReg(m, 0x18, 0x34);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x02);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x00);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+    });
+
+    it("Reg $18 third write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+      writeNextReg(m, 0x18, 0x34);
+      writeNextReg(m, 0x18, 0x45);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x03);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x45);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+    });
+
+    it("Reg $18 fourth write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice
+      writeNextReg(m, 0x1c, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x18, 0x23);
+      writeNextReg(m, 0x18, 0x34);
+      writeNextReg(m, 0x18, 0x45);
+      writeNextReg(m, 0x18, 0x56);
+
+      // --- Assert
+      expect(scrDevice.layer2ClipIndex).toBe(0x00);
+      expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
+      expect(scrDevice.layer2ClipWindowY1).toBe(0x45);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0x56);
     });
   });
 
@@ -304,7 +609,7 @@ describe("Next - ComposedScreenDevice", function () {
     it("second write", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
-      const scrDevice = m.composedScreenDevice  ;
+      const scrDevice = m.composedScreenDevice;
       writeNextReg(m, 0x1c, 0x04);
 
       // --- Act

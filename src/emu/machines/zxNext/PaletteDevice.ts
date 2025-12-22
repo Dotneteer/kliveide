@@ -255,19 +255,19 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   private updateUlaPalette(): void {
-    if (this._selectedPalette === 0) {
-      this.machine.screenDevice.setCurrentUlaColorsFromPalette(
-        this.ulaFirst,
-        this._enableUlaNextMode,
-        this.ulaNextByteFormat
-      );
-    } else if (this._selectedPalette === 4) {
-      this.machine.screenDevice.setCurrentUlaColorsFromPalette(
-        this.ulaSecond,
-        this._enableUlaNextMode,
-        this.ulaNextByteFormat
-      );
-    }
+    // if (this._selectedPalette === 0) {
+    //   this.machine.screenDevice.setCurrentUlaColorsFromPalette(
+    //     this.ulaFirst,
+    //     this._enableUlaNextMode,
+    //     this.ulaNextByteFormat
+    //   );
+    // } else if (this._selectedPalette === 4) {
+    //   this.machine.screenDevice.setCurrentUlaColorsFromPalette(
+    //     this.ulaSecond,
+    //     this._enableUlaNextMode,
+    //     this.ulaNextByteFormat
+    //   );
+    // }
   }
 }
 

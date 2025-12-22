@@ -3,31 +3,17 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 export interface IMachineFrameRunner {
-  get frameCompleted(): boolean;
-
   reset(): void;
   executeMachineFrame(): FrameTerminationMode;
 }
 
 export class MachineFrameRunner implements IMachineFrameRunner {
-  // --- This flag indicates that the last machine frame has been completed.
-  protected _frameCompleted: boolean;
-
-  // --- Shows the number of frame tacts that overflow to the subsequent machine frame.
-  protected _frameOverflow: number;
-
   // --- Store the start tact of the next machine frame
   protected _nextFrameStartTact = 0;
 
   constructor(private readonly machine: IAnyMachine) {}
 
-  get frameCompleted(): boolean {
-    return this._frameCompleted;
-  }
-
   reset(): void {
-    this._frameCompleted = false;
-    this._frameOverflow = 0;
     this._nextFrameStartTact = 0;
   }
 
@@ -55,9 +41,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
     // --- completion reason, like reaching a breakpoint, etc.
     do {
       // --- Test if the machine frame has just been completed.
-      if (this._frameCompleted) {
-        const currentFrameStart = machine.tacts - this._frameOverflow;
-
+      if (machine.frameCompleted) {
         // --- Update the CPU's clock multiplier, if the machine's has changed.
         let clockMultiplierChanged = false;
         if (
@@ -72,11 +56,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
 
         // --- Allow a machine to handle frame initialization
         machine.onInitNewFrame(clockMultiplierChanged);
-        this._frameCompleted = false;
-
-        // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact =
-          currentFrameStart + machine.tactsInFrame * machine.clockMultiplier;
+        machine.frameCompleted = false;
 
         // --- Emulate a keystroke, if any has been queued at all
         machine.emulateKeystroke();
@@ -114,17 +94,11 @@ export class MachineFrameRunner implements IMachineFrameRunner {
           FrameTerminationMode.UntilExecutionPoint);
       }
 
-      // --- Test if the machine frame has just been completed.
-      this._frameCompleted = machine.tacts >= this._nextFrameStartTact;
-
       // --- Exit, if there is a frame command to execute
       if (machine.getFrameCommand()) {
         return (machine.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
       }
-    } while (!this._frameCompleted);
-
-    // --- Calculate the overflow, we need this value in the next frame
-    this._frameOverflow = Math.floor(machine.tacts - this._nextFrameStartTact);
+    } while (!machine.frameCompleted);
 
     // --- Done
     return (machine.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
@@ -166,9 +140,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
     // --- completion reason, like reaching a breakpoint, etc.
     do {
       // --- Test if the machine frame has just been completed.
-      if (this._frameCompleted) {
-        const currentFrameStart = machine.tacts - this._frameOverflow;
-
+      if (machine.frameCompleted) {
         // --- Update the CPU's clock multiplier, if the machine's has changed.
         var clockMultiplierChanged = false;
         if (
@@ -183,11 +155,7 @@ export class MachineFrameRunner implements IMachineFrameRunner {
 
         // --- Allow a machine to handle frame initialization
         machine.onInitNewFrame(clockMultiplierChanged);
-        this._frameCompleted = false;
-
-        // --- Calculate the start tact of the next machine frame
-        this._nextFrameStartTact =
-          currentFrameStart + machine.tactsInFrame * machine.clockMultiplier;
+        machine.frameCompleted = false;
       }
 
       // --- Allow the machine to do additional tasks before the next CPU instruction
@@ -262,17 +230,11 @@ export class MachineFrameRunner implements IMachineFrameRunner {
         return machine.executionContext.lastTerminationReason;
       }
 
-      // --- Test if the machine frame has just been completed.
-      this._frameCompleted = machine.tacts >= this._nextFrameStartTact;
-
       // --- Exit, if there is a frame command to execute
       if (machine.getFrameCommand()) {
         return (machine.executionContext.lastTerminationReason = FrameTerminationMode.Normal);
       }
-    } while (!this._frameCompleted);
-
-    // --- Calculate the overflow, we need this value in the next frame
-    this._frameOverflow = Math.floor(machine.tacts - this._nextFrameStartTact);
+    } while (!machine.frameCompleted);
 
     // --- Done
     return (machine.executionContext.lastTerminationReason = FrameTerminationMode.Normal);

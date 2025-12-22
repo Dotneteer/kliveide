@@ -15,7 +15,6 @@ import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMapping
 import { Z80NMachineBase } from "./Z80NMachineBase";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
-import { Layer2Device } from "./Layer2Device";
 import { PaletteDevice } from "./PaletteDevice";
 import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
@@ -24,7 +23,6 @@ import { CopperDevice } from "./CopperDevice";
 import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
-import { NextScreenDevice } from "./NextScreenDevice";
 import { MouseDevice } from "./MouseDevice";
 import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
@@ -67,8 +65,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   sdCardDevice: SdCardDevice;
 
-  layer2Device: Layer2Device;
-
   paletteDevice: PaletteDevice;
 
   tilemapDevice: TilemapDevice;
@@ -84,10 +80,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   keyboardDevice: NextKeyboardDevice;
 
-  /**
-   * Represents the screen device of ZX Spectrum 48K
-   */
-  screenDevice: NextScreenDevice;
   composedScreenDevice: NextComposedScreenDevice;
 
   mouseDevice: MouseDevice;
@@ -142,14 +134,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Create and initialize devices
     this.divMmcDevice = new DivMmcDevice(this);
     this.sdCardDevice = new SdCardDevice(this);
-    this.layer2Device = new Layer2Device(this);
     this.paletteDevice = new PaletteDevice(this);
     this.tilemapDevice = new TilemapDevice(this);
     this.spriteDevice = new SpriteDevice(this);
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
-    this.screenDevice = new NextScreenDevice(this, NextScreenDevice.NextScreenConfiguration);
     this.composedScreenDevice = new NextComposedScreenDevice(this);
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.mouseDevice = new MouseDevice(this);
@@ -206,14 +196,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.interruptDevice.reset();
     this.divMmcDevice.reset();
     this.sdCardDevice.reset();
-    this.layer2Device.reset();
     this.paletteDevice.reset();
     this.tilemapDevice.reset();
     this.spriteDevice.reset();
     this.dmaDevice.reset();
     this.copperDevice.reset();
     this.keyboardDevice.reset();
-    this.screenDevice.reset();
+    this.composedScreenDevice.reset();
     this.mouseDevice.reset();
     this.joystickDevice.reset();
     this.soundDevice.reset();
@@ -227,7 +216,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Set default machine type
     this.nextRegDevice.configMode = false;
-    this.screenDevice.machineType = 0x03; // ZX Spectrum Next
+    this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
   }
 
   async setup(): Promise<void> {
@@ -261,10 +250,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   async executeCustomCommand(command: string): Promise<any> {
     switch (command) {
       case "toggleScandoubler":
-        return (this.screenDevice.scandoublerEnabled = !this.screenDevice.scandoublerEnabled);
+        return (this.composedScreenDevice.scandoublerEnabled = !this.composedScreenDevice.scandoublerEnabled);
 
       case "toggle5060Hz":
-        return (this.screenDevice.hz60Mode = !this.screenDevice.hz60Mode);
+        return (this.composedScreenDevice.is60HzMode = !this.composedScreenDevice.is60HzMode);
 
       case "cycleCpuSpeed":
         if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
@@ -287,7 +276,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         break;
 
       case "adjustScanlineWeight":
-        return (this.screenDevice.scanlineWeight = (this.screenDevice.scanlineWeight + 1) % 4);
+        return (this.composedScreenDevice.scanlineWeight = (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
         // TODO: Implement multiface NMI
@@ -695,7 +684,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns
    */
   getPixelBuffer(): Uint32Array {
-    //return this.screenDevice.getPixelBuffer();
     return this.composedScreenDevice.getPixelBuffer();
   }
 
@@ -713,7 +701,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   getBufferStartOffset(): number {
     return 0;
-    //return this.screenDevice.screenWidth;
   }
 
   /**
@@ -855,7 +842,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.lastRenderedFrameTact = 0;
 
     // --- Prepare the screen device for the new machine frame
-    this.screenDevice.onNewFrame();
     this.composedScreenDevice.onNewFrame();
 
     // --- Prepare the beeper device for the new frame
@@ -867,7 +853,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt(): boolean {
-    return this.currentFrameTact < 32;
+    return this.composedScreenDevice.pulseIntActive;
   }
 
   /**
@@ -875,9 +861,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param increment The tact increment value
    */
   onTactIncremented(): void {
-    const machineTact = this.currentFrameTact;
-    while (this.lastRenderedFrameTact <= machineTact) {
-      //this.screenDevice.renderTact(this.lastRenderedFrameTact);
+    if (this.frameCompleted) return;
+    while (this.lastRenderedFrameTact < this.currentFrameTact) {
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();

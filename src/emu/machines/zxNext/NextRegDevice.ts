@@ -208,11 +208,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "Machine Type",
       readFn: () =>
         (machine.paletteDevice.secondWrite ? 0x80 : 0x00) |
-        (machine.screenDevice.displayTiming << 4) |
-        (machine.screenDevice.userLockOnDisplayTiming ? 0x08 : 0x00) |
-        machine.screenDevice.machineType,
+        (machine.composedScreenDevice.displayTiming << 4) |
+        (machine.composedScreenDevice.userLockOnDisplayTiming ? 0x08 : 0x00) |
+        machine.composedScreenDevice.machineType,
       writeFn: (v) => {
-        const scrDevice = machine.screenDevice;
+        const scrDevice = machine.composedScreenDevice;
         if (!!(v & 0x80) && !scrDevice.userLockOnDisplayTiming && !(v & 0x08)) {
           const newDisplayTiming = (v & 0x70) >> 4;
           switch (newDisplayTiming) {
@@ -304,8 +304,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn: (v) => {
         machine.joystickDevice.joystick1Mode = ((v & 0xc0) >> 6) | ((v & 0x08) >> 1);
         machine.joystickDevice.joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
-        machine.screenDevice.hz60Mode = (v & 0x04) !== 0; // DEPRECATED
-        machine.screenDevice.scandoublerEnabled = (v & 0x01) !== 0; // DEPRECATED
+        machine.composedScreenDevice.is60HzMode = (v & 0x04) !== 0; // DEPRECATED
+        machine.composedScreenDevice.scandoublerEnabled = (v & 0x01) !== 0; // DEPRECATED
         machine.composedScreenDevice.nextReg0x05Value = v & 0xff;
       },
       slices: [
@@ -519,7 +519,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.soundDevice.ay0Mono ? 0x20 : 0x00) |
         (machine.spriteDevice.spriteIdLockstep ? 0x10 : 0x00) |
         (machine.soundDevice.silenceHdmiAudio ? 0x04 : 0x00) |
-        (machine.screenDevice.scanlineWeight & 0x03),
+        (machine.composedScreenDevice.scanlineWeight & 0x03),
       writeFn: (v) => {
         machine.soundDevice.ay2Mono = (v & 0x80) !== 0;
         machine.soundDevice.ay1Mono = (v & 0x40) !== 0;
@@ -527,7 +527,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.spriteDevice.spriteIdLockstep = (v & 0x10) !== 0;
         machine.divMmcDevice.resetDivMmcMapramFlag = (v & 0x08) !== 0;
         machine.soundDevice.silenceHdmiAudio = (v & 0x04) !== 0;
-        machine.screenDevice.scanlineWeight = v & 0x03;
+        machine.composedScreenDevice.scanlineWeight = v & 0x03;
       },
       slices: [
         {
@@ -702,9 +702,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x11,
       description: "Video Timing",
-      readFn: () => machine.screenDevice.videoTimingMode,
+      readFn: () => machine.composedScreenDevice.videoTimingMode,
       writeFn: (v) => {
-        machine.screenDevice.videoTimingMode = v & 0x07;
+        machine.composedScreenDevice.videoTimingMode = v & 0x07;
       },
       slices: [
         {
@@ -759,10 +759,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x15,
       description: "Sprite and Layers System",
       writeFn: (v) => {
-        machine.screenDevice.enableLoresMode = (v & 0x80) !== 0; // DEPRECATED
+        machine.composedScreenDevice.loResEnabled = (v & 0x80) !== 0; // DEPRECATED
         machine.spriteDevice.sprite0OnTop = (v & 0x40) !== 0; // DEPRECATED
         machine.spriteDevice.enableSpriteClipping = (v & 0x20) !== 0; // DEPRECATED
-        machine.screenDevice.layerPriority = (v & 0x1c) >> 2; // DEPRECATED
+        machine.composedScreenDevice.layerPriority = (v & 0x1c) >> 2; // DEPRECATED
         machine.spriteDevice.enableSpritesOverBorder = (v & 0x02) !== 0; // DEPRECATED
         machine.spriteDevice.enableSprites = (v & 0x01) !== 0; // DEPRECATED
 
@@ -820,21 +820,21 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x16,
       description: "Layer2 X Scroll LSB",
-      readFn: () => machine.layer2Device.scrollX & 0xff,
+      readFn: () => machine.composedScreenDevice.layer2ScrollX & 0xff,
       writeFn: (v) =>
-        (machine.layer2Device.scrollX = (machine.layer2Device.scrollX & 0x100) | (v & 0xff))
+        (machine.composedScreenDevice.layer2ScrollX = (machine.composedScreenDevice.layer2ScrollX & 0x100) | (v & 0xff))
     });
     r({
       id: 0x17,
       description: "Layer2 Y Scroll",
-      readFn: () => machine.layer2Device.scrollY,
-      writeFn: (v) => (machine.layer2Device.scrollY = v & 0xff)
+      readFn: () => machine.composedScreenDevice.layer2ScrollY,
+      writeFn: (v) => (machine.composedScreenDevice.layer2ScrollY = v & 0xff)
     });
     r({
       id: 0x18,
       description: "Clip Window Layer 2",
-      readFn: () => machine.layer2Device.nextReg18Value,
-      writeFn: (v) => (machine.layer2Device.nextReg18Value = v & 0xff)
+      readFn: () => machine.composedScreenDevice.nextReg0x18Value,
+      writeFn: (v) => (machine.composedScreenDevice.nextReg0x18Value = v & 0xff)
     });
     r({
       id: 0x19,
@@ -859,18 +859,18 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "Clip Window control",
       readFn: () =>
         (machine.tilemapDevice.clipIndex << 6) |
-        (machine.ulaDevice.clipIndex << 4) |
+        (machine.composedScreenDevice.ulaClipIndex << 4) |
         (machine.spriteDevice.clipIndex << 2) |
-        machine.layer2Device.clipIndex,
+        machine.composedScreenDevice.layer2ClipIndex,
       writeFn: (v) => {
         if (v & 0x01) {
-          this.machine.layer2Device.clipIndex = 0;
+          this.machine.composedScreenDevice.layer2ClipIndex = 0;
         }
         if (v & 0x02) {
           this.machine.spriteDevice.clipIndex = 0;
         }
         if (v & 0x04) {
-          this.machine.ulaDevice.clipIndex = 0;
+          this.machine.composedScreenDevice.ulaClipIndex = 0;
         }
         if (v & 0x08) {
           this.machine.tilemapDevice.clipIndex = 0;
@@ -901,7 +901,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x1e,
       description: "Active video line MSB",
-      readFn: () => (machine.screenDevice.activeVideoLine & 0x100) >> 8,
+      readFn: () => (machine.composedScreenDevice.activeVideoLine & 0x100) >> 8,
       writeFn: () => {},
       slices: [
         {
@@ -913,7 +913,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x1f,
       description: "Active video line LSB",
-      readFn: () => machine.screenDevice.activeVideoLine & 0xff,
+      readFn: () => machine.composedScreenDevice.activeVideoLine & 0xff,
       writeFn: () => {}
     });
     r({
@@ -1216,7 +1216,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x4a,
       description: "Fallback Colour",
-      writeFn: (v) => (machine.screenDevice.fallbackColor = v & 0xff)
+      writeFn: (v) => (machine.composedScreenDevice.fallbackColor = v & 0xff)
     });
     r({
       id: 0x4b,
@@ -1324,7 +1324,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "ULA Control",
       readFn: () => this.regValues[0x68] & 0xfd,
       writeFn: (v) => {
-        machine.ulaDevice.nextReg68Value = v & 0xff; // DEPRECATED
         machine.keyboardDevice.cancelExtendedKeyEntries = !!(v & 0x10);
 
         machine.composedScreenDevice.disableUlaOutput = !!(v & 0x80);
@@ -1377,17 +1376,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "Display Control 1",
       readFn: () =>
         // DEPRECATED VALUES BELOW
-        (machine.layer2Device.visible ? 0x80 : 0) | // DEPRECATED
+        (machine.composedScreenDevice.layer2Enabled ? 0x80 : 0) |
         (machine.memoryDevice.useShadowScreen ? 0x40 : 0) |
-        (machine.screenDevice.timexColorCombination << 3) | // DEPRECATED
-        machine.screenDevice.timexScreenMode, // DEPRECATED
+        (machine.composedScreenDevice.timexPortValue & 0x3f),
       writeFn: (v) => {
-        machine.layer2Device.visible = !!(v & 0x80); // DEPRECATED
+        machine.composedScreenDevice.layer2Enabled = !!(v & 0x80); // DEPRECATED
         machine.memoryDevice.useShadowScreen = !!(v & 0x40);
-        machine.screenDevice.timexColorCombination = (v & 0x38) >> 3; // DEPRECATED
-        machine.screenDevice.timexScreenMode = v & 0x07; // DEPRECATED
-
-        machine.composedScreenDevice.layer2Enabled = !!(v & 0x80);
         machine.composedScreenDevice.timexPortValue = v & 0x3f;
       },
       slices: [
@@ -1563,7 +1557,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.composedScreenDevice.layer2Resolution << 4) |
         machine.composedScreenDevice.layer2PaletteOffset,
       writeFn: (v) => {
-        machine.layer2Device.nextReg70Value = v; // DEPRECATED
         machine.composedScreenDevice.layer2Resolution = (v >> 4) & 0x03;
         machine.composedScreenDevice.layer2PaletteOffset = v & 0x0f;
       },
@@ -1588,9 +1581,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x71,
       description: "Layer 2 X Scroll MSB",
-      readFn: () => (machine.layer2Device.scrollX & 0x100) >> 8,
+      readFn: () => (machine.composedScreenDevice.layer2ScrollX & 0x100) >> 8,
       writeFn: (v) =>
-        (machine.layer2Device.scrollX = ((v & 0x01) << 8) | (machine.layer2Device.scrollX & 0xff)),
+        (machine.composedScreenDevice.layer2ScrollX = ((v & 0x01) << 8) | (machine.composedScreenDevice.layer2ScrollX & 0xff)),
       slices: [
         {
           mask: 0x01,

@@ -449,7 +449,9 @@ export class MachineController implements IMachineController {
     this._machineTask = (async () => {
       this._cancelRequested = false;
       const nextFrameGap =
-        (this.machine.tactsInFrame / this.machine.baseClockFrequency) *
+        (this.machine.tactsInFrame /
+          this.machine.frameTactMultiplier /
+          this.machine.baseClockFrequency) *
         1000 *
         this.machine.uiFrameFrequency;
       let nextFrameTime = performance.now() + nextFrameGap;

@@ -268,7 +268,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * Indicates that the frame has just completed
    */
   get frameJustCompleted(): boolean {
-    return this._machineFrameRunner.frameCompleted;
+    return this.frameCompleted;
   }
 
   /**
@@ -283,6 +283,12 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * The number of consequtive frames after which the UI should be refreshed
    */
   readonly uiFrameFrequency: number = 1;
+
+  /**
+   * The frame tact multiplier CPU is bases on 3.5MHz clock,
+   * but the Next's video timing is based on 7MHz clock.
+   */
+  readonly frameTactMultiplier = 2;
 
   /**
    * Clean up machine resources on stop

@@ -494,6 +494,11 @@ export class Z80Cpu implements IZ80Cpu {
   tactsInCurrentFrame: number;
 
   /**
+   * Signs if the current frame has been completed
+   */
+  frameCompleted: boolean;
+
+  /**
    * Get the number of T-states in a machine frame.
    */
   get tactsInFrame(): number {
@@ -561,7 +566,6 @@ export class Z80Cpu implements IZ80Cpu {
     } else {
       this.stepOutAddress = -1;
     }
-    console.log("Step out address marked: " + this.stepOutAddress, this.stepOutStack);
   }
 
   /**
@@ -678,6 +682,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.opStartAddress = 0;
     this.frames = 0;
     this.frameTacts = 0;
+    this.frameCompleted = false;
     this.setTactsInFrame(1_000_000);
 
     this.lastMemoryReads = [];
@@ -720,6 +725,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.opStartAddress = 0;
     this.frames = 0;
     this.frameTacts = 0;
+    this.frameCompleted = false;
     this.setTactsInFrame(1_000_000);
 
     this._snoozed = false;
@@ -1730,6 +1736,7 @@ export class Z80Cpu implements IZ80Cpu {
     if (this.frameTacts >= this.tactsInCurrentFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInCurrentFrame;
+      this.frameCompleted = true;
     }
     this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
     this.onTactIncremented();

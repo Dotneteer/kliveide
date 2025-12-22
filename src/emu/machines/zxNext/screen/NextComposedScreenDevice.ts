@@ -122,6 +122,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   spritesEnableOverBorder: boolean;
   spritesEnabled: boolean;
 
+  // === Reg 0x16 - Layer 2 X Scroll LSB
+  layer2ScrollX: number;
+
+  // === Reg 0x17 - Layer 2 Y Scroll
+  layer2ScrollY: number;
+
+  // === Reg 0x18 - Layer 2 Clip Window
+  layer2ClipWindowX1: number;
+  layer2ClipWindowX2: number;
+  layer2ClipWindowY1: number;
+  layer2ClipWindowY2: number;
+  layer2ClipIndex: number;
+
   // === Reg 0x1A - Clip Window ULA/LoRes
   ulaClipWindowX1: number;
   ulaClipWindowX2: number;
@@ -417,6 +430,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaAttrByte2 = 0;
     this.ulaShiftReg = 0;
 
+    this.layer2ClipWindowX1 = 0;
+    this.layer2ClipWindowX2 = 159;
+    this.layer2ClipWindowY1 = 0;
+    this.layer2ClipWindowY2 = 255;
+    this.layer2ClipIndex = 0;
+    this.displayTiming = 0;
+    this.userLockOnDisplayTiming = false;
+    this.machineType = 0;
+    this.videoTimingMode = 0;
+
     // --- Initialize border color (use setter to update cache)
     this.borderColor = 7; // Default white border
 
@@ -457,6 +480,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     return this._pulseIntActive;
   }
 
+  getIntSignal(): boolean {
+    return this._pulseIntActive;
+  }
+
   /**
    * Get the current border color value
    */
@@ -483,6 +510,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this._borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this._borderColor);
   }
 
+  maxTacts: number;
+
   /**
    * Render the pixel pair belonging to the specified frame tact.
    * @param tact Frame tact to render
@@ -501,6 +530,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const tilemap80x32Resolution = this.tilemap80x32Resolution;
 
     // Check if interrupt signal is active (simple range check)
+    if (tact > this.maxTacts) {
+      this.maxTacts = tact;
+    }
+
     this._pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntEndTact;
 
     // === BLANKING CHECK ===
@@ -677,39 +710,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     return this._pixelBuffer;
   }
 
-  // --- Current paper colors
-  currentPaperColors: number[] = [];
-
-  // --- Current ink colors
-  currentInkColors: number[] = [];
-
-  /**
-   * Set the current colors from the palette.
-   * @param palette Palette to set the colors from
-   * @param _ulaNextEnabled ULA Next is enabled
-   * @param _ulaInkColorMask ULA ink color mask
-   */
-  setCurrentUlaColorsFromPalette(
-    palette: number[],
-    _ulaNextEnabled: boolean,
-    _ulaInkColorMask: number
-  ): void {
-    this.currentInkColors.length = 0x100;
-    this.currentPaperColors.length = 0x100;
-    for (let i = 0; i < 0x100; i++) {
-      const bright = !!(i & 0x40);
-      const ink = i & 0x07;
-      const paper = (i & 0x38) >> 3;
-      let color = zxNextRgb333Codes[palette[bright ? ink | 0x08 : ink]];
-      this.currentInkColors[i] =
-        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
-      color = zxNextRgb333Codes[palette[bright ? paper | 0x08 : paper]];
-      this.currentPaperColors[i] =
-        0xff000000 | ((color & 0xff) << 16) | (color & 0xff00) | ((color & 0xff0000) >> 16);
-    }
-    // TODO: Implement this method for ULA Next
-  }
-
   /**
    * Gets the buffer that stores the rendered pixels
    */
@@ -737,6 +737,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.confFirstVisibleHC = this.config.firstVisibleHC;
 
     this.renderingTacts = this.confTotalVC * this.confTotalHC;
+    this.machine.setTactsInFrame(this.renderingTacts);
 
     // --- Update all layer rendering flags references based on timing mode
     this._renderingFlagsULAStandard = is60Hz
@@ -862,6 +863,43 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set nextReg0x05Value(value: number) {
     this.is60HzMode = (value & 0x04) !== 0;
     this.scandoublerEnabled = (value & 0x01) !== 0;
+  }
+
+  /**
+   * Gets the clip window coordinate according to the current clip index
+   */
+  get nextReg0x18Value(): number {
+    switch (this.layer2ClipIndex) {
+      case 0:
+        return this.layer2ClipWindowX1;
+      case 1:
+        return this.layer2ClipWindowX2;
+      case 2:
+        return this.layer2ClipWindowY1;
+      default:
+        return this.layer2ClipWindowY2;
+    }
+  }
+
+  /**
+   * Sets the clip window cordinate according to the current clip index
+   */
+  set nextReg0x18Value(value: number) {
+    switch (this.layer2ClipIndex) {
+      case 0:
+        this.layer2ClipWindowX1 = value;
+        break;
+      case 1:
+        this.layer2ClipWindowX2 = value;
+        break;
+      case 2:
+        this.layer2ClipWindowY1 = value;
+        break;
+      default:
+        this.layer2ClipWindowY2 = value;
+        break;
+    }
+    this.layer2ClipIndex = (this.layer2ClipIndex + 1) & 0x03;
   }
 
   /**
