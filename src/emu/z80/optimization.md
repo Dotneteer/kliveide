@@ -329,10 +329,14 @@ JavaScript numbers are 64-bit floats; bitwise operations convert to 32-bit integ
 ## Recommendations Priority
 
 ### High Priority
-1. Optimize `tactPlusN` and related timing methods
-2. Reduce register getter/setter overhead via typed arrays
+1. ~~Optimize `tactPlusN` and related timing methods~~ **[TESTED - CAUSED REGRESSION]**
+2. ~~Reduce register getter/setter overhead via typed arrays~~ **[TESTED - NO GAIN]**
 3. Skip debug tracking when not debugging
 4. Optimize frame completion check
+
+**Note on #1**: The timing method optimizations were implemented but caused performance regression. The added branch complexity and code duplication likely interfered with JavaScript JIT optimization. The original simple delegation pattern performs better.
+
+**Note on #2**: TypedArray-based register implementation showed no performance improvement over simple number fields with bit operations. Modern JavaScript engines already optimize the getter/setter pattern effectively, and the overhead of array indexing likely negates any benefit from eliminating bit shifts.
 
 ### Medium Priority
 5. Flatten operation dispatch mechanism
