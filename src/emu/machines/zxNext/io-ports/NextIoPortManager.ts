@@ -509,20 +509,9 @@ export class NextIoPortManager {
   }
 
   readPort(port: number): number {
-    let useLogger = false;
-    if (!excluded.some((e) => (port & e.mask) === e.port)) {
-      console.log(
-        `R ${toHexa4(port)}: (${toHexa4(this.machine.pc)}, ${this.machine.memoryDevice.selectedRomLsb + this.machine.memoryDevice.selectedRomMsb})`
-      );
-      useLogger = true;
-    }
     const descriptor = this.portMap.get(port);
     if (!descriptor?.readerFns) {
       return 0xff;
-    }
-
-    if (useLogger) {
-      console.log(`  ${descriptor.description}`);
     }
 
     if (Array.isArray(descriptor.readerFns)) {

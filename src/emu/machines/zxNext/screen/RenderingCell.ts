@@ -5,9 +5,9 @@
 // ULA Standard Cell (8 flags)
 export const ULA_DISPLAY_AREA = 0b00000001;        // bit 0
 export const ULA_CONTENTION_WINDOW = 0b00000010;   // bit 1
-export const ULA_SCROLL_SAMPLE = 0b00000100;       // bit 2
-export const ULA_PIXEL_READ = 0b00001000;          // bit 3
-export const ULA_ATTR_READ = 0b00010000;           // bit 4
+export const ULA_NREG_SAMPLE = 0b00000100;       // bit 2
+export const ULA_BYTE1_READ = 0b00001000;          // bit 3
+export const ULA_BYTE2_READ = 0b00010000;           // bit 4
 export const ULA_SHIFT_REG_LOAD = 0b00100000;      // bit 5
 export const ULA_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
 export const ULA_BORDER_AREA = 0b10000000;         // bit 7

@@ -7,7 +7,7 @@ import { NextComposedScreenDevice } from "@emu/machines/zxNext/screen/NextCompos
 let m: TestZxNextMachine;
 let d: NextComposedScreenDevice;
 
-describe("Next - ULA rendering", function () {
+describe("ULA standard rendering", () => {
   beforeEach(async () => {
     m = await createTestNextMachine();
     d = m.composedScreenDevice;
@@ -359,8 +359,64 @@ describe("Next - ULA rendering", function () {
   }
 });
 
+describe("ULA HiRes rendering", () => {
+  beforeEach(async () => {
+    m = await createTestNextMachine();
+    d = m.composedScreenDevice;
+    initHiResScreenBytes(m, 0x00);
+    m.nextRegDevice.directSetRegValue(0x82, 0xff);
+    m.writePort(0xff, 0x06); // HiRes mode
+  });
+
+  it("Two bytes from column 0 are rendered properly", async () => {
+    // --- Arrange
+    const col = 0;
+    m.memoryDevice.writeScreenMemory(0, 0xff);
+    m.memoryDevice.writeScreenMemory(0x2000, 0xaa);
+
+    // --- Act
+    const buffer = d.renderFullScreen();
+
+    // --- Assert
+    expect(buffer).toBeDefined();
+
+    // --- Check magenta border
+    expect(getFirstBorderPixel(buffer)).toBe(0xffb6b6b6); // black border
+    const matchingBorderPixels = getMatchingBorderPixels(d.config, buffer, 0xffb6b6b6);
+    const borderPixelCount = getBorderPixelCount(d.config);
+    expect(matchingBorderPixels).toBe(borderPixelCount);
+
+    // --- Check paper white/ink black display
+    const startPx = col * 8 * 2;
+    expect(getDisplayPixel(d.config, buffer, startPx + 0, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 1, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 2, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 3, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 4, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 5, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 6, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 7, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 8, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 9, 0)).toBe(0xffb6b6b6); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 10, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 11, 0)).toBe(0xffb6b6b6); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 12, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 13, 0)).toBe(0xffb6b6b6); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 14, 0)).toBe(0xff000000); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 15, 0)).toBe(0xffb6b6b6); // ink
+    expect(getMatchingDisplayPixels(d.config, buffer, 0xff000000)).toBe(12);
+    expect(getMatchingDisplayPixels(d.config, buffer, 0xffb6b6b6)).toBe(getDisplayPixelCount(d.config) - 12);
+  });
+});
+
 function initScreenBytes(machine: IZxNextMachine, byte: number) {
   for (let addr = 0; addr < 0x1800; addr++) {
+    machine.memoryDevice.writeScreenMemory(addr, byte);
+  }
+}
+
+function initHiResScreenBytes(machine: IZxNextMachine, byte: number) {
+  for (let addr = 0; addr < 0x3fff; addr++) {
     machine.memoryDevice.writeScreenMemory(addr, byte);
   }
 }

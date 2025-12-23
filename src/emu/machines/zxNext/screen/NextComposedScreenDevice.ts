@@ -1,18 +1,15 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import {
-  LayerOutput,
-  ULAStandardCell,
-  ULAStandardMatrix,
-  ULA_DISPLAY_AREA,
-  ULA_SCROLL_SAMPLE,
-  ULA_PIXEL_READ,
-  ULA_ATTR_READ,
-  ULA_SHIFT_REG_LOAD,
-  ULA_FLOATING_BUS_UPDATE
-} from "./RenderingCell";
+import { LayerOutput, ULAStandardMatrix } from "./RenderingCell";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
-import { generateULAHiColorCell, generateULAHiResCell, generateULAStandardCell } from "./UlaMatrix";
+import {
+  generateULARenderingFlag,
+  renderULAStandardPixel,
+  IPixelRenderingState,
+  renderULAHiResPixel,
+  renderULAHiColorPixel,
+  sampleNextRegistersForUlaMode
+} from "./UlaMatrix";
 import {
   generateLayer2_256x192Cell,
   generateLayer2_320x256Cell,
@@ -64,7 +61,9 @@ const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
  * for both timing modes (50Hz and 60Hz). The machine operates on a tact-by-tact basis,
  * where each tact corresponds to one CLK_7 cycle at a specific (VC, HC) position.
  */
-export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> {
+export class NextComposedScreenDevice
+  implements IGenericDevice<IZxNextMachine>, IPixelRenderingState
+{
   // Current timing configuration (50Hz or 60Hz)
   config: TimingConfig;
 
@@ -87,7 +86,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // Flash counter (0-31, cycles ~16 frames per state)
   private _flashCounter: number = 0;
-  private _flashFlag: boolean = false;
+  flashFlag: boolean = false;
 
   // ZX Next register flags
   // === Reg 0x03 - Machine type and display timing
@@ -116,6 +115,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // === Reg 0x15 - LoRes mode (128x48 or 128x96)
   loResEnabled: boolean;
+  loResEnabledSampled: boolean;
   sprites0OnTop: boolean;
   spritesEnableClipping: boolean;
   layerPriority: number;
@@ -158,6 +158,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // === Reg 0x68 - ULA Control
   // When true, ULA output is disabled (ULA layer goes transparent)
   disableUlaOutput: boolean;
+  disableUlaOutputSampled: boolean;
   // Blending in SLU modes 6 & 7
   // 00 = For ULA as blend color
   // 01 = For no blending
@@ -189,7 +190,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // === Standard 0xFE port border value
   private _borderColor: number;
-  private _borderRgbCache: number;
+  borderRgbCache: number;
 
   // === Timex port (0xff) ULA flags
   // The last 6 bit of the Timex port
@@ -199,6 +200,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Is in ULA HiRes mode? true = HiRes mode, 512×192 monochrome, even columns
   // at 0x4000, odd at 0x6000
   ulaHiResMode: boolean;
+  ulaHiResModeSampled: boolean;
 
   // In ULA HiRes mode,specify the ink color with paper being the contrasting color:
   // 0 = black ink on white paper
@@ -210,10 +212,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // 6 = yellow ink on blue paper
   // 7 = white ink on black paper
   ulaHiResColor: number;
+  ulaHiResColorSampled: number;
 
   // Is in ULA HiColor mode? true = HiColor mode, 256×192 pixels at 0x4000,
   // 32×192 attributes at 0x6000
   ulaHiColorMode: boolean;
+  ulaHiColorModeSampled: boolean;
 
   // === Layer 2 port (0x123b) flags
   layer2Enabled: boolean;
@@ -223,17 +227,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   layer2EnableMappingForWrites: boolean;
 
   // Rendering flags for all layers and modes
-  private _renderingFlagsULAStandard: ULAStandardMatrix;
-  private _renderingFlagsULAStandard50Hz: ULAStandardMatrix;
-  private _renderingFlagsULAStandard60Hz: ULAStandardMatrix;
-
-  private _renderingFlagsULAHiRes: Uint16Array;
-  private _renderingFlagsULAHiRes50Hz: Uint16Array;
-  private _renderingFlagsULAHiRes60Hz: Uint16Array;
-
-  private _renderingFlagsULAHiColor: Uint16Array;
-  private _renderingFlagsULAHiColor50Hz: Uint16Array;
-  private _renderingFlagsULAHiColor60Hz: Uint16Array;
+  private _renderingFlagsULA: ULAStandardMatrix;
+  private _renderingFlagsULA50Hz: ULAStandardMatrix;
+  private _renderingFlagsULA60Hz: ULAStandardMatrix;
 
   private _renderingFlagsLayer2_256x192: Uint16Array;
   private _renderingFlagsLayer2_256x192_50Hz: Uint16Array;
@@ -283,14 +279,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
   // Pre-calculated ULA address lookup tables (192 entries for Y coordinates 0-191)
   // Stores base addresses before X coordinate is added
-  private _ulaPixelLineBaseAddr: Uint16Array; // Pixel base address for each Y
-  private _ulaAttrLineBaseAddr: Uint16Array; // Attribute base address for each Y
+  ulaPixelLineBaseAddr: Uint16Array; // Pixel base address for each Y
+  ulaAttrLineBaseAddr: Uint16Array; // Attribute base address for each Y
 
   // ULA rendering state
-  ulaScrolledX: number;
-  ulaScrolledY: number;
+  ulaScrollXSampled: number;
+  ulaScrollYSampled: number;
   ulaPixelByte1: number;
   ulaPixelByte2: number;
+  ulaPixelByte3: number;
+  ulaPixelByte4: number;
   floatingBusValue: number;
   ulaAttrByte1: number;
   ulaAttrByte2: number;
@@ -298,6 +296,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   ulaShiftAttr: number;
   ulaShiftAttr2: number;
   ulaShiftAttrCount: number;
+
+  // ULA Hi-Res rendering state
+  ulaHiResInkRgb333: number;
+  ulaHiResPaperRgb333: number;
 
   // Pre-calculated attribute decode lookup tables (256 entries for all attribute byte values)
   // Two sets: one for flash off, one for flash on
@@ -308,8 +310,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private _attrToPaperFlashOn: Uint8Array; // [attr] -> paper palette index (0-15) with flash swap
 
   // Active lookup tables (switch based on _flashFlag)
-  private _activeAttrToInk: Uint8Array;
-  private _activeAttrToPaper: Uint8Array;
+  activeAttrToInk: Uint8Array;
+  activeAttrToPaper: Uint8Array;
 
   constructor(public readonly machine: IZxNextMachine) {
     // Screen dimensions
@@ -318,8 +320,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Initialize ULA address lookup tables (192 Y coordinates)
     // Pre-calculate the Y-dependent part of pixel and attribute addresses
-    this._ulaPixelLineBaseAddr = new Uint16Array(192);
-    this._ulaAttrLineBaseAddr = new Uint16Array(192);
+    this.ulaPixelLineBaseAddr = new Uint16Array(192);
+    this.ulaAttrLineBaseAddr = new Uint16Array(192);
 
     for (let y = 0; y < 192; y++) {
       // Pixel address calculation: y[7:6] | y[2:0] | y[5:3] | x[7:3]
@@ -327,12 +329,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const y76 = (y >> 6) & 0x03; // Bits 7-6: thirds (0-2)
       const y20 = y & 0x07; // Bits 2-0: scan line within char (0-7)
       const y53 = (y >> 3) & 0x07; // Bits 5-3: char row (0-23)
-      this._ulaPixelLineBaseAddr[y] = (y76 << 11) | (y20 << 8) | (y53 << 5);
+      this.ulaPixelLineBaseAddr[y] = (y76 << 11) | (y20 << 8) | (y53 << 5);
 
       // Attribute address calculation: 0x1800 + (y/8)*32 + x/8
       // Pre-calculate 0x1800 + (y/8)*32
       const attrY = y >> 3; // Character row (0-23)
-      this._ulaAttrLineBaseAddr[y] = 0x1800 + (attrY << 5);
+      this.ulaAttrLineBaseAddr[y] = 0x1800 + (attrY << 5);
     }
 
     // Generate attribute decode lookup tables (256 entries for all attribute byte values)
@@ -370,16 +372,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Initialize active lookup tables
-    this._activeAttrToInk = this._attrToInkFlashOff;
-    this._activeAttrToPaper = this._attrToPaperFlashOff;
+    this.activeAttrToInk = this._attrToInkFlashOff;
+    this.activeAttrToPaper = this._attrToPaperFlashOff;
 
     // Generate rendering flags for all layers and modes
-    this._renderingFlagsULAStandard50Hz = this.generateULAStandardRenderingFlags(Plus3_50Hz);
-    this._renderingFlagsULAStandard60Hz = this.generateULAStandardRenderingFlags(Plus3_60Hz);
-    this._renderingFlagsULAHiRes50Hz = this.generateULAHiResRenderingFlags(Plus3_50Hz);
-    this._renderingFlagsULAHiRes60Hz = this.generateULAHiResRenderingFlags(Plus3_60Hz);
-    this._renderingFlagsULAHiColor50Hz = this.generateULAHiColorRenderingFlags(Plus3_50Hz);
-    this._renderingFlagsULAHiColor60Hz = this.generateULAHiColorRenderingFlags(Plus3_60Hz);
+    this._renderingFlagsULA50Hz = this.generateULAStandardRenderingFlags(Plus3_50Hz);
+    this._renderingFlagsULA60Hz = this.generateULAStandardRenderingFlags(Plus3_60Hz);
     this._renderingFlagsLayer2_256x192_50Hz = this.generateLayer2_256x192RenderingFlags(Plus3_50Hz);
     this._renderingFlagsLayer2_256x192_60Hz = this.generateLayer2_256x192RenderingFlags(Plus3_60Hz);
     this._renderingFlagsLayer2_320x256_50Hz = this.generateLayer2_320x256RenderingFlags(Plus3_50Hz);
@@ -421,14 +419,23 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaClipWindowY2 = 191;
     this.ulaScrollX = 0;
     this.ulaScrollY = 0;
-    this.ulaScrolledX = 0;
-    this.ulaScrolledY = 0;
+    this.ulaScrollXSampled = 0;
+    this.ulaScrollYSampled = 0;
     this.ulaPixelByte1 = 0;
     this.ulaPixelByte2 = 0;
     this.floatingBusValue = 0;
     this.ulaAttrByte1 = 0;
     this.ulaAttrByte2 = 0;
     this.ulaShiftReg = 0;
+
+    this.timexPortBits = 0;
+    this.standardScreenAt0x4000 = true;
+    this.ulaHiResMode = false;
+    this.ulaHiResModeSampled = false;
+    this.ulaHiResColor = 0;
+    this.ulaHiResColorSampled = 0;
+    this.ulaHiColorMode = false;
+    this.ulaHiColorModeSampled = false;
 
     this.layer2ClipWindowX1 = 0;
     this.layer2ClipWindowX2 = 159;
@@ -497,7 +504,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   set borderColor(value: number) {
     this._borderColor = value;
-    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb333(value);
+    this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(value);
   }
 
   /**
@@ -507,7 +514,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * - Active palette switches (first <-> second)
    */
   updateBorderRgbCache(): void {
-    this._borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this._borderColor);
+    this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this._borderColor);
   }
 
   maxTacts: number;
@@ -517,18 +524,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param tact Frame tact to render
    */
   renderTact(tact: number): boolean {
-    // === LOCAL VARIABLE HOISTING (Performance Optimization) ===
-    // Cache frequently accessed properties to reduce property dereferencing overhead
-    const loResEnabled = this.loResEnabled;
-    const disableUlaOutput = this.disableUlaOutput;
-    const ulaHiResMode = this.ulaHiResMode;
-    const ulaHiColorMode = this.ulaHiColorMode;
-    const layer2Enabled = this.layer2Enabled;
-    const layer2Resolution = this.layer2Resolution;
-    const spritesEnabled = this.spritesEnabled;
-    const tilemapEnabled = this.tilemapEnabled;
-    const tilemap80x32Resolution = this.tilemap80x32Resolution;
-
     // Check if interrupt signal is active (simple range check)
     if (tact > this.maxTacts) {
       this.maxTacts = tact;
@@ -541,7 +536,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // We can use _renderingFlagsULAStandard as the blanking mask for all layers.
     // If the cell is 0 in this flags array, it's 0 in all other flags arrays (blanking region).
     // Since totalHC == RENDERING_FLAGS_HC_COUNT, tact directly equals the 1D array index.
-    if (this._renderingFlagsULAStandard[tact] === 0) {
+    if (this._renderingFlagsULA[tact] === 0) {
       return false; // Skip blanking tact - no visible content in any layer
     }
 
@@ -554,29 +549,30 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let ulaOutput1: LayerOutput | null = null;
     let ulaOutput2: LayerOutput | null = null;
 
-    if (loResEnabled) {
+    if (this.loResEnabledSampled) {
       // LoRes mode (128×96, replaces ULA output)
       const loresCell = this._renderingFlagsLoRes[tact];
       ulaOutput1 = this.renderLoResPixel(vc, hc, loresCell);
       ulaOutput2 = ulaOutput1; // Standard resolution base (4x replication handled by caller)
-    } else if (!disableUlaOutput) {
-      if (ulaHiResMode || ulaHiColorMode) {
+    } else if (!this.disableUlaOutputSampled) {
+      if (this.ulaHiResModeSampled || this.ulaHiColorModeSampled) {
         // ULA Hi-Res and Hi-Color modes
-        if (ulaHiResMode) {
+        if (this.ulaHiResModeSampled) {
           // ULA Hi-Res mode (512×192, 2 pixels per HC)
-          const ulaCell = this._renderingFlagsULAHiRes[tact];
-          ulaOutput1 = this.renderULAHiResPixel(vc, hc, ulaCell, 0);
-          ulaOutput2 = this.renderULAHiResPixel(vc, hc, ulaCell, 1);
+          const ulaCell = this._renderingFlagsULA[tact];
+          const out = renderULAHiResPixel(this, vc, hc, ulaCell);
+          ulaOutput1 = out[0];
+          ulaOutput2 = out[1];
         } else {
           // ULA Hi-Color mode (256×192)
-          const ulaCell = this._renderingFlagsULAHiColor[tact];
-          ulaOutput1 = this.renderULAHiColorPixel(vc, hc, ulaCell);
+          const ulaCell = this._renderingFlagsULA[tact];
+          ulaOutput1 = renderULAHiColorPixel(this, vc, hc, ulaCell);
           ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
         }
       } else {
         // ULA Standard mode (256×192)
-        const ulaCell = this._renderingFlagsULAStandard[tact];
-        ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
+        const ulaCell = this._renderingFlagsULA[tact];
+        ulaOutput1 = renderULAStandardPixel(this, vc, hc, ulaCell);
         ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
       }
     }
@@ -585,18 +581,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let layer2Output1: LayerOutput | null = null;
     let layer2Output2: LayerOutput | null = null;
 
-    if (layer2Enabled) {
-      if (layer2Resolution === 0) {
+    if (this.layer2Enabled) {
+      if (this.layer2Resolution === 0) {
         // Layer 2 256×192 mode
         const layer2Cell = this._renderingFlagsLayer2_256x192[tact];
         layer2Output1 = this.renderLayer2_256x192Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
-      } else if (layer2Resolution === 1) {
+      } else if (this.layer2Resolution === 1) {
         // Layer 2 320×256 mode
         const layer2Cell = this._renderingFlagsLayer2_320x256[tact];
         layer2Output1 = this.renderLayer2_320x256Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
-      } else if (layer2Resolution === 2) {
+      } else if (this.layer2Resolution === 2) {
         // Layer 2 640×256 mode (Hi-Res, 2 pixels per HC)
         const layer2Cell = this._renderingFlagsLayer2_640x256[tact];
         layer2Output1 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 0);
@@ -608,7 +604,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let spritesOutput1: LayerOutput | null = null;
     let spritesOutput2: LayerOutput | null = null;
 
-    if (spritesEnabled) {
+    if (this.spritesEnabled) {
       const spritesCell = this._renderingFlagsSprites[tact];
       spritesOutput1 = this.renderSpritesPixel(vc, hc, spritesCell);
       spritesOutput2 = spritesOutput1; // Standard resolution: duplicate pixel
@@ -618,8 +614,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let tilemapOutput1: LayerOutput | null = null;
     let tilemapOutput2: LayerOutput | null = null;
 
-    if (tilemapEnabled) {
-      if (tilemap80x32Resolution) {
+    if (this.tilemapEnabled) {
+      if (this.tilemap80x32Resolution) {
         // Tilemap 80×32 mode (Hi-Res, 2 pixels per HC)
         const tilemapCell = this._renderingFlagsTilemap_80x32[tact];
         tilemapOutput1 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 0);
@@ -644,7 +640,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // For now, using simplified approach (incomplete implementation)
 
     // Merge tilemap into ULA if both enabled (simplified version)
-    if (tilemapEnabled && tilemapOutput1) {
+    if (this.tilemapEnabled && tilemapOutput1) {
       if (ulaOutput1 && !ulaOutput1.transparent && !tilemapOutput1.transparent) {
         // Both non-transparent: apply tm_pixel_below logic
         // TODO: Read tm_pixel_below from tilemap attributes
@@ -657,7 +653,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // If only ULA non-transparent, keep ulaOutput1 as-is
     }
 
-    if (tilemapEnabled && tilemapOutput2) {
+    if (this.tilemapEnabled && tilemapOutput2) {
       if (ulaOutput2 && !ulaOutput2.transparent && !tilemapOutput2.transparent) {
         ulaOutput2 = tilemapOutput2;
       } else if (!tilemapOutput2.transparent) {
@@ -704,6 +700,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   renderFullScreen(): Uint32Array {
     this.onNewFrame();
+    sampleNextRegistersForUlaMode(this);
     for (let tact = 0; tact < this.renderingTacts; tact++) {
       this.renderTact(tact);
     }
@@ -740,15 +737,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.machine.setTactsInFrame(this.renderingTacts);
 
     // --- Update all layer rendering flags references based on timing mode
-    this._renderingFlagsULAStandard = is60Hz
-      ? this._renderingFlagsULAStandard60Hz
-      : this._renderingFlagsULAStandard50Hz;
-    this._renderingFlagsULAHiRes = is60Hz
-      ? this._renderingFlagsULAHiRes60Hz
-      : this._renderingFlagsULAHiRes50Hz;
-    this._renderingFlagsULAHiColor = is60Hz
-      ? this._renderingFlagsULAHiColor60Hz
-      : this._renderingFlagsULAHiColor50Hz;
+    this._renderingFlagsULA = is60Hz ? this._renderingFlagsULA60Hz : this._renderingFlagsULA50Hz;
     this._renderingFlagsLayer2_256x192 = is60Hz
       ? this._renderingFlagsLayer2_256x192_60Hz
       : this._renderingFlagsLayer2_256x192_50Hz;
@@ -783,14 +772,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const newFlashFlag = this._flashCounter >= 16;
 
     // Switch active attribute lookup tables when flash state changes
-    if (newFlashFlag !== this._flashFlag) {
-      this._flashFlag = newFlashFlag;
-      if (this._flashFlag) {
-        this._activeAttrToInk = this._attrToInkFlashOn;
-        this._activeAttrToPaper = this._attrToPaperFlashOn;
+    if (newFlashFlag !== this.flashFlag) {
+      this.flashFlag = newFlashFlag;
+      if (this.flashFlag) {
+        this.activeAttrToInk = this._attrToInkFlashOn;
+        this.activeAttrToPaper = this._attrToPaperFlashOn;
       } else {
-        this._activeAttrToInk = this._attrToInkFlashOff;
-        this._activeAttrToPaper = this._attrToPaperFlashOff;
+        this.activeAttrToInk = this._attrToInkFlashOff;
+        this.activeAttrToPaper = this._attrToPaperFlashOff;
       }
     }
 
@@ -804,8 +793,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // ==============================================================================================
   // Port updates
   set timexPortValue(value: number) {
+    console.log(`TIMEX port set to ${value.toString(16).padStart(2, "0")}`);
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
+    this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);
+    this.ulaHiResPaperRgb333 = this.machine.paletteDevice.getUlaRgb333(7 - this.ulaHiResColor);
     const mode = value & 0x07;
     switch (mode) {
       case 0:
@@ -1032,37 +1024,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     for (let vc = 0; vc < vcCount; vc++) {
       for (let hc = 0; hc < hcCount; hc++) {
         const index = vc * hcCount + hc;
-        renderingFlags[index] = generateULAStandardCell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateULAHiResRenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateULAHiResCell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateULAHiColorRenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateULAHiColorCell(config, vc, hc);
+        renderingFlags[index] = generateULARenderingFlag(config, vc, hc);
       }
     }
 
@@ -1197,196 +1159,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
-   * Render ULA Standard pixel for the current tact position (Stage 1: Pixel Generation).
-   *
-   * This method executes Stage 1 of the rendering pipeline as described in Section 1.
-   * It generates the ULA pixel color and flags but does NOT write to the bitmap.
-   * The returned output will be combined with other layers in the composition stage.
-   *
-   * Activities performed:
-   * - Scroll register sampling (at HC subcycles 0x3, 0xB)
-   * - VRAM pixel/attribute reads (at specific HC subcycles)
-   * - Shift register operations
-   * - Pixel generation from shift register
-   * - Palette lookup (RGB output)
-   * - Clipping test
-   * - Transparency determination
-   * - Contention and floating bus simulation
-   *
-   * @param vc - Vertical counter position
-   * @param hc - Horizontal counter position
-   * @param cell - ULA Standard rendering cell flags (Uint16 bit flags)
-   * @returns Layer output (RGB + flags) for composition stage
-   */
-  private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): LayerOutput {
-    // === Display Area: ULA Standard Rendering ===
-    // --- Scroll Sampling ---
-    if ((cell & ULA_SCROLL_SAMPLE) !== 0) {
-      // Sample hardware scroll registers at specific HC subcycle positions (0x3, 0xB)
-      // This happens at HC[3:0] = 0x3 or 0xB (falling edge of CLK_7 in hardware)
-      this.ulaScrolledX = this.ulaScrollX;
-      this.ulaScrolledY = vc - this.confDisplayYStart + this.ulaScrollY;
-      if (this.ulaScrolledY >= 0xc0) {
-        this.ulaScrolledY -= 0xc0; // Wrap Y at 192 for vertical scrolling
-      }
-    }
-
-    // --- Shift Register Load ---
-    if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
-      // Load pixel and attribute data into shift register
-      // This prepares the next 8 pixels for output
-      this.ulaShiftReg =
-        ((((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrolledX & 0x07)) >> 8) &
-        0xff;
-      this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
-      this.ulaShiftAttr2 = this.ulaAttrByte2; // Load attribute byte 2
-      this.ulaShiftAttrCount = 8 - (this.ulaScrolledX & 0x07); // Reset attribute shift counter
-    }
-
-    // // --- Memory Read Activities ---
-    if ((cell & ULA_PIXEL_READ) !== 0) {
-      // Calculate pixel address using pre-computed Y-dependent base + X component
-      // Full address: y[7:6] | y[2:0] | y[5:3] | x[7:3]
-      // Base (Y part) already computed in _ulaPixelLineBaseAddr[this.ulaScrolledY]
-      // X part: ulaScrolledX[7:3] gives byte column (0-31)
-      const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
-      const shiftCols = (baseCol + (this.ulaScrolledX >> 3)) & 0x1f;
-      const pixelAddr = this._ulaPixelLineBaseAddr[this.ulaScrolledY] | shiftCols;
-      // Read pixel byte from Bank 5 or Bank 7
-      const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
-      if (hc & 0x04) {
-        this.ulaPixelByte2 = pixelByte;
-      } else {
-        this.ulaPixelByte1 = pixelByte;
-      }
-
-      // Update floating bus with pixel data
-      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
-        this.floatingBusValue = pixelByte;
-      }
-    }
-
-    if ((cell & ULA_ATTR_READ) !== 0) {
-      // Calculate attribute address using pre-computed Y-dependent base + X component
-      // Full address: 0x1800 + (scrolledY / 8) * 32 + (scrolledX / 8)
-      // Base (Y part) already computed in _ulaAttrLineBaseAddr[scrolledY]
-      // X part: scrolledX[7:3] gives character column (0-31)
-      const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
-      const shiftCols = (baseCol + (this.ulaScrolledX >> 3)) & 0x1f;
-      const attrAddr = this._ulaAttrLineBaseAddr[this.ulaScrolledY] | shiftCols;
-
-      // Read attribute byte from Bank 5 or Bank 7
-      const ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
-      if (hc & 0x04) {
-        this.ulaAttrByte2 = ulaAttrByte;
-      } else {
-        this.ulaAttrByte1 = ulaAttrByte;
-      }
-
-      // Update floating bus with attribute data
-      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
-        this.floatingBusValue = ulaAttrByte;
-      }
-    }
-
-    // --- Contention Simulation ---
-    // if (cell.contentionWindow && this.contentionEnabled) {
-    //   // Delay CPU memory access by one cycle (simulation only)
-    //   // In real hardware, this delays Z80 access to contended RAM ($4000-$7FFF)
-    //   // This would be handled by the CPU emulation module
-    //   this.signalMemoryContention();
-    // }
-
-    // === Border Area ===
-    if ((cell & ULA_DISPLAY_AREA) === 0) {
-      // Use cached border RGB value (updated when borderColor changes)
-      // This eliminates method call overhead for ~30% of pixels
-      return {
-        rgb333: this._borderRgbCache,
-        transparent: false,
-        clipped: false
-      };
-    }
-
-    // // --- Pixel Generation ---
-    // Generate pixel from shift register (happens every HC position)
-    // Extract current pixel bit from shift register
-    const displayHC = hc - this.confDisplayXStart;
-    const displayVC = vc - this.confDisplayYStart;
-    const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
-    const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
-
-    // Use pre-calculated lookup tables with BRIGHT already applied
-    // Direct palette index lookup (0-15) - no bit operations needed
-    const paletteIndex = pixelBit
-      ? this._activeAttrToInk[this.ulaShiftAttr]
-      : this._activeAttrToPaper[this.ulaShiftAttr];
-
-    this.ulaShiftAttrCount--;
-    if (this.ulaShiftAttrCount === 0) {
-      this.ulaShiftAttrCount = 8;
-      this.ulaShiftAttr = this.ulaShiftAttr2; // Load attribute byte 2
-    }
-
-    // Lookup color in ULA palette (16 entries for standard + bright colors)
-    const pixelRGB = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
-
-    // --- Clipping Test ---
-    // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
-    const clipped =
-      displayHC < this.ulaClipWindowX1 ||
-      displayHC > this.ulaClipWindowX2 ||
-      displayVC < this.ulaClipWindowY1 ||
-      displayVC > this.ulaClipWindowY2;
-
-    // --- Transparency Check ---
-    const transparent = pixelRGB >> 1 === this.globalTransparencyColor;
-
-    // Return layer output for composition stage
-    return {
-      rgb333: pixelRGB,
-      transparent: transparent || clipped, // Treat clipped pixels as transparent
-      clipped: clipped
-    };
-  }
-
-  /**
-   * Render ULA Hi-Res mode pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
-   * @param _pixelIndex - Which pixel of the pair (0 or 1)
-   */
-  private renderULAHiResPixel(
-    _vc: number,
-    _hc: number,
-    _cell: number,
-    _pixelIndex: number
-  ): LayerOutput {
-    // TODO: Implementation to be documented in a future section
-    return {
-      rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
-    };
-  }
-
-  /**
-   * Render ULA Hi-Color mode pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
-   */
-  private renderULAHiColorPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
-    // TODO: Implementation to be documented in a future section
-    return {
-      rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
-    };
-  }
-
-  /**
    * Render Layer 2 256×192 mode pixel (Stage 1).
    * @param _vc - Vertical counter position
    * @param _hc - Horizontal counter position
@@ -1505,14 +1277,52 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
-   * Compose a single pixel from layer outputs.
+   * Compose final pixel from layer outputs (Stage 2: Layer Composition).
    *
-   * Helper method that performs the composition logic for one pixel.
-   * Evaluates priority, transparency, and fallback color to select the final RGB value,
-   * then converts it to RGBA format for the bitmap.
+   * This method implements the layer composition logic as described in Section 4 of
+   * the screen_rendering.md document. It combines up to three active layer outputs
+   * (ULA, Layer 2, Sprites) into a single final RGB pixel based on priority settings,
+   * transparency, and blend modes.
    *
-   * @param layerOutputs - Fixed 5-layer tuple [ULA, Layer2, Sprites, Tilemap, LoRes]
-   * @returns RGBA pixel value (format: 0xAABBGGRR)
+   * **Process Flow** (based on VHDL analysis from zxnext.vhd lines 7040-7310):
+   *
+   * 1. **Pre-Composition Processing**:
+   *    - ULA/Tilemap/LoRes transparency resolution (color comparison + clipped flag)
+   *    - Stencil mode: Bitwise AND of ULA and Tilemap when both enabled
+   *    - Blend mode setup: Prepare ULA/Tilemap mix layers for priority evaluation
+   *
+   * 2. **Priority Evaluation** (NextReg 0x15 bits [4:2]):
+   *    Six standard priority modes (SLU, LSU, SUL, LUS, USL, ULS):
+   *    - Evaluate layers in configured order
+   *    - Layer 2 priority bit can override order (forces Layer 2 on top)
+   *    - Select first non-transparent layer
+   *    - Special case: ULA border doesn't cover sprites if tilemap transparent
+   *
+   * 3. **Color Mixing Modes** (NextReg 0x68 bits [7:6], modes 110 and 111):
+   *    - Mode 110: Add Layer 2 and ULA/Tilemap blend, saturate at 7
+   *    - Mode 111: Add Layer 2 and ULA/Tilemap blend, subtract 5 (darken), clamp 0-7
+   *    - Mixed result used if Layer 2 has priority bit OR is only opaque layer
+   *
+   * 4. **Fallback Color**:
+   *    - If all layers transparent: Use fallback/backdrop color (NextReg 0x4A)
+   *    - Fallback looked up in ULA palette, expanded from 8 to 9 bits
+   *
+   * **Implementation Notes**:
+   * - Clock domain: CLK_14 (14 MHz)
+   * - Type: Purely combinational logic (no state between pixels)
+   * - Latency: 0 additional cycles beyond palette lookup
+   * - Total pipeline: ~3 CLK_14 cycles from counter to final RGB
+   *
+   * **Layer 2 Priority Bit**:
+   * Layer 2 pixels carry extra priority bit (9th bit from palette):
+   * - When set: Layer 2 overrides all priority rules (appears on top)
+   * - In blend modes: Affects whether blend result is used
+   * - Cleared when Layer 2 pixel is transparent
+   *
+   * @param ulaOutput - ULA layer output (RGB + transparency + clipped flags)
+   * @param layer2Output - Layer 2 output (RGB + transparency + priority bit)
+   * @param spritesOutput - Sprites output (RGB + transparency flags)
+   * @returns Final RGBA pixel value (format: 0xAABBGGRR)
    */
   private composeSinglePixel(
     ulaOutput: LayerOutput,
@@ -1523,15 +1333,20 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let selectedOutput: LayerOutput | null = null;
     // === Layer 2 Priority Override ===
     // If Layer 2 priority bit is set, it renders on top regardless of priority setting
-    if (layer2Output && layer2Output.priority && !layer2Output.transparent) {
+    if (
+      layer2Output &&
+      layer2Output.priority &&
+      !layer2Output.transparent &&
+      !layer2Output.clipped
+    ) {
       selectedOutput = layer2Output;
     } else {
-      // Select first non-transparent, non-null layer in priority order
+      // Select first non-transparent, non-clipped layer in priority order
       switch (this.layerPriority) {
         case 0: // SLU
-          if (spritesOutput && !spritesOutput.transparent) {
+          if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
-          } else if (layer2Output && !layer2Output.transparent) {
+          } else if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
           } else {
             selectedOutput = ulaOutput;
@@ -1539,9 +1354,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           break;
 
         case 1: // LSU
-          if (layer2Output && !layer2Output.transparent) {
+          if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
-          } else if (spritesOutput && !spritesOutput.transparent) {
+          } else if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
           } else {
             selectedOutput = ulaOutput;
@@ -1549,9 +1364,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           break;
 
         case 2: // SUL
-          if (spritesOutput && !spritesOutput.transparent) {
+          if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
-          } else if (ulaOutput && !ulaOutput.transparent) {
+          } else if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
           } else {
             selectedOutput = layer2Output;
@@ -1559,9 +1374,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           break;
 
         case 3: // LUS
-          if (layer2Output && !layer2Output.transparent) {
+          if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
-          } else if (ulaOutput && !ulaOutput.transparent) {
+          } else if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
           } else {
             selectedOutput = spritesOutput;
@@ -1569,9 +1384,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           break;
 
         case 4: // USL
-          if (ulaOutput && !ulaOutput.transparent) {
+          if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
-          } else if (spritesOutput && !spritesOutput.transparent) {
+          } else if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
           } else {
             selectedOutput = layer2Output;
@@ -1579,9 +1394,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           break;
 
         default:
-          if (ulaOutput && !ulaOutput.transparent) {
+          if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
-          } else if (layer2Output && !layer2Output.transparent) {
+          } else if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
           } else {
             selectedOutput = spritesOutput;
@@ -1592,8 +1407,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === Fallback/Backdrop Color ===
     let finalRGB333: number;
-    if (selectedOutput === null) {
-      // All layers transparent: use fallback color (NextReg 0x4A)
+    // If selected output is null, transparent, or clipped, use fallback color
+    if (selectedOutput === null || selectedOutput.transparent || selectedOutput.clipped) {
+      // All layers transparent/clipped: use fallback color (NextReg 0x4A)
       // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
       const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
       finalRGB333 = (this.fallbackColor << 1) | blueLSB;
