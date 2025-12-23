@@ -243,26 +243,6 @@ export function generateULARenderingFlag(
 }
 
 /**
- * Samples Next registers for ULA mode.
- * @param device Device context implementing IUlaStandardPixelRenderingState
- */
-export function sampleNextRegistersForUlaMode(device: IPixelRenderingState): void {
-  // --- Scroll
-  device.ulaScrollXSampled = device.ulaScrollX;
-  device.ulaScrollYSampled = device.ulaScrollY;
-
-  // --- ULA Standard mode
-  device.disableUlaOutputSampled = device.disableUlaOutput;
-
-  // --- ULA Hi-Res mode
-  device.ulaHiResModeSampled = device.ulaHiResMode;
-  device.ulaHiResColorSampled = device.ulaHiResColor;
-
-  // --- Lo-Res mode
-  device.loResEnabledSampled = device.loResEnabled;
-}
-
-/**
  * Render ULA Standard pixel for the current tact position (Stage 1: Pixel Generation).
  *
  * This function executes Stage 1 of the rendering pipeline as described in Section 1.
@@ -284,7 +264,6 @@ export function renderULAStandardPixel(
   // === Display Area: ULA Standard Rendering ===
   // --- Scroll Sampling ---
   if ((cell & ULA_NREG_SAMPLE) !== 0) {
-    // Sample Next registers used for ULA rendering (scroll, ULA mode, etc.)
     sampleNextRegistersForUlaMode(device);
 
     // Calculate scrolled Y position with vertical scroll offset
@@ -308,12 +287,9 @@ export function renderULAStandardPixel(
     device.ulaShiftAttrCount = 8 - (device.ulaScrollXSampled & 0x07); // Reset attribute shift counter
   }
 
-  // // --- Memory Read Activities ---
+  // --- Memory Read Activities ---
   if ((cell & ULA_BYTE1_READ) !== 0) {
-    // Calculate pixel address using pre-computed Y-dependent base + X component
-    // Full address: y[7:6] | y[2:0] | y[5:3] | x[7:3]
-    // Base (Y part) already computed in _ulaPixelLineBaseAddr[device.ulaScrolledY]
-    // X part: ulaScrolledX[7:3] gives byte column (0-31)
+    // --- Calculate pixel address using pre-computed Y-dependent base + X component
     const baseCol = (hc + 0x0c - device.confDisplayXStart) >> 3;
     const shiftCols = (baseCol + (device.ulaScrollXSampled >> 3)) & 0x1f;
     const pixelAddr = device.ulaPixelLineBaseAddr[device.ulaScrollYSampled] | shiftCols;
@@ -325,22 +301,19 @@ export function renderULAStandardPixel(
       device.ulaPixelByte1 = pixelByte;
     }
 
-    // Update floating bus with pixel data
+    // --- Update floating bus with pixel data
     if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
       device.floatingBusValue = pixelByte;
     }
   }
 
   if ((cell & ULA_BYTE2_READ) !== 0) {
-    // Calculate attribute address using pre-computed Y-dependent base + X component
-    // Full address: 0x1800 + (scrolledY / 8) * 32 + (scrolledX / 8)
-    // Base (Y part) already computed in _ulaAttrLineBaseAddr[scrolledY]
-    // X part: scrolledX[7:3] gives character column (0-31)
+    // --- Calculate attribute address using pre-computed Y-dependent base + X component
     const baseCol = (hc + 0x0a - device.confDisplayXStart) >> 3;
     const shiftCols = (baseCol + (device.ulaScrollXSampled >> 3)) & 0x1f;
     const attrAddr = device.ulaAttrLineBaseAddr[device.ulaScrollYSampled] | shiftCols;
 
-    // Read attribute byte from Bank 5 or Bank 7
+    // --- Read attribute byte from Bank 5 or Bank 7
     const ulaAttrByte = device.machine.memoryDevice.readScreenMemory(attrAddr);
     if (hc & 0x04) {
       device.ulaAttrByte2 = ulaAttrByte;
@@ -348,7 +321,7 @@ export function renderULAStandardPixel(
       device.ulaAttrByte1 = ulaAttrByte;
     }
 
-    // Update floating bus with attribute data
+    // --- Update floating bus with attribute data
     if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
       device.floatingBusValue = ulaAttrByte;
     }
@@ -356,8 +329,8 @@ export function renderULAStandardPixel(
 
   // === Border Area ===
   if ((cell & ULA_DISPLAY_AREA) === 0) {
-    // Use cached border RGB value (updated when borderColor changes)
-    // This eliminates method call overhead for ~30% of pixels
+    // --- Use cached border RGB value (updated when borderColor changes)
+    // --- This eliminates method call overhead for ~30% of pixels
     return {
       rgb333: device.borderRgbCache,
       transparent: false,
@@ -568,4 +541,24 @@ export function renderULAHiResPixel(
     transparent: true,
     clipped: false
   };
+}
+
+/**
+ * Samples Next registers for ULA mode.
+ * @param device Device context implementing IUlaStandardPixelRenderingState
+ */
+function sampleNextRegistersForUlaMode(device: IPixelRenderingState): void {
+  // --- Scroll
+  device.ulaScrollXSampled = device.ulaScrollX;
+  device.ulaScrollYSampled = device.ulaScrollY;
+
+  // --- ULA Standard mode
+  device.disableUlaOutputSampled = device.disableUlaOutput;
+
+  // --- ULA Hi-Res mode
+  device.ulaHiResModeSampled = device.ulaHiResMode;
+  device.ulaHiResColorSampled = device.ulaHiResColor;
+
+  // --- Lo-Res mode
+  device.loResEnabledSampled = device.loResEnabled;
 }

@@ -60,7 +60,7 @@ const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
  * for both timing modes (50Hz and 60Hz). The machine operates on a tact-by-tact basis,
  * where each tact corresponds to one CLK_7 cycle at a specific (VC, HC) position.
  */
-export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>, IPixelRenderingState, IUlaHiResPixelRenderingState {
+export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>, IPixelRenderingState {
   // Current timing configuration (50Hz or 60Hz)
   config: TimingConfig;
 
@@ -1350,15 +1350,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
     let selectedOutput: LayerOutput | null = null;
     // === Layer 2 Priority Override ===
     // If Layer 2 priority bit is set, it renders on top regardless of priority setting
-    if (layer2Output && layer2Output.priority && !layer2Output.transparent) {
+    if (layer2Output && layer2Output.priority && !layer2Output.transparent && !layer2Output.clipped) {
       selectedOutput = layer2Output;
     } else {
-      // Select first non-transparent, non-null layer in priority order
+      // Select first non-transparent, non-clipped layer in priority order
       switch (this.layerPriority) {
         case 0: // SLU
-          if (spritesOutput && !spritesOutput.transparent) {
+          if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
-          } else if (layer2Output && !layer2Output.transparent) {
+          } else if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
           } else {
             selectedOutput = ulaOutput;
@@ -1366,9 +1366,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
           break;
 
         case 1: // LSU
-          if (layer2Output && !layer2Output.transparent) {
+          if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
-          } else if (spritesOutput && !spritesOutput.transparent) {
+          } else if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
           } else {
             selectedOutput = ulaOutput;
@@ -1376,9 +1376,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
           break;
 
         case 2: // SUL
-          if (spritesOutput && !spritesOutput.transparent) {
+          if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
-          } else if (ulaOutput && !ulaOutput.transparent) {
+          } else if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
           } else {
             selectedOutput = layer2Output;
@@ -1386,9 +1386,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
           break;
 
         case 3: // LUS
-          if (layer2Output && !layer2Output.transparent) {
+          if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
-          } else if (ulaOutput && !ulaOutput.transparent) {
+          } else if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
           } else {
             selectedOutput = spritesOutput;
@@ -1396,9 +1396,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
           break;
 
         case 4: // USL
-          if (ulaOutput && !ulaOutput.transparent) {
+          if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
-          } else if (spritesOutput && !spritesOutput.transparent) {
+          } else if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
             selectedOutput = spritesOutput;
           } else {
             selectedOutput = layer2Output;
@@ -1406,9 +1406,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
           break;
 
         default:
-          if (ulaOutput && !ulaOutput.transparent) {
+          if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
             selectedOutput = ulaOutput;
-          } else if (layer2Output && !layer2Output.transparent) {
+          } else if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
             selectedOutput = layer2Output;
           } else {
             selectedOutput = spritesOutput;
@@ -1419,8 +1419,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
 
     // === Fallback/Backdrop Color ===
     let finalRGB333: number;
-    if (selectedOutput === null) {
-      // All layers transparent: use fallback color (NextReg 0x4A)
+    // If selected output is null, transparent, or clipped, use fallback color
+    if (selectedOutput === null || selectedOutput.transparent || selectedOutput.clipped) {
+      // All layers transparent/clipped: use fallback color (NextReg 0x4A)
       // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
       const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
       finalRGB333 = (this.fallbackColor << 1) | blueLSB;
