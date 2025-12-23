@@ -6,7 +6,8 @@ import {
   generateULARenderingFlag,
   renderULAStandardPixel,
   IPixelRenderingState,
-  renderULAHiResPixel
+  renderULAHiResPixel,
+  sampleNextRegistersForUlaMode
 } from "./UlaMatrix";
 import {
   generateLayer2_256x192Cell,
@@ -698,6 +699,7 @@ export class NextComposedScreenDevice
    */
   renderFullScreen(): Uint32Array {
     this.onNewFrame();
+    sampleNextRegistersForUlaMode(this);
     for (let tact = 0; tact < this.renderingTacts; tact++) {
       this.renderTact(tact);
     }
@@ -790,7 +792,6 @@ export class NextComposedScreenDevice
   // ==============================================================================================
   // Port updates
   set timexPortValue(value: number) {
-    console.log("Timex port set: " + value.toString(16));
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
     this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);

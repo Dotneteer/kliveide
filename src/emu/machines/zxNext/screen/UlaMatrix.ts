@@ -223,7 +223,7 @@ export function renderULAStandardPixel(
     sampleNextRegistersForUlaMode(device);
 
     // Calculate scrolled Y position with vertical scroll offset
-    device.ulaScrollYSampled = vc - device.confDisplayYStart + device.ulaScrollY;
+    device.ulaScrollYSampled = vc - device.confDisplayYStart + device.ulaScrollYSampled;
     if (device.ulaScrollYSampled >= 0xc0) {
       device.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
     }
@@ -325,13 +325,10 @@ export function renderULAStandardPixel(
     displayVC < device.ulaClipWindowY1 ||
     displayVC > device.ulaClipWindowY2;
 
-  // --- Transparency Check ---
-  const transparent = pixelRgb333 >> 1 === device.globalTransparencyColor;
-
   // Return layer output for composition stage
   return {
     rgb333: pixelRgb333,
-    transparent: transparent || clipped, // Treat clipped pixels as transparent
+    transparent: pixelRgb333 >> 1 === device.globalTransparencyColor || clipped, 
     clipped: clipped
   };
 }
@@ -368,7 +365,7 @@ export function renderULAHiResPixel(
     sampleNextRegistersForUlaMode(device);
 
     // Calculate scrolled Y position with vertical scroll offset
-    device.ulaScrollYSampled = vc - device.confDisplayYStart + device.ulaScrollY;
+    device.ulaScrollYSampled = vc - device.confDisplayYStart + device.ulaScrollYSampled;
     if (device.ulaScrollYSampled >= 0xc0) {
       device.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
     }
@@ -386,16 +383,6 @@ export function renderULAHiResPixel(
         ((device.ulaScrollXSampled & 0x07) * 2)) >>
         16) &
       0xffff;
-  }
-
-  // === Border Area ===
-  if ((cell & ULA_BORDER_AREA) !== 0) {
-    const pixel = {
-      rgb333: device.ulaHiResPaperRgb333,
-      transparent: false,
-      clipped: false
-    };
-    return [pixel, pixel];
   }
 
   // --- Read pixel data from Bank 0
@@ -435,6 +422,16 @@ export function renderULAHiResPixel(
     }
   }
 
+  // === Border Area ===
+  if ((cell & ULA_BORDER_AREA) !== 0) {
+    const pixel = {
+      rgb333: device.ulaHiResPaperRgb333,
+      transparent: false,
+      clipped: false
+    };
+    return [pixel, pixel];
+  }
+
   // --- Pixel Generation ---
   // Generate pixel from shift register (happens every HC position)
   const displayHC = hc - device.confDisplayXStart;
@@ -452,19 +449,16 @@ export function renderULAHiResPixel(
     displayVC < device.ulaClipWindowY1 ||
     displayVC > device.ulaClipWindowY2;
 
-  // --- Transparency Check ---
-  // const transparent = 0x00000000 >> 1 === device.globalTransparencyColor;
-
   return [
     {
       rgb333: pixel1Rgb333,
-      transparent: false, // Treat clipped pixels as transparent
-      clipped: false, // clipped
+      transparent: (pixel1Rgb333 >> 1 === device.globalTransparencyColor) || clipped,
+      clipped: clipped
     },
     {
       rgb333: pixel2Rgb333,
-      transparent: false, //transparent || clipped, // Treat clipped pixels as transparent
-      clipped: false, //clipped
+      transparent: (pixel2Rgb333 >> 1 === device.globalTransparencyColor) || clipped,
+      clipped: clipped
     }
   ];
 }
@@ -473,7 +467,7 @@ export function renderULAHiResPixel(
  * Samples Next registers for ULA mode.
  * @param device Device context implementing IUlaStandardPixelRenderingState
  */
-function sampleNextRegistersForUlaMode(device: IPixelRenderingState): void {
+export function sampleNextRegistersForUlaMode(device: IPixelRenderingState): void {
   // --- Scroll
   device.ulaScrollXSampled = device.ulaScrollX;
   device.ulaScrollYSampled = device.ulaScrollY;
