@@ -328,7 +328,7 @@ export function renderULAStandardPixel(
   // Return layer output for composition stage
   return {
     rgb333: pixelRgb333,
-    transparent: pixelRgb333 >> 1 === device.globalTransparencyColor || clipped, 
+    transparent: pixelRgb333 >> 1 === device.globalTransparencyColor || clipped,
     clipped: clipped
   };
 }
@@ -350,7 +350,6 @@ export function renderULAStandardPixel(
  * @param vc - Vertical counter position (ULA coordinate system)
  * @param hc - Horizontal counter position (ULA coordinate system)
  * @param cell - ULA Hi-Res rendering cell flags (Uint16 bit flags)
- * @param pixelIndex - Which pixel of the pair (0 or 1) to output
  * @returns Layer output (RGB333 + flags) for composition stage
  */
 export function renderULAHiResPixel(
@@ -402,6 +401,11 @@ export function renderULAHiResPixel(
     } else {
       device.ulaPixelByte1 = pixelByte; // Bank 0, first byte
     }
+
+    // --- Update floating bus with pixel data
+    if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+      device.floatingBusValue = pixelByte;
+    }
   }
 
   // --- Read pixel data from Bank 1 at HC subcycles 0x2, 0x6, 0xA, 0xE
@@ -419,6 +423,11 @@ export function renderULAHiResPixel(
       device.ulaPixelByte4 = pixelByte; // Bank 1, second byte
     } else {
       device.ulaPixelByte2 = pixelByte; // Bank 1, first byte
+    }
+
+    // --- Update floating bus with pixel data
+    if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+      device.floatingBusValue = pixelByte;
     }
   }
 
@@ -452,15 +461,156 @@ export function renderULAHiResPixel(
   return [
     {
       rgb333: pixel1Rgb333,
-      transparent: (pixel1Rgb333 >> 1 === device.globalTransparencyColor) || clipped,
+      transparent: pixel1Rgb333 >> 1 === device.globalTransparencyColor || clipped,
       clipped: clipped
     },
     {
       rgb333: pixel2Rgb333,
-      transparent: (pixel2Rgb333 >> 1 === device.globalTransparencyColor) || clipped,
+      transparent: pixel2Rgb333 >> 1 === device.globalTransparencyColor || clipped,
       clipped: clipped
     }
   ];
+}
+
+/**
+ * Render ULA Hi-Color pixel for the current tact position (Stage 1: Pixel Generation).
+ *
+ * ULA Hi-Color mode (Timex Hi-Color mode):
+ * - 256×192 color display (standard horizontal resolution)
+ * - Uses BOTH memory read cycles: pixel data from one bank, color attributes from another
+ * - Bank 0 reads (HC 0x0/0x4/0x8/0xC): pixel data from 0x4000-0x57FF (8×8 pixel blocks)
+ * - Bank 1 reads (HC 0x2/0x6/0xA/0xE): color data from 0x6000-0x77FF (32×192 attributes via 0x2000 offset)
+ * - Each pixel byte defines 8 pixels (like standard mode)
+ * - Color data: 8 bits per pixel column (not per 8×8 block like standard attributes)
+ * - Uses 8-bit shift register for pixels (standard resolution)
+ * - Color format: same as standard attributes (FLASH, BRIGHT, PAPER, INK)
+ *
+ * @param device - Device context implementing IPixelRenderingState interface
+ * @param vc - Vertical counter position (ULA coordinate system)
+ * @param hc - Horizontal counter position (ULA coordinate system)
+ * @param cell - ULA Hi-Color rendering cell flags (Uint16 bit flags)
+ * @returns Pair of layer outputs (RGB333 + flags) for composition stage
+ */
+export function renderULAHiColorPixel(
+  device: IPixelRenderingState,
+  vc: number,
+  hc: number,
+  cell: ULAHiResCell
+): LayerOutput {
+  // === Display Area: ULA Standard Rendering ===
+  // --- Scroll & mode sampling ---
+  if ((cell & ULA_NREG_SAMPLE) !== 0) {
+    sampleNextRegistersForUlaMode(device);
+
+    // Calculate scrolled Y position with vertical scroll offset
+    device.ulaScrollYSampled = vc - device.confDisplayYStart + device.ulaScrollYSampled;
+    if (device.ulaScrollYSampled >= 0xc0) {
+      device.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
+    }
+  }
+
+  // --- Shift Register Load ---
+  if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
+    // Load pixel and attribute data into shift register
+    // This prepares the next 8 pixels for output
+    device.ulaShiftReg =
+      ((((device.ulaPixelByte1 << 8) | device.ulaPixelByte2) <<
+        (device.ulaScrollXSampled & 0x07)) >>
+        8) &
+      0xff;
+    device.ulaShiftAttr = device.ulaAttrByte1; // Load attribute byte 1
+    device.ulaShiftAttr2 = device.ulaAttrByte2; // Load attribute byte 2
+    device.ulaShiftAttrCount = 8 - (device.ulaScrollXSampled & 0x07); // Reset attribute shift counter
+  }
+
+  // --- Memory Read Activities ---
+  if ((cell & ULA_BYTE1_READ) !== 0) {
+    // --- Calculate pixel address using pre-computed Y-dependent base + X component
+    const baseCol = (hc + 0x0c - device.confDisplayXStart) >> 3;
+    const shiftCols = (baseCol + (device.ulaScrollXSampled >> 3)) & 0x1f;
+    const pixelAddr = device.ulaPixelLineBaseAddr[device.ulaScrollYSampled] | shiftCols;
+    // Read pixel byte from Bank 5 or Bank 7
+    const pixelByte = device.machine.memoryDevice.readScreenMemory(pixelAddr);
+    if (hc & 0x04) {
+      device.ulaPixelByte2 = pixelByte;
+    } else {
+      device.ulaPixelByte1 = pixelByte;
+    }
+
+    // --- Update floating bus with pixel data
+    if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+      device.floatingBusValue = pixelByte;
+    }
+  }
+
+  if ((cell & ULA_BYTE2_READ) !== 0) {
+    // --- Calculate attribute address using pre-computed Y-dependent base + X component
+    const baseCol = (hc + 0x0a - device.confDisplayXStart) >> 3;
+    const shiftCols = (baseCol + (device.ulaScrollXSampled >> 3)) & 0x1f;
+    const attrAddr = 0x2000 | device.ulaPixelLineBaseAddr[device.ulaScrollYSampled] | shiftCols;
+
+    // --- Read attribute byte from Bank 5 or Bank 7
+    const ulaAttrByte = device.machine.memoryDevice.readScreenMemory(attrAddr);
+    if (hc & 0x04) {
+      device.ulaAttrByte2 = ulaAttrByte;
+    } else {
+      device.ulaAttrByte1 = ulaAttrByte;
+    }
+
+    // --- Update floating bus with attribute data
+    if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+      device.floatingBusValue = ulaAttrByte;
+    }
+  }
+
+  // === Border Area ===
+  if ((cell & ULA_DISPLAY_AREA) === 0) {
+    // --- Use cached border RGB value (updated when borderColor changes)
+    // --- This eliminates method call overhead for ~30% of pixels
+    return {
+      rgb333: device.borderRgbCache,
+      transparent: false,
+      clipped: false
+    };
+  }
+
+  // // --- Pixel Generation ---
+  // Generate pixel from shift register (happens every HC position)
+  // Extract current pixel bit from shift register
+  const displayHC = hc - device.confDisplayXStart;
+  const displayVC = vc - device.confDisplayYStart;
+  const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
+  const pixelBit = (device.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
+
+  // Use pre-calculated lookup tables with BRIGHT already applied
+  // Direct palette index lookup (0-15) - no bit operations needed
+  const paletteIndex = pixelBit
+    ? device.activeAttrToInk[device.ulaShiftAttr]
+    : device.activeAttrToPaper[device.ulaShiftAttr];
+
+  device.ulaShiftAttrCount--;
+  if (device.ulaShiftAttrCount === 0) {
+    device.ulaShiftAttrCount = 8;
+    device.ulaShiftAttr = device.ulaShiftAttr2; // Load attribute byte 2
+  }
+
+  // Lookup color in ULA palette (16 entries for standard + bright colors)
+  const pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
+
+  // --- Clipping Test ---
+  // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
+  const clipped =
+    displayHC < device.ulaClipWindowX1 ||
+    displayHC > device.ulaClipWindowX2 ||
+    displayVC < device.ulaClipWindowY1 ||
+    displayVC > device.ulaClipWindowY2;
+
+  // Return layer output for composition stage
+  return {
+    rgb333: pixelRgb333,
+    transparent: pixelRgb333 >> 1 === device.globalTransparencyColor || clipped,
+    clipped: clipped
+  };
 }
 
 /**
@@ -478,6 +628,9 @@ export function sampleNextRegistersForUlaMode(device: IPixelRenderingState): voi
   // --- ULA Hi-Res mode
   device.ulaHiResModeSampled = device.ulaHiResMode;
   device.ulaHiResColorSampled = device.ulaHiResColor;
+
+  // --- ULA Hi-Color mode
+  device.ulaHiColorModeSampled = device.ulaHiColorMode;
 
   // --- Lo-Res mode
   device.loResEnabledSampled = device.loResEnabled;

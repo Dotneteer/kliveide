@@ -7,6 +7,7 @@ import {
   renderULAStandardPixel,
   IPixelRenderingState,
   renderULAHiResPixel,
+  renderULAHiColorPixel,
   sampleNextRegistersForUlaMode
 } from "./UlaMatrix";
 import {
@@ -565,7 +566,7 @@ export class NextComposedScreenDevice
         } else {
           // ULA Hi-Color mode (256×192)
           const ulaCell = this._renderingFlagsULA[tact];
-          ulaOutput1 = this.renderULAHiColorPixel(vc, hc, ulaCell);
+          ulaOutput1 = renderULAHiColorPixel(this, vc, hc, ulaCell);
           ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
         }
       } else {
@@ -792,6 +793,7 @@ export class NextComposedScreenDevice
   // ==============================================================================================
   // Port updates
   set timexPortValue(value: number) {
+    console.log(`TIMEX port set to ${value.toString(16).padStart(2, "0")}`);
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
     this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);
@@ -1154,21 +1156,6 @@ export class NextComposedScreenDevice
   private initializeBitmap(): void {
     // Clear entire bitmap to transparent to fully transparent black
     this._pixelBuffer.fill(0x00000000);
-  }
-
-  /**
-   * Render ULA Hi-Color mode pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
-   */
-  private renderULAHiColorPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
-    // TODO: Implementation to be documented in a future section
-    return {
-      rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
-    };
   }
 
   /**
