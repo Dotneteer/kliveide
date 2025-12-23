@@ -6,8 +6,7 @@ import {
   generateULARenderingFlag,
   renderULAStandardPixel,
   IPixelRenderingState,
-  renderULAHiResPixel,
-  IUlaHiResPixelRenderingState
+  renderULAHiResPixel
 } from "./UlaMatrix";
 import {
   generateLayer2_256x192Cell,
@@ -60,7 +59,9 @@ const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
  * for both timing modes (50Hz and 60Hz). The machine operates on a tact-by-tact basis,
  * where each tact corresponds to one CLK_7 cycle at a specific (VC, HC) position.
  */
-export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>, IPixelRenderingState {
+export class NextComposedScreenDevice
+  implements IGenericDevice<IZxNextMachine>, IPixelRenderingState
+{
   // Current timing configuration (50Hz or 60Hz)
   config: TimingConfig;
 
@@ -284,6 +285,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
   ulaScrollYSampled: number;
   ulaPixelByte1: number;
   ulaPixelByte2: number;
+  ulaPixelByte3: number;
+  ulaPixelByte4: number;
   floatingBusValue: number;
   ulaAttrByte1: number;
   ulaAttrByte2: number;
@@ -293,11 +296,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
   ulaShiftAttrCount: number;
 
   // ULA Hi-Res rendering state
-  ulaHiResPixelByte00: number; // Even bank, first byte
-  ulaHiResPixelByte01: number; // Even bank, second byte
-  ulaHiResPixelByte10: number; // Odd bank, first byte
-  ulaHiResPixelByte11: number; // Odd bank, second byte
-  ulaHiResShiftReg: number; // 16-bit shift register with interleaved pixels
+  ulaHiResInkRgb333: number;
+  ulaHiResPaperRgb333: number;
 
   // Pre-calculated attribute decode lookup tables (256 entries for all attribute byte values)
   // Two sets: one for flash off, one for flash on
@@ -426,6 +426,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
     this.ulaAttrByte2 = 0;
     this.ulaShiftReg = 0;
 
+    this.timexPortBits = 0;
+    this.standardScreenAt0x4000 = true;
+    this.ulaHiResMode = false;
+    this.ulaHiResModeSampled = false;
+    this.ulaHiResColor = 0;
+    this.ulaHiResColorSampled = 0;
+    this.ulaHiColorMode = false;
+    this.ulaHiColorModeSampled = false;
+
     this.layer2ClipWindowX1 = 0;
     this.layer2ClipWindowX2 = 159;
     this.layer2ClipWindowY1 = 0;
@@ -549,8 +558,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
         if (this.ulaHiResModeSampled) {
           // ULA Hi-Res mode (512×192, 2 pixels per HC)
           const ulaCell = this._renderingFlagsULA[tact];
-          ulaOutput1 = this.renderULAHiResPixel(vc, hc, ulaCell, 0);
-          ulaOutput2 = this.renderULAHiResPixel(vc, hc, ulaCell, 1);
+          const out = renderULAHiResPixel(this, vc, hc, ulaCell);
+          ulaOutput1 = out[0];
+          ulaOutput2 = out[1];
         } else {
           // ULA Hi-Color mode (256×192)
           const ulaCell = this._renderingFlagsULA[tact];
@@ -724,9 +734,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
     this.machine.setTactsInFrame(this.renderingTacts);
 
     // --- Update all layer rendering flags references based on timing mode
-    this._renderingFlagsULA = is60Hz
-      ? this._renderingFlagsULA60Hz
-      : this._renderingFlagsULA50Hz;
+    this._renderingFlagsULA = is60Hz ? this._renderingFlagsULA60Hz : this._renderingFlagsULA50Hz;
     this._renderingFlagsLayer2_256x192 = is60Hz
       ? this._renderingFlagsLayer2_256x192_60Hz
       : this._renderingFlagsLayer2_256x192_50Hz;
@@ -782,8 +790,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
   // ==============================================================================================
   // Port updates
   set timexPortValue(value: number) {
+    console.log("Timex port set: " + value.toString(16));
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
+    this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);
+    this.ulaHiResPaperRgb333 = this.machine.paletteDevice.getUlaRgb333(7 - this.ulaHiResColor);
     const mode = value & 0x07;
     switch (mode) {
       case 0:
@@ -1145,22 +1156,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
   }
 
   /**
-   * Render ULA Hi-Res mode pixel (Stage 1).
-   * @param vc - Vertical counter position
-   * @param hc - Horizontal counter position
-   * @param cell - ULA Hi-Res rendering cell with activity flags
-   * @param pixelIndex - Which pixel of the pair (0 or 1)
-   */
-  private renderULAHiResPixel(
-    vc: number,
-    hc: number,
-    cell: number,
-    pixelIndex: number
-  ): LayerOutput {
-    return renderULAHiResPixel(this, vc, hc, cell, pixelIndex);
-  }
-
-  /**
    * Render ULA Hi-Color mode pixel (Stage 1).
    * @param _vc - Vertical counter position
    * @param _hc - Horizontal counter position
@@ -1350,7 +1345,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine>,
     let selectedOutput: LayerOutput | null = null;
     // === Layer 2 Priority Override ===
     // If Layer 2 priority bit is set, it renders on top regardless of priority setting
-    if (layer2Output && layer2Output.priority && !layer2Output.transparent && !layer2Output.clipped) {
+    if (
+      layer2Output &&
+      layer2Output.priority &&
+      !layer2Output.transparent &&
+      !layer2Output.clipped
+    ) {
       selectedOutput = layer2Output;
     } else {
       // Select first non-transparent, non-clipped layer in priority order
