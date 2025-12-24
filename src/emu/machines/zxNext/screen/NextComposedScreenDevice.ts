@@ -824,6 +824,7 @@ export class NextComposedScreenDevice
   // ==============================================================================================
   // Port updates
   set timexPortValue(value: number) {
+    console.log(`TIMEX port set to ${value.toString(16).padStart(2, "0")}`);
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
     this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);
