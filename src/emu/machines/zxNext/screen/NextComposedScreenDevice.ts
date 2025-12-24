@@ -226,6 +226,11 @@ export class NextComposedScreenDevice
   layer2EnableMappingForReads: boolean;
   layer2EnableMappingForWrites: boolean;
 
+  // === ULA+ Mode/Index register port (0xbf3b)
+  ulaPlusEnabled: boolean;
+  ulaPlusMode: number;
+  ulaPlusPaletteIndex: number;
+
   // Rendering flags for all layers and modes
   private _renderingFlagsULA: ULAStandardMatrix;
   private _renderingFlagsULA50Hz: ULAStandardMatrix;
