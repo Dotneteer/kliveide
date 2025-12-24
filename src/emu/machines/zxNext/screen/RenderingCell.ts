@@ -46,11 +46,12 @@ export const TILEMAP_CONTENTION_WINDOW = 0b0010;   // bit 1
 export const TILEMAP_TILE_INDEX_FETCH = 0b0100;    // bit 2
 export const TILEMAP_PATTERN_FETCH = 0b1000;       // bit 3
 
-// LoRes Cell (4 flags)
-export const LORES_DISPLAY_AREA = 0b0001;          // bit 0
-export const LORES_CONTENTION_WINDOW = 0b0010;     // bit 1
-export const LORES_BLOCK_FETCH = 0b0100;           // bit 2
-export const LORES_PIXEL_REPLICATE = 0b1000;       // bit 3
+// LoRes Cell (5 flags)
+export const LORES_DISPLAY_AREA = 0b00001;         // bit 0
+export const LORES_CONTENTION_WINDOW = 0b00010;    // bit 1
+export const LORES_NREG_SAMPLE = 0b00100;          // bit 2
+export const LORES_BLOCK_FETCH = 0b01000;          // bit 3
+export const LORES_PIXEL_REPLICATE = 0b10000;      // bit 4
 
 /**
  * Common timing and region information for all rendering cells.

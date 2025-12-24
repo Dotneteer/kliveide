@@ -51,6 +51,13 @@ export interface IPixelRenderingState {
   // Lo-Res mode configuration
   loResEnabled: boolean;
   loResEnabledSampled: boolean;
+  loResMode: number;              // 0 = standard 8-bit, 1 = radastan 4-bit
+  loResModeSampled: number;
+  loResBlockByte: number;         // Current block data byte
+  loresPaletteOffset: number;     // Palette offset for radastan mode
+  loResScrollXSampled: number;    // Sampled X scroll for LoRes
+  loResScrollYSampled: number;    // Sampled Y scroll for LoRes
+  timexDFile: number;             // Timex display file selector (0 or 1)
 
   // ULA+ palette extension
   ulaPlusEnabled: boolean;

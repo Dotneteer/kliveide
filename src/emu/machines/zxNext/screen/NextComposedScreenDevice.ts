@@ -9,6 +9,7 @@ import {
   renderULAHiColorPixel,
   sampleNextRegistersForUlaMode
 } from "./UlaMatrix";
+import { renderLoResPixel } from "./LoResMatrix";
 import { zxNextBgra } from "../PaletteDevice";
 import {
   initializeAllLookupTables,
@@ -124,6 +125,13 @@ export class NextComposedScreenDevice
   // === Reg 0x15 - LoRes mode (128x48 or 128x96)
   loResEnabled: boolean;
   loResEnabledSampled: boolean;
+  loResMode: number;              // 0 = standard 8-bit, 1 = radastan 4-bit
+  loResModeSampled: number;
+  loResBlockByte: number;         // Current block data byte
+  loresPaletteOffset: number;     // Palette offset for radastan mode (NextReg bits)
+  loResScrollXSampled: number;    // Sampled X scroll for LoRes
+  loResScrollYSampled: number;    // Sampled Y scroll for LoRes
+  timexDFile: number;             // Timex display file selector (0 or 1)
   sprites0OnTop: boolean;
   spritesEnableClipping: boolean;
   layerPriority: number;
@@ -367,6 +375,17 @@ export class NextComposedScreenDevice
     this.ulaHiResColorSampled = 0;
     this.ulaHiColorMode = false;
     this.ulaHiColorModeSampled = false;
+
+    // --- Initialize LoRes state
+    this.loResEnabled = false;
+    this.loResEnabledSampled = false;
+    this.loResMode = 0; // Default: standard 8-bit mode
+    this.loResModeSampled = 0;
+    this.loResBlockByte = 0;
+    this.loresPaletteOffset = 0;
+    this.loResScrollXSampled = 0;
+    this.loResScrollYSampled = 0;
+    this.timexDFile = 0;
 
     // --- Initialize ULA+ state
     this._ulaPlusEnabled = false;
@@ -1023,17 +1042,12 @@ export class NextComposedScreenDevice
   /**
    * Render LoRes pixel (Stage 1).
    * Handles 128×96 mode with 4×4 pixel scaling.
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
+   * @param vc - Vertical counter position
+   * @param hc - Horizontal counter position
+   * @param cell - LoRes rendering cell with activity flags
    */
-  private renderLoResPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
-    // TODO: Implementation to be documented in a future section
-    return {
-      rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
-    };
+  private renderLoResPixel(vc: number, hc: number, cell: number): LayerOutput {
+    return renderLoResPixel(this, vc, hc, cell);
   }
 
   /**
