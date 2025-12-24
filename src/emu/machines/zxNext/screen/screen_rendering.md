@@ -399,6 +399,296 @@ Border pixels are never clipped (always visible)
 - Pixel generation: `zxula.vhd` lines 490-570
 - Palette architecture: `zxnext.vhd` lines 6906-6932
 
+### 1.6 ULA Enhanced Modes (ULA+, ULANext)
+
+The ZX Spectrum Next extends the standard ULA palette system with two enhanced modes: **ULA+** (backwards-compatible with original ULA+ specification) and **ULANext** (Next-specific extended palette mode). These modes provide expanded color capabilities while maintaining compatibility with standard ULA rendering.
+
+#### ULA Enhanced Mode Architecture
+
+**Three Palette Modes** (mutually exclusive):
+1. **Standard ULA**: Classic ZX Spectrum 16-color palette (INK 0-7, BRIGHT INK 8-15, PAPER 16-23, BRIGHT PAPER 24-31)
+2. **ULA+**: 64-color extended palette with per-attribute PAPER brightness control
+3. **ULANext**: Fully programmable attribute byte interpretation with configurable INK/PAPER bit allocation
+
+**Mode Selection Priority** (combinational logic):
+```vhdl
+if i_ulanext_en = '1' then
+   -- ULANext mode active
+elsif i_ulap_en = '1' then
+   -- ULA+ mode active
+else
+   -- Standard ULA mode active
+```
+
+**Palette Storage**: All three modes share the same 256-entry ULA palette RAM:
+- Entries 0-127: Standard ULA + ULANext INK indices
+- Entries 128-191: ULANext PAPER indices
+- Entries 192-255: ULA+ palette (64 colors)
+
+#### ULA+ Mode
+
+ULA+ extends the standard ULA with a 64-color palette while maintaining attribute byte compatibility. It provides independent BRIGHT control for INK and PAPER through palette index manipulation.
+
+**Activation**:
+- **NextReg 0x43** bit 0 = 0 (ULANext disabled)
+- **Port 0xFF3B** bit 0 = 1 (ULA+ enabled)
+- **NextReg 0x08** bit 24 = 1 (ULA+ I/O ports unlocked, required for legacy compatibility)
+
+**Palette Index Generation**:
+```
+ULA+ index = {2'b11, attr[7:6], pixel_select, attr[5:3] or attr[2:0]}
+           = 192 + (attr[7:6] << 4) + (pixel_select << 3) + color_bits
+
+Where:
+  - bits [7:6] = 11 (constant, selects ULA+ range 192-255)
+  - attr[7:6] = FLASH and BRIGHT bits from attribute byte
+  - pixel_select = 1 for PAPER, 0 for INK (unless screen_mode[2]=1, see note below)
+  - attr[5:3] = PAPER color if pixel_select=1
+  - attr[2:0] = INK color if pixel_select=0
+```
+
+**Hardware Implementation Details**:
+```vhdl
+-- ULA+ palette index generation (zxula.vhd lines 540-548)
+ula_pixel(7 downto 3) <= "11" & attr_active(7 downto 6) & (screen_mode_r(2) or not pixel_en);
+
+if pixel_en = '1' then
+   ula_pixel(2 downto 0) <= attr_active(2 downto 0);  -- INK color
+else
+   ula_pixel(2 downto 0) <= attr_active(5 downto 3);  -- PAPER color
+end if;
+```
+
+**Key Features**:
+- **64 Colors**: Palette entries 192-255 can be programmed with any RGB333 color
+- **Independent BRIGHT Control**: Attribute bits 7:6 select one of four 16-color groups
+  - Group 0 (attr[7:6]=00): Indices 192-207 (normal INK/PAPER)
+  - Group 1 (attr[7:6]=01): Indices 208-223 (FLASH without BRIGHT)
+  - Group 2 (attr[7:6]=10): Indices 224-239 (BRIGHT without FLASH)
+  - Group 3 (attr[7:6]=11): Indices 240-255 (FLASH + BRIGHT)
+- **Border Color**: Always uses standard ULA palette (PAPER color, index 16-23 or 24-31)
+- **Flash Disabled**: Flash logic is disabled in ULA+ mode (FLASH bit becomes palette selector)
+
+**I/O Ports**:
+- **0xBF3B** (Write): Mode and palette index selection
+  - Bits [7:6]: Register group (00 = palette, 01 = mode)
+  - Bits [5:0]: Palette index (0-63) if group = 00
+- **0xFF3B** (Read/Write): Palette data or mode enable
+  - Read (palette group): Returns RGB value in GGGRRRBB format
+  - Read (mode group): Bit 0 = ULA+ enabled status
+  - Write (palette group): Set RGB value in GGGRRRBB format
+  - Write (mode group): Bit 0 = 1 to enable ULA+, 0 to disable
+
+**Color Format**: ULA+ I/O ports use 8-bit color format GGGRRRBB. The 9th blue bit is generated as `B_lsb = B1 OR B0`.
+
+**Incompatibility Note**: ULA+ mode forces palette index bit 3 to 1 (PAPER selection) when `screen_mode[2]=1` (Timex Hi-Res/Hi-Color modes). This makes ULA+ incompatible with Timex enhanced video modes. The hardware implementation at `zxula.vhd` line 545 shows:
+```vhdl
+ula_pixel(7 downto 3) <= "11" & attr_active(7 downto 6) & (screen_mode_r(2) or not pixel_en);
+```
+When `screen_mode_r(2)=1`, bit 3 is forced to 1, selecting PAPER palette group regardless of pixel value.
+
+#### ULANext Mode
+
+ULANext provides a fully programmable attribute byte format, allowing arbitrary allocation of bits between INK and PAPER. This enables color modes ranging from 2-color (1-bit INK, 7-bit PAPER) to 256-color (8-bit INK, 0-bit PAPER).
+
+**Activation**:
+- **NextReg 0x43** bit 0 = 1 (ULANext enabled)
+- **NextReg 0x42**: Attribute format mask (defines INK bit allocation)
+
+**Attribute Byte Format Mask** (NextReg 0x42):
+The mask value defines which attribute bits represent INK color (1 bits in mask) vs PAPER color (0 bits in mask). Only solid right-aligned bit sequences are valid.
+
+**Valid Masks and Color Modes**:
+
+| Mask (Binary) | Mask (Hex) | INK Bits | PAPER Bits | INK Colors | PAPER Colors | Mode Description |
+|---|---|---|---|---|---|---|
+| `00000001` | 0x01 | 1 | 7 | 2 | 128 | 1-bit monochrome INK |
+| `00000011` | 0x03 | 2 | 6 | 4 | 64 | 2-bit INK palette |
+| `00000111` | 0x07 | 3 | 5 | 8 | 32 | Standard ZX (no BRIGHT) |
+| `00001111` | 0x0F | 4 | 4 | 16 | 16 | Balanced 16-color mode |
+| `00011111` | 0x1F | 5 | 3 | 32 | 8 | Extended INK mode |
+| `00111111` | 0x3F | 6 | 2 | 64 | 4 | High INK color depth |
+| `01111111` | 0x7F | 7 | 1 | 128 | 2 | Maximum INK colors |
+| `11111111` | 0xFF | 8 | 0 | 256 | 0 (fallback) | Full color mode |
+
+**Palette Index Calculation**:
+
+For **INK pixels** (pixel=1):
+```
+ink_index = attribute_byte AND format_mask
+palette_entry = ink_index (range 0-127 based on mask)
+```
+
+For **PAPER pixels** (pixel=0):
+```
+paper_bits = attribute_byte AND (NOT format_mask)
+palette_entry = 128 + (paper_bits >> count_trailing_ones(format_mask))
+```
+
+**Special Cases**:
+
+1. **Full Ink Color Mode** (mask = 0xFF):
+   - All 256 palette entries represent INK colors
+   - PAPER and border use **Fallback Color** (NextReg 0x4A)
+   - Enables 256-color mode with no PAPER distinction
+   - Hardware sets `ula_select_bgnd = 1` to trigger fallback color usage
+
+2. **Invalid Masks** (non-solid bit sequence, e.g., 0x55 = 01010101):
+   - INK color = `attribute_byte AND format_mask` (bitwise AND with mask)
+   - PAPER and border = **Fallback Color** (NextReg 0x4A)
+   - Hardware behavior: `case` statement `when others` clause sets `ula_select_bgnd = 1`
+   - This gracefully degrades to INK-only mode with fallback for PAPER
+   
+**Hardware Implementation Detail - Invalid Mask Handling**:
+
+When an invalid (non-solid) mask is detected, the hardware uses the `ula_select_bgnd` flag to signal that the fallback color should be used instead of a palette lookup:
+
+```vhdl
+-- PAPER pixel handling in ULANext mode (zxula.vhd lines 518-526)
+case i_ulanext_format is
+   when X"01" =>   ula_pixel <= paper_base_index(7) & attr_active(7 downto 1);
+   when X"03" =>   ula_pixel <= paper_base_index(7 downto 6) & attr_active(7 downto 2);
+   when X"07" =>   ula_pixel <= paper_base_index(7 downto 5) & attr_active(7 downto 3);
+   when X"0F" =>   ula_pixel <= paper_base_index(7 downto 4) & attr_active(7 downto 4);
+   when X"1F" =>   ula_pixel <= paper_base_index(7 downto 3) & attr_active(7 downto 5);
+   when X"3F" =>   ula_pixel <= paper_base_index(7 downto 2) & attr_active(7 downto 6);
+   when X"7F" =>   ula_pixel <= paper_base_index(7 downto 1) & attr_active(7);
+   when others =>  ula_select_bgnd <= '1';  -- Use fallback color
+end case;
+
+-- Later in composition (zxnext.vhd lines 6933-6937)
+if lores_pixel_en_1 = '1' or ula_select_bgnd_1 = '0' then
+   ula_rgb_1 <= ulatm_rgb_1(8 downto 0);  -- Normal palette lookup
+else
+   ula_rgb_1 <= fallback_rgb_1 & (fallback_rgb_1(1) or fallback_rgb_1(0));  -- Fallback color
+end if;
+```
+
+Where `fallback_rgb_1` is derived from NextReg 0x4A (8-bit RGB332 format, expanded to 9-bit RGB333).
+
+**Hardware Implementation**:
+```vhdl
+-- ULANext palette index generation (zxula.vhd lines 498-530)
+if i_ulanext_en = '1' then
+   
+   if border_active_d = '1' then
+      -- Border color (PAPER range 128-255)
+      if i_ulanext_format = X"FF" then
+         ula_select_bgnd <= '1';  -- Use fallback color
+      end if;
+      ula_pixel <= paper_base_index(7 downto 3) & attr_active(5 downto 3);
+   
+   elsif pixel_en = '1' then
+      -- INK pixel (range 0-127)
+      ula_pixel <= attr_active and i_ulanext_format;
+   
+   else
+      -- PAPER pixel (range 128-255)
+      case i_ulanext_format is
+         when X"01" =>   ula_pixel <= paper_base_index(7) & attr_active(7 downto 1);
+         when X"03" =>   ula_pixel <= paper_base_index(7 downto 6) & attr_active(7 downto 2);
+         when X"07" =>   ula_pixel <= paper_base_index(7 downto 5) & attr_active(7 downto 3);
+         when X"0F" =>   ula_pixel <= paper_base_index(7 downto 4) & attr_active(7 downto 4);
+         when X"1F" =>   ula_pixel <= paper_base_index(7 downto 3) & attr_active(7 downto 5);
+         when X"3F" =>   ula_pixel <= paper_base_index(7 downto 2) & attr_active(7 downto 6);
+         when X"7F" =>   ula_pixel <= paper_base_index(7 downto 1) & attr_active(7);
+         when others =>  ula_select_bgnd <= '1';  -- Use fallback color
+      end case;
+   
+   end if;
+
+end if;
+```
+
+**Key Features**:
+- **Flexible Color Allocation**: Programmer controls INK vs PAPER bit distribution
+- **Extended Palette Range**: INKs use entries 0-127, PAPERs use entries 128-255
+- **Flash Disabled**: Flash logic disabled in ULANext mode (all attribute bits available for color)
+- **Border Handling**: Border uses PAPER color calculation, or fallback color in full-ink mode
+- **Fallback Color Integration**: Automatically used when PAPER has no allocated bits
+
+**Register Summary**:
+- **NextReg 0x42**: Attribute format mask (soft reset = 0x07, standard 3-bit INK)
+- **NextReg 0x43** bit 0: Enable ULANext mode (soft reset = 0)
+- **NextReg 0x4A**: Fallback color for modes with no PAPER allocation (RGB333 format)
+
+#### Standard ULA Mode (Baseline)
+
+For completeness, standard ULA mode palette index generation:
+
+```vhdl
+-- Standard ULA palette index (zxula.vhd lines 554-560)
+ula_pixel(7 downto 3) <= "000" & not pixel_en & attr_active(6);
+
+if pixel_en = '1' then
+   ula_pixel(2 downto 0) <= attr_active(2 downto 0);  -- INK: 0-7 or 8-15 (with BRIGHT)
+else
+   ula_pixel(2 downto 0) <= attr_active(5 downto 3);  -- PAPER: 16-23 or 24-31 (with BRIGHT)
+end if;
+```
+
+**Palette Index Structure**:
+- Bit 7-5: `000` (constant)
+- Bit 4: `NOT pixel_en` (0 for INK, 1 for PAPER)
+- Bit 3: `attr[6]` (BRIGHT)
+- Bit 2-0: `attr[2:0]` for INK or `attr[5:3]` for PAPER
+
+**Flash Logic**: Standard ULA applies flash at pixel bit level:
+```vhdl
+pixel_en = (shift_reg(15) xor (attr_active(7) and flash_cnt(4) and (not i_ulanext_en) and not i_ulap_en))
+           and not border_active_d
+```
+Flash only active when both ULANext and ULA+ are disabled.
+
+#### Mode Comparison Summary
+
+| Feature | Standard ULA | ULA+ | ULANext |
+|---|---|---|---|
+| **Palette Entries** | 32 (0-31) | 64 (192-255) | 256 (0-255) |
+| **INK Colors** | 8 + BRIGHT | 8 per group × 4 groups | 2-256 (programmable) |
+| **PAPER Colors** | 8 + BRIGHT | 8 per group × 4 groups | 2-128 (programmable) |
+| **Attribute Format** | Fixed (F-B-PPP-III) | Fixed (uses F/B as selectors) | Programmable mask |
+| **Flash Support** | Yes (bit 7) | No (bit 7 for palette) | No (all bits for color) |
+| **Border Color** | PAPER palette | PAPER palette (std ULA) | PAPER palette or fallback |
+| **Timex Mode Compat** | Yes | No (forced PAPER select) | Yes |
+| **Palette Range** | 0-31 | 192-255 | INK: 0-127, PAPER: 128-255 |
+| **Enable Register** | Default | Port 0xFF3B bit 0 | NextReg 0x43 bit 0 |
+| **Configuration** | None | Port 0xBF3B/0xFF3B | NextReg 0x42 (mask) |
+
+#### Implementation Notes
+
+**Palette RAM Access**:
+- ULA palette: 256 entries × 9 bits (RGB333)
+- Dual-port RAM: Port A for CPU writes (CLK_28), Port B for video reads (CLK_28 inverted)
+- Two palette banks (first/second) selected by NextReg 0x43 bits [6:4] and bit 1
+- ULA+ uses entries 192-255 of the selected ULA palette bank
+
+**Timing Considerations**:
+- Mode selection is combinational (no latency)
+- Palette lookup occurs at CLK_28 inverted edge (1 cycle latency)
+- Format mask (NextReg 0x42) sampled continuously, no synchronization needed
+- ULA+ enable (Port 0xFF3B) sampled continuously, immediate effect
+
+**Emulation Simplifications**:
+For emulation purposes, the palette index can be calculated once per pixel based on:
+- Current mode flags (standard/ULA+/ULANext)
+- Pixel value (from shift register MSB)
+- Attribute byte (from attribute register)
+- Format mask (NextReg 0x42, for ULANext only)
+- Border detection flag
+
+The resulting palette index is then used to fetch the RGB333 color from the appropriate palette bank.
+
+**Source References**:
+- ULA+ palette index generation: `zxula.vhd` lines 540-548
+- ULANext palette index generation: `zxula.vhd` lines 498-530
+- Standard ULA palette index: `zxula.vhd` lines 554-560
+- Flash logic: `zxula.vhd` line 475
+- Mode selection priority: `zxula.vhd` lines 495-560 (nested if-elsif-else structure)
+- NextReg 0x42 documentation: `nextreg.txt` lines 505-522
+- NextReg 0x43 documentation: `nextreg.txt` lines 524-543
+- ULA+ I/O ports: `ports.txt` lines 418-444
+
 ## 2. Timing Modes
 
 ### 2.1 Timing Mode Selection

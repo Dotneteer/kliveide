@@ -1156,14 +1156,18 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x42,
       description: "ULANext Attribute Byte Format",
-      readFn: () => machine.paletteDevice.ulaNextByteFormat,
-      writeFn: (v) => (machine.paletteDevice.ulaNextByteFormat = v & 0xff)
+      readFn: () => machine.composedScreenDevice.nextReg0x42Value,
+      writeFn: (v) => (machine.composedScreenDevice.nextReg0x42Value = v & 0xff)
     });
     r({
       id: 0x43,
       description: "Palette Control",
       readFn: () => machine.paletteDevice.nextReg43Value,
-      writeFn: (v) => (machine.paletteDevice.nextReg43Value = v & 0xff),
+      writeFn: (v) => {
+        const value = v & 0xff;
+        machine.paletteDevice.nextReg43Value = value;
+        machine.composedScreenDevice.nextReg0x43Value = value;
+      },
       slices: [
         {
           mask: 0x80,

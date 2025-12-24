@@ -54,6 +54,10 @@ export interface IPixelRenderingState {
   // ULA+ palette extension
   ulaPlusEnabled: boolean;
 
+  // ULANext palette extension
+  ulaNextEnabled: boolean;
+  ulaNextFormat: number; // Attribute byte format mask (NextReg 0x42)
+
   // ULA shift registers and pixel/attribute bytes
   ulaPixelByte1: number;
   ulaPixelByte2: number;
@@ -307,7 +311,47 @@ export function renderULAStandardPixel(
 
   let pixelRgb333: number;
 
-  if (device.ulaPlusEnabled) {
+  if (device.ulaNextEnabled) {
+    // ULANext Mode: Programmable attribute byte format
+    // INK uses format mask, PAPER uses remaining bits with base index 128
+    const attr = device.ulaShiftAttr;
+    const formatMask = device.ulaNextFormat;
+    
+    let paletteIndex: number;
+    
+    if (pixelBit) {
+      // INK pixel: attribute AND format_mask (range 0-127)
+      paletteIndex = attr & formatMask;
+    } else {
+      // PAPER pixel: use remaining bits, base index 128
+      // Check if format mask is valid (0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF)
+      const validMasks = [0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff];
+      
+      if (validMasks.includes(formatMask)) {
+        // Valid mask: calculate PAPER index
+        const paperBits = attr & ~formatMask;
+        // Count trailing ones to determine shift amount
+        let shift = 0;
+        let mask = formatMask;
+        while (mask & 1) {
+          shift++;
+          mask >>= 1;
+        }
+        paletteIndex = 128 + (paperBits >> shift);
+      } else {
+        // Invalid mask or 0xFF: use fallback color for PAPER
+        // Use fallback color directly from NextReg 0x4A, expand RGB333 to 9-bit
+        const fallbackRgb333 = device.machine.composedScreenDevice.fallbackColor;
+        pixelRgb333 = (fallbackRgb333 << 1) | ((fallbackRgb333 & 0x02) ? 1 : 0);
+        // Skip palette lookup, pixelRgb333 already set
+        paletteIndex = -1; // Sentinel value
+      }
+    }
+    
+    if (paletteIndex !== -1) {
+      pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    }
+  } else if (device.ulaPlusEnabled) {
     // ULA+ Mode: Use 64-color palette (indices 192-255 in ULA palette)
     // Palette index construction (6 bits):
     //   Bits 5-4: attr[7:6] (FLASH, BRIGHT)
@@ -469,9 +513,30 @@ export function renderULAHiResPixel(
   const displayVC = vc - device.confDisplayYStart;
   const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
   const pixelBit1 = (device.ulaShiftReg >> (2 * (7 - pixelWithinByte) + 1)) & 0x01;
-  const pixel1Rgb333 = pixelBit1 ? device.ulaHiResInkRgb333 : device.ulaHiResPaperRgb333;
   const pixelBit2 = (device.ulaShiftReg >> (2 * (7 - pixelWithinByte))) & 0x01;
-  const pixel2Rgb333 = pixelBit2 ? device.ulaHiResInkRgb333 : device.ulaHiResPaperRgb333;
+  
+  let pixel1Rgb333: number;
+  let pixel2Rgb333: number;
+  
+  // Note: ULANext in HiRes mode is not practical but supported by hardware
+  // HiRes mode doesn't use standard attributes, so ULANext produces unpredictable results
+  if (device.ulaNextEnabled) {
+    // ULANext mode: treat HiRes attribute bytes as ULANext attributes
+    // This is hardware-accurate but produces unpredictable/meaningless colors
+    const attr = device.ulaShiftAttr;
+    const formatMask = device.ulaNextFormat;
+    
+    // For each pixel bit, calculate index as if it were standard mode
+    const index1 = pixelBit1 ? (attr & formatMask) : 128;
+    const index2 = pixelBit2 ? (attr & formatMask) : 128;
+    
+    pixel1Rgb333 = device.machine.paletteDevice.getUlaRgb333(index1);
+    pixel2Rgb333 = device.machine.paletteDevice.getUlaRgb333(index2);
+  } else {
+    // Standard HiRes mode: use predefined ink/paper colors
+    pixel1Rgb333 = pixelBit1 ? device.ulaHiResInkRgb333 : device.ulaHiResPaperRgb333;
+    pixel2Rgb333 = pixelBit2 ? device.ulaHiResInkRgb333 : device.ulaHiResPaperRgb333;
+  }
 
   // --- Clipping Test ---
   const clipped =
@@ -608,20 +673,41 @@ export function renderULAHiColorPixel(
   const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
   const pixelBit = (device.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
 
-  // Use pre-calculated lookup tables with BRIGHT already applied
-  // Direct palette index lookup (0-15) - no bit operations needed
-  const paletteIndex = pixelBit
-    ? device.activeAttrToInk[device.ulaShiftAttr]
-    : device.activeAttrToPaper[device.ulaShiftAttr];
+  let pixelRgb333: number;
+  
+  // Note: ULANext in HiColor mode is not practical but supported by hardware
+  // HiColor uses different attribute format (per-column colors), so ULANext produces unpredictable results
+  if (device.ulaNextEnabled) {
+    // ULANext mode: treat HiColor attribute bytes as ULANext attributes
+    // This is hardware-accurate but produces unpredictable/meaningless colors
+    const attr = device.ulaShiftAttr;
+    const formatMask = device.ulaNextFormat;
+    
+    let paletteIndex: number;
+    
+    if (pixelBit) {
+      // INK pixel
+      paletteIndex = attr & formatMask;
+    } else {
+      // PAPER pixel: use base 128 (simplified for HiColor)
+      paletteIndex = 128;
+    }
+    
+    pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
+  } else {
+    // Standard HiColor mode: Use pre-calculated lookup tables with BRIGHT already applied
+    // Direct palette index lookup (0-15) - no bit operations needed
+    const paletteIndex = pixelBit
+      ? device.activeAttrToInk[device.ulaShiftAttr]
+      : device.activeAttrToPaper[device.ulaShiftAttr];
+    pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
+  }
 
   device.ulaShiftAttrCount--;
   if (device.ulaShiftAttrCount === 0) {
     device.ulaShiftAttrCount = 8;
     device.ulaShiftAttr = device.ulaShiftAttr2; // Load attribute byte 2
   }
-
-  // Lookup color in ULA palette (16 entries for standard + bright colors)
-  const pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
 
   // --- Clipping Test ---
   // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)

@@ -738,11 +738,11 @@ class EmuMessageProcessor {
       spriteSecond: pd.spriteSecond,
       tilemapFirst: pd.tilemapFirst,
       tilemapSecond: pd.tilemapSecond,
-      ulaNextByteFormat: pd.ulaNextByteFormat,
       storedPaletteValue: pd.storedPaletteValue,
       trancparencyColor: machine.screenDevice.fallbackColor,
       reg43Value: pd.nextReg43Value,
-      reg6bValue: machine.tilemapDevice.nextReg6bValue
+      reg6bValue: machine.tilemapDevice.nextReg6bValue,
+      ulaNextFormat: machine.composedScreenDevice.ulaNextFormat
     };
   }
 

@@ -239,6 +239,20 @@ export class NextComposedScreenDevice
     this.updateBorderRgbCache();
   }
 
+  // === ULANext mode (NextReg 0x42, 0x43)
+  private _ulaNextEnabled: boolean;
+  ulaNextFormat: number; // Attribute byte format mask (NextReg 0x42)
+
+  get ulaNextEnabled(): boolean {
+    return this._ulaNextEnabled;
+  }
+
+  set ulaNextEnabled(value: boolean) {
+    this._ulaNextEnabled = value;
+    // Border palette index changes when ULANext mode is toggled
+    this.updateBorderRgbCache();
+  }
+
   // Rendering flags for all layers and modes
   private _renderingFlagsULA: ULAStandardMatrix;
   private _renderingFlagsULA50Hz: ULAStandardMatrix;
@@ -454,6 +468,10 @@ export class NextComposedScreenDevice
     this._ulaPlusEnabled = false;
     this.ulaPlusMode = 0;
     this.ulaPlusPaletteIndex = 0;
+
+    // --- Initialize ULANext state
+    this._ulaNextEnabled = false;
+    this.ulaNextFormat = 0x0f; // Default: 4-bit INK, 4-bit PAPER
 
     this.layer2ClipWindowX1 = 0;
     this.layer2ClipWindowX2 = 159;
@@ -960,6 +978,31 @@ export class NextComposedScreenDevice
         break;
     }
     this.ulaClipIndex = (this.ulaClipIndex + 1) & 0x03;
+  }
+
+  /**
+   * NextReg 0x42 - ULANext Attribute Byte Format
+   * Sets the mask indicating which bits of an attribute byte represent INK.
+   * Other bits represent PAPER.
+   */
+  set nextReg0x42Value(value: number) {
+    this.ulaNextFormat = value;
+  }
+
+  get nextReg0x42Value(): number {
+    return this.ulaNextFormat;
+  }
+
+  /**
+   * NextReg 0x43 - Palette Control
+   * bit 0 = Enable ULANext mode
+   */
+  set nextReg0x43Value(value: number) {
+    this.ulaNextEnabled = (value & 0x01) !== 0;
+  }
+
+  get nextReg0x43Value(): number {
+    return this.ulaNextEnabled ? 0x01 : 0x00;
   }
 
   // ==============================================================================================

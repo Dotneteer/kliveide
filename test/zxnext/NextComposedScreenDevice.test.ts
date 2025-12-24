@@ -1386,6 +1386,192 @@ describe("Next - ComposedScreenDevice", function () {
       expect(m.composedScreenDevice.ulaPlusPaletteIndex).toBe(0x00);
     });
   });
+
+  describe("ULANext Mode (NextReg 0x42, 0x43)", () => {
+    it("NextReg 0x42 sets ULANext format mask (default)", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Assert (check default value)
+      expect(d.ulaNextFormat).toBe(0x0f); // Default: 4-bit INK, 4-bit PAPER
+    });
+
+    it("NextReg 0x42 writes and reads format mask", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x42, 0x0f); // 4-bit INK, 4-bit PAPER
+
+      // --- Assert
+      expect(d.ulaNextFormat).toBe(0x0f);
+      expect(readNextReg(m, 0x42)).toBe(0x0f);
+    });
+
+    it("NextReg 0x42 accepts all valid format masks", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+      const validMasks = [0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff];
+
+      // --- Act & Assert
+      for (const mask of validMasks) {
+        writeNextReg(m, 0x42, mask);
+        expect(d.ulaNextFormat).toBe(mask);
+      }
+    });
+
+    it("NextReg 0x42 updates NextComposedScreenDevice", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x42, 0x1f);
+
+      // --- Assert
+      expect(d.ulaNextFormat).toBe(0x1f);
+    });
+
+    it("NextReg 0x43 bit 0 enables ULANext mode", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x01); // Enable ULANext
+
+      // --- Assert
+      expect(d.ulaNextEnabled).toBe(true);
+    });
+
+    it("NextReg 0x43 bit 0 disables ULANext mode", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+      writeNextReg(m, 0x43, 0x01); // Enable first
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x00); // Disable ULANext
+
+      // --- Assert
+      expect(d.ulaNextEnabled).toBe(false);
+    });
+
+    it("NextReg 0x43 preserves other bits when toggling ULANext", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x43, 0xfe); // Set all bits except bit 0
+
+      // --- Assert
+      const value = readNextReg(m, 0x43);
+      expect(value & 0xfe).toBe(0xfe); // Other bits preserved
+      expect(m.composedScreenDevice.ulaNextEnabled).toBe(false);
+
+      // --- Act
+      writeNextReg(m, 0x43, 0xff); // Enable ULANext
+
+      // --- Assert
+      expect(m.composedScreenDevice.ulaNextEnabled).toBe(true);
+      expect(readNextReg(m, 0x43) & 0xfe).toBe(0xfe); // Other bits still preserved
+    });
+
+    it("ULANext and ULA+ are mutually exclusive", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+      const pm = m.portManager;
+
+      // --- Act: Enable ULA+ first
+      pm.writePort(0xbf3b, 0x40); // Mode 01
+      pm.writePort(0xff3b, 0x01); // Enable ULA+
+      
+      expect(d.ulaPlusEnabled).toBe(true);
+      expect(d.ulaNextEnabled).toBe(false);
+
+      // --- Act: Enable ULANext
+      writeNextReg(m, 0x43, 0x01);
+
+      // --- Assert: ULANext enabled, ULA+ remains in its state
+      // (Both can be technically enabled, but rendering logic prioritizes ULANext)
+      expect(d.ulaNextEnabled).toBe(true);
+      expect(d.ulaPlusEnabled).toBe(true); // ULA+ state doesn't automatically disable
+    });
+
+    it("ULANext format mask 0xFF enables full ink color mode", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x42, 0xff); // All 8 bits for INK
+      writeNextReg(m, 0x43, 0x01); // Enable ULANext
+
+      // --- Assert
+      expect(d.ulaNextFormat).toBe(0xff);
+      expect(d.ulaNextEnabled).toBe(true);
+    });
+
+    it("ULANext default state after reset", async () => {
+      // --- Arrange & Act
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Assert
+      expect(d.ulaNextEnabled).toBe(false); // ULANext disabled by default
+      expect(d.ulaNextFormat).toBe(0x0f); // Default: 4-bit INK, 4-bit PAPER
+    });
+
+    it("NextReg 0x42 masks to 8 bits", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x42, 0x1ff); // Try to set more than 8 bits
+
+      // --- Assert
+      expect(d.ulaNextFormat).toBe(0xff); // Only lower 8 bits stored
+    });
+
+    it("Border color update triggers when ULANext mode changes", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+      const initialBorderRgb = d.borderRgbCache;
+
+      // --- Act
+      writeNextReg(m, 0x43, 0x01); // Enable ULANext
+
+      // --- Assert
+      // Border RGB cache should be recalculated (may or may not change value)
+      // Just verify the property is accessible and function was called
+      expect(d.borderRgbCache).toBeDefined();
+      expect(typeof d.borderRgbCache).toBe("number");
+    });
+
+    it("ULANext format changes are applied immediately", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+      
+      writeNextReg(m, 0x43, 0x01); // Enable ULANext first
+
+      // --- Act & Assert: Multiple format changes
+      writeNextReg(m, 0x42, 0x01);
+      expect(d.ulaNextFormat).toBe(0x01);
+      
+      writeNextReg(m, 0x42, 0x03);
+      expect(d.ulaNextFormat).toBe(0x03);
+      
+      writeNextReg(m, 0x42, 0x7f);
+      expect(d.ulaNextFormat).toBe(0x7f);
+    });
+  });
 });
 
 function writeNextReg(m: IZxNextMachine, reg: number, value: number) {

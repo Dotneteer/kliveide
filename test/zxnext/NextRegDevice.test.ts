@@ -1823,25 +1823,25 @@ describe("Next - NextRegDevice", function () {
   it("Reg $42 write #1", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const pal = m.paletteDevice;
+    const d = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x42, 0x3f);
 
     // --- Assert
-    expect(pal.ulaNextByteFormat).toBe(0x3f);
+    expect(d.ulaNextFormat).toBe(0x3f);
   });
 
   it("Reg $42 write #2", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const pal = m.paletteDevice;
+    const d = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x42, 0x1f);
 
     // --- Assert
-    expect(pal.ulaNextByteFormat).toBe(0x1f);
+    expect(d.ulaNextFormat).toBe(0x1f);
   });
 
   it("Reg $4a write", async () => {

@@ -626,11 +626,11 @@ export type PaletteDeviceInfo = {
   spriteSecond: number[];
   tilemapFirst: number[];
   tilemapSecond: number[];
-  ulaNextByteFormat: number;
   storedPaletteValue: number;
   trancparencyColor: number;
   reg43Value: number;
   reg6bValue: number;
+  ulaNextFormat: number;
 };
 
 export type EmuApi = EmuApiImpl;

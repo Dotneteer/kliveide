@@ -47,7 +47,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   tilemapSecond: number[] = [];
   private tilemapRgbFirst: number[] = [];
   private tilemapRgbSecond: number[] = [];
-  ulaNextByteFormat: number;
   storedPaletteValue: number;
 
   constructor(public readonly machine: IZxNextMachine) {
