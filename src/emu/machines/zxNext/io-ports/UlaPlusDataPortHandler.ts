@@ -15,17 +15,20 @@ export function readUlaPlusDataPort(machine: IZxNextMachine): number {
   
   if (mode === 0x00) {
     // Palette access mode: read palette data at current index
-    const paletteIndex = machine.composedScreenDevice.ulaPlusPaletteIndex;
+    const ulaPlusIndex = machine.composedScreenDevice.ulaPlusPaletteIndex;
+    
+    // ULA+ palette is stored at indices 192-255 of the ULA palette (64 colors)
+    const paletteIndex = 192 + ulaPlusIndex;
     const rgb333 = machine.paletteDevice.getUlaRgb333(paletteIndex);
     
-    // Convert from internal 9-bit RGB333 to 8-bit RRRGGGBB format
+    // Convert from internal 9-bit RGB333 to 8-bit GGGRRRBB format
     // Bit layout: RGB333 = [R2 R1 R0 G2 G1 G0 B2 B1 B0]
-    // Output: RRRGGGBB = [R2 R1 R0 G2 G1 G0 B2 B1]
+    // Output: GGGRRRBB = [G2 G1 G0 R2 R1 R0 B2 B1]
     const red = (rgb333 >> 6) & 0x07;    // Bits [8:6]
     const green = (rgb333 >> 3) & 0x07;  // Bits [5:3]
     const blue = (rgb333 >> 1) & 0x03;   // Bits [2:1] (upper 2 bits only)
     
-    return (red << 5) | (green << 2) | blue;
+    return (green << 5) | (red << 2) | blue;
   } else {
     // Control mode (01/10/11): return enable flag in bit 0
     return machine.composedScreenDevice.ulaPlusEnabled ? 0x01 : 0x00;
@@ -48,13 +51,16 @@ export function writeUlaPlusDataPort(machine: IZxNextMachine, value: number): vo
   
   if (mode === 0x00) {
     // Palette access mode: write palette data at current index
-    const paletteIndex = machine.composedScreenDevice.ulaPlusPaletteIndex;
+    const ulaPlusIndex = machine.composedScreenDevice.ulaPlusPaletteIndex;
     
-    // Convert from 8-bit RRRGGGBB to internal 9-bit RGB333 format
-    // Input: RRRGGGBB = [R2 R1 R0 G2 G1 G0 B2 B1]
+    // ULA+ palette is stored at indices 192-255 of the ULA palette (64 colors)
+    const paletteIndex = 192 + ulaPlusIndex;
+    
+    // Convert from 8-bit GGGRRRBB to internal 9-bit RGB333 format
+    // Input: GGGRRRBB = [G2 G1 G0 R2 R1 R0 B2 B1]
     // Output: RGB333 = [R2 R1 R0 G2 G1 G0 B2 B1 B0]
-    const red = (value >> 5) & 0x07;   // Bits [7:5]
-    const green = (value >> 2) & 0x07; // Bits [4:2]
+    const green = (value >> 5) & 0x07; // Bits [7:5]
+    const red = (value >> 2) & 0x07;   // Bits [4:2]
     const blue = value & 0x03;         // Bits [1:0]
     
     // Replicate bit 0 as LSB for blue channel (as per VHDL)
@@ -66,10 +72,7 @@ export function writeUlaPlusDataPort(machine: IZxNextMachine, value: number): vo
       : machine.paletteDevice.ulaFirst;
     palette[paletteIndex] = rgb333;
     
-    // Update border cache if border color was modified (palette index 0-7 PAPER colors)
-    if (paletteIndex < 8) {
-      machine.composedScreenDevice.updateBorderRgbCache();
-    }
+
   } else if (mode === 0x01) {
     // Control mode: update enable flag (bit 0 only)
     machine.composedScreenDevice.ulaPlusEnabled = (value & 0x01) !== 0;

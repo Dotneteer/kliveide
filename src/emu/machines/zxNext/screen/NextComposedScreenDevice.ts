@@ -225,9 +225,19 @@ export class NextComposedScreenDevice
   layer2EnableMappingForWrites: boolean;
 
   // === ULA+ Mode/Index register port (0xbf3b)
-  ulaPlusEnabled: boolean;
+  private _ulaPlusEnabled: boolean;
   ulaPlusMode: number;
   ulaPlusPaletteIndex: number;
+
+  get ulaPlusEnabled(): boolean {
+    return this._ulaPlusEnabled;
+  }
+
+  set ulaPlusEnabled(value: boolean) {
+    this._ulaPlusEnabled = value;
+    // Border palette index changes when ULA+ mode is toggled
+    this.updateBorderRgbCache();
+  }
 
   // Rendering flags for all layers and modes
   private _renderingFlagsULA: ULAStandardMatrix;
@@ -440,6 +450,11 @@ export class NextComposedScreenDevice
     this.ulaHiColorMode = false;
     this.ulaHiColorModeSampled = false;
 
+    // --- Initialize ULA+ state
+    this._ulaPlusEnabled = false;
+    this.ulaPlusMode = 0;
+    this.ulaPlusPaletteIndex = 0;
+
     this.layer2ClipWindowX1 = 0;
     this.layer2ClipWindowX2 = 159;
     this.layer2ClipWindowY1 = 0;
@@ -507,7 +522,7 @@ export class NextComposedScreenDevice
    */
   set borderColor(value: number) {
     this._borderColor = value;
-    this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(value);
+    this.updateBorderRgbCache();
   }
 
   /**
@@ -515,9 +530,22 @@ export class NextComposedScreenDevice
    * Called by PaletteDevice when:
    * - ULA palette colors change
    * - Active palette switches (first <-> second)
+   * 
+   * When ULA+ is enabled, border goes through ULA+ palette lookup.
+   * VHDL: border_clr = "00" & border_color & border_color
+   * ULA+ palette index = "11" & attr[7:6] & "1" & attr[5:3]
+   *                    = "11" & "00" & "1" & border_color
+   *                    = 192 + 8 + border_color = 200 + border_color
    */
   updateBorderRgbCache(): void {
-    this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this._borderColor);
+    if (this._ulaPlusEnabled) {
+      // ULA+: Border uses palette indices 200-207 (for border colors 0-7)
+      const ulaPlusPaletteIndex = 200 + this._borderColor;
+      this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(ulaPlusPaletteIndex);
+    } else {
+      // Standard: Border uses palette indices 0-7
+      this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this._borderColor);
+    }
   }
 
   maxTacts: number;

@@ -1094,9 +1094,10 @@ describe("Next - ComposedScreenDevice", function () {
       const readValue = pm.readPort(0xff3b);
 
       // --- Assert
-      // Color 0xE3 (RRRGGGBB) -> RGB333 = 111_000_11_0 = 0x1c6
-      const expectedRgb333 = (0x07 << 6) | (0x00 << 3) | (0x03 << 1) | 0x01;
-      expect(pal.ulaFirst[5]).toBe(expectedRgb333);
+      // Color 0xE3 (GGGRRRBB): G=7, R=0, B=3 -> RGB333 = 000_111_111 = 0x03f
+      // ULA+ palette index 5 maps to palette entry 192+5 = 197
+      const expectedRgb333 = (0x00 << 6) | (0x07 << 3) | (0x03 << 1) | 0x01;
+      expect(pal.ulaFirst[197]).toBe(expectedRgb333);
       expect(readValue).toBe(0xe3); // Should read back same value
     });
 
@@ -1112,10 +1113,11 @@ describe("Next - ComposedScreenDevice", function () {
       pm.writePort(0xff3b, 0xa5); // RRRGGGBB = 10100101 (R=5, G=1, B=1)
 
       // --- Assert
-      // Expected: R=5 (101), G=1 (001), B=1 (01)
-      // RGB333 = 101_001_01_1 = 0x0a3
-      const expectedRgb333 = (0x05 << 6) | (0x01 << 3) | (0x01 << 1) | 0x01;
-      expect(pal.ulaFirst[16]).toBe(expectedRgb333);
+      // GGGRRRBB = 10100101: G=5 (101), R=1 (001), B=1 (01)
+      // RGB333 = 001_101_011 = 0x06b
+      // ULA+ palette index 16 maps to palette entry 192+16 = 208
+      const expectedRgb333 = (0x01 << 6) | (0x05 << 3) | (0x01 << 1) | 0x01;
+      expect(pal.ulaFirst[208]).toBe(expectedRgb333);
     });
 
     it("Port 0xFF3B mode 00: color format conversion (9-bit to 8-bit)", async () => {
@@ -1126,15 +1128,16 @@ describe("Next - ComposedScreenDevice", function () {
       
       pm.writePort(0xbf3b, 0x12); // Mode 00, index 18
       // Manually set palette to known 9-bit value
-      pal.ulaFirst[18] = 0x1a5; // RGB333 = 110_100_101
+      // ULA+ palette index 18 maps to palette entry 192+18 = 210
+      pal.ulaFirst[210] = 0x1a5; // RGB333 = 110_100_101
 
       // --- Act
       const readValue = pm.readPort(0xff3b);
 
       // --- Assert
-      // Expected: R=6 (110), G=4 (100), B=2 (upper 2 bits of 101)
-      // RRRGGGBB = 11010010 = 0xd2
-      expect(readValue).toBe(0xd2);
+      // RGB333 = 110_100_101: R=6 (110), G=4 (100), B=2 (upper 2 bits: 10)
+      // GGGRRRBB = 10011010 = 0x9a
+      expect(readValue).toBe(0x9a);
     });
 
     it("Port 0xFF3B mode 00: writes to second ULA palette when selected", async () => {
@@ -1150,8 +1153,11 @@ describe("Next - ComposedScreenDevice", function () {
       pm.writePort(0xff3b, 0x9c); // RRRGGGBB = 10011100
 
       // --- Assert
-      const expectedRgb333 = (0x04 << 6) | (0x07 << 3) | (0x00 << 1) | 0x00;
-      expect(pal.ulaSecond[7]).toBe(expectedRgb333);
+      // GGGRRRBB = 10011100: G=4 (100), R=7 (111), B=0 (00)
+      // RGB333 = 111_100_000 = 0x1e0
+      // ULA+ palette index 7 maps to palette entry 192+7 = 199
+      const expectedRgb333 = (0x07 << 6) | (0x04 << 3) | (0x00 << 1) | 0x00;
+      expect(pal.ulaSecond[199]).toBe(expectedRgb333);
     });
 
     it("Port 0xFF3B mode 01: writes enable flag", async () => {
@@ -1351,7 +1357,8 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       for (let i = 0; i < 8; i++) {
-        const rgb333 = pal.ulaFirst[i];
+        // ULA+ palette index i maps to palette entry 192+i
+        const rgb333 = pal.ulaFirst[192 + i];
         const expectedR = i;
         const expectedG = i;
         const expectedB = i & 0x03;
@@ -1374,7 +1381,8 @@ describe("Next - ComposedScreenDevice", function () {
       pm.writePort(0xbf3b, 0x00); // Mode 00, index 0
 
       // --- Assert
-      expect(pal.ulaFirst[63]).toBe(0x1ff); // Max index writable
+      // ULA+ palette index 63 maps to palette entry 192+63 = 255
+      expect(pal.ulaFirst[255]).toBe(0x1ff); // Max index writable
       expect(m.composedScreenDevice.ulaPlusPaletteIndex).toBe(0x00);
     });
   });
