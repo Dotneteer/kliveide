@@ -81,6 +81,10 @@ export interface IPixelRenderingState {
   activeAttrToInk: Uint8Array;
   activeAttrToPaper: Uint8Array;
 
+  // ULA+ attribute decode lookup tables (indices 192-255)
+  ulaPlusAttrToInk: Uint8Array;
+  ulaPlusAttrToPaper: Uint8Array;
+
   // Border color
   borderRgbCache: number;
 
@@ -353,16 +357,10 @@ export function renderULAStandardPixel(
     }
   } else if (device.ulaPlusEnabled) {
     // ULA+ Mode: Use 64-color palette (indices 192-255 in ULA palette)
-    // Palette index construction (6 bits):
-    //   Bits 5-4: attr[7:6] (FLASH, BRIGHT)
-    //   Bit 3: 0 for INK, 1 for PAPER
-    //   Bits 2-0: attr[2:0] for INK or attr[5:3] for PAPER
-    const attr = device.ulaShiftAttr;
-    const ulaPlusIndex6bit =
-      ((attr & 0b11000000) >> 2) | // Bits 5-4: FLASH, BRIGHT (shift right by 2)
-      (pixelBit ? 0 : 0b1000) | // Bit 3: 0 for INK, 1 for PAPER
-      (pixelBit ? (attr & 0b111) : ((attr >> 3) & 0b111)); // Bits 2-0: color
-    const ulaPaletteIndex = 192 + ulaPlusIndex6bit; // ULA+ palette at indices 192-255
+    // Use pre-calculated lookup tables - no bit operations needed
+    const ulaPaletteIndex = pixelBit
+      ? device.ulaPlusAttrToInk[device.ulaShiftAttr]
+      : device.ulaPlusAttrToPaper[device.ulaShiftAttr];
     pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(ulaPaletteIndex);
   } else {
     // Standard Mode: Use pre-calculated lookup tables with BRIGHT already applied

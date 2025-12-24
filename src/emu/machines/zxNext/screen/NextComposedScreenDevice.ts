@@ -340,6 +340,11 @@ export class NextComposedScreenDevice
   activeAttrToInk: Uint8Array;
   activeAttrToPaper: Uint8Array;
 
+  // ULA+ attribute decode lookup tables (indices 192-255)
+  // ULA+ uses 64-color palette with different encoding (FLASH+BRIGHT at top, no flash swap)
+  ulaPlusAttrToInk: Uint8Array; // [attr] -> ULA+ ink palette index (192-255)
+  ulaPlusAttrToPaper: Uint8Array; // [attr] -> ULA+ paper palette index (192-255)
+
   constructor(public readonly machine: IZxNextMachine) {
     // Screen dimensions
     this.screenWidth = BITMAP_WIDTH;
@@ -401,6 +406,26 @@ export class NextComposedScreenDevice
     // Initialize active lookup tables
     this.activeAttrToInk = this._attrToInkFlashOff;
     this.activeAttrToPaper = this._attrToPaperFlashOff;
+
+    // Generate ULA+ attribute decode lookup tables (256 entries)
+    // ULA+ uses 64-color palette (indices 192-255 in ULA palette)
+    // Palette index construction (6 bits):
+    //   Bits 5-4: attr[7:6] (FLASH, BRIGHT)
+    //   Bit 3: 0 for INK, 1 for PAPER
+    //   Bits 2-0: attr[2:0] for INK or attr[5:3] for PAPER
+    // Note: ULA+ disables flash functionality - FLASH bit becomes part of color selection
+    this.ulaPlusAttrToInk = new Uint8Array(256);
+    this.ulaPlusAttrToPaper = new Uint8Array(256);
+
+    for (let attr = 0; attr < 256; attr++) {
+      // INK: bits [7:6] | 0 | [2:0]
+      const inkIndex6bit = ((attr & 0b11000000) >> 2) | (attr & 0b00000111);
+      this.ulaPlusAttrToInk[attr] = 192 + inkIndex6bit;
+
+      // PAPER: bits [7:6] | 1 | [5:3]
+      const paperIndex6bit = ((attr & 0b11000000) >> 2) | 0b1000 | ((attr >> 3) & 0b111);
+      this.ulaPlusAttrToPaper[attr] = 192 + paperIndex6bit;
+    }
 
     // Generate rendering flags for all layers and modes
     this._renderingFlagsULA50Hz = this.generateULAStandardRenderingFlags(Plus3_50Hz);
