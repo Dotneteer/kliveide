@@ -1321,3 +1321,170 @@ The fallback color is looked up in the ULA palette and expanded from 8 to 9 bits
 - Blend modes: `zxnext.vhd` lines 7240-7310
 - Output stage: `zxnext.vhd` lines 7315-7370
 
+## 5. ULA+ Palette Extension
+
+ULA+ is a palette extension mode for the ULA layer that provides access to a full 64-color palette (compared to the standard 16-color ULA palette). When ULA+ mode is enabled, the ULA uses a different palette indexing scheme that extracts color information from the attribute byte in a new way, allowing for richer color output without changing the underlying screen format.
+
+### 5.1 ULA+ Mode Control
+
+ULA+ mode can be enabled/disabled through two interfaces:
+
+#### Port-Based Control
+
+**Port 0xBF3B (ULA+ Mode/Index Register)**:
+- **Bits [7:6]**: Mode selection
+  - `00`: Palette access mode (index register for port 0xFF3B)
+  - `01`: Control mode (enable/disable ULA+ via port 0xFF3B)
+  - `10`: Reserved
+  - `11`: Reserved
+- **Bits [5:0]**: Palette index (0-63) when mode = `00`
+
+**Port 0xFF3B (ULA+ Data/Enable Register)**:
+- **Mode 00 (Palette Access)**:
+  - **Write**: Set palette entry at current index to 8-bit RRRGGGBB color
+  - **Read**: Return 8-bit RRRGGGBB color from palette entry at current index
+- **Mode 01 (Control)**:
+  - **Bit 0**: ULA+ enable flag (1 = enabled, 0 = disabled)
+  - **Bits [7:1]**: Ignored
+
+#### NextReg Control
+
+**NextReg 0x68 (ULA Control)**:
+- **Bit 3**: ULA+ enable flag (1 = enabled, 0 = disabled)
+- Synchronized with Port 0xFF3B mode 01 control
+
+**Typical Port Usage Sequence**:
+```
+1. OUT $BF3B, $01    ; Select control mode
+2. OUT $FF3B, $01    ; Enable ULA+
+3. OUT $BF3B, $00    ; Select palette access mode
+4. OUT $BF3B, $05    ; Set palette index 5
+5. OUT $FF3B, $E3    ; Write color RRRGGGBB = 11100011 (red=7, green=0, blue=3)
+```
+
+### 5.2 ULA+ Palette Structure
+
+The ULA+ palette consists of 64 entries, each storing a 9-bit RGB333 color value internally. When accessed via Port 0xFF3B, colors are converted to/from an 8-bit RRRGGGBB format.
+
+#### Palette Index Generation
+
+When ULA+ mode is enabled, the palette index is constructed from the attribute byte and pixel value:
+
+```
+Palette Index (6 bits) = attr[7:6] & screen_mode_r[2] | ~pixel_en & attr[2:0]
+```
+
+Breaking this down:
+- **attr[7:6]**: Upper 2 bits come from the attribute byte (typically FLASH and BRIGHT in standard ULA)
+- **screen_mode_r[2] | ~pixel_en**: This bit selects INK (1) or PAPER (0)
+  - `pixel_en` is 1 when the current pixel is INK (foreground), 0 for PAPER (background)
+  - `screen_mode_r[2]` is the ULA+ enable flag (when 1, forces INK selection)
+- **attr[2:0]**: Lower 3 bits from attribute byte (color selection)
+
+**Effective Index Structure**:
+```
+Bits [5:4]: attr[7:6]    (group selection - 4 groups of 16 colors)
+Bit  [3]:   INK/PAPER    (0 = PAPER, 1 = INK)
+Bits [2:0]: attr[2:0]    (color selection within INK/PAPER group)
+```
+
+This creates a palette space organized as:
+- **Indices 0-7**: PAPER colors for attr[2:0] = 0-7, attr[7:6] = 00
+- **Indices 8-15**: INK colors for attr[2:0] = 0-7, attr[7:6] = 00
+- **Indices 16-23**: PAPER colors for attr[2:0] = 0-7, attr[7:6] = 01
+- **Indices 24-31**: INK colors for attr[2:0] = 0-7, attr[7:6] = 01
+- **Indices 32-39**: PAPER colors for attr[2:0] = 0-7, attr[7:6] = 10
+- **Indices 40-47**: INK colors for attr[2:0] = 0-7, attr[7:6] = 10
+- **Indices 48-55**: PAPER colors for attr[2:0] = 0-7, attr[7:6] = 11
+- **Indices 56-63**: INK colors for attr[2:0] = 0-7, attr[7:6] = 11
+
+#### Palette Data Format
+
+**Internal Storage**: 9-bit RGB333 format (3 bits each for Red, Green, Blue)
+
+**Port 0xFF3B Format**: 8-bit RRRGGGBB format
+- **Bits [7:5]**: Red channel (3 bits)
+- **Bits [4:2]**: Green channel (3 bits)
+- **Bits [1:0]**: Blue channel (2 bits - LSB implicitly 0 or replicated)
+
+**Conversion on Port Read**:
+```vhdl
+-- Internal 9-bit RGB333 to 8-bit RRRGGGBB
+port_ff3b_read[7:5] <= palette_rgb[8:6];  -- Red
+port_ff3b_read[4:2] <= palette_rgb[5:3];  -- Green
+port_ff3b_read[1:0] <= palette_rgb[2:1];  -- Blue (upper 2 bits)
+```
+
+**Conversion on Port Write**:
+```vhdl
+-- 8-bit RRRGGGBB to internal 9-bit RGB333
+palette_rgb[8:6] <= port_ff3b_write[7:5];  -- Red
+palette_rgb[5:3] <= port_ff3b_write[4:2];  -- Green
+palette_rgb[2:1] <= port_ff3b_write[1:0];  -- Blue (upper 2 bits)
+palette_rgb[0]   <= port_ff3b_write[0];    -- Blue LSB (replicate bit 0)
+```
+
+### 5.3 ULA+ Pixel Generation
+
+When ULA+ mode is enabled, the ULA pixel generation path changes:
+
+1. **Standard Path** (ULA+ disabled):
+   - Extract pixel from shift register
+   - Apply flash logic (XOR with flash counter)
+   - Select INK/PAPER color from attr[2:0] or attr[5:3]
+   - Add BRIGHT bit (attr[6]) to form 4-bit palette index
+   - Lookup in standard ULA palette (16 colors)
+
+2. **ULA+ Path** (ULA+ enabled):
+   - Extract pixel from shift register
+   - Flash logic **disabled** (attr[7] is used for palette group selection)
+   - Construct 6-bit palette index: {attr[7:6], pixel_en, attr[2:0]}
+   - Lookup in ULA+ palette (64 colors)
+   - BRIGHT bit (attr[6]) is reinterpreted as palette group selector
+
+### 5.4 Implementation Notes
+
+#### Integration with Existing Palette System
+
+The ULA+ palette shares the same dual-port RAM architecture as the standard ULA palette:
+
+```
+ULA Palette Address Space (10 bits):
+Bits [9:8]: Palette bank select (00 = first palette, 01 = second palette)
+Bits [7:0]: Color index (0-255, but ULA only uses 0-15 standard, 0-63 ULA+)
+```
+
+When ULA+ is enabled, the palette lookup uses:
+- **Standard ULA**: `{palette_select, 0, 0, 0, 0, ink/paper, bright, color[2:0]}`
+- **ULA+**: `{palette_select, 0, 0, attr[7:6], pixel_en, attr[2:0]}`
+
+#### Compatibility Considerations
+
+- **Default State**: ULA+ mode is disabled on reset
+- **Flash Effect**: When ULA+ is enabled, the FLASH attribute bit (attr[7]) is repurposed for palette group selection, so flashing cannot be used simultaneously with ULA+
+- **BRIGHT Effect**: Similarly, attr[6] becomes a palette group selector instead of a BRIGHT modifier
+- **Border**: Border color continues to use port 0xFE bits [2:0] and is not affected by ULA+
+- **Palette Banks**: ULA+ palette entries exist in both first and second palette banks, allowing palette switching via NextReg 0x43 bit 6
+
+#### Memory Map
+
+**Port Decoding**:
+```vhdl
+port_bf3b_rd = (cpu_a[15:0] = 0xBF3B) AND cpu_iorq = '1' AND cpu_rd = '1'
+port_bf3b_wr = (cpu_a[15:0] = 0xBF3B) AND cpu_iorq = '1' AND cpu_wr = '1'
+port_ff3b_rd = (cpu_a[15:0] = 0xFF3B) AND cpu_iorq = '1' AND cpu_rd = '1'
+port_ff3b_wr = (cpu_a[15:0] = 0xFF3B) AND cpu_iorq = '1' AND cpu_wr = '1'
+```
+
+**Palette RAM Access**:
+- **Write Priority**: CPU/copper writes have priority over video reads
+- **Read Timing**: Video reads occur at CLK_28 inverted edge, alternating between ULA/Tilemap (sc[0]=0) and Layer2/Sprites (sc[0]=1)
+- **Write Timing**: Port writes are registered on i_CLK_28 rising edge
+
+**Source References**:
+- Port definitions: `zxnext.vhd` lines 2635-2680
+- Port 0xBF3B handler: `zxnext.vhd` lines 4495-4510 (mode/index register)
+- Port 0xFF3B handler: `zxnext.vhd` lines 4512-4570 (data/enable register)
+- ULA+ pixel generation: `zxula.vhd` lines 490-570 (palette index construction)
+- NextReg 0x68 integration: `zxnext.vhd` lines 5200-5250 (ULA control register)
+

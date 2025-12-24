@@ -12,7 +12,6 @@ import { readUartRxPort, writeUartRxPort } from "./UartRxPortHandler";
 import { readUartSelectPort, writeUartSelectPort } from "./UartSelectPortHandler";
 import { readUartFramePort, writeUartFramePort } from "./UartFramePortHandler";
 import { readCtcPort, writeCtcPort } from "./CtcPortHandler";
-import { writeUlaPlusRegisterPort } from "./UlaPlusRegisterPortHandler";
 import { readUlaPlusDataPort, writeUlaPlusDataPort } from "./UlaPlusDataPortHandler";
 import { readZ80DmaPort, writeZ80DmaPort } from "./Z80DmaPortHandler";
 import { readZxnDmaPort, writeZxnDmaPort } from "./ZxnDmaPortHandler";
@@ -234,15 +233,22 @@ export class NextIoPortManager {
       port: 0xbf3b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b1011_1111_0011_1011,
-      writerFns: writeUlaPlusRegisterPort
+      readerFns: () => 0xff,
+      writerFns: (_, v) => {
+        machine.composedScreenDevice.ulaPlusMode = (v >> 6) & 0x03;
+        if ((v >> 6) === 0x00) {
+          // Only update palette index when mode is 00 (palette access)
+          machine.composedScreenDevice.ulaPlusPaletteIndex = v & 0x3f;
+        }
+      }
     });
     r({
       description: "ULA+ Data",
       port: 0xff3b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b1111_1111_0011_1011,
-      readerFns: readUlaPlusDataPort,
-      writerFns: writeUlaPlusDataPort
+      readerFns: () => readUlaPlusDataPort(machine),
+      writerFns: (_, v) => writeUlaPlusDataPort(machine, v)
     });
     r({
       description: "Z80Dma",

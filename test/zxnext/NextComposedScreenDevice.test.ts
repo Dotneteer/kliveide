@@ -705,7 +705,7 @@ describe("Next - ComposedScreenDevice", function () {
       expect(readNextReg(m, 0x68)).toBe(0x80);
       expect(scrDevice.disableUlaOutput).toBe(true);
       expect(scrDevice.blendingInSLUModes6And7).toBe(0x00);
-      expect(scrDevice.enableUlaPlus).toBe(false);
+      expect(scrDevice.ulaPlusEnabled).toBe(false);
       expect(scrDevice.ulaHalfPixelScroll).toBe(false);
       expect(scrDevice.enableStencilMode).toBe(false);
     });
@@ -722,7 +722,7 @@ describe("Next - ComposedScreenDevice", function () {
       expect(readNextReg(m, 0x68)).toBe(0x40);
       expect(srcDevice.disableUlaOutput).toBe(false);
       expect(srcDevice.blendingInSLUModes6And7).toBe(0x02);
-      expect(srcDevice.enableUlaPlus).toBe(false);
+      expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
       expect(srcDevice.enableStencilMode).toBe(false);
     });
@@ -739,7 +739,7 @@ describe("Next - ComposedScreenDevice", function () {
       expect(readNextReg(m, 0x68)).toBe(0x08);
       expect(srcDevice.disableUlaOutput).toBe(false);
       expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
-      expect(srcDevice.enableUlaPlus).toBe(true);
+      expect(srcDevice.ulaPlusEnabled).toBe(true);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
       expect(srcDevice.enableStencilMode).toBe(false);
     });
@@ -756,7 +756,7 @@ describe("Next - ComposedScreenDevice", function () {
       expect(readNextReg(m, 0x68)).toBe(0x04);
       expect(srcDevice.disableUlaOutput).toBe(false);
       expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
-      expect(srcDevice.enableUlaPlus).toBe(false);
+      expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(true);
       expect(srcDevice.enableStencilMode).toBe(false);
     });
@@ -773,7 +773,7 @@ describe("Next - ComposedScreenDevice", function () {
       expect(readNextReg(m, 0x68)).toBe(0x01);
       expect(srcDevice.disableUlaOutput).toBe(false);
       expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
-      expect(srcDevice.enableUlaPlus).toBe(false);
+      expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
       expect(srcDevice.enableStencilMode).toBe(true);
     });
@@ -1034,6 +1034,356 @@ describe("Next - ComposedScreenDevice", function () {
       const expectedRendered = visibleWidth * visibleHeight;
       expect(scrDevice.is60HzMode).toBe(true);
       expect(rendered).toBe(expectedRendered);
+    });
+  });
+
+  describe("ULA+ Ports", () => {
+    it("Port 0xBF3B is write-only (returns 0xFF on read)", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+
+      // --- Act
+      pm.writePort(0xbf3b, 0x05); // Set mode 00, index 5
+      const value = pm.readPort(0xbf3b);
+
+      // --- Assert
+      expect(value).toBe(0xff);
+    });
+
+    it("Port 0xBF3B sets mode and index", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      pm.writePort(0xbf3b, 0x05); // Mode 00, index 5
+
+      // --- Assert
+      expect(d.ulaPlusMode).toBe(0x00);
+      expect(d.ulaPlusPaletteIndex).toBe(0x05);
+    });
+
+    it("Port 0xBF3B only updates index when mode is 00", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      pm.writePort(0xbf3b, 0x08); // Mode 00, index 8
+      pm.writePort(0xbf3b, 0x4f); // Mode 01, value 0x0f (index should stay 8)
+
+      // --- Assert
+      expect(d.ulaPlusMode).toBe(0x01);
+      expect(d.ulaPlusPaletteIndex).toBe(0x08); // Unchanged
+    });
+
+    it("Port 0xFF3B mode 00: writes and reads palette data", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const pal = m.paletteDevice;
+      
+      // Set up mode 00, index 5
+      pm.writePort(0xbf3b, 0x05);
+
+      // --- Act
+      pm.writePort(0xff3b, 0xe3); // Write RRRGGGBB = 11100011
+      const readValue = pm.readPort(0xff3b);
+
+      // --- Assert
+      // Color 0xE3 (GGGRRRBB): G=7, R=0, B=3 -> RGB333 = 000_111_111 = 0x03f
+      // ULA+ palette index 5 maps to palette entry 192+5 = 197
+      const expectedRgb333 = (0x00 << 6) | (0x07 << 3) | (0x03 << 1) | 0x01;
+      expect(pal.ulaFirst[197]).toBe(expectedRgb333);
+      expect(readValue).toBe(0xe3); // Should read back same value
+    });
+
+    it("Port 0xFF3B mode 00: color format conversion (8-bit to 9-bit)", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const pal = m.paletteDevice;
+      
+      pm.writePort(0xbf3b, 0x10); // Mode 00, index 16
+
+      // --- Act
+      pm.writePort(0xff3b, 0xa5); // RRRGGGBB = 10100101 (R=5, G=1, B=1)
+
+      // --- Assert
+      // GGGRRRBB = 10100101: G=5 (101), R=1 (001), B=1 (01)
+      // RGB333 = 001_101_011 = 0x06b
+      // ULA+ palette index 16 maps to palette entry 192+16 = 208
+      const expectedRgb333 = (0x01 << 6) | (0x05 << 3) | (0x01 << 1) | 0x01;
+      expect(pal.ulaFirst[208]).toBe(expectedRgb333);
+    });
+
+    it("Port 0xFF3B mode 00: color format conversion (9-bit to 8-bit)", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const pal = m.paletteDevice;
+      
+      pm.writePort(0xbf3b, 0x12); // Mode 00, index 18
+      // Manually set palette to known 9-bit value
+      // ULA+ palette index 18 maps to palette entry 192+18 = 210
+      pal.ulaFirst[210] = 0x1a5; // RGB333 = 110_100_101
+
+      // --- Act
+      const readValue = pm.readPort(0xff3b);
+
+      // --- Assert
+      // RGB333 = 110_100_101: R=6 (110), G=4 (100), B=2 (upper 2 bits: 10)
+      // GGGRRRBB = 10011010 = 0x9a
+      expect(readValue).toBe(0x9a);
+    });
+
+    it("Port 0xFF3B mode 00: writes to second ULA palette when selected", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const pal = m.paletteDevice;
+      writeNextReg(m, 0x43, 0x02); // Enable second ULA palette
+      
+      pm.writePort(0xbf3b, 0x07); // Mode 00, index 7
+
+      // --- Act
+      pm.writePort(0xff3b, 0x9c); // RRRGGGBB = 10011100
+
+      // --- Assert
+      // GGGRRRBB = 10011100: G=4 (100), R=7 (111), B=0 (00)
+      // RGB333 = 111_100_000 = 0x1e0
+      // ULA+ palette index 7 maps to palette entry 192+7 = 199
+      const expectedRgb333 = (0x07 << 6) | (0x04 << 3) | (0x00 << 1) | 0x00;
+      expect(pal.ulaSecond[199]).toBe(expectedRgb333);
+    });
+
+    it("Port 0xFF3B mode 01: writes enable flag", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
+
+      // --- Act
+      pm.writePort(0xff3b, 0x01); // Enable ULA+
+
+      // --- Assert
+      expect(d.ulaPlusEnabled).toBe(true);
+    });
+
+    it("Port 0xFF3B mode 01: reads enable flag", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
+      pm.writePort(0xff3b, 0x01); // Enable ULA+
+
+      // --- Act
+      const readValue = pm.readPort(0xff3b);
+
+      // --- Assert
+      expect(readValue).toBe(0x01);
+    });
+
+    it("Port 0xFF3B mode 01: clears enable flag", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01
+      pm.writePort(0xff3b, 0x01); // Enable
+      
+      // --- Act
+      pm.writePort(0xff3b, 0x00); // Disable
+
+      // --- Assert
+      expect(d.ulaPlusEnabled).toBe(false);
+    });
+
+    it("Port 0xFF3B mode 10: write ignored", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01
+      pm.writePort(0xff3b, 0x01); // Enable
+      pm.writePort(0xbf3b, 0x80); // Mode 10 (reserved)
+
+      // --- Act
+      pm.writePort(0xff3b, 0x00); // Attempt to disable (should be ignored)
+
+      // --- Assert
+      expect(d.ulaPlusEnabled).toBe(true); // Still enabled
+    });
+
+    it("Port 0xFF3B mode 11: write ignored", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01
+      pm.writePort(0xff3b, 0x00); // Disable
+      pm.writePort(0xbf3b, 0xc0); // Mode 11 (reserved)
+
+      // --- Act
+      pm.writePort(0xff3b, 0x01); // Attempt to enable (should be ignored)
+
+      // --- Assert
+      expect(d.ulaPlusEnabled).toBe(false); // Still disabled
+    });
+
+    it("Port 0xFF3B mode 10/11: reads enable flag", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01
+      pm.writePort(0xff3b, 0x01); // Enable
+
+      // --- Act
+      pm.writePort(0xbf3b, 0x80); // Mode 10
+      const readMode10 = pm.readPort(0xff3b);
+      pm.writePort(0xbf3b, 0xc0); // Mode 11
+      const readMode11 = pm.readPort(0xff3b);
+
+      // --- Assert
+      expect(readMode10).toBe(0x01);
+      expect(readMode11).toBe(0x01);
+    });
+
+    it("NextReg 0x68 bit 3 enables ULA+", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x68, 0x08); // Bit 3 = 1
+
+      // --- Assert
+      expect(d.ulaPlusEnabled).toBe(true);
+    });
+
+    it("NextReg 0x68 bit 3 disables ULA+", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01
+      pm.writePort(0xff3b, 0x01); // Enable via port
+
+      // --- Act
+      writeNextReg(m, 0x68, 0x00); // Bit 3 = 0
+
+      // --- Assert
+      expect(d.ulaPlusEnabled).toBe(false);
+    });
+
+    it("NextReg 0x68 syncs with Port 0xFF3B enable flag", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      
+      writeNextReg(m, 0x68, 0x08); // Enable via NextReg
+      pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
+
+      // --- Act
+      const readValue = pm.readPort(0xff3b);
+
+      // --- Assert
+      expect(readValue).toBe(0x01); // Port reflects NextReg setting
+    });
+
+    it("Port 0xFF3B syncs with NextReg 0x68", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      
+      pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
+      pm.writePort(0xff3b, 0x01); // Enable via port
+
+      // --- Act
+      const regValue = readNextReg(m, 0x68);
+
+      // --- Assert
+      expect(regValue & 0x08).toBe(0x08); // Bit 3 is set
+    });
+
+    it("Palette index preserved across mode switches", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const d = m.composedScreenDevice;
+
+      // --- Act
+      pm.writePort(0xbf3b, 0x15); // Mode 00, index 21
+      pm.writePort(0xbf3b, 0x40); // Switch to mode 01 (index remains 21)
+
+      // --- Assert
+      expect(d.ulaPlusMode).toBe(0x01);
+      expect(d.ulaPlusPaletteIndex).toBe(0x15); // Index preserved when switching to mode 01
+      
+      // --- Act (switch back to mode 00 with new index)
+      pm.writePort(0xbf3b, 0x0a); // Mode 00, index 10
+      
+      // --- Assert
+      expect(d.ulaPlusMode).toBe(0x00);
+      expect(d.ulaPlusPaletteIndex).toBe(0x0a); // New index set
+    });
+
+    it("Multiple palette writes in mode 00", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const pal = m.paletteDevice;
+      
+      pm.writePort(0xbf3b, 0x00); // Mode 00, index 0
+
+      // --- Act
+      for (let i = 0; i < 8; i++) {
+        pm.writePort(0xbf3b, i); // Set index
+        pm.writePort(0xff3b, (i << 5) | (i << 2) | (i & 0x03)); // Write color
+      }
+
+      // --- Assert
+      for (let i = 0; i < 8; i++) {
+        // ULA+ palette index i maps to palette entry 192+i
+        const rgb333 = pal.ulaFirst[192 + i];
+        const expectedR = i;
+        const expectedG = i;
+        const expectedB = i & 0x03;
+        const expectedRgb333 = (expectedR << 6) | (expectedG << 3) | (expectedB << 1) | (expectedB & 0x01);
+        expect(rgb333).toBe(expectedRgb333);
+      }
+    });
+
+    it("ULA+ palette uses 6-bit index space (0-63)", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const pm = m.portManager;
+      const pal = m.paletteDevice;
+
+      // --- Act
+      pm.writePort(0xbf3b, 0x3f); // Mode 00, index 63 (max)
+      pm.writePort(0xff3b, 0xff); // White
+      
+      pm.writePort(0xbf3b, 0x7f); // Mode 01, but with bits beyond 6 set
+      pm.writePort(0xbf3b, 0x00); // Mode 00, index 0
+
+      // --- Assert
+      // ULA+ palette index 63 maps to palette entry 192+63 = 255
+      expect(pal.ulaFirst[255]).toBe(0x1ff); // Max index writable
+      expect(m.composedScreenDevice.ulaPlusPaletteIndex).toBe(0x00);
     });
   });
 });

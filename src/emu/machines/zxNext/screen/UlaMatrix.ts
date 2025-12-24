@@ -51,6 +51,9 @@ export interface IPixelRenderingState {
   loResEnabled: boolean;
   loResEnabledSampled: boolean;
 
+  // ULA+ palette extension
+  ulaPlusEnabled: boolean;
+
   // ULA shift registers and pixel/attribute bytes
   ulaPixelByte1: number;
   ulaPixelByte2: number;
@@ -302,20 +305,35 @@ export function renderULAStandardPixel(
   const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
   const pixelBit = (device.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
 
-  // Use pre-calculated lookup tables with BRIGHT already applied
-  // Direct palette index lookup (0-15) - no bit operations needed
-  const paletteIndex = pixelBit
-    ? device.activeAttrToInk[device.ulaShiftAttr]
-    : device.activeAttrToPaper[device.ulaShiftAttr];
+  let pixelRgb333: number;
+
+  if (device.ulaPlusEnabled) {
+    // ULA+ Mode: Use 64-color palette (indices 192-255 in ULA palette)
+    // Palette index construction (6 bits):
+    //   Bits 5-4: attr[7:6] (FLASH, BRIGHT)
+    //   Bit 3: 0 for INK, 1 for PAPER
+    //   Bits 2-0: attr[2:0] for INK or attr[5:3] for PAPER
+    const attr = device.ulaShiftAttr;
+    const ulaPlusIndex6bit =
+      ((attr & 0b11000000) >> 2) | // Bits 5-4: FLASH, BRIGHT (shift right by 2)
+      (pixelBit ? 0 : 0b1000) | // Bit 3: 0 for INK, 1 for PAPER
+      (pixelBit ? (attr & 0b111) : ((attr >> 3) & 0b111)); // Bits 2-0: color
+    const ulaPaletteIndex = 192 + ulaPlusIndex6bit; // ULA+ palette at indices 192-255
+    pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(ulaPaletteIndex);
+  } else {
+    // Standard Mode: Use pre-calculated lookup tables with BRIGHT already applied
+    // Direct palette index lookup (0-15) - no bit operations needed
+    const paletteIndex = pixelBit
+      ? device.activeAttrToInk[device.ulaShiftAttr]
+      : device.activeAttrToPaper[device.ulaShiftAttr];
+    pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
+  }
 
   device.ulaShiftAttrCount--;
   if (device.ulaShiftAttrCount === 0) {
     device.ulaShiftAttrCount = 8;
     device.ulaShiftAttr = device.ulaShiftAttr2; // Load attribute byte 2
   }
-
-  // Lookup color in ULA palette (16 entries for standard + bright colors)
-  const pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
 
   // --- Clipping Test ---
   // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
@@ -345,6 +363,10 @@ export function renderULAStandardPixel(
  * - Uses same 16-bit shift register as Standard mode
  * - 32-bit pre-shift value constructed with byte interleaving: [pbyte_hi][abyte_hi][pbyte_lo][abyte_lo]
  * - Color determined by ulaHiResColor register (0-7 for 8 ink/paper pairs from Timex port 0xFF)
+ *
+ * **ULA+ Compatibility**: ULA+ does NOT work correctly in Hi-Res mode. The hardware forces
+ * palette index bit 3 to 1 (PAPER selection) when screen_mode[2]=1, making attribute-based
+ * palette selection incompatible with Hi-Res mode. This function does not implement ULA+ logic.
  *
  * @param device - Device context implementing IUlaHiResPixelRenderingState interface
  * @param vc - Vertical counter position (ULA coordinate system)
@@ -484,6 +506,10 @@ export function renderULAHiResPixel(
  * - Color data: 8 bits per pixel column (not per 8×8 block like standard attributes)
  * - Uses 8-bit shift register for pixels (standard resolution)
  * - Color format: same as standard attributes (FLASH, BRIGHT, PAPER, INK)
+ *
+ * **ULA+ Compatibility**: ULA+ does NOT work correctly in Hi-Color mode. The hardware forces
+ * palette index bit 3 to 1 (PAPER selection) when screen_mode[2]=1, making attribute-based
+ * palette selection incompatible with Hi-Color mode. This function does not implement ULA+ logic.
  *
  * @param device - Device context implementing IPixelRenderingState interface
  * @param vc - Vertical counter position (ULA coordinate system)
