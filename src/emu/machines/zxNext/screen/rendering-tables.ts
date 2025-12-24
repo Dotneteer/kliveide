@@ -666,7 +666,7 @@ export function getUlaPlusAttrToPaper(): Uint8Array {
 }
 
 /**
- * Initialize all lookup tables (rendering flags + HC/VC + bitmap offsets + ULA addresses + attribute decode).
+ * Initialize all lookup tables (rendering flags + HC/VC + bitmap offsets + ULA addresses + attribute decode + ULANext).
  */
 export function initializeAllLookupTables(): void {
   initializeAllRenderingFlags();
@@ -674,4 +674,226 @@ export function initializeAllLookupTables(): void {
   initializeBitmapOffsetTables();
   initializeULAAddressTables();
   initializeAttributeDecodeTables();
+  initializeULANextTables();
+}
+
+// ============================================================================
+// Active Timing Mode Cache (module-level, updated on mode switch)
+// ============================================================================
+// These module-level variables cache the currently active timing mode tables
+// to avoid repeated conditional checks and function calls in hot path (renderTact).
+// Updated via setActiveTimingMode() when switching between 50Hz and 60Hz.
+
+let _activeRenderingFlagsULA: ULAStandardMatrix;
+let _activeRenderingFlagsLayer2_256x192: Uint16Array;
+let _activeRenderingFlagsLayer2_320x256: Uint16Array;
+let _activeRenderingFlagsLayer2_640x256: Uint16Array;
+let _activeRenderingFlagsSprites: Uint16Array;
+let _activeRenderingFlagsTilemap_40x32: Uint16Array;
+let _activeRenderingFlagsTilemap_80x32: Uint16Array;
+let _activeRenderingFlagsLoRes: Uint16Array;
+let _activeTactToHC: Uint16Array;
+let _activeTactToVC: Uint16Array;
+let _activeTactToBitmapOffset: Int32Array;
+
+/**
+ * Set the active timing mode and update all cache references.
+ * Call this when switching between 50Hz and 60Hz mode.
+ * @param is60Hz - true for 60Hz mode, false for 50Hz mode
+ */
+export function setActiveTimingMode(is60Hz: boolean): void {
+  _activeRenderingFlagsULA = is60Hz ? getULARenderingFlags60Hz() : getULARenderingFlags50Hz();
+  _activeRenderingFlagsLayer2_256x192 = is60Hz
+    ? getLayer2_256x192RenderingFlags60Hz()
+    : getLayer2_256x192RenderingFlags50Hz();
+  _activeRenderingFlagsLayer2_320x256 = is60Hz
+    ? getLayer2_320x256RenderingFlags60Hz()
+    : getLayer2_320x256RenderingFlags50Hz();
+  _activeRenderingFlagsLayer2_640x256 = is60Hz
+    ? getLayer2_640x256RenderingFlags60Hz()
+    : getLayer2_640x256RenderingFlags50Hz();
+  _activeRenderingFlagsSprites = is60Hz
+    ? getSpritesRenderingFlags60Hz()
+    : getSpritesRenderingFlags50Hz();
+  _activeRenderingFlagsTilemap_40x32 = is60Hz
+    ? getTilemap40x32RenderingFlags60Hz()
+    : getTilemap40x32RenderingFlags50Hz();
+  _activeRenderingFlagsTilemap_80x32 = is60Hz
+    ? getTilemap80x32RenderingFlags60Hz()
+    : getTilemap80x32RenderingFlags50Hz();
+  _activeRenderingFlagsLoRes = is60Hz
+    ? getLoResRenderingFlags60Hz()
+    : getLoResRenderingFlags50Hz();
+  _activeTactToHC = is60Hz ? getTactToHC60Hz() : getTactToHC50Hz();
+  _activeTactToVC = is60Hz ? getTactToVC60Hz() : getTactToVC50Hz();
+  _activeTactToBitmapOffset = is60Hz ? getTactToBitmapOffset60Hz() : getTactToBitmapOffset50Hz();
+}
+
+/**
+ * Get the active ULA rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsULA(): ULAStandardMatrix {
+  return _activeRenderingFlagsULA;
+}
+
+/**
+ * Get the active Layer2 256x192 rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsLayer2_256x192(): Uint16Array {
+  return _activeRenderingFlagsLayer2_256x192;
+}
+
+/**
+ * Get the active Layer2 320x256 rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsLayer2_320x256(): Uint16Array {
+  return _activeRenderingFlagsLayer2_320x256;
+}
+
+/**
+ * Get the active Layer2 640x256 rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsLayer2_640x256(): Uint16Array {
+  return _activeRenderingFlagsLayer2_640x256;
+}
+
+/**
+ * Get the active Sprites rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsSprites(): Uint16Array {
+  return _activeRenderingFlagsSprites;
+}
+
+/**
+ * Get the active Tilemap 40x32 rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsTilemap_40x32(): Uint16Array {
+  return _activeRenderingFlagsTilemap_40x32;
+}
+
+/**
+ * Get the active Tilemap 80x32 rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsTilemap_80x32(): Uint16Array {
+  return _activeRenderingFlagsTilemap_80x32;
+}
+
+/**
+ * Get the active LoRes rendering flags for current timing mode.
+ */
+export function getActiveRenderingFlagsLoRes(): Uint16Array {
+  return _activeRenderingFlagsLoRes;
+}
+
+/**
+ * Get the active tact-to-HC lookup table for current timing mode.
+ */
+export function getActiveTactToHC(): Uint16Array {
+  return _activeTactToHC;
+}
+
+/**
+ * Get the active tact-to-VC lookup table for current timing mode.
+ */
+export function getActiveTactToVC(): Uint16Array {
+  return _activeTactToVC;
+}
+
+/**
+ * Get the active tact-to-bitmap-offset lookup table for current timing mode.
+ */
+export function getActiveTactToBitmapOffset(): Int32Array {
+  return _activeTactToBitmapOffset;
+}
+
+// ============================================================================
+// ULANext Attribute Decode Lookup Tables (256×256, shared across all instances)
+// ============================================================================
+let _ulaNextInkLookup: Uint8Array | undefined; // [format][attr] -> ink palette index (0-127)
+let _ulaNextPaperLookup: Uint8Array | undefined; // [format][attr] -> paper palette index (128-255) or 255 for fallback
+
+/**
+ * Generate ULANext attribute decode lookup tables.
+ * Creates 256×256 tables combining format mask (256) and attribute byte (256).
+ * This eliminates all runtime computation for ULANext attribute decoding.
+ */
+function generateULANextAttributeTables(): [Uint8Array, Uint8Array] {
+  // 256 format masks × 256 attribute values = 65536 entries each
+  const inkLookup = new Uint8Array(256 * 256);
+  const paperLookup = new Uint8Array(256 * 256);
+  
+  // Valid format masks (solid right-aligned bit sequences)
+  const validMasks = [0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff];
+  
+  for (let formatMask = 0; formatMask < 256; formatMask++) {
+    const isValidMask = validMasks.includes(formatMask);
+    
+    // Pre-calculate shift amount for valid masks
+    let shift = 0;
+    if (isValidMask && formatMask !== 0xff) {
+      let mask = formatMask;
+      while (mask & 1) {
+        shift++;
+        mask >>= 1;
+      }
+    }
+    
+    for (let attr = 0; attr < 256; attr++) {
+      const index = formatMask * 256 + attr;
+      
+      // INK: Always attr AND format_mask (range 0-127)
+      inkLookup[index] = attr & formatMask;
+      
+      // PAPER: Depends on mask validity
+      if (formatMask === 0xff || !isValidMask) {
+        // Invalid mask or 0xFF: Use sentinel value 255 to indicate fallback color
+        paperLookup[index] = 255;
+      } else {
+        // Valid mask: Calculate PAPER index (128-255)
+        const paperBits = attr & ~formatMask;
+        paperLookup[index] = 128 + (paperBits >> shift);
+      }
+    }
+  }
+  
+  return [inkLookup, paperLookup];
+}
+
+/**
+ * Initialize ULANext attribute decode lookup tables.
+ */
+export function initializeULANextTables(): void {
+  if (_ulaNextInkLookup) {
+    return; // Already initialized
+  }
+  
+  const [ink, paper] = generateULANextAttributeTables();
+  _ulaNextInkLookup = ink;
+  _ulaNextPaperLookup = paper;
+}
+
+/**
+ * Get ULANext ink palette index for given format and attribute.
+ * @param format ULANext format mask (NextReg 0x42)
+ * @param attr Attribute byte value
+ * @returns Ink palette index (0-127)
+ */
+export function getULANextInkIndex(format: number, attr: number): number {
+  if (!_ulaNextInkLookup) {
+    throw new Error("ULANext tables not initialized. Call initializeULANextTables() first.");
+  }
+  return _ulaNextInkLookup[format * 256 + attr];
+}
+
+/**
+ * Get ULANext paper palette index for given format and attribute.
+ * @param format ULANext format mask (NextReg 0x42)
+ * @param attr Attribute byte value
+ * @returns Paper palette index (128-255) or 255 if fallback color should be used
+ */
+export function getULANextPaperIndex(format: number, attr: number): number {
+  if (!_ulaNextPaperLookup) {
+    throw new Error("ULANext tables not initialized. Call initializeULANextTables() first.");
+  }
+  return _ulaNextPaperLookup[format * 256 + attr];
 }

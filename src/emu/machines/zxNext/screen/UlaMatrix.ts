@@ -14,6 +14,7 @@ import {
 } from "./RenderingCell";
 import { TimingConfig } from "./TimingConfig";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { getULANextInkIndex, getULANextPaperIndex } from "./rendering-tables";
 
 /**
  * Interface for ULA Standard pixel rendering context.
@@ -296,6 +297,16 @@ export function renderULAStandardPixel(
 
   // === Border Area ===
   if ((cell & ULA_DISPLAY_AREA) === 0) {
+    // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
+    if (device.ulaNextEnabled && device.ulaNextFormat === 0xff) {
+      // ULANext with 0xFF mask: Border uses fallback color
+      return {
+        rgb333: device.machine.composedScreenDevice.fallbackRgb333Cache,
+        transparent: false,
+        clipped: false
+      };
+    }
+    
     // --- Use cached border RGB value (updated when borderColor changes)
     // --- This eliminates method call overhead for ~30% of pixels
     return {
@@ -316,39 +327,24 @@ export function renderULAStandardPixel(
   let pixelRgb333: number;
 
   if (device.ulaNextEnabled) {
-    // ULANext Mode: Programmable attribute byte format
-    // INK uses format mask, PAPER uses remaining bits with base index 128
+    // ULANext Mode: Use pre-calculated lookup tables
+    // Eliminates all runtime computation (mask validation, bit shifting, etc.)
     const attr = device.ulaShiftAttr;
     const formatMask = device.ulaNextFormat;
     
     let paletteIndex: number;
     
     if (pixelBit) {
-      // INK pixel: attribute AND format_mask (range 0-127)
-      paletteIndex = attr & formatMask;
+      // INK pixel: Direct lookup (range 0-127)
+      paletteIndex = getULANextInkIndex(formatMask, attr);
     } else {
-      // PAPER pixel: use remaining bits, base index 128
-      // Check if format mask is valid (0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF)
-      const validMasks = [0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff];
+      // PAPER pixel: Lookup returns 128-255 or 255 for fallback
+      paletteIndex = getULANextPaperIndex(formatMask, attr);
       
-      if (validMasks.includes(formatMask)) {
-        // Valid mask: calculate PAPER index
-        const paperBits = attr & ~formatMask;
-        // Count trailing ones to determine shift amount
-        let shift = 0;
-        let mask = formatMask;
-        while (mask & 1) {
-          shift++;
-          mask >>= 1;
-        }
-        paletteIndex = 128 + (paperBits >> shift);
-      } else {
-        // Invalid mask or 0xFF: use fallback color for PAPER
-        // Use fallback color directly from NextReg 0x4A, expand RGB333 to 9-bit
-        const fallbackRgb333 = device.machine.composedScreenDevice.fallbackColor;
-        pixelRgb333 = (fallbackRgb333 << 1) | ((fallbackRgb333 & 0x02) ? 1 : 0);
-        // Skip palette lookup, pixelRgb333 already set
-        paletteIndex = -1; // Sentinel value
+      if (paletteIndex === 255) {
+        // Invalid mask or 0xFF: Use cached fallback color
+        pixelRgb333 = device.machine.composedScreenDevice.fallbackRgb333Cache;
+        paletteIndex = -1; // Skip palette lookup
       }
     }
     
@@ -497,8 +493,19 @@ export function renderULAHiResPixel(
 
   // === Border Area ===
   if ((cell & ULA_BORDER_AREA) !== 0) {
+    let borderRgb333: number;
+    
+    // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
+    if (device.ulaNextEnabled && device.ulaNextFormat === 0xff) {
+      // ULANext with 0xFF mask: Border uses fallback color
+      borderRgb333 = device.machine.composedScreenDevice.fallbackRgb333Cache;
+    } else {
+      // Standard border: use paper color from HiRes mode
+      borderRgb333 = device.ulaHiResPaperRgb333;
+    }
+    
     const pixel = {
-      rgb333: device.ulaHiResPaperRgb333,
+      rgb333: borderRgb333,
       transparent: false,
       clipped: false
     };
@@ -519,17 +526,26 @@ export function renderULAHiResPixel(
   // Note: ULANext in HiRes mode is not practical but supported by hardware
   // HiRes mode doesn't use standard attributes, so ULANext produces unpredictable results
   if (device.ulaNextEnabled) {
-    // ULANext mode: treat HiRes attribute bytes as ULANext attributes
-    // This is hardware-accurate but produces unpredictable/meaningless colors
+    // ULANext mode: Use pre-calculated lookup tables (simplified for HiRes)
+    // Hardware-accurate but produces unpredictable colors in HiRes mode
     const attr = device.ulaShiftAttr;
     const formatMask = device.ulaNextFormat;
     
-    // For each pixel bit, calculate index as if it were standard mode
-    const index1 = pixelBit1 ? (attr & formatMask) : 128;
-    const index2 = pixelBit2 ? (attr & formatMask) : 128;
+    // For each pixel bit, use lookup table (INK for 1, PAPER for 0)
+    const index1 = pixelBit1 
+      ? getULANextInkIndex(formatMask, attr)
+      : getULANextPaperIndex(formatMask, attr);
+    const index2 = pixelBit2
+      ? getULANextInkIndex(formatMask, attr)
+      : getULANextPaperIndex(formatMask, attr);
     
-    pixel1Rgb333 = device.machine.paletteDevice.getUlaRgb333(index1);
-    pixel2Rgb333 = device.machine.paletteDevice.getUlaRgb333(index2);
+    // Handle fallback color if needed (index 255)
+    pixel1Rgb333 = index1 === 255 
+      ? device.machine.composedScreenDevice.fallbackRgb333Cache
+      : device.machine.paletteDevice.getUlaRgb333(index1);
+    pixel2Rgb333 = index2 === 255
+      ? device.machine.composedScreenDevice.fallbackRgb333Cache
+      : device.machine.paletteDevice.getUlaRgb333(index2);
   } else {
     // Standard HiRes mode: use predefined ink/paper colors
     pixel1Rgb333 = pixelBit1 ? device.ulaHiResInkRgb333 : device.ulaHiResPaperRgb333;
@@ -654,6 +670,16 @@ export function renderULAHiColorPixel(
 
   // === Border Area ===
   if ((cell & ULA_DISPLAY_AREA) === 0) {
+    // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
+    if (device.ulaNextEnabled && device.ulaNextFormat === 0xff) {
+      // ULANext with 0xFF mask: Border uses fallback color
+      return {
+        rgb333: device.machine.composedScreenDevice.fallbackRgb333Cache,
+        transparent: false,
+        clipped: false
+      };
+    }
+    
     // --- Use cached border RGB value (updated when borderColor changes)
     // --- This eliminates method call overhead for ~30% of pixels
     return {
@@ -676,22 +702,30 @@ export function renderULAHiColorPixel(
   // Note: ULANext in HiColor mode is not practical but supported by hardware
   // HiColor uses different attribute format (per-column colors), so ULANext produces unpredictable results
   if (device.ulaNextEnabled) {
-    // ULANext mode: treat HiColor attribute bytes as ULANext attributes
-    // This is hardware-accurate but produces unpredictable/meaningless colors
+    // ULANext mode: Use pre-calculated lookup tables
+    // Hardware-accurate but produces unpredictable colors in HiColor mode
     const attr = device.ulaShiftAttr;
     const formatMask = device.ulaNextFormat;
     
     let paletteIndex: number;
     
     if (pixelBit) {
-      // INK pixel
-      paletteIndex = attr & formatMask;
+      // INK pixel: Direct lookup
+      paletteIndex = getULANextInkIndex(formatMask, attr);
     } else {
-      // PAPER pixel: use base 128 (simplified for HiColor)
-      paletteIndex = 128;
+      // PAPER pixel: Direct lookup (may return 255 for fallback)
+      paletteIndex = getULANextPaperIndex(formatMask, attr);
+      
+      if (paletteIndex === 255) {
+        // Use cached fallback color
+        pixelRgb333 = device.machine.composedScreenDevice.fallbackRgb333Cache;
+        paletteIndex = -1; // Skip palette lookup
+      }
     }
     
-    pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    if (paletteIndex !== -1) {
+      pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    }
   } else {
     // Standard HiColor mode: Use pre-calculated lookup tables with BRIGHT already applied
     // Direct palette index lookup (0-15) - no bit operations needed

@@ -1,6 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { LayerOutput, ULAStandardMatrix } from "./RenderingCell";
+import { LayerOutput } from "./RenderingCell";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import {
   renderULAStandardPixel,
@@ -12,28 +12,6 @@ import {
 import { zxNextBgra } from "../PaletteDevice";
 import {
   initializeAllLookupTables,
-  getULARenderingFlags50Hz,
-  getULARenderingFlags60Hz,
-  getLayer2_256x192RenderingFlags50Hz,
-  getLayer2_256x192RenderingFlags60Hz,
-  getLayer2_320x256RenderingFlags50Hz,
-  getLayer2_320x256RenderingFlags60Hz,
-  getLayer2_640x256RenderingFlags50Hz,
-  getLayer2_640x256RenderingFlags60Hz,
-  getSpritesRenderingFlags50Hz,
-  getSpritesRenderingFlags60Hz,
-  getTilemap40x32RenderingFlags50Hz,
-  getTilemap40x32RenderingFlags60Hz,
-  getTilemap80x32RenderingFlags50Hz,
-  getTilemap80x32RenderingFlags60Hz,
-  getLoResRenderingFlags50Hz,
-  getLoResRenderingFlags60Hz,
-  getTactToHC50Hz,
-  getTactToVC50Hz,
-  getTactToHC60Hz,
-  getTactToVC60Hz,
-  getTactToBitmapOffset50Hz,
-  getTactToBitmapOffset60Hz,
   getUlaPixelLineBaseAddr,
   getUlaAttrLineBaseAddr,
   getAttrToInkFlashOff,
@@ -41,7 +19,19 @@ import {
   getAttrToInkFlashOn,
   getAttrToPaperFlashOn,
   getUlaPlusAttrToInk,
-  getUlaPlusAttrToPaper
+  getUlaPlusAttrToPaper,
+  setActiveTimingMode,
+  getActiveRenderingFlagsULA,
+  getActiveRenderingFlagsLayer2_256x192,
+  getActiveRenderingFlagsLayer2_320x256,
+  getActiveRenderingFlagsLayer2_640x256,
+  getActiveRenderingFlagsSprites,
+  getActiveRenderingFlagsTilemap_40x32,
+  getActiveRenderingFlagsTilemap_80x32,
+  getActiveRenderingFlagsLoRes,
+  getActiveTactToHC,
+  getActiveTactToVC,
+  getActiveTactToBitmapOffset
 } from "./rendering-tables";
 
 /**
@@ -171,7 +161,16 @@ export class NextComposedScreenDevice
 
   // === Reg 0x4A - Fallback color
   // The 8-bit color used if all layers are transparent
-  fallbackColor: number;
+  private _fallbackColor: number;
+
+  get fallbackColor(): number {
+    return this._fallbackColor;
+  }
+
+  set fallbackColor(value: number) {
+    this._fallbackColor = value;
+    this.updateFallbackRgb333Cache();
+  }
 
   // === Reg 0x68 - ULA Control
   // When true, ULA output is disabled (ULA layer goes transparent)
@@ -207,6 +206,10 @@ export class NextComposedScreenDevice
   // === Standard 0xFE port border value
   private _borderColor: number;
   borderRgbCache: number;
+
+  // Cached fallback RGB333 (NextReg 0x4A expanded from RGB332 to RGB333)
+  // Updated when fallbackColor, ulaNextEnabled, or ulaNextFormat change
+  fallbackRgb333Cache: number;
 
   // === Timex port (0xff) ULA flags
   // The last 6 bit of the Timex port
@@ -269,24 +272,9 @@ export class NextComposedScreenDevice
     this._ulaNextEnabled = value;
     // Border palette index changes when ULANext mode is toggled
     this.updateBorderRgbCache();
+    // Fallback color may be used in ULANext mode
+    this.updateFallbackRgb333Cache();
   }
-
-  // Rendering flags for all layers and modes (active references, switch based on timing mode)
-  private _renderingFlagsULA: ULAStandardMatrix;
-  private _renderingFlagsLayer2_256x192: Uint16Array;
-  private _renderingFlagsLayer2_320x256: Uint16Array;
-  private _renderingFlagsLayer2_640x256: Uint16Array;
-  private _renderingFlagsSprites: Uint16Array;
-  private _renderingFlagsTilemap_40x32: Uint16Array;
-  private _renderingFlagsTilemap_80x32: Uint16Array;
-  private _renderingFlagsLoRes: Uint16Array;
-
-  // HC/VC lookup tables (active references, switch based on timing mode)
-  private _tactToHC: Uint16Array;
-  private _tactToVC: Uint16Array;
-
-  // Bitmap offset lookup table (active reference, switch based on timing mode)
-  private _tactToBitmapOffset: Int32Array;
 
   /**
    * This buffer stores the bitmap of the screen being rendered. Each 32-bit value represents an ARGB pixel.
@@ -482,6 +470,18 @@ export class NextComposedScreenDevice
     }
   }
 
+  /**
+   * Updates the cached fallback RGB333 value when fallback color changes.
+   * The fallback color (NextReg 0x4A) is stored as 8-bit RGB332 and needs
+   * to be expanded to 9-bit RGB333 for rendering.
+   * This cache is used in ULANext mode when format mask is 0xFF.
+   */
+  private updateFallbackRgb333Cache(): void {
+    const fallbackRgb332 = this._fallbackColor;
+    const blueLSB = (fallbackRgb332 & 0x02) | (fallbackRgb332 & 0x01);
+    this.fallbackRgb333Cache = (fallbackRgb332 << 1) | blueLSB;
+  }
+
   maxTacts: number;
 
   /**
@@ -498,16 +498,16 @@ export class NextComposedScreenDevice
 
     // === BLANKING CHECK ===
     // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.
-    // We can use _renderingFlagsULAStandard as the blanking mask for all layers.
+    // We can use active ULA rendering flags as the blanking mask for all layers.
     // If the cell is 0 in this flags array, it's 0 in all other flags arrays (blanking region).
     // Since totalHC == RENDERING_FLAGS_HC_COUNT, tact directly equals the 1D array index.
-    if (this._renderingFlagsULA[tact] === 0) {
+    if (getActiveRenderingFlagsULA()[tact] === 0) {
       return false; // Skip blanking tact - no visible content in any layer
     }
 
     // --- Get pre-calculated (HC, VC) position from lookup tables
-    const hc = this._tactToHC[tact];
-    const vc = this._tactToVC[tact];
+    const hc = getActiveTactToHC()[tact];
+    const vc = getActiveTactToVC()[tact];
 
     // === LAYER RENDERING ===
     // Render ULA layer pixel(s) if enabled
@@ -516,7 +516,7 @@ export class NextComposedScreenDevice
 
     if (this.loResEnabledSampled) {
       // LoRes mode (128×96, replaces ULA output)
-      const loresCell = this._renderingFlagsLoRes[tact];
+      const loresCell = getActiveRenderingFlagsLoRes()[tact];
       ulaOutput1 = this.renderLoResPixel(vc, hc, loresCell);
       ulaOutput2 = ulaOutput1; // Standard resolution base (4x replication handled by caller)
     } else if (!this.disableUlaOutputSampled) {
@@ -524,19 +524,19 @@ export class NextComposedScreenDevice
         // ULA Hi-Res and Hi-Color modes
         if (this.ulaHiResModeSampled) {
           // ULA Hi-Res mode (512×192, 2 pixels per HC)
-          const ulaCell = this._renderingFlagsULA[tact];
+          const ulaCell = getActiveRenderingFlagsULA()[tact];
           const out = renderULAHiResPixel(this, vc, hc, ulaCell);
           ulaOutput1 = out[0];
           ulaOutput2 = out[1];
         } else {
           // ULA Hi-Color mode (256×192)
-          const ulaCell = this._renderingFlagsULA[tact];
+          const ulaCell = getActiveRenderingFlagsULA()[tact];
           ulaOutput1 = renderULAHiColorPixel(this, vc, hc, ulaCell);
           ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
         }
       } else {
         // ULA Standard mode (256×192)
-        const ulaCell = this._renderingFlagsULA[tact];
+        const ulaCell = getActiveRenderingFlagsULA()[tact];
         ulaOutput1 = renderULAStandardPixel(this, vc, hc, ulaCell);
         ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
       }
@@ -549,17 +549,17 @@ export class NextComposedScreenDevice
     if (this.layer2Enabled) {
       if (this.layer2Resolution === 0) {
         // Layer 2 256×192 mode
-        const layer2Cell = this._renderingFlagsLayer2_256x192[tact];
+        const layer2Cell = getActiveRenderingFlagsLayer2_256x192()[tact];
         layer2Output1 = this.renderLayer2_256x192Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
       } else if (this.layer2Resolution === 1) {
         // Layer 2 320×256 mode
-        const layer2Cell = this._renderingFlagsLayer2_320x256[tact];
+        const layer2Cell = getActiveRenderingFlagsLayer2_320x256()[tact];
         layer2Output1 = this.renderLayer2_320x256Pixel(vc, hc, layer2Cell);
         layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
       } else if (this.layer2Resolution === 2) {
         // Layer 2 640×256 mode (Hi-Res, 2 pixels per HC)
-        const layer2Cell = this._renderingFlagsLayer2_640x256[tact];
+        const layer2Cell = getActiveRenderingFlagsLayer2_640x256()[tact];
         layer2Output1 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 0);
         layer2Output2 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 1);
       }
@@ -570,7 +570,7 @@ export class NextComposedScreenDevice
     let spritesOutput2: LayerOutput | null = null;
 
     if (this.spritesEnabled) {
-      const spritesCell = this._renderingFlagsSprites[tact];
+      const spritesCell = getActiveRenderingFlagsSprites()[tact];
       spritesOutput1 = this.renderSpritesPixel(vc, hc, spritesCell);
       spritesOutput2 = spritesOutput1; // Standard resolution: duplicate pixel
     }
@@ -582,12 +582,12 @@ export class NextComposedScreenDevice
     if (this.tilemapEnabled) {
       if (this.tilemap80x32Resolution) {
         // Tilemap 80×32 mode (Hi-Res, 2 pixels per HC)
-        const tilemapCell = this._renderingFlagsTilemap_80x32[tact];
+        const tilemapCell = getActiveRenderingFlagsTilemap_80x32()[tact];
         tilemapOutput1 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 0);
         tilemapOutput2 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 1);
       } else {
         // Tilemap 40×32 mode
-        const tilemapCell = this._renderingFlagsTilemap_40x32[tact];
+        const tilemapCell = getActiveRenderingFlagsTilemap_40x32()[tact];
         tilemapOutput1 = this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
         tilemapOutput2 = tilemapOutput1; // Standard resolution: duplicate pixel
       }
@@ -627,7 +627,7 @@ export class NextComposedScreenDevice
     }
 
     // Use pre-calculated bitmap offset to write pixels
-    const bitmapOffset = this._tactToBitmapOffset[tact];
+    const bitmapOffset = getActiveTactToBitmapOffset()[tact];
     if (bitmapOffset >= 0) {
       // Compose and write first pixel
       const pixelRGBA1 = this.composeSinglePixel(ulaOutput1, layer2Output1, spritesOutput1);
@@ -701,34 +701,8 @@ export class NextComposedScreenDevice
     this.renderingTacts = this.confTotalVC * this.confTotalHC;
     this.machine.setTactsInFrame(this.renderingTacts);
 
-    // --- Update all layer rendering flags references based on timing mode
-    this._renderingFlagsULA = is60Hz ? getULARenderingFlags60Hz() : getULARenderingFlags50Hz();
-    this._renderingFlagsLayer2_256x192 = is60Hz
-      ? getLayer2_256x192RenderingFlags60Hz()
-      : getLayer2_256x192RenderingFlags50Hz();
-    this._renderingFlagsLayer2_320x256 = is60Hz
-      ? getLayer2_320x256RenderingFlags60Hz()
-      : getLayer2_320x256RenderingFlags50Hz();
-    this._renderingFlagsLayer2_640x256 = is60Hz
-      ? getLayer2_640x256RenderingFlags60Hz()
-      : getLayer2_640x256RenderingFlags50Hz();
-    this._renderingFlagsSprites = is60Hz
-      ? getSpritesRenderingFlags60Hz()
-      : getSpritesRenderingFlags50Hz();
-    this._renderingFlagsTilemap_40x32 = is60Hz
-      ? getTilemap40x32RenderingFlags60Hz()
-      : getTilemap40x32RenderingFlags50Hz();
-    this._renderingFlagsTilemap_80x32 = is60Hz
-      ? getTilemap80x32RenderingFlags60Hz()
-      : getTilemap80x32RenderingFlags50Hz();
-    this._renderingFlagsLoRes = is60Hz
-      ? getLoResRenderingFlags60Hz()
-      : getLoResRenderingFlags50Hz();
-
-    // --- Update HC/VC and bitmap offset lookup tables based on timing mode
-    this._tactToHC = is60Hz ? getTactToHC60Hz() : getTactToHC50Hz();
-    this._tactToVC = is60Hz ? getTactToVC60Hz() : getTactToVC50Hz();
-    this._tactToBitmapOffset = is60Hz ? getTactToBitmapOffset60Hz() : getTactToBitmapOffset50Hz();
+    // --- Update module-level active timing mode cache
+    setActiveTimingMode(is60Hz);
 
     // Increment flash counter (cycles 0-31 for ~1 Hz flash rate at 50Hz)
     // Flash period: ~16 frames ON, ~16 frames OFF
@@ -903,6 +877,7 @@ export class NextComposedScreenDevice
    */
   set nextReg0x42Value(value: number) {
     this.ulaNextFormat = value;
+    this.updateFallbackRgb333Cache();
   }
 
   get nextReg0x42Value(): number {
