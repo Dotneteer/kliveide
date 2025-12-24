@@ -1,0 +1,677 @@
+import { ULAStandardMatrix } from "./RenderingCell";
+import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
+import { generateULARenderingFlag } from "./UlaMatrix";
+import {
+  generateLayer2_256x192Cell,
+  generateLayer2_320x256Cell,
+  generateLayer2_640x256Cell
+} from "./Layer2Matrix";
+import { generateSpritesCell } from "./SpritesMatrix";
+import { generateTilemap40x32Cell, generateTilemap80x32Cell } from "./TilemapMatrix";
+import { generateLoResCell } from "./LoResMatrix";
+
+// ============================================================================
+// Rendering Flags Dimensions (1D Uint16Array with full scanline storage)
+// ============================================================================
+// Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
+const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
+
+// ============================================================================
+// Module-level pre-calculated tables (shared across all instances)
+// ============================================================================
+// ULA rendering flags for both timing modes
+let _moduleLevelRenderingFlagsULA50Hz: ULAStandardMatrix | undefined;
+let _moduleLevelRenderingFlagsULA60Hz: ULAStandardMatrix | undefined;
+
+// Layer2 rendering flags for both timing modes and all resolutions
+let _moduleLevelRenderingFlagsLayer2_256x192_50Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsLayer2_256x192_60Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsLayer2_320x256_50Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsLayer2_320x256_60Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsLayer2_640x256_50Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsLayer2_640x256_60Hz: Uint16Array | undefined;
+
+// Sprites rendering flags for both timing modes
+let _moduleLevelRenderingFlagsSprites50Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsSprites60Hz: Uint16Array | undefined;
+
+// Tilemap rendering flags for both timing modes and resolutions
+let _moduleLevelRenderingFlagsTilemap_40x32_50Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsTilemap_40x32_60Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsTilemap_80x32_50Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsTilemap_80x32_60Hz: Uint16Array | undefined;
+
+// LoRes rendering flags for both timing modes
+let _moduleLevelRenderingFlagsLoRes50Hz: Uint16Array | undefined;
+let _moduleLevelRenderingFlagsLoRes60Hz: Uint16Array | undefined;
+
+/**
+ * Initialize all module-level rendering flags tables (lazy initialization).
+ * Called once on first instance construction.
+ */
+export function initializeAllRenderingFlags(): void {
+  if (_moduleLevelRenderingFlagsULA50Hz) {
+    return; // Already initialized
+  }
+
+  // Generate ULA rendering flags for both timing modes
+  _moduleLevelRenderingFlagsULA50Hz = generateULAStandardRenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsULA60Hz = generateULAStandardRenderingFlagsStatic(Plus3_60Hz);
+
+  // Generate Layer2 rendering flags for all resolutions and timing modes
+  _moduleLevelRenderingFlagsLayer2_256x192_50Hz = generateLayer2_256x192RenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsLayer2_256x192_60Hz = generateLayer2_256x192RenderingFlagsStatic(Plus3_60Hz);
+  _moduleLevelRenderingFlagsLayer2_320x256_50Hz = generateLayer2_320x256RenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsLayer2_320x256_60Hz = generateLayer2_320x256RenderingFlagsStatic(Plus3_60Hz);
+  _moduleLevelRenderingFlagsLayer2_640x256_50Hz = generateLayer2_640x256RenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsLayer2_640x256_60Hz = generateLayer2_640x256RenderingFlagsStatic(Plus3_60Hz);
+
+  // Generate Sprites rendering flags for both timing modes
+  _moduleLevelRenderingFlagsSprites50Hz = generateSpritesRenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsSprites60Hz = generateSpritesRenderingFlagsStatic(Plus3_60Hz);
+
+  // Generate Tilemap rendering flags for both resolutions and timing modes
+  _moduleLevelRenderingFlagsTilemap_40x32_50Hz = generateTilemap40x32RenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsTilemap_40x32_60Hz = generateTilemap40x32RenderingFlagsStatic(Plus3_60Hz);
+  _moduleLevelRenderingFlagsTilemap_80x32_50Hz = generateTilemap80x32RenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsTilemap_80x32_60Hz = generateTilemap80x32RenderingFlagsStatic(Plus3_60Hz);
+
+  // Generate LoRes rendering flags for both timing modes
+  _moduleLevelRenderingFlagsLoRes50Hz = generateLoResRenderingFlagsStatic(Plus3_50Hz);
+  _moduleLevelRenderingFlagsLoRes60Hz = generateLoResRenderingFlagsStatic(Plus3_60Hz);
+}
+
+/**
+ * Initialize module-level ULA rendering flags tables (lazy initialization).
+ * Called once on first instance construction.
+ * @deprecated Use initializeAllRenderingFlags() instead
+ */
+export function initializeULARenderingFlags(): void {
+  initializeAllRenderingFlags();
+}
+
+/**
+ * Get the module-level ULA rendering flags for 50Hz mode
+ */
+export function getULARenderingFlags50Hz(): ULAStandardMatrix {
+  if (!_moduleLevelRenderingFlagsULA50Hz) {
+    throw new Error("ULA rendering flags not initialized. Call initializeULARenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsULA50Hz;
+}
+
+/**
+ * Get the module-level ULA rendering flags for 60Hz mode
+ */
+export function getULARenderingFlags60Hz(): ULAStandardMatrix {
+  if (!_moduleLevelRenderingFlagsULA60Hz) {
+    throw new Error("ULA rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsULA60Hz;
+}
+
+// Layer2 getters
+export function getLayer2_256x192RenderingFlags50Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLayer2_256x192_50Hz) {
+    throw new Error("Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLayer2_256x192_50Hz;
+}
+
+export function getLayer2_256x192RenderingFlags60Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLayer2_256x192_60Hz) {
+    throw new Error("Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLayer2_256x192_60Hz;
+}
+
+export function getLayer2_320x256RenderingFlags50Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLayer2_320x256_50Hz) {
+    throw new Error("Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLayer2_320x256_50Hz;
+}
+
+export function getLayer2_320x256RenderingFlags60Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLayer2_320x256_60Hz) {
+    throw new Error("Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLayer2_320x256_60Hz;
+}
+
+export function getLayer2_640x256RenderingFlags50Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLayer2_640x256_50Hz) {
+    throw new Error("Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLayer2_640x256_50Hz;
+}
+
+export function getLayer2_640x256RenderingFlags60Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLayer2_640x256_60Hz) {
+    throw new Error("Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLayer2_640x256_60Hz;
+}
+
+// Sprites getters
+export function getSpritesRenderingFlags50Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsSprites50Hz) {
+    throw new Error("Sprites rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsSprites50Hz;
+}
+
+export function getSpritesRenderingFlags60Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsSprites60Hz) {
+    throw new Error("Sprites rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsSprites60Hz;
+}
+
+// Tilemap getters
+export function getTilemap40x32RenderingFlags50Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsTilemap_40x32_50Hz) {
+    throw new Error("Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsTilemap_40x32_50Hz;
+}
+
+export function getTilemap40x32RenderingFlags60Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsTilemap_40x32_60Hz) {
+    throw new Error("Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsTilemap_40x32_60Hz;
+}
+
+export function getTilemap80x32RenderingFlags50Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsTilemap_80x32_50Hz) {
+    throw new Error("Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsTilemap_80x32_50Hz;
+}
+
+export function getTilemap80x32RenderingFlags60Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsTilemap_80x32_60Hz) {
+    throw new Error("Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsTilemap_80x32_60Hz;
+}
+
+// LoRes getters
+export function getLoResRenderingFlags50Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLoRes50Hz) {
+    throw new Error("LoRes rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLoRes50Hz;
+}
+
+export function getLoResRenderingFlags60Hz(): Uint16Array {
+  if (!_moduleLevelRenderingFlagsLoRes60Hz) {
+    throw new Error("LoRes rendering flags not initialized. Call initializeAllRenderingFlags() first.");
+  }
+  return _moduleLevelRenderingFlagsLoRes60Hz;
+}
+
+/**
+ * Generate ULA Standard rendering flags as 1D Uint16Array with bit flags.
+ * Static version for module-level initialization.
+ *
+ * Dimensions:
+ * - 50Hz: 311 × 456 = ~141,816 elements (~284 KB)
+ * - 60Hz: 264 × 456 = ~120,384 elements (~241 KB)
+ *
+ * Access: renderingFlags[vc * RENDERING_FLAGS_HC_COUNT + hc]
+ *
+ * @param config - Timing configuration (50Hz or 60Hz)
+ * @returns 1D Uint16Array with bit flags for each cell
+ */
+function generateULAStandardRenderingFlagsStatic(config: TimingConfig): ULAStandardMatrix {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateULARenderingFlag(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+// Layer2 generation functions
+function generateLayer2_256x192RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateLayer2_256x192Cell(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+function generateLayer2_320x256RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateLayer2_320x256Cell(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+function generateLayer2_640x256RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateLayer2_640x256Cell(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+// Sprites generation function
+function generateSpritesRenderingFlagsStatic(config: TimingConfig): Uint16Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateSpritesCell(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+// Tilemap generation functions
+function generateTilemap40x32RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateTilemap40x32Cell(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+function generateTilemap80x32RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateTilemap80x32Cell(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+// LoRes generation function
+function generateLoResRenderingFlagsStatic(config: TimingConfig): Uint16Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint16Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateLoResCell(config, vc, hc);
+    }
+  }
+
+  return renderingFlags;
+}
+
+// ============================================================================
+// HC/VC Lookup Tables (shared across all instances)
+// ============================================================================
+const BITMAP_WIDTH = 720;
+const BITMAP_HEIGHT = 288;
+
+let _tactToHC50Hz: Uint16Array | undefined;
+let _tactToVC50Hz: Uint16Array | undefined;
+let _tactToHC60Hz: Uint16Array | undefined;
+let _tactToVC60Hz: Uint16Array | undefined;
+
+/**
+ * Generate HC/VC lookup tables to eliminate expensive modulo/division operations.
+ * Pre-calculates HC and VC values for every tact position.
+ */
+function generateTactLookupTables(config: TimingConfig): [Uint16Array, Uint16Array] {
+  const totalTacts = config.totalVC * config.totalHC;
+  const tactToHC = new Uint16Array(totalTacts);
+  const tactToVC = new Uint16Array(totalTacts);
+
+  for (let tact = 0; tact < totalTacts; tact++) {
+    tactToHC[tact] = tact % config.totalHC;
+    tactToVC[tact] = (tact / config.totalHC) | 0;
+  }
+
+  return [tactToHC, tactToVC];
+}
+
+/**
+ * Initialize HC/VC lookup tables for both timing modes.
+ */
+export function initializeTactLookupTables(): void {
+  if (_tactToHC50Hz) {
+    return; // Already initialized
+  }
+
+  const [hc50, vc50] = generateTactLookupTables(Plus3_50Hz);
+  _tactToHC50Hz = hc50;
+  _tactToVC50Hz = vc50;
+
+  const [hc60, vc60] = generateTactLookupTables(Plus3_60Hz);
+  _tactToHC60Hz = hc60;
+  _tactToVC60Hz = vc60;
+}
+
+export function getTactToHC50Hz(): Uint16Array {
+  if (!_tactToHC50Hz) {
+    throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
+  }
+  return _tactToHC50Hz;
+}
+
+export function getTactToVC50Hz(): Uint16Array {
+  if (!_tactToVC50Hz) {
+    throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
+  }
+  return _tactToVC50Hz;
+}
+
+export function getTactToHC60Hz(): Uint16Array {
+  if (!_tactToHC60Hz) {
+    throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
+  }
+  return _tactToHC60Hz;
+}
+
+export function getTactToVC60Hz(): Uint16Array {
+  if (!_tactToVC60Hz) {
+    throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
+  }
+  return _tactToVC60Hz;
+}
+
+// ============================================================================
+// Bitmap Offset Lookup Tables (shared across all instances)
+// ============================================================================
+let _tactToBitmapOffset50Hz: Int32Array | undefined;
+let _tactToBitmapOffset60Hz: Int32Array | undefined;
+
+/**
+ * Pre-calculate bitmap offset lookup table for each tact.
+ * Stores the final bitmap buffer offset, or -1 if outside visible area.
+ */
+function generateBitmapOffsetTable(config: TimingConfig): Int32Array {
+  const totalTacts = config.totalVC * config.totalHC;
+  const tactToBitmapOffset = new Int32Array(totalTacts);
+
+  for (let tact = 0; tact < totalTacts; tact++) {
+    const hc = tact % config.totalHC;
+    const vc = Math.floor(tact / config.totalHC) | 0;
+    const bitmapY = vc - config.firstBitmapVC;
+
+    if (bitmapY >= 0 && bitmapY < BITMAP_HEIGHT) {
+      const bitmapXBase = (hc - config.firstVisibleHC) * 2;
+      tactToBitmapOffset[tact] = bitmapY * BITMAP_WIDTH + bitmapXBase;
+    } else {
+      tactToBitmapOffset[tact] = -1;
+    }
+  }
+
+  return tactToBitmapOffset;
+}
+
+/**
+ * Initialize bitmap offset lookup tables for both timing modes.
+ */
+export function initializeBitmapOffsetTables(): void {
+  if (_tactToBitmapOffset50Hz) {
+    return; // Already initialized
+  }
+
+  _tactToBitmapOffset50Hz = generateBitmapOffsetTable(Plus3_50Hz);
+  _tactToBitmapOffset60Hz = generateBitmapOffsetTable(Plus3_60Hz);
+}
+
+export function getTactToBitmapOffset50Hz(): Int32Array {
+  if (!_tactToBitmapOffset50Hz) {
+    throw new Error("Bitmap offset tables not initialized. Call initializeBitmapOffsetTables() first.");
+  }
+  return _tactToBitmapOffset50Hz;
+}
+
+export function getTactToBitmapOffset60Hz(): Int32Array {
+  if (!_tactToBitmapOffset60Hz) {
+    throw new Error("Bitmap offset tables not initialized. Call initializeBitmapOffsetTables() first.");
+  }
+  return _tactToBitmapOffset60Hz;
+}
+
+// ============================================================================
+// ULA Address Lookup Tables (shared across all instances)
+// ============================================================================
+let _ulaPixelLineBaseAddr: Uint16Array | undefined;
+let _ulaAttrLineBaseAddr: Uint16Array | undefined;
+
+/**
+ * Generate ULA address lookup tables (192 entries for Y coordinates 0-191).
+ * Pre-calculates base addresses before X coordinate is added.
+ */
+function generateULAAddressTables(): [Uint16Array, Uint16Array] {
+  const ulaPixelLineBaseAddr = new Uint16Array(192);
+  const ulaAttrLineBaseAddr = new Uint16Array(192);
+
+  for (let y = 0; y < 192; y++) {
+    // Pixel address calculation: y[7:6] | y[2:0] | y[5:3] | x[7:3]
+    const y76 = (y >> 6) & 0x03;
+    const y20 = y & 0x07;
+    const y53 = (y >> 3) & 0x07;
+    ulaPixelLineBaseAddr[y] = (y76 << 11) | (y20 << 8) | (y53 << 5);
+
+    // Attribute address calculation: 0x1800 + (y/8)*32 + x/8
+    const attrY = y >> 3;
+    ulaAttrLineBaseAddr[y] = 0x1800 + (attrY << 5);
+  }
+
+  return [ulaPixelLineBaseAddr, ulaAttrLineBaseAddr];
+}
+
+/**
+ * Initialize ULA address lookup tables.
+ */
+export function initializeULAAddressTables(): void {
+  if (_ulaPixelLineBaseAddr) {
+    return; // Already initialized
+  }
+
+  const [pixel, attr] = generateULAAddressTables();
+  _ulaPixelLineBaseAddr = pixel;
+  _ulaAttrLineBaseAddr = attr;
+}
+
+export function getUlaPixelLineBaseAddr(): Uint16Array {
+  if (!_ulaPixelLineBaseAddr) {
+    throw new Error("ULA address tables not initialized. Call initializeULAAddressTables() first.");
+  }
+  return _ulaPixelLineBaseAddr;
+}
+
+export function getUlaAttrLineBaseAddr(): Uint16Array {
+  if (!_ulaAttrLineBaseAddr) {
+    throw new Error("ULA address tables not initialized. Call initializeULAAddressTables() first.");
+  }
+  return _ulaAttrLineBaseAddr;
+}
+
+// ============================================================================
+// Attribute Decode Lookup Tables (shared across all instances)
+// ============================================================================
+let _attrToInkFlashOff: Uint8Array | undefined;
+let _attrToPaperFlashOff: Uint8Array | undefined;
+let _attrToInkFlashOn: Uint8Array | undefined;
+let _attrToPaperFlashOn: Uint8Array | undefined;
+let _ulaPlusAttrToInk: Uint8Array | undefined;
+let _ulaPlusAttrToPaper: Uint8Array | undefined;
+
+/**
+ * Generate attribute decode lookup tables (256 entries for all attribute byte values).
+ * Eliminates bit operations during rendering by pre-calculating palette indices.
+ */
+function generateAttributeDecodeTables(): {
+  attrToInkFlashOff: Uint8Array;
+  attrToPaperFlashOff: Uint8Array;
+  attrToInkFlashOn: Uint8Array;
+  attrToPaperFlashOn: Uint8Array;
+  ulaPlusAttrToInk: Uint8Array;
+  ulaPlusAttrToPaper: Uint8Array;
+} {
+  const attrToInkFlashOff = new Uint8Array(256);
+  const attrToPaperFlashOff = new Uint8Array(256);
+  const attrToInkFlashOn = new Uint8Array(256);
+  const attrToPaperFlashOn = new Uint8Array(256);
+
+  for (let attr = 0; attr < 256; attr++) {
+    const flash = (attr >> 7) & 0x01;
+    const bright = (attr >> 6) & 0x01;
+    const paperColor = (attr >> 3) & 0x07;
+    const inkColor = attr & 0x07;
+
+    const brightOffset = bright << 3;
+    const inkPaletteIndex = inkColor + brightOffset;
+    const paperPaletteIndex = paperColor + brightOffset;
+
+    if (flash) {
+      attrToInkFlashOff[attr] = inkPaletteIndex;
+      attrToPaperFlashOff[attr] = paperPaletteIndex;
+      attrToInkFlashOn[attr] = paperPaletteIndex;
+      attrToPaperFlashOn[attr] = inkPaletteIndex;
+    } else {
+      attrToInkFlashOff[attr] = inkPaletteIndex;
+      attrToPaperFlashOff[attr] = paperPaletteIndex;
+      attrToInkFlashOn[attr] = inkPaletteIndex;
+      attrToPaperFlashOn[attr] = paperPaletteIndex;
+    }
+  }
+
+  // ULA+ attribute decode (64-color palette, indices 192-255)
+  const ulaPlusAttrToInk = new Uint8Array(256);
+  const ulaPlusAttrToPaper = new Uint8Array(256);
+
+  for (let attr = 0; attr < 256; attr++) {
+    const inkIndex6bit = ((attr & 0b11000000) >> 2) | (attr & 0b00000111);
+    ulaPlusAttrToInk[attr] = 192 + inkIndex6bit;
+
+    const paperIndex6bit = ((attr & 0b11000000) >> 2) | 0b1000 | ((attr >> 3) & 0b111);
+    ulaPlusAttrToPaper[attr] = 192 + paperIndex6bit;
+  }
+
+  return {
+    attrToInkFlashOff,
+    attrToPaperFlashOff,
+    attrToInkFlashOn,
+    attrToPaperFlashOn,
+    ulaPlusAttrToInk,
+    ulaPlusAttrToPaper
+  };
+}
+
+/**
+ * Initialize attribute decode lookup tables.
+ */
+export function initializeAttributeDecodeTables(): void {
+  if (_attrToInkFlashOff) {
+    return; // Already initialized
+  }
+
+  const tables = generateAttributeDecodeTables();
+  _attrToInkFlashOff = tables.attrToInkFlashOff;
+  _attrToPaperFlashOff = tables.attrToPaperFlashOff;
+  _attrToInkFlashOn = tables.attrToInkFlashOn;
+  _attrToPaperFlashOn = tables.attrToPaperFlashOn;
+  _ulaPlusAttrToInk = tables.ulaPlusAttrToInk;
+  _ulaPlusAttrToPaper = tables.ulaPlusAttrToPaper;
+}
+
+export function getAttrToInkFlashOff(): Uint8Array {
+  if (!_attrToInkFlashOff) {
+    throw new Error("Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first.");
+  }
+  return _attrToInkFlashOff;
+}
+
+export function getAttrToPaperFlashOff(): Uint8Array {
+  if (!_attrToPaperFlashOff) {
+    throw new Error("Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first.");
+  }
+  return _attrToPaperFlashOff;
+}
+
+export function getAttrToInkFlashOn(): Uint8Array {
+  if (!_attrToInkFlashOn) {
+    throw new Error("Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first.");
+  }
+  return _attrToInkFlashOn;
+}
+
+export function getAttrToPaperFlashOn(): Uint8Array {
+  if (!_attrToPaperFlashOn) {
+    throw new Error("Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first.");
+  }
+  return _attrToPaperFlashOn;
+}
+
+export function getUlaPlusAttrToInk(): Uint8Array {
+  if (!_ulaPlusAttrToInk) {
+    throw new Error("Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first.");
+  }
+  return _ulaPlusAttrToInk;
+}
+
+export function getUlaPlusAttrToPaper(): Uint8Array {
+  if (!_ulaPlusAttrToPaper) {
+    throw new Error("Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first.");
+  }
+  return _ulaPlusAttrToPaper;
+}
+
+/**
+ * Initialize all lookup tables (rendering flags + HC/VC + bitmap offsets + ULA addresses + attribute decode).
+ */
+export function initializeAllLookupTables(): void {
+  initializeAllRenderingFlags();
+  initializeTactLookupTables();
+  initializeBitmapOffsetTables();
+  initializeULAAddressTables();
+  initializeAttributeDecodeTables();
+}

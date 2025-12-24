@@ -3,22 +3,46 @@ import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { LayerOutput, ULAStandardMatrix } from "./RenderingCell";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import {
-  generateULARenderingFlag,
   renderULAStandardPixel,
   IPixelRenderingState,
   renderULAHiResPixel,
   renderULAHiColorPixel,
   sampleNextRegistersForUlaMode
 } from "./UlaMatrix";
-import {
-  generateLayer2_256x192Cell,
-  generateLayer2_320x256Cell,
-  generateLayer2_640x256Cell
-} from "./Layer2Matrix";
-import { generateSpritesCell } from "./SpritesMatrix";
-import { generateTilemap40x32Cell, generateTilemap80x32Cell } from "./TilemapMatrix";
-import { generateLoResCell } from "./LoResMatrix";
 import { zxNextBgra } from "../PaletteDevice";
+import {
+  initializeAllLookupTables,
+  getULARenderingFlags50Hz,
+  getULARenderingFlags60Hz,
+  getLayer2_256x192RenderingFlags50Hz,
+  getLayer2_256x192RenderingFlags60Hz,
+  getLayer2_320x256RenderingFlags50Hz,
+  getLayer2_320x256RenderingFlags60Hz,
+  getLayer2_640x256RenderingFlags50Hz,
+  getLayer2_640x256RenderingFlags60Hz,
+  getSpritesRenderingFlags50Hz,
+  getSpritesRenderingFlags60Hz,
+  getTilemap40x32RenderingFlags50Hz,
+  getTilemap40x32RenderingFlags60Hz,
+  getTilemap80x32RenderingFlags50Hz,
+  getTilemap80x32RenderingFlags60Hz,
+  getLoResRenderingFlags50Hz,
+  getLoResRenderingFlags60Hz,
+  getTactToHC50Hz,
+  getTactToVC50Hz,
+  getTactToHC60Hz,
+  getTactToVC60Hz,
+  getTactToBitmapOffset50Hz,
+  getTactToBitmapOffset60Hz,
+  getUlaPixelLineBaseAddr,
+  getUlaAttrLineBaseAddr,
+  getAttrToInkFlashOff,
+  getAttrToPaperFlashOff,
+  getAttrToInkFlashOn,
+  getAttrToPaperFlashOn,
+  getUlaPlusAttrToInk,
+  getUlaPlusAttrToPaper
+} from "./rendering-tables";
 
 /**
  * For emulation purposes, a **fixed-size bitmap** represents the visible portion of the display across all timing modes and rendering modes.
@@ -47,12 +71,6 @@ const BITMAP_HEIGHT = 288;
 
 // --- Total bitmap size in pixels: 207,360
 const BITMAP_SIZE = BITMAP_WIDTH * BITMAP_HEIGHT;
-
-// ============================================================================
-// Rendering Flags Dimensions (1D Uint16Array with full scanline storage)
-// ============================================================================
-// Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
-const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
 
 /**
  * ZX Spectrum Next Rendering Device
@@ -253,61 +271,31 @@ export class NextComposedScreenDevice
     this.updateBorderRgbCache();
   }
 
-  // Rendering flags for all layers and modes
+  // Rendering flags for all layers and modes (active references, switch based on timing mode)
   private _renderingFlagsULA: ULAStandardMatrix;
-  private _renderingFlagsULA50Hz: ULAStandardMatrix;
-  private _renderingFlagsULA60Hz: ULAStandardMatrix;
-
   private _renderingFlagsLayer2_256x192: Uint16Array;
-  private _renderingFlagsLayer2_256x192_50Hz: Uint16Array;
-  private _renderingFlagsLayer2_256x192_60Hz: Uint16Array;
-
   private _renderingFlagsLayer2_320x256: Uint16Array;
-  private _renderingFlagsLayer2_320x256_50Hz: Uint16Array;
-  private _renderingFlagsLayer2_320x256_60Hz: Uint16Array;
-
   private _renderingFlagsLayer2_640x256: Uint16Array;
-  private _renderingFlagsLayer2_640x256_50Hz: Uint16Array;
-  private _renderingFlagsLayer2_640x256_60Hz: Uint16Array;
-
   private _renderingFlagsSprites: Uint16Array;
-  private _renderingFlagsSprites50Hz: Uint16Array;
-  private _renderingFlagsSprites60Hz: Uint16Array;
-
   private _renderingFlagsTilemap_40x32: Uint16Array;
-  private _renderingFlagsTilemap_40x32_50Hz: Uint16Array;
-  private _renderingFlagsTilemap_40x32_60Hz: Uint16Array;
-
   private _renderingFlagsTilemap_80x32: Uint16Array;
-  private _renderingFlagsTilemap_80x32_50Hz: Uint16Array;
-  private _renderingFlagsTilemap_80x32_60Hz: Uint16Array;
-
   private _renderingFlagsLoRes: Uint16Array;
-  private _renderingFlagsLoRes50Hz: Uint16Array;
-  private _renderingFlagsLoRes60Hz: Uint16Array;
 
-  // HC/VC lookup tables (pre-calculated to avoid modulo/division in renderTact)
-  private _tactToHC: Uint16Array; // [tact] -> HC value
-  private _tactToVC: Uint16Array; // [tact] -> VC value
-  private _tactToHC50Hz: Uint16Array;
-  private _tactToVC50Hz: Uint16Array;
-  private _tactToHC60Hz: Uint16Array;
-  private _tactToVC60Hz: Uint16Array;
+  // HC/VC lookup tables (active references, switch based on timing mode)
+  private _tactToHC: Uint16Array;
+  private _tactToVC: Uint16Array;
 
-  // Bitmap offset lookup tables (pre-calculated to eliminate arithmetic in renderTact)
-  private _tactToBitmapOffset: Int32Array; // [tact] -> bitmap offset (-1 if out of bounds)
-  private _tactToBitmapOffset50Hz: Int32Array;
-  private _tactToBitmapOffset60Hz: Int32Array;
+  // Bitmap offset lookup table (active reference, switch based on timing mode)
+  private _tactToBitmapOffset: Int32Array;
 
   /**
    * This buffer stores the bitmap of the screen being rendered. Each 32-bit value represents an ARGB pixel.
    */
   private _pixelBuffer: Uint32Array;
 
-  // Pre-calculated ULA address lookup tables (192 entries for Y coordinates 0-191)
-  // Stores base addresses before X coordinate is added
-  ulaPixelLineBaseAddr: Uint16Array; // Pixel base address for each Y
-  ulaAttrLineBaseAddr: Uint16Array; // Attribute base address for each Y
+  // ULA address lookup tables (references to module-level shared tables)
+  ulaPixelLineBaseAddr: Uint16Array;
+  ulaAttrLineBaseAddr: Uint16Array;
 
   // ULA rendering state
   ulaScrollXSampled: number;
@@ -328,130 +316,33 @@ export class NextComposedScreenDevice
   ulaHiResInkRgb333: number;
   ulaHiResPaperRgb333: number;
 
-  // Pre-calculated attribute decode lookup tables (256 entries for all attribute byte values)
-  // Two sets: one for flash off, one for flash on
-  // Values are final palette indices (0-15) with BRIGHT already applied
-  private _attrToInkFlashOff: Uint8Array; // [attr] -> ink palette index (0-15)
-  private _attrToPaperFlashOff: Uint8Array; // [attr] -> paper palette index (0-15)
-  private _attrToInkFlashOn: Uint8Array; // [attr] -> ink palette index (0-15) with flash swap
-  private _attrToPaperFlashOn: Uint8Array; // [attr] -> paper palette index (0-15) with flash swap
-
-  // Active lookup tables (switch based on _flashFlag)
+  // Active attribute lookup tables (references to module-level tables, switch based on flash state)
   activeAttrToInk: Uint8Array;
   activeAttrToPaper: Uint8Array;
 
-  // ULA+ attribute decode lookup tables (indices 192-255)
-  // ULA+ uses 64-color palette with different encoding (FLASH+BRIGHT at top, no flash swap)
-  ulaPlusAttrToInk: Uint8Array; // [attr] -> ULA+ ink palette index (192-255)
-  ulaPlusAttrToPaper: Uint8Array; // [attr] -> ULA+ paper palette index (192-255)
+  // ULA+ attribute decode lookup tables (references to module-level shared tables)
+  ulaPlusAttrToInk: Uint8Array;
+  ulaPlusAttrToPaper: Uint8Array;
 
   constructor(public readonly machine: IZxNextMachine) {
     // Screen dimensions
     this.screenWidth = BITMAP_WIDTH;
     this.screenLines = BITMAP_HEIGHT;
 
-    // Initialize ULA address lookup tables (192 Y coordinates)
-    // Pre-calculate the Y-dependent part of pixel and attribute addresses
-    this.ulaPixelLineBaseAddr = new Uint16Array(192);
-    this.ulaAttrLineBaseAddr = new Uint16Array(192);
+    // Initialize all module-level lookup tables (lazy initialization)
+    initializeAllLookupTables();
 
-    for (let y = 0; y < 192; y++) {
-      // Pixel address calculation: y[7:6] | y[2:0] | y[5:3] | x[7:3]
-      // Pre-calculate everything except x[7:3]
-      const y76 = (y >> 6) & 0x03; // Bits 7-6: thirds (0-2)
-      const y20 = y & 0x07; // Bits 2-0: scan line within char (0-7)
-      const y53 = (y >> 3) & 0x07; // Bits 5-3: char row (0-23)
-      this.ulaPixelLineBaseAddr[y] = (y76 << 11) | (y20 << 8) | (y53 << 5);
+    // Get references to module-level ULA address lookup tables
+    this.ulaPixelLineBaseAddr = getUlaPixelLineBaseAddr();
+    this.ulaAttrLineBaseAddr = getUlaAttrLineBaseAddr();
 
-      // Attribute address calculation: 0x1800 + (y/8)*32 + x/8
-      // Pre-calculate 0x1800 + (y/8)*32
-      const attrY = y >> 3; // Character row (0-23)
-      this.ulaAttrLineBaseAddr[y] = 0x1800 + (attrY << 5);
-    }
+    // Initialize active attribute lookup tables (default to flash off)
+    this.activeAttrToInk = getAttrToInkFlashOff();
+    this.activeAttrToPaper = getAttrToPaperFlashOff();
 
-    // Generate attribute decode lookup tables (256 entries for all attribute byte values)
-    // This eliminates bit operations during rendering
-    // Store final palette indices (0-15) with BRIGHT already applied
-    this._attrToInkFlashOff = new Uint8Array(256);
-    this._attrToPaperFlashOff = new Uint8Array(256);
-    this._attrToInkFlashOn = new Uint8Array(256);
-    this._attrToPaperFlashOn = new Uint8Array(256);
-
-    for (let attr = 0; attr < 256; attr++) {
-      const flash = (attr >> 7) & 0x01;
-      const bright = (attr >> 6) & 0x01;
-      const paperColor = (attr >> 3) & 0x07;
-      const inkColor = attr & 0x07;
-
-      // Apply BRIGHT: adds 8 to color index (0-7 -> 0-15)
-      const brightOffset = bright << 3;
-      const inkPaletteIndex = inkColor + brightOffset;
-      const paperPaletteIndex = paperColor + brightOffset;
-
-      if (flash) {
-        // Flash enabled: swap ink and paper when flash is active
-        this._attrToInkFlashOff[attr] = inkPaletteIndex;
-        this._attrToPaperFlashOff[attr] = paperPaletteIndex;
-        this._attrToInkFlashOn[attr] = paperPaletteIndex; // Swapped
-        this._attrToPaperFlashOn[attr] = inkPaletteIndex; // Swapped
-      } else {
-        // Flash disabled: same values for both states
-        this._attrToInkFlashOff[attr] = inkPaletteIndex;
-        this._attrToPaperFlashOff[attr] = paperPaletteIndex;
-        this._attrToInkFlashOn[attr] = inkPaletteIndex;
-        this._attrToPaperFlashOn[attr] = paperPaletteIndex;
-      }
-    }
-
-    // Initialize active lookup tables
-    this.activeAttrToInk = this._attrToInkFlashOff;
-    this.activeAttrToPaper = this._attrToPaperFlashOff;
-
-    // Generate ULA+ attribute decode lookup tables (256 entries)
-    // ULA+ uses 64-color palette (indices 192-255 in ULA palette)
-    // Palette index construction (6 bits):
-    //   Bits 5-4: attr[7:6] (FLASH, BRIGHT)
-    //   Bit 3: 0 for INK, 1 for PAPER
-    //   Bits 2-0: attr[2:0] for INK or attr[5:3] for PAPER
-    // Note: ULA+ disables flash functionality - FLASH bit becomes part of color selection
-    this.ulaPlusAttrToInk = new Uint8Array(256);
-    this.ulaPlusAttrToPaper = new Uint8Array(256);
-
-    for (let attr = 0; attr < 256; attr++) {
-      // INK: bits [7:6] | 0 | [2:0]
-      const inkIndex6bit = ((attr & 0b11000000) >> 2) | (attr & 0b00000111);
-      this.ulaPlusAttrToInk[attr] = 192 + inkIndex6bit;
-
-      // PAPER: bits [7:6] | 1 | [5:3]
-      const paperIndex6bit = ((attr & 0b11000000) >> 2) | 0b1000 | ((attr >> 3) & 0b111);
-      this.ulaPlusAttrToPaper[attr] = 192 + paperIndex6bit;
-    }
-
-    // Generate rendering flags for all layers and modes
-    this._renderingFlagsULA50Hz = this.generateULAStandardRenderingFlags(Plus3_50Hz);
-    this._renderingFlagsULA60Hz = this.generateULAStandardRenderingFlags(Plus3_60Hz);
-    this._renderingFlagsLayer2_256x192_50Hz = this.generateLayer2_256x192RenderingFlags(Plus3_50Hz);
-    this._renderingFlagsLayer2_256x192_60Hz = this.generateLayer2_256x192RenderingFlags(Plus3_60Hz);
-    this._renderingFlagsLayer2_320x256_50Hz = this.generateLayer2_320x256RenderingFlags(Plus3_50Hz);
-    this._renderingFlagsLayer2_320x256_60Hz = this.generateLayer2_320x256RenderingFlags(Plus3_60Hz);
-    this._renderingFlagsLayer2_640x256_50Hz = this.generateLayer2_640x256RenderingFlags(Plus3_50Hz);
-    this._renderingFlagsLayer2_640x256_60Hz = this.generateLayer2_640x256RenderingFlags(Plus3_60Hz);
-    this._renderingFlagsSprites50Hz = this.generateSpritesRenderingFlags(Plus3_50Hz);
-    this._renderingFlagsSprites60Hz = this.generateSpritesRenderingFlags(Plus3_60Hz);
-    this._renderingFlagsTilemap_40x32_50Hz = this.generateTilemap40x32RenderingFlags(Plus3_50Hz);
-    this._renderingFlagsTilemap_40x32_60Hz = this.generateTilemap40x32RenderingFlags(Plus3_60Hz);
-    this._renderingFlagsTilemap_80x32_50Hz = this.generateTilemap80x32RenderingFlags(Plus3_50Hz);
-    this._renderingFlagsTilemap_80x32_60Hz = this.generateTilemap80x32RenderingFlags(Plus3_60Hz);
-    this._renderingFlagsLoRes50Hz = this.generateLoResRenderingFlags(Plus3_50Hz);
-    this._renderingFlagsLoRes60Hz = this.generateLoResRenderingFlags(Plus3_60Hz);
-
-    // Generate HC/VC lookup tables for both timing modes
-    this.generateTactLookupTables(Plus3_50Hz);
-    this.generateTactLookupTables(Plus3_60Hz);
-
-    // Generate bitmap offset lookup tables for both timing modes
-    this.generateBitmapOffsetTable(Plus3_50Hz);
-    this.generateBitmapOffsetTable(Plus3_60Hz);
+    // Get references to module-level ULA+ attribute tables
+    this.ulaPlusAttrToInk = getUlaPlusAttrToInk();
+    this.ulaPlusAttrToPaper = getUlaPlusAttrToPaper();
 
     this.reset();
   }
@@ -811,33 +702,33 @@ export class NextComposedScreenDevice
     this.machine.setTactsInFrame(this.renderingTacts);
 
     // --- Update all layer rendering flags references based on timing mode
-    this._renderingFlagsULA = is60Hz ? this._renderingFlagsULA60Hz : this._renderingFlagsULA50Hz;
+    this._renderingFlagsULA = is60Hz ? getULARenderingFlags60Hz() : getULARenderingFlags50Hz();
     this._renderingFlagsLayer2_256x192 = is60Hz
-      ? this._renderingFlagsLayer2_256x192_60Hz
-      : this._renderingFlagsLayer2_256x192_50Hz;
+      ? getLayer2_256x192RenderingFlags60Hz()
+      : getLayer2_256x192RenderingFlags50Hz();
     this._renderingFlagsLayer2_320x256 = is60Hz
-      ? this._renderingFlagsLayer2_320x256_60Hz
-      : this._renderingFlagsLayer2_320x256_50Hz;
+      ? getLayer2_320x256RenderingFlags60Hz()
+      : getLayer2_320x256RenderingFlags50Hz();
     this._renderingFlagsLayer2_640x256 = is60Hz
-      ? this._renderingFlagsLayer2_640x256_60Hz
-      : this._renderingFlagsLayer2_640x256_50Hz;
+      ? getLayer2_640x256RenderingFlags60Hz()
+      : getLayer2_640x256RenderingFlags50Hz();
     this._renderingFlagsSprites = is60Hz
-      ? this._renderingFlagsSprites60Hz
-      : this._renderingFlagsSprites50Hz;
+      ? getSpritesRenderingFlags60Hz()
+      : getSpritesRenderingFlags50Hz();
     this._renderingFlagsTilemap_40x32 = is60Hz
-      ? this._renderingFlagsTilemap_40x32_60Hz
-      : this._renderingFlagsTilemap_40x32_50Hz;
+      ? getTilemap40x32RenderingFlags60Hz()
+      : getTilemap40x32RenderingFlags50Hz();
     this._renderingFlagsTilemap_80x32 = is60Hz
-      ? this._renderingFlagsTilemap_80x32_60Hz
-      : this._renderingFlagsTilemap_80x32_50Hz;
+      ? getTilemap80x32RenderingFlags60Hz()
+      : getTilemap80x32RenderingFlags50Hz();
     this._renderingFlagsLoRes = is60Hz
-      ? this._renderingFlagsLoRes60Hz
-      : this._renderingFlagsLoRes50Hz;
+      ? getLoResRenderingFlags60Hz()
+      : getLoResRenderingFlags50Hz();
 
-    // --- Update HC/VC lookup tables based on timing mode
-    this._tactToHC = is60Hz ? this._tactToHC60Hz : this._tactToHC50Hz;
-    this._tactToVC = is60Hz ? this._tactToVC60Hz : this._tactToVC50Hz;
-    this._tactToBitmapOffset = is60Hz ? this._tactToBitmapOffset60Hz : this._tactToBitmapOffset50Hz;
+    // --- Update HC/VC and bitmap offset lookup tables based on timing mode
+    this._tactToHC = is60Hz ? getTactToHC60Hz() : getTactToHC50Hz();
+    this._tactToVC = is60Hz ? getTactToVC60Hz() : getTactToVC50Hz();
+    this._tactToBitmapOffset = is60Hz ? getTactToBitmapOffset60Hz() : getTactToBitmapOffset50Hz();
 
     // Increment flash counter (cycles 0-31 for ~1 Hz flash rate at 50Hz)
     // Flash period: ~16 frames ON, ~16 frames OFF
@@ -849,11 +740,11 @@ export class NextComposedScreenDevice
     if (newFlashFlag !== this.flashFlag) {
       this.flashFlag = newFlashFlag;
       if (this.flashFlag) {
-        this.activeAttrToInk = this._attrToInkFlashOn;
-        this.activeAttrToPaper = this._attrToPaperFlashOn;
+        this.activeAttrToInk = getAttrToInkFlashOn();
+        this.activeAttrToPaper = getAttrToPaperFlashOn();
       } else {
-        this.activeAttrToInk = this._attrToInkFlashOff;
-        this.activeAttrToPaper = this._attrToPaperFlashOff;
+        this.activeAttrToInk = getAttrToInkFlashOff();
+        this.activeAttrToPaper = getAttrToPaperFlashOff();
       }
     }
 
@@ -1028,211 +919,6 @@ export class NextComposedScreenDevice
 
   get nextReg0x43Value(): number {
     return this.ulaNextEnabled ? 0x01 : 0x00;
-  }
-
-  // ==============================================================================================
-  // Lookup table generation
-
-  /**
-   * Generate HC/VC lookup tables to eliminate expensive modulo/division operations in renderTact.
-   * Pre-calculates HC and VC values for every tact position.
-   *
-   * Memory cost: ~483 KB per timing mode (~967 KB total for 50Hz + 60Hz)
-   * Performance gain: Eliminates modulo and division operations in hot path
-   *
-   * @param config - Timing configuration (50Hz or 60Hz)
-   */
-  private generateTactLookupTables(config: TimingConfig): void {
-    const totalTacts = config.totalVC * config.totalHC;
-    const tactToHC = new Uint16Array(totalTacts);
-    const tactToVC = new Uint16Array(totalTacts);
-
-    for (let tact = 0; tact < totalTacts; tact++) {
-      tactToHC[tact] = tact % config.totalHC;
-      tactToVC[tact] = (tact / config.totalHC) | 0; // Bitwise OR for integer division
-    }
-
-    // Store in appropriate 50Hz or 60Hz fields
-    if (config === Plus3_50Hz) {
-      this._tactToHC50Hz = tactToHC;
-      this._tactToVC50Hz = tactToVC;
-    } else {
-      this._tactToHC60Hz = tactToHC;
-      this._tactToVC60Hz = tactToVC;
-    }
-  }
-
-  /**
-   * Pre-calculate bitmap coordinate lookup table for each tact.
-   *
-   * This eliminates the need to calculate bitmap Y, bitmap X, and perform bounds checking
-   * on every visible tact. The table stores the final bitmap buffer offset, or -1 if the
-   * tact is outside the visible bitmap area.
-   *
-   * Memory cost: ~483 KB per timing mode (~967 KB total for 50Hz + 60Hz)
-   * Performance gain: Eliminates 2 subtractions, 1 multiplication, and 2 comparisons per tact
-   *
-   * @param config - Timing configuration (50Hz or 60Hz)
-   */
-  private generateBitmapOffsetTable(config: TimingConfig): void {
-    const totalTacts = config.totalVC * config.totalHC;
-    const tactToBitmapOffset = new Int32Array(totalTacts);
-
-    for (let tact = 0; tact < totalTacts; tact++) {
-      const hc = tact % config.totalHC;
-      const vc = Math.floor(tact / config.totalHC) | 0;
-      const bitmapY = vc - config.firstBitmapVC;
-
-      if (bitmapY >= 0 && bitmapY < BITMAP_HEIGHT) {
-        const bitmapXBase = (hc - config.firstVisibleHC) * 2;
-        tactToBitmapOffset[tact] = bitmapY * BITMAP_WIDTH + bitmapXBase;
-      } else {
-        tactToBitmapOffset[tact] = -1; // Out of visible bitmap area
-      }
-    }
-
-    // Store in appropriate 50Hz or 60Hz fields
-    if (config === Plus3_50Hz) {
-      this._tactToBitmapOffset50Hz = tactToBitmapOffset;
-    } else {
-      this._tactToBitmapOffset60Hz = tactToBitmapOffset;
-    }
-  }
-
-  // Rendering flags generation
-
-  /**
-   * Generate ULA Standard rendering flags as 1D Uint16Array with bit flags.
-   * Includes full scanline storage (blanking regions included for simplified addressing).
-   *
-   * Dimensions:
-   * - 50Hz: 311 × 456 = ~141,816 elements (~284 KB)
-   * - 60Hz: 264 × 456 = ~120,384 elements (~241 KB)
-   *
-   * Access: renderingFlags[vc * RENDERING_FLAGS_HC_COUNT + hc]
-   *
-   * @param config - Timing configuration (50Hz or 60Hz)
-   * @returns 1D Uint16Array with bit flags for each cell
-   */
-  private generateULAStandardRenderingFlags(config: TimingConfig): ULAStandardMatrix {
-    const vcCount = config.totalVC; // Total scanlines (including blanking)
-    const hcCount = RENDERING_FLAGS_HC_COUNT; // Total horizontal positions (456)
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    // Generate all cells including blanking regions
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateULARenderingFlag(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateLayer2_256x192RenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateLayer2_256x192Cell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateLayer2_320x256RenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateLayer2_320x256Cell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateLayer2_640x256RenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateLayer2_640x256Cell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateSpritesCell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateTilemap40x32RenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateTilemap40x32Cell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateTilemap80x32RenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateTilemap80x32Cell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
-  }
-
-  private generateLoResRenderingFlags(config: TimingConfig): Uint16Array {
-    const vcCount = config.totalVC;
-    const hcCount = RENDERING_FLAGS_HC_COUNT;
-    const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-    for (let vc = 0; vc < vcCount; vc++) {
-      for (let hc = 0; hc < hcCount; hc++) {
-        const index = vc * hcCount + hc;
-        renderingFlags[index] = generateLoResCell(config, vc, hc);
-      }
-    }
-
-    return renderingFlags;
   }
 
   // ==============================================================================================
