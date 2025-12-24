@@ -165,8 +165,6 @@ export class NextComposedScreenDevice
   // 10 = For ULA/Tilemap mix result as blend color
   // 11 = For tilemap as blend color
   blendingInSLUModes6And7: number;
-  // When true, ULA+ features are enabled
-  enableUlaPlus: boolean;
   // Not used yet
   ulaHalfPixelScroll: boolean;
   // Enable stencil mode when both the ULA and tilemap are enabled
@@ -798,7 +796,6 @@ export class NextComposedScreenDevice
   // ==============================================================================================
   // Port updates
   set timexPortValue(value: number) {
-    console.log(`TIMEX port set to ${value.toString(16).padStart(2, "0")}`);
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
     this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);

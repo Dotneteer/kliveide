@@ -1322,13 +1322,23 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x68,
       description: "ULA Control",
-      readFn: () => this.regValues[0x68] & 0xfd,
+      readFn: () => {
+        const d = machine.composedScreenDevice;
+        return (
+          (d.disableUlaOutput ? 0x80 : 0) |
+          (d.blendingInSLUModes6And7 << 5) |
+          (machine.keyboardDevice.cancelExtendedKeyEntries ? 0x10 : 0) |
+          (d.ulaPlusEnabled ? 0x08 : 0) |
+          (d.ulaHalfPixelScroll ? 0x04 : 0) |
+          (d.enableStencilMode ? 0x01 : 0)
+        );
+      },
       writeFn: (v) => {
         machine.keyboardDevice.cancelExtendedKeyEntries = !!(v & 0x10);
 
         machine.composedScreenDevice.disableUlaOutput = !!(v & 0x80);
         machine.composedScreenDevice.blendingInSLUModes6And7 = (v >> 5) & 0x03;
-        machine.composedScreenDevice.enableUlaPlus = !!(v & 0x08);
+        machine.composedScreenDevice.ulaPlusEnabled = !!(v & 0x08);
         machine.composedScreenDevice.ulaHalfPixelScroll = !!(v & 0x04);
         machine.composedScreenDevice.enableStencilMode = !!(v & 0x01);
       },

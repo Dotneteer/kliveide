@@ -234,9 +234,12 @@ export class NextIoPortManager {
       pmask: 0b1111_1111_1111_1111,
       value: 0b1011_1111_0011_1011,
       readerFns: () => 0xff,
-      writerFns: (v) => {
+      writerFns: (_, v) => {
         machine.composedScreenDevice.ulaPlusMode = (v >> 6) & 0x03;
-        machine.composedScreenDevice.ulaPlusPaletteIndex = v & 0x3f;
+        if ((v >> 6) === 0x00) {
+          // Only update palette index when mode is 00 (palette access)
+          machine.composedScreenDevice.ulaPlusPaletteIndex = v & 0x3f;
+        }
       }
     });
     r({
@@ -244,8 +247,8 @@ export class NextIoPortManager {
       port: 0xff3b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b1111_1111_0011_1011,
-      readerFns: readUlaPlusDataPort,
-      writerFns: writeUlaPlusDataPort
+      readerFns: () => readUlaPlusDataPort(machine),
+      writerFns: (_, v) => writeUlaPlusDataPort(machine, v)
     });
     r({
       description: "Z80Dma",
