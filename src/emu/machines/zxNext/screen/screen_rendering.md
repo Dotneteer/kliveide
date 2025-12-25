@@ -399,7 +399,822 @@ Border pixels are never clipped (always visible)
 - Pixel generation: `zxula.vhd` lines 490-570
 - Palette architecture: `zxnext.vhd` lines 6906-6932
 
-### 1.6 ULA Enhanced Modes (ULA+, ULANext)
+### 1.6 Layer 2 Implementation Details
+
+Layer 2 is a high-resolution bitmap layer that displays directly from SRAM (external RAM) without the attribute-based constraints of the ULA. It supports three resolution modes with flexible scrolling, clipping, and palette offset capabilities.
+
+#### Memory Organization
+
+**SRAM Address Space**: Layer 2 data is stored in external SRAM starting at a configurable 16K bank boundary.
+
+**Bank Configuration**:
+- **Active Bank** (NextReg 0x12, bits 6:0): Starting 16K bank for Layer 2 display (soft reset = 8)
+- **Shadow Bank** (NextReg 0x13, bits 6:0): Alternative buffer for double-buffering (soft reset = 11)
+- **Port 0x123B** bit 3 selects between active (0) and shadow (1) banks for both display and memory mapping
+
+**Memory Size by Resolution**:
+- **256×192×8**: 48KB (3 × 16K banks)
+- **320×256×8**: 80KB (5 × 16K banks)
+- **640×256×4**: 80KB (5 × 16K banks, 4 bits per pixel)
+
+#### Resolution Modes
+
+Layer 2 supports three distinct resolution modes configured via **NextReg 0x70** bits [5:4]:
+
+##### Mode 0: 256×192×8 (Standard Resolution)
+
+**Configuration**: NextReg 0x70 bits [5:4] = `00`
+
+**Memory Layout**:
+```
+Address = bank_base + (y[7:0] × 256) + x[7:0]
+```
+- Linear pixel array: 256 pixels per line, 192 lines
+- Each pixel: 8-bit palette index (0-255)
+- Total size: 49,152 bytes (48KB)
+
+**Display Area**:
+- Uses `phc` (practical horizontal counter) and `pvc` (practical vertical counter)
+- Valid when: `phc[8] = 0` (0-255) and `pvc[8] = 0` and `pvc[7:6] ≠ 11` (0-191)
+
+**Coordinate Mapping**:
+```
+hc_eff = phc + 1              // One pixel ahead for memory access
+vc_eff = pvc
+```
+
+##### Mode 1: 320×256×8 (Wide Resolution)
+
+**Configuration**: NextReg 0x70 bits [5:4] = `01`
+
+**Memory Layout**:
+```
+Address = bank_base + (x[8:0] × 256) + y[7:0]
+```
+- X-major layout: 256 lines of 320 pixels each
+- Each pixel: 8-bit palette index (0-255)
+- Total size: 81,920 bytes (80KB)
+
+**Display Area**:
+- Uses `whc` (wide horizontal counter) and `wvc` (wide vertical counter)
+- Valid when: `whc[8] = 0` or `whc[7:6] = 00` (0-319) and `wvc[8] = 0` (0-255)
+
+**Coordinate Mapping**:
+```
+hc_eff = whc + 1              // One pixel ahead for memory access
+vc_eff = wvc
+```
+
+**Counter Origins**:
+- `whc` starts at -16 (relative to ULA display area)
+- `wvc` starts at -2 (relative to ULA display area)
+- Provides 32-pixel left border extension and 4-line top/bottom border extension
+
+##### Mode 2: 640×256×4 (High Resolution)
+
+**Configuration**: NextReg 0x70 bits [5:4] = `1X` (10 or 11)
+
+**Memory Layout**:
+```
+Address = bank_base + (x[9:0] × 256) + y[7:0]
+Pixel pair = byte at Address
+Left pixel = byte[7:4] (4-bit palette index)
+Right pixel = byte[3:0] (4-bit palette index)
+```
+- X-major layout: 256 lines of 320 bytes each (640 pixels)
+- Each byte contains 2 pixels (4 bits each)
+- Total size: 81,920 bytes (80KB)
+
+**Display Area**:
+- Uses `whc` and `wvc` (same as 320×256 mode)
+- Valid when: `whc[8] = 0` or `whc[7:6] = 00` (0-319 logical) and `wvc[8] = 0` (0-255)
+
+**Coordinate Mapping**:
+```
+hc_eff = whc + 1              // One pixel ahead for memory access
+vc_eff = wvc
+x[9:0] = hc_eff[8:0] × 2 + sc[1]   // Double horizontal for 640 pixels, sc[1] selects sub-pixel
+```
+
+**Pixel Extraction**:
+```vhdl
+-- At CLK_28, fetch byte containing pixel pair
+-- At CLK_14 cycle 0 (sc[1] = 0): output pixel = byte[7:4]
+-- At CLK_14 cycle 1 (sc[1] = 1): output pixel = byte[3:0]
+layer2_pixel_pre <= ("0000" & layer2_pixel_qq[7:4]) when sc(1) = '0' 
+                else ("0000" & layer2_pixel_qq[3:0])
+```
+
+#### Scrolling Implementation
+
+**Horizontal Scrolling**:
+- **LSB**: NextReg 0x16 (8 bits, scroll_x[7:0])
+- **MSB**: NextReg 0x71 bit 0 (scroll_x[8])
+- 9-bit total range: 0-511 pixels
+
+**Vertical Scrolling**:
+- **NextReg 0x17** (8 bits, scroll_y[7:0])
+- Limited to 0-191 when vertical resolution is 192 pixels
+- Full 0-255 range in 320×256 and 640×256 modes
+
+**Scroll Application** (sampled at CLK_7 rising edge):
+
+```vhdl
+-- Horizontal scroll with wraparound
+x_pre[9:0] = hc_eff[8:0] + scroll_x[8:0]
+
+-- 256×192 mode: wrap at 256-pixel boundary
+-- 320×256/640×256 modes: wrap at 320-pixel boundary with special handling
+if (wide_res = '0' or (x_pre[9] = '0' and (x_pre[8] = '0' or x_pre[7:6] = "00"))) then
+   x[8:6] = x_pre[8:6]
+else
+   x[8:6] = x_pre[8:6] + "011"     // Add 192 to wrap 320→0
+end if
+x[5:0] = x_pre[5:0]
+
+-- Vertical scroll with wraparound
+y_pre[8:0] = vc_eff[8:0] + scroll_y[7:0]
+
+-- 256×192 mode: wrap at 192-line boundary (avoid y >= 192)
+-- 320×256/640×256 modes: wrap at 256-line boundary
+if (wide_res = '1' or (y_pre[8] = '0' and y_pre[7:6] ≠ "11")) then
+   y[7:6] = y_pre[7:6]
+else
+   y[7:6] = y_pre[7:6] + 1         // Add 64 to wrap 192→0
+end if
+y[5:0] = y_pre[5:0]
+```
+
+**Scroll Timing**:
+- Scroll values sampled continuously at CLK_7 rising edge
+- No specific sampling window (unlike ULA scroll)
+- Applied to coordinate calculation one pixel ahead of display (hc_eff = hc + 1)
+
+#### Clipping Implementation
+
+**Clip Window Configuration** (NextReg 0x18, 4 writes):
+1. X1 position (inclusive, soft reset = 0)
+2. X2 position (inclusive, soft reset = 255)
+3. Y1 position (inclusive, soft reset = 0)
+4. Y2 position (inclusive, soft reset = 191)
+
+**Clip Window Semantics**:
+- Coordinates are in display space (before scrolling)
+- **256×192 mode**: X coordinates are 8-bit (0-255)
+- **320×256/640×256 modes**: X coordinates doubled internally (9-bit, 0-511)
+
+**Clip Application** (sampled at CLK_7 rising edge):
+
+```vhdl
+-- Adjust clip coordinates for resolution mode
+if (resolution = "00") then
+   clip_x1_q <= '0' & i_clip_x1         // 256×192: 9-bit with MSB=0
+   clip_x2_q <= '0' & i_clip_x2
+else
+   clip_x1_q <= i_clip_x1 & '0'         // Wide modes: double X coords
+   clip_x2_q <= i_clip_x2 & '1'
+end if
+
+clip_y1_q <= i_clip_y1                  // Y coords not doubled
+clip_y2_q <= i_clip_y2
+
+-- Validity checks for coordinate ranges
+hc_valid <= '1' when (narrow and hc_eff[8] = '0') or 
+                    (wide and (hc_eff[8] = '0' or hc_eff[7:6] = "00")) else '0'
+
+vc_valid <= '1' when (wide and vc_eff[8] = '0') or 
+                    (narrow and (vc_eff[8] = '0' and vc_eff[7:6] ≠ "11")) else '0'
+
+-- Enable pixel if within clip window AND valid coordinates
+layer2_clip_en <= '1' when (hc_eff >= clip_x1_q) and (hc_eff <= clip_x2_q) and
+                          (vc_eff >= ('0' & clip_y1_q)) and (vc_eff <= ('0' & clip_y2_q)) and
+                          (hc_valid = '1') and (vc_valid = '1') 
+              else '0'
+```
+
+**Clipping Behavior**:
+- Clipped pixels are **not rendered** (layer2_en = '0')
+- Clipped pixels do not generate SRAM access requests
+- Clipping evaluated **after** scrolling (uses effective coordinates)
+
+#### Memory Access Timing
+
+**SRAM Access Cycle** (CLK_28 domain):
+
+```vhdl
+-- Address calculation
+layer2_bank_eff = (active_bank[6:4] + 1) & active_bank[3:0]
+layer2_addr_eff = (layer2_bank_eff + layer2_addr[16:14]) & layer2_addr[13:0]
+
+-- Memory request at sc = "00" (first CLK_28 cycle of CLK_7)
+process (CLK_28)
+   if sc = "00" then
+      if layer2_en = '1' then
+         layer2_req_t <= not layer2_req_t    // Toggle request signal
+      end if
+      layer2_sram_addr <= layer2_addr_eff[20:0]
+      layer2_pixel_qq <= sram_data_in        // Latch returned data
+   end if
+end process
+```
+
+**Timing Characteristics**:
+- Memory address computed at CLK_28 rate (one pixel ahead)
+- SRAM request toggled at sc = "00" when pixel is enabled
+- Data latched at sc = "00" of the **following** CLK_7 cycle
+- Pipeline delay: ~1.5 CLK_7 cycles (from coordinate to pixel output)
+
+**Memory Request Pattern**:
+- **256×192 mode**: 1 request per CLK_7 (at 7 MHz)
+- **320×256 mode**: 1 request per CLK_7 (at 7 MHz)
+- **640×256 mode**: 2 requests per CLK_7 (at 14 MHz via CLK_28)
+
+#### Palette Offset
+
+**Configuration**: NextReg 0x70 bits [3:0] (palette_offset, soft reset = 0)
+
+**Application**:
+```vhdl
+-- Applied to upper nibble of palette index before lookup
+palette_index[7:4] = layer2_pixel[7:4] + palette_offset[3:0]
+palette_index[3:0] = layer2_pixel[3:0]
+```
+
+**Purpose**:
+- Allows Layer 2 to use different regions of the 256-entry palette
+- Useful for color cycling effects without changing pixel data
+- Does **not** affect transparency comparison (transparency uses original pixel value)
+
+**Palette Offset Timing**:
+- Sampled at CLK_7 rising edge
+- Applied immediately to palette lookup (same cycle as pixel data)
+
+#### Palette Lookup and Priority Bit
+
+Layer 2 shares a **512-entry × 10-bit palette** with sprites:
+
+**Palette Structure**:
+- Entries 0-255: Layer 2 palette (selected by bit 9 = 0)
+- Entries 256-511: Sprite palette (selected by bit 9 = 1)
+- Each entry: 10 bits = 9-bit RGB333 + 1-bit priority flag
+
+**Palette Selection**:
+- **NextReg 0x43** bit 2: Select first (0) or second (1) Layer 2 palette bank
+
+**Palette Address**:
+```vhdl
+l2s_pixel_1 <= '0' & layer2_palette_select_1 & layer2_pixel_1   // when sc(0) = '0'
+               -- bit 9=0 for Layer 2, bit 8=palette_select, bits 7:0=pixel_index
+```
+
+**Priority Bit Extraction**:
+```vhdl
+layer2_prgb_1 <= palette_data[15] & palette_data[8:0]   // [9]=priority, [8:0]=RGB333
+
+-- Sent to composition stage
+layer2_rgb_2 <= layer2_prgb_1[8:0]          // RGB333 color
+layer2_priority_2 <= layer2_prgb_1[9]       // Priority promotion bit
+```
+
+**Priority Promotion**:
+The priority bit (bit 9 of palette entry) allows individual Layer 2 pixels to render **on top** regardless of the layer priority setting (NextReg 0x15 bits [4:2]):
+
+```vhdl
+-- In composition stage (zxnext.vhd lines 7140-7340)
+if layer2_priority = '1' then
+   rgb_out_2 <= layer2_rgb    // Priority bit set: render Layer 2 first
+elsif (normal priority evaluation) then
+   -- ... standard priority order
+end if
+```
+
+This enables selective foreground rendering (e.g., HUD elements) while keeping most Layer 2 pixels in their configured priority order.
+
+#### Enable and Display Control
+
+**Display Enable**:
+- **Port 0x123B** bit 1: Enable Layer 2 display (aliased to NextReg 0x12 bit 7)
+- When disabled, Layer 2 layer outputs transparent pixels
+
+**Memory Mapping Control** (Port 0x123B):
+- Bit 0: Enable mapping for memory writes
+- Bit 2: Enable mapping for memory reads
+- Bits [7:6] + bit 3: Select which 16K segment(s) to map (see Memory Mapping section)
+
+**Memory Mapping Modes** (Port 0x123B bits [7:6] when bit 4 = 0):
+- `00`: First 16K of Layer 2 in the bottom 16K ($0000-$3FFF)
+- `01`: Second 16K of Layer 2 in the bottom 16K
+- `10`: Third 16K of Layer 2 in the bottom 16K
+- `11`: First 48K of Layer 2 in bottom 48K ($0000-$BFFF)
+
+**Bank Offset** (Port 0x123B bits [2:0] when bit 4 = 1):
+- Adds 0-7 to the starting bank for memory mapping
+- Allows fine-grained control over which banks are visible
+
+#### Transparency
+
+**Transparency Color**: NextReg 0x14 (8-bit RGB332 value, soft reset = 0xE3)
+
+**Transparency Test** (Stage 2 composition):
+```vhdl
+layer2_transparent <= '1' when (layer2_rgb_2[8:1] = transparent_rgb_2) or 
+                              (layer2_pixel_en_2 = '0') 
+                  else '0'
+```
+
+**Key Points**:
+- Transparency comparison uses **9-bit RGB333** MSBs (ignores LSB, effectively RGB332 precision)
+- Applies to final palette color, **after** palette offset applied
+- Clipped pixels automatically treated as transparent (layer2_pixel_en = '0')
+- Disabled layer automatically treated as transparent
+
+#### Implementation Notes
+
+**Counter Selection**:
+- **256×192 mode**: Uses `phc` (practical horizontal counter) and `pvc` (practical vertical counter)
+  - `phc` starts at -48 relative to display area (earlier than ULA)
+  - `pvc` matches ULA vertical counter
+- **320×256/640×256 modes**: Uses `whc` (wide horizontal counter) and `wvc` (wide vertical counter)
+  - `whc` starts at -16 relative to 320-pixel area
+  - `wvc` starts at -2 relative to 256-line area
+
+**Address Generation**:
+The address calculation differs by resolution mode:
+- **256×192**: `layer2_addr = '0' & y[7:0] & x[7:0]` (Y-major, 17 bits)
+- **320×256/640×256**: `layer2_addr = x[8:0] & y[7:0]` (X-major, 17 bits)
+
+This X-major layout in wide modes optimizes for horizontal line drawing and scrolling.
+
+**Bank Addressing**:
+```vhdl
+-- Convert 16K bank number to SRAM address bits [21:14]
+layer2_bank_eff[7:0] = (active_bank[6:4] + 1) & active_bank[3:0]
+layer2_addr_eff[21:0] = (layer2_bank_eff + addr[16:14]) & addr[13:0]
+```
+
+The bank calculation adds 1 to the upper nibble to account for ZX Spectrum RAM starting at bank 8 in SRAM.
+
+**Pixel Pipeline**:
+1. **Coordinate Calculation** (CLK_28, sc = "11"): Compute x, y from counters + scroll
+2. **Address Generation** (CLK_28, sc = "00"): Convert x, y to SRAM address
+3. **Memory Request** (CLK_28, sc = "00"): Toggle request signal, send address
+4. **Data Latch** (CLK_28, sc = "00" next cycle): Capture returned pixel data
+5. **Palette Offset** (CLK_7 rising): Add offset to pixel index
+6. **Palette Lookup** (CLK_28 inverted): Convert index to RGB333 + priority
+7. **Composition** (CLK_14): Combine with other layers
+
+**Emulation Considerations**:
+- Pre-calculate which HC/VC positions are valid for each resolution mode
+- Store clipping bounds in sampled registers (updated at frame start or on register write)
+- Use lookup tables for address calculation if performance-critical
+- Cache palette colors to avoid repeated lookups
+- Handle priority bit separately from RGB color in composition logic
+
+#### Register Summary
+
+| Register | Bits | Purpose | Default |
+|---|---|---|---|
+| **NextReg 0x12** | [6:0] | Active RAM bank | 8 |
+| **NextReg 0x13** | [6:0] | Shadow RAM bank | 11 |
+| **NextReg 0x14** | [7:0] | Transparency color (RGB332) | 0xE3 |
+| **NextReg 0x16** | [7:0] | X scroll LSB | 0 |
+| **NextReg 0x17** | [7:0] | Y scroll | 0 |
+| **NextReg 0x18** | [7:0] | Clip window (4 writes) | 0, 255, 0, 191 |
+| **NextReg 0x43** | [2] | Palette bank select | 0 |
+| **NextReg 0x70** | [5:4] | Resolution mode | 00 |
+| **NextReg 0x70** | [3:0] | Palette offset | 0 |
+| **NextReg 0x71** | [0] | X scroll MSB | 0 |
+| **Port 0x123B** | [7:0] | Enable, mapping, shadow | 0 |
+
+#### Source References
+
+- Layer 2 module: `layer2.vhd` lines 1-217 (complete module)
+- Layer 2 instantiation: `zxnext.vhd` lines 4180-4210
+- Coordinate counters: `zxula_timing.vhd` lines 475-525 (phc, whc, wvc generation)
+- Scroll application: `layer2.vhd` lines 152-159 (X scroll), 160-163 (Y scroll)
+- Address calculation: `layer2.vhd` line 165 (mode-dependent formula)
+- Clipping logic: `layer2.vhd` lines 167-172 (validity checks), 174 (enable condition)
+- SRAM access: `layer2.vhd` lines 176-190 (request generation)
+- Pixel extraction: `layer2.vhd` lines 192-217 (hi-res mode pixel splitting)
+- Palette lookup: `zxnext.vhd` lines 6950-6990 (shared Layer 2/Sprite palette)
+- Priority composition: `zxnext.vhd` lines 7140-7340 (layer priority evaluation)
+- NextReg 0x12 documentation: `nextreg.txt` lines 245-247
+- NextReg 0x70 documentation: `nextreg.txt` lines 723-730
+- Port 0x123B documentation: `ports.txt` lines 184-204
+
+#### Layer 2 Implementation Plan
+
+**Objective**: Implement all three Layer 2 resolution modes (256×192, 320×256, 640×256) without breaking existing ULA and LoRes rendering functionality.
+
+**Current Status**:
+- ✅ ULA Standard mode (256×192) fully implemented and tested
+- ✅ ULA HiRes mode (512×192) fully implemented and tested
+- ✅ ULA HiColor mode (256×192) fully implemented and tested
+- ✅ LoRes mode (128×96) fully implemented and tested
+- ✅ Rendering pipeline architecture supports multi-layer composition
+- ✅ Layer priority system implemented in `composeSinglePixel()`
+- ✅ Basic Layer 2 stub methods exist (return transparent pixels)
+- ⚠️ Layer2Matrix.ts exists but only has placeholder implementations
+- ⚠️ Palette system supports Layer 2/Sprite shared palette structure
+- ❌ Layer 2 rendering logic not implemented
+- ❌ Layer 2 memory access not implemented
+- ❌ Layer 2 scrolling not implemented
+- ❌ Layer 2 clipping not implemented
+
+**Implementation Strategy**: Incremental development with continuous testing
+
+##### Phase 1: Core Infrastructure (Foundation)
+
+**Goal**: Set up the basic data structures and interfaces without breaking existing functionality.
+
+**Tasks**:
+
+1. **Extend IPixelRenderingState Interface** (`UlaMatrix.ts`)
+   - Add Layer 2 state properties:
+     - `layer2Enabled: boolean` (Port 0x123B bit 1)
+     - `layer2Resolution: number` (NextReg 0x70 bits [5:4])
+     - `layer2PaletteOffset: number` (NextReg 0x70 bits [3:0])
+     - `layer2ScrollX: number` (9-bit: NextReg 0x71 bit 0 + NextReg 0x16)
+     - `layer2ScrollY: number` (NextReg 0x17)
+     - `layer2ClipX1: number`, `layer2ClipX2: number` (NextReg 0x18)
+     - `layer2ClipY1: number`, `layer2ClipY2: number` (NextReg 0x18)
+     - `layer2ActiveBank: number` (NextReg 0x12)
+     - `layer2ShadowBank: number` (NextReg 0x13)
+     - `layer2UseShadowBank: boolean` (Port 0x123B bit 3)
+   - **Risk**: None - only adds new properties, doesn't modify existing ones
+   - **Test**: Verify existing ULA modes still work after interface change
+
+2. **Update NextComposedScreenDevice Constructor**
+   - Initialize new Layer 2 properties to default values
+   - **Risk**: None - purely additive changes
+   - **Test**: Verify no regression in existing modes
+
+3. **Add Layer 2 Memory Access Helper**
+   - Create `getLayer2PixelFromSRAM(bank: number, address: number): number` method
+   - Access machine's memory via appropriate bank mapping
+   - Handle bank offset calculation: `bank_eff = ((bank >> 4) + 1) << 4 | (bank & 0x0F)`
+   - **Risk**: Low - new isolated method, doesn't affect existing code
+   - **Test**: Unit test with known memory values
+
+4. **Add Layer 2 Coordinate Transformation Helpers**
+   - Create `getLayer2Coordinates_256x192(vc, hc, scrollX, scrollY): {x, y}` 
+   - Create `getLayer2Coordinates_320x256(vc, hc, scrollX, scrollY): {x, y}`
+   - Create `getLayer2Coordinates_640x256(vc, hc, scrollX, scrollY, pixelIndex): {x, y}`
+   - Implement wraparound logic per VHDL specification
+   - **Risk**: Low - pure computation, no side effects
+   - **Test**: Unit tests with various scroll values, verify wraparound
+
+5. **Extend Layer2Matrix.ts Cell Generation**
+   - Replace placeholder implementations with proper coordinate validation
+   - Implement `isValidLayer2Coordinate_256x192(vc, hc): boolean`
+   - Implement `isValidLayer2Coordinate_320x256(vc, hc): boolean`  
+   - Implement `isValidLayer2Coordinate_640x256(vc, hc): boolean`
+   - Set appropriate flags based on validity
+   - **Risk**: Low - only affects Layer 2 matrix, which isn't used yet
+   - **Test**: Verify matrix generation for all modes and timing configs
+
+**Milestone 1 Exit Criteria**:
+- All new infrastructure code compiles without errors
+- All existing tests pass (ULA Standard, ULA HiRes, ULA HiColor, LoRes)
+- New unit tests for coordinate transformation pass
+- No visual regressions in existing rendering modes
+
+##### Phase 2: 256×192 Mode Implementation (Simplest Mode)
+
+**Goal**: Implement complete 256×192 Layer 2 rendering as proof of concept.
+
+**Tasks**:
+
+1. **Implement Clipping Logic**
+   - Create `isLayer2PixelClipped_256x192(x, y): boolean` helper
+   - Apply clip window bounds checking
+   - **Risk**: Low - isolated logic
+   - **Test**: Verify clipping at various window configurations
+
+2. **Implement Basic Pixel Fetch (No Scrolling)**
+   - Update `renderLayer2_256x192Pixel()` in NextComposedScreenDevice
+   - Calculate memory address: `addr = y × 256 + x`
+   - Fetch pixel byte from SRAM
+   - Apply palette offset: `palette_idx = (pixel[7:4] + offset) << 4 | pixel[3:0]`
+   - Lookup color in Layer 2 palette
+   - Extract priority bit from palette entry
+   - Return LayerOutput with RGB333, transparent flag, priority bit
+   - **Risk**: Medium - first real rendering implementation
+   - **Test**: Display static Layer 2 image without scrolling
+
+3. **Implement Transparency**
+   - Compare palette RGB333[8:1] against NextReg 0x14 (transparent color)
+   - Set transparent flag appropriately
+   - **Risk**: Low - simple comparison
+   - **Test**: Verify transparent pixels don't render
+
+4. **Add Scrolling Support**
+   - Sample scroll registers at frame start
+   - Apply scroll transformation to coordinates
+   - Implement wraparound at 256-pixel boundary
+   - **Risk**: Medium - affects coordinate calculation
+   - **Test**: Verify smooth scrolling without artifacts
+
+5. **Add Enable/Disable Control**
+   - Check `layer2Enabled` flag before rendering
+   - Return transparent output when disabled
+   - **Risk**: Low - simple conditional
+   - **Test**: Toggle Layer 2 on/off, verify ULA still renders
+
+6. **Integration Testing**
+   - Test Layer 2 alone (ULA disabled)
+   - Test Layer 2 with ULA (verify priority modes SLU, LSU, SUL, LUS, USL, ULS)
+   - Test Layer 2 priority bit override
+   - Test with LoRes (verify Layer 2 doesn't break LoRes)
+   - **Risk**: High - tests multi-layer composition
+   - **Test**: Visual verification of all priority combinations
+
+**Milestone 2 Exit Criteria**:
+- 256×192 Layer 2 mode renders correctly
+- Scrolling works in all directions with proper wraparound
+- Clipping works correctly
+- Transparency works correctly
+- Priority system integrates properly with existing layers
+- No regressions in ULA/LoRes modes
+- All existing tests still pass
+
+##### Phase 3: 320×256 Mode Implementation (Wide Mode)
+
+**Goal**: Extend implementation to support wide resolution mode.
+
+**Tasks**:
+
+1. **Implement Wide Counter Support**
+   - Add `whc` and `wvc` counter calculations to rendering tables
+   - Update coordinate selection based on resolution mode
+   - **Risk**: Low - parallel to existing phc/pvc counters
+   - **Test**: Verify counters match VHDL specification
+
+2. **Implement X-Major Address Calculation**
+   - Update address formula: `addr = x × 256 + y`
+   - Handle 9-bit X coordinate (0-319)
+   - **Risk**: Medium - different layout than 256×192
+   - **Test**: Verify correct pixel fetch at various coordinates
+
+3. **Implement Wide Clipping**
+   - Adjust clip coordinates (X doubled internally)
+   - Update coordinate validity checks
+   - **Risk**: Medium - different coordinate ranges
+   - **Test**: Verify clipping at boundary conditions
+
+4. **Implement Wide Scrolling**
+   - Apply scroll with 320-pixel wraparound
+   - Handle special wraparound logic (add 192 when > 320)
+   - **Risk**: Medium - complex wraparound rules
+   - **Test**: Verify scrolling across entire 320-pixel range
+
+5. **Update Cell Generation**
+   - Modify `generateLayer2_320x256Cell()` with proper logic
+   - Ensure correct flags set for wide mode
+   - **Risk**: Low - isolated to cell generation
+   - **Test**: Verify cell flags match expected patterns
+
+6. **Integration Testing**
+   - Test 320×256 rendering with various content
+   - Test mode switching (256×192 ↔ 320×256)
+   - Test with other layers
+   - **Risk**: Medium - new resolution mode
+   - **Test**: Visual verification, no artifacts at borders
+
+**Milestone 3 Exit Criteria**:
+- 320×256 Layer 2 mode renders correctly
+- Mode switching works without artifacts
+- Scrolling and clipping work in wide mode
+- All priority modes work correctly
+- No regressions in 256×192 mode or ULA/LoRes modes
+
+##### Phase 4: 640×256 Mode Implementation (Hi-Res Mode)
+
+**Goal**: Implement 4-bit packed pixel mode with doubled horizontal resolution.
+
+**Tasks**:
+
+1. **Implement Pixel Pair Extraction**
+   - Fetch byte containing 2 pixels
+   - Extract left pixel (bits [7:4]) and right pixel (bits [3:0])
+   - Select pixel based on sub-cycle position (sc[1])
+   - **Risk**: Medium - new pixel packing format
+   - **Test**: Verify correct pixel extraction from test patterns
+
+2. **Implement 4-Bit Palette Indexing**
+   - Apply palette offset to 4-bit value: `palette_idx = (pixel[3:0] + offset[3:0]) << 4`
+   - Ensure offset doesn't overflow into wrong nibble
+   - **Risk**: Low - arithmetic operation
+   - **Test**: Verify palette colors at various offsets
+
+3. **Update Address Calculation**
+   - Calculate byte address: `addr = (x >> 1) × 256 + y`
+   - Handle even/odd pixel selection
+   - **Risk**: Medium - bit manipulation required
+   - **Test**: Verify correct byte fetch for adjacent pixels
+
+4. **Update Rendering Loop**
+   - Render 2 pixels per CLK_7 cycle (at CLK_28 rate)
+   - Handle pixel index parameter (0 or 1)
+   - **Risk**: High - affects core rendering loop timing
+   - **Test**: Verify no pixel dropouts or duplicates
+
+5. **Implement Hi-Res Scrolling**
+   - Apply scroll to doubled X coordinate (640 logical pixels)
+   - Use same wraparound as 320×256 mode
+   - **Risk**: Medium - coordinate transformation complexity
+   - **Test**: Verify smooth scrolling at pixel level
+
+6. **Update Cell Generation**
+   - Modify `generateLayer2_640x256Cell()` with hi-res logic
+   - Set flags for 2-pixel-per-cycle rendering
+   - **Risk**: Medium - different cell structure
+   - **Test**: Verify cell generation for hi-res timing
+
+7. **Integration Testing**
+   - Test 640×256 rendering with various content
+   - Test mode switching (320×256 ↔ 640×256)
+   - Test sub-pixel alignment
+   - **Risk**: High - most complex mode
+   - **Test**: Visual verification at pixel level
+
+**Milestone 4 Exit Criteria**:
+- 640×256 Layer 2 mode renders correctly
+- Pixel packing/unpacking works without artifacts
+- All three resolution modes switchable at runtime
+- Scrolling and clipping work in all modes
+- Priority system works correctly in all modes
+- No regressions in any existing modes
+
+##### Phase 5: Advanced Features and Optimization
+
+**Goal**: Implement remaining features and optimize performance.
+
+**Tasks**:
+
+1. **Implement Shadow Bank Switching**
+   - Support active/shadow bank selection (Port 0x123B bit 3)
+   - Enable double-buffering use cases
+   - **Risk**: Low - bank selection logic
+   - **Test**: Verify bank switching updates display
+
+2. **Implement Memory Mapping Support**
+   - Add Layer 2 memory mapping to CPU address space (Port 0x123B)
+   - Support read/write enable flags
+   - Support 16K/48K mapping modes
+   - **Risk**: Medium - affects memory subsystem
+   - **Test**: Verify memory writes update Layer 2 display
+
+3. **Optimize Rendering Performance**
+   - Cache frequently accessed values (clip bounds, scroll values)
+   - Pre-calculate address lookup tables if beneficial
+   - Profile hot paths and optimize
+   - **Risk**: Medium - could introduce bugs
+   - **Test**: Performance benchmarks, regression tests
+
+4. **Add NextReg Update Handlers**
+   - Implement setters for all Layer 2 NextRegs (0x12, 0x13, 0x16, 0x17, 0x18, 0x70, 0x71)
+   - Implement Port 0x123B handler
+   - Update rendering state on register changes
+   - **Risk**: Low - register I/O handling
+   - **Test**: Verify register writes take effect immediately
+
+5. **Comprehensive Testing**
+   - Create automated test suite for all Layer 2 features
+   - Test edge cases (boundary conditions, wrap-around)
+   - Test interaction with all other layers
+   - Test all 6 priority modes × 3 resolutions = 18 combinations
+   - Performance testing (ensure 50/60 Hz frame rate maintained)
+   - **Risk**: Low - testing phase
+   - **Test**: All automated tests pass
+
+**Milestone 5 Exit Criteria**:
+- All Layer 2 features fully implemented
+- Performance meets real hardware specifications
+- All register I/O working correctly
+- Comprehensive test suite passes
+- No known bugs or regressions
+- Code reviewed and documented
+
+##### Phase 6: Documentation and Code Review
+
+**Goal**: Finalize implementation with complete documentation.
+
+**Tasks**:
+
+1. **Code Documentation**
+   - Add comprehensive JSDoc comments to all Layer 2 methods
+   - Document coordinate transformation formulas
+   - Document memory address calculations
+   - Document timing considerations
+   - **Risk**: None
+   - **Test**: Documentation review
+
+2. **Update Architecture Documentation**
+   - Update screen_rendering.md with implementation details
+   - Add performance notes
+   - Add troubleshooting section
+   - **Risk**: None
+   - **Test**: Documentation review
+
+3. **Code Review**
+   - Review for consistency with ULA implementation style
+   - Check for potential optimizations
+   - Verify error handling
+   - **Risk**: Low - may identify bugs
+   - **Test**: Address review comments
+
+**Final Exit Criteria**:
+- All Layer 2 modes fully functional
+- Zero known bugs
+- Performance acceptable (maintains frame rate)
+- All tests pass
+- Code reviewed and approved
+- Documentation complete
+
+##### Risk Mitigation Strategies
+
+**Regression Prevention**:
+- Run full test suite after each phase
+- Maintain separate feature branch until complete
+- Test with known-good ROM images
+- Visual comparison against reference screenshots
+
+**Debugging Strategy**:
+- Implement debug visualization modes (show clipping, show coordinates)
+- Add logging for coordinate transformations
+- Add memory access tracing
+- Create minimal test cases for each feature
+
+**Rollback Plan**:
+- Each phase is independently testable
+- Can pause implementation at any milestone
+- Stub implementations allow system to run (return transparent pixels)
+- Version control allows reverting specific changes
+
+##### Testing Strategy
+
+**Unit Tests** (per phase):
+- Coordinate transformation functions
+- Address calculation functions
+- Clipping logic
+- Wraparound behavior
+- Palette offset application
+
+**Integration Tests** (per milestone):
+- Layer 2 rendering alone
+- Layer 2 + ULA rendering
+- Layer 2 + LoRes rendering
+- All priority modes
+- Mode switching
+
+**Regression Tests** (after each phase):
+- All existing ULA modes still work
+- LoRes mode still works
+- Border rendering still works
+- Palette system still works
+- No performance degradation
+
+**Visual Tests** (per milestone):
+- Static images render correctly
+- Scrolling is smooth
+- Clipping boundaries are clean
+- Color accuracy matches specification
+- No artifacts at resolution boundaries
+
+**Performance Tests** (Phase 5):
+- Maintain 50/60 Hz frame rate
+- No frame drops during scrolling
+- Memory access doesn't bottleneck rendering
+- CPU usage remains reasonable
+
+##### Development Timeline Estimate
+
+- **Phase 1** (Infrastructure): 1-2 days
+- **Phase 2** (256×192 mode): 2-3 days
+- **Phase 3** (320×256 mode): 2-3 days
+- **Phase 4** (640×256 mode): 3-4 days
+- **Phase 5** (Advanced features): 2-3 days
+- **Phase 6** (Documentation): 1-2 days
+
+**Total Estimate**: 11-17 days (depending on complexity of issues encountered)
+
+##### Success Metrics
+
+- ✅ All three Layer 2 resolution modes render correctly
+- ✅ Scrolling works smoothly in all modes
+- ✅ Clipping works correctly in all modes
+- ✅ Priority system integrates properly with all layers
+- ✅ Priority bit override works correctly
+- ✅ Transparency works correctly
+- ✅ Shadow bank switching works
+- ✅ All NextReg/Port I/O works correctly
+- ✅ Performance maintains 50/60 Hz frame rate
+- ✅ Zero regressions in existing modes (ULA, LoRes)
+- ✅ All automated tests pass
+- ✅ Code reviewed and documented
+
+### 1.7 ULA Enhanced Modes (ULA+, ULANext)
 
 The ZX Spectrum Next extends the standard ULA palette system with two enhanced modes: **ULA+** (backwards-compatible with original ULA+ specification) and **ULANext** (Next-specific extended palette mode). These modes provide expanded color capabilities while maintaining compatibility with standard ULA rendering.
 

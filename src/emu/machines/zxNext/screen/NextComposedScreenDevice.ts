@@ -250,6 +250,24 @@ export class NextComposedScreenDevice
   layer2EnableMappingForReads: boolean;
   layer2EnableMappingForWrites: boolean;
 
+  // === Layer 2 bank properties (interface compatibility)
+  // These are aliases for layer2ActiveRamBank and layer2ShadowRamBank
+  get layer2ActiveBank(): number {
+    return this.layer2ActiveRamBank;
+  }
+
+  set layer2ActiveBank(value: number) {
+    this.layer2ActiveRamBank = value;
+  }
+
+  get layer2ShadowBank(): number {
+    return this.layer2ShadowRamBank;
+  }
+
+  set layer2ShadowBank(value: number) {
+    this.layer2ShadowRamBank = value;
+  }
+
   // === ULA+ Mode/Index register port (0xbf3b)
   private _ulaPlusEnabled: boolean;
   ulaPlusMode: number;
@@ -403,11 +421,24 @@ export class NextComposedScreenDevice
     this._ulaNextEnabled = false;
     this.ulaNextFormat = 0x0f; // Default: 4-bit INK, 4-bit PAPER
 
-    this.layer2ClipWindowX1 = 0;
-    this.layer2ClipWindowX2 = 159;
-    this.layer2ClipWindowY1 = 0;
-    this.layer2ClipWindowY2 = 255;
-    this.layer2ClipIndex = 0;
+    // --- Initialize Layer 2 state
+    this.layer2Enabled = false;              // Port 0x123B bit 1: disabled by default
+    this.layer2Resolution = 0;               // NextReg 0x70 bits [5:4]: 256x192 by default
+    this.layer2PaletteOffset = 0;            // NextReg 0x70 bits [3:0]: no offset by default
+    this.layer2ScrollX = 0;                  // NextReg 0x16 + 0x71 bit 0: no scroll
+    this.layer2ScrollY = 0;                  // NextReg 0x17: no scroll
+    this.layer2ClipWindowX1 = 0;             // NextReg 0x18 write 1: left edge
+    this.layer2ClipWindowX2 = 255;           // NextReg 0x18 write 2: right edge (255 for 256x192)
+    this.layer2ClipWindowY1 = 0;             // NextReg 0x18 write 3: top edge
+    this.layer2ClipWindowY2 = 191;           // NextReg 0x18 write 4: bottom edge (191 for 256x192)
+    this.layer2ClipIndex = 0;                // Clip window write index
+    this.layer2ActiveRamBank = 8;            // NextReg 0x12: default to bank 8 (soft reset value)
+    this.layer2ShadowRamBank = 11;           // NextReg 0x13: default to bank 11 (soft reset value)
+    this.layer2UseShadowBank = false;        // Port 0x123B bit 3: use active bank by default
+    this.layer2Bank = 0;                     // Port 0x123B bits [7:6] + bit 3: mapping bank selector
+    this.layer2EnableMappingForReads = false;   // Port 0x123B bit 2: memory mapping disabled
+    this.layer2EnableMappingForWrites = false;  // Port 0x123B bit 0: memory mapping disabled
+
     this.displayTiming = 0;
     this.userLockOnDisplayTiming = false;
     this.machineType = 0;
@@ -1199,5 +1230,157 @@ export class NextComposedScreenDevice
     }
 
     return zxNextBgra[finalRGB333 & 0x1ff]; // Convert to RGBA format
+  }
+
+  // ======================================================================================
+  // Layer 2 Helper Methods (Phase 1 Infrastructure)
+  // ======================================================================================
+
+  /**
+   * Get a pixel byte from Layer 2 SRAM memory.
+   * Handles bank offset calculation and memory access.
+   * 
+   * @param bank Starting 16K bank number (0-127)
+   * @param offset Byte offset within the Layer 2 memory region (0-81919 for wide modes)
+   * @returns Pixel byte value (0-255)
+   */
+  private getLayer2PixelFromSRAM(bank: number, offset: number): number {
+    // Convert 16K bank to effective 8K bank for memory system
+    // Layer 2 banks are stored in SRAM starting at a specific offset
+    // Bank calculation: bank_eff = ((bank >> 4) + 1) << 4 | (bank & 0x0F)
+    const bankUpper = ((bank >> 4) + 1) & 0x0F;
+    const bankLower = bank & 0x0F;
+    const effectiveBank = (bankUpper << 4) | bankLower;
+    
+    // Calculate 16K bank and offset within bank
+    const bank16K = effectiveBank + (offset >> 14);
+    const offsetInBank = offset & 0x3FFF;
+    
+    // Convert to absolute address: bank * 16384 + offset
+    const absoluteAddress = (bank16K << 14) | offsetInBank;
+    
+    // Access memory through the machine's memory system
+    // For now, return 0 (transparent) until full memory integration
+    // TODO: Implement proper SRAM access through machine.memory
+    return 0;
+  }
+
+  /**
+   * Calculate Layer 2 coordinates for 256×192 mode with scrolling and wraparound.
+   * 
+   * @param vc Vertical counter position
+   * @param hc Horizontal counter position (phc - practical horizontal counter)
+   * @param scrollX 9-bit horizontal scroll value (0-511)
+   * @param scrollY 8-bit vertical scroll value (0-191)
+   * @returns {x, y} coordinates after scroll and wraparound, or null if invalid
+   */
+  private getLayer2Coordinates_256x192(
+    vc: number,
+    hc: number,
+    scrollX: number,
+    scrollY: number
+  ): { x: number; y: number } | null {
+    // Use phc (practical horizontal counter) which starts at -48
+    // Valid range: phc[8] = 0 (0-255)
+    if ((hc & 0x100) !== 0) return null;
+    
+    // Valid vertical range: vc[8] = 0 AND vc[7:6] ≠ 11 (0-191)
+    if ((vc & 0x100) !== 0 || (vc & 0xC0) === 0xC0) return null;
+    
+    // Apply horizontal scroll with 256-pixel wraparound
+    const x = (hc + scrollX) & 0xFF;
+    
+    // Apply vertical scroll with 192-line wraparound
+    const yPre = vc + scrollY;
+    const y = yPre >= 192 ? yPre - 192 : yPre;
+    
+    return { x, y: y & 0xFF };
+  }
+
+  /**
+   * Calculate Layer 2 coordinates for 320×256 mode with scrolling and wraparound.
+   * 
+   * @param vc Vertical counter position (wvc - wide vertical counter)
+   * @param hc Horizontal counter position (whc - wide horizontal counter)
+   * @param scrollX 9-bit horizontal scroll value (0-511)
+   * @param scrollY 8-bit vertical scroll value (0-255)
+   * @returns {x, y} coordinates after scroll and wraparound, or null if invalid
+   */
+  private getLayer2Coordinates_320x256(
+    vc: number,
+    hc: number,
+    scrollX: number,
+    scrollY: number
+  ): { x: number; y: number } | null {
+    // Use whc (wide horizontal counter) which starts at -16
+    // Valid range: whc[8] = 0 OR whc[7:6] = 00 (0-319)
+    const hcValid = (hc & 0x100) === 0 || (hc & 0x1C0) === 0;
+    if (!hcValid) return null;
+    
+    // Valid vertical range: wvc[8] = 0 (0-255)
+    if ((vc & 0x100) !== 0) return null;
+    
+    // Apply horizontal scroll with 320-pixel wraparound
+    const xPre = (hc + scrollX) & 0x1FF;
+    let x: number;
+    
+    // Special wraparound: if x >= 320, wrap by adding 192 (320 + 192 = 512, wraps to 0)
+    if (xPre >= 320) {
+      x = (xPre + 192) & 0x1FF;
+    } else {
+      x = xPre;
+    }
+    
+    // Apply vertical scroll with 256-line wraparound
+    const y = (vc + scrollY) & 0xFF;
+    
+    return { x, y };
+  }
+
+  /**
+   * Calculate Layer 2 coordinates for 640×256 mode (4-bit packed pixels).
+   * 
+   * @param vc Vertical counter position (wvc)
+   * @param hc Horizontal counter position (whc)
+   * @param scrollX 9-bit horizontal scroll value (0-511)
+   * @param scrollY 8-bit vertical scroll value (0-255)
+   * @param pixelIndex Which pixel of the pair (0 = left/bits 7:4, 1 = right/bits 3:0)
+   * @returns {x, y, pixelIndex} coordinates and pixel selection, or null if invalid
+   */
+  private getLayer2Coordinates_640x256(
+    vc: number,
+    hc: number,
+    scrollX: number,
+    scrollY: number,
+    pixelIndex: number
+  ): { x: number; y: number; pixelIndex: number } | null {
+    // Use same validation as 320×256 mode
+    const hcValid = (hc & 0x100) === 0 || (hc & 0x1C0) === 0;
+    if (!hcValid) return null;
+    
+    if ((vc & 0x100) !== 0) return null;
+    
+    // Calculate logical X coordinate (0-639) by doubling whc and adding pixel index
+    const logicalX = (hc << 1) | pixelIndex;
+    
+    // Apply scroll to doubled coordinate
+    const xPre = (logicalX + (scrollX << 1)) & 0x3FF; // 10-bit for 640 pixels
+    
+    // Wraparound for 640 pixels (same logic as 320, but doubled)
+    let x: number;
+    if (xPre >= 640) {
+      x = (xPre + 384) & 0x3FF; // 384 = 192 * 2
+    } else {
+      x = xPre;
+    }
+    
+    // Calculate byte address (x / 2) and pixel selection
+    const byteX = x >> 1;
+    const subPixel = x & 1;
+    
+    // Apply vertical scroll
+    const y = (vc + scrollY) & 0xFF;
+    
+    return { x: byteX, y, pixelIndex: subPixel };
   }
 }
