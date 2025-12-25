@@ -125,8 +125,10 @@ export function renderLoResPixel(
         blockAddr = (y >= 96) ? (lores_addr_pre + 0x0800) : lores_addr_pre;
       } else {
         // Radastan LoRes: 4-bit color, uses Timex display file selector
-        // Address: timexDFile bit + y(7 downto 1) * 32 + x(7 downto 2)
-        blockAddr = (device.timexDFile << 13) | ((y >> 1) << 5) | (x >> 2);
+        // Address: timexDFile bit + y(7 downto 1) * 64 + x(7 downto 2)
+        // VHDL: lores_addr_rad <= dfile_i & y(7 downto 1) & x(7 downto 2)
+        // Bit layout: [dfile(1)][y(7:1)(7)][x(7:2)(6)] = 14 bits
+        blockAddr = (device.timexDFile << 13) | ((y >> 1) << 6) | (x >> 2);
       }
       
       // Read from Bank 5 memory (ULA memory space)
@@ -155,9 +157,13 @@ export function renderLoResPixel(
   let pixelRgb333: number;
   
   if (device.loResModeSampled === 0) {
-    // Standard LoRes: 8-bit direct color (256 colors from ULA palette)
-    // Each byte is replicated for 2×2 pixel block
-    const paletteIndex = device.loResBlockByte;
+    // Standard LoRes: 8-bit color with palette offset on high nibble
+    // VHDL: pixel_lores_nib_H <= lores_data_i(7 downto 4) + lores_palette_offset_i
+    //       lores_pixel_o <= pixel_lores_nib_H & lores_data_i(3 downto 0)
+    // High nibble gets palette offset added, low nibble used directly
+    const highNibble = ((device.loResBlockByte >> 4) + device.loresPaletteOffset) & 0x0f;
+    const lowNibble = device.loResBlockByte & 0x0f;
+    const paletteIndex = (highNibble << 4) | lowNibble;
     pixelRgb333 = device.machine.paletteDevice.getUlaRgb333(paletteIndex);
   } else {
     // Radastan LoRes: 4-bit color with palette offset
