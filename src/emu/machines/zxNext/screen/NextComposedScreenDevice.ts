@@ -1,6 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { LayerOutput } from "./RenderingCell";
+import { LayerOutput, LAYER2_DISPLAY_AREA } from "./RenderingCell";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import {
   renderULAStandardPixel,
@@ -789,7 +789,6 @@ export class NextComposedScreenDevice
   // ==============================================================================================
   // Port updates
   set timexPortValue(value: number) {
-    console.log(`TIMEX port set to ${value.toString(16).padStart(2, "0")}`);
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
     this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);
@@ -977,16 +976,76 @@ export class NextComposedScreenDevice
 
   /**
    * Render Layer 2 256×192 mode pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
+   * Handles scrolling, clipping, memory fetch, transparency, and palette lookup.
+   * @param vc - Vertical counter position
+   * @param hc - Horizontal counter position
+   * @param cell - Layer 2 rendering cell with activity flags
    */
-  private renderLayer2_256x192Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
-    // TODO: Implementation to be documented in a future section
+  private renderLayer2_256x192Pixel(vc: number, hc: number, cell: number): LayerOutput {
+    // Check if we're in Layer 2 display area
+    if ((cell & LAYER2_DISPLAY_AREA) === 0) {
+      return {
+        rgb333: 0,
+        transparent: true,
+        clipped: false
+      };
+    }
+
+    // Convert to display-relative coordinates (0-191 for vc, 0-255 for hc)
+    const displayVC = vc - this.confDisplayYStart;
+    const displayHC = hc - this.confDisplayXStart;
+    
+    // Option B: No hardware read-ahead simulation - atomic rendering at current position
+    // Check clipping with display-relative coordinates (inlined)
+    if (displayHC < this.layer2ClipWindowX1 || displayHC > this.layer2ClipWindowX2 ||
+        displayVC < this.layer2ClipWindowY1 || displayVC > this.layer2ClipWindowY2) {
+      return {
+        rgb333: 0,
+        transparent: true,
+        clipped: true
+      };
+    }
+    
+    // Calculate scrolled coordinates using display-relative position
+    const x = (displayHC + this.layer2ScrollX) & 0xFF; // Wrap at 256 pixels
+    const y = (displayVC + this.layer2ScrollY) % 192;  // Wrap at 192 lines
+    
+    // Determine which bank to use
+    const bank = this.layer2UseShadowBank 
+      ? this.layer2ShadowRamBank 
+      : this.layer2ActiveRamBank;
+    
+    // VHDL: layer2_addr <= ('0' & y & x(7 downto 0))
+    // This is bit concatenation: address = y(7:0) & x(7:0) = 16-bit address
+    // In terms of bytes: offset = (y << 8) | x
+    const offset = (y << 8) | x;
+    
+    // Fetch pixel value
+    const pixelValue = this.getLayer2PixelFromSRAM(bank, offset);
+    
+    // Check transparency (use globalTransparencyColor from NextReg 0x14)
+    if (pixelValue === this.globalTransparencyColor) {
+      return {
+        rgb333: 0,
+        transparent: true,
+        clipped: false
+      };
+    }
+    
+    // Apply palette offset (NextReg 0x43 bits[3:0])
+    const paletteIndex = ((this.layer2PaletteOffset & 0x0F) << 4) | (pixelValue & 0x0F);
+    
+    // Lookup color in Layer 2 palette (returns 9-bit RGB333 with priority bit)
+    const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
+    
+    // Extract priority bit (bit 8 of the 9-bit palette entry)
+    const priority = (rgb333 & 0x100) !== 0;
+    
     return {
-      rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
+      rgb333: rgb333 & 0x1FF,
+      transparent: false,
+      clipped: false,
+      priority
     };
   }
 
@@ -1240,61 +1299,32 @@ export class NextComposedScreenDevice
    * Get a pixel byte from Layer 2 SRAM memory.
    * Handles bank offset calculation and memory access.
    * 
-   * @param bank Starting 16K bank number (0-127)
-   * @param offset Byte offset within the Layer 2 memory region (0-81919 for wide modes)
+   * @param bank16K Starting 16K bank number (from NextReg 0x12 or 0x13)
+   * @param offset Byte offset within the Layer 2 display buffer (0-48K for 256×192, 0-80K for 320×256/640×256)
    * @returns Pixel byte value (0-255)
    */
-  private getLayer2PixelFromSRAM(bank: number, offset: number): number {
-    // Convert 16K bank to effective 8K bank for memory system
-    // Layer 2 banks are stored in SRAM starting at a specific offset
-    // Bank calculation: bank_eff = ((bank >> 4) + 1) << 4 | (bank & 0x0F)
-    const bankUpper = ((bank >> 4) + 1) & 0x0F;
-    const bankLower = bank & 0x0F;
+  private getLayer2PixelFromSRAM(bank16K: number, offset: number): number {
+    // VHDL: layer2_bank_eff <= (('0' & layer2_active_bank_q(6 downto 4)) + 1) & layer2_active_bank_q(3 downto 0)
+    // This transforms the bank number: bank_eff = ((bank[6:4] + 1) << 4) | bank[3:0]
+    const bankUpper = ((bank16K >> 4) + 1) & 0x0F;
+    const bankLower = bank16K & 0x0F;
     const effectiveBank = (bankUpper << 4) | bankLower;
     
-    // Calculate 16K bank and offset within bank
-    const bank16K = effectiveBank + (offset >> 14);
-    const offsetInBank = offset & 0x3FFF;
+    // VHDL: layer2_addr_eff <= (layer2_bank_eff + ("00000" & layer2_addr(16 downto 14))) & layer2_addr(13 downto 0)
+    // Add the page offset (upper 3 bits of 17-bit address) to effective bank
+    const finalBank = effectiveBank + (offset >> 14); // offset / 16384
+    const offsetIn16K = offset & 0x3FFF;              // offset % 16384
     
-    // Convert to absolute address: bank * 16384 + offset
-    const absoluteAddress = (bank16K << 14) | offsetInBank;
+    // Convert 16K bank to 8K banks (each 16K = 2 x 8K banks)
+    const bank8K = finalBank * 2 + (offsetIn16K >> 13);
+    const offsetIn8K = offsetIn16K & 0x1FFF;
     
-    // Access memory through the machine's memory system
-    // For now, return 0 (transparent) until full memory integration
-    // TODO: Implement proper SRAM access through machine.memory
-    return 0;
-  }
-
-  /**
-   * Calculate Layer 2 coordinates for 256×192 mode with scrolling and wraparound.
-   * 
-   * @param vc Vertical counter position
-   * @param hc Horizontal counter position (phc - practical horizontal counter)
-   * @param scrollX 9-bit horizontal scroll value (0-511)
-   * @param scrollY 8-bit vertical scroll value (0-191)
-   * @returns {x, y} coordinates after scroll and wraparound, or null if invalid
-   */
-  private getLayer2Coordinates_256x192(
-    vc: number,
-    hc: number,
-    scrollX: number,
-    scrollY: number
-  ): { x: number; y: number } | null {
-    // Use phc (practical horizontal counter) which starts at -48
-    // Valid range: phc[8] = 0 (0-255)
-    if ((hc & 0x100) !== 0) return null;
+    // Read from extended Next RAM (starts at OFFS_NEXT_RAM = 0x040000)
+    // Formula: OFFS_NEXT_RAM + bank8K * 0x2000 + offsetIn8K
+    const memoryOffset = 0x040000 + (bank8K << 13) + offsetIn8K;
     
-    // Valid vertical range: vc[8] = 0 AND vc[7:6] ≠ 11 (0-191)
-    if ((vc & 0x100) !== 0 || (vc & 0xC0) === 0xC0) return null;
-    
-    // Apply horizontal scroll with 256-pixel wraparound
-    const x = (hc + scrollX) & 0xFF;
-    
-    // Apply vertical scroll with 192-line wraparound
-    const yPre = vc + scrollY;
-    const y = yPre >= 192 ? yPre - 192 : yPre;
-    
-    return { x, y: y & 0xFF };
+    // Direct memory access (bypasses MMU/paging logic)
+    return this.machine.memoryDevice.memory[memoryOffset] || 0;
   }
 
   /**
@@ -1382,5 +1412,29 @@ export class NextComposedScreenDevice
     const y = (vc + scrollY) & 0xFF;
     
     return { x: byteX, y, pixelIndex: subPixel };
+  }
+
+  // --- Layer 2 Clipping Logic ---
+
+  /**
+   * Check if a Layer 2 pixel is clipped in 320×256 or 640×256 modes.
+   * Uses the Layer 2 clip window registers (NextReg 0x18).
+   * 
+   * @param x X coordinate (0-319 for 320×256, 0-639 for 640×256)
+   * @param y Y coordinate (0-255)
+   * @returns true if pixel should be clipped (not rendered)
+   */
+  private isLayer2PixelClipped_Wide(x: number, y: number): boolean {
+    // Check horizontal clipping (clip window is in 256×192 coordinate space)
+    if (x < this.layer2ClipWindowX1 || x > this.layer2ClipWindowX2) {
+      return true;
+    }
+    
+    // Check vertical clipping
+    if (y < this.layer2ClipWindowY1 || y > this.layer2ClipWindowY2) {
+      return true;
+    }
+    
+    return false;
   }
 }
