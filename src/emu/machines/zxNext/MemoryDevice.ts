@@ -28,6 +28,7 @@ export type MemoryPageInfo = {
  */
 export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   pageInfo: MemoryPageInfo[];
+  bank8kLookup: Uint8Array;
   maxPages: number;
   memory: Uint8Array;
 
@@ -80,6 +81,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Set up memory data (with no pageinfo yet)
     this.pageInfo = [];
+    this.bank8kLookup = new Uint8Array(8);
     for (let i = 0; i < 8; i++) {
       this.pageInfo.push({
         readOffset: OFFS_ERR_PAGE,
@@ -87,6 +89,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         bank16k: 0xff,
         bank8k: 0xff
       });
+      this.bank8kLookup[i] = 0xff;
     }
     this.memory = new Uint8Array(2048 * 1024 + 0x2000);
 
@@ -159,6 +162,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       bank16k,
       bank8k
     };
+    this.bank8kLookup[pageIndex] = bank8k;
   }
 
   getPageInfo(pageIndex: number): MemoryPageInfo {

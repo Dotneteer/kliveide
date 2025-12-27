@@ -841,7 +841,7 @@ export class Z80Cpu implements IZ80Cpu {
       // --- While in halted state, the CPU does not execute any instructions. It just refreshes the memory
       // --- page pointed by R and waits for four T-states.
       this.refreshMemory();
-      this.tactPlus4();
+      this.tactPlusN(4);
       return;
     }
 
@@ -860,7 +860,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.opCode = this.readMemory(this.pc);
     if (m1Active) {
       this.refreshMemory();
-      this.tactPlus1();
+      this.tactPlusN(1);
 
       // --- After the M1 refresh cycle, DivMMC may page out memory banks
       this.afterOpcodeFetch();
@@ -895,14 +895,14 @@ export class Z80Cpu implements IZ80Cpu {
       // --- Bit instructions
       case OpCodePrefix.CB:
         this.bitOps[this.opCode](this);
-        this.tactPlus1();
+        this.tactPlusN(1);
         this.prefix = OpCodePrefix.None;
         break;
 
       // --- Extended instructions
       case OpCodePrefix.ED:
         this.getExtendedOpsTable()[this.opCode](this);
-        this.tactPlus1();
+        this.tactPlusN(1);
         this.prefix = OpCodePrefix.None;
         break;
 
@@ -917,7 +917,7 @@ export class Z80Cpu implements IZ80Cpu {
           this.prefix = this.prefix == OpCodePrefix.DD ? OpCodePrefix.DDCB : OpCodePrefix.FDCB;
         } else {
           this.indexedOps[this.opCode](this);
-          this.tactPlus1();
+          this.tactPlusN(1);
           this.prefix = OpCodePrefix.None;
         }
         break;
@@ -931,7 +931,7 @@ export class Z80Cpu implements IZ80Cpu {
         this.tactPlus2WithAddress(this.pc);
         this.pc++;
         this.indexedBitOps[this.opCode](this);
-        this.tactPlus1();
+        this.tactPlusN(1);
         this.prefix = OpCodePrefix.None;
         break;
     }
@@ -964,7 +964,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   private processNmi(): void {
     // --- Acknowledge the NMI
-    this.tactPlus4();
+    this.tactPlusN(4);
 
     this.removeFromHaltedState();
 
@@ -1101,7 +1101,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   pushPC(): void {
     this.sp--;
-    this.tactPlus1();
+    this.tactPlusN(1);
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
     this.writeMemory(this.sp, this.pc & 0xff);
@@ -1503,7 +1503,7 @@ export class Z80Cpu implements IZ80Cpu {
    * the CPU tacts at least with 3 T-states!
    */
   delayMemoryRead(_address: number): void {
-    this.tactPlus3();
+    this.tactPlusN(3);
   }
 
   /**
@@ -1524,7 +1524,7 @@ export class Z80Cpu implements IZ80Cpu {
    * the CPU tacts at least with 3 T-states!
    */
   delayMemoryWrite(_address: number): void {
-    this.tactPlus3();
+    this.tactPlusN(3);
   }
 
   /**
@@ -1589,7 +1589,7 @@ export class Z80Cpu implements IZ80Cpu {
    * the CPU tacts at least with 4 T-states!
    */
   delayPortRead(_address: number): void {
-    this.tactPlus4();
+    this.tactPlusN(4);
   }
 
   /**
@@ -1611,7 +1611,7 @@ export class Z80Cpu implements IZ80Cpu {
    * the CPU tacts at least with 4 T-states!
    */
   delayPortWrite(_address: number): void {
-    this.tactPlus4();
+    this.tactPlusN(4);
   }
 
   /**
@@ -1633,19 +1633,12 @@ export class Z80Cpu implements IZ80Cpu {
   delayedAddressBus: boolean;
 
   /**
-   * This method increments the current CPU tacts by one.
-   */
-  tactPlus1(): void {
-    this.tactPlusN(1);
-  }
-
-  /**
    * This method increments the current CPU tacts by one, using memory contention with the provided address.
    * @param address
    */
   tactPlus1WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
   }
 
   /**
@@ -1654,23 +1647,9 @@ export class Z80Cpu implements IZ80Cpu {
    */
   tactPlus2WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
-  }
-
-  /**
-   * This method increments the current CPU tacts by three.
-   */
-  tactPlus3(): void {
-    this.tactPlusN(3);
-  }
-
-  /**
-   * This method increments the current CPU tacts by four.
-   */
-  tactPlus4(): void {
-    this.tactPlusN(4);
+    this.tactPlusN(1);
   }
 
   /**
@@ -1679,13 +1658,13 @@ export class Z80Cpu implements IZ80Cpu {
    */
   tactPlus4WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
   }
 
   /**
@@ -1694,15 +1673,15 @@ export class Z80Cpu implements IZ80Cpu {
    */
   tactPlus5WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
   }
 
   /**
@@ -1711,19 +1690,19 @@ export class Z80Cpu implements IZ80Cpu {
    */
   tactPlus7WithAddress(address: number): void {
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
     if (this.delayedAddressBus) this.delayAddressBusAccess(address);
-    this.tactPlus1();
+    this.tactPlusN(1);
   }
 
   /**

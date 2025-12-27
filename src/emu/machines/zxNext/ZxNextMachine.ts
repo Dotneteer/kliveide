@@ -522,7 +522,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   delayMemoryRead(address: number): void {
     this.delayAddressBusAccess(address);
-    this.tactPlus3();
+    this.tactPlusN(3);
     this.totalContentionDelaySinceStart += 3;
     this.contentionDelaySincePause += 3;
     
@@ -530,11 +530,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Exception: Bank 7 (page 0x0E) has no wait state - direct BRAM connection
     if (this.cpuSpeedDevice.effectiveSpeed === 3) {
       const pageIndex = (address >>> 13) & 0x07;
-      const pageInfo = this.memoryDevice.getPageInfo(pageIndex);
-      const isBank7 = pageInfo.bank8k === 0x0e;
+      const isBank7 = this.memoryDevice.bank8kLookup[pageIndex] === 0x0e;
       
       if (!isBank7) {
-        this.tactPlus1();
+        this.tactPlusN(1);
         this.totalContentionDelaySinceStart++;
         this.contentionDelaySincePause++;
       }
@@ -563,7 +562,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   delayMemoryWrite(address: number): void {
     this.delayAddressBusAccess(address);
-    this.tactPlus3();
+    this.tactPlusN(3);
     this.totalContentionDelaySinceStart += 3;
     this.contentionDelaySincePause += 3;
   }

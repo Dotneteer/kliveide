@@ -204,21 +204,6 @@ export interface IZ80Cpu extends IAnyCpu {
   allowExtendedInstructions: boolean;
 
   /**
-   * This method increments the current CPU tacts by one.
-   */
-  tactPlus1(): void;
-
-  /**
-   * This method increments the current CPU tacts by three.
-   */
-  tactPlus3(): void;
-
-  /**
-   * This method increments the current CPU tacts by four.
-   */
-  tactPlus4(): void;
-
-  /**
    * This method increments the current CPU tacts by N.
    * @param n Number of tact increments
    */
