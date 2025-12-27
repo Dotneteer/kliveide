@@ -97,6 +97,10 @@ export class NextComposedScreenDevice
   private _flashCounter: number = 0;
   flashFlag: boolean = false;
 
+  // Debug frame counter (only counts frames where Layer 2 is rendered)
+  private _debugFrameCounter: number = 0;
+  private _debugFrameCountedThisFrame: boolean = false;
+
   // ZX Next register flags
   // === Reg 0x03 - Machine type and display timing
   displayTiming: number;
@@ -767,6 +771,9 @@ export class NextComposedScreenDevice
     this._flashCounter = (this._flashCounter + 1) & 0x1f;
     const newFlashFlag = this._flashCounter >= 16;
 
+    // Reset debug frame counted flag
+    this._debugFrameCountedThisFrame = false;
+
     // Switch active attribute lookup tables when flash state changes
     if (newFlashFlag !== this.flashFlag) {
       this.flashFlag = newFlashFlag;
@@ -1020,8 +1027,40 @@ export class NextComposedScreenDevice
     // In terms of bytes: offset = (y << 8) | x
     const offset = (y << 8) | x;
     
+    // Increment debug frame counter once per frame (only for Layer 2 frames)
+    if (!this._debugFrameCountedThisFrame) {
+      this._debugFrameCounter++;
+      this._debugFrameCountedThisFrame = true;
+    }
+    
     // Fetch pixel value
     const pixelValue = this.getLayer2PixelFromSRAM(bank, offset);
+    
+    // Debug: Log first pixel of first frame with full calculation details
+    if (this._debugFrameCounter === 1 && displayVC === 0 && displayHC === 248) {
+      console.log(`=== Layer 2 Debug Frame 1 Pixel (248,0) ===`);
+      console.log(`Bank register: active=${this.layer2ActiveRamBank}, shadow=${this.layer2ShadowRamBank}, useShadow=${this.layer2UseShadowBank}`);
+      console.log(`Selected bank: ${bank}, offset: 0x${offset.toString(16)}, scrollX=${this.layer2ScrollX}, scrollY=${this.layer2ScrollY}`);
+      console.log(`Coordinates: display=(${displayHC},${displayVC}), scrolled=(${x},${y})`);
+      console.log(`Memory device exists: ${!!this.machine.memoryDevice}, memory array exists: ${!!this.machine.memoryDevice?.memory}`);
+      if (this.machine.memoryDevice?.memory) {
+        console.log(`Memory array length: ${this.machine.memoryDevice.memory.length}`);
+      }
+    }
+    
+    // Debug: Log 8x8 pixel block (x=248-255, y=0-7) - compact format
+    // Only log first 100 frames, show 8 values per line
+    if (this._debugFrameCounter <= 100 && displayVC <= 7 && displayHC >= 248 && displayHC <= 255) {
+      if (displayHC === 248) {
+        // Start of line - save for batch output
+        (this as any)._debugLine = `F${this._debugFrameCounter} y${displayVC}:`;
+      }
+      (this as any)._debugLine += ` ${pixelValue.toString(16).padStart(2, '0')}`;
+      if (displayHC === 255) {
+        // End of line - output
+        console.log((this as any)._debugLine);
+      }
+    }
     
     // Check transparency (use globalTransparencyColor from NextReg 0x14)
     if (pixelValue === this.globalTransparencyColor) {
@@ -1032,8 +1071,10 @@ export class NextComposedScreenDevice
       };
     }
     
-    // Apply palette offset (NextReg 0x43 bits[3:0])
-    const paletteIndex = ((this.layer2PaletteOffset & 0x0F) << 4) | (pixelValue & 0x0F);
+    // Apply palette offset to upper nibble only (VHDL: palette_offset affects bits[7:4])
+    // layer2_pixel <= (layer2_pixel_pre(7:4) + palette_offset) & layer2_pixel_pre(3:0)
+    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0F)) & 0x0F;
+    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0F);
     
     // Lookup color in Layer 2 palette (returns 9-bit RGB333 with priority bit)
     const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
@@ -1311,17 +1352,31 @@ export class NextComposedScreenDevice
     const effectiveBank = (bankUpper << 4) | bankLower;
     
     // VHDL: layer2_addr_eff <= (layer2_bank_eff + ("00000" & layer2_addr(16 downto 14))) & layer2_addr(13 downto 0)
-    // Add the page offset (upper 3 bits of 17-bit address) to effective bank
-    const finalBank = effectiveBank + (offset >> 14); // offset / 16384
-    const offsetIn16K = offset & 0x3FFF;              // offset % 16384
+    // This is bit concatenation: [bank_eff + addr[16:14]] concat [addr[13:0]]
+    // Upper 8 bits: bank_eff + upper 3 bits of 17-bit offset
+    // Lower 14 bits: lower 14 bits of offset
+    const upper8 = (effectiveBank + (offset >> 14)) & 0xFF;
+    const lower14 = offset & 0x3FFF;
     
-    // Convert 16K bank to 8K banks (each 16K = 2 x 8K banks)
-    const bank8K = finalBank * 2 + (offsetIn16K >> 13);
-    const offsetIn8K = offsetIn16K & 0x1FFF;
+    // Combine into 22-bit SRAM address
+    const sramAddr = (upper8 << 14) | lower14;
     
-    // Read from extended Next RAM (starts at OFFS_NEXT_RAM = 0x040000)
-    // Formula: OFFS_NEXT_RAM + bank8K * 0x2000 + offsetIn8K
-    const memoryOffset = 0x040000 + (bank8K << 13) + offsetIn8K;
+    // Read from extended Next RAM (SRAM starts at 0x040000)
+    // Address range: 0x040000 - 0x05FFFF (128K of Next RAM)
+    const memoryOffset = 0x040000 + sramAddr;
+    
+    // Debug first pixel read
+    if (this._debugFrameCounter === 1 && offset === 0x00F8) { // offset for y=0, x=248
+      console.log(`getLayer2PixelFromSRAM: bank16K=${bank16K}, offset=0x${offset.toString(16)}`);
+      console.log(`  bankUpper=${bankUpper}, bankLower=${bankLower}, effectiveBank=0x${effectiveBank.toString(16)}`);
+      console.log(`  upper8=0x${upper8.toString(16)}, lower14=0x${lower14.toString(16)}, sramAddr=0x${sramAddr.toString(16)}`);
+      console.log(`  memoryOffset=0x${memoryOffset.toString(16)}, value=0x${(this.machine.memoryDevice.memory[memoryOffset] || 0).toString(16)}`);
+      
+      // Check what's in nearby memory
+      console.log(`  Memory at 0x040000: 0x${(this.machine.memoryDevice.memory[0x040000] || 0).toString(16)}`);
+      console.log(`  Memory at 0x040001: 0x${(this.machine.memoryDevice.memory[0x040001] || 0).toString(16)}`);
+      console.log(`  Memory at 0x050000: 0x${(this.machine.memoryDevice.memory[0x050000] || 0).toString(16)}`);
+    }
     
     // Direct memory access (bypasses MMU/paging logic)
     return this.machine.memoryDevice.memory[memoryOffset] || 0;

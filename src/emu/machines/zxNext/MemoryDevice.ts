@@ -205,10 +205,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
             : OFFS_DIVMMC_ROM;
       } else {
         // --- #3: Layer 2 mapping
-        const layer2Mapping = false;
-        if (layer2Mapping) {
-          // TODO: Read from layer2 memory
-          return 0x00;
+        const screenDevice = this.machine.composedScreenDevice;
+        if (screenDevice.layer2EnableMappingForReads) {
+          const layer2Addr = this.getLayer2MappedAddress(address, slot);
+          if (layer2Addr !== null) {
+            return this.memory[layer2Addr];
+          }
         }
 
         // --- #4: MMU
@@ -219,10 +221,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     } else if (slot < 3) {
       // --- 0x4000-0xbfff: area
       // --- #1: layer 2 mapping
-      const layer2Mapping = false;
-      if (layer2Mapping) {
-        // TODO: Read from layer2 memory
-        return 0x00;
+      const screenDevice = this.machine.composedScreenDevice;
+      if (screenDevice.layer2EnableMappingForReads) {
+        const layer2Addr = this.getLayer2MappedAddress(address, slot);
+        if (layer2Addr !== null) {
+          return this.memory[layer2Addr];
+        }
       }
       // --- #2: mmu
     }
@@ -267,10 +271,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         writeOffset = OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000
       } else {
         // --- #3: Layer 2 mapping
-        const layer2Mapping = false;
-        if (layer2Mapping) {
-          // TODO: Write to layer2 memory
-          return;
+        const screenDevice = this.machine.composedScreenDevice;
+        if (screenDevice.layer2EnableMappingForWrites) {
+          const layer2Addr = this.getLayer2MappedAddress(address, slot);
+          if (layer2Addr !== null) {
+            this.memory[layer2Addr] = data;
+            return;
+          }
         }
 
         // --- #4: MMU
@@ -281,10 +288,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     } else if (slot < 3) {
       // --- 0x4000-0xbfff: area
       // --- #1: layer 2 mapping
-      const layer2Mapping = false;
-      if (layer2Mapping) {
-        // TODO: Write to layer2 memory
-        return;
+      const screenDevice = this.machine.composedScreenDevice;
+      if (screenDevice.layer2EnableMappingForWrites) {
+        const layer2Addr = this.getLayer2MappedAddress(address, slot);
+        if (layer2Addr !== null) {
+          this.memory[layer2Addr] = data;
+          return;
+        }
       }
       // --- #2: mmu
     }
@@ -779,22 +789,79 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Gets the offset of the Layer 2 memory according to the current configuration
+   * Gets the Layer 2 mapped SRAM address for a Z80 memory address.
+   * Returns null if the address is not in a Layer 2 mapped region.
+   * 
+   * Based on VHDL lines 2922-2927 in zxnext.vhd:
+   * - layer2_active_bank_offset_pre <= cpu_a(15 downto 14) when port_123b_layer2_map_segment = "11" else port_123b_layer2_map_segment;
+   * - layer2_active_bank_offset <= ("00" & layer2_active_bank_offset_pre) + ('0' & port_123b_layer2_offset);
+   * - layer2_active_bank <= nr_12_layer2_active_bank when port_123b_layer2_map_shadow = '0' else nr_13_layer2_shadow_bank;
+   * - layer2_active_page = (layer2_active_bank & '0') + layer2_active_bank_offset
+   * - layer2_A21_A13 <= ("0001" + ('0' & layer2_active_page(7 downto 5))) & layer2_active_page(4 downto 0);
+   * 
+   * @param address Z80 address (0x0000-0xFFFF)
+   * @param slot Memory slot (0-3 for 0x0000-0x3FFF, 0x4000-0x7FFF, 0x8000-0xBFFF, 0xC000-0xFFFF)
+   * @returns SRAM address offset (0x040000+) or null if not mapped
    */
-  private getLayer2MemoryOffset(): number {
-    const layer2Device = this.machine.layer2Device;
-    let layer2Offset = 0;
-    switch (layer2Device.bank) {
-      case 0x01:
-        layer2Offset = 0x4000;
-        break;
-      case 0x02:
-        layer2Offset = 0x8000;
-        break;
+  private getLayer2MappedAddress(address: number, slot: number): number | null {
+    const screenDevice = this.machine.composedScreenDevice;
+    
+    // Determine which 16K segment is being mapped
+    // port_123b_layer2_map_segment: bits [7:6] of port 0x123B
+    // 00 = First 16K  (0x0000-0x3FFF)
+    // 01 = Second 16K (0x4000-0x7FFF)
+    // 10 = Third 16K  (0x8000-0xBFFF)
+    // 11 = All 48K    (0x0000-0xBFFF, segment determined by address bits 15:14)
+    const mapSegment = screenDevice.layer2Bank;
+    
+    let segmentIndex: number;
+    if (mapSegment === 3) {
+      // All 48K mode: segment determined by address bits [15:14]
+      segmentIndex = (address >> 14) & 0x03;
+      if (segmentIndex === 3) return null; // 0xC000-0xFFFF not mapped
+    } else {
+      // Single 16K segment mode: check if address is in the mapped slot
+      if (slot !== mapSegment) return null;
+      segmentIndex = mapSegment;
     }
-    const ramBank = layer2Device.useShadowScreen
-      ? layer2Device.shadowRamBank
-      : layer2Device.activeRamBank;
-    return OFFS_NEXT_RAM + ramBank * 0x4000 + layer2Device.bankOffset * 0x4000 + layer2Offset;
+    
+    // Get the active bank (7-bit value, 16K bank number)
+    const activeBank = screenDevice.layer2UseShadowBank 
+      ? screenDevice.layer2ShadowRamBank 
+      : screenDevice.layer2ActiveRamBank;
+    
+    // In VHDL:
+    // layer2_active_bank_offset_pre <= cpu_a(15 downto 14) when port_123b_layer2_map_segment = "11" 
+    //                                  else port_123b_layer2_map_segment;
+    // layer2_active_bank_offset <= ("00" & layer2_active_bank_offset_pre) + ('0' & port_123b_layer2_offset);
+    // Since we don't have port_123b_layer2_offset in the emulator yet, assume it's 0
+    const layer2ActiveBankOffset = segmentIndex;  // 0-2 (or address bits 15:14 in 48K mode)
+    
+    // layer2_active_page <= (('0' & layer2_active_bank) + ("0000" & layer2_active_bank_offset)) & cpu_a(13);
+    // This creates an 8-bit page number where:
+    //   - bits[7:1] = (activeBank + bankOffset)  [7-bit addition result]
+    //   - bit[0] = address bit 13  [selects 8K half of the 16K segment]
+    const pageBits7_1 = (activeBank + layer2ActiveBankOffset) & 0x7F;  // 7-bit value
+    const pageBit0 = (address >> 13) & 0x01;  // address bit 13
+    const layer2ActivePage = (pageBits7_1 << 1) | pageBit0;  // 8-bit page number
+    
+    // layer2_A21_A13 <= ("0001" + ('0' & layer2_active_page(7 downto 5))) & layer2_active_page(4 downto 0);
+    // This generates a 9-bit value [8:0] representing SRAM address bits [21:13]
+    // Upper part: bits [8:5] = 0b0001 (0x01) + layer2_active_page[7:5] (4-bit addition)
+    // Lower part: bits [4:0] = layer2_active_page[4:0]
+    const upperNibble = (0x01 + ((layer2ActivePage >> 5) & 0x07)) & 0x0F;  // 4-bit value [3:0]
+    const lowerBits = layer2ActivePage & 0x1F;  // 5-bit value [4:0]
+    const layer2_A21_A13 = (upperNibble << 5) | lowerBits;  // 9-bit value [8:0]
+    
+    // Check if bit 8 is set - if so, address is out of range
+    // sram_active <= not sram_pre_layer2_A21_A13(8);
+    if ((layer2_A21_A13 & 0x100) !== 0) return null;
+    
+    // Combine with address bits [12:0] to form the final SRAM address
+    const sramA12_A0 = address & 0x1FFF;  // Lower 13 bits of Z80 address
+    const sramAddr = ((layer2_A21_A13 & 0xFF) << 13) | sramA12_A0;  // 21-bit SRAM address
+    
+    // Return full memory offset (base + SRAM address)
+    return OFFS_NEXT_RAM + sramAddr;
   }
 }
