@@ -1342,25 +1342,32 @@ export class NextComposedScreenDevice
    * @returns Pixel byte value (0-255)
    */
   private getLayer2PixelFromSRAM(bank16K: number, offset: number): number {
-    // VHDL: layer2_bank_eff <= (('0' & layer2_active_bank_q(6 downto 4)) + 1) & layer2_active_bank_q(3 downto 0)
-    // This transforms the bank number: bank_eff = ((bank[6:4] + 1) << 4) | bank[3:0]
-    const bankUpper = ((bank16K >> 4) + 1) & 0x0F;
-    const bankLower = bank16K & 0x0F;
-    const effectiveBank = (bankUpper << 4) | bankLower;
+    // Layer 2 is 48K (3 × 16K banks)
+    // Each 16K bank consists of 2 × 8K banks
+    // The 16K bank number translates directly to 8K bank pairs:
+    //   bank16K * 2     = first 8K bank
+    //   bank16K * 2 + 1 = second 8K bank
+    //
+    // offset is within a 48K space (0-49151):
+    //   offset 0-16383 = first 16K (8K banks: bank16K*2, bank16K*2+1)
+    //   offset 16384-32767 = second 16K (8K banks: (bank16K+1)*2, (bank16K+1)*2+1)
+    //   offset 32768-49151 = third 16K (8K banks: (bank16K+2)*2, (bank16K+2)*2+1)
     
-    // VHDL: layer2_addr_eff <= (layer2_bank_eff + ("00000" & layer2_addr(16 downto 14))) & layer2_addr(13 downto 0)
-    // This is bit concatenation: [bank_eff + addr[16:14]] concat [addr[13:0]]
-    // Upper 8 bits: bank_eff + upper 3 bits of 17-bit offset
-    // Lower 14 bits: lower 14 bits of offset
-    const upper8 = (effectiveBank + (offset >> 14)) & 0xFF;
-    const lower14 = offset & 0x3FFF;
+    // Which 16K segment are we in? (0, 1, or 2)
+    const segment16K = (offset >> 14) & 0x03; // offset / 16384
     
-    // Combine into 22-bit SRAM address
-    const sramAddr = (upper8 << 14) | lower14;
+    // Which 8K half within that 16K segment? (0 or 1)
+    const half8K = (offset >> 13) & 0x01; // (offset % 16384) / 8192
     
-    // Read from extended Next RAM (SRAM starts at 0x040000)
-    // Address range: 0x040000 - 0x05FFFF (128K of Next RAM)
-    const memoryOffset = 0x040000 + sramAddr;
+    // Calculate the 8K bank number
+    const bank8K = (bank16K + segment16K) * 2 + half8K;
+    
+    // Offset within the 8K bank (0-8191)
+    const offsetWithin8K = offset & 0x1FFF;
+    
+    // Calculate physical memory address
+    // 8K banks are stored sequentially in Next RAM starting at 0x040000
+    const memoryOffset = 0x040000 + bank8K * 0x2000 + offsetWithin8K;
     
     // Direct memory access (bypasses MMU/paging logic)
     return this.machine.memoryDevice.memory[memoryOffset] || 0;
