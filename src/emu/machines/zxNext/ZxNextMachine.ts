@@ -522,8 +522,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   delayMemoryRead(address: number): void {
     this.tactPlusN(3);
-    this.totalContentionDelaySinceStart += 3;
-    this.contentionDelaySincePause += 3;
     
     // --- At 28 MHz (speed value 3), add 1 wait state for memory reads
     // --- Exception: Bank 7 (page 0x0E) has no wait state - direct BRAM connection
