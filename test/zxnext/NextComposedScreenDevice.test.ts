@@ -525,9 +525,9 @@ describe("Next - ComposedScreenDevice", function () {
       // --- Assert
       expect(scrDevice.layer2ClipIndex).toBe(0x01);
       expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
-      expect(scrDevice.layer2ClipWindowX2).toBe(0x9f);
+      expect(scrDevice.layer2ClipWindowX2).toBe(0xff);
       expect(scrDevice.layer2ClipWindowY1).toBe(0x00);
-      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xbf);
     });
 
     it("Reg $18 second write", async () => {
@@ -545,7 +545,7 @@ describe("Next - ComposedScreenDevice", function () {
       expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
       expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
       expect(scrDevice.layer2ClipWindowY1).toBe(0x00);
-      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xbf);
     });
 
     it("Reg $18 third write", async () => {
@@ -564,7 +564,7 @@ describe("Next - ComposedScreenDevice", function () {
       expect(scrDevice.layer2ClipWindowX1).toBe(0x23);
       expect(scrDevice.layer2ClipWindowX2).toBe(0x34);
       expect(scrDevice.layer2ClipWindowY1).toBe(0x45);
-      expect(scrDevice.layer2ClipWindowY2).toBe(0xff);
+      expect(scrDevice.layer2ClipWindowY2).toBe(0xbf);
     });
 
     it("Reg $18 fourth write", async () => {

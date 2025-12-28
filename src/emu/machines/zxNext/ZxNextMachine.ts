@@ -515,12 +515,29 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
    *  action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
+   * 
+   * At 28 MHz, memory reads require 1 additional wait state (1 T-state) with one exception:
+   * - Bank 7 (BRAM, page 0x0E) reads have NO wait state - direct BRAM port access
+   * - All other memory (SRAM and Bank 5 BRAM) has 1 wait state due to scheduling/arbitration
    */
   delayMemoryRead(address: number): void {
     this.delayAddressBusAccess(address);
-    this.tactPlus3();
+    this.tactPlusN(3);
     this.totalContentionDelaySinceStart += 3;
     this.contentionDelaySincePause += 3;
+    
+    // --- At 28 MHz (speed value 3), add 1 wait state for memory reads
+    // --- Exception: Bank 7 (page 0x0E) has no wait state - direct BRAM connection
+    if (this.cpuSpeedDevice.effectiveSpeed === 3) {
+      const pageIndex = (address >>> 13) & 0x07;
+      const isBank7 = this.memoryDevice.bank8kLookup[pageIndex] === 0x0e;
+      
+      if (!isBank7) {
+        this.tactPlusN(1);
+        this.totalContentionDelaySinceStart++;
+        this.contentionDelaySincePause++;
+      }
+    }
   }
 
   /**
@@ -539,9 +556,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
+   * 
+   * Note: Write operations do NOT get the extra wait state at 28 MHz. The hardware uses a different timing 
+   * mechanism (5× 28MHz HDMI clock) to ensure proper write timing without requiring CPU wait states.
    */
   delayMemoryWrite(address: number): void {
-    this.delayMemoryRead(address);
+    this.delayAddressBusAccess(address);
+    this.tactPlusN(3);
+    this.totalContentionDelaySinceStart += 3;
+    this.contentionDelaySincePause += 3;
   }
 
   /**

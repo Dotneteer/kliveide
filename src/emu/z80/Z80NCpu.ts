@@ -226,7 +226,7 @@ function pushNN(cpu: Z80NCpu) {
   cpu.writeMemory(cpu.sp, cpu.fetchCodeByte());
   cpu.sp--;
   cpu.writeMemory(cpu.sp, cpu.fetchCodeByte());
-  cpu.tactPlus3();
+  cpu.tactPlusN(3);
 }
 
 // 0x90: OUTINB
@@ -290,7 +290,7 @@ function ldix(cpu: Z80NCpu) {
   if (tmp !== cpu.a) {
     cpu.writeMemory(cpu.de, tmp);
   } else {
-    cpu.tactPlus3();
+    cpu.tactPlusN(3);
   }
   cpu.tactPlus2WithAddress(cpu.de);
   cpu.bc--;
@@ -312,7 +312,7 @@ function lddx(cpu: Z80NCpu) {
   if (tmp !== cpu.a) {
     cpu.writeMemory(cpu.de, tmp);
   } else {
-    cpu.tactPlus3();
+    cpu.tactPlusN(3);
   }
   cpu.tactPlus2WithAddress(cpu.de);
   cpu.bc--;
@@ -326,7 +326,7 @@ function ldirx(cpu: Z80NCpu) {
   if (tmp !== cpu.a) {
     cpu.writeMemory(cpu.de, tmp);
   } else {
-    cpu.tactPlus3();
+    cpu.tactPlusN(3);
   }
   cpu.tactPlus2WithAddress(cpu.de);
   cpu.bc--;
@@ -348,7 +348,7 @@ function ldpirx(cpu: Z80NCpu) {
   if (tmp !== cpu.a) {
     cpu.writeMemory(cpu.de, tmp);
   } else {
-    cpu.tactPlus3();
+    cpu.tactPlusN(3);
   }
 
   cpu.tactPlus2WithAddress(cpu.de);
@@ -366,7 +366,7 @@ function lddrx(cpu: Z80NCpu) {
   if (tmp !== cpu.a) {
     cpu.writeMemory(cpu.de, tmp);
   } else {
-    cpu.tactPlus3();
+    cpu.tactPlusN(3);
   }
   cpu.tactPlus2WithAddress(cpu.de);
   cpu.bc--;

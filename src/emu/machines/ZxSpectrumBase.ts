@@ -151,7 +151,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    */
   delayMemoryRead(address: number): void {
     this.delayAddressBusAccess(address);
-    this.tactPlus3();
+    this.tactPlusN(3);
     this.totalContentionDelaySinceStart += 3;
     this.contentionDelaySincePause += 3;
   }
@@ -322,29 +322,29 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
       if (lowbit) {
         // --- Low bit set, C:1, C:1, C:1, C:1
         applyContentionDelay();
-        this.tactPlus1();
+        this.tactPlusN(1);
         applyContentionDelay();
-        this.tactPlus1();
+        this.tactPlusN(1);
         applyContentionDelay();
-        this.tactPlus1();
+        this.tactPlusN(1);
         applyContentionDelay();
-        this.tactPlus1();
+        this.tactPlusN(1);
       } else {
         // --- Low bit reset, C:1, C:3
         applyContentionDelay();
-        this.tactPlus1();
+        this.tactPlusN(1);
         applyContentionDelay();
-        this.tactPlus3();
+        this.tactPlusN(3);
       }
     } else {
       if (lowbit) {
         // --- Low bit set, N:4
-        this.tactPlus4();
+        this.tactPlusN(4);
       } else {
         // --- Low bit reset, C:1, C:3
-        this.tactPlus1();
+        this.tactPlusN(1);
         applyContentionDelay();
-        this.tactPlus3();
+        this.tactPlusN(3);
       }
     }
 

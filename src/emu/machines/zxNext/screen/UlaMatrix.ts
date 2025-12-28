@@ -107,6 +107,27 @@ export interface IPixelRenderingState {
 
   // Floating bus
   floatingBusValue: number;
+
+  // === Layer 2 state properties ===
+  // Display enable and configuration
+  layer2Enabled: boolean;              // Port 0x123B bit 1: Layer 2 display enabled
+  layer2Resolution: number;            // NextReg 0x70 bits [5:4]: 00=256x192, 01=320x256, 10/11=640x256
+  layer2PaletteOffset: number;         // NextReg 0x70 bits [3:0]: Added to upper nibble before palette lookup
+  
+  // Scrolling
+  layer2ScrollX: number;               // 9-bit: NextReg 0x71 bit 0 (MSB) + NextReg 0x16 (LSB)
+  layer2ScrollY: number;               // NextReg 0x17: 8-bit Y scroll (0-191 in 256x192, 0-255 in wide modes)
+  
+  // Clipping window
+  layer2ClipWindowX1: number;          // NextReg 0x18 write 1: X1 clip coordinate (inclusive)
+  layer2ClipWindowX2: number;          // NextReg 0x18 write 2: X2 clip coordinate (inclusive)
+  layer2ClipWindowY1: number;          // NextReg 0x18 write 3: Y1 clip coordinate (inclusive)
+  layer2ClipWindowY2: number;          // NextReg 0x18 write 4: Y2 clip coordinate (inclusive)
+  
+  // Bank selection
+  layer2ActiveBank: number;            // NextReg 0x12 bits [6:0]: Starting 16K bank for Layer 2 display
+  layer2ShadowBank: number;            // NextReg 0x13 bits [6:0]: Shadow buffer starting bank
+  layer2UseShadowBank: boolean;        // Port 0x123B bit 3: Use shadow (1) or active (0) bank
 }
 
 /**
