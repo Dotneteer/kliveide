@@ -593,21 +593,35 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     const activeBank = screen.layer2UseShadowBank 
       ? screen.layer2ShadowRamBank 
       : screen.layer2ActiveRamBank;
+    const bankOffset = screen.layer2BankOffset || 0;
+    
+    console.log(`[Layer2] updateLayer2Mapping: mapSegment=${mapSegment}, activeBank=${activeBank}, bankOffset=${bankOffset}, read=${screen.layer2EnableMappingForReads}, write=${screen.layer2EnableMappingForWrites}`);
     
     // Pre-compute mappings for all addresses in the mapped region
     const startAddr = mapSegment === 3 ? 0x0000 : (mapSegment * 0x4000);
     const endAddr = mapSegment === 3 ? 0xC000 : ((mapSegment + 1) * 0x4000);
     
     for (let addr = startAddr; addr < endAddr; addr++) {
-      const segmentIndex = mapSegment === 3 ? ((addr >> 14) & 0x03) : mapSegment;
-      const layer2ActiveBankOffset = segmentIndex;
+      // Calculate segment index based on address
+      // VHDL: layer2_active_bank_offset_pre <= cpu_a(15 downto 14) when port_123b_layer2_map_segment = "11" else port_123b_layer2_map_segment
+      const layer2ActiveBankOffsetPre = mapSegment === 3 
+        ? ((addr >> 14) & 0x03) 
+        : mapSegment;
+      
+      // VHDL: layer2_active_bank_offset <= ("00" & layer2_active_bank_offset_pre) + ('0' & port_123b_layer2_offset)
+      const layer2ActiveBankOffset = (layer2ActiveBankOffsetPre + bankOffset) & 0x07;
+      
+      // VHDL: layer2_active_page <= (('0' & layer2_active_bank) + ("0000" & layer2_active_bank_offset)) & cpu_a(13)
       const pageBits7_1 = (activeBank + layer2ActiveBankOffset) & 0x7F;
       const pageBit0 = (addr >> 13) & 0x01;
       const layer2ActivePage = (pageBits7_1 << 1) | pageBit0;
+      
+      // VHDL: layer2_A21_A13 <= ("0001" + ('0' & layer2_active_page(7 downto 5))) & layer2_active_page(4 downto 0)
       const upperNibble = (0x01 + ((layer2ActivePage >> 5) & 0x07)) & 0x0F;
       const lowerBits = layer2ActivePage & 0x1F;
       const layer2_A21_A13 = (upperNibble << 5) | lowerBits;
       
+      // VHDL: sram_active <= not sram_pre_layer2_A21_A13(8)
       if ((layer2_A21_A13 & 0x100) === 0) {
         const sramA12_A0 = addr & 0x1FFF;
         const sramAddr = ((layer2_A21_A13 & 0xFF) << 13) | sramA12_A0;

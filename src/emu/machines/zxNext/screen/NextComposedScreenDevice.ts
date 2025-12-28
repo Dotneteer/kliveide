@@ -250,6 +250,7 @@ export class NextComposedScreenDevice
   // === Layer 2 port (0x123b) flags
   layer2Enabled: boolean;
   layer2Bank: number;
+  layer2BankOffset: number; // 3-bit offset applied to bank address (bits 2:0 when port bit 4=1)
   layer2UseShadowBank: boolean;
   layer2EnableMappingForReads: boolean;
   layer2EnableMappingForWrites: boolean;
@@ -830,26 +831,46 @@ export class NextComposedScreenDevice
 
   /**
    * Gets the value of the 0x123b port
+   * Note: Reading always returns the mode 0 format (bit 4 = 0), the offset is write-only
    */
   get port0x123bValue(): number {
-    return (
+    const value = (
       (this.layer2Bank << 6) |
       (this.layer2UseShadowBank ? 0x08 : 0x00) |
       (this.layer2EnableMappingForReads ? 0x04 : 0x00) |
       (this.layer2Enabled ? 0x02 : 0x00) |
       (this.layer2EnableMappingForWrites ? 0x01 : 0x00)
     );
+    console.log(
+      `[Layer2] Port 0x123B READ: 0x${value.toString(16).padStart(2, "0")} (bank=${this.layer2Bank}, shadow=${this.layer2UseShadowBank}, read=${this.layer2EnableMappingForReads}, enabled=${this.layer2Enabled}, write=${this.layer2EnableMappingForWrites}, offset=${this.layer2BankOffset})`
+    );
+    return value;
   }
 
   /**
    * Updates the memory configuration based on the new 0x123b port value
+   * Bit 4 determines the mode:
+   *   - If bit 4 = 0: Normal mode - sets segment, shadow, read/write enables
+   *   - If bit 4 = 1: Offset mode - sets 3-bit bank offset (bits 2:0)
    */
   set port0x123bValue(value: number) {
-    this.layer2Bank = (value & 0xc0) >> 6;
-    this.layer2UseShadowBank = (value & 0x08) !== 0;
-    this.layer2EnableMappingForReads = (value & 0x04) !== 0;
-    this.layer2Enabled = (value & 0x02) !== 0;
-    this.layer2EnableMappingForWrites = (value & 0x01) !== 0;
+    if ((value & 0x10) === 0) {
+      // Mode 0 (bit 4 = 0): Normal configuration mode
+      this.layer2Bank = (value & 0xc0) >> 6;
+      this.layer2UseShadowBank = (value & 0x08) !== 0;
+      this.layer2EnableMappingForReads = (value & 0x04) !== 0;
+      this.layer2Enabled = (value & 0x02) !== 0;
+      this.layer2EnableMappingForWrites = (value & 0x01) !== 0;
+      console.log(
+        `[Layer2] Port 0x123B WRITE MODE 0: 0x${value.toString(16).padStart(2, "0")} -> bank=${this.layer2Bank}, shadow=${this.layer2UseShadowBank}, read=${this.layer2EnableMappingForReads}, enabled=${this.layer2Enabled}, write=${this.layer2EnableMappingForWrites}`
+      );
+    } else {
+      // Mode 1 (bit 4 = 1): Bank offset mode
+      this.layer2BankOffset = value & 0x07;
+      console.log(
+        `[Layer2] Port 0x123B WRITE MODE 1: 0x${value.toString(16).padStart(2, "0")} -> bankOffset=${this.layer2BankOffset}`
+      );
+    }
     this.machine.memoryDevice.updateFastPathFlags();
   }
 
@@ -1037,32 +1058,6 @@ export class NextComposedScreenDevice
     
     // Fetch pixel value
     const pixelValue = this.getLayer2PixelFromSRAM(bank, offset);
-    
-    // Debug: Log first pixel of first frame with full calculation details
-    if (this._debugFrameCounter === 1 && displayVC === 0 && displayHC === 248) {
-      console.log(`=== Layer 2 Debug Frame 1 Pixel (248,0) ===`);
-      console.log(`Bank register: active=${this.layer2ActiveRamBank}, shadow=${this.layer2ShadowRamBank}, useShadow=${this.layer2UseShadowBank}`);
-      console.log(`Selected bank: ${bank}, offset: 0x${offset.toString(16)}, scrollX=${this.layer2ScrollX}, scrollY=${this.layer2ScrollY}`);
-      console.log(`Coordinates: display=(${displayHC},${displayVC}), scrolled=(${x},${y})`);
-      console.log(`Memory device exists: ${!!this.machine.memoryDevice}, memory array exists: ${!!this.machine.memoryDevice?.memory}`);
-      if (this.machine.memoryDevice?.memory) {
-        console.log(`Memory array length: ${this.machine.memoryDevice.memory.length}`);
-      }
-    }
-    
-    // Debug: Log 8x8 pixel block (x=248-255, y=0-7) - compact format
-    // Only log first 100 frames, show 8 values per line
-    if (this._debugFrameCounter <= 100 && displayVC <= 7 && displayHC >= 248 && displayHC <= 255) {
-      if (displayHC === 248) {
-        // Start of line - save for batch output
-        (this as any)._debugLine = `F${this._debugFrameCounter} y${displayVC}:`;
-      }
-      (this as any)._debugLine += ` ${pixelValue.toString(16).padStart(2, '0')}`;
-      if (displayHC === 255) {
-        // End of line - output
-        console.log((this as any)._debugLine);
-      }
-    }
     
     // Check transparency (use globalTransparencyColor from NextReg 0x14)
     if (pixelValue === this.globalTransparencyColor) {
@@ -1366,19 +1361,6 @@ export class NextComposedScreenDevice
     // Read from extended Next RAM (SRAM starts at 0x040000)
     // Address range: 0x040000 - 0x05FFFF (128K of Next RAM)
     const memoryOffset = 0x040000 + sramAddr;
-    
-    // Debug first pixel read
-    if (this._debugFrameCounter === 1 && offset === 0x00F8) { // offset for y=0, x=248
-      console.log(`getLayer2PixelFromSRAM: bank16K=${bank16K}, offset=0x${offset.toString(16)}`);
-      console.log(`  bankUpper=${bankUpper}, bankLower=${bankLower}, effectiveBank=0x${effectiveBank.toString(16)}`);
-      console.log(`  upper8=0x${upper8.toString(16)}, lower14=0x${lower14.toString(16)}, sramAddr=0x${sramAddr.toString(16)}`);
-      console.log(`  memoryOffset=0x${memoryOffset.toString(16)}, value=0x${(this.machine.memoryDevice.memory[memoryOffset] || 0).toString(16)}`);
-      
-      // Check what's in nearby memory
-      console.log(`  Memory at 0x040000: 0x${(this.machine.memoryDevice.memory[0x040000] || 0).toString(16)}`);
-      console.log(`  Memory at 0x040001: 0x${(this.machine.memoryDevice.memory[0x040001] || 0).toString(16)}`);
-      console.log(`  Memory at 0x050000: 0x${(this.machine.memoryDevice.memory[0x050000] || 0).toString(16)}`);
-    }
     
     // Direct memory access (bypasses MMU/paging logic)
     return this.machine.memoryDevice.memory[memoryOffset] || 0;
