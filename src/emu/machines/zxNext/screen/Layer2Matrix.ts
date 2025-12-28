@@ -48,6 +48,19 @@ interface Layer2ScanlineState320x256 {
 }
 
 /**
+ * Scanline state for Layer 2 256×192 mode rendering.
+ * Precomputed per scanline to avoid redundant per-pixel calculations.
+ */
+interface Layer2ScanlineState192 {
+  vc: number;
+  displayVC: number;
+  vc_valid: boolean;
+  clippedByVertical: boolean;
+  y: number;  // Pre-calculated: (displayVC + scrollY) % 192
+  bank: number;  // Pre-selected: shadow vs active
+}
+
+/**
  * Bank cache for Layer 2 memory access optimization.
  * Priority 2E: Cache bank calculations for sequential pixel access.
  */
@@ -255,7 +268,76 @@ function getLayer2PixelFromSRAM_Cached(
 }
 
 /**
- * Render Layer 2 256×192 mode pixel.
+ * Prepare scanline state for 256×192 mode rendering.
+ * Precomputes all per-scanline constants to avoid redundant calculations.
+ * Phase 1: Scanline-based state precomputation for 256×192 mode.
+ */
+function prepareScanlineState192(
+  device: ILayer2RenderingState,
+  vc: number
+): Layer2ScanlineState192 | null {
+  const displayVC = vc - device.confDisplayYStart;
+  
+  // Early rejection: outside display area
+  if (displayVC < 0 || displayVC >= 192) {
+    return null;
+  }
+  
+  // Early rejection: clipped by Y bounds
+  if (displayVC < device.layer2ClipWindowY1 || displayVC > device.layer2ClipWindowY2) {
+    return null;
+  }
+  
+  // Pre-calculate Y coordinate with modulo
+  const y = (displayVC + device.layer2ScrollY) % 192;
+  
+  // Pre-select bank
+  const bank = device.layer2UseShadowBank ? device.layer2ShadowRamBank : device.layer2ActiveRamBank;
+  
+  return {
+    vc,
+    displayVC,
+    vc_valid: true,
+    clippedByVertical: false,
+    y,
+    bank
+  };
+}
+
+/**
+ * Fast path for 256×192 mode with no scrolling and full clip window.
+ * Phase 2: Optimized rendering for common unscrolled case.
+ */
+function renderLayer2_256x192Pixel_FastPath(
+  device: ILayer2RenderingState,
+  scanline: Layer2ScanlineState192,
+  hc: number
+): LayerOutput {
+  const displayHC = hc - device.confDisplayXStart;
+  
+  // Fast bounds check (no clipping needed)
+  if (displayHC < 0 || displayHC >= 256) {
+    return { rgb333: 0, transparent: true, clipped: false };
+  }
+  
+  // Direct memory access: offset = (y << 8) | x
+  const offset = (scanline.y << 8) | displayHC;
+  const pixelValue = getLayer2PixelFromSRAM_Cached(device, scanline.bank, offset);
+  
+  if (pixelValue === device.globalTransparencyColor) {
+    return { rgb333: 0, transparent: true, clipped: false };
+  }
+  
+  const upperNibble = ((pixelValue >> 4) + (device.layer2PaletteOffset & 0x0F)) & 0x0F;
+  const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0F);
+  const rgb333 = device.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
+  const priority = (rgb333 & 0x100) !== 0;
+  
+  return { rgb333: rgb333 & 0x1FF, transparent: false, clipped: false, priority };
+}
+
+/**
+ * Render Layer 2 256×192 mode pixel (optimized version).
  * @param device Rendering device state
  * @param vc Vertical counter position
  * @param hc Horizontal counter position
@@ -271,19 +353,34 @@ export function renderLayer2_256x192Pixel(
     return { rgb333: 0, transparent: true, clipped: false };
   }
 
-  const displayVC = vc - device.confDisplayYStart;
+  // Phase 1: Prepare scanline state (would be cached per scanline in real implementation)
+  const scanline = prepareScanlineState192(device, vc);
+  
+  // Phase 1: Early rejection for clipped/invalid scanlines
+  if (!scanline) {
+    return { rgb333: 0, transparent: true, clipped: true };
+  }
+  
+  // Phase 2: Fast path for unscrolled, unclipped content
+  if (device.layer2ScrollX === 0 && device.layer2ScrollY === 0 &&
+      device.layer2ClipWindowX1 === 0 && device.layer2ClipWindowX2 === 255 &&
+      device.layer2ClipWindowY1 === 0 && device.layer2ClipWindowY2 === 191) {
+    return renderLayer2_256x192Pixel_FastPath(device, scanline, hc);
+  }
+
+  // General path with full feature support
   const displayHC = hc - device.confDisplayXStart;
   
-  if (displayHC < device.layer2ClipWindowX1 || displayHC > device.layer2ClipWindowX2 ||
-      displayVC < device.layer2ClipWindowY1 || displayVC > device.layer2ClipWindowY2) {
+  const hc_valid = displayHC >= 0 && displayHC < 256;
+  
+  if (!hc_valid || displayHC < device.layer2ClipWindowX1 || displayHC > device.layer2ClipWindowX2) {
     return { rgb333: 0, transparent: true, clipped: true };
   }
   
   const x = (displayHC + device.layer2ScrollX) & 0xFF;
-  const y = (displayVC + device.layer2ScrollY) % 192;
-  const bank = device.layer2UseShadowBank ? device.layer2ShadowRamBank : device.layer2ActiveRamBank;
-  const offset = (y << 8) | x;
-  const pixelValue = getLayer2PixelFromSRAM_Cached(device, bank, offset);
+  
+  const offset = (scanline.y << 8) | x;
+  const pixelValue = getLayer2PixelFromSRAM_Cached(device, scanline.bank, offset);
   
   if (pixelValue === device.globalTransparencyColor) {
     return { rgb333: 0, transparent: true, clipped: false };
