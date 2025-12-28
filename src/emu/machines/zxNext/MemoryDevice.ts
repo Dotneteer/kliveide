@@ -561,15 +561,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.memory[index] = value;
   }
 
-  logStatus(): void {
-    for (let i = 0; i < 8; i++) {
-      const page = this.pageInfo[i];
-      console.log(
-        `Page ${i}: ${toHexa2(page.bank16k)} ${toHexa2(page.bank8k)} | ${toHexa6(page.readOffset)}`
-      );
-    }
-  }
-
   /**
    * Updates fast path flags based on current device states
    * Call this whenever DivMMC or Layer 2 state changes

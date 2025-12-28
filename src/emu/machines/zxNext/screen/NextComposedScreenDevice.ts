@@ -841,9 +841,6 @@ export class NextComposedScreenDevice
       (this.layer2Enabled ? 0x02 : 0x00) |
       (this.layer2EnableMappingForWrites ? 0x01 : 0x00)
     );
-    console.log(
-      `[Layer2] Port 0x123B READ: 0x${value.toString(16).padStart(2, "0")} (bank=${this.layer2Bank}, shadow=${this.layer2UseShadowBank}, read=${this.layer2EnableMappingForReads}, enabled=${this.layer2Enabled}, write=${this.layer2EnableMappingForWrites}, offset=${this.layer2BankOffset})`
-    );
     return value;
   }
 
@@ -1083,16 +1080,153 @@ export class NextComposedScreenDevice
 
   /**
    * Render Layer 2 320×256 mode pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
+   * 
+   * The 320×256 mode differs from 256×192 in several ways:
+   * 1. Resolution: 320 pixels wide × 256 pixels tall (vs 256×192)
+   * 2. Memory layout: Uses x & y concatenation (x[8:0] & y[7:0]) instead of (y[7:0] & x[7:0])
+   * 3. Coordinate system: Uses "wide" coordinates that start 32 HC earlier horizontally
+   * 4. Coordinate wrapping: x wraps at 320 (0-319), y wraps at 256 (0-255)
+   * 5. Clipping: Clip coordinates are doubled for X (per VHDL: clip_x1_q <= i_clip_x1 & '0')
+   * 
+   * From zxula_timing.vhd:
+   * - whc (wide horizontal counter) starts at -16 and covers 320 pixels
+   * - phc (practical horizontal counter) starts at -48 and covers 256 pixels
+   * - Difference: whc starts 32 pixels earlier than phc
+   * - wide_min_hactive <= c_min_hactive - 32 - 16
+   * 
+   * From layer2.vhd:
+   * - layer2_wide_res = '1' for 320×256 mode
+   * - hc <= i_whc (uses wide horizontal counter instead of phc)
+   * - layer2_addr <= (x & y) when wide_res = '1'  (vs ('0' & y & x(7:0)) for 256×192)
+   * - x wrapping handles 320 pixels: x(8:6) adjustment when x_pre >= 320
+   * - y wrapping handles 256 lines: simple modulo 256
+   * 
+   * @param vc - Vertical counter position
+   * @param hc - Horizontal counter position
+   * @param cell - Layer 2 rendering cell with activity flags
    */
-  private renderLayer2_320x256Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
-    // TODO: Implementation to be documented in a future section
+  private renderLayer2_320x256Pixel(vc: number, hc: number, cell: number): LayerOutput {
+    // Check if we're in Layer 2 display area
+    if ((cell & LAYER2_DISPLAY_AREA) === 0) {
+      return {
+        rgb333: 0,
+        transparent: true,
+        clipped: false
+      };
+    }
+
+    // For 320×256 mode, we need to simulate the "wide" coordinate system.
+    // From zxula_timing.vhd for +3 timing (50Hz):
+    // - c_min_hactive = 136, c_min_vactive = 64
+    // - wide_min_hactive = 136 - 48 = 88
+    // - wide_min_vactive = 64 - 34 = 30
+    // - At HC=88, whc resets to -16, so whc = hc - 104
+    // - At VC=30, wvc resets to -2, so wvc = vc - 32
+    // - At displayXStart=144, displayYStart=64:
+    //   whc = 40, wvc = 32
+    // 
+    const displayHC_wide = (hc - this.confDisplayXStart) + 32;
+    const displayVC_wide = (vc - this.confDisplayYStart) + 32;
+    
+    // Clipping: In 320×256 mode, clip coordinates are handled differently
+    // VHDL for X: clip_x1_q <= i_clip_x1 & '0' (shifts left by 1 bit, i.e., multiply by 2)
+    // VHDL for Y: clip_y1_q <= i_clip_y1 (used directly, 8-bit 0-255)
+    const clipX1 = this.layer2ClipWindowX1 << 1;
+    const clipX2 = (this.layer2ClipWindowX2 << 1) | 1; // Add 1 to include the extended range
+    
+    // Y clip values are used directly (0-255 range for 320×256 mode)
+    // The clip window registers hold 8-bit values, so they naturally support 0-255
+    const clipY1 = this.layer2ClipWindowY1;
+    const clipY2 = this.layer2ClipWindowY2;
+    
+    // Validity check for wide resolution:
+    // VHDL: hc_valid <= '1' when (wide_res = '1' and (hc_eff(8) = '0' or hc_eff(7:6) = "00")) else '0'
+    // This means: hc_eff < 256 OR hc_eff in range 256-319
+    // Invalid range: 320-511
+    const hc_valid = displayHC_wide < 320;
+    
+    // VHDL: vc_valid <= '1' when (wide_res = '1' and vc_eff(8) = '0') else '0'
+    // This means: vc_eff < 256
+    const vc_valid = displayVC_wide >= 0 && displayVC_wide < 256;
+    
+    // Check clipping and validity
+    if (!hc_valid || !vc_valid ||
+        displayHC_wide < clipX1 || displayHC_wide > clipX2 ||
+        displayVC_wide < clipY1 || displayVC_wide > clipY2) {
+      return {
+        rgb333: 0,
+        transparent: true,
+        clipped: true
+      };
+    }
+    
+    // Calculate scrolled coordinates
+    // VHDL: x_pre <= ('0' & hc_eff) + ('0' & layer2_scroll_x_q)
+    const x_pre = displayHC_wide + this.layer2ScrollX;
+    
+    // Handle x wrapping for 320 pixels (x[8:0] = 0-319)
+    // VHDL: x(8:6) <= x_pre(8:6) when (wide_res = '0' or (x_pre(9) = '0' and (x_pre(8) = '0' or x_pre(7:6) = "00"))) 
+    //                else (x_pre(8:6) + "011")
+    // For wide_res='1': if x_pre >= 320, add 3 to upper bits to wrap
+    let x = x_pre;
+    if (x_pre >= 320) {
+      // Add 3 to bits [8:6] to wrap from 320-511 range back to 0-191 range
+      const upper = ((x_pre >> 6) & 0x7) + 3;
+      x = (upper << 6) | (x_pre & 0x3F);
+    }
+    x = x & 0x1FF; // Ensure 9-bit value (0-511, but effectively 0-319 with wrapping)
+    
+    // VHDL: y_pre <= vc_eff + ('0' & layer2_scroll_y_q)
+    const y_pre = displayVC_wide + this.layer2ScrollY;
+    
+    // Handle y wrapping for 256 lines (y[7:0] = 0-255)
+    // VHDL: y(7:6) <= y_pre(7:6) when (wide_res = '1' or ...) else (y_pre(7:6) + 1)
+    // For wide_res = '1': no special adjustment, just simple modulo 256
+    const y = y_pre & 0xFF; // Wrap at 256
+    
+    // Determine which bank to use
+    const bank = this.layer2UseShadowBank 
+      ? this.layer2ShadowRamBank 
+      : this.layer2ActiveRamBank;
+    
+    // VHDL: layer2_addr <= (x & y) when layer2_wide_res = '1'
+    // This is bit concatenation: address = x[8:0] & y[7:0] = 17-bit address
+    // In terms of bytes: offset = (x << 8) | y
+    const offset = (x << 8) | y;
+    
+    // Increment debug frame counter once per frame
+    if (!this._debugFrameCountedThisFrame) {
+      this._debugFrameCounter++;
+      this._debugFrameCountedThisFrame = true;
+    }
+    
+    // Fetch pixel value
+    const pixelValue = this.getLayer2PixelFromSRAM(bank, offset);
+    
+    // Check transparency (use globalTransparencyColor from NextReg 0x14)
+    if (pixelValue === this.globalTransparencyColor) {
+      return {
+        rgb333: 0,
+        transparent: true,
+        clipped: false
+      };
+    }
+    
+    // Apply palette offset to upper nibble only (VHDL: palette_offset affects bits[7:4])
+    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0F)) & 0x0F;
+    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0F);
+    
+    // Lookup color in Layer 2 palette (returns 9-bit RGB333 with priority bit)
+    const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
+    
+    // Extract priority bit (bit 8 of the 9-bit palette entry)
+    const priority = (rgb333 & 0x100) !== 0;
+    
     return {
-      rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
+      rgb333: rgb333 & 0x1FF,
+      transparent: false,
+      clipped: false,
+      priority
     };
   }
 
@@ -1332,23 +1466,29 @@ export class NextComposedScreenDevice
    * Handles bank offset calculation and memory access.
    * 
    * @param bank16K Starting 16K bank number (from NextReg 0x12 or 0x13)
-   * @param offset Byte offset within the Layer 2 display buffer (0-48K for 256×192, 0-80K for 320×256/640×256)
+   * @param offset Byte offset within the Layer 2 display buffer (0-48K for 256×192, 0-80K for 320×256, 0-160K for 640×256)
    * @returns Pixel byte value (0-255)
    */
   private getLayer2PixelFromSRAM(bank16K: number, offset: number): number {
-    // Layer 2 is 48K (3 × 16K banks)
+    // Layer 2 sizes by mode:
+    // - 256×192: 48K (3 × 16K banks)
+    // - 320×256: 80K (5 × 16K banks)
+    // - 640×256: 160K (10 × 16K banks)
+    //
     // Each 16K bank consists of 2 × 8K banks
     // The 16K bank number translates directly to 8K bank pairs:
     //   bank16K * 2     = first 8K bank
     //   bank16K * 2 + 1 = second 8K bank
     //
-    // offset is within a 48K space (0-49151):
-    //   offset 0-16383 = first 16K (8K banks: bank16K*2, bank16K*2+1)
-    //   offset 16384-32767 = second 16K (8K banks: (bank16K+1)*2, (bank16K+1)*2+1)
-    //   offset 32768-49151 = third 16K (8K banks: (bank16K+2)*2, (bank16K+2)*2+1)
+    // From VHDL layer2.vhd:
+    // layer2_bank_eff <= (('0' & layer2_active_bank_q(6:4)) + 1) & layer2_active_bank_q(3:0)
+    // layer2_addr_eff <= (layer2_bank_eff + ("00000" & layer2_addr(16:14))) & layer2_addr(13:0)
+    //
+    // This means: effective_bank = base_bank + (offset >> 14)
+    // The upper 3 bits of offset (bits 16:14) determine the 16K bank offset (0-7)
     
-    // Which 16K segment are we in? (0, 1, or 2)
-    const segment16K = (offset >> 14) & 0x03; // offset / 16384
+    // Which 16K segment are we in? (0-7 for up to 128K)
+    const segment16K = (offset >> 14) & 0x07; // offset / 16384, support up to 8 banks
     
     // Which 8K half within that 16K segment? (0 or 1)
     const half8K = (offset >> 13) & 0x01; // (offset % 16384) / 8192
