@@ -8,7 +8,7 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   protected tactsInFrame28 = 0;
 
   readonly mergedOps: Z80Operation[];
-  
+
   constructor() {
     super();
     this.mergedOps = [...super.getExtendedOpsTable()];
@@ -41,7 +41,7 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    this.frameTacts += 2 * n / this.clockMultiplier;
+    this.frameTacts += (2 * n) / this.clockMultiplier;
     if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInFrame;
@@ -49,6 +49,46 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
     }
     this.currentFrameTact = Math.floor(this.frameTacts);
     this.onTactIncremented();
+  }
+
+  /**
+   * This method increments the current CPU tacts by one, using memory contention with the provided address.
+   * @param _address
+   */
+  tactPlus1WithAddress(_address: number): void {
+    this.tactPlusN(1);
+  }
+
+  /**
+   * This method increments the current CPU tacts by two, using memory contention with the provided address.
+   * @param _address
+   */
+  tactPlus2WithAddress(_address: number): void {
+    this.tactPlusN(2);
+  }
+
+  /**
+   * This method increments the current CPU tacts by four, using memory contention with the provided address.
+   * @param _address
+   */
+  tactPlus4WithAddress(_address: number): void {
+    this.tactPlusN(4);
+  }
+
+  /**
+   * This method increments the current CPU tacts by five, using memory contention with the provided address.
+   * @param _address
+   */
+  tactPlus5WithAddress(_address: number): void {
+    this.tactPlusN(5);
+  }
+
+  /**
+   * This method increments the current CPU tacts by seven, using memory contention with the provided address.
+   * @param _address
+   */
+  tactPlus7WithAddress(_address: number): void {
+    this.tactPlusN(7);
   }
 }
 

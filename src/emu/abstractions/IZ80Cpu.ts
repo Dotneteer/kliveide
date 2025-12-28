@@ -208,4 +208,34 @@ export interface IZ80Cpu extends IAnyCpu {
    * @param n Number of tact increments
    */
   tactPlusN(n: number): void;
+
+  /**
+   * This method increments the current CPU tacts by one, using memory contention with the provided address.
+   * @param address
+   */
+  tactPlus1WithAddress(address: number): void;
+
+  /**
+   * This method increments the current CPU tacts by two, using memory contention with the provided address.
+   * @param address
+   */
+  tactPlus2WithAddress(address: number): void;
+
+  /**
+   * This method increments the current CPU tacts by four, using memory contention with the provided address.
+   * @param address
+   */
+  tactPlus4WithAddress(address: number): void;
+
+  /**
+   * This method increments the current CPU tacts by five, using memory contention with the provided address.
+   * @param address
+   */
+  tactPlus5WithAddress(address: number): void;
+
+  /**
+   * This method increments the current CPU tacts by seven, using memory contention with the provided address.
+   * @param address
+   */
+  tactPlus7WithAddress(address: number): void;
 }
