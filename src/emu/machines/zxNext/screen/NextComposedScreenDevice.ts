@@ -861,15 +861,9 @@ export class NextComposedScreenDevice
       this.layer2EnableMappingForReads = (value & 0x04) !== 0;
       this.layer2Enabled = (value & 0x02) !== 0;
       this.layer2EnableMappingForWrites = (value & 0x01) !== 0;
-      console.log(
-        `[Layer2] Port 0x123B WRITE MODE 0: 0x${value.toString(16).padStart(2, "0")} -> bank=${this.layer2Bank}, shadow=${this.layer2UseShadowBank}, read=${this.layer2EnableMappingForReads}, enabled=${this.layer2Enabled}, write=${this.layer2EnableMappingForWrites}`
-      );
     } else {
       // Mode 1 (bit 4 = 1): Bank offset mode
       this.layer2BankOffset = value & 0x07;
-      console.log(
-        `[Layer2] Port 0x123B WRITE MODE 1: 0x${value.toString(16).padStart(2, "0")} -> bankOffset=${this.layer2BankOffset}`
-      );
     }
     this.machine.memoryDevice.updateFastPathFlags();
   }

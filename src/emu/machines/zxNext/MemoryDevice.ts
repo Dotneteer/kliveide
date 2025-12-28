@@ -248,18 +248,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       const pageInfo = this.pageInfo[address >>> 13];
       if (pageInfo.writeOffset !== null) {
         // Check if writing to Layer 2 banks when Layer 2 display is enabled
-        const bank8k = pageInfo.bank8k;
-        if (bank8k !== undefined) {
-          const screen = this.machine.composedScreenDevice;
-          if (screen.layer2Enabled) {
-            const activeBank = screen.layer2UseShadowBank ? screen.layer2ShadowRamBank : screen.layer2ActiveRamBank;
-            const layer2Start8k = activeBank * 2;
-            const layer2End8k = layer2Start8k + 5; // 48K = 6 banks of 8K
-            if (bank8k >= layer2Start8k && bank8k <= layer2End8k) {
-              console.log(`[Layer2] WRITE FastPath: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, bank8k=${bank8k}`);
-            }
-          }
-        }
         this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
       }
       return;
@@ -792,11 +780,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         const screen = this.machine.composedScreenDevice;
         if (screen.layer2Enabled) {
           const activeBank = screen.layer2UseShadowBank ? screen.layer2ShadowRamBank : screen.layer2ActiveRamBank;
-          const layer2Start8k = activeBank * 2;
-          const layer2End8k = layer2Start8k + 5; // 48K = 6 banks of 8K
-          if (bank8k >= layer2Start8k && bank8k <= layer2End8k) {
-            console.log(`[Layer2] WRITE via MMU Slot0: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, bank8k=${bank8k}`);
-          }
         }
       }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
@@ -828,7 +811,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     if (this._layer2WriteActive) {
       const layer2Offset = this._layer2WriteMap[address];
       if (layer2Offset >= 0) {
-        console.log(`[Layer2] WRITE via L2Map Slot0: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, offset=0x${layer2Offset.toString(16).padStart(6, '0')}`);
         this.memory[layer2Offset] = data;
         return;
       }
@@ -851,11 +833,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         const screen = this.machine.composedScreenDevice;
         if (screen.layer2Enabled) {
           const activeBank = screen.layer2UseShadowBank ? screen.layer2ShadowRamBank : screen.layer2ActiveRamBank;
-          const layer2Start8k = activeBank * 2;
-          const layer2End8k = layer2Start8k + 5; // 48K = 6 banks of 8K
-          if (bank8k >= layer2Start8k && bank8k <= layer2End8k) {
-            console.log(`[Layer2] WRITE via MMU Slot1: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, bank8k=${bank8k}`);
-          }
         }
       }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
@@ -866,7 +843,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     // --- Check Layer 2 first
     const layer2Offset = this._layer2WriteMap[address];
     if (layer2Offset >= 0) {
-      console.log(`[Layer2] WRITE via L2Map Slot1: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, offset=0x${layer2Offset.toString(16).padStart(6, '0')}`);
       this.memory[layer2Offset] = data;
       return;
     }
@@ -889,11 +865,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         const screen = this.machine.composedScreenDevice;
         if (screen.layer2Enabled) {
           const activeBank = screen.layer2UseShadowBank ? screen.layer2ShadowRamBank : screen.layer2ActiveRamBank;
-          const layer2Start8k = activeBank * 2;
-          const layer2End8k = layer2Start8k + 5; // 48K = 6 banks of 8K
-          if (bank8k >= layer2Start8k && bank8k <= layer2End8k) {
-            console.log(`[Layer2] WRITE via MMU Slot2: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, bank8k=${bank8k}`);
-          }
         }
       }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
@@ -904,7 +875,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     // --- Check Layer 2 first
     const layer2Offset = this._layer2WriteMap[address];
     if (layer2Offset >= 0) {
-      console.log(`[Layer2] WRITE via L2Map Slot2: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, offset=0x${layer2Offset.toString(16).padStart(6, '0')}`);
       this.memory[layer2Offset] = data;
       return;
     }
@@ -927,11 +897,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         const screen = this.machine.composedScreenDevice;
         if (screen.layer2Enabled) {
           const activeBank = screen.layer2UseShadowBank ? screen.layer2ShadowRamBank : screen.layer2ActiveRamBank;
-          const layer2Start8k = activeBank * 2;
-          const layer2End8k = layer2Start8k + 5; // 48K = 6 banks of 8K
-          if (bank8k >= layer2Start8k && bank8k <= layer2End8k) {
-            console.log(`[Layer2] WRITE via MMU Slot3: addr=0x${address.toString(16).padStart(4, '0')}, data=0x${data.toString(16).padStart(2, '0')}, bank8k=${bank8k}`);
-          }
         }
       }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;

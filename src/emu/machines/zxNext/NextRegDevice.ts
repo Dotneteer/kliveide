@@ -728,7 +728,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "Layer 2 Active RAM bank",
       readFn: () => machine.composedScreenDevice.layer2ActiveRamBank,
       writeFn: (v) => {
-        console.log(`[Layer2] NextReg 0x12: Layer2ActiveRamBank = ${v & 0x7f}`);
         machine.composedScreenDevice.layer2ActiveRamBank = v & 0x7f;
       },
       slices: [
@@ -744,7 +743,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "Layer 2 Shadow RAM bank",
       readFn: () => machine.composedScreenDevice.layer2ShadowRamBank,
       writeFn: (v) => {
-        console.log(`[Layer2] NextReg 0x13: Layer2ShadowRamBank = ${v & 0x7f}`);
         machine.composedScreenDevice.layer2ShadowRamBank = v & 0x7f;
       },
       slices: [
@@ -829,7 +827,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => machine.composedScreenDevice.layer2ScrollX & 0xff,
       writeFn: (v) => {
         const newScrollX = (machine.composedScreenDevice.layer2ScrollX & 0x100) | (v & 0xff);
-        console.log(`[Layer2] NextReg 0x16: Layer2ScrollX = ${newScrollX}`);
         machine.composedScreenDevice.layer2ScrollX = newScrollX;
       }
     });
@@ -838,7 +835,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "Layer2 Y Scroll",
       readFn: () => machine.composedScreenDevice.layer2ScrollY,
       writeFn: (v) => {
-        console.log(`[Layer2] NextReg 0x17: Layer2ScrollY = ${v & 0xff}`);
         machine.composedScreenDevice.layer2ScrollY = v & 0xff;
       }
     });
@@ -847,7 +843,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       description: "Clip Window Layer 2",
       readFn: () => machine.composedScreenDevice.nextReg0x18Value,
       writeFn: (v) => {
-        console.log(`[Layer2] NextReg 0x18: ClipWindow = 0x${(v & 0xff).toString(16).padStart(2, '0')}`);
         machine.composedScreenDevice.nextReg0x18Value = v & 0xff;
       }
     });
@@ -1588,7 +1583,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn: (v) => {
         const resolution = (v >> 4) & 0x03;
         const paletteOffset = v & 0x0f;
-        console.log(`[Layer2] NextReg 0x70: Resolution=${resolution}, PaletteOffset=${paletteOffset}`);
         machine.composedScreenDevice.layer2Resolution = resolution;
         machine.composedScreenDevice.layer2PaletteOffset = paletteOffset;
       },
@@ -1616,7 +1610,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => (machine.composedScreenDevice.layer2ScrollX & 0x100) >> 8,
       writeFn: (v) => {
         const newScrollX = ((v & 0x01) << 8) | (machine.composedScreenDevice.layer2ScrollX & 0xff);
-        console.log(`[Layer2] NextReg 0x71: Layer2ScrollX = ${newScrollX}`);
         machine.composedScreenDevice.layer2ScrollX = newScrollX;
       },
       slices: [
