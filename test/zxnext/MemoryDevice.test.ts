@@ -432,6 +432,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2UseShadowBank = false;
     screenDevice.layer2ActiveRamBank = 8;
     screenDevice.layer2ShadowRamBank = 11;
+    memDevice.updateFastPathFlags();
   }
 
   it("Layer 2 disabled - should read from normal memory", async () => {
@@ -455,6 +456,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 0; // Map first 16K segment
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
    
     // --- Act
     memDevice.writeMemory(0x0000, 0xA0);
@@ -481,6 +483,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     
     // Write test pattern directly through Layer 2 write mapping
     screenDevice.layer2EnableMappingForWrites = true;
+    memDevice.updateFastPathFlags();
     memDevice.writeMemory(0x4000, 0xB0);
     memDevice.writeMemory(0x5000, 0xB1);
     memDevice.writeMemory(0x7FFF, 0xB2);
@@ -500,6 +503,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     
     // Write test pattern directly through Layer 2 write mapping
     screenDevice.layer2EnableMappingForWrites = true;
+    memDevice.updateFastPathFlags();
     memDevice.writeMemory(0x8000, 0xC0);
     memDevice.writeMemory(0x9000, 0xC1);
     memDevice.writeMemory(0xBFFF, 0xC2);
@@ -517,6 +521,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 3; // Map all 48K
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
     
     // Write to all three segments
     memDevice.writeMemory(0x0000, 0xD0);
@@ -542,6 +547,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 0; // Map first 16K segment
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
 
     // --- Act
     memDevice.writeMemory(0x0000, 0x55);
@@ -561,6 +567,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 1; // Map second 16K segment
     screenDevice.layer2ActiveRamBank = 9;
+    memDevice.updateFastPathFlags();
 
     // --- Act
     memDevice.writeMemory(0x4000, 0x11);
@@ -580,6 +587,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 2; // Map third 16K segment
     screenDevice.layer2ActiveRamBank = 10;
+    memDevice.updateFastPathFlags();
 
     // --- Act
     memDevice.writeMemory(0x8000, 0x44);
@@ -599,6 +607,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 3; // Map all 48K
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
 
     // --- Act
     memDevice.writeMemory(0x0000, 0x77);
@@ -619,13 +628,16 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2Bank = 0; // Map first 16K segment
     screenDevice.layer2ActiveRamBank = 8;
     screenDevice.layer2ShadowRamBank = 11;
+    memDevice.updateFastPathFlags();
     
     // Write using active bank
     screenDevice.layer2UseShadowBank = false;
+    memDevice.updateFastPathFlags();
     memDevice.writeMemory(0x0000, 0xAA);
     
     // Write using shadow bank
     screenDevice.layer2UseShadowBank = true;
+    memDevice.updateFastPathFlags();
     memDevice.writeMemory(0x0000, 0xBB);
     
     // --- Act & Assert - Read from shadow bank
@@ -633,6 +645,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     
     // Switch to active bank and read
     screenDevice.layer2UseShadowBank = false;
+    memDevice.updateFastPathFlags();
     expect(memDevice.readMemory(0x0000)).toBe(0xAA);
   });
 
@@ -643,12 +656,14 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 0;
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
     
     // First, write with Layer 2 enabled to set up data
     memDevice.writeMemory(0x0000, 0xCC);
     
     // Now disable writes but keep reads enabled
     screenDevice.layer2EnableMappingForWrites = false;
+    memDevice.updateFastPathFlags();
 
     // --- Act - Write should go to normal memory, not Layer 2
     memDevice.writeMemory(0x0000, 0xDD);
@@ -663,11 +678,14 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForReads = true;
     screenDevice.layer2Bank = 0;
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
     setupLayer2TestPattern(8, 0xEE);
     
-    // Enable DivMMC viEnableMappingForWrites = true;
+    // Enable Layer 2 writes
+    screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 0;
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
     
     // Write to Layer 2
     memDevice.writeMemory(0x0000, 0xEE);
@@ -688,6 +706,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     screenDevice.layer2EnableMappingForWrites = true;
     screenDevice.layer2Bank = 3; // All 48K mode
     screenDevice.layer2ActiveRamBank = 8;
+    memDevice.updateFastPathFlags();
     
     // Write to Layer 2 mapped regions
     memDevice.writeMemory(0x0000, 0xF0);
@@ -696,6 +715,7 @@ describe("Next - MemoryDevice - Layer 2", async function () {
     
     // Disable Layer 2 writes and write a known value to 0xC000
     screenDevice.layer2EnableMappingForWrites = false;
+    memDevice.updateFastPathFlags();
     const normalMemoryValue = 0x99;
     memDevice.writeMemory(0xC000, normalMemoryValue);
 

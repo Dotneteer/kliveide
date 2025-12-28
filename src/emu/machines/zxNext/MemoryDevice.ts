@@ -54,6 +54,28 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   private _wasInAllRamMode = false;
 
+  // --- Fast path optimization flags
+  private _divMmcActive = false;
+  private _layer2ReadActive = false;
+  private _layer2WriteActive = false;
+  private _useFastPath = true;
+
+  // --- Layer 2 lookup tables (Priority 2 optimization)
+  // 64KB lookup tables: Z80 address → SRAM offset (or -1 if not mapped)
+  private _layer2ReadMap = new Int32Array(0x10000);
+  private _layer2WriteMap = new Int32Array(0x10000);
+
+  // --- Specialized slot readers/writers (Priority 4 optimization)
+  // Function pointers for optimized memory access per slot
+  private _readSlot0: (address: number) => number;
+  private _readSlot1: (address: number) => number;
+  private _readSlot2: (address: number) => number;
+  private _readSlot3: (address: number) => number;
+  private _writeSlot0: (address: number, data: number) => void;
+  private _writeSlot1: (address: number, data: number) => void;
+  private _writeSlot2: (address: number, data: number) => void;
+  private _writeSlot3: (address: number, data: number) => void;
+
   /**
    * Initializes the memory
    * @param totalMemInKb Total memory size in KB
@@ -98,6 +120,21 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     for (let i = OFFS_ERR_PAGE; i < OFFS_ERR_PAGE + 0x2000; i++) {
       this.memory[i] = 0x7e;
     }
+    
+    // --- Initialize Layer 2 lookup tables with "not mapped" sentinel
+    this._layer2ReadMap.fill(-1);
+    this._layer2WriteMap.fill(-1);
+    
+    // --- Initialize slot function pointers to simple versions
+    this._readSlot0 = this._readSlot0Simple.bind(this);
+    this._readSlot1 = this._readSlot1Simple.bind(this);
+    this._readSlot2 = this._readSlot2Simple.bind(this);
+    this._readSlot3 = this._readSlot3Simple.bind(this);
+    this._writeSlot0 = this._writeSlot0Simple.bind(this);
+    this._writeSlot1 = this._writeSlot1Simple.bind(this);
+    this._writeSlot2 = this._writeSlot2Simple.bind(this);
+    this._writeSlot3 = this._writeSlot3Simple.bind(this);
+    
     this.reset();
   }
 
@@ -133,6 +170,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Set memory pages according to the default configuration
     this.updateMemoryConfig();
+    this.updateFastPathFlags();
   }
 
   hardReset(): void {}
@@ -178,65 +216,16 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   readMemory(address: number): number {
     address &= 0xffff;
-    const page = address >>> 13;
-    const slot = page >>> 1;
-    const offset = address & 0x1fff;
-
-    // --- Use MMU by default (unless overridden with a higher priority memory decoding)
-    let readOffset = this.pageInfo[page].readOffset;
-    if (slot === 0x00) {
-      // --- 0x0000-0x3fff: area
-      // --- #0: bootrom (ignored)
-
-      // --- #1: Multiface
-      let multifaceEnabled = false;
-      if (multifaceEnabled) {
-        // TODO: Read from Multiface memory
-        return 0x00;
-      }
-
-      // --- #2: DivMMC
-      const divMmcDevice = this.machine.divMmcDevice;
-      if (divMmcDevice.conmem) {
-        readOffset = page ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000 : OFFS_DIVMMC_ROM;
-      } else if (divMmcDevice.autoMapActive) {
-        readOffset = divMmcDevice.mapram
-          ? page
-            ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000
-            : OFFS_DIVMMC_RAM_BANK_3
-          : page
-            ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000
-            : OFFS_DIVMMC_ROM;
-      } else {
-        // --- #3: Layer 2 mapping
-        const screenDevice = this.machine.composedScreenDevice;
-        if (screenDevice.layer2EnableMappingForReads) {
-          const layer2Addr = this.getLayer2MappedAddress(address, slot);
-          if (layer2Addr !== null) {
-            return this.memory[layer2Addr];
-          }
-        }
-
-        // --- #4: MMU
-        // --- #5: Config (ignored)
-        // --- #6: ROMCS expansion bus (ignored)
-        // --- #7: ROM
-      }
-    } else if (slot < 3) {
-      // --- 0x4000-0xbfff: area
-      // --- #1: layer 2 mapping
-      const screenDevice = this.machine.composedScreenDevice;
-      if (screenDevice.layer2EnableMappingForReads) {
-        const layer2Addr = this.getLayer2MappedAddress(address, slot);
-        if (layer2Addr !== null) {
-          return this.memory[layer2Addr];
-        }
-      }
-      // --- #2: mmu
+    const slot = address >>> 14;
+    
+    // --- Dispatch to specialized slot reader
+    switch (slot) {
+      case 0: return this._readSlot0(address);
+      case 1: return this._readSlot1(address);
+      case 2: return this._readSlot2(address);
+      case 3: return this._readSlot3(address);
     }
-
-    // --- Return the memory content
-    return this.memory[readOffset + offset];
+    return 0; // Should never reach here
   }
 
   /**
@@ -246,68 +235,15 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeMemory(address: number, data: number): void {
     address &= 0xffff;
-    const page = address >>> 13;
-    const slot = page >>> 1;
-    const offset = address & 0x1fff;
-
-    // --- Use MMU by default (unless overridden with a higher priority memory decoding)
-    let writeOffset = this.pageInfo[page].writeOffset;
-    if (slot === 0x00) {
-      // --- 0x0000-0x3fff: area
-      // --- #0: bootrom (ignored)
-
-      // --- #1: Multiface
-      let multifaceEnabled = false;
-      if (multifaceEnabled) {
-        // TODO: Write to Multiface memory
-        return;
-      }
-
-      // --- #2: DivMMC
-      const divMmcDevice = this.machine.divMmcDevice;
-      if (divMmcDevice.conmem) {
-        // --- Page 0 is read-only
-        if (!page) return;
-        writeOffset = OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000;
-      } else if (divMmcDevice.autoMapActive) {
-        // --- Page 0 is read-only, MAPRAM disables write
-        if (!page || (divMmcDevice.mapram && divMmcDevice.bank === 3)) return;
-        writeOffset = OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000
-      } else {
-        // --- #3: Layer 2 mapping
-        const screenDevice = this.machine.composedScreenDevice;
-        if (screenDevice.layer2EnableMappingForWrites) {
-          const layer2Addr = this.getLayer2MappedAddress(address, slot);
-          if (layer2Addr !== null) {
-            this.memory[layer2Addr] = data;
-            return;
-          }
-        }
-
-        // --- #4: MMU
-        // --- #5: Config (ignored)
-        // --- #6: ROMCS expansion bus (ignored)
-        // --- #7: ROM
-      }
-    } else if (slot < 3) {
-      // --- 0x4000-0xbfff: area
-      // --- #1: layer 2 mapping
-      const screenDevice = this.machine.composedScreenDevice;
-      if (screenDevice.layer2EnableMappingForWrites) {
-        const layer2Addr = this.getLayer2MappedAddress(address, slot);
-        if (layer2Addr !== null) {
-          this.memory[layer2Addr] = data;
-          return;
-        }
-      }
-      // --- #2: mmu
+    const slot = address >>> 14;
+    
+    // --- Dispatch to specialized slot writer
+    switch (slot) {
+      case 0: this._writeSlot0(address, data); return;
+      case 1: this._writeSlot1(address, data); return;
+      case 2: this._writeSlot2(address, data); return;
+      case 3: this._writeSlot3(address, data); return;
     }
-
-    // --- Write the memory content
-    if (writeOffset === null || writeOffset === OFFS_ERR_PAGE) {
-      return;
-    }
-    this.memory[writeOffset + offset] = data;
   }
 
   /**
@@ -615,6 +551,295 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
+   * Updates fast path flags based on current device states
+   * Call this whenever DivMMC or Layer 2 state changes
+   */
+  updateFastPathFlags(): void {
+    const divMmc = this.machine.divMmcDevice;
+    this._divMmcActive = divMmc?.conmem || divMmc?.autoMapActive || false;
+
+    const screen = this.machine.composedScreenDevice;
+    this._layer2ReadActive = screen?.layer2EnableMappingForReads || false;
+    this._layer2WriteActive = screen?.layer2EnableMappingForWrites || false;
+
+    // --- Update Layer 2 lookup tables if Layer 2 is active
+    if (this._layer2ReadActive || this._layer2WriteActive) {
+      this.updateLayer2Mapping();
+    }
+
+    // --- Enable fast path only if no special mappings
+    this._useFastPath = !this._divMmcActive && !this._layer2ReadActive && !this._layer2WriteActive;
+    
+    // --- Update specialized slot functions based on configuration
+    this.updateSlotFunctions();
+  }
+
+  /**
+   * Pre-computes Layer 2 memory mappings into lookup tables.
+   * This replaces the ~30-operation getLayer2MappedAddress() call with a single array lookup.
+   * Must be called whenever Layer 2 configuration changes.
+   */
+  private updateLayer2Mapping(): void {
+    // Fill with -1 (not mapped)
+    this._layer2ReadMap.fill(-1);
+    this._layer2WriteMap.fill(-1);
+    
+    const screen = this.machine.composedScreenDevice;
+    if (!screen.layer2EnableMappingForReads && !screen.layer2EnableMappingForWrites) {
+      return; // Nothing mapped
+    }
+    
+    const mapSegment = screen.layer2Bank;
+    const activeBank = screen.layer2UseShadowBank 
+      ? screen.layer2ShadowRamBank 
+      : screen.layer2ActiveRamBank;
+    
+    // Pre-compute mappings for all addresses in the mapped region
+    const startAddr = mapSegment === 3 ? 0x0000 : (mapSegment * 0x4000);
+    const endAddr = mapSegment === 3 ? 0xC000 : ((mapSegment + 1) * 0x4000);
+    
+    for (let addr = startAddr; addr < endAddr; addr++) {
+      const segmentIndex = mapSegment === 3 ? ((addr >> 14) & 0x03) : mapSegment;
+      const layer2ActiveBankOffset = segmentIndex;
+      const pageBits7_1 = (activeBank + layer2ActiveBankOffset) & 0x7F;
+      const pageBit0 = (addr >> 13) & 0x01;
+      const layer2ActivePage = (pageBits7_1 << 1) | pageBit0;
+      const upperNibble = (0x01 + ((layer2ActivePage >> 5) & 0x07)) & 0x0F;
+      const lowerBits = layer2ActivePage & 0x1F;
+      const layer2_A21_A13 = (upperNibble << 5) | lowerBits;
+      
+      if ((layer2_A21_A13 & 0x100) === 0) {
+        const sramA12_A0 = addr & 0x1FFF;
+        const sramAddr = ((layer2_A21_A13 & 0xFF) << 13) | sramA12_A0;
+        const offset = OFFS_NEXT_RAM + sramAddr;
+        
+        if (screen.layer2EnableMappingForReads) {
+          this._layer2ReadMap[addr] = offset;
+        }
+        if (screen.layer2EnableMappingForWrites) {
+          this._layer2WriteMap[addr] = offset;
+        }
+      }
+    }
+  }
+
+  /**
+   * Updates specialized slot function pointers based on current configuration.
+   * Called after fast path flags change.
+   */
+  private updateSlotFunctions(): void {
+    // --- Slot 0 (0x0000-0x3FFF): Check DivMMC and Layer 2
+    const slot0Complex = this._divMmcActive || this._layer2ReadActive;
+    this._readSlot0 = slot0Complex 
+      ? this._readSlot0Complex.bind(this)
+      : this._readSlot0Simple.bind(this);
+    
+    const slot0WriteComplex = this._divMmcActive || this._layer2WriteActive;
+    this._writeSlot0 = slot0WriteComplex
+      ? this._writeSlot0Complex.bind(this)
+      : this._writeSlot0Simple.bind(this);
+    
+    // --- Slot 1 (0x4000-0x7FFF): Check Layer 2 only
+    this._readSlot1 = this._layer2ReadActive
+      ? this._readSlot1Complex.bind(this)
+      : this._readSlot1Simple.bind(this);
+    
+    this._writeSlot1 = this._layer2WriteActive
+      ? this._writeSlot1Complex.bind(this)
+      : this._writeSlot1Simple.bind(this);
+    
+    // --- Slot 2 (0x8000-0xBFFF): Check Layer 2 only
+    this._readSlot2 = this._layer2ReadActive
+      ? this._readSlot2Complex.bind(this)
+      : this._readSlot2Simple.bind(this);
+    
+    this._writeSlot2 = this._layer2WriteActive
+      ? this._writeSlot2Complex.bind(this)
+      : this._writeSlot2Simple.bind(this);
+    
+    // --- Slot 3 (0xC000-0xFFFF): Always simple (no special mappings)
+    // Already bound in constructor
+  }
+
+  // ========== Specialized Slot 0 Readers ==========
+  
+  private _readSlot0Simple(address: number): number {
+    return this.memory[this.pageInfo[address >>> 13].readOffset + (address & 0x1fff)];
+  }
+  
+  private _readSlot0Complex(address: number): number {
+    const page = address >>> 13;
+    const offset = address & 0x1fff;
+    let readOffset = this.pageInfo[page].readOffset;
+    
+    // --- DivMMC has priority
+    if (this._divMmcActive) {
+      const divMmcDevice = this.machine.divMmcDevice;
+      if (divMmcDevice.conmem) {
+        readOffset = page ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000 : OFFS_DIVMMC_ROM;
+        return this.memory[readOffset + offset];
+      } else if (divMmcDevice.autoMapActive) {
+        readOffset = divMmcDevice.mapram
+          ? page ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000 : OFFS_DIVMMC_RAM_BANK_3
+          : page ? OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000 : OFFS_DIVMMC_ROM;
+        return this.memory[readOffset + offset];
+      }
+    }
+    
+    // --- Layer 2 (if DivMMC not active)
+    if (this._layer2ReadActive) {
+      const layer2Offset = this._layer2ReadMap[address];
+      if (layer2Offset >= 0) {
+        return this.memory[layer2Offset];
+      }
+    }
+    
+    return this.memory[readOffset + offset];
+  }
+
+  // ========== Specialized Slot 1 Readers ==========
+  
+  private _readSlot1Simple(address: number): number {
+    return this.memory[this.pageInfo[address >>> 13].readOffset + (address & 0x1fff)];
+  }
+  
+  private _readSlot1Complex(address: number): number {
+    // --- Check Layer 2 first
+    const layer2Offset = this._layer2ReadMap[address];
+    if (layer2Offset >= 0) {
+      return this.memory[layer2Offset];
+    }
+    
+    // --- Fall back to MMU
+    return this.memory[this.pageInfo[address >>> 13].readOffset + (address & 0x1fff)];
+  }
+
+  // ========== Specialized Slot 2 Readers ==========
+  
+  private _readSlot2Simple(address: number): number {
+    return this.memory[this.pageInfo[address >>> 13].readOffset + (address & 0x1fff)];
+  }
+  
+  private _readSlot2Complex(address: number): number {
+    // --- Check Layer 2 first
+    const layer2Offset = this._layer2ReadMap[address];
+    if (layer2Offset >= 0) {
+      return this.memory[layer2Offset];
+    }
+    
+    // --- Fall back to MMU
+    return this.memory[this.pageInfo[address >>> 13].readOffset + (address & 0x1fff)];
+  }
+
+  // ========== Specialized Slot 3 Readers ==========
+  
+  private _readSlot3Simple(address: number): number {
+    return this.memory[this.pageInfo[address >>> 13].readOffset + (address & 0x1fff)];
+  }
+
+  // ========== Specialized Slot 0 Writers ==========
+  
+  private _writeSlot0Simple(address: number, data: number): void {
+    const pageInfo = this.pageInfo[address >>> 13];
+    if (pageInfo.writeOffset !== null) {
+      this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
+    }
+  }
+  
+  private _writeSlot0Complex(address: number, data: number): void {
+    const page = address >>> 13;
+    const offset = address & 0x1fff;
+    let writeOffset = this.pageInfo[page].writeOffset;
+    
+    // --- DivMMC has priority
+    if (this._divMmcActive) {
+      const divMmcDevice = this.machine.divMmcDevice;
+      if (divMmcDevice.conmem) {
+        if (!page) return; // Page 0 is read-only
+        writeOffset = OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000;
+        this.memory[writeOffset + offset] = data;
+        return;
+      } else if (divMmcDevice.autoMapActive) {
+        if (!page || (divMmcDevice.mapram && divMmcDevice.bank === 3)) return;
+        writeOffset = OFFS_DIVMMC_RAM + divMmcDevice.bank * 0x2000;
+        this.memory[writeOffset + offset] = data;
+        return;
+      }
+    }
+    
+    // --- Layer 2 (if DivMMC not active)
+    if (this._layer2WriteActive) {
+      const layer2Offset = this._layer2WriteMap[address];
+      if (layer2Offset >= 0) {
+        this.memory[layer2Offset] = data;
+        return;
+      }
+    }
+    
+    // --- Fall back to MMU
+    if (writeOffset !== null && writeOffset !== OFFS_ERR_PAGE) {
+      this.memory[writeOffset + offset] = data;
+    }
+  }
+
+  // ========== Specialized Slot 1 Writers ==========
+  
+  private _writeSlot1Simple(address: number, data: number): void {
+    const pageInfo = this.pageInfo[address >>> 13];
+    if (pageInfo.writeOffset !== null) {
+      this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
+    }
+  }
+  
+  private _writeSlot1Complex(address: number, data: number): void {
+    // --- Check Layer 2 first
+    const layer2Offset = this._layer2WriteMap[address];
+    if (layer2Offset >= 0) {
+      this.memory[layer2Offset] = data;
+      return;
+    }
+    
+    // --- Fall back to MMU
+    const pageInfo = this.pageInfo[address >>> 13];
+    if (pageInfo.writeOffset !== null) {
+      this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
+    }
+  }
+
+  // ========== Specialized Slot 2 Writers ==========
+  
+  private _writeSlot2Simple(address: number, data: number): void {
+    const pageInfo = this.pageInfo[address >>> 13];
+    if (pageInfo.writeOffset !== null) {
+      this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
+    }
+  }
+  
+  private _writeSlot2Complex(address: number, data: number): void {
+    // --- Check Layer 2 first
+    const layer2Offset = this._layer2WriteMap[address];
+    if (layer2Offset >= 0) {
+      this.memory[layer2Offset] = data;
+      return;
+    }
+    
+    // --- Fall back to MMU
+    const pageInfo = this.pageInfo[address >>> 13];
+    if (pageInfo.writeOffset !== null) {
+      this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
+    }
+  }
+
+  // ========== Specialized Slot 3 Writers ==========
+  
+  private _writeSlot3Simple(address: number, data: number): void {
+    const pageInfo = this.pageInfo[address >>> 13];
+    if (pageInfo.writeOffset !== null) {
+      this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
+    }
+  }
+
+  /**
    * Updates the memory configuration based on the current settings
    */
   updateMemoryConfig(): void {
@@ -679,6 +904,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       this.setRamSlotByMmu(6);
       this.setRamSlotByMmu(7);
     }
+
+    // --- Update fast path flags after memory configuration changes
+    this.updateFastPathFlags();
   }
 
   getMemoryMappings() {

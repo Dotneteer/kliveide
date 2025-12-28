@@ -442,6 +442,7 @@ export class NextComposedScreenDevice
     this.layer2Bank = 0;                     // Port 0x123B bits [7:6] + bit 3: mapping bank selector
     this.layer2EnableMappingForReads = false;   // Port 0x123B bit 2: memory mapping disabled
     this.layer2EnableMappingForWrites = false;  // Port 0x123B bit 0: memory mapping disabled
+    this.machine.memoryDevice.updateFastPathFlags();
 
     this.displayTiming = 0;
     this.userLockOnDisplayTiming = false;
@@ -849,6 +850,7 @@ export class NextComposedScreenDevice
     this.layer2EnableMappingForReads = (value & 0x04) !== 0;
     this.layer2Enabled = (value & 0x02) !== 0;
     this.layer2EnableMappingForWrites = (value & 0x01) !== 0;
+    this.machine.memoryDevice.updateFastPathFlags();
   }
 
   // ==============================================================================================

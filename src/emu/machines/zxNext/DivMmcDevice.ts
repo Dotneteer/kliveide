@@ -84,6 +84,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (!value) {
       // --- Automap is disabled
       this._autoMapActive = false;
+      this.machine.memoryDevice.updateFastPathFlags();
     }
   }
 
@@ -107,6 +108,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
     this._bank = value & 0x0f;
     this.machine.memoryDevice.updateMemoryConfig();
+    this.machine.memoryDevice.updateFastPathFlags();
   }
 
   set nextReg83Value(value: number) {
@@ -119,6 +121,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     } else {
       // --- DivMMC is disabled
       this._autoMapActive = false;
+      this.machine.memoryDevice.updateFastPathFlags();
     }
   }
 
@@ -252,6 +255,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
           if (this.rstTraps[rstIdx].instantMapping) {
             this._autoMapActive = true;
             this._requestAutomapOn = false;
+            this.machine.memoryDevice.updateFastPathFlags();
           } else {
             this._requestAutomapOn = true;
           }
@@ -284,12 +288,14 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         if (pc >= 0x3d00 && pc <= 0x3dff) {
           if (this.automapOn3dxx && rom3PagedIn) {
             this._autoMapActive = true;
+            this.machine.memoryDevice.updateFastPathFlags();
           }
         } else if (pc >= 0x1ff8 && pc <= 0x1fff) {
           if (this.disableAutomapOn1ff8) {
             this._requestAutomapOff = true;
           } else {
             this._autoMapActive = false;
+            this.machine.memoryDevice.updateFastPathFlags();
           }
         }
     }
@@ -303,12 +309,14 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (this._requestAutomapOn) {
       this._autoMapActive = true;
       this._requestAutomapOn = false;
+      this.machine.memoryDevice.updateFastPathFlags();
     }
 
     // --- Delayed page out
     if (this._requestAutomapOff) {
       this._autoMapActive = false;
       this._requestAutomapOff = false;
+      this.machine.memoryDevice.updateFastPathFlags();
     }
   }
 }
