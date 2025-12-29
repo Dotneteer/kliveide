@@ -114,13 +114,16 @@ export class DebugSupport implements IDebugSupport {
   /**
    * Gets memory read breakpoint information for the specified address/partition
    * @param reads Addresses read during the current instruction
+   * @param length Number of bytes read
    * @param partitionResolver A function to resolve the current partition
    */
   hasMemoryRead(
-    reads: number[],
+    reads: ArrayLike<number>,
+    length: number,
     partitionResolver: (address: number) => number | undefined
   ): boolean {
-    for (const read of reads) {
+    for (let i = 0; i < length; i++) {
+      const read = reads[i];
       const flags = this.breakpointFlags[read];
       if (flags & MEM_READ_BP) {
         if (flags & DIS_MR_BP) {
@@ -143,13 +146,16 @@ export class DebugSupport implements IDebugSupport {
   /**
    * Gets memory write breakpoint information for the specified address/partition
    * @param writes Addresses written during the current instruction
+   * @param length Number of bytes written
    * @param partitionResolver A function to resolve the current partition
    */
   hasMemoryWrite(
-    writes: number[],
+    writes: ArrayLike<number>,
+    length: number,
     partitionResolver: (address: number) => number | undefined
   ): boolean {
-    for (const write of writes) {
+    for (let i = 0; i < length; i++) {
+      const write = writes[i];
       const flags = this.breakpointFlags[write];
       if (flags & MEM_WRITE_BP) {
         if (flags & DIS_MW_BP) {

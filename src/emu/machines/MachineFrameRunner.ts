@@ -187,15 +187,19 @@ export class MachineFrameRunner implements IMachineFrameRunner {
       if (machine.executionContext.debugSupport) {
         // --- Check for memory read/write breakpoints
         if (
-          machine.executionContext.debugSupport.hasMemoryRead(machine.lastMemoryReads, (addr) =>
-            machine.getPartition(addr)
+          machine.executionContext.debugSupport.hasMemoryRead(
+            machine.lastMemoryReads,
+            machine.lastMemoryReadsCount,
+            (addr) => machine.getPartition(addr)
           )
         ) {
           return (machine.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
         }
         if (
-          machine.executionContext.debugSupport.hasMemoryWrite(machine.lastMemoryWrites, (addr) =>
-            machine.getPartition(addr)
+          machine.executionContext.debugSupport.hasMemoryWrite(
+            machine.lastMemoryWrites,
+            machine.lastMemoryWritesCount,
+            (addr) => machine.getPartition(addr)
           )
         ) {
           return (machine.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);

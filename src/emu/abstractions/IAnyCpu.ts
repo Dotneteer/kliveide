@@ -123,7 +123,12 @@ export interface IAnyCpu {
   /**
    * The memory addresses of the last memory read operations
    */
-  lastMemoryReads: number[];
+  lastMemoryReads: ArrayLike<number>;
+
+  /**
+   * The number of memory read operations in the last instruction
+   */
+  lastMemoryReadsCount: number;
 
   /**
    * The last value read from memory
@@ -133,7 +138,12 @@ export interface IAnyCpu {
   /**
    * The memory addresses of the last memory write operations
    */
-  lastMemoryWrites: number[];
+  lastMemoryWrites: ArrayLike<number>;
+
+  /**
+   * The number of memory write operations in the last instruction
+   */
+  lastMemoryWritesCount: number;
 
   /**
    * The last value written to memory

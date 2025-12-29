@@ -9,29 +9,24 @@ const MAX_STEP_OUT_STACK_SIZE = 256;
  * This class implements the emulation of the Z80 CPU
  */
 export class Z80Cpu implements IZ80Cpu {
-  // --- Direct register variables
-  private _a: number = 0;
-  private _f: number = 0;
-  private _b: number = 0;
-  private _c: number = 0;
-  private _d: number = 0;
-  private _e: number = 0;
-  private _h: number = 0;
-  private _l: number = 0;
-  private _xh: number = 0;
-  private _xl: number = 0;
-  private _yh: number = 0;
-  private _yl: number = 0;
-  private _i: number = 0;
-  private _r: number = 0;
-  private _wh: number = 0;
-  private _wl: number = 0;
+  // --- Register storage using separate DataView instances for each 16-bit register pair
+  // This eliminates offset addition, allowing literal 0/1 indices for optimal performance
+  private _afView: DataView;
+  private _bcView: DataView;
+  private _deView: DataView;
+  private _hlView: DataView;
+  private _ixView: DataView;
+  private _iyView: DataView;
+  private _irView: DataView;
+  private _wzView: DataView;
+  private _afAltView: DataView;
+  private _bcAltView: DataView;
+  private _deAltView: DataView;
+  private _hlAltView: DataView;
 
-  // --- Shadow registers
-  private _af_: number = 0;
-  private _bc_: number = 0xffff;
-  private _de_: number = 0xffff;
-  private _hl_: number = 0xffff;
+  // --- Cached index register view based on current prefix
+  private _indexView: DataView;
+  private _prefix: OpCodePrefix;
 
   // --- Special registers
   private _pc: number;
@@ -41,6 +36,27 @@ export class Z80Cpu implements IZ80Cpu {
 
   private _snoozed = false;
 
+  constructor() {
+    // Initialize separate DataView instances for each 16-bit register pair
+    // Using literal offsets (0/1) instead of computed offsets for optimal JIT performance
+    this._afView = new DataView(new ArrayBuffer(2));
+    this._bcView = new DataView(new ArrayBuffer(2));
+    this._deView = new DataView(new ArrayBuffer(2));
+    this._hlView = new DataView(new ArrayBuffer(2));
+    this._ixView = new DataView(new ArrayBuffer(2));
+    this._iyView = new DataView(new ArrayBuffer(2));
+    this._irView = new DataView(new ArrayBuffer(2));
+    this._wzView = new DataView(new ArrayBuffer(2));
+    this._afAltView = new DataView(new ArrayBuffer(2));
+    this._bcAltView = new DataView(new ArrayBuffer(2));
+    this._deAltView = new DataView(new ArrayBuffer(2));
+    this._hlAltView = new DataView(new ArrayBuffer(2));
+    
+    // Initialize with IY as default index register
+    this._indexView = this._iyView;
+    this._prefix = OpCodePrefix.None;
+  }
+
   // ----------------------------------------------------------------------------------------------------------------
   // Register access
 
@@ -48,257 +64,250 @@ export class Z80Cpu implements IZ80Cpu {
    * The A register
    */
   get a(): number {
-    return this._a;
+    return this._afView.getUint8(0);
   }
   set a(value: number) {
-    this._a = value & 0xff;
+    this._afView.setUint8(0, value);
   }
 
   /**
    * The F register
    */
   get f(): number {
-    return this._f;
+    return this._afView.getUint8(1);
   }
   set f(value: number) {
-    this._f = value & 0xff;
+    this._afView.setUint8(1, value);
   }
 
   /**
    * The AF register pair
    */
   get af(): number {
-    return (this._a << 8) | this._f;
+    return this._afView.getUint16(0, false);
   }
   set af(value: number) {
-    this._a = (value >> 8) & 0xff;
-    this._f = value & 0xff;
+    this._afView.setUint16(0, value, false);
   }
 
   /**
    * The B register
    */
   get b(): number {
-    return this._b;
+    return this._bcView.getUint8(0);
   }
   set b(value: number) {
-    this._b = value & 0xff;
+    this._bcView.setUint8(0, value);
   }
 
   /**
    * The C register
    */
   get c(): number {
-    return this._c;
+    return this._bcView.getUint8(1);
   }
   set c(value: number) {
-    this._c = value & 0xff;
+    this._bcView.setUint8(1, value);
   }
 
   /**
    * The BC register pair
    */
   get bc(): number {
-    return (this._b << 8) | this._c;
+    return this._bcView.getUint16(0, false);
   }
   set bc(value: number) {
-    this._b = (value >> 8) & 0xff;
-    this._c = value & 0xff;
+    this._bcView.setUint16(0, value, false);
   }
 
   /**
    * The D register
    */
   get d(): number {
-    return this._d;
+    return this._deView.getUint8(0);
   }
   set d(value: number) {
-    this._d = value & 0xff;
+    this._deView.setUint8(0, value);
   }
 
   /**
    * The E register
    */
   get e(): number {
-    return this._e;
+    return this._deView.getUint8(1);
   }
   set e(value: number) {
-    this._e = value & 0xff;
+    this._deView.setUint8(1, value);
   }
 
   /**
    * The DE register pair
    */
   get de(): number {
-    return (this._d << 8) | this._e;
+    return this._deView.getUint16(0, false);
   }
   set de(value: number) {
-    this._d = (value >> 8) & 0xff;
-    this._e = value & 0xff;
+    this._deView.setUint16(0, value, false);
   }
 
   /**
    * The H register
    */
   get h(): number {
-    return this._h;
+    return this._hlView.getUint8(0);
   }
   set h(value: number) {
-    this._h = value & 0xff;
+    this._hlView.setUint8(0, value);
   }
 
   /**
    * The L register
    */
   get l(): number {
-    return this._l;
+    return this._hlView.getUint8(1);
   }
   set l(value: number) {
-    this._l = value & 0xff;
+    this._hlView.setUint8(1, value);
   }
 
   /**
    * The HL register pair
    */
   get hl(): number {
-    return (this._h << 8) | this._l;
+    return this._hlView.getUint16(0, false);
   }
   set hl(value: number) {
-    this._h = (value >> 8) & 0xff;
-    this._l = value & 0xff;
+    this._hlView.setUint16(0, value, false);
   }
 
   /**
    * The alternate AF' register pair
    */
   get af_(): number {
-    return this._af_;
+    return this._afAltView.getUint16(0, false);
   }
   set af_(value: number) {
-    this._af_ = value & 0xffff;
+    this._afAltView.setUint16(0, value, false);
   }
 
   /**
    * The alternate BC' register pair
    */
   get bc_(): number {
-    return this._bc_;
+    return this._bcAltView.getUint16(0, false);
   }
   set bc_(value: number) {
-    this._bc_ = value & 0xffff;
+    this._bcAltView.setUint16(0, value, false);
   }
 
   /**
    * The alternate DE' register pair
    */
   get de_(): number {
-    return this._de_;
+    return this._deAltView.getUint16(0, false);
   }
   set de_(value: number) {
-    this._de_ = value & 0xffff;
+    this._deAltView.setUint16(0, value, false);
   }
 
   /**
    * The alternate HL' register pair
    */
   get hl_(): number {
-    return this._hl_;
+    return this._hlAltView.getUint16(0, false);
   }
   set hl_(value: number) {
-    this._hl_ = value & 0xffff;
+    this._hlAltView.setUint16(0, value, false);
   }
 
   /**
    * The higher 8 bits of the IX register pair
    */
   get xh(): number {
-    return this._xh;
+    return this._ixView.getUint8(0);
   }
   set xh(value: number) {
-    this._xh = value & 0xff;
+    this._ixView.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IX register pair
    */
   get xl(): number {
-    return this._xl;
+    return this._ixView.getUint8(1);
   }
   set xl(value: number) {
-    this._xl = value & 0xff;
+    this._ixView.setUint8(1, value);
   }
 
   /**
    * The IX register pair
    */
   get ix(): number {
-    return (this._xh << 8) | this._xl;
+    return this._ixView.getUint16(0, false);
   }
   set ix(value: number) {
-    this._xh = (value >> 8) & 0xff;
-    this._xl = value & 0xff;
+    this._ixView.setUint16(0, value, false);
   }
 
   /**
    * The higher 8 bits of the IY register pair
    */
   get yh(): number {
-    return this._yh;
+    return this._iyView.getUint8(0);
   }
   set yh(value: number) {
-    this._yh = value & 0xff;
+    this._iyView.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IY register pair
    */
   get yl(): number {
-    return this._yl;
+    return this._iyView.getUint8(1);
   }
   set yl(value: number) {
-    this._yl = value & 0xff;
+    this._iyView.setUint8(1, value);
   }
 
   /**
    * The IY register pair
    */
   get iy(): number {
-    return (this._yh << 8) | this._yl;
+    return this._iyView.getUint16(0, false);
   }
   set iy(value: number) {
-    this._yh = (value >> 8) & 0xff;
-    this._yl = value & 0xff;
+    this._iyView.setUint16(0, value, false);
   }
 
   /**
    * The I (interrupt vector) register
    */
   get i(): number {
-    return this._i;
+    return this._irView.getUint8(0);
   }
   set i(value: number) {
-    this._i = value & 0xff;
+    this._irView.setUint8(0, value);
   }
 
   /**
    * The R (refresh) register
    */
   get r(): number {
-    return this._r;
+    return this._irView.getUint8(1);
   }
   set r(value: number) {
-    this._r = value & 0xff;
+    this._irView.setUint8(1, value);
   }
 
   /**
    * The IR register pair
    */
   get ir(): number {
-    return (this._i << 8) | this._r;
+    return this._irView.getUint16(0, false);
   }
   set ir(value: number) {
-    this._i = (value >> 8) & 0xff;
-    this._r = value & 0xff;
+    this._irView.setUint16(0, value, false);
   }
 
   /**
@@ -325,73 +334,60 @@ export class Z80Cpu implements IZ80Cpu {
    * The higher 8 bits of the WZ register pair
    */
   get wh(): number {
-    return this._wh;
+    return this._wzView.getUint8(0);
   }
   set wh(value: number) {
-    this._wh = value & 0xff;
+    this._wzView.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the WZ register pair
    */
   get wl(): number {
-    return this._wl;
+    return this._wzView.getUint8(1);
   }
   set wl(value: number) {
-    this._wl = value & 0xff;
+    this._wzView.setUint8(1, value);
   }
 
   /**
    * The WZ (MEMPTR) register pair
    */
   get wz(): number {
-    return (this._wh << 8) | this._wl;
+    return this._wzView.getUint16(0, false);
   }
   set wz(value: number) {
-    this._wh = (value >> 8) & 0xff;
-    this._wl = value & 0xff;
+    this._wzView.setUint16(0, value, false);
   }
 
   /**
    * Get or set the value of the current index register
    */
   get indexReg(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.ix : this.iy;
+    return this._indexView.getUint16(0, false);
   }
   set indexReg(value: number) {
-    if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.ix = value;
-    } else {
-      this.iy = value;
-    }
+    this._indexView.setUint16(0, value, false);
   }
 
   /**
    * Get or set the LSB value of the current index register
    */
   get indexL(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xl : this.yl;
+    return this._indexView.getUint8(1);
   }
   set indexL(value: number) {
-    if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.xl = value;
-    } else {
-      this.yl = value;
-    }
+    this._indexView.setUint8(1, value);
   }
 
   /**
    * Get or set the MSB value of the current index register
    */
   get indexH(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xh : this.yh;
+    return this._indexView.getUint8(0);
   }
   set indexH(value: number) {
-    if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.xh = value;
-    } else {
-      this.yh = value;
-    }
+    this._indexView.setUint8(0, value);
   }
 
   /**
@@ -533,7 +529,14 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The current prefix to consider when processing the subsequent opcode.
    */
-  prefix: OpCodePrefix;
+  get prefix(): OpCodePrefix {
+    return this._prefix;
+  }
+  set prefix(value: OpCodePrefix) {
+    this._prefix = value;
+    // Cache the index register DataView based on prefix
+    this._indexView = (value === OpCodePrefix.DD || value === OpCodePrefix.DDCB) ? this._ixView : this._iyView;
+  }
 
   /**
    * We use this variable to handle the EI instruction properly.
@@ -600,7 +603,8 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The memory addresses of the last memory read operations
    */
-  lastMemoryReads: number[] = [];
+  lastMemoryReads: Uint16Array = new Uint16Array(8);
+  lastMemoryReadsCount = 0;
 
   /**
    * The last value read from memory
@@ -610,7 +614,8 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The memory addresses of the last memory write operations
    */
-  lastMemoryWrites: number[] = [];
+  lastMemoryWrites: Uint16Array = new Uint16Array(8);
+  lastMemoryWritesCount = 0;
 
   /**
    * The last value written to memory
@@ -647,11 +652,11 @@ export class Z80Cpu implements IZ80Cpu {
     this.af = 0xffff;
     this.af_ = 0xffff;
     this.bc = 0x0000;
-    this.bc_ = 0x0000;
+    this.bc_ = 0xffff;
     this.de = 0x0000;
-    this.de_ = 0x0000;
+    this.de_ = 0xffff;
     this.hl = 0x0000;
-    this.hl_ = 0x0000;
+    this.hl_ = 0xffff;
     this.ix = 0x0000;
     this.iy = 0x0000;
     this.ir = 0x0000;
@@ -685,8 +690,8 @@ export class Z80Cpu implements IZ80Cpu {
     this.frameCompleted = false;
     this.setTactsInFrame(1_000_000);
 
-    this.lastMemoryReads = [];
-    this.lastMemoryWrites = [];
+    this.lastMemoryReadsCount = 0;
+    this.lastMemoryWritesCount = 0;
     this.lastIoReadPort = undefined;
     this.lastIoWritePort = undefined;
   }
@@ -730,8 +735,8 @@ export class Z80Cpu implements IZ80Cpu {
 
     this._snoozed = false;
 
-    this.lastMemoryReads = [];
-    this.lastMemoryWrites = [];
+    this.lastMemoryReadsCount = 0;
+    this.lastMemoryWritesCount = 0;
     this.lastIoReadPort = undefined;
     this.lastIoWritePort = undefined;
   }
@@ -849,8 +854,8 @@ export class Z80Cpu implements IZ80Cpu {
     // --- For IX and IY indexed bit operations, the opcode is already read, the next byte is the displacement.
     const m1Active = this.prefix === OpCodePrefix.None;
     if (m1Active) {
-      this.lastMemoryReads = [];
-      this.lastMemoryWrites = [];
+      this.lastMemoryReadsCount = 0;
+      this.lastMemoryWritesCount = 0;
       this.lastIoReadPort = undefined;
       this.lastIoWritePort = undefined;
 
@@ -1158,12 +1163,12 @@ export class Z80Cpu implements IZ80Cpu {
    */
   add16(regHl: number, regOther: number): number {
     const tmpVal = regHl + regOther;
-    const lookup =
-      ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
+    const lookup = ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
+    
     this.wz = regHl + 1;
     this.f =
       this.flagsSZPVValue |
-      ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0x00) |
+      ((tmpVal & 0x10000) >>> 16) |  // Carry flag: extract bit 16 then shift to bit 0
       ((tmpVal >>> 8) & FlagsSetMask.R3R5) |
       halfCarryAddFlags[lookup];
     return tmpVal & 0xffff;
@@ -1174,17 +1179,22 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   adc16(value: number): void {
-    const tmpVal = this.hl + value + this.flagCValue;
-    const lookup =
-      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    this.wz = this.hl + 1;
+    const hl = this.hl;  // Cache HL to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmpVal = hl + value + carry;
+    const lookup = ((hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
+    
+    this.wz = hl + 1;
     this.hl = tmpVal;
+    
+    // Compute flags in optimal order to minimize memory access
+    const h = tmpVal >>> 8;  // Extract high byte once
     this.f =
-      ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0) |
+      (tmpVal >>> 16) |  // Carry flag (bit 0): 1 if bit 16 is set, 0 otherwise
       overflowAddFlags[lookup >>> 4] |
-      (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
       halfCarryAddFlags[lookup & 0x07] |
-      (this.hl !== 0 ? 0 : FlagsSetMask.Z);
+      (h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
+      (tmpVal & 0xffff ? 0 : FlagsSetMask.Z);
   }
 
   /**
@@ -1192,18 +1202,23 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   sbc16(value: number): void {
-    const tmpVal = this.hl - value - this.flagCValue;
-    var lookup =
-      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    this.wz = this.hl + 1;
+    const hl = this.hl;  // Cache HL to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmpVal = hl - value - carry;
+    const lookup = ((hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
+    
+    this.wz = hl + 1;
     this.hl = tmpVal;
+    
+    // Compute flags in optimal order to minimize memory access
+    const h = tmpVal >>> 8;  // Extract high byte once
     this.f =
-      ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0) |
+      ((tmpVal & 0x10000) >>> 16) |  // Carry flag: extract bit 16 then shift to bit 0
       FlagsSetMask.N |
       overflowSubFlags[lookup >>> 4] |
-      (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
       halfCarrySubFlags[lookup & 0x07] |
-      (this.hl !== 0 ? 0 : FlagsSetMask.Z);
+      (h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
+      (tmpVal & 0xffff ? 0 : FlagsSetMask.Z);
   }
 
   /**
@@ -1225,15 +1240,17 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sub8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const tmp = a - value;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[tmp & 0xff];
   }
 
   /**
@@ -1241,15 +1258,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sbc8(value: number): void {
-    const tmp = this.a - value - this.flagCValue;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmp = a - value - carry;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[tmp & 0xff];
   }
 
   /**
@@ -1257,29 +1277,34 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to add to A
    */
   add8(value: number): void {
-    const tmp = this.a + value;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const tmp = a + value;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       halfCarryAddFlags[lookup & 0x07] |
-      overflowAddFlags[lookup >> 4] |
-      sz53Table[this.a];
+      overflowAddFlags[lookup >>> 4] |
+      sz53Table[tmp & 0xff];
   }
 
   /**
-   * The core of the 8-bit ADD operation
+   * The core of the 8-bit ADC operation
    * @param value Value to add to A
    */
   adc8(value: number): void {
-    const tmp = this.a + value + this.flagCValue;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmp = a + value + carry;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       halfCarryAddFlags[lookup & 0x07] |
       overflowAddFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[tmp & 0xff];
   }
 
   /**
@@ -1314,11 +1339,13 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to compare with A
    */
   cp8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const tmp = a - value;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
-      (tmp != 0 ? 0 : FlagsSetMask.Z) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
+      (tmp & 0xff ? 0 : FlagsSetMask.Z) |  // Zero flag: check if result is zero
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
@@ -1425,12 +1452,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    */
   bit8(bit: number, oper: number): void {
-    this.f = this.flagCValue | FlagsSetMask.H | (oper & FlagsSetMask.R3R5);
-    const bitVal = oper & (0x01 << bit);
-    if (bitVal === 0) {
-      this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
-    }
-    this.f |= bitVal & FlagsSetMask.S;
+    const bitMask = 0x01 << bit;
+    const bitVal = oper & bitMask;
+    
+    // Build flags: start with carry, H flag, and R3R5 from operand
+    // If bit is 0, add PV and Z flags
+    // Add S flag from the bit value
+    this.f = 
+      this.flagCValue | 
+      FlagsSetMask.H | 
+      (oper & FlagsSetMask.R3R5) |
+      (bitVal ? 0 : (FlagsSetMask.PV | FlagsSetMask.Z)) |
+      (bitVal & FlagsSetMask.S);
   }
 
   /**
@@ -1439,12 +1472,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    */
   bit8W(bit: number, oper: number): void {
-    this.f = this.flagCValue | FlagsSetMask.H | (this.wh & FlagsSetMask.R3R5);
-    const bitVal = oper & (0x01 << bit);
-    if (bitVal === 0) {
-      this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
-    }
-    this.f |= bitVal & FlagsSetMask.S;
+    const bitMask = 0x01 << bit;
+    const bitVal = oper & bitMask;
+    
+    // Build flags: start with carry, H flag, and R3R5 from WH register
+    // If bit is 0, add PV and Z flags
+    // Add S flag from the bit value
+    this.f = 
+      this.flagCValue | 
+      FlagsSetMask.H | 
+      (this.wh & FlagsSetMask.R3R5) |
+      (bitVal ? 0 : (FlagsSetMask.PV | FlagsSetMask.Z)) |
+      (bitVal & FlagsSetMask.S);
   }
 
   // --------------------------------------------------------------------------------------------------------------
@@ -1468,7 +1507,9 @@ export class Z80Cpu implements IZ80Cpu {
    */
   readMemory(address: number): number {
     this.delayMemoryRead(address);
-    this.lastMemoryReads.push(address);
+    if (this.lastMemoryReadsCount < 8) {
+      this.lastMemoryReads[this.lastMemoryReadsCount++] = address;
+    }
     return (this.lastMemoryReadValue = this.doReadMemory(address));
   }
 
@@ -1480,7 +1521,9 @@ export class Z80Cpu implements IZ80Cpu {
    */
   writeMemory(address: number, data: number): void {
     this.delayMemoryWrite(address);
-    this.lastMemoryWrites.push(address);
+    if (this.lastMemoryWritesCount < 8) {
+      this.lastMemoryWrites[this.lastMemoryWritesCount++] = address;
+    }
     this.lastMemoryWriteValue = data;
     this.doWriteMemory(address, data);
   }
@@ -1541,7 +1584,6 @@ export class Z80Cpu implements IZ80Cpu {
    */
   fetchCodeByte(): number {
     this.delayMemoryRead(this.pc);
-    this.lastMemoryReads.push(this.pc);
     return this.doReadMemory(this.pc++);
   }
 

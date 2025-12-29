@@ -27,16 +27,18 @@ export interface IDebugSupport {
   /**
    * Gets memory read breakpoint information for the specified address/partition
    * @param reads Addresses read during the current instruction
+   * @param length Number of bytes read
    * @param partitionResolver A function to resolve the current partition
    */
-  hasMemoryRead(reads: number[], partitionResolver: (address: number) => number | undefined): boolean;
+  hasMemoryRead(reads: ArrayLike<number>, length: number, partitionResolver: (address: number) => number | undefined): boolean;
 
   /**
    * Gets memory write breakpoint information for the specified address/partition
    * @param writes Addresses written during the current instruction
+   * @param length Number of bytes written
    * @param partitionResolver A function to resolve the current partition
    */
-  hasMemoryWrite(writes: number[], partitionResolver: (address: number) => number | undefined): boolean;
+  hasMemoryWrite(writes: ArrayLike<number>, length: number, partitionResolver: (address: number) => number | undefined): boolean;
 
   /**
    * Gets IO read breakpoint information for the specified port
