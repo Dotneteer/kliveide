@@ -1,9 +1,19 @@
 import {
+  LAYER2_DISPLAY_AREA,
+  Layer2Cell,
   LORES_BLOCK_FETCH,
   LORES_DISPLAY_AREA,
   LORES_NREG_SAMPLE,
   LORES_PIXEL_REPLICATE,
   LoResCell,
+  SPRITES_DISPLAY_AREA,
+  SPRITES_LINE_BUFFER_READ,
+  SPRITES_VISIBILITY_CHECK,
+  SpritesCell,
+  TILEMAP_DISPLAY_AREA,
+  TILEMAP_PATTERN_FETCH,
+  TILEMAP_TILE_INDEX_FETCH,
+  TilemapCell,
   ULA_BORDER_AREA,
   ULA_BYTE1_READ,
   ULA_BYTE2_READ,
@@ -16,23 +26,16 @@ import {
   ULAStandardMatrix
 } from "./RenderingCell";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
-import {
-  generateLayer2_256x192Cell,
-  generateLayer2_320x256Cell,
-  generateLayer2_640x256Cell
-} from "./Layer2Matrix";
-import { generateSpritesCell } from "./SpritesMatrix";
-import { generateTilemap40x32Cell, generateTilemap80x32Cell } from "./TilemapMatrix";
 import { isContentionWindow, isDisplayArea, isVisibleArea } from "./matrix-helpers";
 
 // ============================================================================
-// Rendering Flags Dimensions (1D Uint16Array with full scanline storage)
+// Rendering Flags Dimensions (Uint16Array with full scanline storage)
 // ============================================================================
 // Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
 const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
 
 // ============================================================================
-// Module-level pre-calculated tables (shared across all instances)
+// Module-level pre-calculated tables
 // ============================================================================
 // ULA rendering flags for both timing modes
 let _renderingFlagsULA50Hz: ULAStandardMatrix | undefined;
@@ -70,16 +73,16 @@ export function initializeAllRenderingFlags(): void {
   }
 
   // Generate ULA rendering flags for both timing modes
-  _renderingFlagsULA50Hz = generateULAStandardRenderingFlagsStatic(Plus3_50Hz);
-  _renderingFlagsULA60Hz = generateULAStandardRenderingFlagsStatic(Plus3_60Hz);
+  _renderingFlagsULA50Hz = generateULAStandardRenderingFlags(Plus3_50Hz);
+  _renderingFlagsULA60Hz = generateULAStandardRenderingFlags(Plus3_60Hz);
 
   // Generate Layer2 rendering flags for all resolutions and timing modes
-  _renderingFlagsLayer2_256x192_50Hz = generateLayer2_256x192RenderingFlagsStatic(Plus3_50Hz);
-  _renderingFlagsLayer2_256x192_60Hz = generateLayer2_256x192RenderingFlagsStatic(Plus3_60Hz);
-  _renderingFlagsLayer2_320x256_50Hz = generateLayer2_320x256RenderingFlagsStatic(Plus3_50Hz);
-  _renderingFlagsLayer2_320x256_60Hz = generateLayer2_320x256RenderingFlagsStatic(Plus3_60Hz);
-  _renderingFlagsLayer2_640x256_50Hz = generateLayer2_640x256RenderingFlagsStatic(Plus3_50Hz);
-  _renderingFlagsLayer2_640x256_60Hz = generateLayer2_640x256RenderingFlagsStatic(Plus3_60Hz);
+  _renderingFlagsLayer2_256x192_50Hz = generateLayer2_256x192x8RenderingFlags(Plus3_50Hz);
+  _renderingFlagsLayer2_256x192_60Hz = generateLayer2_256x192x8RenderingFlags(Plus3_60Hz);
+  _renderingFlagsLayer2_320x256_50Hz = generateLayer2_320x256x8RenderingFlags(Plus3_50Hz);
+  _renderingFlagsLayer2_320x256_60Hz = generateLayer2_320x256x8RenderingFlags(Plus3_60Hz);
+  _renderingFlagsLayer2_640x256_50Hz = generateLayer2_640x256x4RenderingFlags(Plus3_50Hz);
+  _renderingFlagsLayer2_640x256_60Hz = generateLayer2_640x256x4RenderingFlags(Plus3_60Hz);
 
   // Generate Sprites rendering flags for both timing modes
   _renderingFlagsSprites50Hz = generateSpritesRenderingFlagsStatic(Plus3_50Hz);
@@ -97,182 +100,11 @@ export function initializeAllRenderingFlags(): void {
 }
 
 /**
- * Initialize module-level ULA rendering flags tables (lazy initialization).
- * Called once on first instance construction.
- * @deprecated Use initializeAllRenderingFlags() instead
- */
-export function initializeULARenderingFlags(): void {
-  initializeAllRenderingFlags();
-}
-
-/**
- * Get the module-level ULA rendering flags for 50Hz mode
- */
-export function getULARenderingFlags50Hz(): ULAStandardMatrix {
-  if (!_renderingFlagsULA50Hz) {
-    throw new Error(
-      "ULA rendering flags not initialized. Call initializeULARenderingFlags() first."
-    );
-  }
-  return _renderingFlagsULA50Hz;
-}
-
-/**
- * Get the module-level ULA rendering flags for 60Hz mode
- */
-export function getULARenderingFlags60Hz(): ULAStandardMatrix {
-  if (!_renderingFlagsULA60Hz) {
-    throw new Error(
-      "ULA rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsULA60Hz;
-}
-
-// Layer2 getters
-export function getLayer2_256x192RenderingFlags50Hz(): Uint16Array {
-  if (!_renderingFlagsLayer2_256x192_50Hz) {
-    throw new Error(
-      "Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLayer2_256x192_50Hz;
-}
-
-export function getLayer2_256x192RenderingFlags60Hz(): Uint16Array {
-  if (!_renderingFlagsLayer2_256x192_60Hz) {
-    throw new Error(
-      "Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLayer2_256x192_60Hz;
-}
-
-export function getLayer2_320x256RenderingFlags50Hz(): Uint16Array {
-  if (!_renderingFlagsLayer2_320x256_50Hz) {
-    throw new Error(
-      "Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLayer2_320x256_50Hz;
-}
-
-export function getLayer2_320x256RenderingFlags60Hz(): Uint16Array {
-  if (!_renderingFlagsLayer2_320x256_60Hz) {
-    throw new Error(
-      "Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLayer2_320x256_60Hz;
-}
-
-export function getLayer2_640x256RenderingFlags50Hz(): Uint16Array {
-  if (!_renderingFlagsLayer2_640x256_50Hz) {
-    throw new Error(
-      "Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLayer2_640x256_50Hz;
-}
-
-export function getLayer2_640x256RenderingFlags60Hz(): Uint16Array {
-  if (!_renderingFlagsLayer2_640x256_60Hz) {
-    throw new Error(
-      "Layer2 rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLayer2_640x256_60Hz;
-}
-
-// Sprites getters
-export function getSpritesRenderingFlags50Hz(): Uint16Array {
-  if (!_renderingFlagsSprites50Hz) {
-    throw new Error(
-      "Sprites rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsSprites50Hz;
-}
-
-export function getSpritesRenderingFlags60Hz(): Uint16Array {
-  if (!_renderingFlagsSprites60Hz) {
-    throw new Error(
-      "Sprites rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsSprites60Hz;
-}
-
-// Tilemap getters
-export function getTilemap40x32RenderingFlags50Hz(): Uint16Array {
-  if (!_renderingFlagsTilemap_40x32_50Hz) {
-    throw new Error(
-      "Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsTilemap_40x32_50Hz;
-}
-
-export function getTilemap40x32RenderingFlags60Hz(): Uint16Array {
-  if (!_renderingFlagsTilemap_40x32_60Hz) {
-    throw new Error(
-      "Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsTilemap_40x32_60Hz;
-}
-
-export function getTilemap80x32RenderingFlags50Hz(): Uint16Array {
-  if (!_renderingFlagsTilemap_80x32_50Hz) {
-    throw new Error(
-      "Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsTilemap_80x32_50Hz;
-}
-
-export function getTilemap80x32RenderingFlags60Hz(): Uint16Array {
-  if (!_renderingFlagsTilemap_80x32_60Hz) {
-    throw new Error(
-      "Tilemap rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsTilemap_80x32_60Hz;
-}
-
-// LoRes getters
-export function getLoResRenderingFlags50Hz(): Uint16Array {
-  if (!_renderingFlagsLoRes50Hz) {
-    throw new Error(
-      "LoRes rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLoRes50Hz;
-}
-
-export function getLoResRenderingFlags60Hz(): Uint16Array {
-  if (!_renderingFlagsLoRes60Hz) {
-    throw new Error(
-      "LoRes rendering flags not initialized. Call initializeAllRenderingFlags() first."
-    );
-  }
-  return _renderingFlagsLoRes60Hz;
-}
-
-/**
- * Generate ULA Standard rendering flags as 1D Uint16Array with bit flags.
- * Static version for module-level initialization.
- *
- * Dimensions:
- * - 50Hz: 311 × 456 = ~141,816 elements (~284 KB)
- * - 60Hz: 264 × 456 = ~120,384 elements (~241 KB)
- *
- * Access: renderingFlags[vc * RENDERING_FLAGS_HC_COUNT + hc]
- *
+ * Generate ULA Standard rendering flags
  * @param config - Timing configuration (50Hz or 60Hz)
- * @returns 1D Uint16Array with bit flags for each cell
+ * @returns Uint16Array with bit flags for each cell
  */
-function generateULAStandardRenderingFlagsStatic(config: TimingConfig): ULAStandardMatrix {
+function generateULAStandardRenderingFlags(config: TimingConfig): ULAStandardMatrix {
   const vcCount = config.totalVC;
   const hcCount = RENDERING_FLAGS_HC_COUNT;
   const renderingFlags = new Uint16Array(vcCount * hcCount);
@@ -384,8 +216,12 @@ function generateULAStandardRenderingFlagsStatic(config: TimingConfig): ULAStand
   }
 }
 
-// Layer2 generation functions
-function generateLayer2_256x192RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+/**
+ * Generate Layer 2 256x192x8 rendering flags
+ * @param config - Timing configuration (50Hz or 60Hz)
+ * @returns Uint16Array with bit flags for each cell
+ */
+function generateLayer2_256x192x8RenderingFlags(config: TimingConfig): Uint16Array {
   const vcCount = config.totalVC;
   const hcCount = RENDERING_FLAGS_HC_COUNT;
   const renderingFlags = new Uint16Array(vcCount * hcCount);
@@ -393,14 +229,38 @@ function generateLayer2_256x192RenderingFlagsStatic(config: TimingConfig): Uint1
   for (let vc = 0; vc < vcCount; vc++) {
     for (let hc = 0; hc < hcCount; hc++) {
       const index = vc * hcCount + hc;
-      renderingFlags[index] = generateLayer2_256x192Cell(config, vc, hc);
+      renderingFlags[index] = generateLayer2_256x192x8Cell(vc, hc);
     }
   }
 
   return renderingFlags;
+
+  /**
+   * Generate a single Layer 2 rendering cell for the 256×192 mode at the given (vc, hc) position.
+   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
+   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
+   * @returns Layer 2 rendering cell with all activity flags
+   */
+  function generateLayer2_256x192x8Cell(vc: number, hc: number): Layer2Cell {
+    // Check if we're in the display area
+    const displayArea = isDisplayArea(config, vc, hc);
+    if (!displayArea) {
+      return 0; // No Layer 2 activity outside display area
+    }
+
+    // Layer 2 renders during the entire display area.
+    // In Option B rendering (no cycle-exact timing), pixel fetch, coordinate transformation,
+    // clipping, and palette lookup all happen atomically in the rendering pipeline.
+    return LAYER2_DISPLAY_AREA;
+  }
 }
 
-function generateLayer2_320x256RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+/**
+ * Generate Layer 2 320x256x8 rendering flags
+ * @param config - Timing configuration (50Hz or 60Hz)
+ * @returns Uint16Array with bit flags for each cell
+ */
+function generateLayer2_320x256x8RenderingFlags(config: TimingConfig): Uint16Array {
   const vcCount = config.totalVC;
   const hcCount = RENDERING_FLAGS_HC_COUNT;
   const renderingFlags = new Uint16Array(vcCount * hcCount);
@@ -408,14 +268,76 @@ function generateLayer2_320x256RenderingFlagsStatic(config: TimingConfig): Uint1
   for (let vc = 0; vc < vcCount; vc++) {
     for (let hc = 0; hc < hcCount; hc++) {
       const index = vc * hcCount + hc;
-      renderingFlags[index] = generateLayer2_320x256Cell(config, vc, hc);
+      renderingFlags[index] = generateLayer2_320x256x8Cell(vc, hc);
     }
   }
 
   return renderingFlags;
+
+  /**
+   * Generate a single Layer 2 rendering cell for the 320×256 mode at the given (vc, hc) position.
+   *
+   * For 320×256 mode, the display area is wider and taller than the standard 256×192 area:
+   * - Standard mode: HC 144-399 (256 pixels), VC 64-255 for 50Hz / VC 40-231 for 60Hz (192 lines)
+   * - Wide mode (320×256): HC 104-423 (320 pixels), VC 30-285 for 50Hz / VC 6-261 for 60Hz (256 lines)
+   *
+   * From VHDL timing:
+   * Horizontal:
+   * - wide_min_hactive = c_min_hactive - 48 = 136 - 48 = 88
+   * - At HC=88, whc resets to -16
+   * - whc=0 at HC=104 (start of 320-pixel area)
+   * - whc=319 at HC=423 (end of 320-pixel area)
+   *
+   * Vertical:
+   * - wide_min_vactive = c_min_vactive - 34
+   * - For 50Hz +3: c_min_vactive=64, so wide_min_vactive=30, wvc starts at -2
+   * - For 60Hz +3: c_min_vactive=40, so wide_min_vactive=6, wvc starts at -2
+   * - wvc=0 at VC=32 (50Hz) or VC=8 (60Hz)
+   * - wvc=255 at VC=287 (50Hz) or VC=263 (60Hz)
+   * - But visible 256 lines: wvc=-2 to 253, so VC=30-285 (50Hz) or VC=6-261 (60Hz)
+   *
+   * @param config Timing configuration (50Hz or 60Hz)
+   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
+   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
+   * @returns Layer 2 rendering cell with all activity flags
+   */
+  function generateLayer2_320x256x8Cell(vc: number, hc: number): Layer2Cell {
+    // For 320×256 mode, we need a wider horizontal display area
+    // Wide display starts 32 pixels earlier: displayXStart - 32 = 144 - 32 = 112
+    // Wide display is 320 pixels wide: 112 + 320 - 1 = 431
+    const wideDisplayXStart = config.displayXStart - 32;
+    const wideDisplayXEnd = wideDisplayXStart + 319;
+
+    // Vertical display area is also extended for 320×256 mode
+    // wide_min_vactive = c_min_vactive - 34
+    // For 50Hz: displayYStart=64, so wide starts at 64-34=30, wvc=-2 to 253 covers 256 lines
+    // For 60Hz: displayYStart=40, so wide starts at 40-34=6, wvc=-2 to 253 covers 256 lines
+    // The 256 lines span from wide_min_vactive to wide_min_vactive + 255
+    const wideDisplayYStart = config.displayYStart - 34;
+    const wideDisplayYEnd = wideDisplayYStart + 255;
+
+    // Check if we're in the wide display area
+    if (
+      hc < wideDisplayXStart ||
+      hc > wideDisplayXEnd ||
+      vc < wideDisplayYStart ||
+      vc > wideDisplayYEnd
+    ) {
+      return 0;
+    }
+
+    // Layer 2 renders during the entire wide display area.
+    // Coordinate transformation and validity checks happen in the rendering pipeline.
+    return LAYER2_DISPLAY_AREA;
+  }
 }
 
-function generateLayer2_640x256RenderingFlagsStatic(config: TimingConfig): Uint16Array {
+/**
+ * Generate Layer 2 640x256x4 rendering flags
+ * @param config - Timing configuration (50Hz or 60Hz)
+ * @returns Uint16Array with bit flags for each cell
+ */
+function generateLayer2_640x256x4RenderingFlags(config: TimingConfig): Uint16Array {
   const vcCount = config.totalVC;
   const hcCount = RENDERING_FLAGS_HC_COUNT;
   const renderingFlags = new Uint16Array(vcCount * hcCount);
@@ -423,11 +345,30 @@ function generateLayer2_640x256RenderingFlagsStatic(config: TimingConfig): Uint1
   for (let vc = 0; vc < vcCount; vc++) {
     for (let hc = 0; hc < hcCount; hc++) {
       const index = vc * hcCount + hc;
-      renderingFlags[index] = generateLayer2_640x256Cell(config, vc, hc);
+      renderingFlags[index] = generateLayer2_640x256Cell(vc, hc);
     }
   }
 
   return renderingFlags;
+
+  /**
+   * Generate a single Layer 2 rendering cell for the 640×256 mode at the given (vc, hc) position.
+   * @param config Timing configuration (50Hz or 60Hz)
+   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
+   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
+   * @returns Layer 2 rendering cell with all activity flags
+   */
+  function generateLayer2_640x256Cell(vc: number, hc: number): Layer2Cell {
+    // Check if we're in the display area
+    const displayArea = isDisplayArea(config, vc, hc);
+    if (!displayArea) {
+      return 0;
+    }
+
+    // In 640×256 mode, we render 2 pixels per CLK_7 cycle.
+    // Coordinate transformation and validity checks happen in the rendering pipeline.
+    return LAYER2_DISPLAY_AREA;
+  }
 }
 
 // Sprites generation function
@@ -439,11 +380,29 @@ function generateSpritesRenderingFlagsStatic(config: TimingConfig): Uint16Array 
   for (let vc = 0; vc < vcCount; vc++) {
     for (let hc = 0; hc < hcCount; hc++) {
       const index = vc * hcCount + hc;
-      renderingFlags[index] = generateSpritesCell(config, vc, hc);
+      renderingFlags[index] = generateSpritesCell(vc, hc);
     }
   }
 
   return renderingFlags;
+
+  /**
+   * Generate a single Sprite layer rendering cell for the given (vc, hc) position.
+   * @param config Timing configuration (50Hz or 60Hz)
+   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
+   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
+   * @returns Sprite layer rendering cell with all activity flags
+   */
+  function generateSpritesCell(vc: number, hc: number): SpritesCell {
+    const displayArea = isDisplayArea(config, vc, hc);
+
+    let flags = 0;
+    if (displayArea) {
+      flags |= SPRITES_DISPLAY_AREA | SPRITES_LINE_BUFFER_READ | SPRITES_VISIBILITY_CHECK;
+    }
+    // Sprites use internal memory, no contention window
+    return flags;
+  }
 }
 
 // Tilemap generation functions
@@ -455,11 +414,28 @@ function generateTilemap40x32RenderingFlagsStatic(config: TimingConfig): Uint16A
   for (let vc = 0; vc < vcCount; vc++) {
     for (let hc = 0; hc < hcCount; hc++) {
       const index = vc * hcCount + hc;
-      renderingFlags[index] = generateTilemap40x32Cell(config, vc, hc);
+      renderingFlags[index] = generateTilemap40x32Cell(vc, hc);
     }
   }
 
   return renderingFlags;
+
+  /**
+   * Generate a single Tilemap rendering cell for the 40x32 tilemap mode at the given (vc, hc) position.
+   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
+   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
+   * @returns ULA Standard rendering cell with all activity flags
+   */
+  function generateTilemap40x32Cell(vc: number, hc: number): TilemapCell {
+    const displayArea = isDisplayArea(config, vc, hc);
+
+    let flags = 0;
+    if (displayArea) {
+      flags |= TILEMAP_DISPLAY_AREA | TILEMAP_TILE_INDEX_FETCH | TILEMAP_PATTERN_FETCH;
+    }
+    // Tilemap uses internal memory, no contention window
+    return flags;
+  }
 }
 
 function generateTilemap80x32RenderingFlagsStatic(config: TimingConfig): Uint16Array {
@@ -470,11 +446,28 @@ function generateTilemap80x32RenderingFlagsStatic(config: TimingConfig): Uint16A
   for (let vc = 0; vc < vcCount; vc++) {
     for (let hc = 0; hc < hcCount; hc++) {
       const index = vc * hcCount + hc;
-      renderingFlags[index] = generateTilemap80x32Cell(config, vc, hc);
+      renderingFlags[index] = generateTilemap80x32Cell(vc, hc);
     }
   }
 
   return renderingFlags;
+
+  /**
+   * Generate a single Tilemap rendering cell for the 80x32 tilemap mode at the given (vc, hc) position.
+   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
+   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
+   * @returns ULA Standard rendering cell with all activity flags
+   */
+  function generateTilemap80x32Cell(vc: number, hc: number): TilemapCell {
+    const displayArea = isDisplayArea(config, vc, hc);
+
+    let flags = 0;
+    if (displayArea) {
+      flags |= TILEMAP_DISPLAY_AREA | TILEMAP_TILE_INDEX_FETCH | TILEMAP_PATTERN_FETCH;
+    }
+    // Tilemap uses internal memory, no contention window
+    return flags;
+  }
 }
 
 // LoRes generation function
@@ -558,7 +551,7 @@ function generateTactLookupTables(config: TimingConfig): [Uint16Array, Uint16Arr
 /**
  * Initialize HC/VC lookup tables for both timing modes.
  */
-export function initializeTactLookupTables(): void {
+function initializeTactLookupTables(): void {
   if (_tactToHC50Hz) {
     return; // Already initialized
   }
@@ -572,28 +565,28 @@ export function initializeTactLookupTables(): void {
   _tactToVC60Hz = vc60;
 }
 
-export function getTactToHC50Hz(): Uint16Array {
+function getTactToHC50Hz(): Uint16Array {
   if (!_tactToHC50Hz) {
     throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
   }
   return _tactToHC50Hz;
 }
 
-export function getTactToVC50Hz(): Uint16Array {
+function getTactToVC50Hz(): Uint16Array {
   if (!_tactToVC50Hz) {
     throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
   }
   return _tactToVC50Hz;
 }
 
-export function getTactToHC60Hz(): Uint16Array {
+function getTactToHC60Hz(): Uint16Array {
   if (!_tactToHC60Hz) {
     throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
   }
   return _tactToHC60Hz;
 }
 
-export function getTactToVC60Hz(): Uint16Array {
+function getTactToVC60Hz(): Uint16Array {
   if (!_tactToVC60Hz) {
     throw new Error("Tact lookup tables not initialized. Call initializeTactLookupTables() first.");
   }
@@ -633,7 +626,7 @@ function generateBitmapOffsetTable(config: TimingConfig): Int32Array {
 /**
  * Initialize bitmap offset lookup tables for both timing modes.
  */
-export function initializeBitmapOffsetTables(): void {
+function initializeBitmapOffsetTables(): void {
   if (_tactToBitmapOffset50Hz) {
     return; // Already initialized
   }
@@ -642,7 +635,7 @@ export function initializeBitmapOffsetTables(): void {
   _tactToBitmapOffset60Hz = generateBitmapOffsetTable(Plus3_60Hz);
 }
 
-export function getTactToBitmapOffset50Hz(): Int32Array {
+function getTactToBitmapOffset50Hz(): Int32Array {
   if (!_tactToBitmapOffset50Hz) {
     throw new Error(
       "Bitmap offset tables not initialized. Call initializeBitmapOffsetTables() first."
@@ -651,7 +644,7 @@ export function getTactToBitmapOffset50Hz(): Int32Array {
   return _tactToBitmapOffset50Hz;
 }
 
-export function getTactToBitmapOffset60Hz(): Int32Array {
+function getTactToBitmapOffset60Hz(): Int32Array {
   if (!_tactToBitmapOffset60Hz) {
     throw new Error(
       "Bitmap offset tables not initialized. Call initializeBitmapOffsetTables() first."
@@ -692,7 +685,7 @@ function generateULAAddressTables(): [Uint16Array, Uint16Array] {
 /**
  * Initialize ULA address lookup tables.
  */
-export function initializeULAAddressTables(): void {
+function initializeULAAddressTables(): void {
   if (_ulaPixelLineBaseAddr) {
     return; // Already initialized
   }
@@ -703,16 +696,10 @@ export function initializeULAAddressTables(): void {
 }
 
 export function getUlaPixelLineBaseAddr(): Uint16Array {
-  if (!_ulaPixelLineBaseAddr) {
-    throw new Error("ULA address tables not initialized. Call initializeULAAddressTables() first.");
-  }
   return _ulaPixelLineBaseAddr;
 }
 
 export function getUlaAttrLineBaseAddr(): Uint16Array {
-  if (!_ulaAttrLineBaseAddr) {
-    throw new Error("ULA address tables not initialized. Call initializeULAAddressTables() first.");
-  }
   return _ulaAttrLineBaseAddr;
 }
 
@@ -806,56 +793,26 @@ export function initializeAttributeDecodeTables(): void {
 }
 
 export function getAttrToInkFlashOff(): Uint8Array {
-  if (!_attrToInkFlashOff) {
-    throw new Error(
-      "Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first."
-    );
-  }
   return _attrToInkFlashOff;
 }
 
 export function getAttrToPaperFlashOff(): Uint8Array {
-  if (!_attrToPaperFlashOff) {
-    throw new Error(
-      "Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first."
-    );
-  }
   return _attrToPaperFlashOff;
 }
 
 export function getAttrToInkFlashOn(): Uint8Array {
-  if (!_attrToInkFlashOn) {
-    throw new Error(
-      "Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first."
-    );
-  }
   return _attrToInkFlashOn;
 }
 
 export function getAttrToPaperFlashOn(): Uint8Array {
-  if (!_attrToPaperFlashOn) {
-    throw new Error(
-      "Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first."
-    );
-  }
   return _attrToPaperFlashOn;
 }
 
 export function getUlaPlusAttrToInk(): Uint8Array {
-  if (!_ulaPlusAttrToInk) {
-    throw new Error(
-      "Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first."
-    );
-  }
   return _ulaPlusAttrToInk;
 }
 
 export function getUlaPlusAttrToPaper(): Uint8Array {
-  if (!_ulaPlusAttrToPaper) {
-    throw new Error(
-      "Attribute decode tables not initialized. Call initializeAttributeDecodeTables() first."
-    );
-  }
   return _ulaPlusAttrToPaper;
 }
 
@@ -869,6 +826,7 @@ export function initializeAllLookupTables(): void {
   initializeULAAddressTables();
   initializeAttributeDecodeTables();
   initializeULANextTables();
+  initializeLayer2HelperTables();
 }
 
 // ============================================================================
@@ -896,26 +854,24 @@ let _activeTactToBitmapOffset: Int32Array;
  * @param is60Hz - true for 60Hz mode, false for 50Hz mode
  */
 export function setActiveTimingMode(is60Hz: boolean): void {
-  _activeRenderingFlagsULA = is60Hz ? getULARenderingFlags60Hz() : getULARenderingFlags50Hz();
+  _activeRenderingFlagsULA = is60Hz ? _renderingFlagsULA60Hz : _renderingFlagsULA50Hz;
   _activeRenderingFlagsLayer2_256x192 = is60Hz
-    ? getLayer2_256x192RenderingFlags60Hz()
-    : getLayer2_256x192RenderingFlags50Hz();
+    ? _renderingFlagsLayer2_256x192_60Hz
+    : _renderingFlagsLayer2_256x192_50Hz;
   _activeRenderingFlagsLayer2_320x256 = is60Hz
-    ? getLayer2_320x256RenderingFlags60Hz()
-    : getLayer2_320x256RenderingFlags50Hz();
+    ? _renderingFlagsLayer2_320x256_60Hz
+    : _renderingFlagsLayer2_320x256_50Hz;
   _activeRenderingFlagsLayer2_640x256 = is60Hz
-    ? getLayer2_640x256RenderingFlags60Hz()
-    : getLayer2_640x256RenderingFlags50Hz();
-  _activeRenderingFlagsSprites = is60Hz
-    ? getSpritesRenderingFlags60Hz()
-    : getSpritesRenderingFlags50Hz();
+    ? _renderingFlagsLayer2_640x256_60Hz
+    : _renderingFlagsLayer2_640x256_50Hz;
+  _activeRenderingFlagsSprites = is60Hz ? _renderingFlagsSprites60Hz : _renderingFlagsSprites50Hz;
   _activeRenderingFlagsTilemap_40x32 = is60Hz
-    ? getTilemap40x32RenderingFlags60Hz()
-    : getTilemap40x32RenderingFlags50Hz();
+    ? _renderingFlagsTilemap_40x32_60Hz
+    : _renderingFlagsTilemap_40x32_50Hz;
   _activeRenderingFlagsTilemap_80x32 = is60Hz
-    ? getTilemap80x32RenderingFlags60Hz()
-    : getTilemap80x32RenderingFlags50Hz();
-  _activeRenderingFlagsLoRes = is60Hz ? getLoResRenderingFlags60Hz() : getLoResRenderingFlags50Hz();
+    ? _renderingFlagsTilemap_80x32_60Hz
+    : _renderingFlagsTilemap_80x32_50Hz;
+  _activeRenderingFlagsLoRes = is60Hz ? _renderingFlagsLoRes60Hz : _renderingFlagsLoRes50Hz;
   _activeTactToHC = is60Hz ? getTactToHC60Hz() : getTactToHC50Hz();
   _activeTactToVC = is60Hz ? getTactToVC60Hz() : getTactToVC50Hz();
   _activeTactToBitmapOffset = is60Hz ? getTactToBitmapOffset60Hz() : getTactToBitmapOffset50Hz();
@@ -1071,9 +1027,6 @@ export function initializeULANextTables(): void {
  * @returns Ink palette index (0-127)
  */
 export function getULANextInkIndex(format: number, attr: number): number {
-  if (!_ulaNextInkLookup) {
-    throw new Error("ULANext tables not initialized. Call initializeULANextTables() first.");
-  }
   return _ulaNextInkLookup[format * 256 + attr];
 }
 
@@ -1084,8 +1037,30 @@ export function getULANextInkIndex(format: number, attr: number): number {
  * @returns Paper palette index (128-255) or 255 if fallback color should be used
  */
 export function getULANextPaperIndex(format: number, attr: number): number {
-  if (!_ulaNextPaperLookup) {
-    throw new Error("ULANext tables not initialized. Call initializeULANextTables() first.");
-  }
   return _ulaNextPaperLookup[format * 256 + attr];
+}
+
+// ============================================================================
+// Layer 2 helper tables
+// ============================================================================
+let _layer2XWrappingTable320: Uint16Array | undefined;
+
+function initializeLayer2HelperTables(): void {
+  _layer2XWrappingTable320 = new Uint16Array(1024);
+
+  for (let i = 0; i < 1024; i++) {
+    let x = i;
+    if (x >= 320 && x < 512) {
+      const upper = ((x >> 6) & 0x7) + 3;
+      x = (upper << 6) | (x & 0x3f);
+    }
+    _layer2XWrappingTable320[i] = x & 0x1ff;
+  }
+}
+
+/**
+ * Gets the wrapping table for Layer 2 320px mode.
+ */
+export function getLayer2XWrappingTable320(): Uint16Array {
+  return _layer2XWrappingTable320;
 }
