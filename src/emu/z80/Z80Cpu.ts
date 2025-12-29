@@ -603,7 +603,8 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The memory addresses of the last memory read operations
    */
-  lastMemoryReads: number[] = [];
+  lastMemoryReads: Uint16Array = new Uint16Array(8);
+  lastMemoryReadsCount = 0;
 
   /**
    * The last value read from memory
@@ -613,7 +614,8 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The memory addresses of the last memory write operations
    */
-  lastMemoryWrites: number[] = [];
+  lastMemoryWrites: Uint16Array = new Uint16Array(8);
+  lastMemoryWritesCount = 0;
 
   /**
    * The last value written to memory
@@ -688,8 +690,8 @@ export class Z80Cpu implements IZ80Cpu {
     this.frameCompleted = false;
     this.setTactsInFrame(1_000_000);
 
-    this.lastMemoryReads = [];
-    this.lastMemoryWrites = [];
+    this.lastMemoryReadsCount = 0;
+    this.lastMemoryWritesCount = 0;
     this.lastIoReadPort = undefined;
     this.lastIoWritePort = undefined;
   }
@@ -733,8 +735,8 @@ export class Z80Cpu implements IZ80Cpu {
 
     this._snoozed = false;
 
-    this.lastMemoryReads = [];
-    this.lastMemoryWrites = [];
+    this.lastMemoryReadsCount = 0;
+    this.lastMemoryWritesCount = 0;
     this.lastIoReadPort = undefined;
     this.lastIoWritePort = undefined;
   }
@@ -852,8 +854,8 @@ export class Z80Cpu implements IZ80Cpu {
     // --- For IX and IY indexed bit operations, the opcode is already read, the next byte is the displacement.
     const m1Active = this.prefix === OpCodePrefix.None;
     if (m1Active) {
-      this.lastMemoryReads = [];
-      this.lastMemoryWrites = [];
+      this.lastMemoryReadsCount = 0;
+      this.lastMemoryWritesCount = 0;
       this.lastIoReadPort = undefined;
       this.lastIoWritePort = undefined;
 
@@ -1505,7 +1507,9 @@ export class Z80Cpu implements IZ80Cpu {
    */
   readMemory(address: number): number {
     this.delayMemoryRead(address);
-    this.lastMemoryReads.push(address);
+    if (this.lastMemoryReadsCount < 8) {
+      this.lastMemoryReads[this.lastMemoryReadsCount++] = address;
+    }
     return (this.lastMemoryReadValue = this.doReadMemory(address));
   }
 
@@ -1517,7 +1521,9 @@ export class Z80Cpu implements IZ80Cpu {
    */
   writeMemory(address: number, data: number): void {
     this.delayMemoryWrite(address);
-    this.lastMemoryWrites.push(address);
+    if (this.lastMemoryWritesCount < 8) {
+      this.lastMemoryWrites[this.lastMemoryWritesCount++] = address;
+    }
     this.lastMemoryWriteValue = data;
     this.doWriteMemory(address, data);
   }
@@ -1578,7 +1584,6 @@ export class Z80Cpu implements IZ80Cpu {
    */
   fetchCodeByte(): number {
     this.delayMemoryRead(this.pc);
-    this.lastMemoryReads.push(this.pc);
     return this.doReadMemory(this.pc++);
   }
 

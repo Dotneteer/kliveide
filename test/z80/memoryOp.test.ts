@@ -14,11 +14,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0000);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #2", () => {
@@ -38,12 +37,10 @@ describe("Z80 memory operation test", () => {
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(4);
+    expect(m.cpu.lastMemoryReadsCount).toBe(2);
     expect(lastRead[0]).toBe(0x0001);
-    expect(lastRead[1]).toBe(0x0002);
-    expect(lastRead[2]).toBe(0x0003);
-    expect(lastRead[3]).toBe(0xaa55);
-    expect(lastWrite.length).toBe(0);
+    expect(lastRead[1]).toBe(0xaa55);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #3", () => {
@@ -62,11 +59,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0004);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #4", () => {
@@ -84,15 +80,12 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(5);
+    expect(m.cpu.lastMemoryReadsCount).toBe(3);
     expect(lastRead[0]).toBe(0x0001);
-    expect(lastRead[1]).toBe(0x0002);
-    expect(lastRead[2]).toBe(0x0003);
-    expect(lastRead[3]).toBe(0xaa55);
-    expect(lastRead[4]).toBe(0xaa56);
-    expect(lastWrite.length).toBe(0);
+    expect(lastRead[1]).toBe(0xaa55);
+    expect(lastRead[2]).toBe(0xaa56);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #5", () => {
@@ -111,11 +104,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0004);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #6", () => {
@@ -134,16 +126,13 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(6);
+    expect(m.cpu.lastMemoryReadsCount).toBe(4);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
-    expect(lastRead[2]).toBe(0x0003);
-    expect(lastRead[3]).toBe(0x0004);
-    expect(lastRead[4]).toBe(0xaa55);
-    expect(lastRead[5]).toBe(0xaa56);
-    expect(lastWrite.length).toBe(0);
+    expect(lastRead[2]).toBe(0xaa55);
+    expect(lastRead[3]).toBe(0xaa56);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #7", () => {
@@ -163,11 +152,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0005);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #8", () => {
@@ -185,13 +173,12 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(3);
+    expect(m.cpu.lastMemoryReadsCount).toBe(3);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0xaa55);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #9", () => {
@@ -210,11 +197,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0003);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #10", () => {
@@ -233,14 +219,13 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(4);
+    expect(m.cpu.lastMemoryReadsCount).toBe(4);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
     expect(lastRead[3]).toBe(0xaa57);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #11", () => {
@@ -260,11 +245,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0004);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #12", () => {
@@ -283,14 +267,13 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(4);
+    expect(m.cpu.lastMemoryReadsCount).toBe(4);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
     expect(lastRead[3]).toBe(0xaa57);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #13", () => {
@@ -310,11 +293,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0004);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #14", () => {
@@ -334,15 +316,14 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(5);
+    expect(m.cpu.lastMemoryReadsCount).toBe(5);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
     expect(lastRead[3]).toBe(0x0004);
     expect(lastRead[4]).toBe(0xaa57);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #15", () => {
@@ -363,11 +344,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0005);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #16", () => {
@@ -387,15 +367,14 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(5);
+    expect(m.cpu.lastMemoryReadsCount).toBe(5);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
     expect(lastRead[3]).toBe(0x0004);
     expect(lastRead[4]).toBe(0xaa57);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction read #17", () => {
@@ -409,10 +388,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(1);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0005);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction write #1", () => {
@@ -431,9 +410,9 @@ describe("Z80 memory operation test", () => {
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0001);
-    expect(lastWrite.length).toBe(1);
+    expect(m.cpu.lastMemoryWritesCount).toBe(1);
     expect(lastWrite[0]).toBe(0xaa55);
   });
 
@@ -452,11 +431,9 @@ describe("Z80 memory operation test", () => {
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(3);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0001);
-    expect(lastRead[1]).toBe(0x0002);
-    expect(lastRead[2]).toBe(0x0003);
-    expect(lastWrite.length).toBe(1);
+    expect(m.cpu.lastMemoryWritesCount).toBe(1);
     expect(lastWrite[0]).toBe(0xaa55);
   });
 
@@ -475,11 +452,9 @@ describe("Z80 memory operation test", () => {
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(3);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0001);
-    expect(lastRead[1]).toBe(0x0002);
-    expect(lastRead[2]).toBe(0x0003);
-    expect(lastWrite.length).toBe(2);
+    expect(m.cpu.lastMemoryWritesCount).toBe(2);
     expect(lastWrite[0]).toBe(0xaa55);
     expect(lastWrite[1]).toBe(0xaa56);
   });
@@ -498,11 +473,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(1);
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0004);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction write #5", () => {
@@ -520,12 +494,10 @@ describe("Z80 memory operation test", () => {
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(4);
+    expect(m.cpu.lastMemoryReadsCount).toBe(2);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
-    expect(lastRead[2]).toBe(0x0003);
-    expect(lastRead[3]).toBe(0x0004);
-    expect(lastWrite.length).toBe(2);
+    expect(m.cpu.lastMemoryWritesCount).toBe(2);
     expect(lastWrite[0]).toBe(0xaa55);
     expect(lastWrite[1]).toBe(0xaa56);
   });
@@ -540,10 +512,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(1);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0005);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction write #7", () => {
@@ -562,11 +534,11 @@ describe("Z80 memory operation test", () => {
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
 
-    expect(lastRead.length).toBe(3);
+    expect(m.cpu.lastMemoryReadsCount).toBe(3);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0xaa55);
-    expect(lastWrite.length).toBe(1);
+    expect(m.cpu.lastMemoryWritesCount).toBe(1);
     expect(lastWrite[0]).toBe(0xaa55);
   });
 
@@ -581,10 +553,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(1);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0003);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction write #9", () => {
@@ -603,11 +575,12 @@ describe("Z80 memory operation test", () => {
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(3);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(3);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
-    expect(lastWrite.length).toBe(1);
+    expect(m.cpu.lastMemoryWritesCount).toBe(1);
     expect(lastWrite[0]).toBe(0xaa57);
   });
 
@@ -627,10 +600,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(1);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0004);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction write #11", () => {
@@ -649,11 +622,12 @@ describe("Z80 memory operation test", () => {
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(3);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(3);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
-    expect(lastWrite.length).toBe(1);
+    expect(m.cpu.lastMemoryWritesCount).toBe(1);
     expect(lastWrite[0]).toBe(0xaa57);
   });
 
@@ -673,10 +647,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(1);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0004);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction write #13", () => {
@@ -694,13 +668,14 @@ describe("Z80 memory operation test", () => {
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(5);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(5);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
     expect(lastRead[3]).toBe(0x0004);
     expect(lastRead[4]).toBe(0xaa57);
-    expect(lastWrite.length).toBe(1);
+    expect(m.cpu.lastMemoryWritesCount).toBe(1);
     expect(lastWrite[0]).toBe(0xaa57);
   });
 
@@ -719,10 +694,10 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(1);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0005);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 
   it("Instruction write #15", () => {
@@ -740,13 +715,14 @@ describe("Z80 memory operation test", () => {
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
     const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(5);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(5);
     expect(lastRead[0]).toBe(0x0001);
     expect(lastRead[1]).toBe(0x0002);
     expect(lastRead[2]).toBe(0x0003);
     expect(lastRead[3]).toBe(0x0004);
     expect(lastRead[4]).toBe(0xaa57);
-    expect(lastWrite.length).toBe(1);
+    expect(m.cpu.lastMemoryWritesCount).toBe(1);
     expect(lastWrite[0]).toBe(0xaa57);
   });
 
@@ -765,9 +741,9 @@ describe("Z80 memory operation test", () => {
 
     // --- Assert
     const lastRead = m.cpu.lastMemoryReads;
-    const lastWrite = m.cpu.lastMemoryWrites;
-    expect(lastRead.length).toBe(1);
+
+    expect(m.cpu.lastMemoryReadsCount).toBe(1);
     expect(lastRead[0]).toBe(0x0005);
-    expect(lastWrite.length).toBe(0);
+    expect(m.cpu.lastMemoryWritesCount).toBe(0);
   });
 });
