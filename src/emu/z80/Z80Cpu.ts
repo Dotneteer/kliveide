@@ -1161,12 +1161,12 @@ export class Z80Cpu implements IZ80Cpu {
    */
   add16(regHl: number, regOther: number): number {
     const tmpVal = regHl + regOther;
-    const lookup =
-      ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
+    const lookup = ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
+    
     this.wz = regHl + 1;
     this.f =
       this.flagsSZPVValue |
-      ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0x00) |
+      ((tmpVal & 0x10000) >>> 16) |  // Carry flag: extract bit 16 then shift to bit 0
       ((tmpVal >>> 8) & FlagsSetMask.R3R5) |
       halfCarryAddFlags[lookup];
     return tmpVal & 0xffff;
@@ -1177,17 +1177,22 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   adc16(value: number): void {
-    const tmpVal = this.hl + value + this.flagCValue;
-    const lookup =
-      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    this.wz = this.hl + 1;
+    const hl = this.hl;  // Cache HL to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmpVal = hl + value + carry;
+    const lookup = ((hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
+    
+    this.wz = hl + 1;
     this.hl = tmpVal;
+    
+    // Compute flags in optimal order to minimize memory access
+    const h = tmpVal >>> 8;  // Extract high byte once
     this.f =
-      ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0) |
+      (tmpVal >>> 16) |  // Carry flag (bit 0): 1 if bit 16 is set, 0 otherwise
       overflowAddFlags[lookup >>> 4] |
-      (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
       halfCarryAddFlags[lookup & 0x07] |
-      (this.hl !== 0 ? 0 : FlagsSetMask.Z);
+      (h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
+      (tmpVal & 0xffff ? 0 : FlagsSetMask.Z);
   }
 
   /**
@@ -1195,18 +1200,23 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   sbc16(value: number): void {
-    const tmpVal = this.hl - value - this.flagCValue;
-    var lookup =
-      ((this.hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    this.wz = this.hl + 1;
+    const hl = this.hl;  // Cache HL to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmpVal = hl - value - carry;
+    const lookup = ((hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
+    
+    this.wz = hl + 1;
     this.hl = tmpVal;
+    
+    // Compute flags in optimal order to minimize memory access
+    const h = tmpVal >>> 8;  // Extract high byte once
     this.f =
-      ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0) |
+      ((tmpVal & 0x10000) >>> 16) |  // Carry flag: extract bit 16 then shift to bit 0
       FlagsSetMask.N |
       overflowSubFlags[lookup >>> 4] |
-      (this.h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
       halfCarrySubFlags[lookup & 0x07] |
-      (this.hl !== 0 ? 0 : FlagsSetMask.Z);
+      (h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
+      (tmpVal & 0xffff ? 0 : FlagsSetMask.Z);
   }
 
   /**
@@ -1228,15 +1238,17 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sub8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const tmp = a - value;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[tmp & 0xff];
   }
 
   /**
@@ -1244,15 +1256,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sbc8(value: number): void {
-    const tmp = this.a - value - this.flagCValue;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmp = a - value - carry;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[tmp & 0xff];
   }
 
   /**
@@ -1260,29 +1275,34 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to add to A
    */
   add8(value: number): void {
-    const tmp = this.a + value;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const tmp = a + value;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       halfCarryAddFlags[lookup & 0x07] |
-      overflowAddFlags[lookup >> 4] |
-      sz53Table[this.a];
+      overflowAddFlags[lookup >>> 4] |
+      sz53Table[tmp & 0xff];
   }
 
   /**
-   * The core of the 8-bit ADD operation
+   * The core of the 8-bit ADC operation
    * @param value Value to add to A
    */
   adc8(value: number): void {
-    const tmp = this.a + value + this.flagCValue;
-    var lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const carry = this.flagCValue;
+    const tmp = a + value + carry;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
       halfCarryAddFlags[lookup & 0x07] |
       overflowAddFlags[lookup >>> 4] |
-      sz53Table[this.a];
+      sz53Table[tmp & 0xff];
   }
 
   /**
@@ -1317,11 +1337,13 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to compare with A
    */
   cp8(value: number): void {
-    const tmp = this.a - value;
-    const lookup = ((this.a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    const a = this.a;  // Cache A to avoid multiple getter calls
+    const tmp = a - value;
+    const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
+    
     this.f =
-      ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
-      (tmp != 0 ? 0 : FlagsSetMask.Z) |
+      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
+      (tmp & 0xff ? 0 : FlagsSetMask.Z) |  // Zero flag: check if result is zero
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
@@ -1428,12 +1450,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    */
   bit8(bit: number, oper: number): void {
-    this.f = this.flagCValue | FlagsSetMask.H | (oper & FlagsSetMask.R3R5);
-    const bitVal = oper & (0x01 << bit);
-    if (bitVal === 0) {
-      this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
-    }
-    this.f |= bitVal & FlagsSetMask.S;
+    const bitMask = 0x01 << bit;
+    const bitVal = oper & bitMask;
+    
+    // Build flags: start with carry, H flag, and R3R5 from operand
+    // If bit is 0, add PV and Z flags
+    // Add S flag from the bit value
+    this.f = 
+      this.flagCValue | 
+      FlagsSetMask.H | 
+      (oper & FlagsSetMask.R3R5) |
+      (bitVal ? 0 : (FlagsSetMask.PV | FlagsSetMask.Z)) |
+      (bitVal & FlagsSetMask.S);
   }
 
   /**
@@ -1442,12 +1470,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param oper Operand
    */
   bit8W(bit: number, oper: number): void {
-    this.f = this.flagCValue | FlagsSetMask.H | (this.wh & FlagsSetMask.R3R5);
-    const bitVal = oper & (0x01 << bit);
-    if (bitVal === 0) {
-      this.f |= FlagsSetMask.PV | FlagsSetMask.Z;
-    }
-    this.f |= bitVal & FlagsSetMask.S;
+    const bitMask = 0x01 << bit;
+    const bitVal = oper & bitMask;
+    
+    // Build flags: start with carry, H flag, and R3R5 from WH register
+    // If bit is 0, add PV and Z flags
+    // Add S flag from the bit value
+    this.f = 
+      this.flagCValue | 
+      FlagsSetMask.H | 
+      (this.wh & FlagsSetMask.R3R5) |
+      (bitVal ? 0 : (FlagsSetMask.PV | FlagsSetMask.Z)) |
+      (bitVal & FlagsSetMask.S);
   }
 
   // --------------------------------------------------------------------------------------------------------------
