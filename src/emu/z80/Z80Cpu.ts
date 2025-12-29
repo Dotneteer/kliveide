@@ -24,6 +24,10 @@ export class Z80Cpu implements IZ80Cpu {
   private _deAltView: DataView;
   private _hlAltView: DataView;
 
+  // --- Cached index register view based on current prefix
+  private _indexView: DataView;
+  private _prefix: OpCodePrefix;
+
   // --- Special registers
   private _pc: number;
   private _sp: number;
@@ -47,6 +51,10 @@ export class Z80Cpu implements IZ80Cpu {
     this._bcAltView = new DataView(new ArrayBuffer(2));
     this._deAltView = new DataView(new ArrayBuffer(2));
     this._hlAltView = new DataView(new ArrayBuffer(2));
+    
+    // Initialize with IY as default index register
+    this._indexView = this._iyView;
+    this._prefix = OpCodePrefix.None;
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -356,42 +364,30 @@ export class Z80Cpu implements IZ80Cpu {
    * Get or set the value of the current index register
    */
   get indexReg(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.ix : this.iy;
+    return this._indexView.getUint16(0, false);
   }
   set indexReg(value: number) {
-    if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.ix = value;
-    } else {
-      this.iy = value;
-    }
+    this._indexView.setUint16(0, value, false);
   }
 
   /**
    * Get or set the LSB value of the current index register
    */
   get indexL(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xl : this.yl;
+    return this._indexView.getUint8(1);
   }
   set indexL(value: number) {
-    if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.xl = value;
-    } else {
-      this.yl = value;
-    }
+    this._indexView.setUint8(1, value);
   }
 
   /**
    * Get or set the MSB value of the current index register
    */
   get indexH(): number {
-    return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.xh : this.yh;
+    return this._indexView.getUint8(0);
   }
   set indexH(value: number) {
-    if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
-      this.xh = value;
-    } else {
-      this.yh = value;
-    }
+    this._indexView.setUint8(0, value);
   }
 
   /**
@@ -533,7 +529,14 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * The current prefix to consider when processing the subsequent opcode.
    */
-  prefix: OpCodePrefix;
+  get prefix(): OpCodePrefix {
+    return this._prefix;
+  }
+  set prefix(value: OpCodePrefix) {
+    this._prefix = value;
+    // Cache the index register DataView based on prefix
+    this._indexView = (value === OpCodePrefix.DD || value === OpCodePrefix.DDCB) ? this._ixView : this._iyView;
+  }
 
   /**
    * We use this variable to handle the EI instruction properly.
