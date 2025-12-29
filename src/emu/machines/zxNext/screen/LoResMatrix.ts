@@ -142,7 +142,7 @@ export function renderLoResPixel(
     return {
       rgb333: device.borderRgbCache,
       transparent: false,
-      clipped: false
+      
     };
   }
 
@@ -198,6 +198,6 @@ export function renderLoResPixel(
   return {
     rgb333: pixelRgb333,
     transparent: pixelRgb333 >> 1 === device.globalTransparencyColor || clipped,
-    clipped: clipped
+    
   };
 }

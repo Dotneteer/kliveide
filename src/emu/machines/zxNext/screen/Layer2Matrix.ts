@@ -317,7 +317,7 @@ function renderLayer2_256x192Pixel_FastPath(
   
   // Fast bounds check (no clipping needed)
   if (displayHC < 0 || displayHC >= 256) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
   
   // Direct memory access: offset = (y << 8) | x
@@ -325,7 +325,7 @@ function renderLayer2_256x192Pixel_FastPath(
   const pixelValue = getLayer2PixelFromSRAM_Cached(device, scanline.bank, offset);
   
   if (pixelValue === device.globalTransparencyColor) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
   
   const upperNibble = ((pixelValue >> 4) + (device.layer2PaletteOffset & 0x0F)) & 0x0F;
@@ -333,7 +333,7 @@ function renderLayer2_256x192Pixel_FastPath(
   const rgb333 = device.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
   const priority = (rgb333 & 0x100) !== 0;
   
-  return { rgb333: rgb333 & 0x1FF, transparent: false, clipped: false, priority };
+  return { rgb333: rgb333 & 0x1FF, transparent: false,  priority };
 }
 
 /**
@@ -350,7 +350,7 @@ export function renderLayer2_256x192Pixel(
   cell: number
 ): LayerOutput {
   if ((cell & LAYER2_DISPLAY_AREA) === 0) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
 
   // Phase 1: Prepare scanline state (would be cached per scanline in real implementation)
@@ -358,7 +358,7 @@ export function renderLayer2_256x192Pixel(
   
   // Phase 1: Early rejection for clipped/invalid scanlines
   if (!scanline) {
-    return { rgb333: 0, transparent: true, clipped: true };
+    return { rgb333: 0, transparent: true };
   }
   
   // Phase 2: Fast path for unscrolled, unclipped content
@@ -374,7 +374,7 @@ export function renderLayer2_256x192Pixel(
   const hc_valid = displayHC >= 0 && displayHC < 256;
   
   if (!hc_valid || displayHC < device.layer2ClipWindowX1 || displayHC > device.layer2ClipWindowX2) {
-    return { rgb333: 0, transparent: true, clipped: true };
+    return { rgb333: 0, transparent: true };
   }
   
   const x = (displayHC + device.layer2ScrollX) & 0xFF;
@@ -383,7 +383,7 @@ export function renderLayer2_256x192Pixel(
   const pixelValue = getLayer2PixelFromSRAM_Cached(device, scanline.bank, offset);
   
   if (pixelValue === device.globalTransparencyColor) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
   
   const upperNibble = ((pixelValue >> 4) + (device.layer2PaletteOffset & 0x0F)) & 0x0F;
@@ -391,7 +391,7 @@ export function renderLayer2_256x192Pixel(
   const rgb333 = device.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
   const priority = (rgb333 & 0x100) !== 0;
   
-  return { rgb333: rgb333 & 0x1FF, transparent: false, clipped: false, priority };
+  return { rgb333: rgb333 & 0x1FF, transparent: false,  priority };
 }
 
 /**
@@ -449,7 +449,7 @@ function renderLayer2_320x256Pixel_FastPath(
   
   // Fast bounds check (no clipping needed)
   if (displayHC_wide >= 320) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
   
   // Sequential memory access: offset = (x << 8) | y
@@ -458,7 +458,7 @@ function renderLayer2_320x256Pixel_FastPath(
   const pixelValue = getLayer2PixelFromSRAM_Cached(device, scanline.bank, offset);
   
   if (pixelValue === device.globalTransparencyColor) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
   
   const upperNibble = ((pixelValue >> 4) + (device.layer2PaletteOffset & 0x0F)) & 0x0F;
@@ -466,7 +466,7 @@ function renderLayer2_320x256Pixel_FastPath(
   const rgb333 = device.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
   const priority = (rgb333 & 0x100) !== 0;
   
-  return { rgb333: rgb333 & 0x1FF, transparent: false, clipped: false, priority };
+  return { rgb333: rgb333 & 0x1FF, transparent: false,  priority };
 }
 
 /**
@@ -483,7 +483,7 @@ export function renderLayer2_320x256Pixel(
   cell: number
 ): LayerOutput {
   if ((cell & LAYER2_DISPLAY_AREA) === 0) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
 
   // Priority 1A: Prepare scanline state (would be cached per scanline in real implementation)
@@ -491,7 +491,7 @@ export function renderLayer2_320x256Pixel(
   
   // Priority 1B: Early rejection for clipped/invalid scanlines
   if (!scanline) {
-    return { rgb333: 0, transparent: true, clipped: true };
+    return { rgb333: 0, transparent: true };
   }
   
   // Priority 3H: Fast path for unscrolled, unclipped content
@@ -510,7 +510,7 @@ export function renderLayer2_320x256Pixel(
   const hc_valid = displayHC_wide < 320;
   
   if (!hc_valid || displayHC_wide < clipX1 || displayHC_wide > clipX2) {
-    return { rgb333: 0, transparent: true, clipped: true };
+    return { rgb333: 0, transparent: true };
   }
   
   const x_pre = displayHC_wide + device.layer2ScrollX;
@@ -523,7 +523,7 @@ export function renderLayer2_320x256Pixel(
   const pixelValue = getLayer2PixelFromSRAM_Cached(device, scanline.bank, offset);
   
   if (pixelValue === device.globalTransparencyColor) {
-    return { rgb333: 0, transparent: true, clipped: false };
+    return { rgb333: 0, transparent: true };
   }
   
   const upperNibble = ((pixelValue >> 4) + (device.layer2PaletteOffset & 0x0F)) & 0x0F;
@@ -531,7 +531,7 @@ export function renderLayer2_320x256Pixel(
   const rgb333 = device.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
   const priority = (rgb333 & 0x100) !== 0;
   
-  return { rgb333: rgb333 & 0x1FF, transparent: false, clipped: false, priority };
+  return { rgb333: rgb333 & 0x1FF, transparent: false,  priority };
 }
 
 /**
@@ -550,5 +550,5 @@ export function renderLayer2_640x256Pixel(
   _pixelIndex: number
 ): LayerOutput {
   // TODO: Implementation to be documented in a future section
-  return { rgb333: 0x00000000, transparent: true, clipped: false };
+  return { rgb333: 0x00000000, transparent: true };
 }

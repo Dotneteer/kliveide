@@ -331,7 +331,7 @@ export function renderULAStandardPixel(
       return {
         rgb333: device.machine.composedScreenDevice.fallbackRgb333Cache,
         transparent: false,
-        clipped: false
+        
       };
     }
     
@@ -340,7 +340,7 @@ export function renderULAStandardPixel(
     return {
       rgb333: device.borderRgbCache,
       transparent: false,
-      clipped: false
+      
     };
   }
 
@@ -413,7 +413,7 @@ export function renderULAStandardPixel(
   return {
     rgb333: pixelRgb333,
     transparent: pixelRgb333 >> 1 === device.globalTransparencyColor || clipped,
-    clipped: clipped
+    
   };
 }
 
@@ -535,7 +535,7 @@ export function renderULAHiResPixel(
     const pixel = {
       rgb333: borderRgb333,
       transparent: false,
-      clipped: false
+      
     };
     return [pixel, pixel];
   }
@@ -591,12 +591,12 @@ export function renderULAHiResPixel(
     {
       rgb333: pixel1Rgb333,
       transparent: pixel1Rgb333 >> 1 === device.globalTransparencyColor || clipped,
-      clipped: clipped
+      
     },
     {
       rgb333: pixel2Rgb333,
       transparent: pixel2Rgb333 >> 1 === device.globalTransparencyColor || clipped,
-      clipped: clipped
+      
     }
   ];
 }
@@ -704,7 +704,7 @@ export function renderULAHiColorPixel(
       return {
         rgb333: device.machine.composedScreenDevice.fallbackRgb333Cache,
         transparent: false,
-        clipped: false
+        
       };
     }
     
@@ -713,7 +713,7 @@ export function renderULAHiColorPixel(
     return {
       rgb333: device.borderRgbCache,
       transparent: false,
-      clipped: false
+      
     };
   }
 
@@ -781,7 +781,7 @@ export function renderULAHiColorPixel(
   return {
     rgb333: pixelRgb333,
     transparent: pixelRgb333 >> 1 === device.globalTransparencyColor || clipped,
-    clipped: clipped
+    
   };
 }
 

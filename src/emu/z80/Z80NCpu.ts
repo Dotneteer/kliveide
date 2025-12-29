@@ -7,6 +7,14 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   // --- Number of tacts in the current frame with 28MHz clock
   protected tactsInFrame28 = 0;
 
+  // --- Cached multiplier for frameTacts calculation (2 / clockMultiplier)
+  // --- Pre-computing this eliminates division in the hot path
+  // --- Values: 2 (mult=1), 1 (mult=2), 0.5 (mult=4), 0.25 (mult=8)
+  protected frameTactsMultiplier = 2;
+  
+  // --- Last known clockMultiplier value (to detect changes)
+  protected lastClockMultiplier = 1;
+
   readonly mergedOps: Z80Operation[];
 
   constructor() {
@@ -38,16 +46,27 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   /**
    * This method increments the current CPU tacts by N.
    * @param n Number of tact increments
+   * 
+   * Optimized for clockMultiplier values of 1, 2, 4, 8 (powers of 2).
+   * Pre-computes 2/clockMultiplier to avoid division in hot path.
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    this.frameTacts += (2 * n) / this.clockMultiplier;
+    
+    // Update cached multiplier only if clockMultiplier changed
+    const mult = this.clockMultiplier;
+    if (mult !== this.lastClockMultiplier) {
+      this.lastClockMultiplier = mult;
+      this.frameTactsMultiplier = 2 / mult;
+    }
+    
+    this.frameTacts += n * this.frameTactsMultiplier;
     if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInFrame;
       this.frameCompleted = true;
     }
-    this.currentFrameTact = Math.floor(this.frameTacts);
+    this.currentFrameTact = this.frameTacts | 0;
     this.onTactIncremented();
   }
 

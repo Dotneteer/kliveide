@@ -1006,8 +1006,7 @@ export class NextComposedScreenDevice
     // TODO: Implementation to be documented in a future section
     return {
       rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
+      transparent: true
     };
   }
 
@@ -1027,8 +1026,7 @@ export class NextComposedScreenDevice
     // TODO: Implementation to be documented in a future section
     return {
       rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
+      transparent: true
     };
   }
 
@@ -1042,8 +1040,7 @@ export class NextComposedScreenDevice
     // TODO: Implementation to be documented in a future section
     return {
       rgb333: 0x00000000,
-      transparent: true,
-      clipped: false
+      transparent: true
     };
   }
 
@@ -1118,17 +1115,16 @@ export class NextComposedScreenDevice
     if (
       layer2Output &&
       layer2Output.priority &&
-      !layer2Output.transparent &&
-      !layer2Output.clipped
+      !layer2Output.transparent
     ) {
       selectedOutput = layer2Output;
     } else {
-      // Select first non-transparent, non-clipped layer in priority order
+      // Select first non-transparent layer in priority order
       switch (this.layerPriority) {
         case 0: // SLU
-          if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
+          if (spritesOutput && !spritesOutput.transparent) {
             selectedOutput = spritesOutput;
-          } else if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
+          } else if (layer2Output && !layer2Output.transparent) {
             selectedOutput = layer2Output;
           } else {
             selectedOutput = ulaOutput;
@@ -1136,9 +1132,9 @@ export class NextComposedScreenDevice
           break;
 
         case 1: // LSU
-          if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
+          if (layer2Output && !layer2Output.transparent) {
             selectedOutput = layer2Output;
-          } else if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
+          } else if (spritesOutput && !spritesOutput.transparent) {
             selectedOutput = spritesOutput;
           } else {
             selectedOutput = ulaOutput;
@@ -1146,9 +1142,9 @@ export class NextComposedScreenDevice
           break;
 
         case 2: // SUL
-          if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
+          if (spritesOutput && !spritesOutput.transparent) {
             selectedOutput = spritesOutput;
-          } else if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
+          } else if (ulaOutput && !ulaOutput.transparent) {
             selectedOutput = ulaOutput;
           } else {
             selectedOutput = layer2Output;
@@ -1156,9 +1152,9 @@ export class NextComposedScreenDevice
           break;
 
         case 3: // LUS
-          if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
+          if (layer2Output && !layer2Output.transparent) {
             selectedOutput = layer2Output;
-          } else if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
+          } else if (ulaOutput && !ulaOutput.transparent) {
             selectedOutput = ulaOutput;
           } else {
             selectedOutput = spritesOutput;
@@ -1166,9 +1162,9 @@ export class NextComposedScreenDevice
           break;
 
         case 4: // USL
-          if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
+          if (ulaOutput && !ulaOutput.transparent) {
             selectedOutput = ulaOutput;
-          } else if (spritesOutput && !spritesOutput.transparent && !spritesOutput.clipped) {
+          } else if (spritesOutput && !spritesOutput.transparent) {
             selectedOutput = spritesOutput;
           } else {
             selectedOutput = layer2Output;
@@ -1176,9 +1172,9 @@ export class NextComposedScreenDevice
           break;
 
         default:
-          if (ulaOutput && !ulaOutput.transparent && !ulaOutput.clipped) {
+          if (ulaOutput && !ulaOutput.transparent) {
             selectedOutput = ulaOutput;
-          } else if (layer2Output && !layer2Output.transparent && !layer2Output.clipped) {
+          } else if (layer2Output && !layer2Output.transparent) {
             selectedOutput = layer2Output;
           } else {
             selectedOutput = spritesOutput;
@@ -1189,9 +1185,9 @@ export class NextComposedScreenDevice
 
     // === Fallback/Backdrop Color ===
     let finalRGB333: number;
-    // If selected output is null, transparent, or clipped, use fallback color
-    if (selectedOutput === null || selectedOutput.transparent || selectedOutput.clipped) {
-      // All layers transparent/clipped: use fallback color (NextReg 0x4A)
+    // If selected output is null or transparent, use fallback color
+    if (selectedOutput === null || selectedOutput.transparent) {
+      // All layers transparent: use fallback color (NextReg 0x4A)
       // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
       const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
       finalRGB333 = (this.fallbackColor << 1) | blueLSB;
