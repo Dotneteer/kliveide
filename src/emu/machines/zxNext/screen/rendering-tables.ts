@@ -359,9 +359,27 @@ function generateLayer2_640x256x4RenderingFlags(config: TimingConfig): Uint16Arr
    * @returns Layer 2 rendering cell with all activity flags
    */
   function generateLayer2_640x256Cell(vc: number, hc: number): Layer2Cell {
-    // Check if we're in the display area
-    const displayArea = isDisplayArea(config, vc, hc);
-    if (!displayArea) {
+    // For 640×256 mode, we use the same wide display area as 320×256
+    // Wide display starts 32 pixels earlier: displayXStart - 32 = 144 - 32 = 112
+    // Wide display is 320 pixels wide: 112 + 320 - 1 = 431
+    const wideDisplayXStart = config.displayXStart - 32;
+    const wideDisplayXEnd = wideDisplayXStart + 319;
+
+    // Vertical display area is also extended for 640×256 mode (same as 320×256)
+    // wide_min_vactive = c_min_vactive - 34
+    // For 50Hz: displayYStart=64, so wide starts at 64-34=30, wvc=-2 to 253 covers 256 lines
+    // For 60Hz: displayYStart=40, so wide starts at 40-34=6, wvc=-2 to 253 covers 256 lines
+    // The 256 lines span from wide_min_vactive to wide_min_vactive + 255
+    const wideDisplayYStart = config.displayYStart - 34;
+    const wideDisplayYEnd = wideDisplayYStart + 255;
+
+    // Check if we're in the wide display area
+    if (
+      hc < wideDisplayXStart ||
+      hc > wideDisplayXEnd ||
+      vc < wideDisplayYStart ||
+      vc > wideDisplayYEnd
+    ) {
       return 0;
     }
 
@@ -1044,6 +1062,7 @@ export function getULANextPaperIndex(format: number, attr: number): number {
 // Layer 2 helper tables
 // ============================================================================
 let _layer2XWrappingTable320: Uint16Array | undefined;
+let _layer2XWrappingTable640: Uint16Array | undefined;
 
 function initializeLayer2HelperTables(): void {
   _layer2XWrappingTable320 = new Uint16Array(1024);
@@ -1056,6 +1075,19 @@ function initializeLayer2HelperTables(): void {
     }
     _layer2XWrappingTable320[i] = x & 0x1ff;
   }
+
+  // Initialize 640x256 wrapping table (1024 entries for HC positions 0-319, same as 320x256)
+  // In 640x256 mode, each HC position contains 2 pixels, so we use same wrapping as 320x256
+  _layer2XWrappingTable640 = new Uint16Array(1024);
+
+  for (let i = 0; i < 1024; i++) {
+    let x = i;
+    if (x >= 320 && x < 512) {
+      const upper = ((x >> 6) & 0x7) + 3;
+      x = (upper << 6) | (x & 0x3f);
+    }
+    _layer2XWrappingTable640[i] = x & 0x1ff;
+  }
 }
 
 /**
@@ -1063,4 +1095,11 @@ function initializeLayer2HelperTables(): void {
  */
 export function getLayer2XWrappingTable320(): Uint16Array {
   return _layer2XWrappingTable320;
+}
+
+/**
+ * Gets the wrapping table for Layer 2 640px mode.
+ */
+export function getLayer2XWrappingTable640(): Uint16Array {
+  return _layer2XWrappingTable640;
 }

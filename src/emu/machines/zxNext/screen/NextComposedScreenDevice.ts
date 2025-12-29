@@ -180,6 +180,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Cached fast path eligibility for Layer 2 256x192 rendering
   private _layer2_256x192_canUseFastPath: boolean;
 
+  // Cached fast path eligibility for Layer 2 640x256 rendering
+  private _layer2_640x256_canUseFastPath: boolean;
+
   // Cached scanline state for Layer 2 256x192 rendering
   private _layer2_scanline192_y: number;
   private _layer2_scanline192_bank: number;
@@ -187,6 +190,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Cached scanline state for Layer 2 320x256 rendering
   private _layer2_scanline320x256_y: number;
   private _layer2_scanline320x256_bank: number;
+
+  // Cached scanline state for Layer 2 640x256 rendering
+  private _layer2_scanline640x256_y: number;
+  private _layer2_scanline640x256_bank: number;
 
   // === Reg 0x1A - Clip Window ULA/LoRes
   ulaClipWindowX1: number;
@@ -1011,6 +1018,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2ClipWindowX2 === 255 &&
       this.layer2ClipWindowY1 === 0 &&
       this.layer2ClipWindowY2 === 191;
+
+    this._layer2_640x256_canUseFastPath =
+      this.layer2ScrollX === 0 &&
+      this.layer2ScrollY === 0 &&
+      this.layer2ClipWindowX1 === 0 &&
+      this.layer2ClipWindowX2 === 159 &&
+      this.layer2ClipWindowY1 === 0 &&
+      this.layer2ClipWindowY2 === 255;
   }
 
   /**
@@ -2291,17 +2306,185 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
-   * Render Layer 2 640×256 mode pixel.
-   * @param device Rendering device state
-   * @param _vc Vertical counter position
-   * @param _hc Horizontal counter position
-   * @param _cell Layer 2 rendering cell with activity flags
-   * @param _pixelIndex Which pixel of the pair (0 or 1)
+   * Prepare scanline state for 640×256 mode rendering.
+   * Precomputes all per-scanline constants to avoid redundant calculations.
+   * Priority 1A: Scanline-based state precomputation.
+   * @returns true if scanline is valid and visible, false otherwise
    */
-  private renderLayer2_640x256Pixel(_vc: number, _hc: number, _cell: number): void {
-    // TODO: Implementation to be documented in a future section
-    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
-    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+  private prepareScanlineState640x256(vc: number): boolean {
+    const displayVC = vc - this.confDisplayYStart;
+    const displayVC_wide = displayVC + 32;
+    const vc_valid = displayVC_wide >= 0 && displayVC_wide < 256;
+
+    // Priority 1B: Early scanline rejection
+    if (!vc_valid) {
+      return false;
+    }
+
+    const clipY1 = this.layer2ClipWindowY1;
+    const clipY2 = this.layer2ClipWindowY2;
+    const clippedByVertical = displayVC_wide < clipY1 || displayVC_wide > clipY2;
+
+    // Priority 1B: Early scanline rejection for clipped scanlines
+    if (clippedByVertical) {
+      return false;
+    }
+
+    const y_pre = displayVC_wide + this.layer2ScrollY;
+    this._layer2_scanline640x256_y = y_pre & 0xff;
+    this._layer2_scanline640x256_bank = this.layer2UseShadowBank ? this.layer2ShadowRamBank : this.layer2ActiveRamBank;
+
+    return true;
+  }
+
+  /**
+   * Render Layer 2 640×256 mode pixel (cloned from 320×256 for step 1).
+   * @param vc Vertical counter position
+   * @param hc Horizontal counter position
+   * @param cell Layer 2 rendering cell with activity flags
+   */
+  private renderLayer2_640x256Pixel(vc: number, hc: number, cell: number): void {
+    if ((cell & LAYER2_DISPLAY_AREA) === 0) {
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
+    }
+
+    // Priority 1A: Prepare scanline state (would be cached per scanline in real implementation)
+    const scanlineValid = this.prepareScanlineState640x256(vc);
+
+    // Priority 1B: Early rejection for clipped/invalid scanlines
+    if (!scanlineValid) {
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
+    }
+
+    // Priority 3H: Fast path for unscrolled, unclipped content
+    if (this._layer2_640x256_canUseFastPath) {
+      this.renderLayer2_640x256Pixel_FastPath(hc);
+      return;
+    }
+
+    // General path with full feature support
+    const displayHC_wide = hc - this.confDisplayXStart + 32;
+
+    const clipX1 = this.layer2ClipWindowX1 << 1;
+    const clipX2 = (this.layer2ClipWindowX2 << 1) | 1;
+
+    const hc_valid = displayHC_wide < 320;
+
+    if (!hc_valid || displayHC_wide < clipX1 || displayHC_wide > clipX2) {
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
+    }
+
+    const x_pre = displayHC_wide + this.layer2ScrollX;
+
+    // Priority 2D: Use lookup table for X-coordinate wrapping
+    const x = getLayer2XWrappingTable320()[x_pre & 0x3ff];
+
+    // Priority 2E: Use cached bank access
+    const offset = (x << 8) | this._layer2_scanline640x256_y;
+    const pixelByte = this.getLayer2PixelFromSRAM_Cached(this._layer2_scanline640x256_bank, offset);
+
+    // Extract two 4-bit pixels from the byte (per VHDL line 206)
+    // Lower nibble [3:0] = pixel1 (left pixel, output first)
+    // Upper nibble [7:4] = pixel2 (right pixel, output second)
+    const pixel1_4bit = pixelByte & 0x0f;
+    const pixel2_4bit = (pixelByte >> 4) & 0x0f;
+
+    // Process pixel 1 (left pixel)
+    // In 640x256 mode, palette index = (palette_offset << 4) | pixel_4bit
+    const paletteIndex1 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel1_4bit;
+    
+    if (paletteIndex1 === this.globalTransparencyColor) {
+      this.layer2Pixel1Rgb333 = 0;
+      this.layer2Pixel1Transparent = true;
+      this.layer2Pixel1Priority = false;
+    } else {
+      const rgb333_1 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex1);
+      const priority1 = (rgb333_1 & 0x100) !== 0;
+
+      this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
+      this.layer2Pixel1Transparent = false;
+      this.layer2Pixel1Priority = priority1;
+    }
+
+    // Process pixel 2 (right pixel)
+    const paletteIndex2 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel2_4bit;
+    
+    if (paletteIndex2 === this.globalTransparencyColor) {
+      this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel2Transparent = true;
+      this.layer2Pixel2Priority = false;
+    } else {
+      const rgb333_2 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex2);
+      const priority2 = (rgb333_2 & 0x100) !== 0;
+
+      this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
+      this.layer2Pixel2Transparent = false;
+      this.layer2Pixel2Priority = priority2;
+    }
+  }
+
+  /**
+   * Fast path for 640×256 mode with no scrolling and full clip window.
+   * Priority 1C & 3H: Optimized memory access for common case.
+   */
+  private renderLayer2_640x256Pixel_FastPath(hc: number): void {
+    const displayHC_wide = hc - this.confDisplayXStart + 32;
+
+    // Fast bounds check (no clipping needed)
+    if (displayHC_wide >= 320) {
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
+    }
+
+    // Sequential memory access: offset = (x << 8) | y
+    // Priority 2E: Use cached bank access for sequential pixels
+    const offset = (displayHC_wide << 8) | this._layer2_scanline640x256_y;
+    const pixelByte = this.getLayer2PixelFromSRAM_Cached(this._layer2_scanline640x256_bank, offset);
+
+    // Extract two 4-bit pixels from the byte (per VHDL line 206)
+    // Lower nibble [3:0] = pixel1 (left pixel, output first)
+    // Upper nibble [7:4] = pixel2 (right pixel, output second)
+    const pixel1_4bit = pixelByte & 0x0f;
+    const pixel2_4bit = (pixelByte >> 4) & 0x0f;
+
+    // Process pixel 1 (left pixel)
+    const paletteIndex1 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel1_4bit;
+    
+    if (paletteIndex1 === this.globalTransparencyColor) {
+      this.layer2Pixel1Rgb333 = 0;
+      this.layer2Pixel1Transparent = true;
+      this.layer2Pixel1Priority = false;
+    } else {
+      const rgb333_1 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex1);
+      const priority1 = (rgb333_1 & 0x100) !== 0;
+
+      this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
+      this.layer2Pixel1Transparent = false;
+      this.layer2Pixel1Priority = priority1;
+    }
+
+    // Process pixel 2 (right pixel)
+    const paletteIndex2 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel2_4bit;
+    
+    if (paletteIndex2 === this.globalTransparencyColor) {
+      this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel2Transparent = true;
+      this.layer2Pixel2Priority = false;
+    } else {
+      const rgb333_2 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex2);
+      const priority2 = (rgb333_2 & 0x100) !== 0;
+
+      this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
+      this.layer2Pixel2Transparent = false;
+      this.layer2Pixel2Priority = priority2;
+    }
   }
 }
 
