@@ -9,24 +9,20 @@ const MAX_STEP_OUT_STACK_SIZE = 256;
  * This class implements the emulation of the Z80 CPU
  */
 export class Z80Cpu implements IZ80Cpu {
-  // --- Register storage using DataView for efficient 8-bit and 16-bit access
-  // Layout: [AF, BC, DE, HL, IX, IY, IR, WZ, AF', BC', DE', HL'] = 24 bytes
-  private _regBuffer: ArrayBuffer;
-  private _regView: DataView;
-  
-  // Register offsets in bytes
-  private static readonly AF_OFFSET = 0;
-  private static readonly BC_OFFSET = 2;
-  private static readonly DE_OFFSET = 4;
-  private static readonly HL_OFFSET = 6;
-  private static readonly IX_OFFSET = 8;
-  private static readonly IY_OFFSET = 10;
-  private static readonly IR_OFFSET = 12;
-  private static readonly WZ_OFFSET = 14;
-  private static readonly AF_ALT_OFFSET = 16;
-  private static readonly BC_ALT_OFFSET = 18;
-  private static readonly DE_ALT_OFFSET = 20;
-  private static readonly HL_ALT_OFFSET = 22;
+  // --- Register storage using separate DataView instances for each 16-bit register pair
+  // This eliminates offset addition, allowing literal 0/1 indices for optimal performance
+  private _afView: DataView;
+  private _bcView: DataView;
+  private _deView: DataView;
+  private _hlView: DataView;
+  private _ixView: DataView;
+  private _iyView: DataView;
+  private _irView: DataView;
+  private _wzView: DataView;
+  private _afAltView: DataView;
+  private _bcAltView: DataView;
+  private _deAltView: DataView;
+  private _hlAltView: DataView;
 
   // --- Special registers
   private _pc: number;
@@ -37,11 +33,20 @@ export class Z80Cpu implements IZ80Cpu {
   private _snoozed = false;
 
   constructor() {
-    // Initialize register buffer with DataView for efficient register access
-    // This approach provides automatic synchronization between 8-bit and 16-bit register views,
-    // eliminates bit-shifting operations, and ensures consistent big-endian byte ordering
-    this._regBuffer = new ArrayBuffer(24);
-    this._regView = new DataView(this._regBuffer);
+    // Initialize separate DataView instances for each 16-bit register pair
+    // Using literal offsets (0/1) instead of computed offsets for optimal JIT performance
+    this._afView = new DataView(new ArrayBuffer(2));
+    this._bcView = new DataView(new ArrayBuffer(2));
+    this._deView = new DataView(new ArrayBuffer(2));
+    this._hlView = new DataView(new ArrayBuffer(2));
+    this._ixView = new DataView(new ArrayBuffer(2));
+    this._iyView = new DataView(new ArrayBuffer(2));
+    this._irView = new DataView(new ArrayBuffer(2));
+    this._wzView = new DataView(new ArrayBuffer(2));
+    this._afAltView = new DataView(new ArrayBuffer(2));
+    this._bcAltView = new DataView(new ArrayBuffer(2));
+    this._deAltView = new DataView(new ArrayBuffer(2));
+    this._hlAltView = new DataView(new ArrayBuffer(2));
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -51,250 +56,250 @@ export class Z80Cpu implements IZ80Cpu {
    * The A register
    */
   get a(): number {
-    return this._regView.getUint8(Z80Cpu.AF_OFFSET);
+    return this._afView.getUint8(0);
   }
   set a(value: number) {
-    this._regView.setUint8(Z80Cpu.AF_OFFSET, value);
+    this._afView.setUint8(0, value);
   }
 
   /**
    * The F register
    */
   get f(): number {
-    return this._regView.getUint8(Z80Cpu.AF_OFFSET + 1);
+    return this._afView.getUint8(1);
   }
   set f(value: number) {
-    this._regView.setUint8(Z80Cpu.AF_OFFSET + 1, value);
+    this._afView.setUint8(1, value);
   }
 
   /**
    * The AF register pair
    */
   get af(): number {
-    return this._regView.getUint16(Z80Cpu.AF_OFFSET, false);
+    return this._afView.getUint16(0, false);
   }
   set af(value: number) {
-    this._regView.setUint16(Z80Cpu.AF_OFFSET, value, false);
+    this._afView.setUint16(0, value, false);
   }
 
   /**
    * The B register
    */
   get b(): number {
-    return this._regView.getUint8(Z80Cpu.BC_OFFSET);
+    return this._bcView.getUint8(0);
   }
   set b(value: number) {
-    this._regView.setUint8(Z80Cpu.BC_OFFSET, value);
+    this._bcView.setUint8(0, value);
   }
 
   /**
    * The C register
    */
   get c(): number {
-    return this._regView.getUint8(Z80Cpu.BC_OFFSET + 1);
+    return this._bcView.getUint8(1);
   }
   set c(value: number) {
-    this._regView.setUint8(Z80Cpu.BC_OFFSET + 1, value);
+    this._bcView.setUint8(1, value);
   }
 
   /**
    * The BC register pair
    */
   get bc(): number {
-    return this._regView.getUint16(Z80Cpu.BC_OFFSET, false);
+    return this._bcView.getUint16(0, false);
   }
   set bc(value: number) {
-    this._regView.setUint16(Z80Cpu.BC_OFFSET, value, false);
+    this._bcView.setUint16(0, value, false);
   }
 
   /**
    * The D register
    */
   get d(): number {
-    return this._regView.getUint8(Z80Cpu.DE_OFFSET);
+    return this._deView.getUint8(0);
   }
   set d(value: number) {
-    this._regView.setUint8(Z80Cpu.DE_OFFSET, value);
+    this._deView.setUint8(0, value);
   }
 
   /**
    * The E register
    */
   get e(): number {
-    return this._regView.getUint8(Z80Cpu.DE_OFFSET + 1);
+    return this._deView.getUint8(1);
   }
   set e(value: number) {
-    this._regView.setUint8(Z80Cpu.DE_OFFSET + 1, value);
+    this._deView.setUint8(1, value);
   }
 
   /**
    * The DE register pair
    */
   get de(): number {
-    return this._regView.getUint16(Z80Cpu.DE_OFFSET, false);
+    return this._deView.getUint16(0, false);
   }
   set de(value: number) {
-    this._regView.setUint16(Z80Cpu.DE_OFFSET, value, false);
+    this._deView.setUint16(0, value, false);
   }
 
   /**
    * The H register
    */
   get h(): number {
-    return this._regView.getUint8(Z80Cpu.HL_OFFSET);
+    return this._hlView.getUint8(0);
   }
   set h(value: number) {
-    this._regView.setUint8(Z80Cpu.HL_OFFSET, value);
+    this._hlView.setUint8(0, value);
   }
 
   /**
    * The L register
    */
   get l(): number {
-    return this._regView.getUint8(Z80Cpu.HL_OFFSET + 1);
+    return this._hlView.getUint8(1);
   }
   set l(value: number) {
-    this._regView.setUint8(Z80Cpu.HL_OFFSET + 1, value);
+    this._hlView.setUint8(1, value);
   }
 
   /**
    * The HL register pair
    */
   get hl(): number {
-    return this._regView.getUint16(Z80Cpu.HL_OFFSET, false);
+    return this._hlView.getUint16(0, false);
   }
   set hl(value: number) {
-    this._regView.setUint16(Z80Cpu.HL_OFFSET, value, false);
+    this._hlView.setUint16(0, value, false);
   }
 
   /**
    * The alternate AF' register pair
    */
   get af_(): number {
-    return this._regView.getUint16(Z80Cpu.AF_ALT_OFFSET, false);
+    return this._afAltView.getUint16(0, false);
   }
   set af_(value: number) {
-    this._regView.setUint16(Z80Cpu.AF_ALT_OFFSET, value, false);
+    this._afAltView.setUint16(0, value, false);
   }
 
   /**
    * The alternate BC' register pair
    */
   get bc_(): number {
-    return this._regView.getUint16(Z80Cpu.BC_ALT_OFFSET, false);
+    return this._bcAltView.getUint16(0, false);
   }
   set bc_(value: number) {
-    this._regView.setUint16(Z80Cpu.BC_ALT_OFFSET, value, false);
+    this._bcAltView.setUint16(0, value, false);
   }
 
   /**
    * The alternate DE' register pair
    */
   get de_(): number {
-    return this._regView.getUint16(Z80Cpu.DE_ALT_OFFSET, false);
+    return this._deAltView.getUint16(0, false);
   }
   set de_(value: number) {
-    this._regView.setUint16(Z80Cpu.DE_ALT_OFFSET, value, false);
+    this._deAltView.setUint16(0, value, false);
   }
 
   /**
    * The alternate HL' register pair
    */
   get hl_(): number {
-    return this._regView.getUint16(Z80Cpu.HL_ALT_OFFSET, false);
+    return this._hlAltView.getUint16(0, false);
   }
   set hl_(value: number) {
-    this._regView.setUint16(Z80Cpu.HL_ALT_OFFSET, value, false);
+    this._hlAltView.setUint16(0, value, false);
   }
 
   /**
    * The higher 8 bits of the IX register pair
    */
   get xh(): number {
-    return this._regView.getUint8(Z80Cpu.IX_OFFSET);
+    return this._ixView.getUint8(0);
   }
   set xh(value: number) {
-    this._regView.setUint8(Z80Cpu.IX_OFFSET, value);
+    this._ixView.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IX register pair
    */
   get xl(): number {
-    return this._regView.getUint8(Z80Cpu.IX_OFFSET + 1);
+    return this._ixView.getUint8(1);
   }
   set xl(value: number) {
-    this._regView.setUint8(Z80Cpu.IX_OFFSET + 1, value);
+    this._ixView.setUint8(1, value);
   }
 
   /**
    * The IX register pair
    */
   get ix(): number {
-    return this._regView.getUint16(Z80Cpu.IX_OFFSET, false);
+    return this._ixView.getUint16(0, false);
   }
   set ix(value: number) {
-    this._regView.setUint16(Z80Cpu.IX_OFFSET, value, false);
+    this._ixView.setUint16(0, value, false);
   }
 
   /**
    * The higher 8 bits of the IY register pair
    */
   get yh(): number {
-    return this._regView.getUint8(Z80Cpu.IY_OFFSET);
+    return this._iyView.getUint8(0);
   }
   set yh(value: number) {
-    this._regView.setUint8(Z80Cpu.IY_OFFSET, value);
+    this._iyView.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the IY register pair
    */
   get yl(): number {
-    return this._regView.getUint8(Z80Cpu.IY_OFFSET + 1);
+    return this._iyView.getUint8(1);
   }
   set yl(value: number) {
-    this._regView.setUint8(Z80Cpu.IY_OFFSET + 1, value);
+    this._iyView.setUint8(1, value);
   }
 
   /**
    * The IY register pair
    */
   get iy(): number {
-    return this._regView.getUint16(Z80Cpu.IY_OFFSET, false);
+    return this._iyView.getUint16(0, false);
   }
   set iy(value: number) {
-    this._regView.setUint16(Z80Cpu.IY_OFFSET, value, false);
+    this._iyView.setUint16(0, value, false);
   }
 
   /**
    * The I (interrupt vector) register
    */
   get i(): number {
-    return this._regView.getUint8(Z80Cpu.IR_OFFSET);
+    return this._irView.getUint8(0);
   }
   set i(value: number) {
-    this._regView.setUint8(Z80Cpu.IR_OFFSET, value);
+    this._irView.setUint8(0, value);
   }
 
   /**
    * The R (refresh) register
    */
   get r(): number {
-    return this._regView.getUint8(Z80Cpu.IR_OFFSET + 1);
+    return this._irView.getUint8(1);
   }
   set r(value: number) {
-    this._regView.setUint8(Z80Cpu.IR_OFFSET + 1, value);
+    this._irView.setUint8(1, value);
   }
 
   /**
    * The IR register pair
    */
   get ir(): number {
-    return this._regView.getUint16(Z80Cpu.IR_OFFSET, false);
+    return this._irView.getUint16(0, false);
   }
   set ir(value: number) {
-    this._regView.setUint16(Z80Cpu.IR_OFFSET, value, false);
+    this._irView.setUint16(0, value, false);
   }
 
   /**
@@ -321,30 +326,30 @@ export class Z80Cpu implements IZ80Cpu {
    * The higher 8 bits of the WZ register pair
    */
   get wh(): number {
-    return this._regView.getUint8(Z80Cpu.WZ_OFFSET);
+    return this._wzView.getUint8(0);
   }
   set wh(value: number) {
-    this._regView.setUint8(Z80Cpu.WZ_OFFSET, value);
+    this._wzView.setUint8(0, value);
   }
 
   /**
    * The lower 8 bits of the WZ register pair
    */
   get wl(): number {
-    return this._regView.getUint8(Z80Cpu.WZ_OFFSET + 1);
+    return this._wzView.getUint8(1);
   }
   set wl(value: number) {
-    this._regView.setUint8(Z80Cpu.WZ_OFFSET + 1, value);
+    this._wzView.setUint8(1, value);
   }
 
   /**
    * The WZ (MEMPTR) register pair
    */
   get wz(): number {
-    return this._regView.getUint16(Z80Cpu.WZ_OFFSET, false);
+    return this._wzView.getUint16(0, false);
   }
   set wz(value: number) {
-    this._regView.setUint16(Z80Cpu.WZ_OFFSET, value, false);
+    this._wzView.setUint16(0, value, false);
   }
 
   /**
