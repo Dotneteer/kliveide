@@ -1,15 +1,23 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { LayerOutput } from "./RenderingCell";
-import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import {
-  renderULAStandardPixel,
-  IPixelRenderingState,
-  renderULAHiResPixel,
-  renderULAHiColorPixel,
-  sampleNextRegistersForUlaMode
-} from "./UlaMatrix";
-import { renderLoResPixel } from "./LoResMatrix";
+  LayerOutput,
+  LORES_BLOCK_FETCH,
+  LORES_DISPLAY_AREA,
+  LORES_NREG_SAMPLE,
+  LoResCell,
+  ULA_BORDER_AREA,
+  ULA_BYTE1_READ,
+  ULA_BYTE2_READ,
+  ULA_DISPLAY_AREA,
+  ULA_FLOATING_BUS_UPDATE,
+  ULA_NREG_SAMPLE,
+  ULA_SHIFT_REG_LOAD,
+  ULAHiResCell,
+  ULAStandardCell
+} from "./RenderingCell";
+import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
+import { IPixelRenderingState } from "./UlaMatrix";
 import {
   renderLayer2_256x192Pixel,
   renderLayer2_320x256Pixel,
@@ -38,7 +46,9 @@ import {
   getActiveRenderingFlagsLoRes,
   getActiveTactToHC,
   getActiveTactToVC,
-  getActiveTactToBitmapOffset
+  getActiveTactToBitmapOffset,
+  getULANextInkIndex,
+  getULANextPaperIndex
 } from "./rendering-tables";
 
 /**
@@ -132,9 +142,9 @@ export class NextComposedScreenDevice
   loResEnabled: boolean;
   loResEnabledSampled: boolean;
   loResModeSampled: number;
-  loResBlockByte: number;         // Current block data byte
-  loResScrollXSampled: number;    // Sampled X scroll for LoRes
-  loResScrollYSampled: number;    // Sampled Y scroll for LoRes
+  loResBlockByte: number; // Current block data byte
+  loResScrollXSampled: number; // Sampled X scroll for LoRes
+  loResScrollYSampled: number; // Sampled Y scroll for LoRes
   sprites0OnTop: boolean;
   spritesEnableClipping: boolean;
   layerPriority: number;
@@ -429,22 +439,22 @@ export class NextComposedScreenDevice
     this.ulaNextFormat = 0x0f; // Default: 4-bit INK, 4-bit PAPER
 
     // --- Initialize Layer 2 state
-    this.layer2Enabled = false;              // Port 0x123B bit 1: disabled by default
-    this.layer2Resolution = 0;               // NextReg 0x70 bits [5:4]: 256x192 by default
-    this.layer2PaletteOffset = 0;            // NextReg 0x70 bits [3:0]: no offset by default
-    this.layer2ScrollX = 0;                  // NextReg 0x16 + 0x71 bit 0: no scroll
-    this.layer2ScrollY = 0;                  // NextReg 0x17: no scroll
-    this.layer2ClipWindowX1 = 0;             // NextReg 0x18 write 1: left edge
-    this.layer2ClipWindowX2 = 255;           // NextReg 0x18 write 2: right edge (255 for 256x192)
-    this.layer2ClipWindowY1 = 0;             // NextReg 0x18 write 3: top edge
-    this.layer2ClipWindowY2 = 191;           // NextReg 0x18 write 4: bottom edge (191 for 256x192)
-    this.layer2ClipIndex = 0;                // Clip window write index
-    this.layer2ActiveRamBank = 8;            // NextReg 0x12: default to bank 8 (soft reset value)
-    this.layer2ShadowRamBank = 11;           // NextReg 0x13: default to bank 11 (soft reset value)
-    this.layer2UseShadowBank = false;        // Port 0x123B bit 3: use active bank by default
-    this.layer2Bank = 0;                     // Port 0x123B bits [7:6] + bit 3: mapping bank selector
-    this.layer2EnableMappingForReads = false;   // Port 0x123B bit 2: memory mapping disabled
-    this.layer2EnableMappingForWrites = false;  // Port 0x123B bit 0: memory mapping disabled
+    this.layer2Enabled = false; // Port 0x123B bit 1: disabled by default
+    this.layer2Resolution = 0; // NextReg 0x70 bits [5:4]: 256x192 by default
+    this.layer2PaletteOffset = 0; // NextReg 0x70 bits [3:0]: no offset by default
+    this.layer2ScrollX = 0; // NextReg 0x16 + 0x71 bit 0: no scroll
+    this.layer2ScrollY = 0; // NextReg 0x17: no scroll
+    this.layer2ClipWindowX1 = 0; // NextReg 0x18 write 1: left edge
+    this.layer2ClipWindowX2 = 255; // NextReg 0x18 write 2: right edge (255 for 256x192)
+    this.layer2ClipWindowY1 = 0; // NextReg 0x18 write 3: top edge
+    this.layer2ClipWindowY2 = 191; // NextReg 0x18 write 4: bottom edge (191 for 256x192)
+    this.layer2ClipIndex = 0; // Clip window write index
+    this.layer2ActiveRamBank = 8; // NextReg 0x12: default to bank 8 (soft reset value)
+    this.layer2ShadowRamBank = 11; // NextReg 0x13: default to bank 11 (soft reset value)
+    this.layer2UseShadowBank = false; // Port 0x123B bit 3: use active bank by default
+    this.layer2Bank = 0; // Port 0x123B bits [7:6] + bit 3: mapping bank selector
+    this.layer2EnableMappingForReads = false; // Port 0x123B bit 2: memory mapping disabled
+    this.layer2EnableMappingForWrites = false; // Port 0x123B bit 0: memory mapping disabled
     this.machine.memoryDevice.updateFastPathFlags();
 
     this.displayTiming = 0;
@@ -517,7 +527,7 @@ export class NextComposedScreenDevice
    * Called by PaletteDevice when:
    * - ULA palette colors change
    * - Active palette switches (first <-> second)
-   * 
+   *
    * When ULA+ is enabled, border goes through ULA+ palette lookup.
    * VHDL: border_clr = "00" & border_color & border_color
    * ULA+ palette index = "11" & attr[7:6] & "1" & attr[5:3]
@@ -590,19 +600,19 @@ export class NextComposedScreenDevice
         if (this.ulaHiResModeSampled) {
           // ULA Hi-Res mode (512×192, 2 pixels per HC)
           const ulaCell = getActiveRenderingFlagsULA()[tact];
-          const out = renderULAHiResPixel(this, vc, hc, ulaCell);
+          const out = this.renderULAHiResPixel(vc, hc, ulaCell);
           ulaOutput1 = out[0];
           ulaOutput2 = out[1];
         } else {
           // ULA Hi-Color mode (256×192)
           const ulaCell = getActiveRenderingFlagsULA()[tact];
-          ulaOutput1 = renderULAHiColorPixel(this, vc, hc, ulaCell);
+          ulaOutput1 = this.renderULAHiColorPixel(vc, hc, ulaCell);
           ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
         }
       } else {
         // ULA Standard mode (256×192)
         const ulaCell = getActiveRenderingFlagsULA()[tact];
-        ulaOutput1 = renderULAStandardPixel(this, vc, hc, ulaCell);
+        ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
         ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
       }
     }
@@ -730,7 +740,7 @@ export class NextComposedScreenDevice
    */
   renderFullScreen(): Uint32Array {
     this.onNewFrame();
-    sampleNextRegistersForUlaMode(this);
+    this.sampleNextRegistersForUlaMode();
     for (let tact = 0; tact < this.renderingTacts; tact++) {
       this.renderTact(tact);
     }
@@ -833,13 +843,12 @@ export class NextComposedScreenDevice
    * Note: Reading always returns the mode 0 format (bit 4 = 0), the offset is write-only
    */
   get port0x123bValue(): number {
-    const value = (
+    const value =
       (this.layer2Bank << 6) |
       (this.layer2UseShadowBank ? 0x08 : 0x00) |
       (this.layer2EnableMappingForReads ? 0x04 : 0x00) |
       (this.layer2Enabled ? 0x02 : 0x00) |
-      (this.layer2EnableMappingForWrites ? 0x01 : 0x00)
-    );
+      (this.layer2EnableMappingForWrites ? 0x01 : 0x00);
     return value;
   }
 
@@ -994,8 +1003,6 @@ export class NextComposedScreenDevice
     this._pixelBuffer.fill(0x00000000);
   }
 
-
-
   /**
    * Render Sprites layer pixel (Stage 1).
    * @param _vc - Vertical counter position
@@ -1042,17 +1049,6 @@ export class NextComposedScreenDevice
       rgb333: 0x00000000,
       transparent: true
     };
-  }
-
-  /**
-   * Render LoRes pixel (Stage 1).
-   * Handles 128×96 mode with 4×4 pixel scaling.
-   * @param vc - Vertical counter position
-   * @param hc - Horizontal counter position
-   * @param cell - LoRes rendering cell with activity flags
-   */
-  private renderLoResPixel(vc: number, hc: number, cell: number): LayerOutput {
-    return renderLoResPixel(this, vc, hc, cell);
   }
 
   /**
@@ -1112,11 +1108,7 @@ export class NextComposedScreenDevice
     let selectedOutput: LayerOutput | null = null;
     // === Layer 2 Priority Override ===
     // If Layer 2 priority bit is set, it renders on top regardless of priority setting
-    if (
-      layer2Output &&
-      layer2Output.priority &&
-      !layer2Output.transparent
-    ) {
+    if (layer2Output && layer2Output.priority && !layer2Output.transparent) {
       selectedOutput = layer2Output;
     } else {
       // Select first non-transparent layer in priority order
@@ -1196,6 +1188,697 @@ export class NextComposedScreenDevice
     }
 
     return zxNextBgra[finalRGB333 & 0x1ff]; // Convert to RGBA format
+  }
+
+  // ======================================================================================
+  // ULA Helpers
+  // ======================================================================================
+
+  /**
+   * Render ULA Standard pixel for the current tact position (Stage 1: Pixel Generation).
+   *
+   * This function executes Stage 1 of the rendering pipeline as described in Section 1.
+   * It generates the ULA pixel color and flags but does NOT write to the bitmap.
+   * The returned output will be combined with other layers in the composition stage.
+   *
+   * @param vc - Vertical counter position (ULA coordinate system)
+   * @param hc - Horizontal counter position (ULA coordinate system)
+   * @param cell - ULA Standard rendering cell flags (Uint16 bit flags)
+   * @returns Layer output (RGB333 + flags) for composition stage
+   */
+  private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): LayerOutput {
+    // === Display Area: ULA Standard Rendering ===
+    // --- Scroll & mode sampling ---
+    if ((cell & ULA_NREG_SAMPLE) !== 0) {
+      this.sampleNextRegistersForUlaMode();
+
+      // Calculate scrolled Y position with vertical scroll offset
+      this.ulaScrollYSampled = vc - this.confDisplayYStart + this.ulaScrollYSampled;
+      if (this.ulaScrollYSampled >= 0xc0) {
+        this.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
+      }
+    }
+
+    // --- Shift Register Load ---
+    if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
+      // Load pixel and attribute data into shift register
+      // This prepares the next 8 pixels for output
+      this.ulaShiftReg =
+        ((((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrollXSampled & 0x07)) >>
+          8) &
+        0xff;
+      this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
+      this.ulaShiftAttr2 = this.ulaAttrByte2; // Load attribute byte 2
+      this.ulaShiftAttrCount = 8 - (this.ulaScrollXSampled & 0x07); // Reset attribute shift counter
+    }
+
+    // --- Memory Read Activities ---
+    if ((cell & ULA_BYTE1_READ) !== 0) {
+      // --- Calculate pixel address using pre-computed Y-dependent base + X component
+      const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
+      const pixelAddr = this.ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+      // Read pixel byte from Bank 5 or Bank 7
+      const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
+      if (hc & 0x04) {
+        this.ulaPixelByte2 = pixelByte;
+      } else {
+        this.ulaPixelByte1 = pixelByte;
+      }
+
+      // --- Update floating bus with pixel data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = pixelByte;
+      }
+    }
+
+    if ((cell & ULA_BYTE2_READ) !== 0) {
+      // --- Calculate attribute address using pre-computed Y-dependent base + X component
+      const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
+      const attrAddr = this.ulaAttrLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+
+      // --- Read attribute byte from Bank 5 or Bank 7
+      const ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
+      if (hc & 0x04) {
+        this.ulaAttrByte2 = ulaAttrByte;
+      } else {
+        this.ulaAttrByte1 = ulaAttrByte;
+      }
+
+      // --- Update floating bus with attribute data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = ulaAttrByte;
+      }
+    }
+
+    // === Border Area ===
+    if ((cell & ULA_DISPLAY_AREA) === 0) {
+      // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
+      if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
+        // ULANext with 0xFF mask: Border uses fallback color
+        return {
+          rgb333: this.machine.composedScreenDevice.fallbackRgb333Cache,
+          transparent: false
+        };
+      }
+
+      // --- Use cached border RGB value (updated when borderColor changes)
+      // --- This eliminates method call overhead for ~30% of pixels
+      return {
+        rgb333: this.borderRgbCache,
+        transparent: false
+      };
+    }
+
+    // // --- Pixel Generation ---
+    // Generate pixel from shift register (happens every HC position)
+    // Extract current pixel bit from shift register
+    const displayHC = hc - this.confDisplayXStart;
+    const displayVC = vc - this.confDisplayYStart;
+    const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
+    const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
+
+    let pixelRgb333: number;
+
+    if (this.ulaNextEnabled) {
+      // ULANext Mode: Use pre-calculated lookup tables
+      // Eliminates all runtime computation (mask validation, bit shifting, etc.)
+      const attr = this.ulaShiftAttr;
+      const formatMask = this.ulaNextFormat;
+      let paletteIndex: number;
+
+      if (pixelBit) {
+        // INK pixel: Direct lookup (range 0-127)
+        paletteIndex = getULANextInkIndex(formatMask, attr);
+      } else {
+        // PAPER pixel: Lookup returns 128-255 or 255 for fallback
+        paletteIndex = getULANextPaperIndex(formatMask, attr);
+
+        if (paletteIndex === 255) {
+          // Invalid mask or 0xFF: Use cached fallback color
+          pixelRgb333 = this.machine.composedScreenDevice.fallbackRgb333Cache;
+          paletteIndex = -1; // Skip palette lookup
+        }
+      }
+
+      if (paletteIndex !== -1) {
+        pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+      }
+    } else if (this.ulaPlusEnabled) {
+      // ULA+ Mode: Use 64-color palette (indices 192-255 in ULA palette)
+      // Use pre-calculated lookup tables - no bit operations needed
+      const ulaPaletteIndex = pixelBit
+        ? this.ulaPlusAttrToInk[this.ulaShiftAttr]
+        : this.ulaPlusAttrToPaper[this.ulaShiftAttr];
+      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(ulaPaletteIndex);
+    } else {
+      // Standard Mode: Use pre-calculated lookup tables with BRIGHT already applied
+      // Direct palette index lookup (0-15) - no bit operations needed
+      const paletteIndex = pixelBit
+        ? this.activeAttrToInk[this.ulaShiftAttr]
+        : this.activeAttrToPaper[this.ulaShiftAttr];
+      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    }
+
+    this.ulaShiftAttrCount--;
+    if (this.ulaShiftAttrCount === 0) {
+      this.ulaShiftAttrCount = 8;
+      this.ulaShiftAttr = this.ulaShiftAttr2; // Load attribute byte 2
+    }
+
+    // --- Clipping Test ---
+    // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
+    const clipped =
+      displayHC < this.ulaClipWindowX1 ||
+      displayHC > this.ulaClipWindowX2 ||
+      displayVC < this.ulaClipWindowY1 ||
+      displayVC > this.ulaClipWindowY2;
+
+    // Return layer output for composition stage
+    return {
+      rgb333: pixelRgb333,
+      transparent: pixelRgb333 >> 1 === this.globalTransparencyColor || clipped
+    };
+  }
+
+  /**
+   * Render ULA Hi-Res pixel for the current tact position (Stage 1: Pixel Generation).
+   *
+   * ULA Hi-Res mode (Timex Hi-Res mode):
+   * - 512×192 monochrome display (double horizontal resolution)
+   * - Uses BOTH memory read cycles for pixel data (not pixel + attribute like Standard mode)
+   * - Bank 0 reads (HC 0x0/0x4/0x8/0xC): pixel data from 0x4000-0x57FF
+   * - Bank 1 reads (HC 0x2/0x6/0xA/0xE): pixel data from 0x6000-0x77FF (via 0x2000 offset)
+   * - Both reads use PIXEL addresses (not attribute addresses)
+   * - Uses same 16-bit shift register as Standard mode
+   * - 32-bit pre-shift value constructed with byte interleaving: [pbyte_hi][abyte_hi][pbyte_lo][abyte_lo]
+   * - Color determined by ulaHiResColor register (0-7 for 8 ink/paper pairs from Timex port 0xFF)
+   *
+   * **ULA+ Compatibility**: ULA+ does NOT work correctly in Hi-Res mode. The hardware forces
+   * palette index bit 3 to 1 (PAPER selection) when screen_mode[2]=1, making attribute-based
+   * palette selection incompatible with Hi-Res mode. This function does not implement ULA+ logic.
+   *
+   * @param vc - Vertical counter position (ULA coordinate system)
+   * @param hc - Horizontal counter position (ULA coordinate system)
+   * @param cell - ULA Hi-Res rendering cell flags (Uint16 bit flags)
+   * @returns Layer output (RGB333 + flags) for composition stage
+   */
+  private renderULAHiResPixel(
+    vc: number,
+    hc: number,
+    cell: ULAHiResCell
+  ): [LayerOutput, LayerOutput] {
+    // === Display Area: ULA Standard Rendering ===
+    // --- Scroll & mode sampling ---
+    if ((cell & ULA_NREG_SAMPLE) !== 0) {
+      this.sampleNextRegistersForUlaMode();
+
+      // Calculate scrolled Y position with vertical scroll offset
+      this.ulaScrollYSampled = vc - this.confDisplayYStart + this.ulaScrollYSampled;
+      if (this.ulaScrollYSampled >= 0xc0) {
+        this.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
+      }
+    }
+
+    // --- Shift Register Load ---
+    if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
+      // Load pixel and attribute data into shift register
+      // This prepares the next 8 pixels for output
+      this.ulaShiftReg =
+        ((((this.ulaPixelByte1 << 24) |
+          (this.ulaPixelByte2 << 16) |
+          (this.ulaPixelByte3 << 8) |
+          this.ulaPixelByte4) <<
+          ((this.ulaScrollXSampled & 0x07) * 2)) >>
+          16) &
+        0xffff;
+    }
+
+    // --- Read pixel data from Bank 0
+    if ((cell & ULA_BYTE1_READ) !== 0) {
+      // Calculate pixel address (same Y-dependent address as Standard mode)
+      const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
+      const pixelAddr = this.ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+
+      // Read from Bank 0 (0x4000-0x57FF range)
+      const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
+
+      // Store in byte buffer based on which 8-HC group we're in
+      // Pattern: HC 0x0→byte1, HC 0x4→byte2, HC 0x8→byte1, HC 0xC→byte2
+      if (hc & 0x04) {
+        this.ulaPixelByte3 = pixelByte; // Bank 0, second byte
+      } else {
+        this.ulaPixelByte1 = pixelByte; // Bank 0, first byte
+      }
+
+      // --- Update floating bus with pixel data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = pixelByte;
+      }
+    }
+
+    // --- Read pixel data from Bank 1 at HC subcycles 0x2, 0x6, 0xA, 0xE
+    if ((cell & ULA_BYTE2_READ) !== 0) {
+      // Calculate pixel address with 0x2000 offset for Bank 1
+      const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
+      const pixelAddr = 0x2000 | this.ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+
+      // Read from Bank 1 (0x6000-0x77FF range via 0x2000 offset)
+      const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
+
+      // Store in byte buffer based on which 8-HC group we're in
+      if (hc & 0x04) {
+        this.ulaPixelByte4 = pixelByte; // Bank 1, second byte
+      } else {
+        this.ulaPixelByte2 = pixelByte; // Bank 1, first byte
+      }
+
+      // --- Update floating bus with pixel data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = pixelByte;
+      }
+    }
+
+    // === Border Area ===
+    if ((cell & ULA_BORDER_AREA) !== 0) {
+      let borderRgb333: number;
+
+      // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
+      if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
+        // ULANext with 0xFF mask: Border uses fallback color
+        borderRgb333 = this.machine.composedScreenDevice.fallbackRgb333Cache;
+      } else {
+        // Standard border: use paper color from HiRes mode
+        borderRgb333 = this.ulaHiResPaperRgb333;
+      }
+
+      const pixel = {
+        rgb333: borderRgb333,
+        transparent: false
+      };
+      return [pixel, pixel];
+    }
+
+    // --- Pixel Generation ---
+    // Generate pixel from shift register (happens every HC position)
+    const displayHC = hc - this.confDisplayXStart;
+    const displayVC = vc - this.confDisplayYStart;
+    const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
+    const pixelBit1 = (this.ulaShiftReg >> (2 * (7 - pixelWithinByte) + 1)) & 0x01;
+    const pixelBit2 = (this.ulaShiftReg >> (2 * (7 - pixelWithinByte))) & 0x01;
+
+    let pixel1Rgb333: number;
+    let pixel2Rgb333: number;
+
+    // Note: ULANext in HiRes mode is not practical but supported by hardware
+    // HiRes mode doesn't use standard attributes, so ULANext produces unpredictable results
+    if (this.ulaNextEnabled) {
+      // ULANext mode: Use pre-calculated lookup tables (simplified for HiRes)
+      // Hardware-accurate but produces unpredictable colors in HiRes mode
+      const attr = this.ulaShiftAttr;
+      const formatMask = this.ulaNextFormat;
+
+      // For each pixel bit, use lookup table (INK for 1, PAPER for 0)
+      const index1 = pixelBit1
+        ? getULANextInkIndex(formatMask, attr)
+        : getULANextPaperIndex(formatMask, attr);
+      const index2 = pixelBit2
+        ? getULANextInkIndex(formatMask, attr)
+        : getULANextPaperIndex(formatMask, attr);
+
+      // Handle fallback color if needed (index 255)
+      pixel1Rgb333 =
+        index1 === 255
+          ? this.machine.composedScreenDevice.fallbackRgb333Cache
+          : this.machine.paletteDevice.getUlaRgb333(index1);
+      pixel2Rgb333 =
+        index2 === 255
+          ? this.machine.composedScreenDevice.fallbackRgb333Cache
+          : this.machine.paletteDevice.getUlaRgb333(index2);
+    } else {
+      // Standard HiRes mode: use predefined ink/paper colors
+      pixel1Rgb333 = pixelBit1 ? this.ulaHiResInkRgb333 : this.ulaHiResPaperRgb333;
+      pixel2Rgb333 = pixelBit2 ? this.ulaHiResInkRgb333 : this.ulaHiResPaperRgb333;
+    }
+
+    // --- Clipping Test ---
+    const clipped =
+      displayHC < this.ulaClipWindowX1 ||
+      displayHC > this.ulaClipWindowX2 ||
+      displayVC < this.ulaClipWindowY1 ||
+      displayVC > this.ulaClipWindowY2;
+
+    return [
+      {
+        rgb333: pixel1Rgb333,
+        transparent: pixel1Rgb333 >> 1 === this.globalTransparencyColor || clipped
+      },
+      {
+        rgb333: pixel2Rgb333,
+        transparent: pixel2Rgb333 >> 1 === this.globalTransparencyColor || clipped
+      }
+    ];
+  }
+
+  /**
+   * Render ULA Hi-Color pixel for the current tact position (Stage 1: Pixel Generation).
+   *
+   * ULA Hi-Color mode (Timex Hi-Color mode):
+   * - 256×192 color display (standard horizontal resolution)
+   * - Uses BOTH memory read cycles: pixel data from one bank, color attributes from another
+   * - Bank 0 reads (HC 0x0/0x4/0x8/0xC): pixel data from 0x4000-0x57FF (8×8 pixel blocks)
+   * - Bank 1 reads (HC 0x2/0x6/0xA/0xE): color data from 0x6000-0x77FF (32×192 attributes via 0x2000 offset)
+   * - Each pixel byte defines 8 pixels (like standard mode)
+   * - Color data: 8 bits per pixel column (not per 8×8 block like standard attributes)
+   * - Uses 8-bit shift register for pixels (standard resolution)
+   * - Color format: same as standard attributes (FLASH, BRIGHT, PAPER, INK)
+   *
+   * **ULA+ Compatibility**: ULA+ does NOT work correctly in Hi-Color mode. The hardware forces
+   * palette index bit 3 to 1 (PAPER selection) when screen_mode[2]=1, making attribute-based
+   * palette selection incompatible with Hi-Color mode. This function does not implement ULA+ logic.
+   *
+   * @param vc - Vertical counter position (ULA coordinate system)
+   * @param hc - Horizontal counter position (ULA coordinate system)
+   * @param cell - ULA Hi-Color rendering cell flags (Uint16 bit flags)
+   * @returns Pair of layer outputs (RGB333 + flags) for composition stage
+   */
+  private renderULAHiColorPixel(vc: number, hc: number, cell: ULAHiResCell): LayerOutput {
+    // === Display Area: ULA Standard Rendering ===
+    // --- Scroll & mode sampling ---
+    if ((cell & ULA_NREG_SAMPLE) !== 0) {
+      this.sampleNextRegistersForUlaMode();
+
+      // Calculate scrolled Y position with vertical scroll offset
+      this.ulaScrollYSampled = vc - this.confDisplayYStart + this.ulaScrollYSampled;
+      if (this.ulaScrollYSampled >= 0xc0) {
+        this.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
+      }
+    }
+
+    // --- Shift Register Load ---
+    if ((cell & ULA_SHIFT_REG_LOAD) !== 0) {
+      // Load pixel and attribute data into shift register
+      // This prepares the next 8 pixels for output
+      this.ulaShiftReg =
+        ((((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrollXSampled & 0x07)) >>
+          8) &
+        0xff;
+      this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
+      this.ulaShiftAttr2 = this.ulaAttrByte2; // Load attribute byte 2
+      this.ulaShiftAttrCount = 8 - (this.ulaScrollXSampled & 0x07); // Reset attribute shift counter
+    }
+
+    // --- Memory Read Activities ---
+    if ((cell & ULA_BYTE1_READ) !== 0) {
+      // --- Calculate pixel address using pre-computed Y-dependent base + X component
+      const baseCol = (hc + 0x0c - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
+      const pixelAddr = this.ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+      // Read pixel byte from Bank 5 or Bank 7
+      const pixelByte = this.machine.memoryDevice.readScreenMemory(pixelAddr);
+      if (hc & 0x04) {
+        this.ulaPixelByte2 = pixelByte;
+      } else {
+        this.ulaPixelByte1 = pixelByte;
+      }
+
+      // --- Update floating bus with pixel data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = pixelByte;
+      }
+    }
+
+    if ((cell & ULA_BYTE2_READ) !== 0) {
+      // --- Calculate attribute address using pre-computed Y-dependent base + X component
+      const baseCol = (hc + 0x0a - this.confDisplayXStart) >> 3;
+      const shiftCols = (baseCol + (this.ulaScrollXSampled >> 3)) & 0x1f;
+      const attrAddr = 0x2000 | this.ulaPixelLineBaseAddr[this.ulaScrollYSampled] | shiftCols;
+
+      // --- Read attribute byte from Bank 5 or Bank 7
+      const ulaAttrByte = this.machine.memoryDevice.readScreenMemory(attrAddr);
+      if (hc & 0x04) {
+        this.ulaAttrByte2 = ulaAttrByte;
+      } else {
+        this.ulaAttrByte1 = ulaAttrByte;
+      }
+
+      // --- Update floating bus with attribute data
+      if ((cell & ULA_FLOATING_BUS_UPDATE) !== 0) {
+        this.floatingBusValue = ulaAttrByte;
+      }
+    }
+
+    // === Border Area ===
+    if ((cell & ULA_DISPLAY_AREA) === 0) {
+      // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
+      if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
+        // ULANext with 0xFF mask: Border uses fallback color
+        return {
+          rgb333: this.machine.composedScreenDevice.fallbackRgb333Cache,
+          transparent: false
+        };
+      }
+
+      // --- Use cached border RGB value (updated when borderColor changes)
+      // --- This eliminates method call overhead for ~30% of pixels
+      return {
+        rgb333: this.borderRgbCache,
+        transparent: false
+      };
+    }
+
+    // // --- Pixel Generation ---
+    // Generate pixel from shift register (happens every HC position)
+    // Extract current pixel bit from shift register
+    const displayHC = hc - this.confDisplayXStart;
+    const displayVC = vc - this.confDisplayYStart;
+    const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
+    const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
+
+    let pixelRgb333: number;
+
+    // Note: ULANext in HiColor mode is not practical but supported by hardware
+    // HiColor uses different attribute format (per-column colors), so ULANext produces unpredictable results
+    if (this.ulaNextEnabled) {
+      // ULANext mode: Use pre-calculated lookup tables
+      // Hardware-accurate but produces unpredictable colors in HiColor mode
+      const attr = this.ulaShiftAttr;
+      const formatMask = this.ulaNextFormat;
+      let paletteIndex: number;
+
+      if (pixelBit) {
+        // INK pixel: Direct lookup
+        paletteIndex = getULANextInkIndex(formatMask, attr);
+      } else {
+        // PAPER pixel: Direct lookup (may return 255 for fallback)
+        paletteIndex = getULANextPaperIndex(formatMask, attr);
+
+        if (paletteIndex === 255) {
+          // Use cached fallback color
+          pixelRgb333 = this.machine.composedScreenDevice.fallbackRgb333Cache;
+          paletteIndex = -1; // Skip palette lookup
+        }
+      }
+
+      if (paletteIndex !== -1) {
+        pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+      }
+    } else {
+      // Standard HiColor mode: Use pre-calculated lookup tables with BRIGHT already applied
+      // Direct palette index lookup (0-15) - no bit operations needed
+      const paletteIndex = pixelBit
+        ? this.activeAttrToInk[this.ulaShiftAttr]
+        : this.activeAttrToPaper[this.ulaShiftAttr];
+      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    }
+
+    this.ulaShiftAttrCount--;
+    if (this.ulaShiftAttrCount === 0) {
+      this.ulaShiftAttrCount = 8;
+      this.ulaShiftAttr = this.ulaShiftAttr2; // Load attribute byte 2
+    }
+
+    // --- Clipping Test ---
+    // Check if pixel is within ULA clip window (NextReg 0x1C, 0x1D)
+    const clipped =
+      displayHC < this.ulaClipWindowX1 ||
+      displayHC > this.ulaClipWindowX2 ||
+      displayVC < this.ulaClipWindowY1 ||
+      displayVC > this.ulaClipWindowY2;
+
+    // Return layer output for composition stage
+    return {
+      rgb333: pixelRgb333,
+      transparent: pixelRgb333 >> 1 === this.globalTransparencyColor || clipped
+    };
+  }
+
+  /**
+   * Render LoRes pixel for the current tact position (Stage 1: Pixel Generation).
+   *
+   * LoRes mode (Radastan mode from ZX Uno):
+   * - 128×96 resolution in standard 256×192 display area (each LoRes pixel = 2×2 ULA pixels)
+   * - Two sub-modes:
+   *   * Standard LoRes: 8-bit color (256 colors), $4000-$57FF top, $6000-$77FF bottom
+   *   * Radastan LoRes: 4-bit color (16 colors), uses Timex dfile selector
+   * - Each memory byte covers a 2×2 pixel block (standard) or 2×4 block (radastan, 2 nibbles)
+   * - Simpler addressing than ULA: y(7:1) & x(7:1) for standard, linear with y/2
+   * - No shift register needed: pixels replicated directly from block byte
+   * - Scrolling wraps at 192 lines (like ULA), not 96
+   *
+   * @param vc - Vertical counter position (ULA coordinate system)
+   * @param hc - Horizontal counter position (ULA coordinate system)
+   * @param cell - LoRes rendering cell flags (Uint16 bit flags)
+   * @returns Layer output (RGB333 + flags) for composition stage
+   */
+  private renderLoResPixel(vc: number, hc: number, cell: LoResCell): LayerOutput {
+    // === STAGE 1: Scroll & Mode Sampling ===
+    if ((cell & LORES_NREG_SAMPLE) !== 0) {
+      // Sample scroll registers and mode flags
+      this.loResScrollXSampled = this.ulaScrollX;
+      this.loResScrollYSampled = this.ulaScrollY;
+      this.loResEnabledSampled = this.loResEnabled;
+      this.loResModeSampled = this.loResMode;
+    }
+
+    // === STAGE 2: Block Memory Fetch ===
+    // Fetch every 2 HC positions (one LoRes block = 2×2 pixels in 256×192 space)
+    // Standard mode: each byte = 2×2 pixels, Radastan: each byte = 2 nibbles for 2×4 pixels
+    if ((cell & LORES_BLOCK_FETCH) !== 0) {
+      // Calculate display coordinates
+      const displayHC = hc - this.confDisplayXStart;
+      const displayVC = vc - this.confDisplayYStart;
+
+      // Apply scroll (matching VHDL: x <= hc_i(7 downto 0) + scroll_x_i)
+      const x = (displayHC + this.loResScrollXSampled) & 0xff;
+
+      // Apply Y scroll with 192-line wrap (matching VHDL logic)
+      let y_pre = displayVC + this.loResScrollYSampled;
+      let y: number;
+      if (y_pre >= 192) {
+        // Wrap: y(7 downto 6) <= (y_pre(7 downto 6) + 1)
+        const upperBits = ((y_pre >> 6) + 1) & 0x03;
+        y = (upperBits << 6) | (y_pre & 0x3f);
+      } else {
+        y = y_pre & 0xff;
+      }
+
+      // Fetch when entering new block horizontally
+      // Standard mode: fetch when x[0]=0 (every 2 pixels)
+      // Radastan mode: fetch when x[1:0]=0 (every 4 pixels)
+      // Note: Y coordinate is already used in address calculation - we fetch on every scanline
+      const shouldFetch = this.loResModeSampled === 0 ? (x & 0x01) === 0 : (x & 0x03) === 0;
+
+      if (shouldFetch) {
+        let blockAddr: number;
+
+        if (this.loResModeSampled === 0) {
+          // Standard LoRes: 8-bit color, 128×96 blocks
+          // Address: y(7 downto 1) & x(7 downto 1) - from VHDL
+          const lores_addr_pre = ((y >> 1) << 7) | (x >> 1);
+
+          // Top/bottom half split: when y >= 96, increment bits 13:11 (adds 0x0800)
+          // VHDL: lores_addr(13 downto 11) <= (lores_addr_pre(13 downto 11) + 1)
+          blockAddr = y >= 96 ? lores_addr_pre + 0x0800 : lores_addr_pre;
+        } else {
+          // Radastan LoRes: 4-bit color, uses Timex display file selector
+          // Address: timexDFile bit + y(7 downto 1) * 64 + x(7 downto 2)
+          // VHDL: lores_addr_rad <= dfile_i & y(7 downto 1) & x(7 downto 2)
+          // Bit layout: [dfile(1)][y(7:1)(7)][x(7:2)(6)] = 14 bits
+          blockAddr = (this.timexDFile << 13) | ((y >> 1) << 6) | (x >> 2);
+        }
+
+        // Read from Bank 5 memory (ULA memory space)
+        this.loResBlockByte = this.machine.memoryDevice.readScreenMemory(blockAddr);
+      }
+    }
+
+    // === STAGE 3: Border Area ===
+    if ((cell & LORES_DISPLAY_AREA) === 0) {
+      // Border uses cached border RGB value (same as ULA)
+      return {
+        rgb333: this.borderRgbCache,
+        transparent: false
+      };
+    }
+
+    // === STAGE 4: Pixel Generation ===
+    // Generate pixel from block byte (happens every HC position)
+    const displayHC = hc - this.confDisplayXStart;
+    const displayVC = vc - this.confDisplayYStart;
+
+    // Apply scroll to get pixel position (matching VHDL)
+    const x = (displayHC + this.loResScrollXSampled) & 0xff;
+    let pixelRgb333: number;
+
+    if (this.loResModeSampled === 0) {
+      // Standard LoRes: 8-bit color with palette offset on high nibble
+      // VHDL: pixel_lores_nib_H <= lores_data_i(7 downto 4) + lores_palette_offset_i
+      //       lores_pixel_o <= pixel_lores_nib_H & lores_data_i(3 downto 0)
+      // High nibble gets palette offset added, low nibble used directly
+      const highNibble = ((this.loResBlockByte >> 4) + this.loresPaletteOffset) & 0x0f;
+      const lowNibble = this.loResBlockByte & 0x0f;
+      const paletteIndex = (highNibble << 4) | lowNibble;
+      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    } else {
+      // Radastan LoRes: 4-bit color with palette offset
+      // Each byte has 2 nibbles: high nibble for left pixels, low nibble for right pixels
+      // Bit 1 of X position selects nibble (matching VHDL: x(1) = '0')
+      const nibble =
+        x & 0x02
+          ? this.loResBlockByte & 0x0f // Right nibble (when x[1]=1)
+          : (this.loResBlockByte >> 4) & 0x0f; // Left nibble (when x[1]=0)
+
+      // Palette index construction follows VHDL implementation (lores.vhd lines 110-112)
+      let paletteIndex: number;
+      if (this.ulaPlusEnabled) {
+        // ULA+ mode: use group 3 (bits 7:6 = 11) with palette offset in bits 3:2
+        paletteIndex = 0xc0 | ((this.loresPaletteOffset & 0x03) << 2) | nibble;
+      } else {
+        // Standard mode: palette offset in upper nibble
+        paletteIndex = ((this.loresPaletteOffset & 0x0f) << 4) | nibble;
+      }
+
+      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+    }
+
+    // === STAGE 5: Clipping Test ===
+    // Check if pixel is within ULA clip window (LoRes uses ULA clip window)
+    const clipped =
+      displayHC < this.ulaClipWindowX1 ||
+      displayHC > this.ulaClipWindowX2 ||
+      displayVC < this.ulaClipWindowY1 ||
+      displayVC > this.ulaClipWindowY2;
+
+    // === STAGE 6: Return Layer Output ===
+    return {
+      rgb333: pixelRgb333,
+      transparent: pixelRgb333 >> 1 === this.globalTransparencyColor || clipped
+    };
+  }
+
+  /**
+   * Samples Next registers for ULA mode.
+   */
+  private sampleNextRegistersForUlaMode(): void {
+    // --- Scroll
+    this.ulaScrollXSampled = this.ulaScrollX;
+    this.ulaScrollYSampled = this.ulaScrollY;
+
+    // --- ULA Standard mode
+    this.disableUlaOutputSampled = this.disableUlaOutput;
+
+    // --- ULA Hi-Res mode
+    this.ulaHiResModeSampled = this.ulaHiResMode;
+    this.ulaHiResColorSampled = this.ulaHiResColor;
+    // --- ULA Hi-Color mode
+    this.ulaHiColorModeSampled = this.ulaHiColorMode;
+
+    // --- Lo-Res mode
+    this.loResEnabledSampled = this.loResEnabled;
   }
 
   // ======================================================================================
