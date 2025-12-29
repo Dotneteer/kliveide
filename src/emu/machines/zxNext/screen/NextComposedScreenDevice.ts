@@ -1,7 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import {
-  BankCache,
   LAYER2_DISPLAY_AREA,
   Layer2ScanlineState192,
   Layer2ScanlineState320x256,
@@ -248,6 +247,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // 7 = white ink on black paper
   ulaHiResColor: number;
   ulaHiResColorSampled: number;
+
+  // === Bank cache for Layer 2 memory access optimization
+  // Cache bank calculations for sequential pixel access (Priority 2E)
+  private layer2LastOffset: number = -1;
+  private layer2LastBank16K: number = -1;
+  private layer2LastBank8K: number = -1;
+  private layer2LastMemoryBase: number = -1;
 
   // Is in ULA HiColor mode? true = HiColor mode, 256×192 pixels at 0x4000,
   // 32×192 attributes at 0x6000
@@ -2055,23 +2061,23 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Check if we're in the same 8K segment and using the same bank16K
     // XOR with previous offset and check if result is less than 8K (0x2000)
     // This means we're within the same 8K segment
-    if (bankCache.lastBank16K === bank16K && (offset ^ bankCache.lastOffset) < 0x2000) {
+    if (this.layer2LastBank16K === bank16K && (offset ^ this.layer2LastOffset) < 0x2000) {
       // Fast path: reuse cached bank calculation
       const offsetWithin8K = offset & 0x1fff;
-      return this.machine.memoryDevice.memory[bankCache.lastMemoryBase + offsetWithin8K] || 0;
+      return this.machine.memoryDevice.memory[this.layer2LastMemoryBase + offsetWithin8K] || 0;
     }
 
     // Slow path: recalculate and update cache
     const segment16K = (offset >> 14) & 0x07;
     const half8K = (offset >> 13) & 0x01;
     const bank8K = (bank16K + segment16K) * 2 + half8K;
-    const memoryBase = 0x040000 + bank8K * 0x2000;
+    const memoryBase = 0x040000 + (bank8K << 13);
 
     // Update cache
-    bankCache.lastOffset = offset;
-    bankCache.lastBank16K = bank16K;
-    bankCache.lastBank8K = bank8K;
-    bankCache.lastMemoryBase = memoryBase;
+    this.layer2LastOffset = offset;
+    this.layer2LastBank16K = bank16K;
+    this.layer2LastBank8K = bank8K;
+    this.layer2LastMemoryBase = memoryBase;
 
     const offsetWithin8K = offset & 0x1fff;
     return this.machine.memoryDevice.memory[memoryBase + offsetWithin8K] || 0;
@@ -2278,14 +2284,4 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 }
 
-/**
- * Module-level bank cache for sequential pixel access optimization.
- * Maintained across pixel fetches within the same rendering context.
- * Priority 2E: Reduces redundant bank calculations by ~20-25%.
- */
-const bankCache: BankCache = {
-  lastOffset: -1,
-  lastBank16K: -1,
-  lastBank8K: -1,
-  lastMemoryBase: -1
-};
+
