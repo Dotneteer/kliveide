@@ -2,8 +2,6 @@ import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import {
   LAYER2_DISPLAY_AREA,
-  Layer2ScanlineState192,
-  Layer2ScanlineState320x256,
   LORES_BLOCK_FETCH,
   LORES_DISPLAY_AREA,
   LORES_NREG_SAMPLE,
@@ -182,6 +180,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Cached fast path eligibility for Layer 2 256x192 rendering
   private _layer2_256x192_canUseFastPath: boolean;
 
+  // Cached scanline state for Layer 2 256x192 rendering
+  private _layer2_scanline192_y: number;
+  private _layer2_scanline192_bank: number;
+
+  // Cached scanline state for Layer 2 320x256 rendering
+  private _layer2_scanline320x256_y: number;
+  private _layer2_scanline320x256_bank: number;
+
   // === Reg 0x1A - Clip Window ULA/LoRes
   ulaClipWindowX1: number;
   ulaClipWindowX2: number;
@@ -276,7 +282,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Cache bank calculations for sequential pixel access (Priority 2E)
   private layer2LastOffset: number = -1;
   private layer2LastBank16K: number = -1;
-  private layer2LastBank8K: number = -1;
   private layer2LastMemoryBase: number = -1;
 
   // Is in ULA HiColor mode? true = HiColor mode, 256×192 pixels at 0x4000,
@@ -2003,10 +2008,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Phase 1: Prepare scanline state (would be cached per scanline in real implementation)
-    const scanline = this.prepareScanlineState192(vc);
+    const scanlineValid = this.prepareScanlineState192(vc);
 
     // Phase 1: Early rejection for clipped/invalid scanlines
-    if (!scanline) {
+    if (!scanlineValid) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
@@ -2014,7 +2019,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Phase 2: Fast path for unscrolled, unclipped content
     if (this._layer2_256x192_canUseFastPath) {
-      this.renderLayer2_256x192Pixel_FastPath(scanline, hc);
+      this.renderLayer2_256x192Pixel_FastPath(hc);
       return;
     }
 
@@ -2031,8 +2036,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const x = (displayHC + this.layer2ScrollX) & 0xff;
 
-    const offset = (scanline.y << 8) | x;
-    const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
+    const offset = (this._layer2_scanline192_y << 8) | x;
+    const pixelValue = this.getLayer2PixelFromSRAM_Cached(this._layer2_scanline192_bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
@@ -2054,34 +2059,28 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * Prepare scanline state for 256×192 mode rendering.
    * Precomputes all per-scanline constants to avoid redundant calculations.
    * Phase 1: Scanline-based state precomputation for 256×192 mode.
+   * @returns true if scanline is valid and visible, false otherwise
    */
-  private prepareScanlineState192(vc: number): Layer2ScanlineState192 | null {
+  private prepareScanlineState192(vc: number): boolean {
     const displayVC = vc - this.confDisplayYStart;
 
     // Early rejection: outside display area
     if (displayVC < 0 || displayVC >= 192) {
-      return null;
+      return false;
     }
 
     // Early rejection: clipped by Y bounds
     if (displayVC < this.layer2ClipWindowY1 || displayVC > this.layer2ClipWindowY2) {
-      return null;
+      return false;
     }
 
-    // Pre-calculate Y coordinate with modulo
-    const y = (displayVC + this.layer2ScrollY) % 192;
+    // Pre-calculate Y coordinate with modulo and store in member variable
+    this._layer2_scanline192_y = (displayVC + this.layer2ScrollY) % 192;
 
-    // Pre-select bank
-    const bank = this.layer2UseShadowBank ? this.layer2ShadowRamBank : this.layer2ActiveRamBank;
+    // Pre-select bank and store in member variable
+    this._layer2_scanline192_bank = this.layer2UseShadowBank ? this.layer2ShadowRamBank : this.layer2ActiveRamBank;
 
-    return {
-      vc,
-      displayVC,
-      vc_valid: true,
-      clippedByVertical: false,
-      y,
-      bank
-    };
+    return true;
   }
 
   /**
@@ -2116,7 +2115,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Update cache
     this.layer2LastOffset = offset;
     this.layer2LastBank16K = bank16K;
-    this.layer2LastBank8K = bank8K;
     this.layer2LastMemoryBase = memoryBase;
 
     const offsetWithin8K = offset & 0x1fff;
@@ -2127,7 +2125,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * Fast path for 256×192 mode with no scrolling and full clip window.
    * Phase 2: Optimized rendering for common unscrolled case.
    */
-  private renderLayer2_256x192Pixel_FastPath(scanline: Layer2ScanlineState192, hc: number): void {
+  private renderLayer2_256x192Pixel_FastPath(hc: number): void {
     const displayHC = hc - this.confDisplayXStart;
 
     // Fast bounds check (no clipping needed)
@@ -2138,8 +2136,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Direct memory access: offset = (y << 8) | x
-    const offset = (scanline.y << 8) | displayHC;
-    const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
+    const offset = (this._layer2_scanline192_y << 8) | displayHC;
+    const pixelValue = this.getLayer2PixelFromSRAM_Cached(this._layer2_scanline192_bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
@@ -2171,10 +2169,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Priority 1A: Prepare scanline state (would be cached per scanline in real implementation)
-    const scanline = this.prepareScanlineState320x256(vc);
+    const scanlineValid = this.prepareScanlineState320x256(vc);
 
     // Priority 1B: Early rejection for clipped/invalid scanlines
-    if (!scanline) {
+    if (!scanlineValid) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
@@ -2182,7 +2180,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Priority 3H: Fast path for unscrolled, unclipped content
     if (this._layer2_320x256_canUseFastPath) {
-      this.renderLayer2_320x256Pixel_FastPath(scanline, hc);
+      this.renderLayer2_320x256Pixel_FastPath(hc);
       return;
     }
 
@@ -2206,8 +2204,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const x = getLayer2XWrappingTable320()[x_pre & 0x3ff];
 
     // Priority 2E: Use cached bank access
-    const offset = (x << 8) | scanline.y;
-    const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
+    const offset = (x << 8) | this._layer2_scanline320x256_y;
+    const pixelValue = this.getLayer2PixelFromSRAM_Cached(this._layer2_scanline320x256_bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
@@ -2229,15 +2227,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * Prepare scanline state for 320×256 mode rendering.
    * Precomputes all per-scanline constants to avoid redundant calculations.
    * Priority 1A: Scanline-based state precomputation.
+   * @returns true if scanline is valid and visible, false otherwise
    */
-  private prepareScanlineState320x256(vc: number): Layer2ScanlineState320x256 | null {
+  private prepareScanlineState320x256(vc: number): boolean {
     const displayVC = vc - this.confDisplayYStart;
     const displayVC_wide = displayVC + 32;
     const vc_valid = displayVC_wide >= 0 && displayVC_wide < 256;
 
     // Priority 1B: Early scanline rejection
     if (!vc_valid) {
-      return null;
+      return false;
     }
 
     const clipY1 = this.layer2ClipWindowY1;
@@ -2246,32 +2245,21 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Priority 1B: Early scanline rejection for clipped scanlines
     if (clippedByVertical) {
-      return null;
+      return false;
     }
 
     const y_pre = displayVC_wide + this.layer2ScrollY;
-    const y = y_pre & 0xff;
-    const bank = this.layer2UseShadowBank ? this.layer2ShadowRamBank : this.layer2ActiveRamBank;
+    this._layer2_scanline320x256_y = y_pre & 0xff;
+    this._layer2_scanline320x256_bank = this.layer2UseShadowBank ? this.layer2ShadowRamBank : this.layer2ActiveRamBank;
 
-    return {
-      vc,
-      displayVC,
-      displayVC_wide,
-      vc_valid,
-      clippedByVertical,
-      y,
-      bank
-    };
+    return true;
   }
 
   /**
    * Fast path for 320×256 mode with no scrolling and full clip window.
    * Priority 1C & 3H: Optimized memory access for common case.
    */
-  private renderLayer2_320x256Pixel_FastPath(
-    scanline: Layer2ScanlineState320x256,
-    hc: number
-  ): void {
+  private renderLayer2_320x256Pixel_FastPath(hc: number): void {
     const displayHC_wide = hc - this.confDisplayXStart + 32;
 
     // Fast bounds check (no clipping needed)
@@ -2283,8 +2271,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Sequential memory access: offset = (x << 8) | y
     // Priority 2E: Use cached bank access for sequential pixels
-    const offset = (displayHC_wide << 8) | scanline.y;
-    const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
+    const offset = (displayHC_wide << 8) | this._layer2_scanline320x256_y;
+    const pixelValue = this.getLayer2PixelFromSRAM_Cached(this._layer2_scanline320x256_bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
