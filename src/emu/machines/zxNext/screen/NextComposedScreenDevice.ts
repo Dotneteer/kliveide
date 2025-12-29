@@ -146,10 +146,28 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   spritesEnabled: boolean;
 
   // === Reg 0x16 - Layer 2 X Scroll LSB
-  layer2ScrollX: number;
+  private _layer2ScrollX: number;
+
+  get layer2ScrollX(): number {
+    return this._layer2ScrollX;
+  }
+
+  set layer2ScrollX(value: number) {
+    this._layer2ScrollX = value;
+    this.updateLayer2FastPathCaches();
+  }
 
   // === Reg 0x17 - Layer 2 Y Scroll
-  layer2ScrollY: number;
+  private _layer2ScrollY: number;
+
+  get layer2ScrollY(): number {
+    return this._layer2ScrollY;
+  }
+
+  set layer2ScrollY(value: number) {
+    this._layer2ScrollY = value;
+    this.updateLayer2FastPathCaches();
+  }
 
   // === Reg 0x18 - Layer 2 Clip Window
   layer2ClipWindowX1: number;
@@ -157,6 +175,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   layer2ClipWindowY1: number;
   layer2ClipWindowY2: number;
   layer2ClipIndex: number;
+
+  // Cached fast path eligibility for Layer 2 320x256 rendering
+  private _layer2_320x256_canUseFastPath: boolean;
+
+  // Cached fast path eligibility for Layer 2 256x192 rendering
+  private _layer2_256x192_canUseFastPath: boolean;
 
   // === Reg 0x1A - Clip Window ULA/LoRes
   ulaClipWindowX1: number;
@@ -469,6 +493,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.layer2ClipWindowX2 = 255; // NextReg 0x18 write 2: right edge (255 for 256x192)
     this.layer2ClipWindowY1 = 0; // NextReg 0x18 write 3: top edge
     this.layer2ClipWindowY2 = 191; // NextReg 0x18 write 4: bottom edge (191 for 256x192)
+    this.updateLayer2FastPathCaches();
     this.layer2ClipIndex = 0; // Clip window write index
     this.layer2ActiveRamBank = 8; // NextReg 0x12: default to bank 8 (soft reset value)
     this.layer2ShadowRamBank = 11; // NextReg 0x13: default to bank 11 (soft reset value)
@@ -963,6 +988,27 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
+   * Updates the cached fast path eligibility for Layer 2 rendering modes
+   */
+  updateLayer2FastPathCaches(): void {
+    this._layer2_320x256_canUseFastPath =
+      this.layer2ScrollX === 0 &&
+      this.layer2ScrollY === 0 &&
+      this.layer2ClipWindowX1 === 0 &&
+      this.layer2ClipWindowX2 === 159 &&
+      this.layer2ClipWindowY1 === 0 &&
+      this.layer2ClipWindowY2 === 255;
+
+    this._layer2_256x192_canUseFastPath =
+      this.layer2ScrollX === 0 &&
+      this.layer2ScrollY === 0 &&
+      this.layer2ClipWindowX1 === 0 &&
+      this.layer2ClipWindowX2 === 255 &&
+      this.layer2ClipWindowY1 === 0 &&
+      this.layer2ClipWindowY2 === 191;
+  }
+
+  /**
    * Sets the clip window cordinate according to the current clip index
    */
   set nextReg0x18Value(value: number) {
@@ -981,6 +1027,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         break;
     }
     this.layer2ClipIndex = (this.layer2ClipIndex + 1) & 0x03;
+    this.updateLayer2FastPathCaches();
   }
 
   /**
@@ -1966,14 +2013,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Phase 2: Fast path for unscrolled, unclipped content
-    if (
-      this.layer2ScrollX === 0 &&
-      this.layer2ScrollY === 0 &&
-      this.layer2ClipWindowX1 === 0 &&
-      this.layer2ClipWindowX2 === 255 &&
-      this.layer2ClipWindowY1 === 0 &&
-      this.layer2ClipWindowY2 === 191
-    ) {
+    if (this._layer2_256x192_canUseFastPath) {
       this.renderLayer2_256x192Pixel_FastPath(scanline, hc);
       return;
     }
@@ -2141,14 +2181,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Priority 3H: Fast path for unscrolled, unclipped content
-    if (
-      this.layer2ScrollX === 0 &&
-      this.layer2ScrollY === 0 &&
-      this.layer2ClipWindowX1 === 0 &&
-      this.layer2ClipWindowX2 === 159 &&
-      this.layer2ClipWindowY1 === 0 &&
-      this.layer2ClipWindowY2 === 255
-    ) {
+    if (this._layer2_320x256_canUseFastPath) {
       this.renderLayer2_320x256Pixel_FastPath(scanline, hc);
       return;
     }
