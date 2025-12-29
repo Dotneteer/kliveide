@@ -521,10 +521,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * - All other memory (SRAM and Bank 5 BRAM) has 1 wait state due to scheduling/arbitration
    */
   delayMemoryRead(address: number): void {
-    this.delayAddressBusAccess(address);
     this.tactPlusN(3);
-    this.totalContentionDelaySinceStart += 3;
-    this.contentionDelaySincePause += 3;
     
     // --- At 28 MHz (speed value 3), add 1 wait state for memory reads
     // --- Exception: Bank 7 (page 0x0E) has no wait state - direct BRAM connection
@@ -551,7 +548,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   /**
    * This function implements the memory write delay of the CPU.
-   * @param address Memory address to write
+   * @param _address Memory address to write
    *
    * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
@@ -560,8 +557,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Note: Write operations do NOT get the extra wait state at 28 MHz. The hardware uses a different timing 
    * mechanism (5× 28MHz HDMI clock) to ensure proper write timing without requiring CPU wait states.
    */
-  delayMemoryWrite(address: number): void {
-    this.delayAddressBusAccess(address);
+  delayMemoryWrite(_address: number): void {
     this.tactPlusN(3);
     this.totalContentionDelaySinceStart += 3;
     this.contentionDelaySincePause += 3;

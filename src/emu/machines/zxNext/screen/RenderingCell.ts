@@ -3,55 +3,55 @@
 // ============================================================================
 
 // ULA Standard Cell (8 flags)
-export const ULA_DISPLAY_AREA = 0b00000001;        // bit 0
-export const ULA_CONTENTION_WINDOW = 0b00000010;   // bit 1
-export const ULA_NREG_SAMPLE = 0b00000100;       // bit 2
-export const ULA_BYTE1_READ = 0b00001000;          // bit 3
-export const ULA_BYTE2_READ = 0b00010000;           // bit 4
-export const ULA_SHIFT_REG_LOAD = 0b00100000;      // bit 5
+export const ULA_DISPLAY_AREA = 0b00000001; // bit 0
+export const ULA_CONTENTION_WINDOW = 0b00000010; // bit 1
+export const ULA_NREG_SAMPLE = 0b00000100; // bit 2
+export const ULA_BYTE1_READ = 0b00001000; // bit 3
+export const ULA_BYTE2_READ = 0b00010000; // bit 4
+export const ULA_SHIFT_REG_LOAD = 0b00100000; // bit 5
 export const ULA_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
-export const ULA_BORDER_AREA = 0b10000000;         // bit 7
+export const ULA_BORDER_AREA = 0b10000000; // bit 7
 
 // ULA Hi-Res Cell (6 flags)
-export const ULA_HIRES_DISPLAY_AREA = 0b000001;      // bit 0
+export const ULA_HIRES_DISPLAY_AREA = 0b000001; // bit 0
 export const ULA_HIRES_CONTENTION_WINDOW = 0b000010; // bit 1
-export const ULA_HIRES_PIXEL_READ_0 = 0b000100;      // bit 2
-export const ULA_HIRES_PIXEL_READ_1 = 0b001000;      // bit 3
-export const ULA_HIRES_SHIFT_REG_LOAD = 0b010000;    // bit 4
-export const ULA_HIRES_BORDER_AREA = 0b100000;       // bit 5
+export const ULA_HIRES_PIXEL_READ_0 = 0b000100; // bit 2
+export const ULA_HIRES_PIXEL_READ_1 = 0b001000; // bit 3
+export const ULA_HIRES_SHIFT_REG_LOAD = 0b010000; // bit 4
+export const ULA_HIRES_BORDER_AREA = 0b100000; // bit 5
 
 // ULA Hi-Color Cell (6 flags)
-export const ULA_HICOLOR_DISPLAY_AREA = 0b000001;      // bit 0
+export const ULA_HICOLOR_DISPLAY_AREA = 0b000001; // bit 0
 export const ULA_HICOLOR_CONTENTION_WINDOW = 0b000010; // bit 1
-export const ULA_HICOLOR_PIXEL_READ = 0b000100;        // bit 2
-export const ULA_HICOLOR_COLOR_READ = 0b001000;        // bit 3
-export const ULA_HICOLOR_SHIFT_REG_LOAD = 0b010000;    // bit 4
-export const ULA_HICOLOR_BORDER_AREA = 0b100000;       // bit 5
+export const ULA_HICOLOR_PIXEL_READ = 0b000100; // bit 2
+export const ULA_HICOLOR_COLOR_READ = 0b001000; // bit 3
+export const ULA_HICOLOR_SHIFT_REG_LOAD = 0b010000; // bit 4
+export const ULA_HICOLOR_BORDER_AREA = 0b100000; // bit 5
 
 // Layer 2 Cell (4 flags - same for all 3 resolutions)
-export const LAYER2_DISPLAY_AREA = 0b0001;        // bit 0
-export const LAYER2_CONTENTION_WINDOW = 0b0010;   // bit 1
-export const LAYER2_PIXEL_FETCH = 0b0100;         // bit 2
-export const LAYER2_PALETTE_INDEX = 0b1000;       // bit 3
+export const LAYER2_DISPLAY_AREA = 0b0001; // bit 0
+export const LAYER2_CONTENTION_WINDOW = 0b0010; // bit 1
+export const LAYER2_PIXEL_FETCH = 0b0100; // bit 2
+export const LAYER2_PALETTE_INDEX = 0b1000; // bit 3
 
 // Sprites Cell (4 flags)
-export const SPRITES_DISPLAY_AREA = 0b0001;        // bit 0
-export const SPRITES_CONTENTION_WINDOW = 0b0010;   // bit 1
-export const SPRITES_LINE_BUFFER_READ = 0b0100;    // bit 2
-export const SPRITES_VISIBILITY_CHECK = 0b1000;    // bit 3
+export const SPRITES_DISPLAY_AREA = 0b0001; // bit 0
+export const SPRITES_CONTENTION_WINDOW = 0b0010; // bit 1
+export const SPRITES_LINE_BUFFER_READ = 0b0100; // bit 2
+export const SPRITES_VISIBILITY_CHECK = 0b1000; // bit 3
 
 // Tilemap Cell (4 flags - same for both resolutions)
-export const TILEMAP_DISPLAY_AREA = 0b0001;        // bit 0
-export const TILEMAP_CONTENTION_WINDOW = 0b0010;   // bit 1
-export const TILEMAP_TILE_INDEX_FETCH = 0b0100;    // bit 2
-export const TILEMAP_PATTERN_FETCH = 0b1000;       // bit 3
+export const TILEMAP_DISPLAY_AREA = 0b0001; // bit 0
+export const TILEMAP_CONTENTION_WINDOW = 0b0010; // bit 1
+export const TILEMAP_TILE_INDEX_FETCH = 0b0100; // bit 2
+export const TILEMAP_PATTERN_FETCH = 0b1000; // bit 3
 
 // LoRes Cell (5 flags)
-export const LORES_DISPLAY_AREA = 0b00001;         // bit 0
-export const LORES_CONTENTION_WINDOW = 0b00010;    // bit 1
-export const LORES_NREG_SAMPLE = 0b00100;          // bit 2
-export const LORES_BLOCK_FETCH = 0b01000;          // bit 3
-export const LORES_PIXEL_REPLICATE = 0b10000;      // bit 4
+export const LORES_DISPLAY_AREA = 0b00001; // bit 0
+export const LORES_CONTENTION_WINDOW = 0b00010; // bit 1
+export const LORES_NREG_SAMPLE = 0b00100; // bit 2
+export const LORES_BLOCK_FETCH = 0b01000; // bit 3
+export const LORES_PIXEL_REPLICATE = 0b10000; // bit 4
 
 /**
  * Common timing and region information for all rendering cells.
@@ -78,7 +78,7 @@ export const LORES_PIXEL_REPLICATE = 0b10000;      // bit 4
 /**
  * ULA Standard rendering cell represented as Uint16 bit flags.
  * Activities occur at specific HC subcycle positions during the display area.
- * 
+ *
  * Bit flags (use bitwise operations for access):
  * - ULA_DISPLAY_AREA: Active display area where layers render
  * - ULA_CONTENTION_WINDOW: In contention window (affects CPU timing)
@@ -100,7 +100,7 @@ export type ULAStandardMatrix = Uint16Array;
  */
 /**
  * ULA Timex Hi-Res rendering cell (512×192 mode) represented as Uint16 bit flags.
- * 
+ *
  * Bit flags:
  * - ULA_HIRES_DISPLAY_AREA: Active display area
  * - ULA_HIRES_CONTENTION_WINDOW: In contention window
@@ -113,7 +113,7 @@ export type ULAHiResMatrix = Uint16Array;
 
 /**
  * ULA Timex Hi-Color rendering cell (256×192 with per-pixel color) represented as Uint16 bit flags.
- * 
+ *
  * Bit flags:
  * - ULA_HICOLOR_DISPLAY_AREA: Active display area
  * - ULA_HICOLOR_CONTENTION_WINDOW: In contention window
@@ -126,7 +126,7 @@ export type ULAHiColorMatrix = Uint16Array;
 
 /**
  * Layer 2 rendering cell (all resolutions share common structure) represented as Uint16 bit flags.
- * 
+ *
  * Bit flags:
  * - LAYER2_DISPLAY_AREA: Active display area
  * - LAYER2_CONTENTION_WINDOW: In contention window
@@ -138,7 +138,7 @@ export type Layer2Matrix = Uint16Array;
 
 /**
  * Sprites rendering cell represented as Uint16 bit flags.
- * 
+ *
  * Bit flags:
  * - SPRITES_DISPLAY_AREA: Active display area
  * - SPRITES_CONTENTION_WINDOW: In contention window
@@ -150,7 +150,7 @@ export type SpritesMatrix = Uint16Array;
 
 /**
  * Tilemap rendering cell (both resolutions share common structure) represented as Uint16 bit flags.
- * 
+ *
  * Bit flags:
  * - TILEMAP_DISPLAY_AREA: Active display area
  * - TILEMAP_CONTENTION_WINDOW: In contention window
@@ -162,7 +162,7 @@ export type TilemapMatrix = Uint16Array;
 
 /**
  * LoRes rendering cell (both resolutions share common structure) represented as Uint16 bit flags.
- * 
+ *
  * Bit flags:
  * - LORES_DISPLAY_AREA: Active display area
  * - LORES_CONTENTION_WINDOW: In contention window
@@ -185,22 +185,39 @@ export type RenderingCell =
   | LoResCell;
 
 /**
- * Type alias for a 2D matrix of rendering cells that represents the rendering information
- * for a specific layer across the visible screen area.
+ * Scanline state for Layer 2 320×256 mode rendering.
+ * Precomputed per scanline to avoid redundant per-pixel calculations.
  */
-export type LayerMatrix = RenderingCell[][];
+export interface Layer2ScanlineState320x256 {
+  vc: number;
+  displayVC: number;
+  displayVC_wide: number;
+  vc_valid: boolean;
+  clippedByVertical: boolean;
+  y: number; // Final Y coordinate after scrolling
+  bank: number; // Active memory bank
+}
 
 /**
- * Layer output structure from Stage 1 (Pixel Generation + Palette Lookup).
- * Each rendering layer returns this structure for composition.
+ * Scanline state for Layer 2 256×192 mode rendering.
+ * Precomputed per scanline to avoid redundant per-pixel calculations.
  */
-export type LayerOutput = {
-  // RGB333 color (9 bits: bits[8:6]=R, bits[5:3]=G, bits[2:0]=B)
-  rgb333: number;
-  // True if pixel should be treated as transparent
-  transparent: boolean;
-  // True if pixel is outside layer's clip window
-  clipped: boolean;
-  // Optional: Layer 2 priority bit (overrides priority order)
-  priority?: boolean;
-};
+export interface Layer2ScanlineState192 {
+  vc: number;
+  displayVC: number;
+  vc_valid: boolean;
+  clippedByVertical: boolean;
+  y: number; // Pre-calculated: (displayVC + scrollY) % 192
+  bank: number; // Pre-selected: shadow vs active
+}
+
+/**
+ * Bank cache for Layer 2 memory access optimization.
+ * Priority 2E: Cache bank calculations for sequential pixel access.
+ */
+export interface BankCache {
+  lastOffset: number;
+  lastBank16K: number;
+  lastBank8K: number;
+  lastMemoryBase: number;
+}

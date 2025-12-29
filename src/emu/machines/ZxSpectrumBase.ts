@@ -152,8 +152,6 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
   delayMemoryRead(address: number): void {
     this.delayAddressBusAccess(address);
     this.tactPlusN(3);
-    this.totalContentionDelaySinceStart += 3;
-    this.contentionDelaySincePause += 3;
   }
 
   /**

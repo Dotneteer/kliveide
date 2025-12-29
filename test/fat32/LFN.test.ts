@@ -1,3 +1,4 @@
+
 import { describe, it, expect } from "vitest";
 import { calcShortNameCheckSum, convertLongToShortName, getLongFileFatEntries } from "@main/fat32/file-names";
 import { FNAME_FLAG_LOST_CHARS } from "@main/fat32/Fat32Types";
