@@ -185,25 +185,6 @@ export type RenderingCell =
   | LoResCell;
 
 /**
- * Type alias for a 2D matrix of rendering cells that represents the rendering information
- * for a specific layer across the visible screen area.
- */
-export type LayerMatrix = RenderingCell[][];
-
-/**
- * Layer output structure from Stage 1 (Pixel Generation + Palette Lookup).
- * Each rendering layer returns this structure for composition.
- */
-export type LayerOutput = {
-  // RGB333 color (9 bits: bits[8:6]=R, bits[5:3]=G, bits[2:0]=B)
-  rgb333: number;
-  // True if pixel should be treated as transparent (includes clipped pixels)
-  transparent: boolean;
-  // Optional: Layer 2 priority bit (overrides priority order)
-  priority?: boolean;
-};
-
-/**
  * Scanline state for Layer 2 320×256 mode rendering.
  * Precomputed per scanline to avoid redundant per-pixel calculations.
  */

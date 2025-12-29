@@ -5,7 +5,6 @@ import {
   LAYER2_DISPLAY_AREA,
   Layer2ScanlineState192,
   Layer2ScanlineState320x256,
-  LayerOutput,
   LORES_BLOCK_FETCH,
   LORES_DISPLAY_AREA,
   LORES_NREG_SAMPLE,
@@ -21,7 +20,6 @@ import {
   ULAStandardCell
 } from "./RenderingCell";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
-import { IPixelRenderingState } from "./UlaMatrix";
 import { zxNextBgra } from "../PaletteDevice";
 import {
   initializeAllLookupTables,
@@ -85,9 +83,7 @@ const BITMAP_SIZE = BITMAP_WIDTH * BITMAP_HEIGHT;
  * for both timing modes (50Hz and 60Hz). The machine operates on a tact-by-tact basis,
  * where each tact corresponds to one CLK_7 cycle at a specific (VC, HC) position.
  */
-export class NextComposedScreenDevice
-  implements IGenericDevice<IZxNextMachine>, IPixelRenderingState
-{
+export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> {
   // Current timing configuration (50Hz or 60Hz)
   config: TimingConfig;
 
@@ -351,6 +347,26 @@ export class NextComposedScreenDevice
   ulaPlusAttrToInk: Uint8Array;
   ulaPlusAttrToPaper: Uint8Array;
 
+  // renderTact internal state
+  private ulaPixel1Rgb333: number | null;
+  private ulaPixel1Transparent: boolean;
+  private ulaPixel2Rgb333: number | null;
+  private ulaPixel2Transparent: boolean;
+  private layer2Pixel1Rgb333: number | null;
+  private layer2Pixel1Transparent: boolean;
+  private layer2Pixel1Priority: boolean;
+  private layer2Pixel2Rgb333: number | null;
+  private layer2Pixel2Transparent: boolean;
+  private layer2Pixel2Priority: boolean;
+  private tilemapPixel1Rgb333: number | null;
+  private tilemapPixel1Transparent: boolean;
+  private tilemapPixel2Rgb333: number | null;
+  private tilemapPixel2Transparent: boolean;
+  private spritesPixel1Rgb333: number | null;
+  private spritesPixel1Transparent: boolean;
+  private spritesPixel2Rgb333: number | null;
+  private spritesPixel2Transparent: boolean;
+
   constructor(public readonly machine: IZxNextMachine) {
     // Screen dimensions
     this.screenWidth = BITMAP_WIDTH;
@@ -455,6 +471,26 @@ export class NextComposedScreenDevice
     this.layer2EnableMappingForReads = false; // Port 0x123B bit 2: memory mapping disabled
     this.layer2EnableMappingForWrites = false; // Port 0x123B bit 0: memory mapping disabled
     this.machine.memoryDevice.updateFastPathFlags();
+
+    // --- Initialize renderTact internal state
+    this.ulaPixel1Rgb333 = null;
+    this.ulaPixel1Transparent = false;
+    this.ulaPixel2Rgb333 = null;
+    this.ulaPixel2Transparent = false;
+    this.layer2Pixel1Rgb333 = null;
+    this.layer2Pixel1Transparent = false;
+    this.layer2Pixel1Priority = false;
+    this.layer2Pixel2Rgb333 = null;
+    this.layer2Pixel2Transparent = false;
+    this.layer2Pixel2Priority = false;
+    this.tilemapPixel1Rgb333 = null;
+    this.tilemapPixel1Transparent = false;
+    this.tilemapPixel2Rgb333 = null;
+    this.tilemapPixel2Transparent = false;
+    this.spritesPixel1Rgb333 = null;
+    this.spritesPixel1Transparent = false;
+    this.spritesPixel2Rgb333 = null;
+    this.spritesPixel2Transparent = false;
 
     this.displayTiming = 0;
     this.userLockOnDisplayTiming = false;
@@ -583,87 +619,63 @@ export class NextComposedScreenDevice
     const hc = getActiveTactToHC()[tact];
     const vc = getActiveTactToVC()[tact];
 
-    // === LAYER RENDERING ===
-    // Render ULA layer pixel(s) if enabled
-    let ulaOutput1: LayerOutput | null = null;
-    let ulaOutput2: LayerOutput | null = null;
-
+    // === ULA rendering
     if (this.loResEnabledSampled) {
       // LoRes mode (128×96, replaces ULA output)
       const loresCell = getActiveRenderingFlagsLoRes()[tact];
-      ulaOutput1 = this.renderLoResPixel(vc, hc, loresCell);
-      ulaOutput2 = ulaOutput1; // Standard resolution base (4x replication handled by caller)
+      this.renderLoResPixel(vc, hc, loresCell);
     } else if (!this.disableUlaOutputSampled) {
       if (this.ulaHiResModeSampled || this.ulaHiColorModeSampled) {
         // ULA Hi-Res and Hi-Color modes
         if (this.ulaHiResModeSampled) {
           // ULA Hi-Res mode (512×192, 2 pixels per HC)
           const ulaCell = getActiveRenderingFlagsULA()[tact];
-          const out = this.renderULAHiResPixel(vc, hc, ulaCell);
-          ulaOutput1 = out[0];
-          ulaOutput2 = out[1];
+          this.renderULAHiResPixel(vc, hc, ulaCell);
         } else {
           // ULA Hi-Color mode (256×192)
           const ulaCell = getActiveRenderingFlagsULA()[tact];
-          ulaOutput1 = this.renderULAHiColorPixel(vc, hc, ulaCell);
-          ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
+          this.renderULAHiColorPixel(vc, hc, ulaCell);
         }
       } else {
         // ULA Standard mode (256×192)
         const ulaCell = getActiveRenderingFlagsULA()[tact];
-        ulaOutput1 = this.renderULAStandardPixel(vc, hc, ulaCell);
-        ulaOutput2 = ulaOutput1; // Standard resolution: duplicate pixel
+        this.renderULAStandardPixel(vc, hc, ulaCell);
       }
     }
 
     // Render Layer 2 pixel(s) if enabled
-    let layer2Output1: LayerOutput | null = null;
-    let layer2Output2: LayerOutput | null = null;
-
     if (this.layer2Enabled) {
       if (this.layer2Resolution === 0) {
         // Layer 2 256×192 mode
         const layer2Cell = getActiveRenderingFlagsLayer2_256x192()[tact];
-        layer2Output1 = this.renderLayer2_256x192Pixel(vc, hc, layer2Cell);
-        layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
+        this.renderLayer2_256x192Pixel(vc, hc, layer2Cell);
       } else if (this.layer2Resolution === 1) {
         // Layer 2 320×256 mode
         const layer2Cell = getActiveRenderingFlagsLayer2_320x256()[tact];
-        layer2Output1 = this.renderLayer2_320x256Pixel(vc, hc, layer2Cell);
-        layer2Output2 = layer2Output1; // Standard resolution: duplicate pixel
+        this.renderLayer2_320x256Pixel(vc, hc, layer2Cell);
       } else if (this.layer2Resolution === 2) {
         // Layer 2 640×256 mode (Hi-Res, 2 pixels per HC)
         const layer2Cell = getActiveRenderingFlagsLayer2_640x256()[tact];
-        layer2Output1 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 0);
-        layer2Output2 = this.renderLayer2_640x256Pixel(vc, hc, layer2Cell, 1);
+        this.renderLayer2_640x256Pixel(vc, hc, layer2Cell);
       }
     }
 
     // Render Sprites pixel(s) if enabled
-    let spritesOutput1: LayerOutput | null = null;
-    let spritesOutput2: LayerOutput | null = null;
-
     if (this.spritesEnabled) {
       const spritesCell = getActiveRenderingFlagsSprites()[tact];
-      spritesOutput1 = this.renderSpritesPixel(vc, hc, spritesCell);
-      spritesOutput2 = spritesOutput1; // Standard resolution: duplicate pixel
+      this.renderSpritesPixel(vc, hc, spritesCell);
     }
 
     // Render Tilemap pixel(s) if enabled
-    let tilemapOutput1: LayerOutput | null = null;
-    let tilemapOutput2: LayerOutput | null = null;
-
     if (this.tilemapEnabled) {
       if (this.tilemap80x32Resolution) {
         // Tilemap 80×32 mode (Hi-Res, 2 pixels per HC)
         const tilemapCell = getActiveRenderingFlagsTilemap_80x32()[tact];
-        tilemapOutput1 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 0);
-        tilemapOutput2 = this.renderTilemap_80x32Pixel(vc, hc, tilemapCell, 1);
+        this.renderTilemap_80x32Pixel(vc, hc, tilemapCell);
       } else {
         // Tilemap 40×32 mode
         const tilemapCell = getActiveRenderingFlagsTilemap_40x32()[tact];
-        tilemapOutput1 = this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
-        tilemapOutput2 = tilemapOutput1; // Standard resolution: duplicate pixel
+        this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
       }
     }
 
@@ -679,24 +691,36 @@ export class NextComposedScreenDevice
     // For now, using simplified approach (incomplete implementation)
 
     // Merge tilemap into ULA if both enabled (simplified version)
-    if (this.tilemapEnabled && tilemapOutput1) {
-      if (ulaOutput1 && !ulaOutput1.transparent && !tilemapOutput1.transparent) {
+    if (this.tilemapEnabled && this.tilemapPixel1Rgb333 !== null) {
+      if (
+        this.ulaPixel1Rgb333 != null &&
+        !this.ulaPixel1Transparent &&
+        !this.tilemapPixel1Transparent
+      ) {
         // Both non-transparent: apply tm_pixel_below logic
         // TODO: Read tm_pixel_below from tilemap attributes
         // For now, tilemap on top (simplified)
-        ulaOutput1 = tilemapOutput1;
-      } else if (!tilemapOutput1.transparent) {
+        this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
+        this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+      } else if (!this.tilemapPixel1Transparent) {
         // Only tilemap non-transparent
-        ulaOutput1 = tilemapOutput1;
+        this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
+        this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
       }
       // If only ULA non-transparent, keep ulaOutput1 as-is
     }
 
-    if (this.tilemapEnabled && tilemapOutput2) {
-      if (ulaOutput2 && !ulaOutput2.transparent && !tilemapOutput2.transparent) {
-        ulaOutput2 = tilemapOutput2;
-      } else if (!tilemapOutput2.transparent) {
-        ulaOutput2 = tilemapOutput2;
+    if (this.tilemapEnabled && this.tilemapPixel2Rgb333 !== null) {
+      if (
+        this.ulaPixel2Rgb333 != null &&
+        !this.ulaPixel2Transparent &&
+        !this.tilemapPixel2Transparent
+      ) {
+        this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
+        this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+      } else if (!this.tilemapPixel2Transparent) {
+        this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
+        this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
       }
     }
 
@@ -704,11 +728,27 @@ export class NextComposedScreenDevice
     const bitmapOffset = getActiveTactToBitmapOffset()[tact];
     if (bitmapOffset >= 0) {
       // Compose and write first pixel
-      const pixelRGBA1 = this.composeSinglePixel(ulaOutput1, layer2Output1, spritesOutput1);
+      const pixelRGBA1 = this.composeSinglePixel(
+        this.ulaPixel1Rgb333,
+        this.ulaPixel1Transparent,
+        this.layer2Pixel1Rgb333,
+        this.layer2Pixel1Transparent,
+        this.layer2Pixel1Priority,
+        this.spritesPixel1Rgb333,
+        this.spritesPixel1Transparent
+      );
       this._pixelBuffer[bitmapOffset] = pixelRGBA1;
 
       // Compose and write second pixel
-      const pixelRGBA2 = this.composeSinglePixel(ulaOutput2, layer2Output2, spritesOutput2);
+      const pixelRGBA2 = this.composeSinglePixel(
+        this.ulaPixel2Rgb333,
+        this.ulaPixel2Transparent,
+        this.layer2Pixel2Rgb333,
+        this.layer2Pixel2Transparent,
+        this.layer2Pixel2Priority,
+        this.spritesPixel2Rgb333,
+        this.spritesPixel2Transparent
+      );
       this._pixelBuffer[bitmapOffset + 1] = pixelRGBA2;
     }
 
@@ -801,6 +841,26 @@ export class NextComposedScreenDevice
       // This ensures proper centering of 60Hz content
       this.initializeBitmap();
     }
+
+    // --- Initialize renderTact internal state
+    this.ulaPixel1Rgb333 = null;
+    this.ulaPixel1Transparent = false;
+    this.ulaPixel2Rgb333 = null;
+    this.ulaPixel2Transparent = false;
+    this.layer2Pixel1Rgb333 = null;
+    this.layer2Pixel1Transparent = false;
+    this.layer2Pixel1Priority = false;
+    this.layer2Pixel2Rgb333 = null;
+    this.layer2Pixel2Transparent = false;
+    this.layer2Pixel2Priority = false;
+    this.tilemapPixel1Rgb333 = null;
+    this.tilemapPixel1Transparent = false;
+    this.tilemapPixel2Rgb333 = null;
+    this.tilemapPixel2Transparent = false;
+    this.spritesPixel1Rgb333 = null;
+    this.spritesPixel1Transparent = false;
+    this.spritesPixel2Rgb333 = null;
+    this.spritesPixel2Transparent = false;
   }
 
   // ==============================================================================================
@@ -1008,12 +1068,10 @@ export class NextComposedScreenDevice
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderSpritesPixel(_vc: number, _hc: number, _cell: number): LayerOutput {
+  private renderSpritesPixel(_vc: number, _hc: number, _cell: number): void {
     // TODO: Implementation to be documented in a future section
-    return {
-      rgb333: 0x00000000,
-      transparent: true
-    };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
   }
 
   /**
@@ -1021,19 +1079,11 @@ export class NextComposedScreenDevice
    * @param _vc - Vertical counter position
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
-   * @param _pixelIndex - Which pixel of the pair (0 or 1)
    */
-  private renderTilemap_80x32Pixel(
-    _vc: number,
-    _hc: number,
-    _cell: number,
-    _pixelIndex: number
-  ): LayerOutput {
+  private renderTilemap_80x32Pixel(_vc: number, _hc: number, _cell: number): void {
     // TODO: Implementation to be documented in a future section
-    return {
-      rgb333: 0x00000000,
-      transparent: true
-    };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
   }
 
   /**
@@ -1042,12 +1092,10 @@ export class NextComposedScreenDevice
    * @param _hc - Horizontal counter position
    * @param _cell - ULA Standard rendering cell with activity flags
    */
-  private renderTilemap_40x32Pixel(_vc: number, _hc: number, _cell: number): LayerOutput {
+  private renderTilemap_40x32Pixel(_vc: number, _hc: number, _cell: number): void {
     // TODO: Implementation to be documented in a future section
-    return {
-      rgb333: 0x00000000,
-      transparent: true
-    };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
   }
 
   /**
@@ -1099,76 +1147,101 @@ export class NextComposedScreenDevice
    * @returns Final RGBA pixel value (format: 0xAABBGGRR)
    */
   private composeSinglePixel(
-    ulaOutput: LayerOutput,
-    layer2Output: LayerOutput,
-    spritesOutput: LayerOutput
+    ulaPixelRgb333: number | null,
+    ulaTransparent: boolean,
+    layer2PixelRgb333: number | null,
+    layer2Transparent: boolean,
+    layer2Priority: boolean,
+    spritesPixelRgb333: number | null,
+    spritesTransparent: boolean
   ): number {
     // --- Combine sprites, Layer 2, and ULA outputs
-    let selectedOutput: LayerOutput | null = null;
+    let selectedPixel: number | null = null;
+    let selectedTransparent: boolean = false;
+
     // === Layer 2 Priority Override ===
     // If Layer 2 priority bit is set, it renders on top regardless of priority setting
-    if (layer2Output && layer2Output.priority && !layer2Output.transparent) {
-      selectedOutput = layer2Output;
+    if (layer2PixelRgb333 != null && layer2Priority && !layer2Transparent) {
+      selectedPixel = layer2PixelRgb333;
+      selectedTransparent = layer2Transparent;
     } else {
       // Select first non-transparent layer in priority order
       switch (this.layerPriority) {
         case 0: // SLU
-          if (spritesOutput && !spritesOutput.transparent) {
-            selectedOutput = spritesOutput;
-          } else if (layer2Output && !layer2Output.transparent) {
-            selectedOutput = layer2Output;
+          if (spritesPixelRgb333 != null && !spritesTransparent) {
+            selectedPixel = spritesPixelRgb333;
+            selectedTransparent = spritesTransparent;
+          } else if (layer2PixelRgb333 != null && !layer2Transparent) {
+            selectedPixel = layer2PixelRgb333;
+            selectedTransparent = layer2Transparent;
           } else {
-            selectedOutput = ulaOutput;
+            selectedPixel = ulaPixelRgb333;
+            selectedTransparent = ulaTransparent;
           }
           break;
 
         case 1: // LSU
-          if (layer2Output && !layer2Output.transparent) {
-            selectedOutput = layer2Output;
-          } else if (spritesOutput && !spritesOutput.transparent) {
-            selectedOutput = spritesOutput;
+          if (layer2PixelRgb333 != null && !layer2Transparent) {
+            selectedPixel = layer2PixelRgb333;
+            selectedTransparent = layer2Transparent;
+          } else if (spritesPixelRgb333 != null && !spritesTransparent) {
+            selectedPixel = spritesPixelRgb333;
+            selectedTransparent = spritesTransparent;
           } else {
-            selectedOutput = ulaOutput;
+            selectedPixel = ulaPixelRgb333;
+            selectedTransparent = ulaTransparent;
           }
           break;
 
         case 2: // SUL
-          if (spritesOutput && !spritesOutput.transparent) {
-            selectedOutput = spritesOutput;
-          } else if (ulaOutput && !ulaOutput.transparent) {
-            selectedOutput = ulaOutput;
+          if (spritesPixelRgb333 != null && !spritesTransparent) {
+            selectedPixel = spritesPixelRgb333;
+            selectedTransparent = spritesTransparent;
+          } else if (ulaPixelRgb333 != null && !ulaTransparent) {
+            selectedPixel = ulaPixelRgb333;
+            selectedTransparent = ulaTransparent;
           } else {
-            selectedOutput = layer2Output;
+            selectedPixel = layer2PixelRgb333;
+            selectedTransparent = layer2Transparent;
           }
           break;
 
         case 3: // LUS
-          if (layer2Output && !layer2Output.transparent) {
-            selectedOutput = layer2Output;
-          } else if (ulaOutput && !ulaOutput.transparent) {
-            selectedOutput = ulaOutput;
+          if (layer2PixelRgb333 != null && !layer2Transparent) {
+            selectedPixel = layer2PixelRgb333;
+            selectedTransparent = layer2Transparent;
+          } else if (ulaPixelRgb333 != null && !ulaTransparent) {
+            selectedPixel = ulaPixelRgb333;
+            selectedTransparent = ulaTransparent;
           } else {
-            selectedOutput = spritesOutput;
+            selectedPixel = spritesPixelRgb333;
+            selectedTransparent = spritesTransparent;
           }
           break;
 
         case 4: // USL
-          if (ulaOutput && !ulaOutput.transparent) {
-            selectedOutput = ulaOutput;
-          } else if (spritesOutput && !spritesOutput.transparent) {
-            selectedOutput = spritesOutput;
+          if (ulaPixelRgb333 != null && !ulaTransparent) {
+            selectedPixel = ulaPixelRgb333;
+            selectedTransparent = ulaTransparent;
+          } else if (spritesPixelRgb333 != null && !spritesTransparent) {
+            selectedPixel = spritesPixelRgb333;
+            selectedTransparent = spritesTransparent;
           } else {
-            selectedOutput = layer2Output;
+            selectedPixel = layer2PixelRgb333;
+            selectedTransparent = layer2Transparent;
           }
           break;
 
         default:
-          if (ulaOutput && !ulaOutput.transparent) {
-            selectedOutput = ulaOutput;
-          } else if (layer2Output && !layer2Output.transparent) {
-            selectedOutput = layer2Output;
+          if (ulaPixelRgb333 != null && !ulaTransparent) {
+            selectedPixel = ulaPixelRgb333;
+            selectedTransparent = ulaTransparent;
+          } else if (layer2PixelRgb333 != null && !layer2Transparent) {
+            selectedPixel = layer2PixelRgb333;
+            selectedTransparent = layer2Transparent;
           } else {
-            selectedOutput = spritesOutput;
+            selectedPixel = spritesPixelRgb333;
+            selectedTransparent = spritesTransparent;
           }
           break;
       }
@@ -1177,13 +1250,13 @@ export class NextComposedScreenDevice
     // === Fallback/Backdrop Color ===
     let finalRGB333: number;
     // If selected output is null or transparent, use fallback color
-    if (selectedOutput === null || selectedOutput.transparent) {
+    if (selectedPixel === null || selectedTransparent) {
       // All layers transparent: use fallback color (NextReg 0x4A)
       // NextReg 0x4A is 8-bit RRRGGGBB, convert to 9-bit RGB
       const blueLSB = (this.fallbackColor & 0x02) | (this.fallbackColor & 0x01); // OR of blue bits
       finalRGB333 = (this.fallbackColor << 1) | blueLSB;
     } else {
-      finalRGB333 = selectedOutput.rgb333;
+      finalRGB333 = selectedPixel;
     }
 
     return zxNextBgra[finalRGB333 & 0x1ff]; // Convert to RGBA format
@@ -1205,7 +1278,7 @@ export class NextComposedScreenDevice
    * @param cell - ULA Standard rendering cell flags (Uint16 bit flags)
    * @returns Layer output (RGB333 + flags) for composition stage
    */
-  private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): LayerOutput {
+  private renderULAStandardPixel(vc: number, hc: number, cell: ULAStandardCell): void {
     // === Display Area: ULA Standard Rendering ===
     // --- Scroll & mode sampling ---
     if ((cell & ULA_NREG_SAMPLE) !== 0) {
@@ -1275,19 +1348,17 @@ export class NextComposedScreenDevice
     if ((cell & ULA_DISPLAY_AREA) === 0) {
       // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
       if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
-        // ULANext with 0xFF mask: Border uses fallback color
-        return {
-          rgb333: this.machine.composedScreenDevice.fallbackRgb333Cache,
-          transparent: false
-        };
+        this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 =
+          this.machine.composedScreenDevice.fallbackRgb333Cache;
+        this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+        return;
       }
 
       // --- Use cached border RGB value (updated when borderColor changes)
       // --- This eliminates method call overhead for ~30% of pixels
-      return {
-        rgb333: this.borderRgbCache,
-        transparent: false
-      };
+      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      return;
     }
 
     // // --- Pixel Generation ---
@@ -1355,10 +1426,9 @@ export class NextComposedScreenDevice
       displayVC > this.ulaClipWindowY2;
 
     // Return layer output for composition stage
-    return {
-      rgb333: pixelRgb333,
-      transparent: pixelRgb333 >> 1 === this.globalTransparencyColor || clipped
-    };
+    this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
+    this.ulaPixel1Transparent = this.ulaPixel2Transparent =
+      pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
   }
 
   /**
@@ -1383,11 +1453,7 @@ export class NextComposedScreenDevice
    * @param cell - ULA Hi-Res rendering cell flags (Uint16 bit flags)
    * @returns Layer output (RGB333 + flags) for composition stage
    */
-  private renderULAHiResPixel(
-    vc: number,
-    hc: number,
-    cell: ULAHiResCell
-  ): [LayerOutput, LayerOutput] {
+  private renderULAHiResPixel(vc: number, hc: number, cell: ULAHiResCell): void {
     // === Display Area: ULA Standard Rendering ===
     // --- Scroll & mode sampling ---
     if ((cell & ULA_NREG_SAMPLE) !== 0) {
@@ -1474,11 +1540,9 @@ export class NextComposedScreenDevice
         borderRgb333 = this.ulaHiResPaperRgb333;
       }
 
-      const pixel = {
-        rgb333: borderRgb333,
-        transparent: false
-      };
-      return [pixel, pixel];
+      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = borderRgb333;
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      return;
     }
 
     // --- Pixel Generation ---
@@ -1530,16 +1594,10 @@ export class NextComposedScreenDevice
       displayVC < this.ulaClipWindowY1 ||
       displayVC > this.ulaClipWindowY2;
 
-    return [
-      {
-        rgb333: pixel1Rgb333,
-        transparent: pixel1Rgb333 >> 1 === this.globalTransparencyColor || clipped
-      },
-      {
-        rgb333: pixel2Rgb333,
-        transparent: pixel2Rgb333 >> 1 === this.globalTransparencyColor || clipped
-      }
-    ];
+    this.ulaPixel1Rgb333 = pixel1Rgb333;
+    this.ulaPixel1Transparent = pixel1Rgb333 >> 1 === this.globalTransparencyColor || clipped;
+    this.ulaPixel2Rgb333 = pixel2Rgb333;
+    this.ulaPixel2Transparent = pixel2Rgb333 >> 1 === this.globalTransparencyColor || clipped;
   }
 
   /**
@@ -1564,7 +1622,7 @@ export class NextComposedScreenDevice
    * @param cell - ULA Hi-Color rendering cell flags (Uint16 bit flags)
    * @returns Pair of layer outputs (RGB333 + flags) for composition stage
    */
-  private renderULAHiColorPixel(vc: number, hc: number, cell: ULAHiResCell): LayerOutput {
+  private renderULAHiColorPixel(vc: number, hc: number, cell: ULAHiResCell): void {
     // === Display Area: ULA Standard Rendering ===
     // --- Scroll & mode sampling ---
     if ((cell & ULA_NREG_SAMPLE) !== 0) {
@@ -1634,19 +1692,17 @@ export class NextComposedScreenDevice
     if ((cell & ULA_DISPLAY_AREA) === 0) {
       // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
       if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
-        // ULANext with 0xFF mask: Border uses fallback color
-        return {
-          rgb333: this.machine.composedScreenDevice.fallbackRgb333Cache,
-          transparent: false
-        };
+        this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 =
+          this.machine.composedScreenDevice.fallbackRgb333Cache;
+        this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+        return;
       }
 
       // --- Use cached border RGB value (updated when borderColor changes)
       // --- This eliminates method call overhead for ~30% of pixels
-      return {
-        rgb333: this.borderRgbCache,
-        transparent: false
-      };
+      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      return;
     }
 
     // // --- Pixel Generation ---
@@ -1709,10 +1765,9 @@ export class NextComposedScreenDevice
       displayVC > this.ulaClipWindowY2;
 
     // Return layer output for composition stage
-    return {
-      rgb333: pixelRgb333,
-      transparent: pixelRgb333 >> 1 === this.globalTransparencyColor || clipped
-    };
+    this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
+    this.ulaPixel1Transparent = this.ulaPixel2Transparent =
+      pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
   }
 
   /**
@@ -1733,7 +1788,7 @@ export class NextComposedScreenDevice
    * @param cell - LoRes rendering cell flags (Uint16 bit flags)
    * @returns Layer output (RGB333 + flags) for composition stage
    */
-  private renderLoResPixel(vc: number, hc: number, cell: LoResCell): LayerOutput {
+  private renderLoResPixel(vc: number, hc: number, cell: LoResCell): void {
     // === STAGE 1: Scroll & Mode Sampling ===
     if ((cell & LORES_NREG_SAMPLE) !== 0) {
       // Sample scroll registers and mode flags
@@ -1798,10 +1853,9 @@ export class NextComposedScreenDevice
     // === STAGE 3: Border Area ===
     if ((cell & LORES_DISPLAY_AREA) === 0) {
       // Border uses cached border RGB value (same as ULA)
-      return {
-        rgb333: this.borderRgbCache,
-        transparent: false
-      };
+      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      return;
     }
 
     // === STAGE 4: Pixel Generation ===
@@ -1853,10 +1907,9 @@ export class NextComposedScreenDevice
       displayVC > this.ulaClipWindowY2;
 
     // === STAGE 6: Return Layer Output ===
-    return {
-      rgb333: pixelRgb333,
-      transparent: pixelRgb333 >> 1 === this.globalTransparencyColor || clipped
-    };
+    this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
+    this.ulaPixel1Transparent = this.ulaPixel2Transparent;
+    pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
   }
 
   /**
@@ -1889,9 +1942,11 @@ export class NextComposedScreenDevice
    * @param hc Horizontal counter position
    * @param cell Layer 2 rendering cell with activity flags
    */
-  private renderLayer2_256x192Pixel(vc: number, hc: number, cell: number): LayerOutput {
+  private renderLayer2_256x192Pixel(vc: number, hc: number, cell: number): void {
     if ((cell & LAYER2_DISPLAY_AREA) === 0) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     // Phase 1: Prepare scanline state (would be cached per scanline in real implementation)
@@ -1899,7 +1954,9 @@ export class NextComposedScreenDevice
 
     // Phase 1: Early rejection for clipped/invalid scanlines
     if (!scanline) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     // Phase 2: Fast path for unscrolled, unclipped content
@@ -1911,7 +1968,8 @@ export class NextComposedScreenDevice
       this.layer2ClipWindowY1 === 0 &&
       this.layer2ClipWindowY2 === 191
     ) {
-      return this.renderLayer2_256x192Pixel_FastPath(scanline, hc);
+      this.renderLayer2_256x192Pixel_FastPath(scanline, hc);
+      return;
     }
 
     // General path with full feature support
@@ -1920,7 +1978,9 @@ export class NextComposedScreenDevice
     const hc_valid = displayHC >= 0 && displayHC < 256;
 
     if (!hc_valid || displayHC < this.layer2ClipWindowX1 || displayHC > this.layer2ClipWindowX2) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     const x = (displayHC + this.layer2ScrollX) & 0xff;
@@ -1929,7 +1989,9 @@ export class NextComposedScreenDevice
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
@@ -1937,7 +1999,9 @@ export class NextComposedScreenDevice
     const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
-    return { rgb333: rgb333 & 0x1ff, transparent: false, priority };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
+    this.layer2Pixel1Priority = this.layer2Pixel2Priority = priority;
   }
 
   /**
@@ -2017,15 +2081,14 @@ export class NextComposedScreenDevice
    * Fast path for 256×192 mode with no scrolling and full clip window.
    * Phase 2: Optimized rendering for common unscrolled case.
    */
-  private renderLayer2_256x192Pixel_FastPath(
-    scanline: Layer2ScanlineState192,
-    hc: number
-  ): LayerOutput {
+  private renderLayer2_256x192Pixel_FastPath(scanline: Layer2ScanlineState192, hc: number): void {
     const displayHC = hc - this.confDisplayXStart;
 
     // Fast bounds check (no clipping needed)
     if (displayHC < 0 || displayHC >= 256) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     // Direct memory access: offset = (y << 8) | x
@@ -2033,7 +2096,9 @@ export class NextComposedScreenDevice
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
@@ -2041,7 +2106,9 @@ export class NextComposedScreenDevice
     const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
-    return { rgb333: rgb333 & 0x1ff, transparent: false, priority };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
+    this.layer2Pixel1Priority = this.layer2Pixel2Priority = priority;
   }
 
   /**
@@ -2050,9 +2117,11 @@ export class NextComposedScreenDevice
    * @param hc Horizontal counter position
    * @param cell Layer 2 rendering cell with activity flags
    */
-  private renderLayer2_320x256Pixel(vc: number, hc: number, cell: number): LayerOutput {
+  private renderLayer2_320x256Pixel(vc: number, hc: number, cell: number): void {
     if ((cell & LAYER2_DISPLAY_AREA) === 0) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     // Priority 1A: Prepare scanline state (would be cached per scanline in real implementation)
@@ -2060,7 +2129,9 @@ export class NextComposedScreenDevice
 
     // Priority 1B: Early rejection for clipped/invalid scanlines
     if (!scanline) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     // Priority 3H: Fast path for unscrolled, unclipped content
@@ -2072,7 +2143,8 @@ export class NextComposedScreenDevice
       this.layer2ClipWindowY1 === 0 &&
       this.layer2ClipWindowY2 === 255
     ) {
-      return this.renderLayer2_320x256Pixel_FastPath(scanline, hc);
+      this.renderLayer2_320x256Pixel_FastPath(scanline, hc);
+      return;
     }
 
     // General path with full feature support
@@ -2084,7 +2156,9 @@ export class NextComposedScreenDevice
     const hc_valid = displayHC_wide < 320;
 
     if (!hc_valid || displayHC_wide < clipX1 || displayHC_wide > clipX2) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     const x_pre = displayHC_wide + this.layer2ScrollX;
@@ -2097,7 +2171,9 @@ export class NextComposedScreenDevice
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
@@ -2105,7 +2181,9 @@ export class NextComposedScreenDevice
     const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
-    return { rgb333: rgb333 & 0x1ff, transparent: false, priority };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
+    this.layer2Pixel1Priority = this.layer2Pixel2Priority = priority;
   }
 
   /**
@@ -2154,12 +2232,14 @@ export class NextComposedScreenDevice
   private renderLayer2_320x256Pixel_FastPath(
     scanline: Layer2ScanlineState320x256,
     hc: number
-  ): LayerOutput {
+  ): void {
     const displayHC_wide = hc - this.confDisplayXStart + 32;
 
     // Fast bounds check (no clipping needed)
     if (displayHC_wide >= 320) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     // Sequential memory access: offset = (x << 8) | y
@@ -2168,7 +2248,9 @@ export class NextComposedScreenDevice
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(scanline.bank, offset);
 
     if (pixelValue === this.globalTransparencyColor) {
-      return { rgb333: 0, transparent: true };
+      this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+      this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+      return;
     }
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
@@ -2176,7 +2258,9 @@ export class NextComposedScreenDevice
     const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
-    return { rgb333: rgb333 & 0x1ff, transparent: false, priority };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
+    this.layer2Pixel1Priority = this.layer2Pixel2Priority = priority;
   }
 
   /**
@@ -2187,14 +2271,10 @@ export class NextComposedScreenDevice
    * @param _cell Layer 2 rendering cell with activity flags
    * @param _pixelIndex Which pixel of the pair (0 or 1)
    */
-  private renderLayer2_640x256Pixel(
-    _vc: number,
-    _hc: number,
-    _cell: number,
-    _pixelIndex: number
-  ): LayerOutput {
+  private renderLayer2_640x256Pixel(_vc: number, _hc: number, _cell: number): void {
     // TODO: Implementation to be documented in a future section
-    return { rgb333: 0x00000000, transparent: true };
+    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
+    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
   }
 }
 
