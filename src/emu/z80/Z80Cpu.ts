@@ -55,6 +55,11 @@ export class Z80Cpu implements IZ80Cpu {
     // Initialize with IY as default index register
     this._indexView = this._iyView;
     this._prefix = OpCodePrefix.None;
+
+    // Pre-allocate stepOutStack buffer (reused, never reallocated)
+    this.stepOutStack = new Array(MAX_STEP_OUT_STACK_SIZE);
+    this.stepOutStackPointer = 0;
+    this.stepOutStackCount = 0;
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -556,6 +561,16 @@ export class Z80Cpu implements IZ80Cpu {
   stepOutStack: number[];
 
   /**
+   * Circular buffer pointer for stepOutStack (points to next write position)
+   */
+  private stepOutStackPointer: number;
+
+  /**
+   * Number of valid entries in stepOutStack
+   */
+  private stepOutStackCount: number;
+
+  /**
    * We store the step out depth in this variable to implement the step-out debugger function
    */
   stepOutAddress: number;
@@ -564,8 +579,10 @@ export class Z80Cpu implements IZ80Cpu {
    * Invoke this method to mark the current depth of the call stack when the step-out operation starts.
    */
   markStepOutAddress(): void {
-    if (this.stepOutStack.length > 0) {
-      this.stepOutAddress = this.stepOutStack[this.stepOutStack.length - 1];
+    if (this.stepOutStackCount > 0) {
+      // Get the last pushed address (most recent)
+      const lastIndex = (this.stepOutStackPointer - 1 + MAX_STEP_OUT_STACK_SIZE) % MAX_STEP_OUT_STACK_SIZE;
+      this.stepOutAddress = this.stepOutStack[lastIndex];
     } else {
       this.stepOutAddress = -1;
     }
@@ -1149,9 +1166,15 @@ export class Z80Cpu implements IZ80Cpu {
   }
 
   pushToStepOutStack(returnAddress: number): void {
-    this.stepOutStack.push(returnAddress);
-    if (this.stepOutStack.length > MAX_STEP_OUT_STACK_SIZE) {
-      this.stepOutStack.shift();
+    // Write to current position in circular buffer
+    this.stepOutStack[this.stepOutStackPointer] = returnAddress;
+    
+    // Advance pointer (wrap around at buffer size)
+    this.stepOutStackPointer = (this.stepOutStackPointer + 1) % MAX_STEP_OUT_STACK_SIZE;
+    
+    // Track count (saturate at buffer size)
+    if (this.stepOutStackCount < MAX_STEP_OUT_STACK_SIZE) {
+      this.stepOutStackCount++;
     }
   }
 

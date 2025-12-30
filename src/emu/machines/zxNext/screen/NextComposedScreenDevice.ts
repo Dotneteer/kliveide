@@ -15,7 +15,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Configuration properties
 
   // Current timing configuration (50Hz or 60Hz)
-  private config: TimingConfig;
+  config: TimingConfig;
 
   // Flattened config properties (eliminates property access overhead in hot path)
   private confIntStartTact: number;
@@ -173,6 +173,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.layer2EnableMappingForWrites = false; // Port 0x123B bit 0: memory mapping disabled
     this.machine.memoryDevice.updateFastPathFlags();
 
+    // --- Initialize Tilemap state
+    this.tilemapEnabled = false;
+    this.tilemapClipIndex = 0;
+    this.tilemapClipWindowX1 = 0;
+    this.tilemapClipWindowX2 = 159;
+    this.tilemapClipWindowY1 = 0;
+    this.tilemapClipWindowY2 = 255;
+    this.tilemapScrollX = 0;
+    this.tilemapScrollY = 0;
+
     // --- Initialize renderTact internal state
     this.ulaPixel1Rgb333 = null;
     this.ulaPixel1Transparent = false;
@@ -317,6 +327,28 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set layer2ScrollY(value: number) {
     this.layer2ScrollYField = value;
     this.updateLayer2FastPathCaches();
+  }
+
+  // Gets the Layer 2 X Scroll value (LSB and MSB combined)
+  get tilemapScrollX(): number {
+    return this.tilemapScrollXField;
+  }
+
+  // Sets the Layer 2 X Scroll value (LSB and MSB combined), updating related caches
+  set tilemapScrollX(value: number) {
+    this.tilemapScrollXField = value;
+    this.updateTilemapFastPathCaches();
+  }
+
+  // Gets the Layer 2 Y Scroll value
+  get tilemapScrollY(): number {
+    return this.tilemapScrollYField;
+  }
+
+  // Sets the Layer 2 Y Scroll value, updating related caches
+  set tilemapScrollY(value: number) {
+    this.tilemapScrollYField = value;
+    this.updateTilemapFastPathCaches();
   }
 
   /**
@@ -656,6 +688,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2ClipWindowY2 === 255;
   }
 
+    // Updates the cached fast path eligibility for Layer 2 rendering modes
+  private updateTilemapFastPathCaches(): void {
+    // TODO: Implement tilemap fast path cache updates when needed
+  }
+
   // ==============================================================================================
   // Port updates
   //
@@ -805,6 +842,37 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         break;
     }
     this.ulaClipIndex = (this.ulaClipIndex + 1) & 0x03;
+  }
+
+  get nextReg0x1bValue(): number {
+    switch (this.tilemapClipIndex) {
+      case 0:
+        return this.tilemapClipWindowX1;
+      case 1:
+        return this.tilemapClipWindowX2;
+      case 2:
+        return this.tilemapClipWindowY1;
+      default:
+        return this.tilemapClipWindowY2;
+    }
+  }
+
+  set nextReg0x1bValue(value: number) {
+    switch (this.tilemapClipIndex) {
+      case 0:
+        this.tilemapClipWindowX1 = value;
+        break;
+      case 1:
+        this.tilemapClipWindowX2 = value;
+        break;
+      case 2:
+        this.tilemapClipWindowY1 = value;
+        break;
+      default:
+        this.tilemapClipWindowY2 = value;
+        break;
+    }
+    this.tilemapClipIndex = (this.tilemapClipIndex + 1) & 0x03;
   }
 
   set nextReg0x42Value(value: number) {
@@ -2353,13 +2421,49 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // This section contains all properties and methods related to Tilemap rendering.
   // ==============================================================================================
 
-  // === Reg 0x6B - Tilemap control
+  // Reg $1B - Clip Window Tilemap
+  tilemapClipWindowX1: number;
+  tilemapClipWindowX2: number;
+  tilemapClipWindowY1: number;
+  tilemapClipWindowY2: number;
+  tilemapClipIndex: number;
+
+  // Reg $30 - Tilemap X Scroll LSB combined with Reg $2F - Tilemap X Scroll MSB
+  private tilemapScrollXField: number;
+  // Reg $31 - Tilemap Y Scroll
+  private tilemapScrollYField: number;
+  // REG $4C - Tilemap transparency index
+  tilemapTransparencyIndex: number;
+  // Reg 0x6B [7] - Enable the tilemap
   tilemapEnabled: boolean;
+  // Reg 0x6B [6] - Tilemap resolution: 0 = 40x32, 1 = 80x32
   tilemap80x32Resolution: boolean;
+  // Reg 0x6B [5] - Eliminate the attribute entry in the tilemap
   tilemapEliminateAttributes: boolean;
+  // Reg 0x6B [3] - Tilemap mode: 0 = Graphics, 1 = Text
   tilemapTextMode: boolean;
+  // Reg 0x6B [1] - Activate 512 tile mode
   tilemap512TileMode: boolean;
+  // Reg 0x6B [0] - Force tilemap on top of ULA
   tilemapForceOnTopOfUla: boolean;
+  // Reg $6C [7:4] - Palette offset
+  tilemapPaletteOffset: number;
+  // Reg $6C [3] - X Mirror
+  tilemapXMirror: boolean;
+  // Reg $6C [2] - Y Mirror
+  tilemapYMirror: boolean;
+  // Reg $6C [1] - Rotate 90 degrees
+  tilemapRotate: boolean;
+  // Reg $6C [0] - ULA Over Tilemap (or bit 8 of the tile number if 512 tile mode is enabled)
+  tilemapUlaOver: boolean;
+  // Reg $6E [7] - true to select bank 7, false to select bank 5
+  tilemapUseBank7: boolean;
+  // Reg $6E [5:0] - MSB of address of the tilemap in Bank 5
+  tilemapBank5Msb: number;
+  // Reg $6F [7] - true to select bank 7, false to select bank 5
+  tilemapTileDefUseBank7: boolean;
+  // Reg $6F [5:0] - MSB of address of the tile definitions in Bank 5
+  tilemapTileDefBank5Msb: number;
 
   // ==============================================================================================
   // Sprites Rendering
