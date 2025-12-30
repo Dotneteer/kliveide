@@ -102,6 +102,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   loResBlockByte: number; // Current block data byte
   loResScrollXSampled: number; // Sampled X scroll for LoRes
   loResScrollYSampled: number; // Sampled Y scroll for LoRes
+  // Optimization: pre-computed display coordinates (computed once, reused multiple times)
+  private _loResDisplayHC: number;
+  private _loResDisplayVC: number;
   sprites0OnTop: boolean;
   spritesEnableClipping: boolean;
   layerPriority: number;
@@ -1826,23 +1829,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Fetch every 2 HC positions (one LoRes block = 2×2 pixels in 256×192 space)
     // Standard mode: each byte = 2×2 pixels, Radastan: each byte = 2 nibbles for 2×4 pixels
     if ((cell & SCR_BYTE1_READ) !== 0) {
-      // Calculate display coordinates
-      const displayHC = hc - this.confDisplayXStart;
-      const displayVC = vc - this.confDisplayYStart;
+      // Calculate display coordinates once (will be reused in pixel generation stage)
+      this._loResDisplayHC = hc - this.confDisplayXStart;
+      this._loResDisplayVC = vc - this.confDisplayYStart;
 
       // Apply scroll (matching VHDL: x <= hc_i(7 downto 0) + scroll_x_i)
-      const x = (displayHC + this.loResScrollXSampled) & 0xff;
+      const x = (this._loResDisplayHC + this.loResScrollXSampled) & 0xff;
 
-      // Apply Y scroll with 192-line wrap (matching VHDL logic)
-      let y_pre = displayVC + this.loResScrollYSampled;
-      let y: number;
-      if (y_pre >= 192) {
-        // Wrap: y(7 downto 6) <= (y_pre(7 downto 6) + 1)
-        const upperBits = ((y_pre >> 6) + 1) & 0x03;
-        y = (upperBits << 6) | (y_pre & 0x3f);
-      } else {
-        y = y_pre & 0xff;
-      }
+      // Apply Y scroll with 192-line wrap using pre-computed lookup table
+      const y = loResYWrapTable[this._loResDisplayVC + this.loResScrollYSampled];
 
       // Fetch when entering new block horizontally
       // Standard mode: fetch when x[0]=0 (every 2 pixels)
@@ -1884,11 +1879,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === STAGE 4: Pixel Generation ===
     // Generate pixel from block byte (happens every HC position)
-    const displayHC = hc - this.confDisplayXStart;
-    const displayVC = vc - this.confDisplayYStart;
+    // Reuse pre-computed display coordinates from STAGE 2
 
     // Apply scroll to get pixel position (matching VHDL)
-    const x = (displayHC + this.loResScrollXSampled) & 0xff;
+    const x = (this._loResDisplayHC + this.loResScrollXSampled) & 0xff;
     let pixelRgb333: number;
 
     if (this.loResModeSampled === 0) {
@@ -1925,10 +1919,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // === STAGE 5: Clipping Test ===
     // Check if pixel is within ULA clip window (LoRes uses ULA clip window)
     const clipped =
-      displayHC < this.ulaClipWindowX1 ||
-      displayHC > this.ulaClipWindowX2 ||
-      displayVC < this.ulaClipWindowY1 ||
-      displayVC > this.ulaClipWindowY2;
+      this._loResDisplayHC < this.ulaClipWindowX1 ||
+      this._loResDisplayHC > this.ulaClipWindowX2 ||
+      this._loResDisplayVC < this.ulaClipWindowY1 ||
+      this._loResDisplayVC > this.ulaClipWindowY2;
 
     // === STAGE 6: Return Layer Output ===
     this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
@@ -3282,6 +3276,10 @@ function getULANextPaperIndex(format: number, attr: number): number {
 // ================================================================================================
 let layer2XWrappingTableWide: Uint16Array | undefined;
 
+// LoRes Y-coordinate wrapping lookup table for performance optimization
+// Pre-computed for all possible y_pre values (0-447: 192 display lines + 256 max scroll)
+let loResYWrapTable: Uint8Array | undefined;
+
 function initializeLayer2HelperTables(): void {
   // Both 320x256 and 640x256 modes use the same wrapping logic
   layer2XWrappingTableWide = new Uint16Array(1024);
@@ -3293,5 +3291,18 @@ function initializeLayer2HelperTables(): void {
       x = (upper << 6) | (x & 0x3f);
     }
     layer2XWrappingTableWide[i] = x & 0x1ff;
+  }
+
+  // Initialize LoRes Y-wrap lookup table
+  // Covers all possible displayVC (0-191) + scrollY (0-255) = 0-446
+  loResYWrapTable = new Uint8Array(448);
+  for (let y_pre = 0; y_pre < 448; y_pre++) {
+    if (y_pre >= 192) {
+      // Wrap: y(7 downto 6) <= (y_pre(7 downto 6) + 1)
+      const upperBits = ((y_pre >> 6) + 1) & 0x03;
+      loResYWrapTable[y_pre] = (upperBits << 6) | (y_pre & 0x3f);
+    } else {
+      loResYWrapTable[y_pre] = y_pre & 0xff;
+    }
   }
 }
