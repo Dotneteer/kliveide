@@ -1805,7 +1805,7 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x32)).toBe(0xa7);
-    expect(m.loResDevice.scrollX).toBe(0xa7);
+    expect(m.composedScreenDevice.loResScrollX).toBe(0xa7);
   });
 
   it("Reg $33 write", async () => {
@@ -1817,7 +1817,7 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x33)).toBe(0xa7);
-    expect(m.loResDevice.scrollY).toBe(0xa7);
+    expect(m.composedScreenDevice.loResScrollY).toBe(0xa7);
   });
 
   it("Reg $42 write #1", async () => {
@@ -2206,46 +2206,46 @@ describe("Next - NextRegDevice", function () {
   it("Reg $6a isRadastanMode", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const loResDevice = m.loResDevice;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x6a, 0x20);
 
     // --- Assert
     expect(readNextReg(m, 0x6a)).toBe(0x20);
-    expect(loResDevice.isRadastanMode).toBe(true);
-    expect(loResDevice.radastanTimexXor).toBe(false);
-    expect(loResDevice.paletteOffset).toBe(0);
+    expect(scrDevice.loResRadastanMode).toBe(true);
+    expect(scrDevice.loResRadastanTimexXor).toBe(false);
+    expect(scrDevice.loResPaletteOffset).toBe(0);
   });
 
   it("Reg $6a radastanTimexXor", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const loResDevice = m.loResDevice;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x6a, 0x10);
 
     // --- Assert
     expect(readNextReg(m, 0x6a)).toBe(0x10);
-    expect(loResDevice.isRadastanMode).toBe(false);
-    expect(loResDevice.radastanTimexXor).toBe(true);
-    expect(loResDevice.paletteOffset).toBe(0);
+    expect(scrDevice.loResRadastanMode).toBe(false);
+    expect(scrDevice.loResRadastanTimexXor).toBe(true);
+    expect(scrDevice.loResPaletteOffset).toBe(0);
   });
 
   it("Reg $6a paletteOffset", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const loResDevice = m.loResDevice;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x6a, 0x0a);
 
     // --- Assert
     expect(readNextReg(m, 0x6a)).toBe(0x0a);
-    expect(loResDevice.isRadastanMode).toBe(false);
-    expect(loResDevice.radastanTimexXor).toBe(false);
-    expect(loResDevice.paletteOffset).toBe(0x0a);
+    expect(scrDevice.loResRadastanMode).toBe(false);
+    expect(scrDevice.loResRadastanTimexXor).toBe(false);
+    expect(scrDevice.loResPaletteOffset).toBe(0x0a);
   });
 
   it("Reg $6c paletteOffset", async () => {

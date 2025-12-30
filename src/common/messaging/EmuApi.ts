@@ -411,9 +411,9 @@ export type Z80CpuState = {
   halted: boolean;
   snoozed: boolean;
   opStartAddress: number;
-  lastMemoryReads: number[];
+  lastMemoryReads: Uint16Array;
   lastMemoryReadValue: number;
-  lastMemoryWrites: number[];
+  lastMemoryWrites: Uint16Array;
   lastMemoryWriteValue: number;
   lastIoReadPort: number;
   lastIoReadValue: number;

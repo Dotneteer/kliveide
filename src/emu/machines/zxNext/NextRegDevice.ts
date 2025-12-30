@@ -1080,14 +1080,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x32,
       description: "LoRes X Scroll",
-      readFn: () => machine.loResDevice.scrollX,
-      writeFn: (v) => (machine.loResDevice.scrollX = v & 0xff)
+      readFn: () => machine.composedScreenDevice.loResScrollX,
+      writeFn: (v) => (machine.composedScreenDevice.loResScrollX = v & 0xff)
     });
     r({
       id: 0x33,
       description: "LoRes Y Scroll",
-      readFn: () => machine.loResDevice.scrollY,
-      writeFn: (v) => (machine.loResDevice.scrollY = v & 0xff)
+      readFn: () => machine.composedScreenDevice.loResScrollY,
+      writeFn: (v) => (machine.composedScreenDevice.loResScrollY = v & 0xff)
     });
     r({
       id: 0x34,
@@ -1429,8 +1429,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6a,
       description: "LoRes Control",
-      readFn: () => machine.loResDevice.nextReg6aValue,
-      writeFn: (v) => (machine.loResDevice.nextReg6aValue = v & 0xff),
+      readFn: () =>
+        (machine.composedScreenDevice.loResRadastanMode ? 0x20 : 0) |
+        (machine.composedScreenDevice.loResRadastanTimexXor ? 0x10 : 0) |
+        (machine.composedScreenDevice.loResPaletteOffset & 0x0f),
+      writeFn: (v) => {
+        machine.composedScreenDevice.loResRadastanMode = (v & 0x20) !== 0;
+        machine.composedScreenDevice.loResRadastanTimexXor = (v & 0x10) !== 0;
+        machine.composedScreenDevice.loResPaletteOffset = v & 0x0f;
+      },
       slices: [
         {
           mask: 0x20,

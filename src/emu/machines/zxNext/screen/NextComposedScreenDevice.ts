@@ -98,7 +98,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // === Reg 0x15 - LoRes mode (128x48 or 128x96)
   loResEnabled: boolean;
   loResEnabledSampled: boolean;
-  loResModeSampled: number;
+  loResRadastanModeSampled: boolean;
   loResBlockByte: number; // Current block data byte
   loResScrollXSampled: number; // Sampled X scroll for LoRes
   loResScrollYSampled: number; // Sampled Y scroll for LoRes
@@ -179,6 +179,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // === Reg 0x27 - ULA Y Scroll
   ulaScrollY: number;
 
+  // === Reg 0x32 - LoRes X Scroll
+  loResScrollX: number;
+
+  // === Reg 0x33 - LoRes Y Scroll
+  loResScrollY: number;
+
+
   // === Reg 0x4A - Fallback color
   // The 8-bit color used if all layers are transparent
   private _fallbackColor: number;
@@ -208,6 +215,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // (If either are transparent the result is transparent otherwise the result is a
   // logical AND of both colors)
   enableStencilMode: boolean;
+
+  // === Reg 0x6A - LoRes control
+  loResRadastanMode: boolean;
+  loResRadastanTimexXor: boolean;
+  loResPaletteOffset: number;
 
   // === Reg 0x6B - Tilemap control
   tilemapEnabled: boolean;
@@ -388,19 +400,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.reset();
   }
 
-  // Delegate LoRes properties to loResDevice (NextReg 0x6A)
-  get loResMode(): number {
-    return this.machine.loResDevice.isRadastanMode ? 1 : 0;
-  }
-
-  get loresPaletteOffset(): number {
-    return this.machine.loResDevice.paletteOffset;
-  }
-
-  get timexDFile(): number {
-    return this.machine.loResDevice.radastanTimexXor ? 1 : 0;
-  }
-
   reset(): void {
     // --- No timing config yet
     this.config = undefined;
@@ -437,7 +436,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- Initialize LoRes state
     this.loResEnabled = false;
     this.loResEnabledSampled = false;
-    this.loResModeSampled = 0;
+    this.loResRadastanModeSampled = false;
     this.loResBlockByte = 0;
     this.loResScrollXSampled = 0;
     this.loResScrollYSampled = 0;
@@ -1819,10 +1818,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // === STAGE 1: Scroll & Mode Sampling ===
     if ((cell & SCR_NREG_SAMPLE) !== 0) {
       // Sample scroll registers and mode flags
-      this.loResScrollXSampled = this.ulaScrollX;
-      this.loResScrollYSampled = this.ulaScrollY;
+      this.loResScrollXSampled = this.loResScrollX;
+      this.loResScrollYSampled = this.loResScrollY;
       this.loResEnabledSampled = this.loResEnabled;
-      this.loResModeSampled = this.loResMode;
+      this.loResRadastanModeSampled = this.loResRadastanMode;
     }
 
     // === STAGE 2: Block Memory Fetch ===
@@ -1842,12 +1841,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Fetch when entering new block horizontally
       // Standard mode: fetch when x[0]=0 (every 2 pixels)
       // Radastan mode: fetch when x[1:0]=0 (every 4 pixels)
-      const shouldFetch = this.loResModeSampled === 0 ? (x & 0x01) === 0 : (x & 0x03) === 0;
+      const shouldFetch = !this.loResRadastanModeSampled ? (x & 0x01) === 0 : (x & 0x03) === 0;
 
       if (shouldFetch) {
         let blockAddr: number;
 
-        if (this.loResModeSampled === 0) {
+        if (!this.loResRadastanModeSampled) {
           // Standard LoRes: 8-bit color, 128×96 blocks
           // Address: y(7 downto 1) & x(7 downto 1) - from VHDL
           const lores_addr_pre = ((y >> 1) << 7) | (x >> 1);
@@ -1860,7 +1859,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           // Address: timexDFile bit + y(7 downto 1) * 64 + x(7 downto 2)
           // VHDL: lores_addr_rad <= dfile_i & y(7 downto 1) & x(7 downto 2)
           // Bit layout: [dfile(1)][y(7:1)(7)][x(7:2)(6)] = 14 bits
-          blockAddr = (this.timexDFile << 13) | ((y >> 1) << 6) | (x >> 2);
+          blockAddr = (this.loResRadastanTimexXor ? 0x2000 : 0) | ((y >> 1) << 6) | (x >> 2);
         }
 
         // Read from Bank 5 memory (ULA memory space)
@@ -1884,12 +1883,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const x = (this._loResDisplayHC + this.loResScrollXSampled) & 0xff;
     let pixelRgb333: number;
 
-    if (this.loResModeSampled === 0) {
+    if (!this.loResRadastanModeSampled) {
       // Standard LoRes: 8-bit color with palette offset on high nibble
       // VHDL: pixel_lores_nib_H <= lores_data_i(7 downto 4) + lores_palette_offset_i
       //       lores_pixel_o <= pixel_lores_nib_H & lores_data_i(3 downto 0)
       // High nibble gets palette offset added, low nibble used directly
-      const highNibble = ((this.loResBlockByte >> 4) + this.loresPaletteOffset) & 0x0f;
+      const highNibble = ((this.loResBlockByte >> 4) + this.loResPaletteOffset) & 0x0f;
       const lowNibble = this.loResBlockByte & 0x0f;
       const paletteIndex = (highNibble << 4) | lowNibble;
       pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
@@ -1906,10 +1905,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       let paletteIndex: number;
       if (this.ulaPlusEnabled) {
         // ULA+ mode: use group 3 (bits 7:6 = 11) with palette offset in bits 3:2
-        paletteIndex = 0xc0 | ((this.loresPaletteOffset & 0x03) << 2) | nibble;
+        paletteIndex = 0xc0 | ((this.loResPaletteOffset & 0x03) << 2) | nibble;
       } else {
         // Standard mode: palette offset in upper nibble
-        paletteIndex = ((this.loresPaletteOffset & 0x0f) << 4) | nibble;
+        paletteIndex = ((this.loResPaletteOffset & 0x0f) << 4) | nibble;
       }
 
       pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
