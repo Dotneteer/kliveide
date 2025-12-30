@@ -72,7 +72,7 @@ describe("Next - ComposedScreenDevice", function () {
       pm.writePort(0xff, 0x00); // Set mode 0
 
       // --- Assert
-      expect(d.standardScreenAt0x4000).toBe(true);
+      expect(d.ulaStandardScreenAt0x4000).toBe(true);
       expect(d.ulaHiColorMode).toBe(false);
       expect(d.ulaHiResMode).toBe(false);
     });
@@ -89,7 +89,7 @@ describe("Next - ComposedScreenDevice", function () {
       pm.writePort(0xff, 0x01); // Set mode 2
 
       // --- Assert
-      expect(d.standardScreenAt0x4000).toBe(false);
+      expect(d.ulaStandardScreenAt0x4000).toBe(false);
       expect(d.ulaHiColorMode).toBe(false);
       expect(d.ulaHiResMode).toBe(false);
     });
@@ -703,11 +703,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x80);
-      expect(scrDevice.disableUlaOutput).toBe(true);
-      expect(scrDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(scrDevice.ulaDisableOutput).toBe(true);
+      expect(scrDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(scrDevice.ulaPlusEnabled).toBe(false);
       expect(scrDevice.ulaHalfPixelScroll).toBe(false);
-      expect(scrDevice.enableStencilMode).toBe(false);
+      expect(scrDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("blendingInSLUModes6And7", async () => {
@@ -720,11 +720,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x40);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x02);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x02);
       expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
-      expect(srcDevice.enableStencilMode).toBe(false);
+      expect(srcDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("enableUlaPlus", async () => {
@@ -737,11 +737,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x08);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(srcDevice.ulaPlusEnabled).toBe(true);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
-      expect(srcDevice.enableStencilMode).toBe(false);
+      expect(srcDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("halfPixelScroll", async () => {
@@ -754,11 +754,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x04);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(true);
-      expect(srcDevice.enableStencilMode).toBe(false);
+      expect(srcDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("enableStencilMode", async () => {
@@ -771,11 +771,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x01);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
-      expect(srcDevice.enableStencilMode).toBe(true);
+      expect(srcDevice.ulaEnableStencilMode).toBe(true);
     });
   });
 
