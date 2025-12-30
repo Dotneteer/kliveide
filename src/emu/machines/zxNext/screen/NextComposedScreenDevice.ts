@@ -1842,7 +1842,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Fetch when entering new block horizontally
       // Standard mode: fetch when x[0]=0 (every 2 pixels)
       // Radastan mode: fetch when x[1:0]=0 (every 4 pixels)
-      // Note: Y coordinate is already used in address calculation - we fetch on every scanline
       const shouldFetch = this.loResModeSampled === 0 ? (x & 0x01) === 0 : (x & 0x03) === 0;
 
       if (shouldFetch) {
