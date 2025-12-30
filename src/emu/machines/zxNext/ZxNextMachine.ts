@@ -28,7 +28,6 @@ import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
-import { LoResDevice } from "./LoResDevice";
 import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
@@ -90,8 +89,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   ulaDevice: UlaDevice;
 
-  loResDevice: LoResDevice;
-
   /**
    * Represents the beeper device of ZX Spectrum 48K
    */
@@ -146,7 +143,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice = new JoystickDevice(this);
     this.soundDevice = new NextSoundDevice(this);
     this.ulaDevice = new UlaDevice(this);
-    this.loResDevice = new LoResDevice(this);
     this.hardReset();
   }
 
@@ -207,7 +203,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice.reset();
     this.soundDevice.reset();
     this.ulaDevice.reset();
-    this.loResDevice.reset();
     this.beeperDevice.reset();
     this.expansionBusDevice.reset();
 

@@ -1445,80 +1445,6 @@ describe("Next - NextRegDevice", function () {
     expect(spriteDevice.enableSprites).toBe(true);
   });
 
-  it("Reg $1b first write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-    writeNextReg(m, 0x1c, 0x08);
-
-    // --- Act
-    writeNextReg(m, 0x1b, 0x23);
-
-    // --- Assert
-    expect(tilemapDevice.clipIndex).toBe(0x01);
-    expect(tilemapDevice.clipWindowX1).toBe(0x23);
-    expect(tilemapDevice.clipWindowX2).toBe(0x9f);
-    expect(tilemapDevice.clipWindowY1).toBe(0x00);
-    expect(tilemapDevice.clipWindowY2).toBe(0xff);
-  });
-
-  it("Reg $1b second write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-    writeNextReg(m, 0x1c, 0x08);
-
-    // --- Act
-    writeNextReg(m, 0x1b, 0x23);
-    writeNextReg(m, 0x1b, 0x34);
-
-    // --- Assert
-    expect(tilemapDevice.clipIndex).toBe(0x02);
-    expect(tilemapDevice.clipWindowX1).toBe(0x23);
-    expect(tilemapDevice.clipWindowX2).toBe(0x34);
-    expect(tilemapDevice.clipWindowY1).toBe(0x00);
-    expect(tilemapDevice.clipWindowY2).toBe(0xff);
-  });
-
-  it("Reg $1b third write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-    writeNextReg(m, 0x1c, 0x08);
-
-    // --- Act
-    writeNextReg(m, 0x1b, 0x23);
-    writeNextReg(m, 0x1b, 0x34);
-    writeNextReg(m, 0x1b, 0x45);
-
-    // --- Assert
-    expect(tilemapDevice.clipIndex).toBe(0x03);
-    expect(tilemapDevice.clipWindowX1).toBe(0x23);
-    expect(tilemapDevice.clipWindowX2).toBe(0x34);
-    expect(tilemapDevice.clipWindowY1).toBe(0x45);
-    expect(tilemapDevice.clipWindowY2).toBe(0xff);
-  });
-
-  it("Reg $1b fourth write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-    writeNextReg(m, 0x1c, 0x08);
-
-    // --- Act
-    writeNextReg(m, 0x1b, 0x23);
-    writeNextReg(m, 0x1b, 0x34);
-    writeNextReg(m, 0x1b, 0x45);
-    writeNextReg(m, 0x1b, 0x56);
-
-    // --- Assert
-    expect(tilemapDevice.clipIndex).toBe(0x00);
-    expect(tilemapDevice.clipWindowX1).toBe(0x23);
-    expect(tilemapDevice.clipWindowX2).toBe(0x34);
-    expect(tilemapDevice.clipWindowY1).toBe(0x45);
-    expect(tilemapDevice.clipWindowY2).toBe(0x56);
-  });
-
   it("Reg $1c layer2 clip index reset works", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -1722,80 +1648,6 @@ describe("Next - NextRegDevice", function () {
     expect(m.nextRegDevice.ps2KeymapDataLsb).toBe(0xaa);
   });
 
-  it("Reg $2f write #1", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x2f, 0x03);
-
-    // --- Assert
-    expect(readNextReg(m, 0x2f)).toBe(0x03);
-    expect(m.tilemapDevice.scrollX).toBe(0x300);
-  });
-
-  it("Reg $2f write #2", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x2f, 0xfc2);
-
-    // --- Assert
-    expect(readNextReg(m, 0x2f)).toBe(0x02);
-    expect(m.tilemapDevice.scrollX).toBe(0x200);
-  });
-
-  it("Reg $2f write #3", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    writeNextReg(m, 0x30, 0x5a);
-
-    // --- Act
-    writeNextReg(m, 0x2f, 0x03);
-
-    // --- Assert
-    expect(readNextReg(m, 0x2f)).toBe(0x03);
-    expect(m.tilemapDevice.scrollX).toBe(0x35a);
-  });
-
-  it("Reg $30 write #1", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x30, 0xb4);
-
-    // --- Assert
-    expect(readNextReg(m, 0x30)).toBe(0xb4);
-    expect(m.tilemapDevice.scrollX).toBe(0xb4);
-  });
-
-  it("Reg $30 write #2", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    writeNextReg(m, 0x2f, 0x01);
-
-    // --- Act
-    writeNextReg(m, 0x30, 0xb4);
-
-    // --- Assert
-    expect(readNextReg(m, 0x30)).toBe(0xb4);
-    expect(m.tilemapDevice.scrollX).toBe(0x1b4);
-  });
-
-  it("Reg $31 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x31, 0xc5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x31)).toBe(0xc5);
-    expect(m.tilemapDevice.scrollY).toBe(0xc5);
-  });
-
   it("Reg $32 write", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -1805,7 +1657,7 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x32)).toBe(0xa7);
-    expect(m.loResDevice.scrollX).toBe(0xa7);
+    expect(m.composedScreenDevice.loResScrollX).toBe(0xa7);
   });
 
   it("Reg $33 write", async () => {
@@ -1817,7 +1669,7 @@ describe("Next - NextRegDevice", function () {
 
     // --- Assert
     expect(readNextReg(m, 0x33)).toBe(0xa7);
-    expect(m.loResDevice.scrollY).toBe(0xa7);
+    expect(m.composedScreenDevice.loResScrollY).toBe(0xa7);
   });
 
   it("Reg $42 write #1", async () => {
@@ -1866,18 +1718,6 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(readNextReg(m, 0x4b)).toBe(0xa5);
     expect(m.spriteDevice.transparencyIndex).toBe(0xa5);
-  });
-
-  it("Reg $4c write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x4c, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x4c)).toBe(0xa5);
-    expect(m.tilemapDevice.transparencyIndex).toBe(0xa5);
   });
 
   it("Reg $60 first write", async () => {
@@ -2206,187 +2046,46 @@ describe("Next - NextRegDevice", function () {
   it("Reg $6a isRadastanMode", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const loResDevice = m.loResDevice;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x6a, 0x20);
 
     // --- Assert
     expect(readNextReg(m, 0x6a)).toBe(0x20);
-    expect(loResDevice.isRadastanMode).toBe(true);
-    expect(loResDevice.radastanTimexXor).toBe(false);
-    expect(loResDevice.paletteOffset).toBe(0);
+    expect(scrDevice.loResRadastanMode).toBe(true);
+    expect(scrDevice.loResRadastanTimexXor).toBe(false);
+    expect(scrDevice.loResPaletteOffset).toBe(0);
   });
 
   it("Reg $6a radastanTimexXor", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const loResDevice = m.loResDevice;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x6a, 0x10);
 
     // --- Assert
     expect(readNextReg(m, 0x6a)).toBe(0x10);
-    expect(loResDevice.isRadastanMode).toBe(false);
-    expect(loResDevice.radastanTimexXor).toBe(true);
-    expect(loResDevice.paletteOffset).toBe(0);
+    expect(scrDevice.loResRadastanMode).toBe(false);
+    expect(scrDevice.loResRadastanTimexXor).toBe(true);
+    expect(scrDevice.loResPaletteOffset).toBe(0);
   });
 
   it("Reg $6a paletteOffset", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
-    const loResDevice = m.loResDevice;
+    const scrDevice = m.composedScreenDevice;
 
     // --- Act
     writeNextReg(m, 0x6a, 0x0a);
 
     // --- Assert
     expect(readNextReg(m, 0x6a)).toBe(0x0a);
-    expect(loResDevice.isRadastanMode).toBe(false);
-    expect(loResDevice.radastanTimexXor).toBe(false);
-    expect(loResDevice.paletteOffset).toBe(0x0a);
-  });
-
-  it("Reg $6c paletteOffset", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6c, 0xa0);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6c)).toBe(0xa0);
-    expect(tilemapDevice.paletteOffset).toBe(0x0a);
-    expect(tilemapDevice.mirrorX).toBe(false);
-    expect(tilemapDevice.mirrorY).toBe(false);
-    expect(tilemapDevice.rotate).toBe(false);
-    expect(tilemapDevice.ulaOverTilemap).toBe(false);
-  });
-
-  it("Reg $6c mirrorX", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6c, 0x08);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6c)).toBe(0x08);
-    expect(tilemapDevice.paletteOffset).toBe(0x00);
-    expect(tilemapDevice.mirrorX).toBe(true);
-    expect(tilemapDevice.mirrorY).toBe(false);
-    expect(tilemapDevice.rotate).toBe(false);
-    expect(tilemapDevice.ulaOverTilemap).toBe(false);
-  });
-
-  it("Reg $6c mirrorY", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6c, 0x04);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6c)).toBe(0x04);
-    expect(tilemapDevice.paletteOffset).toBe(0x00);
-    expect(tilemapDevice.mirrorX).toBe(false);
-    expect(tilemapDevice.mirrorY).toBe(true);
-    expect(tilemapDevice.rotate).toBe(false);
-    expect(tilemapDevice.ulaOverTilemap).toBe(false);
-  });
-
-  it("Reg $6c rotate", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6c, 0x02);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6c)).toBe(0x02);
-    expect(tilemapDevice.paletteOffset).toBe(0x00);
-    expect(tilemapDevice.mirrorX).toBe(false);
-    expect(tilemapDevice.mirrorY).toBe(false);
-    expect(tilemapDevice.rotate).toBe(true);
-    expect(tilemapDevice.ulaOverTilemap).toBe(false);
-  });
-
-  it("Reg $6c ulaOverTilemap", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6c, 0x01);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6c)).toBe(0x01);
-    expect(tilemapDevice.paletteOffset).toBe(0x00);
-    expect(tilemapDevice.mirrorX).toBe(false);
-    expect(tilemapDevice.mirrorY).toBe(false);
-    expect(tilemapDevice.rotate).toBe(false);
-    expect(tilemapDevice.ulaOverTilemap).toBe(true);
-  });
-
-  it("Reg $6e baseAddressUseBank7", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6e, 0x80);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6e)).toBe(0x80);
-    expect(tilemapDevice.baseAddressUseBank7).toBe(true);
-    expect(tilemapDevice.baseAddressMsb).toBe(0);
-  });
-
-  it("Reg $6e baseAddressMsb", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6e, 0x02);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6e)).toBe(0x02);
-    expect(tilemapDevice.baseAddressUseBank7).toBe(false);
-    expect(tilemapDevice.baseAddressMsb).toBe(0x02);
-  });
-
-  it("Reg $6f definitionAddressUseBank7", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6f, 0x80);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6f)).toBe(0x80);
-    expect(tilemapDevice.definitionAddressUseBank7).toBe(true);
-    expect(tilemapDevice.definitionAddressMsb).toBe(0);
-  });
-
-  it("Reg $6f definitionAddressMsb", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-    const tilemapDevice = m.tilemapDevice;
-
-    // --- Act
-    writeNextReg(m, 0x6f, 0x02);
-
-    // --- Assert
-    expect(readNextReg(m, 0x6f)).toBe(0x02);
-    expect(tilemapDevice.definitionAddressUseBank7).toBe(false);
-    expect(tilemapDevice.definitionAddressMsb).toBe(0x02);
+    expect(scrDevice.loResRadastanMode).toBe(false);
+    expect(scrDevice.loResRadastanTimexXor).toBe(false);
+    expect(scrDevice.loResPaletteOffset).toBe(0x0a);
   });
 
   it("Reg $71 write #1", async () => {

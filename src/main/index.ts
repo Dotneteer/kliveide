@@ -81,6 +81,12 @@ process.env.PUBLIC = app.isPackaged
 // --- Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
 
+// --- Performance flags for production
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+
 // --- Set application name for Windows 10+ notifications
 if (__WIN32__) app.setAppUserModelId(app.getName());
 
@@ -203,7 +209,9 @@ async function createAppWindows() {
       nodeIntegration: true,
       contextIsolation: false,
       webSecurity: false,
-      backgroundThrottling: false
+      backgroundThrottling: false,
+      enableWebSQL: false,
+      spellcheck: false
     }
   });
   if (displayEmuDevTools) {
@@ -252,7 +260,9 @@ async function createAppWindows() {
       nodeIntegration: true,
       contextIsolation: false,
       webSecurity: false,
-      backgroundThrottling: false
+      backgroundThrottling: false,
+      enableWebSQL: false,
+      spellcheck: false
     },
     show: showIde
   });

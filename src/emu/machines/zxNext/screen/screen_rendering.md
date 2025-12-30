@@ -1504,6 +1504,446 @@ The resulting palette index is then used to fetch the RGB333 color from the appr
 - NextReg 0x43 documentation: `nextreg.txt` lines 524-543
 - ULA+ I/O ports: `ports.txt` lines 418-444
 
+### 1.8 Tilemap Layer Implementation Details
+
+The Tilemap layer provides hardware-accelerated tile-based rendering with support for two resolution modes (40×32 and 80×32), tile rotations/mirrors, scrolling, and text mode. It operates independently of the ULA and can be positioned above or below it in the layer priority order.
+
+#### Memory Organization
+
+**VRAM Access**: Tilemap uses VRAM banks 5 or 7 for both tile map data and tile definitions. Memory access is shared with the ULA on one port, with arbitration controlled by timing signals.
+
+**Base Address Configuration**:
+- **Tilemap Base Address** (NextReg 0x6E): Location of the tilemap data structure
+  - Bit 7: Bank selector (0 = bank 5, 1 = bank 7)
+  - Bits 5:0: Offset within bank (multiple of 256 bytes)
+  - Soft reset: 0x6C (bank 5, offset 0x6C00)
+- **Tile Definitions Base Address** (NextReg 0x6F): Location of tile pixel patterns
+  - Bit 7: Bank selector (0 = bank 5, 1 = bank 7)
+  - Bits 5:0: Offset within bank (multiple of 256 bytes)
+  - Soft reset: 0x4C (bank 5, offset 0x4C00)
+
+**Address Calculation**:
+```
+Full Address = (base[5:0] + addr[13:8]) & 0x3F concatenated with addr[7:0]
+Bank7 Address = base[6] ? (address in bank 7) : (address in bank 5)
+```
+
+**Tilemap Data Structure**:
+
+The tilemap is organized as a 2D array of tile entries, where each tile is represented by 1 or 2 bytes:
+
+**Standard Mode** (NextReg 0x6B bit 5 = 0, 2 bytes per tile):
+- **Byte 0**: Tile index (0-255 or 0-511 in 512-tile mode)
+- **Byte 1**: Tile attributes
+  - Bit 7:4: Palette offset (0-15)
+  - Bit 3: X mirror flag
+  - Bit 2: Y mirror flag
+  - Bit 1: Rotation flag (90° clockwise)
+  - Bit 0: Priority flag (0 = below ULA, 1 = above ULA) or bit 8 of tile index in 512-tile mode
+
+**Attribute-Eliminated Mode** (NextReg 0x6B bit 5 = 1, 1 byte per tile):
+- **Byte 0**: Tile index (0-255 or 0-511 in 512-tile mode)
+- Attributes taken from NextReg 0x6C (default attributes)
+
+**Tilemap Array Dimensions**:
+- **40×32 Mode**: 40 characters wide × 32 characters high = 1,280 tile entries
+  - Standard: 2,560 bytes (2 bytes per tile)
+  - Attribute-eliminated: 1,280 bytes (1 byte per tile)
+- **80×32 Mode**: 80 characters wide × 32 characters high = 2,560 tile entries
+  - Standard: 5,120 bytes (2 bytes per tile)
+  - Attribute-eliminated: 2,560 bytes (1 byte per tile)
+
+**Tile Memory Address Formula**:
+```vhdl
+-- Calculate tile position in array
+tile_y_index = abs_y[11:3]     -- Which row (0-31 typical, wraps at boundary)
+tile_x_index = abs_x[9:6]      -- Which column (0-39 in 40-char mode, 0-79 in 80-char mode)
+tile_array_index = tile_y_index * (40 or 80) + tile_x_index
+tile_sub_x = abs_x[5:3]        -- Which column within character (0-7)
+tile_sub_y = abs_y[2:0]        -- Which row within character (0-7)
+
+-- Address in tilemap memory
+tile_map_addr_0 = tile_array_index * (1 or 2) + 0    -- Tile index byte
+tile_map_addr_1 = tile_array_index * (1 or 2) + 1    -- Attribute byte (if not eliminated)
+```
+
+**Tile Definition Data Structure**:
+
+Each tile definition is an 8×8 pixel pattern stored in VRAM:
+
+**Standard Graphics Mode** (NextReg 0x6B bit 3 = 0):
+- 32 bytes per tile (8 rows × 4 bytes per row)
+- Each byte contains 2 pixels (4 bits each)
+- **Address Formula**:
+  ```
+  tile_pattern_addr = tile_base + (tile_index × 32) + (y_within_tile × 4) + (x_within_tile / 2)
+  pixel_data = byte[7:4] if x_even else byte[3:0]
+  ```
+
+**Text Mode** (NextReg 0x6B bit 3 = 1):
+- 8 bytes per tile (8 rows × 1 byte per row)
+- Each byte contains 8 pixels (1 bit each) - monochrome bitmap
+- **Address Formula**:
+  ```
+  tile_pattern_addr = tile_base + (tile_index × 8) + y_within_tile
+  pixel_bit = byte[7 - x_within_tile]
+  ```
+- **Palette Index Construction** (text mode):
+  ```
+  palette_index = tilemap_attr[7:1] & pixel_bit
+  ```
+  - Bits 7:1 from attribute form base palette offset (0-127)
+  - Bit 0 from pixel determines final index (0 = background, 1 = foreground)
+
+#### Rendering Modes
+
+**Resolution Modes** (NextReg 0x6B bit 6):
+- **40×32 Mode** (bit 6 = 0): 320 pixels wide × 256 pixels high (8×8 pixel tiles)
+- **80×32 Mode** (bit 6 = 1): 640 pixels wide × 256 pixels high (8×8 pixel tiles)
+
+**512-Tile Mode** (NextReg 0x6B bit 1):
+- When enabled: Tile index is 9 bits (0-511) instead of 8 bits (0-255)
+- Bit 8 of tile index comes from attribute byte bit 0 (replaces priority flag)
+
+**Text Mode** (NextReg 0x6B bit 3):
+- When enabled: Tile definitions use 8 bytes per tile (monochrome bitmap)
+- Palette offset extended to 7 bits (attribute bits 7:1)
+- Rotations and mirrors are disabled in text mode
+
+**Attribute-Eliminated Mode** (NextReg 0x6B bit 5):
+- When enabled: Tilemap uses 1 byte per tile (tile index only)
+- Attributes taken from NextReg 0x6C (default attributes)
+- Reduces memory footprint by 50%
+
+#### Scroll Implementation
+
+**Horizontal Scrolling** (NextReg 0x2F/0x30, 10 bits):
+- **MSB** (NextReg 0x2F bits 1:0): Upper 2 bits of scroll amount
+- **LSB** (NextReg 0x30 bits 7:0): Lower 8 bits of scroll amount
+- Valid range: 0-319 in 40-char mode, 0-639 in 80-char mode
+- Scrolling wraps at mode boundary (320 or 640 pixels)
+
+**Vertical Scrolling** (NextReg 0x31, 8 bits):
+- Valid range: 0-255
+- Scrolling wraps at 256-line boundary
+
+**Scroll Application**:
+```vhdl
+-- Absolute coordinates include scroll offset
+abs_x = (hcounter + scroll_x) mod (320 or 640)
+abs_y = (vcounter + scroll_y) mod 256
+
+-- For tilemap address calculation
+abs_y_mult = abs_y[7:3] * 5 * (1 or 2)  -- Multiply by 5 (40-char) or 10 (80-char)
+```
+
+**Scroll Wrapping**:
+The X scroll wraps differently based on mode:
+- **40-char mode**: Four 320-pixel regions (0-319, 320-639, 640-959, 960-1279)
+- **80-char mode**: Two 640-pixel regions (0-639, 640-1279)
+
+Correction logic ensures seamless wrapping:
+```vhdl
+if x_sum >= 1280 then correction := -12
+elsif x_sum >= 960 and mode=40 then correction := +1
+elsif x_sum >= 640 then correction := +6
+elsif x_sum >= 320 and mode=40 then correction := +11
+else correction := 0
+```
+
+#### Tile Transformations
+
+Each tile can be independently transformed using attribute byte flags:
+
+**Mirror X** (Attribute bit 3):
+- Horizontal flip: pixel X coordinate inverted within tile
+- `effective_x = x_mirror ? (7 - x[2:0]) : x[2:0]`
+
+**Mirror Y** (Attribute bit 2):
+- Vertical flip: pixel Y coordinate inverted within tile
+- `effective_y = y_mirror ? (7 - y[2:0]) : y[2:0]`
+
+**Rotation** (Attribute bit 1):
+- 90° clockwise rotation: X and Y coordinates swapped
+- `transformed_x = rotate ? effective_y : effective_x`
+- `transformed_y = rotate ? effective_x : effective_y`
+
+**Combined Transformations**:
+The VHDL implementation applies transformations in this order:
+1. **Rotation XOR X-Mirror**: Determines effective X mirror flag
+   ```vhdl
+   effective_x_mirror = x_mirror XOR rotate
+   ```
+2. **Apply X Mirror**: Invert X coordinate if effective mirror active
+3. **Apply Y Mirror**: Invert Y coordinate if mirror active
+4. **Apply Rotation**: Swap X and Y coordinates if rotation active
+
+**Transformation Matrix**:
+```
+                  │ No Rotate │ Rotate    │
+──────────────────┼───────────┼───────────┤
+No Mirror         │ (x, y)    │ (y, x)    │
+X Mirror Only     │ (7-x, y)  │ (y, 7-x)  │
+Y Mirror Only     │ (x, 7-y)  │ (7-y, x)  │
+X+Y Mirror        │ (7-x,7-y) │ (7-y,7-x) │
+```
+
+#### Memory Access Timing
+
+Tilemap memory fetches occur on a fixed schedule synchronized with the 28 MHz master clock and 7 MHz pixel clock:
+
+**State Machine**: The tilemap pixel loader operates as a 4-state machine:
+
+1. **S_IDLE**: Wait for next fetch cycle
+2. **S_READ_TILE_0**: Fetch tile index byte (byte 0)
+3. **S_READ_TILE_1**: Fetch tile attribute byte (byte 1, or use default if eliminated)
+4. **S_READ_PIXELS**: Fetch tile pixel data (8 pixels, 4 bytes in standard mode, 1 byte in text mode)
+
+**Fetch Timing** (synchronized to hcount and subpixel counters):
+
+```vhdl
+-- hcount = {hcounter[8:0], subpixel[1:0]}  -- 11 bits total (0-1279 in 40-char, 0-2559 in 80-char)
+-- Fetch starts when hcount_eff[2:0] = "000"
+
+hcount_eff = (hcount[10:3] + 1) & hcount[2:0]  -- One character ahead
+
+-- Memory fetch trigger
+tm_mem_fetch = '1' when hcount_eff[2:0] = "000"
+```
+
+**Pixel Buffer Management**:
+- Tilemap uses a 16-entry dual-port RAM for pixel buffering
+- Write side: Fills buffer during S_READ_PIXELS state
+- Read side: Outputs pixels at video rate
+- Ping-pong buffering: Two 8-pixel halves alternate every 8 pixels
+- Buffer half switch occurs at `hcount_eff[2:0] = "111" and hcount[1:0] = "11"`
+
+**Memory Access Schedule** (per 8-pixel character):
+
+| Subpixel | Activity |
+|----------|----------|
+| xxx000 | Trigger fetch, enter S_READ_TILE_0 |
+| xxx... | Wait for memory acknowledge |
+| ...ack | Capture tile index (byte 0), enter S_READ_TILE_1 |
+| xxx... | Wait for memory acknowledge |
+| ...ack | Capture tile attributes (byte 1), enter S_READ_PIXELS |
+| xxx... | Fetch pixel byte 0 (pixels 0-1) |
+| ...ack | Store pixels 0-1 |
+| xxx... | Fetch pixel byte 1 (pixels 2-3) |
+| ...ack | Store pixels 2-3 |
+| xxx... | Fetch pixel byte 2 (pixels 4-5) |
+| ...ack | Store pixels 4-5 |
+| xxx... | Fetch pixel byte 3 (pixels 6-7) |
+| ...ack | Store pixels 6-7, return to S_IDLE |
+
+**Text Mode Optimization**:
+In text mode, only 1 byte per tile (8 pixels) is fetched instead of 4 bytes, reducing memory bandwidth by 75%.
+
+**Tile Boundary Handling**:
+When scrolling causes a tile boundary crossing mid-character, the state machine returns to S_READ_TILE_0 to fetch the new tile data:
+```vhdl
+if tm_next_abs_x[3] /= tm_abs_x[3] then
+   next_state_s <= S_READ_TILE_0  -- New tile, restart fetch
+```
+
+#### Pixel Generation and Palette Lookup
+
+**Palette Index Generation**:
+
+**Standard Graphics Mode**:
+```vhdl
+palette_index[7:4] = tilemap_attr[7:4]  -- Palette offset
+palette_index[3:0] = pixel_nibble        -- 4-bit color from tile pattern
+```
+
+**Text Mode**:
+```vhdl
+palette_index[7:1] = tilemap_attr[7:1]  -- Extended palette offset (0-127)
+palette_index[0]   = pixel_bit          -- 1-bit color from tile pattern (0=bg, 1=fg)
+```
+
+**Palette Lookup** (CLK_28 inverted edge, dual-port RAM):
+- Shared with ULA palette (1K × 9-bit dual-port RAM)
+- Address space: 10 bits total
+  - Bit 9: Layer selector (0 = ULA/LoRes, 1 = Tilemap)
+  - Bit 8: Palette bank select (NextReg 0x6B bit 4)
+  - Bits 7:0: Palette index from pixel generation
+- Data: 9 bits RGB333
+- Lookup latency: 1 cycle (registered output)
+
+**Timing**: Palette lookup alternates between ULA/LoRes (sc[0]=0) and Tilemap (sc[0]=1) at CLK_28 rate.
+
+#### Transparency and Clipping
+
+**Transparency Determination** (Stage 2, CLK_14):
+
+**Standard Mode**:
+```vhdl
+tm_transparent = (pixel_en = '0') OR (tm_enabled = '0')
+```
+- `pixel_en` is false when palette index[3:0] equals transparency index (NextReg 0x4C bits 3:0)
+
+**Text Mode**:
+```vhdl
+tm_transparent = (pixel_en = '0') OR (textmode = '1' AND rgb[8:1] = transparent_rgb) OR (tm_enabled = '0')
+```
+- In text mode, RGB333 color (after palette lookup) is compared to global transparency color
+
+**Clipping** (combinational):
+```vhdl
+-- Clip window defined by NextReg 0x1B (4 coordinates: X1, X2, Y1, Y2)
+-- X coordinates are internally doubled for hi-res compatibility
+clip_x1_doubled = clip_x1 * 2
+clip_x2_doubled = clip_x2 * 2 + 1
+
+pixel_en_clipped = pixel_en AND 
+                   (hcounter >= clip_x1_doubled) AND 
+                   (hcounter <= clip_x2_doubled) AND
+                   (vcounter >= clip_y1) AND 
+                   (vcounter <= clip_y2) AND
+                   (hcounter < 320) AND 
+                   (vcounter[8] = '0')
+```
+
+**Clip Window Reset**:
+- NextReg 0x1C bit 3: Reset tilemap clip index to 0 (for writing X1 next)
+- Clip coordinates are written sequentially: X1, X2, Y1, Y2
+- Reads do not advance the clip position
+
+#### Priority and Composition
+
+**Priority Control**:
+
+**Per-Tile Priority** (Attribute bit 0, when 512-tile mode is disabled):
+- `pixel_below = attribute[0]`
+- 0 = Tilemap below ULA (default)
+- 1 = Tilemap above ULA (per-tile override)
+
+**Force On Top** (NextReg 0x6B bit 0):
+- When enabled: All tilemap pixels rendered above ULA regardless of per-tile flag
+- Priority bit in palette is forced to 0 (below sprites/layer2)
+
+**Priority Bit in Palette** (bit 8 of palette entry):
+- Stores the effective priority: `(attribute[0] OR mode_512) AND NOT force_on_top`
+- Used during composition stage to determine layer order
+
+**Integration with Layer Priority**:
+The tilemap participates in the global layer priority system (NextReg 0x15 bits 4:2):
+- **SLU** (Sprites, Layer2, ULA): Tilemap follows ULA ordering
+- **LSU** (Layer2, Sprites, ULA): Tilemap follows ULA ordering
+- **SUL** (Sprites, ULA, Layer2): Tilemap follows ULA ordering
+- **LUS** (Layer2, ULA, Sprites): Tilemap follows ULA ordering
+- **USL** (ULA, Sprites, Layer2): Tilemap follows ULA ordering
+- **ULS** (ULA, Layer2, Sprites): Tilemap follows ULA ordering
+
+**Stencil Mode** (NextReg 0x68 bit 0):
+When enabled and both ULA and tilemap are active:
+```vhdl
+ulatm_rgb = ula_rgb AND tilemap_rgb  -- Bitwise AND of RGB values
+```
+
+**Blend Modes** (NextReg 0x68 bits 7:6):
+- **Mode 00-01**: No blending affecting tilemap
+- **Mode 10** (bits 1:0 control blend source):
+  - `00`: ULA as blend color
+  - `01`: No blending
+  - `10`: ULA/Tilemap mix result as blend color
+  - `11`: Tilemap as blend color
+- **Mode 11**: Tilemap participates in darkening blend
+
+**Composition Logic**:
+```vhdl
+-- Step 1: Combine ULA and Tilemap based on priority
+if tm_transparent = '0' AND (tm_pixel_below = '0' OR ula_transparent = '1') then
+   ulatm_rgb <= tm_rgb
+else
+   ulatm_rgb <= ula_rgb
+end if
+
+-- Step 2: Apply stencil mode if enabled
+if stencil_mode = '1' then
+   ulatm_rgb <= ula_rgb AND tm_rgb
+end if
+
+-- Step 3: Continue to global layer priority evaluation
+```
+
+#### Control Registers Summary
+
+**NextReg 0x6B** (Tilemap Control):
+- Bit 7: Enable tilemap
+- Bit 6: Resolution mode (0 = 40×32, 1 = 80×32)
+- Bit 5: Eliminate attribute entry
+- Bit 4: Palette bank select
+- Bit 3: Text mode
+- Bit 2: Reserved (must be 0)
+- Bit 1: 512-tile mode
+- Bit 0: Force tilemap on top of ULA
+
+**NextReg 0x6C** (Default Tilemap Attribute):
+- Bits 7:4: Palette offset (when attributes eliminated)
+- Bit 3: X mirror default
+- Bit 2: Y mirror default
+- Bit 1: Rotation default
+- Bit 0: Priority default (or tile index bit 8 in 512-tile mode)
+
+**NextReg 0x6E** (Tilemap Base Address):
+- Bit 7: Bank 7 selector
+- Bits 5:0: Offset in bank (×256 bytes)
+
+**NextReg 0x6F** (Tile Definitions Base Address):
+- Bit 7: Bank 7 selector
+- Bits 5:0: Offset in bank (×256 bytes)
+
+**NextReg 0x2F/0x30** (Tilemap X Scroll):
+- 10 bits total (0-1023)
+- Meaningful range: 0-319 (40-char), 0-639 (80-char)
+
+**NextReg 0x31** (Tilemap Y Scroll):
+- 8 bits (0-255)
+
+**NextReg 0x1B** (Clip Window Tilemap):
+- Sequential writes: X1, X2, Y1, Y2
+- X coordinates doubled internally
+
+**NextReg 0x4C** (Tilemap Transparency Index):
+- Bits 3:0: Transparent color index in standard mode
+- Soft reset: 0x0F
+
+#### Implementation Considerations
+
+**Memory Bandwidth**:
+- Tilemap requires memory access during horizontal active period
+- Shares one VRAM port with ULA (arbitration required)
+- Typical access: 6 bytes per character (2 for map, 4 for pixels in standard mode)
+- Text mode optimization: 3 bytes per character (2 for map, 1 for pixels)
+
+**Performance Optimization Opportunities**:
+1. **Tile Caching**: Cache recently-used tile patterns to reduce memory fetches
+2. **Scanline Buffering**: Pre-fetch entire scanline of tiles during blanking
+3. **Transformation LUTs**: Pre-calculate transformed coordinates for common cases
+4. **Fast Path**: Detect aligned, non-transformed tiles for optimized rendering
+
+**Pipeline Latency**:
+- Memory fetch: Variable (depends on VRAM arbitration)
+- Transformation: 0 cycles (combinational)
+- Palette lookup: 1 cycle (registered output)
+- Total: ~2-4 CLK_7 cycles from fetch to output
+
+**Edge Cases**:
+1. **Mid-Character Tile Boundary**: State machine restarts tile fetch
+2. **Scroll Wrapping**: Correction logic handles 320/640/960/1280 boundaries
+3. **Mode Switching**: Mode sampled at character boundary to avoid glitches
+4. **Text Mode + 512-Tile Mode**: Both can be enabled simultaneously
+
+**Source References**:
+- Tilemap module: `tilemap.vhd` complete file (449 lines)
+- Integration: `zxnext.vhd` lines 4358-4395 (tilemap instantiation)
+- Memory arbitration: `zxnext.vhd` lines 6505-6613 (VRAM port sharing)
+- Palette lookup: `zxnext.vhd` lines 6890-6927 (ULA/Tilemap shared palette)
+- Composition: `zxnext.vhd` lines 7055-7120 (transparency, priority, blending)
+- Control registers: `nextreg.txt` lines 319-337 (clip), 427-439 (scroll), 563-566 (transparency), 679-723 (control, attributes, base addresses)
+
 ## 2. Timing Modes
 
 ### 2.1 Timing Mode Selection

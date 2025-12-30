@@ -4,7 +4,6 @@ import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
 import { InterruptDevice } from "@emu/machines/zxNext/InterruptDevice";
 import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
 import { JoystickDevice } from "@emu/machines/zxNext/JoystickDevice";
-import { LoResDevice } from "@emu/machines/zxNext/LoResDevice";
 import { MemoryDevice } from "@emu/machines/zxNext/MemoryDevice";
 import { SdCardDevice } from "@emu/machines/zxNext/SdCardDevice";
 import { MouseDevice } from "@emu/machines/zxNext/MouseDevice";
@@ -65,8 +64,6 @@ export interface IZxNextMachine extends IZ80Machine {
   soundDevice: NextSoundDevice;
 
   ulaDevice: UlaDevice;
-
-  loResDevice: LoResDevice;
 
   expansionBusDevice: ExpansionBusDevice;
 

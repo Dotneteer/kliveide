@@ -24,6 +24,9 @@ export default defineConfig({
     resolve: { alias },
     plugins: [externalizeDepsPlugin()],
     build: {
+      minify: 'esbuild',
+      sourcemap: false,
+      reportCompressedSize: false,
       rollupOptions: {
         input: {
           index: resolve(__dirname, "src/main/index.ts"),
@@ -50,10 +53,21 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      minify: 'esbuild',
+      sourcemap: false,
+      reportCompressedSize: false
+    }
   },
   renderer: {
     build: {
+      target: 'esnext',
+      minify: 'esbuild',
+      cssMinify: true,
+      sourcemap: false,
+      reportCompressedSize: false,
+      chunkSizeWarningLimit: 2000,
       rollupOptions: {
         input: resolve("src/renderer/index.html")
       }

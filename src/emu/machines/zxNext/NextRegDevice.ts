@@ -861,14 +861,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x1b,
       description: "Clip Window Tilemap",
-      readFn: () => machine.tilemapDevice.nextReg1bValue,
-      writeFn: (v) => (machine.tilemapDevice.nextReg1bValue = v & 0xff)
+      readFn: () => machine.composedScreenDevice.nextReg0x1bValue,
+      writeFn: (v) => (machine.composedScreenDevice.nextReg0x1bValue = v & 0xff)
     });
     r({
       id: 0x1c,
       description: "Clip Window control",
       readFn: () =>
-        (machine.tilemapDevice.clipIndex << 6) |
+        (machine.composedScreenDevice.tilemapClipIndex << 6) |
         (machine.composedScreenDevice.ulaClipIndex << 4) |
         (machine.spriteDevice.clipIndex << 2) |
         machine.composedScreenDevice.layer2ClipIndex,
@@ -883,7 +883,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
           this.machine.composedScreenDevice.ulaClipIndex = 0;
         }
         if (v & 0x08) {
-          this.machine.tilemapDevice.clipIndex = 0;
+          this.machine.composedScreenDevice.tilemapClipIndex = 0;
         }
       },
       slices: [
@@ -1052,10 +1052,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x2f,
       description: "Tilemap X Scroll MSB",
-      readFn: () => (machine.tilemapDevice.scrollX & 0x300) >> 8,
+      readFn: () => (machine.composedScreenDevice.tilemapScrollX & 0x300) >> 8,
       writeFn: (v) =>
-        (machine.tilemapDevice.scrollX =
-          ((v & 0x03) << 8) | (machine.tilemapDevice.scrollX & 0xff)),
+        (machine.composedScreenDevice.tilemapScrollX =
+          ((v & 0x03) << 8) | (machine.composedScreenDevice.tilemapScrollX & 0xff)),
       slices: [
         {
           mask: 0x03,
@@ -1066,28 +1066,29 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x30,
       description: "Tilemap X Scroll LSB",
-      readFn: () => machine.tilemapDevice.scrollX & 0xff,
+      readFn: () => machine.composedScreenDevice.tilemapScrollX & 0xff,
       writeFn: (v) => {
-        machine.tilemapDevice.scrollX = (machine.tilemapDevice.scrollX & 0x300) | (v & 0xff);
+        machine.composedScreenDevice.tilemapScrollX =
+          (machine.composedScreenDevice.tilemapScrollX & 0x300) | (v & 0xff);
       }
     });
     r({
       id: 0x31,
       description: "Tilemap Offset Y",
-      readFn: () => machine.tilemapDevice.scrollY,
-      writeFn: (v) => (machine.tilemapDevice.scrollY = v & 0xff)
+      readFn: () => machine.composedScreenDevice.tilemapScrollY,
+      writeFn: (v) => (machine.composedScreenDevice.tilemapScrollY = v & 0xff)
     });
     r({
       id: 0x32,
       description: "LoRes X Scroll",
-      readFn: () => machine.loResDevice.scrollX,
-      writeFn: (v) => (machine.loResDevice.scrollX = v & 0xff)
+      readFn: () => machine.composedScreenDevice.loResScrollX,
+      writeFn: (v) => (machine.composedScreenDevice.loResScrollX = v & 0xff)
     });
     r({
       id: 0x33,
       description: "LoRes Y Scroll",
-      readFn: () => machine.loResDevice.scrollY,
-      writeFn: (v) => (machine.loResDevice.scrollY = v & 0xff)
+      readFn: () => machine.composedScreenDevice.loResScrollY,
+      writeFn: (v) => (machine.composedScreenDevice.loResScrollY = v & 0xff)
     });
     r({
       id: 0x34,
@@ -1240,7 +1241,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x4c,
       description: "Tilemap Transparency Index",
-      writeFn: (v) => (machine.tilemapDevice.transparencyIndex = v & 0xff)
+      readFn: () => machine.composedScreenDevice.tilemapTransparencyIndex,
+      writeFn: (v) => (machine.composedScreenDevice.tilemapTransparencyIndex = v & 0x0f)
     });
     r({
       id: 0x50,
@@ -1339,22 +1341,22 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => {
         const d = machine.composedScreenDevice;
         return (
-          (d.disableUlaOutput ? 0x80 : 0) |
-          (d.blendingInSLUModes6And7 << 5) |
+          (d.ulaDisableOutput ? 0x80 : 0) |
+          (d.ulaBlendingInSLUModes << 5) |
           (machine.keyboardDevice.cancelExtendedKeyEntries ? 0x10 : 0) |
           (d.ulaPlusEnabled ? 0x08 : 0) |
           (d.ulaHalfPixelScroll ? 0x04 : 0) |
-          (d.enableStencilMode ? 0x01 : 0)
+          (d.ulaEnableStencilMode ? 0x01 : 0)
         );
       },
       writeFn: (v) => {
         machine.keyboardDevice.cancelExtendedKeyEntries = !!(v & 0x10);
 
-        machine.composedScreenDevice.disableUlaOutput = !!(v & 0x80);
-        machine.composedScreenDevice.blendingInSLUModes6And7 = (v >> 5) & 0x03;
+        machine.composedScreenDevice.ulaDisableOutput = !!(v & 0x80);
+        machine.composedScreenDevice.ulaBlendingInSLUModes = (v >> 5) & 0x03;
         machine.composedScreenDevice.ulaPlusEnabled = !!(v & 0x08);
         machine.composedScreenDevice.ulaHalfPixelScroll = !!(v & 0x04);
-        machine.composedScreenDevice.enableStencilMode = !!(v & 0x01);
+        machine.composedScreenDevice.ulaEnableStencilMode = !!(v & 0x01);
       },
       slices: [
         {
@@ -1429,8 +1431,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6a,
       description: "LoRes Control",
-      readFn: () => machine.loResDevice.nextReg6aValue,
-      writeFn: (v) => (machine.loResDevice.nextReg6aValue = v & 0xff),
+      readFn: () =>
+        (machine.composedScreenDevice.loResRadastanMode ? 0x20 : 0) |
+        (machine.composedScreenDevice.loResRadastanTimexXor ? 0x10 : 0) |
+        (machine.composedScreenDevice.loResPaletteOffset & 0x0f),
+      writeFn: (v) => {
+        machine.composedScreenDevice.loResRadastanMode = (v & 0x20) !== 0;
+        machine.composedScreenDevice.loResRadastanTimexXor = (v & 0x10) !== 0;
+        machine.composedScreenDevice.loResPaletteOffset = v & 0x0f;
+      },
       slices: [
         {
           mask: 0x20,
@@ -1509,8 +1518,19 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6c,
       description: "Default Tilemap Attribute",
-      readFn: () => machine.tilemapDevice.nextReg6cValue,
-      writeFn: (v) => (machine.tilemapDevice.nextReg6cValue = v & 0xff),
+      readFn: () =>
+        (machine.composedScreenDevice.tilemapPaletteOffset << 4) |
+        (machine.composedScreenDevice.tilemapXMirror ? 0x08 : 0) |
+        (machine.composedScreenDevice.tilemapYMirror ? 0x04 : 0) |
+        (machine.composedScreenDevice.tilemapRotate ? 0x02 : 0) |
+        (machine.composedScreenDevice.tilemapUlaOver ? 0x01 : 0),
+      writeFn: (v) => {
+        machine.composedScreenDevice.tilemapPaletteOffset = (v >> 4) & 0x0f;
+        machine.composedScreenDevice.tilemapXMirror = (v & 0x08) !== 0;
+        machine.composedScreenDevice.tilemapYMirror = (v & 0x04) !== 0;
+        machine.composedScreenDevice.tilemapRotate = (v & 0x02) !== 0;
+        machine.composedScreenDevice.tilemapUlaOver = (v & 0x01) !== 0;
+      },
       slices: [
         {
           mask: 0xf0,
@@ -1541,8 +1561,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6e,
       description: "Tilemap Base Address",
-      readFn: () => machine.tilemapDevice.nextReg6eValue,
-      writeFn: (v) => (machine.tilemapDevice.nextReg6eValue = v & 0xff),
+      readFn: () =>
+        (machine.composedScreenDevice.tilemapUseBank7 ? 0x80 : 0) |
+        (machine.composedScreenDevice.tilemapBank5Msb & 0x3f),
+      writeFn: (v) => {
+        machine.composedScreenDevice.tilemapUseBank7 = (v & 0x80) !== 0;
+        machine.composedScreenDevice.tilemapBank5Msb = v & 0x3f;
+      },
       slices: [
         {
           mask: 0x80,
@@ -1559,8 +1584,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6f,
       description: "Tile Definitions Base Address",
-      readFn: () => machine.tilemapDevice.nextReg6fValue,
-      writeFn: (v) => (machine.tilemapDevice.nextReg6fValue = v & 0xff),
+      readFn: () =>
+        (machine.composedScreenDevice.tilemapTileDefUseBank7 ? 0x80 : 0) |
+        (machine.composedScreenDevice.tilemapTileDefBank5Msb & 0x3f),
+      writeFn: (v) => {
+        machine.composedScreenDevice.tilemapTileDefUseBank7 = (v & 0x80) !== 0;
+        machine.composedScreenDevice.tilemapTileDefBank5Msb = v & 0x3f;
+      },
       slices: [
         {
           mask: 0x80,

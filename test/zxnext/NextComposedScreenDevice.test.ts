@@ -72,7 +72,7 @@ describe("Next - ComposedScreenDevice", function () {
       pm.writePort(0xff, 0x00); // Set mode 0
 
       // --- Assert
-      expect(d.standardScreenAt0x4000).toBe(true);
+      expect(d.ulaStandardScreenAt0x4000).toBe(true);
       expect(d.ulaHiColorMode).toBe(false);
       expect(d.ulaHiResMode).toBe(false);
     });
@@ -89,7 +89,7 @@ describe("Next - ComposedScreenDevice", function () {
       pm.writePort(0xff, 0x01); // Set mode 2
 
       // --- Assert
-      expect(d.standardScreenAt0x4000).toBe(false);
+      expect(d.ulaStandardScreenAt0x4000).toBe(false);
       expect(d.ulaHiColorMode).toBe(false);
       expect(d.ulaHiResMode).toBe(false);
     });
@@ -570,7 +570,7 @@ describe("Next - ComposedScreenDevice", function () {
     it("Reg $18 fourth write", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
-      const scrDevice = m.composedScreenDevice
+      const scrDevice = m.composedScreenDevice;
       writeNextReg(m, 0x1c, 0x01);
 
       // --- Act
@@ -664,6 +664,82 @@ describe("Next - ComposedScreenDevice", function () {
     });
   });
 
+  describe("Reg $1B - Clip Window Tilemap", () => {
+    it("first write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x08);
+
+      // --- Act
+      writeNextReg(m, 0x1b, 0x23);
+
+      // --- Assert
+      expect(scrDevice.tilemapClipIndex).toBe(0x01);
+      expect(scrDevice.tilemapClipWindowX1).toBe(0x23);
+      expect(scrDevice.tilemapClipWindowX2).toBe(0x9f);
+      expect(scrDevice.tilemapClipWindowY1).toBe(0x00);
+      expect(scrDevice.tilemapClipWindowY2).toBe(0xff);
+    });
+
+    it("second write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x08);
+
+      // --- Act
+      writeNextReg(m, 0x1b, 0x23);
+      writeNextReg(m, 0x1b, 0x34);
+
+      // --- Assert
+      expect(scrDevice.tilemapClipIndex).toBe(0x02);
+      expect(scrDevice.tilemapClipWindowX1).toBe(0x23);
+      expect(scrDevice.tilemapClipWindowX2).toBe(0x34);
+      expect(scrDevice.tilemapClipWindowY1).toBe(0x00);
+      expect(scrDevice.tilemapClipWindowY2).toBe(0xff);
+    });
+
+    it("third write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x08);
+
+      // --- Act
+      writeNextReg(m, 0x1b, 0x23);
+      writeNextReg(m, 0x1b, 0x34);
+      writeNextReg(m, 0x1b, 0x45);
+
+      // --- Assert
+      expect(scrDevice.tilemapClipIndex).toBe(0x03);
+      expect(scrDevice.tilemapClipWindowX1).toBe(0x23);
+      expect(scrDevice.tilemapClipWindowX2).toBe(0x34);
+      expect(scrDevice.tilemapClipWindowY1).toBe(0x45);
+      expect(scrDevice.tilemapClipWindowY2).toBe(0xff);
+    });
+
+    it("fourth write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+      writeNextReg(m, 0x1c, 0x08);
+
+      // --- Act
+      writeNextReg(m, 0x1b, 0x23);
+      writeNextReg(m, 0x1b, 0x34);
+      writeNextReg(m, 0x1b, 0x45);
+      writeNextReg(m, 0x1b, 0x56);
+
+      // --- Assert
+      expect(scrDevice.tilemapClipIndex).toBe(0x00);
+      expect(scrDevice.tilemapClipWindowX1).toBe(0x23);
+      expect(scrDevice.tilemapClipWindowX2).toBe(0x34);
+      expect(scrDevice.tilemapClipWindowY1).toBe(0x45);
+      expect(scrDevice.tilemapClipWindowY2).toBe(0x56);
+    });
+  });
+
   describe("Reg $26 - ULA X Scroll", () => {
     it("write", async () => {
       // --- Arrange
@@ -692,6 +768,100 @@ describe("Next - ComposedScreenDevice", function () {
     });
   });
 
+  describe("Reg $2F - Tilemap X Scroll MSB", () => {
+    it("write #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x2f, 0x03);
+
+      // --- Assert
+      expect(readNextReg(m, 0x2f)).toBe(0x03);
+      expect(m.composedScreenDevice.tilemapScrollX).toBe(0x300);
+    });
+
+    it("write #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x2f, 0xfc2);
+
+      // --- Assert
+      expect(readNextReg(m, 0x2f)).toBe(0x02);
+      expect(m.composedScreenDevice.tilemapScrollX).toBe(0x200);
+    });
+
+    it("write #3", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      writeNextReg(m, 0x30, 0x5a);
+
+      // --- Act
+      writeNextReg(m, 0x2f, 0x03);
+
+      // --- Assert
+      expect(readNextReg(m, 0x2f)).toBe(0x03);
+      expect(m.composedScreenDevice.tilemapScrollX).toBe(0x35a);
+    });
+  });
+
+  describe("Reg $30 - Tilemap X Scroll LSB", () => {
+    it("write #1", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x30, 0xb4);
+
+      // --- Assert
+      expect(readNextReg(m, 0x30)).toBe(0xb4);
+      expect(m.composedScreenDevice.tilemapScrollX).toBe(0xb4);
+    });
+
+    it("write #2", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      writeNextReg(m, 0x2f, 0x01);
+
+      // --- Act
+      writeNextReg(m, 0x30, 0xb4);
+
+      // --- Assert
+      expect(readNextReg(m, 0x30)).toBe(0xb4);
+      expect(m.composedScreenDevice.tilemapScrollX).toBe(0x1b4);
+    });
+  });
+
+  describe("Reg $31 - Tilemap Y Scroll", () => {
+    it("write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x31, 0xc5);
+
+      // --- Assert
+      expect(readNextReg(m, 0x31)).toBe(0xc5);
+      expect(m.composedScreenDevice.tilemapScrollY).toBe(0xc5);
+    });
+  });
+
+  describe("Reg $4C - Tilemap Transparency Index", () => {
+    it("Reg $4c write", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+
+      // --- Act
+      writeNextReg(m, 0x4c, 0xa5);
+
+      // --- Assert
+      expect(readNextReg(m, 0x4c)).toBe(0x05);
+      expect(m.composedScreenDevice.tilemapTransparencyIndex).toBe(0x05);
+    });
+  });
+
   describe("Reg $68 - ULA Control", () => {
     it("disableUlaOutput", async () => {
       // --- Arrange
@@ -703,11 +873,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x80);
-      expect(scrDevice.disableUlaOutput).toBe(true);
-      expect(scrDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(scrDevice.ulaDisableOutput).toBe(true);
+      expect(scrDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(scrDevice.ulaPlusEnabled).toBe(false);
       expect(scrDevice.ulaHalfPixelScroll).toBe(false);
-      expect(scrDevice.enableStencilMode).toBe(false);
+      expect(scrDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("blendingInSLUModes6And7", async () => {
@@ -720,11 +890,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x40);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x02);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x02);
       expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
-      expect(srcDevice.enableStencilMode).toBe(false);
+      expect(srcDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("enableUlaPlus", async () => {
@@ -737,11 +907,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x08);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(srcDevice.ulaPlusEnabled).toBe(true);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
-      expect(srcDevice.enableStencilMode).toBe(false);
+      expect(srcDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("halfPixelScroll", async () => {
@@ -754,11 +924,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x04);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(true);
-      expect(srcDevice.enableStencilMode).toBe(false);
+      expect(srcDevice.ulaEnableStencilMode).toBe(false);
     });
 
     it("enableStencilMode", async () => {
@@ -771,11 +941,11 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0x68)).toBe(0x01);
-      expect(srcDevice.disableUlaOutput).toBe(false);
-      expect(srcDevice.blendingInSLUModes6And7).toBe(0x00);
+      expect(srcDevice.ulaDisableOutput).toBe(false);
+      expect(srcDevice.ulaBlendingInSLUModes).toBe(0x00);
       expect(srcDevice.ulaPlusEnabled).toBe(false);
       expect(srcDevice.ulaHalfPixelScroll).toBe(false);
-      expect(srcDevice.enableStencilMode).toBe(true);
+      expect(srcDevice.ulaEnableStencilMode).toBe(true);
     });
   });
 
@@ -892,6 +1062,153 @@ describe("Next - ComposedScreenDevice", function () {
       expect(scrDevice.tilemapTextMode).toBe(false);
       expect(scrDevice.tilemap512TileMode).toBe(false);
       expect(scrDevice.tilemapForceOnTopOfUla).toBe(true);
+    });
+  });
+
+  describe("Reg $6C - Default Tilemap Attribute", () => {
+    it("paletteOffset", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6c, 0xa0);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6c)).toBe(0xa0);
+      expect(scrDevice.tilemapPaletteOffset).toBe(0x0a);
+      expect(scrDevice.tilemapXMirror).toBe(false);
+      expect(scrDevice.tilemapYMirror).toBe(false);
+      expect(scrDevice.tilemapRotate).toBe(false);
+      expect(scrDevice.tilemapUlaOver).toBe(false);
+    });
+
+    it("mirrorX", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6c, 0x08);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6c)).toBe(0x08);
+      expect(scrDevice.tilemapPaletteOffset).toBe(0x00);
+      expect(scrDevice.tilemapXMirror).toBe(true);
+      expect(scrDevice.tilemapYMirror).toBe(false);
+      expect(scrDevice.tilemapRotate).toBe(false);
+      expect(scrDevice.tilemapUlaOver).toBe(false);
+    });
+
+    it("mirrorY", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6c, 0x04);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6c)).toBe(0x04);
+      expect(scrDevice.tilemapPaletteOffset).toBe(0x00);
+      expect(scrDevice.tilemapXMirror).toBe(false);
+      expect(scrDevice.tilemapYMirror).toBe(true);
+      expect(scrDevice.tilemapRotate).toBe(false);
+      expect(scrDevice.tilemapUlaOver).toBe(false);
+    });
+
+    it("rotate", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6c, 0x02);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6c)).toBe(0x02);
+      expect(scrDevice.tilemapPaletteOffset).toBe(0x00);
+      expect(scrDevice.tilemapXMirror).toBe(false);
+      expect(scrDevice.tilemapYMirror).toBe(false);
+      expect(scrDevice.tilemapRotate).toBe(true);
+      expect(scrDevice.tilemapUlaOver).toBe(false);
+    });
+
+    it("ulaOverTilemap", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6c, 0x01);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6c)).toBe(0x01);
+      expect(scrDevice.tilemapPaletteOffset).toBe(0x00);
+      expect(scrDevice.tilemapXMirror).toBe(false);
+      expect(scrDevice.tilemapYMirror).toBe(false);
+      expect(scrDevice.tilemapRotate).toBe(false);
+      expect(scrDevice.tilemapUlaOver).toBe(true);
+    });
+  });
+
+  describe("Reg $6E - Tilemap Base Address", () => {
+    it("baseAddressUseBank7", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6e, 0x80);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6e)).toBe(0x80);
+      expect(scrDevice.tilemapUseBank7).toBe(true);
+      expect(scrDevice.tilemapBank5Msb).toBe(0);
+    });
+
+    it("baseAddressMsb", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6e, 0x02);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6e)).toBe(0x02);
+      expect(scrDevice.tilemapUseBank7).toBe(false);
+      expect(scrDevice.tilemapBank5Msb).toBe(0x02);
+    });
+  });
+
+  describe("Reg $6F - Tile Definitions Base Address", () => {
+    it("definitionAddressUseBank7", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6f, 0x80);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6f)).toBe(0x80);
+      expect(scrDevice.tilemapTileDefUseBank7).toBe(true);
+      expect(scrDevice.tilemapTileDefBank5Msb).toBe(0);
+    });
+
+    it("definitionAddressMsb", async () => {
+      // --- Arrange
+      const m = await createTestNextMachine();
+      const scrDevice = m.composedScreenDevice;
+
+      // --- Act
+      writeNextReg(m, 0x6f, 0x02);
+
+      // --- Assert
+      expect(readNextReg(m, 0x6f)).toBe(0x02);
+      expect(scrDevice.tilemapTileDefUseBank7).toBe(false);
+      expect(scrDevice.tilemapTileDefBank5Msb).toBe(0x02);
     });
   });
 
@@ -1085,7 +1402,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const pal = m.paletteDevice;
-      
+
       // Set up mode 00, index 5
       pm.writePort(0xbf3b, 0x05);
 
@@ -1106,7 +1423,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const pal = m.paletteDevice;
-      
+
       pm.writePort(0xbf3b, 0x10); // Mode 00, index 16
 
       // --- Act
@@ -1125,7 +1442,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const pal = m.paletteDevice;
-      
+
       pm.writePort(0xbf3b, 0x12); // Mode 00, index 18
       // Manually set palette to known 9-bit value
       // ULA+ palette index 18 maps to palette entry 192+18 = 210
@@ -1146,7 +1463,7 @@ describe("Next - ComposedScreenDevice", function () {
       const pm = m.portManager;
       const pal = m.paletteDevice;
       writeNextReg(m, 0x43, 0x02); // Enable second ULA palette
-      
+
       pm.writePort(0xbf3b, 0x07); // Mode 00, index 7
 
       // --- Act
@@ -1165,7 +1482,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const d = m.composedScreenDevice;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
 
       // --- Act
@@ -1180,7 +1497,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const d = m.composedScreenDevice;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
       pm.writePort(0xff3b, 0x01); // Enable ULA+
 
@@ -1196,10 +1513,10 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const d = m.composedScreenDevice;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01
       pm.writePort(0xff3b, 0x01); // Enable
-      
+
       // --- Act
       pm.writePort(0xff3b, 0x00); // Disable
 
@@ -1212,7 +1529,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const d = m.composedScreenDevice;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01
       pm.writePort(0xff3b, 0x01); // Enable
       pm.writePort(0xbf3b, 0x80); // Mode 10 (reserved)
@@ -1229,7 +1546,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const d = m.composedScreenDevice;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01
       pm.writePort(0xff3b, 0x00); // Disable
       pm.writePort(0xbf3b, 0xc0); // Mode 11 (reserved)
@@ -1246,7 +1563,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const d = m.composedScreenDevice;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01
       pm.writePort(0xff3b, 0x01); // Enable
 
@@ -1278,7 +1595,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const d = m.composedScreenDevice;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01
       pm.writePort(0xff3b, 0x01); // Enable via port
 
@@ -1293,7 +1610,7 @@ describe("Next - ComposedScreenDevice", function () {
       // --- Arrange
       const m = await createTestNextMachine();
       const pm = m.portManager;
-      
+
       writeNextReg(m, 0x68, 0x08); // Enable via NextReg
       pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
 
@@ -1308,7 +1625,7 @@ describe("Next - ComposedScreenDevice", function () {
       // --- Arrange
       const m = await createTestNextMachine();
       const pm = m.portManager;
-      
+
       pm.writePort(0xbf3b, 0x40); // Mode 01 (control)
       pm.writePort(0xff3b, 0x01); // Enable via port
 
@@ -1332,10 +1649,10 @@ describe("Next - ComposedScreenDevice", function () {
       // --- Assert
       expect(d.ulaPlusMode).toBe(0x01);
       expect(d.ulaPlusPaletteIndex).toBe(0x15); // Index preserved when switching to mode 01
-      
+
       // --- Act (switch back to mode 00 with new index)
       pm.writePort(0xbf3b, 0x0a); // Mode 00, index 10
-      
+
       // --- Assert
       expect(d.ulaPlusMode).toBe(0x00);
       expect(d.ulaPlusPaletteIndex).toBe(0x0a); // New index set
@@ -1346,7 +1663,7 @@ describe("Next - ComposedScreenDevice", function () {
       const m = await createTestNextMachine();
       const pm = m.portManager;
       const pal = m.paletteDevice;
-      
+
       pm.writePort(0xbf3b, 0x00); // Mode 00, index 0
 
       // --- Act
@@ -1362,7 +1679,8 @@ describe("Next - ComposedScreenDevice", function () {
         const expectedR = i;
         const expectedG = i;
         const expectedB = i & 0x03;
-        const expectedRgb333 = (expectedR << 6) | (expectedG << 3) | (expectedB << 1) | (expectedB & 0x01);
+        const expectedRgb333 =
+          (expectedR << 6) | (expectedG << 3) | (expectedB << 1) | (expectedB & 0x01);
         expect(rgb333).toBe(expectedRgb333);
       }
     });
@@ -1376,7 +1694,7 @@ describe("Next - ComposedScreenDevice", function () {
       // --- Act
       pm.writePort(0xbf3b, 0x3f); // Mode 00, index 63 (max)
       pm.writePort(0xff3b, 0xff); // White
-      
+
       pm.writePort(0xbf3b, 0x7f); // Mode 01, but with bits beyond 6 set
       pm.writePort(0xbf3b, 0x00); // Mode 00, index 0
 
@@ -1489,7 +1807,7 @@ describe("Next - ComposedScreenDevice", function () {
       // --- Act: Enable ULA+ first
       pm.writePort(0xbf3b, 0x40); // Mode 01
       pm.writePort(0xff3b, 0x01); // Enable ULA+
-      
+
       expect(d.ulaPlusEnabled).toBe(true);
       expect(d.ulaNextEnabled).toBe(false);
 
@@ -1558,16 +1876,16 @@ describe("Next - ComposedScreenDevice", function () {
       // --- Arrange
       const m = await createTestNextMachine();
       const d = m.composedScreenDevice;
-      
+
       writeNextReg(m, 0x43, 0x01); // Enable ULANext first
 
       // --- Act & Assert: Multiple format changes
       writeNextReg(m, 0x42, 0x01);
       expect(d.ulaNextFormat).toBe(0x01);
-      
+
       writeNextReg(m, 0x42, 0x03);
       expect(d.ulaNextFormat).toBe(0x03);
-      
+
       writeNextReg(m, 0x42, 0x7f);
       expect(d.ulaNextFormat).toBe(0x7f);
     });
