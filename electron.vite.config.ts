@@ -24,6 +24,8 @@ export default defineConfig({
     resolve: { alias },
     plugins: [externalizeDepsPlugin()],
     build: {
+      minify: 'esbuild',
+      sourcemap: false,
       rollupOptions: {
         input: {
           index: resolve(__dirname, "src/main/index.ts"),
@@ -50,10 +52,16 @@ export default defineConfig({
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    build: {
+      minify: 'esbuild',
+      sourcemap: false
+    }
   },
   renderer: {
     build: {
+      minify: 'esbuild',
+      sourcemap: false,
       rollupOptions: {
         input: resolve("src/renderer/index.html")
       }

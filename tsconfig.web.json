@@ -20,6 +20,8 @@
     "strict":false,
     "jsx": "react-jsx",
     "baseUrl": ".",
+    "skipLibCheck": true,
+    "removeComments": true,
     "paths": {
       "@abstractions/*": ["./src/common/abstractions/*"],
       "@common/*": ["./src/common/*"],
