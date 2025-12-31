@@ -657,7 +657,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       } else {
         // Tilemap 40×32 mode
         const tilemapCell = activeRenderingFlagsTilemap_40x32[tact];
-        this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
+        // Advanced Strategy: Use fast path when conditions allow
+        if (this.tilemapCanUseFastPath) {
+          this.renderTilemap_40x32Pixel_FastPath(vc, hc, tilemapCell);
+        } else {
+          this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
+        }
       }
     }
 
@@ -793,6 +798,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapClipX2Cache_40x32 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 319);
     this.tilemapClipX1Cache_80x32 = Math.min(this.tilemapClipWindowX1 << 1, 639);
     this.tilemapClipX2Cache_80x32 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 639);
+
+    // Advanced Strategy: Determine if fast path can be used
+    // Fast path requirements: no scroll, no transformations, full clip window
+    this.tilemapCanUseFastPath =
+      this.tilemapScrollXField === 0 &&
+      this.tilemapScrollYField === 0 &&
+      !this.tilemapXMirror &&
+      !this.tilemapYMirror &&
+      !this.tilemapRotate &&
+      this.tilemapClipWindowX1 === 0 &&
+      this.tilemapClipWindowX2 === 159 &&
+      this.tilemapClipWindowY1 === 0 &&
+      this.tilemapClipWindowY2 === 255;
   }
 
   // ==============================================================================================
@@ -2981,6 +2999,85 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Store same pixel to both outputs (CLK_7 rate)
+    this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
+    this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+  }
+
+  /**
+   * Fast path for Tilemap 40×32 mode (Advanced Strategy).
+   * Optimized version with minimal conditionals for common case:
+   * - No scrolling (scrollX=0, scrollY=0)
+   * - No transformations (no mirror, no rotate)
+   * - Full clip window (no clipping needed)
+   * 
+   * @param vc - Vertical counter position
+   * @param hc - Horizontal counter position
+   * @param cell - Rendering cell with activity flags
+   */
+  private renderTilemap_40x32Pixel_FastPath(vc: number, hc: number, cell: number): void {
+    // Sample mode and config (same as regular path)
+    const samplingFlags = cell & (SCR_TILEMAP_SAMPLE_MODE | SCR_TILEMAP_SAMPLE_CONFIG);
+    if (samplingFlags !== 0) {
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
+        this.tilemap80x32Sampled = this.tilemap80x32Resolution;
+      }
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
+        this.tilemapTextModeSampled = this.tilemapTextMode;
+        this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
+        this.tilemap512TileModeSampled = this.tilemap512TileMode;
+        this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
+      }
+    }
+
+    const displayX = hc - this.confDisplayXStart + 32;
+    const displayY = vc - this.tilemapWideDisplayYStart;
+
+    // Fast path: No scrolling, so fetchAbsX = fetchX, fetchAbsY = displayY
+    const fetchX = displayX + 8;
+    
+    const fetchFlags = cell & (SCR_TILE_INDEX_FETCH | SCR_PATTERN_FETCH);
+    if (fetchFlags !== 0) {
+      if ((fetchFlags & SCR_TILE_INDEX_FETCH) !== 0) {
+        this.fetchTilemapTile(fetchX, displayY, this.tilemap80x32Sampled, this.tilemapEliminateAttrSampled);
+      }
+      if ((fetchFlags & SCR_PATTERN_FETCH) !== 0) {
+        this.fetchTilemapPattern(fetchX, displayY, this.tilemapTextModeSampled);
+      }
+    }
+
+    // Fast path: Skip bounds and clipping checks (full clip window = no clipping)
+    if (displayX < 0 || displayX >= 320 || displayY < 0 || displayY >= 256) {
+      this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = null;
+      this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = true;
+      return;
+    }
+
+    // Reset buffer position at tile boundary
+    if ((displayX & 0x07) === 0) {
+      this.tilemapBufferPosition = 0;
+      this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
+    }
+
+    // Fast path: Direct buffer access (no transformation flags needed)
+    const buffers = [this.tilemapPixelBuffer0, this.tilemapPixelBuffer1];
+    const pixelValue = buffers[this.tilemapCurrentBuffer][this.tilemapBufferPosition++];
+
+    // Generate palette index
+    const paletteIndex = this.tilemapTextModeSampled
+      ? (((this.tilemapCurrentAttr >> 1) << 1) | pixelValue) & 0xff
+      : (((this.tilemapTilePaletteOffset << 4) | pixelValue) & 0xff);
+
+    // Palette lookup
+    const rgb333 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex);
+    const paletteEntry = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex);
+
+    // Check transparency
+    const transparent = this.tilemapTextModeSampled
+      ? (paletteEntry & 0x1fe) === (this.globalTransparencyColor << 1)
+      : (pixelValue & 0x0f) === (this.tilemapTransparencyIndex & 0x0f);
+
+    // Store output (no clipping check needed in fast path)
     this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
     this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
   }
