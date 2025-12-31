@@ -220,7 +220,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapTilePaletteOffset = 0;
 
     // --- Initialize pixel buffer
-    this.tilemapPixelBuffer = new Uint8Array(8);
+    this.tilemapPixelBuffer0 = new Uint8Array(8);
+    this.tilemapPixelBuffer1 = new Uint8Array(8);
+    this.tilemapCurrentBuffer = 0;
     this.tilemapBufferPosition = 0;
 
     // --- Initialize fast path flags
@@ -396,6 +398,47 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
+   * Gets the value of Next register 0x6B (Tilemap Control)
+   * Returns bits [7:0] = [enabled, 80x32, elimAttr, -, textMode, -, 512tile, forceOnTop]
+   * Note: Bit 4 (second palette bank) is handled separately in PaletteDevice
+   */
+  get nextReg0x6bValue(): number {
+    return (
+      (this.tilemapEnabled ? 0x80 : 0) |
+      (this.tilemap80x32Resolution ? 0x40 : 0) |
+      (this.tilemapEliminateAttributes ? 0x20 : 0) |
+      (this.tilemapTextMode ? 0x08 : 0) |
+      (this.tilemap512TileMode ? 0x02 : 0) |
+      (this.tilemapForceOnTopOfUla ? 0x01 : 0)
+    );
+  }
+
+  /**
+   * Sets the value of Next register 0x6B (Tilemap Control)
+   * Accepts bits [7:0] = [enabled, 80x32, elimAttr, -, textMode, -, 512tile, forceOnTop]
+   * Note: Bit 4 (second palette bank) must be handled separately in PaletteDevice
+   */
+  set nextReg0x6bValue(value: number) {
+    const enabled = (value & 0x80) !== 0;
+    const wasEnabled = this.tilemapEnabled;
+    this.tilemapEnabled = enabled;
+
+    // Clear tilemap outputs when disabling
+    if (wasEnabled && !enabled) {
+      this.tilemapPixel1Rgb333 = null;
+      this.tilemapPixel2Rgb333 = null;
+      this.tilemapPixel1Transparent = true;
+      this.tilemapPixel2Transparent = true;
+    }
+
+    this.tilemap80x32Resolution = (value & 0x40) !== 0;
+    this.tilemapEliminateAttributes = (value & 0x20) !== 0;
+    this.tilemapTextMode = (value & 0x08) !== 0;
+    this.tilemap512TileMode = (value & 0x02) !== 0;
+    this.tilemapForceOnTopOfUla = (value & 0x01) !== 0;
+  }
+
+  /**
    * This method renders the entire screen frame as the instant screen
    * @param savedPixelBuffer Optional pixel buffer to save the rendered screen
    * @returns The pixel buffer that represents the previous screen
@@ -521,10 +564,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private layer2Pixel2Rgb333: number | null;
   private layer2Pixel2Transparent: boolean;
   private layer2Pixel2Priority: boolean;
-  private tilemapPixel1Rgb333: number | null;
-  private tilemapPixel1Transparent: boolean;
-  private tilemapPixel2Rgb333: number | null;
-  private tilemapPixel2Transparent: boolean;
+  tilemapPixel1Rgb333: number | null;
+  tilemapPixel1Transparent: boolean;
+  tilemapPixel2Rgb333: number | null;
+  tilemapPixel2Transparent: boolean;
   private spritesPixel1Rgb333: number | null;
   private spritesPixel1Transparent: boolean;
   private spritesPixel2Rgb333: number | null;
@@ -2492,19 +2535,27 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private tilemap512TileModeSampled: boolean;    // Sampled at tile boundaries
   private tilemapForceOnTopSampled: boolean;     // Sampled at tile boundaries
 
-  // --- Current tile being processed
+  // --- Current tile being rendered
   private tilemapCurrentTileIndex: number;
   private tilemapCurrentAttr: number;
 
-  // --- Tile transformation flags (extracted from attribute)
+  // --- Current tile transformation flags (for rendering)
   private tilemapTileXMirror: boolean;
   private tilemapTileYMirror: boolean;
   private tilemapTileRotate: boolean;
   private tilemapTilePriority: boolean;
   private tilemapTilePaletteOffset: number;
+  
+  // --- Next tile transformation flags (fetched ahead, applied at tile boundary)
+  private tilemapNextTileXMirror: boolean;
+  private tilemapNextTileYMirror: boolean;
+  private tilemapNextTileRotate: boolean;
+  private tilemapNextTilePaletteOffset: number;
 
-  // --- Pixel buffer for current tile (8 pixels)
-  private tilemapPixelBuffer: Uint8Array; // 8 entries, 4-bit indices
+  // --- Pixel buffers for double-buffering (current tile and next tile)
+  private tilemapPixelBuffer0: Uint8Array; // 8 entries, 4-bit indices
+  private tilemapPixelBuffer1: Uint8Array; // 8 entries, 4-bit indices
+  private tilemapCurrentBuffer: number; // 0 or 1, which buffer is currently being rendered
   private tilemapBufferPosition: number; // 0-7, which pixel to read next
 
   // --- Fast path optimization flags
@@ -2689,11 +2740,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         (this.tilemapUlaOver ? 0x01 : 0);
     }
 
-    // Extract transformation flags from attribute
-    this.tilemapTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
-    this.tilemapTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
-    this.tilemapTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
-    this.tilemapTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
+    // Extract transformation flags from attribute and store for NEXT tile
+    // These will be copied to current flags when we start rendering the next tile
+    this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
+    this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
+    this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
+    this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
     // In 512-tile mode, bit 0 is tile index bit 8 (not priority)
     this.tilemapTilePriority = this.tilemap512TileModeSampled
       ? false
@@ -2709,47 +2761,60 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param textMode - true for text mode, false for graphics mode
    */
   private fetchTilemapPattern(absX: number, absY: number, textMode: boolean): void {
-    const xInTile = absX & 0x07;
+    // For each pixel position within the tile (0-7), apply transformation
+    // xInTile and yInTile are positions WITHIN the 8x8 tile, not absolute coordinates
+    // Note: absX is passed for API consistency but not used (tile is identified by previously fetched index)
+    // Use "next" transformation flags which were set during tile index/attr fetch
+    // Write to the NEXT buffer (not currently being rendered)
+    const nextBuffer = this.tilemapCurrentBuffer === 0 ? this.tilemapPixelBuffer1 : this.tilemapPixelBuffer0;
     const yInTile = absY & 0x07;
 
-    // Apply transformations
-    const { transformedY } = this.applyTileTransformation(
-      xInTile,
-      yInTile,
-      this.tilemapTileXMirror,
-      this.tilemapTileYMirror,
-      this.tilemapTileRotate
-    );
-
     if (textMode) {
-      // Text mode: 8 bytes per tile, 1 bit per pixel
-      const patternAddr = this.tilemapCurrentTileIndex * 8 + transformedY;
-      const patternByte = this.getTilemapVRAM(
-        this.tilemapTileDefUseBank7,
-        this.tilemapTileDefBank5Msb,
-        patternAddr
-      );
-
-      // Extract 8 pixels (1 bit each)
-      for (let i = 0; i < 8; i++) {
-        const bitPos = 7 - i;
-        this.tilemapPixelBuffer[i] = (patternByte >> bitPos) & 0x01;
-      }
-    } else {
-      // Standard graphics mode: 32 bytes per tile, 4 bits per pixel
-      const patternBaseAddr = this.tilemapCurrentTileIndex * 32 + transformedY * 4;
-
-      // Fetch 4 bytes (8 pixels, 2 pixels per byte)
-      for (let byteIndex = 0; byteIndex < 4; byteIndex++) {
+      // Text mode: fetch all 8 pixels with transformations
+      for (let xInTile = 0; xInTile < 8; xInTile++) {
+        // Apply transformation to get which row and bit position to read from pattern
+        const { transformedX, transformedY } = this.applyTileTransformation(
+          xInTile,
+          yInTile,
+          this.tilemapNextTileXMirror,
+          this.tilemapNextTileYMirror,
+          this.tilemapNextTileRotate
+        );
+        
+        const patternAddr = this.tilemapCurrentTileIndex * 8 + transformedY;
         const patternByte = this.getTilemapVRAM(
           this.tilemapTileDefUseBank7,
           this.tilemapTileDefBank5Msb,
-          patternBaseAddr + byteIndex
+          patternAddr
         );
-
-        // Extract 2 pixels (4 bits each)
-        this.tilemapPixelBuffer[byteIndex * 2] = (patternByte >> 4) & 0x0f;
-        this.tilemapPixelBuffer[byteIndex * 2 + 1] = patternByte & 0x0f;
+        
+        // Extract the bit at transformed position
+        const bitPos = 7 - transformedX;
+        nextBuffer[xInTile] = (patternByte >> bitPos) & 0x01;
+      }
+    } else {
+      // Graphics mode: fetch 8 pixels with transformations
+      for (let xInTile = 0; xInTile < 8; xInTile++) {
+        // Apply transformation to get which row, byte, and nibble to read from pattern
+        const { transformedX, transformedY } = this.applyTileTransformation(
+          xInTile,
+          yInTile,
+          this.tilemapNextTileXMirror,
+          this.tilemapNextTileYMirror,
+          this.tilemapNextTileRotate
+        );
+        
+        // Address: tile_base + transformedY * 4 + (transformedX >> 1)
+        const byteAddr = this.tilemapCurrentTileIndex * 32 + transformedY * 4 + (transformedX >> 1);
+        const patternByte = this.getTilemapVRAM(
+          this.tilemapTileDefUseBank7,
+          this.tilemapTileDefBank5Msb,
+          byteAddr
+        );
+        
+        // Extract nibble: high nibble if transformedX is even, low if odd
+        const pixelValue = (transformedX & 1) === 0 ? (patternByte >> 4) & 0x0f : patternByte & 0x0f;
+        nextBuffer[xInTile] = pixelValue;
       }
     }
 
@@ -2786,14 +2851,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const displayX = hc - this.confDisplayXStart + 32;  // Can be negative (border before display)
     const displayY = vc - wideDisplayYStart;            // 0-255
     
-    // Check if in valid display area (outside is border)
-    const xValid = displayX >= 0 && displayX < 320;
-    const yValid = displayY >= 0 && displayY < 256;
+    // ===== PHASE 1: FETCH (happens in border area for prefetching) =====
     
-    // Fetch tile index and attributes if flag set
-    // IMPORTANT: Fetching must happen even in border area (displayX < 0) to preload first tile
-    // When fetching at end of current tile (positions 6,7), we need to fetch NEXT tile's data
-    // So add 8 pixels to look ahead to the next tile
+    // Fetch tile data if flags are set
+    // This happens even in border area (displayX < 0) to prefetch first tile
+    // When fetching at positions 6,7, look ahead +8 pixels to fetch NEXT tile's data
     const fetchX = displayX + 8;
     const { absX: fetchAbsX, absY: fetchAbsY } = this.getTilemapAbsoluteCoordinates(
       fetchX,
@@ -2803,17 +2865,20 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       false // 40×32 mode
     );
 
+    // Fetch tile index and attributes at position 6
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
       this.fetchTilemapTile(fetchAbsX, fetchAbsY, this.tilemap80x32Sampled, this.tilemapEliminateAttrSampled);
     }
 
-    // Fetch pattern data if flag set (after attributes known)
+    // Fetch pattern at position 7 (uses attributes set at position 6)
     if ((cell & SCR_PATTERN_FETCH) !== 0) {
       this.fetchTilemapPattern(fetchAbsX, fetchAbsY, this.tilemapTextModeSampled);
     }
     
-    // If outside valid area, render as transparent (border) but AFTER fetching
-    if (!xValid || !yValid) {
+    // ===== PHASE 2: RENDER (only for pixels in display area) =====
+    
+    // Check if in valid display area
+    if (displayX < 0 || displayX >= 320 || displayY < 0 || displayY >= 256) {
       this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = null;
       this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = true;
       return;
@@ -2830,13 +2895,22 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const isClipped = displayX < clipX1 || displayX > clipX2 || displayY < clipY1 || displayY > clipY2;
 
     // Reset buffer position at start of each tile (when displayX is at tile boundary)
+    // Also copy "next" transformation flags to "current" for this tile
+    // And swap buffers (next buffer becomes current)
     if ((displayX & 0x07) === 0) {
       this.tilemapBufferPosition = 0;
+      this.tilemapTileXMirror = this.tilemapNextTileXMirror;
+      this.tilemapTileYMirror = this.tilemapNextTileYMirror;
+      this.tilemapTileRotate = this.tilemapNextTileRotate;
+      this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      // Swap buffers: what was "next" is now "current"
+      this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
     }
 
     // Generate one pixel for this HC position (CLK_7 rate)
-    // Output the same pixel to both tilemapPixel1 and tilemapPixel2
-    const pixelValue = this.tilemapPixelBuffer[this.tilemapBufferPosition++];
+    // Read pixel sequentially from CURRENT buffer (transformations applied during fetch)
+    const currentBuffer = this.tilemapCurrentBuffer === 0 ? this.tilemapPixelBuffer0 : this.tilemapPixelBuffer1;
+    const pixelValue = currentBuffer[this.tilemapBufferPosition++];
     
     // DIAGNOSTIC: Log HC when rendering first pixel of top-left tile
     if (displayX === 0 && displayY === 0) {
@@ -2907,12 +2981,32 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const displayX = (hc - ultraWideDisplayXStart) * 2;
     const displayY = vc - wideDisplayYStart;
     
-    // Check if in valid display area (outside is border)
-    const xValid = displayX >= 0 && displayX < 640;
-    const yValid = displayY >= 0 && displayY < 256;
+    // ===== PHASE 1: FETCH (happens at tile boundaries, including prefetch) =====
     
-    // If outside valid area, render as transparent (border)
-    if (!xValid || !yValid) {
+    // Fetch tile data if flags are set
+    // In 80×32 mode, fetches happen at START of tile (pixelInTile=0,2,4) not at end
+    const { absX, absY } = this.getTilemapAbsoluteCoordinates(
+      displayX,
+      displayY,
+      this.tilemapScrollXField,
+      this.tilemapScrollYField,
+      true // 80×32 mode
+    );
+
+    // Fetch tile index and attributes
+    if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
+      this.fetchTilemapTile(absX, absY, this.tilemap80x32Sampled, this.tilemapEliminateAttrSampled);
+    }
+
+    // Fetch pattern (uses attributes from previous fetch)
+    if ((cell & SCR_PATTERN_FETCH) !== 0) {
+      this.fetchTilemapPattern(absX, absY, this.tilemapTextModeSampled);
+    }
+    
+    // ===== PHASE 2: RENDER (only for pixels in display area) =====
+    
+    // Check if in valid display area
+    if (displayX < 0 || displayX >= 640 || displayY < 0 || displayY >= 256) {
       this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = null;
       this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = true;
       return;
@@ -2925,40 +3019,26 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const clipY1 = this.tilemapClipWindowY1;
     const clipY2 = this.tilemapClipWindowY2;
     
-    // Check if this pixel is outside clip window (displayX is in pixel coordinates for 80×32)
+    // Reset buffer position at start of each tile (when displayX is at tile boundary)
+    // Also copy "next" transformation flags to "current" for this tile
+    // And swap buffers (next buffer becomes current)
+    if ((displayX & 0x07) === 0) {
+      this.tilemapBufferPosition = 0;
+      this.tilemapTileXMirror = this.tilemapNextTileXMirror;
+      this.tilemapTileYMirror = this.tilemapNextTileYMirror;
+      this.tilemapTileRotate = this.tilemapNextTileRotate;
+      this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      // Swap buffers: what was "next" is now "current"
+      this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
+    }
+
+    // Check if this pixel is outside clip window
     const isClipped = displayX < clipX1 || displayX > clipX2 || displayY < clipY1 || displayY > clipY2;
 
-    // Check if we're in display area
-    if ((cell & SCR_DISPLAY_AREA) === 0) {
-      this.tilemapPixel1Rgb333 = null;
-      this.tilemapPixel2Rgb333 = null;
-      this.tilemapPixel1Transparent = true;
-      this.tilemapPixel2Transparent = true;
-      return;
-    }
-
-    // Get scrolled absolute coordinates
-    const { absX, absY } = this.getTilemapAbsoluteCoordinates(
-      displayX,
-      displayY,
-      this.tilemapScrollXField,
-      this.tilemapScrollYField,
-      true // 80×32 mode
-    );
-
-    // Fetch tile index and attributes if flag set (at tile boundary)
-    if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
-      this.fetchTilemapTile(absX, absY, this.tilemap80x32Sampled, this.tilemapEliminateAttrSampled);
-    }
-
-    // Fetch pattern data if flag set (after attributes known)
-    if ((cell & SCR_PATTERN_FETCH) !== 0) {
-      this.fetchTilemapPattern(absX, absY, this.tilemapTextModeSampled);
-    }
-
     // Generate one pixel for this HC position (CLK_7 rate)
-    // Output the same pixel to both tilemapPixel1 and tilemapPixel2
-    const pixelValue = this.tilemapPixelBuffer[this.tilemapBufferPosition++];
+    // Read pixel sequentially from CURRENT buffer (transformations applied during fetch)
+    const currentBuffer = this.tilemapCurrentBuffer === 0 ? this.tilemapPixelBuffer0 : this.tilemapPixelBuffer1;
+    const pixelValue = currentBuffer[this.tilemapBufferPosition++];
     
     // Generate palette index
     let paletteIndex: number;
@@ -3949,9 +4029,11 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
   function generateTilemap80x32Cell(vc: number, hc: number): number {
     // For 80×32 (640×256) mode, we need even wider horizontal display area
     // Ultra-wide display starts 96 pixels earlier: displayXStart - 96 = 144 - 96 = 48
-    // Ultra-wide display is 640 pixels wide at HC level (320 HC positions × 2 pixels each)
-    const ultraWideDisplayXStart = config.displayXStart - 96;
-    const ultraWideDisplayXEnd = ultraWideDisplayXStart + 319; // 320 HC positions
+    // In 80×32 mode, fetches happen at START of tile (no lookahead like 40×32)
+    // But we still need to extend by 4 HC positions to allow prefetch of first tile
+    // Each HC generates 2 pixels, so 4 HC = 8 pixels = 1 tile width
+    const ultraWideDisplayXStart = config.displayXStart - 96 - 4;  // Include prefetch border
+    const ultraWideDisplayXEnd = ultraWideDisplayXStart + 319 + 4; // 320 HC display + 4 prefetch
 
     // Vertical display area is extended for 640×256 mode (same as 320×256)
     // For 50Hz: displayYStart=64, so wide starts at 64-34=30
@@ -3959,7 +4041,7 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
     const wideDisplayYStart = config.displayYStart - 34;
     const wideDisplayYEnd = wideDisplayYStart + 255;
 
-    // Check if we're in the ultra-wide display area
+    // Check if we're in the ultra-wide display area (including prefetch borders)
     if (
       hc < ultraWideDisplayXStart ||
       hc > ultraWideDisplayXEnd ||
@@ -3971,48 +4053,51 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
 
     let flags = 0;
 
-    // In 80×32 mode, each HC position generates 2 pixels
-    // Calculate HC position relative to ultra-wide display start
-    const hcOffset = hc - ultraWideDisplayXStart;
+    // Calculate HC position relative to display start (without prefetch offset)
+    // The actual display starts 4 HC after ultraWideDisplayXStart
+    const hcOffset = hc - (ultraWideDisplayXStart + 4);
     
-    // Only set flags if we're within the valid tilemap HC range (0-319 HC = 640 pixels)
-    if (hcOffset < 0 || hcOffset >= 320) {
-      return 0;
-    }
-    
-    // Convert HC to pixel coordinate for mode sampling
+    // Convert HC to pixel coordinate
     const pixelX = hcOffset * 2;
     
-    // Sample mode bit (40×32/80×32) every 4 pixels
-    if ((pixelX & 0x03) === 0x03) {
-      flags |= SCR_TILEMAP_SAMPLE_MODE;
+    // Check if we're in the display area for rendering flags
+    const isInDisplayArea = pixelX >= 0 && pixelX < 640;
+    
+    if (isInDisplayArea) {
+      // Sample mode bit (40×32/80×32) every 4 pixels
+      if ((pixelX & 0x03) === 0x03) {
+        flags |= SCR_TILEMAP_SAMPLE_MODE;
+      }
+      
+      // Advance buffer for all pixels in display area
+      flags |= SCR_TILE_BUFFER_ADVANCE;
     }
     
-    // Fetch at 8-pixel tile boundaries (every 4 HC in 80×32 mode)
-    const pixelInTile = pixelX % 8;
+    // Fetch at 8-pixel tile boundaries
+    // Allow fetching even in prefetch area (pixelX can be negative)
+    if (pixelX >= -8 && pixelX < 640) {
+      const pixelInTile = ((pixelX + 8) & 0x07);  // Adjust for negative values
 
-    // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
-    if (pixelInTile === 0) {
-      flags |= SCR_TILEMAP_SAMPLE_CONFIG;
+      // Sample config bits at tile boundaries (when we start rendering the tile)
+      if (pixelInTile === 0 && isInDisplayArea) {
+        flags |= SCR_TILEMAP_SAMPLE_CONFIG;
+      }
+
+      // Fetch tile index at start of tile (pixelInTile === 0)
+      if (pixelInTile === 0) {
+        flags |= SCR_TILE_INDEX_FETCH;
+      }
+
+      // Fetch tile attribute (pixelInTile === 2)
+      if (pixelInTile === 2) {
+        flags |= SCR_TILE_ATTR_FETCH;
+      }
+
+      // Fetch pattern data (pixelInTile === 4)
+      if (pixelInTile === 4) {
+        flags |= SCR_PATTERN_FETCH;
+      }
     }
-
-    // Fetch tile index at start of tile (pixelInTile === 0)
-    if (pixelInTile === 0) {
-      flags |= SCR_TILE_INDEX_FETCH;
-    }
-
-    // Fetch tile attribute (pixelInTile === 2)
-    if (pixelInTile === 2) {
-      flags |= SCR_TILE_ATTR_FETCH;
-    }
-
-    // Fetch pattern data (pixelInTile === 4)
-    if (pixelInTile === 4) {
-      flags |= SCR_PATTERN_FETCH;
-    }
-
-    // Advance buffer for all pixels in display area
-    flags |= SCR_TILE_BUFFER_ADVANCE;
 
     return flags;
   }
