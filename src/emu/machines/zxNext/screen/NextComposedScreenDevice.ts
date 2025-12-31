@@ -775,9 +775,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2ClipWindowY2 === 255;
   }
 
-    // Updates the cached fast path eligibility for Layer 2 rendering modes
+  // Updates the cached fast path eligibility for Layer 2 rendering modes
   private updateTilemapFastPathCaches(): void {
-    // TODO: Implement tilemap fast path cache updates when needed
+    // Priority 1A: Update cached display coordinate calculations
+    this.tilemapWideDisplayYStart = this.confDisplayYStart - 34;
+    this.tilemapClipX1Cache_40x32 = Math.min((this.tilemapClipWindowX1 << 1), 319);
+    this.tilemapClipX2Cache_40x32 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 319);
+    this.tilemapClipX1Cache_80x32 = Math.min((this.tilemapClipWindowX1 << 1), 639);
+    this.tilemapClipX2Cache_80x32 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 639);
   }
 
   // ==============================================================================================
@@ -2558,6 +2563,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private tilemapCurrentBuffer: number; // 0 or 1, which buffer is currently being rendered
   private tilemapBufferPosition: number; // 0-7, which pixel to read next
 
+  // --- Cached computed values (Priority 1A optimization)
+  private tilemapWideDisplayYStart: number; // Cached: confDisplayYStart - 34
+  private tilemapClipX1Cache_40x32: number; // Cached: Math.min((tilemapClipWindowX1 << 1), 319)
+  private tilemapClipX2Cache_40x32: number; // Cached: Math.min((tilemapClipWindowX2 << 1) | 1, 319)
+  private tilemapClipX1Cache_80x32: number; // Cached: Math.min((tilemapClipWindowX1 << 1), 639)
+  private tilemapClipX2Cache_80x32: number; // Cached: Math.min((tilemapClipWindowX2 << 1) | 1, 639)
+
   // --- Fast path optimization flags
   private tilemapCanUseFastPath: boolean;
   private tilemapLastTileDefAddr: number;
@@ -2847,9 +2859,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Calculate display coordinates
     // For 40×32 (320×256) mode, display starts 32 pixels earlier than standard ULA
     // Match Layer 2 320×256: displayHC_wide = hc - confDisplayXStart + 32
-    const wideDisplayYStart = this.confDisplayYStart - 34;
     const displayX = hc - this.confDisplayXStart + 32;  // Can be negative (border before display)
-    const displayY = vc - wideDisplayYStart;            // 0-255
+    const displayY = vc - this.tilemapWideDisplayYStart; // 0-255 (Priority 1A: use cached value)
     
     // ===== PHASE 1: FETCH (happens in border area for prefetching) =====
     
@@ -2857,13 +2868,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // This happens even in border area (displayX < 0) to prefetch first tile
     // When fetching at positions 6,7, look ahead +8 pixels to fetch NEXT tile's data
     const fetchX = displayX + 8;
-    const { absX: fetchAbsX, absY: fetchAbsY } = this.getTilemapAbsoluteCoordinates(
-      fetchX,
-      displayY,
-      this.tilemapScrollXField,
-      this.tilemapScrollYField,
-      false // 40×32 mode
-    );
+    // Priority 1B: Inline getTilemapAbsoluteCoordinates (eliminates object allocation)
+    const fetchAbsX = (fetchX + this.tilemapScrollXField) % 320;
+    const fetchAbsY = (displayY + this.tilemapScrollYField) & 0xff;
 
     // Fetch tile index and attributes at position 6
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
@@ -2886,8 +2893,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     
     // Calculate clip window coordinates (match VHDL pattern)
     // X clip coordinates are doubled: xsv = clip_x1 << 1, xev = (clip_x2 << 1) | 1
-    const clipX1 = Math.min((this.tilemapClipWindowX1 << 1), 319);
-    const clipX2 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 319);
+    // Priority 1A: Use cached clip window values
+    const clipX1 = this.tilemapClipX1Cache_40x32;
+    const clipX2 = this.tilemapClipX2Cache_40x32;
     const clipY1 = this.tilemapClipWindowY1;
     const clipY2 = this.tilemapClipWindowY2;
     
@@ -2977,21 +2985,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Calculate display coordinates (each HC generates 2 pixels)
     // For 80×32 (640×256) mode, display starts 96 pixels earlier than standard ULA
     const ultraWideDisplayXStart = this.confDisplayXStart - 96;
-    const wideDisplayYStart = this.confDisplayYStart - 34;
     const displayX = (hc - ultraWideDisplayXStart) * 2;
-    const displayY = vc - wideDisplayYStart;
+    const displayY = vc - this.tilemapWideDisplayYStart; // Priority 1A: use cached value
     
     // ===== PHASE 1: FETCH (happens at tile boundaries, including prefetch) =====
     
     // Fetch tile data if flags are set
     // In 80×32 mode, fetches happen at START of tile (pixelInTile=0,2,4) not at end
-    const { absX, absY } = this.getTilemapAbsoluteCoordinates(
-      displayX,
-      displayY,
-      this.tilemapScrollXField,
-      this.tilemapScrollYField,
-      true // 80×32 mode
-    );
+    // Priority 1B: Inline getTilemapAbsoluteCoordinates (eliminates object allocation)
+    const absX = (displayX + this.tilemapScrollXField) % 640;
+    const absY = (displayY + this.tilemapScrollYField) & 0xff;
 
     // Fetch tile index and attributes
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
@@ -3014,8 +3017,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     
     // Calculate clip window coordinates (match VHDL pattern)
     // X clip coordinates are doubled: xsv = clip_x1 << 1, xev = (clip_x2 << 1) | 1
-    const clipX1 = Math.min((this.tilemapClipWindowX1 << 1), 639);
-    const clipX2 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 639);
+    // Priority 1A: Use cached clip window values
+    const clipX1 = this.tilemapClipX1Cache_80x32;
+    const clipX2 = this.tilemapClipX2Cache_80x32;
     const clipY1 = this.tilemapClipWindowY1;
     const clipY2 = this.tilemapClipWindowY2;
     
