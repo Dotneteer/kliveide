@@ -1470,7 +1470,18 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.composedScreenDevice.tilemap512TileMode ? 0x02 : 0) |
         (machine.composedScreenDevice.tilemapForceOnTopOfUla ? 0x01 : 0),
       writeFn: (v) => {
-        machine.composedScreenDevice.tilemapEnabled = (v & 0x80) !== 0;
+        const enabled = (v & 0x80) !== 0;
+        const wasEnabled = machine.composedScreenDevice.tilemapEnabled;
+        machine.composedScreenDevice.tilemapEnabled = enabled;
+        
+        // Clear tilemap outputs when disabling
+        if (wasEnabled && !enabled) {
+          machine.composedScreenDevice.tilemapPixel1Rgb333 = null;
+          machine.composedScreenDevice.tilemapPixel2Rgb333 = null;
+          machine.composedScreenDevice.tilemapPixel1Transparent = true;
+          machine.composedScreenDevice.tilemapPixel2Transparent = true;
+        }
+        
         machine.composedScreenDevice.tilemap80x32Resolution = (v & 0x40) !== 0;
         machine.composedScreenDevice.tilemapEliminateAttributes = (v & 0x20) !== 0;
         machine.paletteDevice.secondTilemapPalette = (v & 0x10) !== 0;
