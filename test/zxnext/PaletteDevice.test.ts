@@ -981,7 +981,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.tilemapFirst[0x18]).toBe(0x6b);
-    expect(pal.getTilemapRgb333(0x18)).toBe(0x30);
+    expect(pal.getTilemapRgb333(0x18)).toBe(0x6b);
   });
 
   it("Tilemap RGB333 arrays updated via 8-bit palette write (second)", async () => {
@@ -997,7 +997,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.tilemapSecond[0x2a]).toBe(0xa0);
-    expect(pal.getTilemapRgb333(0x2a)).toBe(0xa0);
+    expect(pal.getTilemapRgb333(0x2a)).toBe(0x55);
   });
 
   it("Tilemap RGB333 arrays updated via 9-bit palette write", async () => {
@@ -1014,7 +1014,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.tilemapFirst[0x14]).toBe(0x180);
-    expect(pal.getTilemapRgb333(0x14)).toBe(0x28);
+    expect(pal.getTilemapRgb333(0x14)).toBe(0x180);
   });
 
   it("getLayer2Rgb333 returns from correct palette based on secondLayer2Palette flag", async () => {

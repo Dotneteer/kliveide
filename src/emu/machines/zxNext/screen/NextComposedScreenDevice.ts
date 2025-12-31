@@ -2,6 +2,7 @@ import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import { zxNextBgra } from "../PaletteDevice";
+import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../MemoryDevice";
 
 /**
  * ZX Spectrum Next Rendering Device
@@ -72,11 +73,21 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // ==============================================================================================
   // Lifecycle methods
 
+  // Priority 1C: Cache palette device reference to avoid property chain traversal
+  private paletteDeviceCache: any;
+  // Priority 1D: Cache memory array reference for faster VRAM access
+  private memoryArrayCache: Uint8Array;
+
   /**
    * Initializes a new instance of the NextComposedScreenDevice class.
    * @param machine The machine the screen device is attached to
    */
   constructor(public readonly machine: IZxNextMachine) {
+    // Priority 1C: Initialize palette device cache
+    this.paletteDeviceCache = machine.paletteDevice;
+    // Priority 1D: Initialize memory array cache
+    this.memoryArrayCache = machine.memoryDevice.memory;
+
     // Screen dimensions
     this.screenWidth = BITMAP_WIDTH;
     this.screenLines = BITMAP_HEIGHT;
@@ -175,13 +186,58 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Initialize Tilemap state
     this.tilemapEnabled = false;
+    this.tilemap80x32Resolution = false;
+    this.tilemapEliminateAttributes = false;
+    this.tilemapTextMode = false;
+    this.tilemap512TileMode = false;
+    this.tilemapForceOnTopOfUla = false;
+    this.tilemapTransparencyIndex = 0x0f;
     this.tilemapClipIndex = 0;
     this.tilemapClipWindowX1 = 0;
     this.tilemapClipWindowX2 = 159;
     this.tilemapClipWindowY1 = 0;
     this.tilemapClipWindowY2 = 255;
-    this.tilemapScrollX = 0;
-    this.tilemapScrollY = 0;
+    this.tilemapScrollXField = 0;
+    this.tilemapScrollYField = 0;
+    this.tilemapUseBank7 = false;
+    this.tilemapBank5Msb = 0;
+    this.tilemapTileDefUseBank7 = false;
+    this.tilemapTileDefBank5Msb = 0;
+
+    // --- Initialize Tilemap default attributes (Reg 0x6C)
+    this.tilemapPaletteOffset = 0;
+    this.tilemapXMirror = false;
+    this.tilemapYMirror = false;
+    this.tilemapRotate = false;
+    this.tilemapUlaOver = false;
+
+    // --- Initialize sampled tilemap configuration
+    this.tilemap80x32Sampled = false;
+    this.tilemapTextModeSampled = false;
+    this.tilemapEliminateAttrSampled = false;
+    this.tilemap512TileModeSampled = false;
+    this.tilemapForceOnTopSampled = false;
+
+    // --- Initialize current tile state
+    this.tilemapCurrentTileIndex = 0;
+    this.tilemapCurrentAttr = 0;
+
+    // --- Initialize tile transformation flags
+    this.tilemapTileXMirror = false;
+    this.tilemapTileYMirror = false;
+    this.tilemapTileRotate = false;
+    this.tilemapTilePriority = false;
+    this.tilemapTilePaletteOffset = 0;
+
+    // --- Initialize pixel buffer
+    this.tilemapPixelBuffer0 = new Uint8Array(8);
+    this.tilemapPixelBuffer1 = new Uint8Array(8);
+    this.tilemapCurrentBuffer = 0;
+    this.tilemapBufferPosition = 0;
+
+    // --- Initialize fast path flags
+    this.tilemapCanUseFastPath = false;
+    this.tilemapLastTileDefAddr = -1;
 
     // --- Initialize renderTact internal state
     this.ulaPixel1Rgb333 = null;
@@ -277,10 +333,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if (this.ulaPlusEnabledField) {
       // ULA+: Border uses palette indices 200-207 (for border colors 0-7)
       const ulaPlusPaletteIndex = 200 + this.borderColorField;
-      this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(ulaPlusPaletteIndex);
+      this.borderRgbCache = this.paletteDeviceCache.getUlaRgb333(ulaPlusPaletteIndex);
     } else {
       // Standard: Border uses palette indices 0-7
-      this.borderRgbCache = this.machine.paletteDevice.getUlaRgb333(this.borderColorField);
+      this.borderRgbCache = this.paletteDeviceCache.getUlaRgb333(this.borderColorField);
     }
   }
 
@@ -349,6 +405,47 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set tilemapScrollY(value: number) {
     this.tilemapScrollYField = value;
     this.updateTilemapFastPathCaches();
+  }
+
+  /**
+   * Gets the value of Next register 0x6B (Tilemap Control)
+   * Returns bits [7:0] = [enabled, 80x32, elimAttr, -, textMode, -, 512tile, forceOnTop]
+   * Note: Bit 4 (second palette bank) is handled separately in PaletteDevice
+   */
+  get nextReg0x6bValue(): number {
+    return (
+      (this.tilemapEnabled ? 0x80 : 0) |
+      (this.tilemap80x32Resolution ? 0x40 : 0) |
+      (this.tilemapEliminateAttributes ? 0x20 : 0) |
+      (this.tilemapTextMode ? 0x08 : 0) |
+      (this.tilemap512TileMode ? 0x02 : 0) |
+      (this.tilemapForceOnTopOfUla ? 0x01 : 0)
+    );
+  }
+
+  /**
+   * Sets the value of Next register 0x6B (Tilemap Control)
+   * Accepts bits [7:0] = [enabled, 80x32, elimAttr, -, textMode, -, 512tile, forceOnTop]
+   * Note: Bit 4 (second palette bank) must be handled separately in PaletteDevice
+   */
+  set nextReg0x6bValue(value: number) {
+    const enabled = (value & 0x80) !== 0;
+    const wasEnabled = this.tilemapEnabled;
+    this.tilemapEnabled = enabled;
+
+    // Clear tilemap outputs when disabling
+    if (wasEnabled && !enabled) {
+      this.tilemapPixel1Rgb333 = null;
+      this.tilemapPixel2Rgb333 = null;
+      this.tilemapPixel1Transparent = true;
+      this.tilemapPixel2Transparent = true;
+    }
+
+    this.tilemap80x32Resolution = (value & 0x40) !== 0;
+    this.tilemapEliminateAttributes = (value & 0x20) !== 0;
+    this.tilemapTextMode = (value & 0x08) !== 0;
+    this.tilemap512TileMode = (value & 0x02) !== 0;
+    this.tilemapForceOnTopOfUla = (value & 0x01) !== 0;
   }
 
   /**
@@ -477,10 +574,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private layer2Pixel2Rgb333: number | null;
   private layer2Pixel2Transparent: boolean;
   private layer2Pixel2Priority: boolean;
-  private tilemapPixel1Rgb333: number | null;
-  private tilemapPixel1Transparent: boolean;
-  private tilemapPixel2Rgb333: number | null;
-  private tilemapPixel2Transparent: boolean;
+  tilemapPixel1Rgb333: number | null;
+  tilemapPixel1Transparent: boolean;
+  tilemapPixel2Rgb333: number | null;
+  tilemapPixel2Transparent: boolean;
   private spritesPixel1Rgb333: number | null;
   private spritesPixel1Transparent: boolean;
   private spritesPixel2Rgb333: number | null;
@@ -560,7 +657,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       } else {
         // Tilemap 40×32 mode
         const tilemapCell = activeRenderingFlagsTilemap_40x32[tact];
-        this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
+        // Advanced Strategy: Use fast path when conditions allow
+        if (this.tilemapCanUseFastPath) {
+          this.renderTilemap_40x32Pixel_FastPath(vc, hc, tilemapCell);
+        } else {
+          this.renderTilemap_40x32Pixel(vc, hc, tilemapCell);
+        }
       }
     }
 
@@ -688,9 +790,27 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2ClipWindowY2 === 255;
   }
 
-    // Updates the cached fast path eligibility for Layer 2 rendering modes
+  // Updates the cached fast path eligibility for Layer 2 rendering modes
   private updateTilemapFastPathCaches(): void {
-    // TODO: Implement tilemap fast path cache updates when needed
+    // Priority 1A: Update cached display coordinate calculations
+    this.tilemapWideDisplayYStart = this.confDisplayYStart - 34;
+    this.tilemapClipX1Cache_40x32 = Math.min(this.tilemapClipWindowX1 << 1, 319);
+    this.tilemapClipX2Cache_40x32 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 319);
+    this.tilemapClipX1Cache_80x32 = Math.min(this.tilemapClipWindowX1 << 1, 639);
+    this.tilemapClipX2Cache_80x32 = Math.min((this.tilemapClipWindowX2 << 1) | 1, 639);
+
+    // Advanced Strategy: Determine if fast path can be used
+    // Fast path requirements: no scroll, no transformations, full clip window
+    this.tilemapCanUseFastPath =
+      this.tilemapScrollXField === 0 &&
+      this.tilemapScrollYField === 0 &&
+      !this.tilemapXMirror &&
+      !this.tilemapYMirror &&
+      !this.tilemapRotate &&
+      this.tilemapClipWindowX1 === 0 &&
+      this.tilemapClipWindowX2 === 159 &&
+      this.tilemapClipWindowY1 === 0 &&
+      this.tilemapClipWindowY2 === 255;
   }
 
   // ==============================================================================================
@@ -706,8 +826,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set timexPortValue(value: number) {
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
-    this.ulaHiResInkRgb333 = this.machine.paletteDevice.getUlaRgb333(this.ulaHiResColor);
-    this.ulaHiResPaperRgb333 = this.machine.paletteDevice.getUlaRgb333(7 - this.ulaHiResColor);
+    this.ulaHiResInkRgb333 = this.paletteDeviceCache.getUlaRgb333(this.ulaHiResColor);
+    this.ulaHiResPaperRgb333 = this.paletteDeviceCache.getUlaRgb333(7 - this.ulaHiResColor);
     const mode = value & 0x07;
     switch (mode) {
       case 0:
@@ -921,30 +1041,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _cell - ULA Standard rendering cell with activity flags
    */
   private renderSpritesPixel(_vc: number, _hc: number, _cell: number): void {
-    // TODO: Implementation to be documented in a future section
-    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
-    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
-  }
-
-  /**
-   * Render Tilemap 80×32 mode pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
-   */
-  private renderTilemap_80x32Pixel(_vc: number, _hc: number, _cell: number): void {
-    // TODO: Implementation to be documented in a future section
-    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
-    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
-  }
-
-  /**
-   * Render Tilemap 40×32 mode pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
-   */
-  private renderTilemap_40x32Pixel(_vc: number, _hc: number, _cell: number): void {
     // TODO: Implementation to be documented in a future section
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
     this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
@@ -1326,7 +1422,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
 
       if (paletteIndex !== -1) {
-        pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+        pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
       }
     } else if (this.ulaPlusEnabled) {
       // ULA+ Mode: Use 64-color palette (indices 192-255 in ULA palette)
@@ -1334,14 +1430,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const ulaPaletteIndex = pixelBit
         ? this.ulaPlusAttrToInk[this.ulaShiftAttr]
         : this.ulaPlusAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(ulaPaletteIndex);
+      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(ulaPaletteIndex);
     } else {
       // Standard Mode: Use pre-calculated lookup tables with BRIGHT already applied
       // Direct palette index lookup (0-15) - no bit operations needed
       const paletteIndex = pixelBit
         ? this.ulaActiveAttrToInk[this.ulaShiftAttr]
         : this.ulaActiveAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
     }
 
     this.ulaShiftAttrCount--;
@@ -1509,11 +1605,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       pixel1Rgb333 =
         index1 === 255
           ? this.machine.composedScreenDevice.fallbackRgb333Cache
-          : this.machine.paletteDevice.getUlaRgb333(index1);
+          : this.paletteDeviceCache.getUlaRgb333(index1);
       pixel2Rgb333 =
         index2 === 255
           ? this.machine.composedScreenDevice.fallbackRgb333Cache
-          : this.machine.paletteDevice.getUlaRgb333(index2);
+          : this.paletteDeviceCache.getUlaRgb333(index2);
     } else {
       // Standard HiRes mode: use predefined ink/paper colors
       pixel1Rgb333 = pixelBit1 ? this.ulaHiResInkRgb333 : this.ulaHiResPaperRgb333;
@@ -1672,7 +1768,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
 
       if (paletteIndex !== -1) {
-        pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+        pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
       }
     } else {
       // Standard HiColor mode: Use pre-calculated lookup tables with BRIGHT already applied
@@ -1680,7 +1776,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const paletteIndex = pixelBit
         ? this.ulaActiveAttrToInk[this.ulaShiftAttr]
         : this.ulaActiveAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
     }
 
     this.ulaShiftAttrCount--;
@@ -1847,7 +1943,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const highNibble = ((this.loResBlockByte >> 4) + this.loResPaletteOffset) & 0x0f;
       const lowNibble = this.loResBlockByte & 0x0f;
       const paletteIndex = (highNibble << 4) | lowNibble;
-      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
     } else {
       // Radastan LoRes: 4-bit color with palette offset
       // Each byte has 2 nibbles: high nibble for left pixels, low nibble for right pixels
@@ -1867,7 +1963,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         paletteIndex = ((this.loResPaletteOffset & 0x0f) << 4) | nibble;
       }
 
-      pixelRgb333 = this.machine.paletteDevice.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
     }
 
     // === STAGE 5: Clipping Test ===
@@ -1984,7 +2080,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2049,7 +2145,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const segment16K = (offset >> 14) & 0x07;
     const half8K = (offset >> 13) & 0x01;
     const bank8K = (bank16K + segment16K) * 2 + half8K;
-    const memoryBase = 0x040000 + (bank8K << 13);
+    const memoryBase = OFFS_NEXT_RAM + (bank8K << 13);
 
     // Update cache
     this.layer2LastOffset = offset;
@@ -2086,7 +2182,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2154,7 +2250,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2223,7 +2319,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2332,7 +2428,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel1Transparent = true;
       this.layer2Pixel1Priority = false;
     } else {
-      const rgb333_1 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex1);
+      const rgb333_1 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex1);
       const priority1 = (rgb333_1 & 0x100) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
@@ -2348,7 +2444,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel2Transparent = true;
       this.layer2Pixel2Priority = false;
     } else {
-      const rgb333_2 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex2);
+      const rgb333_2 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex2);
       const priority2 = (rgb333_2 & 0x100) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
@@ -2390,7 +2486,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel1Transparent = true;
       this.layer2Pixel1Priority = false;
     } else {
-      const rgb333_1 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex1);
+      const rgb333_1 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex1);
       const priority1 = (rgb333_1 & 0x100) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
@@ -2406,7 +2502,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel2Transparent = true;
       this.layer2Pixel2Priority = false;
     } else {
-      const rgb333_2 = this.machine.paletteDevice.getLayer2Rgb333(paletteIndex2);
+      const rgb333_2 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex2);
       const priority2 = (rgb333_2 & 0x100) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
@@ -2465,6 +2561,664 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Reg $6F [5:0] - MSB of address of the tile definitions in Bank 5
   tilemapTileDefBank5Msb: number;
 
+  // --- Sampled tilemap configuration (sampled based on rendering flags)
+  private tilemap80x32Sampled: boolean; // Sampled every 4 pixels
+  private tilemapTextModeSampled: boolean; // Sampled at tile boundaries
+  private tilemapEliminateAttrSampled: boolean; // Sampled at tile boundaries
+  private tilemap512TileModeSampled: boolean; // Sampled at tile boundaries
+  private tilemapForceOnTopSampled: boolean; // Sampled at tile boundaries
+
+  // --- Current tile being rendered
+  private tilemapCurrentTileIndex: number;
+  private tilemapCurrentAttr: number;
+
+  // --- Current tile transformation flags (for rendering)
+  private tilemapTileXMirror: boolean;
+  private tilemapTileYMirror: boolean;
+  private tilemapTileRotate: boolean;
+  private tilemapTilePriority: boolean;
+  private tilemapTilePaletteOffset: number;
+
+  // --- Next tile transformation flags (fetched ahead, applied at tile boundary)
+  private tilemapNextTileXMirror: boolean;
+  private tilemapNextTileYMirror: boolean;
+  private tilemapNextTileRotate: boolean;
+  private tilemapNextTilePaletteOffset: number;
+
+  // --- Pixel buffers for double-buffering (current tile and next tile)
+  private tilemapPixelBuffer0: Uint8Array; // 8 entries, 4-bit indices
+  private tilemapPixelBuffer1: Uint8Array; // 8 entries, 4-bit indices
+  private tilemapCurrentBuffer: number; // 0 or 1, which buffer is currently being rendered
+  private tilemapBufferPosition: number; // 0-7, which pixel to read next
+
+  // --- Cached computed values (Priority 1A optimization)
+  private tilemapWideDisplayYStart: number; // Cached: confDisplayYStart - 34
+  private tilemapClipX1Cache_40x32: number; // Cached: Math.min((tilemapClipWindowX1 << 1), 319)
+  private tilemapClipX2Cache_40x32: number; // Cached: Math.min((tilemapClipWindowX2 << 1) | 1, 319)
+  private tilemapClipX1Cache_80x32: number; // Cached: Math.min((tilemapClipWindowX1 << 1), 639)
+  private tilemapClipX2Cache_80x32: number; // Cached: Math.min((tilemapClipWindowX2 << 1) | 1, 639)
+
+  // --- Fast path optimization flags
+  private tilemapCanUseFastPath: boolean;
+  private tilemapLastTileDefAddr: number;
+
+  /**
+   * Get tilemap data byte from VRAM (bank 5 or 7).
+   * @param useBank7 - true for bank 7, false for bank 5
+   * @param offset - 6-bit MSB offset within bank (base address bits [13:8])
+   * @param address - 14-bit address within the tilemap/tile definition region
+   * @returns Byte value from VRAM
+   */
+  private getTilemapVRAM(useBank7: boolean, offset: number, address: number): number {
+    // Address calculation per VHDL tilemap.vhd line 404:
+    // tm_mem_addr_o <= (tm_mem_addr_sub(13:8) + tm_mem_addr_offset(5:0)) & tm_mem_addr_sub(7:0)
+    // The offset (MSB from reg $6E/$6F bits 5:0) is added to the high byte of the address
+    const highByte = ((offset & 0x3f) + ((address >> 8) & 0x3f)) & 0x3f;
+    const fullAddress = (highByte << 8) | (address & 0xff);
+
+    // Bank selection: Bank 5 or Bank 7 (these are 16K RAM banks in ZX Next)
+    // OFFS_BANK_05 = 0x054000, OFFS_BANK_07 = 0x05c000
+    const bankBase = useBank7 ? OFFS_BANK_07 : OFFS_BANK_05;
+    const physicalAddress = bankBase + fullAddress;
+
+    // Priority 1D: Access cached memory array (eliminates property chain traversal)
+    return this.memoryArrayCache[physicalAddress] || 0;
+  }
+
+  /**
+   * Apply scrolling to get absolute tilemap coordinates.
+   * @param displayX - X coordinate within display area (0-319 for 40×32, 0-639 for 80×32)
+   * @param displayY - Y coordinate within display area (0-255)
+   * @param scrollX - X scroll amount (10 bits, 0-1023)
+   * @param scrollY - Y scroll amount (8 bits, 0-255)
+   * @param mode80x32 - true for 80×32 mode, false for 40×32 mode
+   * @returns Absolute X and Y coordinates with wrapping applied
+   */
+  private getTilemapAbsoluteCoordinates(
+    displayX: number,
+    displayY: number,
+    scrollX: number,
+    scrollY: number,
+    mode80x32: boolean
+  ): { absX: number; absY: number } {
+    // Apply scroll with wrapping
+    // For 40×32 mode: 320 pixels wide (40 tiles × 8 pixels)
+    // For 80×32 mode: 640 pixels wide (80 tiles × 8 pixels)
+    // Both modes: 256 pixels tall (32 tiles × 8 pixels)
+    const maxX = mode80x32 ? 640 : 320;
+    const absX = (displayX + scrollX) % maxX;
+    const absY = (displayY + scrollY) & 0xff; // 256 pixel wraparound
+
+    return { absX, absY };
+  }
+
+  /**
+   * Calculate tilemap addresses for given absolute coordinates.
+   * @param absX - Absolute X coordinate (0-319 or 0-639)
+   * @param absY - Absolute Y coordinate (0-255)
+   * @param mode80x32 - true for 80×32 mode
+   * @param attrEliminated - true if attributes are eliminated
+   * @returns Tile map addresses for index and attribute bytes
+   */
+  private getTilemapAddresses(
+    absX: number,
+    absY: number,
+    mode80x32: boolean,
+    attrEliminated: boolean
+  ): { tileIndexAddr: number; tileAttrAddr: number } {
+    const tileWidth = mode80x32 ? 80 : 40;
+    const bytesPerTile = attrEliminated ? 1 : 2;
+
+    // Calculate which tile we're in
+    const tileX = Math.floor(absX / 8);
+    const tileY = Math.floor(absY / 8);
+    const tileArrayIndex = tileY * tileWidth + tileX;
+
+    // Calculate addresses
+    const tileIndexAddr = tileArrayIndex * bytesPerTile;
+    const tileAttrAddr = attrEliminated ? -1 : tileIndexAddr + 1;
+
+    return { tileIndexAddr, tileAttrAddr };
+  }
+
+  /**
+   * Apply tile transformations (mirror/rotate) to pixel coordinates within tile.
+   * Implements the transformation logic per ZX Spectrum Next hardware specification.
+   *
+   * @param xInTile - X coordinate within tile (0-7)
+   * @param yInTile - Y coordinate within tile (0-7)
+   * @param xMirror - Horizontal flip flag
+   * @param yMirror - Vertical flip flag
+   * @param rotate - 90° clockwise rotation flag
+   * @returns Transformed coordinates
+   */
+  private applyTileTransformation(
+    xInTile: number,
+    yInTile: number,
+    xMirror: boolean,
+    yMirror: boolean,
+    rotate: boolean
+  ): { transformedX: number; transformedY: number } {
+    // Apply transformations per hardware specification
+    let effectiveX = xInTile;
+    let effectiveY = yInTile;
+
+    // Step 1: Rotation XOR X-Mirror determines effective X mirror
+    const effectiveXMirror = xMirror !== rotate; // XOR operation
+
+    // Step 2: Apply X Mirror
+    if (effectiveXMirror) {
+      effectiveX = 7 - effectiveX;
+    }
+
+    // Step 3: Apply Y Mirror
+    if (yMirror) {
+      effectiveY = 7 - effectiveY;
+    }
+
+    // Step 4: Apply Rotation (swap coordinates)
+    const transformedX = rotate ? effectiveY : effectiveX;
+    const transformedY = rotate ? effectiveX : effectiveY;
+
+    return { transformedX, transformedY };
+  }
+
+  /**
+   * Fetch tile index and attributes for current position.
+   * Called when rendering flags indicate tile fetch is needed.
+   * @param absX - Absolute X coordinate in tilemap
+   * @param absY - Absolute Y coordinate in tilemap
+   * @param mode80x32 - true for 80×32 mode, false for 40×32 mode
+   * @param attrEliminated - true if attributes are eliminated
+   */
+  private fetchTilemapTile(
+    absX: number,
+    absY: number,
+    mode80x32: boolean,
+    attrEliminated: boolean
+  ): void {
+    // Get tile addresses
+    const { tileIndexAddr, tileAttrAddr } = this.getTilemapAddresses(
+      absX,
+      absY,
+      mode80x32,
+      attrEliminated
+    );
+
+    // Fetch tile index
+    this.tilemapCurrentTileIndex = this.getTilemapVRAM(
+      this.tilemapUseBank7,
+      this.tilemapBank5Msb,
+      tileIndexAddr
+    );
+
+    // Handle 512-tile mode and attributes
+    if (this.tilemap512TileModeSampled && !attrEliminated) {
+      // Fetch attribute byte
+      this.tilemapCurrentAttr = this.getTilemapVRAM(
+        this.tilemapUseBank7,
+        this.tilemapBank5Msb,
+        tileAttrAddr
+      );
+      // In 512-tile mode, bit 0 is tile index bit 8
+      const tileIndexBit8 = this.tilemapCurrentAttr & 0x01;
+      this.tilemapCurrentTileIndex |= tileIndexBit8 << 8;
+    } else if (!attrEliminated) {
+      // Fetch attribute byte normally
+      this.tilemapCurrentAttr = this.getTilemapVRAM(
+        this.tilemapUseBank7,
+        this.tilemapBank5Msb,
+        tileAttrAddr
+      );
+    } else {
+      // Use default attributes from Reg 0x6C
+      this.tilemapCurrentAttr =
+        (this.tilemapPaletteOffset << 4) |
+        (this.tilemapXMirror ? 0x08 : 0) |
+        (this.tilemapYMirror ? 0x04 : 0) |
+        (this.tilemapRotate ? 0x02 : 0) |
+        (this.tilemapUlaOver ? 0x01 : 0);
+    }
+
+    // Extract transformation flags from attribute and store for NEXT tile
+    // These will be copied to current flags when we start rendering the next tile
+    this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
+    this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
+    this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
+    this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
+    // In 512-tile mode, bit 0 is tile index bit 8 (not priority)
+    this.tilemapTilePriority = this.tilemap512TileModeSampled
+      ? false
+      : (this.tilemapCurrentAttr & 0x01) !== 0;
+  }
+
+  /**
+   * Fetch tile pattern pixels and populate buffer.
+   * Called when SCR_PATTERN_FETCH flag is set.
+   * Tile index and attributes must have been fetched previously.
+   * @param absX - Absolute X coordinate in tilemap
+   * @param absY - Absolute Y coordinate in tilemap
+   * @param textMode - true for text mode, false for graphics mode
+   */
+  private fetchTilemapPattern(absX: number, absY: number, textMode: boolean): void {
+    // For each pixel position within the tile (0-7), apply transformation
+    // xInTile and yInTile are positions WITHIN the 8x8 tile, not absolute coordinates
+    // Note: absX is passed for API consistency but not used (tile is identified by previously fetched index)
+    // Use "next" transformation flags which were set during tile index/attr fetch
+    // Write to the NEXT buffer (not currently being rendered)
+    const nextBuffer =
+      this.tilemapCurrentBuffer === 0 ? this.tilemapPixelBuffer1 : this.tilemapPixelBuffer0;
+    const yInTile = absY & 0x07;
+
+    if (textMode) {
+      // Text mode: fetch all 8 pixels with transformations
+      for (let xInTile = 0; xInTile < 8; xInTile++) {
+        // Apply transformation to get which row and bit position to read from pattern
+        const { transformedX, transformedY } = this.applyTileTransformation(
+          xInTile,
+          yInTile,
+          this.tilemapNextTileXMirror,
+          this.tilemapNextTileYMirror,
+          this.tilemapNextTileRotate
+        );
+
+        const patternAddr = this.tilemapCurrentTileIndex * 8 + transformedY;
+        const patternByte = this.getTilemapVRAM(
+          this.tilemapTileDefUseBank7,
+          this.tilemapTileDefBank5Msb,
+          patternAddr
+        );
+
+        // Extract the bit at transformed position
+        const bitPos = 7 - transformedX;
+        nextBuffer[xInTile] = (patternByte >> bitPos) & 0x01;
+      }
+    } else {
+      // Graphics mode: fetch 8 pixels with transformations
+      for (let xInTile = 0; xInTile < 8; xInTile++) {
+        // Apply transformation to get which row, byte, and nibble to read from pattern
+        const { transformedX, transformedY } = this.applyTileTransformation(
+          xInTile,
+          yInTile,
+          this.tilemapNextTileXMirror,
+          this.tilemapNextTileYMirror,
+          this.tilemapNextTileRotate
+        );
+
+        // Address: tile_base + transformedY * 4 + (transformedX >> 1)
+        const byteAddr = this.tilemapCurrentTileIndex * 32 + transformedY * 4 + (transformedX >> 1);
+        const patternByte = this.getTilemapVRAM(
+          this.tilemapTileDefUseBank7,
+          this.tilemapTileDefBank5Msb,
+          byteAddr
+        );
+
+        // Extract nibble: high nibble if transformedX is even, low if odd
+        const pixelValue =
+          (transformedX & 1) === 0 ? (patternByte >> 4) & 0x0f : patternByte & 0x0f;
+        nextBuffer[xInTile] = pixelValue;
+      }
+    }
+
+    // Do NOT reset buffer position here - let the rendering function handle it
+    // this.tilemapBufferPosition = 0;
+  }
+
+  /**
+   * Render Tilemap 40×32 mode pixel (Stage 1: Pixel Generation).
+   * Generates two pixels per HC position at CLK_14 rate.
+   *
+   * @param vc - Vertical counter position
+   * @param hc - Horizontal counter position
+   * @param cell - Rendering cell with activity flags
+   */
+  private renderTilemap_40x32Pixel(vc: number, hc: number, cell: number): void {
+    // Priority 2F: Combine sampling checks for faster execution when no flags are set
+    const samplingFlags = cell & (SCR_TILEMAP_SAMPLE_MODE | SCR_TILEMAP_SAMPLE_CONFIG);
+    if (samplingFlags !== 0) {
+      // Sample mode bit every 4 pixels (hardware: when hcount(4:0) = "11111")
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
+        this.tilemap80x32Sampled = this.tilemap80x32Resolution;
+      }
+
+      // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
+        this.tilemapTextModeSampled = this.tilemapTextMode;
+        this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
+        this.tilemap512TileModeSampled = this.tilemap512TileMode;
+        this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
+      }
+    }
+
+    // Calculate display coordinates
+    // For 40×32 (320×256) mode, display starts 32 pixels earlier than standard ULA
+    // Match Layer 2 320×256: displayHC_wide = hc - confDisplayXStart + 32
+    const displayX = hc - this.confDisplayXStart + 32; // Can be negative (border before display)
+    const displayY = vc - this.tilemapWideDisplayYStart; // 0-255 (Priority 1A: use cached value)
+
+    // ===== PHASE 1: FETCH (happens in border area for prefetching) =====
+
+    // Fetch tile data if flags are set
+    // This happens even in border area (displayX < 0) to prefetch first tile
+    // When fetching at positions 6,7, look ahead +8 pixels to fetch NEXT tile's data
+    const fetchX = displayX + 8;
+    // Priority 1B: Inline getTilemapAbsoluteCoordinates (eliminates object allocation)
+    const fetchAbsX = (fetchX + this.tilemapScrollXField) % 320;
+    const fetchAbsY = (displayY + this.tilemapScrollYField) & 0xff;
+
+    // Priority 2F: Combine fetch checks for faster execution when no flags are set
+    const fetchFlags = cell & (SCR_TILE_INDEX_FETCH | SCR_PATTERN_FETCH);
+    if (fetchFlags !== 0) {
+      // Fetch tile index and attributes at position 6
+      if ((fetchFlags & SCR_TILE_INDEX_FETCH) !== 0) {
+        this.fetchTilemapTile(
+          fetchAbsX,
+          fetchAbsY,
+          this.tilemap80x32Sampled,
+          this.tilemapEliminateAttrSampled
+        );
+      }
+
+      // Fetch pattern at position 7 (uses attributes set at position 6)
+      if ((fetchFlags & SCR_PATTERN_FETCH) !== 0) {
+        this.fetchTilemapPattern(fetchAbsX, fetchAbsY, this.tilemapTextModeSampled);
+      }
+    }
+
+    // ===== PHASE 2: RENDER (only for pixels in display area) =====
+
+    // Check if in valid display area
+    if (displayX < 0 || displayX >= 320 || displayY < 0 || displayY >= 256) {
+      this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = null;
+      this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = true;
+      return;
+    }
+
+    // Calculate clip window coordinates (match VHDL pattern)
+    // X clip coordinates are doubled: xsv = clip_x1 << 1, xev = (clip_x2 << 1) | 1
+    // Priority 1A: Use cached clip window values
+    const clipX1 = this.tilemapClipX1Cache_40x32;
+    const clipX2 = this.tilemapClipX2Cache_40x32;
+    const clipY1 = this.tilemapClipWindowY1;
+    const clipY2 = this.tilemapClipWindowY2;
+
+    // Check if this pixel is outside clip window
+    const isClipped =
+      displayX < clipX1 || displayX > clipX2 || displayY < clipY1 || displayY > clipY2;
+
+    // Reset buffer position at start of each tile (when displayX is at tile boundary)
+    // Also copy "next" transformation flags to "current" for this tile
+    // And swap buffers (next buffer becomes current)
+    if ((displayX & 0x07) === 0) {
+      this.tilemapBufferPosition = 0;
+      this.tilemapTileXMirror = this.tilemapNextTileXMirror;
+      this.tilemapTileYMirror = this.tilemapNextTileYMirror;
+      this.tilemapTileRotate = this.tilemapNextTileRotate;
+      this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      // Swap buffers: what was "next" is now "current"
+      this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
+    }
+
+    // Generate one pixel for this HC position (CLK_7 rate)
+    // Read pixel sequentially from CURRENT buffer (transformations applied during fetch)
+    // Priority 2H: Use array indexing for faster buffer selection
+    const buffers = [this.tilemapPixelBuffer0, this.tilemapPixelBuffer1];
+    const currentBuffer = buffers[this.tilemapCurrentBuffer];
+    const pixelValue = currentBuffer[this.tilemapBufferPosition++];
+
+    // Generate palette index
+    let paletteIndex: number;
+    if (this.tilemapTextModeSampled) {
+      // Text mode: 7 bits from attribute + 1 bit from pattern
+      paletteIndex = ((this.tilemapCurrentAttr >> 1) << 1) | pixelValue;
+    } else {
+      // Graphics mode: 4 bits palette offset + 4 bits pixel value
+      paletteIndex = (this.tilemapTilePaletteOffset << 4) | pixelValue;
+    }
+
+    // Palette lookup (use Tilemap palette, first or second bank based on Reg $6B bit 4)
+    const rgb333 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex & 0xff);
+    const paletteEntry = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex & 0xff);
+
+    // Check transparency
+    // Priority 2G: Pre-compute comparison value for transparency check
+    let transparent: boolean;
+    if (this.tilemapTextModeSampled) {
+      // Text mode: RGB comparison with global transparency color
+      const globalTransparencyColorShifted = this.globalTransparencyColor << 1;
+      transparent = (paletteEntry & 0x1fe) === globalTransparencyColorShifted;
+    } else {
+      // Graphics mode: palette index comparison
+      transparent = (pixelValue & 0x0f) === (this.tilemapTransparencyIndex & 0x0f);
+    }
+
+    // Apply clipping: if outside clip window, force transparent (matches VHDL pixel_en_s behavior)
+    // The VHDL sets pixel_en_s='0' for clipped pixels, effectively making them transparent
+    if (isClipped) {
+      transparent = true;
+    }
+
+    // Store same pixel to both outputs (CLK_7 rate)
+    this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
+    this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+  }
+
+  /**
+   * Fast path for Tilemap 40×32 mode (Advanced Strategy).
+   * Optimized version with minimal conditionals for common case:
+   * - No scrolling (scrollX=0, scrollY=0)
+   * - No transformations (no mirror, no rotate)
+   * - Full clip window (no clipping needed)
+   * 
+   * @param vc - Vertical counter position
+   * @param hc - Horizontal counter position
+   * @param cell - Rendering cell with activity flags
+   */
+  private renderTilemap_40x32Pixel_FastPath(vc: number, hc: number, cell: number): void {
+    // Sample mode and config (same as regular path)
+    const samplingFlags = cell & (SCR_TILEMAP_SAMPLE_MODE | SCR_TILEMAP_SAMPLE_CONFIG);
+    if (samplingFlags !== 0) {
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
+        this.tilemap80x32Sampled = this.tilemap80x32Resolution;
+      }
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
+        this.tilemapTextModeSampled = this.tilemapTextMode;
+        this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
+        this.tilemap512TileModeSampled = this.tilemap512TileMode;
+        this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
+      }
+    }
+
+    const displayX = hc - this.confDisplayXStart + 32;
+    const displayY = vc - this.tilemapWideDisplayYStart;
+
+    // Fast path: No scrolling, so fetchAbsX = fetchX, fetchAbsY = displayY
+    const fetchX = displayX + 8;
+    
+    const fetchFlags = cell & (SCR_TILE_INDEX_FETCH | SCR_PATTERN_FETCH);
+    if (fetchFlags !== 0) {
+      if ((fetchFlags & SCR_TILE_INDEX_FETCH) !== 0) {
+        this.fetchTilemapTile(fetchX, displayY, this.tilemap80x32Sampled, this.tilemapEliminateAttrSampled);
+      }
+      if ((fetchFlags & SCR_PATTERN_FETCH) !== 0) {
+        this.fetchTilemapPattern(fetchX, displayY, this.tilemapTextModeSampled);
+      }
+    }
+
+    // Fast path: Skip bounds and clipping checks (full clip window = no clipping)
+    if (displayX < 0 || displayX >= 320 || displayY < 0 || displayY >= 256) {
+      this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = null;
+      this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = true;
+      return;
+    }
+
+    // Reset buffer position at tile boundary
+    if ((displayX & 0x07) === 0) {
+      this.tilemapBufferPosition = 0;
+      this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
+    }
+
+    // Fast path: Direct buffer access (no transformation flags needed)
+    const buffers = [this.tilemapPixelBuffer0, this.tilemapPixelBuffer1];
+    const pixelValue = buffers[this.tilemapCurrentBuffer][this.tilemapBufferPosition++];
+
+    // Generate palette index
+    const paletteIndex = this.tilemapTextModeSampled
+      ? (((this.tilemapCurrentAttr >> 1) << 1) | pixelValue) & 0xff
+      : (((this.tilemapTilePaletteOffset << 4) | pixelValue) & 0xff);
+
+    // Palette lookup
+    const rgb333 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex);
+    const paletteEntry = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex);
+
+    // Check transparency
+    const transparent = this.tilemapTextModeSampled
+      ? (paletteEntry & 0x1fe) === (this.globalTransparencyColor << 1)
+      : (pixelValue & 0x0f) === (this.tilemapTransparencyIndex & 0x0f);
+
+    // Store output (no clipping check needed in fast path)
+    this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
+    this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+  }
+
+  /**
+   * Render Tilemap 80×32 mode pixel (Stage 1: Pixel Generation).
+   * In 80×32 mode, each HC generates 2 pixels (doubled horizontal resolution).
+   *
+   * @param vc - Vertical counter position
+   * @param hc - Horizontal counter position
+   * @param cell - Rendering cell with activity flags
+   */
+  private renderTilemap_80x32Pixel(vc: number, hc: number, cell: number): void {
+    // Priority 2F: Combine sampling checks for faster execution when no flags are set
+    const samplingFlags = cell & (SCR_TILEMAP_SAMPLE_MODE | SCR_TILEMAP_SAMPLE_CONFIG);
+    if (samplingFlags !== 0) {
+      // Sample mode bit every 4 pixels
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
+        this.tilemap80x32Sampled = this.tilemap80x32Resolution;
+      }
+
+      // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
+      if ((samplingFlags & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
+        this.tilemapTextModeSampled = this.tilemapTextMode;
+        this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
+        this.tilemap512TileModeSampled = this.tilemap512TileMode;
+        this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
+      }
+    }
+
+    // Calculate display coordinates (each HC generates 2 pixels)
+    // For 80×32 (640×256) mode, display starts 96 pixels earlier than standard ULA
+    const ultraWideDisplayXStart = this.confDisplayXStart - 96;
+    const displayX = (hc - ultraWideDisplayXStart) * 2;
+    const displayY = vc - this.tilemapWideDisplayYStart; // Priority 1A: use cached value
+
+    // ===== PHASE 1: FETCH (happens at tile boundaries, including prefetch) =====
+
+    // Fetch tile data if flags are set
+    // In 80×32 mode, fetches happen at START of tile (pixelInTile=0,2,4) not at end
+    // Priority 1B: Inline getTilemapAbsoluteCoordinates (eliminates object allocation)
+    const absX = (displayX + this.tilemapScrollXField) % 640;
+    const absY = (displayY + this.tilemapScrollYField) & 0xff;
+
+    // Priority 2F: Combine fetch checks for faster execution when no flags are set
+    const fetchFlags = cell & (SCR_TILE_INDEX_FETCH | SCR_PATTERN_FETCH);
+    if (fetchFlags !== 0) {
+      // Fetch tile index and attributes
+      if ((fetchFlags & SCR_TILE_INDEX_FETCH) !== 0) {
+        this.fetchTilemapTile(
+          absX,
+          absY,
+          this.tilemap80x32Sampled,
+          this.tilemapEliminateAttrSampled
+        );
+      }
+
+      // Fetch pattern (uses attributes from previous fetch)
+      if ((fetchFlags & SCR_PATTERN_FETCH) !== 0) {
+        this.fetchTilemapPattern(absX, absY, this.tilemapTextModeSampled);
+      }
+    }
+
+    // ===== PHASE 2: RENDER (only for pixels in display area) =====
+
+    // Check if in valid display area
+    if (displayX < 0 || displayX >= 640 || displayY < 0 || displayY >= 256) {
+      this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = null;
+      this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = true;
+      return;
+    }
+
+    // Calculate clip window coordinates (match VHDL pattern)
+    // X clip coordinates are doubled: xsv = clip_x1 << 1, xev = (clip_x2 << 1) | 1
+    // Priority 1A: Use cached clip window values
+    const clipX1 = this.tilemapClipX1Cache_80x32;
+    const clipX2 = this.tilemapClipX2Cache_80x32;
+    const clipY1 = this.tilemapClipWindowY1;
+    const clipY2 = this.tilemapClipWindowY2;
+
+    // Reset buffer position at start of each tile (when displayX is at tile boundary)
+    // Also copy "next" transformation flags to "current" for this tile
+    // And swap buffers (next buffer becomes current)
+    if ((displayX & 0x07) === 0) {
+      this.tilemapBufferPosition = 0;
+      this.tilemapTileXMirror = this.tilemapNextTileXMirror;
+      this.tilemapTileYMirror = this.tilemapNextTileYMirror;
+      this.tilemapTileRotate = this.tilemapNextTileRotate;
+      this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      // Swap buffers: what was "next" is now "current"
+      this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
+    }
+
+    // Check if this pixel is outside clip window
+    const isClipped =
+      displayX < clipX1 || displayX > clipX2 || displayY < clipY1 || displayY > clipY2;
+
+    // Generate one pixel for this HC position (CLK_7 rate)
+    // Read pixel sequentially from CURRENT buffer (transformations applied during fetch)
+    // Priority 2H: Use array indexing for faster buffer selection
+    const buffers = [this.tilemapPixelBuffer0, this.tilemapPixelBuffer1];
+    const currentBuffer = buffers[this.tilemapCurrentBuffer];
+    const pixelValue = currentBuffer[this.tilemapBufferPosition++];
+
+    // Generate palette index
+    let paletteIndex: number;
+    if (this.tilemapTextModeSampled) {
+      // Text mode: 7 bits from attribute + 1 bit from pattern
+      paletteIndex = ((this.tilemapCurrentAttr >> 1) << 1) | pixelValue;
+    } else {
+      // Graphics mode: 4 bits palette offset + 4 bits pixel value
+      paletteIndex = (this.tilemapTilePaletteOffset << 4) | pixelValue;
+    }
+
+    // Palette lookup (use Tilemap palette, first or second bank based on Reg $6B bit 4)
+    const rgb333 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex & 0xff);
+    const paletteEntry = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex & 0xff);
+
+    // Check transparency
+    // Priority 2G: Pre-compute comparison value for transparency check
+    let transparent: boolean;
+    if (this.tilemapTextModeSampled) {
+      // Text mode: RGB comparison with global transparency color
+      const globalTransparencyColorShifted = this.globalTransparencyColor << 1;
+      transparent = (paletteEntry & 0x1fe) === globalTransparencyColorShifted;
+    } else {
+      // Graphics mode: palette index comparison
+      transparent = (pixelValue & 0x0f) === (this.tilemapTransparencyIndex & 0x0f);
+    }
+
+    // Apply clipping: if outside clip window, force transparent (matches VHDL pixel_en_s behavior)
+    // The VHDL sets pixel_en_s='0' for clipped pixels, effectively making them transparent
+    if (isClipped) {
+      transparent = true;
+    }
+
+    // Store same pixel to both outputs (CLK_7 rate)
+    this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
+    this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+  }
+
   // ==============================================================================================
   // Sprites Rendering
   //
@@ -2519,13 +3273,17 @@ const SCR_CONTENTION_WINDOW = 0b00000010; // bit 1
 const SCR_NREG_SAMPLE = 0b00000100; // bit 2
 const SCR_BYTE1_READ = 0b00001000; // bit 3
 const SCR_LINE_BUFFER_READ = 0b00001000; // bit 3, an alias to SCR_BYTE1_READ
-const SCR_TILE_INDEX_FETCH = 0b00001000; // bit 3, an alias to SCR_BYTE1_READ
+const SCR_TILE_INDEX_FETCH = 0b00001000; // bit 3, an alias to SCR_BYTE1_READ (Tilemap: fetch tile index)
 const SCR_BYTE2_READ = 0b00010000; // bit 4
 const SCR_VISIBILITY_CHECK = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ
-const SCR_PATTERN_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ
+const SCR_TILE_ATTR_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile attribute)
+const SCR_PATTERN_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile pattern row)
 const SCR_SHIFT_REG_LOAD = 0b00100000; // bit 5
+const SCR_TILE_BUFFER_ADVANCE = 0b00100000; // bit 5, an alias to SCR_SHIFT_REG_LOAD (Tilemap: advance pixel buffer)
 const SCR_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
+const SCR_TILEMAP_SAMPLE_MODE = 0b01000000; // bit 6, alias to SCR_FLOATING_BUS_UPDATE (Tilemap: sample mode bit every 4 pixels)
 const SCR_BORDER_AREA = 0b10000000; // bit 7
+const SCR_TILEMAP_SAMPLE_CONFIG = 0b10000000; // bit 7, alias to SCR_BORDER_AREA (Tilemap: sample config bits at tile boundaries)
 
 // Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
 const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
@@ -2547,10 +3305,10 @@ let renderingFlagsSprites50Hz: Uint16Array | undefined;
 let renderingFlagsSprites60Hz: Uint16Array | undefined;
 
 // Tilemap rendering flags for both timing modes and resolutions
-let renderingFlagsTilemap_40x32_50Hz: Uint16Array | undefined;
-let renderingFlagsTilemap_40x32_60Hz: Uint16Array | undefined;
-let renderingFlagsTilemap_80x32_50Hz: Uint16Array | undefined;
-let renderingFlagsTilemap_80x32_60Hz: Uint16Array | undefined;
+let renderingFlagsTilemap_40x32_50Hz: Uint8Array | undefined;
+let renderingFlagsTilemap_40x32_60Hz: Uint8Array | undefined;
+let renderingFlagsTilemap_80x32_50Hz: Uint8Array | undefined;
+let renderingFlagsTilemap_80x32_60Hz: Uint8Array | undefined;
 
 // LoRes rendering flags for both timing modes
 let renderingFlagsLoRes50Hz: Uint16Array | undefined;
@@ -2571,8 +3329,8 @@ let activeRenderingFlagsLayer2_256x192: Uint8Array;
 let activeRenderingFlagsLayer2_320x256: Uint8Array;
 let activeRenderingFlagsLayer2_640x256: Uint8Array;
 let activeRenderingFlagsSprites: Uint16Array;
-let activeRenderingFlagsTilemap_40x32: Uint16Array;
-let activeRenderingFlagsTilemap_80x32: Uint16Array;
+let activeRenderingFlagsTilemap_40x32: Uint8Array;
+let activeRenderingFlagsTilemap_80x32: Uint8Array;
 let activeRenderingFlagsLoRes: Uint16Array;
 let activeTactToHC: Uint16Array;
 let activeTactToVC: Uint16Array;
@@ -2896,70 +3654,6 @@ function generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
       flags |= SCR_DISPLAY_AREA | SCR_LINE_BUFFER_READ | SCR_VISIBILITY_CHECK;
     }
     // Sprites use internal memory, no contention window
-    return flags;
-  }
-}
-
-function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint16Array {
-  const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
-  const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-  for (let vc = 0; vc < vcCount; vc++) {
-    for (let hc = 0; hc < hcCount; hc++) {
-      const index = vc * hcCount + hc;
-      renderingFlags[index] = generateTilemap40x32Cell(vc, hc);
-    }
-  }
-
-  return renderingFlags;
-
-  /**
-   * Generate a single Tilemap rendering cell for the 40x32 tilemap mode at the given (vc, hc) position.
-   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
-   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
-   * @returns ULA Standard rendering cell with all activity flags
-   */
-  function generateTilemap40x32Cell(vc: number, hc: number): number {
-    const displayArea = isDisplayArea(config, vc, hc);
-
-    let flags = 0;
-    if (displayArea) {
-      flags |= SCR_DISPLAY_AREA | SCR_TILE_INDEX_FETCH | SCR_PATTERN_FETCH;
-    }
-    // Tilemap uses internal memory, no contention window
-    return flags;
-  }
-}
-
-function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint16Array {
-  const vcCount = config.totalVC;
-  const hcCount = RENDERING_FLAGS_HC_COUNT;
-  const renderingFlags = new Uint16Array(vcCount * hcCount);
-
-  for (let vc = 0; vc < vcCount; vc++) {
-    for (let hc = 0; hc < hcCount; hc++) {
-      const index = vc * hcCount + hc;
-      renderingFlags[index] = generateTilemap80x32Cell(vc, hc);
-    }
-  }
-
-  return renderingFlags;
-
-  /**
-   * Generate a single Tilemap rendering cell for the 80x32 tilemap mode at the given (vc, hc) position.
-   * @param vc Vertical counter position (firstBitmapVC to lastBitmapVC)
-   * @param hc Horizontal counter position (firstVisibleHC to maxHC)
-   * @returns ULA Standard rendering cell with all activity flags
-   */
-  function generateTilemap80x32Cell(vc: number, hc: number): number {
-    const displayArea = isDisplayArea(config, vc, hc);
-
-    let flags = 0;
-    if (displayArea) {
-      flags |= SCR_DISPLAY_AREA | SCR_TILE_INDEX_FETCH | SCR_PATTERN_FETCH;
-    }
-    // Tilemap uses internal memory, no contention window
     return flags;
   }
 }
@@ -3318,6 +4012,239 @@ function getULANextInkIndex(format: number, attr: number): number {
  */
 function getULANextPaperIndex(format: number, attr: number): number {
   return ulaNextPaperLookup[format * 256 + attr];
+}
+
+// ================================================================================================
+// Tilemap Rendering Flags Generation
+// ================================================================================================
+
+/**
+ * Generate tilemap 40×32 rendering flags for a timing configuration.
+ *
+ * This function creates a flag matrix for the 40×32 tilemap mode (320×256 pixels).
+ * Each tile is 8×8 pixels, requiring 40 tiles horizontally and 32 tiles vertically.
+ *
+ * Fetch timing:
+ * - Tile index fetch occurs at tile boundaries (pixelInTile === 0)
+ * - Tile attribute fetch occurs 1 pixel after (pixelInTile === 1)
+ * - Tile pattern fetch occurs 2 pixels after (pixelInTile === 2)
+ * - Buffer advance occurs for all pixels in display area
+ *
+ * @param config Timing configuration (Plus3_50Hz or Plus3_60Hz)
+ * @returns Uint8Array with flags for each (VC, HC) position
+ */
+function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint8Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateTilemap40x32Cell(vc, hc);
+    }
+  }
+
+  return renderingFlags;
+
+  /**
+   * Generate rendering flags for a single tilemap cell in 40×32 mode.
+   * @param vc Vertical counter position
+   * @param hc Horizontal counter position
+   * @returns Flags indicating tilemap activities at this position
+   */
+  function generateTilemap40x32Cell(vc: number, hc: number): number {
+    // For 40×32 (320×256) mode, we need a wider horizontal display area
+    // Wide display starts 32 pixels earlier: displayXStart - 32 = 144 - 32 = 112
+    // But we also need to include border area for prefetching (8 pixels before)
+    // So extend by another 8 pixels: 112 - 8 = 104
+    const wideDisplayXStart = config.displayXStart - 32 - 8; // Include prefetch border
+    const wideDisplayXEnd = wideDisplayXStart + 319 + 8; // 320 display + 8 prefetch
+
+    // Vertical display area is also extended for 320×256 mode
+    // For 50Hz: displayYStart=64, so wide starts at 64-34=30
+    // For 60Hz: displayYStart=40, so wide starts at 40-34=6
+    const wideDisplayYStart = config.displayYStart - 34;
+    const wideDisplayYEnd = wideDisplayYStart + 255;
+
+    // Check if we're in the wide display area (including prefetch borders)
+    if (
+      hc < wideDisplayXStart ||
+      hc > wideDisplayXEnd ||
+      vc < wideDisplayYStart ||
+      vc > wideDisplayYEnd
+    ) {
+      return 0; // No tilemap activity outside display area
+    }
+
+    let flags = 0;
+
+    // Calculate pixel position within display area relative to wide display start (without prefetch offset)
+    // The actual display starts 8 pixels after wideDisplayXStart
+    const pixelX = hc - (wideDisplayXStart + 8);
+
+    // VHDL uses "one character ahead" (hcount_eff), which means fetching happens
+    // during the border area before visible pixels start. To match this, we need
+    // to allow fetching even when pixelX is negative (in the border).
+    // The fetch at pixelX=-2,-1 will load tile 0 data, ready for rendering at pixelX=0.
+
+    // Only set rendering flags for pixels that will actually be displayed
+    const isInDisplayArea = pixelX >= 0 && pixelX < 320;
+
+    if (isInDisplayArea) {
+      // Sample mode bit (40×32/80×32) every 4 pixels (hardware: when hcount(4:0) = "11111")
+      if ((pixelX & 0x03) === 0x03) {
+        flags |= SCR_TILEMAP_SAMPLE_MODE;
+      }
+
+      // Advance buffer for each pixel in display area
+      flags |= SCR_TILE_BUFFER_ADVANCE;
+    }
+
+    // Tilemap fetches occur at 8-pixel tile boundaries
+    // Each tile is 8 pixels wide in 40×32 mode
+    // Calculate which tile we're fetching for (accounting for +8 lookahead)
+    const fetchForPixelX = pixelX + 8;
+
+    // Only fetch if the target tile is within the display area or just before it
+    // Allow fetching from pixelX=-8 (fetchForPixelX=0, first tile) to pixelX=311 (fetchForPixelX=319, last pixel of last tile)
+    if (fetchForPixelX >= 0 && fetchForPixelX < 320) {
+      const hcInTile = pixelX & 0x07; // Use bitwise AND for modulo 8
+
+      // Sample config bits at tile boundaries (when we'd start rendering the next tile)
+      if (hcInTile === 0 && isInDisplayArea) {
+        flags |= SCR_TILEMAP_SAMPLE_CONFIG;
+      }
+
+      // Fetch tile data at END of previous tile so it's ready for new tile
+      // Fetch tile index 2 positions before tile boundary
+      if (hcInTile === 6) {
+        flags |= SCR_TILE_INDEX_FETCH;
+      }
+
+      // Fetch tile attribute 1 position before tile boundary
+      if (hcInTile === 7) {
+        flags |= SCR_TILE_ATTR_FETCH;
+        // Also fetch pattern at position 7 so buffer is ready for position 0 of next tile
+        flags |= SCR_PATTERN_FETCH;
+      }
+    }
+
+    return flags;
+  }
+}
+
+/**
+ * Generate tilemap 80×32 rendering flags for a timing configuration.
+ *
+ * This function creates a flag matrix for the 80×32 tilemap mode (640×256 pixels).
+ * Each tile is still 8×8 pixels, but the horizontal resolution is doubled.
+ * Each HC position generates 2 pixels instead of 1.
+ *
+ * Fetch timing adjusted for doubled horizontal resolution:
+ * - Tile index fetch occurs at pixelInTile === 0 (every 4 HC positions)
+ * - Tile attribute fetch occurs at pixelInTile === 2 (1 HC after index)
+ * - Tile pattern fetch occurs at pixelInTile === 4 (2 HC after index)
+ * - Buffer advance occurs for all pixels in display area
+ *
+ * @param config Timing configuration (Plus3_50Hz or Plus3_60Hz)
+ * @returns Uint8Array with flags for each (VC, HC) position
+ */
+function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
+  const vcCount = config.totalVC;
+  const hcCount = RENDERING_FLAGS_HC_COUNT;
+  const renderingFlags = new Uint8Array(vcCount * hcCount);
+
+  for (let vc = 0; vc < vcCount; vc++) {
+    for (let hc = 0; hc < hcCount; hc++) {
+      const index = vc * hcCount + hc;
+      renderingFlags[index] = generateTilemap80x32Cell(vc, hc);
+    }
+  }
+
+  return renderingFlags;
+
+  /**
+   * Generate rendering flags for a single tilemap cell in 80×32 mode.
+   * @param vc Vertical counter position
+   * @param hc Horizontal counter position
+   * @returns Flags indicating tilemap activities at this position
+   */
+  function generateTilemap80x32Cell(vc: number, hc: number): number {
+    // For 80×32 (640×256) mode, we need even wider horizontal display area
+    // Ultra-wide display starts 96 pixels earlier: displayXStart - 96 = 144 - 96 = 48
+    // In 80×32 mode, fetches happen at START of tile (no lookahead like 40×32)
+    // But we still need to extend by 4 HC positions to allow prefetch of first tile
+    // Each HC generates 2 pixels, so 4 HC = 8 pixels = 1 tile width
+    const ultraWideDisplayXStart = config.displayXStart - 96 - 4; // Include prefetch border
+    const ultraWideDisplayXEnd = ultraWideDisplayXStart + 319 + 4; // 320 HC display + 4 prefetch
+
+    // Vertical display area is extended for 640×256 mode (same as 320×256)
+    // For 50Hz: displayYStart=64, so wide starts at 64-34=30
+    // For 60Hz: displayYStart=40, so wide starts at 40-34=6
+    const wideDisplayYStart = config.displayYStart - 34;
+    const wideDisplayYEnd = wideDisplayYStart + 255;
+
+    // Check if we're in the ultra-wide display area (including prefetch borders)
+    if (
+      hc < ultraWideDisplayXStart ||
+      hc > ultraWideDisplayXEnd ||
+      vc < wideDisplayYStart ||
+      vc > wideDisplayYEnd
+    ) {
+      return 0; // No tilemap activity outside display area
+    }
+
+    let flags = 0;
+
+    // Calculate HC position relative to display start (without prefetch offset)
+    // The actual display starts 4 HC after ultraWideDisplayXStart
+    const hcOffset = hc - (ultraWideDisplayXStart + 4);
+
+    // Convert HC to pixel coordinate
+    const pixelX = hcOffset * 2;
+
+    // Check if we're in the display area for rendering flags
+    const isInDisplayArea = pixelX >= 0 && pixelX < 640;
+
+    if (isInDisplayArea) {
+      // Sample mode bit (40×32/80×32) every 4 pixels
+      if ((pixelX & 0x03) === 0x03) {
+        flags |= SCR_TILEMAP_SAMPLE_MODE;
+      }
+
+      // Advance buffer for all pixels in display area
+      flags |= SCR_TILE_BUFFER_ADVANCE;
+    }
+
+    // Fetch at 8-pixel tile boundaries
+    // Allow fetching even in prefetch area (pixelX can be negative)
+    if (pixelX >= -8 && pixelX < 640) {
+      const pixelInTile = (pixelX + 8) & 0x07; // Adjust for negative values
+
+      // Sample config bits at tile boundaries (when we start rendering the tile)
+      if (pixelInTile === 0 && isInDisplayArea) {
+        flags |= SCR_TILEMAP_SAMPLE_CONFIG;
+      }
+
+      // Fetch tile index at start of tile (pixelInTile === 0)
+      if (pixelInTile === 0) {
+        flags |= SCR_TILE_INDEX_FETCH;
+      }
+
+      // Fetch tile attribute (pixelInTile === 2)
+      if (pixelInTile === 2) {
+        flags |= SCR_TILE_ATTR_FETCH;
+      }
+
+      // Fetch pattern data (pixelInTile === 4)
+      if (pixelInTile === 4) {
+        flags |= SCR_PATTERN_FETCH;
+      }
+    }
+
+    return flags;
+  }
 }
 
 // ================================================================================================

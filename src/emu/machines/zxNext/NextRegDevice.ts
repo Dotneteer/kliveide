@@ -1462,21 +1462,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x6b,
       description: "Tilemap Control",
       readFn: () =>
-        (machine.composedScreenDevice.tilemapEnabled ? 0x80 : 0) |
-        (machine.composedScreenDevice.tilemap80x32Resolution ? 0x40 : 0) |
-        (machine.composedScreenDevice.tilemapEliminateAttributes ? 0x20 : 0) |
-        (machine.paletteDevice.secondTilemapPalette ? 0x10 : 0) |
-        (machine.composedScreenDevice.tilemapTextMode ? 0x08 : 0) |
-        (machine.composedScreenDevice.tilemap512TileMode ? 0x02 : 0) |
-        (machine.composedScreenDevice.tilemapForceOnTopOfUla ? 0x01 : 0),
+        machine.composedScreenDevice.nextReg0x6bValue |
+        (machine.paletteDevice.secondTilemapPalette ? 0x10 : 0),
       writeFn: (v) => {
-        machine.composedScreenDevice.tilemapEnabled = (v & 0x80) !== 0;
-        machine.composedScreenDevice.tilemap80x32Resolution = (v & 0x40) !== 0;
-        machine.composedScreenDevice.tilemapEliminateAttributes = (v & 0x20) !== 0;
+        machine.composedScreenDevice.nextReg0x6bValue = v;
         machine.paletteDevice.secondTilemapPalette = (v & 0x10) !== 0;
-        machine.composedScreenDevice.tilemapTextMode = (v & 0x08) !== 0;
-        machine.composedScreenDevice.tilemap512TileMode = (v & 0x02) !== 0;
-        machine.composedScreenDevice.tilemapForceOnTopOfUla = (v & 0x01) !== 0;
       },
       slices: [
         {

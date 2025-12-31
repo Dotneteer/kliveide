@@ -250,7 +250,18 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   getTilemapRgb333(index: number): number {
-    return this.tilemapSecond[index & 0xff];
+    return this._secondTilemapPalette
+      ? this.tilemapSecond[index & 0xff]
+      : this.tilemapFirst[index & 0xff];
+  }
+
+  /**
+   * Gets the full 9-bit tilemap palette entry (RGB333 + priority bit)
+   */
+  getTilemapPaletteEntry(index: number): number {
+    return this._secondTilemapPalette
+      ? this.tilemapSecond[index & 0xff]
+      : this.tilemapFirst[index & 0xff];
   }
 
   private updateUlaPalette(): void {
