@@ -15,6 +15,7 @@ import { CimHandler } from "@main/fat32/CimHandlers";
 import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
+import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 
 const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
 const DEFAULT_SC_CARD_FILE = "ks2.cim";
@@ -196,6 +197,8 @@ export async function initializeZxSpectrumNext(): Promise<void> {
   const sourceSdCardPath = path.join(process.env.PUBLIC, SOURCE_SD_CARD_FILE);
   if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
     fs.copyFileSync(sourceSdCardPath, sdCardPath);
+    // --- Create initial backup after copying
+    await ensureSdCardBackupIfEnabled(sdCardPath);
   }
 }
 
@@ -206,11 +209,15 @@ export async function setupZxSpectrumNext(): Promise<void> {
   if (sdCardFile) {
     // --- Use the file stored in settings
     await logSdCardEvent(sdCardFile);
+    // --- Ensure backup on startup
+    await ensureSdCardBackupIfEnabled(sdCardFile);
   } else {
     // --- Set the default SD Card file
     const defaultSdCard = getDefaultSdCardFile();
     mainStore.dispatch(setMediaAction(MEDIA_SD_CARD, defaultSdCard));
     await logSdCardEvent(defaultSdCard);
+    // --- Ensure backup on startup
+    await ensureSdCardBackupIfEnabled(defaultSdCard);
   }
 }
 
@@ -235,6 +242,9 @@ async function resetToDefaultSdCardFile(): Promise<void> {
   if (fs.existsSync(sourceSdCardPath) && fs.statSync(sourceSdCardPath).isFile()) {
     fs.copyFileSync(sourceSdCardPath, sdCardPath);
   }
+
+  // --- Create backup of reset file
+  await ensureSdCardBackupIfEnabled(sdCardPath);
 
   // --- Make the file writeable
   const cimHandler = getSdCardHandler();
@@ -298,6 +308,9 @@ export async function setSelectedSdCardFile(filename: string): Promise<void> {
   // --- Save the folder into settings
   appSettings.folders ??= {};
   appSettings.folders[SD_CARD_FILE_FOLDER] = sdCardFolder;
+
+  // --- Create backup if needed
+  await ensureSdCardBackupIfEnabled(filename);
 }
 
 function isMachineRunning(): boolean {
