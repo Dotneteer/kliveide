@@ -1893,10 +1893,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Fetch when entering new block horizontally
       // Standard mode: fetch when x[0]=0 (every 2 pixels)
       // Radastan mode: fetch when x[1:0]=0 (every 4 pixels)
-      // ALSO force a fetch at the start of the display line (displayHC=0) to handle odd scroll offsets
-      const shouldFetch = !this.loResRadastanModeSampled 
-        ? ((x & 0x01) === 0 || this.loResDisplayHC === 0)
-        : ((x & 0x03) === 0 || this.loResDisplayHC === 0);
+      const shouldFetch = !this.loResRadastanModeSampled ? (x & 0x01) === 0 : (x & 0x03) === 0;
 
       if (shouldFetch) {
         let blockAddr: number;
@@ -3694,18 +3691,28 @@ function generateLoResRenderingFlags(config: TimingConfig): Uint16Array {
     const displayArea = isDisplayArea(config, vc, hc);
     let flags = 0;
 
+    // Extract HC subcycle position (hc[3:0])
+    const hcSub = hc & 0x0f;
+
+    // Check if we're one position before display area starts (for block pre-fetch with odd scrolling)
+    const preDisplayArea = 
+      vc >= config.displayYStart && 
+      vc <= config.displayYEnd && 
+      hc === config.displayXStart - 1;
+
     if (displayArea) {
       flags |= SCR_DISPLAY_AREA;
-
-      // Extract HC subcycle position (hc[3:0])
-      const hcSub = hc & 0x0f;
 
       // Scroll/mode sample at HC subcycle positions 0x7 and 0xF (like ULA)
       if (hcSub === 0x07 || hcSub === 0x0f) {
         flags |= SCR_NREG_SAMPLE;
       }
 
-      // Block fetch and pixel replicate on every HC position in display area
+      // Block fetch on every HC position in display area
+      flags |= SCR_BYTE1_READ;
+    } else if (preDisplayArea) {
+      // Pre-fetch the first block one position before display starts
+      // This ensures we have valid data when rendering the first pixel with odd scroll offsets
       flags |= SCR_BYTE1_READ;
     }
 
