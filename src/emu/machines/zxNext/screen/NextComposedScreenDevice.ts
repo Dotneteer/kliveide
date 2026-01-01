@@ -1929,10 +1929,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === STAGE 4: Pixel Generation ===
     // Generate pixel from block byte (happens every HC position)
-    // Reuse pre-computed display coordinates from STAGE 2
+    // Calculate display coordinates for clipping test
+    const displayHC = hc - this.confDisplayXStart;
+    const displayVC = vc - this.confDisplayYStart;
 
     // Apply scroll to get pixel position (matching VHDL)
-    const x = (this.loResDisplayHC + this.loResScrollXSampled) & 0xff;
+    const x = (displayHC + this.loResScrollXSampled) & 0xff;
     let pixelRgb333: number;
 
     if (!this.loResRadastanModeSampled) {
@@ -1968,16 +1970,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === STAGE 5: Clipping Test ===
     // Check if pixel is within ULA clip window (LoRes uses ULA clip window)
+    // Use display-area coordinates for clipping (same as ULA Standard mode)
     const clipped =
-      this.loResDisplayHC < this.ulaClipWindowX1 ||
-      this.loResDisplayHC > this.ulaClipWindowX2 ||
-      this.loResDisplayVC < this.ulaClipWindowY1 ||
-      this.loResDisplayVC > this.ulaClipWindowY2;
+      displayHC < this.ulaClipWindowX1 ||
+      displayHC > this.ulaClipWindowX2 ||
+      displayVC < this.ulaClipWindowY1 ||
+      displayVC > this.ulaClipWindowY2;
 
     // === STAGE 6: Return Layer Output ===
     this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
-    this.ulaPixel1Transparent = this.ulaPixel2Transparent;
-    pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
+    this.ulaPixel1Transparent = this.ulaPixel2Transparent =
+      pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
   }
 
   // ==============================================================================================
@@ -3688,18 +3691,28 @@ function generateLoResRenderingFlags(config: TimingConfig): Uint16Array {
     const displayArea = isDisplayArea(config, vc, hc);
     let flags = 0;
 
+    // Extract HC subcycle position (hc[3:0])
+    const hcSub = hc & 0x0f;
+
+    // Check if we're one position before display area starts (for block pre-fetch with odd scrolling)
+    const preDisplayArea = 
+      vc >= config.displayYStart && 
+      vc <= config.displayYEnd && 
+      hc === config.displayXStart - 1;
+
     if (displayArea) {
       flags |= SCR_DISPLAY_AREA;
-
-      // Extract HC subcycle position (hc[3:0])
-      const hcSub = hc & 0x0f;
 
       // Scroll/mode sample at HC subcycle positions 0x7 and 0xF (like ULA)
       if (hcSub === 0x07 || hcSub === 0x0f) {
         flags |= SCR_NREG_SAMPLE;
       }
 
-      // Block fetch and pixel replicate on every HC position in display area
+      // Block fetch on every HC position in display area
+      flags |= SCR_BYTE1_READ;
+    } else if (preDisplayArea) {
+      // Pre-fetch the first block one position before display starts
+      // This ensures we have valid data when rendering the first pixel with odd scroll offsets
       flags |= SCR_BYTE1_READ;
     }
 
