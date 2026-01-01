@@ -1893,7 +1893,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Fetch when entering new block horizontally
       // Standard mode: fetch when x[0]=0 (every 2 pixels)
       // Radastan mode: fetch when x[1:0]=0 (every 4 pixels)
-      const shouldFetch = !this.loResRadastanModeSampled ? (x & 0x01) === 0 : (x & 0x03) === 0;
+      // ALSO force a fetch at the start of the display line (displayHC=0) to handle odd scroll offsets
+      const shouldFetch = !this.loResRadastanModeSampled 
+        ? ((x & 0x01) === 0 || this.loResDisplayHC === 0)
+        : ((x & 0x03) === 0 || this.loResDisplayHC === 0);
 
       if (shouldFetch) {
         let blockAddr: number;
