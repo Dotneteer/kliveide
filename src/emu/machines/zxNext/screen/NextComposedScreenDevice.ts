@@ -1929,10 +1929,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === STAGE 4: Pixel Generation ===
     // Generate pixel from block byte (happens every HC position)
-    // Reuse pre-computed display coordinates from STAGE 2
+    // Calculate display coordinates for clipping test
+    const displayHC = hc - this.confDisplayXStart;
+    const displayVC = vc - this.confDisplayYStart;
 
     // Apply scroll to get pixel position (matching VHDL)
-    const x = (this.loResDisplayHC + this.loResScrollXSampled) & 0xff;
+    const x = (displayHC + this.loResScrollXSampled) & 0xff;
     let pixelRgb333: number;
 
     if (!this.loResRadastanModeSampled) {
@@ -1968,16 +1970,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === STAGE 5: Clipping Test ===
     // Check if pixel is within ULA clip window (LoRes uses ULA clip window)
+    // Use display-area coordinates for clipping (same as ULA Standard mode)
     const clipped =
-      this.loResDisplayHC < this.ulaClipWindowX1 ||
-      this.loResDisplayHC > this.ulaClipWindowX2 ||
-      this.loResDisplayVC < this.ulaClipWindowY1 ||
-      this.loResDisplayVC > this.ulaClipWindowY2;
+      displayHC < this.ulaClipWindowX1 ||
+      displayHC > this.ulaClipWindowX2 ||
+      displayVC < this.ulaClipWindowY1 ||
+      displayVC > this.ulaClipWindowY2;
 
     // === STAGE 6: Return Layer Output ===
     this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
-    this.ulaPixel1Transparent = this.ulaPixel2Transparent;
-    pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
+    this.ulaPixel1Transparent = this.ulaPixel2Transparent =
+      pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
   }
 
   // ==============================================================================================
