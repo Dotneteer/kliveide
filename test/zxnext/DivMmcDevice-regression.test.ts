@@ -696,7 +696,7 @@ describe("Next - DivMmcDevice: ROM 3 Dependency Logic (Issue #4)", function () {
     expect(divmmc.autoMapActive).toBe(true);
     
     // Enable auto-unmap at 0x1FF8-0x1FFF
-    divmmc.disableAutomapOn1ff8 = true;
+    divmmc.automapOff1ff8 = true;
     
     // Move to auto-unmap address - ROM3 NOT present
     machine.memoryDevice.port1ffdValue = 0x00;

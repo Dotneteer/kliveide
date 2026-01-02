@@ -16,7 +16,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   readonly rstTraps: TrapInfo[] = [];
   automapOn3dxx: boolean;
-  disableAutomapOn1ff8: boolean;
+  automapOff1ff8: boolean; // Enable automatic unmapping at 0x1FF8-0x1FFF
   automapOn056a: boolean;
   automapOn04d7: boolean;
   automapOn0562: boolean;
@@ -28,11 +28,62 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   enableMultifaceNmiByM1Button: boolean;
   resetDivMmcMapramFlag: boolean;
 
+  // Entry point registries for extensibility
+  private customEntryPoints: Array<{
+    address: number;
+    flag: () => boolean;
+    requiresRom3: boolean;
+    instant: boolean;
+  }> = [];
+
+  private rangeEntryPoints: Array<{
+    range: { start: number; end: number };
+    flag: () => boolean;
+    requiresRom3: boolean;
+    instant: boolean;
+    handler: 'activate' | 'deactivate' | 'autoUnmap1ff8';
+  }> = [];
+
   constructor(public readonly machine: IZxNextMachine) {
     for (let i = 0; i < 8; i++) {
       this.rstTraps.push({ enabled: false, onlyWithRom3: false, instantMapping: false });
     }
+    this.initializeEntryPoints();
     this.reset();
+  }
+
+  /**
+   * Initialize entry point registries for custom and range-based entry points.
+   * This allows for easier extension and maintenance of entry point logic.
+   */
+  private initializeEntryPoints(): void {
+    // Custom entry points registry
+    this.customEntryPoints = [
+      { address: 0x04c6, flag: () => this.automapOn04c6, requiresRom3: true, instant: false },
+      { address: 0x0562, flag: () => this.automapOn0562, requiresRom3: true, instant: false },
+      { address: 0x04d7, flag: () => this.automapOn04d7, requiresRom3: true, instant: false },
+      { address: 0x056a, flag: () => this.automapOn056a, requiresRom3: true, instant: false },
+    ];
+
+    // Range entry points registry
+    // Note: For 0x1FF8-0x1FFF, the behavior is always to unmap (deactivate), but the mode depends on the flag
+    this.rangeEntryPoints = [
+      {
+        range: { start: 0x3d00, end: 0x3dff },
+        flag: () => this.automapOn3dxx,
+        requiresRom3: true,
+        instant: true,
+        handler: 'activate',
+      },
+      {
+        // 0x1FF8-0x1FFF: Always unmaps, but instant if flag is false, delayed if true
+        range: { start: 0x1ff8, end: 0x1fff },
+        flag: () => true,  // Always enabled (check handled in checkRangeEntryPoints)
+        requiresRom3: false,
+        instant: false,
+        handler: 'autoUnmap1ff8',  // Special handler
+      },
+    ];
   }
 
   reset(): void {
@@ -206,7 +257,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   get nextRegBBValue(): number {
     return (
       (this.automapOn3dxx ? 0x80 : 0x00) |
-      (this.disableAutomapOn1ff8 ? 0x40 : 0x00) |
+      (this.automapOff1ff8 ? 0x40 : 0x00) |
       (this.automapOn056a ? 0x20 : 0x00) |
       (this.automapOn04d7 ? 0x10 : 0x00) |
       (this.automapOn0562 ? 0x08 : 0x00) |
@@ -218,7 +269,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   set nextRegBBValue(value: number) {
     this.automapOn3dxx = (value & 0x80) !== 0;
-    this.disableAutomapOn1ff8 = (value & 0x40) !== 0;
+    this.automapOff1ff8 = (value & 0x40) !== 0;
     this.automapOn056a = (value & 0x20) !== 0;
     this.automapOn04d7 = (value & 0x10) !== 0;
     this.automapOn0562 = (value & 0x08) !== 0;
@@ -229,6 +280,141 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   getRstTrapActive(index: number): boolean {
     return this.rstTraps[index].enabled;
+  }
+
+  /**
+   * Checks if ROM 3 is currently paged in (128K +2A/+3 ROM)
+   */
+  private isRom3PagedIn(): boolean {
+    return (
+      this.machine.memoryDevice.selectedRomMsb |
+      this.machine.memoryDevice.selectedRomLsb
+    ) === 0x03;
+  }
+
+  /**
+   * Checks and applies manual CONMEM control (port 0xE3 bit 7)
+   * This works independently of entry points, but still requires enableAutomap
+   */
+  private checkManualConmem(): void {
+    if (!this.enableAutomap) return;
+
+    if (this._conmem && !this._conmemActivated) {
+      // --- conmem=1: activate mapping if not already activated by conmem
+      this._autoMapActive = true;
+      this._conmemActivated = true;
+      this.machine.memoryDevice.updateFastPathFlags();
+    } else if (!this._conmem && this._conmemActivated) {
+      // --- conmem=0: deactivate mapping if it was activated by conmem
+      this._autoMapActive = false;
+      this._conmemActivated = false;
+      this.machine.memoryDevice.updateFastPathFlags();
+    }
+  }
+
+  /**
+   * Checks RST trap entry points (0x0000, 0x0008, ..., 0x0038)
+   */
+  private checkRstTraps(pc: number, rom3Present: boolean): void {
+    if (pc < 0 || pc > 0x38 || (pc & 0x07) !== 0) return;
+
+    const rstIdx = pc >> 3;
+    const trapInfo = this.rstTraps[rstIdx];
+
+    if (!trapInfo.enabled) return;
+    if (trapInfo.onlyWithRom3 && !rom3Present) return;
+
+    this.setAutomapRequest(trapInfo.instantMapping);
+  }
+
+  /**
+   * Checks NMI entry point (0x0066)
+   */
+  private checkNmiEntry(pc: number): void {
+    if (pc !== 0x0066) return;
+    if (!this.enableDivMmcNmiByDriveButton) return;
+    if (!(this as any)._nmiButtonPressed) return;
+
+    const isInstant = this.automapOn0066;
+    const isDelayed = this.automapOn0066Delayed;
+    
+    // Only activate if at least one mode is enabled
+    if (!isInstant && !isDelayed) return;
+    
+    // Prefer instant mode if both are enabled
+    this.setAutomapRequest(isInstant);
+  }
+
+  /**
+   * Checks custom entry points (0x04C6, 0x0562, 0x04D7, 0x056A)
+   */
+  private checkCustomEntryPoints(pc: number, rom3Present: boolean): void {
+    for (const ep of this.customEntryPoints) {
+      if (pc !== ep.address) continue;
+      if (!ep.flag()) continue;
+      if (ep.requiresRom3 && !rom3Present) continue;
+
+      this.setAutomapRequest(ep.instant);
+      return;
+    }
+  }
+
+  /**
+   * Checks range-based entry points (0x3D00-0x3DFF and 0x1FF8-0x1FFF)
+   */
+  private checkRangeEntryPoints(pc: number, rom3Present: boolean): void {
+    for (const ep of this.rangeEntryPoints) {
+      if (pc < ep.range.start || pc > ep.range.end) continue;
+      if (ep.requiresRom3 && !rom3Present) continue;
+
+      // Special handling for 0x1FF8-0x1FFF auto-unmap
+      if (ep.handler === 'autoUnmap1ff8') {
+        if (this.automapOff1ff8) {
+          // Delayed unmap (request for next instruction)
+          this._requestAutomapOff = true;
+        } else {
+          // Immediate unmap
+          this._autoMapActive = false;
+          this.machine.memoryDevice.updateFastPathFlags();
+        }
+      } else if (ep.handler === 'activate') {
+        if (!ep.flag()) continue;
+        this.setAutomapRequest(ep.instant);
+      } else if (ep.handler === 'deactivate') {
+        if (!ep.flag()) continue;
+        this.setAutomapDeactivateRequest();
+      }
+      return;
+    }
+  }
+
+  /**
+   * Sets up an automap activation request (instant or delayed)
+   */
+  private setAutomapRequest(instant: boolean, forceInstant: boolean = false): void {
+    if (instant || forceInstant) {
+      this._autoMapActive = true;
+      this._requestAutomapOn = false;
+    } else {
+      this._requestAutomapOn = true;
+    }
+  }
+
+  /**
+   * Sets up an automap deactivation request
+   */
+  private setAutomapDeactivateRequest(): void {
+    this._requestAutomapOff = true;
+  }
+
+  /**
+   * Applies all automap state changes with a single memory update
+   */
+  private applyAutomapStateChanges(): void {
+    // Batch all memory updates in one place
+    if (this._autoMapActive || this._requestAutomapOn) {
+      this.machine.memoryDevice.updateFastPathFlags();
+    }
   }
 
   /**
@@ -255,109 +441,26 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Pages in ROM/RAM into the lower 16K, if requested so
   beforeOpcodeFetch(): void {
-    // --- Check for RETN instruction (0xED 0x45) is now in afterOpcodeFetch
-
     const pc = this.machine.pc;
 
-    // --- Check manual conmem control (port 0xE3 bit 7)
-    // --- This should work independently of entry points, but still requires enableAutomap
-    if (this.enableAutomap) {
-      if (this._conmem && !this._conmemActivated) {
-        // --- conmem=1: activate mapping if not already activated by conmem
-        this._autoMapActive = true;
-        this._conmemActivated = true;
-        this.machine.memoryDevice.updateFastPathFlags();
-      } else if (!this._conmem && this._conmemActivated) {
-        // --- conmem=0: deactivate mapping if it was activated by conmem
-        this._autoMapActive = false;
-        this._conmemActivated = false;
-        this.machine.memoryDevice.updateFastPathFlags();
-      }
-    }
+    // --- Check manual conmem control via helper method
+    this.checkManualConmem();
 
     if (!this.enableAutomap) {
       // --- No page in/out if automap is disabled
       return;
     }
 
-    // --- We need to know if ROM 3 is paged in
-    const memoryDevice = this.machine.memoryDevice;
-    const rom3PagedIn =
-      //!memoryDevice.enableAltRom &&
-      (memoryDevice.selectedRomMsb | memoryDevice.selectedRomLsb) === 0x03;
+    const rom3Present = this.isRom3PagedIn();
 
-    // --- Check for traps
-    switch (pc) {
-      case 0x0000:
-      case 0x0008:
-      case 0x0010:
-      case 0x0018:
-      case 0x0020:
-      case 0x0028:
-      case 0x0030:
-      case 0x0038:
-        const rstIdx = this.machine.pc >> 3;
-        if (this.rstTraps[rstIdx].enabled && (!this.rstTraps[rstIdx].onlyWithRom3 || rom3PagedIn)) {
-          if (this.rstTraps[rstIdx].instantMapping) {
-            this._autoMapActive = true;
-            this._requestAutomapOn = false;
-            this.machine.memoryDevice.updateFastPathFlags();
-          } else {
-            this._requestAutomapOn = true;
-          }
-        }
-        break;
-      case 0x0066:
-        // NMI vector (0x0066) - only triggers if NMI button enabled and pressed
-        if (this.enableDivMmcNmiByDriveButton && (this as any)._nmiButtonPressed) {
-          const isInstant = this.automapOn0066;
-          const isDelayed = this.automapOn0066Delayed;
+    // --- Check all entry points
+    this.checkRstTraps(pc, rom3Present);
+    this.checkNmiEntry(pc);
+    this.checkCustomEntryPoints(pc, rom3Present);
+    this.checkRangeEntryPoints(pc, rom3Present);
 
-          if (isInstant) {
-            this._autoMapActive = true;
-            this.machine.memoryDevice.updateFastPathFlags();
-          } else if (isDelayed) {
-            this._requestAutomapOn = true;
-          }
-        }
-        break;
-      case 0x04c6:
-        if (this.automapOn04c6 && rom3PagedIn) {
-          this._requestAutomapOn = true;
-        }
-        break;
-      case 0x0562:
-        if (this.automapOn0562 && rom3PagedIn) {
-          this._requestAutomapOn = true;
-        }
-        break;
-      case 0x04d7:
-        if (this.automapOn04d7 && rom3PagedIn) {
-          this._requestAutomapOn = true;
-        }
-        break;
-      case 0x056a:
-        if (this.automapOn056a && rom3PagedIn) {
-          this._requestAutomapOn = true;
-        }
-        break;
-      default:
-        if (pc >= 0x3d00 && pc <= 0x3dff) {
-          if (this.automapOn3dxx && rom3PagedIn) {
-            this._autoMapActive = true;
-            this.machine.memoryDevice.updateFastPathFlags();
-          }
-        } else if (pc >= 0x1ff8 && pc <= 0x1fff) {
-          if (this.disableAutomapOn1ff8) {
-            this._requestAutomapOff = true;
-          } else {
-            this._autoMapActive = false;
-            this.machine.memoryDevice.updateFastPathFlags();
-          }
-        }
-    }
-
-    // TODO: Page in/out logic
+    // --- Apply all state changes
+    this.applyAutomapStateChanges();
   }
 
   // --- Pages in and out ROM/RAM into the lower 16K, if requested so
@@ -365,15 +468,19 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     // --- Check for RETN instruction (0xED 0x45) - unmaps DivMMC
     this.checkAndHandleRetn();
 
-    // --- Delayed page in
+    // --- Process delayed automap requests
+    this.processDelayedAutomapRequests();
+  }
+
+  /**
+   * Processes any delayed automap activation or deactivation requests
+   */
+  private processDelayedAutomapRequests(): void {
     if (this._requestAutomapOn) {
       this._autoMapActive = true;
       this._requestAutomapOn = false;
       this.machine.memoryDevice.updateFastPathFlags();
-    }
-
-    // --- Delayed page out
-    if (this._requestAutomapOff) {
+    } else if (this._requestAutomapOff) {
       this._autoMapActive = false;
       this._requestAutomapOff = false;
       this.machine.memoryDevice.updateFastPathFlags();

@@ -2889,7 +2889,7 @@ describe("Next - DivMmcDevice", async function () {
     const d = m.divMmcDevice;
     const memDevice = m.memoryDevice;
     d.enableAutomap = true;
-    d.disableAutomapOn1ff8 = true;
+    d.automapOff1ff8 = true;
     d.port0xe3Value = 0x00;
     d.rstTraps[4].enabled = true;
     d.rstTraps[4].instantMapping = true;
@@ -2924,7 +2924,7 @@ describe("Next - DivMmcDevice", async function () {
     const memDevice = m.memoryDevice;
     d.enableAutomap = true;
     d.port0xe3Value = 0x00;
-    d.disableAutomapOn1ff8 = false;
+    d.automapOff1ff8 = false;
     d.rstTraps[4].enabled = true;
     d.rstTraps[4].instantMapping = true;
     d.rstTraps[4].onlyWithRom3 = false;
