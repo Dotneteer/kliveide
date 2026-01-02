@@ -100,7 +100,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
           sector: sectorIndex,
           data: sectorData
         });
-        // this.writeSector(sectorIndex, sectorData);
       }
       return;
     }
@@ -188,7 +187,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             command: "sd-read",
             sector: sectorIndex
           });
-          // this.readSector(sectorIndex);
         }
         break;
 
