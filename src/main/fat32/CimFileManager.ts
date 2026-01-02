@@ -8,6 +8,9 @@ export const CIM_VERSION_MAJOR = 1;
 export const CIM_VERSION_MINOR = 0;
 export const MAX_CLUSTERS = 32760;
 export const CIM_HEADER = "CIMF";
+export const SECTOR_SIZE = 1;  // Fixed at 512 bytes (1 × 512)
+export const CLUSTER_BASE_SIZE = 0x1_0000;  // 64 KB
+export const SECTOR_SIZE_BYTES = SECTOR_SIZE * 512;  // 512 bytes
 
 /**
  * This class is responsible for managing the file system of the CIM.
@@ -19,9 +22,12 @@ export class CimFileManager {
       throw new Error("Invalid name");
     }
 
-    // --- Size must be between 1MB and 16GB
-    if (sizeInMegaByte < 64 || sizeInMegaByte > 16384) {
-      throw new Error("Invalid size");
+    // --- Size must be between 64MB and 16GB
+    if (sizeInMegaByte < 64) {
+      throw new Error(`Invalid size: minimum 64 MB required, got ${sizeInMegaByte} MB`);
+    }
+    if (sizeInMegaByte > 16384) {
+      throw new Error(`Invalid size: maximum 16 GB (16384 MB) allowed, got ${sizeInMegaByte} MB`);
     }
 
     // --- Calculate the cluster size
@@ -37,8 +43,8 @@ export class CimFileManager {
 
     const cimFile = new CimFile(name, sizeInMegaByte, selectedClusterSize, clusterCount, isReadonly);
 
-    // --- Create the file
-    fs.writeFileSync(name, new Uint8Array(0x1_0000));
+    // --- Create the file with 64KB header
+    fs.writeFileSync(name, new Uint8Array(CLUSTER_BASE_SIZE));
     cimFile.writeHeader();
     return cimFile;
   }
@@ -86,6 +92,7 @@ export class CimFileManager {
 }
 
 // --- Multiply with 64K
+// Available cluster size multipliers. Each is multiplied by CLUSTER_BASE_SIZE (64KB)
 const availableClusterSizes = [1, 2, 4, 8, 16];
 
 /**
@@ -100,7 +107,7 @@ export class CimFile {
       header: CIM_HEADER,
       versionMajor: CIM_VERSION_MAJOR,
       versionMinor: CIM_VERSION_MINOR,
-      sectorSize: 1,
+      sectorSize: SECTOR_SIZE,
       clusterCount,
       clusterSize,
       maxClusters: 0,
@@ -151,6 +158,12 @@ export class CimFile {
     this._cimInfo.versionMajor = reader.readByte();
     this._cimInfo.versionMinor = reader.readByte();
     this._cimInfo.sectorSize = reader.readByte();
+    
+    // --- Validate sector size matches expected constant
+    if (this._cimInfo.sectorSize !== SECTOR_SIZE) {
+      throw new Error(`Invalid sector size in file: expected ${SECTOR_SIZE}, got ${this._cimInfo.sectorSize}`);
+    }
+    
     this._cimInfo.clusterCount = reader.readUint16();
     this._cimInfo.clusterSize = reader.readByte();
     this._cimInfo.maxClusters = reader.readUint16();
@@ -168,27 +181,34 @@ export class CimFile {
     const sectorsPerCluster = (this._cimInfo.clusterSize * 128) / this._cimInfo.sectorSize;
     const clusterIndex = Math.floor(sectorIndex / sectorsPerCluster);
     const sectorInCluster = sectorIndex % sectorsPerCluster;
+    
+    // --- Defensive: Validate cluster index is within bounds (mathematically guaranteed but defensive check)
+    if (clusterIndex < 0 || clusterIndex >= this._cimInfo.clusterCount) {
+      throw new Error(`Cluster index out of bounds: ${clusterIndex}`);
+    }
+    
     const clusterPointer = this._cimInfo.clusterMap[clusterIndex];
 
     // --- Check if the cluster is empty
     if (clusterPointer === 0xffff) {
       // --- This is an empty cluster
-      return new Uint8Array(this._cimInfo.sectorSize * 512);
+      return new Uint8Array(SECTOR_SIZE_BYTES);
     }
 
     // --- Open the file and seek to the sector
     const fd = fs.openSync(this._filename, "r");
-    const sectorBytes = this._cimInfo.sectorSize * 512;
-    const sectorPointer =
-      0x1_0000 +
-      clusterPointer * this._cimInfo.clusterSize * 0x1_0000 +
-      sectorInCluster * sectorBytes;
-    const buffer = new Uint8Array(sectorBytes);
-    fs.readSync(fd, buffer, 0, 512, sectorPointer);
-    fs.closeSync(fd);
-
-    // --- Done
-    return buffer;
+    try {
+      const sectorBytes = this._cimInfo.sectorSize * 512;
+      const sectorPointer =
+        CLUSTER_BASE_SIZE +
+        clusterPointer * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE +
+        sectorInCluster * sectorBytes;
+      const buffer = new Uint8Array(sectorBytes);
+      fs.readSync(fd, buffer, 0, 512, sectorPointer);
+      return buffer;
+    } finally {
+      fs.closeSync(fd);
+    }
   }
 
   writeSector(sectorIndex: number, data: Uint8Array): void {
@@ -207,45 +227,57 @@ export class CimFile {
     const sectorsPerCluster = (this._cimInfo.clusterSize * 128) / this._cimInfo.sectorSize;
     const clusterIndex = Math.floor(sectorIndex / sectorsPerCluster);
     const sectorInCluster = sectorIndex % sectorsPerCluster;
+    
+    // --- Defensive: Validate cluster index is within bounds (mathematically guaranteed but defensive check)
+    if (clusterIndex < 0 || clusterIndex >= this._cimInfo.clusterCount) {
+      throw new Error(`Cluster index out of bounds: ${clusterIndex}`);
+    }
+    
     const clusterPointer = this._cimInfo.clusterMap[clusterIndex];
 
     // --- Check if the cluster is empty
     if (clusterPointer === 0xffff) {
       // --- This is an empty cluster, create a new cluster
       const currentClusters = this._cimInfo.maxClusters++;
-      const newClusterPointer = 0x1_0000 + currentClusters * this._cimInfo.clusterSize * 0x1_0000;
+      const newClusterPointer = CLUSTER_BASE_SIZE + currentClusters * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE;
       this._cimInfo.clusterMap[clusterIndex] = currentClusters;
-      const cluster = new Uint8Array(this._cimInfo.clusterSize * 0x1_0000);
+      const cluster = new Uint8Array(this._cimInfo.clusterSize * CLUSTER_BASE_SIZE);
       cluster.set(data, sectorInCluster * this._cimInfo.sectorSize * 512);
 
       const fd = fs.openSync(this._filename, "r+");
-      fs.writeSync(fd, cluster, 0, cluster.length, newClusterPointer);
-      fs.closeSync(fd);
+      try {
+        fs.writeSync(fd, cluster, 0, cluster.length, newClusterPointer);
+      } finally {
+        fs.closeSync(fd);
+      }
       this.writeHeader();
       return;
     }
 
     // --- Open the file and seek to the sector
     const fd = fs.openSync(this._filename, "r+");
-    const sectorBytes = this._cimInfo.sectorSize * 512;
-    const sectorPointer =
-      0x1_0000 +
-      clusterPointer * this._cimInfo.clusterSize * 0x1_0000 +
-      sectorInCluster * sectorBytes;
-    fs.writeSync(fd, data, 0, data.length, sectorPointer);
-    fs.closeSync(fd);
+    try {
+      const sectorBytes = this._cimInfo.sectorSize * 512;
+      const sectorPointer =
+        CLUSTER_BASE_SIZE +
+        clusterPointer * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE +
+        sectorInCluster * sectorBytes;
+      fs.writeSync(fd, data, 0, data.length, sectorPointer);
+    } finally {
+      fs.closeSync(fd);
+    }
   }
 
   readCluster(clusterIndex: number): Uint8Array {
     this.checkClusterIndex(clusterIndex);
 
     const clusterPointer = this._cimInfo.clusterMap[clusterIndex];
-    const clusterBytes = this._cimInfo.clusterSize * 0x1_0000;
+    const clusterBytes = this._cimInfo.clusterSize * CLUSTER_BASE_SIZE;
     const buffer = new Uint8Array(clusterBytes);
 
     if (clusterPointer !== 0xffff) {
       const fd = fs.openSync(this._filename, "r");
-      const clusterPointerBytes = 0x1_0000 + clusterPointer * clusterBytes;
+      const clusterPointerBytes = CLUSTER_BASE_SIZE + clusterPointer * clusterBytes;
       fs.readSync(fd, buffer, 0, buffer.length, clusterPointerBytes);
       fs.closeSync(fd);
     }
@@ -253,7 +285,7 @@ export class CimFile {
   }
 
   setReadonly(readOnly: boolean): void {
-    this._cimInfo.reserved = readOnly ? 0 : 1;
+    this._cimInfo.reserved = readOnly ? 1 : 0;
     this.writeHeader();
   }
 

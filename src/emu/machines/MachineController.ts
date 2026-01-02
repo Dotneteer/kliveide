@@ -548,6 +548,9 @@ export class MachineController implements IMachineController {
         const frameCommand = this.machine.getFrameCommand();
         if (frameCommand) {
           await this.machine.processFrameCommand(this.messenger);
+          // --- FIX for ISSUE #2: Clear frame command AFTER processing is complete
+          // --- This ensures the response is ready before the next frame iteration
+          this.machine.setFrameCommand(null);
         }
 
         // --- Wait for the next frame in case of normal termination

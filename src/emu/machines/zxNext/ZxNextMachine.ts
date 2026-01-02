@@ -245,7 +245,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   async executeCustomCommand(command: string): Promise<any> {
     switch (command) {
       case "toggleScandoubler":
-        return (this.composedScreenDevice.scandoublerEnabled = !this.composedScreenDevice.scandoublerEnabled);
+        return (this.composedScreenDevice.scandoublerEnabled =
+          !this.composedScreenDevice.scandoublerEnabled);
 
       case "toggle5060Hz":
         return (this.composedScreenDevice.is60HzMode = !this.composedScreenDevice.is60HzMode);
@@ -271,7 +272,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         break;
 
       case "adjustScanlineWeight":
-        return (this.composedScreenDevice.scanlineWeight = (this.composedScreenDevice.scanlineWeight + 1) % 4);
+        return (this.composedScreenDevice.scanlineWeight =
+          (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
         // TODO: Implement multiface NMI
@@ -510,20 +512,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
    *  action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
-   * 
+   *
    * At 28 MHz, memory reads require 1 additional wait state (1 T-state) with one exception:
    * - Bank 7 (BRAM, page 0x0E) reads have NO wait state - direct BRAM port access
    * - All other memory (SRAM and Bank 5 BRAM) has 1 wait state due to scheduling/arbitration
    */
   delayMemoryRead(address: number): void {
     this.tactPlusN(3);
-    
+
     // --- At 28 MHz (speed value 3), add 1 wait state for memory reads
     // --- Exception: Bank 7 (page 0x0E) has no wait state - direct BRAM connection
     if (this.cpuSpeedDevice.effectiveSpeed === 3) {
       const pageIndex = (address >>> 13) & 0x07;
       const isBank7 = this.memoryDevice.bank8kLookup[pageIndex] === 0x0e;
-      
+
       if (!isBank7) {
         this.tactPlusN(1);
         this.totalContentionDelaySinceStart++;
@@ -548,8 +550,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Normally, it is exactly 3 T-states; however, it may be higher in particular hardware. If you do not set your
    * action, the Z80 CPU will use its default 3-T-state delay. If you use custom delay, take care that you increment
    * the CPU tacts at least with 3 T-states!
-   * 
-   * Note: Write operations do NOT get the extra wait state at 28 MHz. The hardware uses a different timing 
+   *
+   * Note: Write operations do NOT get the extra wait state at 28 MHz. The hardware uses a different timing
    * mechanism (5× 28MHz HDMI clock) to ensure proper write timing without requiring CPU wait states.
    */
   delayMemoryWrite(_address: number): void {
@@ -894,17 +896,80 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const frameCommand = this.getFrameCommand();
     switch (frameCommand.command) {
       case "sd-write":
-        await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
-        this.sdCardDevice.setWriteResponse();
+        try {
+          // --- FIX for ISSUE #7: Wrap IPC call with timeout protection
+          // --- Prevents renderer from hanging if main process becomes unresponsive
+          const result = await this.withIpcTimeout(
+            createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data),
+            'writeSdCardSector'
+          );
+          // --- FIX for ISSUE #8: Only set write response after explicit persistence confirmation
+          // --- The main process confirms that fsyncSync has completed
+          if (result?.persistenceConfirmed) {
+            this.sdCardDevice.setWriteResponse();
+          } else {
+            console.error('SD card write error: No persistence confirmation');
+            this.sdCardDevice.setWriteErrorResponse('Persistence not confirmed');
+          }
+        } catch (err) {
+          console.log("SD card sector write error", err);
+          this.sdCardDevice.setWriteErrorResponse((err as Error).message);
+        }
         break;
-      case "sd-read":
-        const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
-        this.sdCardDevice.setReadResponse(sectorData);
+      case "sd-read": {
+        // --- Wrap in block to properly scope sectorData variable
+        try {
+          // --- FIX for ISSUE #7: Wrap IPC call with timeout protection
+          // --- Prevents renderer from hanging if main process becomes unresponsive
+          const sectorData = await this.withIpcTimeout(
+            createMainApi(messenger).readSdCardSector(frameCommand.sector),
+            'readSdCardSector'
+          );
+          // --- FIX for ISSUE #6: Response Data Type Mismatch Potential
+          // --- Validate that response is Uint8Array (defensive programming)
+          if (sectorData instanceof Uint8Array) {
+            this.sdCardDevice.setReadResponse(sectorData);
+          } else if (Array.isArray(sectorData)) {
+            // --- Convert Array to Uint8Array if needed (IPC edge case)
+            this.sdCardDevice.setReadResponse(new Uint8Array(sectorData));
+          } else {
+            console.error('SD card read error: Invalid response data type', typeof sectorData);
+            // --- Return error response using setMmcResponse with error status
+            (this.sdCardDevice as any).setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+          }
+        } catch (err) {
+          console.log("SD card sector read error", err);
+          // --- Return error response using setMmcResponse with error status
+          (this.sdCardDevice as any).setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+        }
         break;
+      }
       default:
         console.log("Unknown frame command", frameCommand);
         break;
     }
+  }
+
+  /**
+   * Wraps an IPC call with timeout protection.
+   * ISSUE #7 fix: Prevents renderer from hanging indefinitely if main process becomes unresponsive.
+   * 
+   * @param promise The IPC promise to wrap
+   * @param operationName Name of the operation for error logging
+   * @returns Promise that resolves/rejects with the IPC result or timeout error
+   */
+  private withIpcTimeout<T>(promise: Promise<T>, operationName: string): Promise<T> {
+    const IPC_TIMEOUT_MS = 5000; // 5 second timeout
+    
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`IPC timeout: ${operationName} did not complete within ${IPC_TIMEOUT_MS}ms`)),
+          IPC_TIMEOUT_MS
+        )
+      )
+    ]);
   }
 
   /**

@@ -451,9 +451,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (!screenImageData || 
         screenImageData.width !== shadowCanvasWidth.current || 
         screenImageData.height !== shadowCanvasHeight.current) {
+      const width = Math.floor(shadowCanvasWidth.current ?? 1);
+      const height = Math.floor(shadowCanvasHeight.current ?? 1);
       screenImageData = screenCtx.createImageData(
-        shadowCanvasWidth.current,
-        shadowCanvasHeight.current
+        width,
+        height
       );
       screenImageDataRef.current = screenImageData;
     }
