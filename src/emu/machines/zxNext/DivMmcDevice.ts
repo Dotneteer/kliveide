@@ -11,6 +11,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _requestAutomapOn: boolean;
   private _requestAutomapOff: boolean;
   private _autoMapActive: boolean;
+  private _conmemActivated: boolean; // Track if conmem activated the mapping
 
   readonly rstTraps: TrapInfo[] = [];
   automapOn3dxx: boolean;
@@ -43,6 +44,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this._enableAutomap = false;
     this._requestAutomapOn = false;
     this._requestAutomapOff = false;
+    this._conmemActivated = false;
     for (let i = 0; i < 8; i++) {
       this.rstTraps[i].enabled = false;
       this.rstTraps[i].onlyWithRom3 = false;
@@ -84,6 +86,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (!value) {
       // --- Automap is disabled
       this._autoMapActive = false;
+      this._conmemActivated = false;
       this.machine.memoryDevice.updateFastPathFlags();
     }
   }
@@ -121,6 +124,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     } else {
       // --- DivMMC is disabled
       this._autoMapActive = false;
+      this._conmemActivated = false;
       this.machine.memoryDevice.updateFastPathFlags();
     }
   }
@@ -229,8 +233,24 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   beforeOpcodeFetch(): void {
     const pc = this.machine.pc;
 
+    // --- Check manual conmem control (port 0xE3 bit 7)
+    // --- This should work independently of entry points, but still requires enableAutomap
+    if (this.enableAutomap) {
+      if (this._conmem && !this._conmemActivated) {
+        // --- conmem=1: activate mapping if not already activated by conmem
+        this._autoMapActive = true;
+        this._conmemActivated = true;
+        this.machine.memoryDevice.updateFastPathFlags();
+      } else if (!this._conmem && this._conmemActivated) {
+        // --- conmem=0: deactivate mapping if it was activated by conmem
+        this._autoMapActive = false;
+        this._conmemActivated = false;
+        this.machine.memoryDevice.updateFastPathFlags();
+      }
+    }
+
     if (!this.enableAutomap) {
-      // --- No page in/out if automap is disabled or the memory is already paged in
+      // --- No page in/out if automap is disabled
       return;
     }
 
