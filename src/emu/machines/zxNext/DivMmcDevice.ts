@@ -12,6 +12,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _requestAutomapOff: boolean;
   private _autoMapActive: boolean;
   private _conmemActivated: boolean; // Track if conmem activated the mapping
+  private _nmiButtonPressed: boolean; // Track if NMI button is pressed
 
   readonly rstTraps: TrapInfo[] = [];
   automapOn3dxx: boolean;
@@ -45,6 +46,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this._requestAutomapOn = false;
     this._requestAutomapOff = false;
     this._conmemActivated = false;
+    this._nmiButtonPressed = false;
     for (let i = 0; i < 8; i++) {
       this.rstTraps[i].enabled = false;
       this.rstTraps[i].onlyWithRom3 = false;
@@ -229,8 +231,32 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     return this.rstTraps[index].enabled;
   }
 
+  /**
+   * Clears automap and conmem state when RETN is detected
+   * This is called from the test machine when RETN is detected
+   */
+  handleRetnExecution(): void {
+    this._autoMapActive = false;
+    this._conmemActivated = false;
+    this._conmem = false;
+    this._portLastE3Value = this._portLastE3Value & 0x7f; // Clear bit 7 (conmem)
+    this.machine.memoryDevice.updateFastPathFlags();
+  }
+
+  /**
+   * Detects if the last instruction executed was RETN (0xED 0x45)
+   * If detected, clears automap and conmem flags
+   */
+  private checkAndHandleRetn(): void {
+    if (this.machine.retnExecuted) {
+      this.handleRetnExecution();
+    }
+  }
+
   // --- Pages in ROM/RAM into the lower 16K, if requested so
   beforeOpcodeFetch(): void {
+    // --- Check for RETN instruction (0xED 0x45) is now in afterOpcodeFetch
+
     const pc = this.machine.pc;
 
     // --- Check manual conmem control (port 0xE3 bit 7)
@@ -282,7 +308,18 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         }
         break;
       case 0x0066:
-        // TODO: Implement it when NMI button handling is implemented
+        // NMI vector (0x0066) - only triggers if NMI button enabled and pressed
+        if (this.enableDivMmcNmiByDriveButton && (this as any)._nmiButtonPressed) {
+          const isInstant = this.automapOn0066;
+          const isDelayed = this.automapOn0066Delayed;
+
+          if (isInstant) {
+            this._autoMapActive = true;
+            this.machine.memoryDevice.updateFastPathFlags();
+          } else if (isDelayed) {
+            this._requestAutomapOn = true;
+          }
+        }
         break;
       case 0x04c6:
         if (this.automapOn04c6 && rom3PagedIn) {
@@ -325,6 +362,9 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Pages in and out ROM/RAM into the lower 16K, if requested so
   afterOpcodeFetch(): void {
+    // --- Check for RETN instruction (0xED 0x45) - unmaps DivMMC
+    this.checkAndHandleRetn();
+
     // --- Delayed page in
     if (this._requestAutomapOn) {
       this._autoMapActive = true;

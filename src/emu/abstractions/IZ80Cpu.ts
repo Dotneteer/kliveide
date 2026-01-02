@@ -198,6 +198,11 @@ export interface IZ80Cpu extends IAnyCpu {
   retExecuted: boolean;
 
   /**
+   * We need this flag to detect RETN instruction execution for ZX Spectrum Next DivMMC handling.
+   */
+  retnExecuted: boolean;
+
+  /**
    * This flag is reserved for future extension. The ZX Spectrum Next computer uses additional Z80 instructions.
    * This flag indicates if those are allowed.
    */
