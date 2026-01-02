@@ -897,8 +897,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     switch (frameCommand.command) {
       case "sd-write":
         try {
-          await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
-          this.sdCardDevice.setWriteResponse();
+          const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+          // --- FIX for ISSUE #8: Only set write response after explicit persistence confirmation
+          // --- The main process confirms that fsyncSync has completed
+          if (result?.persistenceConfirmed) {
+            this.sdCardDevice.setWriteResponse();
+          } else {
+            console.error('SD card write error: No persistence confirmation');
+            this.sdCardDevice.setWriteErrorResponse('Persistence not confirmed');
+          }
         } catch (err) {
           console.log("SD card sector write error", err);
           this.sdCardDevice.setWriteErrorResponse((err as Error).message);

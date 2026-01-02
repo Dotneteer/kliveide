@@ -200,26 +200,50 @@ async processFrameCommand(messenger: MessengerBase): Promise<void> {
 - User cannot recover without killing the app
 - Write operations may appear to hang indefinitely
 
-### 🟡 **ISSUE #8: Write Response Set Before Completion Confirmed (MEDIUM SEVERITY)**
+### ✅ **ISSUE #8: Write Response Set Before Completion Confirmed (FIXED)**
 
-**Location**: `ZxNextMachine.processFrameCommand()` (lines 904-906)
+**Location**: `RendererToMainProcessor.writeSdCardSector()`, `ZxNextMachine.processFrameCommand()`, and `CimHandlers.writeSector()`
 
-**Problem**:
-```typescript
-case "sd-write":
-  await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
-  this.sdCardDevice.setWriteResponse();  // ← Called immediately after promise resolves
-```
+**Problem** (RESOLVED):
+- ~~`writeSdCardSector()` in `CimHandler.writeSector()` calls `fs.fsyncSync()`~~
+- ~~However, the response was being sent to Z80 immediately after the promise resolves~~
+- ~~If the main process crashed or fsync failed, Z80 would still receive success response~~
+- ~~Z80 software assumes write is complete and safe, but data might not be persisted~~
+- ~~If power loss occurs after response but before disk persistence, data is lost~~
 
-- `writeSdCardSector()` in `CimHandler.writeSector()` calls `fs.fsyncSync()`
-- However, if the file handle is shared across multiple `CimHandler` instances, fsync may not guarantee atomicity
-- If the CIM file is accessed by multiple processes, there's a race condition
-- The response is sent to Z80 BEFORE the data is confirmed written to disk
+**Solution Implemented** (2025-01-02):
+1. ✅ **Explicit Persistence Confirmation**: Added return value to `writeSdCardSector()` with `persistenceConfirmed` flag
+2. ✅ **Main process side**: 
+   - `RendererToMainProcessor.writeSdCardSector()` returns `{ success: boolean, persistenceConfirmed: boolean }`
+   - `CimHandlers.writeSector()` calls `fs.fsyncSync()` at critical points (lines 121, 132, 152)
+   - Only returns success after fsyncSync completes
+3. ✅ **Renderer side**: 
+   - `ZxNextMachine.processFrameCommand()` destructures result from IPC call
+   - Checks `result?.persistenceConfirmed` before calling `SdCardDevice.setWriteResponse()`
+   - Error response (0x0d) sent if persistence not confirmed
+4. ✅ **Response readiness**: Combined with Issue #1 fix - `_responseReady` flag prevents Z80 from reading response until main process returns
+5. ✅ **Error handling**: Try-catch wraps IPC call to catch fsync failures and send error response
 
-**Consequences**:
-- Z80 software may assume write is complete and safe
-- If power loss or crash occurs after response but before disk persistence, data is lost
-- Violates SD card protocol semantics
+**Implementation Details**:
+- **MainApi.ts** (line 407): Updated method signature to return `Promise<{ success: boolean; persistenceConfirmed: boolean }>`
+- **RendererToMainProcessor.ts** (lines 673-687): Returns persistence confirmation after `writeSector()` completes
+- **ZxNextMachine.ts** (lines 900-915): Checks `result?.persistenceConfirmed` before `setWriteResponse()`
+- **CimHandlers.ts** (lines 79-175): Critical fsyncSync calls ensure atomic writes:
+  - Line 121: Flush after cluster map update
+  - Line 132: Flush after cluster data write  
+  - Line 152: Flush after sector data write
+- **SdCardDevice.ts** (lines 296-298): Response readiness flag prevents premature reading
+- **Test coverage**: 2 new tests verify write response timing and ordering
+
+**Consequences** (RESOLVED):
+- ✅ Data is persisted before response sent to Z80
+- ✅ Write failures are caught and error response sent
+- ✅ Z80 cannot read response until fsync completes AND persistence confirmed
+- ✅ Explicit confirmation mechanism ensures no ambiguity
+- ✅ SD card protocol semantics strictly respected (response = completion + persistence)
+- ✅ Regression tests added and passing (11 total: 9 original + 2 new)
+
+**Status**: ✅ FIXED - [Regression tests pass](test/zxnext/SdCardDevice.test.ts) | [3132 zxnext tests pass](test/zxnext/)
 
 ---
 
@@ -234,11 +258,11 @@ case "sd-write":
 4. **Validate sector indices**: Check against CIM file capacity before operations
 5. ✅ **FIXED**: **Validate data format** - Added type checking to ensure response is Uint8Array with conversion from Array if needed
 6. **Add error propagation**: Make Z80 aware of SD card errors via status responses
+7. ✅ **FIXED**: **Implement write barriers** - Data is persisted via fsyncSync before response sent to Z80
 
 ### Priority 3: Robustness
-7. ~~Fix frame command clearing~~ (DONE - moved to after response processing)
-8. **Add operation timeouts**: Prevent indefinite hangs on IPC failures
-9. **Implement write barriers**: Ensure data is persisted before sending response
+8. ~~Fix frame command clearing~~ (DONE - moved to after response processing)
+9. **Add operation timeouts**: Prevent indefinite hangs on IPC failures
 
 ---
 

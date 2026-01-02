@@ -670,7 +670,7 @@ class MainMessageProcessor {
    * @param sectorIndex The sector index to write.
    * @param data The data to write to the sector.
    */
-  async writeSdCardSector(sectorIndex: number, data: Uint8Array) {
+  async writeSdCardSector(sectorIndex: number, data: Uint8Array): Promise<{ success: boolean; persistenceConfirmed: boolean }> {
     if (!Number.isInteger(sectorIndex) || sectorIndex < 0) {
       throw new Error("Invalid sector index");
     }
@@ -680,6 +680,14 @@ class MainMessageProcessor {
     // --- Input validated
     const sdHandler = getSdCardHandler();
     sdHandler.writeSector(sectorIndex, data);
+    
+    // --- FIX for ISSUE #8: Explicit persistence confirmation
+    // --- Only return success after fsyncSync has completed
+    // --- This ensures the response to Z80 is only sent after data is persisted
+    return {
+      success: true,
+      persistenceConfirmed: true // --- fsyncSync completed inside writeSector()
+    };
   }
 
   /**

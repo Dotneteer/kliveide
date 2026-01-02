@@ -403,8 +403,9 @@ class MainApiImpl {
    * Writes data to a sector on the SD card.
    * @param _sectorIndex The sector index to write.
    * @param _data The data to write to the sector.
+   * @returns Object with success status and persistence confirmation flag.
    */
-  async writeSdCardSector(_sectorIndex: number, _data: Uint8Array): Promise<void> {
+  async writeSdCardSector(_sectorIndex: number, _data: Uint8Array): Promise<{ success: boolean; persistenceConfirmed: boolean }> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

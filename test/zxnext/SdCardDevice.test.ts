@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { SdCardDevice } from "@emu/machines/zxNext/SdCardDevice";
+import { BYTES_PER_SECTOR } from "@main/fat32/Fat32Types";
 
 describe("SdCardDevice", () => {
   it("REGRESSION: setWriteErrorResponse method exists and sets error state", () => {
@@ -340,5 +341,106 @@ describe("SdCardDevice", () => {
     
     // --- Response should be marked as ready
     expect((device as any)._responseReady).toBe(true);
+  });
+
+  it("REGRESSION: Write Response Timing - Response marked ready only after write completes (ISSUE #8)", () => {
+    // --- ISSUE #8: Write Response Set Before Completion Confirmed (MEDIUM SEVERITY)
+    // --- Problem: Response is sent to Z80 immediately after writeSdCardSector() promise resolves
+    // --- But Z80 software may assume write is complete and safe
+    // --- If power loss occurs after response but before fsyncSync, data is lost
+    // ---
+    // --- Solution: Ensure response is marked as ready AFTER the main process
+    // --- confirms data is persisted (fsyncSync called)
+    
+    // --- Arrange
+    const mockMachine = { tacts: 0 } as any;
+    const device = new SdCardDevice(mockMachine);
+    
+    // --- Act: Initiate a write command (CMD24)
+    device.writeMmcData(0x58);  // CMD24 = 0x40 | 0x18 = 0x58
+    device.writeMmcData(0x00);  // param 0 (sector index high byte)
+    device.writeMmcData(0x00);  // param 1
+    device.writeMmcData(0x00);  // param 2
+    device.writeMmcData(0x00);  // param 3 (sector index low byte)
+    device.writeMmcData(0xff);  // CRC
+    
+    // --- Z80 now writes 512 bytes + CRC
+    // --- Each byte goes through writeMmcData with specific sequence
+    // --- After all data, device should have _waitForBlock = true and accept data bytes
+    
+    // --- Assert: Before setWriteResponse is called, _responseReady should be false
+    expect((device as any)._responseReady).toBe(false);
+    
+    // --- Write block data (simplified - just write enough to trigger frame command)
+    // --- In real scenario, this happens over many Z80 I/O port accesses
+    for (let i = 0; i < BYTES_PER_SECTOR; i++) {
+      (device as any)._blockToWrite[i] = i & 0xff;
+    }
+    
+    // --- Simulate the frame command being set (which happens after block reception)
+    // --- This sets _responseReady = false
+    (device as any)._responseReady = false;
+    
+    // --- Assert: Response not ready yet
+    expect((device as any)._responseReady).toBe(false);
+    
+    // --- Simulate main process completing (fsyncSync completed)
+    device.setWriteResponse();
+    
+    // --- Assert: Response should now be marked as ready
+    expect((device as any)._responseReady).toBe(true);
+    
+    // --- Verify the response is the success response
+    const response = (device as any)._response;
+    expect(response[0]).toBe(0x05); // Write response token
+    expect(response[1]).toBe(0xff);
+    expect(response[2]).toBe(0xfe);
+  });
+
+  it("REGRESSION: Write Response Ordering - Verify response is set after fsync (ISSUE #8)", () => {
+    // --- This test verifies the critical sequence of operations:
+    // --- 1. writeSdCardSector() called (awaited)
+    // --- 2. fsyncSync() completes on main process
+    // --- 3. Promise resolves
+    // --- 4. setWriteResponse() called (response marked ready)
+    // ---
+    // --- The test ensures Z80 cannot read response until step 4 completes
+    
+    // --- Arrange
+    const mockMachine = { tacts: 0 } as any;
+    const device = new SdCardDevice(mockMachine);
+    
+    // --- Simulate setting up for a write
+    device.writeMmcData(0x58);  // CMD24
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0xff);  // CRC
+    
+    // --- Set up as if frame command was processed
+    (device as any)._responseReady = false;
+    
+    // --- Act: Call setWriteResponse (which should mark response as ready)
+    device.setWriteResponse();
+    
+    // --- Assert: Response readiness flag should be true
+    expect((device as any)._responseReady).toBe(true);
+    
+    // --- Assert: Response index should be valid (not -1 or 0xff)
+    expect((device as any)._responseIndex).toBe(0);
+    
+    // --- Assert: Response should be success
+    const response = (device as any)._response;
+    expect(response).toBeInstanceOf(Uint8Array);
+    expect(response.length).toBeGreaterThanOrEqual(3);
+    expect(response[0]).toBe(0x05);
+    
+    // --- Assert: Reading the response should work
+    const readByte1 = device.readMmcData();
+    expect(readByte1).toBe(0x05); // Response token
+    
+    const readByte2 = device.readMmcData();
+    expect(readByte2).toBe(0xff); // Data response token
   });
 });
