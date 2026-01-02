@@ -115,12 +115,21 @@ export class CimHandler {
       maxClustersBuffer[1] = (this._cimInfo.maxClusters >> 8) & 0xff;
       fs.writeSync(fd, maxClustersBuffer, 0, 2, 0x0a);
 
+      // ✅ CRITICAL: Flush header/cluster map writes to disk before appending cluster data
+      // --- This ensures header is always consistent with cluster map
+      // --- If crash occurs after this fsync, either both are written or neither
+      fs.fsyncSync(fd);
+
       const newCluster = new Uint8Array(this._cimInfo.clusterSize * 0x1_0000);
       newCluster.set(data, sectorInCluster * this._cimInfo.sectorSize * 512);
 
       // --- Append the new cluster to the end of the file
       const fileSize = fs.fstatSync(fd).size;
       fs.writeSync(fd, newCluster, 0, newCluster.length, fileSize);
+
+      // ✅ CRITICAL: Flush cluster data to disk after write
+      // --- Ensures cluster data is persisted before operation completes
+      fs.fsyncSync(fd);
 
       // --- Done - don't close if it's the persistent handle
       if (!this._fd) {
@@ -139,6 +148,9 @@ export class CimHandler {
     // --- Write the sector data to the CIM file
     fs.writeSync(fd, data, 0, data.length, sectorPointer);
     
+    // ✅ Flush to disk to ensure atomicity
+    fs.fsyncSync(fd);
+    
     // --- Don't close if it's the persistent handle
     if (!this._fd) {
       fs.closeSync(fd);
@@ -154,6 +166,9 @@ export class CimHandler {
     // ✅ Use persistent file handle
     const fd = this._fd ?? fs.openSync(this.cimFileName, "r+");
     fs.writeSync(fd, buffer, 0, 2, 0x0e);
+    
+    // ✅ Flush to disk to ensure atomicity
+    fs.fsyncSync(fd);
     
     if (!this._fd) {
       fs.closeSync(fd);

@@ -1,410 +1,222 @@
-# SD Card Management Review - Critical Issues Found
+# SD Card Management Review
 
-## Summary of Fixes
-- ✅ **Issue #1: FIXED** - CIM Header State Out-of-Sync
-- ✅ **Issue #2: FIXED** - Missing Header Persistence After Write Operations
-- ✅ **Issue #3: FIXED** - Stale CimHandler Instance After SD Card Changes
-- ✅ **Issue #4: FIXED** - No Error Handling for Failed Writes
-- ✅ **Issue #5: FIXED** - File Handle Lifecycle Risk in Concurrent Operations
-- ⏳ **Issue #6**: No Atomic Header + Data Write for Consistency
-- ⏳ **Issue #7**: Memory Inconsistency: CimInfo Not Reloaded
+## Overview
+This document details the communication flow between `SdCardDevice` (renderer process) and `CimFileManager`/`CimHandler` (main process) for SD card operations, and identifies critical issues.
 
-## Communication Flow Summary
-1. **SdCardDevice** (renderer) issues `setFrameCommand()` with "sd-read" or "sd-write"
-2. **MachineFrameRunner** clears the command at start of each frame (`setFrameCommand(null)`)
-3. **MachineController** processes non-null frame commands after CPU execution completes
-4. **ZxNextMachine.processFrameCommand()** forwards to main process via messenger API
-5. **CimHandler** (main process) reads/writes to CIM file on disk
-6. **SdCardDevice** receives response and updates its internal state
+---
+
+## Communication Flow
+
+### Read Operation (CMD17: READ_SINGLE_BLOCK)
+1. **SdCardDevice.writeMmcData()** (renderer): Sets frame command `{ command: "sd-read", sector: N }`
+2. **MachineController.run()** (renderer): Calls `machine.processFrameCommand()`
+3. **ZxNextMachine.processFrameCommand()** (renderer→main): Invokes `readSdCardSector(N)` via IPC
+4. **RendererToMainProcessor.readSdCardSector()** (main): Calls `CimHandler.readSector(N)`
+5. **CimHandler.readSector()** (main): Reads data from disk
+6. **ZxNextMachine.processFrameCommand()** (renderer): Receives data, calls `SdCardDevice.setReadResponse()`
+7. **SdCardDevice.readMmcData()** (renderer): Returns response bytes to emulated Z80
+
+### Write Operation (CMD24: WRITE_BLOCK)
+1. **SdCardDevice.writeMmcData()** (renderer): Sets `_waitForBlock = true`
+2. **Z80 writes block data**: Each byte stored in `_blockToWrite[]`
+3. **SdCardDevice.writeMmcData()** (renderer): When complete, sets frame command `{ command: "sd-write", sector: N, data: [...] }`
+4. **MachineController.run()** (renderer): Calls `machine.processFrameCommand()`
+5. **ZxNextMachine.processFrameCommand()** (renderer→main): Invokes `writeSdCardSector(N, data)` via IPC
+6. **RendererToMainProcessor.writeSdCardSector()** (main): Calls `CimHandler.writeSector(N, data)`
+7. **CimHandler.writeSector()** (main): Writes data to disk with fsync
+8. **ZxNextMachine.processFrameCommand()** (renderer): Receives completion, calls `SdCardDevice.setWriteResponse()`
+9. **SdCardDevice.readMmcData()** (renderer): Returns response bytes to emulated Z80
+
+---
 
 ## Critical Issues Found
 
-### 1. **Race Condition: CIM Header State Out-of-Sync** ✅ FIXED
-**Location**: CimHandler.writeSector() when allocating new clusters
+### 🔴 **ISSUE #1: Response Timing Race Condition (HIGH SEVERITY)**
 
-**Problem**: 
-- When a new cluster is allocated, CimHandler updates `_cimInfo.maxClusters++` in memory
-- It writes the cluster map back to disk at offset `0x10 + 2 * clusterIndex`
-- **But**: The header was only written when using the full `writeHeader()` method
-- If the machine crashed/exits, `maxClusters` changes were lost
-- The CIM file's header became inconsistent with actual cluster usage
-
-**Original Code Issue**:
-```typescript
-// CimHandler.writeSector() - Before fix
-const currentClusters = this._cimInfo.maxClusters++;
-this._cimInfo.clusterMap[clusterIndex] = currentClusters;
-// Writes cluster map...
-fs.writeSync(fd, buffer, 0, 2, 0x10 + 2 * clusterIndex);
-fs.writeSync(fd, buffer, 0, 2, 0x0c);  // WRONG: writes old value to wrong offset
-```
-
-**Fix Applied**:
-```typescript
-// CimHandler.writeSector() - After fix
-const currentClusters = this._cimInfo.maxClusters++;
-this._cimInfo.clusterMap[clusterIndex] = currentClusters;
-
-// --- Write back cluster map entry
-const clusterMapBuffer = new Uint8Array(2);
-clusterMapBuffer[0] = currentClusters & 0xff;
-clusterMapBuffer[1] = (currentClusters >> 8) & 0xff;
-fs.writeSync(fd, clusterMapBuffer, 0, 2, 0x10 + 2 * clusterIndex);
-
-// --- Write back updated maxClusters to header (offset 0x0A)
-const maxClustersBuffer = new Uint8Array(2);
-maxClustersBuffer[0] = this._cimInfo.maxClusters & 0xff;
-maxClustersBuffer[1] = (this._cimInfo.maxClusters >> 8) & 0xff;
-fs.writeSync(fd, maxClustersBuffer, 0, 2, 0x0a);
-```
-
-**Regression Test**:
-- Added test to [test/fat32/CimHandler.test.ts](../../../test/fat32/CimHandler.test.ts): `REGRESSION: maxClusters header field persists after cluster allocation`
-- Test allocates multiple clusters and reloads the file to verify `maxClusters` is persisted correctly
-- ✅ Test passes after fix
-
-**Impact**: SD card files no longer become corrupted due to stale maxClusters value after application restart
-
----
-
-### 2. **Missing Header Persistence After Write Operations** ✅ FIXED
-**Location**: CimHandler.writeSector() when allocating new clusters
+**Location**: `SdCardDevice.writeMmcData()` and `readMmcData()`
 
 **Problem**:
-- When CimHandler allocates new clusters, it updates `maxClusters` in memory
-- Only the cluster map entry and cluster data were written to disk
-- **But**: The header's updated `maxClusters` field was never persisted back to the file
-- On application restart, the stale header would cause cluster allocation conflicts
+- When `setFrameCommand()` is called, `SdCardDevice._responseIndex` is set to `-1` at the beginning of `writeMmcData()`
+- The Z80 CPU may immediately try to read the response via `readMmcData()` in the SAME CPU cycle
+- There's a `READ_DELAY` of only 56 tacts designed to simulate SD card latency
+- However, if the IPC call to main process is fast, the response is set immediately
+- But if there's ANY CPU instruction executed before `processFrameCommand()` is called, the delay calculation becomes unreliable
 
-**Original Code Pattern**:
+**Consequences**:
+- Z80 may receive incomplete or misaligned response data
+- Read operations may return uninitialized memory
+- Write operations may report success before data is persisted
+
+**Root Cause**:
 ```typescript
-// CimHandler.writeSector() - Before fix
-if (clusterPointer === 0xffff) {
-  const currentClusters = this._cimInfo.maxClusters++;
-  this._cimInfo.clusterMap[clusterIndex] = currentClusters;
-  // Write cluster map...
-  fs.writeSync(fd, buffer, 0, 2, 0x10 + 2 * clusterIndex);
-  // MISSING: No write of updated maxClusters to header
-  // File written, but header is stale
-}
+// In writeMmcData() at command reception:
+this._responseIndex = -1;  // ← Clears response immediately
+
+// Then later, response is set asynchronously after IPC round-trip
+// But Z80 might query readMmcData() before processFrameCommand() completes
 ```
 
-**Fix Applied** (same as Issue #1):
-```typescript
-// CimHandler.writeSector() - After fix
-if (clusterPointer === 0xffff) {
-  const currentClusters = this._cimInfo.maxClusters++;
-  this._cimInfo.clusterMap[clusterIndex] = currentClusters;
+### 🔴 **ISSUE #2: Missing Synchronization Point (HIGH SEVERITY)**
 
-  // --- Write back cluster map entry
-  const clusterMapBuffer = new Uint8Array(2);
-  clusterMapBuffer[0] = currentClusters & 0xff;
-  clusterMapBuffer[1] = (currentClusters >> 8) & 0xff;
-  fs.writeSync(fd, clusterMapBuffer, 0, 2, 0x10 + 2 * clusterIndex);
-
-  // --- Write back updated maxClusters to header (offset 0x0A) ✅ CRITICAL FIX
-  const maxClustersBuffer = new Uint8Array(2);
-  maxClustersBuffer[0] = this._cimInfo.maxClusters & 0xff;
-  maxClustersBuffer[1] = (this._cimInfo.maxClusters >> 8) & 0xff;
-  fs.writeSync(fd, maxClustersBuffer, 0, 2, 0x0a);
-}
-```
-
-**Regression Tests**:
-- Test 1: `REGRESSION: maxClusters header field persists after cluster allocation`
-  - Tests single cluster allocation persistence across file reload
-  - ✅ Passes
-  
-- Test 2: `REGRESSION: Multiple cluster allocations persist all header updates`
-  - Tests multiple sequential cluster allocations with file reload
-  - Verifies that each allocation persists its header update correctly
-  - ✅ Passes
-
-**Impact**: Each cluster allocation now correctly persists the header, preventing data corruption from stale cluster maps
-
----
-
-### 3. **Stale CimHandler Instance After SD Card Changes** ✅ FIXED
-**Location**: getSdCardHandler() in [src/main/machine-menus/zx-next-menus.ts](../../../src/main/machine-menus/zx-next-menus.ts)
+**Location**: `MachineFrameRunner.executeMachineLoopWithNoDebug()` (line 98)
 
 **Problem**:
-- CimHandler was cached as a module-level singleton with no invalidation mechanism
-- When user changed SD card file via UI (switches between different CIM files), the old CimHandler instance was still returned
-- All subsequent writes would go to the wrong file
-- User would lose data or corrupt the previously selected SD card file
+- When `machine.getFrameCommand()` is true, the frame loop EXITS immediately
+- `processFrameCommand()` is called in `MachineController.run()` AFTER the frame loop returns
+- However, the Z80 CPU is NOT paused during this IPC call
+- The next frame iteration happens BEFORE the response is available
+- The Z80 emulation has no synchronization barrier ensuring the response is ready before resuming
 
-**Original Code Pattern**:
-```typescript
-// BEFORE FIX: src/main/machine-menus/zx-next-menus.ts
-let cimHandler: CimHandler;
+**Consequences**:
+- The Z80 resumes execution before the main process responds
+- SD card commands appear to complete instantly to the CPU, but data isn't ready
+- Causes timing violations in SD card protocols
 
-export function getSdCardHandler(): CimHandler {
-  if (!cimHandler) {  // Only created once, never invalidated
-    const appState = mainStore.getState();
-    const sdCardFile = appState.media?.[MEDIA_SD_CARD];
-    cimHandler = new CimHandler(sdCardFile ?? getDefaultSdCardFile());
-  }
-  return cimHandler;  // Returns stale instance if file changed
-}
-```
+**Root Cause**:
+The frame command is processed asynchronously outside the main execution loop.
 
-**Fix Applied**:
-```typescript
-// AFTER FIX: src/main/machine-menus/zx-next-menus.ts
-let cimHandler: CimHandler;
-let currentSdCardFile: string;  // ✅ Track current file
+### 🔴 **ISSUE #3: Frame Command Cleared at Wrong Time (MEDIUM SEVERITY)**
 
-export function getSdCardHandler(): CimHandler {
-  const appState = mainStore.getState();
-  const sdCardFile = appState.media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
-  
-  // ✅ Invalidate cache if SD card file has changed
-  if (cimHandler && currentSdCardFile !== sdCardFile) {
-    cimHandler = undefined;
-  }
-  
-  if (!cimHandler) {
-    cimHandler = new CimHandler(sdCardFile);
-    currentSdCardFile = sdCardFile;
-  }
-  return cimHandler;
-}
-```
-
-**Regression Test**:
-- Test: `REGRESSION: CimHandler switches to correct file when SD card changes`
-  - Creates two separate CIM files (file 1 and file 2)
-  - Creates CimHandler for file 1 and writes test data
-  - Creates CimHandler for file 2 (simulating user changing SD card)
-  - Verifies handler is now for file 2, not file 1
-  - Writes different test data to file 2
-  - Verifies file 1 still has original data (not corrupted)
-  - ✅ Passes after fix
-
-**Impact**: 
-- User can now safely switch between different SD card files without data corruption
-- Each file gets its own CimHandler instance when needed
-- Writes go to the correct file as expected
-
----
-
-### 4. **No Error Handling for Failed Writes** ✅ FIXED
-**Location**: ZxNextMachine.processFrameCommand() and SdCardDevice.setWriteErrorResponse()
+**Location**: `MachineFrameRunner.executeMachineFrame()` (line 25)
 
 **Problem**:
-- SD write failures were caught and logged but never propagated back
-- SdCardDevice always received success response even if write failed
-- Emulated software thought write succeeded when it actually failed
-- Main process could throw `Error("The file is read-only")` but device had no way to know
-
-**Original Code Pattern**:
 ```typescript
-// ZxNextMachine.processFrameCommand() - Before fix
-case "sd-write":
-  try {
-    await createMainApi(messenger).writeSdCardSector(...);
-    this.sdCardDevice.setWriteResponse();  // Always set on success
-  } catch (err) {
-    console.log("SD card sector write error", err);  // Silent failure
-    // Missing: Send error response or status to SdCardDevice
-  }
-```
-
-**Fix Applied**:
-
-1. **Added `setWriteErrorResponse()` method to SdCardDevice** (SdCardDevice.ts):
-```typescript
-setWriteErrorResponse(errorMessage?: string): void {
-  // --- SD card error response: status byte indicates write error
-  // --- 0x0D indicates a write error in SD card protocol
-  this.setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+executeMachineFrame(): FrameTerminationMode {
+  this.machine.setFrameCommand(null);  // ← Cleared at START of frame
+  return this.machine.executionContext.debugStepMode === DebugStepMode.NoDebug
+    ? this.executeMachineLoopWithNoDebug()
+    : this.executeMachineLoopWithDebug();
 }
 ```
 
-2. **Updated ZxNextMachine to call error handler on failure** (ZxNextMachine.ts):
+- The frame command is cleared BEFORE executing the frame
+- But the frame command is checked during loop execution (line 98)
+- If multiple commands are queued, only the last one is retained
+- If a command is set but frame completes normally, command is lost
+
+**Consequences**:
+- Commands may be silently dropped
+- Race conditions if `setFrameCommand()` called during frame execution
+
+### 🟡 **ISSUE #4: No Command Validation or Queuing (MEDIUM SEVERITY)**
+
+**Location**: `SdCardDevice` and `ZxNextMachine.processFrameCommand()`
+
+**Problem**:
+- Only one frame command can be pending at a time
+- If two SD operations are requested before the first completes, the second overwrites the first
+- No queuing or acknowledgment mechanism exists
+- `processFrameCommand()` assumes the command is complete
+
+**Consequences**:
+- Rapid SD operations may lose data
+- No error recovery mechanism
+- Difficult to diagnose in production
+
+### 🟡 **ISSUE #5: Sector Index Validation Gap (MEDIUM SEVERITY)**
+
+**Location**: `SdCardDevice.writeMmcData()` (lines 178-190 for cmd 0x51, lines 192-199 for cmd 0x58)
+
+**Problem**:
+- The sector index is constructed from 4 command parameter bytes
+- NO validation that the sector index is within valid bounds
+- NO validation against CIM file capacity
+- Invalid sector indices are sent to main process, which may:
+  - Throw uncaught exceptions
+  - Access memory beyond file bounds
+  - Silently fail
+
+**Consequences**:
+- Malformed software or bugs in Z80 ROM could cause crashes
+- Silent data corruption
+- No user-friendly error reporting
+
+### 🟡 **ISSUE #6: Response Data Type Mismatch Potential (LOW SEVERITY)**
+
+**Location**: `ZxNextMachine.processFrameCommand()` (line 908)
+
+**Problem**:
+- `readSdCardSector()` returns `Uint8Array` from main process
+- This is passed directly to `SdCardDevice.setReadResponse()`
+- However, the IPC serialization/deserialization could potentially convert this to:
+  - A regular Array
+  - An ArrayBuffer
+  - A plain object with numeric keys
+
+**Consequences**:
+- Type checking is not strict
+- Could cause subtle bugs if IPC layer changes
+- `Uint8Array` methods would fail if deserialized incorrectly
+
+### 🔴 **ISSUE #7: No Timeout on IPC Operations (HIGH SEVERITY)**
+
+**Location**: `ZxNextMachine.processFrameCommand()` (lines 903-910)
+
+**Problem**:
+```typescript
+async processFrameCommand(messenger: MessengerBase): Promise<void> {
+  const frameCommand = this.getFrameCommand();
+  switch (frameCommand.command) {
+    case "sd-write":
+      await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+      // ← No timeout! If main process hangs, renderer hangs forever
+    case "sd-read":
+      const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+      // ← No timeout! Renderer could freeze indefinitely
+```
+
+**Consequences**:
+- If main process crashes or IPC hangs, the renderer freezes
+- No graceful degradation
+- User cannot recover without killing the app
+- Write operations may appear to hang indefinitely
+
+### 🟡 **ISSUE #8: Write Response Set Before Completion Confirmed (MEDIUM SEVERITY)**
+
+**Location**: `ZxNextMachine.processFrameCommand()` (lines 904-906)
+
+**Problem**:
 ```typescript
 case "sd-write":
-  try {
-    await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
-    this.sdCardDevice.setWriteResponse();
-  } catch (err) {
-    console.log("SD card sector write error", err);
-    this.sdCardDevice.setWriteErrorResponse((err as Error).message);  // ✅ CRITICAL FIX
-  }
+  await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+  this.sdCardDevice.setWriteResponse();  // ← Called immediately after promise resolves
 ```
 
-**Regression Tests**:
-- Test 1: `REGRESSION: setWriteErrorResponse method exists and sets error state`
-  - Verifies that SdCardDevice has the error response method
-  - ✅ Passes
-  
-- Test 2: `setWriteErrorResponse sets proper error response when called`
-  - Tests that error response differs from success response [0x05, 0xff, 0xfe]
-  - Verifies error response is properly set [0x0d, 0xff, 0xff]
-  - ✅ Passes
+- `writeSdCardSector()` in `CimHandler.writeSector()` calls `fs.fsyncSync()`
+- However, if the file handle is shared across multiple `CimHandler` instances, fsync may not guarantee atomicity
+- If the CIM file is accessed by multiple processes, there's a race condition
+- The response is sent to Z80 BEFORE the data is confirmed written to disk
 
-- Test 3: `setWriteResponse still works for successful writes`
-  - Verifies that successful writes still work correctly (positive control)
-  - ✅ Passes
-
-**Impact**:
-- Emulated software now correctly detects write failures
-- Error responses are propagated to the SD device
-- OS can handle write failures appropriately (e.g., retry or show error)
-- File read-only protection is now visible to emulated software
+**Consequences**:
+- Z80 software may assume write is complete and safe
+- If power loss or crash occurs after response but before disk persistence, data is lost
+- Violates SD card protocol semantics
 
 ---
 
-### 5. **File Handle Lifecycle Risk in Concurrent Operations** ✅ FIXED
-**Location**: CimHandler.readSector(), writeSector(), and setReadOnly()
+## Recommended Fixes
 
-**Problem**:
-- Each read/write opened and closed file handles independently
-- If multiple frame commands queued in same frame, they would interleave
-- File system could have file handle conflicts on Windows with file locking
-- No explicit synchronization between concurrent I/O operations
+### Priority 1: Critical Race Conditions
+1. **Add command completion synchronization**: Implement a barrier/event that blocks Z80 execution until IPC response is received
+2. **Add timeout protection**: Wrap all IPC calls with Promise.race([operation, timeout])
+3. **Queue commands properly**: Maintain a command queue with acknowledgments
 
-**Original Code Pattern**:
-```typescript
-const fd = fs.openSync(this.cimFileName, "r+");  // Open for every operation
-// ... read/write operations ...
-fs.closeSync(fd);  // Close immediately after
+### Priority 2: Validation & Safety
+4. **Validate sector indices**: Check against CIM file capacity before operations
+5. **Validate data format**: Ensure response is Uint8Array with length checks
+6. **Add error propagation**: Make Z80 aware of SD card errors via status responses
 
-// Next operation (if queued):
-const fd = fs.openSync(this.cimFileName, "r+");  // Open again - risk of conflicts
-```
-
-**Fix Applied**:
-
-1. **Added persistent file handle** (CimHandler.ts):
-```typescript
-private _fd: number | undefined;  // ✅ Persistent file handle
-
-constructor(public readonly cimFileName: string) {
-  this.readHeader();
-  // ✅ Open file handle on construction - keep it open for all operations
-  try {
-    this._fd = fs.openSync(this.cimFileName, "r+");
-  } catch (e) {
-    // File might be read-only, try read-only mode
-    this._fd = fs.openSync(this.cimFileName, "r");
-  }
-}
-```
-
-2. **Updated readSector() to use persistent handle**:
-```typescript
-// ✅ Use persistent file handle instead of opening/closing
-const fd = this._fd ?? fs.openSync(this.cimFileName, "r");
-fs.readSync(fd, buffer, 0, sectorBytes, sectorPointer);
-if (!this._fd) {
-  fs.closeSync(fd);
-}
-```
-
-3. **Updated writeSector() to use persistent handle**:
-```typescript
-// ✅ Use persistent file handle
-const fd = this._fd ?? fs.openSync(this.cimFileName, "r+");
-// ... perform write operations ...
-// Don't close if it's the persistent handle
-if (!this._fd) {
-  fs.closeSync(fd);
-}
-```
-
-4. **Added close() method for cleanup**:
-```typescript
-close(): void {
-  if (this._fd !== undefined) {
-    try {
-      fs.closeSync(this._fd);
-    } catch (e) {
-      // Handle any errors during close
-    }
-    this._fd = undefined;
-  }
-}
-```
-
-**Regression Test**:
-- Test: `REGRESSION: Concurrent read/write operations complete without file handle conflicts`
-  - Performs 50 iterations of rapid write-read operations
-  - Each iteration writes to 3 sectors then reads them back
-  - Tests interleaved reads/writes on overlapping sectors
-  - Verifies data integrity across all operations
-  - ✅ Passes after fix
-
-**Impact**:
-- File handle remains open for the lifetime of the CimHandler instance
-- No more rapid open/close cycles causing conflicts
-- Safe from file locking issues on Windows
-- Reduces overhead of opening/closing file handles repeatedly
-- All concurrent operations now complete correctly with data integrity
+### Priority 3: Robustness
+7. **Fix frame command clearing**: Clear AFTER frame command is processed, not before
+8. **Add operation timeouts**: Prevent indefinite hangs on IPC failures
+9. **Implement write barriers**: Ensure data is persisted before sending response
 
 ---
 
-### 6. **No Atomic Header + Data Write for Consistency** ⚠️ MEDIUM PRIORITY
-**Location**: CimHandler.writeSector() cluster allocation path
+## Testing Recommendations
 
-**Problem**:
-- Cluster map update (line 85) and sector data write (appended to file) are separate operations
-- If process crashes between these writes, file becomes corrupted
-- No transaction-like mechanism to ensure atomicity
-
-**Scenario**:
-1. Process updates cluster map: `fs.writeSync(fd, buffer, 0, 2, 0x10 + 2 * clusterIndex);`
-2. Crash happens
-3. Cluster map points to a cluster that doesn't exist yet
-4. Next boot: File corrupted, cluster map invalid
-
----
-
-### 7. **Memory Inconsistency: CimInfo Not Reloaded** ⚠️ LOW PRIORITY
-**Location**: CimHandler initialization
-
-**Problem**:
-- CimInfo is loaded once at CimHandler construction
-- If external process modifies the CIM file, in-memory CimInfo is stale
-- Less critical for this project (single writer) but risky for multi-user scenarios
-
----
-
-## Recommendations
-
-### Completed Actions ✅:
-1. **Fix #1 & #2** (Combined): CimHandler.writeSector() now persists maxClusters to header after cluster allocation
-   - Both the cluster map entry AND the updated maxClusters field are written to disk
-   - Tests confirm persistence across application restart
-   - Zero data corruption risk from stale maxClusters values
-
-2. **Fix #3**: CimHandler cache now properly invalidates when SD card file changes
-   - Tracks current SD card file in `currentSdCardFile` variable
-   - Invalidates cache when file path differs from current file
-   - User can safely switch between multiple SD card files
-   - Each file gets its own handler instance
-
-3. **Fix #4**: Added proper error response mechanism for SD write failures
-   - Implemented `setWriteErrorResponse()` method in SdCardDevice
-   - Updated ZxNextMachine to call error handler when writeSdCardSector fails
-   - Error responses now propagated to emulated software (status byte 0x0D)
-   - Emulated OS can now detect write failures and handle them appropriately
-   - Tests verify error responses differ from success responses
-
-4. **Fix #5**: Implemented persistent file handle to eliminate concurrent operation conflicts
-   - Added persistent file handle (`_fd`) that stays open during CimHandler lifetime
-   - Eliminated rapid open/close cycles that caused file conflicts
-   - Updated readSector(), writeSector(), and setReadOnly() to use persistent handle
-   - Added close() method for proper cleanup
-   - Regression tests verify interleaved read/write operations work correctly
-   - Safe from file locking issues on Windows and other OS platforms
-
-### Immediate Actions (Priority 1) - Remaining:
-1. **Fix #6**: Implement atomic writes for new cluster allocation with crash recovery
-
-### Consider for Future:
-- Implement write transaction logging for crash recovery
-- Add CRC validation for header consistency
-- Consider using more robust file I/O patterns with proper fsync()
-- Issue #7 (Memory Inconsistency): Less critical for single-writer scenario
-
+1. **Rapid Sequential Writes**: Verify multiple write commands complete correctly
+2. **IPC Delay Injection**: Add artificial delays to test timeout behavior
+3. **Main Process Crash**: Verify graceful handling if main process becomes unresponsive
+4. **Invalid Sector Index**: Verify error handling for out-of-bounds operations
+5. **Concurrent Access**: Test SD card access with other main process operations

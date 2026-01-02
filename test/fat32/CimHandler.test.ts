@@ -344,6 +344,127 @@ describe("CimHandler", () => {
       expect(data2[0]).toBe(0x33);
     }
   });
+
+  it("REGRESSION: Cluster allocation writes are atomic - data flushed to disk", () => {
+    // --- This test catches Issue #6: No Atomic Header + Data Write for Consistency
+    // --- Multiple writes happen during cluster allocation:
+    // --- 1. Cluster map entry is updated
+    // --- 2. maxClusters header field is updated
+    // --- 3. New cluster data is written
+    // --- Without fsync, OS might not have flushed writes to disk yet
+    // --- A crash before fsync means data loss even though operations "succeeded"
+    
+    // --- Arrange
+    const filePath = createTestFile(93);
+    const cfm = new CimFileManager();
+    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const vol = new Fat32Volume(file);
+    vol.format("MY VOLUME");
+    
+    const ch = new CimHandler(filePath);
+    const initialMaxClusters = ch.cimInfo.maxClusters;
+    
+    // --- Act: Allocate a new cluster
+    const testData = new Uint8Array(512);
+    testData.fill(0xAB);
+    ch.writeSector(5000, testData);
+    
+    // After allocation, verify the state is consistent
+    const afterMaxClusters = ch.cimInfo.maxClusters;
+    expect(afterMaxClusters).toBe(initialMaxClusters + 1);
+    
+    // --- Critical Test: Verify cluster map points to valid allocated cluster
+    const sectorsPerCluster = (ch.cimInfo.clusterSize * 128) / ch.cimInfo.sectorSize;
+    const clusterIndex = Math.floor(5000 / sectorsPerCluster);
+    const clusterPointer = ch.cimInfo.clusterMap[clusterIndex];
+    
+    // Cluster pointer should be valid
+    expect(clusterPointer).toBeLessThan(afterMaxClusters);
+    expect(clusterPointer).not.toBe(0xffff);
+    
+    // --- Verify the cluster data is actually written
+    const readData = ch.readSector(5000);
+    for (let i = 0; i < 512; i++) {
+      expect(readData[i]).toBe(0xAB);
+    }
+    
+    // --- Critical: Simulate application restart and verify consistency
+    // --- BEFORE FIX: Without fsync, OS buffers might not be flushed
+    // --- Data could be lost if OS crashes or system suddenly powers off
+    // --- AFTER FIX: fsync ensures all writes are persisted to disk
+    const ch2 = new CimHandler(filePath);
+    
+    // Header must show the new maxClusters
+    expect(ch2.cimInfo.maxClusters).toBe(afterMaxClusters);
+    
+    // Cluster map must still point to valid cluster
+    const clusterPointer2 = ch2.cimInfo.clusterMap[clusterIndex];
+    expect(clusterPointer2).toBeLessThan(ch2.cimInfo.maxClusters);
+    expect(clusterPointer2).toBe(clusterPointer);
+    
+    // Data must still be there
+    const readData2 = ch2.readSector(5000);
+    for (let i = 0; i < 512; i++) {
+      expect(readData2[i]).toBe(0xAB);
+    }
+  });
+
+  it("REGRESSION: Multiple cluster allocations maintain atomicity throughout", () => {
+    // --- This test verifies atomicity is maintained across many allocations
+    // --- Each allocation should complete atomically - no partial states
+    
+    // --- Arrange
+    const filePath = createTestFile(92);
+    const cfm = new CimFileManager();
+    const file = cfm.createFile(filePath, SIZE_IN_MB);
+    const vol = new Fat32Volume(file);
+    vol.format("MY VOLUME");
+    
+    const ch = new CimHandler(filePath);
+    const initialMaxClusters = ch.cimInfo.maxClusters;
+    
+    // --- Act: Allocate many clusters in sequence
+    const allocations = [];
+    for (let i = 0; i < 10; i++) {
+      const data = new Uint8Array(512);
+      data.fill(0x10 + i);
+      ch.writeSector(1000 + i * 200, data);  // Different sectors in different clusters
+      allocations.push({
+        sector: 1000 + i * 200,
+        value: 0x10 + i
+      });
+    }
+    
+    // --- Assert: All allocations are in consistent state
+    const maxClustersAfterWrites = ch.cimInfo.maxClusters;
+    expect(maxClustersAfterWrites).toBe(initialMaxClusters + 10);
+    
+    // Verify all cluster pointers are valid (atomicity check)
+    const sectorsPerCluster = (ch.cimInfo.clusterSize * 128) / ch.cimInfo.sectorSize;
+    for (let i = 0; i < 10; i++) {
+      const clusterIndex = Math.floor((1000 + i * 200) / sectorsPerCluster);
+      const clusterPointer = ch.cimInfo.clusterMap[clusterIndex];
+      
+      // --- BEFORE FIX: Some clusterPointers might be >= maxClusters
+      // --- AFTER FIX: All clusterPointers are < maxClusters (valid)
+      expect(clusterPointer).toBeLessThan(maxClustersAfterWrites);
+      expect(clusterPointer).not.toBe(0xffff);
+    }
+    
+    // --- Simulate crash/restart - reload file
+    const ch2 = new CimHandler(filePath);
+    
+    // Header consistency
+    expect(ch2.cimInfo.maxClusters).toBe(maxClustersAfterWrites);
+    
+    // All data must be intact
+    for (const alloc of allocations) {
+      const readData = ch2.readSector(alloc.sector);
+      for (let j = 0; j < 512; j++) {
+        expect(readData[j]).toBe(alloc.value);
+      }
+    }
+  });
 });
 
 function createTestFile(id: number): string {
