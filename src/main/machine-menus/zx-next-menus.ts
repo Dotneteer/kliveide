@@ -258,13 +258,21 @@ async function resetToDefaultSdCardFile(): Promise<void> {
 }
 
 let cimHandler: CimHandler;
+let currentSdCardFile: string;
 
 // --- Use this function to get the CIM handler
 export function getSdCardHandler(): CimHandler {
+  const appState = mainStore.getState();
+  const sdCardFile = appState.media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
+  
+  // --- Invalidate cache if SD card file has changed
+  if (cimHandler && currentSdCardFile !== sdCardFile) {
+    cimHandler = undefined;
+  }
+  
   if (!cimHandler) {
-    const appState = mainStore.getState();
-    const sdCardFile = appState.media?.[MEDIA_SD_CARD];
-    cimHandler = new CimHandler(sdCardFile ?? getDefaultSdCardFile());
+    cimHandler = new CimHandler(sdCardFile);
+    currentSdCardFile = sdCardFile;
   }
   return cimHandler;
 }

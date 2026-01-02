@@ -901,6 +901,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           this.sdCardDevice.setWriteResponse();
         } catch (err) {
           console.log("SD card sector write error", err);
+          this.sdCardDevice.setWriteErrorResponse((err as Error).message);
         }
         break;
       case "sd-read":

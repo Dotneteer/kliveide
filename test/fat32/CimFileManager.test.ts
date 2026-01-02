@@ -2975,6 +2975,58 @@ describe("CimFileManager - File Creation and Conversion", () => {
       // --- Clean up
       fs.unlinkSync(filePath);
     });
+
+    it("132. REGRESSION: maxClusters header field persists after cluster allocation", () => {
+      // --- This test catches Issue #1: CIM Header State Out-of-Sync
+      // --- When new clusters are allocated, maxClusters must be persisted to the header
+      
+      // --- Arrange
+      const filePath = createTestFile();
+      const cfm = new CimFileManager();
+      const file = cfm.createFile(filePath, 64);
+      
+      // Initial maxClusters should be 0
+      expect(file.cimInfo.maxClusters).toBe(0);
+
+      // --- Act: Write to sector 0 (allocates cluster 0)
+      const testData = new Uint8Array(512);
+      testData.fill(0xAA);
+      file.writeSector(0, testData);
+      
+      // After first allocation, maxClusters should be 1
+      expect(file.cimInfo.maxClusters).toBe(1);
+
+      // --- Act: Write to sector 128 (allocates cluster 1)
+      testData.fill(0xBB);
+      file.writeSector(128, testData);
+      
+      // After second allocation, maxClusters should be 2
+      expect(file.cimInfo.maxClusters).toBe(2);
+
+      // --- Critical: Simulate application restart by creating a new CimFile instance
+      // --- This forces a readHeader() call which reads the file from disk
+      const file2 = new CimFile(filePath, 64, 1, file.cimInfo.clusterCount);
+      file2.readHeader();
+
+      // --- Assert: maxClusters must match what was allocated (regression test)
+      // --- BEFORE FIX: This would fail because maxClusters was not persisted correctly
+      // --- AFTER FIX: This passes because maxClusters is written to offset 0x0c in header
+      expect(file2.cimInfo.maxClusters).toBe(2);
+      
+      // --- Additional verification: Cluster map should match
+      expect(file2.cimInfo.clusterMap[0]).toBe(0);  // First cluster pointer
+      expect(file2.cimInfo.clusterMap[1]).toBe(1);  // Second cluster pointer
+      
+      // --- Verify data integrity after reload
+      const readData0 = file2.readSector(0);
+      expect(readData0[0]).toBe(0xAA);
+      
+      const readData128 = file2.readSector(128);
+      expect(readData128[0]).toBe(0xBB);
+
+      // --- Clean up
+      fs.unlinkSync(filePath);
+    });
   });
 });
 

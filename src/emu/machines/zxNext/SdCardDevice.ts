@@ -269,6 +269,12 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this.setMmcResponse(new Uint8Array([0x05, 0xff, 0xfe]));
   }
 
+  setWriteErrorResponse(errorMessage?: string): void {
+    // --- SD card error response: status byte indicates write error
+    // --- 0x0D indicates a write error in SD card protocol
+    this.setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+  }
+
   setReadResponse(sectorData: Uint8Array): void {
     const response = new Uint8Array(3 + BYTES_PER_SECTOR);
     response.set(new Uint8Array([0x00, 0xff, 0xfe]));
