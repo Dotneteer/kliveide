@@ -164,23 +164,49 @@ This document details the communication flow between `SdCardDevice` (renderer pr
 
 **Status**: ✅ FIXED - [Synchronization verified](src/emu/machines/MachineController.ts#L545-L553)
 
-### 🟡 **ISSUE #5: Sector Index Validation Gap (MEDIUM SEVERITY)**
+### 🟡 **ISSUE #5: Sector Index Validation Gap (PARTIALLY ADDRESSED)**
 
-**Location**: `SdCardDevice.writeMmcData()` (lines 178-190 for cmd 0x51, lines 192-199 for cmd 0x58)
+**Location**: `SdCardDevice.writeMmcData()` (lines 97-101 for cmd 0x51, lines 188-192 for cmd 0x58) and `CimHandlers.checkSectorIndex()`
 
-**Problem**:
-- The sector index is constructed from 4 command parameter bytes
-- NO validation that the sector index is within valid bounds
-- NO validation against CIM file capacity
-- Invalid sector indices are sent to main process, which may:
-  - Throw uncaught exceptions
-  - Access memory beyond file bounds
-  - Silently fail
+**Current State** (PARTIALLY FIXED):
+- ✅ **Main process validation**: `CimHandlers.readSector()` and `writeSector()` call `checkSectorIndex()` before operations
+- ✅ **Bounds checking**: `checkSectorIndex()` validates `sectorIndex >= 0 && sectorIndex < maxSectors`
+- ✅ **Max sectors calculated**: `maxSectors = (cimInfo.maxSize * 2048) / sectorSize`
+- ✅ **Error thrown**: Out-of-bounds access throws descriptive error: `"Invalid sector index: {index}"`
+- ⚠️ **Renderer side**: No validation in `SdCardDevice` before sending frame command to main process
 
-**Consequences**:
-- Malformed software or bugs in Z80 ROM could cause crashes
-- Silent data corruption
-- No user-friendly error reporting
+**Problem Remaining**:
+- No pre-validation on renderer (Z80 side) before IPC call
+- Invalid indices are sent to main process, which then throws error
+- Error handling could be improved with Z80-friendly error response instead of exception throw
+- Z80 has no way to know valid sector range before attempting access
+
+**Implementation Details**:
+- **CimHandlers.ts** (lines 202-208): `checkSectorIndex()` validates:
+  - Calculates max sectors: `(cimInfo.maxSize * 2048) / sectorSize`
+  - Throws error if `sectorIndex < 0 || sectorIndex >= maxSectors`
+- **RendererToMainProcessor.ts** (lines 659-671): Basic validation:
+  - Checks `sectorIndex < 0` but NO upper bounds check
+  - Relies on CimHandlers to catch invalid indices
+- **SdCardDevice.ts** (lines 97-101, 188-192): NO validation:
+  - Constructs sector index from 4 command parameter bytes
+  - Sends directly to frame command without bounds checking
+
+**Consequences** (PARTIALLY RESOLVED):
+- ✅ Out-of-bounds access is caught and prevented
+- ✅ File system integrity protected
+- ⚠️ Error thrown to main process instead of graceful error response to Z80
+- ⚠️ Z80 cannot know valid range without trial and error
+- ⚠️ Exception handling inconsistent with other SD card error responses
+
+**Recommended Enhancement**:
+1. Calculate max sectors in renderer (read CIM file header once)
+2. Validate sector index in SdCardDevice before setting frame command
+3. Return error response (0x0d) to Z80 if invalid, matching other SD error handling
+4. Prevents IPC call for obviously invalid indices
+5. Provides Z80 with immediate feedback instead of hanging
+
+**Status**: 🟡 PARTIALLY FIXED - Validation exists but error handling could be improved for Z80 compatibility
 
 ### ✅ **ISSUE #6: Response Data Type Mismatch Potential (FIXED)**
 
