@@ -904,10 +904,29 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           this.sdCardDevice.setWriteErrorResponse((err as Error).message);
         }
         break;
-      case "sd-read":
-        const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
-        this.sdCardDevice.setReadResponse(sectorData);
+      case "sd-read": {
+        // --- Wrap in block to properly scope sectorData variable
+        try {
+          const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+          // --- FIX for ISSUE #6: Response Data Type Mismatch Potential
+          // --- Validate that response is Uint8Array (defensive programming)
+          if (sectorData instanceof Uint8Array) {
+            this.sdCardDevice.setReadResponse(sectorData);
+          } else if (Array.isArray(sectorData)) {
+            // --- Convert Array to Uint8Array if needed (IPC edge case)
+            this.sdCardDevice.setReadResponse(new Uint8Array(sectorData));
+          } else {
+            console.error('SD card read error: Invalid response data type', typeof sectorData);
+            // --- Return error response using setMmcResponse with error status
+            (this.sdCardDevice as any).setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+          }
+        } catch (err) {
+          console.log("SD card sector read error", err);
+          // --- Return error response using setMmcResponse with error status
+          (this.sdCardDevice as any).setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+        }
         break;
+      }
       default:
         console.log("Unknown frame command", frameCommand);
         break;

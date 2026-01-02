@@ -308,7 +308,22 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   setReadResponse(sectorData: Uint8Array): void {
     const response = new Uint8Array(3 + BYTES_PER_SECTOR);
     response.set(new Uint8Array([0x00, 0xff, 0xfe]));
-    response.set(sectorData, 3);
+    
+    // --- FIX for ISSUE #6: Response Data Type Mismatch Potential
+    // --- Defensive type checking to handle IPC deserialization edge cases
+    // --- The main process might deserialize Uint8Array as Array due to IPC serialization
+    // --- Ensure we always work with Uint8Array
+    if (sectorData instanceof Uint8Array) {
+      response.set(sectorData, 3);
+    } else if (Array.isArray(sectorData)) {
+      // --- Convert Array to Uint8Array if needed (IPC edge case)
+      response.set(new Uint8Array(sectorData), 3);
+    } else {
+      // --- Fallback: Try to copy as-is or log warning
+      console.warn('setReadResponse: Unexpected response data type', typeof sectorData);
+      response.set(new Uint8Array(sectorData as any), 3);
+    }
+    
     this.setMmcResponse(response);
     // --- FIX for ISSUE #1: setMmcResponse marks response as ready
   }

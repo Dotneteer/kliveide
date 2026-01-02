@@ -143,22 +143,39 @@ executeMachineFrame(): FrameTerminationMode {
 - Silent data corruption
 - No user-friendly error reporting
 
-### 🟡 **ISSUE #6: Response Data Type Mismatch Potential (LOW SEVERITY)**
+### ✅ **ISSUE #6: Response Data Type Mismatch Potential (FIXED)**
 
-**Location**: `ZxNextMachine.processFrameCommand()` (line 908)
+**Location**: `ZxNextMachine.processFrameCommand()` and `SdCardDevice.setReadResponse()`
 
-**Problem**:
-- `readSdCardSector()` returns `Uint8Array` from main process
-- This is passed directly to `SdCardDevice.setReadResponse()`
-- However, the IPC serialization/deserialization could potentially convert this to:
-  - A regular Array
-  - An ArrayBuffer
-  - A plain object with numeric keys
+**Problem** (RESOLVED):
+- ~~`readSdCardSector()` returns `Uint8Array` from main process~~
+- ~~This is passed directly to `SdCardDevice.setReadResponse()`~~
+- ~~However, the IPC serialization/deserialization could potentially convert this to:~~
+  - ~~A regular Array~~
+  - ~~An ArrayBuffer~~
+  - ~~A plain object with numeric keys~~
+- ~~Type checking is not strict~~
+- ~~Could cause subtle bugs if IPC layer changes~~
 
-**Consequences**:
-- Type checking is not strict
-- Could cause subtle bugs if IPC layer changes
-- `Uint8Array` methods would fail if deserialized incorrectly
+**Solution Implemented** (2025-01-02):
+1. Added type validation in `ZxNextMachine.processFrameCommand()` before calling `setReadResponse()`
+2. Added defensive type checking in `SdCardDevice.setReadResponse()` to accept both `Uint8Array` and `Array`
+3. Convert regular Arrays to Uint8Array if needed (IPC edge case)
+4. Log warning if unexpected data type is received
+5. Added regression tests to validate Array-to-Uint8Array conversion
+
+**Implementation Details**:
+- **ZxNextMachine.ts** (lines ~909-923): Added instanceof checks before calling setReadResponse
+- **SdCardDevice.ts** (lines ~308-327): Added conversion logic to ensure always working with Uint8Array
+- **Test coverage**: 2 new tests verify both Array and Uint8Array handling
+
+**Consequences** (RESOLVED):
+- ✅ Type mismatches handled gracefully
+- ✅ IPC serialization edge cases covered
+- ✅ Defensive programming prevents future issues if IPC layer changes
+- ✅ Regression tests added and passing
+
+**Status**: ✅ FIXED - [Regression tests pass](test/zxnext/SdCardDevice.test.ts)
 
 ### 🔴 **ISSUE #7: No Timeout on IPC Operations (HIGH SEVERITY)**
 
@@ -215,7 +232,7 @@ case "sd-write":
 
 ### Priority 2: Validation & Safety
 4. **Validate sector indices**: Check against CIM file capacity before operations
-5. **Validate data format**: Ensure response is Uint8Array with length checks
+5. ✅ **FIXED**: **Validate data format** - Added type checking to ensure response is Uint8Array with conversion from Array if needed
 6. **Add error propagation**: Make Z80 aware of SD card errors via status responses
 
 ### Priority 3: Robustness

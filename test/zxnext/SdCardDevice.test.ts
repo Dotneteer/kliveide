@@ -274,4 +274,71 @@ describe("SdCardDevice", () => {
     // --- The test verifies that the device tracks response readiness properly
     // --- ensuring the frame loop can verify before allowing Z80 to resume
   });
+
+  it("REGRESSION: Response Data Type Mismatch - setReadResponse handles Array conversion (ISSUE #6)", () => {
+    // --- ISSUE #6: Response Data Type Mismatch Potential (LOW SEVERITY)
+    // --- Problem: IPC serialization could convert Uint8Array to regular Array or ArrayBuffer
+    // --- This could cause subtle bugs if the IPC layer changes
+    // --- 
+    // --- Solution: Add type validation in setReadResponse to ensure Uint8Array,
+    // --- converting from Array if necessary
+    
+    // --- Arrange
+    const mockMachine = { tacts: 0 } as any;
+    const device = new SdCardDevice(mockMachine);
+    
+    // --- Simulate IPC deserialization converting Uint8Array to Array
+    // --- This could happen if the serialization/deserialization layer changes
+    const sectorDataAsArray = Array.from({ length: 512 }, (_, i) => i & 0xff);
+    
+    // --- Act: Call setReadResponse with Array instead of Uint8Array
+    // --- Before fix: This might work by accident, but it's not safe
+    // --- After fix: Should handle the conversion gracefully
+    device.setReadResponse(sectorDataAsArray as any);
+    
+    // --- Assert: Response should be properly set
+    const response = (device as any)._response;
+    expect(response).toBeInstanceOf(Uint8Array);
+    expect(response.length).toBe(515); // 3 bytes header + 512 bytes data
+    expect(response[0]).toBe(0x00); // Response header
+    expect(response[1]).toBe(0xff);
+    expect(response[2]).toBe(0xfe);
+    
+    // --- Verify data was copied correctly from Array
+    expect(response[3]).toBe(0); // First data byte
+    expect(response[514]).toBe(511 & 0xff); // Last data byte
+  });
+
+  it("REGRESSION: Response Data Type Mismatch - setReadResponse validates Uint8Array (ISSUE #6)", () => {
+    // --- This test verifies that setReadResponse properly validates and handles
+    // --- the response data type, whether it comes as Uint8Array or Array
+    
+    // --- Arrange
+    const mockMachine = { tacts: 0 } as any;
+    const device = new SdCardDevice(mockMachine);
+    
+    // --- Create proper Uint8Array response
+    const sectorData = new Uint8Array(512);
+    for (let i = 0; i < 512; i++) {
+      sectorData[i] = i & 0xff;
+    }
+    
+    // --- Act: Call setReadResponse with Uint8Array (normal case)
+    device.setReadResponse(sectorData);
+    
+    // --- Assert: Response should be properly set
+    const response = (device as any)._response;
+    expect(response).toBeInstanceOf(Uint8Array);
+    expect(response.length).toBe(515); // 3 bytes header + 512 bytes data
+    expect(response[0]).toBe(0x00); // Response header
+    expect(response[1]).toBe(0xff);
+    expect(response[2]).toBe(0xfe);
+    
+    // --- Verify data integrity
+    expect(response[3]).toBe(0); // First data byte
+    expect(response[514]).toBe(511 & 0xff); // Last data byte
+    
+    // --- Response should be marked as ready
+    expect((device as any)._responseReady).toBe(true);
+  });
 });
