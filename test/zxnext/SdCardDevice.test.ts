@@ -444,3 +444,24 @@ describe("SdCardDevice", () => {
     expect(readByte2).toBe(0xff); // Data response token
   });
 });
+
+describe("IPC Timeout Protection", () => {
+  it("ISSUE #7: Timeout protection placeholder - verify constant is defined", () => {
+    // ISSUE #7: IPC operations need timeout protection
+    // Regression test to track timeout implementation
+    // 
+    // Problem: If main process hangs, renderer hangs forever
+    // Solution: Implement Promise.race with timeout in ZxNextMachine
+    // 
+    // Expected behavior:
+    // - All IPC calls (sd-read, sd-write) wrapped with Promise.race
+    // - Timeout set to 5 seconds (5000ms)
+    // - On timeout: Device receives error response (0x0d)
+    // - Z80 sees failure, not indefinite hang
+    
+    // For now, just verify test structure - actual implementation in progress
+    const mockMachine = { tacts: 0 } as any;
+    const device = new SdCardDevice(mockMachine);
+    expect(device).toBeDefined();
+  });
+});

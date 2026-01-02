@@ -897,7 +897,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     switch (frameCommand.command) {
       case "sd-write":
         try {
-          const result = await createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data);
+          // --- FIX for ISSUE #7: Wrap IPC call with timeout protection
+          // --- Prevents renderer from hanging if main process becomes unresponsive
+          const result = await this.withIpcTimeout(
+            createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data),
+            'writeSdCardSector'
+          );
           // --- FIX for ISSUE #8: Only set write response after explicit persistence confirmation
           // --- The main process confirms that fsyncSync has completed
           if (result?.persistenceConfirmed) {
@@ -914,7 +919,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       case "sd-read": {
         // --- Wrap in block to properly scope sectorData variable
         try {
-          const sectorData = await createMainApi(messenger).readSdCardSector(frameCommand.sector);
+          // --- FIX for ISSUE #7: Wrap IPC call with timeout protection
+          // --- Prevents renderer from hanging if main process becomes unresponsive
+          const sectorData = await this.withIpcTimeout(
+            createMainApi(messenger).readSdCardSector(frameCommand.sector),
+            'readSdCardSector'
+          );
           // --- FIX for ISSUE #6: Response Data Type Mismatch Potential
           // --- Validate that response is Uint8Array (defensive programming)
           if (sectorData instanceof Uint8Array) {
@@ -938,6 +948,28 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         console.log("Unknown frame command", frameCommand);
         break;
     }
+  }
+
+  /**
+   * Wraps an IPC call with timeout protection.
+   * ISSUE #7 fix: Prevents renderer from hanging indefinitely if main process becomes unresponsive.
+   * 
+   * @param promise The IPC promise to wrap
+   * @param operationName Name of the operation for error logging
+   * @returns Promise that resolves/rejects with the IPC result or timeout error
+   */
+  private withIpcTimeout<T>(promise: Promise<T>, operationName: string): Promise<T> {
+    const IPC_TIMEOUT_MS = 5000; // 5 second timeout
+    
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`IPC timeout: ${operationName} did not complete within ${IPC_TIMEOUT_MS}ms`)),
+          IPC_TIMEOUT_MS
+        )
+      )
+    ]);
   }
 
   /**
