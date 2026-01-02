@@ -22,7 +22,8 @@ export class MachineFrameRunner implements IMachineFrameRunner {
    * @returns The value indicates the termination reason of the loop
    */
   executeMachineFrame(): FrameTerminationMode {
-    this.machine.setFrameCommand(null);
+    // --- FIX for ISSUE #2: Don't clear frame command here - it will be cleared after response is ready
+    // --- this.machine.setFrameCommand(null);
     return this.machine.executionContext.debugStepMode === DebugStepMode.NoDebug
       ? this.executeMachineLoopWithNoDebug()
       : this.executeMachineLoopWithDebug();

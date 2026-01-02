@@ -18,6 +18,9 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _waitForBlock: boolean;
   private _blockToWrite: Uint8Array;
   private _dataIndex: number;
+  // --- FIX for ISSUE #1: Response Timing Race Condition
+  // --- Tracks whether the response from the main process is ready to be read by the Z80
+  private _responseReady: boolean;
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
@@ -48,6 +51,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._lastCommand = 0;
     this._response = new Uint8Array(0);
     this._responseIndex = -1;
+    // --- FIX for ISSUE #1: Initialize responseReady flag
+    this._responseReady = false;
     this._ocr = new Uint8Array([0x00, 0xc0, 0xff, 0x80, 0x00]);
     this._commandParams = [];
     this._waitForBlock = false;
@@ -70,6 +75,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   writeMmcData(data: number): void {
     // --- New command, we ignore the rest of the response
     this._responseIndex = -1;
+    // --- FIX for ISSUE #1: Mark response as not ready when starting a new command
+    this._responseReady = false;
 
     if (this._selectedCard) {
       // --- We can use only card 0
@@ -100,6 +107,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
           sector: sectorIndex,
           data: sectorData
         });
+        // --- FIX for ISSUE #1: Response is NOT ready yet - waiting for IPC response
+        this._responseReady = false;
       }
       return;
     }
@@ -187,6 +196,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             command: "sd-read",
             sector: sectorIndex
           });
+          // --- FIX for ISSUE #1: Response is NOT ready yet - waiting for IPC response
+          this._responseReady = false;
         }
         break;
 
@@ -198,7 +209,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
           this._waitForBlock = true;
           this._blockToWrite = new Uint8Array(3 + BYTES_PER_SECTOR);
           this._dataIndex = 0;
-          this.setMmcResponse(new Uint8Array([0xff, 0x00]));
+          // --- FIX for ISSUE #1: Use intermediate response (no IPC wait needed for this)
+          this.setMmcResponseIntermediate(new Uint8Array([0xff, 0x00]));
         }
         break;
 
@@ -241,9 +253,14 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     const now = this.machine.tacts;
-    if (now - this._lastByteReceived < READ_DELAY) {
-      // --- We are still waiting for result
-      return 0xff;
+    // --- FIX for ISSUE #1: Check if response is ready before reading
+    if (!this._responseReady) {
+      // --- Response from main process is not yet available
+      // --- Check if we should still apply read delay for immediate responses (like simple commands)
+      if (this._responseIndex === -1 && now - this._lastByteReceived < READ_DELAY) {
+        // --- We are still waiting for result
+        return 0xff;
+      }
     }
 
     if (this._responseIndex >= 0 && this._responseIndex < this._response.length) {
@@ -263,16 +280,29 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   setMmcResponse(response: Uint8Array): void {
     this._response = response;
     this._responseIndex = 0;
+    // --- FIX for ISSUE #1: Mark response as ready when response is set
+    this._responseReady = true;
+  }
+
+  // --- FIX for ISSUE #1: Set response but keep it marked as not ready (for intermediate responses)
+  // --- This is used for command acknowledgments that don't wait for main process
+  private setMmcResponseIntermediate(response: Uint8Array): void {
+    this._response = response;
+    this._responseIndex = 0;
+    // --- Do NOT mark as ready - this is an immediate response that doesn't need IPC
+    this._responseReady = false;
   }
 
   setWriteResponse(): void {
     this.setMmcResponse(new Uint8Array([0x05, 0xff, 0xfe]));
+    // --- FIX for ISSUE #1: setMmcResponse marks response as ready
   }
 
   setWriteErrorResponse(errorMessage?: string): void {
     // --- SD card error response: status byte indicates write error
     // --- 0x0D indicates a write error in SD card protocol
     this.setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+    // --- FIX for ISSUE #1: setMmcResponse marks response as ready
   }
 
   setReadResponse(sectorData: Uint8Array): void {
@@ -280,5 +310,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     response.set(new Uint8Array([0x00, 0xff, 0xfe]));
     response.set(sectorData, 3);
     this.setMmcResponse(response);
+    // --- FIX for ISSUE #1: setMmcResponse marks response as ready
   }
 }

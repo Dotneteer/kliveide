@@ -31,49 +31,61 @@ This document details the communication flow between `SdCardDevice` (renderer pr
 
 ## Critical Issues Found
 
-### 🔴 **ISSUE #1: Response Timing Race Condition (HIGH SEVERITY)**
+### � **ISSUE #1: Response Timing Race Condition (FIXED)**
 
 **Location**: `SdCardDevice.writeMmcData()` and `readMmcData()`
 
-**Problem**:
-- When `setFrameCommand()` is called, `SdCardDevice._responseIndex` is set to `-1` at the beginning of `writeMmcData()`
-- The Z80 CPU may immediately try to read the response via `readMmcData()` in the SAME CPU cycle
-- There's a `READ_DELAY` of only 56 tacts designed to simulate SD card latency
-- However, if the IPC call to main process is fast, the response is set immediately
-- But if there's ANY CPU instruction executed before `processFrameCommand()` is called, the delay calculation becomes unreliable
+**Problem** (RESOLVED):
+- ~~When `setFrameCommand()` is called, `SdCardDevice._responseIndex` is set to `-1` at the beginning of `writeMmcData()`~~
+- ~~The Z80 CPU may immediately try to read the response via `readMmcData()` in the SAME CPU cycle~~
+- ~~There's a `READ_DELAY` of only 56 tacts designed to simulate SD card latency~~
+- ~~However, if the IPC call to main process is fast, the response is set immediately~~
+- ~~But if there's ANY CPU instruction executed before `processFrameCommand()` is called, the delay calculation becomes unreliable~~
 
-**Consequences**:
-- Z80 may receive incomplete or misaligned response data
-- Read operations may return uninitialized memory
-- Write operations may report success before data is persisted
+**Solution Implemented** (2025-01-02):
+1. Added `_responseReady` flag to track whether response from main process is available
+2. Set `_responseReady = false` when initiating read/write commands
+3. Set `_responseReady = true` when response setters are called from `processFrameCommand()`
+4. Modified `readMmcData()` to respect the readiness flag and return 0xff (wait status) until response is ready
+5. Added `setMmcResponseIntermediate()` for intermediate command responses that don't wait for IPC
 
-**Root Cause**:
-```typescript
-// In writeMmcData() at command reception:
-this._responseIndex = -1;  // ← Clears response immediately
+**Consequences** (RESOLVED):
+- ✅ Z80 cannot read incomplete or misaligned response data
+- ✅ Read operations return proper data after main process persists it
+- ✅ Write operations report success only after data is persisted
+- ✅ Regression tests added and passing
 
-// Then later, response is set asynchronously after IPC round-trip
-// But Z80 might query readMmcData() before processFrameCommand() completes
-```
+**Status**: ✅ FIXED - [Regression tests pass](test/zxnext/SdCardDevice.test.ts)
 
-### 🔴 **ISSUE #2: Missing Synchronization Point (HIGH SEVERITY)**
+### � **ISSUE #2: Missing Synchronization Point (FIXED)**
 
-**Location**: `MachineFrameRunner.executeMachineLoopWithNoDebug()` (line 98)
+**Location**: `MachineFrameRunner.executeMachineFrame()` and `MachineController.run()`
 
-**Problem**:
-- When `machine.getFrameCommand()` is true, the frame loop EXITS immediately
-- `processFrameCommand()` is called in `MachineController.run()` AFTER the frame loop returns
-- However, the Z80 CPU is NOT paused during this IPC call
-- The next frame iteration happens BEFORE the response is available
-- The Z80 emulation has no synchronization barrier ensuring the response is ready before resuming
+**Problem** (RESOLVED):
+- ~~When `machine.getFrameCommand()` is true, the frame loop EXITS immediately~~
+- ~~`processFrameCommand()` is called in `MachineController.run()` AFTER the frame loop returns~~
+- ~~However, the Z80 CPU is NOT paused during this IPC call~~
+- ~~The next frame iteration happens BEFORE the response is available~~
+- ~~The Z80 emulation has no synchronization barrier ensuring the response is ready before resuming~~
 
-**Consequences**:
-- The Z80 resumes execution before the main process responds
-- SD card commands appear to complete instantly to the CPU, but data isn't ready
-- Causes timing violations in SD card protocols
+**Solution Implemented** (2025-01-02):
+1. Removed premature frame command clearing from `MachineFrameRunner.executeMachineFrame()` 
+2. Moved frame command clearing to AFTER `processFrameCommand()` completes in `MachineController.run()`
+3. This ensures the frame command persists through the async IPC call
+4. Guarantees that the response is set before the frame command is cleared
+5. Next frame iteration will check if response is ready (via Issue #1 fix) before resuming Z80
 
-**Root Cause**:
-The frame command is processed asynchronously outside the main execution loop.
+**Consequences** (RESOLVED):
+- ✅ Z80 execution is properly synchronized with response availability
+- ✅ SD card commands don't appear to complete before data is actually ready
+- ✅ Response readiness is checked before frame command is cleared
+- ✅ Regression tests added and passing
+
+**Implementation Details**:
+- **Before**: Frame command cleared at start of frame (line 25 MachineFrameRunner)
+- **After**: Frame command cleared after IPC response is processed (MachineController line 551)
+
+**Status**: ✅ FIXED - [Regression tests pass](test/zxnext/SdCardDevice.test.ts)
 
 ### 🔴 **ISSUE #3: Frame Command Cleared at Wrong Time (MEDIUM SEVERITY)**
 
@@ -197,9 +209,9 @@ case "sd-write":
 ## Recommended Fixes
 
 ### Priority 1: Critical Race Conditions
-1. **Add command completion synchronization**: Implement a barrier/event that blocks Z80 execution until IPC response is received
-2. **Add timeout protection**: Wrap all IPC calls with Promise.race([operation, timeout])
-3. **Queue commands properly**: Maintain a command queue with acknowledgments
+1. ✅ **FIXED**: **Add command completion synchronization** - Implemented a response readiness flag that prevents Z80 from reading the response until the main process has returned data
+2. ✅ **FIXED**: **Add synchronization barrier in frame loop** - Frame command is now cleared AFTER IPC response processing completes, ensuring Z80 doesn't resume before response is ready
+3. **Add timeout protection**: Wrap all IPC calls with Promise.race([operation, timeout])
 
 ### Priority 2: Validation & Safety
 4. **Validate sector indices**: Check against CIM file capacity before operations
@@ -207,7 +219,7 @@ case "sd-write":
 6. **Add error propagation**: Make Z80 aware of SD card errors via status responses
 
 ### Priority 3: Robustness
-7. **Fix frame command clearing**: Clear AFTER frame command is processed, not before
+7. ~~Fix frame command clearing~~ (DONE - moved to after response processing)
 8. **Add operation timeouts**: Prevent indefinite hangs on IPC failures
 9. **Implement write barriers**: Ensure data is persisted before sending response
 
