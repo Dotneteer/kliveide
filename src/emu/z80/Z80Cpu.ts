@@ -51,7 +51,7 @@ export class Z80Cpu implements IZ80Cpu {
     this._bcAltView = new DataView(new ArrayBuffer(2));
     this._deAltView = new DataView(new ArrayBuffer(2));
     this._hlAltView = new DataView(new ArrayBuffer(2));
-    
+
     // Initialize with IY as default index register
     this._indexView = this._iyView;
     this._prefix = OpCodePrefix.None;
@@ -540,7 +540,8 @@ export class Z80Cpu implements IZ80Cpu {
   set prefix(value: OpCodePrefix) {
     this._prefix = value;
     // Cache the index register DataView based on prefix
-    this._indexView = (value === OpCodePrefix.DD || value === OpCodePrefix.DDCB) ? this._ixView : this._iyView;
+    this._indexView =
+      value === OpCodePrefix.DD || value === OpCodePrefix.DDCB ? this._ixView : this._iyView;
   }
 
   /**
@@ -554,6 +555,11 @@ export class Z80Cpu implements IZ80Cpu {
    * internal tracking of the call stack accordingly.
    */
   retExecuted: boolean;
+
+  /**
+   * We need this flag to detect RETN instruction execution for ZX Spectrum Next DivMMC handling.
+   */
+  retnExecuted: boolean;
 
   /**
    * We keep subroutine return addresses in this stack to implement the step-over debugger function
@@ -581,7 +587,8 @@ export class Z80Cpu implements IZ80Cpu {
   markStepOutAddress(): void {
     if (this.stepOutStackCount > 0) {
       // Get the last pushed address (most recent)
-      const lastIndex = (this.stepOutStackPointer - 1 + MAX_STEP_OUT_STACK_SIZE) % MAX_STEP_OUT_STACK_SIZE;
+      const lastIndex =
+        (this.stepOutStackPointer - 1 + MAX_STEP_OUT_STACK_SIZE) % MAX_STEP_OUT_STACK_SIZE;
       this.stepOutAddress = this.stepOutStack[lastIndex];
     } else {
       this.stepOutAddress = -1;
@@ -694,6 +701,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.prefix = OpCodePrefix.None;
     this.eiBacklog = 0;
     this.retExecuted = false;
+    this.retnExecuted = false;
     this.stepOutStack = [];
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
@@ -737,6 +745,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.prefix = OpCodePrefix.None;
     this.eiBacklog = 0;
     this.retExecuted = false;
+    this.retnExecuted = false;
     this.stepOutStack = [];
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
@@ -829,6 +838,7 @@ export class Z80Cpu implements IZ80Cpu {
   executeCpuCycle(): void {
     // --- No RET executed yet
     this.retExecuted = false;
+    this.retnExecuted = false;
 
     // --- Modify the EI interrupt backlog value
     if (this.eiBacklog > 0) {
@@ -1168,10 +1178,10 @@ export class Z80Cpu implements IZ80Cpu {
   pushToStepOutStack(returnAddress: number): void {
     // Write to current position in circular buffer
     this.stepOutStack[this.stepOutStackPointer] = returnAddress;
-    
+
     // Advance pointer (wrap around at buffer size)
     this.stepOutStackPointer = (this.stepOutStackPointer + 1) % MAX_STEP_OUT_STACK_SIZE;
-    
+
     // Track count (saturate at buffer size)
     if (this.stepOutStackCount < MAX_STEP_OUT_STACK_SIZE) {
       this.stepOutStackCount++;
@@ -1186,12 +1196,13 @@ export class Z80Cpu implements IZ80Cpu {
    */
   add16(regHl: number, regOther: number): number {
     const tmpVal = regHl + regOther;
-    const lookup = ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
-    
+    const lookup =
+      ((regHl & 0x0800) >>> 11) | ((regOther & 0x0800) >>> 10) | ((tmpVal & 0x0800) >>> 9);
+
     this.wz = regHl + 1;
     this.f =
       this.flagsSZPVValue |
-      ((tmpVal & 0x10000) >>> 16) |  // Carry flag: extract bit 16 then shift to bit 0
+      ((tmpVal & 0x10000) >>> 16) | // Carry flag: extract bit 16 then shift to bit 0
       ((tmpVal >>> 8) & FlagsSetMask.R3R5) |
       halfCarryAddFlags[lookup];
     return tmpVal & 0xffff;
@@ -1202,18 +1213,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   adc16(value: number): void {
-    const hl = this.hl;  // Cache HL to avoid multiple getter calls
+    const hl = this.hl; // Cache HL to avoid multiple getter calls
     const carry = this.flagCValue;
     const tmpVal = hl + value + carry;
     const lookup = ((hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    
+
     this.wz = hl + 1;
     this.hl = tmpVal;
-    
+
     // Compute flags in optimal order to minimize memory access
-    const h = tmpVal >>> 8;  // Extract high byte once
+    const h = tmpVal >>> 8; // Extract high byte once
     this.f =
-      (tmpVal >>> 16) |  // Carry flag (bit 0): 1 if bit 16 is set, 0 otherwise
+      (tmpVal >>> 16) | // Carry flag (bit 0): 1 if bit 16 is set, 0 otherwise
       overflowAddFlags[lookup >>> 4] |
       halfCarryAddFlags[lookup & 0x07] |
       (h & (FlagsSetMask.R3R5 | FlagsSetMask.S)) |
@@ -1225,18 +1236,18 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from HL
    */
   sbc16(value: number): void {
-    const hl = this.hl;  // Cache HL to avoid multiple getter calls
+    const hl = this.hl; // Cache HL to avoid multiple getter calls
     const carry = this.flagCValue;
     const tmpVal = hl - value - carry;
     const lookup = ((hl & 0x8800) >>> 11) | ((value & 0x8800) >>> 10) | ((tmpVal & 0x8800) >>> 9);
-    
+
     this.wz = hl + 1;
     this.hl = tmpVal;
-    
+
     // Compute flags in optimal order to minimize memory access
-    const h = tmpVal >>> 8;  // Extract high byte once
+    const h = tmpVal >>> 8; // Extract high byte once
     this.f =
-      ((tmpVal & 0x10000) >>> 16) |  // Carry flag: extract bit 16 then shift to bit 0
+      ((tmpVal & 0x10000) >>> 16) | // Carry flag: extract bit 16 then shift to bit 0
       FlagsSetMask.N |
       overflowSubFlags[lookup >>> 4] |
       halfCarrySubFlags[lookup & 0x07] |
@@ -1263,13 +1274,13 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sub8(value: number): void {
-    const a = this.a;  // Cache A to avoid multiple getter calls
+    const a = this.a; // Cache A to avoid multiple getter calls
     const tmp = a - value;
     const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    
+
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
+      ((tmp & 0x100) >>> 8) | // Carry flag: extract bit 8 then shift to bit 0
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
@@ -1281,14 +1292,14 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to subtract from A
    */
   sbc8(value: number): void {
-    const a = this.a;  // Cache A to avoid multiple getter calls
+    const a = this.a; // Cache A to avoid multiple getter calls
     const carry = this.flagCValue;
     const tmp = a - value - carry;
     const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    
+
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
+      ((tmp & 0x100) >>> 8) | // Carry flag: extract bit 8 then shift to bit 0
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
@@ -1300,13 +1311,13 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to add to A
    */
   add8(value: number): void {
-    const a = this.a;  // Cache A to avoid multiple getter calls
+    const a = this.a; // Cache A to avoid multiple getter calls
     const tmp = a + value;
     const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    
+
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
+      ((tmp & 0x100) >>> 8) | // Carry flag: extract bit 8 then shift to bit 0
       halfCarryAddFlags[lookup & 0x07] |
       overflowAddFlags[lookup >>> 4] |
       sz53Table[tmp & 0xff];
@@ -1317,14 +1328,14 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to add to A
    */
   adc8(value: number): void {
-    const a = this.a;  // Cache A to avoid multiple getter calls
+    const a = this.a; // Cache A to avoid multiple getter calls
     const carry = this.flagCValue;
     const tmp = a + value + carry;
     const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    
+
     this.a = tmp;
     this.f =
-      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
+      ((tmp & 0x100) >>> 8) | // Carry flag: extract bit 8 then shift to bit 0
       halfCarryAddFlags[lookup & 0x07] |
       overflowAddFlags[lookup >>> 4] |
       sz53Table[tmp & 0xff];
@@ -1362,13 +1373,13 @@ export class Z80Cpu implements IZ80Cpu {
    * @param value Value to compare with A
    */
   cp8(value: number): void {
-    const a = this.a;  // Cache A to avoid multiple getter calls
+    const a = this.a; // Cache A to avoid multiple getter calls
     const tmp = a - value;
     const lookup = ((a & 0x88) >>> 3) | ((value & 0x88) >>> 2) | ((tmp & 0x88) >>> 1);
-    
+
     this.f =
-      ((tmp & 0x100) >>> 8) |  // Carry flag: extract bit 8 then shift to bit 0
-      (tmp & 0xff ? 0 : FlagsSetMask.Z) |  // Zero flag: check if result is zero
+      ((tmp & 0x100) >>> 8) | // Carry flag: extract bit 8 then shift to bit 0
+      (tmp & 0xff ? 0 : FlagsSetMask.Z) | // Zero flag: check if result is zero
       FlagsSetMask.N |
       halfCarrySubFlags[lookup & 0x07] |
       overflowSubFlags[lookup >>> 4] |
@@ -1477,15 +1488,15 @@ export class Z80Cpu implements IZ80Cpu {
   bit8(bit: number, oper: number): void {
     const bitMask = 0x01 << bit;
     const bitVal = oper & bitMask;
-    
+
     // Build flags: start with carry, H flag, and R3R5 from operand
     // If bit is 0, add PV and Z flags
     // Add S flag from the bit value
-    this.f = 
-      this.flagCValue | 
-      FlagsSetMask.H | 
+    this.f =
+      this.flagCValue |
+      FlagsSetMask.H |
       (oper & FlagsSetMask.R3R5) |
-      (bitVal ? 0 : (FlagsSetMask.PV | FlagsSetMask.Z)) |
+      (bitVal ? 0 : FlagsSetMask.PV | FlagsSetMask.Z) |
       (bitVal & FlagsSetMask.S);
   }
 
@@ -1497,15 +1508,15 @@ export class Z80Cpu implements IZ80Cpu {
   bit8W(bit: number, oper: number): void {
     const bitMask = 0x01 << bit;
     const bitVal = oper & bitMask;
-    
+
     // Build flags: start with carry, H flag, and R3R5 from WH register
     // If bit is 0, add PV and Z flags
     // Add S flag from the bit value
-    this.f = 
-      this.flagCValue | 
-      FlagsSetMask.H | 
+    this.f =
+      this.flagCValue |
+      FlagsSetMask.H |
       (this.wh & FlagsSetMask.R3R5) |
-      (bitVal ? 0 : (FlagsSetMask.PV | FlagsSetMask.Z)) |
+      (bitVal ? 0 : FlagsSetMask.PV | FlagsSetMask.Z) |
       (bitVal & FlagsSetMask.S);
   }
 
@@ -8006,6 +8017,7 @@ function neg(cpu: Z80Cpu) {
 // 0x45: RETN
 function retn(cpu: Z80Cpu) {
   cpu.iff1 = cpu.iff2;
+  cpu.retnExecuted = true;
   ret(cpu);
 }
 

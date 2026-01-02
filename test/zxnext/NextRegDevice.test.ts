@@ -3110,7 +3110,7 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(readNextReg(m, 0xbb)).toBe(0x5a);
     expect(div.automapOn3dxx).toBe(false);
-    expect(div.disableAutomapOn1ff8).toBe(true);
+    expect(div.automapOff1ff8).toBe(true);
     expect(div.automapOn056a).toBe(false);
     expect(div.automapOn04d7).toBe(true);
     expect(div.automapOn0562).toBe(true);
