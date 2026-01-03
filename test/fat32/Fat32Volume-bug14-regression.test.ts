@@ -33,7 +33,7 @@ describe("FAT32 Bug #14 Regression Tests - Volume Label Initialization", () => {
       const root = volume.openRootDirectory();
       
       // Read first directory entry (should be the volume label)
-      root.seekSet(0);
+      // Root directory starts at position 0, so no seek needed
       const buffer = root.readFileData(32);
       
       expect(buffer).not.toBeNull();
@@ -67,7 +67,7 @@ describe("FAT32 Bug #14 Regression Tests - Volume Label Initialization", () => {
       const root = volume.openRootDirectory();
       
       // First entry should be volume label
-      root.seekSet(0);
+      // Root directory starts at position 0, so no seek needed
       const firstEntry = root.readFileData(32);
       expect(firstEntry).not.toBeNull();
       if (firstEntry) {
@@ -76,7 +76,7 @@ describe("FAT32 Bug #14 Regression Tests - Volume Label Initialization", () => {
       }
       
       // Second entry should be free (0x00 or 0xE5)
-      root.seekSet(32);
+      // After reading first 32 bytes, position is already at 32
       const secondEntry = root.readFileData(32);
       expect(secondEntry).not.toBeNull();
       if (secondEntry) {
@@ -110,7 +110,7 @@ describe("FAT32 Bug #14 Regression Tests - Volume Label Initialization", () => {
       
       try {
         const root = volume.openRootDirectory();
-        root.seekSet(0);
+        // Root directory starts at position 0, so no seek needed
         const buffer = root.readFileData(32);
         
         expect(buffer).not.toBeNull();
