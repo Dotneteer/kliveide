@@ -378,6 +378,14 @@ export class Fat32Volume {
    * Allocates a cluster for a file.
    * @param current Current cluster number
    * @returns Allocate cluster number or null if allocation failed
+   * 
+   * ⚠️ NOTE: This method is NOT thread-safe. There is a race condition window
+   * between getFatEntry(found) === 0 check and setFatEntry(found, 0x0fffffff)
+   * where concurrent calls could allocate the same cluster.
+   * 
+   * This is acceptable because FAT32Volume is designed for single-threaded
+   * usage (as used in KLive IDE, a single-threaded emulator). For multi-threaded
+   * environments, a lock must be implemented around cluster allocation.
    */
   allocateCluster(current: number): number | null {
     let found: number;

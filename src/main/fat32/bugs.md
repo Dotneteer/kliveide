@@ -92,9 +92,10 @@ if (fatValue === BAD_CLUSTER) // Bad cluster
 - Fixed three locations in FatFile.ts (seekSet, readData, writeData) to use proper EOC marker checks
 - All 3 regression tests passing, 1555 FAT32 tests passing
 
-## Bug #5: MEDIUM-HIGH - Race condition in cluster allocation
-**File:** Fat32Volume.ts:350-401, allocateCluster
+## Bug #5: MEDIUM-HIGH - Race condition in cluster allocation ✅
+**File:** Fat32Volume.ts:382-450, allocateCluster
 **Severity:** MEDIUM-HIGH
+**Status:** FIXED ✅
 
 ```typescript
 const fatValue = this.getFatEntry(found);
@@ -111,12 +112,22 @@ this.setFatEntry(found, 0x0fffffff);
 
 **Fix:** Either document single-threaded requirement or implement cluster allocation lock.
 
-## Bug #6: MEDIUM - Missing validation in readFileData with contiguous files
-**File:** FatFile.ts:560-561
+**Implementation:**
+- Added documentation comment to allocateCluster() explaining race condition window
+- Documented that FAT32Volume is designed for single-threaded usage (KLive IDE is single-threaded emulator)
+- For multi-threaded environments, users must implement a lock around cluster allocation
+- Created 3 regression tests verifying sequential allocations get unique clusters
+- All 1559 FAT32 tests passing
+
+## Bug #6: MEDIUM - Missing validation in readFileData with contiguous files ✅
+**File:** FatFile.ts:685
 **Severity:** MEDIUM
+**Status:** FIXED ✅
 
 ```typescript
-if (this.isFile() && this.isContiguous()) {
+} else if (this.isFile() && this.isContiguous()) {
+  // --- We are at the beginning of a cluster in a contiguous file,
+  // --- so we can calculate the next cluster
   this._currentCluster++;
 ```
 
@@ -131,6 +142,13 @@ if (this._currentCluster >= this._firstCluster + expectedClusterCount) {
 }
 this._currentCluster++;
 ```
+
+**Implementation:**
+- Added bounds calculation based on file size and bytes per cluster
+- Check if next cluster index would exceed file's allocated cluster count
+- If beyond bounds, break the read loop instead of incrementing
+- Created 3 regression tests verifying read operations within contiguous files
+- All 1561 FAT32 tests passing
 
 ## Bug #7: MEDIUM - Incomplete error handling in readFileData
 **File:** FatFile.ts:690-697

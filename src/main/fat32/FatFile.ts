@@ -685,6 +685,19 @@ export class FatFile {
         } else if (this.isFile() && this.isContiguous()) {
           // --- We are at the beginning of a cluster in a contiguous file,
           // --- so we can calculate the next cluster
+          // ✅ FIX Bug #6: Add bounds check to ensure we don't read past EOF
+          // Calculate how many clusters the file should have
+          const fileSize = this._fileSize;
+          const bytesPerCluster = this.volume.bytesPerCluster;
+          const clustersInFile = (fileSize + bytesPerCluster - 1) >> this.volume.bytesPerClusterShift;
+          const currentClusterIndex = this._currentCluster - this._firstCluster;
+          
+          // Check if next cluster would be beyond file bounds
+          if (currentClusterIndex + 1 >= clustersInFile) {
+            // We've reached the end of the file's allocated clusters
+            break;
+          }
+          
           this._currentCluster++;
         } else {
           // --- We are at the beginning of a cluster in a non-contiguous file or in a directory
