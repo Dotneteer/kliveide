@@ -153,7 +153,7 @@ export class CimFile {
         sectorSize: SECTOR_SIZE,
         clusterCount,
         clusterSize,
-        maxClusters: 0,
+        maxClusters: 0, // Counter for physical clusters allocated (grows from 0)
         maxSize,
         reserved: isReadOnly ? 1 : 0,
         clusterMap: []

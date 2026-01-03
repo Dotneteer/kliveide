@@ -323,6 +323,16 @@ export class Fat32Volume {
     const dv = new DataView(buffer.buffer);
     dv.setInt32(offset, value, true);
     this.file.writeSector(sector, buffer);
+    
+    // ✅ FIX Bug #2: Write to both FAT tables for redundancy
+    // FAT32 requires BPB_NumFATs (typically 2) mirrored FAT tables
+    // Update FAT2 at the mirrored sector offset
+    const fatSize = this.bootSector.BPB_FATSz32;
+    const fat2Sector = sector + fatSize;
+    const buffer2 = this.file.readSector(fat2Sector);
+    const dv2 = new DataView(buffer2.buffer);
+    dv2.setInt32(offset, value, true);
+    this.file.writeSector(fat2Sector, buffer2);
   }
 
   /**
