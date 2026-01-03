@@ -2,7 +2,12 @@ import { describe, it, expect, assert } from "vitest";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
-import { CimFileManager, CIM_HEADER, MAX_CLUSTERS, CLUSTER_BASE_SIZE } from "@main/fat32/CimFileManager";
+import {
+  CimFileManager,
+  CIM_HEADER,
+  MAX_CLUSTERS,
+  CLUSTER_BASE_SIZE
+} from "@main/fat32/CimFileManager";
 import { Fat32Volume } from "@main/fat32/Fat32Volume";
 import { FileManager } from "@main/fat32/FileManager";
 
@@ -34,6 +39,84 @@ interface CimValidationResult {
   };
 }
 
+describe("FileManager", () => {
+  it("Copy works", async () => {
+    // // --- Arrange
+    // const filePath = createTestFile();
+    // const cfm = new CimFileManager();
+    // const file = cfm.createFile(filePath, SIZE_IN_MB);
+    // const vol = new Fat32Volume(file);
+    // vol.format("KS2");
+    // vol.init();
+    // const fm = new FileManager(vol);
+    // // --- Act
+    // try {
+    //   await fm.copyFiles(path.join(os.homedir(), "KliveIDE KS2 Image"), "");
+    // } catch (e) {
+    //   console.log(e);
+    // }
+    // // --- Close the file to ensure all data is written
+    // file.close();
+    // // --- Validate CIM file integrity
+    // const validation = validateCimFile(filePath);
+    // // Log validation results
+    // console.log('\n════════════════════════════════════════════════════════════');
+    // console.log('CIM FILE VALIDATION REPORT');
+    // console.log('════════════════════════════════════════════════════════════');
+    // console.log(`File: ${filePath}`);
+    // console.log(`Size: ${(validation.stats.fileSize / 1024 / 1024).toFixed(2)} MB`);
+    // console.log(`Version: ${validation.stats.header.version}`);
+    // console.log(`Cluster Size: ${validation.stats.header.clusterSize} × 64KB`);
+    // console.log(`Allocated Clusters: ${validation.stats.clusterMap.allocated}`);
+    // console.log(`Empty Clusters: ${validation.stats.clusterMap.empty}`);
+    // if (validation.warnings.length > 0) {
+    //   console.log('\nWARNINGS:');
+    //   validation.warnings.forEach(w => console.log(`  ⚠ ${w}`));
+    // }
+    // if (validation.errors.length > 0) {
+    //   console.log('\nERRORS:');
+    //   validation.errors.forEach(e => console.log(`  ✗ ${e}`));
+    // }
+    // if (validation.valid) {
+    //   console.log('\n✓ CIM file validation PASSED');
+    // } else {
+    //   console.log('\n✗ CIM file validation FAILED');
+    // }
+    // console.log('════════════════════════════════════════════════════════════\n');
+    // // --- Assert validation passed
+    // expect(validation.valid, `CIM validation failed:\n${validation.errors.join('\n')}`).toBe(true);
+    // expect(validation.stats.clusterMap.outOfBounds, 'Out-of-bounds cluster pointers detected').toBe(0);
+    // expect(validation.stats.clusterMap.duplicates, 'Duplicate physical cluster allocations detected').toBe(0);
+    // // --- Convert to image file
+    // const imgFilePath = createImageFile();
+    // cfm.convertToImageFile(file, imgFilePath);
+  });
+});
+
+function createTestFile(): string {
+  const homeDir = os.homedir();
+  const testDir = path.join(homeDir, TEST_DIR);
+  const filePath = path.join(testDir, TEST_FILE);
+
+  // Ensure the test directory exists
+  if (!fs.existsSync(testDir)) {
+    fs.mkdirSync(testDir);
+  }
+  return filePath;
+}
+
+function createImageFile(): string {
+  const homeDir = os.homedir();
+  const testDir = path.join(homeDir, TEST_DIR);
+  const filePath = path.join(testDir, TEST_IMAGE_FILE);
+
+  // Ensure the test directory exists
+  if (!fs.existsSync(testDir)) {
+    fs.mkdirSync(testDir);
+  }
+  return filePath;
+}
+
 /**
  * Validates the consistency and integrity of a CIM file
  */
@@ -43,7 +126,7 @@ function validateCimFile(filePath: string): CimValidationResult {
   const warnings: string[] = [];
 
   if (buffer.length < 16) {
-    errors.push('File too small (minimum 16 bytes for header)');
+    errors.push("File too small (minimum 16 bytes for header)");
     return {
       valid: false,
       errors,
@@ -54,7 +137,7 @@ function validateCimFile(filePath: string): CimValidationResult {
 
   // Read header
   let offset = 0;
-  const header = buffer.toString('utf8', offset, offset + 4);
+  const header = buffer.toString("utf8", offset, offset + 4);
   offset += 4;
 
   if (header !== CIM_HEADER) {
@@ -97,7 +180,9 @@ function validateCimFile(filePath: string): CimValidationResult {
   }
 
   if (maxClusters > clusterCount) {
-    errors.push(`maxClusters (${maxClusters}) exceeds clusterCount (${clusterCount}) - data corruption`);
+    errors.push(
+      `maxClusters (${maxClusters}) exceeds clusterCount (${clusterCount}) - data corruption`
+    );
   }
 
   // Analyze cluster map
@@ -115,7 +200,9 @@ function validateCimFile(filePath: string): CimValidationResult {
       emptyCount++;
     } else if (ptr >= clusterCount) {
       outOfBounds++;
-      errors.push(`Logical cluster ${i} maps to physical ${ptr} (out of bounds, capacity=${clusterCount})`);
+      errors.push(
+        `Logical cluster ${i} maps to physical ${ptr} (out of bounds, capacity=${clusterCount})`
+      );
     } else {
       allocatedCount++;
       if (!physicalUsage.has(ptr)) {
@@ -129,7 +216,9 @@ function validateCimFile(filePath: string): CimValidationResult {
   for (const [phys, logicals] of physicalUsage) {
     if (logicals.length > 1) {
       duplicates.set(phys, logicals);
-      errors.push(`CRITICAL: Physical cluster ${phys} allocated to multiple logical clusters [${logicals.join(', ')}]`);
+      errors.push(
+        `CRITICAL: Physical cluster ${phys} allocated to multiple logical clusters [${logicals.join(", ")}]`
+      );
     }
   }
 
@@ -152,9 +241,7 @@ function validateCimFile(filePath: string): CimValidationResult {
 
   // Additional sanity checks
   if (allocatedCount > 0 && maxClusters === 0) {
-    errors.push(
-      `Header inconsistency: ${allocatedCount} clusters allocated but maxClusters=0`
-    );
+    errors.push(`Header inconsistency: ${allocatedCount} clusters allocated but maxClusters=0`);
   }
 
   return {
@@ -179,91 +266,4 @@ function validateCimFile(filePath: string): CimValidationResult {
       }
     }
   };
-}
-
-describe("FileManager", () => {
-  it("Copy works", async () => {
-    // // --- Arrange
-    // const filePath = createTestFile();
-    // const cfm = new CimFileManager();
-    // const file = cfm.createFile(filePath, SIZE_IN_MB);
-    // const vol = new Fat32Volume(file);
-    // vol.format("KS2");
-    // vol.init();
-    // const fm = new FileManager(vol);
-
-    // // --- Act
-    // try {
-    //   await fm.copyFiles(path.join(os.homedir(), "KliveIDE KS2 Image"), "");
-    // } catch (e) {
-    //   console.log(e);
-    // }
-
-    // // --- Close the file to ensure all data is written
-    // file.close();
-
-    // // --- Validate CIM file integrity
-    // const validation = validateCimFile(filePath);
-
-    // // Log validation results
-    // console.log('\n════════════════════════════════════════════════════════════');
-    // console.log('CIM FILE VALIDATION REPORT');
-    // console.log('════════════════════════════════════════════════════════════');
-    // console.log(`File: ${filePath}`);
-    // console.log(`Size: ${(validation.stats.fileSize / 1024 / 1024).toFixed(2)} MB`);
-    // console.log(`Version: ${validation.stats.header.version}`);
-    // console.log(`Cluster Size: ${validation.stats.header.clusterSize} × 64KB`);
-    // console.log(`Allocated Clusters: ${validation.stats.clusterMap.allocated}`);
-    // console.log(`Empty Clusters: ${validation.stats.clusterMap.empty}`);
-    
-    // if (validation.warnings.length > 0) {
-    //   console.log('\nWARNINGS:');
-    //   validation.warnings.forEach(w => console.log(`  ⚠ ${w}`));
-    // }
-
-    // if (validation.errors.length > 0) {
-    //   console.log('\nERRORS:');
-    //   validation.errors.forEach(e => console.log(`  ✗ ${e}`));
-    // }
-
-    // if (validation.valid) {
-    //   console.log('\n✓ CIM file validation PASSED');
-    // } else {
-    //   console.log('\n✗ CIM file validation FAILED');
-    // }
-    // console.log('════════════════════════════════════════════════════════════\n');
-
-    // // --- Assert validation passed
-    // expect(validation.valid, `CIM validation failed:\n${validation.errors.join('\n')}`).toBe(true);
-    // expect(validation.stats.clusterMap.outOfBounds, 'Out-of-bounds cluster pointers detected').toBe(0);
-    // expect(validation.stats.clusterMap.duplicates, 'Duplicate physical cluster allocations detected').toBe(0);
-
-    // // --- Convert to image file
-    // const imgFilePath = createImageFile();
-    // cfm.convertToImageFile(file, imgFilePath);
-  });
-});
-
-function createTestFile(): string {
-  const homeDir = os.homedir();
-  const testDir = path.join(homeDir, TEST_DIR);
-  const filePath = path.join(testDir, TEST_FILE);
-
-  // Ensure the test directory exists
-  if (!fs.existsSync(testDir)) {
-    fs.mkdirSync(testDir);
-  }
-  return filePath;
-}
-
-function createImageFile(): string {
-  const homeDir = os.homedir();
-  const testDir = path.join(homeDir, TEST_DIR);
-  const filePath = path.join(testDir, TEST_IMAGE_FILE);
-
-  // Ensure the test directory exists
-  if (!fs.existsSync(testDir)) {
-    fs.mkdirSync(testDir);
-  }
-  return filePath;
 }

@@ -29,6 +29,29 @@ export const ERROR_INVALID_FAT32_SIZE = "Invalid FAT32 size.";
 export const ERROR_FAT_ENTRY_OUT_OF_RANGE = "FAT entry index out of range.";
 
 /**
+ * ✅ FIX Bug #4: FAT32 special value constants
+ * These are proper FAT32 end-of-cluster chain markers and special values
+ */
+export const FAT32_EOC_MIN = 0x0FFFFFF8;     // Minimum end-of-cluster marker
+export const FAT32_EOC_MAX = 0x0FFFFFFF;     // Maximum end-of-cluster marker
+export const FAT32_BAD_CLUSTER = 0x0FFFFFF7; // Bad cluster marker
+export const FAT32_FREE_CLUSTER = 0x00000000; // Free cluster
+
+/**
+ * Helper function to check if a FAT entry value represents end-of-chain
+ */
+function isEndOfChain(fatValue: number): boolean {
+  return fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX;
+}
+
+/**
+ * Helper function to check if a FAT entry value represents a bad cluster
+ */
+function isBadCluster(fatValue: number): boolean {
+  return fatValue === FAT32_BAD_CLUSTER;
+}
+
+/**
  * This class represents a FAT32 volume
  */
 
@@ -470,8 +493,11 @@ export class Fat32Volume {
   }
 
   updateFreeClusterCount(change: number) {
+    // ✅ FIX Bug #3: Make FSInfo update as atomic as possible
+    // Read-modify-write pattern with minimal window for inconsistency
+    // Note: FSInfo is advisory-only per FAT32 spec and can be recalculated from FAT
     const fsInfo = this.readFsInfoSector();
-    fsInfo.FSI_Free_Count += change;
+    fsInfo.FSI_Free_Count = Math.max(0, fsInfo.FSI_Free_Count + change);
     this.writeFsInfoSector(fsInfo);
   }
 

@@ -44,7 +44,7 @@ import {
   FAT_ATTRIB_LONG_NAME,
   FS_ATTR_FILE
 } from "./Fat32Types";
-import { Fat32Volume } from "./Fat32Volume";
+import { Fat32Volume, FAT32_EOC_MIN, FAT32_EOC_MAX } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
 import { FatLongFileName } from "./FatLongFileName";
 import { calcShortNameCheckSum, getLongFileFatEntries } from "./file-names";
@@ -571,7 +571,9 @@ export class FatFile {
     if (this._currentCluster > 0) {
       while (nNew--) {
         const fatValue = this.volume.getFatEntry(this._currentCluster);
-        if (fatValue >= this.volume.countOfClusters) {
+        // ✅ FIX Bug #4: Check for proper FAT32 EOC markers (0xFFFFFFF8-0xFFFFFFFF)
+        // instead of comparing with countOfClusters
+        if (fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX) {
           throw new Error(ERROR_SEEK_PAST_EOC);
         }
         this._currentCluster = fatValue;
@@ -688,7 +690,9 @@ export class FatFile {
           // --- We are at the beginning of a cluster in a non-contiguous file or in a directory
           // --- We need to follow the cluster chain
           const fatValue = this.volume.getFatEntry(this._currentCluster);
-          if (fatValue >= this.volume.countOfClusters) {
+          // ✅ FIX Bug #4: Check for proper FAT32 EOC markers (0xFFFFFFF8-0xFFFFFFFF)
+          // instead of comparing with countOfClusters
+          if (fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX) {
             if (this.isDirectory()) {
               break;
             }
@@ -809,7 +813,9 @@ export class FatFile {
             // --- We are in a non-contiguous file or in a directory,
             // --- so we need to follow the cluster chain
             const fatValue = this.volume.getFatEntry(this._currentCluster);
-            if (fatValue >= this.volume.countOfClusters) {
+            // ✅ FIX Bug #4: Check for proper FAT32 EOC markers (0xFFFFFFF8-0xFFFFFFFF)
+            // instead of comparing with countOfClusters
+            if (fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX) {
               // --- We are at the end of the cluster chain
               this.addCluster();
             } else {

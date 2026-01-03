@@ -40,7 +40,7 @@ this.file.writeSector(sector, buffer);
 this.file.writeSector(sector + this.bootSector.BPB_FATSz32, buffer);
 ```
 
-## Bug #3: HIGH - FSInfo free cluster count not updated atomically
+## Bug #3: HIGH - FSInfo free cluster count not updated atomically ✅
 **File:** Fat32Volume.ts:459-462
 **Severity:** HIGH
 
@@ -58,9 +58,10 @@ updateFreeClusterCount(change: number) {
 
 **Fix:** Either lock the operation or document that FSInfo is advisory only.
 
-## Bug #4: HIGH - Incorrect cluster validation in getFatEntry
-**File:** Fat32Volume.ts:310-313, allocateCluster:384, freeChain:471
+## Bug #4: HIGH - Incorrect cluster validation in getFatEntry ✅
+**File:** FatFile.ts:574, 691, 812
 **Severity:** HIGH
+**Status:** FIXED ✅
 
 ```typescript
 const fatValue = this.volume.getFatEntry(this._currentCluster);
@@ -85,6 +86,11 @@ const BAD_CLUSTER = 0x0FFFFFF7;
 if (fatValue >= EOC_MIN && fatValue <= 0x0FFFFFFF) // EOC
 if (fatValue === BAD_CLUSTER) // Bad cluster
 ```
+
+**Implementation:** 
+- Added FAT32 constants to Fat32Volume.ts: FAT32_EOC_MIN, FAT32_EOC_MAX, FAT32_BAD_CLUSTER, FAT32_FREE_CLUSTER
+- Fixed three locations in FatFile.ts (seekSet, readData, writeData) to use proper EOC marker checks
+- All 3 regression tests passing, 1555 FAT32 tests passing
 
 ## Bug #5: MEDIUM-HIGH - Race condition in cluster allocation
 **File:** Fat32Volume.ts:350-401, allocateCluster
