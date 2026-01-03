@@ -55,6 +55,18 @@ describe("FileManager", () => {
     // } catch (e) {
     //   console.log(e);
     // }
+    // // --- Verify all files were copied correctly by reading them back
+    // const sourceDir = path.join(os.homedir(), "KliveIDE KS2 Image");
+    // const verificationErrors = await verifyFilesMatch(vol, sourceDir, "");
+    
+    // if (verificationErrors.length > 0) {
+    //   console.log('\n════════════════════════════════════════════════════════════');
+    //   console.log('FILE VERIFICATION ERRORS');
+    //   console.log('════════════════════════════════════════════════════════════');
+    //   verificationErrors.forEach(err => console.log(`  ✗ ${err}`));
+    //   console.log('════════════════════════════════════════════════════════════\n');
+    // }
+    
     // // --- Close the file to ensure all data is written
     // file.close();
     // // --- Validate CIM file integrity
@@ -84,6 +96,7 @@ describe("FileManager", () => {
     // }
     // console.log('════════════════════════════════════════════════════════════\n');
     // // --- Assert validation passed
+    // expect(verificationErrors.length, `File verification failed:\n${verificationErrors.join('\n')}`).toBe(0);
     // expect(validation.valid, `CIM validation failed:\n${validation.errors.join('\n')}`).toBe(true);
     // expect(validation.stats.clusterMap.outOfBounds, 'Out-of-bounds cluster pointers detected').toBe(0);
     // expect(validation.stats.clusterMap.duplicates, 'Duplicate physical cluster allocations detected').toBe(0);
@@ -115,6 +128,96 @@ function createImageFile(): string {
     fs.mkdirSync(testDir);
   }
   return filePath;
+}
+
+/**
+ * Recursively verifies that all files in the source directory match the files in the volume
+ * @param vol The FAT32 volume to read from
+ * @param sourceDir The source directory path
+ * @param volumePath The current path in the volume (relative)
+ * @returns Array of error messages (empty if all files match)
+ */
+async function verifyFilesMatch(
+  vol: Fat32Volume,
+  sourceDir: string,
+  volumePath: string
+): Promise<string[]> {
+  const errors: string[] = [];
+  const fm = new FileManager(vol);
+  
+  // Get all entries in source directory
+  const sourceEntries = fs.readdirSync(sourceDir, { withFileTypes: true });
+  
+  for (const entry of sourceEntries) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const volumeFilePath = volumePath ? `${volumePath}/${entry.name}` : entry.name;
+    
+    if (entry.isDirectory()) {
+      // Verify directory exists in volume
+      try {
+        const volumeFile = vol.open(volumeFilePath, 0);
+        if (!volumeFile) {
+          errors.push(`Directory not found in volume: ${volumeFilePath}`);
+          continue;
+        }
+        if (!volumeFile.isDirectory()) {
+          errors.push(`Expected directory but found file: ${volumeFilePath}`);
+          volumeFile.close();
+          continue;
+        }
+        volumeFile.close();
+        
+        // Recursively verify subdirectory
+        const subErrors = await verifyFilesMatch(vol, sourcePath, volumeFilePath);
+        errors.push(...subErrors);
+      } catch (error) {
+        errors.push(`Error accessing directory ${volumeFilePath}: ${error}`);
+      }
+    } else if (entry.isFile()) {
+      // Verify file exists and contents match
+      try {
+        const volumeFile = vol.open(volumeFilePath, 0);
+        if (!volumeFile) {
+          errors.push(`File not found in volume: ${volumeFilePath}`);
+          continue;
+        }
+        if (volumeFile.isDirectory()) {
+          errors.push(`Expected file but found directory: ${volumeFilePath}`);
+          volumeFile.close();
+          continue;
+        }
+        
+        // Read source file
+        const sourceData = fs.readFileSync(sourcePath);
+        
+        // Read volume file
+        const volumeData = volumeFile.readFileData(volumeFile.fileSize);
+        volumeFile.close();
+        
+        if (!volumeData) {
+          errors.push(`Failed to read file from volume: ${volumeFilePath}`);
+          continue;
+        }
+        
+        // Compare sizes
+        if (sourceData.length !== volumeData.length) {
+          errors.push(
+            `Size mismatch for ${volumeFilePath}: source=${sourceData.length} bytes, volume=${volumeData.length} bytes`
+          );
+          continue;
+        }
+        
+        // Compare contents
+        if (!sourceData.equals(volumeData)) {
+          errors.push(`Content mismatch for ${volumeFilePath}`);
+        }
+      } catch (error) {
+        errors.push(`Error verifying file ${volumeFilePath}: ${error}`);
+      }
+    }
+  }
+  
+  return errors;
 }
 
 /**
