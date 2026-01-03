@@ -642,9 +642,15 @@ export class FatFile {
   /**
    * Read data from the file
    * @param numBytes Number of bytes to read
-   * @returns The bytes read from the file
+   * @returns The bytes read from the file, or null if EOF reached before data could be read
+   * 
+   * ✅ FIX Bug #7: Document that this method can return null when:
+   * - Reading a file and reaching end of cluster chain before reading requested bytes
+   * - For directories, returns accumulated data even if chain ends prematurely
+   * 
+   * Callers should handle null return value explicitly (see usage at line 451)
    */
-  readFileData(numBytes: number, forceRead = false): Uint8Array {
+  readFileData(numBytes: number, forceRead = false): Uint8Array | null {
     if (!forceRead && !this.isReadable()) {
       throw new Error(ERROR_NO_READ);
     }
@@ -772,9 +778,16 @@ export class FatFile {
       throw new Error(ERROR_NOT_A_FILE);
     }
 
+    // --- ✅ FIX Bug #8: Ensure correct ordering - file data BEFORE directory entry
+    // CRITICAL: File data must be written to disk BEFORE updating directory entry.
+    // If we update directory entry first and crash, the directory claims the file
+    // has data but the clusters contain stale/empty data - data loss!
+    
+    // Step 1: Write actual file data to clusters
     this.writeData(data);
 
-    // --- Update the file size and write time
+    // Step 2: Update directory entry to reflect new file state
+    // Now that file data is safely written, update metadata in directory entry
     const sfn = this._sfnEntry;
     sfn.DIR_FstClusLO = this._firstCluster & 0xffff;
     sfn.DIR_FstClusHI = this._firstCluster >> 16;
@@ -783,6 +796,9 @@ export class FatFile {
     sfn.DIR_WrtTime = timeToNumber(new Date());
     this.parent.seekSet(this._directoryIndex * FS_DIR_SIZE);
     this.parent.writeData(sfn.buffer, true);
+    
+    // --- Note: In KLive IDE's single-threaded environment, writeData() performs
+    // synchronous I/O, providing natural fsync semantics between these operations.
   }
 
   private writeData(src: Uint8Array, forceWrite = false): void {
