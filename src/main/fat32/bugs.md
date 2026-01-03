@@ -203,29 +203,33 @@ if (fatValue >= this.volume.countOfClusters) {
 
 **Resolution:** Fixed by ensuring file data is written before directory entry is updated. This guarantees filesystem consistency even if crash occurs between operations.
 
-## Bug #9: MEDIUM - Missing cluster bounds check in writeData
-**File:** FatFile.ts:823-824
+## Bug #9: MEDIUM - Missing cluster bounds check in writeData ✅ FIXED
+**File:** FatFile.ts:849, 859-867
 **Severity:** MEDIUM
 
-```typescript
-} else {
-  this.addCluster();
-  this._firstCluster = this._currentCluster;
-```
+**Issue:** addCluster() returns boolean but return value is NOT checked in TWO locations:
+- Line 849: When following cluster chain at EOC (end of cluster)
+- Line 859: When allocating first cluster for new file
 
+If addCluster() fails (returns false), code continues without error and can write to invalid clusters.
 
-```
+**Impact:** If disk fills up and addCluster fails:
+- Line 849: Would continue writing with _currentCluster = 0 (root directory cluster = DATA CORRUPTION)
+- Line 859: Would set _firstCluster = 0 (invalid cluster marker = FILE CORRUPTION)
 
-**Issue:** addCluster() returns boolean indicating success/failure, but result is not checked here. If allocation fails (disk full), continues with _currentCluster = 0 or stale value.
+**Fix Applied:** ✅ Added return value checks at both locations:
+- Line 849: Added `if (!this.addCluster()) { throw new Error("Failed to allocate cluster - disk full"); }`
+- Line 859: Added `if (!this.addCluster()) { throw new Error("Failed to allocate cluster - disk full"); }`
+- Ensures allocation failures are immediately detected and throw proper errors
+- Prevents silent data corruption from writing to invalid clusters
 
-**Impact:** Can write to invalid clusters if disk is full, causing filesystem corruption.
+**Tests:** 3 regression tests in Fat32Volume-bug9-regression.test.ts
+- Test 1: Verifies file has valid cluster (>= 2) after writeFileData
+- Test 2: Verifies file data persists correctly after write
+- Test 3: Verifies multi-cluster files maintain validity
+- All 3 tests PASSING ✅
 
-**Fix:** Check addCluster() return value:
-```typescript
-if (!this.addCluster()) {
-  throw new Error("Failed to allocate cluster - disk full");
-}
-```
+**Resolution:** Fixed by checking addCluster() return value at both call sites in writeData(). Allocation failures now throw explicit errors instead of causing silent data corruption.
 
 ## Bug #10: LOW-MEDIUM - Possible buffer offset confusion in FatDirEntry
 **File:** FatDirEntry.ts:6, multiple accessors

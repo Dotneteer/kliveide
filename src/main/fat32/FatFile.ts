@@ -846,7 +846,10 @@ export class FatFile {
             // instead of comparing with countOfClusters
             if (fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX) {
               // --- We are at the end of the cluster chain
-              this.addCluster();
+              // ✅ FIX Bug #9: Check addCluster() return value!
+              if (!this.addCluster()) {
+                throw new Error("Failed to allocate cluster - disk full");
+              }
             } else {
               this._currentCluster = fatValue;
             }
@@ -854,8 +857,13 @@ export class FatFile {
         } else {
           // --- This file has no cluster yet
           if (this._firstCluster === 0) {
-            // --- Allocate first cluster of file
-            this.addCluster();
+            // --- ✅ FIX Bug #9: Check addCluster() return value!
+            // If allocation fails (disk full), addCluster returns false and
+            // _currentCluster remains 0. We must catch this and throw an error
+            // instead of continuing to write to invalid cluster 0 (root directory).
+            if (!this.addCluster()) {
+              throw new Error("Failed to allocate cluster - disk full");
+            }
             this._firstCluster = this._currentCluster;
           } else {
             // --- Follow chain from first cluster
