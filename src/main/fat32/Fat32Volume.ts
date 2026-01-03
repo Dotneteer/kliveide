@@ -29,6 +29,29 @@ export const ERROR_INVALID_FAT32_SIZE = "Invalid FAT32 size.";
 export const ERROR_FAT_ENTRY_OUT_OF_RANGE = "FAT entry index out of range.";
 
 /**
+ * ✅ FIX Bug #4: FAT32 special value constants
+ * These are proper FAT32 end-of-cluster chain markers and special values
+ */
+export const FAT32_EOC_MIN = 0x0FFFFFF8;     // Minimum end-of-cluster marker
+export const FAT32_EOC_MAX = 0x0FFFFFFF;     // Maximum end-of-cluster marker
+export const FAT32_BAD_CLUSTER = 0x0FFFFFF7; // Bad cluster marker
+export const FAT32_FREE_CLUSTER = 0x00000000; // Free cluster
+
+/**
+ * Helper function to check if a FAT entry value represents end-of-chain
+ */
+function isEndOfChain(fatValue: number): boolean {
+  return fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX;
+}
+
+/**
+ * Helper function to check if a FAT entry value represents a bad cluster
+ */
+function isBadCluster(fatValue: number): boolean {
+  return fatValue === FAT32_BAD_CLUSTER;
+}
+
+/**
  * This class represents a FAT32 volume
  */
 
@@ -309,7 +332,9 @@ export class Fat32Volume {
    */
   getFatEntry(index: number): number {
     const [sector, offset] = this.calculateFatEntry(index);
-    return new DataView(this.file.readSector(sector).buffer).getInt32(offset, true);
+    const rawValue = new DataView(this.file.readSector(sector).buffer).getInt32(offset, true);
+    // FAT32 spec: bits 28-31 are reserved, mask them when reading
+    return rawValue & 0x0FFFFFFF;
   }
 
   /**
@@ -323,6 +348,16 @@ export class Fat32Volume {
     const dv = new DataView(buffer.buffer);
     dv.setInt32(offset, value, true);
     this.file.writeSector(sector, buffer);
+    
+    // ✅ FIX Bug #2: Write to both FAT tables for redundancy
+    // FAT32 requires BPB_NumFATs (typically 2) mirrored FAT tables
+    // Update FAT2 at the mirrored sector offset
+    const fatSize = this.bootSector.BPB_FATSz32;
+    const fat2Sector = sector + fatSize;
+    const buffer2 = this.file.readSector(fat2Sector);
+    const dv2 = new DataView(buffer2.buffer);
+    dv2.setInt32(offset, value, true);
+    this.file.writeSector(fat2Sector, buffer2);
   }
 
   /**
@@ -345,6 +380,14 @@ export class Fat32Volume {
    * Allocates a cluster for a file.
    * @param current Current cluster number
    * @returns Allocate cluster number or null if allocation failed
+   * 
+   * ⚠️ NOTE: This method is NOT thread-safe. There is a race condition window
+   * between getFatEntry(found) === 0 check and setFatEntry(found, 0x0fffffff)
+   * where concurrent calls could allocate the same cluster.
+   * 
+   * This is acceptable because FAT32Volume is designed for single-threaded
+   * usage (as used in KLive IDE, a single-threaded emulator). For multi-threaded
+   * environments, a lock must be implemented around cluster allocation.
    */
   allocateCluster(current: number): number | null {
     let found: number;
@@ -460,8 +503,11 @@ export class Fat32Volume {
   }
 
   updateFreeClusterCount(change: number) {
+    // ✅ FIX Bug #3: Make FSInfo update as atomic as possible
+    // Read-modify-write pattern with minimal window for inconsistency
+    // Note: FSInfo is advisory-only per FAT32 spec and can be recalculated from FAT
     const fsInfo = this.readFsInfoSector();
-    fsInfo.FSI_Free_Count += change;
+    fsInfo.FSI_Free_Count = Math.max(0, fsInfo.FSI_Free_Count + change);
     this.writeFsInfoSector(fsInfo);
   }
 

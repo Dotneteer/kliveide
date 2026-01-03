@@ -2960,17 +2960,19 @@ describe("CimFileManager - File Creation and Conversion", () => {
       file.writeSector(0, new Uint8Array(512).fill(88));
       file.writeHeader();
 
-      // Verify initial read works
+      // Verify initial read works (constructor now calls readHeader automatically)
       const file1 = new CimFile(filePath, 64, 1, file.cimInfo.clusterCount);
-      expect(() => file1.readHeader()).not.toThrow();
+      // Should not throw - file is valid
+      expect(file1.cimInfo.header).toBe(CIM_HEADER);
 
       // Now corrupt the file by truncating it (making it invalid)
       const corruptedBuffer = Buffer.alloc(100);  // Too small to be a valid header
       fs.writeFileSync(filePath, corruptedBuffer);
 
-      // --- Act & Assert - Reading corrupted file should fail
-      const file2 = new CimFile(filePath, 64, 1, file.cimInfo.clusterCount);
-      expect(() => file2.readHeader()).toThrow();
+      // --- Act & Assert - Opening corrupted file should fail in constructor (which calls readHeader)
+      expect(() => {
+        const file2 = new CimFile(filePath, 64, 1, file.cimInfo.clusterCount);
+      }).toThrow(/Invalid sector size in file/);
 
       // --- Clean up
       fs.unlinkSync(filePath);

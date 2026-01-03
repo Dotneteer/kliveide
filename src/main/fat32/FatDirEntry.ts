@@ -3,7 +3,9 @@ import { FS_DIR_SIZE } from "./Fat32Types";
 export class FatDirEntry {
   private _view: DataView;
   constructor(public readonly buffer: Uint8Array) {
-    this._view = new DataView(buffer.subarray(FS_DIR_SIZE).buffer);
+    // ✅ FIX Bug #1: Use correct buffer offset instead of subarray(FS_DIR_SIZE)
+    // subarray(32) was skipping the first 32 bytes, causing all reads/writes to be offset by 32 bytes
+    this._view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
   }
 
   clone(): FatDirEntry {

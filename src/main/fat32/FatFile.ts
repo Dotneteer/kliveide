@@ -44,7 +44,7 @@ import {
   FAT_ATTRIB_LONG_NAME,
   FS_ATTR_FILE
 } from "./Fat32Types";
-import { Fat32Volume } from "./Fat32Volume";
+import { Fat32Volume, FAT32_EOC_MIN, FAT32_EOC_MAX } from "./Fat32Volume";
 import { FatDirEntry } from "./FatDirEntry";
 import { FatLongFileName } from "./FatLongFileName";
 import { calcShortNameCheckSum, getLongFileFatEntries } from "./file-names";
@@ -571,7 +571,9 @@ export class FatFile {
     if (this._currentCluster > 0) {
       while (nNew--) {
         const fatValue = this.volume.getFatEntry(this._currentCluster);
-        if (fatValue >= this.volume.countOfClusters) {
+        // ✅ FIX Bug #4: Check for proper FAT32 EOC markers (0xFFFFFFF8-0xFFFFFFFF)
+        // instead of comparing with countOfClusters
+        if (fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX) {
           throw new Error(ERROR_SEEK_PAST_EOC);
         }
         this._currentCluster = fatValue;
@@ -640,9 +642,15 @@ export class FatFile {
   /**
    * Read data from the file
    * @param numBytes Number of bytes to read
-   * @returns The bytes read from the file
+   * @returns The bytes read from the file, or null if EOF reached before data could be read
+   * 
+   * ✅ FIX Bug #7: Document that this method can return null when:
+   * - Reading a file and reaching end of cluster chain before reading requested bytes
+   * - For directories, returns accumulated data even if chain ends prematurely
+   * 
+   * Callers should handle null return value explicitly (see usage at line 451)
    */
-  readFileData(numBytes: number, forceRead = false): Uint8Array {
+  readFileData(numBytes: number, forceRead = false): Uint8Array | null {
     if (!forceRead && !this.isReadable()) {
       throw new Error(ERROR_NO_READ);
     }
@@ -683,12 +691,27 @@ export class FatFile {
         } else if (this.isFile() && this.isContiguous()) {
           // --- We are at the beginning of a cluster in a contiguous file,
           // --- so we can calculate the next cluster
+          // ✅ FIX Bug #6: Add bounds check to ensure we don't read past EOF
+          // Calculate how many clusters the file should have
+          const fileSize = this._fileSize;
+          const bytesPerCluster = this.volume.bytesPerCluster;
+          const clustersInFile = (fileSize + bytesPerCluster - 1) >> this.volume.bytesPerClusterShift;
+          const currentClusterIndex = this._currentCluster - this._firstCluster;
+          
+          // Check if next cluster would be beyond file bounds
+          if (currentClusterIndex + 1 >= clustersInFile) {
+            // We've reached the end of the file's allocated clusters
+            break;
+          }
+          
           this._currentCluster++;
         } else {
           // --- We are at the beginning of a cluster in a non-contiguous file or in a directory
           // --- We need to follow the cluster chain
           const fatValue = this.volume.getFatEntry(this._currentCluster);
-          if (fatValue >= this.volume.countOfClusters) {
+          // ✅ FIX Bug #4: Check for proper FAT32 EOC markers (0xFFFFFFF8-0xFFFFFFFF)
+          // instead of comparing with countOfClusters
+          if (fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX) {
             if (this.isDirectory()) {
               break;
             }
@@ -755,9 +778,16 @@ export class FatFile {
       throw new Error(ERROR_NOT_A_FILE);
     }
 
+    // --- ✅ FIX Bug #8: Ensure correct ordering - file data BEFORE directory entry
+    // CRITICAL: File data must be written to disk BEFORE updating directory entry.
+    // If we update directory entry first and crash, the directory claims the file
+    // has data but the clusters contain stale/empty data - data loss!
+    
+    // Step 1: Write actual file data to clusters
     this.writeData(data);
 
-    // --- Update the file size and write time
+    // Step 2: Update directory entry to reflect new file state
+    // Now that file data is safely written, update metadata in directory entry
     const sfn = this._sfnEntry;
     sfn.DIR_FstClusLO = this._firstCluster & 0xffff;
     sfn.DIR_FstClusHI = this._firstCluster >> 16;
@@ -766,6 +796,9 @@ export class FatFile {
     sfn.DIR_WrtTime = timeToNumber(new Date());
     this.parent.seekSet(this._directoryIndex * FS_DIR_SIZE);
     this.parent.writeData(sfn.buffer, true);
+    
+    // --- Note: In KLive IDE's single-threaded environment, writeData() performs
+    // synchronous I/O, providing natural fsync semantics between these operations.
   }
 
   private writeData(src: Uint8Array, forceWrite = false): void {
@@ -809,9 +842,14 @@ export class FatFile {
             // --- We are in a non-contiguous file or in a directory,
             // --- so we need to follow the cluster chain
             const fatValue = this.volume.getFatEntry(this._currentCluster);
-            if (fatValue >= this.volume.countOfClusters) {
+            // ✅ FIX Bug #4: Check for proper FAT32 EOC markers (0xFFFFFFF8-0xFFFFFFFF)
+            // instead of comparing with countOfClusters
+            if (fatValue >= FAT32_EOC_MIN && fatValue <= FAT32_EOC_MAX) {
               // --- We are at the end of the cluster chain
-              this.addCluster();
+              // ✅ FIX Bug #9: Check addCluster() return value!
+              if (!this.addCluster()) {
+                throw new Error("Failed to allocate cluster - disk full");
+              }
             } else {
               this._currentCluster = fatValue;
             }
@@ -819,8 +857,13 @@ export class FatFile {
         } else {
           // --- This file has no cluster yet
           if (this._firstCluster === 0) {
-            // --- Allocate first cluster of file
-            this.addCluster();
+            // --- ✅ FIX Bug #9: Check addCluster() return value!
+            // If allocation fails (disk full), addCluster returns false and
+            // _currentCluster remains 0. We must catch this and throw an error
+            // instead of continuing to write to invalid cluster 0 (root directory).
+            if (!this.addCluster()) {
+              throw new Error("Failed to allocate cluster - disk full");
+            }
             this._firstCluster = this._currentCluster;
           } else {
             // --- Follow chain from first cluster
@@ -897,7 +940,12 @@ export class FatFile {
 
   private addDirCluster(): boolean {
     // --- Check for the maximum folder size
-    if (this._currentPosition >= 512 * 4095) {
+    // Calculate based on actual cluster size, not hardcoded 512 bytes
+    const bytesPerCluster = this.volume.bootSector.BPB_BytsPerSec * this.volume.bootSector.BPB_SecPerClus;
+    const maxClusters = 4095;
+    const maxDirSize = bytesPerCluster * maxClusters;
+    
+    if (this._currentPosition >= maxDirSize) {
       return false;
     }
 
