@@ -50,35 +50,37 @@
 ```basic
   10 SAVE "/samples/ulahicol.bas"
   20 RUN AT 3
-  25 LAYER 1,3
-  30 BORDER 5
-  40 PRINT AT 2,0; PAPER 1; INK 3; "XYZ01234"
-  50 FOR %s=0 TO 255
-  60 REG $26,%s
-  70 REG $27,0
-  80 PAUSE 0
-  90 NEXT %s
+  30 LAYER 1,3
+  40 BORDER 5
+  50 CLS 
+  60 PRINT AT 2,0; PAPER 1; INK 3; "XYZ01234"
+  70 FOR %s=0 TO 255
+  80 REG $26,%s
+  90 REG $27,0
  100 PAUSE 0
- 110 REG $26,0
- 120 REG $27,0
+ 110 NEXT %s
+ 120 PAUSE 0
+ 130 REG $26,0
+ 140 REG $27,0
 ```
 
 ## ULA HiColor + vertical scroll
 
 ```basic
-  10 SAVE "/samples/ulahicol.bas"
+  10 SAVE "/samples/ulahicoly.bas"
   20 RUN AT 3
   30 LAYER 1,3
   40 BORDER 5
-  50 PRINT AT 2,0; PAPER 1; INK 3; "XYZ01234"
-  60 FOR %s=0 TO 255
-  70 REG $26,%s
-  80 REG $27,0
-  90 PAUSE 0
- 100 NEXT %s
- 110 PAUSE 0
- 120 REG $26,0
- 130 REG $27,0
+  50 CLS 
+  60 PRINT AT 0,0; PAPER 2; INK 6; "XYZ01234"
+  70 FOR %s=0 TO 192
+  80 REG $26,0
+  90 REG $27,%s
+ 100 PAUSE 0
+ 110 NEXT %s
+ 120 PAUSE 0
+ 130 REG $26,0
+ 140 REG $27,0
 ```
 
 ## ULA HiRes + horizontal scroll
@@ -170,17 +172,72 @@
  200 REG $33,0
 ```
 
-## Layer 2 256x192x8 + horizontal scroll
+## ULA Lores Radastan + horizontal scroll + clipping
+
+```basic
+  10 SAVE "/samples/radas.bas"
+  20 RUN AT 3
+  30 LAYER 1,0
+  40 LAYER DIM 0,0,96,96
+  50 CLS 
+  60 BORDER 3
+  70 REG $15,BIN 10000000
+  80 REG $6a,BIN 00100000
+  90 FOR j=1 TO 2
+ 100 FOR %p=0 TO 7
+ 110 FOR %i=0 TO 7
+ 120 PRINT PAPER %p; INK %i; "X"; 
+ 130 NEXT %i
+ 140 NEXT %p
+ 150 NEXT j
+ 160 FOR %s=0 TO 255
+ 170 REG $32,%s
+ 180 REG $33,0
+ 190 PAUSE 0
+ 200 NEXT %s
+ 210 PAUSE 0
+ 220 REG $32,0
+ 230 REG $33,0
+```
+
+## ULA Lores Radastan + vertical scroll
+
+```basic
+  10 SAVE "/samples/radasy.bas"
+  20 RUN AT 3
+  30 LAYER 1,0
+  50 CLS 
+  60 BORDER 3
+  70 REG $15,BIN 10000000
+  80 REG $6a,BIN 00100000
+  90 FOR j=1 TO 2
+ 100 FOR %p=0 TO 7
+ 110 FOR %i=0 TO 7
+ 120 PRINT PAPER %p; INK %i; "X"; 
+ 130 NEXT %i
+ 140 NEXT %p
+ 150 NEXT j
+ 160 FOR %s=0 TO 192
+ 170 REG $32,0
+ 180 REG $33,%s
+ 190 PAUSE 0
+ 200 NEXT %s
+ 210 PAUSE 0
+ 220 REG $32,0
+ 230 REG $33,0
+```
+
+## Layer 2 256x192x8 + horizontal scroll + clipping
 
 ```basic
   10 SAVE "/samples/layer2.bas"
-  20 RUN AT 0
+  20 RUN AT 3
   30 LAYER 2,1
-  40 REG $1c,01
-  50 REG $18,$00
-  60 REG $18,$ff
-  70 REG $18,$00
-  80 REG $18,$9f
+  40 REG $1c,$01
+  50 REG $18,$08
+  60 REG $18,$7f
+  70 REG $18,$08
+  80 REG $18,$7f
   90 CLS 
  100 BORDER 3
  110 FOR %p=0 TO 1
@@ -188,7 +245,7 @@
  130 PRINT PAPER %p; INK %i; "X"; 
  140 NEXT %i
  150 NEXT %p
- 160 FOR %s=0 TO 255
+ 160 FOR %s=0 TO 256
  170 REG $16,%s
  180 REG $71,0
  190 REG $17,0
@@ -200,32 +257,154 @@
  250 REG $17,0
 ```
 
-## Layer 2 256x192x8 + vertical scroll + clipping
+## Layer 2 256x192x8 + vertical scroll
 
 ```basic
   10 SAVE "/samples/layer2y.bas"
-  20 RUN AT 0
+  20 RUN AT 3
   30 LAYER 2,1
-  40 REG $1c,01
-  50 REG $18,$08
-  60 REG $18,$c0
-  70 REG $18,$00
-  80 REG $18,$8f
-  90 CLS 
- 100 BORDER 3
- 110 FOR %p=0 TO 1
- 120 FOR %i=0 TO 255
- 130 PRINT PAPER %p; INK %i; "X"; 
- 140 NEXT %i
- 150 NEXT %p
- 160 FOR %s=0 TO 192
- 170 REG $16,0
- 180 REG $71,0
- 190 REG $17,%s
- 200 PAUSE 0
- 210 NEXT %s
- 220 PAUSE 0
- 230 REG $16,0
- 240 REG $71,0
- 250 REG $17,0
+  40 CLS 
+  50 BORDER 3
+  60 FOR %p=0 TO 1
+  70 FOR %i=0 TO 255
+  80 PRINT PAPER %p; INK %i; "X"; 
+  90 NEXT %i
+ 100 NEXT %p
+ 110 FOR %s=0 TO 192
+ 120 REG $16,0
+ 130 REG $71,0
+ 140 REG $17,%s
+ 150 PAUSE 0
+ 160 NEXT %s
+ 170 PAUSE 0
+ 180 REG $16,0
+ 190 REG $71,0
+ 200 REG $17,0
 ```
+
+## Layer 2 320x256x8 + horizontal scroll
+
+```basic
+  10 SAVE "/samples/layer2hi.bas"
+  20 RUN AT 3
+  30 BORDER 3
+  40 REG $1c,$00
+  50 REG $18,$00
+  60 REG $18,$9f
+  70 REG $18,$00
+  80 REG $18,$ff
+  90 REG $12,$09 
+ 100 REG $70,$10 
+ 110 REG $69,$80 
+ 120 REG $25,$04 
+ 130 FOR %i=0 TO $bfff
+ 140 BANK 09 POKE %i,176
+ 150 BANK 10 POKE %i,85
+ 160 BANK 11 POKE %i,23
+ 170 BANK 12 POKE %i,34
+ 180 BANK 13 POKE %i,45
+ 190 NEXT %i
+ 200 FOR %s=0 TO 256
+ 210 REG $16,%s
+ 220 REG $71,0
+ 230 REG $17,0
+ 240 PAUSE 0
+ 250 NEXT %s
+ 260 PAUSE 0
+ 270 REG $16,0
+ 280 REG $71,0
+ 290 REG $17,0
+```
+
+## Layer 2 640x256x4
+
+```basic
+  10 SAVE "/samples/layer2-640.bas"
+  20 RUN AT 3
+  30 BORDER 3
+  40 REG $1c,$00
+  50 REG $18,$00
+  60 REG $18,$9f
+  70 REG $18,$00
+  80 REG $18,$ff
+  90 REG $12,$09 
+ 100 REG $70,$20 
+ 110 REG $69,$80 
+ 120 REG $25,$04 
+ 130 FOR %i=0 TO $bfff
+ 140 BANK 09 POKE %i,176
+ 150 BANK 10 POKE %i,85
+ 160 BANK 11 POKE %i,$55
+ 170 BANK 12 POKE %i,34
+ 180 BANK 13 POKE %i,255
+ 190 NEXT %i
+```
+
+## Tilemap 40x32 + attribute elimination
+
+```basic
+  10 SAVE "/samples/tm1.bas"
+  20 RUN AT 3
+  30 CLS 
+  40 BORDER 3
+  50 REG $1c,$08: ;  clip
+  60 REG $1b,$00
+  70 REG $1b,$9f
+  80 REG $1b,$00
+  90 REG $1b,$ff
+ 100 REG $2f,$00: ;  offs x
+ 110 REG $30,$00
+ 120 REG $31,$00: ;  offs y
+ 130 REG $6b,BIN 10100001
+ 140 REG $6c,BIN 00000000
+ 150 REG $6e,$00: ;  map=$4000
+ 160 REG $6f,$18: ;  def=$5800
+ 170 REG $43,BIN 00110000
+ 175 ;  Palette
+ 180 REG $40,$00
+ 190 REG $41,BIN 00000000
+ 200 REG $41,BIN 00000011
+ 210 REG $41,BIN 11100000
+ 220 REG $41,BIN 11100011
+ 230 REG $41,BIN 00011100
+ 240 REG $41,BIN 00011111
+ 250 REG $41,BIN 11111100
+ 260 REG $41,BIN 11111111
+ 270 ;  Tile 0 def
+ 280 BANK 5 POKE $1800,$00
+ 290 BANK 5 POKE $1801,$00
+ 300 BANK 5 POKE $1802,$00
+ 310 BANK 5 POKE $1803,$00
+ 320 BANK 5 POKE $1804,$04
+ 330 BANK 5 POKE $1805,$44
+ 340 BANK 5 POKE $1806,$44
+ 350 BANK 5 POKE $1807,$40
+ 360 BANK 5 POKE $1808,$04
+ 370 BANK 5 POKE $1809,$44
+ 380 BANK 5 POKE $180a,$44
+ 390 BANK 5 POKE $180b,$40
+ 400 BANK 5 POKE $180c,$04
+ 410 BANK 5 POKE $180d,$44
+ 420 BANK 5 POKE $180e,$22
+ 430 BANK 5 POKE $180f,$22
+ 440 BANK 5 POKE $1810,$04
+ 450 BANK 5 POKE $1811,$44
+ 460 BANK 5 POKE $1812,$22
+ 470 BANK 5 POKE $1813,$22
+ 480 BANK 5 POKE $1814,$04
+ 490 BANK 5 POKE $1815,$44
+ 500 BANK 5 POKE $1816,$33
+ 510 BANK 5 POKE $1817,$33
+ 520 BANK 5 POKE $1818,$04
+ 530 BANK 5 POKE $1819,$44
+ 540 BANK 5 POKE $181a,$11
+ 550 BANK 5 POKE $181b,$11
+ 560 BANK 5 POKE $181c,$00
+ 570 BANK 5 POKE $181d,$00
+ 580 BANK 5 POKE $181e,$11
+ 590 BANK 5 POKE $181f,$11
+ 990 ;  Back to ULA
+1000 PAUSE 0
+1010 REG $6b,BIN 00000000
+```
+

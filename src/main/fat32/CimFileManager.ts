@@ -41,6 +41,12 @@ export class CimFileManager {
       }
     }
 
+    // ✅ Delete existing file if it exists to ensure clean slate
+    // This prevents the CimFile constructor from loading stale header data
+    if (fs.existsSync(name)) {
+      fs.unlinkSync(name);
+    }
+
     const cimFile = new CimFile(name, sizeInMegaByte, selectedClusterSize, clusterCount, isReadonly);
 
     // --- Create the file with 64KB header
@@ -101,24 +107,81 @@ const availableClusterSizes = [1, 2, 4, 8, 16];
 export class CimFile {
   private _filename: string;
   private _cimInfo: CimInfo;
+  private _fd: number | null = null;  // ✅ FIX Bug #4: Persistent file handle
+  private _fileMode: string;  // Track if file is read-only or read-write
+  
   constructor(filename: string, maxSize: number, clusterSize: number, clusterCount: number, isReadOnly = false) {
     this._filename = filename;
-    this._cimInfo = {
-      header: CIM_HEADER,
-      versionMajor: CIM_VERSION_MAJOR,
-      versionMinor: CIM_VERSION_MINOR,
-      sectorSize: SECTOR_SIZE,
-      clusterCount,
-      clusterSize,
-      maxClusters: 0,
-      maxSize,
-      reserved: isReadOnly ? 1 : 0,
-      clusterMap: []
-    };
+    
+    // ✅ FIX Bug #1: Check if file exists and load header automatically
+    if (fs.existsSync(filename)) {
+      // File exists - load metadata from file
+      // Initialize with temporary structure that will be overwritten by readHeader()
+      this._cimInfo = {
+        header: "",
+        versionMajor: 0,
+        versionMinor: 0,
+        sectorSize: 0,
+        clusterCount: 0,
+        clusterSize: 0,
+        maxClusters: 0,
+        maxSize: 0,
+        reserved: 0,
+        clusterMap: []
+      };
+      
+      // Load actual metadata from file
+      this.readHeader();
+      
+      // ✅ FIX Bug #4: Open persistent file handle
+      this._fileMode = this._cimInfo.reserved ? "r" : "r+";
+      this._fd = fs.openSync(filename, this._fileMode);
+      
+      // Validate constructor parameters match file header
+      if (this._cimInfo.maxSize !== maxSize) {
+        console.warn(`[CimFile] Warning: Constructor parameter maxSize (${maxSize}) differs from file header (${this._cimInfo.maxSize}). Using file header value.`);
+      }
+      if (this._cimInfo.clusterCount !== clusterCount) {
+        console.warn(`[CimFile] Warning: Constructor parameter clusterCount (${clusterCount}) differs from file header (${this._cimInfo.clusterCount}). Using file header value.`);
+      }
+    } else {
+      // New file - initialize structure
+      this._cimInfo = {
+        header: CIM_HEADER,
+        versionMajor: CIM_VERSION_MAJOR,
+        versionMinor: CIM_VERSION_MINOR,
+        sectorSize: SECTOR_SIZE,
+        clusterCount,
+        clusterSize,
+        maxClusters: 0,
+        maxSize,
+        reserved: isReadOnly ? 1 : 0,
+        clusterMap: []
+      };
 
-    // --- Sign empty clusters
-    for (let i = 0; i < MAX_CLUSTERS; i++) {
-      this._cimInfo.clusterMap[i] = 0xffff;
+      // --- Sign empty clusters
+      for (let i = 0; i < MAX_CLUSTERS; i++) {
+        this._cimInfo.clusterMap[i] = 0xffff;
+      }
+      
+      // ✅ FIX Bug #4: Set file mode for new files
+      // File handle will be opened lazily on first read/write
+      this._fileMode = isReadOnly ? "r" : "r+";
+    }
+  }
+
+  /**
+   * ✅ FIX Bug #4: Close persistent file handle
+   * Should be called when done with the CimFile to release resources
+   */
+  close(): void {
+    if (this._fd !== null) {
+      try {
+        fs.closeSync(this._fd);
+      } catch (error) {
+        console.error(`[CimFile] Error closing file ${this._filename}:`, error);
+      }
+      this._fd = null;
     }
   }
 
@@ -172,6 +235,65 @@ export class CimFile {
     for (let i = 0; i < MAX_CLUSTERS; i++) {
       this._cimInfo.clusterMap[i] = reader.readUint16();
     }
+    
+    // ✅ FIX Bug #3: Validate cluster map consistency to prevent data corruption
+    // This detects corrupted headers that could cause one file to overwrite another
+    this.validateClusterMap();
+  }
+  
+  /**
+   * Validates the integrity of the cluster map to detect corruption
+   * @throws Error if corruption is detected
+   */
+  private validateClusterMap(): void {
+    const allocatedClusters = new Set<number>();
+    let actualAllocatedCount = 0;
+    
+    for (let logicalIndex = 0; logicalIndex < this._cimInfo.clusterCount; logicalIndex++) {
+      const physicalCluster = this._cimInfo.clusterMap[logicalIndex];
+      
+      // Skip unallocated clusters
+      if (physicalCluster === 0xffff) {
+        continue;
+      }
+      
+      actualAllocatedCount++;
+      
+      // ✅ Check for duplicate physical cluster assignment
+      // If two logical clusters point to same physical cluster, writes will corrupt data
+      if (allocatedClusters.has(physicalCluster)) {
+        throw new Error(
+          `Cluster map corruption detected: Multiple logical clusters map to physical cluster ${physicalCluster}. ` +
+          `This will cause data corruption where writing to one file overwrites another. ` +
+          `File integrity compromised - recovery may be needed.`
+        );
+      }
+      allocatedClusters.add(physicalCluster);
+      
+      // ✅ Check physical cluster pointer is within bounds
+      // Pointer must be less than maxClusters (the count of allocated physical clusters)
+      if (physicalCluster >= this._cimInfo.maxClusters) {
+        throw new Error(
+          `Cluster map corruption detected: Logical cluster ${logicalIndex} points to physical cluster ${physicalCluster}, ` +
+          `but maxClusters is only ${this._cimInfo.maxClusters}. Out-of-bounds access will cause corruption.`
+        );
+      }
+    }
+    
+    // ✅ Check maxClusters consistency
+    // maxClusters should match the highest physical cluster + 1, or the count of allocated clusters
+    // If mismatch detected, log warning and auto-correct to prevent corruption
+    if (actualAllocatedCount !== this._cimInfo.maxClusters) {
+      console.warn(
+        `[CimFile] Cluster map inconsistency detected in ${this._filename}: ` +
+        `maxClusters=${this._cimInfo.maxClusters} but ${actualAllocatedCount} clusters are actually allocated. ` +
+        `Auto-correcting to prevent cluster reuse and data corruption.`
+      );
+      this._cimInfo.maxClusters = actualAllocatedCount;
+      
+      // Write corrected header back to disk
+      this.writeHeader();
+    }
   }
 
   readSector(sectorIndex: number): Uint8Array {
@@ -195,20 +317,20 @@ export class CimFile {
       return new Uint8Array(SECTOR_SIZE_BYTES);
     }
 
-    // --- Open the file and seek to the sector
-    const fd = fs.openSync(this._filename, "r");
-    try {
-      const sectorBytes = this._cimInfo.sectorSize * 512;
-      const sectorPointer =
-        CLUSTER_BASE_SIZE +
-        clusterPointer * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE +
-        sectorInCluster * sectorBytes;
-      const buffer = new Uint8Array(sectorBytes);
-      fs.readSync(fd, buffer, 0, 512, sectorPointer);
-      return buffer;
-    } finally {
-      fs.closeSync(fd);
+    // ✅ FIX Bug #4: Use persistent file handle instead of open/close each time
+    // Lazy-open file if handle doesn't exist yet
+    if (this._fd === null) {
+      this._fd = fs.openSync(this._filename, this._fileMode);
     }
+    
+    const sectorBytes = this._cimInfo.sectorSize * 512;
+    const sectorPointer =
+      CLUSTER_BASE_SIZE +
+      clusterPointer * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE +
+      sectorInCluster * sectorBytes;
+    const buffer = new Uint8Array(sectorBytes);
+    fs.readSync(this._fd, buffer, 0, 512, sectorPointer);
+    return buffer;
   }
 
   writeSector(sectorIndex: number, data: Uint8Array): void {
@@ -241,31 +363,44 @@ export class CimFile {
       const currentClusters = this._cimInfo.maxClusters++;
       const newClusterPointer = CLUSTER_BASE_SIZE + currentClusters * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE;
       this._cimInfo.clusterMap[clusterIndex] = currentClusters;
+
+      // ✅ FIX Bug #2: Write header FIRST to allocate cluster in metadata atomically
+      // This ensures that if a crash occurs, the header reflects the allocation
+      // before any data is written to the cluster
+      this.writeHeader();
+
+      // ✅ FIX Bug #4: Use persistent file handle instead of open/close
+      // Lazy-open file if handle doesn't exist yet
+      if (this._fd === null) {
+        this._fd = fs.openSync(this._filename, this._fileMode);
+      }
+      
+      // ✅ Flush header to disk before writing cluster data
+      fs.fsyncSync(this._fd);
+
+      // Now write the cluster data
       const cluster = new Uint8Array(this._cimInfo.clusterSize * CLUSTER_BASE_SIZE);
       cluster.set(data, sectorInCluster * this._cimInfo.sectorSize * 512);
-
-      const fd = fs.openSync(this._filename, "r+");
-      try {
-        fs.writeSync(fd, cluster, 0, cluster.length, newClusterPointer);
-      } finally {
-        fs.closeSync(fd);
-      }
-      this.writeHeader();
+      fs.writeSync(this._fd, cluster, 0, cluster.length, newClusterPointer);
+      
+      // ✅ Flush cluster data to disk
+      fs.fsyncSync(this._fd);
+      
       return;
     }
 
-    // --- Open the file and seek to the sector
-    const fd = fs.openSync(this._filename, "r+");
-    try {
-      const sectorBytes = this._cimInfo.sectorSize * 512;
-      const sectorPointer =
-        CLUSTER_BASE_SIZE +
-        clusterPointer * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE +
-        sectorInCluster * sectorBytes;
-      fs.writeSync(fd, data, 0, data.length, sectorPointer);
-    } finally {
-      fs.closeSync(fd);
+    // ✅ FIX Bug #4: Use persistent file handle instead of open/close each time
+    // Lazy-open file if handle doesn't exist yet
+    if (this._fd === null) {
+      this._fd = fs.openSync(this._filename, this._fileMode);
     }
+    
+    const sectorBytes = this._cimInfo.sectorSize * 512;
+    const sectorPointer =
+      CLUSTER_BASE_SIZE +
+      clusterPointer * this._cimInfo.clusterSize * CLUSTER_BASE_SIZE +
+      sectorInCluster * sectorBytes;
+    fs.writeSync(this._fd, data, 0, data.length, sectorPointer);
   }
 
   readCluster(clusterIndex: number): Uint8Array {
@@ -287,6 +422,25 @@ export class CimFile {
   setReadonly(readOnly: boolean): void {
     this._cimInfo.reserved = readOnly ? 1 : 0;
     this.writeHeader();
+    
+    // ✅ FIX Bug #4: Close and reopen file handle with correct mode
+    // when readonly flag changes
+    const newMode = readOnly ? "r" : "r+";
+    if (this._fileMode !== newMode) {
+      this._fileMode = newMode;
+      
+      // Close existing handle if open
+      if (this._fd !== null) {
+        try {
+          fs.closeSync(this._fd);
+        } catch (error) {
+          console.error(`[CimFile] Error closing file during setReadonly:`, error);
+        }
+        this._fd = null;
+      }
+      
+      // File handle will be reopened lazily on next read/write with new mode
+    }
   }
 
   private checkSectorIndex(sectorIndex: number): void {
