@@ -332,7 +332,9 @@ export class Fat32Volume {
    */
   getFatEntry(index: number): number {
     const [sector, offset] = this.calculateFatEntry(index);
-    return new DataView(this.file.readSector(sector).buffer).getInt32(offset, true);
+    const rawValue = new DataView(this.file.readSector(sector).buffer).getInt32(offset, true);
+    // FAT32 spec: bits 28-31 are reserved, mask them when reading
+    return rawValue & 0x0FFFFFFF;
   }
 
   /**

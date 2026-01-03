@@ -940,7 +940,12 @@ export class FatFile {
 
   private addDirCluster(): boolean {
     // --- Check for the maximum folder size
-    if (this._currentPosition >= 512 * 4095) {
+    // Calculate based on actual cluster size, not hardcoded 512 bytes
+    const bytesPerCluster = this.volume.bootSector.BPB_BytsPerSec * this.volume.bootSector.BPB_SecPerClus;
+    const maxClusters = 4095;
+    const maxDirSize = bytesPerCluster * maxClusters;
+    
+    if (this._currentPosition >= maxDirSize) {
       return false;
     }
 
