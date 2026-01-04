@@ -1508,18 +1508,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x6c,
       description: "Default Tilemap Attribute",
-      readFn: () =>
-        (machine.composedScreenDevice.tilemapPaletteOffset << 4) |
-        (machine.composedScreenDevice.tilemapXMirror ? 0x08 : 0) |
-        (machine.composedScreenDevice.tilemapYMirror ? 0x04 : 0) |
-        (machine.composedScreenDevice.tilemapRotate ? 0x02 : 0) |
-        (machine.composedScreenDevice.tilemapUlaOver ? 0x01 : 0),
+      readFn: () => machine.composedScreenDevice.nextReg0x6cValue,
       writeFn: (v) => {
-        machine.composedScreenDevice.tilemapPaletteOffset = (v >> 4) & 0x0f;
-        machine.composedScreenDevice.tilemapXMirror = (v & 0x08) !== 0;
-        machine.composedScreenDevice.tilemapYMirror = (v & 0x04) !== 0;
-        machine.composedScreenDevice.tilemapRotate = (v & 0x02) !== 0;
-        machine.composedScreenDevice.tilemapUlaOver = (v & 0x01) !== 0;
+        machine.composedScreenDevice.nextReg0x6cValue = v;
       },
       slices: [
         {
