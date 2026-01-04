@@ -221,6 +221,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- Initialize current tile state
     this.tilemapCurrentTileIndex = 0;
     this.tilemapCurrentAttr = 0;
+    this.tilemapTileAttr = 0;
+    this.tilemapNextTileAttr = 0;
 
     // --- Initialize tile transformation flags
     this.tilemapTileXMirror = false;
@@ -2574,6 +2576,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // --- Current tile being rendered
   private tilemapCurrentTileIndex: number;
   private tilemapCurrentAttr: number;
+  private tilemapTileAttr: number; // Current tile's attribute (double-buffered for text mode)
+  private tilemapNextTileAttr: number; // Next tile's attribute (fetched ahead)
 
   // --- Current tile transformation flags (for rendering)
   private tilemapTileXMirror: boolean;
@@ -2785,6 +2789,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Extract transformation flags from attribute and store for NEXT tile
     // These will be copied to current flags when we start rendering the next tile
+    this.tilemapNextTileAttr = this.tilemapCurrentAttr;
     this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
     this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
     this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
@@ -2814,26 +2819,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const yInTile = absY & 0x07;
 
     if (textMode) {
-      // Text mode: fetch all 8 pixels with transformations
+      // Text mode: fetch all 8 pixels WITHOUT transformations (rotation/mirror ignored)
+      const patternAddr = this.tilemapCurrentTileIndex * 8 + yInTile;
+      const patternByte = this.getTilemapVRAM(
+        this.tilemapTileDefUseBank7,
+        this.tilemapTileDefBank5Msb,
+        patternAddr
+      );
+
       for (let xInTile = 0; xInTile < 8; xInTile++) {
-        // Apply transformation to get which row and bit position to read from pattern
-        const { transformedX, transformedY } = this.applyTileTransformation(
-          xInTile,
-          yInTile,
-          this.tilemapNextTileXMirror,
-          this.tilemapNextTileYMirror,
-          this.tilemapNextTileRotate
-        );
-
-        const patternAddr = this.tilemapCurrentTileIndex * 8 + transformedY;
-        const patternByte = this.getTilemapVRAM(
-          this.tilemapTileDefUseBank7,
-          this.tilemapTileDefBank5Msb,
-          patternAddr
-        );
-
-        // Extract the bit at transformed position
-        const bitPos = 7 - transformedX;
+        // Extract the bit at position (MSB first)
+        const bitPos = 7 - xInTile;
         nextBuffer[xInTile] = (patternByte >> bitPos) & 0x01;
       }
     } else {
@@ -2954,6 +2950,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // And swap buffers (next buffer becomes current)
     if ((displayX & 0x07) === 0) {
       this.tilemapBufferPosition = 0;
+      this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTileXMirror = this.tilemapNextTileXMirror;
       this.tilemapTileYMirror = this.tilemapNextTileYMirror;
       this.tilemapTileRotate = this.tilemapNextTileRotate;
@@ -2973,7 +2970,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let paletteIndex: number;
     if (this.tilemapTextModeSampled) {
       // Text mode: 7 bits from attribute + 1 bit from pattern
-      paletteIndex = ((this.tilemapCurrentAttr >> 1) << 1) | pixelValue;
+      paletteIndex = ((this.tilemapTileAttr >> 1) << 1) | pixelValue;
     } else {
       // Graphics mode: 4 bits palette offset + 4 bits pixel value
       paletteIndex = (this.tilemapTilePaletteOffset << 4) | pixelValue;
@@ -3058,6 +3055,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Reset buffer position at tile boundary
     if ((displayX & 0x07) === 0) {
       this.tilemapBufferPosition = 0;
+      this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
     }
@@ -3068,7 +3066,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Generate palette index
     const paletteIndex = this.tilemapTextModeSampled
-      ? (((this.tilemapCurrentAttr >> 1) << 1) | pixelValue) & 0xff
+      ? (((this.tilemapTileAttr >> 1) << 1) | pixelValue) & 0xff
       : (((this.tilemapTilePaletteOffset << 4) | pixelValue) & 0xff);
 
     // Palette lookup
@@ -3166,6 +3164,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // And swap buffers (next buffer becomes current)
     if ((displayX & 0x07) === 0) {
       this.tilemapBufferPosition = 0;
+      this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTileXMirror = this.tilemapNextTileXMirror;
       this.tilemapTileYMirror = this.tilemapNextTileYMirror;
       this.tilemapTileRotate = this.tilemapNextTileRotate;
@@ -3189,7 +3188,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let paletteIndex: number;
     if (this.tilemapTextModeSampled) {
       // Text mode: 7 bits from attribute + 1 bit from pattern
-      paletteIndex = ((this.tilemapCurrentAttr >> 1) << 1) | pixelValue;
+      paletteIndex = ((this.tilemapTileAttr >> 1) << 1) | pixelValue;
     } else {
       // Graphics mode: 4 bits palette offset + 4 bits pixel value
       paletteIndex = (this.tilemapTilePaletteOffset << 4) | pixelValue;
