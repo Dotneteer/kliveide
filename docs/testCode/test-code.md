@@ -322,22 +322,25 @@
   10 SAVE "/samples/layer2-640.bas"
   20 RUN AT 3
   30 BORDER 3
-  40 REG $1c,$00
+  40 REG $1c,$01
   50 REG $18,$00
   60 REG $18,$9f
   70 REG $18,$00
   80 REG $18,$ff
-  90 REG $12,$09 
- 100 REG $70,$20 
- 110 REG $69,$80 
- 120 REG $25,$04 
+  90 REG $12,$09
+ 100 REG $70,$20
+ 110 REG $69,$80
+ 120 REG $15,$04
  130 FOR %i=0 TO $bfff
- 140 BANK 09 POKE %i,176
+ 140 BANK 09 POKE %i,11
  150 BANK 10 POKE %i,85
  160 BANK 11 POKE %i,$55
  170 BANK 12 POKE %i,34
  180 BANK 13 POKE %i,255
  190 NEXT %i
+ 200 PAUSE 0
+ 210 REG $16,0
+ 220 REG $17,0
 ```
 
 ## Tilemap 40x32 + attribute elimination
@@ -407,8 +410,249 @@
  620 REG $6b,BIN 00000000
 ```
 
-## Tilemap 40x32 + attribute elimination + rotation and mirror
+## Tilemap 40x32 + no attribute elimination + rotation and mirror
 
 ```basic
+  10 SAVE "/samples/tm2.bas"
+  20 RUN AT 3
+  30 CLS 
+  40 BORDER 3
+  50 ; 
+  60 ;  Clip
+  70 ; 
+  80 REG $1c,$08
+  90 REG $1b,$00
+ 100 REG $1b,$9f
+ 110 REG $1b,$00
+ 120 REG $1b,$ff
+ 130 ; 
+ 140 ;  Offsets
+ 150 ; 
+ 160 REG $2f,$00
+ 170 REG $30,$00
+ 180 REG $31,$00
+ 190 ; 
+ 200 ;  Base adresses
+ 210 ; 
+ 220 REG $6e,$00: ;  map=$4000
+ 230 REG $6f,$18: ;  def=$5800
+ 240 ; 
+ 250 ;  Palette
+ 260 ; 
+ 270 REG $43,BIN 00110000
+ 280 REG $40,$00
+ 290 REG $41,BIN 00000000
+ 300 REG $41,BIN 00000011
+ 310 REG $41,BIN 11100000
+ 320 REG $41,BIN 11100011
+ 330 REG $41,BIN 00011100
+ 340 REG $41,BIN 00011111
+ 350 REG $41,BIN 11111100
+ 360 REG $41,BIN 11111111
+ 370 ; 
+ 380 ;  Define tile 0
+ 390 ; 
+ 400 DATA $00,$00,$00,$00
+ 410 DATA $04,$44,$44,$40
+ 420 DATA $04,$44,$44,$40
+ 430 DATA $04,$44,$22,$22
+ 440 DATA $04,$44,$22,$22
+ 450 DATA $04,$44,$33,$33
+ 460 DATA $04,$44,$11,$11
+ 470 DATA $00,$00,$11,$11
+ 480 RESTORE %400
+ 490 FOR %i=0 TO 31 
+ 500 READ %b
+ 510 BANK 5 POKE %i+$1800,%b
+ 520 NEXT %i
+ 530 ; 
+ 540 ;  Turn on tilemap
+ 550 ; 
+ 560 REG $6b,BIN 10000001
+ 570 REG $6c,BIN 00000000
+ 580 ; 
+ 590 ;  Rotation an mirror
+ 600 ; 
+ 610 BANK 5 POKE $0001,$00
+ 620 BANK 5 POKE $0003,$02
+ 630 BANK 5 POKE $0005,$04
+ 640 BANK 5 POKE $0007,$06
+ 650 BANK 5 POKE $0009,$08
+ 660 BANK 5 POKE $000b,$0a
+ 670 BANK 5 POKE $000d,$0c
+ 680 BANK 5 POKE $000f,$0e
+ 690 ; 
+ 700 ;  Return to ULA
+ 710 ; 
+ 720 PAUSE 0
+ 730 REG $6b,BIN 00000000
+```
 
+## Tilemap 40x32 + no attribute elimination + default attribute
+
+```basic
+  10 SAVE "/samples/tm3.bas"
+  20 RUN AT 3
+  30 CLS 
+  40 BORDER 3
+  50 ; 
+  60 ;  Clip
+  70 ; 
+  80 REG $1c,$08
+  90 REG $1b,$00
+ 100 REG $1b,$9f
+ 110 REG $1b,$00
+ 120 REG $1b,$ff
+ 130 ; 
+ 140 ;  Offsets
+ 150 ; 
+ 160 REG $2f,$00
+ 170 REG $30,$00
+ 180 REG $31,$00
+ 190 ; 
+ 200 ;  Base adresses
+ 210 ; 
+ 220 REG $6e,$00: ;  map=$4000
+ 230 REG $6f,$18: ;  def=$5800
+ 240 ; 
+ 250 ;  Palette
+ 260 ; 
+ 270 REG $43,BIN 00110000
+ 280 REG $40,$00
+ 290 REG $41,BIN 00000000
+ 300 REG $41,BIN 00000011
+ 310 REG $41,BIN 11100000
+ 320 REG $41,BIN 11100011
+ 330 REG $41,BIN 00011100
+ 340 REG $41,BIN 00011111
+ 350 REG $41,BIN 11111100
+ 360 REG $41,BIN 11111111
+ 370 ; 
+ 380 ;  Define tile 0
+ 390 ; 
+ 400 DATA $00,$00,$00,$00
+ 410 DATA $04,$44,$44,$40
+ 420 DATA $04,$44,$44,$40
+ 430 DATA $04,$44,$22,$22
+ 440 DATA $04,$44,$22,$22
+ 450 DATA $04,$44,$33,$33
+ 460 DATA $04,$44,$11,$11
+ 470 DATA $00,$00,$11,$11
+ 480 RESTORE %400
+ 490 FOR %i=0 TO 31 
+ 500 READ %b
+ 510 BANK 5 POKE %i+$1800,%b
+ 520 NEXT %i
+ 530 ; 
+ 540 ;  Turn on tilemap
+ 550 ; 
+ 560 REG $6b,BIN 10100001
+ 570 REG $6c,BIN 00000000
+ 580 ; 
+ 590 ;  Rotation an mirror
+ 600 ; 
+ 610 REG $6c,$0e
+ 620 ; 
+ 630 ;  Return to ULA
+ 640 ; 
+ 650 PAUSE 0
+ 660 REG $6b,BIN 00000000
+```
+
+## Tilemap 40x32 + no attribute elimination + multiple tile defs
+
+```basic
+  10 SAVE "/samples/tm4.bas"
+  20 RUN AT 3
+  30 CLS 
+  40 BORDER 3
+  50 ; 
+  60 ;  Clip
+  70 ; 
+  80 REG $1c,$08
+  90 REG $1b,$00
+ 100 REG $1b,$9f
+ 110 REG $1b,$00
+ 120 REG $1b,$ff
+ 130 ; 
+ 140 ;  Offsets
+ 150 ; 
+ 160 REG $2f,$00
+ 170 REG $30,$00
+ 180 REG $31,$00
+ 190 ; 
+ 200 ;  Base adresses
+ 210 ; 
+ 220 REG $6e,$00: ;  map=$4000
+ 230 REG $6f,$18: ;  def=$5800
+ 240 ; 
+ 250 ;  Palette
+ 260 ; 
+ 270 REG $43,BIN 00110000
+ 280 REG $40,$00
+ 290 REG $41,BIN 00000000
+ 300 REG $41,BIN 00000011
+ 310 REG $41,BIN 11100000
+ 320 REG $41,BIN 11100011
+ 330 REG $41,BIN 00011100
+ 340 REG $41,BIN 00011111
+ 350 REG $41,BIN 11111100
+ 360 REG $41,BIN 11111111
+ 370 ; 
+ 380 ;  Define tile 0
+ 390 ; 
+ 400 DATA $00,$00,$00,$00
+ 410 DATA $04,$44,$44,$40
+ 420 DATA $04,$44,$44,$40
+ 430 DATA $04,$44,$22,$22
+ 440 DATA $04,$44,$22,$22
+ 450 DATA $04,$44,$33,$33
+ 460 DATA $04,$44,$33,$33
+ 470 DATA $04,$44,$11,$11
+ 480 ; 
+ 490 ;  Define tile 1
+ 500 ; 
+ 510 DATA $00,$00,$11,$11
+ 520 DATA $22,$22,$33,$33
+ 530 DATA $44,$44,$55,$55
+ 540 DATA $66,$66,$77,$77
+ 550 DATA $00,$00,$11,$11
+ 560 DATA $22,$22,$33,$33
+ 570 DATA $44,$44,$55,$55
+ 580 DATA $66,$66,$77,$77
+ 590 ; 
+ 600 ;  Define tile 2
+ 610 ; 
+ 620 DATA $22,$22,$22,$22
+ 630 DATA $26,$66,$66,$62
+ 640 DATA $26,$66,$66,$62
+ 650 DATA $26,$66,$66,$62
+ 660 DATA $26,$66,$66,$62
+ 670 DATA $26,$66,$66,$62
+ 680 DATA $22,$22,$22,$22
+ 690 DATA $00,$00,$11,$11
+ 700 RESTORE %400
+ 710 FOR %i=0 TO 95 
+ 720 READ %b
+ 730 BANK 5 POKE %i+$1800,%b
+ 740 NEXT %i
+ 750 ; 
+ 760 ;  Add tile definitions
+ 770 ; 
+ 780 FOR %i=0 TO 100
+ 790 BANK 5 POKE %i*2+1,$01
+ 800 NEXT %i
+ 810 FOR %i=300 TO 400
+ 820 BANK 5 POKE %i*2+1,$02
+ 830 NEXT %i
+ 840 ; 
+ 850 ;  Turn on tilemap
+ 860 ; 
+ 870 REG $6b,BIN 10100001
+ 880 REG $6c,BIN 00000000
+ 890 ; 
+ 900 ;  Return to ULA
+ 910 ; 
+ 920 PAUSE 0
+ 930 REG $6b,BIN 00000000
 ```
