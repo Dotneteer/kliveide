@@ -2868,7 +2868,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param absY - Absolute Y coordinate in tilemap
    * @param textMode - true for text mode, false for graphics mode
    */
-  private fetchTilemapPattern(absX: number, absY: number, textMode: boolean): void {
+  private fetchTilemapPattern(absY: number, textMode: boolean): void {
     // For each pixel position within the tile (0-7), apply transformation
     // xInTile and yInTile are positions WITHIN the 8x8 tile, not absolute coordinates
     // Note: absX is passed for API consistency but not used (tile is identified by previously fetched index)
@@ -3006,7 +3006,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         nextBuffer[7] = patternByte & 0x01;
       } else {
         // Graphics mode: call function (has complex transformations)
-        this.fetchTilemapPattern(fetchAbsX, fetchAbsY, this.tilemapTextModeSampled);
+        this.fetchTilemapPattern(fetchAbsY, this.tilemapTextModeSampled);
       }
     }
 
@@ -3174,7 +3174,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         nextBuffer[7] = patternByte & 0x01;
       } else {
         // Graphics mode: call function (has complex transformations)
-        this.fetchTilemapPattern(fetchX, displayY, this.tilemapTextModeSampled);
+        this.fetchTilemapPattern(displayY, this.tilemapTextModeSampled);
       }
     }
 
@@ -3301,7 +3301,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         nextBuffer[7] = patternByte & 0x01;
       } else {
         // Graphics mode: call function (has complex transformations)
-        this.fetchTilemapPattern(fetchX, displayY, this.tilemapTextModeSampled);
+        this.fetchTilemapPattern(displayY, this.tilemapTextModeSampled);
       }
     }
 
@@ -3466,7 +3466,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         nextBuffer[7] = patternByte & 0x01;
       } else {
         // Graphics mode: call function (has complex transformations)
-        this.fetchTilemapPattern(fetchAbsX, fetchAbsY, this.tilemapTextModeSampled);
+        this.fetchTilemapPattern(fetchAbsY, this.tilemapTextModeSampled);
       }
     }
 
@@ -3648,7 +3648,6 @@ const SCR_VISIBILITY_CHECK = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ
 const SCR_TILE_ATTR_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile attribute)
 const SCR_PATTERN_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile pattern row)
 const SCR_SHIFT_REG_LOAD = 0b00100000; // bit 5
-const SCR_TILE_BUFFER_ADVANCE = 0b00100000; // bit 5, an alias to SCR_SHIFT_REG_LOAD (Tilemap: advance pixel buffer)
 const SCR_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
 const SCR_TILEMAP_SAMPLE_MODE = 0b01000000; // bit 6, alias to SCR_FLOATING_BUS_UPDATE (Tilemap: sample mode bit every 4 pixels)
 const SCR_BORDER_AREA = 0b10000000; // bit 7
@@ -4473,9 +4472,6 @@ function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
       if ((pixelX & 0x03) === 0x03) {
         flags |= SCR_TILEMAP_SAMPLE_MODE;
       }
-
-      // Advance buffer for each pixel in display area
-      flags |= SCR_TILE_BUFFER_ADVANCE;
     }
 
     // Tilemap fetches occur at 8-pixel tile boundaries
@@ -4532,12 +4528,17 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
   const hcCount = RENDERING_FLAGS_HC_COUNT;
   const renderingFlags = new Uint8Array(vcCount * hcCount);
 
+  let tmFetch = 0;
   for (let vc = 0; vc < vcCount; vc++) {
     for (let hc = 0; hc < hcCount; hc++) {
       const index = vc * hcCount + hc;
       renderingFlags[index] = generateTilemap80x32Cell(vc, hc);
+      if (renderingFlags[index] & SCR_TILE_INDEX_FETCH) {
+        tmFetch++;
+      }
     }
   }
+  console.log(`Tilemap 80x32 fetches: ${tmFetch}`);
 
   return renderingFlags;
 
@@ -4590,9 +4591,6 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
       if ((pixelX & 0x03) === 0x03) {
         flags |= SCR_TILEMAP_SAMPLE_MODE;
       }
-
-      // Advance buffer for each pixel in display area
-      flags |= SCR_TILE_BUFFER_ADVANCE;
     }
 
     // Tilemap fetches occur at 8-pixel tile boundaries in 40×32, but every 4 pixels in 80×32
@@ -4604,25 +4602,21 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
     // Allow fetching from pixelX=-8 (fetchForPixelX=0, first tile) to pixelX=311 (fetchForPixelX=319, last pixel of last tile)
     // NOTE: pixelX ranges 0-319 (same as 40x32), so fetchForPixelX ranges -8 to 327
     if (fetchForPixelX >= 0 && fetchForPixelX < 320) {
-      const hcInTile = pixelX & 0x07; // Use bitwise AND for modulo 8
+      const hcInTile = pixelX & 0x03; // Use bitwise AND for modulo 8
 
-      // Sample config bits at tile boundaries (when we'd start rendering the next tile)
-      // In 80×32, tile boundaries are every 4 HC instead of 8
-      if ((hcInTile === 0 || hcInTile === 4) && isInDisplayArea) {
+      if (hcInTile === 0x00 && isInDisplayArea) {
         flags |= SCR_TILEMAP_SAMPLE_CONFIG;
       }
 
-      // Fetch tile data at END of previous tile so it's ready for new tile
-      // In 80×32: fetch at positions 6 AND 2 (which is 6-4)
-      if (hcInTile === 6 || hcInTile === 2) {
+      if (hcInTile === 0x01) {
         flags |= SCR_TILE_INDEX_FETCH;
       }
 
-      // Fetch tile attribute 1 position before tile boundary
-      // In 80×32: fetch at positions 7 AND 3 (which is 7-4)
-      if (hcInTile === 7 || hcInTile === 3) {
+      if (hcInTile === 0x02) {
         flags |= SCR_TILE_ATTR_FETCH;
-        // Also fetch pattern at position 7 so buffer is ready for position 0 of next tile
+      }
+
+      if (hcInTile === 0x03) {
         flags |= SCR_PATTERN_FETCH;
       }
     }
