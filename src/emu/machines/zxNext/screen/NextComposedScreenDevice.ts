@@ -2673,62 +2673,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
-   * Apply scrolling to get absolute tilemap coordinates.
-   * @param displayX - X coordinate within display area (0-319 for 40×32, 0-639 for 80×32)
-   * @param displayY - Y coordinate within display area (0-255)
-   * @param scrollX - X scroll amount (10 bits, 0-1023)
-   * @param scrollY - Y scroll amount (8 bits, 0-255)
-   * @param mode80x32 - true for 80×32 mode, false for 40×32 mode
-   * @returns Absolute X and Y coordinates with wrapping applied
-   */
-  private getTilemapAbsoluteCoordinates(
-    displayX: number,
-    displayY: number,
-    scrollX: number,
-    scrollY: number,
-    mode80x32: boolean
-  ): { absX: number; absY: number } {
-    // Apply scroll with wrapping
-    // For 40×32 mode: 320 pixels wide (40 tiles × 8 pixels)
-    // For 80×32 mode: 640 pixels wide (80 tiles × 8 pixels)
-    // Both modes: 256 pixels tall (32 tiles × 8 pixels)
-    const maxX = mode80x32 ? 640 : 320;
-    const absX = (displayX + scrollX) % maxX;
-    const absY = (displayY + scrollY) & 0xff; // 256 pixel wraparound
-
-    return { absX, absY };
-  }
-
-  /**
-   * Calculate tilemap addresses for given absolute coordinates.
-   * @param absX - Absolute X coordinate (0-319 or 0-639)
-   * @param absY - Absolute Y coordinate (0-255)
-   * @param mode80x32 - true for 80×32 mode
-   * @param attrEliminated - true if attributes are eliminated
-   * @returns Tile map addresses for index and attribute bytes
-   */
-  private getTilemapAddresses(
-    absX: number,
-    absY: number,
-    mode80x32: boolean,
-    attrEliminated: boolean
-  ): { tileIndexAddr: number; tileAttrAddr: number } {
-    const tileWidth = mode80x32 ? 80 : 40;
-    const bytesPerTile = attrEliminated ? 1 : 2;
-
-    // Calculate which tile we're in
-    const tileX = Math.floor(absX / 8);
-    const tileY = Math.floor(absY / 8);
-    const tileArrayIndex = tileY * tileWidth + tileX;
-
-    // Calculate addresses
-    const tileIndexAddr = tileArrayIndex * bytesPerTile;
-    const tileAttrAddr = attrEliminated ? -1 : tileIndexAddr + 1;
-
-    return { tileIndexAddr, tileAttrAddr };
-  }
-
-  /**
    * Apply tile transformations (mirror/rotate) to pixel coordinates within tile.
    * Implements the transformation logic per ZX Spectrum Next hardware specification.
    *
@@ -3269,6 +3213,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         this.tilemap80x32Sampled,
         this.tilemapEliminateAttrSampled
       );
+      if (displayX < 16 && displayY === 0) {
+        console.log(`(${displayX},0): ${this.tilemapCurrentTileIndex}`);
+      }
     }
     if ((cell & SCR_TILE_ATTR_FETCH) !== 0) {
       this.fetchTilemapTileAttribute(
@@ -3313,7 +3260,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Reset buffer position at tile boundary
-    if ((displayX & 0x07) === 0) {
+    if ((displayX & 0x03) === 0) {
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
@@ -3490,7 +3437,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Reset buffer position at start of each tile (when displayX is at tile boundary)
     // Also copy "next" transformation flags to "current" for this tile
     // And swap buffers (next buffer becomes current)
-    if ((displayX & 0x07) === 0) {
+    if ((displayX & 0x03) === 0) {
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTileXMirror = this.tilemapNextTileXMirror;
