@@ -226,9 +226,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapNextTileAttr = 0;
 
     // --- Initialize tile transformation flags
-    this.tilemapTileXMirror = false;
-    this.tilemapTileYMirror = false;
-    this.tilemapTileRotate = false;
     this.tilemapTilePriority = false;
     this.tilemapTilePaletteOffset = 0;
 
@@ -2618,9 +2615,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private tilemapNextTileAttr: number; // Next tile's attribute (fetched ahead)
 
   // --- Current tile transformation flags (for rendering)
-  private tilemapTileXMirror: boolean;
-  private tilemapTileYMirror: boolean;
-  private tilemapTileRotate: boolean;
   private tilemapTilePriority: boolean;
   private tilemapTilePaletteOffset: number;
 
@@ -2722,28 +2716,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param mode80x32 - true for 80×32 mode, false for 40×32 mode
    * @param attrEliminated - true if attributes are eliminated
    */
-  private fetchTilemapTileIndex(
-    absX: number,
-    absY: number,
-    mode80x32: boolean,
-    attrEliminated: boolean
-  ): void {
-    // Inline address calculation (eliminates function call and object allocation)
-    const tileWidth = mode80x32 ? 80 : 40;
-    const bytesPerTile = attrEliminated ? 1 : 2;
-    const tileX = absX >> (mode80x32 ? 2 : 3); // Faster than Math.floor(absX / 8)
-    const tileY = absY >> 3; // Faster than Math.floor(absY / 8)
-    const tileArrayIndex = tileY * tileWidth + tileX;
-    const tileIndexAddr = tileArrayIndex * bytesPerTile;
-
-    // Fetch tile index
-    this.tilemapCurrentTileIndex = this.getTilemapVRAM(
-      this.tilemapUseBank7,
-      this.tilemapBank5Msb,
-      tileIndexAddr
-    );
-  }
-
   /**
    * Fetch tile attribute from tilemap VRAM.
    * Called when SCR_TILE_ATTR_FETCH flag is set.
@@ -2753,57 +2725,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param mode80x32 - true for 80×32 mode, false for 40×32 mode
    * @param attrEliminated - true if attributes are eliminated
    */
-  private fetchTilemapTileAttribute(
-    absX: number,
-    absY: number,
-    mode80x32: boolean,
-    attrEliminated: boolean
-  ): void {
-    // Inline address calculation (eliminates function call and object allocation)
-    const tileWidth = mode80x32 ? 80 : 40;
-    const bytesPerTile = attrEliminated ? 1 : 2;
-    const tileX = absX >> 3; // Faster than Math.floor(absX / 8)
-    const tileY = absY >> 3; // Faster than Math.floor(absY / 8)
-    const tileArrayIndex = tileY * tileWidth + tileX;
-    const tileIndexAddr = tileArrayIndex * bytesPerTile;
-    const tileAttrAddr = attrEliminated ? -1 : tileIndexAddr + 1;
-
-    // Handle 512-tile mode and attributes
-    if (this.tilemap512TileModeSampled && !attrEliminated) {
-      // Fetch attribute byte
-      this.tilemapCurrentAttr = this.getTilemapVRAM(
-        this.tilemapUseBank7,
-        this.tilemapBank5Msb,
-        tileAttrAddr
-      );
-      // In 512-tile mode, bit 0 is tile index bit 8
-      const tileIndexBit8 = this.tilemapCurrentAttr & 0x01;
-      this.tilemapCurrentTileIndex |= tileIndexBit8 << 8;
-    } else if (!attrEliminated) {
-      // Fetch attribute byte normally
-      this.tilemapCurrentAttr = this.getTilemapVRAM(
-        this.tilemapUseBank7,
-        this.tilemapBank5Msb,
-        tileAttrAddr
-      );
-    } else {
-      // Use default attributes from Reg 0x6C (cached)
-      this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
-    }
-
-    // Extract transformation flags from attribute and store for NEXT tile
-    // These will be copied to current flags when we start rendering the next tile
-    this.tilemapNextTileAttr = this.tilemapCurrentAttr;
-    this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
-    this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
-    this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
-    this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-    // In 512-tile mode, bit 0 is tile index bit 8 (not priority)
-    this.tilemapTilePriority = this.tilemap512TileModeSampled
-      ? false
-      : (this.tilemapCurrentAttr & 0x01) !== 0;
-  }
-
   /**
    * Fetch tile pattern pixels and populate buffer.
    * Called when SCR_PATTERN_FETCH flag is set.
@@ -2908,22 +2829,47 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Fetch tile index at position 6
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
-      this.fetchTilemapTileIndex(
-        fetchAbsX,
-        fetchAbsY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
+      // Inline tile index fetch (40×32 mode: 40 tiles wide)
+      const tileArrayIndex = (fetchAbsY >> 3) * 40 + (fetchAbsX >> 3);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      this.tilemapCurrentTileIndex = this.getTilemapVRAM(
+        this.tilemapUseBank7,
+        this.tilemapBank5Msb,
+        tileIndexAddr
       );
     }
 
     // Fetch tile attribute at position 7
     if ((cell & SCR_TILE_ATTR_FETCH) !== 0) {
-      this.fetchTilemapTileAttribute(
-        fetchAbsX,
-        fetchAbsY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
-      );
+      // Inline tile attribute fetch (40×32 mode: 40 tiles wide)
+      const tileArrayIndex = (fetchAbsY >> 3) * 40 + (fetchAbsX >> 3);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      const tileAttrAddr = this.tilemapEliminateAttrSampled ? -1 : tileIndexAddr + 1;
+
+      if (this.tilemap512TileModeSampled && !this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+        const tileIndexBit8 = this.tilemapCurrentAttr & 0x01;
+        this.tilemapCurrentTileIndex |= tileIndexBit8 << 8;
+      } else if (!this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+      } else {
+        this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+      }
+
+      this.tilemapNextTileAttr = this.tilemapCurrentAttr;
+      this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
+      this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
+      this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
+      this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
 
     // Fetch pattern at position 7 (uses attributes set at this position)
@@ -2981,9 +2927,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if ((displayX & 0x07) === 0) {
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
-      this.tilemapTileXMirror = this.tilemapNextTileXMirror;
-      this.tilemapTileYMirror = this.tilemapNextTileYMirror;
-      this.tilemapTileRotate = this.tilemapNextTileRotate;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
       // Swap buffers: what was "next" is now "current"
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
@@ -3080,20 +3023,45 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const fetchX = displayX + 8;
 
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
-      this.fetchTilemapTileIndex(
-        fetchX,
-        displayY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
+      // Inline tile index fetch (40×32 mode: 40 tiles wide, no scrolling)
+      const tileArrayIndex = (displayY >> 3) * 40 + (fetchX >> 3);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      this.tilemapCurrentTileIndex = this.getTilemapVRAM(
+        this.tilemapUseBank7,
+        this.tilemapBank5Msb,
+        tileIndexAddr
       );
     }
     if ((cell & SCR_TILE_ATTR_FETCH) !== 0) {
-      this.fetchTilemapTileAttribute(
-        fetchX,
-        displayY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
-      );
+      // Inline tile attribute fetch (40×32 mode: 40 tiles wide, no scrolling)
+      const tileArrayIndex = (displayY >> 3) * 40 + (fetchX >> 3);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      const tileAttrAddr = this.tilemapEliminateAttrSampled ? -1 : tileIndexAddr + 1;
+
+      if (this.tilemap512TileModeSampled && !this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+        const tileIndexBit8 = this.tilemapCurrentAttr & 0x01;
+        this.tilemapCurrentTileIndex |= tileIndexBit8 << 8;
+      } else if (!this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+      } else {
+        this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+      }
+
+      this.tilemapNextTileAttr = this.tilemapCurrentAttr;
+      this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
+      this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
+      this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
+      this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
     if ((cell & SCR_PATTERN_FETCH) !== 0) {
       // Inline text mode pattern fetch (eliminates function call overhead)
@@ -3207,23 +3175,45 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const fetchX = displayX + 4;
 
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
-      this.fetchTilemapTileIndex(
-        fetchX,
-        displayY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
+      // Inline tile index fetch (80×32 mode: 80 tiles wide, no scrolling)
+      const tileArrayIndex = (displayY >> 3) * 80 + (fetchX >> 2);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      this.tilemapCurrentTileIndex = this.getTilemapVRAM(
+        this.tilemapUseBank7,
+        this.tilemapBank5Msb,
+        tileIndexAddr
       );
-      if (displayX < 40 && displayY === 0) {
-        console.log(`(${displayX},0): ${this.tilemapCurrentTileIndex}`);
-      }
     }
     if ((cell & SCR_TILE_ATTR_FETCH) !== 0) {
-      this.fetchTilemapTileAttribute(
-        fetchX,
-        displayY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
-      );
+      // Inline tile attribute fetch (80×32 mode: 80 tiles wide, no scrolling)
+      const tileArrayIndex = (displayY >> 3) * 80 + (fetchX >> 2);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      const tileAttrAddr = this.tilemapEliminateAttrSampled ? -1 : tileIndexAddr + 1;
+
+      if (this.tilemap512TileModeSampled && !this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+        const tileIndexBit8 = this.tilemapCurrentAttr & 0x01;
+        this.tilemapCurrentTileIndex |= tileIndexBit8 << 8;
+      } else if (!this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+      } else {
+        this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+      }
+
+      this.tilemapNextTileAttr = this.tilemapCurrentAttr;
+      this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
+      this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
+      this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
+      this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
     if ((cell & SCR_PATTERN_FETCH) !== 0) {
       // Inline text mode pattern fetch (eliminates function call overhead)
@@ -3371,25 +3361,47 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Fetch tile index at position 6
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
-      this.fetchTilemapTileIndex(
-        fetchAbsX,
-        fetchAbsY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
+      // Inline tile index fetch (80×32 mode: 80 tiles wide)
+      const tileArrayIndex = (fetchAbsY >> 3) * 80 + (fetchAbsX >> 2);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      this.tilemapCurrentTileIndex = this.getTilemapVRAM(
+        this.tilemapUseBank7,
+        this.tilemapBank5Msb,
+        tileIndexAddr
       );
-      if (displayX < 40 && displayY === 0) {
-        console.log(`(${displayX},0): ${this.tilemapCurrentTileIndex}`);
-      }
     }
 
     // Fetch tile attribute at position 7
     if ((cell & SCR_TILE_ATTR_FETCH) !== 0) {
-      this.fetchTilemapTileAttribute(
-        fetchAbsX,
-        fetchAbsY,
-        this.tilemap80x32Sampled,
-        this.tilemapEliminateAttrSampled
-      );
+      // Inline tile attribute fetch (80×32 mode: 80 tiles wide)
+      const tileArrayIndex = (fetchAbsY >> 3) * 80 + (fetchAbsX >> 2);
+      const tileIndexAddr = this.tilemapEliminateAttrSampled ? tileArrayIndex : tileArrayIndex << 1;
+      const tileAttrAddr = this.tilemapEliminateAttrSampled ? -1 : tileIndexAddr + 1;
+
+      if (this.tilemap512TileModeSampled && !this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+        const tileIndexBit8 = this.tilemapCurrentAttr & 0x01;
+        this.tilemapCurrentTileIndex |= tileIndexBit8 << 8;
+      } else if (!this.tilemapEliminateAttrSampled) {
+        this.tilemapCurrentAttr = this.getTilemapVRAM(
+          this.tilemapUseBank7,
+          this.tilemapBank5Msb,
+          tileAttrAddr
+        );
+      } else {
+        this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+      }
+
+      this.tilemapNextTileAttr = this.tilemapCurrentAttr;
+      this.tilemapNextTilePaletteOffset = (this.tilemapCurrentAttr >> 4) & 0x0f;
+      this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
+      this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
+      this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
 
     // Fetch pattern at position 7 (uses attributes set at this position)
@@ -3443,9 +3455,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if ((displayX & 0x03) === 0) {
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
-      this.tilemapTileXMirror = this.tilemapNextTileXMirror;
-      this.tilemapTileYMirror = this.tilemapNextTileYMirror;
-      this.tilemapTileRotate = this.tilemapNextTileRotate;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
       // Swap buffers: what was "next" is now "current"
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
