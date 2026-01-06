@@ -2731,7 +2731,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Inline address calculation (eliminates function call and object allocation)
     const tileWidth = mode80x32 ? 80 : 40;
     const bytesPerTile = attrEliminated ? 1 : 2;
-    const tileX = absX >> 3; // Faster than Math.floor(absX / 8)
+    const tileX = absX >> (mode80x32 ? 2 : 3); // Faster than Math.floor(absX / 8)
     const tileY = absY >> 3; // Faster than Math.floor(absY / 8)
     const tileArrayIndex = tileY * tileWidth + tileX;
     const tileIndexAddr = tileArrayIndex * bytesPerTile;
@@ -3204,7 +3204,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const displayY = vc - this.tilemapWideDisplayYStart;
 
     // Fast path: No scrolling
-    const fetchX = displayX + 8;
+    const fetchX = displayX + 4;
 
     if ((cell & SCR_TILE_INDEX_FETCH) !== 0) {
       this.fetchTilemapTileIndex(
@@ -3213,7 +3213,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         this.tilemap80x32Sampled,
         this.tilemapEliminateAttrSampled
       );
-      if (displayX < 16 && displayY === 0) {
+      if (displayX < 40 && displayY === 0) {
         console.log(`(${displayX},0): ${this.tilemapCurrentTileIndex}`);
       }
     }
@@ -3364,7 +3364,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Fetch tile data if flags are set
     // This happens even in border area (displayX < 0) to prefetch first tile
     // When fetching at positions 6,7, look ahead +8 pixels to fetch NEXT tile's data
-    const fetchX = displayX + 8;
+    const fetchX = displayX + 4;
     // Priority 1B: Inline getTilemapAbsoluteCoordinates (eliminates object allocation)
     const fetchAbsX = (fetchX + this.tilemapScrollXField) % 320;
     const fetchAbsY = (displayY + this.tilemapScrollYField) & 0xff;
@@ -3377,6 +3377,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         this.tilemap80x32Sampled,
         this.tilemapEliminateAttrSampled
       );
+      if (displayX < 40 && displayY === 0) {
+        console.log(`(${displayX},0): ${this.tilemapCurrentTileIndex}`);
+      }
     }
 
     // Fetch tile attribute at position 7
