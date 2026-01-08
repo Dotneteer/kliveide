@@ -2752,11 +2752,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         patternAddr
       );
 
-      for (let xInTile = 0; xInTile < 8; xInTile++) {
-        // Extract the bit at position (MSB first)
-        const bitPos = 7 - xInTile;
-        nextBuffer[xInTile] = (patternByte >> bitPos) & 0x01;
-      }
+      nextBuffer[0] = (patternByte >> 7) & 0x01;
+      nextBuffer[1] = (patternByte >> 6) & 0x01;
+      nextBuffer[2] = (patternByte >> 5) & 0x01;
+      nextBuffer[3] = (patternByte >> 4) & 0x01;
+      nextBuffer[4] = (patternByte >> 3) & 0x01;
+      nextBuffer[5] = (patternByte >> 2) & 0x01;
+      nextBuffer[6] = (patternByte >> 1) & 0x01;
+      nextBuffer[7] = patternByte & 0x01;
     } else {
       // Graphics mode: fetch 8 pixels with transformations
       for (let xInTile = 0; xInTile < 8; xInTile++) {
@@ -2783,9 +2786,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         nextBuffer[xInTile] = pixelValue;
       }
     }
-
-    // Do NOT reset buffer position here - let the rendering function handle it
-    // this.tilemapBufferPosition = 0;
   }
 
   /**
