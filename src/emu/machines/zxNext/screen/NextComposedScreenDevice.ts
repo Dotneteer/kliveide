@@ -4497,7 +4497,6 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
       }
     }
   }
-  console.log(`Tilemap 80x32 fetches: ${tmFetch}`);
 
   return renderingFlags;
 
