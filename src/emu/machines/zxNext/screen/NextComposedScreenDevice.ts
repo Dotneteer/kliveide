@@ -213,11 +213,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapDefaultAttrCache = 0;
 
     // --- Initialize sampled tilemap configuration
-    this.tilemap80x32Sampled = false;
     this.tilemapTextModeSampled = false;
     this.tilemapEliminateAttrSampled = false;
     this.tilemap512TileModeSampled = false;
-    this.tilemapForceOnTopSampled = false;
 
     // --- Initialize current tile state
     this.tilemapCurrentTileIndex = 0;
@@ -2604,11 +2602,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   tilemapTileDefBank5Msb: number;
 
   // --- Sampled tilemap configuration (sampled based on rendering flags)
-  private tilemap80x32Sampled: boolean; // Sampled every 4 pixels
   private tilemapTextModeSampled: boolean; // Sampled at tile boundaries
   private tilemapEliminateAttrSampled: boolean; // Sampled at tile boundaries
   private tilemap512TileModeSampled: boolean; // Sampled at tile boundaries
-  private tilemapForceOnTopSampled: boolean; // Sampled at tile boundaries
 
   // --- Current tile being rendered
   private tilemapCurrentTileIndex: number;
@@ -2799,18 +2795,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param cell - Rendering cell with activity flags
    */
   private renderTilemap_40x32Pixel(vc: number, hc: number, cell: number): void {
-    // Priority 2F: Combine sampling checks for faster execution when no flags are set
-    // Sample mode bit every 4 pixels (hardware: when hcount(4:0) = "11111")
-    if ((cell & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-      this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-    }
-
     // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
     if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
       this.tilemapTextModeSampled = this.tilemapTextMode;
       this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
       this.tilemap512TileModeSampled = this.tilemap512TileMode;
-      this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
     }
 
     // Calculate display coordinates
@@ -3010,14 +2999,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   private renderTilemap_40x32Pixel_FastPath(vc: number, hc: number, cell: number): void {
     // Sample mode and config (same as regular path)
-    if ((cell & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-      this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-    }
     if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
       this.tilemapTextModeSampled = this.tilemapTextMode;
       this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
       this.tilemap512TileModeSampled = this.tilemap512TileMode;
-      this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
     }
 
     const displayX = hc - this.confDisplayXStart + 32;
@@ -3163,14 +3148,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   private renderTilemap_80x32Pixel_FastPath(vc: number, hc: number, cell: number): void {
     // Sample mode and config (same as regular path)
-    if ((cell & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-      this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-    }
     if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
       this.tilemapTextModeSampled = this.tilemapTextMode;
       this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
       this.tilemap512TileModeSampled = this.tilemap512TileMode;
-      this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
     }
 
     // Same as 40x32, but each HC generates 2 pixels
@@ -3336,20 +3317,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   private renderTilemap_80x32Pixel(vc: number, hc: number, cell: number): void {
     // Priority 2F: Combine sampling checks for faster execution when no flags are set
-    const samplingFlags = cell & (SCR_TILEMAP_SAMPLE_MODE | SCR_TILEMAP_SAMPLE_CONFIG);
-    if (samplingFlags !== 0) {
-      // Sample mode bit every 4 pixels
-      if ((samplingFlags & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-        this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-      }
-
-      // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
-      if ((samplingFlags & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
-        this.tilemapTextModeSampled = this.tilemapTextMode;
-        this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
-        this.tilemap512TileModeSampled = this.tilemap512TileMode;
-        this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
-      }
+    // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
+    if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
+      this.tilemapTextModeSampled = this.tilemapTextMode;
+      this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
+      this.tilemap512TileModeSampled = this.tilemap512TileMode;
     }
 
     // Calculate display coordinates
@@ -3616,7 +3588,6 @@ const SCR_TILE_ATTR_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Ti
 const SCR_PATTERN_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile pattern row)
 const SCR_SHIFT_REG_LOAD = 0b00100000; // bit 5
 const SCR_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
-const SCR_TILEMAP_SAMPLE_MODE = 0b01000000; // bit 6, alias to SCR_FLOATING_BUS_UPDATE (Tilemap: sample mode bit every 4 pixels)
 const SCR_BORDER_AREA = 0b10000000; // bit 7
 const SCR_TILEMAP_SAMPLE_CONFIG = 0b10000000; // bit 7, alias to SCR_BORDER_AREA (Tilemap: sample config bits at tile boundaries)
 const SCR_SPRITE_DISPLAY = 0b00000001; // bit 0, the sprite buffer is displayed
@@ -4450,16 +4421,6 @@ function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
     // to allow fetching even when pixelX is negative (in the border).
     // The fetch at pixelX=-2,-1 will load tile 0 data, ready for rendering at pixelX=0.
 
-    // Only set rendering flags for pixels that will actually be displayed
-    const isInDisplayArea = pixelX >= 0 && pixelX < 320;
-
-    if (isInDisplayArea) {
-      // Sample mode bit (40×32/80×32) every 4 pixels (hardware: when hcount(4:0) = "11111")
-      if ((pixelX & 0x03) === 0x03) {
-        flags |= SCR_TILEMAP_SAMPLE_MODE;
-      }
-    }
-
     // Tilemap fetches occur at 8-pixel tile boundaries
     // Each tile is 8 pixels wide in 40×32 mode
     // Calculate which tile we're fetching for (accounting for +8 lookahead)
@@ -4471,7 +4432,7 @@ function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
       const hcInTile = pixelX & 0x07; // Use bitwise AND for modulo 8
 
       // Sample config bits at tile boundaries (when we'd start rendering the next tile)
-      if (hcInTile === 0 && isInDisplayArea) {
+      if (hcInTile === 0 && pixelX >= 0 && pixelX < 320) {
         flags |= SCR_TILEMAP_SAMPLE_CONFIG;
       }
 
@@ -4568,16 +4529,6 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
     // to allow fetching even when pixelX is negative (in the border).
     // The fetch at pixelX=-2,-1 will load tile 0 data, ready for rendering at pixelX=0.
 
-    // Only set rendering flags for pixels that will actually be displayed
-    const isInDisplayArea = pixelX >= 0 && pixelX < 320;
-
-    if (isInDisplayArea) {
-      // Sample mode bit (40×32/80×32) every 4 pixels (hardware: when hcount(4:0) = "11111")
-      if ((pixelX & 0x03) === 0x03) {
-        flags |= SCR_TILEMAP_SAMPLE_MODE;
-      }
-    }
-
     // Tilemap fetches occur at 8-pixel tile boundaries in 40×32, but every 4 pixels in 80×32
     // Each tile is 8 pixels wide, but in 80×32 we have twice as many tiles
     // Calculate which tile we're fetching for (accounting for +8 lookahead)
@@ -4589,7 +4540,7 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
     if (fetchForPixelX >= 0 && fetchForPixelX < 320) {
       const hcInTile = pixelX & 0x03; // Use bitwise AND for modulo 8
 
-      if (hcInTile === 0x00 && isInDisplayArea) {
+      if (hcInTile === 0x00 && pixelX >= 0 && pixelX < 320) {
         flags |= SCR_TILEMAP_SAMPLE_CONFIG;
       }
 
