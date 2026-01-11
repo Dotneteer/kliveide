@@ -127,10 +127,21 @@ The emulator implements sprite rendering using a simplified architecture compare
    - **Attr 4**: 4-bit pattern flag (7), Pattern bit 6 (6), X scale (5:4), Y scale (3:2), Y MSB (0)
    - Stored as standard byte arrays (5 bytes per sprite, 640 bytes total)
 
-2. **Pattern Memory** (64 patterns × 256 bytes = 16KB):
-   - Each pattern: 16×16 pixels = 256 bytes (8-bit per pixel)
-   - 4-bit patterns stored with 2 pixels per byte (access via nibble extraction)
-   - Can be pre-transformed for rotations/mirrors to optimize rendering
+2. **Pattern Memory** (separate storage for 8-bit and 4-bit patterns):
+   - **8-bit patterns**: 64 patterns × 8 transform variants × 256 bytes = 128KB
+     - Each pattern: 16×16 pixels, 1 byte per pixel (full byte used)
+     - Pattern index: 0-63 (6-bit from attr3[5:0])
+   - **4-bit patterns**: 128 patterns × 8 transform variants × 256 bytes = 256KB
+     - Each pattern: 16×16 pixels, 1 byte per pixel (only lower nibble used, upper nibble ignored)
+     - Pattern index: 0-127 (7-bit from attr3[5:0] + attr4[6] as LSB)
+   - **Total memory**: 384KB (acceptable for modern emulator)
+   - **Advantage**: No nibble extraction during rendering - unified 256-byte access for both modes
+   - Transform variants pre-computed for rotation/mirroring optimization
+   - **Pattern upload**: When a byte is written to pattern memory (port 0x5B):
+     - Write to 8-bit pattern memory (full byte)
+     - Write to 4-bit pattern memory (lower nibble only, upper nibble can be discarded)
+     - Pre-compute all 8 transformation variants for both pattern types simultaneously
+     - This ensures sprites can switch between 4-bit and 8-bit modes using the same pattern data
 
 3. **Single Line Buffer** (320×16-bit array):
    - Unlike hardware's dual buffers, emulator uses **sequential rendering with one buffer**
@@ -576,190 +587,196 @@ The PROCESS state renders a visible sprite by fetching pattern data and writing 
 
 **PROCESS State Execution** (cycle-by-cycle at CLK_28):
 
-```
+**EMULATOR IMPLEMENTATION NOTES**:
+- Use pre-transformed pattern variants from `SpriteDevice.patternMemory8bit[]` or `SpriteDevice.patternMemory4bit[]`
+- All sprite dimensions (width, height) are pre-computed in `SpriteAttributes`
+- Transformation variant index (0-7) is pre-computed in `attributes.transformVariant`
+- Process 4 CLK_28 cycles per function call (batched for efficiency)
+
+```typescript
 ═══════════════════════════════════════════════════════════════════════════
-Cycle 0: STATE = PROCESS (entry from QUALIFY)
-═══════════════════════════════════════════════════════════════════════════
-
-Input: sprite_index (current sprite being processed)
-       y_offset (row within sprite, calculated in QUALIFY)
-       All sprite attributes (attr0-attr4) still available
-
-Action:
-  1. Calculate effective Y index with scaling and mirroring:
-     
-     // Apply Y-scale (right-shift for scaling)
-     if y_scale == 00: y_index = y_offset[3:0]       // 1x, bits 0-3
-     if y_scale == 01: y_index = y_offset[4:1]       // 2x, bits 1-4
-     if y_scale == 10: y_index = y_offset[5:2]       // 4x, bits 2-5
-     if y_scale == 11: y_index = y_offset[6:3]       // 8x, bits 3-6
-     
-     // Apply Y-mirror (bitwise NOT)
-     if attr2[2] == 1:  // Y-mirror
-         y_index = ~y_index[3:0]  // Invert bits (15 - y_index)
-     
-  2. Calculate starting X index based on mirroring:
-     
-     // Effective X-mirror (rotation XORs the mirror flag)
-     x_mirror_eff = attr2[3] XOR attr2[1]
-     
-     if x_mirror_eff == 0:
-         x_index = 0        // Normal: start at column 0
-         x_delta = +1       // Increment
-     else:
-         x_index = 15       // Mirrored: start at column 15
-         x_delta = -1       // Decrement
-     
-  3. Calculate base pattern address:
-     
-     // Pattern is 256 bytes: 16 rows × 16 columns
-     if attr2[1] == 0:  // No rotation
-         pattern_addr = (pattern_index << 8) | (y_index << 4) | x_index
-         pattern_delta = x_delta  // Step by ±1
-     else:  // Rotation (swap X and Y in addressing)
-         pattern_addr = (pattern_index << 8) | (x_index << 4) | y_index
-         pattern_delta = x_delta × 16  // Step by ±16
-     
-  4. Initialize width counter:
-     
-     // Width counter tracks sub-pixels for scaling
-     width_count = 0
-     
-     // Width delta based on X-scale
-     if x_scale == 00: width_delta = 1    // 1x, 16 pixels
-     if x_scale == 01: width_delta = 2    // 2x, 32 pixels (each pixel drawn twice)
-     if x_scale == 10: width_delta = 4    // 4x, 64 pixels
-     if x_scale == 11: width_delta = 8    // 8x, 128 pixels
-     
-     total_width = 16 × width_delta       // Total pixels to render
-     
-  5. Initialize line buffer write position:
-     
-     line_buffer_pos = x_pos  // 9-bit X position (0-511)
-
-Outputs:
-  - pattern_addr: starting address for pattern fetch
-  - pattern_delta: step size for next pixel
-  - width_count: initialized to 0
-  - line_buffer_pos: starting write position
-
-Timing: 1-2 CLK_28 cycles for setup
-
-═══════════════════════════════════════════════════════════════════════════
-Cycles 1-N: Pixel Rendering Loop (repeats for each pixel)
+Setup Phase: STATE = PROCESS (entry from QUALIFY)
 ═══════════════════════════════════════════════════════════════════════════
 
-Loop: for each pixel in sprite (16 pixels base, more if scaled)
+// Emulator: Initialize state variables when entering PROCESSING phase
+// These are calculated ONCE per sprite, then reused for all pixels
 
-Cycle N+0: Fetch Pattern Byte
+const sprite = this.spriteDevice.attributes[this.spritesIndex];
+
+// 1. Calculate Y index within pattern (accounting for scale only)
+//    This represents which row of the 16×16 pattern we're rendering
+//    Note: Y-mirror is already applied in the pre-transformed pattern variant
+const yOffset = this.spritesVc - sprite.y;        // Scanline offset within sprite
+const yIndex = yOffset >> sprite.scaleY;          // Apply Y-scale: divide by 2^scaleY (0-15)
+
+// 2. Get pre-transformed pattern variant (OPTIMIZATION: no transform during render)
+//    Pattern variants are pre-computed when pattern data is written
+//    
+//    Separate storage for 8-bit and 4-bit patterns:
+//    - 8-bit: patternMemory8bit[64 patterns × 8 variants] each 256 bytes
+//    - 4-bit: patternMemory4bit[128 patterns × 8 variants] each 256 bytes (lower nibble only)
+//    
+//    Pattern index encoding:
+//    - 8-bit sprites: attr3[5:0] only (0-63), attr4[6] must be 0
+//    - 4-bit sprites: attr3[5:0] + attr4[6] as LSB (0-127)
+//    - Pattern number format: N5 N4 N3 N2 N1 N0 N6 (where N6 is LSB)
+//    
+//    Transformation variant is 3-bit (0-7):
+//    - bit 2: rotate, bit 1: mirrorX, bit 0: mirrorY
+//    
+//    Combined variant index = (patternIndex << 3) | transformVariant
+
+const variantIndex = sprite.is4BitPattern 
+  ? (((sprite.patternIndex << 1) | (sprite.attributeFlag2 ? 1 : 0)) << 3) | sprite.transformVariant
+  : (sprite.patternIndex << 3) | sprite.transformVariant;
+
+const patternData = sprite.is4BitPattern
+  ? this.spriteDevice.patternMemory4bit[variantIndex]
+  : this.spriteDevice.patternMemory8bit[variantIndex];
+
+// 3. Initialize counters
+this.spritesCurrentPixel = 0;                     // Pixel counter (0 to sprite.width-1)
+this.spritesCurrentX = sprite.x;                  // Line buffer write position (9-bit, -256 to 511)
+
+// 4. Cache values for render loop
+this.spritesPatternData = patternData;            // Cache pattern pointer
+this.spritesPatternYIndex = yIndex;               // Cache Y row index (0-15)
+
+// Pre-computed from attributes (no calculation needed):
+// - sprite.width: Total pixels to render (16, 32, 64, or 128)
+// - sprite.scaleX: X-scale factor (0-3 for 1x, 2x, 4x, 8x)
+// - sprite.is4BitPattern: Color mode flag
+// - sprite.paletteOffset: Palette offset (0-15)
+
+═══════════════════════════════════════════════════════════════════════════
+Render Loop: Pixel Rendering (1 CLK_28 cycle per pixel)
+═══════════════════════════════════════════════════════════════════════════
+
+// Emulator: Process pixels in batches of 4 (4 CLK_28 cycles per CLK_7 call)
+// Each iteration renders ONE pixel to the line buffer
+
+for (let clk28 = 0; clk28 < 4; clk28++) {
+  // Check completion first
+  if (this.spritesCurrentPixel >= sprite.width) {
+    // Sprite rendering complete - transition back to QUALIFYING
+    this.spritesQualifying = true;
+    this.spritesIndex++;
+    break;
+  }
+
+  // 1. Calculate X index within pattern (0-15)
+  //    Account for scaling: multiple output pixels map to same pattern pixel
+  const xScaled = this.spritesCurrentPixel >> sprite.scaleX;  // Divide by 2^scaleX
+  const xIndex = xScaled & 0x0f;                              // Modulo 16
+
+  // 2. Fetch pixel from pre-transformed pattern (DIRECT LOOKUP - no transform!)
+  //    Pattern is always indexed as [y][x] because transformation is pre-applied
+  //    Both 8-bit and 4-bit patterns use 256-byte arrays (4-bit uses lower nibble only)
+  const patternOffset = (this.spritesPatternYIndex << 4) | xIndex;
+  let pixelValue = this.spritesPatternData[patternOffset];
+
+  // 3. Extract pixel color value
+  //    For 4-bit: only lower nibble is used (upper nibble ignored)
+  //    For 8-bit: full byte is used
+  if (sprite.is4BitPattern) {
+    pixelValue = pixelValue & 0x0f;  // Use only lower nibble
+  }
+
+  // 4. Apply palette offset
+  let paletteIndex: number;
+  if (sprite.is4BitPattern) {
+    // 4-bit mode: palette offset replaces upper 4 bits
+    paletteIndex = (sprite.paletteOffset << 4) | pixelValue;
+  } else {
+    // 8-bit mode: add palette offset to upper 4 bits only
+    const upper = ((pixelValue >> 4) + sprite.paletteOffset) & 0x0f;
+    const lower = pixelValue & 0x0f;
+    paletteIndex = (upper << 4) | lower;
+  }
+
+  // 5. Check transparency
+  //    Compare against global transparency index (NextReg 0x4B, default 0xE3)
+  const isTransparent = (pixelValue === this.spriteDevice.transparencyIndex);
+
+  // 6. Check line buffer bounds
+  //    Only write if X position is within visible display (0-319)
+  //    Negative positions and positions >= 320 are clipped
+  const bufferPos = this.spritesCurrentX;
+  const inBounds = (bufferPos >= 0 && bufferPos < 320);
+
+  // 7. Read existing line buffer value (for collision and zero-on-top)
+  const existingValue = this.spritesBuffer[bufferPos];
+  const existingValid = (existingValue & 0x100) !== 0;  // Bit 8 = valid flag
+
+  // 8. Determine write enable
+  let writeEnable = !isTransparent && inBounds;
   
-  Action:
-    1. Request pattern memory read:
-       Read 1 byte from pattern memory at pattern_addr
-       → pattern_byte
-       
-       Note: Pattern SRAM is synchronous, but has zero-delay output
-       Data available same cycle (fast SRAM or register output)
-    
-    2. Extract pixel value:
-       
-       if attr4[7] == 0:  // 8-bit pattern
-           pixel_value = pattern_byte  // Use full byte
-       else:  // 4-bit pattern
-           // Extract nibble based on X position
-           if x_index[0] == 0:
-               pixel_value = pattern_byte[3:0]  // Lower nibble
-           else:
-               pixel_value = pattern_byte[7:4]  // Upper nibble
-    
-    3. Apply palette offset:
-       
-       if attr4[7] == 0:  // 8-bit pattern
-           // Add palette offset to upper 4 bits only
-           palette_index = (pattern_byte[7:4] + attr2[7:4]) | pattern_byte[3:0]
-       else:  // 4-bit pattern
-           // Palette offset replaces upper 4 bits
-           palette_index = (attr2[7:4] << 4) | pixel_value
-    
-    4. Check transparency:
-       
-       is_transparent = (pixel_value == transparent_color)
-       // transparent_color from NextReg 0x4B
-    
-    5. Check line buffer bounds:
-       
-       in_bounds = (line_buffer_pos[8:0] < 320)
-       // Only indices 0-319 are valid for display
-    
-    6. Read existing line buffer value (for zero-on-top check):
-       
-       existing_pixel = line_buffer[line_buffer_pos[8:0]]
-       existing_valid = existing_pixel[8]  // Valid flag bit
-    
-    7. Determine write enable:
-       
-       if zero_on_top_mode == 1:
-           // Don't overwrite existing valid pixels
-           write_enable = NOT is_transparent 
-                         AND in_bounds 
-                         AND NOT existing_valid
-       else:
-           // Normal mode: later sprites overwrite earlier
-           write_enable = NOT is_transparent 
-                         AND in_bounds
-    
-    8. Write to line buffer (if enabled):
-       
-       if write_enable:
-           line_buffer[line_buffer_pos[8:0]] = (1 << 8) | palette_index
-           // Bit 8 = valid flag
-           // Bits 7:0 = palette index
-           
-           // Collision detection
-           if existing_valid:
-               collision_flag = 1  // Set collision status
-    
-    9. Advance counters:
-       
-       width_count = width_count + width_delta
-       
-       // Check if we should fetch next pattern pixel
-       if width_count[4] changed from 0 to 1:
-           // Toggle means we've rendered enough sub-pixels
-           pattern_addr = pattern_addr + pattern_delta
-           width_count = width_count AND 0x0F  // Keep lower 4 bits
-       
-       line_buffer_pos = line_buffer_pos + 1
-    
-    10. Check completion:
-        
-        pixels_rendered = pixels_rendered + 1
-        
-        if pixels_rendered >= total_width:
-            // Sprite complete
-            next_state ← QUALIFY
-            sprite_index ← sprite_index + 1
-            break loop
-        
-        if line_buffer_pos >= 512:
-            // X wrapped around (off right edge)
-            next_state ← QUALIFY
-            sprite_index ← sprite_index + 1
-            break loop
-        
-        // Otherwise, continue to next pixel
+  if (this.spriteDevice.sprite0OnTop && existingValid) {
+    // Zero-on-top mode: don't overwrite existing valid pixels
+    writeEnable = false;
+  }
 
-Outputs per pixel cycle:
-  - Line buffer write (if pixel is opaque and in bounds)
-  - pattern_addr advanced (every N sub-pixels based on scale)
-  - line_buffer_pos incremented
-  - collision_flag potentially set
+  // 9. Write to line buffer
+  if (writeEnable) {
+    // Set bit 8 (valid flag) and bits 7:0 (palette index)
+    this.spritesBuffer[bufferPos] = 0x100 | paletteIndex;
+    
+    // 10. Collision detection
+    //     Trigger when writing to a position that already has a valid pixel
+    if (existingValid) {
+      this.spriteDevice.collisionDetected = true;
+    }
+  }
 
-Timing per pixel: 1 CLK_28 cycle minimum
-                  (Pattern fetch + transparency check + buffer write)
+  // 11. Advance to next pixel
+  this.spritesCurrentPixel++;
+  this.spritesCurrentX++;
+  
+  // Note: X position wraps naturally (9-bit arithmetic handles off-screen sprites)
+}
+
+// Each call to renderPixelClk28() processes one pixel (1 CLK_28 cycle)
+// Typical sprite render loop calls this 16-128 times depending on sprite.width
 
 ═══════════════════════════════════════════════════════════════════════════
 ```
+
+**EMULATOR OPTIMIZATION SUMMARY**:
+
+1. **Pre-transformed Patterns** (eliminates rotation/mirror math):
+   - Separate arrays for 8-bit and 4-bit patterns
+   - 8-bit: 64 patterns × 8 variants = 512 arrays (128KB total)
+   - 4-bit: 128 patterns × 8 variants = 1024 arrays (256KB total)
+   - All patterns use 256-byte arrays (4-bit stores only lower nibble)
+   - Pattern variants pre-computed during writes: `SpriteDevice.writeSpritePattern()`
+   - Direct lookup: `patternData[(yIndex << 4) | xIndex]`
+
+2. **4-bit vs 8-bit Sprite Handling**:
+   - **8-bit sprites**: Full byte used for pixel color (0-255)
+     - Pattern index: attr3[5:0] (0-63)
+     - Palette offset added to upper 4 bits
+     - Transparency index default: 0xE3 (full byte comparison)
+   - **4-bit sprites**: Lower nibble only used for pixel color (0-15)
+     - Pattern index: attr3[5:0] + attr4[6] as LSB (0-127)
+     - Palette offset replaces upper 4 bits (selects one of 16 palettes)
+     - Transparency index default: 0x3 (lower 4 bits comparison)
+     - Upper nibble in pattern memory ignored during rendering
+
+3. **Pre-computed Sprite Dimensions** (eliminates scaling calculations):
+   - Width/height calculated during attribute writes: `SpriteDevice.updateSpriteDimensions()`
+   - Simple loop: `for (pixel = 0; pixel < sprite.width; pixel++)`
+
+4. **Pre-computed Transformation Variant** (eliminates bit extraction):
+   - Variant index (0-7) cached in `attributes.transformVariant`
+   - Combined with pattern index: `variantIndex = (patternIndex << 3) | sprite.transformVariant`
+
+5. **Batched CLK_28 Cycles** (reduces function call overhead):
+   - Process 4 pixels per call (4 CLK_28 cycles simulated)
+   - Reduces JavaScript function call overhead by 75%
+
+6. **Boolean Flags** (eliminates bit tests during rendering):
+   - `sprite.visible`, `sprite.is4BitPattern`, `sprite.mirrorX/Y`, etc.
+   - Pre-extracted during attribute writes, not during rendering
 
 **PROCESS State Timing Examples**:
 

@@ -3534,6 +3534,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   spritesQualifying: boolean;
   // Indicates that sprite rendering is done (before the end of the rendering window)
   spritesRenderingDone: boolean;
+  // The number of tacts remaining for sprite processing on this scanline
+  spritesRemainingClk7Tacts: number;
+  // Indicates that sprite overflow occurred (no time to render visible sprite)
+  spritesOvertime: boolean;
+  // Current sprite pattern Y index (0-15)
+  spritesPatternYIndex: number;
 
   /**
    * Render Sprites layer pixel (Stage 1).
@@ -3551,13 +3557,64 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
       if (this.spritesQualifying) {
         // QUALIFYING phase: Check if current sprite is visible on this scanline
+
+        // Check if we've processed all sprites (128)
+        if (this.spritesIndex >= 128) {
+          // All sprites have been checked; switch to IDLE
+          this.spritesRenderingDone = true;
+          return;
+        }
+
+        // Fetch the sprite attributes for the current sprite
         const spriteAttrs = this.spriteDevice.attributes[this.spritesIndex];
+
+        // Check if sprite is globally enabled (attr3 bit 7)
         if (!spriteAttrs.visible) {
           // Sprite is not visible; skip to next sprite
           this.spritesIndex++;
           return;
         }
 
+        // Check if the current scanline (spritesVc) intersects with the sprite's vertical position
+        const spriteY = spriteAttrs.y;
+        const spriteHeight = spriteAttrs.height;
+        const scanlineIntersects =
+          this.spritesVc >= spriteY && this.spritesVc < spriteY + spriteHeight;
+
+        if (!scanlineIntersects) {
+          // Sprite does not intersect this scanline; skip to next sprite
+          this.spritesIndex++;
+          return;
+        }
+
+        // Check if sprite is within horizontal visibility window (X: 0-319 in standard mode)
+        const spriteX = spriteAttrs.x;
+        const spriteWidth = spriteAttrs.width;
+        const horizontallyVisible = spriteX < 320 && spriteX + spriteWidth > 0;
+
+        if (!horizontallyVisible) {
+          // Sprite is outside horizontal bounds; skip to next sprite
+          this.spritesIndex++;
+          return;
+        }
+
+        // Check if there is still time for processing this sprite on this scanline
+        // The PROCESSING phase needs enough CLK_28 cycles to render the sprite width
+        // (+2 CLK_28 tacts for setup/overhead)
+        const cyclesNeeded = spriteWidth + 2;
+        if (this.spritesRemainingClk7Tacts * 4 < cyclesNeeded) {
+          // Not enough time to render this sprite (no_time condition)
+          // Set sprite overflow flag and skip remaining sprites
+          this.spritesOvertime = true;
+          this.spritesRenderingDone = true;
+          return;
+        }
+
+        // Sprite qualifies! Switch to PROCESSING phase
+        this.spritesQualifying = false;
+
+        // 1. Calculate Y index within pattern (accounting for scale only)
+        this.spritesPatternYIndex = (this.spritesVc - spriteAttrs.y) >> spriteAttrs.scaleY;
         
       } else {
         // PROCESSING phase: Render sprite if visible on this scanline
@@ -3579,6 +3636,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.spritesIndex = 0;
       this.spritesQualifying = true;
       this.spritesRenderingDone = false;
+      this.spritesOvertime = false;
+      this.spritesRemainingClk7Tacts = 120; // Total CLK_28 tacts available (480 CLK_28 ÷ 4 = 120 CLK_7 tacts)
     }
 
     if ((cell & SCR_SPRITE_INIT_DISPLAY) !== 0) {
@@ -3591,6 +3650,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       renderPixelClk28();
       renderPixelClk28();
       renderPixelClk28();
+      this.spritesRemainingClk7Tacts--;
     }
 
     if ((cell & SCR_SPRITE_DISPLAY) !== 0) {

@@ -850,7 +850,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x305b, 0xff);
 
     // --- Assert (check variant 0 = base pattern)
-    const variant0 = spr.patternMemoryVariants[0];
+    const variant0 = spr.patternMemory8bit[0];
     expect(variant0[0]).toBe(0xff);
     expect(spr.patternIndex).toBe(0);
     expect(spr.patternSubIndex).toBe(1);
@@ -866,7 +866,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x305b, 0xff);
 
     // --- Assert (check variant 0 = base pattern)
-    const variant0 = spr.patternMemoryVariants[0];
+    const variant0 = spr.patternMemory8bit[0];
     expect(variant0[0x80]).toBe(0xff);
     expect(spr.patternIndex).toBe(0);
     expect(spr.patternSubIndex).toBe(0x81);
@@ -882,7 +882,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x305b, 0xff);
 
     // --- Assert (pattern 4, variant 0)
-    const variant0 = spr.patternMemoryVariants[4 << 3];
+    const variant0 = spr.patternMemory8bit[4 << 3];
     expect(variant0[0]).toBe(0xff);
     expect(spr.patternIndex).toBe(4);
     expect(spr.patternSubIndex).toBe(0x01);
@@ -898,7 +898,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x305b, 0xff);
 
     // --- Assert (pattern 4, variant 0)
-    const variant0 = spr.patternMemoryVariants[4 << 3];
+    const variant0 = spr.patternMemory8bit[4 << 3];
     expect(variant0[0x80]).toBe(0xff);
     expect(spr.patternIndex).toBe(4);
     expect(spr.patternSubIndex).toBe(0x81);
@@ -915,7 +915,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x315b, 0xa5);
 
     // --- Assert (check variant 0)
-    const variant0 = spr.patternMemoryVariants[0];
+    const variant0 = spr.patternMemory8bit[0];
     expect(variant0[0]).toBe(0xff);
     expect(variant0[1]).toBe(0xa5);
     expect(spr.patternIndex).toBe(0);
@@ -933,7 +933,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x315b, 0xa5);
 
     // --- Assert (check variant 0)
-    const variant0 = spr.patternMemoryVariants[0];
+    const variant0 = spr.patternMemory8bit[0];
     expect(variant0[0x80]).toBe(0xff);
     expect(variant0[0x81]).toBe(0xa5);
     expect(spr.patternIndex).toBe(0);
@@ -951,7 +951,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x315b, 0xa5);
 
     // --- Assert (pattern 4, variant 0)
-    const variant0 = spr.patternMemoryVariants[4 << 3];
+    const variant0 = spr.patternMemory8bit[4 << 3];
     expect(variant0[0]).toBe(0xff);
     expect(variant0[1]).toBe(0xa5);
     expect(spr.patternIndex).toBe(4);
@@ -969,7 +969,7 @@ describe("Next - SpriteDevice", async function () {
     io.writePort(0x315b, 0xa5);
 
     // --- Assert (pattern 4, variant 0)
-    const variant0 = spr.patternMemoryVariants[4 << 3];
+    const variant0 = spr.patternMemory8bit[4 << 3];
     expect(variant0[0x80]).toBe(0xff);
     expect(variant0[0x81]).toBe(0xa5);
     expect(spr.patternIndex).toBe(4);
@@ -988,7 +988,7 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0)
-    const variant0 = spr.patternMemoryVariants[0];
+    const variant0 = spr.patternMemory8bit[0];
     for (let i = 0; i < 100; i++) {
       expect(variant0[i]).toBe(i);
     }
@@ -1008,7 +1008,7 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0)
-    const variant0 = spr.patternMemoryVariants[0];
+    const variant0 = spr.patternMemory8bit[0];
     for (let i = 0; i < 100; i++) {
       expect(variant0[0x80 + i]).toBe(i);
     }
@@ -1028,7 +1028,7 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (pattern 4, variant 0)
-    const variant0 = spr.patternMemoryVariants[4 << 3];
+    const variant0 = spr.patternMemory8bit[4 << 3];
     for (let i = 0; i < 100; i++) {
       expect(variant0[i]).toBe(i);
     }
@@ -1048,7 +1048,7 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (pattern 4, variant 0)
-    const variant0 = spr.patternMemoryVariants[4 << 3];
+    const variant0 = spr.patternMemory8bit[4 << 3];
     for (let i = 0; i < 100; i++) {
       expect(variant0[0x80 + i]).toBe(i);
     }
@@ -1068,7 +1068,7 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0)
-    const variant0 = spr.patternMemoryVariants[0];
+    const variant0 = spr.patternMemory8bit[0];
     for (let i = 0; i < 0x100; i++) {
       expect(variant0[i]).toBe(i);
     }
@@ -1088,8 +1088,8 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0, wraps from pattern 0 to pattern 1)
-    const variant0_p0 = spr.patternMemoryVariants[0];
-    const variant0_p1 = spr.patternMemoryVariants[1 << 3];
+    const variant0_p0 = spr.patternMemory8bit[0];
+    const variant0_p1 = spr.patternMemory8bit[1 << 3];
     for (let i = 0; i < 0x100; i++) {
       const addr = 0x80 + i;
       if (addr < 0x100) {
@@ -1114,7 +1114,7 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (pattern 4, variant 0)
-    const variant0 = spr.patternMemoryVariants[4 << 3];
+    const variant0 = spr.patternMemory8bit[4 << 3];
     for (let i = 0; i < 0x100; i++) {
       expect(variant0[i]).toBe(i);
     }
@@ -1134,8 +1134,8 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (patterns 4 and 5, variant 0)
-    const variant0_p4 = spr.patternMemoryVariants[4 << 3];
-    const variant0_p5 = spr.patternMemoryVariants[5 << 3];
+    const variant0_p4 = spr.patternMemory8bit[4 << 3];
+    const variant0_p5 = spr.patternMemory8bit[5 << 3];
     for (let i = 0; i < 0x100; i++) {
       const addr = 0x80 + i;
       if (addr < 0x100) {
@@ -1160,8 +1160,8 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0 across patterns 0 and 1)
-    const variant0_p0 = spr.patternMemoryVariants[0];
-    const variant0_p1 = spr.patternMemoryVariants[1 << 3];
+    const variant0_p0 = spr.patternMemory8bit[0];
+    const variant0_p1 = spr.patternMemory8bit[1 << 3];
     for (let i = 0; i < 0x102; i++) {
       const variant = i < 0x100 ? variant0_p0 : variant0_p1;
       const addr = i & 0xff;
@@ -1183,8 +1183,8 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0 across patterns 0 and 1)
-    const variant0_p0 = spr.patternMemoryVariants[0];
-    const variant0_p1 = spr.patternMemoryVariants[1 << 3];
+    const variant0_p0 = spr.patternMemory8bit[0];
+    const variant0_p1 = spr.patternMemory8bit[1 << 3];
     for (let i = 0; i < 0x102; i++) {
       const addr = 0x80 + i;
       const variant = addr < 0x100 ? variant0_p0 : variant0_p1;
@@ -1206,8 +1206,8 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0 across patterns 4 and 5)
-    const variant0_p4 = spr.patternMemoryVariants[4 << 3];
-    const variant0_p5 = spr.patternMemoryVariants[5 << 3];
+    const variant0_p4 = spr.patternMemory8bit[4 << 3];
+    const variant0_p5 = spr.patternMemory8bit[5 << 3];
     for (let i = 0; i < 0x102; i++) {
       const variant = i < 0x100 ? variant0_p4 : variant0_p5;
       const addr = i & 0xff;
@@ -1229,8 +1229,8 @@ describe("Next - SpriteDevice", async function () {
     }
 
     // --- Assert (check variant 0 across patterns 4 and 5)
-    const variant0_p4 = spr.patternMemoryVariants[4 << 3];
-    const variant0_p5 = spr.patternMemoryVariants[5 << 3];
+    const variant0_p4 = spr.patternMemory8bit[4 << 3];
+    const variant0_p5 = spr.patternMemory8bit[5 << 3];
     for (let i = 0; i < 0x102; i++) {
       const addr = 0x80 + i;
       const variant = addr < 0x100 ? variant0_p4 : variant0_p5;
