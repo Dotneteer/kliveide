@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { SpriteDevice } from "@emu/machines/zxNext/SpriteDevice";
 
 /**
  * Unit tests for SpriteDevice anchor sprite tracking
@@ -18,7 +19,7 @@ import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 describe("SpriteDevice - Anchor Sprite Tracking", () => {
   let machine: IZxNextMachine;
-  let spriteDevice: any;
+  let spriteDevice: SpriteDevice;
 
   beforeEach(async () => {
     machine = await createTestNextMachine();
@@ -35,7 +36,7 @@ describe("SpriteDevice - Anchor Sprite Tracking", () => {
 
   it("should update anchor X on anchor sprite attr2 write", () => {
     const spriteIdx = 0;
-    const attrs = spriteDevice.spriteMemory[spriteIdx];
+    const attrs = spriteDevice.attributes[spriteIdx];
 
     // --- Set up anchor sprite (colorMode = 0, 5 bytes)
     spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 0, 0x42);  // X LSB
@@ -52,7 +53,7 @@ describe("SpriteDevice - Anchor Sprite Tracking", () => {
 
   it("should update anchor Y on anchor sprite attr2 write", () => {
     const spriteIdx = 1;
-    const attrs = spriteDevice.spriteMemory[spriteIdx];
+    const attrs = spriteDevice.attributes[spriteIdx];
 
     // --- Set up anchor sprite
     spriteDevice.writeIndexedSpriteAttribute(spriteIdx, 0, 0x80);  // X LSB

@@ -103,11 +103,11 @@ describe("SpriteDevice - Sprite Index Management", () => {
       expect(spriteDevice.spriteIndex).toBe(0);
 
       // --- Verify sprite data was stored correctly
-      const sprite126 = spriteDevice.spriteMemory[126];
+      const sprite126 = spriteDevice.attributes[126];
       expect(sprite126.x).toBe(0x11);
       expect(sprite126.y).toBe(0x22);
 
-      const sprite127 = spriteDevice.spriteMemory[127];
+      const sprite127 = spriteDevice.attributes[127];
       expect(sprite127.x).toBe(0x33);
       expect(sprite127.y).toBe(0x44);
     });
@@ -128,7 +128,7 @@ describe("SpriteDevice - Sprite Index Management", () => {
       writeNextReg(machine, 0x36, 0x60); // Y LSB
 
       // --- Verify sprite 127 received the values
-      const sprite127 = spriteDevice.spriteMemory[127];
+      const sprite127 = spriteDevice.attributes[127];
       expect(sprite127.x & 0xFF).toBe(0x50);
       expect(sprite127.y).toBe(0x60);
     });

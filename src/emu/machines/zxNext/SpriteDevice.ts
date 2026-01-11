@@ -4,9 +4,9 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   spriteIdLockstep: boolean;
   sprite0OnTop: boolean;
-  enableSprites: boolean;
-  enableSpriteClipping: boolean;
-  enableSpritesOverBorder: boolean;
+  spritesEnabled: boolean;
+  spriteClippingEnabled: boolean;
+  spritesOverBorderEnabled: boolean;
 
   // --- Sprite clip window coordinates (sprite coordinate space)
   // --- Written via NextReg 0x19 in sequence: X1, X2, Y1, Y2
@@ -30,7 +30,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   // --- 64 patterns × 8 transformation variants × 256 bytes = 128KB
   // --- Variant index = (patternIdx << 3) | (rotate << 2) | (mirrorX << 1) | mirrorY
   patternMemoryVariants: Uint8Array[];
-  spriteMemory: SpriteAttributes[];
+  attributes: SpriteAttributes[];
 
   lastVisibileSpriteIndex: number;
 
@@ -50,9 +50,9 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Allocate sprite attribute memory
-    this.spriteMemory = new Array(128);
+    this.attributes = new Array(128);
     for (let i = 0; i < 128; i++) {
-      this.spriteMemory[i] = {
+      this.attributes[i] = {
         x: 0,
         y: 0,
         paletteOffset: 0,
@@ -60,7 +60,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         mirrorY: false,
         rotate: false,
         attributeFlag1: false,
-        enableVisibility: false,
+        visible: false,
         has5AttributeBytes: false,
         patternIndex: 0,
         colorMode: 0,
@@ -87,9 +87,9 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   reset(): void {
     this.spriteIdLockstep = false;
     this.sprite0OnTop = false;
-    this.enableSpriteClipping = false;
-    this.enableSprites = false;
-    this.enableSpritesOverBorder = false;
+    this.spriteClippingEnabled = false;
+    this.spritesEnabled = false;
+    this.spritesOverBorderEnabled = false;
     this.clipIndex = 0;
     this.clipWindowX1 = 0;
     this.clipWindowX2 = 255;
@@ -216,7 +216,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
 
   writeSpriteAttribute(value: number): void {
     this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
-    const attributes = this.spriteMemory[this.spriteIndex];
+    const attributes = this.attributes[this.spriteIndex];
     if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
       this.spriteSubIndex++;
       attributes.colorMode = 0x00;
@@ -299,12 +299,12 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
 
   writeIndexedSpriteAttribute(spriteIdx: number, attridx: number, value: number): void {
     // --- Bounds check sprite index
-    if (spriteIdx < 0 || spriteIdx >= this.spriteMemory.length) {
+    if (spriteIdx < 0 || spriteIdx >= this.attributes.length) {
       return;
     }
 
     // --- Update the spite attributes
-    const attributes = this.spriteMemory[spriteIdx];
+    const attributes = this.attributes[spriteIdx];
     switch (attridx) {
       case 0:
         // --- X position (lower 8 bits)
@@ -333,7 +333,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         }
         break;
       case 3:
-        attributes.enableVisibility = (value & 0x80) !== 0;
+        attributes.visible = (value & 0x80) !== 0;
         attributes.has5AttributeBytes = (value & 0x40) !== 0;
         attributes.patternIndex = value & 0x3f;
         // --- Update computed 7-bit pattern index
@@ -356,7 +356,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Select the last visible sprite
-    if (attridx === 3 && attributes.enableVisibility) {
+    if (attridx === 3 && attributes.visible) {
       if (spriteIdx > this.lastVisibileSpriteIndex) {
         // --- This is the last visible sprite
         this.lastVisibileSpriteIndex = spriteIdx;
@@ -364,7 +364,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         // --- Search for the last visible sprites
         this.lastVisibileSpriteIndex = -1;
         for (let i = 127; i > 0; i--) {
-          if (this.spriteMemory[i].enableVisibility) {
+          if (this.attributes[i].visible) {
             this.lastVisibileSpriteIndex = i;
             break;
           }
@@ -382,7 +382,7 @@ export type SpriteAttributes = {
   mirrorY: boolean;
   rotate: boolean;
   attributeFlag1: boolean;
-  enableVisibility: boolean;
+  visible: boolean;
   has5AttributeBytes: boolean;
   patternIndex: number;
   colorMode: number;

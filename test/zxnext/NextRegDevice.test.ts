@@ -1349,10 +1349,10 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(screenDevice.loResEnabled).toBe(true);
     expect(spriteDevice.sprite0OnTop).toBe(false);
-    expect(spriteDevice.enableSpriteClipping).toBe(false);
+    expect(spriteDevice.spriteClippingEnabled).toBe(false);
     expect(screenDevice.layerPriority).toBe(0x00);
-    expect(spriteDevice.enableSpritesOverBorder).toBe(false);
-    expect(spriteDevice.enableSprites).toBe(false);
+    expect(spriteDevice.spritesOverBorderEnabled).toBe(false);
+    expect(spriteDevice.spritesEnabled).toBe(false);
   });
 
   it("Reg $15 sprite0OnTop", async () => {
@@ -1367,10 +1367,10 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(screenDevice.loResEnabled).toBe(false);
     expect(spriteDevice.sprite0OnTop).toBe(true);
-    expect(spriteDevice.enableSpriteClipping).toBe(false);
+    expect(spriteDevice.spriteClippingEnabled).toBe(false);
     expect(screenDevice.layerPriority).toBe(0x00);
-    expect(spriteDevice.enableSpritesOverBorder).toBe(false);
-    expect(spriteDevice.enableSprites).toBe(false);
+    expect(spriteDevice.spritesOverBorderEnabled).toBe(false);
+    expect(spriteDevice.spritesEnabled).toBe(false);
   });
 
   it("Reg $15 enableSpriteClipping", async () => {
@@ -1385,10 +1385,10 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(screenDevice.loResEnabled).toBe(false);
     expect(spriteDevice.sprite0OnTop).toBe(false);
-    expect(spriteDevice.enableSpriteClipping).toBe(true);
+    expect(spriteDevice.spriteClippingEnabled).toBe(true);
     expect(screenDevice.layerPriority).toBe(0x00);
-    expect(spriteDevice.enableSpritesOverBorder).toBe(false);
-    expect(spriteDevice.enableSprites).toBe(false);
+    expect(spriteDevice.spritesOverBorderEnabled).toBe(false);
+    expect(spriteDevice.spritesEnabled).toBe(false);
   });
 
   it("Reg $15 layerPriority", async () => {
@@ -1403,10 +1403,10 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(screenDevice.loResEnabled).toBe(false);
     expect(spriteDevice.sprite0OnTop).toBe(false);
-    expect(spriteDevice.enableSpriteClipping).toBe(false);
+    expect(spriteDevice.spriteClippingEnabled).toBe(false);
     expect(screenDevice.layerPriority).toBe(0x06);
-    expect(spriteDevice.enableSpritesOverBorder).toBe(false);
-    expect(spriteDevice.enableSprites).toBe(false);
+    expect(spriteDevice.spritesOverBorderEnabled).toBe(false);
+    expect(spriteDevice.spritesEnabled).toBe(false);
   });
 
   it("Reg $15 enableSpritesOverBorder", async () => {
@@ -1421,10 +1421,10 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(screenDevice.loResEnabled).toBe(false);
     expect(spriteDevice.sprite0OnTop).toBe(false);
-    expect(spriteDevice.enableSpriteClipping).toBe(false);
+    expect(spriteDevice.spriteClippingEnabled).toBe(false);
     expect(screenDevice.layerPriority).toBe(0x00);
-    expect(spriteDevice.enableSpritesOverBorder).toBe(true);
-    expect(spriteDevice.enableSprites).toBe(false);
+    expect(spriteDevice.spritesOverBorderEnabled).toBe(true);
+    expect(spriteDevice.spritesEnabled).toBe(false);
   });
 
   it("Reg $15 enableSprites", async () => {
@@ -1439,10 +1439,10 @@ describe("Next - NextRegDevice", function () {
     // --- Assert
     expect(screenDevice.loResEnabled).toBe(false);
     expect(spriteDevice.sprite0OnTop).toBe(false);
-    expect(spriteDevice.enableSpriteClipping).toBe(false);
+    expect(spriteDevice.spriteClippingEnabled).toBe(false);
     expect(screenDevice.layerPriority).toBe(0x00);
-    expect(spriteDevice.enableSpritesOverBorder).toBe(false);
-    expect(spriteDevice.enableSprites).toBe(true);
+    expect(spriteDevice.spritesOverBorderEnabled).toBe(false);
+    expect(spriteDevice.spritesEnabled).toBe(true);
   });
 
   it("Reg $1c layer2 clip index reset works", async () => {

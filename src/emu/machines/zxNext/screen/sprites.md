@@ -94,7 +94,7 @@ The VHDL sprite hardware has several unique characteristics that distinguish it 
 - **Overflow condition** triggered when:
   - State machine is not IDLE when line_reset occurs (new scanline begins)
   - A visible sprite is encountered but there's no time to render it (`spr_cur_notime = '1'`)
-- Sets **bit 1 of status register** (NextReg 0x0E / Port 0x303B)
+- Sets **bit 1 of sprite status register** (Port 0x303B)
 - When overflow occurs, remaining sprites on that scanline are **skipped entirely**
 - This is a hardware limitation—the state machine simply runs out of time
 - Status bit is sticky (remains set until read by CPU, then auto-clears)
@@ -104,7 +104,7 @@ The VHDL sprite hardware has several unique characteristics that distinguish it 
 - Collision logic: `collision = spr_line_data_o(8) AND spr_line_we`
   - Attempts to write a sprite pixel to a line buffer location that already has a valid sprite pixel (bit 8 set)
   - Only counts as collision if the write would proceed (respecting zero_on_top and transparency)
-- Sets **bit 0 of status register** (NextReg 0x0E / Port 0x303B)
+- Sets **bit 0 of sprite status register** (Port 0x303B)
 - Status is **cumulative per frame**—any collision during the frame sets the bit
 - Reading the status register returns current value and **auto-clears both bits**
 - Does NOT prevent pixel rendering—the sprite with priority (based on zero_on_top setting) is displayed
@@ -545,9 +545,10 @@ Timing: 1 CLK_28 cycle minimum (if not visible)
 
 2. **No-Time Optimization**:
    ```
-   // Skip sprites that are too far right
-   if (current_hcount >= 288) AND (x_pos > current_hcount + margin):
-       skip sprite (treat as not visible)
+   // Skip sprites when not enough time remains before swap
+   // Check triggers at HC 32-60 depending on sprite scaling
+   if (notime_condition_met):
+       skip sprite (set sprites_overtime flag)
    ```
 
 3. **Anchor Sprite Loading**:
@@ -1281,21 +1282,33 @@ Signals to emulator that sprite processing exceeded available time (status reg b
 
 **Early-Exit Optimization** (spr_cur_notime):
 
-Sprites with small X offsets that would finish instantly can be skipped in queue:
+Prevents starting sprite rendering when insufficient time remains before swap period:
 
 ```vhdl
+spr_cur_notime_mask <= spr_cur_x_wrap(2 downto 0) & "00"
 spr_cur_notime = 1 when
-    hcounter[8] = 1 AND hcounter[5] = 1 AND
-    (hcounter[4:0] AND x_wrap_mask = x_wrap_mask)
+    hcounter_i[8] = 1 AND hcounter_i[5] = 1 AND
+    (hcounter_i[4:0] AND notime_mask = notime_mask)
 ```
 
-Prevents wasting state cycles on trivial sprites.
+**How it works**:
+- `hcounter_i` is the WHC (Wide Horizontal Counter, 0-511)
+- Base condition: WHC bit 8=1 AND bit 5=1 → WHC ≥ 288
+- Mask adds sprite-width-dependent threshold based on X-scaling
+- `x_wrap` relates to sprite's scaled width (larger for scaled sprites)
 
-**Emulator Context**:
-- This check uses the **display-relative** hcounter (VHDL HC 0–319 for visible pixels)
-- Condition triggers when hcounter ≥ 256 + 32 = 288 (near end of visible area)
-- In emulator coordinates: VHDL HC 288 → Emulator HC ~384 (within visible region HC 96–415)
-- Purpose: Skip sprites that are too far right and would exceed the blanking window budget
+**Trigger points during rendering (HC 0-95, WHC 400-495)**:
+- **HC 32** (WHC 432): 8x scaled sprites (x_wrap=11000, mask=00000) - need 64 cycles, 64 remaining
+- **HC 48** (WHC 448): 4x scaled sprites (x_wrap=11100, mask=10000) - need 32 cycles, 48 remaining
+- **HC 56** (WHC 456): 2x scaled sprites (x_wrap=11110, mask=11000) - need 24 cycles, 40 remaining
+- **HC 60** (WHC 460): 1x scaled sprites (x_wrap=11111, mask=11100) - need 18 cycles, 36 remaining
+
+**Purpose**: 
+- Prevents starting sprite rendering that won't complete before swap at HC 96
+- Larger scaling triggers check earlier (need more CLK_28 cycles to render)
+- Smaller scaling can start later (fewer cycles needed)
+- Sets `sprites_overtime` flag when visible sprite is skipped due to time constraint
+- This flag appears in **Port 0x303B bit 1** (Sprite Status Register)
 
 ---
 
