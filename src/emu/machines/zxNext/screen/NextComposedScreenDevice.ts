@@ -1073,12 +1073,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * Render Sprites layer pixel (Stage 1).
    * @param _vc - Vertical counter position
    * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
+   * @param cell - ULA Standard rendering cell with activity flags
    */
-  private renderSpritesPixel(_vc: number, _hc: number, _cell: number): void {
-    // TODO: Implementation to be documented in a future section
+  private renderSpritesPixel(_vc: number, _hc: number, cell: number): void {
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
     this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
+    if (cell === 0) {
+      return; // No sprite activity
+    }
   }
 
   /**
@@ -2869,7 +2871,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
 
     // Fetch pattern at position 7 (uses attributes set at this position)
@@ -3061,7 +3065,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
     if ((cell & SCR_PATTERN_FETCH) !== 0) {
       // Inline text mode pattern fetch (eliminates function call overhead)
@@ -3213,7 +3219,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
     if ((cell & SCR_PATTERN_FETCH) !== 0) {
       // Inline text mode pattern fetch (eliminates function call overhead)
@@ -3401,7 +3409,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
 
     // Fetch pattern at position 7 (uses attributes set at this position)
@@ -3600,10 +3610,8 @@ const SCR_DISPLAY_AREA = 0b00000001; // bit 0
 const SCR_CONTENTION_WINDOW = 0b00000010; // bit 1
 const SCR_NREG_SAMPLE = 0b00000100; // bit 2
 const SCR_BYTE1_READ = 0b00001000; // bit 3
-const SCR_LINE_BUFFER_READ = 0b00001000; // bit 3, an alias to SCR_BYTE1_READ
 const SCR_TILE_INDEX_FETCH = 0b00001000; // bit 3, an alias to SCR_BYTE1_READ (Tilemap: fetch tile index)
 const SCR_BYTE2_READ = 0b00010000; // bit 4
-const SCR_VISIBILITY_CHECK = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ
 const SCR_TILE_ATTR_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile attribute)
 const SCR_PATTERN_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile pattern row)
 const SCR_SHIFT_REG_LOAD = 0b00100000; // bit 5
@@ -3611,6 +3619,8 @@ const SCR_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
 const SCR_TILEMAP_SAMPLE_MODE = 0b01000000; // bit 6, alias to SCR_FLOATING_BUS_UPDATE (Tilemap: sample mode bit every 4 pixels)
 const SCR_BORDER_AREA = 0b10000000; // bit 7
 const SCR_TILEMAP_SAMPLE_CONFIG = 0b10000000; // bit 7, alias to SCR_BORDER_AREA (Tilemap: sample config bits at tile boundaries)
+const SCR_SPRITE_DISPLAY = 0b00000001; // bit 0, the sprite buffer is displayed
+const SCR_SPRITE_RENDER = 0b00000010; // bit 1, the sprite buffer is rendered
 
 // Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
 const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
@@ -3974,13 +3984,30 @@ function generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
    * @returns Sprite layer rendering cell with all activity flags
    */
   function generateSpritesCell(vc: number, hc: number): number {
-    const displayArea = isDisplayArea(config, vc, hc);
+    // Vertical display area is also extended for 320×256 mode
+    const wideDisplayYStart = config.displayYStart - 32;
+    const wideDisplayYEnd = wideDisplayYStart + 255;
+
+    // Check if we're in top or bottom display area
+    if (vc < wideDisplayYStart || vc > wideDisplayYEnd) {
+      return 0; // No sprite activity outside the top and bottom sprite borders
+    }
 
     let flags = 0;
-    if (displayArea) {
-      flags |= SCR_DISPLAY_AREA | SCR_LINE_BUFFER_READ | SCR_VISIBILITY_CHECK;
+    // We need a wider horizontal display area for sprites
+    const wideDisplayXStart = config.displayXStart - 32;
+    const wideDisplayXEnd = wideDisplayXStart + 319;
+    const swapStart = wideDisplayXStart - 16; // 16 tacts before wide display starts
+
+    if (hc >= wideDisplayXStart && hc <= wideDisplayXEnd) {
+      // The current content of the sprite buffer is displayed
+      flags |= SCR_SPRITE_DISPLAY;
+    } else if (hc >= swapStart && hc < wideDisplayXStart) {
+      // The sprite buffer is being rendered (new data being drawn)
+      flags |= SCR_SPRITE_RENDER;
     }
-    // Sprites use internal memory, no contention window
+
+    // Done
     return flags;
   }
 }

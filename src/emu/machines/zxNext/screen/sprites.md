@@ -9,7 +9,7 @@ The ZX Spectrum Next sprite engine is a high-performance hardware renderer suppo
 - **64 sprite patterns** (expandable via relative sprites)
 - **Per-sprite transformations**: rotation, mirroring, scaling (1x–4x), palette offset
 - **Relative sprite chains**: unlimited sprite combinations via anchor + relative sprites
-- **9-bit positioning**: sprites can render at subpixel accuracy (0–511 pixels horizontally)
+- **9-bit positioning**: extended coordinate space (0–511 pixels horizontally, wider than the 320-pixel visible area)
 - **Priority modes**: sprites can be rendered in front or behind other layers
 
 ### Coordinate System Reference
@@ -31,19 +31,93 @@ The ZX Spectrum Next sprite engine is a high-performance hardware renderer suppo
 - **VC (emulator)**: 0–310 (50Hz) or 0–263 (60Hz)
 
 **Mapping**: VHDL WHC to Emulator HC:
-- **WHC 0–319 → Emulator HC 104–423** (320-pixel display area for sprites)
-- WHC 320–511 → Emulator HC 424–455 (32) + 0–87 (88) + 88–103 (16) = 136 cycles total
+- **WHC 0–319 → Emulator HC 112–431** (320-pixel display area for sprites)
+- WHC 320–511 → Emulator HC 432–455 (24) + 0–95 (96) + 96–111 (16) = 136 cycles total
 - **Sprite rendering window**: 
-  - Hardware: WHC 320–511 (136 actual machine cycles: 32+88+16)
-  - Emulator: HC 424–455 (32) + HC 0–87 (88) = 120 cycles (excluding 16-cycle reset period)
+  - Hardware: WHC 320–511 (136 actual machine cycles: 24+96+16)
+  - Emulator: HC 432–455 (24) + HC 0–95 (96) = 120 cycles (excluding 16-cycle reset period)
 
-**Important**: Sprites use the **320-pixel coordinate system** (HC 112–431), NOT the ULA's 256-pixel system (HC 144–399).
+**Important**: Sprites use the **320-pixel coordinate system** (HC 112–431), NOT the ULA's 256-pixel system (HC 144–399). The sprite display area starts 32 pixels before the ULA display.
+
+### Hardware Implementation Peculiarities
+
+The VHDL sprite hardware has several unique characteristics that distinguish it from typical software implementations:
+
+**1. Wide Horizontal Counter (WHC)**
+- Hardware uses a **9-bit WHC counter (0-511)** separate from the main horizontal counter
+- WHC provides a 320-pixel coordinate space, wider than the ULA's 256-pixel area
+- WHC resets at HC=96, creating an offset: `whc = (hc - 112) mod 512`
+- This allows sprites to use a unified coordinate system independent of video timing modes
+
+**2. True Parallel Double Buffering**
+- Hardware implements **two physical 320×9-bit line buffers** (640 words total)
+- **Simultaneous operations**: One buffer is being written (sprite rendering) while the other is being read (video output)
+- **16-cycle idle/guard period** (HC 96-111):
+  - State machine enters IDLE state (no sprite processing)
+  - WHC counts through 496-511 during this period
+  - Provides clean separation between rendering phase (write) and display phase (read)
+  - Ensures all pending rendering operations have completed
+  - At HC=111 (WHC=511): line_reset signal triggers, causing:
+    - **Buffer swap** (instantaneous, single clock cycle)
+    - State machine transition to START (ready for next scanline)
+    - Vertical counter increment
+- No memory contention—rendering and display truly happen in parallel
+- Emulators typically use sequential rendering with a single buffer, which requires different timing management
+
+**3. Wide Memory Architecture (40-bit Sprite Attributes)**
+- Sprite attributes stored in **Simple Dual Port RAM** configured as **128 words × 40 bits**
+- All 5 attribute bytes (40 bits) read **in parallel in a single access**
+- **Asynchronous read port**: Combinatorial logic, zero-cycle latency (address → data available immediately)
+- Synchronous write port: CPU/NextReg writes via clock_master_180° (phase-shifted for timing)
+- This wide parallel access eliminates sequential byte fetching—critical for processing 128 sprites in ~480 cycles
+
+**4. Fast Pattern Memory Access**
+- Pattern memory implemented as **16KB SRAM/BRAM** with zero-delay output
+- Synchronous access but data available same cycle (fast block RAM or registered output)
+- Single-cycle pattern byte fetch at 28 MHz (CLK_28)
+- Emulators must simulate this timing to maintain correct sprite rendering throughput
+
+**5. Combinatorial Logic Pipeline**
+- Visibility checks, coordinate calculations, and address generation are **pure combinatorial logic**
+- Multi-cycle operations (QUALIFY, PROCESS) complete in 1-2 CLK_28 cycles minimum
+- Hardware can evaluate sprite visibility and prepare rendering in the same clock where attributes are read
+- Software emulation requires careful sequencing to replicate this parallelism
+
+**6. State Machine at 28 MHz**
+- Core sprite state machine runs at **CLK_28 (28 MHz)**, 4× faster than CLK_7 (7 MHz pixel clock)
+- Allows processing multiple sub-operations per pixel clock
+- Typical sprite processing: ~10-12 CLK_28 cycles per visible sprite
+- With 480 CLK_28 cycles available per scanline, hardware can render ~40-48 sprites (though typically limited by practical sprite count)
+
+**7. Sprite Overflow Handling (Max Sprites Per Line)**
+- Hardware tracks whether sprite processing completes within the blanking interval
+- **Overflow condition** triggered when:
+  - State machine is not IDLE when line_reset occurs (new scanline begins)
+  - A visible sprite is encountered but there's no time to render it (`spr_cur_notime = '1'`)
+- Sets **bit 1 of status register** (NextReg 0x0E / Port 0x303B)
+- When overflow occurs, remaining sprites on that scanline are **skipped entirely**
+- This is a hardware limitation—the state machine simply runs out of time
+- Status bit is sticky (remains set until read by CPU, then auto-clears)
+
+**8. Collision Detection**
+- Hardware detects when **multiple sprites overlap at the same pixel**
+- Collision logic: `collision = spr_line_data_o(8) AND spr_line_we`
+  - Attempts to write a sprite pixel to a line buffer location that already has a valid sprite pixel (bit 8 set)
+  - Only counts as collision if the write would proceed (respecting zero_on_top and transparency)
+- Sets **bit 0 of status register** (NextReg 0x0E / Port 0x303B)
+- Status is **cumulative per frame**—any collision during the frame sets the bit
+- Reading the status register returns current value and **auto-clears both bits**
+- Does NOT prevent pixel rendering—the sprite with priority (based on zero_on_top setting) is displayed
+
+These hardware characteristics enable the Next's sprite engine to process 128 sprites efficiently within horizontal blanking. Emulators must account for these architectural differences when implementing sprite rendering to maintain timing accuracy and visual fidelity.
 
 ---
 
 ## Architecture Overview
 
-### Core Components
+### Emulator Implementation Components
+
+The emulator implements sprite rendering using a simplified architecture compared to the hardware, while maintaining timing accuracy and visual fidelity:
 
 1. **Sprite Attribute Memory** (128 sprites × 5 attributes):
    - **Attr 0**: X position (bits 7:0)
@@ -51,376 +125,93 @@ The ZX Spectrum Next sprite engine is a high-performance hardware renderer suppo
    - **Attr 2**: Palette offset (7:4), X/Y mirror (3:2), Rotation (1), X MSB (0)
    - **Attr 3**: Visible flag (7), Relative sprite marker (6), Pattern index (5:0)
    - **Attr 4**: 4-bit pattern flag (7), Pattern bit 6 (6), X scale (5:4), Y scale (3:2), Y MSB (0)
+   - Stored as standard byte arrays (5 bytes per sprite, 640 bytes total)
 
 2. **Pattern Memory** (64 patterns × 256 bytes = 16KB):
    - Each pattern: 16×16 pixels = 256 bytes (8-bit per pixel)
    - 4-bit patterns stored with 2 pixels per byte (access via nibble extraction)
+   - Can be pre-transformed for rotations/mirrors to optimize rendering
 
-3. **Double-Buffered Line Buffers** (2 × 320×9-bit RAM):
-   - One buffer receives sprite rendering
-   - Other buffer provides output to video composition
-   - Buffers swap at end of each scanline
+3. **Single Line Buffer** (320×16-bit array):
+   - Unlike hardware's dual buffers, emulator uses **sequential rendering with one buffer**
+   - Buffer format: `Uint16Array[320]` where each entry contains:
+     - Bit 8: Valid flag (sprite pixel present)
+     - Bits 7-0: Palette index
+   - Cleared and reused each scanline (no buffer swapping needed)
 
-4. **State Machine** (4-state: IDLE, START, QUALIFY, PROCESS):
-   - Controls sprite iteration and pixel rendering
-   - Executes during horizontal blanking interval
+4. **Clock Timing and HC-Based Control Flags**:
+   - Emulator operates at **CLK_7 (7 MHz)**, the pixel clock rate
+   - Internally simulates **4 CLK_28 (28 MHz) activities per CLK_7 cycle**
+   - Uses **per-HC flags** to control sprite processing phases:
+     - **Render flags** (HC 432-455, HC 0-95): Process sprites, write to line buffer
+     - **Swap flag** (HC 96-111): Idle period, no sprite processing (maintains hardware timing fidelity)
+     - **Display flags** (HC 112-431): Read from line buffer, composite with other layers
+   - These flags ensure correct timing alignment with hardware behavior
+
+5. **State Machine** (emulator may simplify or adapt):
+   - Reflects hardware's activity flow: IDLE → START → QUALIFY → PROCESS
+   - Implementation may differ internally but maintains **same functional behavior**
+   - Processes 128 sprites per scanline, determining visibility and rendering pixels
+   - Executes within horizontal blanking to match hardware timing constraints
+
+**Key Differences from Hardware**:
+- **Single buffer** (sequential) vs. dual buffers (parallel) — simpler memory management
+- **No physical buffer swap** — buffer cleared and reused each scanline
+- **HC-driven control flow** — flags determine when to render vs. display
+- **Software state machine** — may be optimized differently but preserves hardware timing semantics
 
 ---
 
 ## Coordinate System Mapping (VHDL Hardware vs. Emulator)
 
-### Understanding the Two Coordinate Systems
+### VHDL Hardware Coordinates
 
-The VHDL hardware and the emulator use different coordinate systems for horizontal timing. The hardware actually uses **two different horizontal counters**:
+The VHDL sprite hardware uses a **Wide Horizontal Counter (WHC)** that differs from the machine's main horizontal counter:
 
-1. **Main HC (`hc`)**: The actual machine horizontal counter (0-455, 456 cycles per scanline at CLK_7)
-2. **Wide HC (`whc`)**: A derived 320-pixel display counter (0-511, 512 cycles per scanline at CLK_7)
+- **WHC Range**: 0-511 (9-bit counter)
+- **WHC 0-319**: Sprite display area (320 visible pixels)
+- **WHC 320-511**: Horizontal blanking (sprite rendering window)
+- **WHC Reset**: Occurs at main HC = 96, resets WHC to -16 (496 unsigned)
 
-The sprite module receives **`whc`** as its `hcounter_i` input, NOT the main `hc`.
+### Emulator Coordinate Mapping
 
-| Coordinate Space | HC Range | Description |
-|-----------------|----------|-------------|
-| **Machine `hc`** | 0–455 | Main horizontal counter, 456 cycles per scanline |
-| **VHDL `whc` (hcounter_i)** | 0–511 | Wide display counter for 320px layers, 512 cycles |
-| **Emulator `hc`** | 0–455 | Emulator horizontal counter (matches machine `hc`) |
+The emulator uses the main horizontal counter (HC 0-455). To map emulator coordinates to sprite coordinates:
 
-### How WHC (Wide Horizontal Counter) is Generated
-
-The `whc` counter is generated in `zxula_timing.vhd` using the following logic:
-
-```vhdl
--- For 128K 50Hz mode (ZX Next default):
-c_min_hactive = 136        -- Start of 256px ULA display area
-wide_min_hactive = c_min_hactive - 32 - 16 = 88
-
--- WHC reset trigger
-wide_hactive <= '1' when hc = 88 else '0';
-
--- WHC counter process
-process (i_CLK_7)
-begin
-   if rising_edge(i_CLK_7) then
-      if wide_hactive = '1' then
-         whc <= "111110000";   -- Start at -16 (decimal value = 496 unsigned)
-      else
-         whc <= whc + 1;
-      end if;
-   end if;
-end process;
-```
-
-**Key Points**:
-- `whc` resets to **-16** (0x1F0 = 496 unsigned) when main `hc = 88`
-- `whc` then increments every CLK_7 cycle
-- `whc` wraps naturally at 512 (9-bit counter: 0-511)
-
-### Mapping Main HC to WHC
-
-Given that `whc` starts at -16 when `hc = 88`, we can derive the mapping:
-
-```
-When hc = 88:  whc = -16 (496 unsigned) = 0x1F0
-When hc = 89:  whc = -15 (497)
-...
-When hc = 103: whc = -1  (511)
-When hc = 104: whc = 0   ← Sprite display area begins
-When hc = 105: whc = 1
-...
-When hc = 423: whc = 319 ← Sprite display area ends
-When hc = 424: whc = 320 ← Sprite rendering begins (blanking)
-...
-When hc = 455: whc = 351
-When hc = 0:   whc = 352 ← Wrapped around to next scanline
-...
-When hc = 87:  whc = 495
-When hc = 88:  whc = -16 (496) ← Reset
-```
-
-**Formula**: 
-```
-whc = (hc - 104) mod 512
-or equivalently:
-whc = (hc + 392) mod 512  // where 392 = 512 - 104 - 16
-```
-
-**Verification**:
-- At `hc = 104`: `whc = (104 - 104) mod 512 = 0` ✓
-- At `hc = 423`: `whc = (423 - 104) mod 512 = 319` ✓
-- At `hc = 424`: `whc = (424 - 104) mod 512 = 320` ✓
-- At `hc = 455`: `whc = (455 - 104) mod 512 = 351` ✓
-- At `hc = 0`: `whc = (0 + 512 - 104) mod 512 = 352` ✓ (wrapped)
-- At `hc = 87`: `whc = (87 + 512 - 104) mod 512 = 495` ✓
-- At `hc = 88`: Reset to -16 (496) ✓
-
-### Detailed VHDL Hardware Timing (as used in sprites.vhd)
-
-The hardware sprites module receives `hcounter_i`, which is actually the **wide horizontal counter (`whc`)** from `zxula_timing.vhd`. This is a **320-pixel-based display counter** that counts:
-
-```
-VHDL hcounter_i (whc) = 0–319: Display/visible pixels (320 pixels)
-VHDL hcounter_i (whc) = 320–511: Horizontal blanking interval (192 clocks)
-```
-
-**Key VHDL Signal**:
-```vhdl
-hcounter_i_valid <= '1' when hcounter_i < 320 else '0';
-```
-
-This validates that the current HC position is within the 320-pixel display window.
-
-**Visual Timeline** (VHDL Hardware - whc counter):
-```
-whc:  0                             319|320                                511
-      ├────────────────────────────────┼────────────────────────────────────┤
-      │    DISPLAY/VISIBLE (320 clk)   │   BLANKING INTERVAL (192 clk)      │
-      │    Video Output Active         │   Sprite Rendering Active          │
-      │    Line Buffer Read            │   Line Buffer Write                │
-      └────────────────────────────────┴────────────────────────────────────┘
-                                       ↑                                    ↑
-                                  hcounter_i                           line_reset
-                                   = 320                               (HC=511)
-                                                                    buffer swap
-```
-
-**Important**: The `whc` counter is a **derived counter** from the main horizontal counter (`hc`). It provides a convenient 320-pixel-wide coordinate system for sprite/Layer 2/tilemap rendering. Although WHC has a 512-value range (9-bit), it only counts through **456 values per scanline** due to the reset at HC 88. The sequence is: WHC 496-511 (16 cycles) → WHC 0-351 (352 cycles) → WHC 352-495 (88 cycles) → reset.
-
-### Emulator Coordinate System (NextComposedScreenDevice)
-
-The emulator uses the **main HC** (0-455) which matches the machine's actual horizontal counter. The emulator needs to **emulate the WHC mapping** to correctly position sprites.
-
-**Emulator HC Layout**:
-```
-Emulator HC = 0–87:   Part of blanking (whc = 352–495)
-Emulator HC = 88:     WHC reset point (whc wraps to -16/496)
-Emulator HC = 88–103: Left blanking continues (whc = -16 to -1, or 496–511)
-Emulator HC = 104:    Sprite display begins (whc = 0)
-Emulator HC = 104–423: Sprite 320px display area (whc = 0–319)
-  - HC 104–143: Left border (40 clocks)
-  - HC 144–399: ULA display area (256 clocks, 512 pixels at 2px/CLK_7)
-  - HC 400–423: Right border (24 clocks)
-Emulator HC = 424–455: Sprite rendering window part 1 (whc = 320–351, 32 clocks)
-```
-
-**Important Clarification**: The emulator's `firstVisibleHC = 96` is for **video output** purposes (when pixels start being visible on screen), but the sprite **coordinate system** starts at emulator HC = 104 (where `whc = 0`).
-
-**Visual Timeline** (Emulator Coordinates with WHC mapping):
-```
-HC:   0        87|88     103|104      143|144           399|400      423|424        455
-      ├──────────┼──────────┼────────────┼─────────────────┼────────────┼────────────┤
-whc:  352     495|-16     -1|0         39|40            295|296      319|320        351
-      ├──────────┼──────────┼────────────┼─────────────────┼────────────┼────────────┤
-      │ BLANKING │ BLANKING │  LEFT      │   ULA DISPLAY   │   RIGHT    │ BLANKING   │
-      │ (whc     │ (whc     │  BORDER    │     (256 clk)   │   BORDER   │ (whc       │
-      │  wrap)   │  wraps)  │  (40 clk)  │   ULA 256px     │  (24 clk)  │  320-351)  │
-      │          │          │            │                 │            │            │
-      └──────────┴──────────┴────────────┴─────────────────┴────────────┴────────────┘
-                            ↑                                           ↑
-                       whc = 0                                      whc = 320
-                   (Sprite display                              (Sprite rendering
-                   area begins)                                 window begins)
-                 
-                            ├───────────────────────────────────────────┤
-                            │  Sprite 320px Display Area                │
-                            │  (WHC 0–319)                              │
-                            └───────────────────────────────────────────┘
-```
+**Formula**: `whc = (hc - 112) mod 512`
 
 **Key Mapping Points**:
-- **Emulator HC 104 → WHC 0** (first sprite pixel)
-- **Emulator HC 143 → WHC 39** (ULA display starts, but sprites already active)
-- **Emulator HC 399 → WHC 295** (ULA display ends)
-- **Emulator HC 423 → WHC 319** (last sprite display pixel)
-- **Emulator HC 424 → WHC 320** (sprite rendering window begins)
+- **Emulator HC 112 → WHC 0** (first sprite pixel)
+- **Emulator HC 431 → WHC 319** (last sprite pixel)
+- **Emulator HC 432 → WHC 320** (sprite rendering begins)
 
-**Total**: 456 CLK_7 cycles per scanline (0–455)
-
-### Mapping Between Coordinate Systems
-
-To convert between VHDL hardware coordinates (WHC) and emulator coordinates (main HC):
-
-**Main HC → WHC** (emulator to hardware sprite counter):
+**Emulator Timing Layout**:
 ```
-whc = (hc - 104) mod 512
-
-Examples:
-  Emulator HC 104 → WHC 0   (first sprite pixel)
-  Emulator HC 200 → WHC 96
-  Emulator HC 423 → WHC 319 (last sprite pixel)
-  Emulator HC 424 → WHC 320 (sprite rendering begins)
-  Emulator HC 455 → WHC 351
-  Emulator HC 0   → WHC 352 (wrapped to next scanline)
-  Emulator HC 87  → WHC 495
-  Emulator HC 88  → WHC -16/496 (reset point)
+HC:   112-431        432-455    0-95      96-111
+      ├─────────────┼─────────┼─────────┼─────────┤
+      │ DISPLAY     │ RENDER  │ RENDER  │  SWAP   │
+      │ (320 px)    │ (24 c)  │ (96 c)  │ (16 c)  │
+      └─────────────┴─────────┴─────────┴─────────┘
 ```
 
-**WHC → Main HC** (hardware sprite counter to emulator):
-```
-hc = (whc + 104) mod 456
+**Important for Emulator Implementation**: While the hardware uses double buffering with a 16-cycle guard period (HC 96-111, called "swap period" by the FPGA core), the emulator typically uses sequential rendering with a single buffer. During HC 96-111, the hardware state machine is IDLE with the actual buffer swap occurring in a single clock cycle at HC 111. For high-fidelity emulation, the emulator should **not perform sprite memory fetches or buffer modifications** during HC 96-111, as this would break timing accuracy and potentially cause visual artifacts that wouldn't occur on real hardware.
 
-Examples:
-  WHC 0   → Emulator HC 104 (first sprite pixel)
-  WHC 96  → Emulator HC 200
-  WHC 319 → Emulator HC 423 (last sprite pixel)
-  WHC 320 → Emulator HC 424 (sprite rendering begins)
-  WHC 351 → Emulator HC 455
-  WHC 352 → Emulator HC 0   (wrapped to next scanline)
-```
+### Line Buffer Coordinates
 
-**Sprite Display Position Mapping**:
+- **Sprite X positions (0-319)** map directly to **line buffer indices (0-319)**
+- **Line buffer index** = `hc - 112` during display (HC 112-431)
+- **ULA overlap**: ULA uses line buffer indices 32-287 (middle 256 pixels)
 
-When sprites use WHC coordinates (0-319 for display), they map to emulator HC as follows:
-
-```
-Sprite X Position:  0              39|40                         295|296        319
-(WHC coordinate)    ├────────────────┼──────────────────────────────┼────────────┤
-                    │  Left Border   │  ULA Display Area (256px)    │Right Border│
-                    │    (40 px)     │   (Overlaps w/ sprite area)  │  (24 px)   │
-                    └────────────────┴──────────────────────────────┴────────────┘
-
-Emulator HC:       104            143|144                        399|400        423
-                    ├────────────────┼──────────────────────────────┼────────────┤
-                    │  Sprite only   │  Sprite + ULA overlap        │ Sprite only│
-                    └────────────────┴──────────────────────────────┴────────────┘
-```
-
-**Sprite Rendering Window** (blanking interval):
-- **VHDL Hardware (WHC)**: 320–511 (**136 actual machine cycles** at CLK_7)
-  - WHC 320–351: HC 424–455 (32 cycles)
-  - WHC 352–495: HC 0–87 (88 cycles)
-  - WHC 496–511: HC 88–103 (16 cycles, used for buffer swap and state reset)
-- **Emulator (main HC)**: 424–455 + 0–87 (**120 CLK_7 cycles**)
-  - Part 1: HC 424–455 (32 cycles)
-  - Part 2: HC 0–87 (88 cycles)
-  - Does not include HC 88–103 (reserved for buffer swap in hardware)
-
-**Understanding WHC 320-511 = 192 values, but only 136 machine cycles**:
-
-The confusion arises because WHC 320-511 represents **192 counter values**, but due to the WHC reset at HC 88, these 192 values only span **136 machine cycles**:
-
-- WHC doesn't count continuously 320→511 in one sequence
-- Instead: WHC 320-351 (32 cycles), then 352-495 (88 cycles), then reset breaks the sequence, then 496-511 (16 cycles)
-- Total: 32 + 88 + 16 = **136 cycles**
-- The **16-cycle difference** (136 - 120) is HC 88-103, where WHC transitions through 496-511
-- This period is used for **line buffer swap** and **state machine reset**
-
-**For emulation**: The hardware has **136 cycles** for sprite rendering, of which 16 cycles are used for bookkeeping (buffer swap). The emulator has **120 cycles** of pure rendering time, which matches the hardware's effective rendering window (136 - 16 = 120). Both systems have equivalent processing capability.
-
-### Sprite Line Buffer Coordinates
-
-The sprite line buffer uses **WHC display-relative coordinates** (0–319):
-
-```vhdl
--- VHDL: Line buffer address
-spr_line_addr_s <= spr_cur_hcount;  -- 9-bit, 0–319 valid range
-
--- Line buffer write validation
-spr_cur_hcount_valid <= '1' when spr_cur_hcount < 320 else '0';
-```
-
-**Emulator Equivalent**:
-- Sprite X positions 0–319 map to line buffer indices 0–319
-- During video output (emulator HC 104–423, which is WHC 0-319), read from line buffer:
-  - Line buffer index = (Emulator_HC - 104) = WHC for HC ∈ [104, 423]
-  - Maps to pixel X positions 0–319 on screen
-- **Note**: The ULA layer reads from HC 144–399, which corresponds to:
-  - WHC 40-295 (line buffer indices 40-295)
-  - The middle 256 pixels of the 320-pixel sprite buffer
-
-### Practical Example: Sprite at X=100
-
-When a sprite has X position = 100 (in WHC coordinate space):
-
-1. **Sprite Rendering** (during blanking):
-   - Sprite state machine calculates: `spr_cur_hcount = 100` (WHC = 100)
-   - Writes pixels to line buffer indices 100–115 (16-pixel sprite)
-
-2. **Video Output** (during display):
-   - At Emulator HC = 204 (104 + 100), WHC = 100
-   - Read line buffer index 100
-   - Compose sprite pixel with other layers
-   - Output to screen at pixel position X=100
-
-3. **ULA Layer Interaction**:
-   - ULA renders at Emulator HC 144–399 (WHC 40-295, line buffer indices 40-295)
-   - Sprite at X=100 (WHC 100) overlaps with ULA pixel at X=60 (100 - 40)
-   - Sprite at X=0–39 (WHC 0-39) appears left of ULA display (in left border)
-   - Sprite at X=296–319 (WHC 296-319) appears right of ULA display (in right border)
-
-### Display Coordinate Translation
-
-The line buffer uses **WHC-based display-space coordinates** (0–319), which correspond to screen coordinates:
-
-```
-Line Buffer Index:  0              39|40                           295|296      319
-(WHC coordinate)    ├────────────────┼──────────────────────────────┼────────────┤
-                    │  Left Border   │  ULA Display Area (256px)    │Right Border│
-                    │    (40 px)     │   (Overlaps w/ sprite area)  │  (24 px)   │
-                    └────────────────┴──────────────────────────────┴────────────┘
-                    ├──────────────────────────────────────────────────────────────┤
-                    │             Sprite Display Area (320 pixels)                 │
-                    └──────────────────────────────────────────────────────────────┘
-
-Screen Position:   0              39|40                           295|296      319
-(Physical pixels)  ├────────────────┼──────────────────────────────┼────────────┤
-                   │  Sprite only   │  Sprite + ULA overlap        │ Sprite only│
-                   └────────────────┴──────────────────────────────┴────────────┘
-```
-
-**Sprite Rendering vs Display Windows** (no overlap):
-
-```
-Emulator HC:  0      87|88   103|104                            423|424      455
-              ├────────┼────────┼──────────────────────────────────┼────────────┤
-              │ RENDER │  SWAP  │     DISPLAY (320 cycles)         │   RENDER   │
-              │ (88)   │  (16)  │  Read from line buffer           │   (32)     │
-              └────────┴────────┴──────────────────────────────────┴────────────┘
-              ├────────────────┬┬──────────────────────────────────┬─────────────┤
-              │ Sprite         ││ Sprite pixels displayed to       │ Sprite      │
-              │ Processing:    ││ screen (prepared in previous     │ Processing: │
-              │ - Qualify      ││ rendering phase)                 │ - Fetch     │
-              │ - Fetch pixels ││                                  │ - Write     │
-              │ - Write buffer ││                                  │   buffer    │
-              └────────────────┴┴──────────────────────────────────┴─────────────┘
-                               ↑↑
-                            Buffer swap separates phases
-```
-
-**Emulator HC to Line Buffer Index**:
+**For Emulator Implementation**:
 ```typescript
-// During sprite display area (HC 104–423, WHC 0-319)
-const lineBufferIndex = hc - 104;  // Same as WHC
-// Range: 0–319
+// Convert emulator HC to sprite coordinate
+const spriteCoord = (hc - 112) & 0x1FF; // WHC equivalent
 
-// During ULA display area (HC 144–399, WHC 40-295)
-const ulaLineBufferIndex = hc - 104;  // Also gives WHC
-// ULA uses indices 40–295 (middle 256 pixels of sprite buffer)
+// Line buffer access during display
+if (hc >= 112 && hc <= 431) {
+    const lineBufferIndex = hc - 112;
+    const spritePixel = lineBuffer[lineBufferIndex];
+}
 ```
-
-**Sprite X Position to Line Buffer Index**:
-```typescript
-// Sprite X coordinate (0–511 in sprite attributes) maps to WHC/line buffer index
-const lineBufferIndex = sprite.x & 0x1FF;  // Modulo 512, but only 0-319 visible
-// Only indices 0–319 are within display window
-```
-
-**Wrapping Behavior**:
-- Sprites with X ∈ [0, 319]: Fully or partially visible
-- Sprites with X ∈ [320, 511]: Treated as negative X (wraps around left edge)
-- Example: Sprite at X=500 appears at screen position X=500-512 = -12 (off-screen left, WHC wraps)
-
-### Timing Synchronization
-
-**Line Buffer Swap** (critical synchronization point):
-
-```vhdl
--- VHDL: Swap at WHC = 511 (end of WHC scanline cycle)
-line_reset_s <= '1' when hcounter_i = "111111111" else '0';
-```
-
-**Emulator Equivalent**:
-- WHC = 511 occurs at Emulator HC = 103 (using formula: (511 + 104) mod 456 = 103)
-- Swap should occur at this point: HC 103 → 104 (end of WHC cycle → sprite display begins)
-- Ensures sprites for scanline N are ready before HC 104 (first sprite pixel, WHC = 0)
 
 ---
 
@@ -437,43 +228,45 @@ This section describes **all activities** that occur during the 120 CLK_7 cycle 
 SCANLINE N (VC = N)
 ═══════════════════════════════════════════════════════════════════════════
 
-HC 424-455: Sprite Rendering Phase 1 (32 cycles)
+HC 432-455: Sprite Rendering Phase 1 (24 cycles)
   → Render sprites for scanline N+1 into line buffer
 
 ═══════════════════════════════════════════════════════════════════════════
 SCANLINE N+1 (VC = N+1)
 ═══════════════════════════════════════════════════════════════════════════
 
-HC 0-87: Sprite Rendering Phase 2 (88 cycles)
+HC 0-95: Sprite Rendering Phase 2 (96 cycles)
   → Continue rendering sprites for scanline N+1 into line buffer
 
-HC 88-103: Buffer Swap Period (16 cycles)
-  → No rendering, state machine reset preparation
+HC 96-111: Buffer Swap Period (16 cycles)
+  → Guard period: state machine IDLE, no activity
+  → Actual buffer swap occurs in a single clock cycle at HC 111
+  → (FPGA core calls this "swap period" but it's primarily a guard/synchronization period)
 
-HC 104-423: Sprite Display Window (320 cycles)
+HC 112-431: Sprite Display Window (320 cycles)
   → Display sprites for scanline N+1 from line buffer
   → Compose with ULA/Layer 2/Tilemap layers
 
-HC 424-455: Sprite Rendering Phase 1 (32 cycles)
+HC 432-455: Sprite Rendering Phase 1 (24 cycles)
   → Clear buffer, start rendering sprites for scanline N+2
 ```
 
 ### Detailed Activity Breakdown
 
-#### Phase 1: HC 424-455 (Scanline N, 32 cycles)
+#### Phase 1: HC 432-455 (Scanline N, 24 cycles)
 
 **When**: End of scanline N  
 **Goal**: Start rendering sprites for scanline N+1  
 **Buffer State**: Empty or just cleared
 
 **Activities** (at CLK_28 = 28 MHz, 4× faster than CLK_7):
-1. **At HC 424** (first cycle):
+1. **At HC 432** (first cycle):
    - Clear line buffer (set all 320 entries to 0 = transparent)
    - Initialize sprite state machine: state ← START
    - Set sprite index ← 0
    - Increment vertical line counter: spr_cur_vcount ← N+1
 
-2. **HC 424-455** (32 CLK_7 cycles = 128 CLK_28 cycles):
+2. **HC 432-455** (24 CLK_7 cycles = 96 CLK_28 cycles):
    - **QUALIFY state** (for each sprite 0-127):
      - Read sprite attributes from attribute RAM (async, instant)
      - Check visibility: attr3[7] == 1?
@@ -501,13 +294,13 @@ HC 424-455: Sprite Rendering Phase 1 (32 cycles)
    - Overhead: 1 cycle per sprite for QUALIFY, 1-2 cycles for PROCESS setup
    - Pattern fetches: 16 cycles minimum per 16×16 sprite (more if scaled)
 
-#### Phase 2: HC 0-87 (Scanline N+1, 88 cycles)
+#### Phase 2: HC 0-95 (Scanline N+1, 96 cycles)
 
 **When**: Beginning of scanline N+1  
 **Goal**: Complete rendering sprites for scanline N+1  
 **Buffer State**: Partially filled from Phase 1
 
-**Activities** (88 CLK_7 cycles = 352 CLK_28 cycles):
+**Activities** (96 CLK_7 cycles = 384 CLK_28 cycles):
 1. **Continue from Phase 1**:
    - State machine continues from where Phase 1 left off
    - If in PROCESS state: complete current sprite
@@ -526,37 +319,48 @@ HC 424-455: Sprite Rendering Phase 1 (32 cycles)
 4. **Overtime Condition**:
    - If sprites don't complete by HC 87: set overtime flag
    - Remaining sprites are skipped (hardware limitation)
-   - This matches real hardware behavior
+   - This Guard period for timing synchronization and buffer swap
 
-#### Swap Period: HC 88-103 (Scanline N+1, 16 cycles)
-
-**When**: Scanline N+1, between rendering and display  
-**Goal**: State machine reset and synchronization
+**Purpose of this idle period**:
+- **Ensures rendering completion**: Sprite processing should finish by HC 95
+- **Clean phase separation**: Prevents overlap between write operations (rendering) and read operations (display)
+- **Timing synchronization**: Allows hardware signals to stabilize before buffer swap
+- State machine must be in IDLE state (no active sprite processing)
 
 **Activities** (16 CLK_7 cycles = 64 CLK_28 cycles):
-1. **At HC 88** (WHC reset):
+1. **At HC 96** (WHC reset):
    - WHC counter resets to -16 (496 unsigned)
    - State machine should be in IDLE state
 
-2. **HC 88-103**:
-   - **No sprite rendering** occurs
+2. **HC 96-111** (idle guard period):
+   - **No sprite rendering** occurs during these 16 cycles
    - State machine remains IDLE
-   - Line buffer remains unchanged (contains sprites for N+1)
-   - Emulator can use this time for other tasks
+   - WHC counts from 496 to 511
+   - Hardware waits for rendering phase to fully complete
+   - **Emulator Note**: Single-buffer emulators should avoid sprite processing during this period to maintain timing fidelity
 
-3. **At HC 103** (end of swap):
-   - In hardware: line_reset signal triggers (WHC = 511)
-   - Buffer swap occurs (hardware only)
-   - Prepare for display at HC 104
+3. **At HC 111** (WHC = 511):
+   - **line_reset signal triggers** (rising edge detected)
+   - **Buffer swap occurs instantaneously** (single clock cycle):
+     - In hardware: `line_buf_sel <= not line_buf_sel` (swap read/write buffers)
+     - Vertical counter increments: `spr_cur_vcount <= vcounter_i + 1`
+     - State machine transitions: IDLE → START
+   - **Emulator**: Should ensure sprite buffer is finalizedvoid sprite processing during this period to maintain timing fidelity
 
-#### Display Window: HC 104-423 (Scanline N+1, 320 cycles)
+3. **At HC 111** (WHC = 511):
+   - In hardware: line_reset signal triggers
+   - **Buffer swap occurs instantaneously** (single clock cycle operation)
+   - **Emulator**: Finalize any pending sprite rendering before HC 112
+   - Prepare for display at HC 112
+
+#### Display Window: HC 112-431 (Scanline N+1, 320 cycles)
 
 **When**: Scanline N+1, visible display area  
 **Goal**: Read sprite data and compose with other layers
 
 **Activities** (320 CLK_7 cycles):
-1. **For each HC in [104, 423]**:
-   - Calculate line buffer index: idx = HC - 104 (gives 0-319)
+1. **For each HC in [112, 431]**:
+   - Calculate line buffer index: idx = HC - 112 (gives 0-319)
    - Read sprite entry: entry = lineBuffer[idx]
    - Extract valid flag: valid = (entry & 0x100) != 0
    - Extract palette index: palette_idx = entry & 0xFF
@@ -578,18 +382,18 @@ HC 424-455: Sprite Rendering Phase 1 (32 cycles)
 ### State Machine States During Rendering Window
 
 **IDLE State**:
-- **When**: HC 0-87 (if all sprites processed), HC 88-103 (swap period)
+- **When**: HC 0-95 (if all sprites processed), HC 96-111 (swap period)
 - **Activity**: Waiting for next scanline or ready for swap
-- **Transition**: At HC 103 (WHC 511), line_reset triggers START
+- **Transition**: At HC 111 (WHC 511), line_reset triggers START
 
 **START State**:
-- **When**: At HC 424 (beginning of rendering)
+- **When**: At HC 432 (beginning of rendering)
 - **Duration**: 1 CLK_28 cycle
 - **Activity**: sprite_index ← 0, initialize counters
 - **Transition**: Immediately to QUALIFY
 
 **QUALIFY State**:
-- **When**: During HC 424-455 and HC 0-87
+- **When**: During HC 432-455 and HC 0-95
 - **Duration**: 1-2 CLK_28 cycles per sprite (minimum)
 - **Activity**: Check sprite visibility and Y-match
 - **Transition**: 
@@ -598,7 +402,7 @@ HC 424-455: Sprite Rendering Phase 1 (32 cycles)
   - If sprite_index wraps to 0: → IDLE (all done)
 
 **PROCESS State**:
-- **When**: During HC 424-455 and HC 0-87 (for visible sprites)
+- **When**: During HC 432-455 and HC 0-95 (for visible sprites)
 - **Duration**: 16-128+ CLK_28 cycles (depends on sprite width and scaling)
 - **Activity**: Fetch pattern, write pixels to line buffer
 - **Transition**: When width complete → QUALIFY (next sprite)
@@ -991,7 +795,7 @@ Timing per pixel: 1 CLK_28 cycle minimum
 **Scenario**: Render sprite #5 on scanline 100, sprite is at X=50, Y=95, 16×16, no transforms
 
 ```
-Scanline 99, HC 424:
+Scanline 99, HC 432:
   CLK_28 cycle 0: STATE = START
     - sprite_index ← 0
     - spr_cur_vcount ← 100
@@ -1034,18 +838,18 @@ This level of detail allows you to accurately emulate the sprite rendering timin
 
 **Single Buffer Approach**:
 ```typescript
-// At HC 424 (scanline N)
-if (hc === 424) {
+// At HC 432 (scanline N)
+if (hc === 432) {
   this.clearSpriteLineBuffer();  // Clear buffer for N+1
   this.renderSpritesForScanline(vc + 1);  // Start rendering N+1
 }
 
-// At HC 0-87 (scanline N+1)  
+// At HC 0-95 (scanline N+1)  
 // Rendering continues automatically (same call)
 
-// At HC 104-423 (scanline N+1)
-if (hc >= 104 && hc <= 423) {
-  const idx = hc - 104;
+// At HC 112-431 (scanline N+1)
+if (hc >= 112 && hc <= 431) {
+  const idx = hc - 112;
   const spritePixel = this.spriteLineBuffer[idx];
   // Compose with other layers
 }
@@ -1056,10 +860,10 @@ if (hc >= 104 && hc <= 423) {
 - **Per-sprite overhead**: ~2 CLK_28 (QUALIFY + PROCESS setup)
 - **Pattern fetch**: 16-128 CLK_28 (base sprite to 8× scaled)
 - **Practical limit**: 10-30 visible sprites per scanline
-- **Timeout**: If processing exceeds HC 87, skip remaining sprites
+- **Timeout**: If processing exceeds HC 95, skip remaining sprites
 
 **Optimization Strategies**:
-1. **Early termination**: Stop at sprite_index = 0 or when HC > 87
+1. **Early termination**: Stop at sprite_index = 0 or when HC > 95
 2. **X-culling**: Skip sprites with X > 319 or X < -128 immediately
 3. **Y-culling**: Skip sprites outside vertical range before QUALIFY
 4. **Fast path**: Optimize for non-transformed sprites (no rotate/mirror/scale)
@@ -1095,7 +899,7 @@ For standard (non-relative) sprites, Y is 8-bit only. The 9th bit is used for re
 **Timing**: Occurs during **horizontal blanking** (VHDL WHC ≥ 320) at CLK_MASTER rate (28 MHz).
 
 **Emulator Timing**: In the emulator's coordinate system:
-- Blanking window (for sprite rendering): Emulator HC 424–455 (32 clocks) + HC 0–87 (88 clocks) = **120 CLK_7 cycles**
+- Blanking window (for sprite rendering): Emulator HC 432–455 (24 clocks) + HC 0–95 (96 clocks) = **120 CLK_7 cycles**
 - Each CLK_7 = 2 CLK_14 = 4 CLK_28 cycles
 - Available CLK_MASTER (28 MHz) cycles: 120 × 4 = **480 cycles** for sprite processing
 
@@ -1636,26 +1440,27 @@ START: HC 0 (beginning of scanline)
   Buffer A: READ buffer  - Contains sprites for scanline 100 (rendered during line 99)
   Buffer B: WRITE buffer - Empty, ready for rendering
 
-HC 0-87: RENDER sprites for scanline 101 → Buffer B (WRITE)
+HC 0-95: RENDER sprites for scanline 101 → Buffer B (WRITE)
   - Qualify sprites: which are visible on line 101?
   - Fetch patterns for visible sprites
   - Write pixels to Buffer B at positions 0-319
 
-HC 88-103: SWAP PERIOD (16 cycles)
-  - No rendering (state machine preparing for swap)
+HC 96-111: SWAP PERIOD (16 cycles)
+  - Guard period: state machine is IDLE (no activity)
   - No display yet (still in blanking)
-  - At HC 103: SWAP BUFFERS
+  - Note: FPGA core calls this "swap period" but it's primarily a guard/synchronization period
+  - At HC 111: SWAP BUFFERS (single clock cycle)
     → Buffer A becomes WRITE buffer
     → Buffer B becomes READ buffer
 
-HC 104-423: DISPLAY sprites for scanline 100 ← Buffer B (READ)
+HC 112-431: DISPLAY sprites for scanline 100 ← Buffer B (READ)
   - Read Buffer B at positions 0-319
   - Compose with ULA/Layer 2/Tilemap
   - Output to screen at current VC (100)
   - Note: This is the PREVIOUS buffer, rendered during scanline 99
 
-HC 424-455: Continue RENDER sprites for scanline 101 → Buffer A (WRITE)
-  - Continue processing sprites that didn't fit in HC 0-87
+HC 432-455: Continue RENDER sprites for scanline 101 → Buffer A (WRITE)
+  - Continue processing sprites that didn't fit in HC 0-95
   - Write pixels to Buffer A at positions 0-319
 
 END: HC 455
@@ -1670,20 +1475,20 @@ START: HC 0
   Buffer A: WRITE buffer - Will receive sprites for scanline 102
   Buffer B: READ buffer  - Contains sprites for scanline 101 (rendered during line 100)
 
-HC 0-87: RENDER sprites for scanline 102 → Buffer A (WRITE)
+HC 0-95: RENDER sprites for scanline 102 → Buffer A (WRITE)
   - Process sprites for next scanline (102)
   - Write pixels to Buffer A
 
-HC 88-103: SWAP PERIOD
-  - At HC 103: SWAP BUFFERS
+HC 96-111: SWAP PERIOD (guard period)
+  - At HC 111: SWAP BUFFERS (single clock cycle)
     → Buffer A becomes READ buffer
     → Buffer B becomes WRITE buffer
 
-HC 104-423: DISPLAY sprites for scanline 101 ← Buffer A (READ)
+HC 112-431: DISPLAY sprites for scanline 101 ← Buffer A (READ)
   - Read Buffer A (rendered during scanline 100)
   - Compose and output to screen at VC 101
 
-HC 424-455: Continue RENDER sprites for scanline 102 → Buffer B (WRITE)
+HC 432-455: Continue RENDER sprites for scanline 102 → Buffer B (WRITE)
   - Write remaining sprite pixels to Buffer B
 
 END: HC 455
@@ -1698,10 +1503,10 @@ START: HC 0
   Buffer A: READ buffer  - Contains sprites for scanline 102 (rendered during line 101)
   Buffer B: WRITE buffer - Will receive sprites for scanline 103
 
-HC 0-87: RENDER sprites for scanline 103 → Buffer B (WRITE)
-HC 88-103: SWAP PERIOD → Buffers swap at HC 103
-HC 104-423: DISPLAY sprites for scanline 102 ← Buffer A (READ)
-HC 424-455: Continue RENDER sprites for scanline 103 → Buffer B (WRITE)
+HC 0-95: RENDER sprites for scanline 103 → Buffer B (WRITE)
+HC 96-111: SWAP PERIOD → Buffers swap at HC 111
+HC 112-431: DISPLAY sprites for scanline 102 ← Buffer A (READ)
+HC 432-455: Continue RENDER sprites for scanline 103 → Buffer B (WRITE)
 
 END: HC 455
   Buffer A: Contains sprites for scanline 102 (just displayed)
@@ -1712,8 +1517,8 @@ END: HC 455
 
 1. **Temporal Offset**: Sprites displayed on scanline N were rendered during scanline N-1
 2. **One Scanline Latency**: There's always a 1-scanline delay between rendering and display
-3. **Zero Overlap**: Rendering window (HC 0-87, 424-455) and display window (HC 104-423) never overlap
-4. **Swap at HC 103**: The 16-cycle swap period (HC 88-103) acts as a "neutral zone" separating the two phases
+3. **Zero Overlap**: Rendering window (HC 0-95, 432-455) and display window (HC 112-431) never overlap
+4. **Swap at HC 111**: The 16-cycle period (HC 96-111) is a guard/synchronization zone where the state machine is IDLE; the actual buffer swap occurs in a single clock cycle at HC 111. (The FPGA core calls this the "swap period" though it's primarily a guard period.)
 5. **Continuous Pipeline**: While displaying line N, we're already rendering line N+1
 
 **Why This Works**:
@@ -2007,12 +1812,12 @@ renderAllSpritesForFrame(): void {
 | Aspect | VHDL Hardware (WHC) | Emulator (Main HC) |
 |--------|---------------------|---------------------|
 | **Counter Range** | 0–511 (456 values/scanline) | 0–455 (456 cycles) |
-| **Sprite Display Area** | WHC 0–319 (320 pixels) | HC 104–423 (320 clocks) |
-| **ULA Display Area** | WHC 40–295 (256 pixels) | HC 144–399 (256 clocks) |
-| **Blanking Interval** | WHC 320–511 (136 machine cycles) | HC 424–455 + 0–87 (120 cycles) |
-| **Sprite Rendering Window** | WHC 320–511 (136 cycles total) | HC 424–455, 0–87 (120 cycles) |
-| **Buffer Swap Period** | WHC 496–511 (16 cycles at HC 88–103) | HC 88–103 (16 cycles, not used for rendering) |
-| **Line Buffer Swap** | WHC = 511 | HC = 103 (WHC wraps to 0) |
+| **Sprite Display Area** | WHC 0–319 (320 pixels) | HC 112–431 (320 clocks) |
+| **ULA Display Area** | WHC 32–287 (256 pixels) | HC 144–399 (256 clocks) |
+| **Blanking Interval** | WHC 320–511 (136 machine cycles) | HC 432–455 + 0–95 (120 cycles) |
+| **Sprite Rendering Window** | WHC 320–511 (136 cycles total) | HC 432–455, 0–95 (120 cycles) |
+| **Buffer Swap Period** | WHC 496–511 (16 cycles at HC 96–111) | HC 96–111 (16 cycles, not used for rendering) |
+| **Line Buffer Swap** | WHC = 511 | HC = 111 (WHC wraps to 0) |
 | **Line Buffer Size** | 320 × 9-bit | 320 × 16-bit (Uint16Array) |
 | **Sprite Coordinates** | 0–319 (WHC-relative) | 0–319 (line buffer indices) |
 | **Clock Rate** | CLK_7 (7 MHz) | CLK_7 (7 MHz) |
@@ -2021,32 +1826,32 @@ renderAllSpritesForFrame(): void {
 **Conversion Formulas**:
 ```
 // Emulator HC to WHC
-whc = (hc - 104) mod 512
+whc = (hc - 112) mod 512
 
 // WHC to Emulator HC  
-hc = (whc + 104) mod 456
+hc = (whc + 112) mod 456
 
 // Examples:
-HC 104 → WHC 0   (first sprite pixel)
-HC 423 → WHC 319 (last sprite pixel)
-HC 424 → WHC 320 (sprite rendering begins)
+HC 112 → WHC 0   (first sprite pixel)
+HC 431 → WHC 319 (last sprite pixel)
+HC 432 → WHC 320 (sprite rendering begins)
 ```
 
 **Key Timing Points** (Emulator HC with WHC mapping):
-- **HC = 88**: WHC reset point (WHC wraps to -16/496)
-- **HC = 103**: WHC = 511, buffer swap occurs
-- **HC = 104** (WHC 0): First sprite display pixel, line buffer index 0
-- **HC = 143** (WHC 39): Last left border pixel before ULA
-- **HC = 144** (WHC 40): ULA display start (displayXStart, 0x90)
-- **HC = 399** (WHC 295): ULA display end (displayXEnd, 0x18F)
-- **HC = 400** (WHC 296): Right border begins
-- **HC = 423** (WHC 319): Last sprite display pixel, line buffer index 319
-- **HC = 424** (WHC 320): Sprite rendering window begins (blanking)
-- **HC = 455** (WHC 351): End of scanline
-- **HC = 0** (WHC 352): Wrap to next scanline, sprite rendering continues
-- **HC = 87** (WHC 495): Last cycle before WHC reset
+- **HC = 96**: WHC reset point (WHC wraps to -16/496)
+- **HC = 111**: WHC = 511, buffer swap occurs
+- **HC = 112** (WHC 0): First sprite display pixel, line buffer index 0
+- **HC = 143** (WHC 31): Last left border pixel before ULA
+- **HC = 144** (WHC 32): ULA display start (displayXStart, 0x90)
+- **HC = 399** (WHC 287): ULA display end (displayXEnd, 0x18F)
+- **HC = 400** (WHC 288): Right border begins
+- **HC = 431** (WHC 319): Last sprite display pixel, line buffer index 319
+- **HC = 432** (WHC 320): Sprite rendering window begins (blanking)
+- **HC = 455** (WHC 343): End of scanline
+- **HC = 0** (WHC 344): Wrap to next scanline, sprite rendering continues
+- **HC = 95** (WHC 495): Last cycle before WHC reset
 
-**Important Note**: WHC is a derived counter that runs continuously at CLK_7 rate, resetting when main HC = 88. The 512-cycle range provides a convenient 320-pixel display coordinate system for sprites, Layer 2, and tilemaps.
+**Important Note**: WHC is a derived counter that runs continuously at CLK_7 rate, resetting when main HC = 96. The 512-cycle range provides a convenient 320-pixel display coordinate system for sprites, Layer 2, and tilemaps.
 
 ---
 
