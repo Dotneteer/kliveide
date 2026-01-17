@@ -108,7 +108,7 @@ The ZX Spectrum 128K/2A/+2A/+3/+3E models handle 16K memory pages (banks) that c
 
 The __BANK__ pragma lets you declare that you want to put the Z80 Assembly code in a specific memory bank. When you export the compiled output, the __Export code__ command of the IDE creates a loader that reads the code and places it on the specified memory page.
 
-The __BANK__ pragma accepts two parameters. The first is the bank number (so it must be between 0 and 7). The second one is an optional offset value (between 0 and 16383), which indicates the start offset within the bank. If you omit this, the default value is zero. By default, the Klive Assembler assumes that the start address of the code in the bank is `$C000`. Nonetheless, you can specify any other value.
+The __BANK__ pragma accepts two parameters (plus optional flags). The first is the bank number (0-7 for Spectrum128, 0-111 for ZX Spectrum Next). The second one is an optional offset value (between 0 and 16383), which indicates the start offset within the bank. If you omit this, the default value is zero. By default, the Klive Assembler assumes that the start address of the code in the bank is `$C000`. Nonetheless, you can specify any other value.
 
 > **Note**: You need to apply the `.model Spectrum128` pragma at the top of your code so that you can use `.bank`.
 
@@ -232,27 +232,46 @@ As you may need multiple memory banks in your program, you can use multiple `BAN
 ; ...
 ```
 
+### Using the `noexport` flag (Next model only)
+
+When using the ZX Spectrum Next model, you can optionally exclude specific banks from being exported to the NEX file by using the `noexport` flag. By default, all banks are exported. This flag allows you to mark banks that should not be included in the final NEX output:
+
+```z80klive
+.model Next
+.bank 5
+; This bank WILL be exported
+  nop
+
+.bank 10 noexport
+; This bank will NOT be exported
+  nop
+
+.bank 15
+; This bank WILL be exported
+  nop
+```
+
+You can also combine the `noexport` flag with the offset parameter:
+
+```z80klive
+.model Next
+.bank 20, #1000 noexport
+; This bank with offset will not be exported
+  nop
+```
+
+> **Note**: The `noexport` flag is only available for the ZX Spectrum Next model. Using it with other models (Spectrum48, Spectrum128) will raise an error.
+
 ### Restrictions with BANK
 
 - `BANK` cannot have a label.
 - `BANK` cannot be used with the ZX Spectrum 48 model type.
-- The `BANK` value must be between 0 and 7
+- For Spectrum128: The `BANK` value must be between 0 and 7
+- For ZX Spectrum Next: The `BANK` value must be between 0 and 111
 - The offset must be between 0 and 16383
-- You can use the `BANK` pragma for a particular bank page only once, so, for example, the following code raises
-an error message:
-
-```z80klive
-.bank 1
-; ...
-
-.bank 3
-; ...
-
-.bank 1 ; This line raises the error
-; ...
-```
-
-> **Note**: This is a temporary restriction. In the future, it may be removed.
+- For Spectrum128: You can use the `BANK` pragma for a particular bank page only once
+- For ZX Spectrum Next: You can reuse the same bank multiple times to create multiple segments within the same bank
+- The `noexport` flag can only be used with the ZX Spectrum Next model
 
 ## The EQU pragma
 

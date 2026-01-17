@@ -567,6 +567,338 @@ describe("Assembler - pragmas", async () => {
     expect(output.errors[0].errorCode === "Z0411").toBe(true);
   });
 
+  // --- ZX Spectrum Next bank tests (0-111 banks, multiple segments per bank)
+  
+  it("bank - Next model basic", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].startAddress).toBe(0xc000);
+    expect(output.segments[0].bank).toBe(5);
+  });
+
+  it("bank - Next model high bank number", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 111
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].startAddress).toBe(0xc000);
+    expect(output.segments[0].bank).toBe(111);
+  });
+
+  it("bank - Next model bank 50", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 50
+      ld a,1
+      ret
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].bank).toBe(50);
+    expect(output.segments[0].emittedCode.length).toBe(3);
+  });
+
+  it("bank - Next model invalid bank number too high", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 112
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z0306").toBe(true);
+  });
+
+  it("bank - Next model multiple segments same bank", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5
+      .org #C000
+      ld a,1
+      ret
+      
+      .bank 5
+      .org #D000
+      ld b,2
+      ret
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(2);
+    expect(output.segments[0].bank).toBe(5);
+    expect(output.segments[0].startAddress).toBe(0xc000);
+    expect(output.segments[1].bank).toBe(5);
+    expect(output.segments[1].startAddress).toBe(0xd000);
+  });
+
+  it("bank - Next model reuse bank allowed", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5
+      nop
+      .bank 10
+      nop
+      .bank 5
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(3);
+    expect(output.segments[0].bank).toBe(5);
+    expect(output.segments[1].bank).toBe(10);
+    expect(output.segments[2].bank).toBe(5);
+  });
+
+  it("bank - Next model multiple banks", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5
+      ld a,1
+      
+      .bank 2
+      ld b,2
+      
+      .bank 10
+      ld c,3
+      
+      .bank 111
+      ld d,4
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(4);
+    expect(output.segments[0].bank).toBe(5);
+    expect(output.segments[1].bank).toBe(2);
+    expect(output.segments[2].bank).toBe(10);
+    expect(output.segments[3].bank).toBe(111);
+  });
+
+  it("bank - Next model with offset", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 20, #1000
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].bank).toBe(20);
+    expect(output.segments[0].startAddress).toBe(0xd000);
+    expect(output.segments[0].bankOffset).toBe(0x1000);
+  });
+
+  it("bank - Next model multiple segments same bank with org", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5
+      .org #C000
+      Start:
+        ld a,1
+        ret
+      
+      .bank 5
+      .org #E000
+      Data:
+        .defb 1,2,3,4
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(2);
+    expect(output.segments[0].bank).toBe(5);
+    expect(output.segments[0].startAddress).toBe(0xc000);
+    expect(output.segments[1].bank).toBe(5);
+    expect(output.segments[1].startAddress).toBe(0xe000);
+  });
+
+  it("bank - Spectrum128 still rejects reuse", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .bank 1
+      nop
+      .bank 1
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z0309").toBe(true);
+  });
+
+  it("bank - Spectrum128 rejects high bank numbers", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .bank 8
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z0306").toBe(true);
+  });
+
+  it("bank - noexport flag with Next model", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5 noexport
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].bank).toBe(5);
+    expect(output.segments[0].nexExport).toBe(false);
+  });
+
+  it("bank - noexport flag with Spectrum128 model", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .bank 5 noexport
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z0331").toBe(true);
+  });
+
+  it("bank - noexport flag with Spectrum48 model", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum48
+      .bank 5 noexport
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z0308").toBe(true);
+  });
+
+  it("bank - noexport flag with offset", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 10, #800 noexport
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].bank).toBe(10);
+    expect(output.segments[0].bankOffset).toBe(0x800);
+    expect(output.segments[0].nexExport).toBe(false);
+  });
+
+  it("bank - multiple banks with selective noexport", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5
+      ld a,1
+      ret
+      
+      .bank 10 noexport
+      ld b,2
+      ret
+      
+      .bank 15
+      ld c,3
+      ret
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(3);
+    expect(output.segments[0].bank).toBe(5);
+    expect(output.segments[0].nexExport).toBe(true);
+    expect(output.segments[1].bank).toBe(10);
+    expect(output.segments[1].nexExport).toBe(false);
+    expect(output.segments[2].bank).toBe(15);
+    expect(output.segments[2].nexExport).toBe(true);
+  });
+
+  it("bank - default nexExport is true for Next model without flag", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].bank).toBe(5);
+    expect(output.segments[0].nexExport).toBe(true);
+  });
+
+  it("bank - case-insensitive noexport keyword", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Next
+      .bank 5 NOEXPORT
+      nop
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.segments[0].nexExport).toBe(false);
+  });
+
   it("xorg - negative value", async () => {
     const compiler = new Z80Assembler();
     const source = `

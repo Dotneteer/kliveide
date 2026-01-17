@@ -56,6 +56,7 @@ export type ErrorCodes =
   | "Z0318"
   | "Z0319"
   | "Z0320"
+  | "Z0331"
   | "Z0321"
   | "Z0322"
   | "Z0323"
@@ -200,7 +201,7 @@ export const errorMessages: Record<string, string> = {
     "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
   Z0304: "An .equ pragma must have a label",
   Z0305: "The .bank pragma cannot have a label.",
-  Z0306: "The .bank pragma's value must be between 0 and 7.",
+  Z0306: "The .bank pragma's value must be between 0 and 7 (Spectrum 128) or 0 and 111 (Next).",
   Z0307: "The .bank pragma's offset value must be between 0 and #03fff.",
   Z0308: "The .bank pragma cannot be used with the current model type.",
   Z0309: "You have already used the .bank pragma for bank {0}.",
@@ -226,6 +227,7 @@ export const errorMessages: Record<string, string> = {
   Z0328: "Invalid .comparebin length value (negative, or segment exceends the file length).",
   Z0329: "Cannot open file '{0}' used in .comparebin pragma ({1}).",
   Z0330: ".comparebin fails: {0}.",
+  Z0331: "The 'noexport' flag in .bank pragma can only be used with .model Next.",
 
   // --- Instructions
   Z0401: "Unexpected error when emitting code for mnemonic '{0}'.",

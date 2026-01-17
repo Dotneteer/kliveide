@@ -653,6 +653,11 @@ export interface BankPragma<TNode extends TypedObject, TToken extends CommonToke
    * Origin address
    */
   offset?: Expression<TNode, TToken>;
+
+  /**
+   * Flag to exclude this bank from NEX export (Next model only)
+   */
+  noexport?: boolean;
 }
 
 export interface XorgPragma<TNode extends TypedObject, TToken extends CommonTokenType>

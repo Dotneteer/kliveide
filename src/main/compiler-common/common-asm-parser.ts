@@ -522,10 +522,18 @@ export abstract class CommonAsmParser<
       case CommonTokens.BankPragma:
         const bankExpr = this.getExpression();
         const bankOffsExpr = this.getExpression(true, true);
+        let noexport = false;
+        // --- Check for optional noexport flag
+        const bankToken = this.tokens.peek();
+        if (bankToken.type === CommonTokens.Identifier && bankToken.text?.toLowerCase() === "noexport") {
+          this.tokens.get(); // consume the noexport token
+          noexport = true;
+        }
         return {
           type: "BankPragma",
           bankId: bankExpr,
-          offset: bankOffsExpr
+          offset: bankOffsExpr,
+          noexport
         } as BankPragma<TInstruction, TToken>;
       case CommonTokens.XorgPragma:
         const xorgExpr = this.getExpression();
