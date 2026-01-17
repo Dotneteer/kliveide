@@ -3,6 +3,7 @@ import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import { zxNextBgra } from "../PaletteDevice";
 import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../MemoryDevice";
+import { SpriteDevice, type SpriteAttributes } from "../SpriteDevice";
 
 /**
  * ZX Spectrum Next Rendering Device
@@ -73,19 +74,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // ==============================================================================================
   // Lifecycle methods
 
-  // Priority 1C: Cache palette device reference to avoid property chain traversal
-  private paletteDeviceCache: any;
-  // Priority 1D: Cache memory array reference for faster VRAM access
+  private paletteDevice: any;
   private memoryArrayCache: Uint8Array;
+  private spriteDevice: SpriteDevice;
 
   /**
    * Initializes a new instance of the NextComposedScreenDevice class.
    * @param machine The machine the screen device is attached to
    */
   constructor(public readonly machine: IZxNextMachine) {
-    // Priority 1C: Initialize palette device cache
-    this.paletteDeviceCache = machine.paletteDevice;
-    // Priority 1D: Initialize memory array cache
+    this.paletteDevice = machine.paletteDevice;
+    this.spriteDevice = machine.spriteDevice;
     this.memoryArrayCache = machine.memoryDevice.memory;
 
     // Screen dimensions
@@ -213,11 +212,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapDefaultAttrCache = 0;
 
     // --- Initialize sampled tilemap configuration
-    this.tilemap80x32Sampled = false;
     this.tilemapTextModeSampled = false;
     this.tilemapEliminateAttrSampled = false;
     this.tilemap512TileModeSampled = false;
-    this.tilemapForceOnTopSampled = false;
 
     // --- Initialize current tile state
     this.tilemapCurrentTileIndex = 0;
@@ -242,6 +239,20 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapLastPaletteIndex = -1;
     this.tilemapCachedRgb333 = null;
     this.tilemapCachedPaletteEntry = 0;
+
+    // --- Initialize sprites state machine
+    this.spritesBufferPosition = 0;
+    this.spritesCurrentPixel = 0;
+    this.spritesCurrentX = 0;
+    this.spritesPatternData = null;
+    this.spritesCurrentSprite = null;
+    
+    // --- Initialize sprite clip boundaries
+    this.spritesClipXMin = 0;
+    this.spritesClipXMax = 319;
+    this.spritesClipYMin = 0;
+    this.spritesClipYMax = 255;
+    this.updateSpriteClipBoundaries();
 
     // --- Initialize renderTact internal state
     this.ulaPixel1Rgb333 = null;
@@ -337,10 +348,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if (this.ulaPlusEnabledField) {
       // ULA+: Border uses palette indices 200-207 (for border colors 0-7)
       const ulaPlusPaletteIndex = 200 + this.borderColorField;
-      this.borderRgbCache = this.paletteDeviceCache.getUlaRgb333(ulaPlusPaletteIndex);
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(ulaPlusPaletteIndex);
     } else {
       // Standard: Border uses palette indices 0-7
-      this.borderRgbCache = this.paletteDeviceCache.getUlaRgb333(this.borderColorField);
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(this.borderColorField);
     }
   }
 
@@ -675,7 +686,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     // Render Sprites pixel(s) if enabled
-    if (this.spritesEnabled) {
+    if (this.spriteDevice.spritesEnabled) {
       const spritesCell = activeRenderingFlagsSprites[tact];
       this.renderSpritesPixel(vc, hc, spritesCell);
     }
@@ -861,8 +872,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set timexPortValue(value: number) {
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
-    this.ulaHiResInkRgb333 = this.paletteDeviceCache.getUlaRgb333(this.ulaHiResColor);
-    this.ulaHiResPaperRgb333 = this.paletteDeviceCache.getUlaRgb333(7 - this.ulaHiResColor);
+    this.ulaHiResInkRgb333 = this.paletteDevice.getUlaRgb333(this.ulaHiResColor);
+    this.ulaHiResPaperRgb333 = this.paletteDevice.getUlaRgb333(7 - this.ulaHiResColor);
     const mode = value & 0x07;
     switch (mode) {
       case 0:
@@ -1067,18 +1078,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private initializeBitmap(): void {
     // Clear entire bitmap to transparent to fully transparent black
     this.pixelBufferField.fill(0x00000000);
-  }
-
-  /**
-   * Render Sprites layer pixel (Stage 1).
-   * @param _vc - Vertical counter position
-   * @param _hc - Horizontal counter position
-   * @param _cell - ULA Standard rendering cell with activity flags
-   */
-  private renderSpritesPixel(_vc: number, _hc: number, _cell: number): void {
-    // TODO: Implementation to be documented in a future section
-    this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
-    this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
   }
 
   /**
@@ -1457,7 +1456,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
 
       if (paletteIndex !== -1) {
-        pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
+        pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
       }
     } else if (this.ulaPlusEnabled) {
       // ULA+ Mode: Use 64-color palette (indices 192-255 in ULA palette)
@@ -1465,14 +1464,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const ulaPaletteIndex = pixelBit
         ? this.ulaPlusAttrToInk[this.ulaShiftAttr]
         : this.ulaPlusAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(ulaPaletteIndex);
+      pixelRgb333 = this.paletteDevice.getUlaRgb333(ulaPaletteIndex);
     } else {
       // Standard Mode: Use pre-calculated lookup tables with BRIGHT already applied
       // Direct palette index lookup (0-15) - no bit operations needed
       const paletteIndex = pixelBit
         ? this.ulaActiveAttrToInk[this.ulaShiftAttr]
         : this.ulaActiveAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
     }
 
     this.ulaShiftAttrCount--;
@@ -1640,11 +1639,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       pixel1Rgb333 =
         index1 === 255
           ? this.machine.composedScreenDevice.fallbackRgb333Cache
-          : this.paletteDeviceCache.getUlaRgb333(index1);
+          : this.paletteDevice.getUlaRgb333(index1);
       pixel2Rgb333 =
         index2 === 255
           ? this.machine.composedScreenDevice.fallbackRgb333Cache
-          : this.paletteDeviceCache.getUlaRgb333(index2);
+          : this.paletteDevice.getUlaRgb333(index2);
     } else {
       // Standard HiRes mode: use predefined ink/paper colors
       pixel1Rgb333 = pixelBit1 ? this.ulaHiResInkRgb333 : this.ulaHiResPaperRgb333;
@@ -1803,7 +1802,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       }
 
       if (paletteIndex !== -1) {
-        pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
+        pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
       }
     } else {
       // Standard HiColor mode: Use pre-calculated lookup tables with BRIGHT already applied
@@ -1811,7 +1810,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const paletteIndex = pixelBit
         ? this.ulaActiveAttrToInk[this.ulaShiftAttr]
         : this.ulaActiveAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
     }
 
     this.ulaShiftAttrCount--;
@@ -1980,7 +1979,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       const highNibble = ((this.loResBlockByte >> 4) + this.loResPaletteOffset) & 0x0f;
       const lowNibble = this.loResBlockByte & 0x0f;
       const paletteIndex = (highNibble << 4) | lowNibble;
-      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
     } else {
       // Radastan LoRes: 4-bit color with palette offset
       // Each byte has 2 nibbles: high nibble for left pixels, low nibble for right pixels
@@ -2000,7 +1999,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         paletteIndex = ((this.loResPaletteOffset & 0x0f) << 4) | nibble;
       }
 
-      pixelRgb333 = this.paletteDeviceCache.getUlaRgb333(paletteIndex);
+      pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
     }
 
     // === STAGE 5: Clipping Test ===
@@ -2118,7 +2117,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2220,7 +2219,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2288,7 +2287,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2357,7 +2356,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
     const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
-    const rgb333 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex);
+    const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
     const priority = (rgb333 & 0x100) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
@@ -2466,7 +2465,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel1Transparent = true;
       this.layer2Pixel1Priority = false;
     } else {
-      const rgb333_1 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex1);
+      const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
       const priority1 = (rgb333_1 & 0x100) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
@@ -2482,7 +2481,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel2Transparent = true;
       this.layer2Pixel2Priority = false;
     } else {
-      const rgb333_2 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex2);
+      const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
       const priority2 = (rgb333_2 & 0x100) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
@@ -2524,7 +2523,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel1Transparent = true;
       this.layer2Pixel1Priority = false;
     } else {
-      const rgb333_1 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex1);
+      const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
       const priority1 = (rgb333_1 & 0x100) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
@@ -2540,7 +2539,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel2Transparent = true;
       this.layer2Pixel2Priority = false;
     } else {
-      const rgb333_2 = this.paletteDeviceCache.getLayer2Rgb333(paletteIndex2);
+      const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
       const priority2 = (rgb333_2 & 0x100) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
@@ -2602,11 +2601,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   tilemapTileDefBank5Msb: number;
 
   // --- Sampled tilemap configuration (sampled based on rendering flags)
-  private tilemap80x32Sampled: boolean; // Sampled every 4 pixels
   private tilemapTextModeSampled: boolean; // Sampled at tile boundaries
   private tilemapEliminateAttrSampled: boolean; // Sampled at tile boundaries
   private tilemap512TileModeSampled: boolean; // Sampled at tile boundaries
-  private tilemapForceOnTopSampled: boolean; // Sampled at tile boundaries
 
   // --- Current tile being rendered
   private tilemapCurrentTileIndex: number;
@@ -2797,18 +2794,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param cell - Rendering cell with activity flags
    */
   private renderTilemap_40x32Pixel(vc: number, hc: number, cell: number): void {
-    // Priority 2F: Combine sampling checks for faster execution when no flags are set
-    // Sample mode bit every 4 pixels (hardware: when hcount(4:0) = "11111")
-    if ((cell & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-      this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-    }
-
     // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
     if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
       this.tilemapTextModeSampled = this.tilemapTextMode;
       this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
       this.tilemap512TileModeSampled = this.tilemap512TileMode;
-      this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
     }
 
     // Calculate display coordinates
@@ -2869,7 +2859,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
 
     // Fetch pattern at position 7 (uses attributes set at this position)
@@ -2963,8 +2955,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       paletteEntry = this.tilemapCachedPaletteEntry;
     } else {
       // Cache miss - lookup and cache
-      rgb333 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex & 0xff);
-      paletteEntry = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex & 0xff);
+      rgb333 = this.paletteDevice.getTilemapRgb333(paletteIndex & 0xff);
+      paletteEntry = this.paletteDevice.getTilemapPaletteEntry(paletteIndex & 0xff);
       this.tilemapLastPaletteIndex = paletteIndex;
       this.tilemapCachedRgb333 = rgb333;
       this.tilemapCachedPaletteEntry = paletteEntry;
@@ -3006,14 +2998,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   private renderTilemap_40x32Pixel_FastPath(vc: number, hc: number, cell: number): void {
     // Sample mode and config (same as regular path)
-    if ((cell & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-      this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-    }
     if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
       this.tilemapTextModeSampled = this.tilemapTextMode;
       this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
       this.tilemap512TileModeSampled = this.tilemap512TileMode;
-      this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
     }
 
     const displayX = hc - this.confDisplayXStart + 32;
@@ -3061,7 +3049,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
     if ((cell & SCR_PATTERN_FETCH) !== 0) {
       // Inline text mode pattern fetch (eliminates function call overhead)
@@ -3127,8 +3117,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       rgb333 = this.tilemapCachedRgb333;
       paletteEntry = this.tilemapCachedPaletteEntry;
     } else {
-      rgb333 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex);
-      paletteEntry = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex);
+      rgb333 = this.paletteDevice.getTilemapRgb333(paletteIndex);
+      paletteEntry = this.paletteDevice.getTilemapPaletteEntry(paletteIndex);
       this.tilemapLastPaletteIndex = paletteIndex;
       this.tilemapCachedRgb333 = rgb333;
       this.tilemapCachedPaletteEntry = paletteEntry;
@@ -3157,14 +3147,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   private renderTilemap_80x32Pixel_FastPath(vc: number, hc: number, cell: number): void {
     // Sample mode and config (same as regular path)
-    if ((cell & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-      this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-    }
     if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
       this.tilemapTextModeSampled = this.tilemapTextMode;
       this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
       this.tilemap512TileModeSampled = this.tilemap512TileMode;
-      this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
     }
 
     // Same as 40x32, but each HC generates 2 pixels
@@ -3213,7 +3199,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
     if ((cell & SCR_PATTERN_FETCH) !== 0) {
       // Inline text mode pattern fetch (eliminates function call overhead)
@@ -3277,8 +3265,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       rgb333_1 = this.tilemapCachedRgb333;
       paletteEntry1 = this.tilemapCachedPaletteEntry;
     } else {
-      rgb333_1 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex1);
-      paletteEntry1 = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex1);
+      rgb333_1 = this.paletteDevice.getTilemapRgb333(paletteIndex1);
+      paletteEntry1 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex1);
       this.tilemapLastPaletteIndex = paletteIndex1;
       this.tilemapCachedRgb333 = rgb333_1;
       this.tilemapCachedPaletteEntry = paletteEntry1;
@@ -3300,8 +3288,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       rgb333_2 = this.tilemapCachedRgb333;
       paletteEntry2 = this.tilemapCachedPaletteEntry;
     } else {
-      rgb333_2 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex2);
-      paletteEntry2 = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex2);
+      rgb333_2 = this.paletteDevice.getTilemapRgb333(paletteIndex2);
+      paletteEntry2 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex2);
       this.tilemapLastPaletteIndex = paletteIndex2;
       this.tilemapCachedRgb333 = rgb333_2;
       this.tilemapCachedPaletteEntry = paletteEntry2;
@@ -3328,20 +3316,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   private renderTilemap_80x32Pixel(vc: number, hc: number, cell: number): void {
     // Priority 2F: Combine sampling checks for faster execution when no flags are set
-    const samplingFlags = cell & (SCR_TILEMAP_SAMPLE_MODE | SCR_TILEMAP_SAMPLE_CONFIG);
-    if (samplingFlags !== 0) {
-      // Sample mode bit every 4 pixels
-      if ((samplingFlags & SCR_TILEMAP_SAMPLE_MODE) !== 0) {
-        this.tilemap80x32Sampled = this.tilemap80x32Resolution;
-      }
-
-      // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
-      if ((samplingFlags & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
-        this.tilemapTextModeSampled = this.tilemapTextMode;
-        this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
-        this.tilemap512TileModeSampled = this.tilemap512TileMode;
-        this.tilemapForceOnTopSampled = this.tilemapForceOnTopOfUla;
-      }
+    // Sample config bits at tile boundaries (hardware: when state = S_IDLE)
+    if ((cell & SCR_TILEMAP_SAMPLE_CONFIG) !== 0) {
+      this.tilemapTextModeSampled = this.tilemapTextMode;
+      this.tilemapEliminateAttrSampled = this.tilemapEliminateAttributes;
+      this.tilemap512TileModeSampled = this.tilemap512TileMode;
     }
 
     // Calculate display coordinates
@@ -3401,7 +3380,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled ? false : (this.tilemapCurrentAttr & 0x01) !== 0;
+      this.tilemapTilePriority = this.tilemap512TileModeSampled
+        ? false
+        : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
 
     // Fetch pattern at position 7 (uses attributes set at this position)
@@ -3489,8 +3470,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       rgb333_1 = this.tilemapCachedRgb333;
       paletteEntry1 = this.tilemapCachedPaletteEntry;
     } else {
-      rgb333_1 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex1 & 0xff);
-      paletteEntry1 = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex1 & 0xff);
+      rgb333_1 = this.paletteDevice.getTilemapRgb333(paletteIndex1 & 0xff);
+      paletteEntry1 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex1 & 0xff);
       this.tilemapLastPaletteIndex = paletteIndex1;
       this.tilemapCachedRgb333 = rgb333_1;
       this.tilemapCachedPaletteEntry = paletteEntry1;
@@ -3524,8 +3505,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       rgb333_2 = this.tilemapCachedRgb333;
       paletteEntry2 = this.tilemapCachedPaletteEntry;
     } else {
-      rgb333_2 = this.paletteDeviceCache.getTilemapRgb333(paletteIndex2 & 0xff);
-      paletteEntry2 = this.paletteDeviceCache.getTilemapPaletteEntry(paletteIndex2 & 0xff);
+      rgb333_2 = this.paletteDevice.getTilemapRgb333(paletteIndex2 & 0xff);
+      paletteEntry2 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex2 & 0xff);
       this.tilemapLastPaletteIndex = paletteIndex2;
       this.tilemapCachedRgb333 = rgb333_2;
       this.tilemapCachedPaletteEntry = paletteEntry2;
@@ -3552,11 +3533,321 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   //
   // This section contains all properties and methods related to Sprites rendering.
   // ==============================================================================================
+  // Sprite pixel buffer (size: 320 pixels, 2 pixels per HC, RGB333)
+  spritesBuffer = new Uint16Array(320);
+  // Sprite pixel buffer position (0-319)
+  spritesBufferPosition: number;
+  // The sprite scanline index being processed (0-255)
+  spritesVc: number;
+  // The sprite being processed (0-127)
+  spritesIndex: number;
+  // Indicates if the current sprite is QUALIFYING (true) or PROCESSING (false)
+  spritesQualifying: boolean;
+  // Indicates that sprite rendering is done (before the end of the rendering window)
+  spritesRenderingDone: boolean;
+  // The number of tacts remaining for sprite processing on this scanline
+  spritesRemainingClk7Tacts: number;
+  // Indicates that sprite overflow occurred (no time to render visible sprite)
+  spritesOvertime: boolean;
+  // Current sprite pattern Y index (0-15)
+  spritesPatternYIndex: number;
+  
+  // PROCESSING phase state variables
+  // Pixel counter (0 to sprite.width-1)
+  private spritesCurrentPixel: number;
+  // Line buffer write position (9-bit, -256 to 511)
+  private spritesCurrentX: number;
+  // Cached pattern data for current sprite
+  private spritesPatternData: Uint8Array | null;
+  // Current sprite being processed (cached reference)
+  private spritesCurrentSprite: SpriteAttributes | null;
+  
+  // Precalculated sprite clipping boundaries (updated when spritesOverBorderEnabled changes)
+  private spritesClipXMin: number;
+  private spritesClipXMax: number;
+  private spritesClipYMin: number;
+  private spritesClipYMax: number;
 
-  sprites0OnTop: boolean;
-  spritesEnableClipping: boolean;
-  spritesEnableOverBorder: boolean;
-  spritesEnabled: boolean;
+  /**
+   * Render Sprites layer pixel (Stage 1).
+   * @param vc - Vertical counter position
+   * @param _hc - Horizontal counter position
+   * @param cell - ULA Standard rendering cell with activity flags
+   */
+  /**
+   * Update sprite clipping boundaries based on spritesOverBorderEnabled flag.
+   * Called when NextReg 0x15 bit 1 changes.
+   */
+  updateSpriteClipBoundaries(): void {
+    if (this.spriteDevice.spritesOverBorderEnabled) {
+      // Full sprite area: 320×256 pixels
+      this.spritesClipXMin = 0;
+      this.spritesClipXMax = 319;
+      this.spritesClipYMin = 0;
+      this.spritesClipYMax = 255;
+    } else {
+      // Restricted to ULA area: 256×192 pixels (X: 32-287, Y: 32-223)
+      this.spritesClipXMin = 32;
+      this.spritesClipXMax = 287;
+      this.spritesClipYMin = 32;
+      this.spritesClipYMax = 223;
+    }
+  }
+
+  private renderSpritesPixel(vc: number, _hc: number, cell: number): void {
+    // This function executes the next CLK_28 cycle (implementing the QUALIFY/PROCESS phases)
+    const renderPixelClk28 = () => {
+      if (this.spritesRenderingDone) {
+        // Nothing to render for this scanline; all sprites processed
+        return;
+      }
+
+      if (this.spritesQualifying) {
+        // QUALIFYING phase: Check if current sprite is visible on this scanline
+
+        // Early exit: If the scanline is entirely outside vertical clip boundaries,
+        // no sprite can be visible on this scanline
+        if (this.spritesVc < this.spritesClipYMin || this.spritesVc > this.spritesClipYMax) {
+          // Scanline is outside vertical clip bounds; skip all sprites
+          this.spritesRenderingDone = true;
+          return;
+        }
+
+        // Check if we've processed all sprites (128)
+        if (this.spritesIndex >= 128) {
+          // All sprites have been checked; switch to IDLE
+          this.spritesRenderingDone = true;
+          return;
+        }
+
+        // Fetch the sprite attributes for the current sprite
+        const spriteAttrs = this.spriteDevice.attributes[this.spritesIndex];
+
+        // Check if sprite is globally enabled (attr3 bit 7)
+        if (!spriteAttrs.visible) {
+          // Sprite is not visible; skip to next sprite
+          this.spritesIndex++;
+          return;
+        }
+
+        // Check if the current scanline intersects with the sprite's vertical position
+        const spriteY = spriteAttrs.y;
+        const spriteHeight = spriteAttrs.height;
+        const spriteBottom = spriteY + spriteHeight;
+        
+        const scanlineIntersects =
+          this.spritesVc >= spriteY && 
+          this.spritesVc < spriteBottom &&
+          spriteY <= this.spritesClipYMax && 
+          spriteBottom > this.spritesClipYMin;
+
+        if (!scanlineIntersects) {
+          // Sprite does not intersect this scanline or is outside vertical clip bounds
+          this.spritesIndex++;
+          return;
+        }
+
+        // Check if sprite is within horizontal clip boundaries
+        const spriteX = spriteAttrs.x;
+        const spriteWidth = spriteAttrs.width;
+        const spriteRight = spriteX + spriteWidth;
+        
+        const horizontallyVisible = 
+          spriteX <= this.spritesClipXMax && 
+          spriteRight > this.spritesClipXMin;
+
+        if (!horizontallyVisible) {
+          // Sprite is outside horizontal clip bounds
+          this.spritesIndex++;
+          return;
+        }
+
+        // Check if there is still time for processing this sprite on this scanline
+        // The PROCESSING phase needs enough CLK_28 cycles to render the sprite width
+        // (+2 CLK_28 tacts for setup/overhead)
+        const cyclesNeeded = spriteWidth + 2;
+        if (this.spritesRemainingClk7Tacts * 4 < cyclesNeeded) {
+          // Not enough time to render this sprite (no_time condition)
+          // Set sprite overflow flag and skip remaining sprites
+          this.spritesOvertime = true;
+          this.spritesRenderingDone = true;
+          return;
+        }
+
+        // Sprite qualifies! Switch to PROCESSING phase
+        this.spritesQualifying = false;
+
+        // Cache sprite reference for PROCESSING phase
+        this.spritesCurrentSprite = spriteAttrs;
+
+        // 1. Calculate Y index within pattern (accounting for scale only)
+        //    This represents which row of the 16×16 pattern we're rendering
+        //    Note: Y-mirror is already applied in the pre-transformed pattern variant
+        const yOffset = this.spritesVc - spriteAttrs.y;
+        this.spritesPatternYIndex = yOffset >> spriteAttrs.scaleY;  // Apply Y-scale (0-15)
+
+        // 2. Get pre-transformed pattern variant using cached variant index
+        //    The variant index is precalculated when sprite attributes are written
+        this.spritesPatternData = spriteAttrs.is4BitPattern
+          ? this.spriteDevice.patternMemory4bit[spriteAttrs.patternVariantIndex]
+          : this.spriteDevice.patternMemory8bit[spriteAttrs.patternVariantIndex];
+
+        // 3. Initialize counters
+        this.spritesCurrentPixel = 0;           // Pixel counter (0 to sprite.width-1)
+        this.spritesCurrentX = spriteAttrs.x;   // Line buffer write position (9-bit)
+
+      } else {
+        // PROCESSING phase: Render sprite pixels
+        
+        // Safety check: ensure we have a valid sprite reference
+        if (!this.spritesCurrentSprite) {
+          // This shouldn't happen, but if it does, go back to QUALIFYING
+          this.spritesQualifying = true;
+          return;
+        }
+        
+        // Check completion first
+        if (this.spritesCurrentPixel >= this.spritesCurrentSprite.width) {
+          // Sprite rendering complete - transition back to QUALIFYING
+          this.spritesQualifying = true;
+          this.spritesIndex++;
+          return;
+        }
+
+        const sprite = this.spritesCurrentSprite;
+
+        // 1. Calculate X index within pattern (0-15)
+        //    Account for scaling: multiple output pixels map to same pattern pixel
+        const xScaled = this.spritesCurrentPixel >> sprite.scaleX;  // Divide by 2^scaleX
+        const xIndex = xScaled & 0x0f;                              // Modulo 16
+
+        // 2. Fetch pixel from pre-transformed pattern (DIRECT LOOKUP - no transform!)
+        //    Pattern is always indexed as [y][x] because transformation is pre-applied
+        const patternOffset = (this.spritesPatternYIndex << 4) | xIndex;
+        const pixelValue = this.spritesPatternData![patternOffset];
+
+        // 3. Check transparency FIRST (before any color processing)
+        //    Compare against global transparency index (NextReg 0x4B, default 0xE3)
+        const isTransparent = (pixelValue === this.spriteDevice.transparencyIndex);
+
+        if (isTransparent) {
+          // Skip transparent pixels - advance to next pixel
+          this.spritesCurrentPixel++;
+          this.spritesCurrentX++;
+          return;
+        }
+
+        // 4. Extract pixel color value
+        //    For 4-bit: only lower nibble is used (upper nibble ignored)
+        //    For 8-bit: full byte is used
+        let colorValue: number;
+        if (sprite.is4BitPattern) {
+          colorValue = pixelValue & 0x0f;  // Use only lower nibble
+        } else {
+          colorValue = pixelValue;  // Use full byte
+        }
+
+        // 5. Apply palette offset
+        let paletteIndex: number;
+        if (sprite.is4BitPattern) {
+          // 4-bit mode: palette offset replaces upper 4 bits
+          paletteIndex = (sprite.paletteOffset << 4) | colorValue;
+        } else {
+          // 8-bit mode: add palette offset to upper 4 bits only
+          const upper = ((colorValue >> 4) + sprite.paletteOffset) & 0x0f;
+          const lower = colorValue & 0x0f;
+          paletteIndex = (upper << 4) | lower;
+        }
+
+        // 6. Check line buffer bounds
+        //    Only write if X position is within visible display (0-319)
+        //    Negative positions and positions >= 320 are clipped
+        const bufferPos = this.spritesCurrentX;
+        const inBounds = (bufferPos >= 0 && bufferPos < 320);
+
+        // 7. Read existing line buffer value (for collision and zero-on-top)
+        let existingValue = 0;
+        let existingValid = false;
+        if (inBounds) {
+          existingValue = this.spritesBuffer[bufferPos];
+          existingValid = (existingValue & 0x100) !== 0;  // Bit 8 = valid flag
+        }
+
+        // 8. Determine write enable
+        let writeEnable = inBounds;
+        
+        if (this.spriteDevice.sprite0OnTop && existingValid) {
+          // Zero-on-top mode: don't overwrite existing valid pixels
+          writeEnable = false;
+        }
+
+        // 9. Write to line buffer
+        if (writeEnable) {
+          // Set bit 8 (valid flag) and bits 7:0 (palette index)
+          this.spritesBuffer[bufferPos] = 0x100 | paletteIndex;
+          
+          // 10. Collision detection
+          //     Trigger when writing to a position that already has a valid pixel
+          if (existingValid) {
+            this.spriteDevice.collisionDetected = true;
+          }
+        }
+
+        // 11. Advance to next pixel
+        this.spritesCurrentPixel++;
+        this.spritesCurrentX++;
+      }
+    };
+
+    if (cell === 0) {
+      // No sprite activity in this cell
+      this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = 0;
+      this.spritesPixel1Transparent = this.spritesPixel2Transparent = true;
+      return;
+    }
+
+    if ((cell & SCR_SPRITE_INIT_RENDER) !== 0) {
+      // Initialize sprite rendering for the next scanline (index 0)
+      this.spritesBufferPosition = 0;
+      this.spritesBuffer.fill(0x00); // Clear sprite buffer
+      // Sprite Y coordinates use a 256-line display area that starts 32 lines before ULA display
+      // (same as tilemapWideDisplayYStart)
+      this.spritesVc = vc - (this.confDisplayYStart - 32) + 1;
+      this.spritesIndex = 0;
+      this.spritesQualifying = true;
+      this.spritesRenderingDone = false;
+      this.spritesOvertime = false;
+      this.spritesRemainingClk7Tacts = 120; // Total CLK_28 tacts available (480 CLK_28 ÷ 4 = 120 CLK_7 tacts)
+    }
+
+    if ((cell & SCR_SPRITE_INIT_DISPLAY) !== 0) {
+      this.spritesBufferPosition = 0;
+    }
+
+    if ((cell & SCR_SPRITE_RENDER) !== 0) {
+      // This cell renders 4 CLK_28 cycles (4 potential machine state transitions)
+      renderPixelClk28();
+      renderPixelClk28();
+      renderPixelClk28();
+      renderPixelClk28();
+      this.spritesRemainingClk7Tacts--;
+    }
+
+    if ((cell & SCR_SPRITE_DISPLAY) !== 0) {
+      const bufferValue = this.spritesBuffer[this.spritesBufferPosition++];
+      const isTransparent = !(bufferValue & 0x100);
+      
+      if (isTransparent) {
+        this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = 0;
+        this.spritesPixel1Transparent = this.spritesPixel2Transparent = true;
+      } else {
+        const paletteIndex = bufferValue & 0xff;
+        const rgb333 = this.paletteDevice.getSpriteRgb333(paletteIndex);
+        this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = rgb333;
+        this.spritesPixel1Transparent = this.spritesPixel2Transparent = false;
+      }
+    }
+  }
 }
 
 // ================================================================================================
@@ -3600,17 +3891,18 @@ const SCR_DISPLAY_AREA = 0b00000001; // bit 0
 const SCR_CONTENTION_WINDOW = 0b00000010; // bit 1
 const SCR_NREG_SAMPLE = 0b00000100; // bit 2
 const SCR_BYTE1_READ = 0b00001000; // bit 3
-const SCR_LINE_BUFFER_READ = 0b00001000; // bit 3, an alias to SCR_BYTE1_READ
 const SCR_TILE_INDEX_FETCH = 0b00001000; // bit 3, an alias to SCR_BYTE1_READ (Tilemap: fetch tile index)
 const SCR_BYTE2_READ = 0b00010000; // bit 4
-const SCR_VISIBILITY_CHECK = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ
 const SCR_TILE_ATTR_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile attribute)
 const SCR_PATTERN_FETCH = 0b00010000; // bit 4, an alias to SCR_BYTE2_READ (Tilemap: fetch tile pattern row)
 const SCR_SHIFT_REG_LOAD = 0b00100000; // bit 5
 const SCR_FLOATING_BUS_UPDATE = 0b01000000; // bit 6
-const SCR_TILEMAP_SAMPLE_MODE = 0b01000000; // bit 6, alias to SCR_FLOATING_BUS_UPDATE (Tilemap: sample mode bit every 4 pixels)
 const SCR_BORDER_AREA = 0b10000000; // bit 7
 const SCR_TILEMAP_SAMPLE_CONFIG = 0b10000000; // bit 7, alias to SCR_BORDER_AREA (Tilemap: sample config bits at tile boundaries)
+const SCR_SPRITE_DISPLAY = 0b00000001; // bit 0, the sprite buffer is displayed
+const SCR_SPRITE_INIT_DISPLAY = 0b00000010; // bit 1, the sprite display is initialized
+const SCR_SPRITE_RENDER = 0b00000100; // bit 2, the sprite buffer is rendered
+const SCR_SPRITE_INIT_RENDER = 0b00001000; // bit 3, the sprite buffer is initialized
 
 // Full scanline including blanking (both 50Hz and 60Hz use HC 0-455)
 const RENDERING_FLAGS_HC_COUNT = 456; // 0 to maxHC (455)
@@ -3974,13 +4266,41 @@ function generateSpritesRenderingFlags(config: TimingConfig): Uint16Array {
    * @returns Sprite layer rendering cell with all activity flags
    */
   function generateSpritesCell(vc: number, hc: number): number {
-    const displayArea = isDisplayArea(config, vc, hc);
+    // Vertical display area is also extended for 320×256 mode
+    const wideDisplayYStart = config.displayYStart - 32;
+    const wideDisplayYEnd = wideDisplayYStart + 255;
+
+    // Check if we're in top or bottom display area. We start rendering sprites
+    // one scanline before the display area to prepare the sprite buffer.
+    if (vc < wideDisplayYStart - 1 || vc > wideDisplayYEnd) {
+      return 0; // No sprite activity outside the top and bottom sprite borders
+    }
 
     let flags = 0;
-    if (displayArea) {
-      flags |= SCR_DISPLAY_AREA | SCR_LINE_BUFFER_READ | SCR_VISIBILITY_CHECK;
+    // We need a wider horizontal display area for sprites
+    const wideDisplayXStart = config.displayXStart - 32;
+    const wideDisplayXEnd = wideDisplayXStart + 319;
+    const swapStart = wideDisplayXStart - 16; // 16 tacts before wide display starts
+
+    if (hc >= wideDisplayXStart && hc <= wideDisplayXEnd) {
+      // The current content of the sprite buffer is displayed
+      flags |= SCR_SPRITE_DISPLAY;
+    } else if (hc >= swapStart && hc < wideDisplayXStart) {
+      // The sprite buffer is being rendered (new data being drawn)
+      flags |= SCR_SPRITE_RENDER;
     }
-    // Sprites use internal memory, no contention window
+
+    if (hc === wideDisplayXEnd + 1) {
+      // Initialize sprite buffer for the next line
+      flags |= SCR_SPRITE_INIT_RENDER;
+    }
+
+    if (hc === swapStart) {
+      // Initialize sprite display for the current line
+      flags |= SCR_SPRITE_INIT_DISPLAY;
+    }
+
+    // Done
     return flags;
   }
 }
@@ -4423,16 +4743,6 @@ function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
     // to allow fetching even when pixelX is negative (in the border).
     // The fetch at pixelX=-2,-1 will load tile 0 data, ready for rendering at pixelX=0.
 
-    // Only set rendering flags for pixels that will actually be displayed
-    const isInDisplayArea = pixelX >= 0 && pixelX < 320;
-
-    if (isInDisplayArea) {
-      // Sample mode bit (40×32/80×32) every 4 pixels (hardware: when hcount(4:0) = "11111")
-      if ((pixelX & 0x03) === 0x03) {
-        flags |= SCR_TILEMAP_SAMPLE_MODE;
-      }
-    }
-
     // Tilemap fetches occur at 8-pixel tile boundaries
     // Each tile is 8 pixels wide in 40×32 mode
     // Calculate which tile we're fetching for (accounting for +8 lookahead)
@@ -4444,7 +4754,7 @@ function generateTilemap40x32RenderingFlags(config: TimingConfig): Uint8Array {
       const hcInTile = pixelX & 0x07; // Use bitwise AND for modulo 8
 
       // Sample config bits at tile boundaries (when we'd start rendering the next tile)
-      if (hcInTile === 0 && isInDisplayArea) {
+      if (hcInTile === 0 && pixelX >= 0 && pixelX < 320) {
         flags |= SCR_TILEMAP_SAMPLE_CONFIG;
       }
 
@@ -4541,16 +4851,6 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
     // to allow fetching even when pixelX is negative (in the border).
     // The fetch at pixelX=-2,-1 will load tile 0 data, ready for rendering at pixelX=0.
 
-    // Only set rendering flags for pixels that will actually be displayed
-    const isInDisplayArea = pixelX >= 0 && pixelX < 320;
-
-    if (isInDisplayArea) {
-      // Sample mode bit (40×32/80×32) every 4 pixels (hardware: when hcount(4:0) = "11111")
-      if ((pixelX & 0x03) === 0x03) {
-        flags |= SCR_TILEMAP_SAMPLE_MODE;
-      }
-    }
-
     // Tilemap fetches occur at 8-pixel tile boundaries in 40×32, but every 4 pixels in 80×32
     // Each tile is 8 pixels wide, but in 80×32 we have twice as many tiles
     // Calculate which tile we're fetching for (accounting for +8 lookahead)
@@ -4562,7 +4862,7 @@ function generateTilemap80x32RenderingFlags(config: TimingConfig): Uint8Array {
     if (fetchForPixelX >= 0 && fetchForPixelX < 320) {
       const hcInTile = pixelX & 0x03; // Use bitwise AND for modulo 8
 
-      if (hcInTile === 0x00 && isInDisplayArea) {
+      if (hcInTile === 0x00 && pixelX >= 0 && pixelX < 320) {
         flags |= SCR_TILEMAP_SAMPLE_CONFIG;
       }
 

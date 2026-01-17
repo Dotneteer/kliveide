@@ -763,19 +763,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x15,
       description: "Sprite and Layers System",
       writeFn: (v) => {
-        machine.composedScreenDevice.loResEnabled = (v & 0x80) !== 0; // DEPRECATED
-        machine.spriteDevice.sprite0OnTop = (v & 0x40) !== 0; // DEPRECATED
-        machine.spriteDevice.enableSpriteClipping = (v & 0x20) !== 0; // DEPRECATED
-        machine.composedScreenDevice.layerPriority = (v & 0x1c) >> 2; // DEPRECATED
-        machine.spriteDevice.enableSpritesOverBorder = (v & 0x02) !== 0; // DEPRECATED
-        machine.spriteDevice.enableSprites = (v & 0x01) !== 0; // DEPRECATED
-
         machine.composedScreenDevice.loResEnabled = (v & 0x80) !== 0;
-        machine.composedScreenDevice.sprites0OnTop = (v & 0x40) !== 0;
-        machine.composedScreenDevice.spritesEnableClipping = (v & 0x20) !== 0;
+        machine.spriteDevice.sprite0OnTop = (v & 0x40) !== 0;
+        machine.spriteDevice.spriteClippingEnabled = (v & 0x20) !== 0;
         machine.composedScreenDevice.layerPriority = (v & 0x1c) >> 2;
-        machine.composedScreenDevice.spritesEnableOverBorder = (v & 0x02) !== 0;
-        machine.composedScreenDevice.spritesEnabled = (v & 0x01) !== 0;
+        machine.spriteDevice.spritesOverBorderEnabled = (v & 0x02) !== 0;
+        machine.spriteDevice.spritesEnabled = (v & 0x01) !== 0;
+        machine.composedScreenDevice.layerPriority = (v & 0x1c) >> 2;
+        machine.composedScreenDevice.updateSpriteClipBoundaries();
       },
       slices: [
         {

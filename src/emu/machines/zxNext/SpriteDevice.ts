@@ -4,17 +4,17 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   spriteIdLockstep: boolean;
   sprite0OnTop: boolean;
-  enableSprites: boolean;
-  enableSpriteClipping: boolean;
-  enableSpritesOverBorder: boolean;
+  spritesEnabled: boolean;
+  spriteClippingEnabled: boolean;
+  spritesOverBorderEnabled: boolean;
 
   // --- Sprite clip window coordinates (sprite coordinate space)
   // --- Written via NextReg 0x19 in sequence: X1, X2, Y1, Y2
-  clipWindowX1: number;  // Range 0-255, default 0
-  clipWindowX2: number;  // Range 0-255, default 255
-  clipWindowY1: number;  // Range 0-191, default 0
-  clipWindowY2: number;  // Range 0-191, default 191
-  clipIndex: number;     // Write sequence index (0-3)
+  clipWindowX1: number; // Range 0-255, default 0
+  clipWindowX2: number; // Range 0-255, default 255
+  clipWindowY1: number; // Range 0-191, default 0
+  clipWindowY2: number; // Range 0-191, default 191
+  clipIndex: number; // Write sequence index (0-3)
 
   transparencyIndex: number;
 
@@ -27,10 +27,13 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   tooManySpritesPerLine: boolean;
   collisionDetected: boolean;
 
-  // --- 64 patterns × 8 transformation variants × 256 bytes = 128KB
+  // --- Pattern memory: separate storage for 8-bit and 4-bit sprites
+  // --- 8-bit: 64 patterns × 8 variants × 256 bytes = 128KB
+  // --- 4-bit: 128 patterns × 8 variants × 256 bytes = 256KB (lower nibble only)
   // --- Variant index = (patternIdx << 3) | (rotate << 2) | (mirrorX << 1) | mirrorY
-  patternMemoryVariants: Uint8Array[];
-  spriteMemory: SpriteAttributes[];
+  patternMemory8bit: Uint8Array[];   // 512 entries (64 × 8)
+  patternMemory4bit: Uint8Array[];   // 1024 entries (128 × 8)
+  attributes: SpriteAttributes[];
 
   lastVisibileSpriteIndex: number;
 
@@ -43,16 +46,23 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   private anchorMirrorY: boolean = false;
 
   constructor(public readonly machine: IZxNextMachine) {
-    // --- Allocate pattern memory: 64 patterns × 8 variants = 512 arrays of 256 bytes each
-    this.patternMemoryVariants = new Array(512);
+    // --- Allocate 8-bit pattern memory: 64 patterns × 8 variants = 512 arrays of 256 bytes each
+    this.patternMemory8bit = new Array(512);
     for (let i = 0; i < 512; i++) {
-      this.patternMemoryVariants[i] = new Uint8Array(256);
+      this.patternMemory8bit[i] = new Uint8Array(256);
     }
-    
+
+    // --- Allocate 4-bit pattern memory: 128 patterns × 8 variants = 1024 arrays of 256 bytes each
+    // --- (only lower nibble used per byte, upper nibble ignored)
+    this.patternMemory4bit = new Array(1024);
+    for (let i = 0; i < 1024; i++) {
+      this.patternMemory4bit[i] = new Uint8Array(256);
+    }
+
     // --- Allocate sprite attribute memory
-    this.spriteMemory = new Array(128);
+    this.attributes = new Array(128);
     for (let i = 0; i < 128; i++) {
-      this.spriteMemory[i] = {
+      this.attributes[i] = {
         x: 0,
         y: 0,
         paletteOffset: 0,
@@ -60,7 +70,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         mirrorY: false,
         rotate: false,
         attributeFlag1: false,
-        enableVisibility: false,
+        visible: false,
         has5AttributeBytes: false,
         patternIndex: 0,
         colorMode: 0,
@@ -69,7 +79,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         scaleY: 0,
         pattern7Bit: 0,
         is4BitPattern: false,
-        transformVariant: 0
+        transformVariant: 0,
+        patternVariantIndex: 0,
+        width: 16,
+        height: 16
       };
     }
 
@@ -87,9 +100,9 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   reset(): void {
     this.spriteIdLockstep = false;
     this.sprite0OnTop = false;
-    this.enableSpriteClipping = false;
-    this.enableSprites = false;
-    this.enableSpritesOverBorder = false;
+    this.spriteClippingEnabled = false;
+    this.spritesEnabled = false;
+    this.spritesOverBorderEnabled = false;
     this.clipIndex = 0;
     this.clipWindowX1 = 0;
     this.clipWindowX2 = 255;
@@ -97,6 +110,30 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowY2 = 191;
     this.transparencyIndex = 0xe3;
     this.lastVisibileSpriteIndex = -1;
+    
+    // --- Reset all sprite attributes to default values
+    for (let i = 0; i < 128; i++) {
+      this.attributes[i].x = 0;
+      this.attributes[i].y = 0;
+      this.attributes[i].paletteOffset = 0;
+      this.attributes[i].mirrorX = false;
+      this.attributes[i].mirrorY = false;
+      this.attributes[i].rotate = false;
+      this.attributes[i].attributeFlag1 = false;
+      this.attributes[i].visible = false;
+      this.attributes[i].has5AttributeBytes = false;
+      this.attributes[i].patternIndex = 0;
+      this.attributes[i].colorMode = 0;
+      this.attributes[i].attributeFlag2 = false;
+      this.attributes[i].scaleX = 0;
+      this.attributes[i].scaleY = 0;
+      this.attributes[i].pattern7Bit = 0;
+      this.attributes[i].is4BitPattern = false;
+      this.attributes[i].transformVariant = 0;
+      this.attributes[i].patternVariantIndex = 0;
+      this.attributes[i].width = 16;
+      this.attributes[i].height = 16;
+    }
   }
 
   /**
@@ -143,7 +180,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
    * Gets the full 7-bit pattern index for a sprite.
    * Pattern index uses 6 bits from attr3[5:0] and 1 bit from attr4[6] (attributeFlag2).
    * Valid range: 0-127 (7-bit)
-   * 
+   *
    * @param sprite The sprite attributes to get the pattern index from
    * @returns The full 7-bit pattern index (0-127)
    */
@@ -214,22 +251,63 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
-  writeSpriteAttribute(value: number): void {
-    this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
-    const attributes = this.spriteMemory[this.spriteIndex];
-    if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
-      this.spriteSubIndex++;
-      attributes.colorMode = 0x00;
-      attributes.attributeFlag2 = false;
-      attributes.scaleX = 0;
-      attributes.scaleY = 0;
-    }
+  writeSpriteAttribute(port: number, value: number): void {
+    // --- Check if upper byte specifies a direct attribute index
+    // --- Upper nibble must be 0x3, and lower nibble 0x1-0x5 maps to attribute 0-4
+    const upperByte = (port >> 8) & 0xFF;
+    const upperNibble = (upperByte >> 4) & 0x0F;
+    const lowerNibble = upperByte & 0x0F;
+    
+    // --- Determine if this is a direct write (port indicates specific attr that doesn't match current subIndex)
+    const portAttrIndex = lowerNibble - 1;
+    const isDirect = upperNibble === 0x3 && 
+                     lowerNibble >= 0x01 && 
+                     lowerNibble <= 0x05 && 
+                     portAttrIndex !== this.spriteSubIndex;
+    
+    if (isDirect) {
+      // --- Direct attribute write
+      // --- If spriteSubIndex is 0 but we're writing to a non-zero attribute,
+      // --- check if we just completed a sprite (by seeing if we can write attr0 to current sprite)
+      // --- If so, target the previous sprite. Otherwise, target current sprite.
+      let targetSpriteIndex = this.spriteIndex;
+      
+      // --- If subIndex is 0 and we're accessing a later attribute (2, 3, 4),
+      // --- we might be modifying the just-completed sprite
+      if (this.spriteSubIndex === 0 && portAttrIndex >= 2) {
+        // --- Check if the current sprite has already been configured (has non-default values)
+        // --- If X or Y is still 0 and other attrs are default, we're on a fresh sprite
+        const currentAttrs = this.attributes[this.spriteIndex];
+        const prevAttrs = this.attributes[(this.spriteIndex - 1) & 0x7f];
+        
+        // --- If previous sprite has been configured recently (non-zero X or has scaling),
+        // --- assume we want to modify it
+        if (prevAttrs.scaleX !== 0 || prevAttrs.scaleY !== 0 || prevAttrs.x !== 0) {
+          targetSpriteIndex = (this.spriteIndex - 1) & 0x7f;
+        }
+      }
+      
+      this.writeIndexedSpriteAttribute(targetSpriteIndex, portAttrIndex, value);
+    } else {
+      // --- Sequential write using spriteSubIndex
+      this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
+      const attributes = this.attributes[this.spriteIndex];
+      if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
+        this.spriteSubIndex++;
+        attributes.colorMode = 0x00;
+        attributes.attributeFlag2 = false;
+        attributes.scaleX = 0;
+        attributes.scaleY = 0;
+        // --- Update dimensions for 4-byte sprites (no scaling)
+        this.updateSpriteDimensions(attributes);
+      }
 
-    // --- Increment subindex and sprite index
-    this.spriteSubIndex++;
-    if (this.spriteSubIndex >= 5) {
-      this.spriteSubIndex = 0;
-      this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
+      // --- Increment subindex and sprite index
+      this.spriteSubIndex++;
+      if (this.spriteSubIndex >= 5) {
+        this.spriteSubIndex = 0;
+        this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
+      }
     }
   }
 
@@ -249,47 +327,51 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   writeSpritePattern(value: number): void {
-    const srcIdx = this.patternSubIndex;  // 0-255
-    const baseVariantIdx = this.patternIndex << 3;  // patternIndex * 8
-    
+    const srcIdx = this.patternSubIndex; // 0-255
+    const baseVariantIdx8bit = this.patternIndex << 3; // For 8-bit: patternIndex (0-63) * 8
+
     // --- Extract X,Y coordinates from linear index
-    const srcY = srcIdx >> 4;     // srcIdx / 16 (row 0-15)
-    const srcX = srcIdx & 0x0f;   // srcIdx % 16 (col 0-15)
-    
-    // --- Write to all 8 transformation variants immediately
-    // --- Each variant uses different coordinate mapping
-    
-    // Variant 0 (000): No transform - [y][x] → [y][x]
-    this.patternMemoryVariants[baseVariantIdx][srcIdx] = value;
-    
-    // Variant 1 (001): mirrorY - [y][x] → [15-y][x]
-    const dstIdx1 = ((15 - srcY) << 4) | srcX;
-    this.patternMemoryVariants[baseVariantIdx + 1][dstIdx1] = value;
-    
-    // Variant 2 (010): mirrorX - [y][x] → [y][15-x]
-    const dstIdx2 = (srcY << 4) | (15 - srcX);
-    this.patternMemoryVariants[baseVariantIdx + 2][dstIdx2] = value;
-    
-    // Variant 3 (011): mirrorX + mirrorY - [y][x] → [15-y][15-x]
-    const dstIdx3 = ((15 - srcY) << 4) | (15 - srcX);
-    this.patternMemoryVariants[baseVariantIdx + 3][dstIdx3] = value;
-    
-    // Variant 4 (100): rotate 90° CW - [y][x] → [x][15-y]
-    const dstIdx4 = (srcX << 4) | (15 - srcY);
-    this.patternMemoryVariants[baseVariantIdx + 4][dstIdx4] = value;
-    
-    // Variant 5 (101): rotate + mirrorY - [y][x] → [x][y]
-    const dstIdx5 = (srcX << 4) | srcY;
-    this.patternMemoryVariants[baseVariantIdx + 5][dstIdx5] = value;
-    
-    // Variant 6 (110): rotate + mirrorX - [y][x] → [15-x][15-y]
-    const dstIdx6 = ((15 - srcX) << 4) | (15 - srcY);
-    this.patternMemoryVariants[baseVariantIdx + 6][dstIdx6] = value;
-    
-    // Variant 7 (111): rotate + mirrorX + mirrorY - [y][x] → [15-x][y]
-    const dstIdx7 = ((15 - srcX) << 4) | srcY;
-    this.patternMemoryVariants[baseVariantIdx + 7][dstIdx7] = value;
-    
+    const srcY = srcIdx >> 4; // srcIdx / 16 (row 0-15)
+    const srcX = srcIdx & 0x0f; // srcIdx % 16 (col 0-15)
+
+    // --- Calculate destination indices for all 8 transformation variants
+    const dstIdx0 = srcIdx;                               // Variant 0 (000): No transform
+    const dstIdx1 = ((15 - srcY) << 4) | srcX;            // Variant 1 (001): mirrorY
+    const dstIdx2 = (srcY << 4) | (15 - srcX);            // Variant 2 (010): mirrorX
+    const dstIdx3 = ((15 - srcY) << 4) | (15 - srcX);     // Variant 3 (011): mirrorX + mirrorY
+    const dstIdx4 = (srcX << 4) | (15 - srcY);            // Variant 4 (100): rotate 90° CW
+    const dstIdx5 = (srcX << 4) | srcY;                   // Variant 5 (101): rotate + mirrorY
+    const dstIdx6 = ((15 - srcX) << 4) | (15 - srcY);     // Variant 6 (110): rotate + mirrorX
+    const dstIdx7 = ((15 - srcX) << 4) | srcY;            // Variant 7 (111): rotate + mirrorX + mirrorY
+
+    // --- Write to 8-bit pattern memory (64 patterns: 0-63)
+    // --- Use full byte value
+    this.patternMemory8bit[baseVariantIdx8bit][dstIdx0] = value;
+    this.patternMemory8bit[baseVariantIdx8bit + 1][dstIdx1] = value;
+    this.patternMemory8bit[baseVariantIdx8bit + 2][dstIdx2] = value;
+    this.patternMemory8bit[baseVariantIdx8bit + 3][dstIdx3] = value;
+    this.patternMemory8bit[baseVariantIdx8bit + 4][dstIdx4] = value;
+    this.patternMemory8bit[baseVariantIdx8bit + 5][dstIdx5] = value;
+    this.patternMemory8bit[baseVariantIdx8bit + 6][dstIdx6] = value;
+    this.patternMemory8bit[baseVariantIdx8bit + 7][dstIdx7] = value;
+
+    // --- Write to 4-bit pattern memory (128 patterns: 0-127)
+    // --- Pattern index for 4-bit = (patternIndex << 1) | patternSubIndex[7]
+    // --- This maps: patternIndex 0-63, subIndex 0-127 → pattern 0-63
+    // ---            patternIndex 0-63, subIndex 128-255 → pattern 64-127
+    const pattern4bitIndex = (this.patternIndex << 1) | ((this.patternSubIndex >> 7) & 1);
+    const baseVariantIdx4bit = pattern4bitIndex << 3;
+    const value4bit = value & 0x0f;  // Use only lower nibble
+
+    this.patternMemory4bit[baseVariantIdx4bit][dstIdx0] = value4bit;
+    this.patternMemory4bit[baseVariantIdx4bit + 1][dstIdx1] = value4bit;
+    this.patternMemory4bit[baseVariantIdx4bit + 2][dstIdx2] = value4bit;
+    this.patternMemory4bit[baseVariantIdx4bit + 3][dstIdx3] = value4bit;
+    this.patternMemory4bit[baseVariantIdx4bit + 4][dstIdx4] = value4bit;
+    this.patternMemory4bit[baseVariantIdx4bit + 5][dstIdx5] = value4bit;
+    this.patternMemory4bit[baseVariantIdx4bit + 6][dstIdx6] = value4bit;
+    this.patternMemory4bit[baseVariantIdx4bit + 7][dstIdx7] = value4bit;
+
     // --- Increment the pattern index
     this.patternSubIndex = (this.patternSubIndex + 1) & 0xff;
     if (!this.patternSubIndex) {
@@ -299,12 +381,12 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
 
   writeIndexedSpriteAttribute(spriteIdx: number, attridx: number, value: number): void {
     // --- Bounds check sprite index
-    if (spriteIdx < 0 || spriteIdx >= this.spriteMemory.length) {
+    if (spriteIdx < 0 || spriteIdx >= this.attributes.length) {
       return;
     }
 
     // --- Update the spite attributes
-    const attributes = this.spriteMemory[spriteIdx];
+    const attributes = this.attributes[spriteIdx];
     switch (attridx) {
       case 0:
         // --- X position (lower 8 bits)
@@ -321,10 +403,12 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.rotate = (value & 0x02) !== 0;
         attributes.attributeFlag1 = (value & 0x01) !== 0;
         // --- Cache transformation variant (0-7) for fast renderer lookup
-        attributes.transformVariant = 
-          (attributes.rotate ? 4 : 0) | 
-          (attributes.mirrorX ? 2 : 0) | 
-          (attributes.mirrorY ? 1 : 0);
+        attributes.transformVariant =
+          (attributes.rotate ? 4 : 0) | (attributes.mirrorX ? 2 : 0) | (attributes.mirrorY ? 1 : 0);
+        // --- Cache complete pattern variant index for direct memory lookup
+        this.updatePatternVariantIndex(attributes);
+        // --- Recalculate width and height
+        this.updateSpriteDimensions(attributes);
         // --- Track anchor sprite if this is an anchor sprite (non-relative with 5 attribute bytes)
         if (attributes.has5AttributeBytes && attributes.colorMode !== 0x01) {
           this.anchorX = attributes.x;
@@ -335,11 +419,13 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         }
         break;
       case 3:
-        attributes.enableVisibility = (value & 0x80) !== 0;
+        attributes.visible = (value & 0x80) !== 0;
         attributes.has5AttributeBytes = (value & 0x40) !== 0;
         attributes.patternIndex = value & 0x3f;
         // --- Update computed 7-bit pattern index
         attributes.pattern7Bit = attributes.patternIndex | (attributes.attributeFlag2 ? 64 : 0);
+        // --- Cache complete pattern variant index for direct memory lookup
+        this.updatePatternVariantIndex(attributes);
         break;
       default:
         // --- attr4 (5th attribute byte)
@@ -350,6 +436,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.scaleY = (value & 0x06) >> 1;
         // --- Update computed 7-bit pattern index (bit 6 of attr4 extends patternIndex)
         attributes.pattern7Bit = attributes.patternIndex | (attributes.attributeFlag2 ? 64 : 0);
+        // --- Cache complete pattern variant index for direct memory lookup
+        this.updatePatternVariantIndex(attributes);
+        // --- Recalculate width and height
+        this.updateSpriteDimensions(attributes);
         if (attributes.colorMode !== 0x01) {
           // --- Anchor sprite: set X MSB (bit 0 of attr4)
           attributes.x = (((value & 0x01) << 8) | (attributes.x & 0xff)) & 0x1ff;
@@ -358,20 +448,65 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Select the last visible sprite
-    if (attridx === 3 && attributes.enableVisibility) {
+    if (attridx === 3 && attributes.visible) {
       if (spriteIdx > this.lastVisibileSpriteIndex) {
         // --- This is the last visible sprite
         this.lastVisibileSpriteIndex = spriteIdx;
       } else {
         // --- Search for the last visible sprites
         this.lastVisibileSpriteIndex = -1;
-        for (let i = 127; i > 0; i++) {
-          if (this.spriteMemory[i].enableVisibility) {
+        for (let i = 127; i > 0; i--) {
+          if (this.attributes[i].visible) {
             this.lastVisibileSpriteIndex = i;
             break;
           }
         }
       }
+    }
+  }
+
+  /**
+   * Update the cached pattern variant index for direct lookup in pattern memory.
+   * Called whenever sprite attributes affecting pattern selection change.
+   */
+  private updatePatternVariantIndex(attributes: SpriteAttributes): void {
+    // Combined variant index = (patternIndex << 3) | transformVariant
+    // For 4-bit sprites, pattern index is 7-bit (includes attributeFlag2 as LSB)
+    if (attributes.is4BitPattern) {
+      const pattern7bit = (attributes.patternIndex << 1) | (attributes.attributeFlag2 ? 1 : 0);
+      attributes.patternVariantIndex = (pattern7bit << 3) | attributes.transformVariant;
+    } else {
+      attributes.patternVariantIndex = (attributes.patternIndex << 3) | attributes.transformVariant;
+    }
+  }
+
+  /**
+   * Recalculates sprite width and height based on scaling and rotation flags.
+   * Base sprite size is 16x16 pixels.
+   * 
+   * Scaling multipliers:
+   * - scale = 0: 1x (16 pixels)
+   * - scale = 1: 2x (32 pixels)
+   * - scale = 2: 4x (64 pixels)
+   * - scale = 3: 8x (128 pixels)
+   * 
+   * Rotation swaps width and height dimensions.
+   * Mirroring does not affect dimensions (only visual appearance).
+   */
+  private updateSpriteDimensions(attributes: SpriteAttributes): void {
+    const baseSize = 16;
+    
+    // --- Calculate scaled dimensions
+    const scaledWidth = baseSize << attributes.scaleX; // 16 * (2^scaleX)
+    const scaledHeight = baseSize << attributes.scaleY; // 16 * (2^scaleY)
+    
+    // --- Apply rotation (swaps width/height)
+    if (attributes.rotate) {
+      attributes.width = scaledHeight;
+      attributes.height = scaledWidth;
+    } else {
+      attributes.width = scaledWidth;
+      attributes.height = scaledHeight;
     }
   }
 }
@@ -384,7 +519,7 @@ export type SpriteAttributes = {
   mirrorY: boolean;
   rotate: boolean;
   attributeFlag1: boolean;
-  enableVisibility: boolean;
+  visible: boolean;
   has5AttributeBytes: boolean;
   patternIndex: number;
   colorMode: number;
@@ -392,9 +527,12 @@ export type SpriteAttributes = {
   scaleX: number;
   scaleY: number;
   // --- Computed fields for renderer optimization
-  pattern7Bit: number;      // Full 7-bit pattern index: patternIndex | (attributeFlag2 ? 64 : 0)
-  is4BitPattern: boolean;   // 4-bit color mode flag
+  pattern7Bit: number; // Full 7-bit pattern index: patternIndex | (attributeFlag2 ? 64 : 0)
+  is4BitPattern: boolean; // 4-bit color mode flag
   transformVariant: number; // Cached transformation variant (0-7): (rotate << 2) | (mirrorX << 1) | mirrorY
+  patternVariantIndex: number; // Cached pattern variant index for direct lookup in patternMemory arrays
+  width: number; // Effective sprite width in pixels after scaling and rotation
+  height: number; // Effective sprite height in pixels after scaling and rotation
 };
 
 export type SpriteInfo = {

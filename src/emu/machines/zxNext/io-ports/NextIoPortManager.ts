@@ -495,7 +495,7 @@ export class NextIoPortManager {
       port: 0x57,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_0111,
-      writerFns: (_, v) => machine.spriteDevice.writeSpriteAttribute(v)
+      writerFns: (port, v) => machine.spriteDevice.writeSpriteAttribute(port, v)
     });
     r({
       description: "Sprite pattern",
