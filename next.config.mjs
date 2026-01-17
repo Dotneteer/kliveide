@@ -45,7 +45,7 @@ const z80Language = {
     },
     "pragma": {
       "name": "keyword.control.pragma.z80klive",
-      "match": "(?i)(\\.org|\\.bank|\\.xorg|\\.ent|\\.xent|\\.equ|\\.var|\\.disp|\\.defb|\\.db|\\.defw|\\.dw|\\.defm|\\.dm|\\.defn|\\.dn|\\.defh|\\.dh|\\.defs|\\.ds|\\.defc|\\.dc|\\.defg|\\.dg|\\.defgx|\\.dgx|\\.skip|\\.extern|\\.fillb|\\.fillw|\\.model|\\.injectopt|\\.align|\\.trace|\\.tracehex|\\.rndseed|\\.error|\\.includebin|\\.include_bin|\\.incbin|\\.comparebin|\\.zxbasic|\\.onsuccess)\\b|\\b(org|bank|xorg|ent|xent|equ|var|disp|defb|db|defw|dw|defm|dm|defn|dn|defh|dh|defs|ds|defc|dc|defg|dg|defgx|dgx|skip|extern|fillb|fillw|model|injectopt|align|trace|tracehex|rndseed|error|includebin|include_bin|incbin|comparebin|zxbasic|onsuccess)\\b"
+      "match": "(?i)(\\.org|\\.bank|\\.savenex|\\.xorg|\\.ent|\\.xent|\\.equ|\\.var|\\.disp|\\.defb|\\.db|\\.defw|\\.dw|\\.defm|\\.dm|\\.defn|\\.dn|\\.defh|\\.dh|\\.defs|\\.ds|\\.defc|\\.dc|\\.defg|\\.dg|\\.defgx|\\.dgx|\\.skip|\\.extern|\\.fillb|\\.fillw|\\.model|\\.injectopt|\\.align|\\.trace|\\.tracehex|\\.rndseed|\\.error|\\.includebin|\\.include_bin|\\.incbin|\\.comparebin|\\.zxbasic|\\.onsuccess)\\b|\\b(org|bank|savenex|xorg|ent|xent|equ|var|disp|defb|db|defw|dw|defm|dm|defn|dn|defh|dh|defs|ds|defc|dc|defg|dg|defgx|dgx|skip|extern|fillb|fillw|model|injectopt|align|trace|tracehex|rndseed|error|includebin|include_bin|incbin|comparebin|zxbasic|onsuccess)\\b"
     },
     "string": {
       "patterns": [

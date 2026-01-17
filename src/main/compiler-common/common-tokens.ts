@@ -80,65 +80,66 @@ export const CommonTokens = {
   InjectOptPragma: 68,
   OnSuccessPragma: 69,
   OnErrorPragma: 70,
+  SaveNexPragma: 71,
 
-  Macro: 71,
-  Endm: 72,
-  Proc: 73,
-  Endp: 74,
-  Loop: 75,
-  Endl: 76,
-  Repeat: 77,
-  Until: 78,
-  While: 79,
-  Endw: 80,
-  If: 81,
-  IfUsed: 82,
-  IfNUsed: 83,
-  Elif: 84,
-  Else: 85,
-  Endif: 86,
-  For: 87,
-  To: 88,
-  Step: 89,
-  Next: 90,
-  Break: 91,
-  Continue: 92,
-  Module: 93,
-  EndModule: 94,
-  Struct: 95,
-  Ends: 96,
+  Macro: 72,
+  Endm: 73,
+  Proc: 74,
+  Endp: 75,
+  Loop: 76,
+  Endl: 77,
+  Repeat: 78,
+  Until: 79,
+  While: 80,
+  Endw: 81,
+  If: 82,
+  IfUsed: 83,
+  IfNUsed: 84,
+  Elif: 85,
+  Else: 86,
+  Endif: 87,
+  For: 88,
+  To: 89,
+  Step: 90,
+  Next: 91,
+  Break: 92,
+  Continue: 93,
+  Module: 94,
+  EndModule: 95,
+  Struct: 96,
+  Ends: 97,
 
-  TextOf: 97,
-  LTextOf: 98,
-  Def: 99,
-  IsIndexedAddr: 100,
-  IsExpr: 101,
+  TextOf: 98,
+  LTextOf: 99,
+  Def: 100,
+  IsIndexedAddr: 101,
+  IsExpr: 102,
 
-  True: 102,
-  False: 103,
-  CurCnt: 104,
+  True: 103,
+  False: 104,
+  CurCnt: 105,
 
-  IfDefDir: 105,
-  IfNDefDir: 106,
-  EndIfDir: 107,
-  ElseDir: 108,
-  DefineDir: 109,
-  UndefDir: 110,
-  IncludeDir: 111,
-  IfDir: 112,
-  IfModDir: 113,
-  IfNModDir: 114,
-  LineDir: 115,
-  CurAddress: 116,
-  NoneArg: 117,
+  IfDefDir: 106,
+  IfNDefDir: 107,
+  EndIfDir: 108,
+  ElseDir: 109,
+  DefineDir: 110,
+  UndefDir: 111,
+  IncludeDir: 112,
+  IfDir: 113,
+  IfModDir: 114,
+  IfNModDir: 115,
+  LineDir: 116,
+  CurAddress: 117,
+  NoneArg: 118,
 
-  BinaryLiteral: 118,
-  OctalLiteral: 119,
-  DecimalLiteral: 120,
-  HexadecimalLiteral: 121,
-  RealLiteral: 122,
-  CharLiteral: 123,
-  StringLiteral: 124
+  BinaryLiteral: 119,
+  OctalLiteral: 120,
+  DecimalLiteral: 121,
+  HexadecimalLiteral: 122,
+  RealLiteral: 123,
+  CharLiteral: 124,
+  StringLiteral: 125
 }
 
 export type CommonTokenType = typeof CommonTokens[keyof typeof CommonTokens];
@@ -338,6 +339,13 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
   ".ONSUCCESS": CommonTokens.OnSuccessPragma,
   onsuccess: CommonTokens.OnSuccessPragma,
   ONSUCCESS: CommonTokens.OnSuccessPragma,
+
+  ".savenex": CommonTokens.SaveNexPragma,
+  ".SAVENEX": CommonTokens.SaveNexPragma,
+  ".SaveNex": CommonTokens.SaveNexPragma,
+  savenex: CommonTokens.SaveNexPragma,
+  SAVENEX: CommonTokens.SaveNexPragma,
+  SaveNex: CommonTokens.SaveNexPragma,
 
   ".macro": CommonTokens.Macro,
   ".MACRO": CommonTokens.Macro,
@@ -787,8 +795,6 @@ commonTokenTraits.set(CommonTokens.QuestionMark, {});
 // ----------------------------------------------------------------------------
 // R
 commonTokenTraits.set(CommonTokens.RDBrac, {});
-commonTokenTraits.set(CommonTokens.RPar, {});
-commonTokenTraits.set(CommonTokens.RSBrac, {});
 commonTokenTraits.set(CommonTokens.RealLiteral, {
   expressionStart: true,
   literal: true
@@ -796,9 +802,12 @@ commonTokenTraits.set(CommonTokens.RealLiteral, {
 commonTokenTraits.set(CommonTokens.Repeat, { statement: true });
 commonTokenTraits.set(CommonTokens.RightShift, {});
 commonTokenTraits.set(CommonTokens.RndSeedPragma, { pragma: true });
+commonTokenTraits.set(CommonTokens.RPar, {});
+commonTokenTraits.set(CommonTokens.RSBrac, {});
 
 // ----------------------------------------------------------------------------
 // S
+commonTokenTraits.set(CommonTokens.SaveNexPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.SkipPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.Step, {});
 commonTokenTraits.set(CommonTokens.StringLiteral, {

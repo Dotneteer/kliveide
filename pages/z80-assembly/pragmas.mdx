@@ -652,3 +652,20 @@ Here is a sample:
 ```z80klive
 .onsuccess "expc mycode.tap"
 ```
+
+## The SAVENEX pragma
+
+The __SAVENEX__ pragma is used to configure ZX Spectrum Next NEX file generation parameters. This pragma is only available when compiling for the ZX Spectrum Next (Model 4). The pragma uses a declarative syntax with subcommands to specify various aspects of the NEX file format, such as the output filename, RAM configuration, border color, core version requirements, entry points, screen loading, palette data, copper code, and loading bar settings.
+
+The pragma consists of the `.savenex` keyword followed by a subcommand and its parameters. You can use multiple `.savenex` pragmas throughout your source code to build up the complete NEX file configuration. The compiler collects all these declarations and assembles them into a complete configuration object.
+
+Here are a few examples:
+
+```z80klive
+.savenex file "myprogram.nex"
+.savenex ram 768
+.savenex border 5
+.savenex core 3, 1, 10
+```
+
+For a complete reference of all `.savenex` subcommands and the NEX file format, see the [SAVENEX Pragma Reference](./savenex-reference).

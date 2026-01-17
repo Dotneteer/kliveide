@@ -64,7 +64,8 @@ export type Pragma<TInstruction extends TypedObject, TToken extends CommonTokenT
   | IncBinPragma<TInstruction, TToken>
   | CompareBinPragma<TInstruction, TToken>
   | InjectOptPragma<TInstruction>
-  | OnSuccessPragma<TInstruction>;
+  | OnSuccessPragma<TInstruction>
+  | SaveNexPragma<TInstruction, TToken>;
 
 export type IfLikeStatement<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | IfStatement<TInstruction, TToken>
@@ -967,6 +968,110 @@ export interface OnSuccessPragma<TNode extends TypedObject> extends PartialAssem
    * Pragma values
    */
   command: string;
+}
+
+/**
+ * SaveNex pragma types for ZX Spectrum Next NEX file generation
+ */
+export type SaveNexPragma<TNode extends TypedObject, TToken extends CommonTokenType> =
+  | SaveNexFilePragma<TNode, TToken>
+  | SaveNexRamPragma<TNode, TToken>
+  | SaveNexBorderPragma<TNode, TToken>
+  | SaveNexCorePragma<TNode, TToken>
+  | SaveNexStackAddrPragma<TNode, TToken>
+  | SaveNexEntryAddrPragma<TNode, TToken>
+  | SaveNexEntryBankPragma<TNode, TToken>
+  | SaveNexFileHandlePragma<TNode, TToken>
+  | SaveNexPreservePragma<TNode, TToken>
+  | SaveNexScreenPragma<TNode, TToken>
+  | SaveNexPalettePragma<TNode, TToken>
+  | SaveNexCopperPragma<TNode, TToken>
+  | SaveNexBarPragma<TNode, TToken>;
+
+export interface SaveNexFilePragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexFilePragma";
+  filename: Expression<TNode, TToken>;
+}
+
+export interface SaveNexRamPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexRamPragma";
+  size: Expression<TNode, TToken>;
+}
+
+export interface SaveNexBorderPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexBorderPragma";
+  color: Expression<TNode, TToken>;
+}
+
+export interface SaveNexCorePragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexCorePragma";
+  major: Expression<TNode, TToken>;
+  minor?: Expression<TNode, TToken>;
+  subminor?: Expression<TNode, TToken>;
+}
+
+export interface SaveNexStackAddrPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexStackAddrPragma";
+  address: Expression<TNode, TToken>;
+}
+
+export interface SaveNexEntryAddrPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexEntryAddrPragma";
+  address: Expression<TNode, TToken>;
+}
+
+export interface SaveNexEntryBankPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexEntryBankPragma";
+  bankNo: Expression<TNode, TToken>;
+}
+
+export interface SaveNexFileHandlePragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexFileHandlePragma";
+  mode: Expression<TNode, TToken>; // 0/"close", "bc", or address
+}
+
+export interface SaveNexPreservePragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexPreservePragma";
+  value: Expression<TNode, TToken>; // "on"/"off" or 0/1
+}
+
+export interface SaveNexScreenPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexScreenPragma";
+  screenType: Expression<TNode, TToken>; // l2, ula, lores, hires, hicolor, l2_320, l2_640
+  filename: Expression<TNode, TToken>;
+  paletteFile?: Expression<TNode, TToken>;
+  paletteOffset?: Expression<TNode, TToken>;
+}
+
+export interface SaveNexPalettePragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexPalettePragma";
+  filename: Expression<TNode, TToken>;
+}
+
+export interface SaveNexCopperPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexCopperPragma";
+  filename: Expression<TNode, TToken>;
+}
+
+export interface SaveNexBarPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "SaveNexBarPragma";
+  enabled: Expression<TNode, TToken>; // "on"/"off" or 0/1
+  color?: Expression<TNode, TToken>;
+  delay?: Expression<TNode, TToken>;
+  startDelay?: Expression<TNode, TToken>;
 }
 
 // ============================================================================
