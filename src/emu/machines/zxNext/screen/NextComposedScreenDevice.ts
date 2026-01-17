@@ -3,7 +3,7 @@ import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Plus3_50Hz, Plus3_60Hz, TimingConfig } from "./TimingConfig";
 import { zxNextBgra } from "../PaletteDevice";
 import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../MemoryDevice";
-import { SpriteDevice } from "../SpriteDevice";
+import { SpriteDevice, type SpriteAttributes } from "../SpriteDevice";
 
 /**
  * ZX Spectrum Next Rendering Device
@@ -242,6 +242,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Initialize sprites state machine
     this.spritesBufferPosition = 0;
+    this.spritesCurrentPixel = 0;
+    this.spritesCurrentX = 0;
+    this.spritesPatternData = null;
+    this.spritesCurrentSprite = null;
+    
+    // --- Initialize sprite clip boundaries
+    this.spritesClipXMin = 0;
+    this.spritesClipXMax = 319;
+    this.spritesClipYMin = 0;
+    this.spritesClipYMax = 255;
+    this.updateSpriteClipBoundaries();
 
     // --- Initialize renderTact internal state
     this.ulaPixel1Rgb333 = null;
@@ -3540,6 +3551,22 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   spritesOvertime: boolean;
   // Current sprite pattern Y index (0-15)
   spritesPatternYIndex: number;
+  
+  // PROCESSING phase state variables
+  // Pixel counter (0 to sprite.width-1)
+  private spritesCurrentPixel: number;
+  // Line buffer write position (9-bit, -256 to 511)
+  private spritesCurrentX: number;
+  // Cached pattern data for current sprite
+  private spritesPatternData: Uint8Array | null;
+  // Current sprite being processed (cached reference)
+  private spritesCurrentSprite: SpriteAttributes | null;
+  
+  // Precalculated sprite clipping boundaries (updated when spritesOverBorderEnabled changes)
+  private spritesClipXMin: number;
+  private spritesClipXMax: number;
+  private spritesClipYMin: number;
+  private spritesClipYMax: number;
 
   /**
    * Render Sprites layer pixel (Stage 1).
@@ -3547,6 +3574,26 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param _hc - Horizontal counter position
    * @param cell - ULA Standard rendering cell with activity flags
    */
+  /**
+   * Update sprite clipping boundaries based on spritesOverBorderEnabled flag.
+   * Called when NextReg 0x15 bit 1 changes.
+   */
+  updateSpriteClipBoundaries(): void {
+    if (this.spriteDevice.spritesOverBorderEnabled) {
+      // Full sprite area: 320×256 pixels
+      this.spritesClipXMin = 0;
+      this.spritesClipXMax = 319;
+      this.spritesClipYMin = 0;
+      this.spritesClipYMax = 255;
+    } else {
+      // Restricted to ULA area: 256×192 pixels (X: 32-287, Y: 32-223)
+      this.spritesClipXMin = 32;
+      this.spritesClipXMax = 287;
+      this.spritesClipYMin = 32;
+      this.spritesClipYMax = 223;
+    }
+  }
+
   private renderSpritesPixel(vc: number, _hc: number, cell: number): void {
     // This function executes the next CLK_28 cycle (implementing the QUALIFY/PROCESS phases)
     const renderPixelClk28 = () => {
@@ -3557,6 +3604,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
       if (this.spritesQualifying) {
         // QUALIFYING phase: Check if current sprite is visible on this scanline
+
+        // Early exit: If the scanline is entirely outside vertical clip boundaries,
+        // no sprite can be visible on this scanline
+        if (this.spritesVc < this.spritesClipYMin || this.spritesVc > this.spritesClipYMax) {
+          // Scanline is outside vertical clip bounds; skip all sprites
+          this.spritesRenderingDone = true;
+          return;
+        }
 
         // Check if we've processed all sprites (128)
         if (this.spritesIndex >= 128) {
@@ -3575,25 +3630,34 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           return;
         }
 
-        // Check if the current scanline (spritesVc) intersects with the sprite's vertical position
+        // Check if the current scanline intersects with the sprite's vertical position
         const spriteY = spriteAttrs.y;
         const spriteHeight = spriteAttrs.height;
+        const spriteBottom = spriteY + spriteHeight;
+        
         const scanlineIntersects =
-          this.spritesVc >= spriteY && this.spritesVc < spriteY + spriteHeight;
+          this.spritesVc >= spriteY && 
+          this.spritesVc < spriteBottom &&
+          spriteY <= this.spritesClipYMax && 
+          spriteBottom > this.spritesClipYMin;
 
         if (!scanlineIntersects) {
-          // Sprite does not intersect this scanline; skip to next sprite
+          // Sprite does not intersect this scanline or is outside vertical clip bounds
           this.spritesIndex++;
           return;
         }
 
-        // Check if sprite is within horizontal visibility window (X: 0-319 in standard mode)
+        // Check if sprite is within horizontal clip boundaries
         const spriteX = spriteAttrs.x;
         const spriteWidth = spriteAttrs.width;
-        const horizontallyVisible = spriteX < 320 && spriteX + spriteWidth > 0;
+        const spriteRight = spriteX + spriteWidth;
+        
+        const horizontallyVisible = 
+          spriteX <= this.spritesClipXMax && 
+          spriteRight > this.spritesClipXMin;
 
         if (!horizontallyVisible) {
-          // Sprite is outside horizontal bounds; skip to next sprite
+          // Sprite is outside horizontal clip bounds
           this.spritesIndex++;
           return;
         }
@@ -3613,11 +3677,27 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         // Sprite qualifies! Switch to PROCESSING phase
         this.spritesQualifying = false;
 
+        // Cache sprite reference for PROCESSING phase
+        this.spritesCurrentSprite = spriteAttrs;
+
         // 1. Calculate Y index within pattern (accounting for scale only)
-        this.spritesPatternYIndex = (this.spritesVc - spriteAttrs.y) >> spriteAttrs.scaleY;
-        
+        //    This represents which row of the 16×16 pattern we're rendering
+        //    Note: Y-mirror is already applied in the pre-transformed pattern variant
+        const yOffset = this.spritesVc - spriteAttrs.y;
+        this.spritesPatternYIndex = yOffset >> spriteAttrs.scaleY;  // Apply Y-scale (0-15)
+
+        // 2. Get pre-transformed pattern variant using cached variant index
+        //    The variant index is precalculated when sprite attributes are written
+        this.spritesPatternData = spriteAttrs.is4BitPattern
+          ? this.spriteDevice.patternMemory4bit[spriteAttrs.patternVariantIndex]
+          : this.spriteDevice.patternMemory8bit[spriteAttrs.patternVariantIndex];
+
+        // 3. Initialize counters
+        this.spritesCurrentPixel = 0;           // Pixel counter (0 to sprite.width-1)
+        this.spritesCurrentX = spriteAttrs.x;   // Line buffer write position (9-bit)
+
       } else {
-        // PROCESSING phase: Render sprite if visible on this scanline
+        // PROCESSING phase: Render sprite pixels (to be implemented)
       }
     };
 

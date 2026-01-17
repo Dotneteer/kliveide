@@ -770,6 +770,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.spriteDevice.spritesOverBorderEnabled = (v & 0x02) !== 0;
         machine.spriteDevice.spritesEnabled = (v & 0x01) !== 0;
         machine.composedScreenDevice.layerPriority = (v & 0x1c) >> 2;
+        machine.composedScreenDevice.updateSpriteClipBoundaries();
       },
       slices: [
         {

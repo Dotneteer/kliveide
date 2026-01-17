@@ -949,6 +949,41 @@ visible = (attr3[7] = 1) AND (Y <= spr_cur_vcount < Y + height)
 
 Where `spr_cur_vcount` is updated at frame boundary (HC=511, VC=0) and incremented per scanline.
 
+**Border Mode Restriction** (NextReg 0x15 bit 1):
+
+When **sprites over border mode is disabled** (NextReg 0x15 bit 1 = 0), sprites are restricted to the **ULA 256×192 display area** only. In sprite coordinate space, this corresponds to:
+
+- **Horizontal**: X = 32 to 287 (256 pixels)
+- **Vertical**: Y = 32 to 223 (192 pixels)
+
+Sprites that are entirely outside this area are skipped during the QUALIFYING phase:
+
+```typescript
+// Horizontal border clipping (when spritesOverBorderEnabled = false)
+if (!spritesOverBorderEnabled) {
+  const spriteRight = spriteX + spriteWidth;
+  const inUlaArea = spriteX < 288 && spriteRight > 32;
+  
+  if (!inUlaArea) {
+    // Skip sprite - entirely outside ULA area
+    continue;
+  }
+}
+
+// Vertical border clipping (when spritesOverBorderEnabled = false)
+if (!spritesOverBorderEnabled) {
+  const spriteBottom = spriteY + spriteHeight;
+  const inUlaAreaY = spriteY < 224 && spriteBottom > 32;
+  
+  if (!inUlaAreaY) {
+    // Skip sprite - entirely outside ULA vertical area
+    continue;
+  }
+}
+```
+
+**Note**: Sprites that *partially* overlap the ULA area are still processed, but pixels outside the ULA bounds will be clipped during rendering (not yet implemented in the PROCESSING phase).
+
 **Y-Offset Calculation**:
 
 ```

@@ -80,6 +80,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         pattern7Bit: 0,
         is4BitPattern: false,
         transformVariant: 0,
+        patternVariantIndex: 0,
         width: 16,
         height: 16
       };
@@ -129,6 +130,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       this.attributes[i].pattern7Bit = 0;
       this.attributes[i].is4BitPattern = false;
       this.attributes[i].transformVariant = 0;
+      this.attributes[i].patternVariantIndex = 0;
       this.attributes[i].width = 16;
       this.attributes[i].height = 16;
     }
@@ -403,6 +405,8 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         // --- Cache transformation variant (0-7) for fast renderer lookup
         attributes.transformVariant =
           (attributes.rotate ? 4 : 0) | (attributes.mirrorX ? 2 : 0) | (attributes.mirrorY ? 1 : 0);
+        // --- Cache complete pattern variant index for direct memory lookup
+        this.updatePatternVariantIndex(attributes);
         // --- Recalculate width and height
         this.updateSpriteDimensions(attributes);
         // --- Track anchor sprite if this is an anchor sprite (non-relative with 5 attribute bytes)
@@ -420,6 +424,8 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.patternIndex = value & 0x3f;
         // --- Update computed 7-bit pattern index
         attributes.pattern7Bit = attributes.patternIndex | (attributes.attributeFlag2 ? 64 : 0);
+        // --- Cache complete pattern variant index for direct memory lookup
+        this.updatePatternVariantIndex(attributes);
         break;
       default:
         // --- attr4 (5th attribute byte)
@@ -430,6 +436,8 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.scaleY = (value & 0x06) >> 1;
         // --- Update computed 7-bit pattern index (bit 6 of attr4 extends patternIndex)
         attributes.pattern7Bit = attributes.patternIndex | (attributes.attributeFlag2 ? 64 : 0);
+        // --- Cache complete pattern variant index for direct memory lookup
+        this.updatePatternVariantIndex(attributes);
         // --- Recalculate width and height
         this.updateSpriteDimensions(attributes);
         if (attributes.colorMode !== 0x01) {
@@ -454,6 +462,21 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
           }
         }
       }
+    }
+  }
+
+  /**
+   * Update the cached pattern variant index for direct lookup in pattern memory.
+   * Called whenever sprite attributes affecting pattern selection change.
+   */
+  private updatePatternVariantIndex(attributes: SpriteAttributes): void {
+    // Combined variant index = (patternIndex << 3) | transformVariant
+    // For 4-bit sprites, pattern index is 7-bit (includes attributeFlag2 as LSB)
+    if (attributes.is4BitPattern) {
+      const pattern7bit = (attributes.patternIndex << 1) | (attributes.attributeFlag2 ? 1 : 0);
+      attributes.patternVariantIndex = (pattern7bit << 3) | attributes.transformVariant;
+    } else {
+      attributes.patternVariantIndex = (attributes.patternIndex << 3) | attributes.transformVariant;
     }
   }
 
@@ -507,6 +530,7 @@ export type SpriteAttributes = {
   pattern7Bit: number; // Full 7-bit pattern index: patternIndex | (attributeFlag2 ? 64 : 0)
   is4BitPattern: boolean; // 4-bit color mode flag
   transformVariant: number; // Cached transformation variant (0-7): (rotate << 2) | (mirrorX << 1) | mirrorY
+  patternVariantIndex: number; // Cached pattern variant index for direct lookup in patternMemory arrays
   width: number; // Effective sprite width in pixels after scaling and rotation
   height: number; // Effective sprite height in pixels after scaling and rotation
 };
