@@ -3697,7 +3697,105 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         this.spritesCurrentX = spriteAttrs.x;   // Line buffer write position (9-bit)
 
       } else {
-        // PROCESSING phase: Render sprite pixels (to be implemented)
+        // PROCESSING phase: Render sprite pixels
+        
+        // Safety check: ensure we have a valid sprite reference
+        if (!this.spritesCurrentSprite) {
+          // This shouldn't happen, but if it does, go back to QUALIFYING
+          this.spritesQualifying = true;
+          return;
+        }
+        
+        // Check completion first
+        if (this.spritesCurrentPixel >= this.spritesCurrentSprite.width) {
+          // Sprite rendering complete - transition back to QUALIFYING
+          this.spritesQualifying = true;
+          this.spritesIndex++;
+          return;
+        }
+
+        const sprite = this.spritesCurrentSprite;
+
+        // 1. Calculate X index within pattern (0-15)
+        //    Account for scaling: multiple output pixels map to same pattern pixel
+        const xScaled = this.spritesCurrentPixel >> sprite.scaleX;  // Divide by 2^scaleX
+        const xIndex = xScaled & 0x0f;                              // Modulo 16
+
+        // 2. Fetch pixel from pre-transformed pattern (DIRECT LOOKUP - no transform!)
+        //    Pattern is always indexed as [y][x] because transformation is pre-applied
+        const patternOffset = (this.spritesPatternYIndex << 4) | xIndex;
+        const pixelValue = this.spritesPatternData![patternOffset];
+
+        // 3. Check transparency FIRST (before any color processing)
+        //    Compare against global transparency index (NextReg 0x4B, default 0xE3)
+        const isTransparent = (pixelValue === this.spriteDevice.transparencyIndex);
+
+        if (isTransparent) {
+          // Skip transparent pixels - advance to next pixel
+          this.spritesCurrentPixel++;
+          this.spritesCurrentX++;
+          return;
+        }
+
+        // 4. Extract pixel color value
+        //    For 4-bit: only lower nibble is used (upper nibble ignored)
+        //    For 8-bit: full byte is used
+        let colorValue: number;
+        if (sprite.is4BitPattern) {
+          colorValue = pixelValue & 0x0f;  // Use only lower nibble
+        } else {
+          colorValue = pixelValue;  // Use full byte
+        }
+
+        // 5. Apply palette offset
+        let paletteIndex: number;
+        if (sprite.is4BitPattern) {
+          // 4-bit mode: palette offset replaces upper 4 bits
+          paletteIndex = (sprite.paletteOffset << 4) | colorValue;
+        } else {
+          // 8-bit mode: add palette offset to upper 4 bits only
+          const upper = ((colorValue >> 4) + sprite.paletteOffset) & 0x0f;
+          const lower = colorValue & 0x0f;
+          paletteIndex = (upper << 4) | lower;
+        }
+
+        // 6. Check line buffer bounds
+        //    Only write if X position is within visible display (0-319)
+        //    Negative positions and positions >= 320 are clipped
+        const bufferPos = this.spritesCurrentX;
+        const inBounds = (bufferPos >= 0 && bufferPos < 320);
+
+        // 7. Read existing line buffer value (for collision and zero-on-top)
+        let existingValue = 0;
+        let existingValid = false;
+        if (inBounds) {
+          existingValue = this.spritesBuffer[bufferPos];
+          existingValid = (existingValue & 0x100) !== 0;  // Bit 8 = valid flag
+        }
+
+        // 8. Determine write enable
+        let writeEnable = inBounds;
+        
+        if (this.spriteDevice.sprite0OnTop && existingValid) {
+          // Zero-on-top mode: don't overwrite existing valid pixels
+          writeEnable = false;
+        }
+
+        // 9. Write to line buffer
+        if (writeEnable) {
+          // Set bit 8 (valid flag) and bits 7:0 (palette index)
+          this.spritesBuffer[bufferPos] = 0x100 | paletteIndex;
+          
+          // 10. Collision detection
+          //     Trigger when writing to a position that already has a valid pixel
+          if (existingValid) {
+            this.spriteDevice.collisionDetected = true;
+          }
+        }
+
+        // 11. Advance to next pixel
+        this.spritesCurrentPixel++;
+        this.spritesCurrentX++;
       }
     };
 
@@ -3712,7 +3810,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Initialize sprite rendering for the next scanline (index 0)
       this.spritesBufferPosition = 0;
       this.spritesBuffer.fill(0x00); // Clear sprite buffer
-      this.spritesVc = vc - this.confDisplayYStart + 1;
+      // Sprite Y coordinates use a 256-line display area that starts 32 lines before ULA display
+      // (same as tilemapWideDisplayYStart)
+      this.spritesVc = vc - (this.confDisplayYStart - 32) + 1;
       this.spritesIndex = 0;
       this.spritesQualifying = true;
       this.spritesRenderingDone = false;
@@ -3735,8 +3835,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     if ((cell & SCR_SPRITE_DISPLAY) !== 0) {
       const bufferValue = this.spritesBuffer[this.spritesBufferPosition++];
-      this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = bufferValue & 0x0ff;
-      this.spritesPixel1Transparent = this.spritesPixel2Transparent = !(bufferValue & 0x100);
+      const isTransparent = !(bufferValue & 0x100);
+      
+      if (isTransparent) {
+        this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = 0;
+        this.spritesPixel1Transparent = this.spritesPixel2Transparent = true;
+      } else {
+        const paletteIndex = bufferValue & 0xff;
+        const rgb333 = this.paletteDevice.getSpriteRgb333(paletteIndex);
+        this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = rgb333;
+        this.spritesPixel1Transparent = this.spritesPixel2Transparent = false;
+      }
     }
   }
 }
