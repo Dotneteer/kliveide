@@ -50,7 +50,9 @@ if (typeof window === "undefined") {
     querySelectorAll: vi.fn(() => []),
     getElementById: vi.fn(() => null),
     getElementsByClassName: vi.fn(() => []),
-    getElementsByTagName: vi.fn(() => [])
+    getElementsByTagName: vi.fn(() => []),
+    queryCommandSupported: vi.fn(() => false),
+    queryCommandEnabled: vi.fn(() => false)
   };
 
   (global as any).window = {
@@ -73,5 +75,35 @@ if (typeof window === "undefined") {
   };
 
   (global as any).document = mockDocument;
+
+  // Mock Event classes for Monaco editor
+  if (typeof (global as any).UIEvent === "undefined") {
+    (global as any).UIEvent = class UIEvent extends (global as any).Event {
+      constructor(type: string) {
+        super(type);
+      }
+    };
+  }
+
+  if (typeof (global as any).KeyboardEvent === "undefined") {
+    (global as any).KeyboardEvent = class KeyboardEvent extends (global as any).Event {
+      constructor(type: string) {
+        super(type);
+      }
+    };
+  }
+
+  if (typeof (global as any).MouseEvent === "undefined") {
+    (global as any).MouseEvent = class MouseEvent extends (global as any).Event {
+      constructor(type: string) {
+        super(type);
+      }
+    };
+  }
+
+  // Mock self for Monaco editor workers
+  if (typeof (global as any).self === "undefined") {
+    (global as any).self = global;
+  }
 }
 

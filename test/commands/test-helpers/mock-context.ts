@@ -82,7 +82,14 @@ export function createMockMainApi() {
     openWithShell: vi.fn().mockResolvedValue({ path: "test-path" }),
     createKliveProject: vi.fn().mockResolvedValue("/test/project"),
     setGlobalSettingsValue: vi.fn().mockResolvedValue(undefined),
-    getGlobalSettingsValue: vi.fn().mockResolvedValue(undefined)
+    getGlobalSettingsValue: vi.fn().mockResolvedValue(undefined),
+    saveSettings: vi.fn().mockResolvedValue(undefined),
+    createDiskFile: vi.fn().mockResolvedValue("/disk.dsk"),
+    setGloballyExcludedProjectItems: vi.fn().mockResolvedValue(undefined),
+    addGlobalExcludedProjectItem: vi.fn().mockResolvedValue(undefined),
+    setRegisterValue: vi.fn().mockResolvedValue(undefined),
+    compileFile: vi.fn().mockResolvedValue({}),
+    displayMessageBox: vi.fn().mockResolvedValue(undefined)
   } as any;
 }
 
@@ -117,7 +124,8 @@ export function createMockProjectService() {
       closeAllDocuments: vi.fn().mockResolvedValue(undefined),
       isOpen: vi.fn().mockReturnValue(false),
       waitOpen: vi.fn().mockResolvedValue({ id: "test-doc" }),
-      getDocumentApi: vi.fn()
+      getDocumentApi: vi.fn(),
+      getOpenDocuments: vi.fn().mockReturnValue([])
     }),
     getBreakpointAddressInfo: vi.fn(),
     getDocumentForProjectNode: vi.fn().mockResolvedValue({ id: "test-doc" }),
