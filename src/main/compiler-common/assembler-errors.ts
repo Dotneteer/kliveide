@@ -56,6 +56,7 @@ export type ErrorCodes =
   | "Z0318"
   | "Z0319"
   | "Z0320"
+  | "Z0331"
   | "Z0321"
   | "Z0322"
   | "Z0323"
@@ -66,6 +67,22 @@ export type ErrorCodes =
   | "Z0328"
   | "Z0329"
   | "Z0330"
+  | "Z0331"
+  
+  // --- SaveNex pragma errors
+  | "Z0340"
+  | "Z0341"
+  | "Z0342"
+  | "Z0343"
+  | "Z0344"
+  | "Z0345"
+  | "Z0346"
+  | "Z0347"
+  | "Z0348"
+  | "Z0349"
+  | "Z0350"
+  | "Z0351"
+  | "Z0352"
 
   // --- Instructions
   | "Z0401"
@@ -200,7 +217,7 @@ export const errorMessages: Record<string, string> = {
     "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
   Z0304: "An .equ pragma must have a label",
   Z0305: "The .bank pragma cannot have a label.",
-  Z0306: "The .bank pragma's value must be between 0 and 7.",
+  Z0306: "The .bank pragma's value must be between 0 and 7 (Spectrum 128) or 0 and 111 (Next).",
   Z0307: "The .bank pragma's offset value must be between 0 and #03fff.",
   Z0308: "The .bank pragma cannot be used with the current model type.",
   Z0309: "You have already used the .bank pragma for bank {0}.",
@@ -226,6 +243,22 @@ export const errorMessages: Record<string, string> = {
   Z0328: "Invalid .comparebin length value (negative, or segment exceends the file length).",
   Z0329: "Cannot open file '{0}' used in .comparebin pragma ({1}).",
   Z0330: ".comparebin fails: {0}.",
+  Z0331: "The 'noexport' flag in .bank pragma can only be used with .model Next.",
+
+  // --- SaveNex pragma errors
+  Z0340: "The .savenex pragma can only be used with .model Next.",
+  Z0341: "The .savenex file pragma requires a string filename.",
+  Z0342: "The .savenex ram pragma requires 768 or 1792 as the RAM size.",
+  Z0343: "The .savenex border pragma requires a color value between 0 and 7.",
+  Z0344: "The .savenex core pragma requires major (0-15), minor (0-15), and subminor (0-255) version numbers.",
+  Z0345: "The .savenex entrybank pragma requires a bank number between 0 and 111.",
+  Z0346: "Unknown .savenex subcommand: '{0}'.",
+  Z0347: "The .savenex screen pragma requires a valid screen type (l2/layer2/ula/lores/hires/hicolor/l2_320/l2_640).",
+  Z0348: "The .savenex bar pragma requires 'on' or 'off' as the first parameter.",
+  Z0349: "The .savenex filehandle pragma requires 'close', 'bc', or an address value.",
+  Z0350: "The .savenex preserve pragma requires 'on' or 'off'.",
+  Z0351: "Invalid color value {0} for loading bar (must be 0-255).",
+  Z0352: "Invalid delay value {0} (must be 0-255).",
 
   // --- Instructions
   Z0401: "Unexpected error when emitting code for mnemonic '{0}'.",

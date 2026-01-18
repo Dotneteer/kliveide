@@ -68,6 +68,19 @@ import {
   Operand,
   OperandType,
   OrgPragma,
+  SaveNexBarPragma,
+  SaveNexBorderPragma,
+  SaveNexCopperPragma,
+  SaveNexCorePragma,
+  SaveNexEntryAddrPragma,
+  SaveNexEntryBankPragma,
+  SaveNexFileHandlePragma,
+  SaveNexFilePragma,
+  SaveNexPalettePragma,
+  SaveNexPreservePragma,
+  SaveNexRamPragma,
+  SaveNexScreenPragma,
+  SaveNexStackAddrPragma,
   PartialAssemblyLine,
   ProcEndStatement,
   ProcStatement,
@@ -522,10 +535,18 @@ export abstract class CommonAsmParser<
       case CommonTokens.BankPragma:
         const bankExpr = this.getExpression();
         const bankOffsExpr = this.getExpression(true, true);
+        let noexport = false;
+        // --- Check for optional noexport flag
+        const bankToken = this.tokens.peek();
+        if (bankToken.type === CommonTokens.Identifier && bankToken.text?.toLowerCase() === "noexport") {
+          this.tokens.get(); // consume the noexport token
+          noexport = true;
+        }
         return {
           type: "BankPragma",
           bankId: bankExpr,
-          offset: bankOffsExpr
+          offset: bankOffsExpr,
+          noexport
         } as BankPragma<TInstruction, TToken>;
       case CommonTokens.XorgPragma:
         const xorgExpr = this.getExpression();
@@ -739,6 +760,9 @@ export abstract class CommonAsmParser<
           command: expr.value
         } as OnSuccessPragma<TInstruction>;
       }
+
+      case CommonTokens.SaveNexPragma:
+        return this.parseSaveNexPragma();
     }
     return null;
   }
@@ -2254,6 +2278,170 @@ export abstract class CommonAsmParser<
       return null;
     }
     return expressions;
+  }
+
+  /**
+   * Parses a .savenex pragma by reading the subcommand and routing to the appropriate parser
+   */
+  private parseSaveNexPragma(): PartialAssemblyLine<TInstruction> | null {
+    const subcommand = this.tokens.peek();
+    if (subcommand.type !== CommonTokens.Identifier) {
+      this.reportError("Z0346"); // Unknown subcommand
+      return null;
+    }
+
+    const subcmdText = subcommand.text?.toLowerCase();
+    this.tokens.get(); // consume the subcommand identifier
+
+    switch (subcmdText) {
+      case "file":
+        return this.parseSaveNexFile();
+      case "ram":
+        return this.parseSaveNexRam();
+      case "border":
+        return this.parseSaveNexBorder();
+      case "core":
+        return this.parseSaveNexCore();
+      case "stackaddr":
+        return this.parseSaveNexStackAddr();
+      case "entryaddr":
+        return this.parseSaveNexEntryAddr();
+      case "entrybank":
+        return this.parseSaveNexEntryBank();
+      case "filehandle":
+        return this.parseSaveNexFileHandle();
+      case "preserve":
+        return this.parseSaveNexPreserve();
+      case "screen":
+        return this.parseSaveNexScreen();
+      case "palette":
+        return this.parseSaveNexPalette();
+      case "copper":
+        return this.parseSaveNexCopper();
+      case "bar":
+        return this.parseSaveNexBar();
+      default:
+        this.reportError("Z0346"); // Unknown subcommand
+        return null;
+    }
+  }
+
+  private parseSaveNexFile(): SaveNexFilePragma<TInstruction, TToken> {
+    const filename = this.getExpression();
+    return {
+      type: "SaveNexFilePragma",
+      filename
+    } as SaveNexFilePragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexRam(): SaveNexRamPragma<TInstruction, TToken> {
+    const size = this.getExpression();
+    return {
+      type: "SaveNexRamPragma",
+      size
+    } as SaveNexRamPragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexBorder(): SaveNexBorderPragma<TInstruction, TToken> {
+    const color = this.getExpression();
+    return {
+      type: "SaveNexBorderPragma",
+      color
+    } as SaveNexBorderPragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexCore(): SaveNexCorePragma<TInstruction, TToken> {
+    const major = this.getExpression();
+    const minor = this.getExpression(true, true);
+    const subminor = minor ? this.getExpression(true, true) : null;
+    return {
+      type: "SaveNexCorePragma",
+      major,
+      minor,
+      subminor
+    } as SaveNexCorePragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexStackAddr(): SaveNexStackAddrPragma<TInstruction, TToken> {
+    const address = this.getExpression();
+    return {
+      type: "SaveNexStackAddrPragma",
+      address
+    } as SaveNexStackAddrPragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexEntryAddr(): SaveNexEntryAddrPragma<TInstruction, TToken> {
+    const address = this.getExpression();
+    return {
+      type: "SaveNexEntryAddrPragma",
+      address
+    } as SaveNexEntryAddrPragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexEntryBank(): SaveNexEntryBankPragma<TInstruction, TToken> {
+    const bankNo = this.getExpression();
+    return {
+      type: "SaveNexEntryBankPragma",
+      bankNo
+    } as SaveNexEntryBankPragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexFileHandle(): SaveNexFileHandlePragma<TInstruction, TToken> {
+    const mode = this.getExpression();
+    return {
+      type: "SaveNexFileHandlePragma",
+      mode
+    } as SaveNexFileHandlePragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexPreserve(): SaveNexPreservePragma<TInstruction, TToken> {
+    const value = this.getExpression();
+    return {
+      type: "SaveNexPreservePragma",
+      value
+    } as SaveNexPreservePragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexScreen(): SaveNexScreenPragma<TInstruction, TToken> {
+    const type = this.getExpression();
+    const filename = this.getExpression(true, true);
+    const paletteOffset = filename ? this.getExpression(true, true) : null;
+    return {
+      type: "SaveNexScreenPragma",
+      screenType: type,
+      filename,
+      paletteOffset
+    } as SaveNexScreenPragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexPalette(): SaveNexPalettePragma<TInstruction, TToken> {
+    const filename = this.getExpression();
+    return {
+      type: "SaveNexPalettePragma",
+      filename
+    } as SaveNexPalettePragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexCopper(): SaveNexCopperPragma<TInstruction, TToken> {
+    const filename = this.getExpression();
+    return {
+      type: "SaveNexCopperPragma",
+      filename
+    } as SaveNexCopperPragma<TInstruction, TToken>;
+  }
+
+  private parseSaveNexBar(): SaveNexBarPragma<TInstruction, TToken> {
+    const enabled = this.getExpression();
+    const color = this.getExpression(true, true);
+    const delay = color ? this.getExpression(true, true) : null;
+    const startDelay = delay ? this.getExpression(true, true) : null;
+    return {
+      type: "SaveNexBarPragma",
+      enabled,
+      color,
+      delay,
+      startDelay
+    } as SaveNexBarPragma<TInstruction, TToken>;
   }
 }
 

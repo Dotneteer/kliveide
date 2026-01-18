@@ -201,6 +201,12 @@ export interface IBinarySegment {
   bank?: number;
 
   /**
+   * Flag indicating if this bank segment should be exported to NEX file
+   * Default: true for Next model banks, ignored for other models
+   */
+  nexExport?: boolean;
+
+  /**
    * Start offset used for banks
    */
   bankOffset?: number;

@@ -3622,6 +3622,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
         // Fetch the sprite attributes for the current sprite
         const spriteAttrs = this.spriteDevice.attributes[this.spritesIndex];
+        
+        // Safety check: ensure sprite attributes exist
+        if (!spriteAttrs) {
+          // Invalid sprite index, stop processing
+          this.spritesRenderingDone = true;
+          return;
+        }
 
         // Check if sprite is globally enabled (attr3 bit 7)
         if (!spriteAttrs.visible) {

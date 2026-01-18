@@ -96,6 +96,11 @@ export class AssemblerOutput<
   readonly traceOutput: string[];
 
   /**
+   * ZX Spectrum Next NEX file configuration
+   */
+  nexConfig: NexConfiguration = new NexConfiguration();
+
+  /**
    * Adds the specified information to the address map
    * @param fileIndex File index
    * @param line Source line number
@@ -120,6 +125,12 @@ export class BinarySegment implements IBinarySegment {
    * The bank of the segment
    */
   bank?: number;
+
+  /**
+   * Flag indicating if this bank segment should be exported to NEX file
+   * Default: true for Next model banks, ignored for other models
+   */
+  nexExport: boolean = true;
 
   /**
    * Start offset used for banks
@@ -302,4 +313,114 @@ export class AssemblerOptions {
    * Allows flexible use of DEFx pragmas
    */
   flexibleDefPragmas: boolean = false;
+
+  /**
+   * Provides the absolute file path of a source item
+   * @param sourceItem Source item
+   * @returns Absolute file path
+   */
+  getFullSourcePath?: (sourceItem: ISourceFileItem) => Promise<string | null>;
+}
+
+/**
+ * Screen types supported by NEX format
+ */
+export type NexScreenType = "l2" | "layer2" | "ula" | "lores" | "hires" | "hicolor" | "l2_320" | "l2_640";
+
+/**
+ * File handle modes for NEX
+ */
+export type NexFileHandleMode = "close" | "bc" | number;
+
+/**
+ * NEX screen configuration
+ */
+export interface NexScreenConfig {
+  type: NexScreenType;
+  filename?: string;
+  paletteOffset?: number;
+}
+
+/**
+ * Configuration for ZX Spectrum Next NEX file generation
+ */
+export class NexConfiguration {
+  /**
+   * Output NEX filename (required)
+   */
+  filename?: string;
+
+  /**
+   * RAM requirement: 768 or 1792 (KB)
+   */
+  ramSize: number = 768;
+
+  /**
+   * Border color (0-7)
+   */
+  borderColor: number = 0;
+
+  /**
+   * Minimum required core version
+   */
+  coreVersion: { major: number; minor: number; subminor: number } = {
+    major: 0,
+    minor: 0,
+    subminor: 0
+  };
+
+  /**
+   * Stack pointer value on entry
+   */
+  stackAddr?: number;
+
+  /**
+   * Entry address (PC on start), 0 = load only without running
+   */
+  entryAddr?: number;
+
+  /**
+   * Entry bank (0-111) mapped to slot 3 on entry
+   */
+  entryBank: number = 0;
+
+  /**
+   * File handle mode after loading
+   */
+  fileHandle: NexFileHandleMode = "close";
+
+  /**
+   * Preserve Next hardware registers (true) or reset (false)
+   */
+  preserveRegs: boolean = false;
+
+  /**
+   * Loading screen configuration
+   */
+  screen?: NexScreenConfig;
+
+  /**
+   * Palette file (512 bytes)
+   */
+  paletteFile?: string;
+
+  /**
+   * Copper code file (max 2048 bytes)
+   */
+  copperFile?: string;
+
+  /**
+   * Loading bar configuration
+   */
+  loadingBar: {
+    enabled: boolean;
+    color: number;
+    delay: number;
+    startDelay: number;
+  } = {
+    enabled: false,
+    color: 2,
+    delay: 0,
+    startDelay: 0
+  };
 }

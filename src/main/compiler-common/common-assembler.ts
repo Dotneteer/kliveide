@@ -9,6 +9,7 @@ import {
   AssemblerOptions,
   AssemblerOutput,
   BinarySegment,
+  NexFileHandleMode,
   SourceFileItem
 } from "../compiler-common/assembler-in-out";
 import { AssemblyModule } from "../compiler-common/assembly-module";
@@ -86,6 +87,19 @@ import {
   Pragma,
   RepeatStatement,
   RndSeedPragma,
+  SaveNexBarPragma,
+  SaveNexBorderPragma,
+  SaveNexCopperPragma,
+  SaveNexCorePragma,
+  SaveNexEntryAddrPragma,
+  SaveNexEntryBankPragma,
+  SaveNexFileHandlePragma,
+  SaveNexFilePragma,
+  SaveNexPalettePragma,
+  SaveNexPreservePragma,
+  SaveNexRamPragma,
+  SaveNexScreenPragma,
+  SaveNexStackAddrPragma,
   SkipPragma,
   Statement,
   StructStatement,
@@ -1509,6 +1523,45 @@ export abstract class CommonAssembler<
       case "OnSuccessPragma":
         this.processOnSuccessPragma(pragmaLine);
         break;
+      case "SaveNexFilePragma":
+        this.processSaveNexFile(pragmaLine);
+        break;
+      case "SaveNexRamPragma":
+        this.processSaveNexRam(pragmaLine);
+        break;
+      case "SaveNexBorderPragma":
+        this.processSaveNexBorder(pragmaLine);
+        break;
+      case "SaveNexCorePragma":
+        this.processSaveNexCore(pragmaLine);
+        break;
+      case "SaveNexStackAddrPragma":
+        this.processSaveNexStackAddr(pragmaLine);
+        break;
+      case "SaveNexEntryAddrPragma":
+        this.processSaveNexEntryAddr(pragmaLine);
+        break;
+      case "SaveNexEntryBankPragma":
+        this.processSaveNexEntryBank(pragmaLine);
+        break;
+      case "SaveNexFileHandlePragma":
+        this.processSaveNexFileHandle(pragmaLine);
+        break;
+      case "SaveNexPreservePragma":
+        this.processSaveNexPreserve(pragmaLine);
+        break;
+      case "SaveNexScreenPragma":
+        this.processSaveNexScreen(pragmaLine);
+        break;
+      case "SaveNexPalettePragma":
+        this.processSaveNexPalette(pragmaLine);
+        break;
+      case "SaveNexCopperPragma":
+        this.processSaveNexCopper(pragmaLine);
+        break;
+      case "SaveNexBarPragma":
+        this.processSaveNexBar(pragmaLine);
+        break;
     }
   }
 
@@ -1572,7 +1625,27 @@ export abstract class CommonAssembler<
     if (!value.isValid) {
       return;
     }
-    if (value.asWord() > 7) {
+    
+    // --- Check for appropriate model type first
+    const errCode = this.modelSupportsBankPragma(this._output.modelType);
+    if (this._output.modelType === undefined || errCode) {
+      this.reportAssemblyError(errCode, pragma);
+      return;
+    }
+    
+    // --- Check if noexport flag is used (only allowed for Next model)
+    if (pragma.noexport) {
+      const isNext = this._output.modelType === 4; // SpectrumModelType.Next
+      if (!isNext) {
+        this.reportAssemblyError("Z0331", pragma);
+        return;
+      }
+    }
+    
+    // --- Bank range check depends on model
+    const isNext = this._output.modelType === 4; // SpectrumModelType.Next
+    const maxBank = isNext ? 111 : 7;
+    if (value.asWord() > maxBank) {
       this.reportAssemblyError("Z0306", pragma);
       return;
     }
@@ -1591,13 +1664,6 @@ export abstract class CommonAssembler<
       }
     }
 
-    // --- Check for appropriate model type
-    const errCode = this.modelSupportsBankPragma(this._output.modelType);
-    if (this._output.modelType === undefined || errCode) {
-      this.reportAssemblyError(errCode, pragma);
-      return;
-    }
-
     this.ensureCodeSegment((0xc000 + offset) & 0xffff);
     if (this._currentSegment.currentOffset !== 0 || this._currentSegment.bank !== undefined) {
       // --- There is already code emitted for the current segment,
@@ -1605,14 +1671,17 @@ export abstract class CommonAssembler<
       this._currentSegment = new BinarySegment();
       this._output.segments.push(this._currentSegment);
     }
-    if (this._output.segments.some((s) => s.bank === value.value)) {
-      // --- A bank can be used only once
+    
+    // --- For non-Next models, a bank can be used only once
+    // --- For Next, allow multiple segments per bank
+    if (!isNext && this._output.segments.some((s) => s.bank === value.value)) {
       this.reportAssemblyError("Z0309", pragma, null, value.value);
       return;
     }
     this._currentSegment.startAddress = (0xc000 + offset) & 0xffff;
     this._currentSegment.bank = value.value;
     this._currentSegment.bankOffset = offset;
+    this._currentSegment.nexExport = !pragma.noexport; // Default true, set to false if noexport flag present
     this._currentSegment.maxCodeLength = 0x4000 - offset;
   }
 
@@ -2267,6 +2336,413 @@ export abstract class CommonAssembler<
    */
   processOnSuccessPragma(pragma: OnSuccessPragma<TInstruction>): void {
     this._output.onSuccessCommands.push(pragma.command);
+  }
+
+  /**
+   * Processes the .savenex file pragma
+   */
+  processSaveNexFile(pragma: SaveNexFilePragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma); // SaveNex only with Next model
+      return;
+    }
+
+    const filenameValue = this.evaluateExprImmediate(pragma.filename);
+    if (filenameValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z0341", pragma); // File requires string filename
+      return;
+    }
+
+    this._output.nexConfig.filename = filenameValue.asString();
+  }
+
+  /**
+   * Processes the .savenex ram pragma
+   */
+  processSaveNexRam(pragma: SaveNexRamPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const sizeValue = this.evaluateExprImmediate(pragma.size);
+    if (sizeValue.type !== ExpressionValueType.Integer) {
+      this.reportAssemblyError("Z0342", pragma); // RAM requires 768 or 1792
+      return;
+    }
+
+    const size = sizeValue.asLong();
+    if (size !== 768 && size !== 1792) {
+      this.reportAssemblyError("Z0342", pragma);
+      return;
+    }
+
+    this._output.nexConfig.ramSize = size;
+  }
+
+  /**
+   * Processes the .savenex border pragma
+   */
+  processSaveNexBorder(pragma: SaveNexBorderPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const colorValue = this.evaluateExprImmediate(pragma.color);
+    if (colorValue.type !== ExpressionValueType.Integer) {
+      this.reportAssemblyError("Z0343", pragma); // Border requires 0-7
+      return;
+    }
+
+    const color = colorValue.asLong();
+    if (color < 0 || color > 7) {
+      this.reportAssemblyError("Z0343", pragma);
+      return;
+    }
+
+    this._output.nexConfig.borderColor = color;
+  }
+
+  /**
+   * Processes the .savenex core pragma
+   */
+  processSaveNexCore(pragma: SaveNexCorePragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const majorValue = this.evaluateExprImmediate(pragma.major);
+
+    let major: number;
+    let minor: number;
+    let subminor: number;
+
+    // Check if it's a string format like "3.1.10"
+    if (majorValue.type === ExpressionValueType.String && !pragma.minor && !pragma.subminor) {
+      const versionStr = majorValue.asString();
+      const parts = versionStr.split('.');
+      
+      if (parts.length !== 3) {
+        this.reportAssemblyError("Z0344", pragma); // Core version number ranges
+        return;
+      }
+
+      major = parseInt(parts[0], 10);
+      minor = parseInt(parts[1], 10);
+      subminor = parseInt(parts[2], 10);
+
+      if (isNaN(major) || isNaN(minor) || isNaN(subminor)) {
+        this.reportAssemblyError("Z0344", pragma);
+        return;
+      }
+    } else {
+      // Handle the numeric format with three separate expressions
+      if (!pragma.minor || !pragma.subminor) {
+        this.reportAssemblyError("Z0344", pragma);
+        return;
+      }
+
+      const minorValue = this.evaluateExprImmediate(pragma.minor);
+      const subminorValue = this.evaluateExprImmediate(pragma.subminor);
+
+      if (majorValue.type !== ExpressionValueType.Integer ||
+          minorValue.type !== ExpressionValueType.Integer ||
+          subminorValue.type !== ExpressionValueType.Integer) {
+        this.reportAssemblyError("Z0344", pragma); // Core version number ranges
+        return;
+      }
+
+      major = majorValue.asLong();
+      minor = minorValue.asLong();
+      subminor = subminorValue.asLong();
+    }
+
+    if (major < 0 || major > 255 || minor < 0 || minor > 255 || subminor < 0 || subminor > 255) {
+      this.reportAssemblyError("Z0344", pragma);
+      return;
+    }
+
+    this._output.nexConfig.coreVersion = { major, minor, subminor };
+  }
+
+  /**
+   * Processes the .savenex stackaddr pragma
+   */
+  processSaveNexStackAddr(pragma: SaveNexStackAddrPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const addrValue = this.evaluateExprImmediate(pragma.address);
+    if (addrValue.type !== ExpressionValueType.Integer) {
+      this.reportAssemblyError("Z0351", pragma); // Value range error
+      return;
+    }
+
+    const addr = addrValue.asLong();
+    if (addr < 0 || addr > 0xffff) {
+      this.reportAssemblyError("Z0351", pragma);
+      return;
+    }
+
+    this._output.nexConfig.stackAddr = addr;
+  }
+
+  /**
+   * Processes the .savenex entryaddr pragma
+   */
+  processSaveNexEntryAddr(pragma: SaveNexEntryAddrPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const addrValue = this.evaluateExprImmediate(pragma.address);
+    if (addrValue.type !== ExpressionValueType.Integer) {
+      this.reportAssemblyError("Z0352", pragma); // Value range error
+      return;
+    }
+
+    const addr = addrValue.asLong();
+    if (addr < 0 || addr > 0xffff) {
+      this.reportAssemblyError("Z0352", pragma);
+      return;
+    }
+
+    this._output.nexConfig.entryAddr = addr;
+  }
+
+  /**
+   * Processes the .savenex entrybank pragma
+   */
+  processSaveNexEntryBank(pragma: SaveNexEntryBankPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const bankValue = this.evaluateExprImmediate(pragma.bankNo);
+    if (bankValue.type !== ExpressionValueType.Integer) {
+      this.reportAssemblyError("Z0345", pragma); // Entry bank 0-111
+      return;
+    }
+
+    const bank = bankValue.asLong();
+    if (bank < 0 || bank > 111) {
+      this.reportAssemblyError("Z0345", pragma);
+      return;
+    }
+
+    this._output.nexConfig.entryBank = bank;
+  }
+
+  /**
+   * Processes the .savenex filehandle pragma
+   */
+  processSaveNexFileHandle(pragma: SaveNexFileHandlePragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const modeValue = this.evaluateExprImmediate(pragma.mode);
+    if (modeValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z0349", pragma); // Filehandle modes
+      return;
+    }
+
+    const mode = modeValue.asString().toLowerCase();
+    if (mode !== "close" && mode !== "open") {
+      this.reportAssemblyError("Z0349", pragma);
+      return;
+    }
+
+    this._output.nexConfig.fileHandle = mode as NexFileHandleMode;
+  }
+
+  /**
+   * Processes the .savenex preserve pragma
+   */
+  processSaveNexPreserve(pragma: SaveNexPreservePragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const valueExpr = this.evaluateExprImmediate(pragma.value);
+    
+    let preserveValue: boolean;
+    if (valueExpr.type === ExpressionValueType.String) {
+      const str = valueExpr.asString().toLowerCase();
+      if (str === "on" || str === "true") {
+        preserveValue = true;
+      } else if (str === "off" || str === "false") {
+        preserveValue = false;
+      } else {
+        this.reportAssemblyError("Z0350", pragma); // Preserve requires on/off
+        return;
+      }
+    } else if (valueExpr.type === ExpressionValueType.Integer) {
+      preserveValue = valueExpr.asLong() !== 0;
+    } else {
+      this.reportAssemblyError("Z0350", pragma);
+      return;
+    }
+
+    this._output.nexConfig.preserveRegs = preserveValue;
+  }
+
+  /**
+   * Processes the .savenex screen pragma
+   */
+  processSaveNexScreen(pragma: SaveNexScreenPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const typeValue = this.evaluateExprImmediate(pragma.screenType);
+    if (typeValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z0347", pragma); // Invalid screen type
+      return;
+    }
+
+    const type = typeValue.asString().toLowerCase();
+    const validTypes = ["layer2", "ula", "lores", "hires-color", "hires-mono"];
+    if (!validTypes.includes(type)) {
+      this.reportAssemblyError("Z0347", pragma);
+      return;
+    }
+
+    if (!pragma.filename) {
+      this._output.nexConfig.screen = { type: type as any };
+      return;
+    }
+
+    const filenameValue = this.evaluateExprImmediate(pragma.filename);
+    if (filenameValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z0347", pragma);
+      return;
+    }
+
+    let paletteOffset: number | undefined;
+    if (pragma.paletteOffset) {
+      const offsetValue = this.evaluateExprImmediate(pragma.paletteOffset);
+      if (offsetValue.type !== ExpressionValueType.Integer) {
+        this.reportAssemblyError("Z0347", pragma);
+        return;
+      }
+      paletteOffset = offsetValue.asLong();
+    }
+
+    this._output.nexConfig.screen = {
+      type: type as any,
+      filename: filenameValue.asString(),
+      paletteOffset
+    };
+  }
+
+  /**
+   * Processes the .savenex palette pragma
+   */
+  processSaveNexPalette(pragma: SaveNexPalettePragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const filenameValue = this.evaluateExprImmediate(pragma.filename);
+    if (filenameValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z0341", pragma); // Needs string filename
+      return;
+    }
+
+    this._output.nexConfig.paletteFile = filenameValue.asString();
+  }
+
+  /**
+   * Processes the .savenex copper pragma
+   */
+  processSaveNexCopper(pragma: SaveNexCopperPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const filenameValue = this.evaluateExprImmediate(pragma.filename);
+    if (filenameValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z0341", pragma); // Needs string filename
+      return;
+    }
+
+    this._output.nexConfig.copperFile = filenameValue.asString();
+  }
+
+  /**
+   * Processes the .savenex bar pragma
+   */
+  processSaveNexBar(pragma: SaveNexBarPragma<TInstruction, TToken>): void {
+    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+      this.reportAssemblyError("Z0340", pragma);
+      return;
+    }
+
+    const enabledValue = this.evaluateExprImmediate(pragma.enabled);
+    
+    let enabled: boolean;
+    if (enabledValue.type === ExpressionValueType.String) {
+      const str = enabledValue.asString().toLowerCase();
+      if (str === "on" || str === "true") {
+        enabled = true;
+      } else if (str === "off" || str === "false") {
+        enabled = false;
+      } else {
+        this.reportAssemblyError("Z0348", pragma); // Bar requires on/off
+        return;
+      }
+    } else if (enabledValue.type === ExpressionValueType.Integer) {
+      enabled = enabledValue.asLong() !== 0;
+    } else {
+      this.reportAssemblyError("Z0348", pragma);
+      return;
+    }
+
+    this._output.nexConfig.loadingBar.enabled = enabled;
+
+    if (pragma.color) {
+      const colorValue = this.evaluateExprImmediate(pragma.color);
+      if (colorValue.type !== ExpressionValueType.Integer) {
+        this.reportAssemblyError("Z0348", pragma);
+        return;
+      }
+      const color = colorValue.asLong();
+      if (color < 0 || color > 255) {
+        this.reportAssemblyError("Z0348", pragma);
+        return;
+      }
+      this._output.nexConfig.loadingBar.color = color;
+    }
+
+    if (pragma.delay) {
+      const delayValue = this.evaluateExprImmediate(pragma.delay);
+      if (delayValue.type !== ExpressionValueType.Integer) {
+        this.reportAssemblyError("Z0348", pragma);
+        return;
+      }
+      this._output.nexConfig.loadingBar.delay = delayValue.asLong();
+    }
+
+    if (pragma.startDelay) {
+      const startDelayValue = this.evaluateExprImmediate(pragma.startDelay);
+      if (startDelayValue.type !== ExpressionValueType.Integer) {
+        this.reportAssemblyError("Z0348", pragma);
+        return;
+      }
+      this._output.nexConfig.loadingBar.startDelay = startDelayValue.asLong();
+    }
   }
 
   /**
