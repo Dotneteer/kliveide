@@ -108,11 +108,13 @@ export function createMockIdeCommandsService() {
 export function createMockProjectService() {
   return {
     getNodeForFile: vi.fn(),
+    performAllDelayedSavesNow: vi.fn().mockResolvedValue(undefined),
     getActiveDocumentHubService: vi.fn().mockReturnValue({
       getDocument: vi.fn(),
       setActiveDocument: vi.fn().mockResolvedValue(undefined),
       openDocument: vi.fn().mockResolvedValue(undefined),
       closeDocument: vi.fn().mockResolvedValue(undefined),
+      closeAllDocuments: vi.fn().mockResolvedValue(undefined),
       isOpen: vi.fn().mockReturnValue(false),
       waitOpen: vi.fn().mockResolvedValue({ id: "test-doc" }),
       getDocumentApi: vi.fn()

@@ -169,7 +169,9 @@ const context = createMockContextWithProject("/test/project");
 - [x] Phase 1: Simple Commands (ClearScreen ✅, ClearHistory ✅, Num ✅) - **COMPLETED** (39 tests)
 - [x] Phase 2: State Commands (SetBreakpoint ✅, Breakpoints ✅, Watches ✅) - **COMPLETED** (109 tests)
 - [x] Phase 3: Machine Commands (Start, Pause, Stop, Restart, Debug, StepInto, StepOver, StepOut) - **COMPLETED** (62 tests)
-- [ ] Phase 4: IPC Commands (OpenFolder, CloseFolder, Shell)
-- [ ] Phase 5: Complex Validation Commands
-- [ ] Phase 6: Service-Dependent Commands
+- [x] Phase 4: IPC Commands (OpenFolder ✅, CloseFolder ✅, Shell ✅) - **COMPLETED** (27 tests)
+- [x] Phase 5: Complex Validation Commands (RemoveBreakpoint ✅, EnableBreakpoint ✅, SetMemoryContent ✅) - **COMPLETED** (67 tests)
+- [x] Phase 6: Service-Dependent Commands (NavigateToDocument ✅, ToolCommands ✅, NewProject ✅) - **COMPLETED** (79 tests)
 - [ ] Phase 7: Remaining Commands
+
+**Total: 383 tests passing across 13 test files**
