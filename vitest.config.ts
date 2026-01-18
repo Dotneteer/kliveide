@@ -13,6 +13,7 @@ const config = {
      */
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    setupFiles: ["./test/vitest.setup.ts"],
     alias: {
       "@styles": resolve("src/renderer/assets/styles"),
       "@common": resolve("src/common"),
@@ -30,3 +31,4 @@ const config = {
 };
 
 export default config;
+
