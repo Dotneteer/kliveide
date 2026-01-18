@@ -17,6 +17,7 @@ export function createMockOutputBuffer(): IOutputBuffer {
     clear: vi.fn(),
     write: vi.fn(),
     writeLine: vi.fn(),
+    writeMessage: vi.fn(),
     color: vi.fn(),
     resetStyle: vi.fn(),
     bold: vi.fn(),
@@ -173,7 +174,9 @@ export function createMockContext(overrides?: Partial<IdeCommandContext>): IdeCo
   const mockEmuApi = createMockEmuApi();
   const mockMainApi = createMockMainApi();
   const mockAppServices = createMockAppServices();
-  const mockMessenger = {} as MessengerBase;
+  const mockMessenger = {
+    sendMessage: vi.fn().mockResolvedValue({ success: true })
+  } as any;
   const mockMessageSource = "test" as MessageSource;
   const mockMachineInfo = createMockMachineInfo();
 
