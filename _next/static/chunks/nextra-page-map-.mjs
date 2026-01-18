@@ -301,6 +301,12 @@ export const pageMap = [{
       "sidebarTitle": "Pragmas"
     }
   }, {
+    name: "savenex-reference",
+    route: "/z80-assembly/savenex-reference",
+    frontMatter: {
+      "sidebarTitle": "Savenex Reference"
+    }
+  }, {
     name: "statements",
     route: "/z80-assembly/statements",
     frontMatter: {
