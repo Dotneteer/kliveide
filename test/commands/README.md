@@ -166,10 +166,10 @@ const context = createMockContextWithProject("/test/project");
 
 ## Progress Tracking
 
-- [x] Phase 1: Simple Commands (ClearScreen ✅, ClearHistory ✅, Num ✅) - **COMPLETED**
-- [ ] Phase 2: State Commands (Breakpoints, Watches)
-- [ ] Phase 3: IPC Commands (OpenFolder, CloseFolder, Shell)
-- [ ] Phase 4: Emulator Commands (Machine controls)
+- [x] Phase 1: Simple Commands (ClearScreen ✅, ClearHistory ✅, Num ✅) - **COMPLETED** (39 tests)
+- [x] Phase 2: State Commands (SetBreakpoint ✅, Breakpoints ✅, Watches ✅) - **COMPLETED** (109 tests)
+- [x] Phase 3: Machine Commands (Start, Pause, Stop, Restart, Debug, StepInto, StepOver, StepOut) - **COMPLETED** (62 tests)
+- [ ] Phase 4: IPC Commands (OpenFolder, CloseFolder, Shell)
 - [ ] Phase 5: Complex Validation Commands
 - [ ] Phase 6: Service-Dependent Commands
 - [ ] Phase 7: Remaining Commands

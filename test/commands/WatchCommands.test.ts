@@ -59,7 +59,7 @@ describe("AddWatchCommand", () => {
   describe("validateCommandArgs", () => {
     it("should validate simple symbol name", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "mySymbol" };
+      const args: any = { watchSpec: "mySymbol" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -72,7 +72,7 @@ describe("AddWatchCommand", () => {
 
     it("should validate symbol with type", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myVar:w" };
+      const args: any = { watchSpec: "myVar:w" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -85,7 +85,7 @@ describe("AddWatchCommand", () => {
 
     it("should validate symbol with type and length", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myArray:a:16" };
+      const args: any = { watchSpec: "myArray:a:16" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -99,7 +99,7 @@ describe("AddWatchCommand", () => {
 
     it("should parse direct flag", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: ">myVar" };
+      const args: any = { watchSpec: ">myVar" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -112,7 +112,7 @@ describe("AddWatchCommand", () => {
 
     it("should reject empty watch specification", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "" };
+      const args: any = { watchSpec: "" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -124,7 +124,7 @@ describe("AddWatchCommand", () => {
 
     it("should reject invalid symbol name", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "123invalid" };
+      const args: any = { watchSpec: "123invalid" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -136,7 +136,7 @@ describe("AddWatchCommand", () => {
 
     it("should reject invalid type", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myVar:invalid" };
+      const args: any = { watchSpec: "myVar:invalid" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -148,7 +148,7 @@ describe("AddWatchCommand", () => {
 
     it("should reject length for non-array/string types", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myVar:b:16" };
+      const args: any = { watchSpec: "myVar:b:16" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -160,7 +160,7 @@ describe("AddWatchCommand", () => {
 
     it("should reject invalid length", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myArray:a:invalid" };
+      const args: any = { watchSpec: "myArray:a:invalid" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -172,7 +172,7 @@ describe("AddWatchCommand", () => {
 
     it("should reject length too large", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myArray:a:2000" };
+      const args: any = { watchSpec: "myArray:a:2000" };
 
       // Act
       const messages = await command.validateCommandArgs(context, args);
@@ -186,7 +186,7 @@ describe("AddWatchCommand", () => {
   describe("execute", () => {
     it("should add watch to Redux store", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myVar:b", symbol: "myVar", type: "b" };
+      const args: any = { watchSpec: "myVar:b", symbol: "myVar", type: "b" };
       await command.validateCommandArgs(context, args);
 
       // Act
@@ -198,7 +198,7 @@ describe("AddWatchCommand", () => {
 
     it("should display success message", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myVar:b", symbol: "myVar", type: "b" };
+      const args: any = { watchSpec: "myVar:b", symbol: "myVar", type: "b" };
       await command.validateCommandArgs(context, args);
 
       // Act
@@ -210,7 +210,7 @@ describe("AddWatchCommand", () => {
 
     it("should display symbol name in uppercase", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myvar:b", symbol: "myvar", type: "b" };
+      const args: any = { watchSpec: "myvar:b", symbol: "myvar", type: "b" };
       await command.validateCommandArgs(context, args);
 
       // Act
@@ -225,7 +225,7 @@ describe("AddWatchCommand", () => {
 
     it("should display type description", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myArray:a:16", symbol: "myArray", type: "a", length: 16 };
+      const args: any = { watchSpec: "myArray:a:16", symbol: "myArray", type: "a", length: 16 };
       await command.validateCommandArgs(context, args);
 
       // Act
@@ -237,7 +237,7 @@ describe("AddWatchCommand", () => {
 
     it("should return successful result", async () => {
       // Arrange
-      const args: WatchSpecArgs = { watchSpec: "myVar:b", symbol: "myVar", type: "b" };
+      const args: any = { watchSpec: "myVar:b", symbol: "myVar", type: "b" };
       await command.validateCommandArgs(context, args);
 
       // Act
