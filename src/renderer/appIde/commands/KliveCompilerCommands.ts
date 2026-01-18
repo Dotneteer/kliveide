@@ -33,6 +33,7 @@ import { outputNavigateAction } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "../utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -180,6 +181,11 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     output: KliveCompilerOutput,
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
+    // --- Check if this is a NEX file export (based on .savenex pragma or explicit format)
+    if (output.nexConfig || args["-f"] === "nex") {
+      return await this.exportNexFile(context, output, args);
+    }
+
     if (args["-f"] == "hex") {
       return await saveIntelHexFile(context, args.filename, output);
     }
@@ -923,6 +929,84 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       } catch (err) {
         return commandError(err.toString());
       }
+    }
+  }
+
+  /**
+   * Export code as NEX file for ZX Spectrum Next
+   */
+  async exportNexFile(
+    context: IdeCommandContext,
+    output: KliveCompilerOutput,
+    args: ExportCommandArgs
+  ): Promise<IdeCommandResult> {
+    try {
+      // --- Ensure we're targeting Next model
+      if (output.modelType !== SpectrumModelType.Next) {
+        return commandError(
+          "NEX file export requires .model Next in the source code."
+        );
+      }
+
+      // --- Ensure we have NEX configuration
+      if (!output.nexConfig) {
+        return commandError(
+          "NEX file export requires .savenex pragma configuration in the source code."
+        );
+      }
+
+      // --- Determine output filename
+      const filename = args.filename || output.nexConfig.filename;
+      if (!filename) {
+        return commandError(
+          "NEX file export requires a filename (use .savenex file or provide filename argument)."
+        );
+      }
+
+      // --- Get the base directory for resolving relative paths
+      const projectRoot = context.service.projectService.getActiveProject()?.folderPath;
+      if (!projectRoot) {
+        return commandError("No active project found.");
+      }
+
+      // --- Generate NEX file data
+      const nexData = await NexFileWriter.fromAssemblerOutput(output, projectRoot);
+
+      // --- Save the NEX file
+      const filePath = await context.mainApi.saveBinaryFile(
+        filename,
+        nexData,
+        `home:${EXPORT_FILE_FOLDER}`
+      );
+
+      // --- Build summary message
+      const bankCount = output.segments.filter(s => s.bank !== undefined && s.bank !== null).length;
+      const hasScreens = output.nexConfig.screens && output.nexConfig.screens.length > 0;
+      const hasPalette = output.nexConfig.paletteFile !== undefined;
+      const hasCopper = output.nexConfig.copperFile !== undefined;
+      
+      let summary = `NEX file successfully exported to '${filePath}'`;
+      summary += `\n  Size: ${nexData.length} bytes`;
+      summary += `\n  RAM: ${output.nexConfig.ramSize}K`;
+      summary += `\n  Banks: ${bankCount}`;
+      summary += `\n  Entry: 0x${(output.nexConfig.entryAddr ?? output.entryAddress ?? 0).toString(16).toUpperCase()}`;
+      
+      if (hasScreens) {
+        summary += `\n  Loading screen: Yes`;
+      }
+      if (hasPalette) {
+        summary += `\n  Palette: Yes`;
+      }
+      if (hasCopper) {
+        summary += `\n  Copper code: Yes`;
+      }
+      if (output.nexConfig.loadingBar.enabled) {
+        summary += `\n  Loading bar: Yes`;
+      }
+
+      return commandSuccessWith(summary);
+    } catch (err) {
+      return commandError(`NEX export failed: ${err.toString()}`);
     }
   }
 }
