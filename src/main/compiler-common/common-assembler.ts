@@ -2342,7 +2342,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex file pragma
    */
   processSaveNexFile(pragma: SaveNexFilePragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma); // SaveNex only with Next model
       return;
     }
@@ -2360,7 +2360,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex ram pragma
    */
   processSaveNexRam(pragma: SaveNexRamPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2384,7 +2384,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex border pragma
    */
   processSaveNexBorder(pragma: SaveNexBorderPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2408,7 +2408,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex core pragma
    */
   processSaveNexCore(pragma: SaveNexCorePragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2471,7 +2471,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex stackaddr pragma
    */
   processSaveNexStackAddr(pragma: SaveNexStackAddrPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2495,7 +2495,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex entryaddr pragma
    */
   processSaveNexEntryAddr(pragma: SaveNexEntryAddrPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2519,7 +2519,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex entrybank pragma
    */
   processSaveNexEntryBank(pragma: SaveNexEntryBankPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2543,7 +2543,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex filehandle pragma
    */
   processSaveNexFileHandle(pragma: SaveNexFileHandlePragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2567,7 +2567,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex preserve pragma
    */
   processSaveNexPreserve(pragma: SaveNexPreservePragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2599,7 +2599,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex screen pragma
    */
   processSaveNexScreen(pragma: SaveNexScreenPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2649,7 +2649,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex palette pragma
    */
   processSaveNexPalette(pragma: SaveNexPalettePragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2667,7 +2667,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex copper pragma
    */
   processSaveNexCopper(pragma: SaveNexCopperPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }
@@ -2685,7 +2685,7 @@ export abstract class CommonAssembler<
    * Processes the .savenex bar pragma
    */
   processSaveNexBar(pragma: SaveNexBarPragma<TInstruction, TToken>): void {
-    if (this._options.currentModel !== 4) { // SpectrumModelType.Next
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) { // SpectrumModelType.Next
       this.reportAssemblyError("Z0340", pragma);
       return;
     }

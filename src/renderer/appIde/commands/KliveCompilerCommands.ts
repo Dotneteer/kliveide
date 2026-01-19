@@ -182,7 +182,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
     // --- Check if this is a NEX file export (based on .savenex pragma or explicit format)
-    if (output.nexConfig || args["-f"] === "nex") {
+    if ((output as CompilerOutput).nexConfig || args["-f"] === "nex") {
       return await this.exportNexFile(context, output, args);
     }
 
@@ -941,22 +941,25 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
     try {
+      // --- Cast to CompilerOutput since we need to access NEX-specific properties
+      const compiledOutput = output as CompilerOutput;
+
       // --- Ensure we're targeting Next model
-      if (output.modelType !== SpectrumModelType.Next) {
+      if (compiledOutput.modelType !== SpectrumModelType.Next) {
         return commandError(
           "NEX file export requires .model Next in the source code."
         );
       }
 
       // --- Ensure we have NEX configuration
-      if (!output.nexConfig) {
+      if (!compiledOutput.nexConfig) {
         return commandError(
           "NEX file export requires .savenex pragma configuration in the source code."
         );
       }
 
       // --- Determine output filename
-      const filename = args.filename || output.nexConfig.filename;
+      const filename = args.filename || compiledOutput.nexConfig.filename;
       if (!filename) {
         return commandError(
           "NEX file export requires a filename (use .savenex file or provide filename argument)."
@@ -964,13 +967,14 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
 
       // --- Get the base directory for resolving relative paths
-      const projectRoot = context.service.projectService.getActiveProject()?.folderPath;
+      const state = context.store.getState();
+      const projectRoot = state.project?.folderPath;
       if (!projectRoot) {
         return commandError("No active project found.");
       }
 
       // --- Generate NEX file data
-      const nexData = await NexFileWriter.fromAssemblerOutput(output, projectRoot);
+      const nexData = await NexFileWriter.fromAssemblerOutput(compiledOutput as any, projectRoot);
 
       // --- Save the NEX file
       const filePath = await context.mainApi.saveBinaryFile(
@@ -980,16 +984,16 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       );
 
       // --- Build summary message
-      const bankCount = output.segments.filter(s => s.bank !== undefined && s.bank !== null).length;
-      const hasScreens = output.nexConfig.screens && output.nexConfig.screens.length > 0;
-      const hasPalette = output.nexConfig.paletteFile !== undefined;
-      const hasCopper = output.nexConfig.copperFile !== undefined;
+      const bankCount = compiledOutput.segments.filter(s => s.bank !== undefined && s.bank !== null).length;
+      const hasScreens = compiledOutput.nexConfig.screens && compiledOutput.nexConfig.screens.length > 0;
+      const hasPalette = compiledOutput.nexConfig.paletteFile !== undefined;
+      const hasCopper = compiledOutput.nexConfig.copperFile !== undefined;
       
       let summary = `NEX file successfully exported to '${filePath}'`;
       summary += `\n  Size: ${nexData.length} bytes`;
-      summary += `\n  RAM: ${output.nexConfig.ramSize}K`;
+      summary += `\n  RAM: ${compiledOutput.nexConfig.ramSize}K`;
       summary += `\n  Banks: ${bankCount}`;
-      summary += `\n  Entry: 0x${(output.nexConfig.entryAddr ?? output.entryAddress ?? 0).toString(16).toUpperCase()}`;
+      summary += `\n  Entry: 0x${(compiledOutput.nexConfig.entryAddr ?? compiledOutput.entryAddress ?? 0).toString(16).toUpperCase()}`;
       
       if (hasScreens) {
         summary += `\n  Loading screen: Yes`;
@@ -1000,7 +1004,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       if (hasCopper) {
         summary += `\n  Copper code: Yes`;
       }
-      if (output.nexConfig.loadingBar.enabled) {
+      if (compiledOutput.nexConfig.loadingBar.enabled) {
         summary += `\n  Loading bar: Yes`;
       }
 
