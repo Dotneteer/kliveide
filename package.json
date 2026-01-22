@@ -61,7 +61,7 @@
     "eslint": "^8.31.0",
     "execa": "^8.0.1",
     "expect": "^29.3.1",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "monaco-editor": "^0.55.1",
     "nextra": "^3.3.0",
     "nextra-theme-docs": "^3.3.0",
