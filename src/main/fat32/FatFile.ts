@@ -417,6 +417,7 @@ export class FatFile {
       this._error = ERROR_NOT_A_DIRECTORY;
       return false;
     }
+
     if (this.isOpen()) {
       this._error = ERROR_ALREADY_OPEN;
       return false;
@@ -694,7 +695,7 @@ export class FatFile {
           // ✅ FIX Bug #6: Add bounds check to ensure we don't read past EOF
           // Calculate how many clusters the file should have
           const fileSize = this._fileSize;
-          const bytesPerCluster = this.volume.bytesPerCluster;
+          const bytesPerCluster = 1 << (this.volume.bytesPerClusterShift);
           const clustersInFile = (fileSize + bytesPerCluster - 1) >> this.volume.bytesPerClusterShift;
           const currentClusterIndex = this._currentCluster - this._firstCluster;
           

@@ -132,6 +132,12 @@ export interface IOutputBuffer {
   writeLine(message?: string, data?: unknown, actionable?: boolean): void;
 
   /**
+   * Splits a message into multiple lines and adds them to the output
+   * @param message Message to write
+   */
+  writeLines(message: string): void;
+
+  /**
    * This event fires when the contents of the buffer changes.
    */
   readonly contentsChanged: ILiteEvent<void>;

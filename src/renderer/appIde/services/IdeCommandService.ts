@@ -228,20 +228,17 @@ class IdeCommandService implements IIdeCommandService {
       if (commandResult.finalMessage) {
         if (commandResult.finalMessage.startsWith("$W:")) {
           buffer.color("yellow");
-          buffer.writeLine(commandResult.finalMessage.substring(3));
+          buffer.writeLines(commandResult.finalMessage.substring(3));
           buffer.resetStyle();
         } else {
           buffer.color("bright-green");
-          buffer.writeLine(commandResult.finalMessage);
+          buffer.writeLines(commandResult.finalMessage);
           buffer.resetStyle();
         }
       }
     } else {
       buffer.color("bright-red");
-      const lines = (commandResult.finalMessage ?? "Command execution failed.").split("\n");
-      for (const line of lines) {
-        buffer.writeLine(line);
-      }
+      buffer.writeLines(commandResult.finalMessage ?? "Command execution failed.");
       buffer.resetStyle();
     }
     return commandResult;

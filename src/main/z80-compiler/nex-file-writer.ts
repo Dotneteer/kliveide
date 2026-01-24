@@ -153,6 +153,7 @@ export class NexFileWriter {
     this.banks.set(bankNo, paddedData);
 
     // Mark bank as present in header (bytes 18-129)
+    // Each bank uses one byte in the array (0/1 flag), not a bitmask
     this.header[18 + bankNo] = 1;
   }
 

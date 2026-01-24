@@ -1,5 +1,6 @@
-import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
+import { LiteEvent } from "@emu/utils/lite-event";
 import { IOutputBuffer, OutputColor, OutputContentLine } from "./abstractions";
+import { ILiteEvent } from "@abstractions/ILiteEvent";
 
 /**
  * Implements a composite buffer to write the contents of the output pane to
@@ -43,6 +44,10 @@ export class CompositeOutputBuffer implements IOutputBuffer {
     this.buffers.forEach(buffer =>
       buffer.writeLine(message, data, actionable)
     );
+  }
+
+  writeLines(message: string): void {
+    this.buffers.forEach(buffer => buffer.writeLines(message));
   }
 
   contentsChanged: ILiteEvent<void> = new LiteEvent<void>();

@@ -17,9 +17,9 @@ import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 
-const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
-const DEFAULT_SC_CARD_FILE = "ks2.cim";
-const SOURCE_SD_CARD_FILE = "mmc/ks2-base.cim";
+export const SD_CARD_FILE_FOLDER = "sdCardFileFolder";
+export const DEFAULT_SD_CARD_FILE = "ks2.cim";
+export const SOURCE_SD_CARD_FILE = "mmc/ks2-base.cim";
 
 /**
  * Renders tape commands
@@ -182,7 +182,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
 
 export async function initializeZxSpectrumNext(): Promise<void> {
   // --- This is where the SD Card file is stored
-  const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SC_CARD_FILE);
+  const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
   if (!fs.existsSync(sdCardPath)) {
     // --- Create the folder if it does not exist
     fs.mkdirSync(path.dirname(sdCardPath), { recursive: true });
@@ -222,7 +222,7 @@ export async function setupZxSpectrumNext(): Promise<void> {
 }
 
 function getDefaultSdCardFile(): string {
-  return path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SC_CARD_FILE);
+  return path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
 }
 
 async function logSdCardEvent(filename: string): Promise<void> {
@@ -231,7 +231,7 @@ async function logSdCardEvent(filename: string): Promise<void> {
 
 async function resetToDefaultSdCardFile(): Promise<void> {
   // --- Get the default SD Card file, and delete the current one
-  const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SC_CARD_FILE);
+  const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
   if (fs.existsSync(sdCardPath) && fs.statSync(sdCardPath).isFile()) {
     // --- Delete the file
     fs.unlinkSync(sdCardPath);

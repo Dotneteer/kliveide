@@ -277,8 +277,8 @@ export class MachineController implements IMachineController {
    */
   async runCode(
     codeToInject: CodeToInject,
-    debug?: boolean,
-    projectDebug?: boolean
+    debug: boolean,
+    projectDebug: boolean
   ): Promise<void> {
     // --- Stop the machine
     await this.stop();
@@ -295,8 +295,13 @@ export class MachineController implements IMachineController {
     this.isDebugging = debug;
 
     let entryPoint = 0;
+    let keepPc = false;
     for (const step of injectionFlow) {
       switch (step.type) {
+        case "KeepPc":
+          keepPc = true;
+          break;
+
         case "ReachExecPoint":
           // --- Run while a particular entry point is reached
           if (this._machineState === MachineControllerState.Running) {
@@ -313,6 +318,12 @@ export class MachineController implements IMachineController {
 
         case "Start":
           await this.start();
+          break;
+
+        case "Wait":
+          if ((step.duration ?? 100) > 0) {
+            await delay(step.duration);
+          }
           break;
 
         case "QueueKey":
@@ -350,7 +361,9 @@ export class MachineController implements IMachineController {
     }
 
     // --- Set the continuation point
-    m.pc = entryPoint;
+    if (!keepPc) {
+      m.pc = entryPoint;
+    }
 
     // --- Start the machine
     if (debug) {

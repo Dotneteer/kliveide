@@ -37,6 +37,7 @@ import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
 import { IC64Machine } from "@emu/machines/c64/IC64Machine";
+import { add } from "lodash";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
 
@@ -521,15 +522,17 @@ class EmuMessageProcessor {
   /**
    * Runs code in the emulator, optionally in debug mode.
    * @param codeToInject The code to run.
+   * @param additionalInfo: any,
    * @param debug True to run in debug mode.
    * @param projectDebug True to use project debug mode.
    */
-  runCodeCommand(codeToInject: CodeToInject, debug: boolean, projectDebug: boolean) {
+  runCodeCommand(codeToInject: CodeToInject, additionalInfo: any, debug: boolean, projectDebug: boolean) {
+    console.log("Running code command", additionalInfo);
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
-    controller.runCode(codeToInject, debug, projectDebug);
+    controller.runCode(codeToInject, additionalInfo, debug, projectDebug);
   }
 
   /**
@@ -739,7 +742,7 @@ class EmuMessageProcessor {
       tilemapFirst: pd.tilemapFirst,
       tilemapSecond: pd.tilemapSecond,
       storedPaletteValue: pd.storedPaletteValue,
-      trancparencyColor: machine.screenDevice.fallbackColor,
+      trancparencyColor: machine.composedScreenDevice.fallbackColor,
       reg43Value: pd.nextReg43Value,
       reg6bValue: machine.tilemapDevice.nextReg6bValue,
       ulaNextFormat: machine.composedScreenDevice.ulaNextFormat

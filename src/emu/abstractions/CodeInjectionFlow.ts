@@ -5,7 +5,9 @@ type CodeInjectionStep =
   | InjectStep
   | SetReturnStep
   | QueueKeyStep
-  | StartStep;
+  | StartStep
+  | KeepPcStep
+  | WaitStep;
 
 interface CodeInjectionStepBase {
   type: CodeInjectionStep["type"];
@@ -37,4 +39,13 @@ interface QueueKeyStep extends CodeInjectionStepBase {
 
 interface StartStep extends CodeInjectionStepBase {
   type: "Start";
+}
+
+interface KeepPcStep extends CodeInjectionStepBase {
+  type: "KeepPc";
+}
+
+interface WaitStep extends CodeInjectionStepBase {
+  type: "Wait";
+  duration: number;
 }
