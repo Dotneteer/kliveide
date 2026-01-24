@@ -57,14 +57,14 @@ export function createEmulatorApi(context: ScriptCallContext): EmulatorApi {
       await getEmuApi().injectCodeCommand(createCodeToInject(code, org, partition));
     },
     runCode: async (code: Uint8Array, org: number = 0x8000, partition?: number): Promise<void> => {
-      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), false);
+      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), null, false, false);
     },
     debugCode: async (
       code: Uint8Array,
       org: number = 0x8000,
       partition?: number
     ): Promise<void> => {
-      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), true);
+      await getEmuApi().runCodeCommand(createCodeToInject(code, org, partition), null, true, true);
     }
   };
 }

@@ -189,8 +189,9 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   /**
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
+   * @param additionalInfo Additional information for code execution
    */
-  getCodeInjectionFlow(model: string): CodeInjectionFlow;
+  getCodeInjectionFlow(model: string, additionalInfo?: any): CodeInjectionFlow;
 
   /**
    * Injects the specified code into the ZX Spectrum machine
@@ -340,12 +341,6 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
     secondary?: number,
     ternary?: number
   ): void;
-
-  /**
-   * Gets the main execution point information of the machine
-   * @param model Machine model to use for code execution
-   */
-  getCodeInjectionFlow(model: string): CodeInjectionFlow;
 
   /**
    * Gets the length of the key emulation queue

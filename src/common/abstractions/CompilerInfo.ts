@@ -148,6 +148,11 @@ export interface CompilerOutput extends CompiledModule {
    * Trace outputs
    */
   readonly traceOutput: string[];
+
+  /**
+   * ZX Spectrum Next NEX file configuration
+   */
+  readonly nexConfig?: any;
 }
 
 /**

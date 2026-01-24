@@ -4,14 +4,14 @@
     @include fill-parent-flex;
     box-sizing: border-box;
     flex-direction: column;
-    user-select: none;
+    user-select: text;
 }
 
 .outputWrapper {
     @include fill-parent-flex;
     box-sizing: border-box;
     flex-direction: column;
-    user-select: none;
+    user-select: text;
     font-family: var(--monospace-font);
     font-size: 0.8em;
 }

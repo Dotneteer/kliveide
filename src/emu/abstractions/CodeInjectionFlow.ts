@@ -1,11 +1,13 @@
 export type CodeInjectionFlow = CodeInjectionStep[];
 
-type CodeInjectionStep =
+export type CodeInjectionStep =
   | ReachExecPointStep
   | InjectStep
   | SetReturnStep
   | QueueKeyStep
-  | StartStep;
+  | StartStep
+  | KeepPcStep
+  | WaitStep;
 
 interface CodeInjectionStepBase {
   type: CodeInjectionStep["type"];
@@ -27,7 +29,7 @@ interface SetReturnStep extends CodeInjectionStepBase {
   returnPoint: number;
 }
 
-interface QueueKeyStep extends CodeInjectionStepBase {
+export interface QueueKeyStep extends CodeInjectionStepBase {
   type: "QueueKey";
   primary: number;
   secondary?: number;
@@ -37,4 +39,13 @@ interface QueueKeyStep extends CodeInjectionStepBase {
 
 interface StartStep extends CodeInjectionStepBase {
   type: "Start";
+}
+
+interface KeepPcStep extends CodeInjectionStepBase {
+  type: "KeepPc";
+}
+
+interface WaitStep extends CodeInjectionStepBase {
+  type: "Wait";
+  duration: number;
 }

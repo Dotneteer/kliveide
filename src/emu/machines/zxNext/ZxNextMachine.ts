@@ -4,7 +4,7 @@ import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBe
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { CodeInjectionFlow, QueueKeyStep } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { MachineModel } from "@common/machines/info-types";
 
@@ -28,10 +28,10 @@ import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
-import { NextKeyboardDevice } from "./NextKeyboardDevice";
+import { convertAsciiStringToNextKeyCodes, NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
+import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { createMainApi } from "@common/messaging/MainApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { CpuState } from "@common/messaging/EmuApi";
@@ -40,6 +40,10 @@ import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
+
+const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
+const SP_KEY_WAIT = 250;
+const SP_KEY_WAIT_SHORT = 50;
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -807,9 +811,89 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Gets the main execution point information of the machine
    * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
-    // TODO: Implement this
-    return [];
+  getCodeInjectionFlow(_model: string, additionalInfo: any): CodeInjectionFlow {
+    // --- Create QueueKey steps for the prompt
+    const prompt = `.nexload ${additionalInfo}\n`;
+    const promtKeys = convertAsciiStringToNextKeyCodes(prompt);
+    const promptQueue: QueueKeyStep[] = [];
+    for (const keyCode of promtKeys) {
+      if (keyCode.extMode) {
+        promptQueue.push({
+          type: "QueueKey",
+          primary: SpectrumKeyCode.CShift,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT_SHORT
+        });
+      }
+      promptQueue.push({
+        type: "QueueKey",
+        primary: keyCode.primaryCode,
+        secondary: keyCode.secondaryCode,
+        wait: SP_KEY_WAIT_SHORT
+      });
+    }
+
+    // --- Create the flow
+    return [
+      {
+        type: "KeepPc"
+      },
+      {
+        type: "ReachExecPoint",
+        rom: 0,
+        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
+        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
+      },
+      {
+        type: "Start"
+      },
+      {
+        type: "Wait",
+        duration: 100
+      },
+      {
+        type: "ReachExecPoint",
+        rom: 0,
+        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
+        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
+      },
+      {
+        type: "Start"
+      },
+      {
+        type: "QueueKey",
+        primary: SpectrumKeyCode.Space,
+        wait: SP_KEY_WAIT,
+        message: "Space"
+      },
+      {
+        type: "ReachExecPoint",
+        rom: 0,
+        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
+        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
+      },
+      {
+        type: "Start"
+      },
+      {
+        type: "QueueKey",
+        primary: SpectrumKeyCode.N6,
+        secondary: SpectrumKeyCode.CShift,
+        wait: SP_KEY_WAIT,
+        message: "Arrow down"
+      },
+      {
+        type: "QueueKey",
+        primary: SpectrumKeyCode.Enter,
+        wait: 0,
+        message: "Enter"
+      },
+      {
+        type: "Wait",
+        duration: 100
+      },
+      ...promptQueue
+    ];
   }
 
   /**
@@ -901,15 +985,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           // --- Prevents renderer from hanging if main process becomes unresponsive
           const result = await this.withIpcTimeout(
             createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data),
-            'writeSdCardSector'
+            "writeSdCardSector"
           );
           // --- FIX for ISSUE #8: Only set write response after explicit persistence confirmation
           // --- The main process confirms that fsyncSync has completed
           if (result?.persistenceConfirmed) {
             this.sdCardDevice.setWriteResponse();
           } else {
-            console.error('SD card write error: No persistence confirmation');
-            this.sdCardDevice.setWriteErrorResponse('Persistence not confirmed');
+            console.error("SD card write error: No persistence confirmation");
+            this.sdCardDevice.setWriteErrorResponse("Persistence not confirmed");
           }
         } catch (err) {
           console.log("SD card sector write error", err);
@@ -923,7 +1007,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           // --- Prevents renderer from hanging if main process becomes unresponsive
           const sectorData = await this.withIpcTimeout(
             createMainApi(messenger).readSdCardSector(frameCommand.sector),
-            'readSdCardSector'
+            "readSdCardSector"
           );
           // --- FIX for ISSUE #6: Response Data Type Mismatch Potential
           // --- Validate that response is Uint8Array (defensive programming)
@@ -933,7 +1017,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
             // --- Convert Array to Uint8Array if needed (IPC edge case)
             this.sdCardDevice.setReadResponse(new Uint8Array(sectorData));
           } else {
-            console.error('SD card read error: Invalid response data type', typeof sectorData);
+            console.error("SD card read error: Invalid response data type", typeof sectorData);
             // --- Return error response using setMmcResponse with error status
             (this.sdCardDevice as any).setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
           }
@@ -953,19 +1037,22 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Wraps an IPC call with timeout protection.
    * ISSUE #7 fix: Prevents renderer from hanging indefinitely if main process becomes unresponsive.
-   * 
+   *
    * @param promise The IPC promise to wrap
    * @param operationName Name of the operation for error logging
    * @returns Promise that resolves/rejects with the IPC result or timeout error
    */
   private withIpcTimeout<T>(promise: Promise<T>, operationName: string): Promise<T> {
     const IPC_TIMEOUT_MS = 5000; // 5 second timeout
-    
+
     return Promise.race([
       promise,
       new Promise<T>((_, reject) =>
         setTimeout(
-          () => reject(new Error(`IPC timeout: ${operationName} did not complete within ${IPC_TIMEOUT_MS}ms`)),
+          () =>
+            reject(
+              new Error(`IPC timeout: ${operationName} did not complete within ${IPC_TIMEOUT_MS}ms`)
+            ),
           IPC_TIMEOUT_MS
         )
       )

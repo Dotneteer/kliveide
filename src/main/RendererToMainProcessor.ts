@@ -23,7 +23,7 @@ import {
   resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
-import { AppSettings } from "./settings";
+import { AppSettings, KLIVE_HOME_FOLDER } from "./settings";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
@@ -52,10 +52,13 @@ import { Action } from "@common/state/Action";
 import { MessageBoxType } from "@common/messaging/MainApi";
 import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
-import { getSdCardHandler } from "./machine-menus/zx-next-menus";
+import { DEFAULT_SD_CARD_FILE, getSdCardHandler } from "./machine-menus/zx-next-menus";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
+import { CimFile } from "./fat32/CimFileManager";
+import { Fat32Volume } from "./fat32/Fat32Volume";
+import { FileManager } from "./fat32/FileManager";
 
 const compilerRegistry = createCompilerRegistry();
 
@@ -376,6 +379,26 @@ class MainMessageProcessor {
   }
 
   /**
+   * Copies the specified file to the SD card image.
+   * @param srcFile
+   * @param destFile The destination file path on the SD card image.
+   */
+  async copyToSdCard(srcFile: string, destFile: string) {
+    const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+    if (!fs.existsSync(sdCardPath)) {
+      // --- The folder does not exist, we cannot proceed
+      console.error("SD card path does not exist:", sdCardPath);
+      return;
+    }
+
+    const cimFile = new CimFile(sdCardPath);
+    const vol = new Fat32Volume(cimFile);
+    vol.init();
+    const fm = new FileManager(vol);
+    fm.copyFile(srcFile, destFile);
+  }
+
+  /**
    * Saves the current project state to disk.
    */
   async saveProject() {
@@ -670,7 +693,10 @@ class MainMessageProcessor {
    * @param sectorIndex The sector index to write.
    * @param data The data to write to the sector.
    */
-  async writeSdCardSector(sectorIndex: number, data: Uint8Array): Promise<{ success: boolean; persistenceConfirmed: boolean }> {
+  async writeSdCardSector(
+    sectorIndex: number,
+    data: Uint8Array
+  ): Promise<{ success: boolean; persistenceConfirmed: boolean }> {
     if (!Number.isInteger(sectorIndex) || sectorIndex < 0) {
       throw new Error("Invalid sector index");
     }
@@ -680,7 +706,7 @@ class MainMessageProcessor {
     // --- Input validated
     const sdHandler = getSdCardHandler();
     sdHandler.writeSector(sectorIndex, data);
-    
+
     // --- FIX for ISSUE #8: Explicit persistence confirmation
     // --- Only return success after fsyncSync has completed
     // --- This ensures the response to Z80 is only sent after data is persisted

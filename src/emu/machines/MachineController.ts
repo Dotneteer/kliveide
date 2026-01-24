@@ -35,6 +35,7 @@ import { createIdeApi } from "@common/messaging/IdeApi";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+import { add } from "lodash";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -272,13 +273,15 @@ export class MachineController implements IMachineController {
   /**
    * Runs the specified code in the virtual machine
    * @param codeToInject Code to inject into the amchine
+   * @param additionalInfo Additional information for code execution
    * @param debug Run in debug mode?
    * @param projectDebug Run in project debug mode?
    */
   async runCode(
     codeToInject: CodeToInject,
-    debug?: boolean,
-    projectDebug?: boolean
+    additionalInfo: any,
+    debug: boolean,
+    projectDebug: boolean
   ): Promise<void> {
     // --- Stop the machine
     await this.stop();
@@ -290,13 +293,18 @@ export class MachineController implements IMachineController {
 
     // --- Execute the code injection flow
     const m = this.machine;
-    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model ?? m.machineId);
+    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model ?? m.machineId, additionalInfo);
     await this.sendOutput("Initialize the machine", "blue");
     this.isDebugging = debug;
 
     let entryPoint = 0;
+    let keepPc = false;
     for (const step of injectionFlow) {
       switch (step.type) {
+        case "KeepPc":
+          keepPc = true;
+          break;
+
         case "ReachExecPoint":
           // --- Run while a particular entry point is reached
           if (this._machineState === MachineControllerState.Running) {
@@ -313,6 +321,12 @@ export class MachineController implements IMachineController {
 
         case "Start":
           await this.start();
+          break;
+
+        case "Wait":
+          if ((step.duration ?? 100) > 0) {
+            await delay(step.duration);
+          }
           break;
 
         case "QueueKey":
@@ -350,7 +364,9 @@ export class MachineController implements IMachineController {
     }
 
     // --- Set the continuation point
-    m.pc = entryPoint;
+    if (!keepPc) {
+      m.pc = entryPoint;
+    }
 
     // --- Start the machine
     if (debug) {

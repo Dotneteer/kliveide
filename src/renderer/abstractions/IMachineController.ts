@@ -130,10 +130,16 @@ export interface IMachineController {
   /**
    * Runs the specified code in the virtual machine
    * @param codeToInject Code to inject into the amchine
+   * @param additionalInfo Additional information for code execution
    * @param debug Run in debug mode?
    * @param projectDebug Run in project debug mode?
    */
-  runCode(codeToInject: CodeToInject, debug?: boolean, projectDebug?: boolean): Promise<void>;
+  runCode(
+    codeToInject: CodeToInject,
+    additionalInfo: any,
+    debug: boolean,
+    projectDebug: boolean
+  ): Promise<void>;
 
   /**
    * Resolves the source code breakpoints used when running the machine

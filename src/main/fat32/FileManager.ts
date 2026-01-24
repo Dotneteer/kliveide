@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Fat32Volume } from "./Fat32Volume";
+import { O_RDONLY } from "./Fat32Types";
 
 const CHUNK_SIZE = 64 * 1024; // 64 KBimport { Fat32Volume } from "./Fat32Volume";
 
@@ -51,6 +52,49 @@ export class FileManager {
 
     // Start reading a given directory
     await this.readDirectoryRecursive(sourcePath, "", handleFile, handleFolder);
+  }
+
+  async copyFile(sourceFilePath: string, targetFilePath: string) {
+    // Create the target directory if it doesn't exist
+    const targetDir = this.volume.open(targetFilePath, O_RDONLY);
+    if (!targetDir) {
+      const dirPath = path.dirname(targetFilePath);
+      this.volume.mkdir(dirPath);
+    }
+
+    // Create the target file in the FAT32 volume
+    this.volume.remove(targetFilePath); // Remove if it already exists
+    const targetFile = this.volume.createFile(targetFilePath);
+    const fileHandle = await fs.promises.open(sourceFilePath, "r");
+    const buffer = new Uint8Array(CHUNK_SIZE);
+
+    let bytesRead = 0;
+    let position = 0; // Tracks where in the file we are
+
+    try {
+      do {
+        // Read up to CHUNK_SIZE from the file
+        const { bytesRead: read } = await fileHandle.read(
+          buffer,
+          0, // Write offset in the buffer
+          CHUNK_SIZE, // Number of bytes to read
+          position // Position in the file to start reading
+        );
+
+        bytesRead = read;
+        position += read;
+
+        if (read > 0) {
+          // --- Extract the valid slice of data
+          const chunk = buffer.slice(0, read);
+          targetFile.writeFileData(chunk);
+        }
+      } while (bytesRead > 0);
+    } finally {
+      await fileHandle.close();
+      console.log("File copy completed.");
+      targetFile?.close();
+    }
   }
 
   private async readDirectoryRecursive(

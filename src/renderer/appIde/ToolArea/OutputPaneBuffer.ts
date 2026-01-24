@@ -1,10 +1,6 @@
-import { ILiteEvent, LiteEvent } from "@emu/utils/lite-event";
-import {
-  IOutputBuffer,
-  OutputColor,
-  OutputContentLine,
-  OutputSpan
-} from "./abstractions";
+import { LiteEvent } from "@emu/utils/lite-event";
+import { IOutputBuffer, OutputColor, OutputContentLine, OutputSpan } from "./abstractions";
+import { ILiteEvent } from "@abstractions/ILiteEvent";
 
 type StyleState = {
   color?: OutputColor;
@@ -30,7 +26,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   private _contentsChanged = new LiteEvent<void>();
   private _styleStack: StyleState[] = [];
 
-  constructor (
+  constructor(
     public readonly bufferedLines = 10240,
     public readonly maxLineLenght = 1024
   ) {}
@@ -38,7 +34,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   /**
    * Clears the contents of the buffer
    */
-  clear (): void {
+  clear(): void {
     this._buffer = [];
     this._currentLineIndex = -1;
     this._contentsChanged.fire();
@@ -47,14 +43,14 @@ export class OutputPaneBuffer implements IOutputBuffer {
   /**
    * Gets the contents of the buffer
    */
-  getContents (): OutputContentLine[] {
+  getContents(): OutputContentLine[] {
     return this._buffer;
   }
 
   /**
    * Sets the default color
    */
-  resetStyle (): void {
+  resetStyle(): void {
     this._color = undefined;
     this._bgColor = undefined;
     this._isBold = false;
@@ -67,14 +63,14 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * Sets the output to the specified color
    * @param color
    */
-  color (color: OutputColor): void {
+  color(color: OutputColor): void {
     this._color = color;
   }
 
   /**
    * Sets the output background to the specified color
    */
-  backgroundColor (bgcolor: OutputColor): void {
+  backgroundColor(bgcolor: OutputColor): void {
     this._bgColor = bgcolor;
   }
 
@@ -82,7 +78,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * Indicates if the font is to be used in bold
    * @param use
    */
-  bold (use: boolean): void {
+  bold(use: boolean): void {
     this._isBold = use;
   }
 
@@ -90,7 +86,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * Indicates if the font is to be used in italic
    * @param use
    */
-  italic (use: boolean): void {
+  italic(use: boolean): void {
     this._isItalic = use;
   }
 
@@ -98,7 +94,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * Indicates if the font is to be used with underline
    * @param use
    */
-  underline (use: boolean): void {
+  underline(use: boolean): void {
     this._isUnderline = use;
   }
 
@@ -106,7 +102,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * Indicates if the font is to be used with strikethru
    * @param use
    */
-  strikethru (use: boolean): void {
+  strikethru(use: boolean): void {
     this._isStrikethru = use;
   }
 
@@ -116,7 +112,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * @param data Optional item data
    * @param actionable Actionable text?
    */
-  write (message: string, data?: unknown, actionable?: boolean): void {
+  write(message: string, data?: unknown, actionable?: boolean): void {
     if (this._currentLineIndex < 0) {
       this._currentLineIndex = 0;
       this._buffer[0] = { spans: [] };
@@ -144,7 +140,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * @param data Optional item data
    * @param actionable Actionable text?
    */
-  writeLine (message?: string, data?: unknown, actionable?: boolean): void {
+  writeLine(message?: string, data?: unknown, actionable?: boolean): void {
     if (message) {
       this.write(message, data, actionable);
     } else {
@@ -158,23 +154,34 @@ export class OutputPaneBuffer implements IOutputBuffer {
     } else {
       this._currentLineIndex++;
     }
-    this._buffer[this._currentLineIndex] = {spans: [] };
+    this._buffer[this._currentLineIndex] = { spans: [] };
+  }
+
+  /**
+   * Splits a message into multiple lines and adds them to the output
+   * @param message Message to write
+   */
+  writeLines(message: string): void {
+    const lines = message.split("\n");
+    for (const line of lines) {
+      this.writeLine(line);
+    }
   }
 
   /**
    * This event fires when the contents of the buffer changes.
    */
-  get contentsChanged (): ILiteEvent<void> {
+  get contentsChanged(): ILiteEvent<void> {
     return this._contentsChanged;
   }
 
   /**
    * Gets the string representation of the buffer
    */
-  getBufferText (): string {
+  getBufferText(): string {
     let result = "";
-    this._buffer.forEach(l => {
-      l.spans.forEach(s => (result += s.text));
+    this._buffer.forEach((l) => {
+      l.spans.forEach((s) => (result += s.text));
       result += "\n";
     });
     return result;
@@ -183,7 +190,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   /**
    * Saves the current style state
    */
-  pushStyle (): void {
+  pushStyle(): void {
     this._styleStack.push({
       color: this._color,
       bgColor: this._bgColor,
@@ -197,7 +204,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   /**
    * Restores the style state
    */
-  popStyle (): void {
+  popStyle(): void {
     if (this._styleStack.length === 0) {
       return;
     }

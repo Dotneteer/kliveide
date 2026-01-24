@@ -1,4 +1,9 @@
-import type { BinarySegment, CompilerOutput, InjectableOutput, KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import type {
+  BinarySegment,
+  CompilerOutput,
+  InjectableOutput,
+  KliveCompilerOutput
+} from "@abstractions/CompilerInfo";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CodeToInject } from "@abstractions/CodeToInject";
@@ -33,6 +38,7 @@ import { outputNavigateAction } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "../utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 
 const EXPORT_FILE_FOLDER = "KliveExports";
 
@@ -180,6 +186,11 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     output: KliveCompilerOutput,
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
+    // --- Check if this is a NEX file export (based on .savenex pragma or explicit format)
+    if ((output as CompilerOutput).nexConfig || args["-f"] === "nex") {
+      return await this.exportNexFile(context, output, args);
+    }
+
     if (args["-f"] == "hex") {
       return await saveIntelHexFile(context, args.filename, output);
     }
@@ -925,6 +936,91 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
     }
   }
+
+  /**
+   * Export code as NEX file for ZX Spectrum Next
+   */
+  async exportNexFile(
+    context: IdeCommandContext,
+    output: KliveCompilerOutput,
+    args: ExportCommandArgs
+  ): Promise<IdeCommandResult> {
+    try {
+      // --- Cast to CompilerOutput since we need to access NEX-specific properties
+      const compiledOutput = output as CompilerOutput;
+
+      // --- Ensure we're targeting Next model
+      if (compiledOutput.modelType !== SpectrumModelType.Next) {
+        return commandError("NEX file export requires .model Next in the source code.");
+      }
+
+      // --- Ensure we have NEX configuration
+      if (!compiledOutput.nexConfig) {
+        return commandError(
+          "NEX file export requires .savenex pragma configuration in the source code."
+        );
+      }
+
+      // --- Determine output filename
+      const filename = args.filename || compiledOutput.nexConfig.filename;
+      if (!filename) {
+        return commandError(
+          "NEX file export requires a filename (use .savenex file or provide filename argument)."
+        );
+      }
+
+      // --- Get the base directory for resolving relative paths
+      const state = context.store.getState();
+      const projectRoot = state.project?.folderPath;
+      if (!projectRoot) {
+        return commandError("No active project found.");
+      }
+
+      // --- Generate NEX file data
+      const nexData = await NexFileWriter.fromAssemblerOutput(compiledOutput as any, projectRoot);
+
+      // --- Save the NEX file
+      const filePath = await context.mainApi.saveBinaryFile(
+        filename,
+        nexData,
+        `home:${EXPORT_FILE_FOLDER}`
+      );
+
+      await context.mainApi.copyToSdCard(filePath, "_klive/" + compiledOutput.nexConfig.filename);
+
+      // --- Build summary message
+      const bankCount = compiledOutput.segments.filter(
+        (s) => s.bank !== undefined && s.bank !== null
+      ).length;
+      const hasScreens =
+        compiledOutput.nexConfig.screens && compiledOutput.nexConfig.screens.length > 0;
+      const hasPalette = compiledOutput.nexConfig.paletteFile !== undefined;
+      const hasCopper = compiledOutput.nexConfig.copperFile !== undefined;
+
+      let summary = `NEX file successfully exported to '${filePath}'`;
+      summary += `\n  Size: ${nexData.length} bytes`;
+      summary += `\n  RAM: ${compiledOutput.nexConfig.ramSize}K`;
+      summary += `\n  Banks: ${bankCount}`;
+      summary += `\n  Entry: 0x${(compiledOutput.nexConfig.entryAddr ?? compiledOutput.entryAddress ?? 0).toString(16).toUpperCase()}`;
+
+      if (hasScreens) {
+        summary += `\n  Loading screen: Yes`;
+      }
+      if (hasPalette) {
+        summary += `\n  Palette: Yes`;
+      }
+      if (hasCopper) {
+        summary += `\n  Copper code: Yes`;
+      }
+      if (compiledOutput.nexConfig.loadingBar.enabled) {
+        summary += `\n  Loading bar: Yes`;
+      }
+
+      return commandSuccessWith(summary);
+    } catch (err) {
+      return commandError(`NEX export failed: ${err.toString()}`);
+    }
+  }
 }
 
 // --- Gets the model code according to machine type
@@ -949,7 +1045,7 @@ async function compileCode(
 ): Promise<{ result?: KliveCompilerOutput; message?: string }> {
   // --- Release the files locked by the debugger
   context.service.projectService.releaseLocks();
-  
+
   // --- Shortcuts
   const out = context.output;
 
@@ -1059,13 +1155,38 @@ async function injectCode(
     return commandError("Compiled code is not injectable.");
   }
 
+  // --- Handle ZX Spectrum Next: export NEX file instead of code injection
+  const compiledOutput = result as CompilerOutput;
+  let additionalInfo: any = null;
+  const isZxNext = compiledOutput.modelType === SpectrumModelType.Next;
+  if (isZxNext && compiledOutput.nexConfig) {
+    // --- Export NEX file for Next model
+    const exportCmd = new ExportCodeCommand();
+    const args: ExportCommandArgs = {
+      filename: compiledOutput.nexConfig.filename || "output.nex"
+    };
+
+    // --- The machine must be stopped to keep the integrity of the SD card
+    const machineState = context.store.getState().emulatorState?.machineState;
+    if (
+      machineState !== MachineControllerState.Stopped &&
+      machineState !== MachineControllerState.None
+    ) {
+      return commandError(
+        "Machine must be in stopped to inject the exported NEX file to its SD card."
+      );
+    }
+    await exportCmd.exportCompiledCode(context, result, args);
+    additionalInfo = "_klive/" + compiledOutput.nexConfig.filename;
+  }
+
   let sumCodeLength = 0;
   result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
   if (sumCodeLength === 0) {
     return commandSuccessWith("Code length is 0, no code injected");
   }
 
-  if (operationType === "inject") {
+  if (isZxNext && operationType === "inject") {
     if (context.store.getState().emulatorState?.machineState !== MachineControllerState.Paused) {
       return commandError("Machine must be in paused state.");
     }
@@ -1107,7 +1228,7 @@ async function injectCode(
       break;
 
     case "run": {
-      await context.emuApi.runCodeCommand(codeToInject, false, false);
+      await context.emuApi.runCodeCommand(codeToInject, additionalInfo, false, false);
       returnMessage = `Code injected and started.`;
       break;
     }
@@ -1119,11 +1240,11 @@ async function injectCode(
         out.color("yellow");
         out.writeLine("No debug information available.");
         out.resetStyle();
-        await context.emuApi.runCodeCommand(codeToInject, false, false);
+        await context.emuApi.runCodeCommand(codeToInject, additionalInfo, false, false);
         returnMessage = `$W:Code injected and started without debugging.`;
         break;
       }
-      await context.emuApi.runCodeCommand(codeToInject, true, true);
+      await context.emuApi.runCodeCommand(codeToInject, additionalInfo, true, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }

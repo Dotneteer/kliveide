@@ -198,6 +198,15 @@ class MainApiImpl {
   }
 
   /**
+   * Copies the specified file to the SD card image.
+   * @param _srcFile
+   * @param _destFile The destination file path on the SD card image.
+   */
+  async copyToSdCard(_srcFile: string, _destFile: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Saves application settings to disk.
    */
   async saveSettings(): Promise<void> {

@@ -178,11 +178,13 @@ class EmuApiImpl {
   /**
    * Runs code in the emulator, optionally in debug mode.
    * @param _codeToInject The code to run.
+   * @package _additionalInfo Additional information for code execution.
    * @param _debug True to run in debug mode.
    * @param _projectDebug True to use project debug mode.
    */
   async runCodeCommand(
     _codeToInject: CodeToInject,
+    _additionalInfo: any,
     _debug: boolean,
     _projectDebug: boolean
   ): Promise<void> {

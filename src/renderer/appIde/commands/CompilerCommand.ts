@@ -257,7 +257,7 @@ async function injectCode(
       break;
 
     case "run": {
-      await context.emuApi.runCodeCommand(codeToInject, false, false);
+      await context.emuApi.runCodeCommand(codeToInject, null, false, false);
       returnMessage = `Code injected and started.`;
       break;
     }
@@ -269,11 +269,11 @@ async function injectCode(
         out.color("yellow");
         out.writeLine("No debug information available.");
         out.resetStyle();
-        await context.emuApi.runCodeCommand(codeToInject, false, false);
+        await context.emuApi.runCodeCommand(codeToInject, null, false, false);
         returnMessage = `$W:Code injected and started without debugging.`;
         break;
       }
-      await context.emuApi.runCodeCommand(codeToInject, true, true);
+      await context.emuApi.runCodeCommand(codeToInject, null, true, true);
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }
