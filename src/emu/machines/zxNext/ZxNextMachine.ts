@@ -4,7 +4,7 @@ import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBe
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
-import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { CodeInjectionFlow, QueueKeyStep } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { MachineModel } from "@common/machines/info-types";
 
@@ -28,7 +28,7 @@ import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
-import { NextKeyboardDevice } from "./NextKeyboardDevice";
+import { convertAsciiStringToNextKeyCodes, NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -43,6 +43,7 @@ import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 
 const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
 const SP_KEY_WAIT = 250;
+const SP_KEY_WAIT_SHORT = 50;
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
@@ -810,8 +811,29 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Gets the main execution point information of the machine
    * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
-    // TODO: Implement this
+  getCodeInjectionFlow(_model: string, additionalInfo: any): CodeInjectionFlow {
+    // --- Create QueueKey steps for the prompt
+    const prompt = `.nexload ${additionalInfo}\n`;
+    const promtKeys = convertAsciiStringToNextKeyCodes(prompt);
+    const promptQueue: QueueKeyStep[] = [];
+    for (const keyCode of promtKeys) {
+      if (keyCode.extMode) {
+        promptQueue.push({
+          type: "QueueKey",
+          primary: SpectrumKeyCode.CShift,
+          secondary: SpectrumKeyCode.CShift,
+          wait: SP_KEY_WAIT_SHORT
+        });
+      }
+      promptQueue.push({
+        type: "QueueKey",
+        primary: keyCode.primaryCode,
+        secondary: keyCode.secondaryCode,
+        wait: SP_KEY_WAIT_SHORT
+      });
+    }
+
+    // --- Create the flow
     return [
       {
         type: "KeepPc"
@@ -836,7 +858,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
       },
       {
-        type: "Start",
+        type: "Start"
       },
       {
         type: "QueueKey",
@@ -851,7 +873,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
       },
       {
-        type: "Start",
+        type: "Start"
       },
       {
         type: "QueueKey",
@@ -865,7 +887,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         primary: SpectrumKeyCode.Enter,
         wait: 0,
         message: "Enter"
-      }
+      },
+      {
+        type: "Wait",
+        duration: 100
+      },
+      ...promptQueue
     ];
   }
 

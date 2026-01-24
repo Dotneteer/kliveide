@@ -113,10 +113,12 @@ export class NextKeyboardDevice extends KeyboardDevice {
   }
 }
 
-export function convertAsciiStringToNextKeyCodes(text: string): {
+type NextKeyCode = {
   primaryCode: number;
   secondaryCode?: number;
-}[] {
+  extMode?: boolean;
+};
+export function convertAsciiStringToNextKeyCodes(text: string): NextKeyCode[] {
   const result: { primaryCode: number; secondaryCode?: number; extMode?: boolean }[] = [];
   for (let i = 0; i < text.length; i++) {
     const keyCode = asciiToNextKeyCodeMap[text.charAt(i)];
@@ -127,9 +129,7 @@ export function convertAsciiStringToNextKeyCodes(text: string): {
   return result;
 }
 
-const asciiToNextKeyCodeMap: {
-  [key: string]: { primaryCode: number; secondaryCode?: number; extMode?: boolean };
-} = {
+const asciiToNextKeyCodeMap: Record<string, NextKeyCode> = {
   "0": { primaryCode: SpectrumKeyCode.N0 },
   "1": { primaryCode: SpectrumKeyCode.N1 },
   "2": { primaryCode: SpectrumKeyCode.N2 },
