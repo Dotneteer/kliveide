@@ -1,3 +1,189 @@
+# ZX Spectrum Next Development
+
+The ZX Spectrum Next assembler in Klive IDE provides a comprehensive development environment for the ZX Spectrum Next platform. This page covers all Next-specific features, including automatic conveniences, the `.savenex` pragma, and NEX file generation.
+
+## Quick Start
+
+The simplest ZX Spectrum Next program in Klive IDE looks like this:
+
+```z80klive
+.model next
+
+.savenex file "myapp.nex"
+
+; Your code starts at $8000 automatically
+main:
+    ld a, 4
+    out (0xFE), a    ; Set border color to green
+trap: 
+    jr $
+```
+
+When you use `.model next`, Klive automatically:
+- Sets `.savenex ram 768` (768K RAM)
+- Sets `.savenex border 7` (white border)
+- Sets `.savenex entryaddr $8000` (entry at $8000)
+- Maps unbanked code to bank 2 at address $8000
+
+## Automatic Conveniences for `.model next`
+
+### Default `.savenex` Values
+
+When `.model next` is specified, these defaults are automatically applied:
+
+| Parameter | Default Value | Description |
+|-----------|--------------|-------------|
+| `ram` | 768 | 768K RAM configuration |
+| `border` | 7 | White border color |
+| `entryaddr` | $8000 | Entry point at $8000 |
+
+You can override any default by explicitly specifying the `.savenex` pragma:
+
+```z80klive
+.model next
+
+.savenex file "myapp.nex"
+.savenex border 5        ; Override default (use cyan instead of white)
+.savenex ram 1792        ; Override default (use 1792K instead of 768K)
+
+; Code...
+```
+
+### Unbanked Code (Automatic Bank 2 Mapping)
+
+When you write code without an explicit `.bank` pragma, it's considered "unbanked" code and automatically:
+
+1. **Starts at $8000** - The default assembly address is $8000
+2. **Maps to Bank 2** - During NEX export, unbanked code is written to bank 2
+3. **Uses the range $8000-$bfff** - The standard 16KB bank 2 address range
+
+**Example - Simple unbanked program:**
+
+```z80klive
+.model next
+
+.savenex file "simple.nex"
+
+; This code is unbanked - automatically starts at $8000 and maps to bank 2
+main:
+    ld a, 3
+    call setborder
+trap:
+    jr $
+
+setborder:
+    out (0xFE), a
+    ret
+```
+
+### Address Range Warning (Z0904)
+
+The assembler warns you if unbanked code exceeds the typical bank 2 range ($bfff):
+
+```z80klive
+.model next
+
+.savenex file "test.nex"
+
+.org $c000              ; ⚠️ Warning Z0904: Address $c000 exceeds $bfff
+    ld a, 7
+trap:
+    jr $
+```
+
+The warning message is:
+
+```
+Warning Z0904: Unbanked code address $c000 exceeds typical bank 2 range ($8000-$bfff). 
+Consider using .bank pragma for explicit memory layout.
+```
+
+**Note:** This is a warning, not an error. Your code will still compile and the NEX file will be generated, but you should review whether you intended to extend beyond the standard bank 2 range.
+
+### Multiple Unbanked Sections
+
+You can have multiple unbanked code sections at different addresses using `.org`:
+
+```z80klive
+.model next
+
+.savenex file "multi.nex"
+
+; First section at $8000
+    ld a, 1
+    call routine1
+
+; Second section at $9000
+.org $9000
+routine1:
+    out (0xFE), a
+    ret
+
+; Third section at $a000
+.org $a000
+routine2:
+    ld a, 2
+    ret
+```
+
+All unbanked sections are collected and written to bank 2 in the NEX file at their respective addresses.
+
+## Multi-Bank Applications
+
+For complex applications requiring multiple memory banks, use explicit `.bank` pragmas alongside unbanked code:
+
+```z80klive
+.model next
+
+.savenex file "screen-tests.nex"
+.savenex core "3.1.0"
+
+; Unbanked code in bank 2 at $8000
+main:
+    ; 
+    ; Save the current MMU 5 value ($A000-$BFFF)
+    ld a,$55
+    ld bc,$243b
+    out (c),a
+    inc b
+    in a,(c)
+    push af
+    ;
+    ; Page in the first 8K of 16K Bank $20 to $A000-$BFFF
+    di
+    nextreg $55,$40
+    ;
+    ; Invoke the subrouting in Bank $20
+    call SetBorder
+    ;
+    ; Restore the old MMU 5 value
+    pop af
+    nextreg $55,a
+    ei
+trap 
+    jr $
+
+
+; Explicit bank $20 code
+.bank $20
+.org $0000
+.disp $a000
+
+SetBorder
+    ld a,3
+    out ($fe),a
+    ret
+```
+
+### How Multi-Bank Code Works
+
+- **Unbanked code** exports to **bank 2** at the addresses where it's assembled ($8000-$bfff typically)
+- **`.bank` sections** export to **their specified bank** (e.g., bank 5) at the addresses defined by `.org` and `.disp`
+- Both can coexist in the same source file
+- Each bank section is independent
+
+---
+
 # SAVENEX Pragma Reference
 
 The `.savenex` pragma provides a declarative way to configure ZX Spectrum Next NEX file generation parameters directly in your assembly source code. This pragma is only available when targeting the ZX Spectrum Next (Model 4).
@@ -45,11 +231,12 @@ Specifies the amount of RAM required by the program.
 ```
 
 - **size**: Must be either 768 (for 768K RAM) or 1792 (for 1792K RAM)
+- **Default when `.model next` is used**: 768
 
 **Examples:**
 
 ```z80klive
-.savenex ram 768    ; 768K RAM
+.savenex ram 768    ; 768K RAM (default for .model next)
 .savenex ram 1792   ; 1792K RAM
 ```
 
@@ -64,12 +251,26 @@ Specifies the border color to be set when the program loads.
 ```
 
 - **color**: Integer value from 0 to 7
+- **Default when `.model next` is used**: 7 (white)
 
 **Example:**
 
 ```z80klive
 .savenex border 5   ; Cyan border
 ```
+
+**Border Colors:**
+
+| Value | Color |
+|-------|-------|
+| 0 | Black |
+| 1 | Blue |
+| 2 | Red |
+| 3 | Magenta |
+| 4 | Green |
+| 5 | Cyan |
+| 6 | Yellow |
+| 7 | White |
 
 ### CORE - Specify Required Core Version
 
@@ -126,11 +327,12 @@ Specifies the program's entry point address.
 ```
 
 - **address**: Integer value from 0 to 0xFFFF
+- **Default when `.model next` is used**: $8000
 
 **Example:**
 
 ```z80klive
-.savenex entryaddr 0x8000
+.savenex entryaddr 0x8000    ; Entry at $8000 (default for .model next)
 ```
 
 ### ENTRYBANK - Set Entry Bank
@@ -273,47 +475,10 @@ Configures the loading bar display.
 .savenex bar "on", 2, 50, 100
 ```
 
-## Complete Example
-
-Here's a complete example showing various `.savenex` configurations:
-
-```z80klive
-    ; Basic NEX file configuration
-    .savenex file "demo.nex"
-    .savenex ram 768
-    .savenex border 5
-    
-    ; Core requirements (both formats shown for illustration)
-    .savenex core 3, 1, 10      ; Comma-separated format
-    ; .savenex core "3.1.10"    ; Alternative string format
-    
-    ; Entry point configuration
-    .savenex stackaddr 0xFF00
-    .savenex entryaddr Start
-    .savenex entrybank 5
-    
-    ; File handling
-    .savenex filehandle "close"
-    .savenex preserve "on"
-    
-    ; Loading screen
-    .savenex screen "layer2", "loader.scr"
-    .savenex palette "colors.nxp"
-    
-    ; Loading bar
-    .savenex bar "on", 2, 50, 100
-    
-    ; Your program code
-    .org 0x8000
-Start:
-    ld a, 7
-    out (0xFE), a
-    ret
-```
 
 ## NEX File Format
 
-The NEX file format is the native executable format for the ZX Spectrum Next. It's a container format that includes:
+The NEX file format [(see details here)](https://wiki.specnext.dev/NEX_file_format) is the native executable format for the ZX Spectrum Next. It's a container format that includes:
 
 - **Header Information**: File version, RAM requirements, entry points, etc.
 - **Screen Data**: Optional loading screen in various formats
@@ -328,7 +493,39 @@ The `.savenex` pragma targets NEX file format version 1.2, which is the current 
 
 ### Bank Organization
 
-The NEX file organizes code and data into 16K banks that correspond to the Next's memory management system. Banks 5-111 are available for user programs, with bank 5 typically used for the initial code.
+The NEX file organizes code and data into 16K banks that correspond to the Next's memory management system:
+
+- **Banks 0-1**: ROM (read-only, system)
+- **Bank 2**: Default user code bank (unbanked code maps here automatically)
+- **Banks 3-4**: Standard RAM banks
+- **Banks 5-111**: Extended RAM banks available for paging
+
+### How Unbanked Code Maps to Bank 2
+
+When you use `.model next` and write code without explicit `.bank` pragmas:
+
+1. Your code is assembled at addresses starting from $8000
+2. During NEX export, this "unbanked" code is written to bank 2
+3. The offset calculation is: `bank2_offset = address - $8000`
+4. Code at $8000 goes to offset 0 in bank 2
+5. Code at $9000 goes to offset $1000 in bank 2
+6. And so on...
+
+**Example:**
+
+```z80klive
+.model next
+.savenex file "test.nex"
+
+; Code at $8000 → bank 2, offset $0000
+main:
+    ld a, 1
+
+; Code at $9000 → bank 2, offset $1000
+.org $9000
+routine:
+    ld a, 2
+```
 
 ### Loading Process
 
@@ -343,13 +540,29 @@ When a NEX file loads on the ZX Spectrum Next:
 
 ## Default Values
 
-If you don't specify certain `.savenex` parameters, these defaults are used:
+Default values for `.savenex` parameters depend on whether you're using `.model next`:
 
-- **ramSize**: 768 (768K RAM)
-- **borderColor**: 0 (Black)
-- **entryBank**: 0 (Bank 0)
-- **fileHandle**: "close"
-- **preserveRegs**: false (off)
+### With `.model next` (Automatic Conveniences)
+
+| Parameter | Default Value | Description |
+|-----------|--------------|-------------|
+| `ram` | 768 | 768K RAM |
+| `border` | 7 | White border |
+| `entryaddr` | $8000 | Entry point at $8000 |
+| `entryBank` | 0 | Bank 0 |
+| `fileHandle` | "close" | Close file after loading |
+| `preserveRegs` | false | Don't preserve registers |
+
+### Without `.model next` (Traditional Mode)
+
+| Parameter | Default Value | Description |
+|-----------|--------------|-------------|
+| `ram` | (none) | Must be specified |
+| `border` | 0 | Black border |
+| `entryaddr` | (none) | Must be specified |
+| `entryBank` | 0 | Bank 0 |
+| `fileHandle` | "close" | Close file after loading |
+| `preserveRegs` | false | Don't preserve registers |
 
 ## Error Handling
 
@@ -361,14 +574,21 @@ The assembler will generate errors if:
 - Invalid screen types or modes are specified
 - Version numbers exceed 255
 
+The assembler will generate warnings if:
+
+- **Z0904**: Unbanked code address exceeds $bfff (typical bank 2 range)
+
 ## Notes
 
 - The `.savenex` pragma only configures the NEX file parameters; it doesn't generate the actual NEX file. The file generation happens during the export process.
 - Multiple `.savenex` pragmas with the same subcommand will use the last value specified.
 - Expression support allows you to use symbols, calculations, and other expressions for numeric parameters.
 - String parameters can be string literals or expressions that evaluate to strings.
+- Unbanked code is automatically tracked and exported to bank 2 during NEX file generation.
+- You can mix unbanked code and explicit `.bank` sections in the same source file.
 
 ## See Also
 
 - [Pragmas](./pragmas) - Complete pragma reference
+- [Klive Z80 Assembler Overview](./z80-assembler) - General assembler documentation
 - [ZX Spectrum Next Documentation](https://www.specnext.com/) - Official Next documentation

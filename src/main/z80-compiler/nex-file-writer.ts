@@ -411,6 +411,48 @@ export class NexFileWriter {
     // Add banks from segments
     const bankData = new Map<number, Uint8Array>();
     
+    // Process unbanked segments into bank 2 (for Next auto-defaults)
+    if (output.unbankedSegments && output.unbankedSegments.length > 0) {
+      if (!bankData.has(2)) {
+        bankData.set(2, new Uint8Array(16384));
+      }
+      
+      const bank2 = bankData.get(2)!;
+      
+      // Map each unbanked segment to bank 2
+      for (const segment of output.unbankedSegments) {
+        // Calculate bank 2 offset from absolute address
+        // Bank 2 address range is $8000-$bfff, offset 0 corresponds to $8000
+        const bank2Offset = segment.startAddress - 0x8000;
+        
+        if (bank2Offset < 0) {
+          // Address below bank 2 range
+          console.warn(
+            `Warning: Unbanked code at $${segment.startAddress.toString(16).toUpperCase()} ` +
+            `is below bank 2 range ($8000). Code will be ignored.`
+          );
+          continue;
+        }
+        
+        if (bank2Offset >= 16384) {
+          // Address above bank 2 range
+          console.warn(
+            `Warning: Unbanked code at $${segment.startAddress.toString(16).toUpperCase()} ` +
+            `is above bank 2 range ($bfff). Code may be truncated.`
+          );
+        }
+        
+        // Copy segment data to bank 2 at correct offset
+        const segmentData = new Uint8Array(segment.emittedCode);
+        for (let i = 0; i < segmentData.length; i++) {
+          const targetOffset = bank2Offset + i;
+          if (targetOffset < 16384) {
+            bank2[targetOffset] = segmentData[i];
+          }
+        }
+      }
+    }
+    
     for (const segment of output.segments) {
       if (segment.bank !== undefined && segment.bank !== null) {
         // Get or create bank data

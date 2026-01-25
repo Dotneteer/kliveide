@@ -331,6 +331,12 @@ export abstract class CommonAssembler<
     let emitSuccess = false;
     const parseResult = await this.executeParse(0, sourceItem, sourceText);
     this.preprocessedLines = parseResult.parsedLines;
+    
+    // --- Set up unbanked code defaults if using Next auto mode
+    if (this._output.isNextAutoMode) {
+      this.setupNextUnbankedCodeDefaults();
+    }
+    
     emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
       emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
@@ -807,6 +813,82 @@ export abstract class CommonAssembler<
       return;
     }
     this._output.modelType = modelType;
+    
+    // Apply Next-specific defaults if using .model next
+    if (modelType === 4) { // SpectrumModelType.Next
+      this.applyNextDefaults();
+    }
+  }
+
+  /**
+   * Applies automatic defaults for ZX Spectrum Next model
+   */
+  private applyNextDefaults(): void {
+    // Set default .savenex ram if not explicitly set
+    if (this._output.nexConfig.ramSize === 768) {
+      // 768 is the default in NexConfiguration, but we'll keep it
+      // Only override if it's still the default
+    }
+    
+    // Set default .savenex border if not explicitly set
+    if (this._output.nexConfig.borderColor === 0) {
+      // Only override if it's still the default (0)
+      this._output.nexConfig.borderColor = 7;
+    }
+    
+    // Set default .savenex entryaddr if not explicitly set
+    if (this._output.nexConfig.entryAddr === undefined) {
+      this._output.nexConfig.entryAddr = 0x8000;
+    }
+    
+    // Mark that we're in automatic Next mode (for unbanked code handling)
+    this._output.isNextAutoMode = true;
+  }
+
+  /**
+   * Sets up automatic .org $8000 for unbanked Next code
+   * Called during initial assembly setup if conditions are met
+   */
+  protected setupNextUnbankedCodeDefaults(): void {
+    if (!this._output.isNextAutoMode) {
+      return; // Not in auto mode
+    }
+    
+    // Create initial segment for unbanked code
+    // It starts at $8000 by default, but can be overridden with .org
+    this.ensureCodeSegment(0x8000);
+    
+    // Mark this initial segment as unbanked and track it
+    if (!this._output.unbankedSegments) {
+      this._output.unbankedSegments = [];
+    }
+    this._output.unbankedSegments.push(this._currentSegment);
+  }
+
+  /**
+   * Checks if current unbanked code exceeds typical bank 2 range
+   * Emits a warning if address exceeds $bfff
+   */
+  protected checkUnbankedCodeRange(): void {
+    // Only check if in Next auto mode and current segment is unbanked
+    if (!this._output.isNextAutoMode || !this._currentSegment || this._currentSegment.bank !== undefined) {
+      return; // Not in auto mode, or segment is explicitly banked
+    }
+    
+    const currentAddress = this.getCurrentAssemblyAddress();
+    if (currentAddress > 0xbfff) {
+      // Mark segment as warned so we don't repeat the warning
+      if (!(this._currentSegment as any).rangeWarned) {
+        // Report as warning, not error - code can exceed $bfff
+        this.reportAssemblyWarning(
+          "Z0904",
+          this._currentSourceLine,
+          null,
+          currentAddress.toString(16).toUpperCase()
+        );
+        (this._currentSegment as any).rangeWarned = true;
+      }
+    }
   }
 
   // ==========================================================================
@@ -962,6 +1044,14 @@ export abstract class CommonAssembler<
     segment.maxCodeLength = maxLength & 0xffff;
     this._output.segments.push(segment);
     this._currentSegment = segment;
+    
+    // --- Track as unbanked segment if we're in Next auto mode and segment has no bank
+    if (this._output.isNextAutoMode && segment.bank === undefined) {
+      if (!this._output.unbankedSegments) {
+        this._output.unbankedSegments = [];
+      }
+      this._output.unbankedSegments.push(segment);
+    }
   }
 
   /**
@@ -1595,8 +1685,27 @@ export abstract class CommonAssembler<
       segment.maxCodeLength = 0x10000 - value.value;
       this._output.segments.push(segment);
       this._currentSegment = segment;
+      
+      // --- Track as unbanked segment if we're in Next auto mode
+      if (this._output.isNextAutoMode && segment.bank === undefined) {
+        if (!this._output.unbankedSegments) {
+          this._output.unbankedSegments = [];
+        }
+        this._output.unbankedSegments.push(segment);
+      }
     } else {
       this._currentSegment.startAddress = value.value;
+      
+      // --- If current segment is unbanked and we're in Next auto mode,
+      // --- make sure it's tracked
+      if (this._output.isNextAutoMode && this._currentSegment.bank === undefined) {
+        if (!this._output.unbankedSegments) {
+          this._output.unbankedSegments = [];
+        }
+        if (!this._output.unbankedSegments.includes(this._currentSegment)) {
+          this._output.unbankedSegments.push(this._currentSegment);
+        }
+      }
     }
 
     if (!label) {
@@ -4522,6 +4631,7 @@ export abstract class CommonAssembler<
    */
   protected emitByte(data: number): void {
     this.ensureCodeSegment();
+    this.checkUnbankedCodeRange();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);
@@ -4954,6 +5064,67 @@ export abstract class CommonAssembler<
     );
     this._output.errors.push(errorInfo);
     this.reportScopeError(code);
+
+    function replace(input: string, placeholder: string, replacement: string): string {
+      do {
+        input = input.replace(placeholder, replacement);
+      } while (input.includes(placeholder));
+      return input;
+    }
+  }
+
+  /**
+   * Reports an assembly warning
+   * @param code Warning code
+   * @param sourceLine Assembly line of the warning
+   * @param parameters Optional parameters to report
+   */
+  protected reportAssemblyWarning(
+    code: ErrorCodes,
+    sourceLine: PartialAssemblyLine<TInstruction>,
+    nodePosition?: NodePosition | null,
+    ...parameters: any[]
+  ): void {
+    if ((sourceLine as any).fileIndex === undefined) {
+      return;
+    }
+
+    this.reportMacroInvocationErrors();
+
+    const line = { ...(sourceLine as AssemblyLine<TInstruction>) };
+
+    // --- Cut closing comment, if there is any
+    if (line.sourceText) {
+      const segments = line.sourceText.split(";");
+      line.endColumn = line.startColumn + segments[0].trim().length - 1;
+    }
+    const sourceItem = this._output.sourceFileList[line.fileIndex];
+    let errorText: string = errorMessages[code] ?? "Unknown warning";
+    if (parameters) {
+      parameters.forEach(
+        (_, idx) => (errorText = replace(errorText, `{${idx}}`, parameters[idx].toString()))
+      );
+    }
+
+    if (this._macroInvocations.length > 0) {
+      const lines = this._macroInvocations
+        .map((mi) => (mi as unknown as AssemblyLine<TInstruction>).line)
+        .join(", ");
+      errorText = `(from macro invocation through ${lines}) ` + errorText;
+    }
+
+    const errorInfo = new AssemblerErrorInfo(
+      code,
+      sourceItem.filename,
+      line.line,
+      nodePosition ? nodePosition.startPosition : line.startPosition,
+      nodePosition ? nodePosition.endPosition : line.endPosition + 1,
+      nodePosition ? nodePosition.startColumn : line.startColumn,
+      nodePosition ? nodePosition.endColumn : line.endColumn + 1,
+      errorText,
+      true  // Mark as warning
+    );
+    this._output.errors.push(errorInfo);
 
     function replace(input: string, placeholder: string, replacement: string): string {
       do {

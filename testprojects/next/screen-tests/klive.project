@@ -1,0 +1,79 @@
+{
+  "kliveVersion": "0.52.0",
+  "machineType": "zxnext",
+  "clockMultiplier": 1,
+  "soundLevel": 0.8,
+  "soundMuted": false,
+  "savedSoundLevel": 0.8,
+  "media": {
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
+  },
+  "machineSpecific": {},
+  "ide": {
+    "excludedProjectItems": []
+  },
+  "viewOptions": {
+    "theme": "dark"
+  },
+  "debugger": {
+    "breakpoints": [
+      {
+        "resource": "code/display.kz80.asm",
+        "line": 6,
+        "exec": true,
+        "ioMask": 65535
+      }
+    ]
+  },
+  "builder": {
+    "roots": [
+      "code/code.kz80.asm"
+    ]
+  },
+  "exportDialog": {
+    "formatId": "tzx",
+    "exportName": "",
+    "exportFolder": "",
+    "programName": "",
+    "screenFilename": "",
+    "startBlock": true,
+    "addClear": true,
+    "addPause": false,
+    "singleBlock": false,
+    "startAddress": ""
+  },
+  "workspaceSettings": {
+    "docsWorkspace": {
+      "documents": [
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/code.kz80.asm",
+          "position": {
+            "line": 17,
+            "column": 18
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/display.kz80.asm",
+          "position": {
+            "line": 6,
+            "column": 5
+          }
+        }
+      ],
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/code.kz80.asm"
+    },
+    "Disassembly": {
+      "topAddress": 5,
+      "isFullView": true,
+      "currentSegment": 0,
+      "decimalView": false,
+      "bankLabel": true,
+      "autoRefresh": true,
+      "ram": true,
+      "screen": false,
+      "disassOffset": 0
+    }
+  }
+}

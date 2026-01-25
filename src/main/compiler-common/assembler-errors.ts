@@ -84,6 +84,10 @@ export type ErrorCodes =
   | "Z0351"
   | "Z0352"
 
+  // --- Next model warnings
+  | "Z0902"
+  | "Z0904"
+
   // --- Instructions
   | "Z0401"
   | "Z0402"
@@ -259,6 +263,7 @@ export const errorMessages: Record<string, string> = {
   Z0350: "The .savenex preserve pragma requires 'on' or 'off'.",
   Z0351: "Invalid color value {0} for loading bar (must be 0-255).",
   Z0352: "Invalid delay value {0} (must be 0-255).",
+  Z0902: "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",
 
   // --- Instructions
   Z0401: "Unexpected error when emitting code for mnemonic '{0}'.",
@@ -318,7 +323,7 @@ export const errorMessages: Record<string, string> = {
 
   // --- Modules
   Z0901: "You cannot define a module without a name.",
-  Z0902: "You cannot define a module with a temporary name ({0}).",
+  Z0904: "You cannot define a module with a temporary name ({0}).",
   Z0903: "Module with name '{0}' already exists.",
 
   // --- Macros

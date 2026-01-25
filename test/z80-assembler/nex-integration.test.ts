@@ -135,12 +135,12 @@ describe("NEX Integration Tests", () => {
     
     expect(output.errors.length).toBe(0);
     expect(output.nexConfig.ramSize).toBe(768); // Default
-    expect(output.nexConfig.borderColor).toBe(0); // Default
+    expect(output.nexConfig.borderColor).toBe(7); // Auto-default for Next model
     expect(output.nexConfig.entryBank).toBe(0); // Default
     
     const nexData = await NexFileWriter.fromAssemblerOutput(output, process.cwd());
     expect(nexData[8]).toBe(0); // 768K RAM
-    expect(nexData[11]).toBe(0); // Black border
+    expect(nexData[11]).toBe(7); // White border (auto-default for Next)
   });
 
   it("validates model type requirement", async () => {

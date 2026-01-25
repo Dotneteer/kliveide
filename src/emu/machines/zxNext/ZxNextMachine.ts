@@ -4,7 +4,7 @@ import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBe
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
-import type { CodeInjectionFlow, QueueKeyStep } from "@emu/abstractions/CodeInjectionFlow";
+import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { MachineModel } from "@common/machines/info-types";
 
@@ -815,7 +815,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Create QueueKey steps for the prompt
     const prompt = `.nexload ${additionalInfo}\n`;
     const promtKeys = convertAsciiStringToNextKeyCodes(prompt);
-    const promptQueue: QueueKeyStep[] = [];
+    const promptQueue: CodeInjectionStep[] = [];
     for (const keyCode of promtKeys) {
       if (keyCode.extMode) {
         promptQueue.push({
@@ -830,6 +830,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         primary: keyCode.primaryCode,
         secondary: keyCode.secondaryCode,
         wait: SP_KEY_WAIT_SHORT
+      });
+      promptQueue.push({
+        type: "Wait",
+        duration: SP_KEY_WAIT_SHORT
       });
     }
 

@@ -101,6 +101,17 @@ export class AssemblerOutput<
   nexConfig: NexConfiguration = new NexConfiguration();
 
   /**
+   * Indicates if automatic Next defaults are active (set when .model next is used)
+   */
+  isNextAutoMode?: boolean;
+
+  /**
+   * Segments created without explicit .bank pragma (unbanked segments).
+   * Used for mapping to bank 2 during NEX file export.
+   */
+  unbankedSegments?: IBinarySegment[];
+
+  /**
    * Adds the specified information to the address map
    * @param fileIndex File index
    * @param line Source line number
