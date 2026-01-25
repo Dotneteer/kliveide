@@ -106,6 +106,12 @@ export class AssemblerOutput<
   isNextAutoMode?: boolean;
 
   /**
+   * Segments created without explicit .bank pragma (unbanked segments).
+   * Used for mapping to bank 2 during NEX file export.
+   */
+  unbankedSegments?: IBinarySegment[];
+
+  /**
    * Adds the specified information to the address map
    * @param fileIndex File index
    * @param line Source line number

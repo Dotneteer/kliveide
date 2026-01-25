@@ -229,4 +229,113 @@ describe("Next Auto Defaults (Step 1)", () => {
       expect(output.nexConfig.entryAddr).toBe(0x8000);
     });
   });
+
+  describe("T2: Unbanked Code Mode Activation", () => {
+    it("✅ Next model without .bank creates unbanked segment at $8000", async () => {
+      const source = `
+        .model next
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      expect(output.segments.length).toBeGreaterThan(0);
+      expect(output.segments[0].bank).toBeUndefined(); // Unbanked
+      expect(output.segments[0].startAddress).toBe(0x8000);
+      expect(output.unbankedSegments).toBeDefined();
+      expect(output.unbankedSegments!.length).toBeGreaterThan(0);
+    });
+
+    it("❌ Unbanked and banked code can coexist", async () => {
+      const source = `
+        .model next
+        ld a,1        ; Unbanked - goes to bank 2 at $8000
+        
+        .bank 5
+        .org 0xC000
+        ld b,2        ; Banked - goes to bank 5
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // Multiple segments created due to .bank pragma
+      expect(output.segments.length).toBeGreaterThanOrEqual(2);
+      // Banked segment should be present
+      expect(output.segments.some(s => s.bank === 5)).toBe(true);
+      // Unbanked segments should be tracked
+      expect(output.unbankedSegments).toBeDefined();
+      expect(output.unbankedSegments!.length).toBeGreaterThan(0);
+      // Should have both unbanked and banked segments
+      expect(output.segments.some(s => s.bank === undefined)).toBe(true);
+    });
+
+    it("✅ .org overrides default $8000 for unbanked code", async () => {
+      const source = `
+        .model next
+        .org $8200
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      expect(output.segments[0].bank).toBeUndefined(); // Unbanked
+      expect(output.segments[0].startAddress).toBe(0x8200);
+      expect(output.unbankedSegments).toBeDefined();
+      expect(output.unbankedSegments!.some(s => s.startAddress === 0x8200)).toBe(true);
+    });
+
+    it("✅ Multiple unbanked .org sections create multiple unbanked segments", async () => {
+      const source = `
+        .model next
+        .org $8000
+        ld a,1
+        
+        .org $8500
+        ld b,2
+        
+        .org $9000
+        ld c,3
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // Each .org creates a new segment
+      expect(output.segments.length).toBeGreaterThanOrEqual(3);
+      // All should be unbanked
+      expect(output.segments.every(s => s.bank === undefined)).toBe(true);
+      // All segments should be tracked in unbankedSegments
+      expect(output.unbankedSegments).toBeDefined();
+      expect(output.unbankedSegments!.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("✅ .bank pragma creates banked segment, not in unbankedSegments", async () => {
+      const source = `
+        .model next
+        ld a,1        ; Unbanked
+        
+        .bank 3
+        .org 0xC000
+        ld b,2        ; Banked - not in unbanked array
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      expect(output.segments.length).toBeGreaterThanOrEqual(2);
+      // Should have both banked and unbanked segments
+      expect(output.segments.some(s => s.bank === undefined)).toBe(true);
+      expect(output.segments.some(s => s.bank === 3)).toBe(true);
+      // Unbanked segments should be tracked
+      expect(output.unbankedSegments).toBeDefined();
+      expect(output.unbankedSegments!.length).toBeGreaterThan(0);
+      // Verify that only unbanked segments are in the array
+      expect(output.unbankedSegments!.every(s => s.bank === undefined)).toBe(true);
+    });
+
+    it("❌ Non-Next models don't track unbanked segments", async () => {
+      const source = `
+        .model Spectrum48
+        .org $8000
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // unbankedSegments should not be populated for non-Next models
+      expect(output.unbankedSegments).toBeUndefined();
+    });
+  });
 });

@@ -331,6 +331,12 @@ export abstract class CommonAssembler<
     let emitSuccess = false;
     const parseResult = await this.executeParse(0, sourceItem, sourceText);
     this.preprocessedLines = parseResult.parsedLines;
+    
+    // --- Set up unbanked code defaults if using Next auto mode
+    if (this._output.isNextAutoMode) {
+      this.setupNextUnbankedCodeDefaults();
+    }
+    
     emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
       emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
@@ -839,6 +845,26 @@ export abstract class CommonAssembler<
     this._output.isNextAutoMode = true;
   }
 
+  /**
+   * Sets up automatic .org $8000 for unbanked Next code
+   * Called during initial assembly setup if conditions are met
+   */
+  protected setupNextUnbankedCodeDefaults(): void {
+    if (!this._output.isNextAutoMode) {
+      return; // Not in auto mode
+    }
+    
+    // Create initial segment for unbanked code
+    // It starts at $8000 by default, but can be overridden with .org
+    this.ensureCodeSegment(0x8000);
+    
+    // Mark this initial segment as unbanked and track it
+    if (!this._output.unbankedSegments) {
+      this._output.unbankedSegments = [];
+    }
+    this._output.unbankedSegments.push(this._currentSegment);
+  }
+
   // ==========================================================================
   // Process Expressions
 
@@ -992,6 +1018,14 @@ export abstract class CommonAssembler<
     segment.maxCodeLength = maxLength & 0xffff;
     this._output.segments.push(segment);
     this._currentSegment = segment;
+    
+    // --- Track as unbanked segment if we're in Next auto mode and segment has no bank
+    if (this._output.isNextAutoMode && segment.bank === undefined) {
+      if (!this._output.unbankedSegments) {
+        this._output.unbankedSegments = [];
+      }
+      this._output.unbankedSegments.push(segment);
+    }
   }
 
   /**
@@ -1625,8 +1659,27 @@ export abstract class CommonAssembler<
       segment.maxCodeLength = 0x10000 - value.value;
       this._output.segments.push(segment);
       this._currentSegment = segment;
+      
+      // --- Track as unbanked segment if we're in Next auto mode
+      if (this._output.isNextAutoMode && segment.bank === undefined) {
+        if (!this._output.unbankedSegments) {
+          this._output.unbankedSegments = [];
+        }
+        this._output.unbankedSegments.push(segment);
+      }
     } else {
       this._currentSegment.startAddress = value.value;
+      
+      // --- If current segment is unbanked and we're in Next auto mode,
+      // --- make sure it's tracked
+      if (this._output.isNextAutoMode && this._currentSegment.bank === undefined) {
+        if (!this._output.unbankedSegments) {
+          this._output.unbankedSegments = [];
+        }
+        if (!this._output.unbankedSegments.includes(this._currentSegment)) {
+          this._output.unbankedSegments.push(this._currentSegment);
+        }
+      }
     }
 
     if (!label) {
