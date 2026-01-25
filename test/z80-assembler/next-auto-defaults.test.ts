@@ -400,7 +400,7 @@ describe("Next Auto Defaults (Step 1)", () => {
       const startSymbol = output.symbols["start"];
       expect(startSymbol).toBeDefined();
       // Symbol value is an ExpressionValue, extract the numeric value
-      const symbolValue = typeof startSymbol.value === 'object' ? startSymbol.value._value : startSymbol.value;
+      const symbolValue = typeof startSymbol.value === 'object' ? startSymbol.value.value : startSymbol.value;
       expect(symbolValue).toBe(0x8000);
     });
 

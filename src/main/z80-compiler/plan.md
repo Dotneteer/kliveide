@@ -1323,6 +1323,6 @@ If a step fails:
 - [x] Step 3: Initialize unbanked segment (4 tests) ✅ COMPLETE - 32 tests passing (7 new)
 - [x] Step 4: Range warning (5 tests) ✅ COMPLETE - 37 tests passing (5 new)
 - [x] Step 5: NEX export mapping (10 tests) ✅ COMPLETE - 47 tests passing (10 new)
-- [ ] Step 6: Integration tests (5 tests)
-- [ ] Step 7: Documentation
+- [x] Step 6: Integration tests (13 tests) ✅ COMPLETE - 60 tests passing (13 new)
+- [x] Step 7: Documentation ✅ COMPLETE - Created zx-next.mdx with comprehensive documentation
 - [ ] Step 8: Final verification

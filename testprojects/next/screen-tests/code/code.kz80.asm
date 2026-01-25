@@ -10,7 +10,8 @@ main:
     ; Entry point code
     ld a,3
     out ($fe),a
-trap jr trap
+trap 
+    jr $
 
 TX_Hello
     .defm "Hello"
