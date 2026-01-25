@@ -301,12 +301,6 @@ export const pageMap = [{
       "sidebarTitle": "Pragmas"
     }
   }, {
-    name: "savenex-reference",
-    route: "/z80-assembly/savenex-reference",
-    frontMatter: {
-      "sidebarTitle": "Savenex Reference"
-    }
-  }, {
     name: "statements",
     route: "/z80-assembly/statements",
     frontMatter: {
@@ -329,6 +323,12 @@ export const pageMap = [{
     route: "/z80-assembly/z80-instructions",
     frontMatter: {
       "sidebarTitle": "Z80 Instructions"
+    }
+  }, {
+    name: "zx-next",
+    route: "/z80-assembly/zx-next",
+    frontMatter: {
+      "sidebarTitle": "Zx Next"
     }
   }]
 }];
