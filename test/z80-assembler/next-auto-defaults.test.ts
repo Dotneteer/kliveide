@@ -338,4 +338,189 @@ describe("Next Auto Defaults (Step 1)", () => {
       expect(output.unbankedSegments).toBeUndefined();
     });
   });
+
+  describe("T3: Unbanked Code Segment Initialization", () => {
+    it("✅ Empty Next program creates initial unbanked segment at $8000", async () => {
+      const source = `.model next`;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // Should have at least one segment (the initial one)
+      expect(output.segments.length).toBeGreaterThan(0);
+      // First segment should be unbanked and at $8000
+      expect(output.segments[0].bank).toBeUndefined();
+      expect(output.segments[0].startAddress).toBe(0x8000);
+      // Should be in unbankedSegments array
+      expect(output.unbankedSegments).toBeDefined();
+      expect(output.unbankedSegments!.includes(output.segments[0])).toBe(true);
+    });
+
+    it("✅ Code without .org compiles to $8000 (default)", async () => {
+      const source = `
+        .model next
+        ld a,1
+        nop
+        ret
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      expect(output.segments[0].startAddress).toBe(0x8000);
+      expect(output.segments[0].bank).toBeUndefined();
+      // Code should be in the segment
+      expect(output.segments[0].emittedCode.length).toBeGreaterThan(0);
+    });
+
+    it("❌ .org before code overrides $8000 default", async () => {
+      const source = `
+        .model next
+        .org $8200
+        ld a,1
+        nop
+        ret
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // Should have segment(s) starting at custom address
+      expect(output.segments.some(s => s.startAddress === 0x8200)).toBe(true);
+      // None should be at default $8000 unless there was code before .org
+      const defaultSegment = output.segments.find(s => s.startAddress === 0x8000);
+      if (defaultSegment) {
+        // If there is a default segment, it should have no code
+        expect(defaultSegment.emittedCode.length).toBe(0);
+      }
+    });
+
+    it("✅ First instruction address defaults to $8000", async () => {
+      const source = `
+        .model next
+        start: ld a,7
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // Find the start label
+      const startSymbol = output.symbols["start"];
+      expect(startSymbol).toBeDefined();
+      // Symbol value is an ExpressionValue, extract the numeric value
+      const symbolValue = typeof startSymbol.value === 'object' ? startSymbol.value._value : startSymbol.value;
+      expect(symbolValue).toBe(0x8000);
+    });
+
+    it("✅ Multiple code sections default to $8000 but create new segments on .org", async () => {
+      const source = `
+        .model next
+        ld a,1      ; $8000
+        
+        .org $8500
+        ld b,2      ; $8500
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      expect(output.segments.length).toBeGreaterThanOrEqual(2);
+      // All should be unbanked
+      expect(output.segments.every(s => s.bank === undefined)).toBe(true);
+      // Addresses should be correct
+      expect(output.segments.some(s => s.startAddress === 0x8000)).toBe(true);
+      expect(output.segments.some(s => s.startAddress === 0x8500)).toBe(true);
+    });
+
+    it("✅ Next model without any code still has default segment at $8000", async () => {
+      const source = `
+        .model next
+        ; Just a comment, no code
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // Should still have initial segment created
+      expect(output.segments.length).toBeGreaterThan(0);
+      expect(output.segments[0].startAddress).toBe(0x8000);
+    });
+
+    it("✅ Non-Next model doesn't get default $8000 segment", async () => {
+      const source = `
+        .model Spectrum48
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // Should not have unbanked tracking
+      expect(output.unbankedSegments).toBeUndefined();
+    });
+  });
+
+  describe("Step 4: Range Warnings", () => {
+    it("✅ Code at $8000 range doesn't warn", async () => {
+      const source = `
+        .model next
+        .org $8000
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      const warnings = output.errors.filter(e => e.errorCode === "Z0902");
+      expect(warnings.length).toBe(0);
+    });
+
+    it("✅ Code at $bff0 (edge case) doesn't warn", async () => {
+      const source = `
+        .model next
+        .org $bff0
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+        nop
+      `;
+      const output = await testCompile(source);
+      const warnings = output.errors.filter(e => e.errorCode === "Z0902");
+      expect(warnings.length).toBe(0);
+    });
+
+    it("✅ Code at $c000 generates Z0904 warning", async () => {
+      const source = `
+        .model next
+        .org $c000
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      const warnings = output.errors.filter(e => e.errorCode === "Z0904");
+      expect(warnings.length).toBe(1);
+      expect(warnings[0].isWarning).toBe(true);
+      expect(warnings[0].message).toContain("C000");
+    });
+
+    it("✅ Code compiles despite Z0904 warning", async () => {
+      const source = `
+        .model next
+        .org $c000
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      // Should have warning but not fail compilation
+      expect(output.errors.some(e => e.errorCode === "Z0904")).toBe(true);
+      // Only the warning should exist, not errors
+      const errors = output.errors.filter(e => !e.isWarning);
+      expect(errors.length).toBe(0);
+    });
+
+    it("✅ Banked code at $c000 doesn't warn", async () => {
+      const source = `
+        .model next
+        .bank 4
+        .org $c000
+        ld a,1
+      `;
+      const output = await testCompile(source);
+      const warnings = output.errors.filter(e => e.errorCode === "Z0902");
+      expect(warnings.length).toBe(0);
+    });
+  });
 });

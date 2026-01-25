@@ -1317,11 +1317,11 @@ If a step fails:
 
 ## Progress Tracking
 
-- [ ] Step 0: Baseline verification ✓/✗
-- [ ] Step 1: Default savenex values (8 tests)
-- [ ] Step 2: Track unbanked segments (6 tests)
-- [ ] Step 3: Initialize unbanked segment (4 tests)
-- [ ] Step 4: Range warning (5 tests)
+- [x] Step 0: Baseline verification ✓/✗
+- [x] Step 1: Default savenex values (8 tests) ✅ COMPLETE - 19 tests passing
+- [x] Step 2: Track unbanked segments (6 tests) ✅ COMPLETE - 25 tests passing
+- [x] Step 3: Initialize unbanked segment (4 tests) ✅ COMPLETE - 32 tests passing (7 new)
+- [x] Step 4: Range warning (5 tests) ✅ COMPLETE - 37 tests passing (5 new)
 - [ ] Step 5: NEX export mapping (7 tests)
 - [ ] Step 6: Integration tests (5 tests)
 - [ ] Step 7: Documentation

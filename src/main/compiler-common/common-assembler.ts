@@ -865,6 +865,32 @@ export abstract class CommonAssembler<
     this._output.unbankedSegments.push(this._currentSegment);
   }
 
+  /**
+   * Checks if current unbanked code exceeds typical bank 2 range
+   * Emits a warning if address exceeds $bfff
+   */
+  protected checkUnbankedCodeRange(): void {
+    // Only check if in Next auto mode and current segment is unbanked
+    if (!this._output.isNextAutoMode || !this._currentSegment || this._currentSegment.bank !== undefined) {
+      return; // Not in auto mode, or segment is explicitly banked
+    }
+    
+    const currentAddress = this.getCurrentAssemblyAddress();
+    if (currentAddress > 0xbfff) {
+      // Mark segment as warned so we don't repeat the warning
+      if (!(this._currentSegment as any).rangeWarned) {
+        // Report as warning, not error - code can exceed $bfff
+        this.reportAssemblyWarning(
+          "Z0904",
+          this._currentSourceLine,
+          null,
+          currentAddress.toString(16).toUpperCase()
+        );
+        (this._currentSegment as any).rangeWarned = true;
+      }
+    }
+  }
+
   // ==========================================================================
   // Process Expressions
 
@@ -4605,6 +4631,7 @@ export abstract class CommonAssembler<
    */
   protected emitByte(data: number): void {
     this.ensureCodeSegment();
+    this.checkUnbankedCodeRange();
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);
@@ -5037,6 +5064,67 @@ export abstract class CommonAssembler<
     );
     this._output.errors.push(errorInfo);
     this.reportScopeError(code);
+
+    function replace(input: string, placeholder: string, replacement: string): string {
+      do {
+        input = input.replace(placeholder, replacement);
+      } while (input.includes(placeholder));
+      return input;
+    }
+  }
+
+  /**
+   * Reports an assembly warning
+   * @param code Warning code
+   * @param sourceLine Assembly line of the warning
+   * @param parameters Optional parameters to report
+   */
+  protected reportAssemblyWarning(
+    code: ErrorCodes,
+    sourceLine: PartialAssemblyLine<TInstruction>,
+    nodePosition?: NodePosition | null,
+    ...parameters: any[]
+  ): void {
+    if ((sourceLine as any).fileIndex === undefined) {
+      return;
+    }
+
+    this.reportMacroInvocationErrors();
+
+    const line = { ...(sourceLine as AssemblyLine<TInstruction>) };
+
+    // --- Cut closing comment, if there is any
+    if (line.sourceText) {
+      const segments = line.sourceText.split(";");
+      line.endColumn = line.startColumn + segments[0].trim().length - 1;
+    }
+    const sourceItem = this._output.sourceFileList[line.fileIndex];
+    let errorText: string = errorMessages[code] ?? "Unknown warning";
+    if (parameters) {
+      parameters.forEach(
+        (_, idx) => (errorText = replace(errorText, `{${idx}}`, parameters[idx].toString()))
+      );
+    }
+
+    if (this._macroInvocations.length > 0) {
+      const lines = this._macroInvocations
+        .map((mi) => (mi as unknown as AssemblyLine<TInstruction>).line)
+        .join(", ");
+      errorText = `(from macro invocation through ${lines}) ` + errorText;
+    }
+
+    const errorInfo = new AssemblerErrorInfo(
+      code,
+      sourceItem.filename,
+      line.line,
+      nodePosition ? nodePosition.startPosition : line.startPosition,
+      nodePosition ? nodePosition.endPosition : line.endPosition + 1,
+      nodePosition ? nodePosition.startColumn : line.startColumn,
+      nodePosition ? nodePosition.endColumn : line.endColumn + 1,
+      errorText,
+      true  // Mark as warning
+    );
+    this._output.errors.push(errorInfo);
 
     function replace(input: string, placeholder: string, replacement: string): string {
       do {
