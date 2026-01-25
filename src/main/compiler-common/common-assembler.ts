@@ -807,6 +807,36 @@ export abstract class CommonAssembler<
       return;
     }
     this._output.modelType = modelType;
+    
+    // Apply Next-specific defaults if using .model next
+    if (modelType === 4) { // SpectrumModelType.Next
+      this.applyNextDefaults();
+    }
+  }
+
+  /**
+   * Applies automatic defaults for ZX Spectrum Next model
+   */
+  private applyNextDefaults(): void {
+    // Set default .savenex ram if not explicitly set
+    if (this._output.nexConfig.ramSize === 768) {
+      // 768 is the default in NexConfiguration, but we'll keep it
+      // Only override if it's still the default
+    }
+    
+    // Set default .savenex border if not explicitly set
+    if (this._output.nexConfig.borderColor === 0) {
+      // Only override if it's still the default (0)
+      this._output.nexConfig.borderColor = 7;
+    }
+    
+    // Set default .savenex entryaddr if not explicitly set
+    if (this._output.nexConfig.entryAddr === undefined) {
+      this._output.nexConfig.entryAddr = 0x8000;
+    }
+    
+    // Mark that we're in automatic Next mode (for unbanked code handling)
+    this._output.isNextAutoMode = true;
   }
 
   // ==========================================================================

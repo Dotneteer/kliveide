@@ -4,10 +4,7 @@
 .model next
 
 .savenex file "screen-tests.nex"
-.savenex ram 768
 .savenex core "3.1.0"
-.savenex border 7
-.savenex entryaddr $8000
 
 .bank $02
 .org $0000
