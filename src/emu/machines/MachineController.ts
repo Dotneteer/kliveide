@@ -293,7 +293,10 @@ export class MachineController implements IMachineController {
 
     // --- Execute the code injection flow
     const m = this.machine;
-    const injectionFlow = this.machine.getCodeInjectionFlow(codeToInject.model ?? m.machineId, additionalInfo);
+    const injectionFlow = this.machine.getCodeInjectionFlow(
+      codeToInject.model ?? m.machineId,
+      additionalInfo
+    );
     await this.sendOutput("Initialize the machine", "blue");
     this.isDebugging = debug;
 
@@ -320,7 +323,11 @@ export class MachineController implements IMachineController {
           break;
 
         case "Start":
-          await this.start();
+          if (debug) {
+            await this.startDebug();
+          } else {
+            await this.start();
+          }
           break;
 
         case "Wait":

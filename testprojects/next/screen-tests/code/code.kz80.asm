@@ -1,0 +1,24 @@
+; ==============================================================================
+; ZX Spectrum Next Screen Test Cases 
+; ==============================================================================
+.model next
+
+.savenex file "screen-tests.nex"
+.savenex ram 768
+.savenex core "3.1.0"
+.savenex border 7
+.savenex entryaddr $8000
+
+.bank $02
+.org $0000
+.disp $8000
+
+main:
+    ; Entry point code
+    ld a,3
+    out ($fe),a
+trap jr trap
+
+TX_Hello
+    .defm "Hello"
+TX_Hello_len = $ - TX_Hello

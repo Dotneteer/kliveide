@@ -29,7 +29,7 @@ interface SetReturnStep extends CodeInjectionStepBase {
   returnPoint: number;
 }
 
-export interface QueueKeyStep extends CodeInjectionStepBase {
+interface QueueKeyStep extends CodeInjectionStepBase {
   type: "QueueKey";
   primary: number;
   secondary?: number;
