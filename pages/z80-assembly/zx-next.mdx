@@ -135,27 +135,44 @@ For complex applications requiring multiple memory banks, use explicit `.bank` p
 ```z80klive
 .model next
 
-.savenex file "multibank.nex"
+.savenex file "screen-tests.nex"
+.savenex core "3.1.0"
 
 ; Unbanked code in bank 2 at $8000
 main:
-    ld a, 5
-    ld bc, $123b        ; Page bank 5 into slot 1 ($c000-$ffff)
-    nextreg bc, a
-    call $c000          ; Call into bank 5
-    ret
+    ; 
+    ; Save the current MMU 5 value ($A000-$BFFF)
+    ld a,$55
+    ld bc,$243b
+    out (c),a
+    inc b
+    in a,(c)
+    push af
+    ;
+    ; Page in the first 8K of 16K Bank $20 to $A000-$BFFF
+    di
+    nextreg $55,$40
+    ;
+    ; Invoke the subrouting in Bank $20
+    call SetBorder
+    ;
+    ; Restore the old MMU 5 value
+    pop af
+    nextreg $55,a
+    ei
+trap 
+    jr $
 
-; Explicit bank 5 code
-.bank 5
+
+; Explicit bank $20 code
+.bank $20
 .org $0000
-.disp $c000
+.disp $a000
 
-bank5_routine:
-    ld a, 7
-    out (0xFE), a
+SetBorder
+    ld a,3
+    out ($fe),a
     ret
-
-.endbank
 ```
 
 ### How Multi-Bank Code Works
@@ -164,43 +181,6 @@ bank5_routine:
 - **`.bank` sections** export to **their specified bank** (e.g., bank 5) at the addresses defined by `.org` and `.disp`
 - Both can coexist in the same source file
 - Each bank section is independent
-
-### Bank Restrictions
-
-When using `.bank` pragmas:
-
-- Bank 2 is the default for unbanked code - don't manually specify `.bank 2` for simple programs
-- Banks 0-1 are ROM (typically not writable)
-- Banks 2-111 are available for user programs
-- Bank 5+ are commonly used for paged code/data
-
-## Backward Compatibility
-
-The new automatic conveniences don't break existing Next code:
-
-**Traditional explicit multi-bank code still works:**
-
-```z80klive
-.model next
-
-.savenex file "legacy.nex"
-.savenex ram 768
-.savenex border 7
-.savenex entryaddr $8000
-
-.bank 2
-.org $0000
-.disp $8000
-
-main:
-    ld a, 7
-    out (0xFE), a
-    ret
-
-.endbank
-```
-
-The difference is that you can now omit the boilerplate `.bank 2`, `.org $0000`, and `.disp $8000` for simple single-bank programs.
 
 ---
 
@@ -495,46 +475,10 @@ Configures the loading bar display.
 .savenex bar "on", 2, 50, 100
 ```
 
-## Complete Example
-
-Here's a complete example showing various `.savenex` configurations with the new automatic conveniences:
-
-```z80klive
-    .model next
-    
-    ; Only specify what you need - ram, border, and entryaddr have defaults
-    .savenex file "demo.nex"
-    .savenex core 3, 1, 10
-    
-    ; Optional: Override defaults if needed
-    ; .savenex ram 1792        ; Only if you need more than 768K
-    ; .savenex border 5        ; Only if you want a different border color
-    
-    ; Entry point configuration (optional)
-    .savenex stackaddr 0xFF00
-    ; .savenex entryaddr $8000    ; Already the default
-    
-    ; File handling
-    .savenex filehandle "close"
-    .savenex preserve "on"
-    
-    ; Loading screen
-    .savenex screen "layer2", "loader.scr"
-    .savenex palette "colors.nxp"
-    
-    ; Loading bar
-    .savenex bar "on", 2, 50, 100
-    
-    ; Your program code - automatically starts at $8000 and maps to bank 2
-Start:
-    ld a, 7
-    out (0xFE), a
-    ret
-```
 
 ## NEX File Format
 
-The NEX file format is the native executable format for the ZX Spectrum Next. It's a container format that includes:
+The NEX file format [(see details here)](https://wiki.specnext.dev/NEX_file_format) is the native executable format for the ZX Spectrum Next. It's a container format that includes:
 
 - **Header Information**: File version, RAM requirements, entry points, etc.
 - **Screen Data**: Optional loading screen in various formats
@@ -634,113 +578,6 @@ The assembler will generate warnings if:
 
 - **Z0904**: Unbanked code address exceeds $bfff (typical bank 2 range)
 
-## Development Workflow
-
-### Simple Single-Bank Programs
-
-For most programs that fit in 16KB:
-
-```z80klive
-.model next
-
-.savenex file "game.nex"
-.savenex core "3.1.0"
-
-; Your code - automatically handled
-main:
-    ; Game logic here
-    ret
-```
-
-### Multi-Bank Programs
-
-For larger programs requiring multiple banks:
-
-```z80klive
-.model next
-
-.savenex file "bigapp.nex"
-.savenex core "3.1.0"
-
-; Main code in bank 2 (unbanked)
-main:
-    ; Initialize
-    call setup_banks
-    ; Main loop
-    ret
-
-setup_banks:
-    ; Page in additional banks as needed
-    ret
-
-; Additional code in bank 5
-.bank 5
-.org $0000
-.disp $c000
-
-bank5_code:
-    ; Bank 5 routines
-    ret
-
-.endbank
-
-; More additional code in bank 6
-.bank 6
-.org $0000
-.disp $c000
-
-bank6_code:
-    ; Bank 6 routines
-    ret
-
-.endbank
-```
-
-## Migration Guide
-
-### From Traditional Multi-Bank to Simplified Syntax
-
-**Before (Traditional):**
-
-```z80klive
-.model next
-
-.savenex file "app.nex"
-.savenex ram 768
-.savenex border 7
-.savenex entryaddr $8000
-
-.bank 2
-.org $0000
-.disp $8000
-
-main:
-    ld a, 7
-    out (0xFE), a
-    ret
-
-.endbank
-```
-
-**After (Simplified):**
-
-```z80klive
-.model next
-
-.savenex file "app.nex"
-
-main:
-    ld a, 7
-    out (0xFE), a
-    ret
-```
-
-The simplified version is equivalent and much cleaner. The automatic conveniences handle:
-- `.savenex ram 768` (default)
-- `.savenex border 7` (default)
-- `.savenex entryaddr $8000` (default)
-- Bank 2 mapping at $8000 (automatic for unbanked code)
-
 ## Notes
 
 - The `.savenex` pragma only configures the NEX file parameters; it doesn't generate the actual NEX file. The file generation happens during the export process.
@@ -753,5 +590,5 @@ The simplified version is equivalent and much cleaner. The automatic convenience
 ## See Also
 
 - [Pragmas](./pragmas) - Complete pragma reference
-- [Z80 Assembler Overview](./z80-assembler) - General assembler documentation
+- [Klive Z80 Assembler Overview](./z80-assembler) - General assembler documentation
 - [ZX Spectrum Next Documentation](https://www.specnext.com/) - Official Next documentation
