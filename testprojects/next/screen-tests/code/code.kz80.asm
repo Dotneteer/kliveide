@@ -6,10 +6,6 @@
 .savenex file "screen-tests.nex"
 .savenex core "3.1.0"
 
-.bank $02
-.org $0000
-.disp $8000
-
 main:
     ; Entry point code
     ld a,3

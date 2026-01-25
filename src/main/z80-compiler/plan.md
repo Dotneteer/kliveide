@@ -1322,7 +1322,7 @@ If a step fails:
 - [x] Step 2: Track unbanked segments (6 tests) ✅ COMPLETE - 25 tests passing
 - [x] Step 3: Initialize unbanked segment (4 tests) ✅ COMPLETE - 32 tests passing (7 new)
 - [x] Step 4: Range warning (5 tests) ✅ COMPLETE - 37 tests passing (5 new)
-- [ ] Step 5: NEX export mapping (7 tests)
+- [x] Step 5: NEX export mapping (10 tests) ✅ COMPLETE - 47 tests passing (10 new)
 - [ ] Step 6: Integration tests (5 tests)
 - [ ] Step 7: Documentation
 - [ ] Step 8: Final verification
