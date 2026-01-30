@@ -1,20 +1,6 @@
 ; ------------------------------------------------------------------------------
 ; SP48 API Macros
 ; ------------------------------------------------------------------------------
-OpenUpperScreen .macro()
-    ld a,2
-    call $1601
-.endm
-
-PrintChar .macro()
-    push hl
-    push bc
-    rst $28
-    .defw $0010
-    pop bc
-    pop hl
-.endm
-
 ; ------------------------------------------------------------------------------
 ; Sign error
 ; ------------------------------------------------------------------------------
@@ -32,7 +18,7 @@ ClearScreen
     push bc
     ld hl,$4000
     ld de,$4001
-    ld bc,$5fff
+    ld bc,$17ff
     ld (hl),0
     ldir
     ld hl,$5800
@@ -46,23 +32,10 @@ ClearScreen
     ret
 
 ; ------------------------------------------------------------------------------
-; Print the specified text to the screen
-; IN:
-;   DE = Start address
-;   BC = Text length
-; OUT(s):
-;   F(c) = 0
-; OUT(f):
-;   F(c) = 1
+; PrintText
 ; ------------------------------------------------------------------------------
-PrintToScreen
-`next
-    ld a,(hl)
-    PrintChar()
-    inc hl
-    dec bc
-    ld a,b
-    or c
-    jr nz,`next
-    ret
-
+PrintText .macro(addr, length)
+    ld de,{{addr}}
+    ld bc,{{length}}
+    call $203c
+.endm

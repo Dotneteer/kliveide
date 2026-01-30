@@ -126,7 +126,7 @@ export class NexFileWriter {
   }
 
   /**
-   * Set file handle address. 0xFFFF = close, 0x0000 = BC register.
+   * Set file handle address. 0 = close file, 1 = pass handle in BC (recommended), 0x4000+ = write to memory address.
    * @param address - Address to store file handle, or special value
    */
   setFileHandle(address: number): void {
@@ -378,13 +378,13 @@ export class NexFileWriter {
     
     // Handle file handle
     if (config.fileHandle === "close") {
-      writer.setFileHandle(0xffff);
-    } else if (config.fileHandle === "bc") {
-      writer.setFileHandle(0x0000);
+      writer.setFileHandle(0x0000); // 0 = close file
+    } else if (config.fileHandle === "open") {
+      writer.setFileHandle(0x0001); // 1 = pass handle in BC register (recommended)
     } else if (typeof config.fileHandle === "number") {
       writer.setFileHandle(config.fileHandle);
     } else {
-      writer.setFileHandle(0xffff); // Default to close
+      writer.setFileHandle(0x0000); // Default to close
     }
 
     // Load screen

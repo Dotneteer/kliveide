@@ -341,7 +341,7 @@ export type NexScreenType = "l2" | "layer2" | "ula" | "lores" | "hires" | "hicol
 /**
  * File handle modes for NEX
  */
-export type NexFileHandleMode = "close" | "bc" | number;
+export type NexFileHandleMode = "close" | "open" | number;
 
 /**
  * NEX screen configuration

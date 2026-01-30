@@ -358,7 +358,9 @@ export enum FixupType {
   Xent,
   Struct,
   FieldBit8,
-  FieldBit16
+  FieldBit16,
+  NexStackAddr,
+  NexEntryAddr
 }
 
 /**

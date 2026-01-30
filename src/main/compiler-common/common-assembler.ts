@@ -2585,7 +2585,17 @@ export abstract class CommonAssembler<
       return;
     }
 
-    const addrValue = this.evaluateExprImmediate(pragma.address);
+    const addrValue = this.evaluateExpr(pragma.address);
+    if (!addrValue.isValid) {
+      // Forward reference - record a fixup
+      this.recordFixup(
+        pragma as unknown as AssemblyLine<TInstruction>,
+        FixupType.NexStackAddr,
+        pragma.address
+      );
+      return;
+    }
+
     if (addrValue.type !== ExpressionValueType.Integer) {
       this.reportAssemblyError("Z0351", pragma); // Value range error
       return;
@@ -2609,7 +2619,17 @@ export abstract class CommonAssembler<
       return;
     }
 
-    const addrValue = this.evaluateExprImmediate(pragma.address);
+    const addrValue = this.evaluateExpr(pragma.address);
+    if (!addrValue.isValid) {
+      // Forward reference - record a fixup
+      this.recordFixup(
+        pragma as unknown as AssemblyLine<TInstruction>,
+        FixupType.NexEntryAddr,
+        pragma.address
+      );
+      return;
+    }
+
     if (addrValue.type !== ExpressionValueType.Integer) {
       this.reportAssemblyError("Z0352", pragma); // Value range error
       return;
@@ -4855,7 +4875,7 @@ export abstract class CommonAssembler<
       }
     }
 
-    // --- #2: fix Bit8, Bit16, Jr, Ent, Xent
+    // --- #2: fix Bit8, Bit16, Jr, Ent, Xent, NexStackAddr, NexEntryAddr
     for (const fixup of scope.fixups.filter(
       (f) =>
         !f.resolved &&
@@ -4863,7 +4883,9 @@ export abstract class CommonAssembler<
           f.type === FixupType.Bit16 ||
           f.type === FixupType.Jr ||
           f.type === FixupType.Ent ||
-          f.type === FixupType.Xent)
+          f.type === FixupType.Xent ||
+          f.type === FixupType.NexStackAddr ||
+          f.type === FixupType.NexEntryAddr)
     )) {
       const evalResult = this.evaluateFixupExpression(fixup, true, signNotEvaluable);
 
@@ -4904,6 +4926,26 @@ export abstract class CommonAssembler<
 
           case FixupType.Xent:
             this._output.exportEntryAddress = evalResult.value.asWord();
+            break;
+
+          case FixupType.NexStackAddr:
+            const stackAddr = evalResult.value.asWord();
+            if (stackAddr < 0 || stackAddr > 0xffff) {
+              this.reportAssemblyError("Z0351", fixup.sourceLine);
+              success = false;
+              break;
+            }
+            this._output.nexConfig.stackAddr = stackAddr;
+            break;
+
+          case FixupType.NexEntryAddr:
+            const entryAddr = evalResult.value.asWord();
+            if (entryAddr < 0 || entryAddr > 0xffff) {
+              this.reportAssemblyError("Z0352", fixup.sourceLine);
+              success = false;
+              break;
+            }
+            this._output.nexConfig.entryAddr = entryAddr;
             break;
         }
       } else {
