@@ -995,11 +995,59 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       const tStatesPerByte = Math.floor((prescalar * cpuFreq) / prescalarFreq);
       return tStatesPerByte;
     } else {
-      // Continuous mode - return basic transfer time (read + write)
-      // For simplicity, assume 3 T-states read + 3 T-states write = 6 T-states
-      // TODO: Step 19 will refine this with proper contention
-      return 6;
+      // Continuous mode - calculate accurate transfer time including contention/wait states
+      return this.calculateDmaTransferTiming();
     }
+  }
+
+  /**
+   * Calculate accurate T-state timing for DMA transfer
+   * Takes into account:
+   * - CPU speed (3.5MHz, 7MHz, 14MHz, 28MHz)
+   * - SRAM wait states at 28MHz
+   * - Bank 7 direct access (no wait state)
+   * - Memory vs I/O port timing
+   * 
+   * @returns T-states consumed for one byte transfer (read + write)
+   */
+  calculateDmaTransferTiming(): number {
+    const sourceAddr = this.transferState.sourceAddress;
+    
+    // Get current CPU speed from machine
+    const cpuSpeed = this.machine.cpuSpeedDevice.effectiveSpeed;
+    
+    let readTStates = 0;
+    let writeTStates = 0;
+    
+    // Calculate read timing
+    if (this.registers.portAIsIO) {
+      // I/O port read: typically 4 T-states
+      readTStates = 4;
+    } else {
+      // Memory read: base 3 T-states
+      readTStates = 3;
+      
+      // At 28 MHz, add 1 wait state unless it's Bank 7
+      if (cpuSpeed === 3) {
+        const pageIndex = (sourceAddr >>> 13) & 0x07;
+        const isBank7 = this.machine.memoryDevice.bank8kLookup[pageIndex] === 0x0e;
+        
+        if (!isBank7) {
+          readTStates += 1; // Wait state for SRAM or Bank 5
+        }
+      }
+    }
+    
+    // Calculate write timing  
+    if (this.registers.portBIsIO) {
+      // I/O port write: typically 4 T-states
+      writeTStates = 4;
+    } else {
+      // Memory write: always 3 T-states (no wait states on writes, even at 28MHz)
+      writeTStates = 3;
+    }
+    
+    return readTStates + writeTStates;
   }
 
   /**
