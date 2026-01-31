@@ -657,15 +657,18 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     let value = 0;
     
     if (this.registerReadSeq === RegisterReadSequence.RD_STATUS) {
-      // Format: 00E1101T
-      // Bit 5 (E): End of block reached (inverted - 1 means not reached)
-      const eBit = this.statusFlags.endOfBlockReached ? 0 : (1 << 5);
-      
-      // Bit 0 (T): At least one byte transferred
+      // Format depends on end-of-block status:
+      // Complete (E): 00110110 (0x36) + T bit
+      // In progress (!E): 00011011 (0x1B) - bit 3 + T bit, without bits 5,2
       const tBit = this.statusFlags.atLeastOneByteTransferred ? 1 : 0;
       
-      // Fixed bits: bits 4-1 = 1101 (0x1A in positions 4-1)
-      value = eBit | 0x1a | tBit;
+      if (this.statusFlags.endOfBlockReached) {
+        // Complete: bits 5,4,2,1 set (0x36) plus T at bit 0
+        value = 0x36 | tBit;
+      } else {
+        // In progress: bits 4,3,1 set (0x1A) plus T at bit 0
+        value = 0x1a | tBit;
+      }
       
       // Advance to next read position based on read mask
       this.advanceReadSequence();
@@ -919,6 +922,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
     // Increment byte counter
     this.transferState.byteCounter++;
+    
+    // Update status flags
+    if (this.transferState.byteCounter === 1) {
+      // First byte transferred
+      this.statusFlags.atLeastOneByteTransferred = true;
+      this.statusFlags.endOfBlockReached = false;
+    }
   }
 
   /**
@@ -992,6 +1002,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // If auto-restart is enabled, this will reset addresses and counter
       // Safety: limit iterations to prevent infinite loops
     } while (this.checkAndHandleAutoRestart() && iteration < maxIterations);
+    
+    // If we exited the loop without auto-restart, mark block as complete
+    if (!this.registers.autoRestart || iteration >= maxIterations) {
+      this.statusFlags.endOfBlockReached = true;
+    }
 
     // Release bus
     this.releaseBus();
@@ -1067,7 +1082,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
     // Check for auto-restart if block is complete
     if (bytesTransferred >= bytesRemaining) {
-      this.checkAndHandleAutoRestart();
+      if (!this.checkAndHandleAutoRestart()) {
+        // Transfer complete, no auto-restart
+        this.statusFlags.endOfBlockReached = true;
+      }
     }
 
     return bytesTransferred;

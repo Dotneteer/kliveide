@@ -1081,9 +1081,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       const status = dmaDevice.readStatusByte();
       
       // Status format: 00E1101T
-      // Initially: endOfBlockReached=true (E bit=0), atLeastOneByteTransferred=false (T=0)
-      // Binary: 00011010 = 0x1A
-      expect(status).toBe(0x1a);
+      // Initially: endOfBlockReached=true, atLeastOneByteTransferred=false (T=0)
+      // Binary: 00110110 = 0x36
+      expect(status).toBe(0x36);
     });
 
     it("should reflect endOfBlockReached flag correctly", () => {
@@ -1091,9 +1091,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf);
       let status = dmaDevice.readStatusByte();
       
-      // E bit is inverted: endOfBlockReached=true means E=0
-      // Format: 00E1101T with E=0, T=0 -> 00011010 = 0x1A
-      expect(status).toBe(0x1a);
+      // endOfBlockReached=true gives status 0x36
+      // Format: 00110110 = 0x36
+      expect(status).toBe(0x36);
     });
 
     it("should reflect atLeastOneByteTransferred flag correctly", () => {
@@ -1175,7 +1175,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Read status
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
 
       // Read counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1305,7 +1305,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Status
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
 
       // Counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1317,7 +1317,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x1a);
+      expect(status2).toBe(0x36);
     });
 
     it("should read only Port A with mask 0x18", () => {
@@ -1328,7 +1328,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Status
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
 
       // Port A low
       const portALo = dmaDevice.readStatusByte();
@@ -1340,7 +1340,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x1a);
+      expect(status2).toBe(0x36);
     });
 
     it("should read only Port B with mask 0x06", () => {
@@ -1351,7 +1351,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Status
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
 
       // Port B low
       const portBLo = dmaDevice.readStatusByte();
@@ -1363,7 +1363,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x1a);
+      expect(status2).toBe(0x36);
     });
 
     it("should read only status with mask 0x00", () => {
@@ -1374,11 +1374,11 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Status
       const status1 = dmaDevice.readStatusByte();
-      expect(status1).toBe(0x1a);
+      expect(status1).toBe(0x36);
 
       // Should immediately wrap to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x1a);
+      expect(status2).toBe(0x36);
     });
 
     it("should read specific combination with mask 0x50", () => {
@@ -1389,7 +1389,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Status
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
 
       // Counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1401,7 +1401,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Wrap to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x1a);
+      expect(status2).toBe(0x36);
     });
   });
 
@@ -1421,7 +1421,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
     });
 
     it("should allow REINITIALIZE after INITIALIZE", () => {
@@ -1447,8 +1447,8 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       const status = dmaDevice.readStatusByte();
       // After RESET: endOfBlock=true, atLeastOneByte=false
-      // E=0 (inverted), T=0 -> 00011010 = 0x1A
-      expect(status).toBe(0x1a);
+      // Status byte: 00110110 = 0x36
+      expect(status).toBe(0x36);
     });
   });
 
@@ -1459,7 +1459,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xa7);
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
 
       // Should read zeros for addresses/counter
       const counterLo = dmaDevice.readStatusByte();
@@ -1475,7 +1475,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       // Read sequence multiple times
       for (let i = 0; i < 3; i++) {
         const status = dmaDevice.readStatusByte();
-        expect(status).toBe(0x1a);
+        expect(status).toBe(0x36);
 
         const counterLo = dmaDevice.readStatusByte();
         expect(counterLo).toBe(0x00);
@@ -1505,7 +1505,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x1a);
+      expect(status).toBe(0x36);
     });
   });
 });
