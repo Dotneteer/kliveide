@@ -372,7 +372,8 @@ describe("DmaDevice - Step 11: Memory/IO Write Cycle", () => {
       dma.performWriteCycle();
       
       const transferState = dma.getTransferState();
-      expect(transferState.byteCounter).toBe(65536);
+      // Counter is 16-bit, so 65535+1 wraps to 0
+      expect(transferState.byteCounter).toBe(0);
     });
   });
 

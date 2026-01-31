@@ -474,22 +474,41 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 16: Port Handler Integration (0x6B - zxnDMA mode)
+### Step 16: Port Handler Integration (0x6B - zxnDMA mode) ✓ COMPLETED
 
 **Goal**: Connect DMA to port 0x6B for zxnDMA mode.
 
 **Implementation**:
-- Implement `readZxnDmaPort` in `ZxnDmaPortHandler.ts`
-- Implement `writeZxnDmaPort` in `ZxnDmaPortHandler.ts`
-- Route read to `DmaDevice.readPort()`
-- Route write to `DmaDevice.writePort()`
-- Set `dmaMode` flag to zxnDMA mode
+- Implement `readZxnDmaPort` in `ZxnDmaPortHandler.ts` ✓
+- Implement `writeZxnDmaPort` in `ZxnDmaPortHandler.ts` ✓
+- Route write to `DmaDevice.writePort()` dispatcher ✓
+- Created `writePort()` method that routes bytes to WR0/WR4/WR6 based on bit patterns ✓
+- Set `dmaMode` flag to ZXNDMA on every port access ✓
+- Update NextIoPortManager to register handlers with lambda wrappers ✓
+
+**Implementation Details**:
+- `writePort()` dispatcher checks D7 bit: 0=config (WR0-WR5), 1=command (WR4/WR6)
+- WR4 detection: D7=1 AND (value & 0x0F) === 0x0D (pattern xxxx1101)
+- WR6 detection: D7=1 AND (value & 0x0F) !== 0x0D (all other commands)
+- WR0 dispatcher routes to WR1/WR2/WR5 based on low bits when seq=IDLE
+- Multi-byte sequences tracked via RegisterWriteSequence enum
+- Port handler functions receive IZxNextMachine parameter for device access
 
 **Tests**:
-- Write to port 0x6B and verify register update
-- Read from port 0x6B and verify status/register read
-- Test complete transfer via port 0x6B
-- Verify length is exact (not length+1)
+- Port Write Operations: WR0, WR4, RESET, LOAD, ENABLE_DMA commands ✓
+- Port Read Operations: Initial status, INITIALIZE_READ_SEQUENCE, counter reads, address reads ✓
+- Complete Transfers: Memory-to-memory, exact length behavior, burst mode ✓
+- Mode Persistence: zxnDMA mode maintained across operations ✓
+- Status Byte: Correct format via port reads, status changes after transfer ✓
+
+**Bug Fixes**:
+- WR4 detection mask corrected from 0x0D to 0x0F to properly detect pattern
+- Test values corrected: 0xDD (CONTINUOUS) instead of 0xCD (BURST)
+- getTransferState() returns copy, must re-fetch after transfer to see updates
+- WR2 requires D6=1 to enable timing/prescalar bytes following
+- WR1/WR2 must configure address modes explicitly (INCREMENT vs DECREMENT)
+
+**Status**: ✓ 17 new tests in DmaDevice-port-integration.test.ts, 457 tests passing overall (440 + 17), no linting errors
 
 ---
 

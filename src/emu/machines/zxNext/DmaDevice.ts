@@ -328,12 +328,26 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       }
     } else {
       // D7=0: Start of a register configuration
-      // The Z80 DMA uses a complex encoding, but typically:
-      // - WR0 is the main configuration register (transfer parameters)
-      // - WR1-WR5 are written implicitly based on bits in WR0
-      // For simplicity, route all D7=0 bytes to WR0, which will set up
-      // the sequence and may trigger writes to other registers
-      this.writeWR0(value);
+      // Z80 DMA register identification by bit patterns:
+      // - WR1 (Port A config): D2=1, D1D0=00 → xxx100  
+      // - WR2 (Port B config): D2D1D0=000 → xxx000
+      // - WR5 (auto-restart): D4D3=10, D1D0=10 → xxx1x010  
+      // - WR0 (transfer): Everything else with D7=0
+      const lowBits = value & 0x07;
+      
+      if (lowBits === 0x04) {
+        // WR1: xxx100 (D2=1, D1D0=00)
+        this.writeWR1(value);
+      } else if (lowBits === 0x00) {
+        // WR2: xxx000 (D2D1D0=000)
+        this.writeWR2(value);
+      } else if ((value & 0x18) === 0x10 && (value & 0x03) === 0x02) {
+        // WR5: xxx1x010 (D4=1, D3=0, D1D0=10)
+        this.writeWR5(value);
+      } else {
+        // WR0: Everything else
+        this.writeWR0(value);
+      }
     }
   }
 
@@ -343,31 +357,6 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Parameters: Port A start address (16-bit), block length (16-bit)
    */
   writeWR0(value: number): void {
-    // If we're starting a new sequence (IDLE), check which register to write to
-    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
-      // D2-D0 bits identify the register:
-      // - WR0 (transfer parameters): various patterns including 101
-      // - WR1 (Port A config): xxx100  
-      // - WR2 (Port B config): xxx000
-      // - WR5 (auto-restart): xx1xxx
-      const lowBits = value & 0x07;
-      
-      if ((value & 0x08) !== 0 && lowBits === 0x02) {
-        // WR5: D3=1, D2-D0=010 (pattern 01010 = 0x0A, but also others)
-        this.writeWR5(value);
-        return;
-      } else if (lowBits === 0x04) {
-        // WR1: xxx100
-        this.writeWR1(value);
-        return;
-      } else if (lowBits === 0x00) {
-        // WR2: xxx000
-        this.writeWR2(value);
-        return;
-      }
-      // Otherwise it's WR0 - fall through to normal WR0 handling
-    }
-    
     // Extract direction bit (D6)
     const direction = (value & 0x40) !== 0;
     
@@ -653,8 +642,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.transferState.destAddress = this.registers.portAStartAddress;
     }
     
-    // Reset byte counter
-    this.transferState.byteCounter = 0;
+    // Reset byte counter based on mode
+    // zxnDMA mode: counter starts at 0
+    // Legacy mode: counter starts at -1 (0xFFFF) for compatibility
+    if (this.dmaMode === DmaMode.ZXNDMA) {
+      this.transferState.byteCounter = 0;
+    } else {
+      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
+    }
     
     // Keep register write sequence in IDLE
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
@@ -665,8 +660,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Used to continue a transfer from current positions
    */
   private executeContinue(): void {
-    // Reset byte counter to restart counting
-    this.transferState.byteCounter = 0;
+    // Reset byte counter to restart counting based on mode
+    // zxnDMA mode: counter starts at 0
+    // Legacy mode: counter starts at -1 (0xFFFF) for compatibility
+    if (this.dmaMode === DmaMode.ZXNDMA) {
+      this.transferState.byteCounter = 0;
+    } else {
+      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
+    }
     
     // Keep current source and destination addresses unchanged
     // Keep register write sequence in IDLE
@@ -1006,11 +1007,17 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.updateAddress('source', this.registers.portBAddressMode);
     }
 
-    // Increment byte counter
-    this.transferState.byteCounter++;
+    // Increment byte counter (16-bit with wraparound)
+    this.transferState.byteCounter = (this.transferState.byteCounter + 1) & 0xFFFF;
     
     // Update status flags
-    if (this.transferState.byteCounter === 1) {
+    // In zxnDMA mode: first byte = byteCounter 1
+    // In legacy mode: first byte = byteCounter 0 (starts at 0xFFFF, wraps to 0)
+    const isFirstByte = this.dmaMode === DmaMode.LEGACY 
+      ? this.transferState.byteCounter === 0
+      : this.transferState.byteCounter === 1;
+    
+    if (isFirstByte) {
       // First byte transferred
       this.statusFlags.atLeastOneByteTransferred = true;
       this.statusFlags.endOfBlockReached = false;
@@ -1054,7 +1061,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return 0;
     }
 
-    const bytesToTransfer = this.registers.blockLength;
+    // In legacy mode, transfer length is blockLength+1 for compatibility
+    // In zxnDMA mode, transfer length is exactly blockLength
+    const bytesToTransfer = this.dmaMode === DmaMode.LEGACY 
+      ? this.registers.blockLength + 1 
+      : this.registers.blockLength;
     let totalBytesTransferred = 0;
     const maxIterations = this.registers.autoRestart ? 1000 : 1; // Safety limit for auto-restart
 
@@ -1116,8 +1127,21 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return 0;
     }
 
-    const bytesToTransfer = this.registers.blockLength;
-    const bytesAlreadyTransferred = this.transferState.byteCounter;
+    // In legacy mode, transfer length is blockLength+1 for compatibility
+    // In zxnDMA mode, transfer length is exactly blockLength
+    const bytesToTransfer = this.dmaMode === DmaMode.LEGACY 
+      ? this.registers.blockLength + 1 
+      : this.registers.blockLength;
+    
+    // In legacy mode, byteCounter starts at 0xFFFF (-1), so we need special handling
+    // After first byte, it becomes 0, after second byte it becomes 1, etc.
+    // So bytes transferred = byteCounter + 1 when byteCounter was initially 0xFFFF
+    const bytesAlreadyTransferred = this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF
+      ? 0
+      : this.dmaMode === DmaMode.LEGACY
+      ? this.transferState.byteCounter + 1
+      : this.transferState.byteCounter;
+    
     const bytesRemaining = bytesToTransfer - bytesAlreadyTransferred;
     
     if (bytesRemaining <= 0) {
