@@ -8,19 +8,99 @@ LAST_K                    .equ $5c08
 ; ------------------------------------------------------------------------------
 ZXN_PRINT_TEXT            .equ $203c
 
+; ------------------------------------------------------------------------------
+; ZX Spectrun Next key codes
+; ------------------------------------------------------------------------------
+KEY_T                    .equ $74
+KEY_LC_T                 .equ $3e
+KEY_X                    .equ $78
+KEY_LC_X                 .equ $60
+
 ; 256 byte buffer for conversions
 TMP_BUFF .defs $100
+
+Border .macro(color)
+    push af
+    ld a,{{color}}
+    out ($fe),a
+    pop af
+.endm
+
+Ink .macro(color)
+    push af
+    ld a,$10
+    rst $10
+    ld a,{{color}}
+    rst $10
+    pop af
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Sign error
 ; ------------------------------------------------------------------------------
 SIGN_ERR .macro()
-    ld a,2
-    out ($fe),a
+    Border(2)
 .endm
 
+; ------------------------------------------------------------------------------
+; Text termination mark
+; ------------------------------------------------------------------------------
 TERM_TEXT .macro()
     .defw $ffff
+.endm
+
+; ------------------------------------------------------------------------------
+; Prints text with a particular start address and length
+; addr: Start address of the text
+; length: Text length
+; ------------------------------------------------------------------------------
+PrintText .macro(addr, length)
+    ld de,{{addr}}
+    ld bc,{{length}}
+    call ZXN_PRINT_TEXT
+.endm
+
+; ------------------------------------------------------------------------------
+; Prints text with a particular start address. The text should be terminated
+; with $FFFF word
+; addr: Start address of the text
+; ------------------------------------------------------------------------------
+PrintText2 .macro(addr)
+    ld de,{{addr}}
+    call PrintTermText
+.endm
+
+PrintTermText
+    ld bc,0
+    push de
+    ex de,hl
+`testLoop
+    ld a,h
+    or l
+    jr nz, `charTest
+    ld bc,0
+    jr `done
+`chartest
+    ld a,(hl)
+    cp $ff
+    inc hl
+    inc bc
+    jr nz,`testLoop
+    ld a,(hl)
+    cp $ff
+    jr nz,`chartest
+    dec bc
+`done
+    pop de
+    jp ZXN_PRINT_TEXT
+
+PrintAt .macro(row, col)
+    ld a,$16
+    rst $10
+    ld a,{{row}}
+    rst $10
+    ld a,{{col}}
+    rst $10
 .endm
 
 ; ------------------------------------------------------------------------------
@@ -47,51 +127,6 @@ ClearScreen
     pop de
     pop hl
     ret
-
-; ------------------------------------------------------------------------------
-; Prints text with a particular start address and length
-; addr: Start address of the text
-; length: Text length
-; ------------------------------------------------------------------------------
-PrintText .macro(addr, length)
-    ld de,{{addr}}
-    ld bc,{{length}}
-    call ZXN_PRINT_TEXT
-.endm
-
-; ------------------------------------------------------------------------------
-; Prints text with a particular start address. The text should be terminated
-; with $FFFF word
-; addr: Start address of the text
-; ------------------------------------------------------------------------------
-PrintText2 .macro(addr)
-    ld de,{{addr}}
-    call __findTerminationAndPrint
-.endm
-
-__findTerminationAndPrint
-    ld bc,0
-    push de
-    ex de,hl
-`testLoop
-    ld a,h
-    or l
-    jr nz, `charTest
-    ld bc,0
-    jr `done
-`chartest
-    ld a,(hl)
-    cp $ff
-    inc hl
-    inc bc
-    jr nz,`testLoop
-    ld a,(hl)
-    cp $ff
-    jr nz,`chartest
-    dec bc
-`done
-    pop de
-    jp ZXN_PRINT_TEXT
 
 ; ------------------------------------------------------------------------------
 ; Convert 16-bit value to decimal string

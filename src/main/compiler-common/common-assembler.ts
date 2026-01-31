@@ -4875,12 +4875,13 @@ export abstract class CommonAssembler<
       }
     }
 
-    // --- #2: fix Bit8, Bit16, Jr, Ent, Xent, NexStackAddr, NexEntryAddr
+    // --- #2: fix Bit8, Bit16, Bit16Be, Jr, Ent, Xent, NexStackAddr, NexEntryAddr
     for (const fixup of scope.fixups.filter(
       (f) =>
         !f.resolved &&
         (f.type === FixupType.Bit8 ||
           f.type === FixupType.Bit16 ||
+          f.type === FixupType.Bit16Be ||
           f.type === FixupType.Jr ||
           f.type === FixupType.Ent ||
           f.type === FixupType.Xent ||
@@ -4900,6 +4901,11 @@ export abstract class CommonAssembler<
           case FixupType.Bit16:
             emittedCode[fixup.offset] = evalResult.value.asByte();
             emittedCode[fixup.offset + 1] = evalResult.value.asWord() >> 8;
+            break;
+
+          case FixupType.Bit16Be:
+            emittedCode[fixup.offset] = evalResult.value.asWord() >> 8;
+            emittedCode[fixup.offset + 1] = evalResult.value.asByte();
             break;
 
           case FixupType.Jr:
