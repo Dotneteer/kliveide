@@ -16,6 +16,8 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const statusSuccess = useSelector((s) => s.ideView?.statusSuccess);
   const isKliveProject = useSelector((s) => s.project?.isKliveProject);
   const compilation = useSelector((s) => s.compilation);
+  const cursorLine = useSelector((s) => s.ideView?.cursorLine);
+  const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
   const [machineState, setMachineState] = useState("");
   const [compileStatus, setCompileStatus] = useState("");
   const [compileSuccess, setCompileSuccess] = useState(true);
@@ -107,6 +109,14 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
           </Section>
         )}
         <SpaceFiller />
+        {cursorLine !== undefined && cursorColumn !== undefined && (
+          <Section>
+            <Label text="Ln" />
+            <Label text={cursorLine.toString()} isMonospace={true} />
+            <Label text="Col" />
+            <Label text={cursorColumn.toString()} isMonospace={true} />
+          </Section>
+        )}
       </div>
     </div>
   );

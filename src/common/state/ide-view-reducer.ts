@@ -65,6 +65,13 @@ export function ideViewReducer (
         statusSuccess: payload?.flag
       };
 
+    case "SET_CURSOR_POSITION":
+      return {
+        ...state,
+        cursorLine: payload?.line,
+        cursorColumn: payload?.column
+      };
+
     case "INC_TOOL_CMD_SEQ":
       return {
         ...state,

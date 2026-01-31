@@ -42,30 +42,6 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/code.kz80.asm",
           "position": {
-            "line": 42,
-            "column": 1
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/display.kz80.asm",
-          "position": {
-            "line": 200,
-            "column": 1
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/types.kz80.asm",
-          "position": {
-            "line": 0,
-            "column": 0
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/border-tests.kz80.asm",
-          "position": {
             "line": 0,
             "column": 0
           }
