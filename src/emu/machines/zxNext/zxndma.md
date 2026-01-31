@@ -244,18 +244,18 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 8: Register Read Operations
+### Step 8: Register Read Operations ✓ COMPLETED
 
 **Goal**: Implement reading of DMA registers via read sequence.
 
 **Implementation**:
-- Implement read sequence state machine
-- Read status byte (format: 00E1101T)
-- Read counter (low/high - swapped in current core)
-- Read Port A address (low/high)
-- Read Port B address (low/high)
-- Handle read mask filtering
-- Implement read sequence wraparound
+- Implement read sequence state machine (completed in Step 7)
+- Read status byte (format: 00E1101T) ✓
+- Read counter (low/high - swapped in current core) ✓
+- Read Port A address (low/high) ✓
+- Read Port B address (low/high) ✓
+- Handle read mask filtering ✓
+- Implement read sequence wraparound ✓
 
 **Tests**:
 - Read full sequence with mask 0x7F
@@ -263,6 +263,11 @@ Each step follows this strict workflow:
 - Verify counter byte order
 - Read addresses after transfer
 - Test wraparound behavior
+- Status byte format verification
+- Read after state changes (LOAD, CONTINUE, ENABLE_DMA)
+- Edge cases (all bits set, zero addresses, multiple cycles)
+
+**Status**: ✓ 32 new tests in DmaDevice-regread.test.ts, 295 tests passing overall (143 + 120 + 32), no linting errors
 
 ---
 
