@@ -142,10 +142,20 @@ interface StatusFlags {
   endOfBlockReached: boolean;  // E bit - cleared when transfer completes
 }
 
+/**
+ * Bus control state for CPU/DMA arbitration
+ */
+interface BusControlState {
+  busRequested: boolean;      // BUSREQ signal asserted
+  busAcknowledged: boolean;   // BUSAK signal received
+  busDelayed: boolean;        // dma_delay signal active
+}
+
 export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private registers: RegisterState;
   private transferState: TransferState;
   private statusFlags: StatusFlags;
+  private busControl: BusControlState;
 
   private dmaState: DmaState = DmaState.IDLE;
   private registerWriteSeq: RegisterWriteSequence = RegisterWriteSequence.IDLE;
@@ -159,6 +169,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.registers = this.initializeRegisters();
     this.transferState = this.initializeTransferState();
     this.statusFlags = this.initializeStatusFlags();
+    this.busControl = this.initializeBusControl();
     this.reset();
   }
 
@@ -195,6 +206,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     return {
       atLeastOneByteTransferred: false,
       endOfBlockReached: true  // Initially true (not reached)
+    };
+  }
+
+  private initializeBusControl(): BusControlState {
+    return {
+      busRequested: false,
+      busAcknowledged: false,
+      busDelayed: false
     };
   }
 
@@ -723,6 +742,81 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         return (mask & 0x02) !== 0;
       default:
         return false;
+    }
+  }
+
+  /**
+   * Get bus control state
+   */
+  getBusControl(): BusControlState {
+    return this.busControl;
+  }
+
+  /**
+   * Request bus access from CPU
+   * Asserts BUSREQ signal
+   */
+  requestBus(): void {
+    if (!this.busControl.busRequested) {
+      this.busControl.busRequested = true;
+      this.busControl.busAcknowledged = false;
+    }
+  }
+
+  /**
+   * Acknowledge bus grant from CPU
+   * Called when BUSAK signal is received
+   */
+  acknowledgeBus(): void {
+    if (this.busControl.busRequested) {
+      this.busControl.busAcknowledged = true;
+    }
+  }
+
+  /**
+   * Release bus back to CPU
+   * Clears BUSREQ signal
+   */
+  releaseBus(): void {
+    this.busControl.busRequested = false;
+    this.busControl.busAcknowledged = false;
+  }
+
+  /**
+   * Check if bus is available for DMA transfer
+   * Returns true if BUSREQ was acknowledged and not delayed
+   */
+  isBusAvailable(): boolean {
+    return this.busControl.busRequested &&
+           this.busControl.busAcknowledged &&
+           !this.busControl.busDelayed;
+  }
+
+  /**
+   * Set bus delay signal
+   * Used by external devices to delay DMA transfer
+   */
+  setBusDelay(delayed: boolean): void {
+    this.busControl.busDelayed = delayed;
+  }
+
+  /**
+   * Check if DMA should request bus
+   * Returns true if DMA is enabled and not in IDLE state
+   */
+  shouldRequestBus(): boolean {
+    return this.registers.dmaEnabled &&
+           this.dmaState !== DmaState.IDLE &&
+           this.dmaState !== DmaState.FINISH_DMA;
+  }
+
+  /**
+   * Release bus in burst mode
+   * In burst mode, release bus between byte transfers to allow CPU execution
+   */
+  releaseBusForBurst(): void {
+    if (this.registers.transferMode === TransferMode.BURST) {
+      this.releaseBus();
     }
   }
 }
