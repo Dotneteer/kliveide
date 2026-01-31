@@ -1166,16 +1166,8 @@ async function injectCode(
       filename: compiledOutput.nexConfig.filename || "output.nex"
     };
 
-    // --- The machine must be stopped to keep the integrity of the SD card
-    const machineState = context.store.getState().emulatorState?.machineState;
-    if (
-      machineState !== MachineControllerState.Stopped &&
-      machineState !== MachineControllerState.None
-    ) {
-      return commandError(
-        "Machine must be in stopped to inject the exported NEX file to its SD card."
-      );
-    }
+    // --- Stop the machine before exporting
+    await context.emuApi.issueMachineCommand("stop");
     await exportCmd.exportCompiledCode(context, result, args);
     additionalInfo = "_klive/" + compiledOutput.nexConfig.filename;
   }

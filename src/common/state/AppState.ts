@@ -64,6 +64,8 @@ export type IdeView = {
   toolCommandSeqNo: number;
   dialogToDisplay?: number;
   dialogData?: any;
+  cursorLine?: number;
+  cursorColumn?: number;
 };
 
 export type EmulatorState = {

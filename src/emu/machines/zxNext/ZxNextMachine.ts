@@ -864,18 +864,18 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       {
         type: "Start"
       },
-      {
-        type: "QueueKey",
-        primary: SpectrumKeyCode.Space,
-        wait: SP_KEY_WAIT,
-        message: "Space"
-      },
-      {
-        type: "ReachExecPoint",
-        rom: 0,
-        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-      },
+      // {
+      //   type: "QueueKey",
+      //   primary: SpectrumKeyCode.Space,
+      //   wait: SP_KEY_WAIT,
+      //   message: "Space"
+      // },
+      // {
+      //   type: "ReachExecPoint",
+      //   rom: 0,
+      //   execPoint: ZXNEXT_MAIN_WAITING_LOOP,
+      //   message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
+      // },
       {
         type: "Start"
       },

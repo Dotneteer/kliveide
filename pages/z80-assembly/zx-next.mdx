@@ -363,14 +363,19 @@ Specifies whether to close or keep open the NEX file handle after loading.
 .savenex filehandle <mode>
 ```
 
-- **mode**: Either "close" or "open"
+- **mode**: Either "close" (close file after loading) or "open" (keep file open, pass handle in BC register)
+- **Default**: "close" (file is closed after loading)
 
 **Examples:**
 
 ```z80klive
-.savenex filehandle "close"
-.savenex filehandle "open"
+.savenex filehandle "close"  ; Close file after loading (default)
+.savenex filehandle "open"   ; Keep file open, pass handle in BC register
 ```
+
+**NEX File Specification:**
+- "close" writes 0x0000 to offset 140 (file is closed by loader)
+- "open" writes 0x0001 to offset 140 (file kept open, handle passed in BC register)
 
 ### PRESERVE - Preserve Next Registers
 
@@ -550,7 +555,7 @@ Default values for `.savenex` parameters depend on whether you're using `.model 
 | `border` | 7 | White border |
 | `entryaddr` | $8000 | Entry point at $8000 |
 | `entryBank` | 0 | Bank 0 |
-| `fileHandle` | "close" | Close file after loading |
+| `fileHandle` | "close" | Close NEX file after loading |
 | `preserveRegs` | false | Don't preserve registers |
 
 ### Without `.model next` (Traditional Mode)
@@ -561,7 +566,7 @@ Default values for `.savenex` parameters depend on whether you're using `.model 
 | `border` | 0 | Black border |
 | `entryaddr` | (none) | Must be specified |
 | `entryBank` | 0 | Bank 0 |
-| `fileHandle` | "close" | Close file after loading |
+| `fileHandle` | "close" | Close NEX file after loading |
 | `preserveRegs` | false | Don't preserve registers |
 
 ## Error Handling

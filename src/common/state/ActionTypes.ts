@@ -44,6 +44,7 @@ export interface ActionTypes {
   PROTECT_DISK: null;
 
   SET_IDE_STATUS_MESSAGE: null;
+  SET_CURSOR_POSITION: null;
   INC_BPS_VERSION: null;
   INC_TOOL_CMD_SEQ: null;
 

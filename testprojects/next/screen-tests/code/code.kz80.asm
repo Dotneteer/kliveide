@@ -5,39 +5,162 @@
 
 .savenex file "screen-tests.nex"
 .savenex core "3.1.0"
+.savenex stackaddr STACK_TOP
 
 ; Unbanked code in bank 2 at $8000
-main:
-    ; 
-    ; Save the current MMU 5 value ($A000-$BFFF)
-    ld a,$55
-    ld bc,$243b
-    out (c),a
-    inc b
-    in a,(c)
-    push af
-    ;
-    ; Page in the first 8K of 16K Bank $20 to $A000-$BFFF
-    di
-    nextreg $55,$40
-    ;
-    ; Invoke the subrouting in Bank $20
-    call SetBorder
-    ;
-    ; Restore the old MMU 5 value
-    pop af
-    nextreg $55,a
+    jp Main
+
+#include "display.kz80.asm"
+#include "border-tests.kz80.asm"
+
+Main:
+    ; When NEX file starts, interrupt is disabled
     ei
+MainLoop
+    call ClearScreen            ; Empty screen
+    PrintText2(WelcomeText)     ; Display the menu text
+KeyLoop
+    call WaitForKey             ; Dispatch the key
+    ;ld h,0
+    ;ld l,a
+    ;call PrintHL
+    ;ld a,' '
+    ;rst $10
+    cp KEY_X                    ; Handle "Exit" key
+    jp z,Exit
+    cp KEY_LC_X 
+    jp z,Exit
+    cp KEY_T                    ; Hanlde the "Test" key
+    jp z,RunTests
+    cp KEY_LC_T
+    jp z,RunTests
+    Border(4)
+    jr KeyLoop
 trap 
     jr $
 
+;
+; Start the test cycle
+RunTests
+    ld bc,0
+    ld hl,TestTable
+`testloop
+    ld e,(hl)
+    inc hl
+    ld d,(hl)
+    inc hl
+    ld a,d
+    or e
+    jr z,EndTests
+    ;
+    ; Save main registers
+    push bc
+    push de
+    ;
+    ; Invoke the next test
+    call ClearScreen
+    ;
+    ; Print test number and title
+    push hl
+    push de
+    PrintAt(0, 0)
+    ld h,b
+    ld l,c
+    call PrintHL
+    pop de                      ; DE=Current test descriptor
+    ex de,hl
+    ld e,(hl)
+    inc hl
+    ld d,(hl)                   ; DE=Test routine
+    inc hl
+    ld c,(hl)
+    inc hl
+    ld b,(hl)                   ; BC=Test parameter
+    inc hl
+    ld a,(hl)                   ; A=Non-zero if should wait for key
+    inc hl                      ; HL=Test title to print
+    ;
+    ; Save test address, parameter, and keypress flag
+    push de
+    push bc
+    push af
+    ex de,hl
+    PrintAt(2, 0)
+    Ink(1)
+    call PrintTermText
+    Ink(0)
+    pop af                      ; Restor keypress flag
+    and a
+    jr z,`runTest               ; No keypress required
+    ld de,StartTestText
+    call PrintTermText
+    call WaitForKey
+`runTest
+    pop bc                     ; Restore address and parameters
+    pop de
+    ;
+    ; Execute the test
+    ;
+    ex de,hl
+    push `testReturn
+    jp (hl)
+    ; 
+`testReturn
+    pop hl
+    ;
+    ; Wait for keypress
+    call WaitForKey
+    ;
+    ; Restore main registers
+    pop de
+    pop bc
+    jr `testLoop
 
-; Explicit bank $20 code
-.bank $20
-.org $0000
-.disp $a000
+;
+; All tests run
+EndTests
+    Border(7)
+    call ClearScreen
+    PrintText2(EndText)
+    call WaitForKey
+    jp MainLoop
 
-SetBorder
-    ld a,3
-    out ($fe),a
-    ret
+;
+; Page to ZX Spectrum Next ROM and restart
+Exit
+    nextreg $8e,$00
+    jp $0
+
+TestTable
+    .dw BorderTest
+    .dw 0
+
+WelcomeText
+    .dm "\a\x01\x01" ; AT 1, 1
+    .dm "Klive Screen Tests"
+    .dm "\a\x03\x01" ; AT 3, 1
+    .dm "\I\x01L\I\x00 List tests"
+    .dm "\a\x05\x01" ; AT 5, 1
+    .dm "\I\x01T\I\x00 Execute tests"
+    .dm "\a\x09\x01" ; AT 9, 1
+    .dm "\I\x01X\I\x00 Exit"
+    TERM_TEXT()
+
+EndText
+    .dm "\a\x01\x01" ; AT 1, 1
+    .dm "Tests completed."
+    .dm "\a\x02\x01" ; AT 2, 1
+    .dm "Press any key."
+    TERM_TEXT()
+
+StartTestText
+    .dm "\a\x04\x00" ; AT 4, 1
+    .dm "Press any key to start the test"
+    TERM_TEXT()
+
+
+;
+; Keep $100 bytes for stack
+.defs $100
+STACK_TOP
+

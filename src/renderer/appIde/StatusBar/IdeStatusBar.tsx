@@ -5,20 +5,29 @@ import { Icon } from "@controls/Icon";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import classnames from "classnames";
 import styles from "./IdeStatusBar.module.scss";
+import { useAppServices } from "../services/AppServicesProvider";
+import { CODE_EDITOR } from "@common/state/common-ids";
 
 type IdeStatusBarProps = {
   show: boolean;
 };
 
 export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
+  const { projectService } = useAppServices();
   const execState = useSelector((s) => s.emulatorState?.machineState);
   const statusMessage = useSelector((s) => s.ideView?.statusMessage);
   const statusSuccess = useSelector((s) => s.ideView?.statusSuccess);
   const isKliveProject = useSelector((s) => s.project?.isKliveProject);
   const compilation = useSelector((s) => s.compilation);
+  const cursorLine = useSelector((s) => s.ideView?.cursorLine);
+  const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
   const [machineState, setMachineState] = useState("");
   const [compileStatus, setCompileStatus] = useState("");
   const [compileSuccess, setCompileSuccess] = useState(true);
+
+  // --- Get active document to check if it's a Monaco editor
+  const activeDocument = projectService?.getActiveDocumentHubService()?.getActiveDocument();
+  const isMonacoEditor = activeDocument?.type === CODE_EDITOR;
 
   // --- Reflect machine execution state changes
   useEffect(() => {
@@ -107,6 +116,14 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
           </Section>
         )}
         <SpaceFiller />
+        {isMonacoEditor && cursorLine !== undefined && cursorColumn !== undefined && (
+          <Section>
+            <Label text="Ln" />
+            <Label text={cursorLine.toString()} isMonospace={true} />
+            <Label text="Col" />
+            <Label text={cursorColumn.toString()} isMonospace={true} />
+          </Section>
+        )}
       </div>
     </div>
   );

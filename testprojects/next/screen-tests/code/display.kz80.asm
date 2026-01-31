@@ -1,30 +1,113 @@
 ; ------------------------------------------------------------------------------
-; SP48 API Macros
+; ZX Spectrun Next system variables
 ; ------------------------------------------------------------------------------
-OpenUpperScreen .macro()
-    ld a,2
-    call $1601
+LAST_K                    .equ $5c08
+
+; ------------------------------------------------------------------------------
+; ZX Spectrun Next ROM Addresses
+; ------------------------------------------------------------------------------
+ZXN_PRINT_TEXT            .equ $203c
+
+; ------------------------------------------------------------------------------
+; ZX Spectrun Next key codes
+; ------------------------------------------------------------------------------
+KEY_T                    .equ $74
+KEY_LC_T                 .equ $3e
+KEY_X                    .equ $78
+KEY_LC_X                 .equ $60
+
+; 256 byte buffer for conversions
+TMP_BUFF .defs $100
+
+Border .macro(color)
+    push af
+    ld a,{{color}}
+    out ($fe),a
+    pop af
 .endm
 
-PrintChar .macro()
-    push hl
-    push bc
-    rst $28
-    .defw $0010
-    pop bc
-    pop hl
+Ink .macro(color)
+    push af
+    ld a,$10
+    rst $10
+    ld a,{{color}}
+    rst $10
+    pop af
 .endm
 
 ; ------------------------------------------------------------------------------
 ; Sign error
 ; ------------------------------------------------------------------------------
 SIGN_ERR .macro()
-    ld a,2
-    out ($fe),a
+    Border(2)
+.endm
+
+; ------------------------------------------------------------------------------
+; Text termination mark
+; ------------------------------------------------------------------------------
+TERM_TEXT .macro()
+    .defw $ffff
+.endm
+
+; ------------------------------------------------------------------------------
+; Prints text with a particular start address and length
+; addr: Start address of the text
+; length: Text length
+; ------------------------------------------------------------------------------
+PrintText .macro(addr, length)
+    ld de,{{addr}}
+    ld bc,{{length}}
+    call ZXN_PRINT_TEXT
+.endm
+
+; ------------------------------------------------------------------------------
+; Prints text with a particular start address. The text should be terminated
+; with $FFFF word
+; addr: Start address of the text
+; ------------------------------------------------------------------------------
+PrintText2 .macro(addr)
+    ld de,{{addr}}
+    call PrintTermText
+.endm
+
+PrintTermText
+    ld bc,0
+    push de
+    ex de,hl
+`testLoop
+    ld a,h
+    or l
+    jr nz, `charTest
+    ld bc,0
+    jr `done
+`chartest
+    ld a,(hl)
+    cp $ff
+    inc hl
+    inc bc
+    jr nz,`testLoop
+    ld a,(hl)
+    cp $ff
+    jr nz,`chartest
+    dec bc
+`done
+    pop de
+    jp ZXN_PRINT_TEXT
+
+PrintAt .macro(row, col)
+    ld a,$16
+    rst $10
+    ld a,{{row}}
+    rst $10
+    ld a,{{col}}
+    rst $10
 .endm
 
 ; ------------------------------------------------------------------------------
 ; Clear Screen
+; IN: ---
+; OUT:
+;   AFBCDEHL/IX same
 ; ------------------------------------------------------------------------------
 ClearScreen
     push hl
@@ -32,7 +115,7 @@ ClearScreen
     push bc
     ld hl,$4000
     ld de,$4001
-    ld bc,$5fff
+    ld bc,$17ff
     ld (hl),0
     ldir
     ld hl,$5800
@@ -46,23 +129,110 @@ ClearScreen
     ret
 
 ; ------------------------------------------------------------------------------
-; Print the specified text to the screen
+; Convert 16-bit value to decimal string
 ; IN:
-;   DE = Start address
-;   BC = Text length
-; OUT(s):
-;   F(c) = 0
-; OUT(f):
-;   F(c) = 1
+;   HL=Input value
+;   DE=Destination buffer (at least with 5 bytes)
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-PrintToScreen
-`next
-    ld a,(hl)
-    PrintChar()
-    inc hl
-    dec bc
-    ld a,b
-    or c
-    jr nz,`next
+ConvToDecimal
+    ld bc,10000
+    call `conv
+    ld bc,1000
+    call `conv
+    ld bc,100
+    call `conv
+    ld bc,10
+    call `conv
+    ld a,l
+    jr `conv3
+`conv
+    xor a
+`conv1
+    sbc hl,bc
+    jr c,`conv2
+    inc a
+    jr `conv1
+`conv2
+    add hl,bc
+`conv3
+    add a,'0'
+    ld (de),a
+    inc de
     ret
 
+; ------------------------------------------------------------------------------
+; Convert 16-bit value to decimal string (keeps registers)
+; IN:
+;   HL=Input value
+;   DE=Destination buffer (at least with 5 bytes)
+; OUT:
+;   AFBCDEHL/IX same
+; ------------------------------------------------------------------------------
+ConvToDecimalP
+    push af
+    push bc
+    push de
+    push hl
+    call ConvToDecimal
+    pop hl
+    pop de
+    pop bc
+    pop af
+    ret
+
+; ------------------------------------------------------------------------------
+; Prints the specified number or LSB digits of HL
+; IN:
+;   HL=Input value
+;   A=number of digit (LSBs), 1-5. Default: 5
+; OUT:
+;   AFBCDEHL/IX same
+; ------------------------------------------------------------------------------
+PrintHL
+    ld a,5
+PrintHL2
+    cp 0
+    jr z,`print1
+    cp 5
+    jr c,`print2
+`print1
+    ld a,5
+`print2
+    push af
+    ld de,TMP_BUFF
+    call ConvToDecimal
+    pop af
+    ld hl,TMP_BUFF + 5
+    ld b,0
+    ld c,a
+    and a
+    sbc hl,bc
+    ld b,a
+`print3
+    ld a,(hl)
+    rst $10
+    inc hl
+    djnz `print3
+    ret
+
+; ------------------------------------------------------------------------------
+; Wait for a keypress
+; (Interrupt must be enabled)
+; IN: ---
+; OUT:
+;   A=Pressed key
+;
+;   AFBCDEHL/IX same
+;   AF....../.. different
+; ------------------------------------------------------------------------------
+WaitForKey
+    xor a
+    ld (LAST_K),a
+`wait
+    ld a,(LAST_K)
+    or a
+    jr z,`wait
+    ret

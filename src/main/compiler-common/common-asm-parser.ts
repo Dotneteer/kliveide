@@ -1317,23 +1317,13 @@ export abstract class CommonAsmParser<
     }
 
     while (this.skipToken(CommonTokens.VerticalBar)) {
-      const startToken = this.tokens.peek();
       const rightExpr = this.parseXorExpr();
       if (!rightExpr) {
         this.reportError("Z0111");
         return null;
       }
       const endToken = this.tokens.peek();
-      leftExpr = this.createExpressionNode<BinaryExpression<TInstruction, TToken>>(
-        "BinaryExpression",
-        {
-          operator: "|",
-          left: leftExpr,
-          right: rightExpr
-        },
-        startToken,
-        endToken
-      );
+      leftExpr = this.createBinaryExpressionNode("|", leftExpr, rightExpr, endToken);
     }
     return leftExpr;
   }
@@ -1349,23 +1339,13 @@ export abstract class CommonAsmParser<
     }
 
     while (this.skipToken(CommonTokens.UpArrow)) {
-      const startToken = this.tokens.peek();
       const rightExpr = this.parseAndExpr();
       if (!rightExpr) {
         this.reportError("Z0111");
         return null;
       }
       const endToken = this.tokens.peek();
-      leftExpr = this.createExpressionNode<BinaryExpression<TInstruction, TToken>>(
-        "BinaryExpression",
-        {
-          operator: "^",
-          left: leftExpr,
-          right: rightExpr
-        },
-        startToken,
-        endToken
-      );
+      leftExpr = this.createBinaryExpressionNode("^", leftExpr, rightExpr, endToken);
     }
     return leftExpr;
   }
@@ -1381,23 +1361,13 @@ export abstract class CommonAsmParser<
     }
 
     while (this.skipToken(CommonTokens.Ampersand)) {
-      const startToken = this.tokens.peek();
       const rightExpr = this.parseEquExpr();
       if (!rightExpr) {
         this.reportError("Z0111");
         return null;
       }
       const endToken = this.tokens.peek();
-      leftExpr = this.createExpressionNode<BinaryExpression<TInstruction, TToken>>(
-        "BinaryExpression",
-        {
-          operator: "&",
-          left: leftExpr,
-          right: rightExpr
-        },
-        startToken,
-        endToken
-      );
+      leftExpr = this.createBinaryExpressionNode("&", leftExpr, rightExpr, endToken);
     }
     return leftExpr;
   }
@@ -1421,24 +1391,13 @@ export abstract class CommonAsmParser<
         CommonTokens.CiNotEqual
       ))
     ) {
-      const startToken = this.tokens.peek();
       const rightExpr = this.parseRelExpr();
       if (!rightExpr) {
         this.reportError("Z0111");
         return null;
       }
       const endToken = this.tokens.peek();
-      leftExpr = this.createExpressionNode<BinaryExpression<TInstruction, TToken>>(
-        "BinaryExpression",
-        {
-          type: "BinaryExpression",
-          operator: opType.text,
-          left: leftExpr,
-          right: rightExpr
-        },
-        startToken,
-        endToken
-      );
+      leftExpr = this.createBinaryExpressionNode(opType.text, leftExpr, rightExpr, endToken);
     }
     return leftExpr;
   }
@@ -1462,23 +1421,13 @@ export abstract class CommonAsmParser<
         CommonTokens.GreaterThanOrEqual
       ))
     ) {
-      const startToken = this.tokens.peek();
       const rightExpr = this.parseShiftExpr();
       if (!rightExpr) {
         this.reportError("Z0111");
         return null;
       }
       const endToken = this.tokens.peek();
-      leftExpr = this.createExpressionNode<BinaryExpression<TInstruction, TToken>>(
-        "BinaryExpression",
-        {
-          operator: opType.text,
-          left: leftExpr,
-          right: rightExpr
-        },
-        startToken,
-        endToken
-      );
+      leftExpr = this.createBinaryExpressionNode(opType.text, leftExpr, rightExpr, endToken);
     }
     return leftExpr;
   }
@@ -1528,23 +1477,13 @@ export abstract class CommonAsmParser<
 
     let opType: Token<CommonTokenType> | null;
     while ((opType = this.skipTokens(CommonTokens.Plus, CommonTokens.Minus))) {
-      const startToken = this.tokens.peek();
       const rightExpr = this.parseMultExpr();
       if (!rightExpr) {
         this.reportError("Z0111");
         return null;
       }
       const endToken = this.tokens.peek();
-      leftExpr = this.createExpressionNode<BinaryExpression<TInstruction, TToken>>(
-        "BinaryExpression",
-        {
-          operator: opType.text,
-          left: leftExpr,
-          right: rightExpr
-        },
-        startToken,
-        endToken
-      );
+      leftExpr = this.createBinaryExpressionNode(opType.text, leftExpr, rightExpr, endToken);
     }
     return leftExpr;
   }
@@ -2061,6 +2000,36 @@ export abstract class CommonAsmParser<
 
   // ==========================================================================
   // Helper methods for parsing
+
+  /**
+   * Creates a binary expression node with correct source text span
+   */
+  private createBinaryExpressionNode(
+    operator: string,
+    left: Expression<TInstruction, TToken>,
+    right: Expression<TInstruction, TToken>,
+    endToken: Token<CommonTokenType>
+  ): BinaryExpression<TInstruction, TToken> {
+    // Note: We can't use the current token as startToken because it points to the right expression
+    // Instead, we use the left expression's start position to get the full source span
+    const startPosition = left.startPosition;
+    const endPosition = right.endPosition;
+    return Object.assign(
+      {},
+      {
+        type: "BinaryExpression" as const,
+        operator,
+        left,
+        right,
+        startPosition,
+        endPosition,
+        line: left.line,
+        startColumn: left.startColumn,
+        endColumn: right.endColumn,
+        sourceText: this.tokens.getSourceSpan(startPosition, endPosition)
+      }
+    );
+  }
 
   private createExpressionNode<T extends ExpressionNode<TInstruction>>(
     type: ExpressionNode<TInstruction>["type"],

@@ -43,6 +43,11 @@
     "/^python3 /tmp/fix_savenex\\.py$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "npx tsx": true,
+    "/^node /tmp/test-reg-debug\\.mjs$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }

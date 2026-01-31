@@ -47,7 +47,8 @@ import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import {
   incBreakpointsVersionAction,
   incEditorVersionAction,
-  startBackgroundCompileAction
+  startBackgroundCompileAction,
+  setCursorPositionAction
 } from "@common/state/actions";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import { useDocumentHubServiceVersion } from "../services/DocumentServiceProvider";
@@ -612,6 +613,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           .getActiveDocumentHubService()
           .saveActiveDocumentPosition(e.position.lineNumber, e.position.column);
         store.dispatch(incEditorVersionAction());
+        store.dispatch(setCursorPositionAction(e.position.lineNumber, e.position.column));
       })
     );
 

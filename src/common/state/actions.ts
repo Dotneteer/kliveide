@@ -146,6 +146,11 @@ export const setIdeStatusMessageAction: ActionCreator = (text: string, flag?: bo
   payload: { text, flag }
 });
 
+export const setCursorPositionAction: ActionCreator = (line: number, column: number) => ({
+  type: "SET_CURSOR_POSITION",
+  payload: { line, column }
+});
+
 export const incBreakpointsVersionAction: ActionCreator = () => ({
   type: "INC_BPS_VERSION"
 });

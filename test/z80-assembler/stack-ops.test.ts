@@ -15,6 +15,19 @@ describe("Assembler - stack operations", () => {
     await testCodeEmit(".model next \r\n push #1234", 0xed, 0x8a, 0x12, 0x34);
   });
 
+  it("extended push with fixup", async () => {
+    await testCodeEmit(`
+      .model next
+      push \`term
+      nop
+      nop
+      nop
+      \`term
+        nop
+    `, 0xed, 0x8a, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00);
+  });
+
+
   it("pop", async () => {
     await testCodeEmit("pop af", 0xf1);
     await testCodeEmit("pop bc", 0xc1);

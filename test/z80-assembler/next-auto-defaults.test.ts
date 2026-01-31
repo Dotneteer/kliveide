@@ -522,5 +522,64 @@ describe("Next Auto Defaults (Step 1)", () => {
       const warnings = output.errors.filter(e => e.errorCode === "Z0902");
       expect(warnings.length).toBe(0);
     });
+
+    it("✅ Forward reference in .savenex stackaddr works", async () => {
+      const source = `
+        .model next
+        .savenex file "test.nex"
+        .savenex stackaddr STACK_TOP
+        
+        ld a,1
+        .defs $100
+STACK_TOP:
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // ld a,1 is 2 bytes at $8000-$8001, .defs $100 fills $8002-$8101, STACK_TOP is at $8102
+      expect(output.nexConfig.stackAddr).toBe(0x8102);
+    });
+
+    it("✅ Forward reference in .savenex entryaddr works", async () => {
+      const source = `
+        .model next
+        .savenex file "test.nex"
+        .savenex entryaddr main
+        
+main:
+        ld a,1
+        ret
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      expect(output.nexConfig.entryAddr).toBe(0x8000);
+    });
+
+    it("✅ Both stackaddr and entryaddr forward references work together", async () => {
+      const source = `
+        .model next
+        .savenex file "test.nex"
+        .savenex stackaddr STACK_TOP
+        .savenex entryaddr main
+        
+main:
+        ld a,1
+        call subroutine
+        ret
+
+subroutine:
+        ld b,2
+        ret
+        
+        .defs $100
+STACK_TOP:
+      `;
+      const output = await testCompile(source);
+      expect(output.errors.length).toBe(0);
+      // main: ld a,1 (2 bytes), call (3 bytes), ret (1 byte), 
+      // subroutine: ld b,2 (2 bytes), ret (1 byte) = 9 bytes total
+      // .defs $100 fills 256 bytes, STACK_TOP at $8000 + 9 + 256 = $8109
+      expect(output.nexConfig.stackAddr).toBe(0x8109);
+      expect(output.nexConfig.entryAddr).toBe(0x8000);
+    });
   });
 });
