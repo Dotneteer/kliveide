@@ -942,4 +942,47 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     }
     // FIXED mode: do nothing, address stays the same
   }
+
+  /**
+   * Execute a complete continuous transfer
+   * Performs the entire block transfer without releasing the bus
+   * @returns Number of bytes transferred
+   */
+  executeContinuousTransfer(): number {
+    if (!this.registers.dmaEnabled) {
+      return 0;
+    }
+
+    // Check if transfer mode is continuous
+    if (this.registers.transferMode !== TransferMode.CONTINUOUS) {
+      return 0;
+    }
+
+    const bytesToTransfer = this.registers.blockLength;
+    let bytesTransferred = 0;
+
+    // Request and wait for bus
+    this.requestBus();
+    
+    // Perform the transfer
+    while (bytesTransferred < bytesToTransfer) {
+      // Read from source
+      this.performReadCycle();
+      
+      // Write to destination
+      this.performWriteCycle();
+      
+      bytesTransferred++;
+
+      // Check if we've completed the block
+      if (bytesTransferred >= bytesToTransfer) {
+        break;
+      }
+    }
+
+    // Release bus
+    this.releaseBus();
+
+    return bytesTransferred;
+  }
 }
