@@ -455,6 +455,18 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
           this.executeEnableDma();
           break;
           
+        case 0xbf: // READ_STATUS_BYTE
+          this.executeReadStatusByte();
+          break;
+          
+        case 0xa7: // INITIALIZE_READ_SEQUENCE
+          this.executeInitializeReadSequence();
+          break;
+          
+        case 0x8b: // REINITIALIZE_STATUS_BYTE
+          this.executeReinitializeStatusByte();
+          break;
+          
         default:
           // Unknown command - ignore
           break;
@@ -578,5 +590,139 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     
     // Keep register write sequence in IDLE
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * READ_STATUS_BYTE command (0xBF) - Prepare to read status
+   * Status format: 00E1101T
+   * - E (bit 5): End of block (inverted - 1=not reached, 0=reached)
+   * - T (bit 0): At least one byte transferred
+   */
+  private executeReadStatusByte(): void {
+    // Set read sequence to return status byte on next read
+    this.registerReadSeq = RegisterReadSequence.RD_STATUS;
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * INITIALIZE_READ_SEQUENCE command (0xA7) - Start read sequence
+   * Uses read mask to determine which registers to include in read sequence
+   */
+  private executeInitializeReadSequence(): void {
+    // Initialize read sequence to first position
+    this.registerReadSeq = RegisterReadSequence.RD_STATUS;
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * REINITIALIZE_STATUS_BYTE command (0x8B) - Reset status and read sequence
+   * Resets status flags and reinitializes the read sequence
+   */
+  private executeReinitializeStatusByte(): void {
+    // Reset status flags
+    this.statusFlags.endOfBlockReached = true;
+    this.statusFlags.atLeastOneByteTransferred = false;
+    
+    // Reinitialize read sequence to status byte
+    this.registerReadSeq = RegisterReadSequence.RD_STATUS;
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * Read the next byte in the register read sequence
+   * Called when DMA port is read after a read command
+   * Status format: 00E1101T where E=end of block (inverted), T=at least one byte
+   */
+  readStatusByte(): number {
+    let value = 0;
+    
+    if (this.registerReadSeq === RegisterReadSequence.RD_STATUS) {
+      // Format: 00E1101T
+      // Bit 5 (E): End of block reached (inverted - 1 means not reached)
+      const eBit = this.statusFlags.endOfBlockReached ? 0 : (1 << 5);
+      
+      // Bit 0 (T): At least one byte transferred
+      const tBit = this.statusFlags.atLeastOneByteTransferred ? 1 : 0;
+      
+      // Fixed bits: bits 4-1 = 1101 (0x1A in positions 4-1)
+      value = eBit | 0x1a | tBit;
+      
+      // Advance to next read position based on read mask
+      this.advanceReadSequence();
+    } else if (this.registerReadSeq === RegisterReadSequence.RD_COUNTER_LO) {
+      // Counter low byte
+      value = this.transferState.byteCounter & 0xff;
+      this.advanceReadSequence();
+    } else if (this.registerReadSeq === RegisterReadSequence.RD_COUNTER_HI) {
+      // Counter high byte
+      value = (this.transferState.byteCounter >> 8) & 0xff;
+      this.advanceReadSequence();
+    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_A_LO) {
+      // Port A address low byte
+      value = this.transferState.sourceAddress & 0xff;
+      this.advanceReadSequence();
+    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_A_HI) {
+      // Port A address high byte
+      value = (this.transferState.sourceAddress >> 8) & 0xff;
+      this.advanceReadSequence();
+    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_B_LO) {
+      // Port B address low byte
+      value = this.transferState.destAddress & 0xff;
+      this.advanceReadSequence();
+    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_B_HI) {
+      // Port B address high byte
+      value = (this.transferState.destAddress >> 8) & 0xff;
+      this.advanceReadSequence();
+    }
+    
+    return value;
+  }
+
+  /**
+   * Advance read sequence to next position based on read mask
+   */
+  private advanceReadSequence(): void {
+    const mask = this.registers.readMask;
+    let nextSeq = (this.registerReadSeq + 1) % 7;
+    
+    // Skip positions not enabled by mask
+    while (nextSeq !== RegisterReadSequence.RD_STATUS && !this.isReadPositionEnabled(nextSeq, mask)) {
+      nextSeq = (nextSeq + 1) % 7;
+    }
+    
+    this.registerReadSeq = nextSeq as RegisterReadSequence;
+  }
+
+  /**
+   * Check if a read position is enabled by the read mask
+   */
+  private isReadPositionEnabled(position: RegisterReadSequence, mask: number): boolean {
+    // Read mask bits:
+    // Bit 6: Counter low
+    // Bit 5: Counter high
+    // Bit 4: Port A address low
+    // Bit 3: Port A address high
+    // Bit 2: Port B address low
+    // Bit 1: Port B address high
+    // Bit 0: (unused/reserved)
+    
+    switch (position) {
+      case RegisterReadSequence.RD_STATUS:
+        return true; // Status is always included
+      case RegisterReadSequence.RD_COUNTER_LO:
+        return (mask & 0x40) !== 0;
+      case RegisterReadSequence.RD_COUNTER_HI:
+        return (mask & 0x20) !== 0;
+      case RegisterReadSequence.RD_PORT_A_LO:
+        return (mask & 0x10) !== 0;
+      case RegisterReadSequence.RD_PORT_A_HI:
+        return (mask & 0x08) !== 0;
+      case RegisterReadSequence.RD_PORT_B_LO:
+        return (mask & 0x04) !== 0;
+      case RegisterReadSequence.RD_PORT_B_HI:
+        return (mask & 0x02) !== 0;
+      default:
+        return false;
+    }
   }
 }

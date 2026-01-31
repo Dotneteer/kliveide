@@ -219,23 +219,28 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 7: Command Register (WR6) - Read Operations
+### Step 7: Command Register (WR6) - Read Operations ✓ COMPLETED
 
 **Goal**: Implement status reading and read mask configuration.
 
 **Implementation**:
 - Implement READ_STATUS_BYTE (0xBF)
-- Implement READ_MASK_FOLLOWS (0xBB)
+- Implement READ_MASK_FOLLOWS (0xBB) - already done in Step 5
 - Implement INITIALIZE_READ_SEQUENCE (0xA7)
 - Implement REINITIALIZE_STATUS_BYTE (0x8B)
 - Parse read mask byte
 - Set up read sequence state machine
+- Implement readStatusByte() method with read mask filtering
+- Implement advanceReadSequence() to skip disabled registers
 
 **Tests**:
 - Read status byte (verify E and T bits)
 - Configure read mask
 - Initialize read sequence with different masks
 - Reinitialize status byte
+- Read mask filtering (counter only, Port A only, Port B only, combinations)
+
+**Status**: ✓ 34 new tests in DmaDevice-commands.test.ts (120 total), 263 tests passing overall, no linting errors
 
 ---
 

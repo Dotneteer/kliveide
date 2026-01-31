@@ -1055,3 +1055,457 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
   });
 });
+
+describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
+  let machine: TestZxNextMachine;
+  let dmaDevice: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dmaDevice = machine.dmaDevice;
+  });
+
+  describe("READ_STATUS_BYTE Command (0xBF)", () => {
+    it("should set read sequence to RD_STATUS", () => {
+      dmaDevice.writeWR6(0xbf);
+      expect(dmaDevice.getRegisterReadSeq()).toBe(0); // RD_STATUS = 0
+    });
+
+    it("should keep register write sequence in IDLE", () => {
+      dmaDevice.writeWR6(0xbf);
+      expect(dmaDevice.getRegisterWriteSeq()).toBe(0); // IDLE = 0
+    });
+
+    it("should return status byte with correct format", () => {
+      dmaDevice.writeWR6(0xbf);
+      const status = dmaDevice.readStatusByte();
+      
+      // Status format: 00E1101T
+      // Initially: endOfBlockReached=true (E bit=0), atLeastOneByteTransferred=false (T=0)
+      // Binary: 00011010 = 0x1A
+      expect(status).toBe(0x1a);
+    });
+
+    it("should reflect endOfBlockReached flag correctly", () => {
+      // Initially endOfBlockReached is true (so E bit should be 0)
+      dmaDevice.writeWR6(0xbf);
+      let status = dmaDevice.readStatusByte();
+      
+      // E bit is inverted: endOfBlockReached=true means E=0
+      // Format: 00E1101T with E=0, T=0 -> 00011010 = 0x1A
+      expect(status).toBe(0x1a);
+    });
+
+    it("should reflect atLeastOneByteTransferred flag correctly", () => {
+      // After reset, atLeastOneByteTransferred is false
+      dmaDevice.writeWR6(0xc3); // RESET sets atLeastOneByteTransferred=false
+      dmaDevice.writeWR6(0xbf);
+      const status = dmaDevice.readStatusByte();
+      
+      // T bit should be 0
+      expect(status & 0x01).toBe(0);
+    });
+
+    it("should work multiple times", () => {
+      dmaDevice.writeWR6(0xbf);
+      const status1 = dmaDevice.readStatusByte();
+      
+      dmaDevice.writeWR6(0xbf);
+      const status2 = dmaDevice.readStatusByte();
+      
+      expect(status1).toBe(status2);
+    });
+  });
+
+  describe("INITIALIZE_READ_SEQUENCE Command (0xA7)", () => {
+    it("should set read sequence to RD_STATUS", () => {
+      dmaDevice.writeWR6(0xa7);
+      expect(dmaDevice.getRegisterReadSeq()).toBe(0); // RD_STATUS = 0
+    });
+
+    it("should keep register write sequence in IDLE", () => {
+      dmaDevice.writeWR6(0xa7);
+      expect(dmaDevice.getRegisterWriteSeq()).toBe(0); // IDLE = 0
+    });
+
+    it("should reset read sequence even if already reading", () => {
+      // Configure read mask to include counter
+      dmaDevice.writeWR6(0xbb); // READ_MASK_FOLLOWS
+      dmaDevice.writeWR6(0x7f); // All registers
+      
+      dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
+      dmaDevice.readStatusByte(); // Read status
+      
+      // After reading status, should advance to next position
+      expect(dmaDevice.getRegisterReadSeq()).not.toBe(0);
+      
+      // Reinitialize should reset to status
+      dmaDevice.writeWR6(0xa7);
+      expect(dmaDevice.getRegisterReadSeq()).toBe(0);
+    });
+
+    it("should work with different read masks", () => {
+      // Set read mask for counter only
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x60); // Counter low + high
+      
+      dmaDevice.writeWR6(0xa7);
+      expect(dmaDevice.getRegisterReadSeq()).toBe(0);
+    });
+
+    it("should allow reading full sequence", () => {
+      // Setup addresses and counter
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+
+      // Set full read mask
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x7f);
+
+      dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
+
+      // Read status
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+
+      // Read counter low
+      const counterLo = dmaDevice.readStatusByte();
+      expect(counterLo).toBe(0x00);
+
+      // Read counter high
+      const counterHi = dmaDevice.readStatusByte();
+      expect(counterHi).toBe(0x00);
+
+      // Read Port A low
+      const portALo = dmaDevice.readStatusByte();
+      expect(portALo).toBe(0x00);
+
+      // Read Port A high
+      const portAHi = dmaDevice.readStatusByte();
+      expect(portAHi).toBe(0x10);
+
+      // Read Port B low
+      const portBLo = dmaDevice.readStatusByte();
+      expect(portBLo).toBe(0x00);
+
+      // Read Port B high
+      const portBHi = dmaDevice.readStatusByte();
+      expect(portBHi).toBe(0x20);
+    });
+  });
+
+  describe("REINITIALIZE_STATUS_BYTE Command (0x8B)", () => {
+    it("should reset endOfBlockReached to true", () => {
+      dmaDevice.writeWR6(0x8b);
+      const statusFlags = dmaDevice.getStatusFlags();
+      expect(statusFlags.endOfBlockReached).toBe(true);
+    });
+
+    it("should reset atLeastOneByteTransferred to false", () => {
+      dmaDevice.writeWR6(0x8b);
+      const statusFlags = dmaDevice.getStatusFlags();
+      expect(statusFlags.atLeastOneByteTransferred).toBe(false);
+    });
+
+    it("should set read sequence to RD_STATUS", () => {
+      dmaDevice.writeWR6(0x8b);
+      expect(dmaDevice.getRegisterReadSeq()).toBe(0);
+    });
+
+    it("should keep register write sequence in IDLE", () => {
+      dmaDevice.writeWR6(0x8b);
+      expect(dmaDevice.getRegisterWriteSeq()).toBe(0);
+    });
+
+    it("should work multiple times", () => {
+      dmaDevice.writeWR6(0x8b);
+      dmaDevice.writeWR6(0x8b);
+      dmaDevice.writeWR6(0x8b);
+
+      const statusFlags = dmaDevice.getStatusFlags();
+      expect(statusFlags.endOfBlockReached).toBe(true);
+      expect(statusFlags.atLeastOneByteTransferred).toBe(false);
+    });
+  });
+
+  describe("READ_MASK_FOLLOWS Command (0xBB) - Read Mask Configuration", () => {
+    it("should store read mask correctly", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x7f); // All bits set
+      
+      const registers = dmaDevice.getRegisters();
+      expect(registers.readMask).toBe(0x7f);
+    });
+
+    it("should mask to 7 bits", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0xff); // All 8 bits
+      
+      const registers = dmaDevice.getRegisters();
+      expect(registers.readMask).toBe(0x7f); // Only 7 bits stored
+    });
+
+    it("should accept zero mask", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x00);
+      
+      const registers = dmaDevice.getRegisters();
+      expect(registers.readMask).toBe(0x00);
+    });
+
+    it("should accept partial mask", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x60); // Counter only (bits 6-5)
+      
+      const registers = dmaDevice.getRegisters();
+      expect(registers.readMask).toBe(0x60);
+    });
+
+    it("should allow updating mask multiple times", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x40);
+      expect(dmaDevice.getRegisters().readMask).toBe(0x40);
+      
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x20);
+      expect(dmaDevice.getRegisters().readMask).toBe(0x20);
+    });
+  });
+
+  describe("Read Mask Filtering", () => {
+    beforeEach(() => {
+      // Setup addresses and counter
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x34);
+      dmaDevice.writeWR0(0x12);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x78);
+      dmaDevice.writeWR4(0x56);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+    });
+
+    it("should read only counter with mask 0x60", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x60); // Counter low + high
+
+      dmaDevice.writeWR6(0xa7);
+
+      // Status
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+
+      // Counter low
+      const counterLo = dmaDevice.readStatusByte();
+      expect(counterLo).toBe(0x00);
+
+      // Counter high
+      const counterHi = dmaDevice.readStatusByte();
+      expect(counterHi).toBe(0x00);
+
+      // Should wrap back to status
+      const status2 = dmaDevice.readStatusByte();
+      expect(status2).toBe(0x1a);
+    });
+
+    it("should read only Port A with mask 0x18", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x18); // Port A low + high
+
+      dmaDevice.writeWR6(0xa7);
+
+      // Status
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+
+      // Port A low
+      const portALo = dmaDevice.readStatusByte();
+      expect(portALo).toBe(0x34);
+
+      // Port A high
+      const portAHi = dmaDevice.readStatusByte();
+      expect(portAHi).toBe(0x12);
+
+      // Should wrap back to status
+      const status2 = dmaDevice.readStatusByte();
+      expect(status2).toBe(0x1a);
+    });
+
+    it("should read only Port B with mask 0x06", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x06); // Port B low + high
+
+      dmaDevice.writeWR6(0xa7);
+
+      // Status
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+
+      // Port B low
+      const portBLo = dmaDevice.readStatusByte();
+      expect(portBLo).toBe(0x78);
+
+      // Port B high
+      const portBHi = dmaDevice.readStatusByte();
+      expect(portBHi).toBe(0x56);
+
+      // Should wrap back to status
+      const status2 = dmaDevice.readStatusByte();
+      expect(status2).toBe(0x1a);
+    });
+
+    it("should read only status with mask 0x00", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x00); // No registers
+
+      dmaDevice.writeWR6(0xa7);
+
+      // Status
+      const status1 = dmaDevice.readStatusByte();
+      expect(status1).toBe(0x1a);
+
+      // Should immediately wrap to status
+      const status2 = dmaDevice.readStatusByte();
+      expect(status2).toBe(0x1a);
+    });
+
+    it("should read specific combination with mask 0x50", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x50); // Counter low + Port A low
+
+      dmaDevice.writeWR6(0xa7);
+
+      // Status
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+
+      // Counter low
+      const counterLo = dmaDevice.readStatusByte();
+      expect(counterLo).toBe(0x00);
+
+      // Port A low
+      const portALo = dmaDevice.readStatusByte();
+      expect(portALo).toBe(0x34);
+
+      // Wrap to status
+      const status2 = dmaDevice.readStatusByte();
+      expect(status2).toBe(0x1a);
+    });
+  });
+
+  describe("Command Sequencing", () => {
+    it("should allow READ_STATUS_BYTE after LOAD", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+      dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
+
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+    });
+
+    it("should allow REINITIALIZE after INITIALIZE", () => {
+      dmaDevice.writeWR6(0xa7); // INITIALIZE
+      dmaDevice.writeWR6(0x8b); // REINITIALIZE
+
+      const statusFlags = dmaDevice.getStatusFlags();
+      expect(statusFlags.endOfBlockReached).toBe(true);
+      expect(statusFlags.atLeastOneByteTransferred).toBe(false);
+    });
+
+    it("should handle READ_MASK_FOLLOWS before INITIALIZE", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x7f);
+      dmaDevice.writeWR6(0xa7);
+
+      expect(dmaDevice.getRegisterReadSeq()).toBe(0);
+    });
+
+    it("should work with RESET then read commands", () => {
+      dmaDevice.writeWR6(0xc3); // RESET
+      dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
+
+      const status = dmaDevice.readStatusByte();
+      // After RESET: endOfBlock=true, atLeastOneByte=false
+      // E=0 (inverted), T=0 -> 00011010 = 0x1A
+      expect(status).toBe(0x1a);
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle reading before any LOAD", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x7f);
+      dmaDevice.writeWR6(0xa7);
+
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+
+      // Should read zeros for addresses/counter
+      const counterLo = dmaDevice.readStatusByte();
+      expect(counterLo).toBe(0x00);
+    });
+
+    it("should handle multiple sequential reads", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x60); // Counter only
+
+      dmaDevice.writeWR6(0xa7);
+
+      // Read sequence multiple times
+      for (let i = 0; i < 3; i++) {
+        const status = dmaDevice.readStatusByte();
+        expect(status).toBe(0x1a);
+
+        const counterLo = dmaDevice.readStatusByte();
+        expect(counterLo).toBe(0x00);
+
+        const counterHi = dmaDevice.readStatusByte();
+        expect(counterHi).toBe(0x00);
+      }
+    });
+
+    it("should preserve read mask through RESET", () => {
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x42);
+
+      dmaDevice.writeWR6(0xc3); // RESET
+
+      const registers = dmaDevice.getRegisters();
+      // RESET does not clear readMask - it's preserved
+      expect(registers.readMask).toBe(0x42);
+    });
+
+    it("should handle all commands in sequence", () => {
+      dmaDevice.writeWR6(0xbb); // READ_MASK_FOLLOWS
+      dmaDevice.writeWR6(0x7f);
+
+      dmaDevice.writeWR6(0x8b); // REINITIALIZE_STATUS_BYTE
+      dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
+      dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
+
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x1a);
+    });
+  });
+});
