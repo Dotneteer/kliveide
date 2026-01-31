@@ -443,6 +443,18 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
           this.registerWriteSeq = RegisterWriteSequence.R6_BYTE_0;
           break;
           
+        case 0xcf: // LOAD
+          this.executeLoad();
+          break;
+          
+        case 0xd3: // CONTINUE
+          this.executeContinue();
+          break;
+          
+        case 0x87: // ENABLE_DMA
+          this.executeEnableDma();
+          break;
+          
         default:
           // Unknown command - ignore
           break;
@@ -505,6 +517,66 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private executeDisableDma(): void {
     this.dmaState = DmaState.IDLE;
     this.registers.dmaEnabled = false;
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * LOAD command (0xCF) - Load addresses from registers to transfer state
+   * Direction determines which address goes to source/destination
+   */
+  private executeLoad(): void {
+    if (this.registers.directionAtoB) {
+      // A → B: Port A is source, Port B is destination
+      this.transferState.sourceAddress = this.registers.portAStartAddress;
+      this.transferState.destAddress = this.registers.portBStartAddress;
+    } else {
+      // B → A: Port B is source, Port A is destination
+      this.transferState.sourceAddress = this.registers.portBStartAddress;
+      this.transferState.destAddress = this.registers.portAStartAddress;
+    }
+    
+    // Reset byte counter
+    this.transferState.byteCounter = 0;
+    
+    // Keep register write sequence in IDLE
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * CONTINUE command (0xD3) - Reset counter but keep current addresses
+   * Used to continue a transfer from current positions
+   */
+  private executeContinue(): void {
+    // Reset byte counter to restart counting
+    this.transferState.byteCounter = 0;
+    
+    // Keep current source and destination addresses unchanged
+    // Keep register write sequence in IDLE
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * ENABLE_DMA command (0x87) - Start DMA transfer
+   * Initializes counter based on mode: 0 for zxnDMA, -1 for legacy
+   */
+  private executeEnableDma(): void {
+    // Enable DMA
+    this.registers.dmaEnabled = true;
+    
+    // Initialize byte counter based on mode
+    // zxnDMA mode: counter starts at 0
+    // Legacy mode: counter starts at -1 (0xFFFF) for compatibility
+    if (this.dmaMode === DmaMode.ZXNDMA) {
+      this.transferState.byteCounter = 0;
+    } else {
+      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
+    }
+    
+    // Set DMA state to ready for transfer
+    // (actual transfer will start when bus is available)
+    this.dmaState = DmaState.IDLE;  // Will transition to TRANSFERRING in future steps
+    
+    // Keep register write sequence in IDLE
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 }

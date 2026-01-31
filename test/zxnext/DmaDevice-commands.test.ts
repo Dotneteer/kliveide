@@ -599,3 +599,459 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     });
   });
 });
+
+describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
+  let machine: TestZxNextMachine;
+  let dmaDevice: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dmaDevice = machine.dmaDevice;
+  });
+
+  describe("LOAD Command (0xCF)", () => {
+    it("should load addresses with A→B direction", () => {
+      // Configure Port A and Port B addresses
+      dmaDevice.writeWR0(0x40); // D6=1 (A→B direction)
+      dmaDevice.writeWR0(0x00); // Port A low = 0x00
+      dmaDevice.writeWR0(0x10); // Port A high = 0x10
+      dmaDevice.writeWR0(0x00); // Block length low
+      dmaDevice.writeWR0(0x01); // Block length high
+
+      dmaDevice.writeWR4(0x01); // Continuous mode
+      dmaDevice.writeWR4(0x00); // Port B low = 0x00
+      dmaDevice.writeWR4(0x20); // Port B high = 0x20
+
+      // Execute LOAD
+      dmaDevice.writeWR6(0xcf);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x1000); // Port A
+      expect(transferState.destAddress).toBe(0x2000);   // Port B
+    });
+
+    it("should load addresses with B→A direction", () => {
+      // Configure Port A and Port B addresses
+      dmaDevice.writeWR0(0x00); // D6=0 (B→A direction)
+      dmaDevice.writeWR0(0x00); // Port A low = 0x00
+      dmaDevice.writeWR0(0x10); // Port A high = 0x10
+      dmaDevice.writeWR0(0x00); // Block length low
+      dmaDevice.writeWR0(0x01); // Block length high
+
+      dmaDevice.writeWR4(0x01); // Continuous mode
+      dmaDevice.writeWR4(0x00); // Port B low = 0x00
+      dmaDevice.writeWR4(0x20); // Port B high = 0x20
+
+      // Execute LOAD
+      dmaDevice.writeWR6(0xcf);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x2000); // Port B
+      expect(transferState.destAddress).toBe(0x1000);   // Port A
+    });
+
+    it("should reset byte counter to 0", () => {
+      // Configure addresses
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      // Execute LOAD
+      dmaDevice.writeWR6(0xcf);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0);
+    });
+
+    it("should keep register write sequence in IDLE", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf);
+
+      expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.IDLE);
+    });
+
+    it("should handle multiple LOAD commands", () => {
+      // Configure first addresses
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf);
+      let transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x1000);
+
+      // Change Port A address
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x30);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      // Execute LOAD again
+      dmaDevice.writeWR6(0xcf);
+      transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x3000);
+    });
+
+    it("should work with zero addresses", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x00);
+
+      dmaDevice.writeWR6(0xcf);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x0000);
+      expect(transferState.destAddress).toBe(0x0000);
+    });
+
+    it("should work with maximum addresses", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0xff);
+      dmaDevice.writeWR0(0xff);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0xff);
+      dmaDevice.writeWR4(0xff);
+
+      dmaDevice.writeWR6(0xcf);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0xffff);
+      expect(transferState.destAddress).toBe(0xffff);
+    });
+  });
+
+  describe("CONTINUE Command (0xD3)", () => {
+    it("should reset byte counter to 0", () => {
+      // Setup addresses first
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+
+      // Simulate counter increment (would happen during transfer)
+      // For now, just verify CONTINUE resets it
+
+      dmaDevice.writeWR6(0xd3); // CONTINUE
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0);
+    });
+
+    it("should preserve source address", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+      const beforeContinue = dmaDevice.getTransferState();
+
+      dmaDevice.writeWR6(0xd3); // CONTINUE
+      const afterContinue = dmaDevice.getTransferState();
+
+      expect(afterContinue.sourceAddress).toBe(beforeContinue.sourceAddress);
+    });
+
+    it("should preserve destination address", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+      const beforeContinue = dmaDevice.getTransferState();
+
+      dmaDevice.writeWR6(0xd3); // CONTINUE
+      const afterContinue = dmaDevice.getTransferState();
+
+      expect(afterContinue.destAddress).toBe(beforeContinue.destAddress);
+    });
+
+    it("should keep register write sequence in IDLE", () => {
+      dmaDevice.writeWR6(0xd3);
+      expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.IDLE);
+    });
+
+    it("should work multiple times", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+
+      // Execute CONTINUE multiple times
+      dmaDevice.writeWR6(0xd3);
+      dmaDevice.writeWR6(0xd3);
+      dmaDevice.writeWR6(0xd3);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0);
+      expect(transferState.sourceAddress).toBe(0x1000);
+      expect(transferState.destAddress).toBe(0x2000);
+    });
+
+    it("should work without prior LOAD command", () => {
+      // CONTINUE should work even if addresses weren't loaded
+      dmaDevice.writeWR6(0xd3);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0);
+    });
+  });
+
+  describe("ENABLE_DMA Command (0x87)", () => {
+    it("should enable DMA", () => {
+      dmaDevice.writeWR6(0x87);
+
+      const registers = dmaDevice.getRegisters();
+      expect(registers.dmaEnabled).toBe(true);
+    });
+
+    it("should initialize counter to 0 in zxnDMA mode", () => {
+      dmaDevice.setDmaMode(DmaMode.ZXNDMA);
+      dmaDevice.writeWR6(0x87);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0);
+    });
+
+    it("should initialize counter to -1 (0xFFFF) in legacy mode", () => {
+      dmaDevice.setDmaMode(DmaMode.LEGACY);
+      dmaDevice.writeWR6(0x87);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0xFFFF);
+    });
+
+    it("should set DMA state to IDLE (ready for transfer)", () => {
+      dmaDevice.writeWR6(0x87);
+
+      expect(dmaDevice.getDmaState()).toBe(DmaState.IDLE);
+    });
+
+    it("should keep register write sequence in IDLE", () => {
+      dmaDevice.writeWR6(0x87);
+      expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.IDLE);
+    });
+
+    it("should enable DMA even if previously disabled", () => {
+      // Disable first
+      dmaDevice.writeWR6(0x83); // DISABLE_DMA
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(false);
+
+      // Enable
+      dmaDevice.writeWR6(0x87);
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+    });
+
+    it("should work multiple times", () => {
+      dmaDevice.setDmaMode(DmaMode.ZXNDMA);
+
+      dmaDevice.writeWR6(0x87);
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+
+      dmaDevice.writeWR6(0x87);
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+      expect(dmaDevice.getTransferState().byteCounter).toBe(0);
+    });
+
+    it("should switch counter value when mode changes", () => {
+      dmaDevice.setDmaMode(DmaMode.ZXNDMA);
+      dmaDevice.writeWR6(0x87);
+      expect(dmaDevice.getTransferState().byteCounter).toBe(0);
+
+      dmaDevice.setDmaMode(DmaMode.LEGACY);
+      dmaDevice.writeWR6(0x87);
+      expect(dmaDevice.getTransferState().byteCounter).toBe(0xFFFF);
+
+      dmaDevice.setDmaMode(DmaMode.ZXNDMA);
+      dmaDevice.writeWR6(0x87);
+      expect(dmaDevice.getTransferState().byteCounter).toBe(0);
+    });
+  });
+
+  describe("Command Sequencing", () => {
+    it("should execute LOAD then ENABLE in sequence", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+      dmaDevice.writeWR6(0x87); // ENABLE
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x1000);
+      expect(transferState.destAddress).toBe(0x2000);
+      expect(transferState.byteCounter).toBe(0);
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+    });
+
+    it("should execute LOAD, CONTINUE, then ENABLE", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+      dmaDevice.writeWR6(0xd3); // CONTINUE
+      dmaDevice.writeWR6(0x87); // ENABLE
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0);
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+    });
+
+    it("should handle DISABLE after ENABLE", () => {
+      dmaDevice.writeWR6(0x87); // ENABLE
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+
+      dmaDevice.writeWR6(0x83); // DISABLE
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(false);
+    });
+
+    it("should allow LOAD after ENABLE", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0x87); // ENABLE first
+      dmaDevice.writeWR6(0xcf); // Then LOAD
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x1000);
+      expect(transferState.byteCounter).toBe(0);
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle CONTINUE before LOAD", () => {
+      // CONTINUE should work even without LOAD
+      dmaDevice.writeWR6(0xd3);
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.byteCounter).toBe(0);
+      expect(transferState.sourceAddress).toBe(0);
+      expect(transferState.destAddress).toBe(0);
+    });
+
+    it("should handle ENABLE before LOAD", () => {
+      dmaDevice.setDmaMode(DmaMode.ZXNDMA);
+      dmaDevice.writeWR6(0x87);
+
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+      expect(dmaDevice.getTransferState().byteCounter).toBe(0);
+    });
+
+    it("should preserve addresses through RESET and LOAD", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xc3); // RESET (clears transfer state)
+      dmaDevice.writeWR6(0xcf); // LOAD (reloads from registers)
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x1000);
+      expect(transferState.destAddress).toBe(0x2000);
+    });
+
+    it("should handle all three commands in quick succession", () => {
+      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x10);
+      dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR0(0x01);
+
+      dmaDevice.writeWR4(0x01);
+      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x20);
+
+      dmaDevice.writeWR6(0xcf); // LOAD
+      dmaDevice.writeWR6(0xd3); // CONTINUE
+      dmaDevice.writeWR6(0x87); // ENABLE
+
+      const transferState = dmaDevice.getTransferState();
+      expect(transferState.sourceAddress).toBe(0x1000);
+      expect(transferState.destAddress).toBe(0x2000);
+      expect(transferState.byteCounter).toBe(0);
+      expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
+    });
+  });
+});

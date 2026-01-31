@@ -173,7 +173,7 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 5: Command Register (WR6) - Basic Commands
+### Step 5: Command Register (WR6) - Basic Commands ✓ COMPLETED
 
 **Goal**: Implement essential WR6 commands.
 
@@ -183,6 +183,7 @@ Each step follows this strict workflow:
 - Implement RESET_PORT_A_TIMING (0xC7)
 - Implement RESET_PORT_B_TIMING (0xCB)
 - Implement DISABLE_DMA (0x83)
+- Implement READ_MASK_FOLLOWS (0xBB)
 - Reset prescalar and timing on reset commands
 
 **Tests**:
@@ -190,10 +191,13 @@ Each step follows this strict workflow:
 - Execute timing resets
 - Disable DMA during transfer
 - Verify prescalar reset behavior
+- Test READ_MASK_FOLLOWS command
+
+**Status**: ✓ 57 tests in DmaDevice-commands.test.ts passing, 143 tests in DmaDevice.test.ts passing (200 total), no linting errors
 
 ---
 
-### Step 6: Command Register (WR6) - Transfer Commands
+### Step 6: Command Register (WR6) - Transfer Commands ✓ COMPLETED
 
 **Goal**: Implement LOAD, CONTINUE, and ENABLE commands.
 
@@ -210,6 +214,8 @@ Each step follows this strict workflow:
 - CONTINUE after partial transfer
 - ENABLE to start transfer
 - Test counter initialization in both modes
+
+**Status**: ✓ 29 new tests in DmaDevice-commands.test.ts (86 total), 229 tests passing overall, no linting errors
 
 ---
 
