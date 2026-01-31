@@ -271,44 +271,51 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 9: Bus Control and Handshaking
+### Step 9: Bus Control and Handshaking ✓ COMPLETED
 
 **Goal**: Implement bus request/acknowledge protocol.
 
 **Implementation**:
-- Implement `busreq` signal assertion
-- Wait for `busak` signal
-- Handle bus arbitration with other DMA devices
-- Respect `dma_delay` signal
-- Implement bus release in burst mode
+- Implement `busreq` signal assertion ✓
+- Wait for `busak` signal ✓
+- Handle bus arbitration with other DMA devices ✓
+- Respect `dma_delay` signal ✓
+- Implement bus release in burst mode ✓
 
 **Tests**:
-- Request bus and verify BUSREQ signal
-- Wait for BUSAK before transfer
-- Test bus arbitration with multiple requests
-- Verify bus release in burst mode
+- Request bus and verify BUSREQ signal ✓
+- Wait for BUSAK before transfer ✓
+- Test bus arbitration with multiple requests ✓
+- Verify bus release in burst mode ✓
+
+**Status**: ✓ 32 new tests in DmaDevice-buscontrol.test.ts, 327 tests passing overall (143 + 120 + 32 + 32), no linting errors
 
 ---
 
-### Step 10: Memory/IO Read Cycle
+### Step 10: Memory/IO Read Cycle ✓ COMPLETED
 
 **Goal**: Implement the read phase of a transfer.
 
 **Implementation**:
-- Set up source address on address bus
-- Assert MREQ or IORQ based on port type
-- Assert RD signal
-- Implement cycle length timing (2, 3, or 4 T-states)
-- Handle WAIT signal (if CE/WAIT mode enabled)
-- Latch data from bus
-- Handle 14MHz timing adjustments
+- Set up source address based on transfer direction ✓
+- Determine read source (memory or IO) based on port configuration ✓
+- Read from memory using machine.memoryDevice.readMemory() ✓
+- Read from IO port using machine.portManager.readPort() ✓
+- Store data byte in _transferDataByte for write cycle ✓
+- Handle both A→B and B→A transfer directions ✓
 
 **Tests**:
-- Read from memory with 2-cycle timing
-- Read from memory with 3-cycle timing
-- Read from memory with 4-cycle timing
-- Read from I/O port
-- Test WAIT signal handling
+- Read from memory address in A→B direction ✓
+- Read from memory address in B→A direction ✓
+- Read sequential memory addresses ✓
+- Read from IO port in A→B direction ✓
+- Read from IO port in B→A direction ✓
+- Distinguish between memory and IO reads ✓
+- Read with increment/fixed address modes ✓
+- Transfer state integration ✓
+- Edge cases (zero values, 0xFF, consecutive reads, direction changes) ✓
+
+**Status**: ✓ 19 new tests in DmaDevice-readcycle.test.ts, 346 tests passing overall (143 + 120 + 32 + 32 + 19), no linting errors
 
 ---
 

@@ -161,6 +161,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private registerWriteSeq: RegisterWriteSequence = RegisterWriteSequence.IDLE;
   private registerReadSeq: RegisterReadSequence = RegisterReadSequence.RD_STATUS;
   private _tempRegisterByte: number = 0;  // Stores first byte of WR0-WR6 for parameter parsing
+  private _transferDataByte: number = 0;  // Stores data byte during read-write cycle
 
   private dmaMode: DmaMode = DmaMode.ZXNDMA;
   private prescalarTimer: number = 0;  // Timer for fixed-rate transfers
@@ -818,5 +819,58 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     if (this.registers.transferMode === TransferMode.BURST) {
       this.releaseBus();
     }
+  }
+
+  /**
+   * Perform a read cycle from source port
+   * Reads data from memory or IO port based on source configuration
+   * @returns The data byte read from the source
+   */
+  performReadCycle(): number {
+    // Determine which port is the source based on transfer direction
+    let sourceAddress: number;
+    let isIO: boolean;
+    
+    if (this.registers.directionAtoB) {
+      // A->B: Port A is source
+      sourceAddress = this.transferState.sourceAddress;
+      isIO = this.registers.portAIsIO;
+    } else {
+      // B->A: Port B is source
+      sourceAddress = this.transferState.destAddress;
+      isIO = this.registers.portBIsIO;
+    }
+
+    // Read from memory or IO port
+    if (isIO) {
+      // IO port read
+      this._transferDataByte = this.machine.portManager.readPort(sourceAddress);
+    } else {
+      // Memory read
+      this._transferDataByte = this.machine.memoryDevice.readMemory(sourceAddress);
+    }
+
+    return this._transferDataByte;
+  }
+
+  /**
+   * Get the transfer data byte (for testing)
+   */
+  getTransferDataByte(): number {
+    return this._transferDataByte;
+  }
+
+  /**
+   * Set source address in transfer state (for testing)
+   */
+  setSourceAddress(address: number): void {
+    this.transferState.sourceAddress = address;
+  }
+
+  /**
+   * Set destination address in transfer state (for testing)
+   */
+  setDestAddress(address: number): void {
+    this.transferState.destAddress = address;
   }
 }
