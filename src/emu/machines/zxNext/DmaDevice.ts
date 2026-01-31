@@ -291,7 +291,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Write to WR1 register
-   * Base byte: D7=0, D5=portAIsIO, D4=addressMode(1:0), D3-D0=timingCycleLength
+   * Base byte: D7=0, D6=timing parameter follows, D5-D4=address mode, D3=I/O flag, D2-D0=register identifier (100)
    * Optional: Timing byte for cycle length configuration
    */
   writeWR1(value: number): void {
@@ -299,18 +299,21 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // First write - store base byte and extract Port A configuration
       this._tempRegisterByte = value;
       
-      // D5: Port A type (1=I/O, 0=Memory)
-      this.registers.portAIsIO = (value & 0x20) !== 0;
+      // D3: Port A type (1=I/O, 0=Memory)
+      this.registers.portAIsIO = (value & 0x08) !== 0;
       
-      // D4-D3: Address mode (0=Decrement, 1=Increment, 2=Fixed)
-      const addressModeValue = (value >> 3) & 0x03;
+      // D5-D4: Address mode (0=Decrement, 1=Increment, 2/3=Fixed)
+      const addressModeValue = (value >> 4) & 0x03;
       this.registers.portAAddressMode = addressModeValue as AddressMode;
       
-      // D2-D0: Timing cycle length (0=4 cycles, 1=3 cycles, 2=2 cycles)
-      const cycleLength = value & 0x07;
-      this.registers.portATimingCycleLength = cycleLength as CycleLength;
-      
-      this.registerWriteSeq = RegisterWriteSequence.R1_BYTE_0;
+      // D6: Check if timing byte follows
+      if ((value & 0x40) === 0) {
+        // No timing byte follows - return to IDLE
+        this.registerWriteSeq = RegisterWriteSequence.IDLE;
+      } else {
+        // Timing byte follows
+        this.registerWriteSeq = RegisterWriteSequence.R1_BYTE_0;
+      }
     } else if (this.registerWriteSeq === RegisterWriteSequence.R1_BYTE_0) {
       // Optional timing byte - for future timing parameter expansion
       // For now, just complete the sequence
@@ -320,7 +323,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Write to WR2 register
-   * Base byte: D7=0, D5=portBIsIO, D4=addressMode(1:0), D3-D0=timingCycleLength
+   * Base byte: D7=0, D6=timing parameter follows, D5-D4=address mode, D3=I/O flag, D2-D0=register identifier (000)
    * Parameters: Timing byte, prescalar byte
    */
   writeWR2(value: number): void {
@@ -328,18 +331,21 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // First write - store base byte and extract Port B configuration
       this._tempRegisterByte = value;
       
-      // D5: Port B type (1=I/O, 0=Memory)
-      this.registers.portBIsIO = (value & 0x20) !== 0;
+      // D3: Port B type (1=I/O, 0=Memory)
+      this.registers.portBIsIO = (value & 0x08) !== 0;
       
-      // D4-D3: Address mode (0=Decrement, 1=Increment, 2=Fixed)
-      const addressModeValue = (value >> 3) & 0x03;
+      // D5-D4: Address mode (0=Decrement, 1=Increment, 2/3=Fixed)
+      const addressModeValue = (value >> 4) & 0x03;
       this.registers.portBAddressMode = addressModeValue as AddressMode;
       
-      // D2-D0: Timing cycle length (0=4 cycles, 1=3 cycles, 2=2 cycles)
-      const cycleLength = value & 0x07;
-      this.registers.portBTimingCycleLength = cycleLength as CycleLength;
-      
-      this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_0;
+      // D6: Check if timing byte follows
+      if ((value & 0x40) === 0) {
+        // No timing byte follows - return to IDLE
+        this.registerWriteSeq = RegisterWriteSequence.IDLE;
+      } else {
+        // Timing byte follows
+        this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_0;
+      }
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_0) {
       // Timing byte - for future timing parameter expansion
       // For now, just store and move to next byte
@@ -404,5 +410,101 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
+  }
+
+  /**
+   * Write to WR6 register - Command register
+   * Implements command bytes for DMA control
+   */
+  writeWR6(value: number): void {
+    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      this._tempRegisterByte = value;
+      
+      // Parse command byte
+      switch (value) {
+        case 0xc3: // RESET
+          this.executeReset();
+          break;
+          
+        case 0xc7: // RESET_PORT_A_TIMING
+          this.executeResetPortATiming();
+          break;
+          
+        case 0xcb: // RESET_PORT_B_TIMING
+          this.executeResetPortBTiming();
+          break;
+          
+        case 0x83: // DISABLE_DMA
+          this.executeDisableDma();
+          break;
+          
+        case 0xbb: // READ_MASK_FOLLOWS
+          // Next byte will be the read mask
+          this.registerWriteSeq = RegisterWriteSequence.R6_BYTE_0;
+          break;
+          
+        default:
+          // Unknown command - ignore
+          break;
+      }
+    } else if (this.registerWriteSeq === RegisterWriteSequence.R6_BYTE_0) {
+      // Read mask byte follows READ_MASK_FOLLOWS command
+      this.registers.readMask = value & 0x7f;
+      this.registerWriteSeq = RegisterWriteSequence.IDLE;
+    }
+  }
+
+  /**
+   * RESET command (0xC3) - Reset all DMA state
+   */
+  private executeReset(): void {
+    // Reset DMA state
+    this.dmaState = DmaState.IDLE;
+    
+    // Reset status flags
+    this.statusFlags.endOfBlockReached = true;
+    this.statusFlags.atLeastOneByteTransferred = false;
+    
+    // Reset timing to default (3 cycles)
+    this.registers.portATimingCycleLength = CycleLength.CYCLES_3;
+    this.registers.portBTimingCycleLength = CycleLength.CYCLES_3;
+    
+    // Reset prescalar
+    this.registers.portBPrescalar = 0;
+    this.prescalarTimer = 0;
+    
+    // Reset control flags
+    this.registers.ceWaitMultiplexed = false;
+    this.registers.autoRestart = false;
+    
+    // Keep register write sequence in IDLE
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * RESET_PORT_A_TIMING command (0xC7) - Reset Port A timing to default
+   */
+  private executeResetPortATiming(): void {
+    this.registers.portATimingCycleLength = CycleLength.CYCLES_3;
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * RESET_PORT_B_TIMING command (0xCB) - Reset Port B timing to default
+   */
+  private executeResetPortBTiming(): void {
+    this.registers.portBTimingCycleLength = CycleLength.CYCLES_3;
+    this.registers.portBPrescalar = 0;
+    this.prescalarTimer = 0;
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * DISABLE_DMA command (0x83) - Stop DMA transfer
+   */
+  private executeDisableDma(): void {
+    this.dmaState = DmaState.IDLE;
+    this.registers.dmaEnabled = false;
+    this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 }

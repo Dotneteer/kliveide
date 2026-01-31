@@ -599,55 +599,55 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       expect(dmaDevice.getRegisters().portAIsIO).toBe(false);
     });
 
-    it("should parse Port A as I/O (D5=1)", () => {
-      dmaDevice.writeWR1(0x20);
+    it("should parse Port A as I/O (D3=1)", () => {
+      dmaDevice.writeWR1(0x08);
       expect(dmaDevice.getRegisters().portAIsIO).toBe(true);
     });
 
-    it("should parse Port A address mode - Decrement (D4-D3=00)", () => {
+    it("should parse Port A address mode - Decrement (D5-D4=00)", () => {
       dmaDevice.writeWR1(0x00);
       expect(dmaDevice.getRegisters().portAAddressMode).toBe(AddressMode.DECREMENT);
     });
 
-    it("should parse Port A address mode - Increment (D4-D3=01)", () => {
-      dmaDevice.writeWR1(0x08);
+    it("should parse Port A address mode - Increment (D5-D4=01)", () => {
+      dmaDevice.writeWR1(0x10);
       expect(dmaDevice.getRegisters().portAAddressMode).toBe(AddressMode.INCREMENT);
     });
 
-    it("should parse Port A address mode - Fixed (D4-D3=10)", () => {
-      dmaDevice.writeWR1(0x10);
+    it("should parse Port A address mode - Fixed (D5-D4=10)", () => {
+      dmaDevice.writeWR1(0x20);
       expect(dmaDevice.getRegisters().portAAddressMode).toBe(AddressMode.FIXED);
     });
 
-    it("should parse Port A timing cycle length - 4 cycles (D2-D0=00)", () => {
-      dmaDevice.writeWR1(0x00);
-      expect(dmaDevice.getRegisters().portATimingCycleLength).toBe(CycleLength.CYCLES_4);
-    });
-
-    it("should parse Port A timing cycle length - 3 cycles (D2-D0=01)", () => {
-      dmaDevice.writeWR1(0x01);
+    it("should keep Port A timing cycle length at default (3 cycles) when D6=0", () => {
+      dmaDevice.writeWR1(0x00); // No timing byte follows
       expect(dmaDevice.getRegisters().portATimingCycleLength).toBe(CycleLength.CYCLES_3);
     });
 
-    it("should parse Port A timing cycle length - 2 cycles (D2-D0=10)", () => {
-      dmaDevice.writeWR1(0x02);
-      expect(dmaDevice.getRegisters().portATimingCycleLength).toBe(CycleLength.CYCLES_2);
+    it("should keep Port A timing cycle length at default when no timing parameter", () => {
+      dmaDevice.writeWR1(0x10); // Increment mode, no timing byte
+      expect(dmaDevice.getRegisters().portATimingCycleLength).toBe(CycleLength.CYCLES_3);
     });
 
-    it("should transition to R1_BYTE_0 after base byte", () => {
-      dmaDevice.writeWR1(0x20);
+    it("should transition to R1_BYTE_0 when D6=1 (timing byte follows)", () => {
+      dmaDevice.writeWR1(0x40); // D6=1, timing byte follows
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R1_BYTE_0);
     });
 
+    it("should return to IDLE when D6=0 (no timing byte)", () => {
+      dmaDevice.writeWR1(0x20); // D6=0, no timing byte
+      expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.IDLE);
+    });
+
     it("should combine Port A type and address mode", () => {
-      dmaDevice.writeWR1(0x28); // I/O + Increment
+      dmaDevice.writeWR1(0x18); // D4=1 (Increment), D3=1 (I/O)
       const registers = dmaDevice.getRegisters();
       expect(registers.portAIsIO).toBe(true);
       expect(registers.portAAddressMode).toBe(AddressMode.INCREMENT);
     });
 
-    it("should combine Port A I/O, address mode, and timing", () => {
-      dmaDevice.writeWR1(0x29); // I/O + Increment + 3 cycles
+    it("should combine Port A I/O and address mode with default timing", () => {
+      dmaDevice.writeWR1(0x18); // D4=1 (Increment), D3=1 (I/O), D6=0 (no timing byte)
       const registers = dmaDevice.getRegisters();
       expect(registers.portAIsIO).toBe(true);
       expect(registers.portAAddressMode).toBe(AddressMode.INCREMENT);
@@ -657,7 +657,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
 
   describe("WR1 Sequencing", () => {
     it("should complete WR1 sequence with timing byte", () => {
-      dmaDevice.writeWR1(0x20); // Base byte: Port A as I/O
+      dmaDevice.writeWR1(0x48); // D6=1 (timing byte follows), D3=1 (I/O)
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R1_BYTE_0);
       
       dmaDevice.writeWR1(0x00); // Optional timing byte
@@ -665,11 +665,11 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should allow starting new WR1 after completing sequence", () => {
-      dmaDevice.writeWR1(0x00);
+      dmaDevice.writeWR1(0x40); // D6=1, no other flags
       dmaDevice.writeWR1(0x00);
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.IDLE);
       
-      dmaDevice.writeWR1(0x20);
+      dmaDevice.writeWR1(0x48); // D6=1, D3=1
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R1_BYTE_0);
     });
   });
@@ -680,8 +680,8 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       expect(dmaDevice.getRegisters().portBIsIO).toBe(false);
     });
 
-    it("should parse Port B as I/O (D5=1)", () => {
-      dmaDevice.writeWR2(0x20);
+    it("should parse Port B as I/O (D3=1)", () => {
+      dmaDevice.writeWR2(0x08);
       expect(dmaDevice.getRegisters().portBIsIO).toBe(true);
     });
 
@@ -690,55 +690,55 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       expect(dmaDevice.getRegisters().portBAddressMode).toBe(AddressMode.DECREMENT);
     });
 
-    it("should parse Port B address mode - Increment (D4-D3=01)", () => {
-      dmaDevice.writeWR2(0x08);
+    it("should parse Port B address mode - Increment (D5-D4=01)", () => {
+      dmaDevice.writeWR2(0x10);
       expect(dmaDevice.getRegisters().portBAddressMode).toBe(AddressMode.INCREMENT);
     });
 
-    it("should parse Port B address mode - Fixed (D4-D3=10)", () => {
-      dmaDevice.writeWR2(0x10);
+    it("should parse Port B address mode - Fixed (D5-D4=10)", () => {
+      dmaDevice.writeWR2(0x20);
       expect(dmaDevice.getRegisters().portBAddressMode).toBe(AddressMode.FIXED);
     });
 
-    it("should parse Port B timing cycle length - 4 cycles (D2-D0=00)", () => {
-      dmaDevice.writeWR2(0x00);
-      expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(CycleLength.CYCLES_4);
-    });
-
-    it("should parse Port B timing cycle length - 3 cycles (D2-D0=01)", () => {
-      dmaDevice.writeWR2(0x01);
+    it("should parse Port B timing cycle length - default 3 cycles without timing byte", () => {
+      dmaDevice.writeWR2(0x00); // No timing byte (D6=0)
       expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(CycleLength.CYCLES_3);
     });
 
-    it("should parse Port B timing cycle length - 2 cycles (D2-D0=10)", () => {
-      dmaDevice.writeWR2(0x02);
-      expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(CycleLength.CYCLES_2);
+    it("should parse Port B timing cycle length - default remains 3 cycles", () => {
+      dmaDevice.writeWR2(0x01); // No timing byte (D6=0), D0 is unused
+      expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(CycleLength.CYCLES_3);
     });
 
-    it("should transition to R2_BYTE_0 after base byte", () => {
-      dmaDevice.writeWR2(0x20);
+    it("should keep default cycle length when timing byte not requested", () => {
+      dmaDevice.writeWR2(0x02); // No timing byte (D6=0), D1 is unused
+      expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(CycleLength.CYCLES_3);
+    });
+
+    it("should transition to R2_BYTE_0 after base byte with timing flag", () => {
+      dmaDevice.writeWR2(0x60); // D6=1 (timing byte follows), D5=1 (address mode)
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R2_BYTE_0);
     });
 
     it("should combine Port B type and address mode", () => {
-      dmaDevice.writeWR2(0x28); // I/O + Increment
+      dmaDevice.writeWR2(0x18); // D4=1 (Increment), D3=1 (I/O)
       const registers = dmaDevice.getRegisters();
       expect(registers.portBIsIO).toBe(true);
       expect(registers.portBAddressMode).toBe(AddressMode.INCREMENT);
     });
 
-    it("should combine Port B I/O, address mode, and timing", () => {
-      dmaDevice.writeWR2(0x2a); // I/O + Increment + 2 cycles
+    it("should combine Port B I/O and address mode with default timing", () => {
+      dmaDevice.writeWR2(0x18); // D4=1 (Increment), D3=1 (I/O), D6=0 (no timing byte)
       const registers = dmaDevice.getRegisters();
       expect(registers.portBIsIO).toBe(true);
       expect(registers.portBAddressMode).toBe(AddressMode.INCREMENT);
-      expect(registers.portBTimingCycleLength).toBe(CycleLength.CYCLES_2);
+      expect(registers.portBTimingCycleLength).toBe(CycleLength.CYCLES_3);
     });
   });
 
   describe("WR2 Sequencing with Prescalar", () => {
     it("should complete WR2 sequence with timing and prescalar bytes", () => {
-      dmaDevice.writeWR2(0x20); // Base byte
+      dmaDevice.writeWR2(0x48); // D6=1 (timing byte follows), D3=1 (I/O)
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R2_BYTE_0);
       
       dmaDevice.writeWR2(0x00); // Timing byte
@@ -749,7 +749,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should store prescalar value", () => {
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x40); // D6=1, timing byte follows
       dmaDevice.writeWR2(0x00);
       dmaDevice.writeWR2(0x7b); // Prescalar = 123
       
@@ -757,7 +757,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should handle prescalar 0x00", () => {
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x40);
       dmaDevice.writeWR2(0x00);
       dmaDevice.writeWR2(0x00);
       
@@ -765,7 +765,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should handle prescalar 0xff", () => {
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x40);
       dmaDevice.writeWR2(0x00);
       dmaDevice.writeWR2(0xff);
       
@@ -773,12 +773,12 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should allow starting new WR2 after completing sequence", () => {
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x40);
       dmaDevice.writeWR2(0x00);
       dmaDevice.writeWR2(0x00);
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.IDLE);
       
-      dmaDevice.writeWR2(0x20);
+      dmaDevice.writeWR2(0x48);
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R2_BYTE_0);
     });
   });
@@ -786,11 +786,10 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
   describe("WR1 and WR2 Independence", () => {
     it("should allow Port A and Port B to be configured independently", () => {
       // Configure Port A as I/O with Increment
-      dmaDevice.writeWR1(0x28);
-      dmaDevice.writeWR1(0x00);
+      dmaDevice.writeWR1(0x18); // D4=1 (Increment), D3=1 (I/O)
 
       // Configure Port B as Memory with Fixed
-      dmaDevice.writeWR2(0x10);
+      dmaDevice.writeWR2(0x60); // D6=1 (timing byte), D5=1 (Fixed), D3=0 (Memory)
       dmaDevice.writeWR2(0x00);
       dmaDevice.writeWR2(0x50); // Prescalar = 80
 
@@ -803,7 +802,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should preserve Port A configuration when writing WR2", () => {
-      dmaDevice.writeWR1(0x29); // Port A: I/O, Increment, 3 cycles
+      dmaDevice.writeWR1(0x58); // D6=1, D4=1 (Increment), D3=1 (I/O)
       dmaDevice.writeWR1(0x00);
 
       const registersAfterWR1 = dmaDevice.getRegisters();
@@ -811,7 +810,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       expect(registersAfterWR1.portAAddressMode).toBe(AddressMode.INCREMENT);
       expect(registersAfterWR1.portATimingCycleLength).toBe(CycleLength.CYCLES_3);
 
-      dmaDevice.writeWR2(0x10); // Port B: Memory, Fixed, 4 cycles
+      dmaDevice.writeWR2(0x60); // D6=1, D5=1 (Fixed), D3=0 (Memory)
       dmaDevice.writeWR2(0x00);
       dmaDevice.writeWR2(0x64);
 
@@ -823,7 +822,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       // Port B should be updated
       expect(registersAfterWR2.portBIsIO).toBe(false);
       expect(registersAfterWR2.portBAddressMode).toBe(AddressMode.FIXED);
-      expect(registersAfterWR2.portBTimingCycleLength).toBe(CycleLength.CYCLES_4);
+      expect(registersAfterWR2.portBTimingCycleLength).toBe(CycleLength.CYCLES_3);
       expect(registersAfterWR2.portBPrescalar).toBe(0x64);
     });
   });
@@ -831,9 +830,9 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
   describe("WR1 and WR2 Address Mode Combinations", () => {
     it("should configure all address mode combinations", () => {
       const addressModes = [
-        { value: 0x00, mode: AddressMode.DECREMENT },
-        { value: 0x08, mode: AddressMode.INCREMENT },
-        { value: 0x10, mode: AddressMode.FIXED }
+        { value: 0x00, mode: AddressMode.DECREMENT }, // D5-D4 = 00
+        { value: 0x10, mode: AddressMode.INCREMENT }, // D5-D4 = 01
+        { value: 0x20, mode: AddressMode.FIXED }      // D5-D4 = 10
       ];
 
       addressModes.forEach(({ value, mode }) => {
@@ -851,32 +850,26 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
   });
 
   describe("WR1 and WR2 Timing Cycle Combinations", () => {
-    it("should configure all timing cycle length combinations for Port A", () => {
-      const cycleLengths = [
-        { value: 0x00, cycles: CycleLength.CYCLES_4 },
-        { value: 0x01, cycles: CycleLength.CYCLES_3 },
-        { value: 0x02, cycles: CycleLength.CYCLES_2 }
-      ];
-
-      cycleLengths.forEach(({ value, cycles }) => {
-        dmaDevice.reset();
-        dmaDevice.writeWR1(value);
-        expect(dmaDevice.getRegisters().portATimingCycleLength).toBe(cycles);
-      });
+    it("should keep timing cycle length at default (3 cycles) for Port A", () => {
+      // Timing cycle length is not in base byte - it's in optional timing parameter byte
+      // Without timing byte (D6=0), timing stays at default CYCLES_3
+      dmaDevice.writeWR1(0x00); // D6=0, no timing byte
+      expect(dmaDevice.getRegisters().portATimingCycleLength).toBe(CycleLength.CYCLES_3);
+      
+      dmaDevice.reset();
+      dmaDevice.writeWR1(0x10); // D6=0, increment mode
+      expect(dmaDevice.getRegisters().portATimingCycleLength).toBe(CycleLength.CYCLES_3);
     });
 
-    it("should configure all timing cycle length combinations for Port B", () => {
-      const cycleLengths = [
-        { value: 0x00, cycles: CycleLength.CYCLES_4 },
-        { value: 0x01, cycles: CycleLength.CYCLES_3 },
-        { value: 0x02, cycles: CycleLength.CYCLES_2 }
-      ];
-
-      cycleLengths.forEach(({ value, cycles }) => {
-        dmaDevice.reset();
-        dmaDevice.writeWR2(value);
-        expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(cycles);
-      });
+    it("should keep timing cycle length at default (3 cycles) for Port B", () => {
+      // Timing cycle length is not in base byte - it's in optional timing parameter byte
+      // Without timing byte (D6=0), timing stays at default CYCLES_3
+      dmaDevice.writeWR2(0x00); // D6=0, no timing byte
+      expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(CycleLength.CYCLES_3);
+      
+      dmaDevice.reset();
+      dmaDevice.writeWR2(0x20); // D6=0, fixed mode
+      expect(dmaDevice.getRegisters().portBTimingCycleLength).toBe(CycleLength.CYCLES_3);
     });
   });
 
@@ -910,10 +903,10 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
 
   describe("WR1 and WR2 Edge Cases", () => {
     it("should handle WR1 with all address mode bits combinations", () => {
-      // Test D4-D3 combinations with all other bits
-      for (let i = 0; i < 8; i++) {
+      // Test D5-D4 combinations (address mode is in bits 5-4)
+      for (let i = 0; i < 4; i++) {
         dmaDevice.reset();
-        const value = i << 3; // Shift address mode bits
+        const value = i << 4; // Shift to bits 5-4
         dmaDevice.writeWR1(value);
         const expectedMode = i & 0x03;
         expect(dmaDevice.getRegisters().portAAddressMode).toBe(expectedMode);
@@ -921,7 +914,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should handle WR2 with maximum prescalar value", () => {
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x40); // D6=1, timing byte follows
       dmaDevice.writeWR2(0x00);
       dmaDevice.writeWR2(0xff);
 
@@ -929,7 +922,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should handle WR1 timing byte not affecting configuration", () => {
-      dmaDevice.writeWR1(0x2a); // Port A: I/O, Increment, 2 cycles
+      dmaDevice.writeWR1(0x58); // D6=1 (timing follows), D4=1 (Increment), D3=1 (I/O)
       const registersAfterBase = dmaDevice.getRegisters();
       
       dmaDevice.writeWR1(0xff); // Timing byte with all bits set
@@ -942,7 +935,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
     });
 
     it("should handle WR2 timing byte not affecting configuration", () => {
-      dmaDevice.writeWR2(0x2a); // Port B: I/O, Increment, 2 cycles
+      dmaDevice.writeWR2(0x58); // D6=1 (timing follows), D4=1 (Increment), D3=1 (I/O)
       const registersAfterBase = dmaDevice.getRegisters();
       
       dmaDevice.writeWR2(0xff); // Timing byte
