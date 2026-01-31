@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "39.2.3",
+  "kliveVersion": "0.52.0",
   "machineType": "zxnext",
   "modelId": "pal",
   "clockMultiplier": 1,
@@ -22,7 +22,8 @@
         "resource": "code/border-tests.kz80.asm",
         "line": 9,
         "exec": true,
-        "ioMask": 65535
+        "ioMask": 65535,
+        "resolvedAddress": 33211
       }
     ]
   },

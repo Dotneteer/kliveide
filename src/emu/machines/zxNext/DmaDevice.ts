@@ -277,11 +277,97 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
+   * Write to DMA port - dispatches to appropriate WRx register based on byte value
+   * This is the main entry point for port writes
+   * @param value The byte value to write
+   */
+  writePort(value: number): void {
+    // Check if we're in the middle of a multi-byte sequence
+    if (this.registerWriteSeq !== RegisterWriteSequence.IDLE) {
+      // Continue the current sequence
+      if (this.registerWriteSeq >= RegisterWriteSequence.R0_BYTE_0 && this.registerWriteSeq <= RegisterWriteSequence.R0_BYTE_3) {
+        this.writeWR0(value);
+      } else if (this.registerWriteSeq >= RegisterWriteSequence.R1_BYTE_0 && this.registerWriteSeq <= RegisterWriteSequence.R1_BYTE_1) {
+        this.writeWR1(value);
+      } else if (this.registerWriteSeq >= RegisterWriteSequence.R2_BYTE_0 && this.registerWriteSeq <= RegisterWriteSequence.R2_BYTE_1) {
+        this.writeWR2(value);
+      } else if (this.registerWriteSeq >= RegisterWriteSequence.R4_BYTE_0 && this.registerWriteSeq <= RegisterWriteSequence.R4_BYTE_2) {
+        this.writeWR4(value);
+      } else if (this.registerWriteSeq === RegisterWriteSequence.R5_BYTE_0) {
+        this.writeWR5(value);
+      } else if (this.registerWriteSeq === RegisterWriteSequence.R6_BYTE_0) {
+        this.writeWR6(value);
+      }
+      return;
+    }
+
+    // We're in IDLE state, so this is a base byte
+    // In Z80 DMA, the register is identified by specific bit patterns:
+    // - WR6 (commands): 10xxxxxx or 11xxxxxx specific patterns
+    // - WR4: 1xxx1101 (burst/continuous mode)
+    // - WR0-WR5: Various patterns with D7=0
+    
+    // The safest approach: route ALL writes through the write methods
+    // and let them handle the byte based on context. But we need to determine
+    // the initial target register.
+    
+    // Simplified Z80 DMA logic:
+    // 1. WR6 commands have D7=1 with specific patterns (0xC3, 0xC7, 0xCB, 0x83, 0x87, 0xBB, 0xBF, 0xA7, 0xCF, 0xD3, etc.)
+    // 2. WR4 has pattern 1xxx1101 (0x8D, 0xCD, etc.)  
+    // 3. Everything else with D7=0 is configuration (WR0-WR5)
+    
+    if ((value & 0x80) !== 0) {
+      // D7=1: Check if it's WR4 or WR6
+      // WR4 pattern: bits 3,2,1,0 must be 1101 (xxxx1101)
+      // WR4 values: 0x8D (burst), 0xCD (continuous)
+      if ((value & 0x0F) === 0x0D) {
+        this.writeWR4(value);
+      } else {
+        // It's a WR6 command
+        this.writeWR6(value);
+      }
+    } else {
+      // D7=0: Start of a register configuration
+      // The Z80 DMA uses a complex encoding, but typically:
+      // - WR0 is the main configuration register (transfer parameters)
+      // - WR1-WR5 are written implicitly based on bits in WR0
+      // For simplicity, route all D7=0 bytes to WR0, which will set up
+      // the sequence and may trigger writes to other registers
+      this.writeWR0(value);
+    }
+  }
+
+  /**
    * Write to WR0 register
    * Base byte: D7=0, D6=direction, D5-D0=parameters
    * Parameters: Port A start address (16-bit), block length (16-bit)
    */
   writeWR0(value: number): void {
+    // If we're starting a new sequence (IDLE), check which register to write to
+    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // D2-D0 bits identify the register:
+      // - WR0 (transfer parameters): various patterns including 101
+      // - WR1 (Port A config): xxx100  
+      // - WR2 (Port B config): xxx000
+      // - WR5 (auto-restart): xx1xxx
+      const lowBits = value & 0x07;
+      
+      if ((value & 0x08) !== 0 && lowBits === 0x02) {
+        // WR5: D3=1, D2-D0=010 (pattern 01010 = 0x0A, but also others)
+        this.writeWR5(value);
+        return;
+      } else if (lowBits === 0x04) {
+        // WR1: xxx100
+        this.writeWR1(value);
+        return;
+      } else if (lowBits === 0x00) {
+        // WR2: xxx000
+        this.writeWR2(value);
+        return;
+      }
+      // Otherwise it's WR0 - fall through to normal WR0 handling
+    }
+    
     // Extract direction bit (D6)
     const direction = (value & 0x40) !== 0;
     

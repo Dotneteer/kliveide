@@ -493,8 +493,7 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 17: Port Handler Integration (0x0B - Zilog mode)
-Legacy mode)
+### Step 17: Port Handler Integration (0x0B - Legacy mode)
 
 **Goal**: Connect DMA to port 0x0B for legacy compatibility mode.
 

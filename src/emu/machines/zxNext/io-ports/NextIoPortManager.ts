@@ -263,8 +263,8 @@ export class NextIoPortManager {
       port: 0x6b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0110_1011,
-      readerFns: readZxnDmaPort,
-      writerFns: writeZxnDmaPort
+      readerFns: () => readZxnDmaPort(machine),
+      writerFns: (_, v) => writeZxnDmaPort(machine, v)
     });
     r({
       description: "AY reg",
