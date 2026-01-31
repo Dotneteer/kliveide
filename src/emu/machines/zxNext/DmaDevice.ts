@@ -985,4 +985,73 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
     return bytesTransferred;
   }
+
+  /**
+   * Execute a burst transfer with prescalar timing
+   * Performs transfers with delays between each byte, releasing the bus to allow CPU execution
+   * @param tStatesToExecute Number of T-states available for transfer
+   * @returns Number of bytes transferred
+   */
+  executeBurstTransfer(tStatesToExecute: number): number {
+    if (!this.registers.dmaEnabled) {
+      return 0;
+    }
+
+    // Check if transfer mode is burst
+    if (this.registers.transferMode !== TransferMode.BURST) {
+      return 0;
+    }
+
+    const bytesToTransfer = this.registers.blockLength;
+    const bytesAlreadyTransferred = this.transferState.byteCounter;
+    const bytesRemaining = bytesToTransfer - bytesAlreadyTransferred;
+    
+    if (bytesRemaining <= 0) {
+      return 0; // Transfer already complete
+    }
+    
+    let bytesTransferred = 0;
+    let tStatesUsed = 0;
+
+    // Calculate T-states per transfer based on prescalar
+    // Prescalar formula: Frate = 875kHz / prescalar
+    // At 3.5MHz base clock (3500000 Hz), 875kHz = 3500000 / 4
+    // Delay in T-states = (prescalar * CPU_FREQ) / 875000
+    const prescalar = this.registers.portBPrescalar || 1; // Minimum 1 to avoid divide by zero
+    const cpuFreq = 3500000; // 3.5MHz base clock
+    const prescalarFreq = 875000; // 875kHz reference
+    const tStatesPerByte = Math.floor((prescalar * cpuFreq) / prescalarFreq);
+
+    // Perform transfers while we have T-states and bytes to transfer
+    while (bytesTransferred < bytesRemaining && tStatesUsed < tStatesToExecute) {
+      // Request bus for this byte
+      this.requestBus();
+      
+      // Read from source
+      this.performReadCycle();
+      
+      // Write to destination
+      this.performWriteCycle();
+      
+      bytesTransferred++;
+      
+      // Release bus between transfers (burst mode behavior)
+      this.releaseBusForBurst();
+      
+      // Account for T-states used (prescalar delay + transfer time)
+      tStatesUsed += tStatesPerByte;
+      
+      // Check if we've completed the block
+      if (bytesTransferred >= bytesRemaining) {
+        break;
+      }
+      
+      // Check if we've run out of T-states for this execution slice
+      if (tStatesUsed >= tStatesToExecute) {
+        break;
+      }
+    }
+
+    return bytesTransferred;
+  }
 }
