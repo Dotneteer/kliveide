@@ -959,31 +959,44 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     const bytesToTransfer = this.registers.blockLength;
-    let bytesTransferred = 0;
+    let totalBytesTransferred = 0;
+    const maxIterations = this.registers.autoRestart ? 1000 : 1; // Safety limit for auto-restart
 
     // Request and wait for bus
     this.requestBus();
     
-    // Perform the transfer
-    while (bytesTransferred < bytesToTransfer) {
-      // Read from source
-      this.performReadCycle();
+    // Perform the transfer (with potential auto-restart loops)
+    let iteration = 0;
+    do {
+      let bytesTransferred = 0;
       
-      // Write to destination
-      this.performWriteCycle();
-      
-      bytesTransferred++;
+      while (bytesTransferred < bytesToTransfer) {
+        // Read from source
+        this.performReadCycle();
+        
+        // Write to destination
+        this.performWriteCycle();
+        
+        bytesTransferred++;
+        totalBytesTransferred++;
 
-      // Check if we've completed the block
-      if (bytesTransferred >= bytesToTransfer) {
-        break;
+        // Check if we've completed the block
+        if (bytesTransferred >= bytesToTransfer) {
+          break;
+        }
       }
-    }
+      
+      iteration++;
+      
+      // Check for auto-restart after completing the block
+      // If auto-restart is enabled, this will reset addresses and counter
+      // Safety: limit iterations to prevent infinite loops
+    } while (this.checkAndHandleAutoRestart() && iteration < maxIterations);
 
     // Release bus
     this.releaseBus();
 
-    return bytesTransferred;
+    return totalBytesTransferred;
   }
 
   /**
@@ -1052,6 +1065,55 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       }
     }
 
+    // Check for auto-restart if block is complete
+    if (bytesTransferred >= bytesRemaining) {
+      this.checkAndHandleAutoRestart();
+    }
+
     return bytesTransferred;
+  }
+
+  /**
+   * Check if transfer is complete and handle auto-restart
+   * @returns true if transfer restarted, false otherwise
+   */
+  private checkAndHandleAutoRestart(): boolean {
+    // Check if we've completed the block
+    if (this.transferState.byteCounter < this.registers.blockLength) {
+      return false; // Transfer not complete yet
+    }
+
+    // Transfer is complete - check auto-restart flag
+    if (!this.registers.autoRestart) {
+      return false; // No auto-restart
+    }
+
+    // Auto-restart: reload addresses and reset counter
+    if (this.registers.directionAtoB) {
+      // A → B: Port A is source, Port B is destination
+      this.transferState.sourceAddress = this.registers.portAStartAddress;
+      this.transferState.destAddress = this.registers.portBStartAddress;
+    } else {
+      // B → A: Port B is source, Port A is destination
+      this.transferState.sourceAddress = this.registers.portBStartAddress;
+      this.transferState.destAddress = this.registers.portAStartAddress;
+    }
+
+    // Reset byte counter based on DMA mode
+    if (this.dmaMode === DmaMode.ZXNDMA) {
+      this.transferState.byteCounter = 0;
+    } else {
+      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit for legacy mode
+    }
+
+    return true; // Transfer restarted
+  }
+
+  /**
+   * Check if current transfer block is complete
+   * @returns true if byteCounter has reached blockLength
+   */
+  isTransferComplete(): boolean {
+    return this.transferState.byteCounter >= this.registers.blockLength;
   }
 }

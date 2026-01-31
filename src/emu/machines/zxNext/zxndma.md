@@ -387,7 +387,7 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 13: Burst Transfer Mode with Prescalar
+### Step 13: Burst Transfer Mode with Prescalar ✓ COMPLETED
 
 **Goal**: Implement burst mode with timed delays between transfers.
 
@@ -422,7 +422,7 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 14: Auto-Restart Feature
+### Step 14: Auto-Restart Feature  ✓ COMPLETED
 
 **Goal**: Implement automatic transfer restart on completion.
 
@@ -432,6 +432,7 @@ Each step follows this strict workflow:
 - Reset byte counter
 - Restart transfer without CPU intervention
 - Handle mode-dependent counter initialization (0 for zxnDMA, -1 for legacy)
+- Add safety limit (1000 iterations) to prevent infinite loops in test scenarios
 
 **Tests**:
 - Enable auto-restart and verify multiple transfers
@@ -439,6 +440,9 @@ Each step follows this strict workflow:
 - Verify counter resets properly
 - Test with both transfer directions
 - Disable auto-restart and verify single transfer
+- Test auto-restart in burst mode
+- Test auto-restart in continuous mode
+- Verify isTransferComplete() helper method
 
 ---
 
