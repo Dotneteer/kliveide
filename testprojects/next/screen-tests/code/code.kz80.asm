@@ -17,18 +17,25 @@ main:
     ; Save the current MMU 5 value ($A000-$BFFF)
     call ClearScreen
 
-    ;
-    ;ld de,Hello_txt
-    ;ld bc,Hello_txt_end - Hello_txt
-    PrintText(Hello_txt, Hello_txt_end - Hello_txt)
-    ld a,3
+    PrintText2(WelcomeText)
+    ei
+    call WaitForKey
+    ld a,4
     out ($fe),a
 trap 
     jr $
 
-Hello_txt
-    .defm "hello"
-Hello_txt_end
+WelcomeText
+    .dm "\a\x02\x02" ; AT 2, 2
+    .dm "Klive Screen Tests"
+    .dm "\a\x04\x02" ; AT 4, 2
+    .dm "\I\x01L\I\x00 List tests"
+    .dm "\a\x06\x02" ; AT 6, 2
+    .dm "\I\x01T\I\x00 Execute tests"
+    TERM_TEXT()
+
+;
+; Keep $100 bytes for stack
 .defs $100
 STACK_TOP
 
