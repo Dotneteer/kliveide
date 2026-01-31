@@ -1,6 +1,7 @@
 {
-  "kliveVersion": "0.52.0",
+  "kliveVersion": "39.2.3",
   "machineType": "zxnext",
+  "modelId": "pal",
   "clockMultiplier": 1,
   "soundLevel": 0.8,
   "soundMuted": false,
@@ -21,8 +22,7 @@
         "resource": "code/border-tests.kz80.asm",
         "line": 9,
         "exec": true,
-        "ioMask": 65535,
-        "resolvedAddress": 33211
+        "ioMask": 65535
       }
     ]
   },
@@ -51,7 +51,7 @@
           "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/code.kz80.asm",
           "position": {
             "line": 155,
-            "column": 20
+            "column": 1
           }
         },
         {
