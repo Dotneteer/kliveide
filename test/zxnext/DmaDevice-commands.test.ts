@@ -877,10 +877,10 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
       expect(transferState.byteCounter).toBe(0xFFFF);
     });
 
-    it("should set DMA state to IDLE (ready for transfer)", () => {
+    it("should set DMA state to START_DMA (ready for transfer)", () => {
       dmaDevice.writeWR6(0x87);
 
-      expect(dmaDevice.getDmaState()).toBe(DmaState.IDLE);
+      expect(dmaDevice.getDmaState()).toBe(DmaState.START_DMA);
     });
 
     it("should keep register write sequence in IDLE", () => {

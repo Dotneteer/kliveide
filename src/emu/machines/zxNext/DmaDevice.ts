@@ -293,8 +293,6 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.writeWR2(value);
       } else if (this.registerWriteSeq >= RegisterWriteSequence.R4_BYTE_0 && this.registerWriteSeq <= RegisterWriteSequence.R4_BYTE_2) {
         this.writeWR4(value);
-      } else if (this.registerWriteSeq === RegisterWriteSequence.R5_BYTE_0) {
-        this.writeWR5(value);
       } else if (this.registerWriteSeq === RegisterWriteSequence.R6_BYTE_0) {
         this.writeWR6(value);
       }
@@ -691,9 +689,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
     }
     
-    // Set DMA state to ready for transfer
+    // Set DMA state to START_DMA so stepDma() will begin transfer
     // (actual transfer will start when bus is available)
-    this.dmaState = DmaState.IDLE;  // Will transition to TRANSFERRING in future steps
+    this.dmaState = DmaState.START_DMA;
     
     // Keep register write sequence in IDLE
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
@@ -837,13 +835,6 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Get bus control state
-   */
-  getBusControl(): BusControlState {
-    return this.busControl;
-  }
-
-  /**
    * Request bus access from CPU
    * Asserts BUSREQ signal
    */
@@ -908,6 +899,106 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   releaseBusForBurst(): void {
     if (this.registers.transferMode === TransferMode.BURST) {
       this.releaseBus();
+    }
+  }
+
+  /**
+   * Get current bus control state
+   * Used by machine to check if DMA owns the bus
+   * @returns Bus control state object
+   */
+  getBusControl(): Readonly<BusControlState> {
+    return { ...this.busControl };
+  }
+
+  /**
+   * Step DMA state machine forward by one operation
+   * This method is called from the machine frame loop to allow incremental DMA execution
+   * Returns the number of T-states consumed by this step
+   * @returns T-states consumed (0 if no operation performed)
+   */
+  stepDma(): number {
+    // If DMA is not enabled or idle, nothing to do
+    if (!this.registers.dmaEnabled || this.dmaState === DmaState.IDLE) {
+      return 0;
+    }
+
+    // Check if we need bus access
+    if (!this.isBusAvailable()) {
+      // Request bus if not already requested
+      if (!this.busControl.busRequested) {
+        this.requestBus();
+      }
+      // Wait for bus acknowledgment - no T-states consumed yet
+      return 0;
+    }
+
+    // In legacy mode, transfer length is blockLength+1 for compatibility
+    // In zxnDMA mode, transfer length is exactly blockLength
+    const bytesToTransfer = this.dmaMode === DmaMode.LEGACY 
+      ? this.registers.blockLength + 1 
+      : this.registers.blockLength;
+    
+    // Check if we've already completed the transfer
+    const bytesAlreadyTransferred = this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF
+      ? 0
+      : this.dmaMode === DmaMode.LEGACY
+      ? this.transferState.byteCounter + 1
+      : this.transferState.byteCounter;
+    
+    if (bytesAlreadyTransferred >= bytesToTransfer) {
+      // Transfer complete - check for auto-restart
+      if (this.checkAndHandleAutoRestart()) {
+        // Restarted - continue with next byte
+      } else {
+        // No restart - mark complete and release bus
+        this.statusFlags.endOfBlockReached = true;
+        this.releaseBus();
+        this.dmaState = DmaState.IDLE;
+        return 0;
+      }
+    }
+
+    // Perform one byte transfer
+    // Read cycle: typically 3 T-states for memory, 4 for I/O
+    // Write cycle: typically 3 T-states for memory, 4 for I/O
+    this.performReadCycle();
+    this.performWriteCycle();
+
+    // Check if transfer just completed
+    const bytesAfterTransfer = this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF
+      ? 0
+      : this.dmaMode === DmaMode.LEGACY
+      ? this.transferState.byteCounter + 1
+      : this.transferState.byteCounter;
+
+    if (bytesAfterTransfer >= bytesToTransfer) {
+      // Transfer complete - check for auto-restart
+      if (this.checkAndHandleAutoRestart()) {
+        // Restarted - keep bus for next iteration
+      } else {
+        // No restart - mark complete and release bus
+        this.statusFlags.endOfBlockReached = true;
+        this.releaseBus();
+        this.dmaState = DmaState.IDLE;
+      }
+    }
+
+    // In burst mode, release bus after each byte
+    if (this.registers.transferMode === TransferMode.BURST) {
+      this.releaseBusForBurst();
+      
+      // Calculate prescalar delay for burst mode
+      const prescalar = this.registers.portBPrescalar || 1;
+      const cpuFreq = 3500000; // 3.5MHz base clock
+      const prescalarFreq = 875000; // 875kHz reference
+      const tStatesPerByte = Math.floor((prescalar * cpuFreq) / prescalarFreq);
+      return tStatesPerByte;
+    } else {
+      // Continuous mode - return basic transfer time (read + write)
+      // For simplicity, assume 3 T-states read + 3 T-states write = 6 T-states
+      // TODO: Step 19 will refine this with proper contention
+      return 6;
     }
   }
 

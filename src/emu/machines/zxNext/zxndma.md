@@ -512,22 +512,41 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 17: Port Handler Integration (0x0B - Legacy mode)
+### Step 17: Port Handler Integration (0x0B - Legacy mode) ✓ COMPLETED
 
 **Goal**: Connect DMA to port 0x0B for legacy compatibility mode.
 
 **Implementation**:
-- Implement `readZ80DmaPort` in `Z80DmaPortHandler.ts`
-- Implement `writeZ80DmaPort` in `Z80DmaPortHandler.ts`
-- Route to same `DmaDevice` methods
-- Set `dmaMode` flag to legacy mode
-- Handle length+1 behavior in legacy mode for compatibility
+- Implement `readZ80DmaPort` in `Z80DmaPortHandler.ts` ✓
+- Implement `writeZ80DmaPort` in `Z80DmaPortHandler.ts` ✓
+- Route to same `DmaDevice` methods ✓
+- Set `dmaMode` flag to LEGACY on every port 0x0B access ✓
+- Handle length+1 behavior in legacy mode for compatibility ✓
+- Fixed WR register routing in `writePort()` to properly identify WR0/WR1/WR2/WR5 ✓
+
+**Implementation Details**:
+- Port 0x0B handler sets `DmaMode.LEGACY` before every read/write operation
+- Legacy mode transfers `blockLength + 1` bytes for backward compatibility
+- ByteCounter initialization: 0xFFFF in legacy mode (vs 0 in zxnDMA mode)
+- First byte detection: byteCounter === 0 in legacy (vs === 1 in zxnDMA)
+- Register routing moved from `writeWR0()` to `writePort()` to allow direct test access
+- WR0: default, WR1: xxx100, WR2: xxx000, WR5: xxx1x010 bit patterns
 
 **Tests**:
-- Write to port 0x0B and verify register update
-- Read from port 0x0B
-- Test transfer via port 0x0B
-- Verify length+1 behavior in legacy
+- Port Write Operations: WR0, WR4, RESET, LOAD, ENABLE_DMA commands via port 0x0B ✓
+- Port Read Operations: Status reads, counter reads, address reads via port 0x0B ✓
+- Complete Transfers: Simple transfer, length+1 verification, burst mode ✓
+- Mode Persistence: Legacy mode maintained across operations ✓
+- Status Byte: Correct format, status changes after transfer ✓
+- Mode Switching: zxnDMA↔legacy transitions, transfer behavior differences ✓
+
+**Bug Fixes**:
+- Fixed register routing to check bit patterns in `writePort()`, not `writeWR0()`
+- WR2 routing: D2D1D0=000 (any value ending in 000, not just with D5D4=00)
+- Restored 16-bit counter wrapping (& 0xFFFF) for correct first-byte flag detection
+- Fixed counter overflow test expectation (65536 → 0 for hardware-accurate wrap)
+
+**Status**: ✓ 20 new tests in DmaDevice-legacy-port.test.ts, 477 tests passing overall (440 + 17 + 20), no linting errors
 
 ---
 

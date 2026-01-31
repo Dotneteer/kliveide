@@ -660,6 +660,23 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Set the interrupt signal, if required so
     super.beforeInstructionExecuted();
     this.clockMultiplier = this.cpuSpeedDevice.effectiveClockMultiplier;
+    
+    // --- Check if DMA is requesting the bus and acknowledge it FIRST
+    // This must happen before calling stepDma() so the bus is available
+    let busControl = this.dmaDevice.getBusControl();
+    if (busControl.busRequested && !busControl.busAcknowledged) {
+      // --- DMA requested bus - acknowledge it
+      this.dmaDevice.acknowledgeBus();
+    }
+    
+    // --- Step DMA state machine if active
+    // This allows DMA to perform one operation per CPU instruction cycle
+    // After acknowledgment above, DMA can now proceed with transfer
+    const dmaTStates = this.dmaDevice.stepDma();
+    if (dmaTStates > 0) {
+      // --- DMA performed an operation - consume T-states
+      this.tactPlusN(dmaTStates);
+    }
   }
 
   /**
