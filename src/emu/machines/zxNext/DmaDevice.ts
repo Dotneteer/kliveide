@@ -288,4 +288,121 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
   }
+
+  /**
+   * Write to WR1 register
+   * Base byte: D7=0, D5=portAIsIO, D4=addressMode(1:0), D3-D0=timingCycleLength
+   * Optional: Timing byte for cycle length configuration
+   */
+  writeWR1(value: number): void {
+    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // First write - store base byte and extract Port A configuration
+      this._tempRegisterByte = value;
+      
+      // D5: Port A type (1=I/O, 0=Memory)
+      this.registers.portAIsIO = (value & 0x20) !== 0;
+      
+      // D4-D3: Address mode (0=Decrement, 1=Increment, 2=Fixed)
+      const addressModeValue = (value >> 3) & 0x03;
+      this.registers.portAAddressMode = addressModeValue as AddressMode;
+      
+      // D2-D0: Timing cycle length (0=4 cycles, 1=3 cycles, 2=2 cycles)
+      const cycleLength = value & 0x07;
+      this.registers.portATimingCycleLength = cycleLength as CycleLength;
+      
+      this.registerWriteSeq = RegisterWriteSequence.R1_BYTE_0;
+    } else if (this.registerWriteSeq === RegisterWriteSequence.R1_BYTE_0) {
+      // Optional timing byte - for future timing parameter expansion
+      // For now, just complete the sequence
+      this.registerWriteSeq = RegisterWriteSequence.IDLE;
+    }
+  }
+
+  /**
+   * Write to WR2 register
+   * Base byte: D7=0, D5=portBIsIO, D4=addressMode(1:0), D3-D0=timingCycleLength
+   * Parameters: Timing byte, prescalar byte
+   */
+  writeWR2(value: number): void {
+    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // First write - store base byte and extract Port B configuration
+      this._tempRegisterByte = value;
+      
+      // D5: Port B type (1=I/O, 0=Memory)
+      this.registers.portBIsIO = (value & 0x20) !== 0;
+      
+      // D4-D3: Address mode (0=Decrement, 1=Increment, 2=Fixed)
+      const addressModeValue = (value >> 3) & 0x03;
+      this.registers.portBAddressMode = addressModeValue as AddressMode;
+      
+      // D2-D0: Timing cycle length (0=4 cycles, 1=3 cycles, 2=2 cycles)
+      const cycleLength = value & 0x07;
+      this.registers.portBTimingCycleLength = cycleLength as CycleLength;
+      
+      this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_0;
+    } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_0) {
+      // Timing byte - for future timing parameter expansion
+      // For now, just store and move to next byte
+      this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_1;
+    } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_1) {
+      // Prescalar byte (8-bit value for fixed-rate transfers)
+      this.registers.portBPrescalar = value & 0xff;
+      this.registerWriteSeq = RegisterWriteSequence.IDLE;
+    }
+  }
+
+  /**
+   * Write to WR3 register
+   * Base byte: D7=0, D0=dmaEnabled
+   * Note: Prefer WR6 for DMA control in modern implementations
+   */
+  writeWR3(value: number): void {
+    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // D0: DMA enable flag
+      this.registers.dmaEnabled = (value & 0x01) !== 0;
+      this.registerWriteSeq = RegisterWriteSequence.IDLE;
+    }
+  }
+
+  /**
+   * Write to WR4 register
+   * Base byte: D7=0, D4=transferMode, D3-D0=parameters
+   * Parameters: Port B start address (16-bit)
+   */
+  writeWR4(value: number): void {
+    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // First write - store base byte and extract transfer mode
+      this._tempRegisterByte = value;
+      
+      // D4: Transfer mode (1=Continuous, 2=Burst)
+      const modeValue = (value >> 4) & 0x01;
+      this.registers.transferMode = modeValue === 0 ? TransferMode.BURST : TransferMode.CONTINUOUS;
+      
+      this.registerWriteSeq = RegisterWriteSequence.R4_BYTE_0;
+    } else if (this.registerWriteSeq === RegisterWriteSequence.R4_BYTE_0) {
+      // Port B start address - low byte
+      this.registers.portBStartAddress = (this.registers.portBStartAddress & 0xff00) | value;
+      this.registerWriteSeq = RegisterWriteSequence.R4_BYTE_1;
+    } else if (this.registerWriteSeq === RegisterWriteSequence.R4_BYTE_1) {
+      // Port B start address - high byte (final parameter)
+      this.registers.portBStartAddress = (this.registers.portBStartAddress & 0x00ff) | (value << 8);
+      this.registerWriteSeq = RegisterWriteSequence.IDLE;
+    }
+  }
+
+  /**
+   * Write to WR5 register
+   * Base byte: D7=0, D5=autoRestart, D4=ceWaitMultiplexed
+   */
+  writeWR5(value: number): void {
+    if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // D5: Auto-restart flag
+      this.registers.autoRestart = (value & 0x20) !== 0;
+      
+      // D4: CE/WAIT multiplexed flag
+      this.registers.ceWaitMultiplexed = (value & 0x10) !== 0;
+      
+      this.registerWriteSeq = RegisterWriteSequence.IDLE;
+    }
+  }
 }
