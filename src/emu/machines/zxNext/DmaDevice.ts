@@ -873,4 +873,73 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   setDestAddress(address: number): void {
     this.transferState.destAddress = address;
   }
+
+  /**
+   * Perform a write cycle to destination port
+   * Writes data to memory or IO port based on destination configuration
+   * Updates addresses based on address mode and increments byte counter
+   */
+  performWriteCycle(): void {
+    // Determine which port is the destination based on transfer direction
+    let destAddress: number;
+    let isIO: boolean;
+    let addressMode: AddressMode;
+    
+    if (this.registers.directionAtoB) {
+      // A->B: Port B is destination
+      destAddress = this.transferState.destAddress;
+      isIO = this.registers.portBIsIO;
+      addressMode = this.registers.portBAddressMode;
+    } else {
+      // B->A: Port A is destination
+      destAddress = this.transferState.sourceAddress;
+      isIO = this.registers.portAIsIO;
+      addressMode = this.registers.portAAddressMode;
+    }
+
+    // Write to memory or IO port
+    if (isIO) {
+      // IO port write
+      this.machine.portManager.writePort(destAddress, this._transferDataByte);
+    } else {
+      // Memory write
+      this.machine.memoryDevice.writeMemory(destAddress, this._transferDataByte);
+    }
+
+    // Update addresses based on address mode
+    if (this.registers.directionAtoB) {
+      // A->B: Update both source (Port A) and destination (Port B)
+      this.updateAddress('source', this.registers.portAAddressMode);
+      this.updateAddress('dest', addressMode);
+    } else {
+      // B->A: Update both source (Port B) and destination (Port A)
+      this.updateAddress('dest', addressMode);
+      this.updateAddress('source', this.registers.portBAddressMode);
+    }
+
+    // Increment byte counter
+    this.transferState.byteCounter++;
+  }
+
+  /**
+   * Update address based on address mode
+   * @param addrType 'source' or 'dest'
+   * @param mode Address mode (increment, decrement, fixed)
+   */
+  private updateAddress(addrType: 'source' | 'dest', mode: AddressMode): void {
+    if (mode === AddressMode.INCREMENT) {
+      if (addrType === 'source') {
+        this.transferState.sourceAddress = (this.transferState.sourceAddress + 1) & 0xffff;
+      } else {
+        this.transferState.destAddress = (this.transferState.destAddress + 1) & 0xffff;
+      }
+    } else if (mode === AddressMode.DECREMENT) {
+      if (addrType === 'source') {
+        this.transferState.sourceAddress = (this.transferState.sourceAddress - 1) & 0xffff;
+      } else {
+        this.transferState.destAddress = (this.transferState.destAddress - 1) & 0xffff;
+      }
+    }
+    // FIXED mode: do nothing, address stays the same
+  }
 }
