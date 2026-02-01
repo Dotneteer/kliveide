@@ -1,7 +1,52 @@
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 /**
- * Represents a PSG chip
+ * PSG Chip (AY-3-8912) - Programmable Sound Generator
+ *
+ * This class implements a complete AY-3-8912 PSG chip, used in:
+ * - ZX Spectrum 128K (single PSG)
+ * - ZX Spectrum Next (via TurboSound - 3x PSG chips)
+ *
+ * ## Features
+ * - 3 programmable tone channels (A, B, C)
+ * - Programmable noise generator
+ * - Envelope generator with 16 shapes
+ * - 16 16-bit registers for full control
+ * - Per-channel volume control (0-15 or envelope-driven)
+ * - Master volume via 16-level volume table
+ *
+ * ## Registers (0-15)
+ * - 0-1: Channel A tone frequency (12-bit)
+ * - 2-3: Channel B tone frequency (12-bit)
+ * - 4-5: Channel C tone frequency (12-bit)
+ * - 6: Noise frequency (5-bit)
+ * - 7: Enable flags (noise/tone per channel)
+ * - 8-10: Channel A-C volume control
+ * - 11-12: Envelope frequency (16-bit)
+ * - 13: Envelope shape/style
+ * - 14-15: I/O port control (not used in ZX Spectrum)
+ *
+ * ## Output
+ * - Per-channel tone output (high/low square wave)
+ * - Combined through OR logic with noise
+ * - Multiplied by per-channel volume
+ * - Output range: 0-65535 (16-bit signed, represented as 0-FFFF)
+ *
+ * ## Usage
+ * 1. Set register index via setRegisterIndex(reg)
+ * 2. Write value via setRegisterValue(value)
+ * 3. Call clock() to advance sound generation
+ * 4. Read channel output via getChannelA/B/C()
+ *
+ * ## Multi-Chip Systems
+ * When used in TurboSound (3 chips), each chip has:
+ * - Independent tone/noise generators
+ * - Selectable stereo panning (muted, left, right, stereo)
+ * - Optional mono mode (all channels mixed to mono)
+ * - Global stereo mode selection (ABC vs ACB)
+ *
+ * See AUDIO_ARCHITECTURE.md for complete system details.
+ * See PORT_MAPPINGS.md for PSG port I/O details.
  */
 export class PsgChip {
   // --- Chip ID (for multi-chip systems like Turbo Sound Next)
