@@ -687,20 +687,20 @@ Each step follows this strict workflow:
 
 ### Step 22: Optimization and Performance
 
-**Goal**: Optimize DMA transfer performance.
+**Goal**: Optimize DMA transfer performance and improve code quality.
 
-**Implementation**:
-- Optimize hot path (transfer loop)
-- Minimize state checks during transfer
-- Use efficient address calculations
-- Cache frequently accessed values
-- Profile and optimize critical sections
+**Analysis**: See [dma-opt.md](dma-opt.md) for detailed refactoring plan.
 
-**Tests**:
-- Benchmark large memory transfers
-- Profile CPU time during DMA
-- Compare performance to native code
-- Measure frame impact of DMA transfers
+**Implementation Plan**:
+- Phase 1: Extract duplicate logic into helper methods
+- Phase 2: Cache frequently calculated values
+- Phase 3: Optimize hot path (stepDma, address updates)
+- Phase 4: Replace magic numbers with named constants
+- Phase 5: Improve bus state machine robustness
+- Phase 6: Reorganize code for better readability
+- Phase 7: Add validation and safety checks
+
+**Status**: Ready to execute optimization phases
 
 ---
 

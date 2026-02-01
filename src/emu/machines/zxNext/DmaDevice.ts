@@ -893,6 +893,43 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
+   * Get the total number of bytes to transfer
+   * In legacy mode, adds 1 to blockLength for compatibility
+   * In zxnDMA mode, returns exact blockLength
+   * @returns Total bytes to transfer
+   */
+  private getTransferLength(): number {
+    return this.dmaMode === DmaMode.LEGACY 
+      ? this.registers.blockLength + 1 
+      : this.registers.blockLength;
+  }
+
+  /**
+   * Get the number of bytes already transferred
+   * Handles legacy mode counter wrapping (0xFFFF = 0 bytes transferred)
+   * @returns Number of bytes transferred so far
+   */
+  private getBytesTransferred(): number {
+    if (this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF) {
+      return 0;  // Haven't transferred any bytes yet
+    }
+    
+    if (this.dmaMode === DmaMode.LEGACY) {
+      return this.transferState.byteCounter + 1;
+    }
+    
+    return this.transferState.byteCounter;
+  }
+
+  /**
+   * Check if transfer should continue based on current progress
+   * @returns true if more bytes need to be transferred
+   */
+  private shouldContinueTransfer(): boolean {
+    return this.getBytesTransferred() < this.getTransferLength();
+  }
+
+  /**
    * Release bus in burst mode
    * In burst mode, release bus between byte transfers to allow CPU execution
    */
@@ -923,20 +960,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return 0;
     }
 
-    // In legacy mode, transfer length is blockLength+1 for compatibility
-    // In zxnDMA mode, transfer length is exactly blockLength
-    const bytesToTransfer = this.dmaMode === DmaMode.LEGACY 
-      ? this.registers.blockLength + 1 
-      : this.registers.blockLength;
-    
-    // Check if we've already completed the transfer (including zero-length case)
-    const bytesAlreadyTransferred = this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF
-      ? 0
-      : this.dmaMode === DmaMode.LEGACY
-      ? this.transferState.byteCounter + 1
-      : this.transferState.byteCounter;
-    
-    if (bytesAlreadyTransferred >= bytesToTransfer) {
+    // Check if transfer is already complete
+    if (!this.shouldContinueTransfer()) {
       // Transfer complete - check for auto-restart
       if (this.checkAndHandleAutoRestart()) {
         // Restarted - continue with next byte
@@ -966,13 +991,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.performWriteCycle();
 
     // Check if transfer just completed
-    const bytesAfterTransfer = this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF
-      ? 0
-      : this.dmaMode === DmaMode.LEGACY
-      ? this.transferState.byteCounter + 1
-      : this.transferState.byteCounter;
-
-    if (bytesAfterTransfer >= bytesToTransfer) {
+    if (!this.shouldContinueTransfer()) {
       // Transfer complete - check for auto-restart
       if (this.checkAndHandleAutoRestart()) {
         // Restarted - keep bus for next iteration
@@ -1200,11 +1219,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return 0;
     }
 
-    // In legacy mode, transfer length is blockLength+1 for compatibility
-    // In zxnDMA mode, transfer length is exactly blockLength
-    const bytesToTransfer = this.dmaMode === DmaMode.LEGACY 
-      ? this.registers.blockLength + 1 
-      : this.registers.blockLength;
+    const bytesToTransfer = this.getTransferLength();
     let totalBytesTransferred = 0;
     const maxIterations = this.registers.autoRestart ? 1000 : 1; // Safety limit for auto-restart
 
@@ -1266,21 +1281,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return 0;
     }
 
-    // In legacy mode, transfer length is blockLength+1 for compatibility
-    // In zxnDMA mode, transfer length is exactly blockLength
-    const bytesToTransfer = this.dmaMode === DmaMode.LEGACY 
-      ? this.registers.blockLength + 1 
-      : this.registers.blockLength;
-    
-    // In legacy mode, byteCounter starts at 0xFFFF (-1), so we need special handling
-    // After first byte, it becomes 0, after second byte it becomes 1, etc.
-    // So bytes transferred = byteCounter + 1 when byteCounter was initially 0xFFFF
-    const bytesAlreadyTransferred = this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF
-      ? 0
-      : this.dmaMode === DmaMode.LEGACY
-      ? this.transferState.byteCounter + 1
-      : this.transferState.byteCounter;
-    
+    const bytesToTransfer = this.getTransferLength();
+    const bytesAlreadyTransferred = this.getBytesTransferred();
     const bytesRemaining = bytesToTransfer - bytesAlreadyTransferred;
     
     if (bytesRemaining <= 0) {
