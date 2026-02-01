@@ -111,6 +111,26 @@ export const enum BusState {
 const MASK_WR0_DIRECTION = 0x40;    // Direction bit (A->B vs B->A)
 
 /**
+ * WR0 Register control bits (additional fields beyond direction)
+ */
+const MASK_WR0_SEARCH_CONTROL = 0x20;   // D5: 0=Transfer, 1=Search
+const MASK_WR0_INTERRUPT_MODE = 0x18;   // D4-D3: Interrupt mode
+const SHIFT_WR0_INTERRUPT_MODE = 3;     // Bits to shift for interrupt mode
+
+/**
+ * WR1/WR2 Register configuration bits
+ */
+const MASK_WR12_TIMING_FOLLOWS = 0x40;  // D6: Timing byte follows
+const MASK_WR12_IO_FLAG = 0x08;         // D3: 1=I/O, 0=Memory
+const MASK_WR12_ADDRESS_MODE = 0x30;    // D5-D4: Address mode
+const SHIFT_WR12_ADDRESS_MODE = 4;      // Bits to shift for address mode
+
+/**
+ * Cycle length extraction from timing bytes
+ */
+const MASK_CYCLE_LENGTH = 0x03;         // D1-D0: Cycle length bits
+
+/**
  * Address register assembly masks (16-bit address composition)
  */
 const ADDR_MASK_HIGH_BYTE = 0xFF00; // High byte mask
@@ -158,9 +178,30 @@ const PATTERN_WR3_ENABLE = 0x03;       // xxx011 (D2D1D0=011)
 const PATTERN_WR3_DISABLE = 0x02;      // xxx010 (D2D1D0=010)
 const PATTERN_WR4_MASK = 0x0F;         // Mask for WR4 detection
 const PATTERN_WR4_BITS = 0x0D;         // xxxx1101
-const PATTERN_WR5_MASK = 0x17;         // Mask for WR5 detection
-const PATTERN_WR5_BASE = 0x12;         // xxx1x010
+const PATTERN_WR5_MASK = 0x17;         // Mask for WR5 detection (0x18 with D0)
+const PATTERN_WR5_BASE = 0x12;         // xxx1x010 (D4=1, D3=0, D1D0=10)
 const PATTERN_WR6_COMMAND = 0x80;      // 1xxxxxxx (command)
+
+/**
+ * WR0 register bit patterns
+ */
+const WR0_DIRECTION_BIT = 0x40;        // D6: 0=A→B, 1=B→A
+const WR0_SEARCH_CONTROL_BIT = 0x20;   // D5: 0=Transfer, 1=Search
+const WR0_INTERRUPT_MASK = 0x18;       // D4-D3: Interrupt mode
+const WR0_INTERRUPT_SHIFT = 3;         // Shift to extract interrupt bits
+
+/**
+ * WR1/WR2 register bit patterns
+ */
+const WR12_TIMING_FOLLOWS = 0x40;      // D6: Timing byte follows
+const WR12_IO_FLAG = 0x08;              // D3: 1=I/O, 0=Memory
+const WR12_ADDRESS_MODE_MASK = 0x30;   // D5-D4: Address mode
+const WR12_ADDRESS_MODE_SHIFT = 4;     // Shift to extract address mode
+
+/**
+ * Cycle length and timing extraction
+ */
+const CYCLE_LENGTH_MASK = 0x03;        // D1-D0: Cycle length bits
 
 /**
  * Internal register
@@ -170,6 +211,10 @@ interface RegisterState {
   directionAtoB: boolean;  // true = A->B, false = B->A
   portAStartAddress: number;  // 16-bit starting address
   blockLength: number;  // 16-bit transfer length
+  
+  // WR0 - Control bits (D5, D4-D3)
+  searchControl: boolean;  // D5: 0=Transfer mode, 1=Search mode
+  interruptControl: number;  // D4-D3: Interrupt mode (0-3)
 
   // WR1 - Port A configuration
   portAIsIO: boolean;  // true = I/O, false = Memory
@@ -264,6 +309,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       directionAtoB: true,
       portAStartAddress: 0,
       blockLength: 0,
+      
+      // WR0 control bits
+      searchControl: false,
+      interruptControl: 0,
+      
       portAIsIO: false,
       portAAddressMode: AddressMode.INCREMENT,
       portATimingCycleLength: CycleLength.CYCLES_3,
@@ -589,11 +639,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // 2. WR4 has pattern 1xxx1101 (0x8D, 0xCD, etc.)  
     // 3. Everything else with D7=0 is configuration (WR0-WR5)
     
-    if ((value & 0x80) !== 0) {
+    if ((value & PATTERN_WR6_COMMAND) !== 0) {
       // D7=1: Check if it's WR4 or WR6
       // WR4 pattern: bits 3,2,1,0 must be 1101 (xxxx1101)
       // WR4 values: 0x8D (burst), 0xCD (continuous)
-      if ((value & 0x0F) === 0x0D) {
+      if ((value & PATTERN_WR4_MASK) === PATTERN_WR4_BITS) {
         this.writeWR4(value);
       } else {
         // It's a WR6 command
@@ -619,7 +669,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       } else if (lowBits === PATTERN_WR2) {
         // WR2: xxx000 (D2D1D0=000)
         this.writeWR2(value);
-      } else if ((value & 0x18) === 0x10 && (value & 0x03) === 0x02) {
+      } else if ((value & PATTERN_WR5_MASK) === PATTERN_WR5_BASE) {
         // WR5: xxx1x010 (D4=1, D3=0, D1D0=10) - Check BEFORE WR3!
         this.writeWR5(value);
       } else if (lowBits === PATTERN_WR3_ENABLE || lowBits === PATTERN_WR3_DISABLE) {
@@ -634,17 +684,24 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Write to WR0 register
-   * Base byte: D7=0, D6=direction, D5-D0=parameters
+   * Base byte: D7=0, D6=direction, D5=search control, D4-D3=interrupt mode, D2-D0=parameters
    * Parameters: Port A start address (16-bit), block length (16-bit)
    */
   writeWR0(value: number): void {
-    // Extract direction bit (D6)
-    const direction = (value & MASK_WR0_DIRECTION) !== 0;
-    
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
-      // First write - store base byte and transition to R0_BYTE_0
+      // First write - store base byte and extract WR0 control bits
       this._tempRegisterByte = value;
+      
+      // D6: Direction bit (0=A→B, 1=B→A)
+      const direction = (value & MASK_WR0_DIRECTION) !== 0;
       this.registers.directionAtoB = direction;
+      
+      // D5: Search control (0=Transfer mode, 1=Search mode)
+      this.registers.searchControl = (value & MASK_WR0_SEARCH_CONTROL) !== 0;
+      
+      // D4-D3: Interrupt control mode
+      this.registers.interruptControl = (value & MASK_WR0_INTERRUPT_MODE) >> SHIFT_WR0_INTERRUPT_MODE;
+      
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_0;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_0) {
       // Port A start address - low byte
@@ -676,14 +733,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this._tempRegisterByte = value;
       
       // D3: Port A type (1=I/O, 0=Memory)
-      this.registers.portAIsIO = (value & 0x08) !== 0;
+      this.registers.portAIsIO = (value & MASK_WR12_IO_FLAG) !== 0;
       
       // D5-D4: Address mode (0=Decrement, 1=Increment, 2/3=Fixed)
-      const addressModeValue = (value >> 4) & 0x03;
+      const addressModeValue = (value & MASK_WR12_ADDRESS_MODE) >> SHIFT_WR12_ADDRESS_MODE;
       this.registers.portAAddressMode = addressModeValue as AddressMode;
       
       // D6: Check if timing byte follows
-      if ((value & 0x40) === 0) {
+      if ((value & MASK_WR12_TIMING_FOLLOWS) === 0) {
         // No timing byte follows - return to IDLE
         this.registerWriteSeq = RegisterWriteSequence.IDLE;
       } else {
@@ -693,7 +750,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     } else if (this.registerWriteSeq === RegisterWriteSequence.R1_BYTE_0) {
       // Store timing byte and extract cycle length from D1-D0
       this.registers.portATimingValue = value;
-      const cycleLengthBits = value & 0x03;
+      const cycleLengthBits = value & MASK_CYCLE_LENGTH;
       this.registers.portATimingCycleLength = cycleLengthBits as CycleLength;
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
@@ -710,14 +767,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this._tempRegisterByte = value;
       
       // D3: Port B type (1=I/O, 0=Memory)
-      this.registers.portBIsIO = (value & 0x08) !== 0;
+      this.registers.portBIsIO = (value & MASK_WR12_IO_FLAG) !== 0;
       
       // D5-D4: Address mode (0=Decrement, 1=Increment, 2/3=Fixed)
-      const addressModeValue = (value >> 4) & 0x03;
+      const addressModeValue = (value & MASK_WR12_ADDRESS_MODE) >> SHIFT_WR12_ADDRESS_MODE;
       this.registers.portBAddressMode = addressModeValue as AddressMode;
       
       // D6: Check if timing byte follows
-      if ((value & 0x40) === 0) {
+      if ((value & MASK_WR12_TIMING_FOLLOWS) === 0) {
         // No timing byte follows - return to IDLE
         this.registerWriteSeq = RegisterWriteSequence.IDLE;
       } else {
@@ -727,7 +784,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_0) {
       // Store timing byte and extract cycle length from D1-D0
       this.registers.portBTimingValue = value;
-      const cycleLengthBits = value & 0x03;
+      const cycleLengthBits = value & MASK_CYCLE_LENGTH;
       this.registers.portBTimingCycleLength = cycleLengthBits as CycleLength;
       this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_1;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_1) {
