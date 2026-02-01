@@ -1,6 +1,7 @@
 {
   "kliveVersion": "0.52.0",
   "machineType": "zxnext",
+  "modelId": "pal",
   "clockMultiplier": 1,
   "soundLevel": 0.8,
   "soundMuted": false,
@@ -51,7 +52,7 @@
           "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/code.kz80.asm",
           "position": {
             "line": 155,
-            "column": 20
+            "column": 1
           }
         },
         {
