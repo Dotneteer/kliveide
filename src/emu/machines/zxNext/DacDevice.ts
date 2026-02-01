@@ -159,4 +159,26 @@ export class DacDevice {
       this.setDacChannel(i, values[i]);
     }
   }
+
+  /**
+   * Get the device state for persistence
+   */
+  getState(): any {
+    return {
+      dacChannels: [...this._dacChannels]
+    };
+  }
+
+  /**
+   * Restore the device state from persisted data
+   */
+  setState(state: any): void {
+    if (!state || !state.dacChannels) return;
+    
+    for (let i = 0; i < 4; i++) {
+      if (i < state.dacChannels.length) {
+        this._dacChannels[i] = state.dacChannels[i] & 0xFF;
+      }
+    }
+  }
 }

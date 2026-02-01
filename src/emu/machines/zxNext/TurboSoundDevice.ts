@@ -355,5 +355,46 @@ export class TurboSoundDevice {
   writeSelectedRegister(value: number): void {
     this._chips[this._selectedChip].writePsgRegisterValue(value);
   }
+
+  /**
+   * Get the device state for persistence
+   */
+  getState(): any {
+    return {
+      selectedChip: this._selectedChip,
+      chipPanning: [...this._chipPanning],
+      ayStereoMode: this._ayStereoMode,
+      chipMonoMode: [...this._chipMonoMode],
+      chipStates: this._chips.map(chip => chip.getState())
+    };
+  }
+
+  /**
+   * Restore the device state from persisted data
+   */
+  setState(state: any): void {
+    if (!state) return;
+    
+    this._selectedChip = state.selectedChip ?? 0;
+    if (state.chipPanning) {
+      this._chipPanning[0] = state.chipPanning[0] ?? 0x3;
+      this._chipPanning[1] = state.chipPanning[1] ?? 0x3;
+      this._chipPanning[2] = state.chipPanning[2] ?? 0x3;
+    }
+    this._ayStereoMode = state.ayStereoMode ?? false;
+    if (state.chipMonoMode) {
+      this._chipMonoMode[0] = state.chipMonoMode[0] ?? false;
+      this._chipMonoMode[1] = state.chipMonoMode[1] ?? false;
+      this._chipMonoMode[2] = state.chipMonoMode[2] ?? false;
+    }
+    
+    if (state.chipStates) {
+      for (let i = 0; i < 3; i++) {
+        if (state.chipStates[i]) {
+          this._chips[i].setState(state.chipStates[i]);
+        }
+      }
+    }
+  }
 }
 

@@ -172,4 +172,30 @@ export class AudioMixerDevice {
     this.i2sInput = { left: 0, right: 0 };
     this.volumeScale = 1.0;
   }
+
+  /**
+   * Get the device state for persistence
+   */
+  getState(): any {
+    return {
+      earLevel: this.earLevel,
+      micLevel: this.micLevel,
+      psgOutput: { ...this.psgOutput },
+      i2sInput: { ...this.i2sInput },
+      volumeScale: this.volumeScale
+    };
+  }
+
+  /**
+   * Restore the device state from persisted data
+   */
+  setState(state: any): void {
+    if (!state) return;
+    
+    this.earLevel = state.earLevel ?? 0;
+    this.micLevel = state.micLevel ?? 0;
+    this.psgOutput = state.psgOutput ? { ...state.psgOutput } : { left: 0, right: 0 };
+    this.i2sInput = state.i2sInput ? { ...state.i2sInput } : { left: 0, right: 0 };
+    this.volumeScale = state.volumeScale ?? 1.0;
+  }
 }

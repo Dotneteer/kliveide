@@ -84,4 +84,32 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
     this.dacDevice.reset();
     this.audioMixerDevice.reset();
   }
+
+  /**
+   * Get the device state for persistence
+   */
+  getState(): any {
+    return {
+      turboSound: this.turboSoundDevice.getState(),
+      dac: this.dacDevice.getState(),
+      mixer: this.audioMixerDevice.getState()
+    };
+  }
+
+  /**
+   * Restore the device state from persisted data
+   */
+  setState(state: any): void {
+    if (!state) return;
+    
+    if (state.turboSound) {
+      this.turboSoundDevice.setState(state.turboSound);
+    }
+    if (state.dac) {
+      this.dacDevice.setState(state.dac);
+    }
+    if (state.mixer) {
+      this.audioMixerDevice.setState(state.mixer);
+    }
+  }
 }

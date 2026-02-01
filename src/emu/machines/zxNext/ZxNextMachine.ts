@@ -227,6 +227,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
   }
 
+  /**
+   * Get audio device state for persistence
+   */
+  getAudioDeviceState(): any {
+    return this.audioControlDevice.getState();
+  }
+
+  /**
+   * Restore audio device state from persisted data
+   */
+  setAudioDeviceState(state: any): void {
+    this.audioControlDevice.setState(state);
+  }
+
   async setup(): Promise<void> {
     // --- Get the ZX Spectrum Next ROM file
     let romContents = await this.loadRomFromFile("roms/enNextZX.rom");

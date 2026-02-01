@@ -236,6 +236,88 @@ export class PsgChip {
   }
 
   /**
+   * Gets the state of the PSG chip for persistence
+   */
+  getState(): any {
+    return {
+      psgRegisterIndex: this._psgRegisterIndex,
+      regValues: new Uint8Array(this._regValues),
+      toneA: this._toneA,
+      toneAEnabled: this._toneAEnabled,
+      noiseAEnabled: this._noiseAEnabled,
+      volA: this._volA,
+      envA: this._envA,
+      cntA: this._cntA,
+      bitA: this._bitA,
+      toneB: this._toneB,
+      toneBEnabled: this._toneBEnabled,
+      noiseBEnabled: this._noiseBEnabled,
+      volB: this._volB,
+      envB: this._envB,
+      cntB: this._cntB,
+      bitB: this._bitB,
+      toneC: this._toneC,
+      toneCEnabled: this._toneCEnabled,
+      noiseCEnabled: this._noiseCEnabled,
+      volC: this._volC,
+      envC: this._envC,
+      cntC: this._cntC,
+      bitC: this._bitC,
+      noiseSeed: this._noiseSeed,
+      noiseFreq: this._noiseFreq,
+      cntNoise: this._cntNoise,
+      bitNoise: this._bitNoise,
+      envFreq: this._envFreq,
+      envStyle: this._envStyle,
+      cntEnv: this._cntEnv,
+      posEnv: this._posEnv
+    };
+  }
+
+  /**
+   * Sets the state of the PSG chip from persisted data
+   */
+  setState(state: any): void {
+    if (!state) return;
+
+    this._psgRegisterIndex = state.psgRegisterIndex ?? 0;
+    if (state.regValues) {
+      for (let i = 0; i < Math.min(state.regValues.length, this._regValues.length); i++) {
+        this._regValues[i] = state.regValues[i];
+      }
+    }
+    this._toneA = state.toneA ?? 0;
+    this._toneAEnabled = state.toneAEnabled ?? false;
+    this._noiseAEnabled = state.noiseAEnabled ?? false;
+    this._volA = state.volA ?? 0;
+    this._envA = state.envA ?? false;
+    this._cntA = state.cntA ?? 0;
+    this._bitA = state.bitA ?? false;
+    this._toneB = state.toneB ?? 0;
+    this._toneBEnabled = state.toneBEnabled ?? false;
+    this._noiseBEnabled = state.noiseBEnabled ?? false;
+    this._volB = state.volB ?? 0;
+    this._envB = state.envB ?? false;
+    this._cntB = state.cntB ?? 0;
+    this._bitB = state.bitB ?? false;
+    this._toneC = state.toneC ?? 0;
+    this._toneCEnabled = state.toneCEnabled ?? false;
+    this._noiseCEnabled = state.noiseCEnabled ?? false;
+    this._volC = state.volC ?? 0;
+    this._envC = state.envC ?? false;
+    this._cntC = state.cntC ?? 0;
+    this._bitC = state.bitC ?? false;
+    this._noiseSeed = state.noiseSeed ?? 0;
+    this._noiseFreq = state.noiseFreq ?? 0;
+    this._cntNoise = state.cntNoise ?? 0;
+    this._bitNoise = state.bitNoise ?? false;
+    this._envFreq = state.envFreq ?? 0;
+    this._envStyle = state.envStyle ?? 0;
+    this._cntEnv = state.cntEnv ?? 0;
+    this._posEnv = state.posEnv ?? 0;
+  }
+
+  /**
    * Set the PSG register index
    * @param index PSG register index (0-15)
    */
