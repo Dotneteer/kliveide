@@ -1,6 +1,7 @@
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { AudioDeviceBase } from "../AudioDeviceBase";
 import { PsgChip } from "./PsgChip";
@@ -83,14 +84,14 @@ export class ZxSpectrum128PsgDevice
   /**
    * Gets the current sound sample (according to the current CPU tact)
    */
-  getCurrentSampleValue (): number {
+  getCurrentSampleValue (): AudioSample {
     let value =
       this._psg.orphanSamples > 0
         ? this._psg.orphanSum / this._psg.orphanSamples / 65535 / 3
         : 0.0;
     this._psg.orphanSum = 0;
     this._psg.orphanSamples = 0;
-    return value;
+    return { left: value, right: value };
   }
 
   /**
