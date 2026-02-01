@@ -841,17 +841,52 @@ sumSamples[i] = beeper[i] + (turbo[i].left + turbo[i].right) + (mixer[i].left + 
 - ✓ Full test coverage for all debug methods on all devices
 
 ### Step 14: Testing - Single PSG Compatibility
-- Test existing ZX Spectrum 128 programs
-- Verify backward compatibility
-- Test chip 0 default selection
-- Test: Existing 128K software works unchanged
+✅ **COMPLETED**
 
-### Step 15: Testing - TurboSound
-- Test multi-chip selection via port 0xFFFD
-- Test stereo panning per chip
-- Test ABC/ACB stereo modes
-- Test mono mode per chip
-- Test: TurboSound software works correctly
+**Implementation Summary:**
+- Created comprehensive test suite for backward compatibility with ZX Spectrum 128K software
+- Tests verify default chip 0 selection, single chip operations, and no multi-chip interference
+- Core PSG functionality tested: tone configuration, volume control, envelope generation, noise, mixer
+- Default mixer behavior verified: ABC stereo mode, stereo panning enabled, mono mode disabled
+- ZX Spectrum 128K software patterns validated: register writes, tone sweeps, interrupt-driven generation
+- Reset behavior verified for chips, devices, and complete AudioControlDevice
+- State persistence with single chip verified
+
+**Tests Created:** `test/audio/PsgCompatibility.step14.test.ts` (29 tests)
+**Test Results:**
+- ✓ Default chip selection tests (4 tests)
+- ✓ Single chip isolation tests (3 tests)
+- ✓ PSG core functionality tests (6 tests)
+- ✓ Default mixer behavior tests (5 tests)
+- ✓ 128K software compatibility tests (5 tests)
+- ✓ Reset behavior tests (3 tests)
+- ✓ State persistence tests (2 tests)
+- ✓ Debug information tests (2 tests)
+- ✓ All 537 audio tests pass across 17 test files
+
+### Step 15: Testing - TurboSound Multi-Chip
+✅ **COMPLETED**
+
+**Implementation Summary:**
+- Created comprehensive multi-chip testing suite for TurboSound functionality
+- Tests verify chip selection via port 0xFFFD (three independent chips)
+- Stereo panning per chip tested: muted, right-only, left-only, full stereo modes
+- ABC vs ACB stereo mode switching verified
+- Individual mono mode per chip tested with independent control
+- Multi-chip orchestration tested: complex configurations with different settings per chip
+- State management tested: save/restore for all chips, selection, panning, modes
+- Debug information verified: per-chip and aggregate debug output
+
+**Tests Created:** `test/audio/TurboSoundTesting.step15.test.ts` (34 tests)
+**Test Results:**
+- ✓ Multi-chip selection tests (6 tests)
+- ✓ Stereo panning tests (7 tests)
+- ✓ ABC/ACB stereo modes tests (6 tests)
+- ✓ Mono mode tests (5 tests)
+- ✓ Multi-chip orchestration tests (5 tests)
+- ✓ State management tests (4 tests)
+- ✓ Debug information tests (2 tests)
+- ✓ All 571 audio tests pass across 18 test files
 
 ### Step 16: Testing - DAC Playback
 - Test SpecDrum software
