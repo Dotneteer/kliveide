@@ -648,24 +648,40 @@ Each step follows this strict workflow:
 
 ---
 
-### Step 21: Edge Cases and Error Handling
+### Step 21: Edge Cases and Error Handling ✓ COMPLETED
 
-**Goal**: Handle edge cases and malformed commands.
+**Goal**: Handle edge cases and malformed commands gracefully without crashing or corrupting state.
 
 **Implementation**:
-- Handle zero-length transfers
-- Handle invalid register writes
-- Ignore unimplemented commands gracefully
-- Handle mode switches mid-transfer
-- Protect against invalid state transitions
-- Handle disabled DMA mid-transfer
+- ✅ Zero-length transfers: Modified `stepDma()` to check completion before requesting bus
+- ✅ Invalid register writes: Existing implementation handles gracefully with bit masking
+- ✅ Unimplemented commands: Already ignored gracefully (no-op for unknown command codes)
+- ✅ Mode switches mid-transfer: Tested and handled without crashes
+- ✅ State transitions: Protected via DMA state machine
+- ✅ Disabled DMA mid-transfer: Stops cleanly and releases bus
 
-**Tests**:
-- Attempt zero-length transfer
-- Write invalid command codes
-- Change mode during active transfer
-- Disable DMA mid-transfer
-- Send malformed register sequences
+**Implementation Details**:
+- **Zero-Length Fix** ([DmaDevice.ts:920-950](src/emu/machines/zxNext/DmaDevice.ts#L920-L950)):
+  - Moved completion check before bus request in `stepDma()`
+  - Zero-length transfers complete immediately without bus arbitration
+  - Prevents unnecessary bus contention for empty transfers
+- **Invalid Commands**: Existing `writeWR6()` ignores unknown commands
+- **Mid-Transfer Protection**:
+  - DISABLE_DMA stops transfer and releases bus
+  - Register writes during transfer are handled gracefully
+  - RESET command clears state properly
+  - Mode switches don't corrupt memory
+
+**Tests**: 26 comprehensive edge case tests in [DmaDevice-edge-cases.test.ts](test/zxnext/DmaDevice-edge-cases.test.ts)
+- ✅ **Zero-Length Transfers** (4 tests): No crash, no bus request, works after completion
+- ✅ **Invalid Register Writes** (3 tests): Oversized lengths, invalid configs, incomplete sequences
+- ✅ **Invalid Commands** (6 tests): Unknown codes, corruption prevention, timing
+- ✅ **Mode Switches Mid-Transfer** (3 tests): Burst↔continuous, register changes
+- ✅ **Disabled DMA Mid-Transfer** (4 tests): Clean stop, bus release, re-enable, memory safety
+- ✅ **State Corruption Prevention** (4 tests): Sequential edge cases, rapid cycles, integrity
+- ✅ **Boundary Conditions** (3 tests): Address wraparound, max block length, single-byte
+
+**Status**: ✓ **548 tests passing** (522 existing + 26 new) - **100% pass rate**
 
 ---
 

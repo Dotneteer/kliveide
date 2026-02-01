@@ -923,23 +923,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return 0;
     }
 
-    // Check if we need bus access
-    if (!this.isBusAvailable()) {
-      // Request bus if not already requested
-      if (!this.busControl.busRequested) {
-        this.requestBus();
-      }
-      // Wait for bus acknowledgment - no T-states consumed yet
-      return 0;
-    }
-
     // In legacy mode, transfer length is blockLength+1 for compatibility
     // In zxnDMA mode, transfer length is exactly blockLength
     const bytesToTransfer = this.dmaMode === DmaMode.LEGACY 
       ? this.registers.blockLength + 1 
       : this.registers.blockLength;
     
-    // Check if we've already completed the transfer
+    // Check if we've already completed the transfer (including zero-length case)
     const bytesAlreadyTransferred = this.dmaMode === DmaMode.LEGACY && this.transferState.byteCounter === 0xFFFF
       ? 0
       : this.dmaMode === DmaMode.LEGACY
@@ -951,12 +941,22 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       if (this.checkAndHandleAutoRestart()) {
         // Restarted - continue with next byte
       } else {
-        // No restart - mark complete and release bus
+        // No restart - mark complete and release bus (if held)
         this.statusFlags.endOfBlockReached = true;
         this.releaseBus();
         this.dmaState = DmaState.IDLE;
         return 0;
       }
+    }
+
+    // Check if we need bus access
+    if (!this.isBusAvailable()) {
+      // Request bus if not already requested
+      if (!this.busControl.busRequested) {
+        this.requestBus();
+      }
+      // Wait for bus acknowledgment - no T-states consumed yet
+      return 0;
     }
 
     // Perform one byte transfer
