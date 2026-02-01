@@ -198,4 +198,45 @@ export class AudioMixerDevice {
     this.i2sInput = state.i2sInput ? { ...state.i2sInput } : { left: 0, right: 0 };
     this.volumeScale = state.volumeScale ?? 1.0;
   }
+
+  /**
+   * Gets debug information about the audio mixer
+   */
+  getDebugInfo(): any {
+    const mixedOutput = this.getMixedOutput();
+    return {
+      sources: {
+        ear: {
+          level: this.earLevel,
+          enabled: this.earLevel > 0
+        },
+        mic: {
+          level: this.micLevel,
+          enabled: this.micLevel > 0
+        },
+        psg: {
+          left: this.psgOutput.left,
+          right: this.psgOutput.right
+        },
+        i2s: {
+          left: this.i2sInput.left,
+          right: this.i2sInput.right
+        }
+      },
+      volume: {
+        scale: this.volumeScale,
+        scaledPercent: `${(this.volumeScale * 100).toFixed(1)}%`
+      },
+      output: {
+        mixed: {
+          left: mixedOutput.left,
+          right: mixedOutput.right
+        },
+        dacOutput: {
+          left: this.dac.getStereoOutput().left,
+          right: this.dac.getStereoOutput().right
+        }
+      }
+    };
+  }
 }

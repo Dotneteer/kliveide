@@ -112,4 +112,15 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
       this.audioMixerDevice.setState(state.mixer);
     }
   }
+
+  /**
+   * Gets comprehensive debug information about all audio devices
+   */
+  getDebugInfo(): any {
+    return {
+      turboSound: this.turboSoundDevice.getDebugInfo(),
+      dac: this.dacDevice.getDebugInfo(),
+      mixer: this.audioMixerDevice.getDebugInfo()
+    };
+  }
 }

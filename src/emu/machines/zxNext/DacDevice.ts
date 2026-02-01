@@ -181,4 +181,35 @@ export class DacDevice {
       }
     }
   }
+
+  /**
+   * Gets debug information about the DAC device
+   */
+  getDebugInfo(): any {
+    const stereoOutput = this.getStereoOutput();
+    return {
+      channels: {
+        a: {
+          value: this._dacChannels[0],
+          hex: `0x${this._dacChannels[0].toString(16).toUpperCase().padStart(2, "0")}`
+        },
+        b: {
+          value: this._dacChannels[1],
+          hex: `0x${this._dacChannels[1].toString(16).toUpperCase().padStart(2, "0")}`
+        },
+        c: {
+          value: this._dacChannels[2],
+          hex: `0x${this._dacChannels[2].toString(16).toUpperCase().padStart(2, "0")}`
+        },
+        d: {
+          value: this._dacChannels[3],
+          hex: `0x${this._dacChannels[3].toString(16).toUpperCase().padStart(2, "0")}`
+        }
+      },
+      stereoOutput: {
+        left: stereoOutput.left,
+        right: stereoOutput.right
+      }
+    };
+  }
 }

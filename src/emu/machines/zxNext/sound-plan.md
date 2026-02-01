@@ -800,18 +800,45 @@ sumSamples[i] = beeper[i] + (turbo[i].left + turbo[i].right) + (mixer[i].left + 
 - All samples are properly synchronized through machine.tacts clock
 
 ### Step 12: Add State Persistence
-- Add TurboSound state to machine state
-- Add DAC state to machine state
-- Add mixer state to machine state
-- Implement reset() for all devices
-- Test: Verify save/load state works
+✅ **COMPLETED**
+
+**Implementation Summary:**
+- Added `getState()/setState()` to PsgChip for full state persistence
+- TurboSoundDevice already has state persistence (3 chips with independent state)
+- DacDevice already has state persistence (all 4 DAC channels)
+- AudioMixerDevice already has state persistence (all mixer levels and settings)
+- AudioControlDevice aggregates state from all sub-devices
+- ZxNextMachine has `getAudioDeviceState()/setAudioDeviceState()` methods
+- All state methods handle null/undefined gracefully
+
+**Tests Created:** `test/audio/AudioStatePersistence.step12.test.ts`
+**Test Results:**
+- ✓ All 22 audio state persistence tests pass
+- ✓ All 475 audio tests pass across 15 test files
+- ✓ State save/restore for TurboSound, DAC, mixer, and machine level
 
 ### Step 13: Add Debug Support
-- Add PSG chip state inspection
-- Add DAC channel value inspection
-- Add mixer level inspection
-- Add audio enable/disable flags visibility
-- Test: Verify debug info displays correctly
+✅ **COMPLETED**
+
+**Implementation Summary:**
+- Added `getDebugInfo()` to PsgChip providing complete register state, channel details, noise, and envelope information
+- Added `getDebugInfo()` and `getChipDebugInfo(chipId)` to TurboSoundDevice for all 3 chips
+- Added `getDebugInfo()` to DacDevice for all 4 DAC channels with hex formatting and stereo output
+- Added `getDebugInfo()` to AudioMixerDevice for all audio sources, volume scaling, and mixed output
+- Added `getDebugInfo()` to AudioControlDevice aggregating all sub-device debug information
+
+**Debug Information Provided:**
+- PSG: Register index, all 16 registers, channel state (tone, volume, enabled flags, counters, output), noise state, envelope state, diagnostics
+- TurboSound: Selected chip, stereo mode (ABC/ACB), panning/mono per chip, complete chip states for all 3 chips
+- DAC: All 4 channel values with hex formatting, stereo output conversion
+- Mixer: EAR/MIC levels, PSG output, I2S input, volume scale with percentage, mixed output values
+- AudioControl: Aggregate debug info from all sub-devices (TurboSound, DAC, Mixer)
+
+**Tests Created:** `test/audio/AudioDebug.step13.test.ts` (33 tests)
+**Test Results:**
+- ✓ All 33 debug info tests pass
+- ✓ All 508 audio tests pass across 16 test files
+- ✓ Full test coverage for all debug methods on all devices
 
 ### Step 14: Testing - Single PSG Compatibility
 - Test existing ZX Spectrum 128 programs

@@ -630,5 +630,66 @@ export class PsgChip {
     }
     return vol;
   }
+
+  /**
+   * Gets debug information about the PSG chip for inspection
+   */
+  getDebugInfo(): any {
+    return {
+      chipId: this.chipId,
+      registerIndex: this._psgRegisterIndex,
+      registers: Array.from(this._regValues),
+      channels: {
+        a: {
+          tone: this._toneA,
+          toneEnabled: this._toneAEnabled,
+          volume: this._volA,
+          envelope: this._envA,
+          noiseEnabled: this._noiseAEnabled,
+          counter: this._cntA,
+          bit: this._bitA,
+          output: this.getChannelAVolume()
+        },
+        b: {
+          tone: this._toneB,
+          toneEnabled: this._toneBEnabled,
+          volume: this._volB,
+          envelope: this._envB,
+          noiseEnabled: this._noiseBEnabled,
+          counter: this._cntB,
+          bit: this._bitB,
+          output: this.getChannelBVolume()
+        },
+        c: {
+          tone: this._toneC,
+          toneEnabled: this._toneCEnabled,
+          volume: this._volC,
+          envelope: this._envC,
+          noiseEnabled: this._noiseCEnabled,
+          counter: this._cntC,
+          bit: this._bitC,
+          output: this.getChannelCVolume()
+        }
+      },
+      noise: {
+        frequency: this._noiseFreq,
+        seed: this._noiseSeed,
+        counter: this._cntNoise,
+        bit: this._bitNoise
+      },
+      envelope: {
+        frequency: this._envFreq,
+        style: this._envStyle,
+        counter: this._cntEnv,
+        position: this._posEnv
+      },
+      diagnostics: {
+        started: this.started,
+        samplesCount: this.samplesCount,
+        orphanSum: this.orphanSum,
+        orphanSamples: this.orphanSamples
+      }
+    };
+  }
 }
 

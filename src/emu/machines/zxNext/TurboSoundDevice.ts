@@ -396,5 +396,49 @@ export class TurboSoundDevice {
       }
     }
   }
+
+  /**
+   * Gets debug information about the TurboSound device
+   */
+  getDebugInfo(): any {
+    return {
+      selectedChip: this._selectedChip,
+      ayStereoMode: this._ayStereoMode ? "ACB" : "ABC",
+      chips: [
+        {
+          chipId: 0,
+          panning: this._chipPanning[0],
+          monoMode: this._chipMonoMode[0],
+          debug: this._chips[0].getDebugInfo()
+        },
+        {
+          chipId: 1,
+          panning: this._chipPanning[1],
+          monoMode: this._chipMonoMode[1],
+          debug: this._chips[1].getDebugInfo()
+        },
+        {
+          chipId: 2,
+          panning: this._chipPanning[2],
+          monoMode: this._chipMonoMode[2],
+          debug: this._chips[2].getDebugInfo()
+        }
+      ]
+    };
+  }
+
+  /**
+   * Gets debug information about a specific chip
+   * @param chipId The chip ID (0-2)
+   */
+  getChipDebugInfo(chipId: number): any {
+    const id = chipId & 0x03;
+    return {
+      chipId: id,
+      panning: this._chipPanning[id],
+      monoMode: this._chipMonoMode[id],
+      debug: this._chips[id].getDebugInfo()
+    };
+  }
 }
 
