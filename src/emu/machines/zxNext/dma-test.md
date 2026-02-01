@@ -875,10 +875,11 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 
 ### Test Suite Metrics
 - **Phase 1**: ✅ COMPLETED - 583 unit tests passing
-- **Phase 2**: ✅ COMPLETED - 73 Z80 code-driven tests passing
-- **Total DMA Tests**: 656 passing tests
-- **Test Files Created**: 3 new Phase 2 test files (basic, registers, commands)
-- **Coverage**: Basic configuration, register writing, mode selection, all WR6 commands
+- **Phase 2**: ✅ COMPLETED - 73 Z80 code-driven tests passing (23+30+20)
+- **Phase 3**: ✅ COMPLETED - 11 transfer tests passing
+- **Total DMA Tests**: 667 passing tests (583 unit + 84 Z80 code-driven)
+- **Test Files Created**: 4 new test files (basic, registers, commands, transfers)
+- **Coverage**: Basic configuration, register writing, mode selection, all WR6 commands, memory-to-memory transfers
 
 ### Implementation Quality Findings
 
@@ -915,11 +916,11 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 
 ### Next Steps
 
-**Immediate (Phase 3)**:
-1. Create DmaDevice-z80-commands.test.ts (LOAD, CONTINUE, etc.)
-2. Begin transfer tests (memory-to-memory)
-3. Add I/O transfer tests
-4. Status register reading tests
+**Immediate (Phase 4)**:
+1. Create DMA I/O transfer tests (memory-to-I/O, I/O-to-memory)
+2. Status register reading tests
+3. Advanced transfer modes (burst, legacy, prescalar)
+4. Edge case and error condition tests
 
 **Future Enhancements**:
 1. Fix timing parameter storage in writeWR1/writeWR2
@@ -932,3 +933,60 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 2. Phase 4: Advanced features (burst, legacy, auto-restart, audio)
 3. Phase 5: Integration & edge cases
 4. Performance optimization based on test findings
+
+### Phase 3: Transfer Tests ✅ COMPLETED (11/11 tests passing - 100%)
+
+**Completion Date**: February 1, 2026
+
+**Test File**: `test/zxnext/DmaDevice-z80-transfers.test.ts`
+
+**Test Categories** (11 total):
+
+1. **Simple Memory-to-Memory Transfer** (2 tests):
+   - `should copy 4 bytes from 0x8000 to 0x9000` - Basic transfer verification
+   - `should verify DMA enabled after configuration` - DMA state after transfer
+
+2. **Transfer Direction** (2 tests):
+   - `should transfer A→B with correct addresses` - Primary direction
+   - `should transfer to different memory regions` - Address flexibility
+
+3. **Address Modes** (2 tests):
+   - `should increment both source and destination` - Increment addressing
+   - `should handle fixed destination address for multiple writes` - Fixed mode
+
+4. **Block Sizes** (1 test):
+   - `should transfer single byte` - Minimal transfer size
+
+5. **State Management** (2 tests):
+   - `should maintain enabled state after transfer` - DMA enabled flag
+   - `should reflect transfer completion in registers` - Register state validation
+
+6. **Sequential & Burst Mode** (2 tests):
+   - `should transfer and return to enabled state` - Multi-operation support
+   - `should transfer with byte count verification` - Byte counter tracking
+
+**Key Findings**:
+
+1. **Transfer Execution**: Memory-to-memory transfers execute correctly via DMA
+2. **Address Modes**: Both increment and fixed modes function properly
+3. **State Transitions**: DMA correctly transitions through state machine
+4. **Register Preservation**: Transfer configuration persists across operations
+5. **Helper Methods**: `configureContinuousTransfer()` and `runUntilDmaComplete()` essential
+
+**Implementation Details**:
+
+All Phase 3 tests use helper methods from TestNextMachine:
+```typescript
+const code = m.configureContinuousTransfer(sourceAddr, destAddr, length);
+m.initCode(code, 0xC000);
+m.pc = 0xC000;
+m.runUntilHalt();
+m.runUntilDmaComplete();
+m.assertMemoryBlock(destAddr, expectedData);
+```
+
+**Total Phase 3 Implementation**:
+- 11 passing tests
+- 3 test categories focused on core transfer functionality
+- Memory isolation strategy to prevent test conflicts
+- ~250 lines of test code
