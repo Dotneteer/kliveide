@@ -90,8 +90,94 @@ export const enum DmaMode {
   LEGACY = 1   // Port 0x0B - length+1 for compatibility
 }
 
+// ============================================================================
+// Phase 4: Constants - Magic Numbers Replaced with Named Constants
+// ============================================================================
+
 /**
- * Internal register storage for WR0-WR6
+ * Bit masks for WR0 register parsing
+ */
+const MASK_WR0_COMMAND_BIT = 0x80;  // High bit indicates command (not address)
+const MASK_WR0_LOW_BITS = 0x0F;     // Low 4 bits for command identification
+const CMD_WR0_RESET = 0x0D;         // Reset/enable command code
+const MASK_WR0_PORT_SELECT = 0x07;  // Port selection (3 bits)
+const MASK_WR0_TIMING_LENGTH = 0x18; // Timing cycle length bits
+const MASK_WR0_TIMING_CONTENTION = 0x03;  // Timing contention mode
+const TIMING_CONTENTION_VALUE = 0x02; // Expected contention value
+const MASK_WR0_DIRECTION = 0x40;    // Direction bit (A->B vs B->A)
+const DIR_A_TO_B = true;            // Direction flag for A->B transfer
+
+/**
+ * WR0 Register write sequence values for port selection
+ */
+const WR0_PORT_CYCLES_4 = 0x04;     // Port A with 4-cycle timing
+const WR0_PORT_FIXED = 0x00;        // Port A fixed mode (no address change)
+
+/**
+ * Address register assembly masks (16-bit address composition)
+ */
+const ADDR_MASK_HIGH_BYTE = 0xFF00; // High byte mask
+const ADDR_MASK_LOW_BYTE = 0x00FF;  // Low byte mask
+const BYTE_SHIFT = 8;               // Shift for byte assembly
+
+/**
+ * WR1 Register parsing masks
+ */
+const MASK_WR1_PORT_A_IO = 0x08;    // Port A I/O flag
+const MASK_WR1_ADDRESS_MODE = 0x30; // Address mode bits (4-5)
+const SHIFT_WR1_ADDRESS_MODE = 4;   // Shift to extract address mode
+
+/**
+ * WR2 Register parsing masks
+ */
+const MASK_WR2_PORT_B_IO = 0x08;    // Port B I/O flag
+const MASK_WR2_ADDRESS_MODE = 0x30; // Address mode bits (4-5)
+const SHIFT_WR2_ADDRESS_MODE = 4;   // Shift to extract address mode
+
+/**
+ * WR0 Port A address byte indices
+ */
+const MASK_WR0_PORT_A_SELECT = 0x40;  // Bit to select Port A vs Port B
+
+/**
+ * 16-bit arithmetic masks
+ */
+const MASK_16BIT = 0xFFFF;          // 16-bit wraparound mask
+const MASK_8BIT = 0xFF;             // 8-bit mask
+
+/**
+ * CPU speed constants (from CpuSpeedDevice)
+ */
+const CPU_SPEED_28MHZ = 3;          // CPU speed value for 28 MHz
+
+/**
+ * Bank lookup constants
+ */
+const BANK_7_ID = 0x0E;             // Bank 7 identifier in memory device
+const BANK_SHIFT = 13;              // Bits to shift address for bank lookup (13k window)
+
+/**
+ * T-state timing constants
+ */
+const TSTATES_IO_PORT = 4;          // T-states for I/O port operation
+const TSTATES_MEMORY_READ = 3;      // Base T-states for memory read (no contention)
+const TSTATES_MEMORY_WRITE = 3;     // T-states for memory write (no wait states on writes)
+const TSTATES_WAIT_STATE = 1;       // Additional T-state for bank contention
+
+/**
+ * Prescalar frequency constants (for audio sampling)
+ */
+const PRESCALAR_REFERENCE_FREQ = 3500000;  // Reference frequency in Hz
+const PRESCALAR_AUDIO_FREQ = 875000;       // Audio sample frequency in Hz
+
+/**
+ * Status flag positions
+ */
+const STATUS_EOB_BIT = 0;           // End of block bit position
+const STATUS_FIRST_BYTE_BIT = 1;    // First byte transferred bit position
+
+/**
+ * Internal register
  */
 interface RegisterState {
   // WR0 - Port A and block configuration
@@ -132,6 +218,9 @@ interface TransferState {
   sourceAddress: number;  // 16-bit current source pointer
   destAddress: number;  // 16-bit current destination pointer
   byteCounter: number;  // 16-bit bytes transferred so far
+  // Function pointers for address update operations (Phase 3 optimization)
+  updateSourceAddress: () => void;  // Called after each byte to update source
+  updateDestAddress: () => void;    // Called after each byte to update destination
 }
 
 /**
@@ -203,7 +292,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     return {
       sourceAddress: 0,
       destAddress: 0,
-      byteCounter: 0
+      byteCounter: 0,
+      updateSourceAddress: this.noOpAddressUpdate.bind(this),  // Default to no-op
+      updateDestAddress: this.noOpAddressUpdate.bind(this)     // Will be set in executeLoad()
     };
   }
 
@@ -362,7 +453,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR0(value: number): void {
     // Extract direction bit (D6)
-    const direction = (value & 0x40) !== 0;
+    const direction = (value & MASK_WR0_DIRECTION) !== 0;
     
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
       // First write - store base byte and transition to R0_BYTE_0
@@ -371,19 +462,19 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_0;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_0) {
       // Port A start address - low byte
-      this.registers.portAStartAddress = (this.registers.portAStartAddress & 0xff00) | value;
+      this.registers.portAStartAddress = (this.registers.portAStartAddress & ADDR_MASK_HIGH_BYTE) | value;
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_1;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_1) {
       // Port A start address - high byte
-      this.registers.portAStartAddress = (this.registers.portAStartAddress & 0x00ff) | (value << 8);
+      this.registers.portAStartAddress = (this.registers.portAStartAddress & ADDR_MASK_LOW_BYTE) | (value << BYTE_SHIFT);
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_2;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_2) {
       // Block length - low byte
-      this.registers.blockLength = (this.registers.blockLength & 0xff00) | value;
+      this.registers.blockLength = (this.registers.blockLength & ADDR_MASK_HIGH_BYTE) | value;
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_3;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_3) {
       // Block length - high byte (final parameter)
-      this.registers.blockLength = (this.registers.blockLength & 0x00ff) | (value << 8);
+      this.registers.blockLength = (this.registers.blockLength & ADDR_MASK_LOW_BYTE) | (value << BYTE_SHIFT);
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
   }
@@ -646,7 +737,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.transferState.destAddress = this.registers.portAStartAddress;
     }
     
-    // Bank attributes will be calculated on-demand during transfer
+    // Set up function pointers for address update operations (Phase 3 optimization)
+    this.updateAddressFunctionPointers();
     
     // Reset byte counter based on mode
     // zxnDMA mode: counter starts at 0
@@ -940,6 +1032,81 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
+   * Increment source address (for Phase 3 optimization)
+   * Used as function pointer in hot path
+   */
+  private incrementSourceAddress(): void {
+    this.transferState.sourceAddress = (this.transferState.sourceAddress + 1) & MASK_16BIT;
+  }
+
+  /**
+   * Decrement source address (for Phase 3 optimization)
+   * Used as function pointer in hot path
+   */
+  private decrementSourceAddress(): void {
+    this.transferState.sourceAddress = (this.transferState.sourceAddress - 1) & MASK_16BIT;
+  }
+
+  /**
+   * Increment destination address (for Phase 3 optimization)
+   * Used as function pointer in hot path
+   */
+  private incrementDestAddress(): void {
+    this.transferState.destAddress = (this.transferState.destAddress + 1) & MASK_16BIT;
+  }
+
+  /**
+   * Decrement destination address (for Phase 3 optimization)
+   * Used as function pointer in hot path
+   */
+  private decrementDestAddress(): void {
+    this.transferState.destAddress = (this.transferState.destAddress - 1) & MASK_16BIT;
+  }
+
+  /**
+   * No-op address update (for Phase 3 optimization)
+   * Used when address mode is FIXED
+   */
+  private noOpAddressUpdate(): void {
+    // No-op: address stays the same
+  }
+
+  /**
+   * Get the appropriate address update function for a given address mode and port
+   * Returns a bound method that will be called in the hot path
+   * @param mode The address mode (INCREMENT, DECREMENT, FIXED)
+   * @param port The port (source or dest)
+   * @returns A bound function to call on each byte transfer
+   */
+  private getAddressUpdateFunction(mode: AddressMode, port: 'source' | 'dest'): () => void {
+    switch (mode) {
+      case AddressMode.INCREMENT:
+        return port === 'source' ? this.incrementSourceAddress.bind(this) : this.incrementDestAddress.bind(this);
+      case AddressMode.DECREMENT:
+        return port === 'source' ? this.decrementSourceAddress.bind(this) : this.decrementDestAddress.bind(this);
+      case AddressMode.FIXED:
+      default:
+        return this.noOpAddressUpdate.bind(this);
+    }
+  }
+
+  /**
+   * Update function pointers to match current register configuration (Phase 3 optimization)
+   * Called in executeLoad() and at the start of performWriteCycle() to ensure consistency
+   */
+  private updateAddressFunctionPointers(): void {
+    if (this.registers.directionAtoB) {
+      // A->B: Update Port A (source) and Port B (destination)
+      this.transferState.updateSourceAddress = this.getAddressUpdateFunction(this.registers.portAAddressMode, 'source');
+      this.transferState.updateDestAddress = this.getAddressUpdateFunction(this.registers.portBAddressMode, 'dest');
+    } else {
+      // B->A: Update Port B (source) and Port A (destination)
+      this.transferState.updateSourceAddress = this.getAddressUpdateFunction(this.registers.portBAddressMode, 'source');
+      this.transferState.updateDestAddress = this.getAddressUpdateFunction(this.registers.portAAddressMode, 'dest');
+    }
+  }
+
+  /**
    * Release bus in burst mode
    * In burst mode, release bus between byte transfers to allow CPU execution
    */
@@ -1019,8 +1186,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       
       // Calculate prescalar delay for burst mode
       const prescalar = this.registers.portBPrescalar || 1;
-      const cpuFreq = 3500000; // 3.5MHz base clock
-      const prescalarFreq = 875000; // 875kHz reference
+      const cpuFreq = PRESCALAR_REFERENCE_FREQ; // 3.5MHz base clock
+      const prescalarFreq = PRESCALAR_AUDIO_FREQ; // 875kHz reference
       const tStatesPerByte = Math.floor((prescalar * cpuFreq) / prescalarFreq);
       return tStatesPerByte;
     } else {
@@ -1051,18 +1218,18 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // Calculate read timing
     if (this.registers.portAIsIO) {
       // I/O port read: typically 4 T-states
-      readTStates = 4;
+      readTStates = TSTATES_IO_PORT;
     } else {
       // Memory read: base 3 T-states
-      readTStates = 3;
+      readTStates = TSTATES_MEMORY_READ;
       
       // At 28 MHz, add 1 wait state unless it's Bank 7
-      if (cpuSpeed === 3) {
-        const pageIndex = (sourceAddr >>> 13) & 0x07;
-        const isBank7 = this.machine.memoryDevice.bank8kLookup[pageIndex] === 0x0e;
+      if (cpuSpeed === CPU_SPEED_28MHZ) {
+        const pageIndex = (sourceAddr >>> BANK_SHIFT) & 0x07;
+        const isBank7 = this.machine.memoryDevice.bank8kLookup[pageIndex] === BANK_7_ID;
         
         if (!isBank7) {
-          readTStates += 1; // Wait state for SRAM or Bank 5
+          readTStates += TSTATES_WAIT_STATE; // Wait state for SRAM or Bank 5
         }
       }
     }
@@ -1070,10 +1237,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // Calculate write timing  
     if (this.registers.portBIsIO) {
       // I/O port write: typically 4 T-states
-      writeTStates = 4;
+      writeTStates = TSTATES_IO_PORT;
     } else {
       // Memory write: always 3 T-states (no wait states on writes, even at 28MHz)
-      writeTStates = 3;
+      writeTStates = TSTATES_MEMORY_WRITE;
     }
     
     return readTStates + writeTStates;
@@ -1138,21 +1305,22 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Updates addresses based on address mode and increments byte counter
    */
   performWriteCycle(): void {
+    // Ensure function pointers are up-to-date with current register settings
+    // (This handles test cases that call performWriteCycle() directly without LOAD)
+    this.updateAddressFunctionPointers();
+    
     // Determine which port is the destination based on transfer direction
     let destAddress: number;
     let isIO: boolean;
-    let addressMode: AddressMode;
     
     if (this.registers.directionAtoB) {
       // A->B: Port B is destination
       destAddress = this.transferState.destAddress;
       isIO = this.registers.portBIsIO;
-      addressMode = this.registers.portBAddressMode;
     } else {
       // B->A: Port A is destination
       destAddress = this.transferState.sourceAddress;
       isIO = this.registers.portAIsIO;
-      addressMode = this.registers.portAAddressMode;
     }
 
     // Write to memory or IO port
@@ -1164,19 +1332,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.machine.memoryDevice.writeMemory(destAddress, this._transferDataByte);
     }
 
-    // Update addresses based on address mode
-    if (this.registers.directionAtoB) {
-      // A->B: Update both source (Port A) and destination (Port B)
-      this.updateAddress('source', this.registers.portAAddressMode);
-      this.updateAddress('dest', addressMode);
-    } else {
-      // B->A: Update both source (Port B) and destination (Port A)
-      this.updateAddress('dest', addressMode);
-      this.updateAddress('source', this.registers.portBAddressMode);
-    }
+    // Update addresses using function pointers (Phase 3 optimization)
+    // Replaces string-based dispatch with direct function calls
+    this.transferState.updateSourceAddress();
+    this.transferState.updateDestAddress();
 
     // Increment byte counter (16-bit with wraparound)
-    this.transferState.byteCounter = (this.transferState.byteCounter + 1) & 0xFFFF;
+    this.transferState.byteCounter = (this.transferState.byteCounter + 1) & MASK_16BIT;
     
     // Update status flags
     // In zxnDMA mode: first byte = byteCounter 1
@@ -1190,28 +1352,6 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.statusFlags.atLeastOneByteTransferred = true;
       this.statusFlags.endOfBlockReached = false;
     }
-  }
-
-  /**
-   * Update address based on address mode
-   * @param addrType 'source' or 'dest'
-   * @param mode Address mode (increment, decrement, fixed)
-   */
-  private updateAddress(addrType: 'source' | 'dest', mode: AddressMode): void {
-    if (mode === AddressMode.INCREMENT) {
-      if (addrType === 'source') {
-        this.transferState.sourceAddress = (this.transferState.sourceAddress + 1) & 0xffff;
-      } else {
-        this.transferState.destAddress = (this.transferState.destAddress + 1) & 0xffff;
-      }
-    } else if (mode === AddressMode.DECREMENT) {
-      if (addrType === 'source') {
-        this.transferState.sourceAddress = (this.transferState.sourceAddress - 1) & 0xffff;
-      } else {
-        this.transferState.destAddress = (this.transferState.destAddress - 1) & 0xffff;
-      }
-    }
-    // FIXED mode: do nothing, address stays the same
   }
 
   /**
@@ -1307,8 +1447,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // At 3.5MHz base clock (3500000 Hz), 875kHz = 3500000 / 4
     // Delay in T-states = (prescalar * CPU_FREQ) / 875000
     const prescalar = this.registers.portBPrescalar || 1; // Minimum 1 to avoid divide by zero
-    const cpuFreq = 3500000; // 3.5MHz base clock
-    const prescalarFreq = 875000; // 875kHz reference
+    const cpuFreq = PRESCALAR_REFERENCE_FREQ; // 3.5MHz base clock
+    const prescalarFreq = PRESCALAR_AUDIO_FREQ; // 875kHz reference
     const tStatesPerByte = Math.floor((prescalar * cpuFreq) / prescalarFreq);
 
     // Perform transfers while we have T-states and bytes to transfer
