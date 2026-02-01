@@ -1,6 +1,7 @@
 import type { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { AudioDeviceBase } from "./AudioDeviceBase";
 
@@ -37,7 +38,8 @@ export class SpectrumBeeperDevice
   /**
    * Gets the current sound sample (according to the current CPU tact)
    */
-  getCurrentSampleValue(): number {
-    return this._earBit ? 1.0 : 0.0;
+  getCurrentSampleValue(): AudioSample {
+    const value = this._earBit ? 1.0 : 0.0;
+    return { left: value, right: value };
   }
 }

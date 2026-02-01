@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { AudioDeviceBase } from "@emu/machines/AudioDeviceBase";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 /**
  * Mock machine for testing audio devices
@@ -20,14 +21,14 @@ class MockMachine implements Partial<IAnyMachine> {
 /**
  * Concrete test implementation of AudioDeviceBase
  */
-class TestAudioDevice extends AudioDeviceBase<MockMachine> {
-  private _currentSampleValue = 0.0;
+class TestAudioDevice extends AudioDeviceBase<IAnyMachine> {
+  private _currentSampleValue = { left: 0.0, right: 0.0 };
 
-  setSampleValue(value: number): void {
-    this._currentSampleValue = value;
+  setSampleValue(left: number, right: number): void {
+    this._currentSampleValue = { left, right };
   }
 
-  override getCurrentSampleValue(): number {
+  override getCurrentSampleValue(): AudioSample {
     return this._currentSampleValue;
   }
 }
@@ -38,7 +39,7 @@ describe("AudioDeviceBase", () => {
 
   beforeEach(() => {
     machine = new MockMachine();
-    device = new TestAudioDevice(machine as any);
+    device = new TestAudioDevice(machine as IAnyMachine);
   });
 
   describe("Sample Rate Setup", () => {
@@ -110,7 +111,7 @@ describe("AudioDeviceBase", () => {
   describe("Frame Boundary Behavior", () => {
     it("should clear samples on onNewFrame", () => {
       device.setAudioSampleRate(44100);
-      device.setSampleValue(0.5);
+      device.setSampleValue(0.5, 0.5);
       
       machine.tacts = 100;
       device.setNextAudioSample();
@@ -122,7 +123,7 @@ describe("AudioDeviceBase", () => {
 
     it("should reset on reset()", () => {
       device.setAudioSampleRate(44100);
-      device.setSampleValue(0.5);
+      device.setSampleValue(0.5, 0.5);
       
       machine.tacts = 100;
       device.setNextAudioSample();
@@ -158,7 +159,7 @@ describe("AudioDeviceBase", () => {
     it("should generate multiple samples with sufficient tacts", () => {
       device.setAudioSampleRate(44100);
       const sampleLength = 3_546_900 / 44100;
-      device.setSampleValue(1.0);
+      device.setSampleValue(1.0, 1.0);
       
       // Simulate 5 samples worth of tacts
       machine.tacts = sampleLength * 5;
@@ -167,7 +168,7 @@ describe("AudioDeviceBase", () => {
       }
       
       expect(device.getAudioSamples().length).toBe(5);
-      expect(device.getAudioSamples()[0]).toBe(1.0);
+      expect(device.getAudioSamples()[0].left).toBe(1.0);
     });
 
     it("should use first pending sample correctly", () => {
@@ -175,11 +176,11 @@ describe("AudioDeviceBase", () => {
       const sampleLength = 3_546_900 / 44100;
       
       // Set initial sample value
-      device.setSampleValue(0.5);
+      device.setSampleValue(0.5, 0.5);
       machine.tacts = sampleLength;
       device.setNextAudioSample();
       
-      expect(device.getAudioSamples()[0]).toBe(0.5);
+      expect(device.getAudioSamples()[0].left).toBe(0.5);
     });
   });
 
@@ -246,24 +247,24 @@ describe("AudioDeviceBase", () => {
   describe("Sample Value Retrieval", () => {
     it("should call getCurrentSampleValue", () => {
       device.setAudioSampleRate(44100);
-      device.setSampleValue(0.75);
+      device.setSampleValue(0.75, 0.75);
       
       const sampleLength = 3_546_900 / 44100;
       machine.tacts = sampleLength;
       device.setNextAudioSample();
       
-      expect(device.getAudioSamples()[0]).toBe(0.75);
+      expect(device.getAudioSamples()[0].left).toBe(0.75);
     });
 
     it("should handle negative sample values", () => {
       device.setAudioSampleRate(44100);
-      device.setSampleValue(-0.5);
+      device.setSampleValue(-0.5, -0.5);
       
       const sampleLength = 3_546_900 / 44100;
       machine.tacts = sampleLength;
       device.setNextAudioSample();
       
-      expect(device.getAudioSamples()[0]).toBe(-0.5);
+      expect(device.getAudioSamples()[0].left).toBe(-0.5);
     });
 
     it("should accumulate diverse sample values", () => {
@@ -272,21 +273,24 @@ describe("AudioDeviceBase", () => {
       const values = [0.0, 0.5, 1.0, -0.5, 0.25];
       
       for (const value of values) {
-        device.setSampleValue(value);
+        device.setSampleValue(value, value);
         machine.tacts += sampleLength;
         device.setNextAudioSample();
       }
       
       const samples = device.getAudioSamples();
       expect(samples.length).toBe(5);
-      expect(samples).toEqual(values);
+      for (let i = 0; i < values.length; i++) {
+        expect(samples[i].left).toBe(values[i]);
+        expect(samples[i].right).toBe(values[i]);
+      }
     });
   });
 
   describe("Integration", () => {
     it("should generate expected samples per frame at 44.1kHz", () => {
       device.setAudioSampleRate(44100);
-      device.setSampleValue(1.0);
+      device.setSampleValue(1.0, 1.0);
       
       // ZX Spectrum 128: ~69,888 tacts per frame
       const tactsPerFrame = 69_888;
@@ -304,7 +308,7 @@ describe("AudioDeviceBase", () => {
 
     it("should handle continuous frame simulation", () => {
       device.setAudioSampleRate(44100);
-      device.setSampleValue(0.5);
+      device.setSampleValue(0.5, 0.5);
       
       const tactsPerFrame = 69_888;
       let totalSamples = 0;
@@ -330,7 +334,7 @@ describe("AudioDeviceBase", () => {
       
       for (const rate of rates) {
         device.setAudioSampleRate(rate);
-        device.setSampleValue(1.0);
+        device.setSampleValue(1.0, 1.0);
         device.getAudioSamples().length = 0; // Reset
         
         machine.tacts = tactsPerFrame;

@@ -60,7 +60,8 @@ describe("SpectrumBeeperDevice", () => {
       machine.tacts = sampleLength;
       beeper.setNextAudioSample();
 
-      expect(beeper.getAudioSamples()[0]).toBe(1.0);
+      expect(beeper.getAudioSamples()[0].left).toBe(1.0);
+      expect(beeper.getAudioSamples()[0].right).toBe(1.0);
     });
 
     it("should generate 0.0 sample when EAR bit is false", () => {
@@ -71,7 +72,8 @@ describe("SpectrumBeeperDevice", () => {
       machine.tacts = sampleLength;
       beeper.setNextAudioSample();
 
-      expect(beeper.getAudioSamples()[0]).toBe(0.0);
+      expect(beeper.getAudioSamples()[0].left).toBe(0.0);
+      expect(beeper.getAudioSamples()[0].right).toBe(0.0);
     });
 
     it("should generate correct samples for EAR bit transitions", () => {
@@ -82,19 +84,22 @@ describe("SpectrumBeeperDevice", () => {
       beeper.setEarBit(true);
       machine.tacts = sampleLength;
       beeper.setNextAudioSample();
-      expect(beeper.getAudioSamples()[0]).toBe(1.0);
+      expect(beeper.getAudioSamples()[0].left).toBe(1.0);
+      expect(beeper.getAudioSamples()[0].right).toBe(1.0);
 
       // Change EAR bit to off and generate next sample
       beeper.setEarBit(false);
       machine.tacts = sampleLength * 2;
       beeper.setNextAudioSample();
-      expect(beeper.getAudioSamples()[1]).toBe(0.0);
+      expect(beeper.getAudioSamples()[1].left).toBe(0.0);
+      expect(beeper.getAudioSamples()[1].right).toBe(0.0);
 
       // Change back to on
       beeper.setEarBit(true);
       machine.tacts = sampleLength * 3;
       beeper.setNextAudioSample();
-      expect(beeper.getAudioSamples()[2]).toBe(1.0);
+      expect(beeper.getAudioSamples()[2].left).toBe(1.0);
+      expect(beeper.getAudioSamples()[2].right).toBe(1.0);
     });
   });
 
@@ -113,7 +118,8 @@ describe("SpectrumBeeperDevice", () => {
       const samples = beeper.getAudioSamples();
       const expected = pattern.map((v) => (v ? 1.0 : 0.0));
 
-      expect(samples).toEqual(expected);
+      expect(samples.map(s => s.left)).toEqual(expected);
+      expect(samples.map(s => s.right)).toEqual(expected);
     });
 
     it("should maintain consistent frequency", () => {
@@ -137,7 +143,7 @@ describe("SpectrumBeeperDevice", () => {
       // Verify square wave characteristics: should have transitions
       let transitions = 0;
       for (let i = 1; i < samples.length; i++) {
-        if (samples[i] !== samples[i - 1]) {
+        if (samples[i].left !== samples[i - 1].left) {
           transitions++;
         }
       }
@@ -183,7 +189,8 @@ describe("SpectrumBeeperDevice", () => {
         // Verify all samples match the EAR bit state for this frame
         const expectedValue = frame % 2 === 0 ? 1.0 : 0.0;
         for (const sample of frameSamples) {
-          expect(sample).toBe(expectedValue);
+          expect(sample.left).toBe(expectedValue);
+          expect(sample.right).toBe(expectedValue);
         }
 
         beeper.onNewFrame();
@@ -272,7 +279,8 @@ describe("SpectrumBeeperDevice", () => {
       }
 
       expect(beeper.getAudioSamples().length).toBe(10);
-      expect(beeper.getAudioSamples()[0]).toBe(1.0);
+      expect(beeper.getAudioSamples()[0].left).toBe(1.0);
+      expect(beeper.getAudioSamples()[0].right).toBe(1.0);
     });
 
     it("should work at 22.05kHz", () => {
@@ -368,7 +376,8 @@ describe("SpectrumBeeperDevice", () => {
       // Verify alternating pattern
       for (let i = 0; i < samples.length; i++) {
         const expected = i % 2 === 0 ? 1.0 : 0.0;
-        expect(samples[i]).toBe(expected);
+        expect(samples[i].left).toBe(expected);
+        expect(samples[i].right).toBe(expected);
       }
     });
 
@@ -385,7 +394,8 @@ describe("SpectrumBeeperDevice", () => {
 
       const samples = beeper.getAudioSamples();
       for (const sample of samples) {
-        expect(sample).toBe(0.0);
+        expect(sample.left).toBe(0.0);
+        expect(sample.right).toBe(0.0);
       }
     });
 
@@ -402,7 +412,8 @@ describe("SpectrumBeeperDevice", () => {
 
       const samples = beeper.getAudioSamples();
       for (const sample of samples) {
-        expect(sample).toBe(1.0);
+        expect(sample.left).toBe(1.0);
+        expect(sample.right).toBe(1.0);
       }
     });
   });
@@ -425,7 +436,8 @@ describe("SpectrumBeeperDevice", () => {
       }
 
       const samples = beeper.getAudioSamples();
-      expect(samples).toEqual([1.0, 1.0, 1.0, 1.0, 1.0]);
+      expect(samples.map(s => s.left)).toEqual([1.0, 1.0, 1.0, 1.0, 1.0]);
+      expect(samples.map(s => s.right)).toEqual([1.0, 1.0, 1.0, 1.0, 1.0]);
     });
 
     it("should support inheritance method chain", () => {
@@ -465,8 +477,8 @@ describe("SpectrumBeeperDevice", () => {
       }
 
       const samples = beeper.getAudioSamples();
-      const onSamples = samples.filter((s) => s === 1.0).length;
-      const offSamples = samples.filter((s) => s === 0.0).length;
+      const onSamples = samples.filter((s) => s.left === 1.0).length;
+      const offSamples = samples.filter((s) => s.left === 0.0).length;
 
       expect(onSamples).toBeGreaterThan(0);
       expect(offSamples).toBeGreaterThan(0);

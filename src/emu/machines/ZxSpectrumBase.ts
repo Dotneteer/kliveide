@@ -8,6 +8,7 @@ import type { ITapeDevice } from "../abstractions/ITapeDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 
 import { EmulatedKeyStroke } from "../structs/EmulatedKeyStroke";
@@ -127,7 +128,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
   /**
    * Gets the audio samples rendered in the current frame
    */
-  abstract getAudioSamples(): number[];
+  abstract getAudioSamples(): AudioSample[];
 
   /**
    * Gets the structure describing system variables

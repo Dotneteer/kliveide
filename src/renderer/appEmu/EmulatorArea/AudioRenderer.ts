@@ -3,6 +3,7 @@
  * so we need to create the worklet in vanilla JavaScript.
  */
 import samplingWorklet from "./Sampling.worklet.js?url";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 // --- Let's create audio contextes before using the renderers
 let beeperAudioContext: AudioContext | undefined;
@@ -81,12 +82,15 @@ export class AudioRenderer {
 
   /**
    * Stores the samples to render
-   * @param samples Next batch of samples to store
+   * @param samples Next batch of stereo samples to store
+   * @param soundLevel Sound level multiplier (0.0 to 1.0)
    */
-  storeSamples(samples: number[]): void {
+  storeSamples(samples: AudioSample[], soundLevel: number = 1.0): void {
     if (this.suspended) return;
     if (this.worklet) {
-      this.worklet.port.postMessage({ samples });
+      // Downmix stereo to mono: (left + right) / 2
+      const monoSamples = samples.map(s => (s.left + s.right) / 2 * soundLevel);
+      this.worklet.port.postMessage({ samples: monoSamples });
     }
   }
 }

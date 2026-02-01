@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { SpectrumBeeperDevice } from "@emu/machines/BeeperDevice";
 import { ZxSpectrum128PsgDevice } from "@emu/machines/zxSpectrum128/ZxSpectrum128PsgDevice";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
@@ -83,7 +84,8 @@ describe("Audio Integration Tests", () => {
       expect(psgSamples.length).toBeGreaterThan(0);
 
       // Beeper should be 1.0 when on
-      expect(beeperSamples[0]).toBe(1.0);
+      expect(beeperSamples[0].left).toBe(1.0);
+      expect(beeperSamples[0].right).toBe(1.0);
     });
 
     it("should allow simultaneous output without interference", () => {
@@ -315,8 +317,8 @@ describe("Audio Integration Tests", () => {
       const offSamples = beeper.getAudioSamples().slice();
 
       // Verify difference
-      expect(onSamples.every((s) => s === 1.0)).toBe(true);
-      expect(offSamples.every((s) => s === 0.0)).toBe(true);
+      expect(onSamples.every((s) => s.left === 1.0 && s.right === 1.0)).toBe(true);
+      expect(offSamples.every((s) => s.left === 0.0 && s.right === 0.0)).toBe(true);
     });
 
     it("should handle PSG tone changes", () => {
@@ -420,8 +422,8 @@ describe("Audio Integration Tests", () => {
     it("should simulate game with background beep and music PSG", () => {
       // Simulate game: beeper for effects, PSG for music
       const sampleLength = 3_546_900 / 44100;
-      const frame1Beeper: number[] = [];
-      const frame1Psg: number[] = [];
+      const frame1Beeper: AudioSample[] = [];
+      const frame1Psg: AudioSample[] = [];
 
       // Frame 1: Game starts, beep plays, music starts
       beeper.setEarBit(true); // Game start beep

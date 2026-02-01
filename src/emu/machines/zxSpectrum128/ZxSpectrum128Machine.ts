@@ -1,6 +1,7 @@
 import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
@@ -287,13 +288,16 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples(): number[] {
+  getAudioSamples(): AudioSample[] {
     const beeperSamples = this.beeperDevice.getAudioSamples();
     const psgSamples = this.psgDevice.getAudioSamples();
     const samplesCount = Math.min(beeperSamples.length, psgSamples.length);
-    var sumSamples: number[] = [];
+    const sumSamples: AudioSample[] = [];
     for (let i = 0; i < samplesCount; i++) {
-      sumSamples[i] = beeperSamples[i] + psgSamples[i];
+      sumSamples[i] = {
+        left: beeperSamples[i].left + psgSamples[i].left,
+        right: beeperSamples[i].right + psgSamples[i].right
+      };
     }
     return sumSamples;
   }
