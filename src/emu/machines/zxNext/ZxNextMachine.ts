@@ -7,6 +7,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { MachineModel } from "@common/machines/info-types";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
@@ -488,9 +489,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Gets the audio samples rendered in the current frame
    */
-  getAudioSamples(): number[] {
-    // TODO: Implement this
-    return [];
+  getAudioSamples(): AudioSample[] {
+    // For now, return beeper samples
+    // TurboSound, DAC, and AudioMixer are not yet integrated into sample generation
+    return this.beeperDevice.getAudioSamples();
   }
 
   /**
@@ -984,6 +986,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   shouldRaiseInterrupt(): boolean {
     return this.composedScreenDevice.pulseIntActive;
   }
+
+
 
   /**
    * Every time the CPU clock is incremented, this function is executed.
