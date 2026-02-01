@@ -230,6 +230,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   // Cache fields reserved for Phase 2 optimization
   // (Currently unused - prepared for future performance improvements)
 
+  // ============================================================================
+  // Constructor & Initialization
+  // ============================================================================
+
   constructor(public readonly machine: IZxNextMachine) {
     this.registers = this.initializeRegisters();
     this.transferState = this.initializeTransferState();
@@ -283,6 +287,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     };
   }
 
+  // ============================================================================
+  // Reset & State Management
+  // ============================================================================
+
   reset(): void {
     this.registers = this.initializeRegisters();
     this.transferState = this.initializeTransferState();
@@ -297,7 +305,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // Cache fields cleared on reset
   }
 
-  // Getters for current state (for testing and debugging)
+  // ============================================================================
+  // State Getters & Setters
+  // ============================================================================
+
   getDmaState(): DmaState {
     return this.dmaState;
   }
@@ -441,6 +452,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   setTempRegisterByte(value: number): void {
     this._tempRegisterByte = value;
   }
+
+  // ============================================================================
+  // Port I/O & Register Write Methods
+  // ============================================================================
 
   /**
    * Write to DMA port - dispatches to appropriate WRx register based on byte value
@@ -921,6 +936,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
+  // ============================================================================
+  // Status Byte Management & Read Sequences
+  // ============================================================================
+
   /**
    * Read the next byte in the register read sequence
    * Called when DMA port is read after a read command
@@ -1021,6 +1040,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         return false;
     }
   }
+  // ============================================================================
+  // Bus Control & Arbitration
+  // ============================================================================
 
   /**
    * Request bus access from CPU
@@ -1119,6 +1141,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private shouldContinueTransfer(): boolean {
     return this.getBytesTransferred() < this.getTransferLength();
   }
+
+  // ============================================================================
+  // Address Update & Helper Methods
+  // ============================================================================
 
   /**
    * Increment source address (for Phase 3 optimization)
@@ -1227,6 +1253,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   getBusState(): BusState {
     return this.busControl.state;
   }
+
+  // ============================================================================
+  // Transfer Operations & Timing
+  // ============================================================================
 
   /**
    * Step DMA state machine forward by one operation
