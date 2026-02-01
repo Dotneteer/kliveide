@@ -330,6 +330,105 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.dmaMode = mode;
   }
 
+  /**
+   * Set DMA enabled state (for testing)
+   */
+  setDmaEnabled(enabled: boolean): void {
+    this.registers.dmaEnabled = enabled;
+  }
+
+  // ============================================================================
+  // Phase 7: Validation Methods
+  // ============================================================================
+
+  /**
+   * Check if a DMA transfer is currently active
+   * @returns true if DMA is not in IDLE or FINISH_DMA state
+   */
+  isTransferActive(): boolean {
+    return this.registers.dmaEnabled && 
+           this.dmaState !== DmaState.IDLE &&
+           this.dmaState !== DmaState.FINISH_DMA;
+  }
+
+  /**
+   * Validate that register changes are allowed
+   * Prevents modifications during active transfer
+   * @param registerName Name of register being modified
+   * @throws Error if modification attempted during active transfer
+   */
+  validateRegisterWrite(registerName: string): void {
+    if (this.isTransferActive()) {
+      let stateName = "UNKNOWN";
+      if (this.dmaState === DmaState.IDLE) stateName = "IDLE";
+      else if (this.dmaState === DmaState.START_DMA) stateName = "START_DMA";
+      else if (this.dmaState === DmaState.WAITING_ACK) stateName = "WAITING_ACK";
+      else if (this.dmaState === DmaState.TRANSFERRING_READ_1) stateName = "TRANSFERRING_READ_1";
+      else if (this.dmaState === DmaState.TRANSFERRING_WRITE_1) stateName = "TRANSFERRING_WRITE_1";
+      else if (this.dmaState === DmaState.FINISH_DMA) stateName = "FINISH_DMA";
+
+      throw new Error(
+        `Cannot modify ${registerName} register during active DMA transfer. ` +
+        `Current DMA state: ${stateName}. ` +
+        `Disable DMA or wait for transfer to complete.`
+      );
+    }
+  }
+
+  /**
+   * Check for counter overflow in zxnDMA mode
+   * In legacy mode, overflow is expected behavior
+   * @returns true if counter wrapped around unexpectedly
+   */
+  detectCounterOverflow(): boolean {
+    // Only detect overflow in zxnDMA mode
+    if (this.dmaMode !== DmaMode.ZXNDMA) {
+      return false;
+    }
+
+    // In zxnDMA mode, byteCounter should never exceed transfer length
+    const transferLength = this.getTransferLength();
+    return this.transferState.byteCounter >= transferLength;
+  }
+
+  /**
+   * Get maximum transfer size in bytes
+   * @returns Maximum bytes that can be transferred (65536 for 16-bit counter)
+   */
+  getMaxTransferSize(): number {
+    return 0x10000; // 2^16 = 65536 bytes
+  }
+
+  /**
+   * Validate transfer size is within limits
+   * @throws Error if transfer size exceeds maximum
+   */
+  validateTransferSize(): void {
+    const blockLength = this.registers.blockLength;
+    const transferLength = this.getTransferLength();
+    const maxSize = this.getMaxTransferSize();
+
+    if (transferLength > maxSize) {
+      throw new Error(
+        `Transfer size ${transferLength} exceeds maximum of ${maxSize} bytes. ` +
+        `Block length register value: 0x${blockLength.toString(16).padStart(4, '0')}`
+      );
+    }
+  }
+
+  /**
+   * Validate source and destination addresses are within memory bounds
+   * @returns true if addresses are valid
+   */
+  validateAddressBounds(): boolean {
+    const maxAddress = 0xFFFF; // Assuming 16-bit addressing
+    
+    const sourceValid = this.transferState.sourceAddress <= maxAddress;
+    const destValid = this.transferState.destAddress <= maxAddress;
+    
+    return sourceValid && destValid;
+  }
+
   getPrescalarTimer(): number {
     return this.prescalarTimer;
   }
@@ -697,6 +796,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Direction determines which address goes to source/destination
    */
   private executeLoad(): void {
+    // Phase 7: Validate transfer size before loading
+    try {
+      this.validateTransferSize();
+    } catch (error) {
+      console.error(`[DMA] ${(error as Error).message}`);
+      // Continue anyway - may be intentional
+    }
+
     if (this.registers.directionAtoB) {
       // A → B: Port A is source, Port B is destination
       this.transferState.sourceAddress = this.registers.portAStartAddress;
@@ -705,6 +812,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // B → A: Port B is source, Port A is destination
       this.transferState.sourceAddress = this.registers.portBStartAddress;
       this.transferState.destAddress = this.registers.portAStartAddress;
+    }
+
+    // Phase 7: Validate address bounds
+    if (!this.validateAddressBounds()) {
+      console.warn(
+        `[DMA] Invalid addresses detected. ` +
+        `Source: 0x${this.transferState.sourceAddress.toString(16)}, ` +
+        `Dest: 0x${this.transferState.destAddress.toString(16)}`
+      );
     }
     
     // Set up function pointers for address update operations (Phase 3 optimization)
@@ -1326,6 +1442,18 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
     // Increment byte counter (16-bit with wraparound)
     this.transferState.byteCounter = (this.transferState.byteCounter + 1) & MASK_16BIT;
+    
+    // Phase 7: Detect counter overflow in zxnDMA mode (potential bug indicator)
+    if (this.detectCounterOverflow()) {
+      // Log warning but don't halt transfer - could be legitimate in some cases
+      // This helps identify unexpected behavior during debugging
+      console.warn(
+        `[DMA] Counter overflow detected in zxnDMA mode. ` +
+        `byteCounter=${this.transferState.byteCounter}, ` +
+        `blockLength=${this.registers.blockLength}. ` +
+        `Transfer may have completed unexpectedly.`
+      );
+    }
     
     // Update status flags
     // In zxnDMA mode: first byte = byteCounter 1
