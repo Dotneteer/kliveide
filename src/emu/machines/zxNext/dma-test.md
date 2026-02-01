@@ -658,7 +658,7 @@ it("should transfer 4 bytes from 0x8000 to 0x9000 (A→B)", async () => {
 6. ✅ Clean up proof-of-concept test
 7. ✅ Verify all 583 existing DMA tests still pass
 
-### Phase 2: Basic Test Migration ✅ COMPLETED (53/53 tests passing - 100%)
+### Phase 2: Basic Test Migration ✅ COMPLETED (73/73 tests passing - 100%)
 1. ✅ DmaDevice-z80-basic.test.ts (23/23 tests ✅)
    - Initialization & mode selection
    - Direction flag configuration  
@@ -682,7 +682,22 @@ it("should transfer 4 bytes from 0x8000 to 0x9000 (A→B)", async () => {
 - WR5 requires specific bit pattern: D7=0, D4D3=10, D1D0=10, with D5 controlling auto-restart
 - Timing and prescalar configuration tests removed (see Implementation Flaws section)
 
-3. ⏳ DmaDevice-z80-commands.test.ts (basic commands) - TODO
+3. ✅ DmaDevice-z80-commands.test.ts (20/20 tests ✅)
+   - ✅ RESET command (0xC3) - returns to IDLE state
+   - ✅ CONTINUE command (0xD3) - continues partial transfer
+   - ✅ LOAD command (0xCF) - loads configuration
+   - ✅ ENABLE_DMA command (0x87) - enables DMA, sets state to START_DMA
+   - ✅ DISABLE_DMA command (0x83) - disables DMA operation
+   - ✅ Command sequencing (ENABLE→DISABLE, RESET→ENABLE, etc.)
+   - ✅ Commands with register state (preservation and clearing)
+   - ✅ Legacy mode commands (port 0x0B)
+   - ✅ Complex sequences including complete DMA setup
+
+**Command Test Discoveries**:
+- RESET command doesn't modify `dmaEnabled` flag (only affects DMA state)
+- ENABLE command sets DMA state to `START_DMA` (not an "enabled mode")
+- Commands work correctly in both zxnDMA and legacy modes
+- Register state is preserved across ENABLE/DISABLE cycles
 
 ### Phase 3: Transfer Test Migration
 1. DmaDevice-z80-transfers.test.ts (memory-to-memory)
@@ -860,10 +875,10 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 
 ### Test Suite Metrics
 - **Phase 1**: ✅ COMPLETED - 583 unit tests passing
-- **Phase 2**: ✅ COMPLETED - 53 Z80 code-driven tests passing
-- **Total DMA Tests**: 636 passing tests
-- **Test Files Created**: 2 new Phase 2 test files
-- **Coverage**: Basic configuration, register writing, mode selection, commands
+- **Phase 2**: ✅ COMPLETED - 73 Z80 code-driven tests passing
+- **Total DMA Tests**: 656 passing tests
+- **Test Files Created**: 3 new Phase 2 test files (basic, registers, commands)
+- **Coverage**: Basic configuration, register writing, mode selection, all WR6 commands
 
 ### Implementation Quality Findings
 
@@ -874,6 +889,7 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 4. Command-based control (WR6) properly implemented
 5. Address modes and transfer modes fully functional
 6. Bus control and DMA state management robust
+7. All WR6 commands working (RESET, LOAD, CONTINUE, ENABLE, DISABLE)
 
 #### Weaknesses (4 identified flaws)
 1. **WR0 parameter control bits ignored** (specification deviation)
@@ -883,6 +899,9 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 
 ### Key Discoveries
 1. WR3 register write path disconnected - documented workaround using WR6
+2. RESET command doesn't modify `dmaEnabled` flag (only resets DMA state to IDLE)
+3. ENABLE command sets DMA state to `START_DMA`, not a separate "enabled mode"
+4. Commands preserve register state across ENABLE/DISABLE cycles
 2. WR5 auto-restart requires specific bit pattern (D4D3=10, D1D0=10)
 3. RegisterState property naming critical for test development
 4. AddressMode enum: DECREMENT=0, INCREMENT=1, FIXED=2
