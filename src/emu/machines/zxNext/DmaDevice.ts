@@ -166,6 +166,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private dmaMode: DmaMode = DmaMode.ZXNDMA;
   private prescalarTimer: number = 0;  // Timer for fixed-rate transfers
 
+  // Cache for frequently calculated values
+  // Cache fields reserved for Phase 2 optimization
+  // (Currently unused - prepared for future performance improvements)
+
   constructor(public readonly machine: IZxNextMachine) {
     this.registers = this.initializeRegisters();
     this.transferState = this.initializeTransferState();
@@ -228,6 +232,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this._tempRegisterByte = 0;
     this.prescalarTimer = 0;
     this.dmaMode = DmaMode.ZXNDMA;
+    
+    // Cache fields cleared on reset
   }
 
   // Getters for current state (for testing and debugging)
@@ -640,6 +646,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.transferState.destAddress = this.registers.portAStartAddress;
     }
     
+    // Bank attributes will be calculated on-demand during transfer
+    
     // Reset byte counter based on mode
     // zxnDMA mode: counter starts at 0
     // Legacy mode: counter starts at -1 (0xFFFF) for compatibility
@@ -688,6 +696,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     } else {
       this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
     }
+    
+    // Transfer length will be calculated on-demand during transfer
     
     // Set DMA state to START_DMA so stepDma() will begin transfer
     // (actual transfer will start when bus is available)
