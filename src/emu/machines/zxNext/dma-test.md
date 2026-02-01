@@ -877,9 +877,10 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 - **Phase 1**: ✅ COMPLETED - 583 unit tests passing
 - **Phase 2**: ✅ COMPLETED - 73 Z80 code-driven tests passing (23+30+20)
 - **Phase 3**: ✅ COMPLETED - 11 transfer tests passing
-- **Total DMA Tests**: 667 passing tests (583 unit + 84 Z80 code-driven)
-- **Test Files Created**: 4 new test files (basic, registers, commands, transfers)
-- **Coverage**: Basic configuration, register writing, mode selection, all WR6 commands, memory-to-memory transfers
+- **Phase 4**: ✅ COMPLETED - 10 I/O transfer tests passing
+- **Total DMA Tests**: 677 passing tests (583 unit + 94 Z80 code-driven)
+- **Test Files Created**: 5 new test files (basic, registers, commands, transfers, io-transfers)
+- **Coverage**: Basic configuration, register writing, mode selection, all WR6 commands, memory-to-memory transfers, I/O transfers
 
 ### Implementation Quality Findings
 
@@ -916,11 +917,11 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 
 ### Next Steps
 
-**Immediate (Phase 4)**:
-1. Create DMA I/O transfer tests (memory-to-I/O, I/O-to-memory)
-2. Status register reading tests
-3. Advanced transfer modes (burst, legacy, prescalar)
-4. Edge case and error condition tests
+**Immediate (Phase 5)**:
+1. Create DMA status register tests (reading register state)
+2. Advanced transfer modes (burst mode configuration, legacy mode)
+3. Auto-restart mode tests
+4. Error condition and edge case tests
 
 **Future Enhancements**:
 1. Fix timing parameter storage in writeWR1/writeWR2
@@ -930,8 +931,8 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 
 **Long-term**:
 1. Complete all 305 highly-suitable test cases
-2. Phase 4: Advanced features (burst, legacy, auto-restart, audio)
-3. Phase 5: Integration & edge cases
+2. Phase 5: Advanced features (burst, legacy, auto-restart, audio)
+3. Phase 6: Integration & edge cases
 4. Performance optimization based on test findings
 
 ### Phase 3: Transfer Tests ✅ COMPLETED (11/11 tests passing - 100%)
@@ -990,3 +991,60 @@ m.assertMemoryBlock(destAddr, expectedData);
 - 3 test categories focused on core transfer functionality
 - Memory isolation strategy to prevent test conflicts
 - ~250 lines of test code
+
+### Phase 4: I/O Transfer Tests ✅ COMPLETED (10/10 tests passing - 100%)
+
+**Completion Date**: February 1, 2026
+
+**Test File**: `test/zxnext/DmaDevice-z80-io-transfers.test.ts`
+
+**Test Categories** (10 total):
+
+1. **Memory-to-I/O Transfers** (2 tests):
+   - `should transfer data from memory to I/O port` - Basic memory-to-I/O
+   - `should transfer data to specific I/O port` - Port selection
+
+2. **I/O-to-Memory Transfers** (2 tests):
+   - `should transfer data from I/O port to memory` - Basic I/O-to-memory
+   - `should handle I/O reads to different memory addresses` - Address variation
+
+3. **I/O Port Configuration** (3 tests):
+   - `should correctly configure memory source with I/O destination` - Configuration validation
+   - `should preserve DMA state during I/O transfers` - State preservation
+   - Combined with transfer tests for comprehensive coverage
+
+4. **I/O Transfer Completion** (2 tests):
+   - `should return to IDLE after I/O memory transfer` - State transition
+   - `should verify byte counter increments during I/O transfer` - Byte counting
+
+5. **I/O Port Range Tests** (2 tests):
+   - `should handle low I/O port addresses` - Port 0x00 range
+   - `should handle high I/O port addresses` - Port 0xFF range
+
+**Key Findings**:
+
+1. **I/O Configuration**: Memory-to-I/O transfers use fixed addressing for I/O port
+2. **Port Range**: All I/O port addresses (0x00-0xFF) handled correctly
+3. **Direction Control**: D6 bit in WR0 properly controls A→B vs B→A
+4. **I/O Flags**: D3 bit in WR1/WR2 correctly identifies I/O vs memory
+5. **State Transitions**: DMA returns to IDLE correctly after I/O transfers
+
+**Implementation Details**:
+
+All Phase 4 tests use Z80 DMA register configuration:
+- WR0: Port address + block length (D6 for direction)
+- WR1: Port A config (D3=1 for I/O, D5-D4 for address mode)
+- WR2: Port B config (D3=1 for I/O, D5-D4 for address mode)
+- WR4: Port B address or I/O port number
+- WR6: LOAD and ENABLE commands
+
+**Critical Discovery**: When Port B is I/O:
+- Use fixed address mode (D5-D4=10) to prevent port number increment
+- Port writes to single I/O port address continuously
+- Multiple bytes write to same port sequentially
+
+**Total Phase 4 Implementation**:
+- 10 passing tests
+- 5 test categories covering memory-to-I/O and I/O-to-memory
+- I/O port range validation (0x00-0xFF)
+- ~280 lines of test code
