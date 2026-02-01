@@ -1048,3 +1048,129 @@ All Phase 4 tests use Z80 DMA register configuration:
 - 5 test categories covering memory-to-I/O and I/O-to-memory
 - I/O port range validation (0x00-0xFF)
 - ~280 lines of test code
+
+
+## ✅ Phase 5: Advanced Modes and Status Register Tests ✅ COMPLETED (23/23 tests passing - 100%)
+
+**Completion Date**: February 1, 2026
+
+**Test File**: `test/zxnext/DmaDevice-z80-advanced.test.ts`
+
+**Cumulative Progress**: 
+- **Total Z80 Code-Driven Tests**: 118 passing (Phases 2-5)
+- **Total DMA Tests**: 701 passing (583 unit + 118 Z80)
+
+**Test Categories** (23 total):
+
+1. **Burst Mode Transfer** (3 tests):
+   - `should execute burst mode transfer` - Burst configuration execution
+   - `should handle burst mode with prescalar` - Prescalar timing control
+   - `should maintain DMA enabled in burst mode` - State persistence
+
+2. **Transfer Mode Configuration** (2 tests):
+   - `should distinguish between continuous and burst modes` - Mode selection
+   - `should verify transfer mode setting in registers` - Configuration validation
+
+3. **Block Length Configuration** (3 tests):
+   - `should handle minimum block length (1 byte)` - Single-byte transfers
+   - `should handle large block length (256 bytes)` - Maximum size transfers
+   - `should verify block length in registers after transfer` - Register persistence
+
+4. **Address Mode Combinations** (3 tests):
+   - `should handle increment address mode for both ports` - Increment addressing
+   - `should handle fixed source with increment destination` - Mixed addressing
+   - `should handle mixed addressing modes` - Complex configurations
+
+5. **Status Register Reading** (4 tests):
+   - `should report DMA state before transfer` - Pre-transfer state
+   - `should report registers after configuration` - Configuration reflection
+   - `should report IDLE state after transfer completion` - Completion state
+   - `should preserve register values across operations` - State preservation
+
+6. **Multiple Transfer Sequences** (2 tests):
+   - `should execute first transfer` - Initial transfer execution
+   - `should verify byte transferred counter` - Byte counting accuracy
+
+7. **Edge Cases** (4 tests):
+   - `should handle transfer with aligned addresses` - Address alignment
+   - `should handle transfer between different memory banks` - Memory regions
+   - `should handle back-to-back transfers` - Sequential execution
+   - `should handle transfer with maximum count` - Large transfers (200 bytes)
+
+8. **Register State Validation** (2 tests):
+   - `should maintain consistent register state` - State consistency
+   - `should reflect all transfer parameters` - Parameter reflection
+
+**Key Findings**:
+
+1. **Block Length Range**: Supports 1-256 byte transfers correctly
+2. **Large Transfers**: Successfully handles 200+ byte transfers
+3. **Register Consistency**: All register fields maintained across operations
+4. **State Management**: DMA correctly reports IDLE after completion
+5. **Back-to-Back Transfers**: DMA can be re-enabled after transfer completion
+
+**Implementation Details**:
+
+All Phase 5 tests use helper methods from TestNextMachine:
+```typescript
+const code = m.configureContinuousTransfer(sourceAddr, destAddr, length);
+m.initCode(code, 0xC000);
+m.pc = 0xC000;
+m.runUntilHalt();
+m.runUntilDmaComplete();
+m.assertMemoryBlock(destAddr, expectedData);
+m.assertDmaTransferred(length);
+```
+
+**Memory Isolation Strategy**: 
+- Phase 2-3: 0x0000-0x9000 range
+- Phase 4: 0x9000-0x99FF range
+- Phase 5: 0xA000-0xBCFF range
+- Prevents cross-phase test interference
+
+**Total Phase 5 Implementation**:
+- 23 passing tests
+- 8 test categories covering advanced modes, status registers, and edge cases
+- Large transfer support (up to 256 bytes)
+- Register state validation
+- ~430 lines of test code
+
+## Overall Testing Summary
+
+### Cumulative Test Metrics
+
+| Phase | Focus | Tests | Status | Files |
+|-------|-------|-------|--------|-------|
+| 1 | Unit tests | 583 | ✅ Passing | Multiple |
+| 2 | Basic operations | 73 | ✅ Passing | 3 files |
+| 3 | Memory transfers | 11 | ✅ Passing | 1 file |
+| 4 | I/O transfers | 10 | ✅ Passing | 1 file |
+| 5 | Advanced modes | 23 | ✅ Passing | 1 file |
+| **Total** | **Comprehensive DMA** | **700+** | **✅ Passing** | **7 Z80 files** |
+
+### Z80 Code-Driven Test Files
+
+1. `DmaDevice-z80-basic.test.ts` - 23 tests (initialization, modes, configuration)
+2. `DmaDevice-z80-registers.test.ts` - 30 tests (WR0-WR6 register writing)
+3. `DmaDevice-z80-commands.test.ts` - 20 tests (LOAD, ENABLE, DISABLE, RESET)
+4. `DmaDevice-z80-transfers.test.ts` - 11 tests (memory-to-memory transfers)
+5. `DmaDevice-z80-io-transfers.test.ts` - 10 tests (I/O port transfers)
+6. `DmaDevice-z80-advanced.test.ts` - 23 tests (advanced modes, edge cases)
+7. `DmaDevice-z80-poc.test.ts` - 1 test (proof of concept)
+
+### Test Execution
+
+All Z80 code-driven tests combined:
+```bash
+npm run test test/zxnext/DmaDevice-z80-*.test.ts
+```
+
+**Result**: 118 tests passing, Duration ~1 second
+
+### Next Steps for Future Work
+
+1. **Auto-Restart Mode**: Test WR5 auto-restart configuration if supported
+2. **Legacy Mode**: Verify compatibility with older DMA specifications
+3. **Error Conditions**: Test error flags and recovery scenarios
+4. **Performance**: Benchmark DMA throughput under various configurations
+5. **Integration**: Test DMA interaction with other ZX Next devices
