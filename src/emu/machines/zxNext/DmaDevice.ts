@@ -90,28 +90,25 @@ export const enum DmaMode {
   LEGACY = 1   // Port 0x0B - length+1 for compatibility
 }
 
+/**
+ * Bus state machine states (Phase 5 optimization)
+ * Replaces three separate boolean flags with single enum for clarity
+ */
+export const enum BusState {
+  IDLE = 0,              // No bus request (busRequested=false, busAcknowledged=false)
+  REQUESTED = 1,        // Bus requested but not yet acknowledged (busRequested=true, busAcknowledged=false)
+  AVAILABLE = 2,        // Bus requested and acknowledged, ready for transfer (busRequested=true, busAcknowledged=true)
+  DELAYED = 3           // Bus available but delayed by external signal (busRequested=true, busAcknowledged=true, busDelayed=true)
+}
+
 // ============================================================================
 // Phase 4: Constants - Magic Numbers Replaced with Named Constants
 // ============================================================================
 
 /**
- * Bit masks for WR0 register parsing
+ * WR0 Register direction bit mask
  */
-const MASK_WR0_COMMAND_BIT = 0x80;  // High bit indicates command (not address)
-const MASK_WR0_LOW_BITS = 0x0F;     // Low 4 bits for command identification
-const CMD_WR0_RESET = 0x0D;         // Reset/enable command code
-const MASK_WR0_PORT_SELECT = 0x07;  // Port selection (3 bits)
-const MASK_WR0_TIMING_LENGTH = 0x18; // Timing cycle length bits
-const MASK_WR0_TIMING_CONTENTION = 0x03;  // Timing contention mode
-const TIMING_CONTENTION_VALUE = 0x02; // Expected contention value
 const MASK_WR0_DIRECTION = 0x40;    // Direction bit (A->B vs B->A)
-const DIR_A_TO_B = true;            // Direction flag for A->B transfer
-
-/**
- * WR0 Register write sequence values for port selection
- */
-const WR0_PORT_CYCLES_4 = 0x04;     // Port A with 4-cycle timing
-const WR0_PORT_FIXED = 0x00;        // Port A fixed mode (no address change)
 
 /**
  * Address register assembly masks (16-bit address composition)
@@ -121,29 +118,9 @@ const ADDR_MASK_LOW_BYTE = 0x00FF;  // Low byte mask
 const BYTE_SHIFT = 8;               // Shift for byte assembly
 
 /**
- * WR1 Register parsing masks
- */
-const MASK_WR1_PORT_A_IO = 0x08;    // Port A I/O flag
-const MASK_WR1_ADDRESS_MODE = 0x30; // Address mode bits (4-5)
-const SHIFT_WR1_ADDRESS_MODE = 4;   // Shift to extract address mode
-
-/**
- * WR2 Register parsing masks
- */
-const MASK_WR2_PORT_B_IO = 0x08;    // Port B I/O flag
-const MASK_WR2_ADDRESS_MODE = 0x30; // Address mode bits (4-5)
-const SHIFT_WR2_ADDRESS_MODE = 4;   // Shift to extract address mode
-
-/**
- * WR0 Port A address byte indices
- */
-const MASK_WR0_PORT_A_SELECT = 0x40;  // Bit to select Port A vs Port B
-
-/**
  * 16-bit arithmetic masks
  */
 const MASK_16BIT = 0xFFFF;          // 16-bit wraparound mask
-const MASK_8BIT = 0xFF;             // 8-bit mask
 
 /**
  * CPU speed constants (from CpuSpeedDevice)
@@ -169,12 +146,6 @@ const TSTATES_WAIT_STATE = 1;       // Additional T-state for bank contention
  */
 const PRESCALAR_REFERENCE_FREQ = 3500000;  // Reference frequency in Hz
 const PRESCALAR_AUDIO_FREQ = 875000;       // Audio sample frequency in Hz
-
-/**
- * Status flag positions
- */
-const STATUS_EOB_BIT = 0;           // End of block bit position
-const STATUS_FIRST_BYTE_BIT = 1;    // First byte transferred bit position
 
 /**
  * Internal register
@@ -232,12 +203,12 @@ interface StatusFlags {
 }
 
 /**
- * Bus control state for CPU/DMA arbitration
+ * Bus control state for CPU/DMA arbitration (Phase 5 optimization)
+ * Single BusState enum replaces three boolean flags
  */
 interface BusControlState {
-  busRequested: boolean;      // BUSREQ signal asserted
-  busAcknowledged: boolean;   // BUSAK signal received
-  busDelayed: boolean;        // dma_delay signal active
+  state: BusState;        // Current bus state
+  delayFlag: boolean;     // External bus delay signal (independent of state)
 }
 
 export class DmaDevice implements IGenericDevice<IZxNextMachine> {
@@ -307,9 +278,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   private initializeBusControl(): BusControlState {
     return {
-      busRequested: false,
-      busAcknowledged: false,
-      busDelayed: false
+      state: BusState.IDLE,
+      delayFlag: false
     };
   }
 
@@ -941,9 +911,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Asserts BUSREQ signal
    */
   requestBus(): void {
-    if (!this.busControl.busRequested) {
-      this.busControl.busRequested = true;
-      this.busControl.busAcknowledged = false;
+    if (this.busControl.state === BusState.IDLE) {
+      this.busControl.state = BusState.REQUESTED;
     }
   }
 
@@ -952,8 +921,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Called when BUSAK signal is received
    */
   acknowledgeBus(): void {
-    if (this.busControl.busRequested) {
-      this.busControl.busAcknowledged = true;
+    if (this.busControl.state === BusState.REQUESTED) {
+      this.busControl.state = BusState.AVAILABLE;
     }
   }
 
@@ -962,18 +931,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Clears BUSREQ signal
    */
   releaseBus(): void {
-    this.busControl.busRequested = false;
-    this.busControl.busAcknowledged = false;
+    this.busControl.state = BusState.IDLE;
   }
 
   /**
    * Check if bus is available for DMA transfer
-   * Returns true if BUSREQ was acknowledged and not delayed
+   * Returns true if bus is in AVAILABLE state (not delayed)
    */
   isBusAvailable(): boolean {
-    return this.busControl.busRequested &&
-           this.busControl.busAcknowledged &&
-           !this.busControl.busDelayed;
+    return this.busControl.state === BusState.AVAILABLE;
   }
 
   /**
@@ -981,7 +947,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Used by external devices to delay DMA transfer
    */
   setBusDelay(delayed: boolean): void {
-    this.busControl.busDelayed = delayed;
+    this.busControl.delayFlag = delayed;
+    
+    // If we have an active bus request and delay changes, update state accordingly
+    if (delayed && this.busControl.state === BusState.AVAILABLE) {
+      this.busControl.state = BusState.DELAYED;
+    } else if (!delayed && this.busControl.state === BusState.DELAYED) {
+      this.busControl.state = BusState.AVAILABLE;
+    }
   }
 
   /**
@@ -1121,8 +1094,22 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Used by machine to check if DMA owns the bus
    * @returns Bus control state object
    */
-  getBusControl(): Readonly<BusControlState> {
-    return { ...this.busControl };
+  getBusControl(): Readonly<BusControlState & { busRequested: boolean; busAcknowledged: boolean; busDelayed: boolean }> {
+    return {
+      ...this.busControl,
+      // Backward-compatible boolean properties for tests
+      busRequested: this.busControl.state !== BusState.IDLE,
+      busAcknowledged: this.busControl.state === BusState.AVAILABLE || this.busControl.state === BusState.DELAYED,
+      busDelayed: this.busControl.delayFlag
+    };
+  }
+
+  /**
+   * Get current bus state (Phase 5 - for testing and debugging)
+   * @returns Current BusState enum value
+   */
+  getBusState(): BusState {
+    return this.busControl.state;
   }
 
   /**
@@ -1154,7 +1141,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // Check if we need bus access
     if (!this.isBusAvailable()) {
       // Request bus if not already requested
-      if (!this.busControl.busRequested) {
+      if (this.busControl.state !== BusState.REQUESTED) {
         this.requestBus();
       }
       // Wait for bus acknowledgment - no T-states consumed yet
