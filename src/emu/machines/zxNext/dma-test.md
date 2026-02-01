@@ -895,8 +895,8 @@ The unit tests should be **retained alongside** Z80 code-driven tests because:
 
 #### Weaknesses (4 identified flaws)
 1. **WR0 parameter control bits ignored** (specification deviation)
-2. **Timing parameters not stored** (incomplete implementation)
-3. **Prescalar requires timing byte** (specification unclear)
+2. ~~**Timing parameters not stored**~~ ✅ **FIXED** (Phase 1 Implementation - February 2026)
+3. **Prescalar requires timing byte** (specification behavior - documented)
 4. **WR3 not port-accessible** (architectural decision, needs documentation)
 
 ### Key Discoveries
@@ -1156,7 +1156,8 @@ m.assertDmaTransferred(length);
 4. `DmaDevice-z80-transfers.test.ts` - 11 tests (memory-to-memory transfers)
 5. `DmaDevice-z80-io-transfers.test.ts` - 10 tests (I/O port transfers)
 6. `DmaDevice-z80-advanced.test.ts` - 23 tests (advanced modes, edge cases)
-7. `DmaDevice-z80-poc.test.ts` - 1 test (proof of concept)
+7. `DmaDevice-z80-timing.test.ts` - 14 tests (timing parameter configuration) ✨ NEW
+8. `DmaDevice-z80-poc.test.ts` - 1 test (proof of concept)
 
 ### Test Execution
 
@@ -1165,12 +1166,42 @@ All Z80 code-driven tests combined:
 npm run test test/zxnext/DmaDevice-z80-*.test.ts
 ```
 
-**Result**: 118 tests passing, Duration ~1 second
+**Result**: 132 tests passing, Duration ~1 second
+
+### Implementation Progress - Phase 1: Timing Parameters
+
+**Completed (February 2026)**:
+
+✅ Extended `RegisterState` interface with `portATimingValue` and `portBTimingValue` fields
+✅ Modified `writeWR1()` to store timing byte and extract cycle length from D1-D0
+✅ Modified `writeWR2()` to store timing byte and extract cycle length from D1-D0
+✅ Added `getTimingParameters()` getter method for test visibility
+✅ Created comprehensive Z80 integration tests (14 tests)
+✅ Updated documentation and marked weakness as FIXED
+
+**Implementation Details**:
+
+1. **Timing Byte Storage**: Raw timing byte (0x00-0xFF) now stored in RegisterState
+2. **Cycle Length Extraction**: Lower 2 bits (D1-D0) extracted and mapped to CycleLength enum:
+   - Bits 00 → CYCLES_4 (4 T-states)
+   - Bits 01 → CYCLES_3 (3 T-states)
+   - Bits 10 → CYCLES_2 (2 T-states)
+3. **Backward Compatibility**: Existing tests updated to verify new timing storage behavior
+
+**Test Coverage**:
+
+- Port A timing configuration with various cycle lengths
+- Port B timing and prescalar interaction
+- Timing parameter getter validation
+- Timing preservation with address mode variations
+- Timing preservation with I/O configuration
 
 ### Next Steps for Future Work
 
-1. **Auto-Restart Mode**: Test WR5 auto-restart configuration if supported
-2. **Legacy Mode**: Verify compatibility with older DMA specifications
-3. **Error Conditions**: Test error flags and recovery scenarios
-4. **Performance**: Benchmark DMA throughput under various configurations
-5. **Integration**: Test DMA interaction with other ZX Next devices
+1. **Phase 2**: Add validation methods and WR3 port routing
+2. **Phase 3**: Extract routing constants and WR0 control bits
+3. **Auto-Restart Mode**: Test WR5 auto-restart configuration if supported
+4. **Legacy Mode**: Verify compatibility with older DMA specifications
+5. **Error Conditions**: Test error flags and recovery scenarios
+6. **Performance**: Benchmark DMA throughput under various configurations
+7. **Integration**: Test DMA interaction with other ZX Next devices

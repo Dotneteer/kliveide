@@ -160,11 +160,13 @@ interface RegisterState {
   portAIsIO: boolean;  // true = I/O, false = Memory
   portAAddressMode: AddressMode;
   portATimingCycleLength: CycleLength;
+  portATimingValue: number | null;  // Raw timing byte from WR1
 
   // WR2 - Port B configuration
   portBIsIO: boolean;  // true = I/O, false = Memory
   portBAddressMode: AddressMode;
   portBTimingCycleLength: CycleLength;
+  portBTimingValue: number | null;  // Raw timing byte from WR2
   portBPrescalar: number;  // 8-bit prescalar value for fixed-rate transfers
 
   // WR3 - Activation (legacy, prefer WR6)
@@ -250,9 +252,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       portAIsIO: false,
       portAAddressMode: AddressMode.INCREMENT,
       portATimingCycleLength: CycleLength.CYCLES_3,
+      portATimingValue: null,
       portBIsIO: false,
       portBAddressMode: AddressMode.INCREMENT,
       portBTimingCycleLength: CycleLength.CYCLES_3,
+      portBTimingValue: null,
       portBPrescalar: 0,
       dmaEnabled: false,
       transferMode: TransferMode.CONTINUOUS,
@@ -346,6 +350,25 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   setDmaEnabled(enabled: boolean): void {
     this.registers.dmaEnabled = enabled;
+  }
+
+  /**
+   * Get timing parameters (for testing and debugging)
+   */
+  getTimingParameters(): {
+    portA: { cycleLength: CycleLength; rawValue: number | null };
+    portB: { cycleLength: CycleLength; rawValue: number | null };
+  } {
+    return {
+      portA: {
+        cycleLength: this.registers.portATimingCycleLength,
+        rawValue: this.registers.portATimingValue
+      },
+      portB: {
+        cycleLength: this.registers.portBTimingCycleLength,
+        rawValue: this.registers.portBTimingValue
+      }
+    };
   }
 
   // ============================================================================
@@ -589,8 +612,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.registerWriteSeq = RegisterWriteSequence.R1_BYTE_0;
       }
     } else if (this.registerWriteSeq === RegisterWriteSequence.R1_BYTE_0) {
-      // Optional timing byte - for future timing parameter expansion
-      // For now, just complete the sequence
+      // Store timing byte and extract cycle length from D1-D0
+      this.registers.portATimingValue = value;
+      const cycleLengthBits = value & 0x03;
+      this.registers.portATimingCycleLength = cycleLengthBits as CycleLength;
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
   }
@@ -621,8 +646,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_0;
       }
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_0) {
-      // Timing byte - for future timing parameter expansion
-      // For now, just store and move to next byte
+      // Store timing byte and extract cycle length from D1-D0
+      this.registers.portBTimingValue = value;
+      const cycleLengthBits = value & 0x03;
+      this.registers.portBTimingCycleLength = cycleLengthBits as CycleLength;
       this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_1;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_1) {
       // Prescalar byte (8-bit value for fixed-rate transfers)

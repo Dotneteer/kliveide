@@ -803,7 +803,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
 
     it("should preserve Port A configuration when writing WR2", () => {
       dmaDevice.writeWR1(0x58); // D6=1, D4=1 (Increment), D3=1 (I/O)
-      dmaDevice.writeWR1(0x00);
+      dmaDevice.writeWR1(0x01); // Timing byte with D1-D0 = 01 (CYCLES_3)
 
       const registersAfterWR1 = dmaDevice.getRegisters();
       expect(registersAfterWR1.portAIsIO).toBe(true);
@@ -811,7 +811,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       expect(registersAfterWR1.portATimingCycleLength).toBe(CycleLength.CYCLES_3);
 
       dmaDevice.writeWR2(0x60); // D6=1, D5=1 (Fixed), D3=0 (Memory)
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x01); // Timing byte with D1-D0 = 01 (CYCLES_3)
       dmaDevice.writeWR2(0x64);
 
       const registersAfterWR2 = dmaDevice.getRegisters();
@@ -921,30 +921,32 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       expect(dmaDevice.getRegisters().portBPrescalar).toBe(0xff);
     });
 
-    it("should handle WR1 timing byte not affecting configuration", () => {
+    it("should handle WR1 timing byte and extract cycle length", () => {
       dmaDevice.writeWR1(0x58); // D6=1 (timing follows), D4=1 (Increment), D3=1 (I/O)
       const registersAfterBase = dmaDevice.getRegisters();
       
-      dmaDevice.writeWR1(0xff); // Timing byte with all bits set
+      dmaDevice.writeWR1(0x02); // Timing byte with D1-D0 = 10 (CYCLES_2)
       const registersAfterTiming = dmaDevice.getRegisters();
 
-      // Configuration should remain unchanged
+      // Base configuration should remain unchanged
       expect(registersAfterTiming.portAIsIO).toBe(registersAfterBase.portAIsIO);
       expect(registersAfterTiming.portAAddressMode).toBe(registersAfterBase.portAAddressMode);
-      expect(registersAfterTiming.portATimingCycleLength).toBe(registersAfterBase.portATimingCycleLength);
+      // But timing cycle length should be updated from timing byte
+      expect(registersAfterTiming.portATimingCycleLength).toBe(CycleLength.CYCLES_2);
     });
 
-    it("should handle WR2 timing byte not affecting configuration", () => {
+    it("should handle WR2 timing byte and extract cycle length", () => {
       dmaDevice.writeWR2(0x58); // D6=1 (timing follows), D4=1 (Increment), D3=1 (I/O)
       const registersAfterBase = dmaDevice.getRegisters();
       
-      dmaDevice.writeWR2(0xff); // Timing byte
+      dmaDevice.writeWR2(0x02); // Timing byte with D1-D0 = 10 (CYCLES_2)
       const registersAfterTiming = dmaDevice.getRegisters();
       
-      // Configuration should remain unchanged
+      // Base configuration should remain unchanged
       expect(registersAfterTiming.portBIsIO).toBe(registersAfterBase.portBIsIO);
       expect(registersAfterTiming.portBAddressMode).toBe(registersAfterBase.portBAddressMode);
-      expect(registersAfterTiming.portBTimingCycleLength).toBe(registersAfterBase.portBTimingCycleLength);
+      // But timing cycle length should be updated from timing byte
+      expect(registersAfterTiming.portBTimingCycleLength).toBe(CycleLength.CYCLES_2);
     });
   });
 });
