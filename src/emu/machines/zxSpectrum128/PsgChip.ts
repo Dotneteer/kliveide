@@ -4,6 +4,12 @@ import type { PsgChipState } from "@emu/abstractions/PsgChipState";
  * Represents a PSG chip
  */
 export class PsgChip {
+  // --- Chip ID (for multi-chip systems like Turbo Sound Next)
+  // --- 0 = chip 0 (default)
+  // --- 1 = chip 1
+  // --- 2 = chip 2
+  readonly chipId: number;
+
   // --- The last register index set
   private _psgRegisterIndex = 0;
 
@@ -71,7 +77,8 @@ export class PsgChip {
   /**
    * Reset the device when creating it
    */
-  constructor () {
+  constructor (chipId: number = 0) {
+    this.chipId = chipId & 0x03; // Limit to 0-3
     this.reset();
   }
 

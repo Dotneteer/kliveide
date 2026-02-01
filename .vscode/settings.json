@@ -48,6 +48,14 @@
     "/^node /tmp/test-reg-debug\\.mjs$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^node -e \"console\\.log\\('0xe3 = ' \\+ \\(0xe3\\)\\.toString\\(2\\)\\.padStart\\(8, '0'\\)\\); console\\.log\\('0xdf = ' \\+ \\(0xdf\\)\\.toString\\(2\\)\\.padStart\\(8, '0'\\)\\); console\\.log\\('0xe3 & 0xdf = ' \\+ \\(0xe3 & 0xdf\\)\\.toString\\(2\\)\\.padStart\\(8, '0'\\) \\+ ' = 0x' \\+ \\(0xe3 & 0xdf\\)\\.toString\\(16\\)\\); console\\.log\\('bits 6:5 of \\(0xe3 & 0xdf\\) >> 5 = ' \\+ \\(\\(0xe3 & 0xdf\\) >> 5\\)\\);\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^node -e \"console\\.log\\('0xc0 \\| 0x02 = 0x' \\+ \\(0xc0 \\| 0x02\\)\\.toString\\(16\\) \\+ ' = ' \\+ \\(0xc0 \\| 0x02\\)\\.toString\\(2\\)\\.padStart\\(8, '0'\\)\\); console\\.log\\('bits 7:5: ' \\+ \\(\\(0xc0 \\| 0x02\\) >> 5\\)\\); console\\.log\\(''\\); console\\.log\\('Need bits 7:5 = 111 \\(0xe0\\) AND bits 6:5 = 10 \\(0x40\\) AND chip 1 \\(0x02\\)'\\); console\\.log\\('0xe0 \\| 0x40 \\| 0x02 = 0x' \\+ \\(0xe0 \\| 0x40 \\| 0x02\\)\\.toString\\(16\\) \\+ ' = ' \\+ \\(0xe0 \\| 0x40 \\| 0x02\\)\\.toString\\(2\\)\\.padStart\\(8, '0'\\)\\); console\\.log\\('bits 7:5: ' \\+ \\(\\(0xe0 \\| 0x40 \\| 0x02\\) >> 5\\) \\+ ' = ' \\+ \\(\\(\\(0xe0 \\| 0x40 \\| 0x02\\) >> 5\\) & 0x03\\)\\);\"$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }
