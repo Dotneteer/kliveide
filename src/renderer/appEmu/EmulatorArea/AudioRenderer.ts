@@ -23,7 +23,10 @@ export async function getBeeperContext(samplesPerFrame: number): Promise<AudioRe
     await beeperAudioContext.suspend();
     await beeperAudioContext.audioWorklet.addModule(samplingWorklet);
     try {
-      beeperWorklet = new AudioWorkletNode(beeperAudioContext, "sampling-generator");
+      // Create worklet with stereo output (2 channels)
+      beeperWorklet = new AudioWorkletNode(beeperAudioContext, "sampling-generator", {
+        outputChannelCount: [2]
+      });
       beeperWorklet.connect(beeperAudioContext.destination);
       beeperWorklet.port.postMessage({ initialize: samplesPerFrame });
     } catch (err) {
@@ -88,9 +91,13 @@ export class AudioRenderer {
   storeSamples(samples: AudioSample[], soundLevel: number = 1.0): void {
     if (this.suspended) return;
     if (this.worklet) {
-      // Downmix stereo to mono: (left + right) / 2
-      const monoSamples = samples.map(s => (s.left + s.right) / 2 * soundLevel);
-      this.worklet.port.postMessage({ samples: monoSamples });
+      // Send interleaved stereo samples: [L, R, L, R, ...]
+      const stereoSamples: number[] = [];
+      for (const sample of samples) {
+        stereoSamples.push(sample.left * soundLevel);
+        stereoSamples.push(sample.right * soundLevel);
+      }
+      this.worklet.port.postMessage({ samples: stereoSamples });
     }
   }
 }
