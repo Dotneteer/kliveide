@@ -244,6 +244,13 @@ export class PsgChip {
   }
 
   /**
+   * Gets the current register index
+   */
+  get psgRegisterIndex (): number {
+    return this._psgRegisterIndex;
+  }
+
+  /**
    * Reads the value of the register addressed by the register index last set
    */
   readPsgRegisterValue (): number {

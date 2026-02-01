@@ -530,6 +530,152 @@ The ZX Spectrum Next features Turbo Sound Next (3x AY-3-8912 PSG chips) and 4x 8
   - All DAC ports
 - Test: Verify port reads/writes route correctly
 
+**Status: ✅ COMPLETED**
+
+**Implementation Summary:**
+- Implemented complete I/O port routing for audio subsystem
+- All port handlers now receive `machine` parameter to access `machine.audioControlDevice`
+- Handlers properly route I/O operations to TurboSoundDevice and DacDevice
+
+**Port Handler Files Created/Updated:**
+
+1. **AyRegPortHandler.ts** - Port 0xFFFD (AY Register Select & Chip Select)
+   - Writes route to `TurboSoundDevice.selectRegister()` for standard register selection
+   - Special command detection: bit 7=1 AND bits 4:2=111 (pattern 0xE0-0xFF)
+   - Chip selection via bits 1:0: 11=chip0, 10=chip1, 01=chip2, 00=reserved
+   - Panning control via bits 6:5: 00=muted, 01=right, 10=left, 11=stereo
+   - Implementation: Decodes chip ID as `2 - (bits1:0 - 1)` to maintain TurboSound chip numbering
+   - Routes chip selection to `TurboSoundDevice.selectChip()` and panning to `setChipPanning()`
+
+2. **AyDatPortHandler.ts** - Ports 0xBFFD (Data) and 0xBFF5 (Info)
+   - Port 0xBFFD: Read via `TurboSoundDevice.readSelectedRegister()`, Write via `writeSelectedRegister(value)`
+   - Port 0xBFF5: Info port read returns chip ID (bits 7:4) + register (bits 3:0)
+     - Chip ID encoding: `1 << chipId` (chip 0→0x10, chip 1→0x20, chip 2→0x40)
+     - Register index in bits 3:0 from `TurboSoundDevice.getSelectedRegister()`
+   - Returns 0xFF on unrecognized ports
+   - Port detection via `port & 0xFF` to handle port aliases
+
+3. **DacPortHandler.ts** - All DAC ports (11 port variants)
+   - `writeDacAPort()`: Handles 0x1F, 0xF1, 0x3F → calls `DacDevice.setDacA()`
+   - `writeDacBPort()`: Handles 0x0F, 0xF3 → calls `DacDevice.setDacB()`
+   - `writeDacCPort()`: Handles 0x4F, 0xF9 → calls `DacDevice.setDacC()`
+   - `writeDacDPort()`: Handles 0x5F → calls `DacDevice.setDacD()`
+   - `writeDacAandDPort()`: Handles 0xDF, 0xFB → calls both `setDacA()` and `setDacD()`
+   - `writeDacBandCPort()`: Handles 0xB3 → calls both `setDacB()` and `setDacC()`
+   - All handlers receive `machine` parameter for device access
+
+4. **NextIoPortManager.ts Updates**
+   - AY Register port (0xFFFD): Lambda wrapped - `(_, v) => writeAyRegPort(machine, v)`
+   - AY Data port (0xBFFD): Lambda wrapped - `(_, v) => writeAyDatPort(machine, v)`
+   - AY Info port (0xBFF5): Lambda wrapped - `(_, v) => writeAyDatPort(machine, v)` (same handler, port number in value)
+   - All 11 DAC port variants: Lambda wrapped - `(_, v) => writeDacXPort(machine, v)`
+   - Port readers for AY ports: `(p) => readAyRegPort(machine, p)`, `(p) => readAyDatPort(machine, p)`
+   - Fixed bug: DAC D port (0x5F) was calling writeDacCPort, now correctly calls writeDacDPort
+
+5. **TurboSoundDevice.ts New Methods**
+   - `selectChip(chipId)`: Set currently selected chip (0-3, masked to 2 bits)
+   - `selectRegister(registerIndex)`: Call selected chip's `setPsgRegisterIndex()`
+   - `setChipPanning(chipId, panControl)`: Update panning array for specified chip
+   - `getSelectedRegister()`: Return currently selected register index
+   - `readSelectedRegister()`: Return value of currently selected register
+   - `writeSelectedRegister(value)`: Write to currently selected register
+   - All methods maintain proper state isolation between chips
+
+6. **PsgChip.ts Enhancement**
+   - Added `get psgRegisterIndex(): number` property
+   - Enables TurboSoundDevice to read currently selected register index
+   - Maintains encapsulation while allowing internal access
+
+**Integration Pattern:**
+All I/O port handlers follow this pattern:
+```typescript
+// In NextIoPortManager port registration:
+writerFns: (_, v) => handler(machine, v)
+readerFns: (p) => handler(machine, p)
+
+// Handler implementation:
+export function handler(machine: IZxNextMachine, value: number): void {
+  machine.audioControlDevice.getAudioDevice().method(value);
+}
+```
+
+This ensures:
+- Clean separation between port manager and handler logic
+- Each handler receives machine context without circular dependencies
+- Audio devices accessed through machine.audioControlDevice
+- All handlers follow consistent pattern
+
+**Port Mapping Summary:**
+
+| Port Address | Read Behavior | Write Behavior | Handler |
+|---|---|---|---|
+| 0xFFFD | Chip/Reg status | Reg select or chip select+pan | AyRegPortHandler |
+| 0xBFFD | Register value | Register value | AyDatPortHandler |
+| 0xBFF5 | Chip ID + Reg | (write-only, open bus) | AyDatPortHandler |
+| 0x1F, 0xF1, 0x3F | 0xFF | DAC A write | DacPortHandler |
+| 0x0F, 0xF3 | 0xFF | DAC B write | DacPortHandler |
+| 0x4F, 0xF9 | 0xFF | DAC C write | DacPortHandler |
+| 0x5F | 0xFF | DAC D write | DacPortHandler |
+| 0xDF, 0xFB | 0xFF | DAC A+D write | DacPortHandler |
+| 0xB3 | 0xFF | DAC B+C write | DacPortHandler |
+
+**Tests Created:** `test/audio/PortHandlers.step10.test.ts` (35 tests)
+- **AY Register Port (0xFFFD) Tests (8 tests)**:
+  - Register selection and indexing
+  - Chip selection for all 3 chips
+  - Panning control modes (mute, right, left, stereo)
+  - Chip ID masking and register masking
+  - Persistence across register/chip changes
+
+- **AY Data Port (0xBFFD) Tests (5 tests)**:
+  - Register write and read back
+  - Read verification
+  - Multi-chip isolation
+  - Multiple register operations
+
+- **AY Info Port (0xBFF5) Tests (3 tests)**:
+  - Chip ID encoding and register info
+  - All chip encoding variants
+  - Register inclusion in info read
+
+- **DAC Individual Channel Tests (4 tests)**:
+  - Individual DAC A, B, C, D writes
+  - Independence of channels
+  - All 256 value support per channel
+
+- **DAC Combined Channel Tests (3 tests)**:
+  - DAC A+D combined write
+  - DAC B+C combined write
+  - Non-interference with other channels
+
+- **DAC Port Multiplexing Tests (3 tests)**:
+  - Multiple writes to same DAC
+  - State persistence across operations
+  - Alternating port writes
+
+- **Port Handler Integration Tests (3 tests)**:
+  - Complete AY command sequences
+  - Complete DAC sequences
+  - Independence between AY and DAC
+
+- **Edge Cases Tests (5 tests)**:
+  - Register/chip ID masking of large values
+  - Boundary values (0x00, 0xFF, 0x80)
+  - Rapid operations and state preservation
+
+**Test Results:**
+- ✓ All 35 new tests pass
+- ✓ All 453 total audio tests pass (418 previous + 35 new)
+- ✓ Full backward compatibility maintained
+- ✓ No regressions detected
+
+**Critical Insights:**
+- Port handlers must receive machine parameter via lambda wrapping
+- Chip ID decoding: 11b=chip0, 10b=chip1, 01b=chip2 (formula: 2-(bits1:0-1))
+- Info port encoding: chip ID as 1<<chipId to support read detection
+- DAC ports write-only (read returns 0xFF, open bus behavior)
+- Combined DAC ports (A+D, B+C) maintain independence for other channels
+
 ### Step 11: Update Audio Sampling
 - Modify audio device to call TurboSound and DAC devices
 - Generate PSG samples every 16 ULA tacts

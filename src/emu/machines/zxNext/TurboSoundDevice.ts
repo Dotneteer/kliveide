@@ -308,5 +308,52 @@ export class TurboSoundDevice {
       chip.orphanSamples = 0;
     });
   }
+
+  /**
+   * Selects a chip by ID (for port handler use)
+   * @param chipId The chip ID (0-2)
+   */
+  selectChip(chipId: number): void {
+    this._selectedChip = chipId & 0x03;
+  }
+
+  /**
+   * Selects a register on the currently selected chip (for port handler use)
+   * @param registerIndex The register index (0-15 for AY)
+   */
+  selectRegister(registerIndex: number): void {
+    this._chips[this._selectedChip].setPsgRegisterIndex(registerIndex & 0x0f);
+  }
+
+  /**
+   * Sets the panning for the currently selected chip (for port handler use)
+   * @param chipId The chip ID (0-2)
+   * @param panControl Panning control value (0-3: muted, right, left, stereo)
+   */
+  setChipPanning(chipId: number, panControl: number): void {
+    const id = chipId & 0x03;
+    this._chipPanning[id] = panControl & 0x03;
+  }
+
+  /**
+   * Gets the currently selected register index (for port handler use)
+   */
+  getSelectedRegister(): number {
+    return this._chips[this._selectedChip].psgRegisterIndex;
+  }
+
+  /**
+   * Reads the currently selected register (for port handler use)
+   */
+  readSelectedRegister(): number {
+    return this._chips[this._selectedChip].readPsgRegisterValue();
+  }
+
+  /**
+   * Writes to the currently selected register (for port handler use)
+   */
+  writeSelectedRegister(value: number): void {
+    this._chips[this._selectedChip].writePsgRegisterValue(value);
+  }
 }
 
