@@ -250,11 +250,72 @@ The ZX Spectrum Next features Turbo Sound Next (3x AY-3-8912 PSG chips) and 4x 8
   - 0x5F → DAC D
 - Test: Verify port writes update correct DACs
 
+**Status: ✅ COMPLETED**
+
+**Implementation Summary:**
+- Created `DacPortDevice` class that routes I/O port writes to DAC channels
+- Port address normalization: treats odd and even addresses identically (bit 0 masked)
+- Individual channel routing for single-channel ports
+- Combined channel routing for dual-channel ports (A+D, B+C)
+- Port reads return 0xFF (write-only devices, open bus)
+- Full reset support
+
+**Port Mappings:**
+- DAC A (individual): 0x1F, 0xF1, 0x3F → setDacA()
+- DAC B (individual): 0x0F, 0xF3 → setDacB()
+- DAC C (individual): 0x4F, 0xF9 → setDacC()
+- DAC D (individual): 0x5F → setDacD()
+- DAC A + D (combined): 0xDF, 0xFB → setDacA() + setDacD()
+- DAC B + C (combined): 0xB3 → setDacB() + setDacC()
+
+**Tests Created:** `test/audio/DacPortDevice.step6.test.ts` (41 tests)
+- Individual port write verification (DAC A, B, C, D)
+- Combined port write verification (A+D, B+C)
+- Port address normalization (odd/even equivalence)
+- Port read operations (write-only, returns 0xFF)
+- Reset behavior through port device
+- Multi-port write sequences
+- Complete port mapping verification
+- Edge cases (unrecognized ports, boundary values)
+
+**Test Results:**
+- ✓ All 41 new tests pass
+- ✓ All 301 total audio tests pass (21 + 15 + 29 + 31 + 28 + 41 + 49 + 17 + 29 + 41)
+- ✓ Full backward compatibility maintained
+
 ### Step 7: Implement DAC NextReg Mirrors
 - Add NextReg 0x2C support (mono - DAC A+D write)
 - Add NextReg 0x2D support (left - DAC B write)
 - Add NextReg 0x2E support (right - DAC C write)
 - Test: Verify NextReg writes update correct DACs
+
+**Status: ✅ COMPLETED**
+
+**Implementation Summary:**
+- Created `DacNextRegDevice` class that routes NextReg writes to DAC channels
+- Supports reading and writing DAC values via NextReg interface
+- NextReg 0x2C (44): Mono DAC - writes to both DAC A and DAC D simultaneously
+- NextReg 0x2D (45): Left DAC - writes to DAC B
+- NextReg 0x2E (46): Right DAC - writes to DAC C
+- Returns `true` for handled registers, `false` for unrecognized
+- Read operations return current DAC values or `undefined` for unrecognized registers
+
+**Tests Created:** `test/audio/DacNextRegDevice.step7.test.ts` (38 tests)
+- NextReg 0x2C write/read verification (mono A+D)
+- NextReg 0x2D write/read verification (left B)
+- NextReg 0x2E write/read verification (right C)
+- Unrecognized register handling
+- Reset behavior through NextReg device
+- Multi-register write sequences
+- Read-write consistency verification
+- Independent channel updates
+- Integration patterns (stereo playback, silence, maximum volume)
+- Edge cases (all 256 values, alternating writes)
+
+**Test Results:**
+- ✓ All 38 new tests pass
+- ✓ All 339 total audio tests pass (21 + 15 + 29 + 31 + 28 + 41 + 49 + 17 + 29 + 41 + 38)
+- ✓ Full backward compatibility maintained
 
 ### Step 8: Create Audio Mixer
 - Create `src/emu/machines/zxNext/AudioMixerDevice.ts`
