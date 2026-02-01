@@ -1,6 +1,7 @@
 import type { SysVar } from "@abstractions/SysVar";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { MachineModel } from "@common/machines/info-types";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
@@ -205,7 +206,7 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples(): number[] {
+  getAudioSamples(): AudioSample[] {
     return this.beeperDevice.getAudioSamples();
   }
 

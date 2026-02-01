@@ -1,4 +1,4 @@
-import type { IAudioDevice } from "@emu/abstractions/IAudioDevice";
+import type { IAudioDevice, AudioSample } from "@emu/abstractions/IAudioDevice";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
@@ -8,7 +8,7 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   private _audioSampleRate = 0;
   private _audioSampleLength = 0;
   private _audioNextSampleTact = 0;
-  private readonly _audioSamples: number[] = [];
+  private readonly _audioSamples: AudioSample[] = [];
 
   /**
    * Initialize the audio device and assign it to its host machine.
@@ -78,7 +78,7 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   /**
    * Gets the current sound sample (according to the current CPU tact)
    */
-  getCurrentSampleValue () {
-    return 0.0;
+  getCurrentSampleValue (): AudioSample {
+    return { left: 0.0, right: 0.0 };
   }
 }

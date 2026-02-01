@@ -3,6 +3,7 @@
  * so we need to create the worklet in vanilla JavaScript.
  */
 import samplingWorklet from "./Sampling.worklet.js?url";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 // --- Let's create audio contextes before using the renderers
 let beeperAudioContext: AudioContext | undefined;
@@ -22,7 +23,10 @@ export async function getBeeperContext(samplesPerFrame: number): Promise<AudioRe
     await beeperAudioContext.suspend();
     await beeperAudioContext.audioWorklet.addModule(samplingWorklet);
     try {
-      beeperWorklet = new AudioWorkletNode(beeperAudioContext, "sampling-generator");
+      // Create worklet with stereo output (2 channels)
+      beeperWorklet = new AudioWorkletNode(beeperAudioContext, "sampling-generator", {
+        outputChannelCount: [2]
+      });
       beeperWorklet.connect(beeperAudioContext.destination);
       beeperWorklet.port.postMessage({ initialize: samplesPerFrame });
     } catch (err) {
@@ -81,12 +85,19 @@ export class AudioRenderer {
 
   /**
    * Stores the samples to render
-   * @param samples Next batch of samples to store
+   * @param samples Next batch of stereo samples to store
+   * @param soundLevel Sound level multiplier (0.0 to 1.0)
    */
-  storeSamples(samples: number[]): void {
+  storeSamples(samples: AudioSample[], soundLevel: number = 1.0): void {
     if (this.suspended) return;
     if (this.worklet) {
-      this.worklet.port.postMessage({ samples });
+      // Send interleaved stereo samples: [L, R, L, R, ...]
+      const stereoSamples: number[] = [];
+      for (const sample of samples) {
+        stereoSamples.push(sample.left * soundLevel);
+        stereoSamples.push(sample.right * soundLevel);
+      }
+      this.worklet.port.postMessage({ samples: stereoSamples });
     }
   }
 }

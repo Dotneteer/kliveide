@@ -1,4 +1,5 @@
 import type { SysVar } from "@abstractions/SysVar";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
@@ -77,7 +78,7 @@ export interface IZxSpectrumMachine extends IZ80Machine {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples(): number[];
+  getAudioSamples(): AudioSample[];
 
   /**
    * Gets the current cursor mode

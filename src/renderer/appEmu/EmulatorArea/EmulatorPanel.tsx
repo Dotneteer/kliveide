@@ -1,4 +1,5 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import styles from "./EmulatorPanel.module.scss";
 import { useMachineController } from "@renderer/core/useMachineController";
@@ -343,9 +344,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (args.fullFrame && beeperRenderer.current) {
       const sampleGetter = (controller.machine as any).getAudioSamples;
       if (typeof sampleGetter === "function") {
-        const samples = sampleGetter.call(controller.machine) as number[];
+        const samples = sampleGetter.call(controller.machine) as AudioSample[];
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
-        beeperRenderer.current.storeSamples(samples.map((s) => s * soundLevel));
+        beeperRenderer.current.storeSamples(samples, soundLevel);
         await beeperRenderer.current.play();
       }
     }

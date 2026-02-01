@@ -2,6 +2,14 @@ import type { IGenericDevice } from "./IGenericDevice";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
 /**
+ * Represents a stereo audio sample with left and right channels
+ */
+export interface AudioSample {
+    left: number;
+    right: number;
+}
+
+/**
  * This interface represents anaudio device that creates sound samples according to a particular sample rate.
  */
 export interface IAudioDevice<T extends IAnyMachine> extends IGenericDevice<T> {
@@ -19,7 +27,7 @@ export interface IAudioDevice<T extends IAnyMachine> extends IGenericDevice<T> {
     /**
      * Gets the audio samples rendered in the current frame
      */
-    getAudioSamples(): number[];
+    getAudioSamples(): AudioSample[];
 
     /**
      * This method signs that a new machine frame has been started
