@@ -166,11 +166,79 @@ The ZX Spectrum Next features Turbo Sound Next (3x AY-3-8912 PSG chips) and 4x 8
 - Implement output muting when channels disabled
 - Test: Verify panning works per chip
 
+**Status: ✅ COMPLETED**
+
+**Implementation Summary:**
+- Enhanced `TurboSoundDevice.getChipStereoOutput()` to apply per-chip panning control
+- Panning modes (bits 1:0): 00=muted, 01=right only, 10=left only, 11=stereo
+- Panning applied AFTER stereo mode mixing via switch statement
+- Independent panning per chip with persistence across mode changes
+
+**Tests Created:** `test/audio/TurboSoundDevice.step4.test.ts` (28 tests)
+- Panning modes (00/01/10/11) verification
+- Pan control via chip selection commands (0x9F, 0xBF, 0xDF, 0xFF for chip 0)
+- Multi-chip independence (3 chips with different panning)
+- Panning with stereo/mono modes (ABC, ACB, mono)
+- Pan persistence across device reset and mode switches
+- Output verification and complex scenarios
+- Integration with chip selection and stereo/mono protocols
+
+**Test Results:**
+- ✓ All 28 new tests pass
+- ✓ All 211 previous tests still pass
+- ✓ Full backward compatibility maintained
+
 ### Step 5: Create DAC Device
 - Create `src/emu/machines/zxNext/DacDevice.ts`
 - Implement 4x 8-bit DAC channels
 - Initialize to 0x80 (center value)
 - Test: Basic DAC value storage
+
+**Status: ✅ COMPLETED**
+
+**Implementation Summary:**
+- Created `DacDevice` class managing 4 stereo DAC channels (A, B, C, D)
+- Each channel stores 8-bit unsigned value (0x00-0xFF, center at 0x80)
+- Stereo output combines: Left = DAC A + DAC B, Right = DAC C + DAC D
+- Conversion: 8-bit unsigned → signed byte → 16-bit signed (×256)
+- Full getter/setter interface for individual and bulk operations
+- Reset functionality to restore all channels to 0x80
+
+**DAC Channels:**
+- DAC A: Left channel
+- DAC B: Left channel
+- DAC C: Right channel
+- DAC D: Right channel
+
+**Value Conversion:**
+- Input: 8-bit unsigned (0x00-0xFF)
+- Step 1: Convert to signed byte (-128 to +127)
+  - 0x00 → 0
+  - 0x7F → 127
+  - 0x80 → -128
+  - 0xFF → -1
+- Step 2: Scale by 256 for 16-bit audio
+  - 0x00 → 0
+  - 0x7F → 32512
+  - 0x80 → -32768
+  - 0xFF → -256
+
+**Tests Created:** `test/audio/DacDevice.step5.test.ts` (49 tests)
+- Initialization to 0x80 on all channels
+- Channel value storage and retrieval (setDacChannel/getDacChannel)
+- Specific channel getters/setters (setDacA, getDacA, etc.)
+- Array-based operations (getChannelValues/setChannelValues)
+- Stereo output conversion (8-bit to 16-bit signed scaling)
+- Reset behavior and idempotency
+- Error handling for invalid channel indices
+- State independence across channels
+- Edge cases (all 256 possible values, extreme values, consistency)
+- Integration scenarios (complex audio, envelope sweep, stereo pan simulation)
+
+**Test Results:**
+- ✓ All 49 new tests pass
+- ✓ All 260 total audio tests pass (21 + 15 + 29 + 31 + 28 + 41 + 49 + 17 + 29)
+- ✓ Full backward compatibility maintained
 
 ### Step 6: Implement DAC I/O Ports
 - Add port handlers for all DAC ports:
