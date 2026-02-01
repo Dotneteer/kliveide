@@ -215,40 +215,63 @@ export class TurboSoundDevice {
 
   /**
    * Gets the stereo output for a specific chip
-   * Applies stereo mode (ABC/ACB) and mono mode settings
+   * Applies stereo mode (ABC/ACB), mono mode, and panning settings
    * @param chipId The chip ID (0-2)
-   * @returns Object with left and right channel samples (0-65535)
+   * @returns Object with left and right channel samples (0-65535), with panning applied
    */
   getChipStereoOutput(chipId: number): { left: number; right: number } {
     const id = chipId & 0x03;
     const chip = this._chips[id];
+    const panning = this._chipPanning[id];
 
     // Get the current volume for each channel
     const volA = chip.getChannelAVolume();
     const volB = chip.getChannelBVolume();
     const volC = chip.getChannelCVolume();
 
+    let left = 0;
+    let right = 0;
+
     if (this._chipMonoMode[id]) {
       // Mono mode: all channels to both left and right
       // Total = A + B + C for both channels
       const mono = Math.min(65535, volA + volB + volC);
-      return { left: mono, right: mono };
+      left = mono;
+      right = mono;
+    } else {
+      // Stereo mode
+      if (this._ayStereoMode) {
+        // ACB mode: Left = A + C, Right = B
+        left = Math.min(65535, volA + volC);
+        right = volB;
+      } else {
+        // ABC mode: Left = A + B, Right = C
+        left = Math.min(65535, volA + volB);
+        right = volC;
+      }
     }
 
-    // Stereo mode
-    if (this._ayStereoMode) {
-      // ACB mode: Left = A + C, Right = B
-      return {
-        left: Math.min(65535, volA + volC),
-        right: volB,
-      };
-    } else {
-      // ABC mode: Left = A + B, Right = C
-      return {
-        left: Math.min(65535, volA + volB),
-        right: volC,
-      };
+    // Apply panning control
+    // Panning bits: 00=muted, 01=right only, 10=left only, 11=stereo
+    switch (panning) {
+      case 0x00: // Muted
+        left = 0;
+        right = 0;
+        break;
+      case 0x01: // Right only
+        left = 0;
+        // right stays as is
+        break;
+      case 0x02: // Left only
+        // left stays as is
+        right = 0;
+        break;
+      case 0x03: // Stereo (default)
+        // Both channels pass through
+        break;
     }
+
+    return { left, right };
   }
 
   /**
