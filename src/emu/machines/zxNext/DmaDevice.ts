@@ -173,7 +173,6 @@ const PRESCALAR_AUDIO_FREQ = 875000;       // Audio sample frequency in Hz
 const MASK_REGISTER_ID = 0x07;        // D2-D0: Register identifier
 const PATTERN_WR1 = 0x04;              // xxx100
 const PATTERN_WR2 = 0x00;              // xxx000
-const PATTERN_WR3_MASK = 0x07;         // Full 3-bit mask for WR3
 const PATTERN_WR3_ENABLE = 0x03;       // xxx011 (D2D1D0=011)
 const PATTERN_WR3_DISABLE = 0x02;      // xxx010 (D2D1D0=010)
 const PATTERN_WR4_MASK = 0x0F;         // Mask for WR4 detection
@@ -181,27 +180,6 @@ const PATTERN_WR4_BITS = 0x0D;         // xxxx1101
 const PATTERN_WR5_MASK = 0x17;         // Mask for WR5 detection (0x18 with D0)
 const PATTERN_WR5_BASE = 0x12;         // xxx1x010 (D4=1, D3=0, D1D0=10)
 const PATTERN_WR6_COMMAND = 0x80;      // 1xxxxxxx (command)
-
-/**
- * WR0 register bit patterns
- */
-const WR0_DIRECTION_BIT = 0x40;        // D6: 0=A→B, 1=B→A
-const WR0_SEARCH_CONTROL_BIT = 0x20;   // D5: 0=Transfer, 1=Search
-const WR0_INTERRUPT_MASK = 0x18;       // D4-D3: Interrupt mode
-const WR0_INTERRUPT_SHIFT = 3;         // Shift to extract interrupt bits
-
-/**
- * WR1/WR2 register bit patterns
- */
-const WR12_TIMING_FOLLOWS = 0x40;      // D6: Timing byte follows
-const WR12_IO_FLAG = 0x08;              // D3: 1=I/O, 0=Memory
-const WR12_ADDRESS_MODE_MASK = 0x30;   // D5-D4: Address mode
-const WR12_ADDRESS_MODE_SHIFT = 4;     // Shift to extract address mode
-
-/**
- * Cycle length and timing extraction
- */
-const CYCLE_LENGTH_MASK = 0x03;        // D1-D0: Cycle length bits
 
 /**
  * Internal register
