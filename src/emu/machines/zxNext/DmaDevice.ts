@@ -148,6 +148,21 @@ const PRESCALAR_REFERENCE_FREQ = 3500000;  // Reference frequency in Hz
 const PRESCALAR_AUDIO_FREQ = 875000;       // Audio sample frequency in Hz
 
 /**
+ * Register routing bit patterns (for port write dispatch)
+ */
+const MASK_REGISTER_ID = 0x07;        // D2-D0: Register identifier
+const PATTERN_WR1 = 0x04;              // xxx100
+const PATTERN_WR2 = 0x00;              // xxx000
+const PATTERN_WR3_MASK = 0x07;         // Full 3-bit mask for WR3
+const PATTERN_WR3_ENABLE = 0x03;       // xxx011 (D2D1D0=011)
+const PATTERN_WR3_DISABLE = 0x02;      // xxx010 (D2D1D0=010)
+const PATTERN_WR4_MASK = 0x0F;         // Mask for WR4 detection
+const PATTERN_WR4_BITS = 0x0D;         // xxxx1101
+const PATTERN_WR5_MASK = 0x17;         // Mask for WR5 detection
+const PATTERN_WR5_BASE = 0x12;         // xxx1x010
+const PATTERN_WR6_COMMAND = 0x80;      // 1xxxxxxx (command)
+
+/**
  * Internal register
  */
 interface RegisterState {
@@ -463,6 +478,62 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     return sourceValid && destValid;
   }
 
+  /**
+   * Comprehensive validation of entire register configuration
+   * Returns detailed error messages for debugging and testing
+   * @returns Object with validation result and error list
+   */
+  validateRegisterState(): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    // Block length validation
+    if (this.registers.blockLength === 0) {
+      errors.push("Block length is zero - no data will be transferred");
+    }
+    if (this.registers.blockLength > 0xFFFF) {
+      errors.push(`Block length overflow: ${this.registers.blockLength}`);
+    }
+
+    // Address mode validation
+    if (this.registers.portAAddressMode > AddressMode.FIXED) {
+      errors.push(`Invalid Port A address mode: ${this.registers.portAAddressMode}`);
+    }
+    if (this.registers.portBAddressMode > AddressMode.FIXED) {
+      errors.push(`Invalid Port B address mode: ${this.registers.portBAddressMode}`);
+    }
+
+    // Address range validation
+    if (this.registers.portAStartAddress > 0xFFFF) {
+      errors.push(`Port A address overflow: 0x${this.registers.portAStartAddress.toString(16)}`);
+    }
+    if (this.registers.portBStartAddress > 0xFFFF) {
+      errors.push(`Port B address overflow: 0x${this.registers.portBStartAddress.toString(16)}`);
+    }
+
+    // Transfer mode validation
+    if (this.registers.transferMode !== TransferMode.CONTINUOUS && 
+        this.registers.transferMode !== TransferMode.BURST) {
+      errors.push(`Invalid transfer mode: ${this.registers.transferMode}`);
+    }
+
+    // I/O port validation - addresses must be in 0x00-0xFF range
+    if (this.registers.portAIsIO && this.registers.portAStartAddress > 0xFF) {
+      errors.push(
+        `Port A configured as I/O but address > 0xFF: 0x${this.registers.portAStartAddress.toString(16)}`
+      );
+    }
+    if (this.registers.portBIsIO && this.registers.portBStartAddress > 0xFF) {
+      errors.push(
+        `Port B configured as I/O but address > 0xFF: 0x${this.registers.portBStartAddress.toString(16)}`
+      );
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
   getPrescalarTimer(): number {
     return this.prescalarTimer;
   }
@@ -533,19 +604,27 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // Z80 DMA register identification by bit patterns:
       // - WR1 (Port A config): D2=1, D1D0=00 → xxx100  
       // - WR2 (Port B config): D2D1D0=000 → xxx000
+      // - WR3 (DMA enable): D2D1D0=011 or 010 → xxx011 or xxx010
       // - WR5 (auto-restart): D4D3=10, D1D0=10 → xxx1x010  
       // - WR0 (transfer): Everything else with D7=0
-      const lowBits = value & 0x07;
+      // 
+      // NOTE: Check WR5 before WR3 since WR5 has D1D0=10 (same as low 2 bits of WR3)
+      // but is distinguished by D4D3=10 requirement
       
-      if (lowBits === 0x04) {
+      const lowBits = value & MASK_REGISTER_ID;
+      
+      if (lowBits === PATTERN_WR1) {
         // WR1: xxx100 (D2=1, D1D0=00)
         this.writeWR1(value);
-      } else if (lowBits === 0x00) {
+      } else if (lowBits === PATTERN_WR2) {
         // WR2: xxx000 (D2D1D0=000)
         this.writeWR2(value);
       } else if ((value & 0x18) === 0x10 && (value & 0x03) === 0x02) {
-        // WR5: xxx1x010 (D4=1, D3=0, D1D0=10)
+        // WR5: xxx1x010 (D4=1, D3=0, D1D0=10) - Check BEFORE WR3!
         this.writeWR5(value);
+      } else if (lowBits === PATTERN_WR3_ENABLE || lowBits === PATTERN_WR3_DISABLE) {
+        // WR3: xxx011 (enable) or xxx010 (disable) - DMA enable/disable flag
+        this.writeWR3(value);
       } else {
         // WR0: Everything else
         this.writeWR0(value);

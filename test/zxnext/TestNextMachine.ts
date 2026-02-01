@@ -278,6 +278,25 @@ export class TestZxNextMachine extends ZxNextMachine {
   getDmaRegisters() {
     return this.dmaDevice.getRegisters();
   }
+
+  /**
+   * Get DMA validation result without throwing
+   */
+  getDmaValidation() {
+    return this.dmaDevice.validateRegisterState();
+  }
+
+  /**
+   * Validate DMA configuration and throw if invalid
+   */
+  assertDmaConfigurationValid(): void {
+    const result = this.dmaDevice.validateRegisterState();
+    if (!result.valid) {
+      throw new Error(
+        `DMA configuration invalid:\n${result.errors.map(e => `  - ${e}`).join('\n')}`
+      );
+    }
+  }
   
   // ===== Phase 1 Enhancements =====
   
