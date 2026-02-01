@@ -481,5 +481,65 @@ export class PsgChip {
       // }
     }
   }
+
+  /**
+   * Gets the current output volume for channel A (0-65535)
+   */
+  getChannelAVolume (): number {
+    let vol = 0;
+    if (
+      (this._bitA && this._toneAEnabled) ||
+      (this._bitNoise && this._noiseAEnabled)
+    ) {
+      let tmpVol = 0;
+      if (this._envA) {
+        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      } else {
+        tmpVol = this._volA * 2 + 1;
+      }
+      vol = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    }
+    return vol;
+  }
+
+  /**
+   * Gets the current output volume for channel B (0-65535)
+   */
+  getChannelBVolume (): number {
+    let vol = 0;
+    if (
+      (this._bitB && this._toneBEnabled) ||
+      (this._bitNoise && this._noiseBEnabled)
+    ) {
+      let tmpVol = 0;
+      if (this._envB) {
+        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      } else {
+        tmpVol = this._volB * 2 + 1;
+      }
+      vol = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    }
+    return vol;
+  }
+
+  /**
+   * Gets the current output volume for channel C (0-65535)
+   */
+  getChannelCVolume (): number {
+    let vol = 0;
+    if (
+      (this._bitC && this._toneCEnabled) ||
+      (this._bitNoise && this._noiseCEnabled)
+    ) {
+      let tmpVol = 0;
+      if (this._envC) {
+        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      } else {
+        tmpVol = this._volC * 2 + 1;
+      }
+      vol = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    }
+    return vol;
+  }
 }
 

@@ -6,9 +6,17 @@ import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
  *
  * Chip Selection via port 0xFFFD:
  * - If bits 7:5 = 0, selects register in active chip
- * - If bits 7:5 = 111 (0xE0), controls chip selection and panning
+ * - If bit 7=1 AND bits 4:2=111, controls chip selection and panning
  *   - Bits 1:0 = active chip (11=0, 10=1, 01=2, 00=reserved)
  *   - Bits 6:5 = panning (00=muted, 01=right, 10=left, 11=stereo)
+ *
+ * Stereo modes (global):
+ * - ABC: A+B=Left, C=Right (default)
+ * - ACB: A+C=Left, B=Right (when ayStereoMode=true)
+ *
+ * Mono mode (per chip):
+ * - Disabled: stereo output per mode
+ * - Enabled: all channels mixed to both left and right (mono output)
  */
 export class TurboSoundDevice {
   // --- The three PSG chips
@@ -26,6 +34,12 @@ export class TurboSoundDevice {
   // --- 00 = muted, 01 = right only, 10 = left only, 11 = stereo
   private readonly _chipPanning = [0x3, 0x3, 0x3]; // All stereo by default (11)
 
+  // --- AY stereo mode: false = ABC, true = ACB
+  private _ayStereoMode = false;
+
+  // --- Mono mode per chip
+  private readonly _chipMonoMode = [false, false, false];
+
   /**
    * Initialize the Turbo Sound device
    */
@@ -42,6 +56,10 @@ export class TurboSoundDevice {
     this._chipPanning[0] = 0x3; // Stereo
     this._chipPanning[1] = 0x3; // Stereo
     this._chipPanning[2] = 0x3; // Stereo
+    this._ayStereoMode = false; // ABC mode
+    this._chipMonoMode[0] = false;
+    this._chipMonoMode[1] = false;
+    this._chipMonoMode[2] = false;
   }
 
   /**
@@ -59,6 +77,42 @@ export class TurboSoundDevice {
   getChipPanning(chipId: number): number {
     const id = chipId & 0x03;
     return this._chipPanning[id];
+  }
+
+  /**
+   * Gets the AY stereo mode
+   * @returns false = ABC mode, true = ACB mode
+   */
+  getAyStereoMode(): boolean {
+    return this._ayStereoMode;
+  }
+
+  /**
+   * Sets the AY stereo mode
+   * @param mode false = ABC mode, true = ACB mode
+   */
+  setAyStereoMode(mode: boolean): void {
+    this._ayStereoMode = mode;
+  }
+
+  /**
+   * Gets the mono mode for a specific chip
+   * @param chipId The chip ID (0-2)
+   * @returns true if mono mode, false if stereo mode
+   */
+  getChipMonoMode(chipId: number): boolean {
+    const id = chipId & 0x03;
+    return this._chipMonoMode[id];
+  }
+
+  /**
+   * Sets the mono mode for a specific chip
+   * @param chipId The chip ID (0-2)
+   * @param mode true for mono, false for stereo
+   */
+  setChipMonoMode(chipId: number, mode: boolean): void {
+    const id = chipId & 0x03;
+    this._chipMonoMode[id] = mode;
   }
 
   /**
@@ -160,6 +214,44 @@ export class TurboSoundDevice {
   }
 
   /**
+   * Gets the stereo output for a specific chip
+   * Applies stereo mode (ABC/ACB) and mono mode settings
+   * @param chipId The chip ID (0-2)
+   * @returns Object with left and right channel samples (0-65535)
+   */
+  getChipStereoOutput(chipId: number): { left: number; right: number } {
+    const id = chipId & 0x03;
+    const chip = this._chips[id];
+
+    // Get the current volume for each channel
+    const volA = chip.getChannelAVolume();
+    const volB = chip.getChannelBVolume();
+    const volC = chip.getChannelCVolume();
+
+    if (this._chipMonoMode[id]) {
+      // Mono mode: all channels to both left and right
+      // Total = A + B + C for both channels
+      const mono = Math.min(65535, volA + volB + volC);
+      return { left: mono, right: mono };
+    }
+
+    // Stereo mode
+    if (this._ayStereoMode) {
+      // ACB mode: Left = A + C, Right = B
+      return {
+        left: Math.min(65535, volA + volC),
+        right: volB,
+      };
+    } else {
+      // ABC mode: Left = A + B, Right = C
+      return {
+        left: Math.min(65535, volA + volB),
+        right: volC,
+      };
+    }
+  }
+
+  /**
    * Gets the orphan samples for a specific chip
    * @param chipId The chip ID (0-2)
    */
@@ -194,3 +286,4 @@ export class TurboSoundDevice {
     });
   }
 }
+

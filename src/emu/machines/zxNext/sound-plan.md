@@ -110,6 +110,57 @@ The ZX Spectrum Next features Turbo Sound Next (3x AY-3-8912 PSG chips) and 4x 8
   - Right = (B or C) + C
 - Test: Verify stereo separation and mixing
 
+**Status: ✅ COMPLETED**
+
+**Implementation Summary:**
+- Extended `PsgChip` with three new methods:
+  - `getChannelAVolume()` - Returns current channel A output (0-65535)
+  - `getChannelBVolume()` - Returns current channel B output (0-65535)
+  - `getChannelCVolume()` - Returns current channel C output (0-65535)
+  - Each method applies tone/noise enabling, volume scaling, and envelope modulation
+- Extended `TurboSoundDevice` with stereo/mono mode support:
+  - `_ayStereoMode` property (false=ABC, true=ACB)
+  - `_chipMonoMode` array (per-chip mono enable)
+  - `getAyStereoMode()`, `setAyStereoMode()` methods
+  - `getChipMonoMode()`, `setChipMonoMode()` methods
+  - `getChipStereoOutput()` method implementing complete mixing logic:
+    - **Mono mode**: All channels sum to both left and right (clamped at 65535)
+    - **ABC mode**: Left = A+B, Right = C
+    - **ACB mode**: Left = A+C, Right = B
+  - Reset() properly initializes all modes to defaults (ABC, stereo)
+
+**Mixing Algorithm Details:**
+- Per-channel volumes obtained via new PsgChip methods
+- Each method calculates channel output considering:
+  - Tone/noise enable flags
+  - Current output bit state
+  - Volume level (0-15)
+  - Envelope mode and position (if enabled)
+  - Uses existing volume table for 0-65535 conversion
+- Mixing combines volumes per stereo/mono mode
+- Combined volumes clamped at 65535 maximum
+
+**Tests Created:** `test/audio/TurboSoundDevice.step3.test.ts` (31 tests)
+- Stereo mode control (ABC/ACB switching)
+- Mono mode per-chip control and independence
+- Stereo output in ABC mode (A+B=Left, C=Right)
+- Stereo output in ACB mode (A+C=Left, B=Right)
+- Mono output (all channels to both L/R)
+- Mono override of stereo routing
+- Multiple chips with different modes
+- Output clamping at 65535
+- Mode switching during operation
+- Integration with existing chip selection/panning
+- Orphan sample interaction
+- Edge cases (rapid toggles, zero output, noise mixing)
+
+**Test Results:**
+- ✓ All 31 new tests pass
+- ✓ All 29 Step 2 tests still pass
+- ✓ All 15 Step 1 tests still pass
+- ✓ All 183 audio tests pass (41 PsgDevice + 29 TurboSound + 21 AudioBase + 17 Integration + 15 Step1 + 29 Step2 + 31 Step3 + 29 Beeper)
+- ✓ Full backward compatibility maintained
+
 ### Step 4: Implement PSG Pan Control
 - Add per-chip left/right channel enable
 - Implement output muting when channels disabled
