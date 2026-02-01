@@ -439,7 +439,88 @@ The ZX Spectrum Next features Turbo Sound Next (3x AY-3-8912 PSG chips) and 4x 8
   - Reg 0x08 bit 3 - Enable 8-bit DACs
   - Reg 0x08 bit 1 - Enable TurboSound
   - Reg 0x09 bits 7:5 - Mono mode per AY chip
+- Create `AudioControlDevice` to apply configuration
 - Test: Verify configuration changes take effect
+
+**Status: ✅ COMPLETED**
+
+**Implementation Summary:**
+- Created `AudioControlDevice` class that bridges NextSoundDevice configuration with audio hardware devices
+- Manages and instantiates TurboSoundDevice, DacDevice, and AudioMixerDevice internally
+- Applies NextReg configuration flags to audio devices via `applyConfiguration()` method
+- Provides unified getter access to all audio devices
+
+**AudioControlDevice Architecture:**
+- **Configuration Source**: NextSoundDevice (holds flags from NextReg reads/writes)
+- **Configuration Targets**: TurboSoundDevice, DacDevice, AudioMixerDevice
+- **Configuration Flow**: NextRegDevice → NextSoundDevice → AudioControlDevice → Audio Devices
+
+**NextReg Configuration Mappings:**
+
+1. **Reg 0x06 bits 1:0 - PSG Mode Control**:
+   - 0b00 (0): YM mode - YM-2149 compatible
+   - 0b01 (1): AY mode - AY-3-8912 standard
+   - 0b10 (2): ZXN-8950 mode - extended functionality
+   - 0b11 (3): Hold all PSGs in reset - silences all PSG output
+
+2. **Reg 0x08 bit 5 - AY Stereo Mode**:
+   - 0 (false): ABC mode (left = A+B, right = C)
+   - 1 (true): ACB mode (left = A+C, right = B)
+   - Applied to TurboSoundDevice via `setAyStereoMode()`
+
+3. **Reg 0x08 bit 3 - 8-bit DAC Enable**:
+   - 0: DAC disabled (write-only, won't generate sound)
+   - 1: DAC enabled (all 4 channels active)
+   - Stored in `enable8BitDacs` flag
+   - DacDevice always instantiated but controlled via this flag
+
+4. **Reg 0x08 bit 1 - TurboSound Enable**:
+   - 0: TurboSound disabled (currently selected AY chip frozen)
+   - 1: TurboSound enabled (all 3 chips active)
+   - Stored in `enableTurbosound` flag
+   - TurboSoundDevice always instantiated but controlled via this flag
+
+5. **Reg 0x09 bits 7:5 - Per-Chip Mono Mode**:
+   - Bit 7: AY 2 mono mode (0=stereo, 1=mono)
+   - Bit 6: AY 1 mono mode (0=stereo, 1=mono)
+   - Bit 5: AY 0 mono mode (0=stereo, 1=mono)
+   - Independent per-chip control
+   - Applied via `setChipMonoMode(chipId, monoEnabled)`
+
+**Integration Points:**
+- ZxNextMachine instantiates AudioControlDevice in constructor
+- AudioControlDevice.applyConfiguration() called when NextReg writes occur
+- Configuration flags control audio device behavior at runtime
+- NextRegDevice already handles reads/writes (registers were already mapped)
+
+**Design Pattern:**
+- Separation of concerns: NextRegDevice handles hardware register protocol
+- NextSoundDevice stores configuration state
+- AudioControlDevice applies configuration to audio devices
+- Audio devices generate sound based on applied configuration
+
+**Tests Created:** `test/audio/AudioControlDevice.step9.test.ts` (37 tests)
+- **PSG Mode Configuration (4 tests)**: Mode 0-3 support
+- **AY Stereo Mode Configuration (4 tests)**: ABC/ACB switching
+- **8-bit DAC Enable Configuration (4 tests)**: Enable/disable with state preservation
+- **TurboSound Enable Configuration (4 tests)**: Enable/disable with state preservation
+- **Per-Chip Mono Mode Configuration (8 tests)**: Independent chip control, multiple combinations
+- **Combined Configuration (3 tests)**: Multiple flags applied together
+- **Reset Behavior (3 tests)**: Reset all audio devices
+- **Device Access (4 tests)**: Getter methods and device persistence
+- **Configuration Persistence (3 tests)**: Multiple applications, dynamic toggling
+
+**Test Results:**
+- ✓ All 37 new tests pass
+- ✓ All 418 total audio tests pass (381 previous + 37 new)
+- ✓ Full backward compatibility maintained
+
+**Critical Design Decisions:**
+- AudioControlDevice creates and owns the audio devices (encapsulation)
+- Configuration is applied on demand via explicit `applyConfiguration()` calls
+- Devices persist their internal state across configuration changes
+- Reset() resets all audio devices (hard reset behavior)
+- NextReg configuration is already wired through NextRegDevice
 
 ### Step 10: Integrate Port Handlers
 - Update port handler in `ZxNextMachine.ts`:

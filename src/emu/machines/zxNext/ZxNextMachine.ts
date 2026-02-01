@@ -40,6 +40,7 @@ import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
+import { AudioControlDevice } from "./AudioControlDevice";
 
 const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
 const SP_KEY_WAIT = 250;
@@ -99,6 +100,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   beeperDevice: ISpectrumBeeperDevice;
 
   /**
+   * Audio control device that manages TurboSound, DAC, and mixer
+   */
+  audioControlDevice: AudioControlDevice;
+
+  /**
    * Represents the floating port device of ZX Spectrum 48K
    */
   floatingBusDevice: IFloatingBusDevice;
@@ -146,6 +152,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.mouseDevice = new MouseDevice(this);
     this.joystickDevice = new JoystickDevice(this);
     this.soundDevice = new NextSoundDevice(this);
+    this.audioControlDevice = new AudioControlDevice(this);
     this.ulaDevice = new UlaDevice(this);
     this.hardReset();
   }
@@ -206,6 +213,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.mouseDevice.reset();
     this.joystickDevice.reset();
     this.soundDevice.reset();
+    this.audioControlDevice.reset();
     this.ulaDevice.reset();
     this.beeperDevice.reset();
     this.expansionBusDevice.reset();
