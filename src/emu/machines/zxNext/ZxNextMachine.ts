@@ -42,6 +42,7 @@ import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 import { AudioControlDevice } from "./AudioControlDevice";
+import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
 const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
 const SP_KEY_WAIT = 250;
@@ -217,6 +218,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.audioControlDevice.reset();
     this.ulaDevice.reset();
     this.beeperDevice.reset();
+    
+    // --- Configure audio sample rate for beeper device
+    const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+    if (typeof audioRate === "number") {
+      this.beeperDevice.setAudioSampleRate(audioRate);
+    }
+    
     this.expansionBusDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices
@@ -504,9 +512,38 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Gets the audio samples rendered in the current frame
    */
   getAudioSamples(): AudioSample[] {
-    // For now, return beeper samples
-    // TurboSound, DAC, and AudioMixer are not yet integrated into sample generation
-    return this.beeperDevice.getAudioSamples();
+    // Get the mixer device
+    const mixer = this.audioControlDevice.getAudioMixerDevice();
+    const turboSound = this.audioControlDevice.getTurboSoundDevice();
+
+    // Update mixer with current PSG output from TurboSound
+    // Get combined stereo output from all 3 PSG chips
+    let totalPsgLeft = 0;
+    let totalPsgRight = 0;
+    for (let i = 0; i < 3; i++) {
+      const chipOutput = turboSound.getChipStereoOutput(i);
+      totalPsgLeft += chipOutput.left;
+      totalPsgRight += chipOutput.right;
+    }
+    mixer.setPsgOutput({ left: totalPsgLeft, right: totalPsgRight });
+
+    // Get beeper samples (these are time-based samples with EAR bit state)
+    const beeperSamples = this.beeperDevice.getAudioSamples();
+
+    // For each beeper sample, update mixer and generate mixed output
+    const mixedSamples: AudioSample[] = [];
+    for (let i = 0; i < beeperSamples.length; i++) {
+      // Update mixer with this sample's beeper level
+      // Beeper samples are {left: 0-1.0, right: 0-1.0}
+      // Mixer expects setEarLevel to receive 0 or 1 (converts internally to 0 or 512)
+      mixer.setEarLevel(beeperSamples[i].left);
+
+      // Get the mixed output (includes EAR, MIC, PSG, DAC)
+      const mixed = mixer.getMixedOutput();
+      mixedSamples.push(mixed);
+    }
+
+    return mixedSamples;
   }
 
   /**
@@ -991,6 +1028,21 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
+
+    // --- Prepare audio devices for the new frame
+    this.audioControlDevice.getTurboSoundDevice().onNewFrame();
+    this.audioControlDevice.getDacDevice().onNewFrame();
+    this.audioControlDevice.getAudioMixerDevice().onNewFrame();
+  }
+
+  /**
+   * Called after each Z80 instruction executes
+   */
+  afterInstructionExecuted(): void {
+    super.afterInstructionExecuted();
+    this.audioControlDevice.getTurboSoundDevice().calculateCurrentAudioValue();
+    this.audioControlDevice.getDacDevice().calculateCurrentAudioValue();
+    this.audioControlDevice.getAudioMixerDevice().calculateCurrentAudioValue();
   }
 
   /**
@@ -1013,6 +1065,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();
+
+    // --- Generate audio samples for all audio devices
+    this.audioControlDevice.getTurboSoundDevice().setNextAudioSample();
+    this.audioControlDevice.getDacDevice().setNextAudioSample();
+    this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
   }
 
   /**

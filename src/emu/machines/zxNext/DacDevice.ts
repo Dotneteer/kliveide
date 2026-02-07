@@ -257,4 +257,39 @@ export class DacDevice {
       }
     };
   }
+
+  // --- AudioSample stub methods for integration with ZxNextMachine ---
+
+  /**
+   * Called at the start of each frame to clear samples
+   */
+  onNewFrame(): void {
+    // DAC devices don't accumulate samples like beeper
+    // State is read on-demand when mixing
+  }
+
+  /**
+   * Calculate current audio value (called after instruction executed)
+   */
+  calculateCurrentAudioValue(): void {
+    // DAC values are updated immediately on write
+    // No additional calculation needed
+  }
+
+  /**
+   * Generate next audio sample (called on tact incremented)
+   */
+  setNextAudioSample(): void {
+    // DAC generates values through port writes
+    // No sample buffering needed
+  }
+
+  /**
+   * Get audio samples for current frame (for integration)
+   */
+  getAudioSamples(): AudioSample[] {
+    // Return single sample with current stereo output
+    const output = this.getStereoOutput();
+    return [{ left: output.left, right: output.right }];
+  }
 }

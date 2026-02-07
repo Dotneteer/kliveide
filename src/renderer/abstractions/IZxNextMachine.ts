@@ -18,6 +18,8 @@ import { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import { CpuSpeedDevice } from "@emu/machines/zxNext/CpuSpeedDevice";
 import { ExpansionBusDevice } from "@emu/machines/zxNext/ExpansionBusDevice";
 import { NextComposedScreenDevice } from "@emu/machines/zxNext/screen/NextComposedScreenDevice";
+import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
+import type { AudioControlDevice } from "@emu/machines/zxNext/AudioControlDevice";
 
 /**
  * This interface defines the behavior of a ZX Spectrum 48K virtual machine that integrates the emulator built from
@@ -64,6 +66,10 @@ export interface IZxNextMachine extends IZ80Machine {
   soundDevice: NextSoundDevice;
 
   ulaDevice: UlaDevice;
+
+  beeperDevice: ISpectrumBeeperDevice;
+
+  audioControlDevice: AudioControlDevice;
 
   expansionBusDevice: ExpansionBusDevice;
 

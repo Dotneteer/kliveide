@@ -475,5 +475,49 @@ export class TurboSoundDevice {
       debug: this._chips[id].getDebugInfo()
     };
   }
+
+  // --- AudioSample stub methods for integration with ZxNextMachine ---
+
+  /**
+   * Called at the start of each frame to clear samples
+   */
+  onNewFrame(): void {
+    // TurboSound devices don't accumulate samples like beeper
+    // State is read on-demand when mixing
+  }
+
+  /**
+   * Calculate current audio value (called after instruction executed)
+   */
+  calculateCurrentAudioValue(): void {
+    // Generate output values for all chips every 16 tacts
+    this.generateAllOutputValues();
+  }
+
+  /**
+   * Generate next audio sample (called on tact incremented)
+   */
+  setNextAudioSample(): void {
+    // TurboSound generates values through calculateCurrentAudioValue
+    // No sample buffering needed
+  }
+
+  /**
+   * Get audio samples for current frame (for integration)
+   */
+  getAudioSamples(): AudioSample[] {
+    // Return single sample with current stereo output
+    // Mixed output from all chips
+    let totalLeft = 0;
+    let totalRight = 0;
+
+    for (let i = 0; i < 3; i++) {
+      const output = this.getChipStereoOutput(i);
+      totalLeft += output.left;
+      totalRight += output.right;
+    }
+
+    return [{ left: totalLeft, right: totalRight }];
+  }
 }
 

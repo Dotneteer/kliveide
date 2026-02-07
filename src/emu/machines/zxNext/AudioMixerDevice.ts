@@ -319,4 +319,39 @@ export class AudioMixerDevice {
       }
     };
   }
+
+  // --- AudioSample stub methods for integration with ZxNextMachine ---
+
+  /**
+   * Called at the start of each frame to clear samples
+   */
+  onNewFrame(): void {
+    // Mixer doesn't accumulate samples like beeper
+    // State is read on-demand when mixing
+  }
+
+  /**
+   * Calculate current audio value (called after instruction executed)
+   */
+  calculateCurrentAudioValue(): void {
+    // Mixer values are updated immediately on source changes
+    // No additional calculation needed
+  }
+
+  /**
+   * Generate next audio sample (called on tact incremented)
+   */
+  setNextAudioSample(): void {
+    // Mixer generates values through source updates
+    // No sample buffering needed
+  }
+
+  /**
+   * Get audio samples for current frame (for integration)
+   */
+  getAudioSamples(): AudioSample[] {
+    // Return single sample with current mixed output
+    const output = this.getMixedOutput();
+    return [{ left: output.left, right: output.right }];
+  }
 }
