@@ -223,6 +223,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
     if (typeof audioRate === "number") {
       this.beeperDevice.setAudioSampleRate(audioRate);
+      
+      // --- Also configure TurboSoundDevice with the same sample rate
+      this.audioControlDevice.getTurboSoundDevice().setAudioSampleRate(
+        this.baseClockFrequency,
+        audioRate
+      );
     }
     
     this.expansionBusDevice.reset();
@@ -516,31 +522,76 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const mixer = this.audioControlDevice.getAudioMixerDevice();
     const turboSound = this.audioControlDevice.getTurboSoundDevice();
 
-    // Update mixer with current PSG output from TurboSound
-    // Get combined stereo output from all 3 PSG chips
-    let totalPsgLeft = 0;
-    let totalPsgRight = 0;
-    for (let i = 0; i < 3; i++) {
-      const chipOutput = turboSound.getChipStereoOutput(i);
-      totalPsgLeft += chipOutput.left;
-      totalPsgRight += chipOutput.right;
-    }
-    mixer.setPsgOutput({ left: totalPsgLeft, right: totalPsgRight });
+    // Determine if we should log detail for this frame
+    // Logic: First non-zero frame after 200, then wait 2 frames, log the 3rd frame
+    const frameCount = (turboSound as any)._frameCount;
+    const firstNonZeroFrame = (turboSound as any)._firstNonZeroFrame;
+    const shouldLogDetail = firstNonZeroFrame > 0 && frameCount === firstNonZeroFrame + 2;
 
-    // Get beeper samples (these are time-based samples with EAR bit state)
+    // Get time-series sample arrays from both devices
     const beeperSamples = this.beeperDevice.getAudioSamples();
+    const turboSoundSamples = this.soundDevice.enableTurbosound 
+      ? turboSound.getAudioSamples() 
+      : [];
 
-    // For each beeper sample, update mixer and generate mixed output
+    // Both should have the same length, but handle mismatch gracefully
+    const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);
+    
+    if (shouldLogDetail) {
+      console.log(`[AUDIO F${frameCount}] Beeper:${beeperSamples.length}s TurboSound:${turboSoundSamples.length}s`);
+    }
+
+    // For each sample time, combine beeper + PSG + DAC in mixer
     const mixedSamples: AudioSample[] = [];
-    for (let i = 0; i < beeperSamples.length; i++) {
-      // Update mixer with this sample's beeper level
-      // Beeper samples are {left: 0-1.0, right: 0-1.0}
-      // Mixer expects setEarLevel to receive 0 or 1 (converts internally to 0 or 512)
-      mixer.setEarLevel(beeperSamples[i].left);
+    const sampleDetails: Array<{ear: number, psgL: number, psgR: number, mixL: number, mixR: number}> = [];
+    
+    for (let i = 0; i < sampleCount; i++) {
+      // Get beeper sample (or 0 if out of range)
+      const earLevel = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
+      mixer.setEarLevel(earLevel);
+
+      // Get PSG sample (or 0 if out of range or disabled)
+      const psgSample = i < turboSoundSamples.length 
+        ? turboSoundSamples[i] 
+        : { left: 0, right: 0 };
+      mixer.setPsgOutput(psgSample);
 
       // Get the mixed output (includes EAR, MIC, PSG, DAC)
       const mixed = mixer.getMixedOutput();
       mixedSamples.push(mixed);
+
+      // Track details for logging
+      if (shouldLogDetail && i < 100) {
+        sampleDetails.push({
+          ear: earLevel,
+          psgL: psgSample.left,
+          psgR: psgSample.right,
+          mixL: mixed.left,
+          mixR: mixed.right
+        });
+      }
+    }
+
+    // Log detailed sample information for diagnostic frame
+    if (shouldLogDetail) {
+      console.log(`[SAMPLES F${frameCount}] ${mixedSamples.length}s:`);
+      
+      for (let i = 0; i < sampleDetails.length; i++) {
+        const s = sampleDetails[i];
+        console.log(`  ${i}: ear=${s.ear.toFixed(2)} psg=(${s.psgL},${s.psgR}) → mix=(${s.mixL},${s.mixR})`);
+      }
+      
+      // Calculate statistics
+      const leftVals = mixedSamples.map(s => s.left);
+      const rightVals = mixedSamples.map(s => s.right);
+      const minL = Math.min(...leftVals);
+      const maxL = Math.max(...leftVals);
+      const avgL = leftVals.reduce((a, b) => a + b, 0) / leftVals.length;
+      const minR = Math.min(...rightVals);
+      const maxR = Math.max(...rightVals);
+      const avgR = rightVals.reduce((a, b) => a + b, 0) / rightVals.length;
+      
+      console.log(`  Stats: L(min=${minL} max=${maxL} avg=${avgL.toFixed(0)}) R(min=${minR} max=${maxR} avg=${avgR.toFixed(0)})`);
     }
 
     return mixedSamples;
@@ -1040,7 +1091,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   afterInstructionExecuted(): void {
     super.afterInstructionExecuted();
-    this.audioControlDevice.getTurboSoundDevice().calculateCurrentAudioValue();
+    this.audioControlDevice.getTurboSoundDevice().calculateCurrentAudioValue(this.tacts);
     this.audioControlDevice.getDacDevice().calculateCurrentAudioValue();
     this.audioControlDevice.getAudioMixerDevice().calculateCurrentAudioValue();
   }
@@ -1067,7 +1118,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.beeperDevice.setNextAudioSample();
 
     // --- Generate audio samples for all audio devices
-    this.audioControlDevice.getTurboSoundDevice().setNextAudioSample();
+    // Pass machine tacts and clock multiplier for proper sample timing
+    this.audioControlDevice.getTurboSoundDevice().setNextAudioSample(this.tacts, this.clockMultiplier);
     this.audioControlDevice.getDacDevice().setNextAudioSample();
     this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
   }

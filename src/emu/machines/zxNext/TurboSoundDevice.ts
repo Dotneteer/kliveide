@@ -1,4 +1,5 @@
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
 
 /**
@@ -23,10 +24,13 @@ import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
  * ## Stereo Modes (Global Setting)
  * - ABC mode (ayStereoMode=false, default):
  *   - Left output = Channel A + Channel B (from all chips)
- *   - Right output = Channel C (from all chips)
+ *   - Right output = Channel B + Channel C (from all chips)
  * - ACB mode (ayStereoMode=true):
  *   - Left output = Channel A + Channel C (from all chips)
- *   - Right output = Channel B (from all chips)
+ *   - Right output = Channel B + Channel C (from all chips)
+ * 
+ * Note: Channel B is always mixed into the right output in both modes.
+ * Channel C is also always mixed into the right output in both modes.
  *
  * ## Mono Mode (Per-Chip)
  * When enabled for a chip:
@@ -75,11 +79,53 @@ export class TurboSoundDevice {
   // --- Mono mode per chip
   private readonly _chipMonoMode = [false, false, false];
 
+  // --- Audio sampling controls (following BeeperDevice pattern)
+  // Uses fixed audio sample rate and adjusts for clock multiplier changes automatically
+  private _audioSampleRate = 0;
+  private _audioSampleLength = 0;
+  private _audioNextSampleTact = 0;
+  private readonly _audioSamples: AudioSample[] = [];
+  
+  // --- PSG clock tracking (PSG runs at baseClockFrequency / 2 = 1.75 MHz)
+  // --- But generateOutputValue() should be called at 1.75 MHz / 8 due to internal ÷8 prescaler
+  private _psgClockDivisor = 16; // PSG effective rate: CPU ÷ 2 ÷ 8 = CPU ÷ 16
+  private _lastCpuTact = 0; // Last CPU tact when PSG was updated
+  private _psgTactRemainder = 0; // Fractional PSG tacts to carry forward
+
+  // --- Diagnostics: track samples per frame
+  private _samplesThisFrame = 0;
+  private _sampleSumThisFrame = 0;
+  private _frameCount = 0;
+  private _samplesThisFrameDetails: Array<{vol: number, left: number, right: number}> = [];
+  private _firstNonZeroFrame = -1;
+  private _shouldLogNextFrame = false;
+
   /**
    * Initialize the Turbo Sound device
+   * @param baseClockFrequency Base CPU clock frequency (default 3,500,000 Hz)
+   * @param audioSampleRate Audio sample rate (default 48,000 Hz)
    */
-  constructor() {
+  constructor(baseClockFrequency: number = 3_500_000, audioSampleRate: number = 48_000) {
+    this.setAudioSampleRate(baseClockFrequency, audioSampleRate);
     this.reset();
+  }
+
+  /**
+   * Sets up the sample rate to use with this device
+   * @param baseClockFrequency Base CPU clock frequency
+   * @param sampleRate Audio sample rate
+   */
+  setAudioSampleRate(baseClockFrequency: number, sampleRate: number): void {
+    this._audioSampleRate = sampleRate;
+    this._audioSampleLength = baseClockFrequency / sampleRate;
+    this._audioNextSampleTact = 0;
+  }
+
+  /**
+   * Gets the audio sample rate
+   */
+  getAudioSampleRate(): number {
+    return this._audioSampleRate;
   }
 
   /**
@@ -95,6 +141,10 @@ export class TurboSoundDevice {
     this._chipMonoMode[0] = false;
     this._chipMonoMode[1] = false;
     this._chipMonoMode[2] = false;
+    this._audioNextSampleTact = 0;
+    this._audioSamples.length = 0;
+    this._lastCpuTact = 0;
+    this._psgTactRemainder = 0;
   }
 
   /**
@@ -276,13 +326,13 @@ export class TurboSoundDevice {
     } else {
       // Stereo mode
       if (this._ayStereoMode) {
-        // ACB mode: Left = A + C, Right = B
+        // ACB mode: Left = A + C, Right = B + C
         left = Math.min(65535, volA + volC);
-        right = volB;
+        right = Math.min(65535, volB + volC);
       } else {
-        // ABC mode: Left = A + B, Right = C
+        // ABC mode: Left = A + B, Right = B + C
         left = Math.min(65535, volA + volB);
-        right = volC;
+        right = Math.min(65535, volB + volC);
       }
     }
 
@@ -400,6 +450,7 @@ export class TurboSoundDevice {
       chipPanning: [...this._chipPanning],
       ayStereoMode: this._ayStereoMode,
       chipMonoMode: [...this._chipMonoMode],
+      audioNextSampleTact: this._audioNextSampleTact,
       chipStates: this._chips.map(chip => chip.getState())
     };
   }
@@ -422,6 +473,7 @@ export class TurboSoundDevice {
       this._chipMonoMode[1] = state.chipMonoMode[1] ?? false;
       this._chipMonoMode[2] = state.chipMonoMode[2] ?? false;
     }
+    this._audioNextSampleTact = state.audioNextSampleTact ?? 0;
     
     if (state.chipStates) {
       for (let i = 0; i < 3; i++) {
@@ -482,42 +534,148 @@ export class TurboSoundDevice {
    * Called at the start of each frame to clear samples
    */
   onNewFrame(): void {
-    // TurboSound devices don't accumulate samples like beeper
-    // State is read on-demand when mixing
+    // Log summary from previous frame
+    if (this._frameCount > 0) {
+      console.log(`[F${this._frameCount}] TS: ${this._samplesThisFrame}s Σ=${this._sampleSumThisFrame}`);
+      
+      // Detect first non-zero frame after frame 200
+      if (this._frameCount > 200 && this._sampleSumThisFrame > 0 && this._firstNonZeroFrame === -1) {
+        this._firstNonZeroFrame = this._frameCount;
+        console.log(`[TRIGGER] First non-zero F${this._firstNonZeroFrame}`);
+      }
+      
+      // Check if we should log the next frame in detail (2 frames after first non-zero)
+      if (this._firstNonZeroFrame > 0 && this._frameCount === this._firstNonZeroFrame + 2) {
+        this._shouldLogNextFrame = true;
+        console.log(`[TRIGGER] Detail logging F${this._frameCount + 1}`);
+      }
+      
+      // If we were logging details in the previous frame, output all samples now
+      if (this._shouldLogNextFrame && this._samplesThisFrameDetails.length > 0) {
+        console.log(`[SAMPLES F${this._frameCount - 1}] ${this._samplesThisFrameDetails.length}s:`);
+        for (let i = 0; i < this._samplesThisFrameDetails.length; i++) {
+          const s = this._samplesThisFrameDetails[i];
+          console.log(`  ${i}: l=${s.left} r=${s.right} t=${s.vol}`);
+        }
+        
+        // Calculate statistics
+        const avg = this._samplesThisFrameDetails.reduce((sum, s) => sum + s.vol, 0) / this._samplesThisFrameDetails.length;
+        const max = Math.max(...this._samplesThisFrameDetails.map(s => s.vol));
+        const min = Math.min(...this._samplesThisFrameDetails.map(s => s.vol));
+        console.log(`  Stats: min=${min} max=${max} avg=${avg.toFixed(0)}`);
+        
+        // Log PSG register values for all 3 chips
+        console.log(`[PSG F${this._frameCount - 1}]:`);
+        for (let chipId = 0; chipId < 3; chipId++) {
+          const chip = this._chips[chipId];
+          const chipState = chip.getPsgData();
+          if (chipState && chipState.regValues) {
+            const r = chipState.regValues;
+            console.log(`  C${chipId}: TA=${r[0]},${r[1]} TB=${r[2]},${r[3]} NP=${r[4]} EP=${r[5]},${r[6]} Mix=${r[7].toString(16)} VA=${r[8]} VB=${r[9]} VC=${r[10]} ES=${r[11]} EP=${r[12]},${r[13]}`);
+          } else {
+            console.log(`  C${chipId}: N/A`);
+          }
+        }
+        
+        this._samplesThisFrameDetails = [];
+        this._shouldLogNextFrame = false;
+      }
+    }
+
+    // Reset counters for new frame
+    this._samplesThisFrame = 0;
+    this._sampleSumThisFrame = 0;
+    if (!this._shouldLogNextFrame) {
+      this._samplesThisFrameDetails = [];
+    }
+    this._frameCount++;
+    
+    // Clear audio samples for new frame
+    this._audioSamples.length = 0;
+    
+    // Reset PSG tact tracking for new frame
+    this._lastCpuTact = 0;
+    this._psgTactRemainder = 0;
   }
 
   /**
    * Calculate current audio value (called after instruction executed)
+   * Advances PSG chips by the correct number of tacts since last call
+   * PSG generateOutputValue() called at CPU clock / 16 (accounts for ÷2 for 1.75MHz + ÷8 internal prescaler)
    */
-  calculateCurrentAudioValue(): void {
-    // Generate output values for all chips every 16 tacts
-    this.generateAllOutputValues();
+  calculateCurrentAudioValue(currentCpuTact: number): void {
+    // Initialize on first call to avoid huge elapsed time
+    if (this._lastCpuTact === 0) {
+      this._lastCpuTact = currentCpuTact;
+      return;
+    }
+    
+    // Calculate elapsed CPU tacts since last update
+    const cpuTactsElapsed = currentCpuTact - this._lastCpuTact;
+    this._lastCpuTact = currentCpuTact;
+    
+    // Clamp to reasonable range to prevent performance issues
+    if (cpuTactsElapsed <= 0 || cpuTactsElapsed > 100) {
+      return; // Skip if negative (wraparound) or unreasonably large
+    }
+    
+    // Convert to PSG tacts (PSG runs at half CPU speed + carry forward remainder)
+    const exactPsgTacts = cpuTactsElapsed / this._psgClockDivisor + this._psgTactRemainder;
+    const psgTactsToAdvance = Math.floor(exactPsgTacts);
+    this._psgTactRemainder = exactPsgTacts - psgTactsToAdvance;
+    
+    // Advance each PSG chip by the elapsed tacts
+    for (let i = 0; i < psgTactsToAdvance; i++) {
+      this.generateAllOutputValues();
+    }
   }
 
   /**
    * Generate next audio sample (called on tact incremented)
+   * Follows BeeperDevice pattern: generates samples at fixed intervals
+   * accounting for clock multiplier changes
+   * Just reads current PSG state - PSG already advanced in calculateCurrentAudioValue()
    */
-  setNextAudioSample(): void {
-    // TurboSound generates values through calculateCurrentAudioValue
-    // No sample buffering needed
-  }
+  setNextAudioSample(machineTacts: number, clockMultiplier: number): void {
+    // Check if it's time to generate a sample
+    if (machineTacts <= this._audioNextSampleTact) return;
 
-  /**
-   * Get audio samples for current frame (for integration)
-   */
-  getAudioSamples(): AudioSample[] {
-    // Return single sample with current stereo output
-    // Mixed output from all chips
+    // Calculate current stereo output from all 3 chips (just read current state)
     let totalLeft = 0;
     let totalRight = 0;
-
     for (let i = 0; i < 3; i++) {
       const output = this.getChipStereoOutput(i);
       totalLeft += output.left;
       totalRight += output.right;
     }
 
-    return [{ left: totalLeft, right: totalRight }];
+    // Store the sample
+    const sample = { left: totalLeft, right: totalRight };
+    this._audioSamples.push(sample);
+
+    // Track samples for diagnostics
+    this._samplesThisFrame++;
+    const totalVolume = totalLeft + totalRight;
+    this._sampleSumThisFrame += totalVolume;
+    
+    // Store sample details for later logging
+    if (this._shouldLogNextFrame) {
+      this._samplesThisFrameDetails.push({
+        vol: totalVolume,
+        left: totalLeft,
+        right: totalRight
+      });
+    }
+
+    // Advance to next sample time, accounting for clock multiplier
+    this._audioNextSampleTact += this._audioSampleLength * clockMultiplier;
+  }
+
+  /**
+   * Get audio samples for current frame (for integration)
+   */
+  getAudioSamples(): AudioSample[] {
+    return this._audioSamples;
   }
 }
 

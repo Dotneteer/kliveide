@@ -143,6 +143,9 @@ export class PsgChip {
     for (let i = 0; i < this._regValues.length; i++) {
       this._regValues[i] = 0;
     }
+    
+    // --- Initialize mixer register to 0xFF (all channels disabled) to match hardware
+    this._regValues[7] = 0xff;
 
     // --- Channel A setup
     this._toneA = 0;

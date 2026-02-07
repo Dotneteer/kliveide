@@ -463,6 +463,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.soundDevice.enableInternalSpeaker = (v & 0x10) !== 0;
         machine.soundDevice.enable8BitDacs = (v & 0x08) !== 0;
         this.enablePort0xffTimexVideoModeRead = (v & 0x04) !== 0;
+        const prevTurbosound = machine.soundDevice.enableTurbosound;
         machine.soundDevice.enableTurbosound = (v & 0x02) !== 0;
         this.implementIssue2Keyboard = (v & 0x01) !== 0;
       },

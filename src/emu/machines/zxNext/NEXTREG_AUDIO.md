@@ -154,11 +154,13 @@ NEXTREG 0x08, 0xA1              ; Set bit 5
 **Values**:
 - 0 = ABC mode (default)
   - Left = Channel A + Channel B (PSG)
-  - Right = Channel C (PSG)
+  - Right = Channel B + Channel C (PSG)
   
 - 1 = ACB mode
   - Left = Channel A + Channel C (PSG)
-  - Right = Channel B (PSG)
+  - Right = Channel B + Channel C (PSG)
+
+**Note**: Channel B is mixed into the right output in both modes. Channel C is also mixed into the right output in both modes.
 
 **Default**: 0 (ABC mode)
 
@@ -312,7 +314,7 @@ NEXTREG 0x08, 0x83
 ### ACB Stereo Mode
 
 ```assembly
-; Switch to ACB stereo mode (A+C left, B right)
+; Switch to ACB stereo mode (A+C left, B+C right)
 NEXTREG 0x08, 0xB1
 ; Bits: 10110001
 ;       ^ Audio enabled

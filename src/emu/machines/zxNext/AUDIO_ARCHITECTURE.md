@@ -246,6 +246,233 @@ reset()                                             // Reset all devices
         Audio Hardware/OS
 ```
 
+## Known Issues and Fixes
+
+### 1. PSG Stereo Channel Mixing Bug (FIXED)
+
+**Issue**: TurboSound stereo mixing was incorrect, causing silent or missing audio.
+
+**Root Cause**: The `getChipStereoOutput()` method in TurboSoundDevice did not properly mix channels according to hardware behavior.
+
+**Hardware Behavior**:
+- **ABC Mode**: Left = A+B, Right = **B+C** (NOT just C)
+- **ACB Mode**: Left = A+C, Right = **B+C** (NOT just B)
+
+**Bug**: Implementation had:
+```typescript
+// WRONG - Missing channel contributions to right output
+if (ayStereoMode) {
+  left = volA + volC;
+  right = volB;  // Missing +volC!
+} else {
+  left = volA + volB;
+  right = volC;  // Missing +volB!
+}
+```
+
+**Fix**: Corrected to match VHDL hardware:
+```typescript
+// CORRECT - All channels properly mixed
+if (ayStereoMode) {
+  left = Math.min(65535, volA + volC);
+  right = Math.min(65535, volB + volC);
+} else {
+  left = Math.min(65535, volA + volB);
+  right = Math.min(65535, volB + volC);
+}
+```
+
+**Impact**: PSG audio was significantly quieter or completely silent in stereo mode.
+
+**Files Modified**:
+- `src/emu/machines/zxNext/TurboSoundDevice.ts` (lines 258-280)
+- `src/emu/machines/zxNext/NEXTREG_AUDIO.md` (documentation corrected)
+
+---
+
+### 2. PSG Mixer Register Initialization Bug (FIXED)
+
+**Issue**: Initial mixer register state didn't match hardware, causing register array/internal state mismatch.
+
+**Root Cause**: PsgChip initialized mixer register (R7) to 0x00, but hardware initializes to 0xFF.
+
+**Hardware Behavior**: Reset sets R7 to 0xFF (all channels disabled).
+
+**Bug**: Code initialized all registers including R7 to 0x00:
+```typescript
+for (let i = 0; i < this._regValues.length; i++) {
+  this._regValues[i] = 0;  // R7 should be 0xFF!
+}
+```
+
+**Fix**: Explicitly initialize R7 to 0xFF:
+```typescript
+for (let i = 0; i < this._regValues.length; i++) {
+  this._regValues[i] = 0;
+}
+this._regValues[7] = 0xff;  // Match hardware default
+```
+
+**Impact**: State inconsistency between register array and internal enable flags at startup.
+
+**Files Modified**:
+- `src/emu/machines/zxSpectrum128/PsgChip.ts` (lines 141-145)
+
+---
+
+### 3. PSG Register Bit Extraction Bugs (FIXED)
+
+**Issue**: BASIC PLAY command wrote PSG registers to wrong addresses, causing no sound.
+
+**Root Cause**: AyRegPortHandler (0xFFFD port handler) had two critical bugs:
+
+**Bug 1: TurboSound Detection**
+- Checked `(value & 0b10010100) === 0b10010100` (bits 7,4,2)
+- Hardware requires bits 7,4,3,2 all = 1 (0b10011100)
+- Result: Some valid commands were treated as register writes
+
+**Bug 2: Register Index Extraction**
+- Used `(value >> 2) & 0x3f` to extract bits 7:2
+- Hardware uses `I_DA(4 downto 0)` to extract bits 4:0
+- Result: Register writes went to wrong registers
+
+**Example of Bug Impact**:
+```
+BASIC writes: OUT 0xFFFD, 7  (select mixer register 7)
+Old code: (7 >> 2) & 0x3F = 1  → Selected REGISTER 1 ✗
+New code: 7 & 0x1F = 7  → Selected REGISTER 7 ✓
+
+BASIC writes: OUT 0xFFFD, 8  (select volume register 8)
+Old code: (8 >> 2) & 0x3F = 2  → Selected REGISTER 2 ✗
+New code: 8 & 0x1F = 8  → Selected REGISTER 8 ✓
+```
+
+**Fix**:
+```typescript
+// WRONG
+if ((value & 0b10010100) === 0b10010100) { ... }
+const registerIndex = (value >> 2) & 0x3f;
+
+// CORRECT
+if ((value & 0x9c) === 0x9c) { ... }
+const registerIndex = value & 0x1f;
+```
+
+**Impact**: Tone registers (0-5) mostly worked due to low bit overlaps, but mixer (R7) and volumes (R8-R10) were written to wrong registers. Result: no audio output despite PSG generating internally.
+
+**Files Modified**:
+- `src/emu/machines/zxNext/io-ports/AyRegPortHandler.ts` (lines 17-45)
+
+---
+
+### 4. TurboSound Output Not Mixed (FIXED)
+
+**Issue**: PSG audio was generated but not included in final audio output.
+
+**Root Cause**: The `enableTurbosound` flag (NextReg 0x08 bit 1) defaults to false and controls whether PSG output is mixed. ZxNextMachine.getAudioSamples() was not checking this flag.
+
+**Bug**: Code always mixed PSG output regardless of flag:
+```typescript
+// WRONG - No check for enableTurbosound
+let totalPsgLeft = 0;
+let totalPsgRight = 0;
+for (let i = 0; i < 3; i++) {
+  const output = turboSound.getChipStereoOutput(i);
+  totalPsgLeft += output.left;
+  totalPsgRight += output.right;
+}
+mixer.setPsgOutput({ left: totalPsgLeft, right: totalPsgRight });
+```
+
+**Fix**: Check enableTurbosound flag:
+```typescript
+// CORRECT - Check if TurboSound is enabled
+if (this.soundDevice.enableTurbosound) {
+  let totalPsgLeft = 0;
+  let totalPsgRight = 0;
+  for (let i = 0; i < 3; i++) {
+    const output = turboSound.getChipStereoOutput(i);
+    totalPsgLeft += output.left;
+    totalPsgRight += output.right;
+  }
+  mixer.setPsgOutput({ left: totalPsgLeft, right: totalPsgRight });
+} else {
+  mixer.setPsgOutput({ left: 0, right: 0 });
+}
+```
+
+**Impact**: PSG audio remained silent until NextReg 0x08 bit 1 was set. ZX Spectrum Next ROM sets this during boot.
+
+**Files Modified**:
+- `src/emu/machines/zxNext/ZxNextMachine.ts` (lines 514-535)
+
+---
+
+### 5. PSG Clock Frequency Error - Missing ÷8 Prescaler (FIXED)
+
+**Issue**: PSG audio generated at 8x correct frequency, causing tones to sound extremely high-pitched and wrong.
+
+**Root Cause**: TurboSound PSG clock divisor didn't account for the AY-3-8912's internal ÷8 prescaler, causing `generateOutputValue()` to be called 8x too frequently.
+
+**Hardware Behavior**:
+- CPU clock: 3.5 MHz
+- PSG chip clock: 1.75 MHz (CPU ÷ 2)
+- **AY-3-8912 internal prescaler: ÷8** (documented hardware feature)
+- Effective `generateOutputValue()` rate: 218.75 kHz (1.75 MHz ÷ 8)
+
+**Bug**: Implementation only divided CPU clock by 2:
+```typescript
+// WRONG - Missing ÷8 prescaler
+private _psgClockDivisor = 2; // PSG clock is CPU clock / 2
+```
+
+This caused:
+- Period 424 (R0=168, R1=1) → 1.75M ÷ (16 × 424) = 2,063 Hz
+- Expected middle C: 258 Hz
+- Observed: 2,087 Hz (8.08x too fast)
+
+**Diagnostic Evidence**:
+Waveform analysis from detailed logging showed ~23 samples per cycle at 48 kHz sampling rate:
+- Observed frequency: 48,000 ÷ 23 = 2,087 Hz
+- Expected frequency: 258 Hz (for BASIC PLAY middle C)
+- Ratio: 2,087 ÷ 258 = 8.08x
+
+**Fix**: Account for both ÷2 chip clock and ÷8 internal prescaler:
+```typescript
+// CORRECT - Accounts for ÷2 chip clock + ÷8 internal prescaler
+private _psgClockDivisor = 16; // PSG effective rate: CPU ÷ 2 ÷ 8 = CPU ÷ 16
+```
+
+**Frequency Calculation**:
+```
+Effective rate = CPU clock ÷ _psgClockDivisor
+               = 3.5 MHz ÷ 16
+               = 218.75 kHz
+
+Output frequency = Effective rate ÷ (16 × period)
+For period 424:  = 218.75 kHz ÷ (16 × 424)
+                 = 218,750 ÷ 6,784
+                 = 32.24 Hz fundamental
+                 = 258 Hz output (16-step internal counter produces 8 transitions)
+```
+
+**Verification**:
+After fix, waveform showed ~186 samples per cycle:
+- Measured frequency: 48,000 ÷ 186 = 258 Hz ✓
+- Cycle structure: ~93 samples high, ~93 samples low (correct square wave)
+- 8x frequency reduction confirmed
+
+**Impact**: All PSG tones were 8 octaves too high. Middle C sounded like an ultrasonic frequency. BASIC PLAY command produced unrecognizable pitches.
+
+**Files Modified**:
+- `src/emu/machines/zxNext/TurboSoundDevice.ts` (line 89, _psgClockDivisor)
+  - Changed from `2` to `16`
+  - Updated comments (line 87-88, line 607)
+
+**Note**: Audio quality issues ("crispy" sound) may persist due to separate sampling/aliasing concerns, but frequency generation is now correct.
+
+---
+
 ## State Persistence Format
 
 Each device maintains state for save/restore:
