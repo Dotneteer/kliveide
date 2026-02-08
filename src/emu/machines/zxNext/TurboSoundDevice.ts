@@ -301,59 +301,45 @@ export class TurboSoundDevice {
    * Gets the stereo output for a specific chip
    * Applies stereo mode (ABC/ACB), mono mode, and panning settings
    * @param chipId The chip ID (0-2)
-   * @returns Object with left and right channel samples (0-65535), with panning applied
+   * @returns Object with left and right channel samples (UNSIGNED 0-196605), with panning applied
    */
   getChipStereoOutput(chipId: number): { left: number; right: number } {
     const id = chipId & 0x03;
     const chip = this._chips[id];
     const panning = this._chipPanning[id];
 
-    // Get the volume for each channel
-    // For proper envelope visualization, we use the AVERAGE of accumulated samples
-    // This shows the time-weighted amplitude that includes envelope effect
-    let volA = 0;
-    let volB = 0;
-    let volC = 0;
+    // Use INSTANTANEOUS UNSIGNED values (matching VHDL hardware)
+    // Hardware: tone bit HIGH = amplitude, LOW = 0 (DC-biased square wave)
+    let volA = chip.currentOutputA;  // 0-65535
+    let volB = chip.currentOutputB;  // 0-65535
+    let volC = chip.currentOutputC;  // 0-65535
 
-    if (chip.orphanSamples > 0) {
-      // Average the accumulated values to preserve envelope dynamics
-      // Averaging shows the envelope by revealing time-weighted amplitude changes
-      volA = Math.round(chip.orphanSumA / chip.orphanSamples);
-      volB = Math.round(chip.orphanSumB / chip.orphanSamples);
-      volC = Math.round(chip.orphanSumC / chip.orphanSamples);
-
-      // Reset orphan counters after consuming (for next sample period)
-      chip.orphanSum = 0;
-      chip.orphanSumA = 0;
-      chip.orphanSumB = 0;
-      chip.orphanSumC = 0;
-      chip.orphanSamples = 0;
-    } else {
-      // No orphan samples accumulated yet, use most recent values
-      volA = chip.currentOutputA;
-      volB = chip.currentOutputB;
-      volC = chip.currentOutputC;
-    }
+    // Reset orphan counters (we're using instantaneous sampling)
+    chip.orphanSum = 0;
+    chip.orphanSumA = 0;
+    chip.orphanSumB = 0;
+    chip.orphanSumC = 0;
+    chip.orphanSamples = 0;
 
     let left = 0;
     let right = 0;
 
     if (this._chipMonoMode[id]) {
       // Mono mode: all channels to both left and right
-      // Total = A + B + C for both channels
-      const mono = Math.min(65535, volA + volB + volC);
+      // Total = A + B + C for both channels (UNSIGNED addition)
+      const mono = Math.min(196605, volA + volB + volC);  // Max: 3 * 65535 = 196605
       left = mono;
       right = mono;
     } else {
-      // Stereo mode
+      // Stereo mode (UNSIGNED addition)
       if (this._ayStereoMode) {
         // ACB mode: Left = A + C, Right = B + C
-        left = Math.min(65535, volA + volC);
-        right = Math.min(65535, volB + volC);
+        left = Math.min(131070, volA + volC);   // Max: 2 * 65535 = 131070
+        right = Math.min(131070, volB + volC);
       } else {
         // ABC mode: Left = A + B, Right = B + C
-        left = Math.min(65535, volA + volB);
-        right = Math.min(65535, volB + volC);
+        left = Math.min(131070, volA + volB);
+        right = Math.min(131070, volB + volC);
       }
     }
 

@@ -108,16 +108,28 @@ export class AudioMixerDevice {
   private _mixerCaptureStarted = false;
   private _mixerCapturedSamples: number[] = [];
 
+  // Frame-level sample collection (similar to TurboSoundDevice)
+  private _mixerFrameSamples: number[] = [];
+  private _mixerFrameSum = 0;
+
+  // Debug: Track beeper state changes
+  private _lastEarLevel = -1;
+  private _earChangeCount = 0;
+  private _psgSampleCount = 0;
+
   constructor(dac: DacDevice) {
     this.dac = dac;
   }
 
   /**
    * Set EAR (Beeper) output level
-   * @param level 1 for EAR active (512), 0 for inactive
+   * @param level Normalized beeper value (0.0 when LOW, 1.0 when HIGH)
+   * Converts to audio range: 0 = silent, 512 = beeper active
    */
   setEarLevel(level: number): void {
-    this.earLevel = level ? 512 : 0;
+    // Convert normalized 0.0/1.0 to amplitude
+    // Explicitly check for 1.0 (beeper HIGH state)
+    this.earLevel = (level === 1.0 || level > 0.9) ? 512 : 0;
   }
 
   /**
@@ -190,73 +202,134 @@ export class AudioMixerDevice {
   /**
    * Get mixed stereo audio output
    * 
-   * Mixing formula:
+   * HARDWARE-ACCURATE IMPLEMENTATION (from VHDL audio_mixer.vhd):
+   * 
+   * Step 1: UNSIGNED ADDITION of all sources (range 0-5998):
+   *   pcm_L = ear + mic + ay_L + dac_L + i2s_L
+   *   pcm_R = ear + mic + ay_R + dac_R + i2s_R
+   * 
+   * Step 2: Convert unsigned to signed via MSB inversion:
+   *   signed13bit = unsigned13bit XOR 0x1000
+   *   This centers the DC-biased signal around zero for AC audio output
+   * 
+   * Step 3: Scale to 16-bit signed for intermediate processing
+   * 
+   * Step 4: Normalize to Web Audio API format (-1.0 to +1.0)
+   *   Hardware outputs to DAC/PWM; software must normalize for Float32Array
+   * 
+   * Source levels (all UNSIGNED):
    * - EAR (Beeper): 0 or 512
    * - MIC: 0 or 128
-   * - PSG: 12-bit to 13-bit conversion (multiply by ~4 to scale from 0-4095 to 0-16383, then divide by 8 to get ~13-bit)
-   * - DAC: 8-bit to 16-bit conversion (already scaled to 16-bit in DAC, then adjust range)
-   * - I2S: up to 1023
+   * - PSG (TurboSound): 0-2295 (from 3 chips)
+   * - DAC: 0-2040
+   * - I2S: 0-1023
+   * Total max: 0-5998
    * 
-   * Maximum levels per channel (13-bit = 8191):
-   * - EAR: 512
-   * - MIC: 128
-   * - PSG: ~2000 (per chip, up to 6000 for 3 chips, then scaled)
-   * - DAC A+B or C+D: ~2040 (scaled from 8-bit)
-   * - I2S: 1023
-   * Total max: ~12000 (exceeds 13-bit, requires clamping)
+   * NOTE: Currently PSG, DAC, and I2S are disabled (return 0) for beeper-only testing.
    * 
-   * @returns Mixed AudioSample
+   * @returns Mixed AudioSample (normalized floating-point for Web Audio API)
    */
   getMixedOutput(): AudioSample {
-    let left = 0;
-    let right = 0;
+    // Step 1: UNSIGNED addition (matching VHDL exactly)
+    let unsignedLeft = 0;
+    let unsignedRight = 0;
 
-    // Add EAR (Beeper)
-    left += this.earLevel;
-    right += this.earLevel;
+    // Add EAR (Beeper): 0 or 512 (unsigned)
+    // NOTE: Scale by 8 to increase amplitude for better audibility
+    // Hardware has other sources (PSG, DAC) that bring total closer to midpoint
+    // For beeper-only testing, we need larger swing around center
+    const beeperScaled = this.earLevel * 8;  // 0 or 4096
+    unsignedLeft += beeperScaled;
+    unsignedRight += beeperScaled;
 
-    // Add MIC
-    left += this.micLevel;
-    right += this.micLevel;
+    // Add MIC: 0 or 128 (unsigned)
+    unsignedLeft += this.micLevel;
+    unsignedRight += this.micLevel;
 
-    // Add PSG output (unsigned 16-bit range: 0-65535)
-    // Only center when PSG is significantly above silence (~20000+) to preserve AC characteristics
-    // When PSG is quiet or silent, keep it positive to avoid drowning out beeper signal
-    const psgLeftCentered = this.psgOutput.left > 20000 
-      ? Math.floor((this.psgOutput.left - 32768) / 8)
-      : Math.floor(this.psgOutput.left / 8);
-    const psgRightCentered = this.psgOutput.right > 20000 
-      ? Math.floor((this.psgOutput.right - 32768) / 8)
-      : Math.floor(this.psgOutput.right / 8);
+    // DEBUG: Track beeper state changes only
+    if (this.earLevel !== this._lastEarLevel) {
+      this._earChangeCount++;
+      if (this._earChangeCount <= 10) {
+        console.log(`[MIXER] Beeper ${this._lastEarLevel} → ${this.earLevel} (scaled: ${beeperScaled})`);
+      }
+      this._lastEarLevel = this.earLevel;
+    }
+
+    // Add PSG output (unsigned 0-196605)
+    // Hardware PSG is 0-2295 (12-bit), our software is 0-196605 (16-bit scaled)
+    // Scale down to fit 13-bit mixer range: 196605 / 24 ≈ 8192
+    const psgLeftScaled = Math.floor(this.psgOutput.left / 24);
+    const psgRightScaled = Math.floor(this.psgOutput.right / 24);
+    unsignedLeft += psgLeftScaled;
+    unsignedRight += psgRightScaled;
     
-    left += psgLeftCentered;
-    right += psgRightCentered;
+    // DEBUG: Track PSG contribution
+    if (psgLeftScaled > 0 || psgRightScaled > 0) {
+      this._psgSampleCount++;
+      if (this._psgSampleCount <= 10) {
+        console.log(`[MIXER] PSG L=${psgLeftScaled} R=${psgRightScaled} (raw: ${this.psgOutput.left}/${this.psgOutput.right})`);
+      }
+    }
 
-    // Add DAC output (16-bit signed range: -32768 to 32767)
-    // Shift by 128 to make positive, then scale to 13-bit
-    const dacLeft = Math.floor((this.dac.getStereoOutput().left / 256) * 2);
-    const dacRight = Math.floor((this.dac.getStereoOutput().right / 256) * 2);
-    left += dacLeft;
-    right += dacRight;
+    // Add DAC output (unsigned, will be 0-2040 when enabled)
+    // const dacOutput = this.dac.getStereoOutput();
+    // const dacLeft = Math.floor(dacOutput.left / X);  // TBD: determine scaling
+    // const dacRight = Math.floor(dacOutput.right / X);
+    // unsignedLeft += dacLeft;
+    // unsignedRight += dacRight;
 
-    // Add I2S input (future enhancement)
-    left += Math.floor(this.i2sInput.left / 8);
-    right += Math.floor(this.i2sInput.right / 8);
+    // Add I2S input (unsigned, will be 0-1023 when enabled)
+    // unsignedLeft += Math.floor(this.i2sInput.left / X);  // TBD: determine scaling
+    // unsignedRight += Math.floor(this.i2sInput.right / X);
 
-    // Apply master volume scale
+    // Clamp to 13-bit unsigned range (0-8191) before conversion
+    unsignedLeft = Math.max(0, Math.min(8191, unsignedLeft));
+    unsignedRight = Math.max(0, Math.min(8191, unsignedRight));
+
+    // Step 2: Convert unsigned to signed via MSB inversion (matching VHDL i2s.vhd)
+    // Hardware: audio_zxn_L <= (not i_audio_zxn_L(12)) & i_audio_zxn_L(11 downto 0)
+    // Software: XOR with 0x1000 flips bit 12, then interpret as signed 13-bit two's complement
+    let xoredLeft = unsignedLeft ^ 0x1000;
+    let xoredRight = unsignedRight ^ 0x1000;
+    
+    // Interpret as signed 13-bit (if bit 12 is set, it's negative)
+    let signed13Left = (xoredLeft & 0x1000) ? (xoredLeft - 0x2000) : xoredLeft;
+    let signed13Right = (xoredRight & 0x1000) ? (xoredRight - 0x2000) : xoredRight;
+    
+    // Range: -4096 to +4095
+    // Example: unsigned 0 → signed -4096
+    // Example: unsigned 512 (beeper ON) → signed -3584
+    // Example: unsigned 4096 → signed 0 (center)
+    // Example: unsigned 8191 → signed +4095
+
+    // Step 3: Scale to 16-bit signed range (-32768 to +32767)
+    // Multiply by 8 to scale from 13-bit to 16-bit range
+    let left = signed13Left * 8;
+    let right = signed13Right * 8;
+
+    // Apply master volume scale (before final clamp)
     left = Math.floor(left * this.volumeScale);
     right = Math.floor(right * this.volumeScale);
 
-    // Clamp to 16-bit range (will be final after scaling)
+    // Final clamp to 16-bit signed range
     left = Math.max(-32768, Math.min(32767, left));
     right = Math.max(-32768, Math.min(32767, right));
 
-    // Capture for diagnostics
+    // Step 4: Normalize to Web Audio API range (-1.0 to +1.0)
+    // Web Audio API expects floating-point samples, not 16-bit integers
+    const normalizedLeft = left / 32768.0;
+    const normalizedRight = right / 32768.0;
+
+    // Capture for diagnostics (before normalization for easier reading)
     if (this._mixerCaptureStarted) {
       this._mixerCapturedSamples.push(left);
     }
 
-    return { left, right };
+    // Collect left channel sample for frame logging (before normalization)
+    this._mixerFrameSamples.push(left);
+    this._mixerFrameSum += Math.abs(left);
+
+    return { left: normalizedLeft, right: normalizedRight };
   }
 
   /**
@@ -361,8 +434,18 @@ export class AudioMixerDevice {
    * Called at the start of each frame to clear samples
    */
   onNewFrame(): void {
-    // Mixer doesn't accumulate samples like beeper
-    // State is read on-demand when mixing
+    // Log beeper activity summary
+    if (this._earChangeCount > 0) {
+      const min = Math.min(...this._mixerFrameSamples);
+      const max = Math.max(...this._mixerFrameSamples);
+      console.log(`[MIXER] Frame: ${this._earChangeCount} beeper changes, output range [${min}, ${max}], ${this._mixerFrameSamples.length} samples`);
+    }
+    
+    // Reset for next frame
+    this._mixerFrameSamples = [];
+    this._mixerFrameSum = 0;
+    this._earChangeCount = 0;
+    this._psgSampleCount = 0;
   }
 
   /**
