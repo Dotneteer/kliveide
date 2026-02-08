@@ -6,10 +6,11 @@ Previous Phase 5 broke audio (lagging) due to incorrect WebAudio worklet sample 
 ## Safe Approach: Mono Downmix at Renderer Boundary
 
 ### Phase 1-4: Core Stereo Infrastructure (SAFE - Already Proven)
-- ✅ AudioSample interface: `{ left: number, right: number }`
-- ✅ All devices return `AudioSample[]`
-- ✅ Machine mixing: stereo sample addition
-- ✅ All 108 tests passing
+- ✅ **Step 1**: PsgChip chipId support (15 tests)
+- ✅ **Step 2**: TurboSoundDevice multi-chip management (29 tests)
+- ✅ **Step 3**: Stereo mixing ABC/ACB/mono modes (31 tests)
+- ✅ **Step 4**: PSG Pan Control (28 tests)
+- ✅ **Total Audio Tests**: 211 passing
 
 ### Phase 5: Simple Mono Downmix (NEW APPROACH)
 **Strategy:** Convert stereo → mono at renderer, keeping WebAudio unchanged

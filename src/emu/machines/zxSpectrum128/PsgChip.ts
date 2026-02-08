@@ -1,9 +1,63 @@
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 
 /**
- * Represents a PSG chip
+ * PSG Chip (AY-3-8912) - Programmable Sound Generator
+ *
+ * This class implements a complete AY-3-8912 PSG chip, used in:
+ * - ZX Spectrum 128K (single PSG)
+ * - ZX Spectrum Next (via TurboSound - 3x PSG chips)
+ *
+ * ## Features
+ * - 3 programmable tone channels (A, B, C)
+ * - Programmable noise generator
+ * - Envelope generator with 16 shapes
+ * - 16 16-bit registers for full control
+ * - Per-channel volume control (0-15 or envelope-driven)
+ * - Master volume via 16-level volume table
+ *
+ * ## Registers (0-15)
+ * - 0-1: Channel A tone frequency (12-bit)
+ * - 2-3: Channel B tone frequency (12-bit)
+ * - 4-5: Channel C tone frequency (12-bit)
+ * - 6: Noise frequency (5-bit)
+ * - 7: Enable flags (noise/tone per channel)
+ * - 8-10: Channel A-C volume control
+ * - 11-12: Envelope frequency (16-bit)
+ * - 13: Envelope shape/style
+ * - 14-15: I/O port control (not used in ZX Spectrum)
+ *
+ * ## Output
+ * - Per-channel tone output (high/low square wave)
+ * - Combined through OR logic with noise
+ * - Multiplied by per-channel volume
+ * - Output range: -32768 to +32767 (16-bit signed AC signal)
+ *   - Silent/disabled: 0
+ *   - Active tone HIGH: +amplitude
+ *   - Active tone LOW: -amplitude
+ *
+ * ## Usage
+ * 1. Set register index via setRegisterIndex(reg)
+ * 2. Write value via setRegisterValue(value)
+ * 3. Call clock() to advance sound generation
+ * 4. Read channel output via getChannelA/B/C()
+ *
+ * ## Multi-Chip Systems
+ * When used in TurboSound (3 chips), each chip has:
+ * - Independent tone/noise generators
+ * - Selectable stereo panning (muted, left, right, stereo)
+ * - Optional mono mode (all channels mixed to mono)
+ * - Global stereo mode selection (ABC vs ACB)
+ *
+ * See AUDIO_ARCHITECTURE.md for complete system details.
+ * See PORT_MAPPINGS.md for PSG port I/O details.
  */
 export class PsgChip {
+  // --- Chip ID (for multi-chip systems like Turbo Sound Next)
+  // --- 0 = chip 0 (default)
+  // --- 1 = chip 1
+  // --- 2 = chip 2
+  readonly chipId: number;
+
   // --- The last register index set
   private _psgRegisterIndex = 0;
 
@@ -59,9 +113,24 @@ export class PsgChip {
   private _posEnv: number;
 
   /**
-   * Sum of orphan samples
+   * Sum of orphan samples (total across all channels)
    */
   orphanSum = 0;
+
+  /**
+   * Sum of orphan samples for channel A
+   */
+  orphanSumA = 0;
+
+  /**
+   * Sum of orphan samples for channel B
+   */
+  orphanSumB = 0;
+
+  /**
+   * Sum of orphan samples for channel C
+   */
+  orphanSumC = 0;
 
   /**
    * Number of orphan samples
@@ -69,9 +138,25 @@ export class PsgChip {
   orphanSamples = 0;
 
   /**
+   * Current output value for channel A (latest generated value)
+   */
+  currentOutputA = 0;
+
+  /**
+   * Current output value for channel B (latest generated value)
+   */
+  currentOutputB = 0;
+
+  /**
+   * Current output value for channel C (latest generated value)
+   */
+  currentOutputC = 0;
+
+  /**
    * Reset the device when creating it
    */
-  constructor () {
+  constructor (chipId: number = 0) {
+    this.chipId = chipId & 0x03; // Limit to 0-3
     this.reset();
   }
 
@@ -91,6 +176,9 @@ export class PsgChip {
     for (let i = 0; i < this._regValues.length; i++) {
       this._regValues[i] = 0;
     }
+    
+    // --- Initialize mixer register to 0xFF (all channels disabled) to match hardware
+    this._regValues[7] = 0xff;
 
     // --- Channel A setup
     this._toneA = 0;
@@ -133,6 +221,9 @@ export class PsgChip {
 
     this.orphanSamples = 0;
     this.orphanSum = 0;
+    this.orphanSumA = 0;
+    this.orphanSumB = 0;
+    this.orphanSumC = 0;
   }
 
   /**
@@ -229,11 +320,109 @@ export class PsgChip {
   }
 
   /**
+   * Gets the state of the PSG chip for persistence
+   */
+  getState(): any {
+    return {
+      psgRegisterIndex: this._psgRegisterIndex,
+      regValues: new Uint8Array(this._regValues),
+      toneA: this._toneA,
+      toneAEnabled: this._toneAEnabled,
+      noiseAEnabled: this._noiseAEnabled,
+      volA: this._volA,
+      envA: this._envA,
+      cntA: this._cntA,
+      bitA: this._bitA,
+      toneB: this._toneB,
+      toneBEnabled: this._toneBEnabled,
+      noiseBEnabled: this._noiseBEnabled,
+      volB: this._volB,
+      envB: this._envB,
+      cntB: this._cntB,
+      bitB: this._bitB,
+      toneC: this._toneC,
+      toneCEnabled: this._toneCEnabled,
+      noiseCEnabled: this._noiseCEnabled,
+      volC: this._volC,
+      envC: this._envC,
+      cntC: this._cntC,
+      bitC: this._bitC,
+      noiseSeed: this._noiseSeed,
+      noiseFreq: this._noiseFreq,
+      cntNoise: this._cntNoise,
+      bitNoise: this._bitNoise,
+      envFreq: this._envFreq,
+      envStyle: this._envStyle,
+      cntEnv: this._cntEnv,
+      posEnv: this._posEnv
+    };
+  }
+
+  /**
+   * Sets the state of the PSG chip from persisted data
+   */
+  setState(state: any): void {
+    if (!state) return;
+
+    this._psgRegisterIndex = state.psgRegisterIndex ?? 0;
+    if (state.regValues) {
+      for (let i = 0; i < Math.min(state.regValues.length, this._regValues.length); i++) {
+        this._regValues[i] = state.regValues[i];
+      }
+    }
+    this._toneA = state.toneA ?? 0;
+    this._toneAEnabled = state.toneAEnabled ?? false;
+    this._noiseAEnabled = state.noiseAEnabled ?? false;
+    this._volA = state.volA ?? 0;
+    this._envA = state.envA ?? false;
+    this._cntA = state.cntA ?? 0;
+    this._bitA = state.bitA ?? false;
+    this._toneB = state.toneB ?? 0;
+    this._toneBEnabled = state.toneBEnabled ?? false;
+    this._noiseBEnabled = state.noiseBEnabled ?? false;
+    this._volB = state.volB ?? 0;
+    this._envB = state.envB ?? false;
+    this._cntB = state.cntB ?? 0;
+    this._bitB = state.bitB ?? false;
+    this._toneC = state.toneC ?? 0;
+    this._toneCEnabled = state.toneCEnabled ?? false;
+    this._noiseCEnabled = state.noiseCEnabled ?? false;
+    this._volC = state.volC ?? 0;
+    this._envC = state.envC ?? false;
+    this._cntC = state.cntC ?? 0;
+    this._bitC = state.bitC ?? false;
+    this._noiseSeed = state.noiseSeed ?? 0;
+    this._noiseFreq = state.noiseFreq ?? 0;
+    this._cntNoise = state.cntNoise ?? 0;
+    this._bitNoise = state.bitNoise ?? false;
+    this._envFreq = state.envFreq ?? 0;
+    this._envStyle = state.envStyle ?? 0;
+    this._cntEnv = state.cntEnv ?? 0;
+    this._posEnv = state.posEnv ?? 0;
+    
+    // --- Restore orphan sample state (transient, but may be used for serialization)
+    if (state.orphanSum !== undefined) {
+      this.orphanSum = state.orphanSum;
+      this.orphanSumA = state.orphanSumA ?? 0;
+      this.orphanSumB = state.orphanSumB ?? 0;
+      this.orphanSumC = state.orphanSumC ?? 0;
+      this.orphanSamples = state.orphanSamples ?? 0;
+    }
+  }
+
+  /**
    * Set the PSG register index
    * @param index PSG register index (0-15)
    */
   setPsgRegisterIndex (index: number): void {
     this._psgRegisterIndex = index & 0x0f;
+  }
+
+  /**
+   * Gets the current register index
+   */
+  get psgRegisterIndex (): number {
+    return this._psgRegisterIndex;
   }
 
   /**
@@ -337,10 +526,6 @@ export class PsgChip {
     }
   }
 
-  started = false;
-  samplesCount = 0;
-  samplesList: { vol: number; count: number }[] = [];
-
   /**
    * Generates the current PSG output value
    */
@@ -403,76 +588,220 @@ export class PsgChip {
       }
     }
 
-    // --- Add Channel A volume value
+    // --- Calculate channel volumes
+    let volA = 0;
+    let volB = 0;
+    let volC = 0;
+
+    // --- Channel A volume value (UNSIGNED output - matching VHDL hardware)
     let tmpVol = 0;
-    if (
-      (this._bitA && this._toneAEnabled) ||
-      (this._bitNoise && this._noiseAEnabled)
-    ) {
+    
+    if (this._toneAEnabled || this._noiseAEnabled) {
       if (this._envA) {
         tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
       } else {
         tmpVol = this._volA * 2 + 1;
       }
 
-      // --- At this point tmpVol is 0-31, let's convert it to 0-65535
-      vol += this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      // --- Convert to amplitude (0-65535 range for 16-bit software)
+      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      
+      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0 (unsigned DC-biased square wave)
+      if (this._toneAEnabled && this._bitA) {
+        volA = amplitude;
+      } else if (this._noiseAEnabled && this._bitNoise) {
+        volA = amplitude;
+      }
+      // else volA remains 0
+      
+      vol += volA;  // Total volume uses unsigned addition
     }
 
-    // --- Add Channel B volume value
-    if (
-      (this._bitB && this._toneBEnabled) ||
-      (this._bitNoise && this._noiseBEnabled)
-    ) {
+    // --- Channel B volume value (UNSIGNED output)
+    
+    if (this._toneBEnabled || this._noiseBEnabled) {
       if (this._envB) {
         tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
       } else {
         tmpVol = this._volB * 2 + 1;
       }
 
-      // --- At this point tmpVol is 0-31, let's convert it to 0-65535
-      vol += this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      // --- Convert to amplitude (0-65535 range)
+      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      
+      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0
+      if (this._toneBEnabled && this._bitB) {
+        volB = amplitude;
+      } else if (this._noiseBEnabled && this._bitNoise) {
+        volB = amplitude;
+      }
+      
+      vol += volB;
     }
 
-    // --- Add Channel C volume value
-    if (
-      (this._bitC && this._toneCEnabled) ||
-      (this._bitNoise && this._noiseCEnabled)
-    ) {
+    // --- Channel C volume value (UNSIGNED output)
+    
+    if (this._toneCEnabled || this._noiseCEnabled) {
       if (this._envC) {
         tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
       } else {
         tmpVol = this._volC * 2 + 1;
       }
 
-      // --- At this point tmpVol is 0-31, let's convert it to 0-65535
-      vol += this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      // --- Convert to amplitude (0-65535 range)
+      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      
+      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0
+      if (this._toneCEnabled && this._bitC) {
+        volC = amplitude;
+      } else if (this._noiseCEnabled && this._bitNoise) {
+        volC = amplitude;
+      }
+      
+      vol += volC;
     }
 
+    // --- Store current output values (UNSIGNED - matching hardware)
+    this.currentOutputA = volA;
+    this.currentOutputB = volB;
+    this.currentOutputC = volC;
+
+    // --- Store for orphan sample tracking
+    this.orphanSumA += volA;
+    this.orphanSumB += volB;
+    this.orphanSumC += volC;
     this.orphanSum += vol;
     this.orphanSamples += 1;
+  }
 
-    // --- Diagnostics
-    if (!this.started && vol > 0) {
-      this.started = true;
-    }
-
-    if (this.started && this.samplesCount < 20000) {
-      if (this.samplesCount) {
-        const lastSample = this.samplesList[this.samplesList.length - 1];
-        if (lastSample.vol === vol) {
-          lastSample.count++;
-        } else {
-          this.samplesList.push({ vol, count: 0 });
-        }
+  /**
+   * Gets the current output volume for channel A (-32768 to +32767)
+   */
+  getChannelAVolume (): number {
+    let vol = 0;
+    
+    if (this._toneAEnabled || this._noiseAEnabled) {
+      let tmpVol = 0;
+      if (this._envA) {
+        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
       } else {
-        this.samplesList.push({ vol, count: 0 });
+        tmpVol = this._volA * 2 + 1;
       }
-      this.samplesCount++;
-      // if (this.samplesCount === 20000) {
-      //   console.log(this.samplesList);
-      // }
+      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      
+      // Return signed value based on tone bit state
+      if (this._toneAEnabled) {
+        vol = this._bitA ? amplitude : -amplitude;
+      } else if (this._noiseAEnabled) {
+        vol = this._bitNoise ? amplitude : -amplitude;
+      }
     }
+    return vol;
+  }
+
+  /**
+   * Gets the current output volume for channel B (-32768 to +32767)
+   */
+  getChannelBVolume (): number {
+    let vol = 0;
+    
+    if (this._toneBEnabled || this._noiseBEnabled) {
+      let tmpVol = 0;
+      if (this._envB) {
+        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      } else {
+        tmpVol = this._volB * 2 + 1;
+      }
+      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      
+      // Return signed value based on tone bit state
+      if (this._toneBEnabled) {
+        vol = this._bitB ? amplitude : -amplitude;
+      } else if (this._noiseBEnabled) {
+        vol = this._bitNoise ? amplitude : -amplitude;
+      }
+    }
+    return vol;
+  }
+
+  /**
+   * Gets the current output volume for channel C (-32768 to +32767)
+   */
+  getChannelCVolume (): number {
+    let vol = 0;
+    
+    if (this._toneCEnabled || this._noiseCEnabled) {
+      let tmpVol = 0;
+      if (this._envC) {
+        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      } else {
+        tmpVol = this._volC * 2 + 1;
+      }
+      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      
+      // Return signed value based on tone bit state
+      if (this._toneCEnabled) {
+        vol = this._bitC ? amplitude : -amplitude;
+      } else if (this._noiseCEnabled) {
+        vol = this._bitNoise ? amplitude : -amplitude;
+      }
+    }
+    return vol;
+  }
+
+  /**
+   * Gets debug information about the PSG chip for inspection
+   */
+  getDebugInfo(): any {
+    return {
+      chipId: this.chipId,
+      registerIndex: this._psgRegisterIndex,
+      registers: Array.from(this._regValues),
+      channels: {
+        a: {
+          tone: this._toneA,
+          toneEnabled: this._toneAEnabled,
+          volume: this._volA,
+          envelope: this._envA,
+          noiseEnabled: this._noiseAEnabled,
+          counter: this._cntA,
+          bit: this._bitA,
+          output: this.getChannelAVolume()
+        },
+        b: {
+          tone: this._toneB,
+          toneEnabled: this._toneBEnabled,
+          volume: this._volB,
+          envelope: this._envB,
+          noiseEnabled: this._noiseBEnabled,
+          counter: this._cntB,
+          bit: this._bitB,
+          output: this.getChannelBVolume()
+        },
+        c: {
+          tone: this._toneC,
+          toneEnabled: this._toneCEnabled,
+          volume: this._volC,
+          envelope: this._envC,
+          noiseEnabled: this._noiseCEnabled,
+          counter: this._cntC,
+          bit: this._bitC,
+          output: this.getChannelCVolume()
+        }
+      },
+      noise: {
+        frequency: this._noiseFreq,
+        seed: this._noiseSeed,
+        counter: this._cntNoise,
+        bit: this._bitNoise
+      },
+      envelope: {
+        frequency: this._envFreq,
+        style: this._envStyle,
+        counter: this._cntEnv,
+        position: this._posEnv
+      }
+    };
   }
 }
 

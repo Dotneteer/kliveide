@@ -7,6 +7,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { MachineModel } from "@common/machines/info-types";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
@@ -40,6 +41,8 @@ import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
+import { AudioControlDevice } from "./AudioControlDevice";
+import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
 const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
 const SP_KEY_WAIT = 250;
@@ -99,6 +102,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   beeperDevice: ISpectrumBeeperDevice;
 
   /**
+   * Audio control device that manages TurboSound, DAC, and mixer
+   */
+  audioControlDevice: AudioControlDevice;
+
+  /**
    * Represents the floating port device of ZX Spectrum 48K
    */
   floatingBusDevice: IFloatingBusDevice;
@@ -146,6 +154,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.mouseDevice = new MouseDevice(this);
     this.joystickDevice = new JoystickDevice(this);
     this.soundDevice = new NextSoundDevice(this);
+    this.audioControlDevice = new AudioControlDevice(this);
+    
     this.ulaDevice = new UlaDevice(this);
     this.hardReset();
   }
@@ -206,8 +216,22 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.mouseDevice.reset();
     this.joystickDevice.reset();
     this.soundDevice.reset();
+    this.audioControlDevice.reset();
     this.ulaDevice.reset();
     this.beeperDevice.reset();
+    
+    // --- Configure audio sample rate for beeper device
+    const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+    if (typeof audioRate === "number") {
+      this.beeperDevice.setAudioSampleRate(audioRate);
+      
+      // --- Also configure TurboSoundDevice with the same sample rate
+      this.audioControlDevice.getTurboSoundDevice().setAudioSampleRate(
+        this.baseClockFrequency,
+        audioRate
+      );
+    }
+    
     this.expansionBusDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices
@@ -216,6 +240,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Set default machine type
     this.nextRegDevice.configMode = false;
     this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
+  }
+
+  /**
+   * Get audio device state for persistence
+   */
+  getAudioDeviceState(): any {
+    return this.audioControlDevice.getState();
+  }
+
+  /**
+   * Restore audio device state from persisted data
+   */
+  setAudioDeviceState(state: any): void {
+    this.audioControlDevice.setState(state);
   }
 
   async setup(): Promise<void> {
@@ -480,9 +518,84 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Gets the audio samples rendered in the current frame
    */
-  getAudioSamples(): number[] {
-    // TODO: Implement this
-    return [];
+  getAudioSamples(): AudioSample[] {
+    // Get the mixer device
+    const mixer = this.audioControlDevice.getAudioMixerDevice();
+    const turboSound = this.audioControlDevice.getTurboSoundDevice();
+
+    // Determine if we should log detail for this frame
+    // Logic: First non-zero frame after 200, then wait 2 frames, log the 3rd frame
+    const frameCount = (turboSound as any)._frameCount;
+    const firstNonZeroFrame = (turboSound as any)._firstNonZeroFrame;
+    const shouldLogDetail = firstNonZeroFrame > 0 && frameCount === firstNonZeroFrame + 2;
+
+    // Get time-series sample arrays from both devices
+    const beeperSamples = this.beeperDevice.getAudioSamples();
+    const turboSoundSamples = this.soundDevice.enableTurbosound 
+      ? turboSound.getAudioSamples() 
+      : [];
+
+    // Both should have the same length, but handle mismatch gracefully
+    const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);
+    
+    if (shouldLogDetail) {
+      console.log(`[AUDIO F${frameCount}] Beeper:${beeperSamples.length}s TurboSound:${turboSoundSamples.length}s`);
+    }
+
+    // For each sample time, combine beeper + PSG + DAC in mixer
+    const mixedSamples: AudioSample[] = [];
+    const sampleDetails: Array<{ear: number, psgL: number, psgR: number, mixL: number, mixR: number}> = [];
+    
+    for (let i = 0; i < sampleCount; i++) {
+      // Get beeper sample (or 0 if out of range)
+      const earLevel = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
+      mixer.setEarLevel(earLevel);
+
+      // Get PSG sample (or 0 if out of range or disabled)
+      const psgSample = i < turboSoundSamples.length 
+        ? turboSoundSamples[i] 
+        : { left: 0, right: 0 };
+      mixer.setPsgOutput(psgSample);
+
+      // Get the mixed output (includes EAR, MIC, PSG, DAC)
+      const mixed = mixer.getMixedOutput();
+      mixedSamples.push(mixed);
+
+      // Track details for logging
+      if (shouldLogDetail && i < 100) {
+        sampleDetails.push({
+          ear: earLevel,
+          psgL: psgSample.left,
+          psgR: psgSample.right,
+          mixL: mixed.left,
+          mixR: mixed.right
+        });
+      }
+    }
+
+    // Log detailed sample information for diagnostic frame
+    if (shouldLogDetail) {
+      console.log(`[SAMPLES F${frameCount}] ${mixedSamples.length}s:`);
+      
+      for (let i = 0; i < sampleDetails.length; i++) {
+        const s = sampleDetails[i];
+        console.log(`  ${i}: ear=${s.ear.toFixed(2)} psg=(${s.psgL},${s.psgR}) → mix=(${s.mixL},${s.mixR})`);
+      }
+      
+      // Calculate statistics
+      const leftVals = mixedSamples.map(s => s.left);
+      const rightVals = mixedSamples.map(s => s.right);
+      const minL = Math.min(...leftVals);
+      const maxL = Math.max(...leftVals);
+      const avgL = leftVals.reduce((a, b) => a + b, 0) / leftVals.length;
+      const minR = Math.min(...rightVals);
+      const maxR = Math.max(...rightVals);
+      const avgR = rightVals.reduce((a, b) => a + b, 0) / rightVals.length;
+      
+      console.log(`  Stats: L(min=${minL} max=${maxL} avg=${avgL.toFixed(0)}) R(min=${minR} max=${maxR} avg=${avgR.toFixed(0)})`);
+    }
+
+    return mixedSamples;
   }
 
   /**
@@ -967,6 +1080,21 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
+
+    // --- Prepare audio devices for the new frame
+    this.audioControlDevice.getTurboSoundDevice().onNewFrame();
+    this.audioControlDevice.getDacDevice().onNewFrame();
+    this.audioControlDevice.getAudioMixerDevice().onNewFrame();
+  }
+
+  /**
+   * Called after each Z80 instruction executes
+   */
+  afterInstructionExecuted(): void {
+    super.afterInstructionExecuted();
+    this.audioControlDevice.getTurboSoundDevice().calculateCurrentAudioValue(this.tacts);
+    this.audioControlDevice.getDacDevice().calculateCurrentAudioValue();
+    this.audioControlDevice.getAudioMixerDevice().calculateCurrentAudioValue();
   }
 
   /**
@@ -976,6 +1104,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   shouldRaiseInterrupt(): boolean {
     return this.composedScreenDevice.pulseIntActive;
   }
+
+
 
   /**
    * Every time the CPU clock is incremented, this function is executed.
@@ -987,6 +1117,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();
+
+    // --- Generate audio samples for all audio devices
+    // Pass machine tacts and clock multiplier for proper sample timing
+    this.audioControlDevice.getTurboSoundDevice().setNextAudioSample(this.tacts, this.clockMultiplier);
+    this.audioControlDevice.getDacDevice().setNextAudioSample();
+    this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
   }
 
   /**

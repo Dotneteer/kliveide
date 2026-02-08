@@ -271,101 +271,101 @@ export class NextIoPortManager {
       port: 0xfffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1100_0000_0000_0101,
-      readerFns: readAyRegPort,
-      writerFns: writeAyRegPort
+      readerFns: (p) => readAyRegPort(machine, p),
+      writerFns: (_, v) => writeAyRegPort(machine, v)
     });
     r({
       description: "AY data",
       port: 0xbffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1000_0000_0000_0101,
-      readerFns: readAyDatPort,
-      writerFns: writeAyDatPort
+      readerFns: (p) => readAyDatPort(machine, p),
+      writerFns: (_, v) => writeAyDatPort(machine, v)
     });
     r({
       description: "AY info",
       port: 0xbff5,
       pmask: 0b1100_0000_0000_1111,
       value: 0b1000_0000_0000_0101,
-      readerFns: readAyDatPort,
-      writerFns: writeAyDatPort
+      readerFns: (p) => readAyDatPort(machine, p),
+      writerFns: (_, v) => writeAyDatPort(machine, v)
     });
     r({
       description: "DAC A",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b1000_0000_0001_1111,
-      writerFns: writeDacAPort
+      writerFns: (_, v) => writeDacAPort(machine, v)
     });
     r({
       description: "DAC A",
       port: 0xf1,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0001,
-      writerFns: writeDacAPort
+      writerFns: (_, v) => writeDacAPort(machine, v)
     });
     r({
       description: "DAC A",
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      writerFns: writeDacAPort
+      writerFns: (_, v) => writeDacAPort(machine, v)
     });
     r({
       description: "DAC B",
       port: 0x0f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0000_1111,
-      writerFns: writeDacBPort
+      writerFns: (_, v) => writeDacBPort(machine, v)
     });
     r({
       description: "DAC B",
       port: 0xf3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0011,
-      writerFns: writeDacBPort
+      writerFns: (_, v) => writeDacBPort(machine, v)
     });
     r({
       description: "DAC A,D",
       port: 0xdf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
-      writerFns: writeDacAandDPort
+      writerFns: (_, v) => writeDacAandDPort(machine, v)
     });
     r({
       description: "DAC A,D",
       port: 0xfb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1011,
-      writerFns: writeDacAandDPort
+      writerFns: (_, v) => writeDacAandDPort(machine, v)
     });
     r({
       description: "DAC B,C",
       port: 0xb3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1011_0011,
-      writerFns: writeDacBandCPort
+      writerFns: (_, v) => writeDacBandCPort(machine, v)
     });
     r({
       description: "DAC C",
       port: 0x4f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0100_1111,
-      writerFns: writeDacCPort
+      writerFns: (_, v) => writeDacCPort(machine, v)
     });
     r({
       description: "DAC C",
       port: 0xf9,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1001,
-      writerFns: writeDacCPort
+      writerFns: (_, v) => writeDacCPort(machine, v)
     });
     r({
       description: "DAC D",
       port: 0x5f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1111,
-      writerFns: writeDacCPort
+      writerFns: (_, v) => writeDacDPort(machine, v)
     });
     r({
       description: "SPI CS",
