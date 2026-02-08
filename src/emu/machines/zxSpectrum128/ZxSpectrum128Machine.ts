@@ -2,6 +2,7 @@ import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
+import type { CodeToInject } from "@abstractions/CodeToInject";
 
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
@@ -625,6 +626,51 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   onTactIncremented(): void {
     super.onTactIncremented();
     this.psgDevice.setNextAudioSample();
+  }
+
+  /**
+   * Injects the specified code into the ZX Spectrum 128 machine
+   * This overrides the base implementation to support bank segments
+   * @param codeToInject Code to inject into the machine
+   * @returns The start address of the injected code
+   */
+  injectCodeToRun(codeToInject: CodeToInject): number {
+    // --- Clear the screen unless otherwise requested
+    if (!codeToInject.options.noCls) {
+      for (let addr = 0x4000; addr < 0x5800; addr++) {
+        this.writeMemory(addr, 0);
+      }
+      for (let addr = 0x5800; addr < 0x5b00; addr++) {
+        this.writeMemory(addr, 0x38);
+      }
+    }
+
+    // --- Inject each segment
+    for (const segment of codeToInject.segments) {
+      if (segment.bank !== undefined) {
+        // --- Write to banked memory
+        const bankOffset = this.memory.getPartitionOffset(segment.bank);
+        const baseAddr = bankOffset + (segment.bankOffset ?? 0);
+        for (let i = 0; i < segment.emittedCode.length; i++) {
+          this.memory.memory[baseAddr + i] = segment.emittedCode[i];
+        }
+      } else {
+        // --- Write to addressable memory (paged)
+        const addr = segment.startAddress;
+        for (let i = 0; i < segment.emittedCode.length; i++) {
+          this.writeMemory(addr + i, segment.emittedCode[i]);
+        }
+      }
+    }
+
+    // --- Prepare the run mode
+    if (codeToInject.options.cursork) {
+      // --- Set the keyboard in "L" mode
+      this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
+    }
+
+    // --- Use this start point
+    return codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
   }
 
   /**
