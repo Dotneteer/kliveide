@@ -155,6 +155,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice = new JoystickDevice(this);
     this.soundDevice = new NextSoundDevice(this);
     this.audioControlDevice = new AudioControlDevice(this);
+    
     this.ulaDevice = new UlaDevice(this);
     this.hardReset();
   }

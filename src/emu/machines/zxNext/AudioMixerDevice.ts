@@ -104,6 +104,10 @@ export class AudioMixerDevice {
   // Volume scaling factors (0-100 or 0-1.0)
   private volumeScale: number = 1.0;
 
+  // Capture state for diagnostic logging
+  private _mixerCaptureStarted = false;
+  private _mixerCapturedSamples: number[] = [];
+
   constructor(dac: DacDevice) {
     this.dac = dac;
   }
@@ -215,10 +219,18 @@ export class AudioMixerDevice {
     left += this.micLevel;
     right += this.micLevel;
 
-    // Add PSG output (12-bit range: 0-65535)
-    // Scale to mix with other sources: divide by 8 to bring into similar range
-    left += Math.floor(this.psgOutput.left / 8);
-    right += Math.floor(this.psgOutput.right / 8);
+    // Add PSG output (unsigned 16-bit range: 0-65535)
+    // Only center when PSG is significantly above silence (~20000+) to preserve AC characteristics
+    // When PSG is quiet or silent, keep it positive to avoid drowning out beeper signal
+    const psgLeftCentered = this.psgOutput.left > 20000 
+      ? Math.floor((this.psgOutput.left - 32768) / 8)
+      : Math.floor(this.psgOutput.left / 8);
+    const psgRightCentered = this.psgOutput.right > 20000 
+      ? Math.floor((this.psgOutput.right - 32768) / 8)
+      : Math.floor(this.psgOutput.right / 8);
+    
+    left += psgLeftCentered;
+    right += psgRightCentered;
 
     // Add DAC output (16-bit signed range: -32768 to 32767)
     // Shift by 128 to make positive, then scale to 13-bit
@@ -239,7 +251,30 @@ export class AudioMixerDevice {
     left = Math.max(-32768, Math.min(32767, left));
     right = Math.max(-32768, Math.min(32767, right));
 
+    // Capture for diagnostics
+    if (this._mixerCaptureStarted) {
+      this._mixerCapturedSamples.push(left);
+    }
+
     return { left, right };
+  }
+
+  /**
+   * Start capturing mixer output
+   */
+  startMixerCapture(): void {
+    this._mixerCaptureStarted = true;
+    this._mixerCapturedSamples = [];
+  }
+
+  /**
+   * Stop capturing mixer output and return CSV
+   */
+  stopMixerCapture(): string {
+    this._mixerCaptureStarted = false;
+    const csv = this._mixerCapturedSamples.join(",");
+    this._mixerCapturedSamples = [];
+    return csv;
   }
 
   /**

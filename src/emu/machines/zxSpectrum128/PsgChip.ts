@@ -110,14 +110,44 @@ export class PsgChip {
   private _posEnv: number;
 
   /**
-   * Sum of orphan samples
+   * Sum of orphan samples (total across all channels)
    */
   orphanSum = 0;
+
+  /**
+   * Sum of orphan samples for channel A
+   */
+  orphanSumA = 0;
+
+  /**
+   * Sum of orphan samples for channel B
+   */
+  orphanSumB = 0;
+
+  /**
+   * Sum of orphan samples for channel C
+   */
+  orphanSumC = 0;
 
   /**
    * Number of orphan samples
    */
   orphanSamples = 0;
+
+  /**
+   * Current output value for channel A (latest generated value)
+   */
+  currentOutputA = 0;
+
+  /**
+   * Current output value for channel B (latest generated value)
+   */
+  currentOutputB = 0;
+
+  /**
+   * Current output value for channel C (latest generated value)
+   */
+  currentOutputC = 0;
 
   /**
    * Reset the device when creating it
@@ -188,6 +218,9 @@ export class PsgChip {
 
     this.orphanSamples = 0;
     this.orphanSum = 0;
+    this.orphanSumA = 0;
+    this.orphanSumB = 0;
+    this.orphanSumC = 0;
   }
 
   /**
@@ -363,6 +396,15 @@ export class PsgChip {
     this._envStyle = state.envStyle ?? 0;
     this._cntEnv = state.cntEnv ?? 0;
     this._posEnv = state.posEnv ?? 0;
+    
+    // --- Restore orphan sample state (transient, but may be used for serialization)
+    if (state.orphanSum !== undefined) {
+      this.orphanSum = state.orphanSum;
+      this.orphanSumA = state.orphanSumA ?? 0;
+      this.orphanSumB = state.orphanSumB ?? 0;
+      this.orphanSumC = state.orphanSumC ?? 0;
+      this.orphanSamples = state.orphanSamples ?? 0;
+    }
   }
 
   /**
@@ -547,6 +589,11 @@ export class PsgChip {
       }
     }
 
+    // --- Calculate channel volumes
+    let volA = 0;
+    let volB = 0;
+    let volC = 0;
+
     // --- Add Channel A volume value
     let tmpVol = 0;
     if (
@@ -560,7 +607,8 @@ export class PsgChip {
       }
 
       // --- At this point tmpVol is 0-31, let's convert it to 0-65535
-      vol += this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      volA = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      vol += volA;
     }
 
     // --- Add Channel B volume value
@@ -575,7 +623,8 @@ export class PsgChip {
       }
 
       // --- At this point tmpVol is 0-31, let's convert it to 0-65535
-      vol += this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      volB = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      vol += volB;
     }
 
     // --- Add Channel C volume value
@@ -590,9 +639,18 @@ export class PsgChip {
       }
 
       // --- At this point tmpVol is 0-31, let's convert it to 0-65535
-      vol += this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      volC = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+      vol += volC;
     }
 
+    // --- Store current output values (for preserving envelope shape in audio)
+    this.currentOutputA = volA;
+    this.currentOutputB = volB;
+    this.currentOutputC = volC;
+
+    this.orphanSumA += volA;
+    this.orphanSumB += volB;
+    this.orphanSumC += volC;
     this.orphanSum += vol;
     this.orphanSamples += 1;
 
@@ -735,6 +793,9 @@ export class PsgChip {
         started: this.started,
         samplesCount: this.samplesCount,
         orphanSum: this.orphanSum,
+        orphanSumA: this.orphanSumA,
+        orphanSumB: this.orphanSumB,
+        orphanSumC: this.orphanSumC,
         orphanSamples: this.orphanSamples
       }
     };

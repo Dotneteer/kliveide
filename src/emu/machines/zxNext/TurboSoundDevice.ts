@@ -92,13 +92,9 @@ export class TurboSoundDevice {
   private _lastCpuTact = 0; // Last CPU tact when PSG was updated
   private _psgTactRemainder = 0; // Fractional PSG tacts to carry forward
 
-  // --- Diagnostics: track samples per frame
-  private _samplesThisFrame = 0;
-  private _sampleSumThisFrame = 0;
-  private _frameCount = 0;
-  private _samplesThisFrameDetails: Array<{vol: number, left: number, right: number}> = [];
-  private _firstNonZeroFrame = -1;
-  private _shouldLogNextFrame = false;
+  // --- Simple diagnostics: capture TurboSound samples for non-zero frames
+  private _turboSoundFrameSamples: number[] = [];
+  private _turboSoundFrameSum = 0;
 
   /**
    * Initialize the Turbo Sound device
@@ -110,6 +106,9 @@ export class TurboSoundDevice {
     this.reset();
   }
 
+  /**
+   * Set the mixer device reference for diagnostic capture
+   */
   /**
    * Sets up the sample rate to use with this device
    * @param baseClockFrequency Base CPU clock frequency
@@ -309,10 +308,32 @@ export class TurboSoundDevice {
     const chip = this._chips[id];
     const panning = this._chipPanning[id];
 
-    // Get the current volume for each channel
-    const volA = chip.getChannelAVolume();
-    const volB = chip.getChannelBVolume();
-    const volC = chip.getChannelCVolume();
+    // Get the volume for each channel
+    // For proper envelope visualization, we use the AVERAGE of accumulated samples
+    // This shows the time-weighted amplitude that includes envelope effect
+    let volA = 0;
+    let volB = 0;
+    let volC = 0;
+
+    if (chip.orphanSamples > 0) {
+      // Average the accumulated values to preserve envelope dynamics
+      // Averaging shows the envelope by revealing time-weighted amplitude changes
+      volA = Math.round(chip.orphanSumA / chip.orphanSamples);
+      volB = Math.round(chip.orphanSumB / chip.orphanSamples);
+      volC = Math.round(chip.orphanSumC / chip.orphanSamples);
+
+      // Reset orphan counters after consuming (for next sample period)
+      chip.orphanSum = 0;
+      chip.orphanSumA = 0;
+      chip.orphanSumB = 0;
+      chip.orphanSumC = 0;
+      chip.orphanSamples = 0;
+    } else {
+      // No orphan samples accumulated yet, use most recent values
+      volA = chip.currentOutputA;
+      volB = chip.currentOutputB;
+      volC = chip.currentOutputC;
+    }
 
     let left = 0;
     let right = 0;
@@ -534,63 +555,14 @@ export class TurboSoundDevice {
    * Called at the start of each frame to clear samples
    */
   onNewFrame(): void {
-    // Log summary from previous frame
-    if (this._frameCount > 0) {
-      console.log(`[F${this._frameCount}] TS: ${this._samplesThisFrame}s Σ=${this._sampleSumThisFrame}`);
-      
-      // Detect first non-zero frame after frame 200
-      if (this._frameCount > 200 && this._sampleSumThisFrame > 0 && this._firstNonZeroFrame === -1) {
-        this._firstNonZeroFrame = this._frameCount;
-        console.log(`[TRIGGER] First non-zero F${this._firstNonZeroFrame}`);
-      }
-      
-      // Check if we should log the next frame in detail (2 frames after first non-zero)
-      if (this._firstNonZeroFrame > 0 && this._frameCount === this._firstNonZeroFrame + 2) {
-        this._shouldLogNextFrame = true;
-        console.log(`[TRIGGER] Detail logging F${this._frameCount + 1}`);
-      }
-      
-      // If we were logging details in the previous frame, output all samples now
-      if (this._shouldLogNextFrame && this._samplesThisFrameDetails.length > 0) {
-        console.log(`[SAMPLES F${this._frameCount - 1}] ${this._samplesThisFrameDetails.length}s:`);
-        for (let i = 0; i < this._samplesThisFrameDetails.length; i++) {
-          const s = this._samplesThisFrameDetails[i];
-          console.log(`  ${i}: l=${s.left} r=${s.right} t=${s.vol}`);
-        }
-        
-        // Calculate statistics
-        const avg = this._samplesThisFrameDetails.reduce((sum, s) => sum + s.vol, 0) / this._samplesThisFrameDetails.length;
-        const max = Math.max(...this._samplesThisFrameDetails.map(s => s.vol));
-        const min = Math.min(...this._samplesThisFrameDetails.map(s => s.vol));
-        console.log(`  Stats: min=${min} max=${max} avg=${avg.toFixed(0)}`);
-        
-        // Log PSG register values for all 3 chips
-        console.log(`[PSG F${this._frameCount - 1}]:`);
-        for (let chipId = 0; chipId < 3; chipId++) {
-          const chip = this._chips[chipId];
-          const chipState = chip.getPsgData();
-          if (chipState && chipState.regValues) {
-            const r = chipState.regValues;
-            console.log(`  C${chipId}: TA=${r[0]},${r[1]} TB=${r[2]},${r[3]} NP=${r[4]} EP=${r[5]},${r[6]} Mix=${r[7].toString(16)} VA=${r[8]} VB=${r[9]} VC=${r[10]} ES=${r[11]} EP=${r[12]},${r[13]}`);
-          } else {
-            console.log(`  C${chipId}: N/A`);
-          }
-        }
-        
-        this._samplesThisFrameDetails = [];
-        this._shouldLogNextFrame = false;
-      }
+    // If frame has non-zero samples, log them
+    if (this._turboSoundFrameSum > 0 && this._turboSoundFrameSamples.length > 0) {
+      console.log(this._turboSoundFrameSamples.join(','));
     }
-
-    // Reset counters for new frame
-    this._samplesThisFrame = 0;
-    this._sampleSumThisFrame = 0;
-    if (!this._shouldLogNextFrame) {
-      this._samplesThisFrameDetails = [];
-    }
-    this._frameCount++;
     
-    // Clear audio samples for new frame
+    // Clear frame samples for new frame
+    this._turboSoundFrameSamples = [];
+    this._turboSoundFrameSum = 0;
     this._audioSamples.length = 0;
     
     // Reset PSG tact tracking for new frame
@@ -653,19 +625,9 @@ export class TurboSoundDevice {
     const sample = { left: totalLeft, right: totalRight };
     this._audioSamples.push(sample);
 
-    // Track samples for diagnostics
-    this._samplesThisFrame++;
-    const totalVolume = totalLeft + totalRight;
-    this._sampleSumThisFrame += totalVolume;
-    
-    // Store sample details for later logging
-    if (this._shouldLogNextFrame) {
-      this._samplesThisFrameDetails.push({
-        vol: totalVolume,
-        left: totalLeft,
-        right: totalRight
-      });
-    }
+    // Capture TurboSound left channel for diagnostics
+    this._turboSoundFrameSamples.push(totalLeft);
+    this._turboSoundFrameSum += totalLeft;
 
     // Advance to next sample time, accounting for clock multiplier
     this._audioNextSampleTact += this._audioSampleLength * clockMultiplier;
