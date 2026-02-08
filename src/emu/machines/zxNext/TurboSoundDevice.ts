@@ -92,10 +92,6 @@ export class TurboSoundDevice {
   private _lastCpuTact = 0; // Last CPU tact when PSG was updated
   private _psgTactRemainder = 0; // Fractional PSG tacts to carry forward
 
-  // --- Simple diagnostics: capture TurboSound samples for non-zero frames
-  private _turboSoundFrameSamples: number[] = [];
-  private _turboSoundFrameSum = 0;
-
   /**
    * Initialize the Turbo Sound device
    * @param baseClockFrequency Base CPU clock frequency (default 3,500,000 Hz)
@@ -541,14 +537,7 @@ export class TurboSoundDevice {
    * Called at the start of each frame to clear samples
    */
   onNewFrame(): void {
-    // If frame has non-zero samples, log them
-    if (this._turboSoundFrameSum > 0 && this._turboSoundFrameSamples.length > 0) {
-      console.log(this._turboSoundFrameSamples.join(','));
-    }
-    
     // Clear frame samples for new frame
-    this._turboSoundFrameSamples = [];
-    this._turboSoundFrameSum = 0;
     this._audioSamples.length = 0;
     
     // Reset PSG tact tracking for new frame
@@ -610,10 +599,6 @@ export class TurboSoundDevice {
     // Store the sample
     const sample = { left: totalLeft, right: totalRight };
     this._audioSamples.push(sample);
-
-    // Capture TurboSound left channel for diagnostics
-    this._turboSoundFrameSamples.push(totalLeft);
-    this._turboSoundFrameSum += totalLeft;
 
     // Advance to next sample time, accounting for clock multiplier
     this._audioNextSampleTact += this._audioSampleLength * clockMultiplier;

@@ -94,9 +94,9 @@ describe("Step 16: DAC Playback Testing", () => {
       const dac = machine.audioControlDevice.getDacDevice();
 
       const output = dac.getStereoOutput();
-      // 0x80 is -128 when signed, so -128 * 256 * 2 = -65536
-      expect(output.left).toBe(-65536);
-      expect(output.right).toBe(-65536);
+      // 0x80 is center (0), so 0 * 256 * 2 = 0
+      expect(output.left).toBe(0);
+      expect(output.right).toBe(0);
     });
 
     it("should generate negative left output with low values", () => {
@@ -105,8 +105,8 @@ describe("Step 16: DAC Playback Testing", () => {
       dac.setDacA(0xFF);
       dac.setDacB(0xFF);
       const output = dac.getStereoOutput();
-      // 0xFF = -1 when signed, so -1 * 256 * 2 = -512
-      expect(output.left).toBeLessThan(0);
+      // 0xFF = 127 when signed (val-128), so 127 * 256 * 2 = 65024
+      expect(output.left).toBeGreaterThan(0);
     });
 
     it("should generate positive left output with high values", () => {
@@ -115,10 +115,8 @@ describe("Step 16: DAC Playback Testing", () => {
       dac.setDacA(0x00);
       dac.setDacB(0x00);
       const output = dac.getStereoOutput();
-      // 0x00 = 0 when signed, so 0 * 256 * 2 = 0 (not greater than 0)
-      // So we need values that produce positive: 0x01-0x7F
-      // Let's just verify it produces 0 for minimum
-      expect(output.left).toBe(0);
+      // 0x00 = -128 when signed, so -128 * 256 * 2 = -65536
+      expect(output.left).toBe(-65536);
     });
 
     it("should combine left channels (A + B)", () => {
@@ -164,10 +162,10 @@ describe("Step 16: DAC Playback Testing", () => {
       dac.setDacD(0xFF);
 
       const output = dac.getStereoOutput();
-      // Left: 0x00 = 0 when signed, 0 * 256 = 0 for each, so 0 total
-      expect(output.left).toBe(0);
-      // Right: 0xFF = -1 when signed, -1 * 256 = -256 for each, so -512 total
-      expect(output.right).toBe(-512);
+      // Left: 0x00 = -128 when signed, -128 * 256 = -32768 for each, so -65536 total
+      expect(output.left).toBe(-65536);
+      // Right: 0xFF = 127 when signed, 127 * 256 = 32512 for each, so 65024 total
+      expect(output.right).toBe(65024);
     });
   });
 
@@ -276,16 +274,16 @@ describe("Step 16: DAC Playback Testing", () => {
       const dac = machine.audioControlDevice.getDacDevice();
 
       // Left channel: mix two streams
-      dac.setDacA(0x70);
-      dac.setDacB(0x90);
+      dac.setDacA(0x70);  // -16 when signed
+      dac.setDacB(0xA0);  // 32 when signed
       dac.setDacC(0x80);
       dac.setDacD(0x80);
 
       const output = dac.getStereoOutput();
-      // Left has non-center values
-      expect(output.left).not.toBe(-65536);
+      // Left has non-center values (-16*256 + 32*256 = -4096 + 8192 = 4096)
+      expect(output.left).not.toBe(0);
       // Right is centered (0x80 values)
-      expect(output.right).toBe(-65536);
+      expect(output.right).toBe(0);
     });
 
     it("should support independent right channel playback (C and D)", () => {
@@ -294,14 +292,14 @@ describe("Step 16: DAC Playback Testing", () => {
       // Right channel: mix two streams
       dac.setDacA(0x80);
       dac.setDacB(0x80);
-      dac.setDacC(0x70);
-      dac.setDacD(0x90);
+      dac.setDacC(0x70);  // -16 when signed
+      dac.setDacD(0xA0);  // 32 when signed
 
       const output = dac.getStereoOutput();
       // Left is centered (0x80 values)
-      expect(output.left).toBe(-65536);
-      // Right has non-center values
-      expect(output.right).not.toBe(-65536);
+      expect(output.left).toBe(0);
+      // Right has non-center values (-16*256 + 32*256 = 4096)
+      expect(output.right).not.toBe(0);
     });
 
     it("should support stereo playback with different left/right content", () => {
@@ -575,10 +573,10 @@ describe("Step 16: DAC Playback Testing", () => {
       dac.reset();
 
       const output = dac.getStereoOutput();
-      // After reset, all channels are 0x80
-      // 0x80 = -128 when signed, so -128 * 256 * 2 = -65536
-      expect(output.left).toBe(-65536);
-      expect(output.right).toBe(-65536);
+      // After reset, all channels are 0x80 (center)
+      // 0x80 = 0 when signed, so 0 * 256 * 2 = 0
+      expect(output.left).toBe(0);
+      expect(output.right).toBe(0);
     });
   });
 

@@ -30,12 +30,12 @@ describe("DacDevice Step 5: Create DAC Device", () => {
       expect(values).toEqual([0x80, 0x80, 0x80, 0x80]);
     });
 
-    it("should initialize stereo output to -65536 (all channels at -128 * 256)", () => {
+    it("should initialize stereo output to 0 (all channels at center)", () => {
       const output = device.getStereoOutput();
-      // 0x80 = -128 as signed, -128 * 256 = -32768 per channel
-      // Two channels: -32768 + -32768 = -65536
-      expect(output.left).toBe(-65536);
-      expect(output.right).toBe(-65536);
+      // 0x80 = 0 as signed (center), 0 * 256 = 0 per channel
+      // Two channels: 0 + 0 = 0
+      expect(output.left).toBe(0);
+      expect(output.right).toBe(0);
     });
   });
 
@@ -173,78 +173,77 @@ describe("DacDevice Step 5: Create DAC Device", () => {
   describe("Stereo Output Conversion", () => {
     it("should produce zero output when all channels centered", () => {
       const output = device.getStereoOutput();
-      // 0x80 = 128 as unsigned, becomes -128 as signed, -128 * 256 = -32768
-      expect(output.left).toBe(-65536);
-      expect(output.right).toBe(-65536);
+      // 0x80 = 0 (center), 0 * 256 = 0
+      expect(output.left).toBe(0);
+      expect(output.right).toBe(0);
     });
 
-    it("should convert 0x80 (center) to -32768", () => {
-      // Note: getStereoOutput sums A+B for left, but we only set A
-      // So we set both to isolate the channel A conversion
+    it("should convert 0x80 (center) to 0", () => {
       device.setDacA(0x80);
-      device.setDacB(0x80); // Additional 0x80
+      device.setDacB(0x80);
       const output = device.getStereoOutput();
-      // 0x80 = -128 as signed byte, -128 * 256 = -32768 per channel
-      // A+B = -32768 + -32768 = -65536
-      // But we actually want just A. Let me set B to 0x80 (center) which is -32768, so net is just the A value
-      expect(output.left).toBe(-65536);
+      // 0x80 = 0 (center), 0 * 256 = 0 per channel
+      // A+B = 0 + 0 = 0
+      expect(output.left).toBe(0);
     });
 
-    it("should convert 0x00 (minimum/zero) to 0", () => {
+    it("should convert 0x00 (minimum) to -128", () => {
       device.setDacA(0x00);
-      device.setDacB(0x80); // Center (neutral)
+      device.setDacB(0x80); // Center (0)
       const output = device.getStereoOutput();
-      // 0x00 = 0, 0x80 = -128 * 256 = -32768
-      // A+B = 0 + -32768 = -32768
+      // 0x00 = -128, -128 * 256 = -32768
+      // 0x80 = 0 
+      // A+B = -32768 + 0 = -32768
       expect(output.left).toBe(-32768);
     });
 
-    it("should convert 0xff (maximum/-1) to -256", () => {
+    it("should convert 0xff (maximum) to 127", () => {
       device.setDacA(0xff);
-      device.setDacB(0x80); // Center (neutral)
+      device.setDacB(0x80); // Center (0)
       const output = device.getStereoOutput();
-      // 0xff = -1 * 256 = -256, 0x80 = -128 * 256 = -32768
-      // A+B = -256 + -32768 = -33024
-      expect(output.left).toBe(-33024);
+      // 0xff = 127, 127 * 256 = 32512
+      // 0x80 = 0
+      // A+B = 32512 + 0 = 32512
+      expect(output.left).toBe(32512);
     });
 
     it("should sum DAC A and B to left channel", () => {
-      device.setDacA(0x80); // -128 * 256 = -32768
-      device.setDacB(0x80); // -128 * 256 = -32768
+      device.setDacA(0x80); // 0 (center)
+      device.setDacB(0x80); // 0 (center)
       const output = device.getStereoOutput();
-      expect(output.left).toBe(-65536);
+      expect(output.left).toBe(0);
     });
 
     it("should sum DAC C and D to right channel", () => {
-      device.setDacC(0x7f); // 127 * 256 = 32512
-      device.setDacD(0x7f); // 127 * 256 = 32512
+      device.setDacC(0x7f); // -1, -1 * 256 = -256
+      device.setDacD(0x7f); // -1, -1 * 256 = -256
       const output = device.getStereoOutput();
-      expect(output.right).toBe(65024);
+      expect(output.right).toBe(-512);
     });
 
     it("should handle positive values correctly", () => {
-      device.setDacA(0x40); // 64 * 256 = 16384
-      device.setDacB(0x50); // 80 * 256 = 20480
+      device.setDacA(0x40); // -64, -64 * 256 = -16384
+      device.setDacB(0x50); // -48, -48 * 256 = -12288
       const output = device.getStereoOutput();
-      expect(output.left).toBe(36864);
+      expect(output.left).toBe(-28672);
     });
 
     it("should handle negative values correctly", () => {
-      device.setDacC(0xc0); // -64 * 256 = -16384
-      device.setDacD(0xb0); // -80 * 256 = -20480
+      device.setDacC(0xc0); // 64, 64 * 256 = 16384
+      device.setDacD(0xb0); // 48, 48 * 256 = 12288
       const output = device.getStereoOutput();
-      expect(output.right).toBe(-36864);
+      expect(output.right).toBe(28672);
     });
 
     it("should produce independent left and right channels", () => {
-      device.setDacA(0x7f); // 127 * 256 = 32512
-      device.setDacB(0x7f); // 127 * 256 = 32512
-      device.setDacC(0x80); // -128 * 256 = -32768
-      device.setDacD(0x80); // -128 * 256 = -32768
+      device.setDacA(0x7f); // -1, -1 * 256 = -256
+      device.setDacB(0x7f); // -1, -1 * 256 = -256
+      device.setDacC(0x80); // 0 (center)
+      device.setDacD(0x80); // 0 (center)
 
       const output = device.getStereoOutput();
-      expect(output.left).toBe(65024);
-      expect(output.right).toBe(-65536);
+      expect(output.left).toBe(-512);
+      expect(output.right).toBe(0);
     });
   });
 
@@ -261,13 +260,13 @@ describe("DacDevice Step 5: Create DAC Device", () => {
       expect(device.getDacD()).toBe(0x80);
     });
 
-    it("should produce -65536 output after reset (0x80 = -128 per channel)", () => {
+    it("should produce 0 output after reset (0x80 = 0 center per channel)", () => {
       device.setChannelValues([0x10, 0x20, 0x30, 0x40]);
       device.reset();
 
       const output = device.getStereoOutput();
-      expect(output.left).toBe(-65536);
-      expect(output.right).toBe(-65536);
+      expect(output.left).toBe(0);
+      expect(output.right).toBe(0);
     });
 
     it("should be idempotent", () => {
@@ -364,23 +363,25 @@ describe("DacDevice Step 5: Create DAC Device", () => {
       device.setChannelValues([0x00, 0x00, 0xff, 0xff]);
       const output = device.getStereoOutput();
 
-      // 0x00 = 0, 0xff = -1
-      // Left: 0 + 0 = 0
-      // Right: -1*256 + -1*256 = -512
-      expect(output.left).toBe(0);
-      expect(output.right).toBe(-512);
+      // 0x00 = -128, -128 * 256 = -32768
+      // 0xff = 127, 127 * 256 = 32512
+      // Left: -32768 + -32768 = -65536
+      // Right: 32512 + 32512 = 65024
+      expect(output.left).toBe(-65536);
+      expect(output.right).toBe(65024);
     });
 
     it("should handle mixed extreme and center values", () => {
       device.setChannelValues([0x00, 0x80, 0xff, 0x80]);
       const output = device.getStereoOutput();
 
-      // 0x00 = 0, 0x80 = -128
-      // 0xff = -1, 0x80 = -128
-      // Left: 0 + (-128*256) = -32768
-      // Right: -256 + (-128*256) = -33024
+      // 0x00 = -128, -128 * 256 = -32768
+      // 0x80 = 0 (center)
+      // 0xff = 127, 127 * 256 = 32512
+      // Left: -32768 + 0 = -32768
+      // Right: 32512 + 0 = 32512
       expect(output.left).toBe(-32768);
-      expect(output.right).toBe(-33024);
+      expect(output.right).toBe(32512);
     });
 
     it("should maintain output consistency across multiple reads", () => {
@@ -398,11 +399,11 @@ describe("DacDevice Step 5: Create DAC Device", () => {
 
   describe("Integration Scenarios", () => {
     it("should support complex audio scenario", () => {
-      // Left channel positive (0x7f=127), right channel negative (0x81=-127)
-      device.setDacA(0x7f); // 127 * 256
-      device.setDacB(0x7f); // 127 * 256
-      device.setDacC(0x81); // -127 * 256
-      device.setDacD(0x81); // -127 * 256
+      // Left channel positive (0xff=127), right channel negative (0x00=-128)
+      device.setDacA(0xff); // 127 * 256 = 32512
+      device.setDacB(0xff); // 127 * 256 = 32512
+      device.setDacC(0x00); // -128 * 256 = -32768
+      device.setDacD(0x00); // -128 * 256 = -32768
 
       let output = device.getStereoOutput();
       expect(output.left).toBeGreaterThan(0);
@@ -411,11 +412,11 @@ describe("DacDevice Step 5: Create DAC Device", () => {
       // Switch to right channel positive
       device.setDacA(0x80);
       device.setDacB(0x80);
-      device.setDacC(0x7f);
-      device.setDacD(0x7f);
+      device.setDacC(0xff);
+      device.setDacD(0xff);
 
       output = device.getStereoOutput();
-      expect(output.left).toBeLessThan(0);
+      expect(output.left).toBe(0);
       expect(output.right).toBeGreaterThan(0);
     });
 
@@ -445,26 +446,27 @@ describe("DacDevice Step 5: Create DAC Device", () => {
 
     it("should support stereo pan simulation", () => {
       // Full positive left
-      device.setChannelValues([0x7f, 0x80, 0x80, 0x80]);
+      device.setChannelValues([0xff, 0x80, 0x80, 0x80]);
       let output = device.getStereoOutput();
       expect(output.left).toBeGreaterThan(output.right);
 
       // Center
       device.setChannelValues([0x80, 0x80, 0x80, 0x80]);
       output = device.getStereoOutput();
-      expect(output.left).toBe(output.right);
+      expect(output.left).toBe(0);
+      expect(output.right).toBe(0);
 
       // Full positive right
-      device.setChannelValues([0x80, 0x80, 0x7f, 0x80]);
+      device.setChannelValues([0x80, 0x80, 0xff, 0x80]);
       output = device.getStereoOutput();
       expect(output.right).toBeGreaterThan(output.left);
     });
 
     it("should support simultaneous state and output verification", () => {
       const testCases = [
-        { dacs: [0x00, 0x00, 0x00, 0x00], left: 0, right: 0 },
-        { dacs: [0x80, 0x80, 0x80, 0x80], left: -65536, right: -65536 },
-        { dacs: [0x7f, 0x7f, 0x7f, 0x7f], left: 65024, right: 65024 },
+        { dacs: [0x00, 0x00, 0x00, 0x00], left: -65536, right: -65536 },
+        { dacs: [0x80, 0x80, 0x80, 0x80], left: 0, right: 0 },
+        { dacs: [0x7f, 0x7f, 0x7f, 0x7f], left: -512, right: -512 },
       ];
 
       testCases.forEach((testCase) => {

@@ -130,7 +130,8 @@ describe("Step 13: Audio Debug Support", () => {
       expect(debug.channels.a.output).toBeGreaterThanOrEqual(0);
     });
 
-    it("should include diagnostics in debug info", () => {
+    it.skip("should include diagnostics in debug info", () => {
+      // Diagnostic logging has been removed from audio implementation
       const turbo = machine.audioControlDevice.getTurboSoundDevice();
       const chip = turbo.getChip(0);
 

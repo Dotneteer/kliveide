@@ -159,9 +159,11 @@ export class DacDevice {
    */
   getStereoOutput(): AudioSample {
     // Convert 8-bit unsigned to signed byte value (-128 to +127)
-    // by sign-extending: if bit 7 is set, it's negative
+    // 0x80 (128) maps to 0 (center/silence)
+    // 0x00 (0) maps to -128 (minimum)
+    // 0xFF (255) maps to +127 (maximum)
     const toSignedByte = (val: number) => {
-      return val > 127 ? val - 256 : val;
+      return val - 128;
     };
 
     // Convert to 16-bit by multiplying by 256

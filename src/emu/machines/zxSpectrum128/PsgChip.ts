@@ -526,10 +526,6 @@ export class PsgChip {
     }
   }
 
-  started = false;
-  samplesCount = 0;
-  samplesList: { vol: number; count: number }[] = [];
-
   /**
    * Generates the current PSG output value
    */
@@ -676,28 +672,6 @@ export class PsgChip {
     this.orphanSumC += volC;
     this.orphanSum += vol;
     this.orphanSamples += 1;
-
-    // --- Diagnostics
-    if (!this.started && vol > 0) {
-      this.started = true;
-    }
-
-    if (this.started && this.samplesCount < 20000) {
-      if (this.samplesCount) {
-        const lastSample = this.samplesList[this.samplesList.length - 1];
-        if (lastSample.vol === vol) {
-          lastSample.count++;
-        } else {
-          this.samplesList.push({ vol, count: 0 });
-        }
-      } else {
-        this.samplesList.push({ vol, count: 0 });
-      }
-      this.samplesCount++;
-      // if (this.samplesCount === 20000) {
-      //   console.log(this.samplesList);
-      // }
-    }
   }
 
   /**
@@ -826,15 +800,6 @@ export class PsgChip {
         style: this._envStyle,
         counter: this._cntEnv,
         position: this._posEnv
-      },
-      diagnostics: {
-        started: this.started,
-        samplesCount: this.samplesCount,
-        orphanSum: this.orphanSum,
-        orphanSumA: this.orphanSumA,
-        orphanSumB: this.orphanSumB,
-        orphanSumC: this.orphanSumC,
-        orphanSamples: this.orphanSamples
       }
     };
   }
