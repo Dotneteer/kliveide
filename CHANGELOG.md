@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.52.1
+
+### Fixes
+
+- Fix the ZX Spectrum 128 banked code injection issue
+
 ## 0.52.0
 
 ### Features
