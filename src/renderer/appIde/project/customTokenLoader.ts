@@ -1,9 +1,6 @@
-import fs from "fs";
-import path from "path";
-import { homedir } from "os";
 import { MonacoAwareCustomLanguageInfo } from "@renderer/abstractions/CustomLanguageInfo";
 
-const KLIVE_HOME_FOLDER = "Klive";
+const ipcRenderer = (window as any).electron?.ipcRenderer;
 
 /**
  * Loads custom token colors from JSON files stored in the Klive settings folder.
@@ -11,23 +8,22 @@ const KLIVE_HOME_FOLDER = "Klive";
  * 
  * @param languageProviders Array of language providers to apply custom tokens to
  */
-export function loadCustomTokenColors(
+export async function loadCustomTokenColors(
   languageProviders: MonacoAwareCustomLanguageInfo[]
-): void {
-  const settingsFolderPath = path.join(homedir(), KLIVE_HOME_FOLDER);
-  
+): Promise<void> {
+  if (!ipcRenderer) {
+    // IPC not available, skip custom token loading
+    return;
+  }
+
   for (const provider of languageProviders) {
     try {
-      const tokenFilePath = path.join(settingsFolderPath, `${provider.id}.tokens.json`);
+      // Request custom tokens from main process via IPC
+      const customTokens = await ipcRenderer.invoke('load-custom-tokens', provider.id);
       
-      // Check if the file exists
-      if (!fs.existsSync(tokenFilePath)) {
+      if (!customTokens) {
         continue;
       }
-
-      // Read and parse the token file
-      const tokenFileContent = fs.readFileSync(tokenFilePath, "utf8");
-      const customTokens = JSON.parse(tokenFileContent);
 
       // Apply custom tokens to dark theme
       if (customTokens.darkTheme && provider.darkTheme) {

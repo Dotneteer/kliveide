@@ -94,7 +94,7 @@ export async function initializeMonaco() {
   loader.config({ monaco: monacoEditor });
 
   // --- Load custom token colors from settings folder before initializing Monaco
-  loadCustomTokenColors(customLanguagesRegistry);
+  await loadCustomTokenColors(customLanguagesRegistry);
 
   // --- Wait for monaco to initialize
   const monaco = await loader.init();
