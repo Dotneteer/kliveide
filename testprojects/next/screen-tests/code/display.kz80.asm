@@ -19,9 +19,14 @@ KEY_LC_X                 .equ $60
 ; 256 byte buffer for conversions
 TMP_BUFF .defs $100
 
+; Store the last border color here
+LastBorder
+    .db 0
+
 Border .macro(color)
     push af
     ld a,{{color}}
+    ld (LastBorder),a
     out ($fe),a
     pop af
 .endm
@@ -30,7 +35,42 @@ Ink .macro(color)
     push af
     ld a,$10
     rst $10
+    pop af
+    push af
     ld a,{{color}}
+    rst $10
+    pop af
+.endm
+
+Paper .macro(color)
+    push af
+    ld a,$11
+    rst $10
+    pop af
+    push af
+    ld a,{{color}}
+    rst $10
+    pop af
+.endm
+
+Flash .macro(value)
+    push af
+    ld a,$12
+    rst $10
+    pop af
+    push af
+    ld a,{{value}}
+    rst $10
+    pop af
+.endm
+
+Bright .macro(value)
+    push af
+    ld a,$13
+    rst $10
+    pop af
+    push af
+    ld a,{{value}}
     rst $10
     pop af
 .endm
@@ -123,9 +163,20 @@ ClearScreen
     ld bc,$02ff
     ld (hl),$38
     ldir
+    PrintAt(0, 0)
     pop bc
     pop de
     pop hl
+    ret
+
+; ------------------------------------------------------------------------------
+; Reset screen attribute
+; ------------------------------------------------------------------------------
+ResetScreenAttributes
+    Flash(0)
+    Bright(0)
+    Paper(7)
+    Ink(0)
     ret
 
 ; ------------------------------------------------------------------------------

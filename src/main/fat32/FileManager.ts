@@ -92,7 +92,6 @@ export class FileManager {
       } while (bytesRead > 0);
     } finally {
       await fileHandle.close();
-      console.log("File copy completed.");
       targetFile?.close();
     }
   }

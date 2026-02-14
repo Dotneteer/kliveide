@@ -11,7 +11,11 @@
     jp Main
 
 #include "display.kz80.asm"
+#include "helpers.kz80.asm"
 #include "border-tests.kz80.asm"
+#include "ula-tests.kz80.asm"
+
+#include "teststable.kz80.asm"
 
 Main:
     ; When NEX file starts, interrupt is disabled
@@ -21,11 +25,6 @@ MainLoop
     PrintText2(WelcomeText)     ; Display the menu text
 KeyLoop
     call WaitForKey             ; Dispatch the key
-    ;ld h,0
-    ;ld l,a
-    ;call PrintHL
-    ;ld a,' '
-    ;rst $10
     cp KEY_X                    ; Handle "Exit" key
     jp z,Exit
     cp KEY_LC_X 
@@ -63,7 +62,6 @@ RunTests
     ; Print test number and title
     push hl
     push de
-    PrintAt(0, 0)
     ld h,b
     ld l,c
     call PrintHL
@@ -95,6 +93,8 @@ RunTests
     ld de,StartTestText
     call PrintTermText
     call WaitForKey
+    ld de,EmptyText
+    call PrintTermText
 `runTest
     pop bc                     ; Restore address and parameters
     pop de
@@ -106,23 +106,23 @@ RunTests
     jp (hl)
     ; 
 `testReturn
+    ; Sign the test has been ended
+    call Beep
     pop hl
-    ;
-    ; Wait for keypress
-    call WaitForKey
     ;
     ; Restore main registers
     pop de
     pop bc
+    inc bc
     jr `testLoop
 
 ;
 ; All tests run
 EndTests
-    Border(7)
-    call ClearScreen
+    ; call ClearScreen
     PrintText2(EndText)
     call WaitForKey
+    Border(7)
     jp MainLoop
 
 ;
@@ -130,10 +130,6 @@ EndTests
 Exit
     nextreg $8e,$00
     jp $0
-
-TestTable
-    .dw BorderTest
-    .dw 0
 
 WelcomeText
     .dm "\a\x01\x01" ; AT 1, 1
@@ -147,15 +143,19 @@ WelcomeText
     TERM_TEXT()
 
 EndText
-    .dm "\a\x01\x01" ; AT 1, 1
+    .dm "\a\x14\x01" ; AT 20, 1
     .dm "Tests completed."
-    .dm "\a\x02\x01" ; AT 2, 1
+    .dm "\a\x15\x01" ; AT 21, 1
     .dm "Press any key."
     TERM_TEXT()
 
 StartTestText
     .dm "\a\x04\x00" ; AT 4, 1
     .dm "Press any key to start the test"
+    TERM_TEXT()
+EmptyText
+    .dm "\a\x04\x00" ; AT 4, 1
+    .dm "                               "
     TERM_TEXT()
 
 
