@@ -1,0 +1,22 @@
+{
+  "darkTheme": {
+    "keyword": "569cd6",
+    "statement": "c586c0",
+    "string.escape": "d7ba7d",
+    "identifier": "9cdcfe",
+    "comment": "6a9955",
+    "regexp.escape.control": "ce9178",
+    "regexp.escape": "d7ba7d",
+    "regexp": "d16969"
+  },
+  "lightTheme": {
+    "keyword": "0070c0",
+    "statement": "af00db",
+    "string.escape": "a5673f",
+    "identifier": "0089ba",
+    "comment": "237122",
+    "regexp.escape.control": "ee0000",
+    "regexp.escape": "a5673f",
+    "regexp": "811f3f"
+  }
+}

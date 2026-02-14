@@ -379,7 +379,7 @@ export const ksxLanguageProvider: MonacoAwareCustomLanguageInfo = {
     rules: [
       {
         token: "keyword",
-        foreground: "0000ff"
+        foreground: "0070c0"
       },
       {
         token: "statement",
@@ -387,15 +387,15 @@ export const ksxLanguageProvider: MonacoAwareCustomLanguageInfo = {
       },
       {
         token: "string.escape",
-        foreground: "ee0000"
+        foreground: "a5673f"
       },
       {
         token: "identifier",
-        foreground: "0070c1"
+        foreground: "0089ba"
       },
       {
         token: "comment",
-        foreground: "008000"
+        foreground: "237122"
       },
       {
         token: "regexp.escape.control",
@@ -403,7 +403,7 @@ export const ksxLanguageProvider: MonacoAwareCustomLanguageInfo = {
       },
       {
         token: "regexp.escape",
-        foreground: "d16969"
+        foreground: "a5673f"
       },
       {
         token: "regexp",

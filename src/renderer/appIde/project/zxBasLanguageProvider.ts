@@ -350,4 +350,55 @@ export const zxBasLanguageProvider: MonacoAwareCustomLanguageInfo = {
     ],
     colors: {},
   },
+  lightTheme: {
+    rules: [
+      {
+        token: "comment",
+        foreground: "237122",
+      },
+      {
+        token: "directive",
+        foreground: "666666",
+      },
+      {
+        token: "statement",
+        foreground: "af00db",
+        fontStyle: "bold",
+      },
+      {
+        token: "identifier",
+        foreground: "795e26",
+      },
+      {
+        token: "function",
+        foreground: "007acc",
+      },
+      {
+        token: "escape",
+        foreground: "a5673f",
+      },
+      {
+        token: "asmdel",
+        foreground: "cc6600",
+      },
+      {
+        token: "pragma",
+        foreground: "af00db",
+      },
+      {
+        token: "register",
+        foreground: "0089ba",
+      },
+      {
+        token: "condition",
+        foreground: "0089ba",
+      },
+      {
+        token: "macroparam",
+        foreground: "af00db",
+        fontStyle: "italic",
+      },
+    ],
+    colors: {},
+  },
 };

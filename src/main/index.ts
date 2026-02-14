@@ -62,7 +62,6 @@ import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
-import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";

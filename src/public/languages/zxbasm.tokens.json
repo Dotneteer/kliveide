@@ -1,0 +1,26 @@
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "pragma": "c586c0",
+    "identifier": "dcdcaa",
+    "register": "9cdcfe",
+    "condition": "9cdcfe",
+    "preproc": "a0a0a0"
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "keyword": {
+      "foreground": "0070c0",
+      "fontStyle": "bold"
+    },
+    "pragma": "af00db",
+    "identifier": "795e26",
+    "register": "0089ba",
+    "condition": "0089ba",
+    "preproc": "666666"
+  }
+}

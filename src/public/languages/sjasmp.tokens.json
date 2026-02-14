@@ -1,0 +1,38 @@
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "condasm": "c586c0",
+    "pseudoop": {
+      "foreground": "c586c0",
+      "fontStyle": "bold"
+    },
+    "identifier": "dcdcaa",
+    "register": "9cdcfe",
+    "condition": "9cdcfe",
+    "specop": "4fc1ff",
+    "escape": "d7ba7d",
+    "luadef": "ff8500"
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "keyword": {
+      "foreground": "0070c0",
+      "fontStyle": "bold"
+    },
+    "condasm": "af00db",
+    "pseudoop": {
+      "foreground": "af00db",
+      "fontStyle": "bold"
+    },
+    "identifier": "795e26",
+    "register": "0089ba",
+    "condition": "0089ba",
+    "specop": "007acc",
+    "escape": "a5673f",
+    "luadef": "cc6600"
+  }
+}

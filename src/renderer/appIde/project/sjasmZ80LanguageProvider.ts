@@ -496,45 +496,45 @@ export const sjasmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
     rules: [
       {
         token: "comment",
-        foreground: "6a9955"
+        foreground: "237122"
       },
       {
         token: "keyword",
-        foreground: "569cd6",
+        foreground: "0070c0",
         fontStyle: "bold"
       },
       {
         token: "condasm",
-        foreground: "c586c0"
+        foreground: "af00db"
       },
       {
         token: "pseudoop",
-        foreground: "c586c0",
+        foreground: "af00db",
         fontStyle: "bold"
       },
       {
         token: "identifier",
-        foreground: "dcdcaa"
+        foreground: "795e26"
       },
       {
         token: "register",
-        foreground: "9cdcfe"
+        foreground: "0089ba"
       },
       {
         token: "condition",
-        foreground: "9cdcfe"
+        foreground: "0089ba"
       },
       {
         token: "specop",
-        foreground: "4fc1ff"
+        foreground: "007acc"
       },
       {
         token: "escape",
-        foreground: "d7ba7d"
+        foreground: "a5673f"
       },
       {
         token: "luadef",
-        foreground: "ff8500"
+        foreground: "cc6600"
       }
     ],
     colors: {}
