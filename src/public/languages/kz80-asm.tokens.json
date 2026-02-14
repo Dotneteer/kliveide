@@ -1,0 +1,44 @@
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "statement": {
+      "foreground": "c586c0",
+      "fontStyle": "bold"
+    },
+    "pragma": "c586c0",
+    "identifier": "dcdcaa",
+    "register": "9cdcfe",
+    "condition": "9cdcfe",
+    "function": "4fc1ff",
+    "macroparam": {
+      "foreground": "c586c0",
+      "fontStyle": "italic"
+    },
+    "escape": "d7ba7d"
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "keyword": {
+      "foreground": "0070c0",
+      "fontStyle": "bold"
+    },
+    "statement": {
+      "foreground": "af00db",
+      "fontStyle": "bold"
+    },
+    "pragma": "af00db",
+    "identifier": "795e26",
+    "register": "0089ba",
+    "condition": "0089ba",
+    "function": "007acc",
+    "macroparam": {
+      "foreground": "af00db",
+      "fontStyle": "italic"
+    },
+    "escape": "a5673f"
+  }
+}

@@ -40,6 +40,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { useAppServices } from "../services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
+import { loadCustomTokenColors } from "../project/customTokenLoader";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "../utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
@@ -91,6 +92,9 @@ export async function initializeMonaco() {
   // --- Use the ESM version of monaco-editor which is bundled by Vite
   // --- This avoids the AMD loader issues in production builds
   loader.config({ monaco: monacoEditor });
+
+  // --- Load custom token colors from settings folder before initializing Monaco
+  await loadCustomTokenColors(customLanguagesRegistry);
 
   // --- Wait for monaco to initialize
   const monaco = await loader.init();

@@ -283,4 +283,38 @@ export const asmZxbLanguageProvider: MonacoAwareCustomLanguageInfo = {
     ],
     colors: {},
   },
+  lightTheme: {
+    rules: [
+      {
+        token: "comment",
+        foreground: "237122",
+      },
+      {
+        token: "keyword",
+        foreground: "0070c0",
+        fontStyle: "bold",
+      },
+      {
+        token: "pragma",
+        foreground: "af00db",
+      },
+      {
+        token: "identifier",
+        foreground: "795e26",
+      },
+      {
+        token: "register",
+        foreground: "0089ba",
+      },
+      {
+        token: "condition",
+        foreground: "0089ba",
+      },
+      {
+        token: "preproc",
+        foreground: "666666",
+      },
+    ],
+    colors: {},
+  },
 };

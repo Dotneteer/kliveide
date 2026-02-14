@@ -3,6 +3,7 @@ export default {
   "diagnostics": "Diagnostics",
   "shortcuts": "Changing keyboard shortcuts",
   "file-extensions": "Changing default file extensions",
+  "customize-syntax-colors": "Customizing syntax highlighting colors",
   "instant-screen": "Using the Instant Screen",
   "always-on-top": "Keeping the Emulator always on top",
   "measure-t-states": "Measuring T-states"

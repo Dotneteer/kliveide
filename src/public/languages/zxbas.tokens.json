@@ -1,0 +1,40 @@
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "directive": "a0a0a0",
+    "statement": {
+      "foreground": "c586c0",
+      "fontStyle": "bold"
+    },
+    "identifier": "dcdcaa",
+    "function": "4fc1ff",
+    "escape": "d7ba7d",
+    "asmdel": "ff8500",
+    "pragma": "c586c0",
+    "register": "9cdcfe",
+    "condition": "9cdcfe",
+    "macroparam": {
+      "foreground": "c586c0",
+      "fontStyle": "italic"
+    }
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "directive": "666666",
+    "statement": {
+      "foreground": "af00db",
+      "fontStyle": "bold"
+    },
+    "identifier": "795e26",
+    "function": "007acc",
+    "escape": "a5673f",
+    "asmdel": "cc6600",
+    "pragma": "af00db",
+    "register": "0089ba",
+    "condition": "0089ba",
+    "macroparam": {
+      "foreground": "af00db",
+      "fontStyle": "italic"
+    }
+  }
+}

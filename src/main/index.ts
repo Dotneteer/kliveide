@@ -62,11 +62,11 @@ import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
-import { fileChangeWatcher } from "./file-watcher";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
 import { appSettings, getSettingValue, loadAppSettings, saveAppSettings } from "./settings-utils";
+import { KLIVE_HOME_FOLDER } from "./settings";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -596,6 +596,26 @@ ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
   response.sourceId = "main";
   if (ideWindow?.isDestroyed() === false) {
     ideWindow.webContents.send("IdeToMainResponse", response);
+  }
+});
+
+// --- Handle custom token loading requests from renderer
+ipcMain.handle("load-custom-tokens", async (_event, languageId: string) => {
+  try {
+    const settingsFolderPath = join(app.getPath("home"), KLIVE_HOME_FOLDER);
+    const tokenFilePath = join(settingsFolderPath, `${languageId}.tokens.json`);
+    
+    // Check if the file exists
+    if (!fs.existsSync(tokenFilePath)) {
+      return null;
+    }
+
+    // Read and parse the token file
+    const tokenFileContent = fs.readFileSync(tokenFilePath, "utf8");
+    return JSON.parse(tokenFileContent);
+  } catch (error) {
+    // Return null on error to allow silent failure
+    return null;
   }
 });
 

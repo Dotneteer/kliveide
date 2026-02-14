@@ -1,16 +1,23 @@
 # Klive IDE Changelog
 
-## 0.52.1
+## 0.53.0
 
 ### Fixes
 
-- Fix the ZX Spectrum 128 banked code injection issue
+- Use token colors with more contrast in the light theme
+- Experimenting with turning off the AppImage sandbox
+
+### Features
+
+- Allow token color customization
 
 ## 0.52.0
 
 ### Features
 
-- Add live reload functionality for externally changed files
+### Fixes
+
+- Fix the ZX Spectrum 128 banked code injection issue
 
 ## 0.51.1
 

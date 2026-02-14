@@ -40,4 +40,9 @@
     target: ["AppImage", "deb"],
     artifactName: "${productName}-Linux-${version}.${ext}",
   },
+  appImage: {
+    // Disable sandbox for AppImage due to SUID limitations in AppImage format
+    // See: https://github.com/electron/electron/issues/17972
+    sandbox: false,
+  },
 }

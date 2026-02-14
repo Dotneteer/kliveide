@@ -726,42 +726,42 @@ export const asm6510LanguageProvider: MonacoAwareCustomLanguageInfo = {
     rules: [
       {
         token: "comment",
-        foreground: "6a9955"
+        foreground: "237122"
       },
       {
         token: "keyword",
-        foreground: "569cd6",
+        foreground: "0070c0",
         fontStyle: "bold"
       },
       {
         token: "statement",
-        foreground: "c586c0",
+        foreground: "af00db",
         fontStyle: "bold"
       },
       {
         token: "pragma",
-        foreground: "c586c0"
+        foreground: "af00db"
       },
       {
         token: "identifier",
-        foreground: "dcdcaa"
+        foreground: "795e26"
       },
       {
         token: "register",
-        foreground: "9cdcfe"
+        foreground: "0089ba"
       },
       {
         token: "function",
-        foreground: "4fc1ff"
+        foreground: "007acc"
       },
       {
         token: "macroparam",
-        foreground: "c586c0",
+        foreground: "af00db",
         fontStyle: "italic"
       },
       {
         token: "escape",
-        foreground: "d7ba7d"
+        foreground: "a5673f"
       }
     ],
     colors: {}
