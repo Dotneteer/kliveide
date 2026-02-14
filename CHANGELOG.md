@@ -5,6 +5,7 @@
 ### Fixes
 
 - Use token colors with more contrast in the light theme
+- Experimenting with turning off the AppImage sandbox
 
 ### Features
 
