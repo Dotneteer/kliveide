@@ -85,6 +85,12 @@ export const pageMap = [{
       "sidebarTitle": "Always on Top"
     }
   }, {
+    name: "customize-syntax-colors",
+    route: "/howto/customize-syntax-colors",
+    frontMatter: {
+      "sidebarTitle": "Customize Syntax Colors"
+    }
+  }, {
     name: "diagnostics",
     route: "/howto/diagnostics",
     frontMatter: {
