@@ -142,6 +142,7 @@ Offset 135: Required core version (3 bytes) - major.minor.subminor (0-15.0-15.0-
 Offset 138: Timex color / Layer 2 palette offset (1 byte)
 Offset 139: Entry bank (1 byte) - bank mapped to slot 3 (0xC000-0xFFFF)
 Offset 140: File handle address (2 bytes) - where to store file handle (0=close file)
+Offset 142: Disable expansion bus (1 byte) - 0=enabled, 1=disabled (V1.3+ loaders)
 ```
 
 **Preserve NextRegs** determines whether the loader resets all Next registers to defaults or leaves them as-is. Most programs want 0 (reset everything) for clean state. Setting 1 is useful for utilities that modify the environment without overwriting it.
@@ -158,6 +159,8 @@ Offset 140: File handle address (2 bytes) - where to store file handle (0=close 
 
 This enables **streaming assets** - include gigabytes of data at the end of the NEX file, keep it open, and read on demand.
 
+**Disable expansion bus** (offset 142, V1.3+ loaders): Controls whether the expansion bus is available during program execution. Set to 1 to disable the expansion bus (useful if your program expects exclusive hardware access and doesn't want interference from expansion devices). Set to 0 to leave it enabled. **Note:** This flag is only honored on core versions 3.0.5 or newer. Earlier loaders and core versions ignore this byte.
+
 ## Optional Blocks: Palette, Screens, and Copper
 
 After the 512-byte header come the optional blocks. Their presence is determined by header flags.
@@ -170,13 +173,19 @@ If the loading screen uses a palette (Layer 2, LoRes, or Tilemap) and bit 7 of o
 256 entries × 2 bytes per entry = 512 bytes total
 
 Each entry (little-endian 16-bit):
-  Bits 0-7:   RRRGGGBB (8-bit color)
-  Bits 8-15:  Reserved (should be 0)
+  Bits 0-2:   RRR (3-bit red)
+  Bits 3-5:   GGG (3-bit green)
+  Bits 6-8:   BBB (3-bit blue)
+  Bits 9-15:  Reserved (should be 0)
 ```
 
-The Next uses 9-bit RGB color internally (3 bits red, 3 bits green, 3 bits blue), but the palette format stores 8-bit RGB (3-3-2). The hardware converts on load. Each palette entry is two bytes, with only the first byte used.
+The Next uses 9-bit RGB333 color (3 bits red, 3 bits green, 3 bits blue). The format stores this as little-endian 16-bit values: the lower 9 bits contain the color (BBBGGGRRR), and the upper 7 bits are reserved. The loader writes these values to NextReg $44 (PALETTE_VALUE_BIT9_REGISTER).
 
-**Why 512 bytes for 256 entries?** Future expansion. The format reserves space for potential 9-bit or 16-bit palette entries in future core versions. For now, the high byte of each entry should be zero.
+**Byte layout per entry:**
+- Byte 0 (bits 0-7): BBGGGRRR (red[2:0], green[2:0], blue[1:0])
+- Byte 1 (bits 8-15): 0000000B (reserved, blue[2])
+
+**Why 512 bytes for 256 entries?** The format uses 2 bytes per entry to accommodate the 9-bit RGB333 format with room for future expansion.
 
 ### Loading Screen Blocks
 
@@ -347,7 +356,88 @@ Offset 140-141: 0 (close file after loading)
 
 ## Loading Procedure: What Your Emulator Must Do
 
-_TBD_
+It is helpful to know how a NEX file is loaded.
+
+When the NEX loader starts, the upper 16K of the memory has a particular configuration. The first 8K ($0000-$1fff) is occupied by the ESXDOS ROM, the second 8K slot ($2000-$3fff) is configured to RAM. The NEXT loader is loaded into this second slot entirely separated from the rest of the $4000-$ffff address space. The loader saves the previous state of the Stack Pointer (SP) and temporarily moves the stack to the top of the second 8K slot ($3fff).
+
+Before opening the NEX file, the loader disables the interrupt and sets the CPU speed to 14MHz. When the file has opened successfully, the loader initializes the screen:
+- It sets transparency on ULA
+- Disables Layer 2
+- Enables sprites (no sprites over the border, sprites over layer 2 over ULA)
+
+The loader prepares the memory to load the NEX file by setting up the upper three 16K memory slots:
+- Slot 1 ($4000-$7fff): Bank 5
+- Slot 2 ($8000-$bfff): Bank 2
+- Slot 3 ($c000-$ffff): Bank 0
+
+It's time to load the NEX header. The loader puts this information to $c000, into the freshly loaded Bank 0.
+
+First, the loader checks the loader version information in the NEX file's header. If the NEX file requires a higher version than the current loader, the system raises an error and aborts loading.
+
+According to Offset 142, the loader may disable the expansion bus by writing 0 to the top four bits of nextreg 0x80.
+
+When you use the NEX loader in an actual hardware, the loader checks if the current core version is at least the one required in the NEX file. If not, the loader raises an error asking the user to update the machine core. When the NEX loader runs within an emulator, this check is skipped.
+
+At this point, the loader blackens the screen by setting a black border and setting all the screen attribute bytes to PAPER 0 and INK 0.
+
+According to the setting in Offset 134, the loader optionally resets the Next register values:
+- Stops Copper
+- Disables the divmmc nmi by DRIVE button
+- Enables multiface nmi by M1 button
+- Unlocks port 0x7ffd
+- Disables ram and port contention
+- Sets the AY stereo mode to ABC
+- Enables Spectdrum (The four 8-bit DACs)
+- Enables the Timex port (0xff)
+- Enables TurboSound
+- Turns to 28MHz CPU speed
+- Sets Layer 2 page to Bank 16, Layer 2 shadow page to Bank 12
+- Sets the global tansparency color to $e3
+- Enables sprites (but not over border, uses sprites over layer 2 over ula)
+- Resets scrolls of Layer 2 and LoRes to zero
+- Resets all clip windows to their defaults (no clipping)
+- Allows flashing
+- Initializes the primary ULA, Layer 2, and sprites palettes
+- Set the fallback color used if all layers are transparent to 0
+- Pages back ROM for the entire $0000-03fff range
+
+The reset does keep the following Peripheral Settings 2 flags intact:
+- Enable F8 cpu speed hotkey and F5/F6 expansion bus hotkeys
+- Divert BEEP only to internal speaker
+- Enable F3 50/60 Hz hotkey
+
+After waiting for the beginning of the next screen frame, the loader reenables the previous AY mode (before the reset).
+
+The loader check Offset 10 for the loading screens and the palette block. If the palette loading is explicitly disabled (Bit 7) or any of HiColor, HiRes, or ULA mode is set, it skips loading the palette. Otherwise, the loader readt the 512 bytes of palette information and sets the affected palette. In case of LoRes, enables ULANext and uploads the primary ULA palette. When Layer 2 is selected, the palette uploads to the Layer 2 primary palette.
+
+Depending on the type of the loader screen (if any of them is enabled at all), the loader handles them the following way:
+
+1. If Layer 2 loading screen is set, the loader reads the next 48K from the file and stores them in bank 9, 10, and 11, respectively. Then it enables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula. Then, it resets the Timex port (0xff).
+2. If ULA loading screen is set, the loader reads the next 6912 bytes (6144 pixel bytes + 768 attribute bytes) and stores the data directly from address $4000 (remember, Bank 5 is paged in for this memory range). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula. Then, it resets the Timex port (0xff).
+3. If LoRes loading screen is set, the loader loads two subsequent blocks of 6144 bytes. It stores the first block from $4000, the second to $6000 (following the LoRes screen structure). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula, and enables the LoRes display mode.
+4. If HiRes loading screen is set, the loader loads two subsequent blocks of 6144 bytes. It stores the first block from $4000, the second to $6000 (following the HiRes screen structure). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula, and enables the HiRes display mode.
+5. If HiColor loading screen is set, the loader loads two subsequent blocks of 6144 bytes. It stores the first block from $4000, the second to $6000 (following the HiColor screen structure). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula, and enables the HiColor display mode.
+
+The loader sets the border color only if there is any loading screen.
+
+(continue from .skpbmp)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Tools for Creating NEX Files
 

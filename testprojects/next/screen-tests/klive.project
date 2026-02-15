@@ -19,6 +19,16 @@
   "debugger": {
     "breakpoints": [
       {
+        "address": 8192,
+        "exec": true,
+        "ioMask": 65535
+      },
+      {
+        "address": 8883,
+        "exec": true,
+        "ioMask": 65535
+      },
+      {
         "resource": "code/border-tests.kz80.asm",
         "line": 15,
         "exec": true,
@@ -73,14 +83,6 @@
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/teststable.kz80.asm",
-          "position": {
-            "line": 7,
-            "column": 1
-          }
-        },
-        {
-          "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/helpers.kz80.asm",
           "position": {
             "line": 16,
@@ -96,15 +98,15 @@
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/code.kz80.asm"
+      "activeDocumentId": "$disassembly"
     },
     "Disassembly": {
-      "topAddress": 33313,
+      "topAddress": 8915,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,
       "bankLabel": true,
-      "autoRefresh": true,
+      "autoRefresh": false,
       "ram": true,
       "screen": false,
       "disassOffset": 0
