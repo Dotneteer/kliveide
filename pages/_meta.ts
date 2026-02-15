@@ -7,5 +7,8 @@ export default {
   "contribute": "Contribute",
   scripting: "Scripting",
   "commands-reference": "Commands Reference",
-  "machine-types": "Machine Types"
+  "machine-types": "Machine Types",
+  book: {
+    display: "hidden"
+  }
 };

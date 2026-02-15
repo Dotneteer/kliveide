@@ -33,6 +33,36 @@ The project contains some other Nextra-related files; please do not touch them. 
 
 You can consider existing articles as examples.
 
+### Creating Hidden Pages
+
+Sometimes you may want to create documentation pages that are accessible via URL but don't appear in the navigation sidebar. This is useful for:
+- Supplementary reference materials
+- Draft content that's ready but not yet promoted
+- Special-purpose landing pages
+- Beta feature documentation
+
+To create a hidden page:
+
+1. Create your `.mdx` file in the appropriate folder (e.g., `pages/book.mdx`)
+2. Add an entry for this page in the corresponding `_meta.ts` file with `display: "hidden"`
+3. The page will be accessible via its URL path (e.g., `/book`) but won't appear in navigation
+
+Example:
+```typescript
+// pages/_meta.ts
+export default {
+  index: "Introduction",
+  "getting-started": "Getting Started",
+  book: {
+    display: "hidden"  // Page exists at /book but hidden from sidebar
+  }
+};
+```
+
+The page at `pages/book.mdx` will be accessible at `/book` but hidden from the sidebar. You can link to hidden pages from other documentation pages using standard markdown links: `[Link text](/book)`.
+
+See the [example hidden page](/book) to understand how this works in practice.
+
 ### Adding images
 
 You can add images following these steps:
