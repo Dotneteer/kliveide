@@ -186,8 +186,9 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
     output: KliveCompilerOutput,
     args: ExportCommandArgs
   ): Promise<IdeCommandResult> {
-    // --- Check if this is a NEX file export (based on .savenex pragma or explicit format)
-    if ((output as CompilerOutput).nexConfig || args["-f"] === "nex") {
+    // --- Check if this is a NEX file export (based on explicit format or .savenex pragma)
+    // --- Respect explicit format choice: only use NEX if format is "nex" or if no format is specified and nexConfig exists
+    if (args["-f"] === "nex" || ((output as CompilerOutput).nexConfig && !args["-f"])) {
       return await this.exportNexFile(context, output, args);
     }
 
