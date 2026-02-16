@@ -1,4 +1,4 @@
-@import "@styles/core.scss";
+@use "@styles/core.scss" as *;
 
 .listWrapper {
   @include fill-parent-flex;

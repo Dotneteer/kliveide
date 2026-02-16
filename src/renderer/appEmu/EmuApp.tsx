@@ -46,8 +46,6 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR
 } from "@common/settings/setting-const";
-import hello from "../xmlui/Hello.xmlui";
-console.log("XMLUI Hello:", hello);
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 

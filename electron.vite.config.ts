@@ -70,7 +70,6 @@ export default defineConfig({
       }
     },
     resolve: { alias },
-    //assetsInclude: ["**/*.xmlui"],
     plugins: [react()]
   }
 });
