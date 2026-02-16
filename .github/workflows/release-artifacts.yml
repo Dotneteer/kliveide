@@ -21,6 +21,7 @@ jobs:
       - name: Build Electron app on Windows
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
         run: npm run build:win
 
       - name: Add install Emulator install kit to artifacts
@@ -49,6 +50,7 @@ jobs:
       - name: Build Electron app on linux
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
         run: npm run build:linux
 
       - name: Add install Emulator install kit to artifacts
@@ -75,6 +77,7 @@ jobs:
       - name: Build Electron app on linux ARM64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
         run: npm run build:linux:arm64
 
       - name: Add install Emulator install kit to artifacts
@@ -101,6 +104,7 @@ jobs:
       - name: Build Electron app on Mac
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
         run: npm run build:mac
 
       - name: Add install Emulator install kit to artifacts
@@ -127,6 +131,7 @@ jobs:
       - name: Build Electron app on Mac ARM64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
         run: npm run build:mac:arm64
 
       - name: Add install Emulator install kit to artifacts
