@@ -664,7 +664,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
     }
 
     // --- Prepare the run mode
-    if (codeToInject.options.cursork) {
+    if (codeToInject.options.cursorl || codeToInject.options.cursork /* deprecated */) {
       // --- Set the keyboard in "L" mode
       this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
     }
