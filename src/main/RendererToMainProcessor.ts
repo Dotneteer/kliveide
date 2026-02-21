@@ -59,6 +59,7 @@ import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
 import { CimFile } from "./fat32/CimFileManager";
 import { Fat32Volume } from "./fat32/Fat32Volume";
 import { FileManager } from "./fat32/FileManager";
+import { O_RDONLY } from "./fat32/Fat32Types";
 
 const compilerRegistry = createCompilerRegistry();
 
@@ -740,6 +741,23 @@ class MainMessageProcessor {
    */
   async setGlobalSettingsValue(settingId: string, value: any): Promise<void> {
     setSettingValue(settingId, value);
+  }
+
+
+  /**
+   * Checks if the ZX Spectrum Next files system has an "autoexec.1st" file.
+   * @returns True if the "autoexec.1st" file exists, false otherwise.
+   */
+  async hasNextAutoExec(): Promise<boolean> {
+    const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+    if (!fs.existsSync(sdCardPath)) {
+      return false;
+    }
+
+    const cimFile = new CimFile(sdCardPath);
+    const vol = new Fat32Volume(cimFile);
+    vol.init();
+    return vol.open("/nextzxos/autoexec.1st", O_RDONLY) !== null;
   }
 }
 

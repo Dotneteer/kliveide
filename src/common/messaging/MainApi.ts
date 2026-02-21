@@ -449,6 +449,14 @@ class MainApiImpl {
   async setGlobalSettingsValue(_settingId: string, _value: any): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Checks if the ZX Spectrum Next files system has an "autoexec.1st" file.
+   * @returns True if the "autoexec.1st" file exists, false otherwise.
+   */
+  async hasNextAutoExec(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 export type MainApi = MainApiImpl;
