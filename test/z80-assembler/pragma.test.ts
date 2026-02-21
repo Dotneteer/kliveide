@@ -1705,13 +1705,85 @@ describe("Assembler - pragmas", async () => {
     });
   });
 
-  it("injectopt #1", async () => {
+  it("injectopt #1 - cursork (deprecated)", async () => {
     const compiler = new Z80Assembler();
     const source = ".injectopt cursork";
 
     const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
+    expect(output.injectOptions["cursork"]).toBe(true);
+  });
+
+  it("injectopt #2 - cursorl", async () => {
+    const compiler = new Z80Assembler();
+    const source = ".injectopt cursorl";
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.injectOptions["cursorl"]).toBe(true);
+  });
+
+  it("injectopt #3 - cursorl case insensitivity", async () => {
+    const compiler = new Z80Assembler();
+    const source = ".injectopt CURSORL";
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.injectOptions["cursorl"]).toBe(true);
+  });
+
+  it("injectopt #4 - multiple cursorl options", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .injectopt cursorl
+      nop
+      .injectopt cursorl
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.injectOptions["cursorl"]).toBe(true);
+  });
+
+  it("injectopt #5 - cursorl with subroutine", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .injectopt cursorl
+      .injectopt subroutine
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.injectOptions["cursorl"]).toBe(true);
+    expect(output.injectOptions["subroutine"]).toBe(true);
+  });
+
+  it("injectopt #6 - cursork (deprecated) still works", async () => {
+    const compiler = new Z80Assembler();
+    const source = ".injectopt cursork";
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.injectOptions["cursork"]).toBe(true);
+  });
+
+  it("injectopt #7 - both cursork and cursorl work together", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      .injectopt cursorl
+      .injectopt cursork
+    `;
+
+    const output = await compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.injectOptions["cursorl"]).toBe(true);
     expect(output.injectOptions["cursork"]).toBe(true);
   });
 

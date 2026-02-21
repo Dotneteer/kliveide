@@ -1,3 +1,5 @@
+import { Callout } from 'nextra/components';
+
 # Pragmas
 
 The compiler understands several pragmas that &mdash; though they are not Z80 instructions &mdash; influence the emitted code. Each pragma has two alternative syntax constructs, one with a dot prefix and another without. 
@@ -304,14 +306,22 @@ The __VAR__ pragma works similarly to __EQU__. However, while __EQU__ does not a
 
 The **INJECTOPT** pragma expects an identifier-like option tag after the starting pragma keyword. This keyword identifies an option for injecting the code into an emulated machine. The Klive Assembler supports two options:
 
-### `cursork`
+### `cursorl`
 
-When you run the ZX Spectrum virtual machine from the IDE, it injects the machine code into the memory and sets up the system as if you started the code from BASIC with the RUN command. By default, it sets the cursor to "L" mode.
-However, in several cases, you'd like to keep the cursor in "K" mode, for example, when you intend to start the code with the 
-**RANDOMIZE USER _addr_** command (here, *addr* is the entry address). In this case, you can add the INJECTOP pragma to the code:
+When you run the ZX Spectrum virtual machine from the IDE, it injects the machine code into the memory and sets up the system as if you started the code from BASIC with the RUN command. By default, it sets the cursor to "K" mode.
+
+However, in several cases, you'd like to keep the cursor in "L" mode, for example, when you intend to start the code with the **RANDOMIZE USER _addr_** command (here, *addr* is the entry address). In this case, you can add the INJECTOPT pragma to the code:
 
 ```z80klive
-.injectopt cursork
+.injectopt cursorl
+```
+
+### `cursork` (deprecated)
+
+The `cursork` option is a deprecated alias for `cursorl` and does the same thing — it sets the cursor to "L" mode. The name was originally chosen because the "K" cursor is what you want to get rid of, which caused confusion. Use `cursorl` instead.
+
+```z80klive
+.injectopt cursork  ; deprecated: use cursorl instead
 ```
 
 ### `subroutine`
