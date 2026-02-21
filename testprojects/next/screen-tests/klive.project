@@ -1,13 +1,14 @@
 {
-  "kliveVersion": "0.53.0",
+  "kliveVersion": "0.53.2",
   "machineType": "zxnext",
   "modelId": "pal",
   "clockMultiplier": 1,
-  "soundLevel": 0,
-  "soundMuted": true,
+  "soundLevel": 0.8,
+  "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
+    "tape": "/Users/dotneteer/KliveExports/exp-test.tzx"
   },
   "machineSpecific": {},
   "ide": {
@@ -22,7 +23,8 @@
         "resource": "code/border-tests.kz80.asm",
         "line": 9,
         "exec": true,
-        "ioMask": 65535
+        "ioMask": 65535,
+        "resolvedAddress": 33211
       }
     ]
   },

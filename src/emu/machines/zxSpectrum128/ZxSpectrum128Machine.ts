@@ -498,7 +498,7 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  getCodeInjectionFlow(model: string): CodeInjectionFlow {
+  async getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow> {
     if (model === "sp48") {
       return [
         {

@@ -112,6 +112,10 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     this.memoryDevice = new C64MemoryDevice(this);
     this.config = {};
   }
+  frameTactMultiplier: number;
+  frameCompleted: boolean;
+  lastMemoryReadsCount: number;
+  lastMemoryWritesCount: number;
   getAspectRatio?: () => [number, number];
   getSelectedRomPage(): number {
     throw new Error("Method not implemented.");
@@ -137,7 +141,7 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
   }
 
   get frameJustCompleted(): boolean {
-    return this.machineFrameRunner.frameCompleted;
+    return this.frameJustCompleted;
   }
 
   /**
@@ -344,7 +348,7 @@ export class C64Machine extends M6510VaCpu implements IC64Machine {
     return this._emulatedKeyStrokes.length;
   }
 
-  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
+  async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {
     return [];
   }
 

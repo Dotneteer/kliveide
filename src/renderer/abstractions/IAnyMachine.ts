@@ -191,7 +191,7 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * @param model Machine model to use for code execution
    * @param additionalInfo Additional information for code execution
    */
-  getCodeInjectionFlow(model: string, additionalInfo?: any): CodeInjectionFlow;
+  getCodeInjectionFlow(model: string, additionalInfo?: any): Promise<CodeInjectionFlow>;
 
   /**
    * Injects the specified code into the ZX Spectrum machine

@@ -37,6 +37,7 @@ import { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 // --- Default ROM file
 const DEFAULT_ROM = "z88v50-r1f99aaae";
@@ -356,7 +357,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples(): number[] {
+  getAudioSamples(): AudioSample[] {
     return this.beeperDevice.getAudioSamples();
   }
 
@@ -655,7 +656,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets the main execution point information of the machine
    * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow(_model: string): CodeInjectionFlow {
+  async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {
     // TODO: Implement this
     return [];
   }

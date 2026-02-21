@@ -371,7 +371,7 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @param model Machine model to use for code execution
    * @param additionalInfo Additional information for code execution
    */
-  abstract getCodeInjectionFlow(model: string, additionalInfo: any): CodeInjectionFlow;
+  abstract getCodeInjectionFlow(model: string, additionalInfo: any): Promise<CodeInjectionFlow>;
 
   /**
    * Gets the length of the key emulation queue

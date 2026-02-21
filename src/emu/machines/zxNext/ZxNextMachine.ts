@@ -121,7 +121,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Initialize the machine
    */
-  constructor(public readonly modelInfo?: MachineModel) {
+  constructor(
+    public readonly modelInfo?: MachineModel,
+    private readonly messenger?: MessengerBase
+  ) {
     super();
 
     // --- Set up machine attributes
@@ -155,7 +158,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice = new JoystickDevice(this);
     this.soundDevice = new NextSoundDevice(this);
     this.audioControlDevice = new AudioControlDevice(this);
-    
+
     this.ulaDevice = new UlaDevice(this);
     this.hardReset();
   }
@@ -219,19 +222,18 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.audioControlDevice.reset();
     this.ulaDevice.reset();
     this.beeperDevice.reset();
-    
+
     // --- Configure audio sample rate for beeper device
     const audioRate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
     if (typeof audioRate === "number") {
       this.beeperDevice.setAudioSampleRate(audioRate);
-      
+
       // --- Also configure TurboSoundDevice with the same sample rate
-      this.audioControlDevice.getTurboSoundDevice().setAudioSampleRate(
-        this.baseClockFrequency,
-        audioRate
-      );
+      this.audioControlDevice
+        .getTurboSoundDevice()
+        .setAudioSampleRate(this.baseClockFrequency, audioRate);
     }
-    
+
     this.expansionBusDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices
@@ -531,30 +533,34 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // Get time-series sample arrays from both devices
     const beeperSamples = this.beeperDevice.getAudioSamples();
-    const turboSoundSamples = this.soundDevice.enableTurbosound 
-      ? turboSound.getAudioSamples() 
-      : [];
+    const turboSoundSamples = this.soundDevice.enableTurbosound ? turboSound.getAudioSamples() : [];
 
     // Both should have the same length, but handle mismatch gracefully
     const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);
-    
+
     if (shouldLogDetail) {
-      console.log(`[AUDIO F${frameCount}] Beeper:${beeperSamples.length}s TurboSound:${turboSoundSamples.length}s`);
+      console.log(
+        `[AUDIO F${frameCount}] Beeper:${beeperSamples.length}s TurboSound:${turboSoundSamples.length}s`
+      );
     }
 
     // For each sample time, combine beeper + PSG + DAC in mixer
     const mixedSamples: AudioSample[] = [];
-    const sampleDetails: Array<{ear: number, psgL: number, psgR: number, mixL: number, mixR: number}> = [];
-    
+    const sampleDetails: Array<{
+      ear: number;
+      psgL: number;
+      psgR: number;
+      mixL: number;
+      mixR: number;
+    }> = [];
+
     for (let i = 0; i < sampleCount; i++) {
       // Get beeper sample (or 0 if out of range)
       const earLevel = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
       mixer.setEarLevel(earLevel);
 
       // Get PSG sample (or 0 if out of range or disabled)
-      const psgSample = i < turboSoundSamples.length 
-        ? turboSoundSamples[i] 
-        : { left: 0, right: 0 };
+      const psgSample = i < turboSoundSamples.length ? turboSoundSamples[i] : { left: 0, right: 0 };
       mixer.setPsgOutput(psgSample);
 
       // Get the mixed output (includes EAR, MIC, PSG, DAC)
@@ -576,23 +582,27 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // Log detailed sample information for diagnostic frame
     if (shouldLogDetail) {
       console.log(`[SAMPLES F${frameCount}] ${mixedSamples.length}s:`);
-      
+
       for (let i = 0; i < sampleDetails.length; i++) {
         const s = sampleDetails[i];
-        console.log(`  ${i}: ear=${s.ear.toFixed(2)} psg=(${s.psgL},${s.psgR}) → mix=(${s.mixL},${s.mixR})`);
+        console.log(
+          `  ${i}: ear=${s.ear.toFixed(2)} psg=(${s.psgL},${s.psgR}) → mix=(${s.mixL},${s.mixR})`
+        );
       }
-      
+
       // Calculate statistics
-      const leftVals = mixedSamples.map(s => s.left);
-      const rightVals = mixedSamples.map(s => s.right);
+      const leftVals = mixedSamples.map((s) => s.left);
+      const rightVals = mixedSamples.map((s) => s.right);
       const minL = Math.min(...leftVals);
       const maxL = Math.max(...leftVals);
       const avgL = leftVals.reduce((a, b) => a + b, 0) / leftVals.length;
       const minR = Math.min(...rightVals);
       const maxR = Math.max(...rightVals);
       const avgR = rightVals.reduce((a, b) => a + b, 0) / rightVals.length;
-      
-      console.log(`  Stats: L(min=${minL} max=${maxL} avg=${avgL.toFixed(0)}) R(min=${minR} max=${maxR} avg=${avgR.toFixed(0)})`);
+
+      console.log(
+        `  Stats: L(min=${minL} max=${maxL} avg=${avgL.toFixed(0)}) R(min=${minR} max=${maxR} avg=${avgR.toFixed(0)})`
+      );
     }
 
     return mixedSamples;
@@ -773,7 +783,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Set the interrupt signal, if required so
     super.beforeInstructionExecuted();
     this.clockMultiplier = this.cpuSpeedDevice.effectiveClockMultiplier;
-    
+
     // --- Check if DMA is requesting the bus and acknowledge it FIRST
     // This must happen before calling stepDma() so the bus is available
     let busControl = this.dmaDevice.getBusControl();
@@ -781,7 +791,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       // --- DMA requested bus - acknowledge it
       this.dmaDevice.acknowledgeBus();
     }
-    
+
     // --- Step DMA state machine if active
     // This allows DMA to perform one operation per CPU instruction cycle
     // After acknowledgment above, DMA can now proceed with transfer
@@ -941,7 +951,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Gets the main execution point information of the machine
    * @param _model Machine model to use for code execution
    */
-  getCodeInjectionFlow(_model: string, additionalInfo: any): CodeInjectionFlow {
+  async getCodeInjectionFlow(_model: string, additionalInfo: any): Promise<CodeInjectionFlow> {
+    // --- Check for autoexec file
+    const mainApi = createMainApi(this.messenger);
+    const hasAutoExect = await mainApi.hasNextAutoExec();
+    console.log(`Autoexec file ${hasAutoExect ? "found" : "not found"}`);
+
     // --- Create QueueKey steps for the prompt
     const prompt = `.nexload ${additionalInfo}\n`;
     const promtKeys = convertAsciiStringToNextKeyCodes(prompt);
@@ -968,7 +983,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }
 
     // --- Create the flow
-    return [
+    const keys: CodeInjectionFlow = [
       {
         type: "KeepPc"
       },
@@ -993,19 +1008,25 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       },
       {
         type: "Start"
-      },
-      // {
-      //   type: "QueueKey",
-      //   primary: SpectrumKeyCode.Space,
-      //   wait: SP_KEY_WAIT,
-      //   message: "Space"
-      // },
-      // {
-      //   type: "ReachExecPoint",
-      //   rom: 0,
-      //   execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-      //   message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-      // },
+      }
+    ];
+    if (hasAutoExect) {
+      keys.push(
+        {
+          type: "QueueKey",
+          primary: SpectrumKeyCode.Space,
+          wait: SP_KEY_WAIT,
+          message: "Space"
+        },
+        {
+          type: "ReachExecPoint",
+          rom: 0,
+          execPoint: ZXNEXT_MAIN_WAITING_LOOP,
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
+        }
+      );
+    }
+    keys.push(
       {
         type: "Start"
       },
@@ -1027,7 +1048,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         duration: 100
       },
       ...promptQueue
-    ];
+    );
+    return keys;
   }
 
   /**
@@ -1105,8 +1127,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     return this.composedScreenDevice.pulseIntActive;
   }
 
-
-
   /**
    * Every time the CPU clock is incremented, this function is executed.
    * @param increment The tact increment value
@@ -1120,7 +1140,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Generate audio samples for all audio devices
     // Pass machine tacts and clock multiplier for proper sample timing
-    this.audioControlDevice.getTurboSoundDevice().setNextAudioSample(this.tacts, this.clockMultiplier);
+    this.audioControlDevice
+      .getTurboSoundDevice()
+      .setNextAudioSample(this.tacts, this.clockMultiplier);
     this.audioControlDevice.getDacDevice().setNextAudioSample();
     this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
   }
