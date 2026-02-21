@@ -485,7 +485,7 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
    * Gets the main execution point information of the machine
    * @param model Machine model to use for code execution
    */
-  abstract getCodeInjectionFlow(model: string): CodeInjectionFlow;
+  abstract getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow>;
 
   /**
    * Injects the specified code into the ZX Spectrum machine

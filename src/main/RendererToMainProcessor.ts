@@ -757,7 +757,7 @@ class MainMessageProcessor {
     const cimFile = new CimFile(sdCardPath);
     const vol = new Fat32Volume(cimFile);
     vol.init();
-    return vol.open("/nextzxos/autoexec.1st", O_RDONLY) !== null;
+    return vol.open("nextzxos/autoexec.1st", O_RDONLY) !== null;
   }
 }
 

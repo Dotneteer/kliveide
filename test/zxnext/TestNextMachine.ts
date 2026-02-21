@@ -346,7 +346,7 @@ export class TestZxNextMachine extends ZxNextMachine {
       r: this.r,
       iff1: this.iff1,
       iff2: this.iff2,
-      im: this.im
+      im: this.interruptMode
     };
   }
   
