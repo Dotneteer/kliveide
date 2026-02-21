@@ -89,7 +89,7 @@ export class TestUpd765Machine extends ZxSpectrumBase {
     throw new Error("Method not implemented.");
   }
 
-  getCodeInjectionFlow(model: string): CodeInjectionFlow {
+  async getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow> {
     throw new Error("Method not implemented.");
   }
 

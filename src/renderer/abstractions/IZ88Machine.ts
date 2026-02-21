@@ -4,6 +4,7 @@ import type { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
 import type { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
 import type { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 import type { Z88BankedMemory } from "@emu/machines/z88/memory/Z88BankedMemory";
+import { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 /**
  * This interface defines the behavior of a Cambridge Z88 virtual machine that integrates the emulator
@@ -38,7 +39,7 @@ export interface IZ88Machine extends IZ80Machine {
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
    */
-  getAudioSamples(): number[];
+  getAudioSamples(): AudioSample[];
 
   /**
    * Indicates if the machine's operating system is initialized

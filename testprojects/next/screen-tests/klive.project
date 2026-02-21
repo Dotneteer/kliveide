@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "0.53.0",
+  "kliveVersion": "0.53.2",
   "machineType": "zxnext",
   "modelId": "pal",
   "clockMultiplier": 1,
@@ -7,7 +7,8 @@
   "soundMuted": true,
   "savedSoundLevel": 0.8,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
+    "tape": "/Users/dotneteer/KliveExports/exp-test.tzx"
   },
   "machineSpecific": {},
   "ide": {

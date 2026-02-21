@@ -1,5 +1,17 @@
 # Klive IDE Changelog
 
+## 0.53.2
+
+### Fixes
+
+- Introduce "cursorl" with the same functionality as "cursork" (deprecated)
+
+## 0.53.1
+
+### Fixes
+
+- Fix .tzx and .tap export functionality (issue #1151)
+
 ## 0.53.0
 
 ### Fixes

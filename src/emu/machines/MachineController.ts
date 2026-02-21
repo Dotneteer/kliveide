@@ -293,7 +293,7 @@ export class MachineController implements IMachineController {
 
     // --- Execute the code injection flow
     const m = this.machine;
-    const injectionFlow = this.machine.getCodeInjectionFlow(
+    const injectionFlow = await this.machine.getCodeInjectionFlow(
       codeToInject.model ?? m.machineId,
       additionalInfo
     );

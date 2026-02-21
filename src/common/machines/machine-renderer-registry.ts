@@ -30,7 +30,7 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
   },
   {
     machineId: MI_ZXNEXT,
-    factory: (_, model) => new ZxNextMachine(model)
+    factory: (_, model, _c, messenger) => new ZxNextMachine(model, messenger)
   },
   {
     machineId: MI_Z88,

@@ -1,4 +1,4 @@
-@import "@styles/core.scss";
+@use "@styles/core.scss" as *;
 
 .sideBarHeader {
     @include fix-height-panel(36px);
