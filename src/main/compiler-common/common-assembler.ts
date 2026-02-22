@@ -910,13 +910,17 @@ export abstract class CommonAssembler<
   }
 
   /**
-   * Gets the current assembly address
+   * Gets the current assembly address.
+   * Returns the address of the first byte of the current instruction (the value of "$").
+   * Uses currentInstructionOffset when available, so that "$" correctly points to the
+   * start of the instruction even after opcode prefix bytes have been emitted.
    */
   getCurrentAddress(): number {
     this.ensureCodeSegment();
     const curSegment = this._currentSegment;
+    const offset = curSegment.currentInstructionOffset ?? curSegment.emittedCode.length;
     return (
-      (curSegment.startAddress + (curSegment?.displacement ?? 0) + curSegment.emittedCode.length) &
+      (curSegment.startAddress + (curSegment?.displacement ?? 0) + offset) &
       0xffff
     );
   }
@@ -1083,6 +1087,10 @@ export abstract class CommonAssembler<
   ): Promise<void> {
     const assembler = this;
     this._currentSourceLine = asmLine;
+    // --- Capture the instruction start offset BEFORE any bytes are emitted for
+    // --- this line, so that "$" in expressions correctly evaluates to the
+    // --- address of the first byte of the current instruction.
+    this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
     this._currentListFileItem = {
       fileIndex: asmLine.fileIndex,
       address: this.getCurrentAddress(),
@@ -1258,7 +1266,6 @@ export abstract class CommonAssembler<
       if (asmLine.type.endsWith("Pragma")) {
         // --- Process a pragma
         this.ensureCodeSegment();
-        this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
         await this.applyPragma(asmLine as Pragma<TInstruction, TToken>, currentLabel);
         //emitListItem();
       } else if (asmLine.type.endsWith("Statement")) {
@@ -1277,7 +1284,6 @@ export abstract class CommonAssembler<
       } else {
         // --- Process operations
         const addr = this.getCurrentAddress();
-        this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
         this.emitAssemblyOperationCode(asmLine);
 
         // --- Generate source map information

@@ -1,4 +1,4 @@
-# The NEX File Format: Packaging Next Applications
+# Appendix A: The NEX File Format
 
 Throughout this book, every hands-on exercise loads and runs code using the NEX file format. It's the standard way to distribute ZX Spectrum Next applications - a single file that contains everything needed to load and run a program. Understanding NEX files isn't just academic curiosity; it's essential for testing your emulator, running examples, and eventually creating your own Next software. This chapter breaks down the format from the user's perspective first, then dives into the implementation details you'll need for your emulator's loader.
 
@@ -354,100 +354,119 @@ Offset 140-141: 0 (close file after loading)
 
 **File size**: 512 (header) + 512 (palette) + 49,152 (screen) + 49,152 (3 banks) = 99,328 bytes ≈ 97KB
 
-## Loading Procedure: What Your Emulator Must Do
+## Loading Procedure: How Your Code is Started
 
-It is helpful to know how a NEX file is loaded.
+Understanding how the NEX loader operates helps you write better programs and debug loading issues. Here's the complete loading sequence.
 
-When the NEX loader starts, the upper 16K of the memory has a particular configuration. The first 8K ($0000-$1fff) is occupied by the ESXDOS ROM, the second 8K slot ($2000-$3fff) is configured to RAM. The NEXT loader is loaded into this second slot entirely separated from the rest of the $4000-$ffff address space. The loader saves the previous state of the Stack Pointer (SP) and temporarily moves the stack to the top of the second 8K slot ($3fff).
+### Initial Setup
 
-Before opening the NEX file, the loader disables the interrupt and sets the CPU speed to 14MHz. When the file has opened successfully, the loader initializes the screen:
-- It sets transparency on ULA
+When the NEX loader starts, memory is configured as follows: the first 8K (`$0000–$1FFF`) holds the ESXDOS ROM, and the second 8K slot (`$2000–$3FFF`) is RAM containing the loader itself — completely isolated from the `$4000–$FFFF` address space. The loader immediately saves the current Stack Pointer and moves the stack to the top of that second slot (`$3FFF`).
+
+Before opening the NEX file, the loader disables interrupts and sets the CPU speed to 14MHz. Once the file is open, the loader saves the file handle for later use (see Offset 140) and initializes the screen:
+
+- Sets ULA transparency
 - Disables Layer 2
-- Enables sprites (no sprites over the border, sprites over layer 2 over ULA)
+- Enables sprites (not over border; sprites above Layer 2, Layer 2 above ULA)
 
-The loader prepares the memory to load the NEX file by setting up the upper three 16K memory slots:
-- Slot 1 ($4000-$7fff): Bank 5
-- Slot 2 ($8000-$bfff): Bank 2
-- Slot 3 ($c000-$ffff): Bank 0
+The loader then maps the upper three 16K memory slots:
 
-It's time to load the NEX header. The loader puts this information to $c000, into the freshly loaded Bank 0.
+| Slot | Address range   | Bank   |
+|------|-----------------|--------|
+| 1    | `$4000–$7FFF`   | Bank 5 |
+| 2    | `$8000–$BFFF`   | Bank 2 |
+| 3    | `$C000–$FFFF`   | Bank 0 |
 
-First, the loader checks the loader version information in the NEX file's header. If the NEX file requires a higher version than the current loader, the system raises an error and aborts loading.
+### Reading the Header
 
-According to Offset 142, the loader may disable the expansion bus by writing 0 to the top four bits of nextreg 0x80.
+The loader reads the 512-byte NEX header into Bank 0 at `$C000` and performs these checks in order:
 
-When you use the NEX loader in an actual hardware, the loader checks if the current core version is at least the one required in the NEX file. If not, the loader raises an error asking the user to update the machine core. When the NEX loader runs within an emulator, this check is skipped.
+1. **Loader version**: If the NEX file requires a newer loader version, loading aborts with an error.
+2. **Expansion bus** (Offset 142): If requested, the loader disables the expansion bus by clearing the top four bits of NextReg `$80`.
+3. **Core version** (Offsets 135–137): On real hardware, if the current FPGA core is older than the required version, loading aborts with an upgrade prompt. In an emulator, this check is skipped.
 
-At this point, the loader blackens the screen by setting a black border and setting all the screen attribute bytes to PAPER 0 and INK 0.
+The loader then blacks out the screen — black border, all ULA attributes set to PAPER 0 / INK 0.
 
-According to the setting in Offset 134, the loader optionally resets the Next register values:
-- Stops Copper
-- Disables the divmmc nmi by DRIVE button
-- Enables multiface nmi by M1 button
-- Unlocks port 0x7ffd
-- Disables ram and port contention
-- Sets the AY stereo mode to ABC
-- Enables Spectdrum (The four 8-bit DACs)
-- Enables the Timex port (0xff)
-- Enables TurboSound
-- Turns to 28MHz CPU speed
-- Sets Layer 2 page to Bank 16, Layer 2 shadow page to Bank 12
-- Sets the global tansparency color to $e3
-- Enables sprites (but not over border, uses sprites over layer 2 over ula)
-- Resets scrolls of Layer 2 and LoRes to zero
-- Resets all clip windows to their defaults (no clipping)
-- Allows flashing
-- Initializes the primary ULA, Layer 2, and sprites palettes
-- Set the fallback color used if all layers are transparent to 0
-- Pages back ROM for the entire $0000-03fff range
+### Resetting Next Registers (Offset 134)
 
-The reset does keep the following Peripheral Settings 2 flags intact:
-- Enable F8 cpu speed hotkey and F5/F6 expansion bus hotkeys
-- Divert BEEP only to internal speaker
-- Enable F3 50/60 Hz hotkey
+If Offset 134 is 0, the loader resets the Next hardware to a clean state:
 
-After waiting for the beginning of the next screen frame, the loader reenables the previous AY mode (before the reset).
+- Stops the Copper
+- Disables DivMMC NMI (DRIVE button), enables Multiface NMI (M1 button)
+- Unlocks port `$7FFD`
+- Disables RAM and port contention
+- Sets AY stereo mode to ABC
+- Enables Spectdrum (four 8-bit DACs) and TurboSound
+- Enables the Timex port (`$FF`)
+- Sets CPU speed to 28MHz
+- Sets Layer 2 page to Bank 16, shadow page to Bank 12
+- Sets global transparency color to `$E3`
+- Enables sprites (not over border; sprites above Layer 2 above ULA)
+- Resets Layer 2 and LoRes scroll positions to zero
+- Resets all clip windows to defaults (no clipping)
+- Enables flashing
+- Initializes primary ULA, Layer 2, and sprite palettes
+- Sets the fallback color (all layers transparent) to 0
+- Pages the ROM back into `$0000–$3FFF`
 
-The loader check Offset 10 for the loading screens and the palette block. If the palette loading is explicitly disabled (Bit 7) or any of HiColor, HiRes, or ULA mode is set, it skips loading the palette. Otherwise, the loader readt the 512 bytes of palette information and sets the affected palette. In case of LoRes, enables ULANext and uploads the primary ULA palette. When Layer 2 is selected, the palette uploads to the Layer 2 primary palette.
+The following Peripheral Settings 2 flags are preserved regardless:
 
-Depending on the type of the loader screen (if any of them is enabled at all), the loader handles them the following way:
+- F8 CPU speed hotkey and F5/F6 expansion bus hotkeys
+- BEEP routed to internal speaker only
+- F3 50/60Hz hotkey
 
-1. If Layer 2 loading screen is set, the loader reads the next 48K from the file and stores them in bank 9, 10, and 11, respectively. Then it enables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula. Then, it resets the Timex port (0xff).
-2. If ULA loading screen is set, the loader reads the next 6912 bytes (6144 pixel bytes + 768 attribute bytes) and stores the data directly from address $4000 (remember, Bank 5 is paged in for this memory range). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula. Then, it resets the Timex port (0xff).
-3. If LoRes loading screen is set, the loader loads two subsequent blocks of 6144 bytes. It stores the first block from $4000, the second to $6000 (following the LoRes screen structure). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula, and enables the LoRes display mode.
-4. If HiRes loading screen is set, the loader loads two subsequent blocks of 6144 bytes. It stores the first block from $4000, the second to $6000 (following the HiRes screen structure). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula, and enables the HiRes display mode.
-5. If HiColor loading screen is set, the loader loads two subsequent blocks of 6144 bytes. It stores the first block from $4000, the second to $6000 (following the HiColor screen structure). Then it disables Layer 2, enables sprites with layer priority set to sprites over layer 2 over ula, and enables the HiColor display mode.
+After waiting for the next screen frame to begin, the loader restores the AY stereo mode that was active before the reset.
 
-The loader sets the border color only if there is any loading screen.
+### Loading the Palette and Screen
 
-(continue from .skpbmp)
+The loader reads Offset 10 to determine whether a palette and loading screen are present.
+
+**Palette**: The 512-byte palette block is skipped if bit 7 of Offset 10 is set, or if the screen type is ULA, HiRes, or HiColor (these modes don't use a NEX palette). Otherwise, the loader reads the palette and programs the appropriate hardware palette:
+
+- **LoRes**: Enables ULANext and uploads to the primary ULA palette
+- **Layer 2**: Uploads to the Layer 2 primary palette
+
+**Loading screen**: Each screen type is loaded as follows:
+
+| Screen type | Size        | Destination              | Notes                                    |
+|-------------|-------------|--------------------------|------------------------------------------|
+| Layer 2     | 48KB        | Banks 9, 10, 11          | Enables Layer 2; resets Timex port       |
+| ULA         | 6,912 bytes | `$4000` (Bank 5)         | Disables Layer 2; resets Timex port      |
+| LoRes       | 2 × 6,144 B | `$4000` and `$6000`      | Disables Layer 2; enables LoRes mode     |
+| HiRes       | 2 × 6,144 B | `$4000` and `$6000`      | Disables Layer 2; enables HiRes mode     |
+| HiColor     | 2 × 6,144 B | `$4000` and `$6000`      | Disables Layer 2; enables HiColor mode   |
+
+All screen types set sprite priority to: sprites above Layer 2, Layer 2 above ULA.
+
+The border color (Offset 11) is applied only if a loading screen is present.
+
+After all screens are loaded, Bank 0 is paged back into Slot 3 (`$C000–$FFFF`).
+
+### Loading Memory Banks
+
+Banks are loaded in this fixed order: **5, 2, 0, 1, 3, 4, 6, 7**, then **8 through 111** sequentially. For each bank, the loader checks the corresponding flag byte in the header (Offsets 18–129). If the flag is set, the loader maps that bank to Slot 3 via MMU 6 and MMU 7 and reads 16KB of data from the file into `$C000–$FFFF`.
+
+After each bank loads, the loader updates the loading progress indicator. If a loading screen is present, it also waits the number of frames specified in Offset 132 before proceeding.
+
+### Starting Execution
+
+Once all banks are loaded:
+
+1. **File handle** (Offset 140): If the value is zero, the NEX file is closed. Otherwise, it remains open for the program to use.
+2. **Entry bank** (Offset 139): The specified bank is paged into Slot 3 (`$C000–$FFFF`) via MMU 6 and MMU 7.
+3. **File handle delivery**: If Offset 140 is in the range `$0001–$3FFF`, the file handle is placed in register BC. If it is in the range `$4000–$FFFF`, the file handle is written to that memory address.
+4. **Stack pointer**: SP is set to the value at Offset 12.
+5. **Program counter** (Offset 14):
+   - **Zero**: The NEX file is closed, SP and Slot 3 are restored to their original values, and control returns to the NextBASIC prompt.
+   - **Non-zero**: The loader jumps to that address with ZX Spectrum Next ROM3 paged in, starting your program.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Tools for Creating NEX Files
+## Creating NEX Files with Klive Assembler
 
 You don't manually construct NEX files byte-by-byte (though you could). Klive IDE includes a Z80 assembler with built-in NEX file generation - it's the tool we'll use throughout this book.
 
-### Klive IDE Assembler
-
 Klive's assembler makes NEX creation straightforward using the `.model next` directive and `.savenex` pragma. Here's a complete example:
 
-```z80
+```z80klive
 .model next
 
 .savenex file "game.nex"
@@ -455,15 +474,15 @@ Klive's assembler makes NEX creation straightforward using the `.model next` dir
 .savenex border 5            ; Cyan border
 
 ; Your code starts at $8000 automatically (unbanked code maps to bank 2)
-main:
+main
     ld a, 2
     out (0xFE), a            ; Set border color
     call game_loop
     
-trap:
+trap
     jr trap
 
-game_loop:
+game_loop
     ; Game logic here
     ret
 ```
@@ -477,7 +496,7 @@ When you use `.model next`, Klive automatically sets sensible defaults:
 The `.savenex` pragma accepts multiple subcommands to configure every aspect of the NEX file:
 
 **Basic Configuration:**
-```z80
+```z80klive
 .savenex file "myapp.nex"        ; Output filename
 .savenex ram 768                 ; 768KB or 1792KB
 .savenex border 4                ; Green border (0-7)
@@ -487,14 +506,14 @@ The `.savenex` pragma accepts multiple subcommands to configure every aspect of 
 ```
 
 **Loading Screen:**
-```z80
+```z80klive
 .savenex screen "layer2", "loading.scr"
 .savenex palette "colors.nxp"
 .savenex bar "on", 2, 50, 100    ; Enable loading bar: color 2, delay 50, start delay 100
 ```
 
 **Advanced Features:**
-```z80
+```z80klive
 .savenex copper "effects.cu"     ; Copper code for loading effects
 .savenex filehandle "open"       ; Keep file open, pass handle in BC
 .savenex preserve "on"           ; Preserve Next registers
@@ -504,14 +523,14 @@ The `.savenex` pragma accepts multiple subcommands to configure every aspect of 
 
 For complex programs using multiple memory banks, combine unbanked code with explicit `.bank` sections:
 
-```z80
+```z80klive
 .model next
 
 .savenex file "multibank.nex"
 .savenex core "3.1.0"
 
 ; Unbanked code in bank 2 at $8000
-main:
+main
     ; Page in bank $20 to $A000-$BFFF
     nextreg $55, $40
     call DrawScreen
@@ -522,34 +541,12 @@ main:
 .org $0000
 .disp $a000
 
-DrawScreen:
+DrawScreen
     ; Drawing code here
     ret
 ```
 
 The assembler tracks which banks your code uses and automatically includes them in the NEX file. Unbanked code (without `.bank` pragma) goes to bank 2 starting at $8000. Code with explicit `.bank` directives goes to the specified bank at the addresses you define.
-
-### Other Tools (Alternative Options)
-
-While Klive IDE is our primary tool, other assemblers support NEX generation if you need them:
-
-**sjasmplus** - Popular Z80 assembler with NEX support:
-```asm
-    DEVICE ZXSPECTRUMNEXT
-    SAVENEX OPEN "game.nex", start, stack
-    SAVENEX CORE 3,1,10
-    SAVENEX AUTO
-    SAVENEX CLOSE
-start:
-    ; Your code
-```
-
-**NexCreate** - Command-line NEX builder from binary files:
-```bash
-nexcreate -S layer2.scr -c 7000 -s C000 program.bin output.nex
-```
-
-For all exercises in this book, we'll use Klive IDE's assembler. Understanding the NEX format helps you debug loading issues, inspect file structure, and understand what your assembler is generating under the hood.
 
 ## Version Differences: V1.0, V1.1, V1.2
 
