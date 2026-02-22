@@ -8,6 +8,52 @@ import z80_assembly_meta from "../../../pages/z80-assembly/_meta.ts";
 export const pageMap = [{
   data: meta
 }, {
+  name: "book",
+  route: "/book",
+  children: [{
+    name: "app-A-nex-file-format",
+    route: "/book/app-A-nex-file-format",
+    frontMatter: {
+      "sidebarTitle": "App a Nex File Format"
+    }
+  }, {
+    name: "app-B-nextreg-reference",
+    route: "/book/app-B-nextreg-reference",
+    frontMatter: {
+      "sidebarTitle": "App B Nextreg Reference"
+    }
+  }, {
+    name: "introduction",
+    route: "/book/introduction",
+    frontMatter: {
+      "sidebarTitle": "Introduction"
+    }
+  }, {
+    name: "preface",
+    route: "/book/preface",
+    frontMatter: {
+      "sidebarTitle": "Preface"
+    }
+  }, {
+    name: "using-klive-ide",
+    route: "/book/using-klive-ide",
+    frontMatter: {
+      "sidebarTitle": "Using Klive Ide"
+    }
+  }, {
+    name: "z80-z80n-overview",
+    route: "/book/z80-z80n-overview",
+    frontMatter: {
+      "sidebarTitle": "Z80 Z80n Overview"
+    }
+  }]
+}, {
+  name: "book",
+  route: "/book",
+  frontMatter: {
+    "sidebarTitle": "Book"
+  }
+}, {
   name: "commands-reference",
   route: "/commands-reference",
   frontMatter: {
