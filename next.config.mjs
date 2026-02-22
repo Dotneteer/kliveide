@@ -137,7 +137,7 @@ const customTheme = {
     {
       scope: ["string"],
       settings: {
-        foreground: "#cd3131"
+        foreground: "#FF6B35"
       }
     },
     {

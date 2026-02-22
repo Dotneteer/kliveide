@@ -29,8 +29,13 @@
   },
   "builder": {
     "roots": [
-      "code/code.kz80.asm"
+      "main.kz80.asm"
     ]
+  },
+  "settings": {
+    "languages": {
+      "kz80-asm": ".asm"
+    }
   },
   "exportDialog": {
     "formatId": "tzx",
@@ -49,54 +54,38 @@
       "documents": [
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/code.kz80.asm",
+          "id": "/Users/dotneteer/source/kliveide/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 18,
-            "column": 16
+            "line": 22,
+            "column": 15
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/border-tests.kz80.asm",
+          "id": "/Users/dotneteer/source/kliveide/testprojects/next/book/_helpers/display.asm",
           "position": {
-            "line": 8,
-            "column": 23
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/display.kz80.asm",
-          "position": {
-            "line": 175,
-            "column": 22
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/helpers.kz80.asm",
-          "position": {
-            "line": 16,
+            "line": 370,
             "column": 1
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/ula-tests.kz80.asm",
+          "id": "/Users/dotneteer/source/kliveide/testprojects/next/book/01_intro/print.asm",
           "position": {
-            "line": 7,
-            "column": 5
+            "line": 16,
+            "column": 1
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/testprojects/next/screen-tests/code/display.kz80.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
-      "topAddress": 0,
+      "topAddress": 33555,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,
       "bankLabel": true,
-      "autoRefresh": false,
+      "autoRefresh": true,
       "ram": true,
       "screen": false,
       "disassOffset": 0

@@ -24,6 +24,13 @@ export class FixupEntry<
 > extends ExpressionEvaluator<TInstruction, TToken> {
   private readonly _symbols: Record<string, IValueInfo>;
 
+  /**
+   * The start address of the instruction that contains this fixup expression.
+   * Captured at construction time so "$" in the expression correctly evaluates
+   * to the first byte of that instruction, even during deferred fixup resolution.
+   */
+  private readonly _instructionStartAddress: number;
+
   constructor(
     public readonly parentContext: IEvaluationContext<TInstruction, TToken>,
     public readonly module: AssemblyModule<TInstruction, TToken>,
@@ -36,6 +43,9 @@ export class FixupEntry<
     public readonly structBytes: Map<number, number> | null = null
   ) {
     super();
+    // Capture the start address of the current instruction so that "$" in the
+    // fixup expression always resolves to the instruction's first byte address.
+    this._instructionStartAddress = parentContext.getCurrentAddress();
     if (expression) this._symbols = FixupEntry.snapshotVars(module);
   }
 
@@ -60,10 +70,12 @@ export class FixupEntry<
   }
 
   /**
-   * Gets the current assembly address
+   * Gets the current assembly address.
+   * Returns the captured start address of the instruction that contains this
+   * fixup expression, so "$" always refers to the instruction's first byte.
    */
   getCurrentAddress(): number {
-    return this.parentContext.getCurrentAddress();
+    return this._instructionStartAddress;
   }
 
   /**

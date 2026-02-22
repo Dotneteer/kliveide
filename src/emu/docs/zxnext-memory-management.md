@@ -95,6 +95,10 @@ Now that you understand address lines, let's see how the 2MB is actually carved 
 | 0x10'0000 - 0x17'FFFF | 512K | 2nd Extra IC RAM  | A20:A19 = `10`         |
 | 0x18'0000 - 0x1F'FFFF | 512K | 3rd Extra IC RAM  | A20:A19 = `11`         |
 
+### Understanding the Address Lines Column
+
+Notice the "Address Lines (Binary)" column - it shows which bits pin down each region. **More specified bits = smaller region; fewer bits = larger region.** For example, `A20:A16 = 00000` (5 bits) gives 64KB, but `A20:A19 = 01` (2 bits) gives 512KB. The decoder uses binary prefix matching - like a ZIP code where "00000xxxx..." is more specific than "01xxxx...". Each bit you lock down cuts the addressable region in half.
+
 ### The System Region: Why the First 256K Is Special
 
 Remember from the address line breakdown that A20:A16 gives us 32 possible regions of 64K each. The first four regions (0-3) - that's 0x00'0000 through 0x03'FFFF, or 256K total - have a special role. Though the official ZX Spectrum Next documentation doesn't use this term, I call it the **System Region**.
@@ -154,70 +158,24 @@ Most software targets the full 2MB because that's what current retail boards shi
 
 Think of this region as the "worker floors" of your 2MB memory building - where all the real work happens, and where the size of the building determines how much you can do at once.
 
-### Understanding the Address Lines Column: A Decoder's Guide
-
-The "Address Lines (Binary)" column tells you which address bits pin down each memory region. Here's the key insight: **the more bits you specify, the smaller the region; the fewer bits you specify, the larger the region.**
-
-Let's walk through the patterns:
-
-**A20:A16 = `00000`** (Specifying 5 bits)
-- All 5 high bits must be zero to land in this region
-- That leaves A15:A0 (16 bits) free to vary
-- Result: First 64KB (ROM area) - addresses 0x00'0000-0x00'FFFF
-- *Why 64KB?* Because $2^{16}$ = 64KB of free-ranging address space
-
-**A20:A13 = `00001 000`** (Specifying 8 bits)
-- High 5 bits (A20:A16) must be `00001`
-- Next 3 bits (A15:A13) must be `000`
-- That leaves A12:A0 (13 bits) free to vary
-- Result: 8KB region - addresses 0x01'0000-0x01'1FFF (DivMMC ROM)
-- *Why 8KB?* Because $2^{13}$ = 8KB
-
-**A20:A14 = `00001 01`** (Specifying 7 bits)
-- High 5 bits (A20:A16) must be `00001`
-- Next 2 bits (A15:A14) must be `01`
-- That leaves A13:A0 (14 bits) free to vary
-- Result: 16KB region - addresses 0x01'4000-0x01'7FFF (Multiface ROM/RAM)
-- *Why 16KB?* Because $2^{14}$ = 16KB
-
-**A20:A17 = `0001`** (Specifying 4 bits)
-- Only 4 bits locked down
-- That leaves A16:A0 (17 bits) free to vary
-- Result: 128KB region (like `0010` giving 0x04'0000-0x05'FFFF)
-- *Why 128KB?* Because $2^{17}$ = 128KB
-
-**A20:A19 = `01`** (Specifying 2 bits)
-- Only 2 bits locked down - very permissive!
-- That leaves A18:A0 (19 bits) free to vary
-- Result: 512KB region
-- *Why 512KB?* Because $2^{19}$ = 512KB
-
-**The Pattern:**
-
-Think of it like a zip code system. If I say "addresses starting with 00000," that's very specific - it only matches one 64KB region. But if I say "addresses starting with 01," that's vague - it matches an entire 512KB region because I'm not being picky about the remaining bits.
-
-The address decoder uses this binary prefix matching to route your memory request to the right physical chip or region. More specific prefix = smaller region. Less specific prefix = larger region.
-
 ## MMU Slots and Pages: The Z80's Window Manager
 
 The MMU divides the Z80's 64KB address space into 8 slots of 8KB each. Think of these as 8 windows, each looking at a different part of the 2MB memory. You can change what each window looks at by programming its MMU register.
 
-- **Slot 0**: 0x0000 - 0x1FFF
-- **Slot 1**: 0x2000 - 0x3FFF
-- **Slot 2**: 0x4000 - 0x5FFF
-- **Slot 3**: 0x6000 - 0x7FFF
-- **Slot 4**: 0x8000 - 0x9FFF
-- **Slot 5**: 0xA000 - 0xBFFF
-- **Slot 6**: 0xC000 - 0xDFFF
-- **Slot 7**: 0xE000 - 0xFFFF
+| Slot | Address Range |
+| ---- | ------------- |
+| **Slot 0** | 0x0000 - 0x1FFF |
+| **Slot 1** | 0x2000 - 0x3FFF |
+| **Slot 2** | 0x4000 - 0x5FFF |
+| **Slot 3** | 0x6000 - 0x7FFF |
+| **Slot 4** | 0x8000 - 0x9FFF |
+| **Slot 5** | 0xA000 - 0xBFFF |
+| **Slot 6** | 0xC000 - 0xDFFF |
+| **Slot 7** | 0xE000 - 0xFFFF |
 
-Each slot is controlled by a corresponding MMU register (MMU0-MMU7, accessed via NextReg 0x50-0x57) that specifies which 8K-bank of physical memory is mapped:
+Each slot is controlled by a corresponding MMU register (MMU0-MMU7, accessed via NextReg 0x50-0x57) that specifies which 8K-bank of physical memory is mapped. As covered in the Memory Map section, this uses the standard formula to map into the MMU-addressable region (0x04'0000 onward).
 
-```
-Physical Address = 0x04'0000 + (MMU_reg << 13) | CPU_A[12:0]
-```
-
-**Important:** The first 256K of physical memory (0x00'0000-0x03'FFFF) is called the **System Region**. It contains ROMs, DivMMC ROM/RAM, Multiface, and Alt ROMs, and is accessed through the priority decode chain, NOT through the MMU. The MMU can only address memory starting at 0x04'0000 (after the System Region). This means MMU 8K-bank 0 maps to physical address 0x04'0000, not 0x00'0000!
+**Important:** Values 0-223 in an MMU register access the MMU-addressable region. Values 224-255 bypass the MMU and access the System Region instead (the first 256K with ROM, DivMMC, Multiface, and Alt ROMs).
 
 **Special Behavior for MMU Values 224-255 (0xE0-0xFF):**
 
@@ -229,12 +187,7 @@ Here's a clever hardware trick: when an MMU register contains a value from 224-2
 
 That's **beyond the 2MB boundary (0x1F'FFFF)**! Instead of accessing out-of-range memory, the MMU hardware **bypasses its own paging logic** and falls through to the priority decode chain, which then maps to **different regions within the System Region (physical addresses 0x00'0000-0x03'FFFF)** - where the firmware "ROM" images and special areas are stored. 
 
-Which specific region appears depends on:
-- **ROM selection registers** (ports 0x7FFD and 0x1FFD, or NextReg 0x8C lock bits): Select one of four 16K ROM images in the first 64K
-- **Configuration mode** (NextReg 0x03/0x04): Can access any 16K within the entire first 256K
-- **CPU address bit A13**: Selects which 8K half of the 16K region
-
-*Don't worry if this seems complicated right now - I'll dive into the priority decode chain, ROM selection, and configuration mode in detail later in this chapter.*
+Which specific System Region location appears depends on the ROM selection registers (ports 0x7FFD/0x1FFD, or NextReg 0x8C) and configuration mode settings - details covered in the priority decode chain section below.
 
 This is how the system boots with firmware visible in the lower 16K despite using MMU registers - MMU0 and MMU1 are initialized to **0xFF** on reset, which signals "bypass MMU, use priority decode" rather than "try to map 8K-bank 255 beyond 2MB".
 
@@ -248,59 +201,13 @@ Let's focus on the straightforward case first: **MMU 8K-bank numbers 0-223**. Th
 Physical Address = 0x04'0000 + (MMU_reg << 13) | CPU_A[12:0]
 ```
 
-**Breaking it down:**
-
-- **`0x04'0000`**: Start after the System Region (256KB offset)
-- **`MMU_reg << 13`**: Multiply the 8K-bank number by 8192 (the 8K-bank size)
-- **`CPU_A[12:0]`**: Add the offset within the 8K-bank (0-8191)
-
-That's it! Write an 8K-bank number to an MMU register, and the formula tells you where that 8K-bank lives in physical memory.
-
-**Concrete Examples:**
-
-**8K-Bank 0 = Physical 0x04'0000**
-```
-0x04'0000 + (0x00 << 13) = 0x04'0000
-```
-
-**8K-Bank 8 = Physical 0x05'0000**
-```
-0x04'0000 + (0x08 << 13) = 0x04'0000 + 0x01'0000 = 0x05'0000
-```
-
-**8K-Bank 20 = Physical 0x06'8000**
-```
-0x04'0000 + (0x14 << 13) = 0x04'0000 + 0x02'8000 = 0x06'8000
-```
-
-**8K-Bank 128 = Physical 0x14'0000**
-```
-0x04'0000 + (0x80 << 13) = 0x04'0000 + 0x10'0000 = 0x14'0000
-```
-
-**8K-Bank 223 (last usable) = Physical 0x1FE000**
-```
-0x04'0000 + (0xDF << 13) = 0x04'0000 + 0x1B'E000 = 0x1FE000
-```
-
-**The Math Checks Out:**
-
-- 224 8K-banks × 8KB = 1,792KB = 1.75MB
-- Starting at 0x04'0000 (after 256K System Region)
-- Ending at 0x1F'FFFF (the 2MB boundary)
-- Perfect fit!
+This straightforward arithmetic gives you 224 usable 8K-banks (0-223) spanning 1.75MB of the MMU-addressable region.
 
 *Common mistake: "Shouldn't 8K-bank 0 be the ROM?" Nope! The MMU can't address the System Region (where ROM lives). MMU 8K-bank 0 starts AFTER the System Region at 0x04'0000. To access ROM through an MMU slot, you need the special values 224-255, which I'll cover in the next section.*
 
 ### Special MMU Values (224-255): Accessing the System Region
 
-Now for the clever bit. MMU values 224-255 (0xE0-0xFF) don't follow the simple formula. If they did, they'd calculate addresses beyond the 2MB limit:
-
-```
-0x04'0000 + (0xFF << 13) = 0x23'E000  (beyond 0x1F'FFFF - impossible!)
-```
-
-Instead, the hardware detects this "overflow" and does something different: it **bypasses the MMU entirely** and uses the **priority decode chain** to access different parts of the System Region (physical 0x00'0000-0x03'FFFF).
+MMU values 224-255 (0xE0-0xFF) trigger an overflow that causes the hardware to **bypass the MMU entirely** and use the **priority decode chain** to access the System Region (physical 0x00'0000-0x03'FFFF) instead.
 
 **Why This Matters:**
 
@@ -329,6 +236,22 @@ This clever design uses the same MMU registers for both RAM paging (0-223) and f
 ## Address Decoding Priority: Who Wins When Everyone Wants the Same Address?
 
 Here's the challenge: when the Z80 asks to read from, say, address 0x2000, **multiple hardware components all think they should handle it**. Each one has its own way of translating that 16-bit Z80 address into a physical 21-bit address. And to make things even more interesting, the **same Z80 address can map to different physical addresses depending on whether it's a read or write operation** (thanks to Layer 2's separate read/write mapping controls).
+
+**Why does the hardware need so many overlapping systems?**
+
+Think about what needs to happen on the Next:
+
+- **Boot requires firmware visible** - you need ROM code at 0x0000 when the system starts, but later you want regular RAM there
+- **Graphics need fast access** - Layer 2's dual-buffering mode needs to read from one graphics buffer while writing to another - simultaneously
+- **The OS needs its own space** - DivMMC (ESXDOS) sits in the first 16K when you call DOS functions, then disappears to let your code run
+- **Debugging tools must work anytime** - Multiface can't wait for a "convenient moment" to activate; it needs to snapshot the machine state immediately when the NMI button is pressed, regardless of what else is active
+- **Security and protection** - ROM regions need write protection to prevent accidental corruption, but firmware updates need to temporarily disable that protection
+
+Without multiple independent systems, you'd need separate control registers and complex mode switching. Instead, the Next uses a clever priority chain: each system occupies the same address space but wins or loses based on its priority level and activation state. The Boot ROM always wins during startup. Then Multiface beats DivMMC, which beats the standard MMU. It's like having multiple tenants who can all claim the same apartment, but the lease clearly states who gets priority at any given moment.
+
+**Why separate read/write mapping for Layer 2?**
+
+Layer 2's dual-buffer graphics mode is clever: you display one graphics buffer on screen while writing to another. To make this work, Layer 2 can map different 16K banks for reads and writes - so when you write to Z80 address 0x4000, you're actually writing to graphics buffer A, but when a subroutine reads from 0x4000 (to compare pixels or check already-drawn data), it reads from graphics buffer B. Without separate read/write mapping, double-buffering would require constantly swapping the address mappings and would cause visual glitches.
 
 Each component wants to handle the translation:
 
@@ -394,7 +317,7 @@ Before diving into the detailed technical sections, let's get a quick overview o
 
 **ZX Spectrum Next ROM (Physical 0x00'0000-0x00'FFFF, 64KB)**
 
-The first 64KB contains the ZX Spectrum Next firmware, organized as four 16KB banks. Despite being called "ROM," this is actually SRAM with write protection. The system boots from here, and this is where the Next's native operating system and BASIC interpreter live. ROM selection registers (ports 0x7FFD and 0x1FFD, or NextReg 0x8C lock bits) determine which of the four 16KB banks appears in each 8KB slot.
+The first 64KB contains the ZX Spectrum Next firmware, organized as four 16KB banks. This is where the system boots and where the Next's native operating system and BASIC interpreter live. ROM selection registers (ports 0x7FFD and 0x1FFD, or NextReg 0x8C lock bits) determine which of the four 16KB banks appears in each 8KB slot.
 
 **DivMMC ROM and RAM (Physical 0x01'0000-0x03'FFFF, 192KB)**
 This region houses the ESXDOS operating system (ROM at 0x01'0000-0x01'1FFF) and its working memory (128KB RAM at 0x02'0000-0x03'FFFF). When DivMMC automap is active, the 8K ROM is mapped into the first 8K slot of the Z80's address space (0x0000-0x1FFF), and a selectable 8K slice of the 128K RAM is mapped into the second 8K slot (0x2000-0x3FFF). DivMMC automatically pages itself in when the system calls DOS functions, making SD card access and file management seamless. The automap mechanism triggers on specific RST instructions and I/O port accesses.
@@ -406,33 +329,25 @@ The famous Spectrum debugging and snapshot tool, built right into the Next. Pres
 Alternative ROM images for compatibility: Alt ROM0 (at 0x01'8000-0x01'BFFF) is the 128K ROM, Alt ROM1 (at 0x01'C000-0x01'FFFF) is the 48K ROM. When you need perfect compatibility with original Spectrum software, you can swap to these via NextReg 0x8C bit 7. This is separate from the primary ROM area, allowing flexible ROM management. The Alt ROM area is normally read-only, but can be made writable by setting NextReg 0x8C bit 6 (which makes the Alt ROM visible only during write operations, allowing you to update or patch these ROM images).
 
 **Main RAM (Physical 0x04'0000 onward, 1.75MB)**
-This is where your programs, data, graphics, and everything else lives during normal operation. The MMU can directly address this region using the simple formula: Physical = 0x04'0000 + (8K-bank × 8KB). It's divided into 224 8K-banks (0-223) that can be mapped into any of the eight MMU slots. This is the "worker space" - no special hardware tricks, just regular memory paging.
+This is where your programs, data, graphics, and everything else lives during normal operation. It's divided into 224 8K-banks (0-223) that can be mapped into any of the eight MMU slots using the formula covered in the Memory Map section.
 
 ### Hardware Components: Who Does What
 
-**Boot ROM**
-The highest-priority memory system, active only during initial system startup. When Boot ROM is on, nothing else matters - the system is loading the firmware. Once boot completes, this component deactivates and never interferes again.
+The **Boot ROM** operates as the highest-priority memory system, active only during initial system startup. When Boot ROM is on, nothing else matters - the system is loading the firmware. Once boot completes, this component deactivates and never interferes again.
 
-**MMU (Memory Management Unit)**
-Your everyday memory mapper. The MMU divides the Z80's 64KB address space into eight 8KB slots (0x0000-0x1FFF, 0x2000-0x3FFF, etc.). Each slot has a register (MMU0-MMU7, accessed via NextReg 0x50-0x57) that specifies which 8K-bank of physical memory appears there. Write a different 8K-bank number to the register, and that slot instantly shows different memory. Simple, predictable, powerful.
+The **MMU (Memory Management Unit)** serves as your everyday memory mapper, dividing the Z80's 64KB address space into eight 8KB slots (0x0000-0x1FFF, 0x2000-0x3FFF, etc.). Each slot has a register (MMU0-MMU7, accessed via NextReg 0x50-0x57) that specifies which 8K-bank of physical memory appears there. Write a different 8K-bank number to the register, and that slot instantly shows different memory - simple, predictable, and powerful.
 
-**DivMMC**
-The automatic butler of the memory system. DivMMC provides the ESXDOS operating system and pages itself in automatically when needed. Call a DOS function or access the SD card? DivMMC appears. Return from the function? DivMMC disappears. You don't manually enable it - the hardware detects specific addresses and I/O operations and handles paging automatically. High priority (level 3) ensures DOS always works, even when other systems are active.
+**DivMMC** acts as the automatic butler of the memory system, providing the ESXDOS operating system and paging itself in automatically when needed. Call a DOS function or access the SD card? DivMMC appears. Return from the function? DivMMC disappears. You don't manually enable it - the hardware detects specific addresses and I/O operations and handles paging automatically. High priority (level 3) ensures DOS always works, even when other systems are active.
 
-**Multiface**
-The debugging superhero. Press the NMI button, and Multiface overrides everything (except Boot ROM) to give you a snapshot and debug interface. It's essential for game development and reverse engineering. Very high priority (level 2) means it works no matter what state the machine is in.
+**Multiface** functions as the debugging superhero: press the NMI button, and Multiface overrides everything (except Boot ROM) to give you a snapshot and debug interface. It's essential for game development and reverse engineering. Very high priority (level 2) means it works no matter what state the machine is in.
 
-**Layer 2**
-The Next's high-color graphics mode (256 colors per pixel). Layer 2 has its own memory mapping system that can overlay the MMU for the first 48K of address space. When enabled, Layer 2 intercepts memory accesses and redirects them to graphics buffers. You can have separate read and write mappings, so you can draw to one buffer while displaying another. Priority level 4 means graphics can override normal memory but not DivMMC or Multiface.
+**Layer 2** implements the Next's high-color graphics mode (256 colors per pixel) with its own memory mapping system that can overlay the MMU for the first 48K of address space. When enabled, Layer 2 intercepts memory accesses and redirects them to graphics buffers. You can have separate read and write mappings, so you can draw to one buffer while displaying another. Priority level 4 means graphics can override normal memory but not DivMMC or Multiface.
 
-**Configuration Mode**
-A special "safe mode" for system setup and firmware updates. When active, NextReg 0x04 selects which ROM/RAM to map, bypassing normal ROM selection. Priority level 5 (lower than MMU) means it doesn't interfere with normal operation, only with ROM access. Used during initial configuration and when updating the firmware.
+**Configuration Mode** provides a special "safe mode" for system setup and firmware updates. When active, NextReg 0x04 selects which ROM/RAM to map, bypassing normal ROM selection. Priority level 5 (lower than MMU) means it doesn't interfere with normal operation, only with ROM access. It's used during initial configuration and when updating the firmware.
 
-**ROMCS (Expansion Bus ROM)**
-External hardware on the expansion bus can provide ROM by asserting the ROMCS signal. This is how add-on cards extend the system without needing internal ROM space. Very low priority (level 6) - only gets a chance if nothing else wants the address.
+**ROMCS (Expansion Bus ROM)** allows external hardware on the expansion bus to provide ROM by asserting the ROMCS signal. This is how add-on cards extend the system without needing internal ROM space. Very low priority (level 6) means it only gets a chance if nothing else wants the address.
 
-**Standard ROM**
-The default fallback. If no other system claims an address in the 0x0000-0x3FFF range, Standard ROM responds. Lowest priority (level 8) - the safety net that ensures there's always something to execute from.
+**Standard ROM** serves as the default fallback: if no other system claims an address in the 0x0000-0x3FFF range, Standard ROM responds. With the lowest priority (level 8), it's the safety net that ensures there's always something to execute from.
 
 ## Legacy 128K Paging: Compatibility with the Old Guard
 
@@ -440,17 +355,29 @@ Before the Next's fancy MMU system, Spectrum 128K machines used a different pagi
 
 **16K-Banks: The Original Memory Unit**
 
-The ZX Spectrum 128K (and its successors +2/+3) organized memory into **16K-banks** (often just called "banks" for short). These are exactly what they sound like - 16KB chunks of memory. The 128K models had:
+The ZX Spectrum 128K (1986) organized memory into **16K-banks** (often just called "banks" for short). These are exactly what they sound like - 16KB chunks of memory. The system had:
 
 - **Two 16K ROM banks** (128K ROM and 48K ROM for compatibility)
 - **Eight 16K RAM banks** (numbered 0-7, giving 128KB total RAM)
 
-The Z80's 64KB address space was divided into four 16K slots, and two I/O ports controlled which banks appeared where:
+The original 128K paging control used a **single I/O port**:
 
-- **Port 0x7FFD** (bits 2:0): Select which of the 8 RAM banks appears at 0xC000-0xFFFF
+- **Port 0x7FFD** (bits 2:0): Select which of the 8 RAM banks appears at 0xC000-0xFFFF (the upper 16K)
 - **Port 0x7FFD** (bit 3): Select shadow screen (Bank 7 instead of Bank 5)
 - **Port 0x7FFD** (bit 4): ROM/RAM at 0x0000-0x3FFF (special all-RAM mode)
-- **Port 0x1FFD** (bit 0): Special paging mode for +2/+3 models
+
+This simple scheme controlled where the RAM appeared at the top of the address space, while the lower 16K was always ROM (except in all-RAM mode).
+
+**The +2/+3 Enhancement: More Paging Control**
+
+The later models (ZX Spectrum +2 and +2A/+3) kept the original port 0x7FFD but added a **second control port**:
+
+- **Port 0x1FFD** (bit 0): Additional paging mode selection
+  - This allowed different ROM/RAM configurations beyond what 128K offered
+  - The +2/+3 used this to support different operating systems and ROM images
+  - More complex than the simple 128K scheme, but giving more flexibility
+
+The +2/+3 models essentially layered additional control on top of the 128K scheme rather than replacing it. Legacy software written for 128K still works on +2/+3 using just port 0x7FFD, but +2/+3-specific software could use port 0x1FFD for enhanced capabilities.
 
 **Special Banking Configurations:**
 
@@ -460,11 +387,9 @@ The most interesting configuration is **all-RAM mode** (port 0x7FFD bit 4 set). 
 - Memory-intensive applications
 - RAM disks and other clever hacks
 
-The +2/+3 models added even more complex paging modes via port 0x1FFD, allowing you to access different combinations of ROM and RAM banks.
-
 **Special Roles: Bank 5 and Bank 7**
 
-Two specific 16K RAM banks have special significance:
+Two specific 16K RAM banks have special significance across all 128K models:
 
 - **Bank 5** (physical 0x01'4000-0x01'7FFF): The main screen memory
   - Normally appears at 0x4000-0x7FFF in the Z80's address space
@@ -486,7 +411,7 @@ The Next's 8KB MMU slots (MMU0-MMU7) can be thought of as cutting each 16K-bank 
 - Port 0x7FFD selects a 16K-bank, which sets two adjacent MMU registers
 - You can use NextReg 0x8E to control 128K paging via registers instead of ports
 
-The Next maintains full backward compatibility - your old 128K software just works, using the legacy ports exactly as it always did. But for new software, the 8KB MMU system is far more flexible.
+The Next maintains full backward compatibility - your old 128K, +2, or +3 software just works, using the legacy ports exactly as it always did. But for new software, the 8KB MMU system is far more flexible.
 
 *I mentioned earlier that I'd cover legacy 128K paging modes later - this is that coverage! For deeper details on the port mappings and special modes, see the "128K Memory Paging" section in the NextReg Registers Summary later in this chapter.*
 
@@ -521,26 +446,13 @@ When an MMU register points to pages 0x0A, 0x0B (Bank 5) or 0x0E (Bank 7), route
 
 **The Memory Access Pipeline:**
 
-**1. Address Decode Phase**
+Memory access follows a three-phase pipeline that determines where data lives and how long you'll wait.
 
-First, figure out what memory is being accessed:
-- Determine which MMU slot (check address bits A15:A13)
-- Calculate the physical address
-- Check if this is Bank 5 or Bank 7 (special video memory in BRAM)
-- **Lock in the settings**: Freeze Layer 2 and MMU register values
-  - *Why? The Copper or other systems might change these mid-access, causing corruption*
+The **Address Decode Phase** begins by determining which MMU slot is being accessed (checking address bits A15:A13), calculating the physical address, and checking if this is Bank 5 or Bank 7 (special video memory in BRAM). Critically, the hardware locks in the Layer 2 and MMU register values at this point to prevent corruption - the Copper or other systems might change these mid-access, which would cause the wrong memory to be accessed partway through the operation.
 
-**2. Priority Decode Chain**
+Next, the **Priority Decode Chain** runs through each system in priority order (Boot ROM → Multiface → DivMMC → Layer 2 → MMU → etc.) until one claims the address. The first system that says "yes, this is mine" wins and determines the final physical address. This phase also establishes whether the memory is ROM (read-only) or RAM (read/write) and figures out where the data actually lives: external SRAM, internal BRAM, or Boot ROM.
 
-Run through the priority decode chain to determine the final physical address:
-- Check each system in priority order (Boot ROM → Multiface → DivMMC → Layer 2 → MMU → etc.)
-- First one that claims the address wins
-- Determine if this is ROM (read-only) or RAM (read/write)
-- Figure out where the data lives: external SRAM, internal BRAM, or Boot ROM
-
-**3. Wait States and Timing**
-
-Memory access isn't instant - different memory types have different speeds:
+Finally, **Wait States and Timing** are applied because memory access isn't instant - different memory types have different speeds:
 
 - **At 28 MHz**: Always insert 1 wait state for SRAM **read** access (chips need time to respond)
   - This adds 1 extra T-state to the normal 3 T-state memory read delay
@@ -559,15 +471,7 @@ The expansion bus can only operate at 3.5 MHz. If you need to access expansion h
 
 **Read-Only Memory Regions**
 
-Even though everything is physically SRAM, certain regions refuse write operations:
-
-- **Boot ROM** - Always read-only (prevents boot code corruption)
-- **DivMMC ROM** - Read-only (the ESXDOS operating system ROM)
-- **Multiface ROM** - The first 8K is read-only (second 8K is RAM workspace)
-- **Standard ROMs** - Read-only unless Alt ROM write is enabled (NextReg 0x8C bit 6)
-- **DivMMC RAM Bank 3** - Becomes read-only when mapped to 0x0000-0x1FFF
-  - *This prevents accidental corruption of ESXDOS workspace*
-- **ROMCS-mapped memory** - External ROM from expansion bus is assumed read-only
+Even though everything is physically SRAM, certain regions refuse write operations. The **Boot ROM** is always read-only to prevent boot code corruption. **DivMMC ROM** is read-only because it contains the ESXDOS operating system. **Multiface ROM** has its first 8K read-only (the Multiface program itself) while the second 8K serves as RAM workspace. **Standard ROMs** are read-only unless Alt ROM write is enabled (NextReg 0x8C bit 6), allowing firmware updates. **DivMMC RAM Bank 3** becomes read-only when mapped to 0x0000-0x1FFF to prevent accidental corruption of ESXDOS workspace. Finally, **ROMCS-mapped memory** from the expansion bus is assumed read-only since it's provided by external hardware.
 
 When you write to a read-only region, the write is silently ignored. Your program doesn't get an error - the write simply doesn't happen. This is how the hardware enforces the ROM/RAM boundaries.
 
@@ -583,7 +487,11 @@ BRAM solves this with **dual-port access**: the CPU can write to Bank 5 through 
 
 **The Speed Advantage:**
 
-Reading from BRAM is **faster than SRAM** - it's internal to the FPGA, running at the full FPGA clock speed with no external bus delays. This is crucial because the screen rendering components (ULA, Tilemap, LoRes, Sprites) need to read video data constantly and rapidly. They can slam BRAM with read requests every clock cycle without slowing anything down or requiring complex timing coordination.
+Reading from BRAM is **faster than SRAM** - it's internal to the FPGA, running at the full FPGA clock speed with no external bus delays. Critically, BRAM can complete a read in **a single 28 MHz clock cycle**, with data available immediately. This is indispensable for graphics rendering: the screen rendering components (ULA, Tilemap, LoRes, Sprites) need to read video data constantly and feed it to the display pipeline without interruption.
+
+Why does single-cycle access matter? Consider high-resolution Layer 2 graphics: at 28 MHz, you're fetching multiple pixels per clock cycle. If video memory took multiple cycles to read, you'd either have pipeline stalls (frozen graphics) or need massive prefetch buffers (expensive in FPGA area). Instead, BRAM delivers the data you need in the exact cycle you need it, allowing the rendering hardware to sustain full throughput.
+
+The rendering hardware can slam BRAM with read requests every clock cycle without slowing anything down or requiring complex timing coordination.
 
 If video memory lived in external SRAM, the rendering hardware would need to compete with the CPU for memory bus access, causing either visual glitches (missed display deadlines) or severe CPU slowdowns (waiting for video to finish). BRAM eliminates this bottleneck - the video system gets its data instantly, every time.
 
@@ -638,22 +546,17 @@ When you detect an MMU mapping to pages 0x0A, 0x0B (Bank 5) or 0x0E (Bank 7), ro
 
 **Memory Arbitration: Who Gets Access When?**
 
-Bank 5 and Bank 7 are special because both the CPU and video hardware need access. Here's how conflicts are resolved:
+Bank 5 and Bank 7 are special because both the CPU and video hardware need access. The CPU and video hardware share access to dual-port BRAM, with video requests (ULA for screen, Tilemap for tiles, LoRes for graphics) happening at specific times. When both request simultaneously, the **CPU wins** - it can't wait indefinitely without affecting program execution. The video system can tolerate small delays without visual glitches, making this priority scheme practical.
 
-**Bank 5 Arbitration** (CPU vs. video systems):
-- CPU and video hardware share access to dual-port BRAM
-- Video requests (ULA for screen, Tilemap for tiles, LoRes for graphics) happen at specific times
-- **CPU wins** when both request simultaneously - the CPU can't wait indefinitely
-- Video system can tolerate small delays without visual glitches
-
-**Video System Priority** (ULA vs. Tilemap):
-- ULA (screen display) gets first priority - can't miss display timing
-- Tilemap gets access when ULA isn't requesting
-- Both systems read during different clock phases to minimize conflicts
+Within the video system itself, the **ULA (screen display) gets first priority** because it can't miss display timing without causing visible artifacts. Tilemap gets access when ULA isn't requesting, and both systems read during different clock phases to minimize conflicts.
 
 ## DivMMC Memory Management: The Automatic Butler
 
-DivMMC is like having a butler who appears exactly when you need them without being called. It provides the ESXDOS operating system and SD card access, and it pages itself in automatically when needed.
+**The Story of DivMMC:**
+
+The original ZX Spectrum had no disk storage - just a cassette tape interface that stored programs painfully slowly. In 2006, the "DivIDE" board was created to add SD/MMC card support to the Spectrum, offering instant file access instead of tape loading. DivMMC (DivIDE MMC) evolved from this hardware concept, becoming the standard way to add mass storage to Spectrum machines. The Next inherited this legacy, integrating DivMMC as a core feature with a complete filesystem operating system called ESXDOS. This combination transformed the Spectrum from a stand-alone computer into one with modern file management - you can now save, load, and organize programs just like on contemporary computers, except on a machine from 1982.
+
+DivMMC is like having a butler who appears exactly when you need them without being called. It provides the ESXDOS operating system and SD card access, and it pages itself in automatically when needed. The clever part is that it happens invisibly - your old code doesn't need to know about DivMMC at all. ROMs and BASIC programs can execute their normal routines, and when they encounter specific RST instructions or I/O operations, DivMMC automatically pages itself in, handles the request, and disappears. This is the "automap" mechanism - transparent, automatic, and elegant.
 
 **Automap: The Magic Appearance Trick**
 
@@ -661,16 +564,35 @@ Automap is DivMMC's clever mechanism for automatically paging in its ROM/RAM whe
 
 **1. Entry Points** (what triggers automap):
 
-- **RST instructions** at specific addresses - BASIC and ROM routines call these for compatibility
-- **Certain I/O port accesses** - accessing hardware triggers DOS services
-- **NMI button press** - manual activation
+- **RST instructions** - Eight possible entry points controlled by NextReg 0xB8:
+  - Any of **RST 0, 8, 16, 24, 32, 40, 48, 56** can be configured to trigger automap
+  - Default (NextReg 0xB8 = 0x83): RST 0, RST 8, and RST 56 trigger automap
+  - When a program executes one of these enabled RST instructions, DivMMC pages itself in
+  
+- **I/O port accesses** (ROM3 automap, controlled by NextReg 0xBB):
+  - **Port 0x04C6** - Disk configuration
+  - **Port 0x0562** - ROM selection
+  - **Port 0x04D7** - Disk drive command
+  - **Port 0x056A** - ROM bank management
+  - Each port triggers automap when accessed during the appropriate address range (configured in NextReg 0xBB bits)
+  
+- **NMI button press** - Manual activation via hardware button
+  - Can also be triggered via NextReg 0x02 bit 3 (software NMI generation)
 
 **2. Automap Modes** (timing matters):
 
 - **Instant mode**: Page in immediately during the M1 cycle
-  - Fast but can cause glitches if you're not expecting it
+  - DivMMC paging is active when the CPU reads the instruction opcode
+  - The **opcode itself comes from paged-in memory** (DivMMC ROM or RAM)
+  - Fast, direct execution of DOS routines, but can cause glitches if you're not expecting the memory map to change mid-instruction
+  - Best for: Well-behaved code that knows it's triggering automap
+  
 - **Delayed mode**: Page in on the *next* M1 cycle after the opcode fetch
-  - Safer - gives the current instruction time to complete
+  - The CPU fetches the **opcode from the original memory** during M1
+  - Memory paging activates after M1 completes, before operand fetches
+  - **Operands and further data reads come from paged-in memory**
+  - Safer and more compatible - gives the current instruction time to complete naturally
+  - Best for: Legacy code that wasn't designed with automap in mind (e.g., old BASIC ROMs)
 
 **3. Memory Layout When Active**:
 
@@ -681,10 +603,12 @@ Automap is DivMMC's clever mechanism for automatically paging in its ROM/RAM whe
 
 **4. Exit Conditions** (how DivMMC knows to unpage itself):
 
-- **RETN instruction** - return from interrupt/DOS call
-- **Access to 0x1FF8-0x1FFF** - special "exit automap" addresses
-- **Reset** - system resets clear everything
-- **Disable via register** - you can turn it off manually
+- **RETN instruction** - return from interrupt/DOS call automatically unpages DivMMC
+- **Access to addresses 0x1FF8-0x1FFF** - special "exit automap" zone (when enabled in NextReg 0xBB bit 6)
+  - Useful for exiting from ROM3 interrupt handlers
+  - Reading from these addresses triggers immediate unpage
+- **Manual disable** - NextReg 0x0A bit 4 controls whether automap is enabled at all
+- **Reset** - system resets clear all automap state
 
 **DivMMC Priority:**
 
@@ -692,7 +616,11 @@ DivMMC sits at **level 3** in the decode hierarchy. That's high enough to overri
 
 ## Multiface Memory Management: The Debugging Superhero
 
-Multiface is the original "pause and save" system for Spectrum. Press a button, the entire machine freezes, and Multiface takes over to let you save snapshots or inspect memory. On the Next, it's built in rather than being an external device.
+Before emulators existed, game developers testing on real Spectrum hardware faced a critical problem: you could run your code, but if something went wrong, you had no way to pause and inspect the machine state. Multiface solved this in the late 1980s - a hardware cartridge you plugged into the Expansion Port that added a physical "freeze" button. Press it, and everything stops. Multiface takes over the memory, displays a menu, lets you save the entire machine state to tape or disk, inspect memory, modify registers, and resume execution right where you left off. It was the closest thing to a debugger that hardware-era Spectrum developers had.
+
+The Next inherits this legacy by building Multiface directly into the FPGA - no external hardware needed. Every Next has debugging superpowers built in. Press a physical button (or trigger it via software) and Multiface springs into action, overriding the entire machine state to give you a developer interface. For emulator development and game development, this is invaluable - you can pause mid-operation, inspect memory, modify code, and test edge cases that would be impossible to reproduce otherwise.
+
+What makes Multiface so elegant is its priority: it's the only system (besides Boot ROM) that can interrupt *anything*. DivMMC might be paging, Layer 2 might be rendering, the CPU might be in the middle of a critical operation - Multiface doesn't care. It overrides everything instantly. This is why it lives at priority level 2, just below the Boot ROM itself.
 
 **Activation** (summoning the superhero):
 
@@ -720,110 +648,52 @@ This is essential because Multiface needs to work no matter what state the machi
 
 ## Expansion Bus ROMCS: External Hardware Gets a Say
 
-The expansion bus lets external hardware provide ROM. This is how add-on cards can extend the system without needing internal ROM space.
+The expansion bus lets external hardware provide ROM, allowing add-on cards to extend the system without needing internal ROM space.
 
-**ROMCS Signal** ("ROM Chip Select"):
+The **ROMCS signal** ("ROM Chip Select") works as follows: external hardware pulls this signal low to indicate "I've got ROM for you!" The system monitors this signal during memory cycles in the 0x0000-0x3FFF range. When asserted, internal ROM is disabled and the external hardware provides data instead. The expansion ROM appears at physical addresses corresponding to DivMMC banks 14-15 (0x01'C000-0x01'FFFF) - unused address space in the physical layout that's been repurposed for this function.
 
-- External hardware pulls this signal low to say "I've got ROM for you!"
-- Monitored during memory cycles in the 0x0000-0x3FFF range
-- When asserted: internal ROM is disabled, external hardware provides data
-- **Physical mapping**: Expansion ROM appears at DivMMC banks 14-15 (0x01'C000-0x01'FFFF)
-  - Wait, why DivMMC banks? Because that's unused address space in the physical layout
+ROMCS sits at **level 6 in the decode hierarchy** - near the bottom, lower than most internal systems. It only gets a chance if Boot ROM is off, Multiface is inactive, DivMMC isn't paged in, Layer 2 isn't mapping this area, the MMU hasn't overridden it, and Configuration mode is off.
 
-**Priority**: Level 6 (near the bottom)
+**The 3.5 MHz Speed Requirement:**
 
-ROMCS sits at level 6 in the decode hierarchy - lower than most internal systems. It only gets a chance if:
-- Boot ROM is off
-- Multiface is inactive
-- DivMMC isn't paged in
-- Layer 2 isn't mapping this area
-- MMU hasn't overridden it
-- Configuration mode is off
+Here's the crucial constraint: **when ROMCS is active, the CPU must run at 3.5 MHz**. This is not optional - it's a hardware requirement. External expansion cards are slow compared to the Next's FPGA and internal SRAM. At 7 MHz or higher, the CPU executes memory cycles too quickly for external hardware to respond. The timing looks like this:
 
-**Timing** (why the memory cycle delay matters):
+- **At 3.5 MHz**: Memory cycle takes 280 nanoseconds (T4 and T5 + additional insertion of wait states). External cards have time to decode the address, check if ROMCS should be asserted, and provide valid data before the Next samples the bus.
+- **At 7 MHz+**: Memory cycle is too fast - external hardware can't possibly respond in time, resulting in bus contention, corrupted data, and system crashes.
 
-The memory cycle delay (see Write Operations section) exists primarily for ROMCS. Expansion cards might be slow - they're not FPGA-fast. By inserting delays at slower CPU speeds, you give external hardware time to decode the address and assert ROMCS before the memory cycle completes.
+The Next enforces this by locking the CPU to 3.5 MHz whenever ROMCS is active. If external hardware asserts ROMCS during a memory read, the CPU speed hardware automatically switches to 3.5 MHz until the expansion card releases the signal. From the software perspective, you don't explicitly manage this - it happens automatically. But knowing the speed constraint is important for understanding why accessing expansion devices is slow compared to internal memory.
 
-At 28 MHz: sorry, no delay for you. External hardware can't keep up with that speed anyway.
+**Wait States and Timing for ROMCS:**
+
+The memory cycle delay mentioned in the earlier Timing section exists primarily for ROMCS compatibility. By inserting wait states at slower CPU speeds (with time-sliced insertion at sub-cycle resolution), the Next gives external hardware the maximum possible time to participate in the memory cycle. At 28 MHz, there's no accommodation for expansion hardware - external devices simply can't keep up with that speed, which is why ROMCS doesn't work in turbo mode.
 
 ## Configuration Mode: System Setup and Updates
 
-Configuration mode is like a "safe mode" for the Next - it's used for initial system setup and firmware updates.
+Configuration mode provides a "safe mode" for the Next, used for initial system setup and firmware updates. It's activated via NextReg 0x03 (setting specific bits to enter config mode), after which NextReg 0x04 selects which ROM/RAM to map. The mode serves three main purposes: initial machine configuration, firmware updates (safely updating system ROM), and factory setup and testing.
 
-**How It Works:**
-
-- **Activation**: Via NextReg 0x03 (set specific bits to enter config mode)
-- **Memory mapping**: NextReg 0x04 selects which ROM/RAM to map
-- **Purpose**: 
-  - Initial machine configuration
-  - Firmware updates (safely update system ROM)
-  - Factory setup and testing
-- **Priority**: Level 5 in the decode hierarchy
-  - Lower than MMU but higher than standard ROM
-  - This lets you override the normal ROM without affecting other systems
-
-Configuration mode is deliberately low in priority (below MMU) so that once the system boots, normal memory mappings take precedence.
+Configuration mode sits at **level 5 in the decode hierarchy** - lower than MMU but higher than standard ROM. This positioning lets you override the normal ROM without affecting other systems. The mode is deliberately low in priority (below MMU) so that once the system boots, normal memory mappings take precedence.
 
 ## Alternative ROM: ROM Swapping Made Easy
 
-The Next can swap between different ROM images - useful for compatibility with original Spectrum software.
+The Next can swap between different ROM images for compatibility with original Spectrum software. The **48K ROM** resides at physical addresses 0x01'C000-0x01'FFFF (16KB), while the **128K ROM** occupies 0x01'8000-0x01'BFFF (16KB, swappable). These are the traditional Spectrum ROMs for compatibility mode.
 
-**ROM Selection:**
+NextReg 0x8C controls ROM selection: **bit 7** enables Alt ROM (swapping to 48K/128K ROM instead of Next ROM), while **bit 6** enables Alt ROM write access - when set, the ROM becomes writable for updates or patches; when clear, it's read-only for normal operation. **Bits 5-4** serve as lock bits to prevent accidental mode switching during operation (bit 5 locks ROM1 selection, bit 4 locks ROM0 selection).
 
-- **48K ROM**: Physical addresses 0x01'C000-0x01'FFFF (16KB)
-- **128K ROM**: Physical addresses 0x01'8000-0x01'BFFF (16KB, can be swapped)
-- These are the traditional Spectrum ROMs for compatibility mode
-
-**Control via NextReg 0x8C:**
-
-- **Bit 7**: Enable Alt ROM (swap to 48K/128K ROM instead of Next ROM)
-- **Bit 6**: Alt ROM write enable
-  - When set: ROM becomes writable (for updates/patches)
-  - When clear: ROM is read-only (normal operation)
-- **Bits 5-4**: Lock bits - prevent accidental mode switching during operation
-  - Bit 5: Lock ROM1 selection
-  - Bit 4: Lock ROM0 selection
-
-**Why This Matters:**
-
-When running old Spectrum software, you might need the original 48K or 128K ROM for perfect compatibility. Alt ROM lets you switch without restarting. And the write enable feature means you can even patch ROM bugs or customize the ROM contents.
+When running old Spectrum software, you might need the original 48K or 128K ROM for perfect compatibility. Alt ROM lets you switch without restarting, and the write enable feature means you can even patch ROM bugs or customize the ROM contents.
 
 ## Timing and Contention: When You Have to Wait Your Turn
 
 **ULA Contention: The Classic Spectrum Problem**
 
-ULA contention is like traffic on a one-lane bridge - only one vehicle at a time. When the ULA is reading Bank 5 to display the screen, the CPU has to wait.
-
-**How it works:**
-
-- **Affects**: Bank 5 access (screen memory at 0x4000-0x5FFF in 48K mode)
-- **When**: ULA is actively reading pixels for display
-- **Mechanism**: CPU clock is held high during contention periods
-  - This effectively pauses the CPU without breaking anything
-- **Where**: Applies during pixel display and border rendering
-- **Disable**: NextReg 0x08 bit 6 turns off contention
-  - Useful for timing-insensitive code or speed testing
-  - But makes your emulator less accurate!
-
-**Why This Matters:**
+ULA contention is like traffic on a one-lane bridge - only one vehicle at a time. When the ULA is reading Bank 5 to display the screen, the CPU has to wait. The contention affects Bank 5 access (screen memory at 0x4000-0x5FFF in 48K mode) when the ULA is actively reading pixels for display. The mechanism works by holding the CPU clock high during contention periods, effectively pausing the CPU without breaking anything. Contention applies during pixel display and border rendering. You can disable it via NextReg 0x08 bit 6, which is useful for timing-insensitive code or speed testing, but this makes your emulator less accurate.
 
 Original Spectrum software often relied on ULA contention timing. A game might use contention delays to synchronize with the display beam. If you disable contention, that software might run too fast or break.
 
 **Memory Wait States: Giving SRAM Time to Respond**
 
-**At 28 MHz** (turbo speed):
-- **Always insert 1 wait state** for SRAM reads
-- Why? The SRAM chips can't respond instantly at 28 MHz
-- This doesn't apply to internal BRAM (Banks 5/7) - that's FPGA-fast
+At **28 MHz** (turbo speed), the system always inserts 1 wait state for SRAM reads because the SRAM chips can't respond instantly at that speed. This wait state doesn't apply to internal BRAM (Banks 5/7) - that's FPGA-fast. At **14 MHz and below** (normal speeds), no wait states are needed - SRAM is plenty fast enough, which is why lower speeds feel "smoother" with no micro-pauses.
 
-**At 14 MHz and below** (normal speeds):
-- **No wait states needed** - SRAM is plenty fast enough
-- This is why lower speeds feel "smoother" - no micro-pauses
-
-**Bank 5/7 Arbitration Delays:**
-- Even without ULA contention, Bank 5/7 access might be delayed
-- The video system might be using the port when you request it
-- These delays are variable based on video timing
+Even without ULA contention, Bank 5/7 access might be delayed if the video system is using the port when you request it. These delays are variable based on video timing.
 
 **Sub-Pixel Timing: The 28 MHz Heartbeat**
 
@@ -885,7 +755,7 @@ if (MMU_reg >= 0xE0) {
 
 This is critical for boot - the default values MMU0=0xFF and MMU1=0xFF must access firmware from the System Region (physical 0x00'0000-0x00'3FFF), not crash with out-of-range addresses. It's also used by software that wants to temporarily restore firmware visibility (like ESXDOS returning to BASIC).
 
-**Remember:** There are no ROM chips! The System Region (0x00'0000-0x03'FFFF) contains SRAM that's write-protected to act like ROM. The MMU values 224-255 are a way to access different parts of the System Region without needing separate "ROM enable" control bits, and without trying to access memory beyond the 2MB limit.
+**Remember:** The MMU values 224-255 access the System Region (0x00'0000-0x03'FFFF) without needing separate "ROM enable" control bits or trying to access memory beyond 2MB.
 
 **4. Memory Cycle Delay Matters for Expansion Bus**
 

@@ -1,0 +1,216 @@
+# The ZX Spectrum Next: A Modern Classic
+
+## Why Revive a 40-Year-Old Computer?
+
+Here's a question that might seem absurd in 2020: why would anyone build a brand new version of a computer from 1982? The ZX Spectrum was already ancient when the iPhone launched. By the time the Next appeared, the original Spectrum was older than most of its new users' parents.
+
+The answer isn't nostalgia alone - though there's plenty of that. It's about preserving a programming culture that's been lost. The ZX Spectrum generation grew up with machines you could **understand completely**. Open the manual, and by page 50 you'd know exactly how the hardware worked. Write a program, poke a few memory addresses, and you could control every pixel on screen. Modern computers are powerful, but they're black boxes wrapped in abstractions wrapped in more abstractions. You can't "understand" an iPhone - you can only use the APIs someone else built.
+
+The Spectrum represented something different: **accessible low-level computing**. Kids learned to program because the barrier between "user" and "programmer" was paper-thin. The Next project asked: what if we took that philosophy and gave it modern hardware? Not just emulation running in a window, but real silicon you can hold, real signals you can measure with a scope, real hardware you can expand with your own circuits. A machine that's simultaneously authentic 1982 Spectrum and powerful 2020s computer.
+
+There's something irreplaceable about physical interaction with real hardware. When you press a key on the Next, an actual electrical signal travels through the FPGA to the keyboard controller. When you run a program, real silicon executes real Z80 code. This tactile feedback - the click of keys, the physical weight of the machine on your desk - connects you to the computer in a way that clicking on a window can't replicate. It's the difference between reading about gravity and actually feeling yourself fall. Emulators are wonderful tools for preservation and education, but the Next offers something more: **embodied computing**. You can feel the machine working.
+
+## The Vision: Backward Compatible, Forward Thinking
+
+Victor Trucco and the core team (later joined by many community contributors) started the Next project with a deceptively simple goal: **make the perfect Spectrum**. Not replace it, not reimagine it - perfect it. That meant two seemingly contradictory requirements:
+
+**Run all existing Spectrum software without modification.** Thousands of programs exist - games, utilities, demos, educational software. These define what "Spectrum" means. Break compatibility and you're building something else entirely, just using the same name.
+
+**Add modern features without breaking the classic experience.** More memory, better graphics, faster CPU, SD card storage, HDMI video output. But these enhancements had to be **optional** - you could toggle them off and get a pure 48K Spectrum experience, or turn them on and get capabilities that would have seemed like science fiction in 1982.
+
+The tension between these requirements shaped every design decision. How do you add 2MB of RAM to a machine designed for 48KB? How do you change the graphics without breaking programs that assume ULA timing? How do you modernize storage without losing tape compatibility? The answer: **layers of backward compatibility** built into hardware that knows when to behave like a 1982 machine and when to show off its 2020s capabilities.
+
+### The Kickstarter Journey: From Dream to Reality
+
+The ZX Spectrum Next didn't appear overnight - it emerged from years of FPGA development work and community passion. **Victor Trucco** (hardware designer and FPGA developer from Brazil) and **Fabio Belavenuto** (computer scientist and MSX hardware expert, also from Brazil) created the **TBBlue** - the original FPGA bitstream that became the foundation for the Next. **Jim Bagley** (legendary Spectrum game developer who created classics like Cabal and Midnight Resistance) joined to drive development requirements and implement new video modes. **Rick Dickinson** (1957-2018), the original Sinclair industrial designer behind the ZX80, ZX81, and ZX Spectrum, came aboard to design the case. **Henrique Olifiers** (former Bossa Studios co-founder) coordinated the project's business and marketing.
+
+The **first Kickstarter campaign launched April 23, 2017**, asking for £250,000 to fund production. The response was overwhelming: **£723,390 pledged by 3,113 backers** - nearly 290% of the goal. Funded in under 24 hours, the community sent a clear message: they desperately wanted this machine. The campaign offered everything from bare PCB boards for DIY builders to fully assembled machines with injection-molded cases recreating the classic Spectrum aesthetic.
+
+But hardware manufacturing taught brutal lessons. Supply chain issues, component revisions, case tooling problems, and the complexities of running a hardware startup from scratch meant delivery took longer than planned. The team grew with **Allen Albright** taking over firmware development, **Garry Lancaster** creating NextZXOS and NextBASIC, **Phil Candy** (Rick's design partner) ensuring quality, and dozens more contributors. The team remained transparent throughout, posting regular updates about challenges and solutions. By 2018-2019, thousands of Issue 2 boards were shipping worldwide.
+
+A **second Kickstarter launched August 11, 2020** for an improved Issue 2 revision, incorporating lessons learned and component improvements. **£1,847,106 pledged by 5,236 backers** - funded in under 5 minutes. COVID-19 hit during fulfillment, creating unprecedented supply chain disruptions. The team persisted through Brexit complications, component shortages, and global logistics chaos. By 2020-2021, thousands more Next machines reached backers worldwide.
+
+The **third campaign launched July 19, 2025** for the Issue 3 board featuring a larger FPGA (Artix A7) enabling new cores: Sinclair QL and Commodore 64 emulation alongside the Spectrum. **£2,612,335 pledged by 7,524 backers** - over 1000% of the £250,000 goal, funded in 7 minutes. After delivering over 10,000 units across the first two campaigns, the community had proven the Next wasn't just nostalgia - it was a living, evolving platform.
+
+Throughout this journey, the project remained **community-driven at its core**. The FPGA core development happens in public GitLab repositories. Hundreds of developers contribute software, tools, games, and documentation. The official forums buzz with hardware mods, programming techniques, and mutual support. This isn't a product dropped on the market - it's a platform built **with** its community, not just **for** them.
+
+## Why FPGA? The Hardware Philosophy
+
+Here's where the Next makes its critical architectural choice: **it's not emulation**. The Next uses an FPGA (Field-Programmable Gate Array) to recreate the original Spectrum hardware at the silicon level. This deserves explanation because it's easy to confuse FPGAs with software emulation.
+
+**Software Emulation: The Translation Approach**
+
+When you run a Spectrum emulator on your PC, the software reads the Z80 machine code and translates it: "Oh, this instruction means load this value into this register." Every instruction gets interpreted by another program. It's like reading a French novel through a translator - you get the story, but you're not reading the original words.
+
+Software emulation has advantages: it's flexible, easy to debug, runs on any computer. But it has problems too. Timing is approximate at best. Hardware quirks get simplified. External hardware can't connect because there are no real ports. You're simulating the Spectrum, not building one.
+
+**FPGA: Hardware Recreation**
+
+An FPGA is a chip full of programmable logic gates - think of it as reconfigurable silicon. You describe a hardware design in VHDL or Verilog (hardware description languages), and the FPGA rewires itself to become that hardware. The Next's FPGA literally **becomes** a Z80 CPU, ULA video chip, AY sound chip, and all the glue logic. It's not pretending - at the electrical signal level, it **is** these components.
+
+Why does this matter? Three critical reasons:
+
+**1. Perfect Timing Accuracy**
+
+The original Spectrum relied on precise timing relationships. The ULA steals memory cycles from the CPU at exact moments. Sound generation depends on specific clock relationships. Many programs and especially demos exploit these timings creatively (or accidentally). An FPGA running at the correct clock frequency gets these relationships exactly right - because it's the same circuit relationships as the original, just implemented in different silicon.
+
+**2. Real Hardware Compatibility**
+
+The Next has physical ports - GPIO, expansion bus, joysticks. External hardware can connect because real electrical signals exist. You can add external peripherals that the original Spectrum never had, but using the same electrical interface philosophy. Try that with software emulation - where do you even plug in the cable?
+
+**3. Authentic Development Experience**
+
+When you write software for the Next, you're writing for real hardware. The constraints are real. The optimizations that matter on real hardware still matter here. It's not a simulation teaching you simulation-optimized techniques - it's authentic low-level computing with all the beautiful constraints that make programming interesting.
+
+## The Modern Enhancements: What Makes It "Next"
+
+The genius of the Next is in what it adds **without** breaking the past. Let's look at the key enhancements:
+
+### The Memory Expansion: 2MB That Knows How to Hide
+
+Original Spectrum: 48KB (16KB ROM + 48KB RAM). The 128K models added bank switching to reach 128KB total. The Next? **2MB** - that's over 40 times the original 48K model.
+
+But here's the trick: the Z80 still has only 16 address lines. It can only "see" 64KB at once. The Next solves this with a **flexible MMU (Memory Management Unit)** that divides the Z80's address space into eight 8KB slots, each of which can point to any 8KB page in that 2MB. Want to run a 48K program? Set the MMU to mimic the original memory map. Want to use all 2MB? Page it in 8KB at a time through those slots.
+
+The MMU is sophisticated enough to stay invisible when running legacy software. Set a mode register, and suddenly it thinks it's a 128K machine with the original 0x7FFD port behavior. The software has no idea it's running on hardware with 40x more memory available.
+
+### Graphics: From 8 Colors to 256, Without Losing the Stripes
+
+The original Spectrum ULA is infamous for **color clash** - you could only have two colors per 8×8 pixel block. This limitation defined the Spectrum's visual aesthetic (and frustrated generations of game developers). The Next adds three new graphics modes that eliminate color clash while keeping the ULA fully functional:
+
+**Layer 2** provides 256×192 resolution with 256 colors per pixel. That's not a typo - the machine that originally had 8 colors total now gives you 256 colors **per pixel**. Layer 2 can display photographic-quality images that would have been impossible on the original hardware. Layer 2 uses external SRAM (requiring 48KB for standard resolution, even more for higher resolution modes), while the original ULA screen memory stays in the fast BRAM where it belongs. This means the ULA keeps chugging along underneath, unaware of the high-color layer composited on top, and you can even scroll Layer 2 graphics while the ULA displays text or graphics at the same time.
+
+**Tilemap** mode provides a grid-based background system where you define a map of tile references, and the hardware automatically looks up pattern data and renders them. It's like painting with a palette of 256 pre-drawn tiles - the CPU just specifies which tile goes where. The tilemap layer has its own memory, its own palette, and the hardware handles all rendering automatically. Games can scroll smoothly without the CPU copying screen data around - change a scroll register and the entire background shifts in hardware.
+
+**Sprites** are a completely independent graphics system - movable objects that can float above or below any of the other layers. The Next provides 128 hardware sprites, each with its own position registers, its own palette, and independent movement control. Sprites don't belong to the tilemap system or any other layer - they're a separate compositing element. This independence is what makes them so powerful: you can have sprites moving over a tilemap background, over Layer 2 graphics, or over ULA screens, all controlled separately.
+
+**LoRes** mode is an alternate rendering mode for the ULA - when enabled (NextReg 0x15 bit 7), it replaces standard ULA output. LoRes reduces resolution to 128×96 to gain more color attributes per block: 2 colors per 4×8 block instead of ULA's 2 colors per 8×8 block. It uses the same memory space as ULA, so you can't have both simultaneously - it's either ULA or LoRes.
+
+The Next's video compositor combines these systems using a three-layer priority order: **Sprites**, **Layer 2**, and **ULA** (which represents standard ULA, LoRes mode, or ULA/LoRes with Tilemap composited). The Z80 just writes to video memory - the FPGA handles the complex compositing at 28 MHz.
+
+### The Speed Upgrade: From 3.5 MHz to 28 MHz
+
+The original Spectrum ran at 3.5 MHz - fast for 1982, leisurely by modern standards. The Next offers **selectable CPU speeds**: 3.5 MHz, 7 MHz, 14 MHz, and 28 MHz. That top speed is 8 times faster than the original.
+
+Why multiple speeds instead of just "fast"? **Compatibility**. Some programs rely on specific timing - they delay by executing pointless loops, assuming each instruction takes a certain number of microseconds. Run these at 28 MHz and they break spectacularly (or finish so fast you can't see what happened). The Next lets you switch speeds per program, or even mid-program if you need precise timing for one section and maximum speed for another.
+
+There's a subtle implementation detail here: the **memory wait states** adjust automatically based on CPU speed. At 28 MHz, the external SRAM can't respond instantly, so the hardware inserts wait states. At 3.5 MHz, memory is fast enough that no waits are needed. The Z80 never knows this is happening - it just experiences slightly longer memory cycles at high speed, keeping everything synchronized.
+
+### Copper: The Raster Effect Co-Processor
+
+Borrowed conceptually from the Amiga, the **Copper** is a simple co-processor that executes a list of instructions synchronized to the video raster beam. You load up to 2KB of Copper instructions (NextReg 0x60-0x63), then start execution (NextReg 0x62). The Copper waits for specific raster positions and writes to NextReg registers when those positions are reached.
+
+Why is this useful? **Raster effects without CPU involvement**. Want to change the border color every scanline? Split the screen into multiple graphics modes? Display more sprites than hardware limits by reusing sprite registers mid-frame? The Copper handles it automatically while the Z80 continues running game logic. Each Copper instruction is just two bytes: either WAIT (pause until raster reaches position X,Y) or MOVE (write value to NextReg). The hardware executes these in a loop, frame after frame, with perfect timing.
+
+The Copper can access NextReg registers 0x00-0x7F (not 0x80+), giving it control over palettes, layer priorities, scrolling, sprites, video modes - essentially everything visible. This makes it perfect for loading screens with animated effects (rainbow bars, color cycling) or in-game effects like parallax scrolling layers or HUD overlays that don't consume any CPU time.
+
+### DMA: Bulk Data Transfers Without CPU Cycles
+
+The Next includes a DMA (Direct Memory Access) controller accessible through ports 0x0B (Z80 DMA mode) and 0x6B (ZXN DMA mode). This implements a subset of the Zilog Z80 DMA architecture plus Next-specific burst mode optimized for digital audio playback.
+
+**What does DMA do?** It copies memory blocks without tying up the CPU. Need to copy 16KB of graphics data to video memory? Set up the DMA with source address, destination address, and byte count, then trigger it. The DMA handles the transfer in hardware - no loop, no CPU registers involved. The Z80 continues executing code while memory copies happen in parallel (though the DMA and CPU take turns accessing memory to avoid conflicts).
+
+The burst mode is particularly clever: it can continuously read from a memory buffer and write to an I/O port (like the DAC audio outputs), effectively streaming audio samples without CPU intervention. Set up a circular buffer of audio data, point the DMA at it, and music plays while your game runs at full speed. This is how tracker modules and digitized audio work on the Next - the DMA feeds samples to the DAC hardware automatically.
+
+### Programmable Interrupt System
+
+The original Spectrum had one interrupt: the ULA signaled 50 times per second (or 60 Hz in NTSC mode) at vertical blank. You could use IM2 mode on the original hardware, but you'd still get just that one interrupt source - the ULA - and you had to provide your own interrupt vector table in RAM. The Next extends this dramatically with **hardware IM2 mode** (NextReg 0xC0) providing a priority-based interrupt system with 10 distinct interrupt sources and automatic vector generation:
+
+- **Line interrupts** (NextReg 0x22-0x23): Trigger at any specific scanline, not just vertical blank. Want to change the screen mode halfway down the display? Set a line interrupt for scanline 128, handle it in your interrupt routine. This enables split-screen effects that were impossible on the original hardware.
+
+- **UART interrupts**: Serial communication (Rx and Tx for two UART channels) can trigger interrupts, making it practical to handle keyboard/mouse data from the Raspberry Pi connector or implement networked gaming over serial.
+
+- **CTC channels**: Four Counter/Timer/Controller channels (ports 0x183B-0x1B3B) provide programmable timers that can trigger interrupts at specific intervals. Need something to happen every millisecond? Program a CTC channel and let hardware handle the timing.
+
+The hardware IM2 mode automatically generates interrupt vectors based on priority (line interrupt highest, UART Tx lowest), eliminating the need for software interrupt scanning. The system also supports **stackless NMI** (NextReg 0xC0 bit 3), which saves the return address to a NextReg instead of the stack - useful for debugging tools that need to inspect the stack without modifying it.
+
+This interrupt flexibility means the Next can respond to real-time events (audio sample timing, communication protocols, split-screen rendering) with hardware precision instead of polling loops that waste CPU cycles.
+
+### Storage: From Tape to SD Card
+
+Original Spectrum storage: **cassette tape**. Loading a game took 3-5 minutes of distinctive warbling sounds - the data being read from tape. Those sounds were meaningful: they told you the program was loading, and when they stopped unexpectedly, you knew something went wrong. The Next has an **SD card slot** with a complete filesystem operating system (ESXDOS). Insert an SD card, browse folders, load files instantly. Modern convenience meets vintage hardware.
+
+But the Next doesn't abandon tape compatibility. You can still load from tape (or tape audio files) if you want that authentic experience. The hardware includes a tape input that works exactly like the original. Many users keep tape loading for nostalgia, using SD cards for everything else.
+
+The clever part is **DivMMC** (covered in detail in the memory management chapter) - a hardware paging system that makes the disk operating system appear and disappear automatically. Call a DOS function? DivMMC pages its ROM into memory, handles the SD card access, then unpages itself. From the program's perspective, it just called a routine and got data back. The complexity is hidden beautifully.
+
+### Sound: From Beeper to 9-Channel TurboSound
+
+The original Spectrum had a beeper - one bit of output that could be on or off. Clever programmers made amazing music by toggling that bit precisely, but it tied up the CPU completely during playback.
+
+The 128K models added the **AY-3-8912 sound chip** - a 3-channel programmable sound generator (PSG). The Next not only includes a register-compatible FPGA recreation of this chip, it provides **three AY chips** - that's 9 channels of PSG audio in what's known as **TurboSound** configuration (NextReg 0x08 bit 1). Programs can switch between AY 0, AY 1, and AY 2 using port 0xFFFD bits 7-6, with all three chips mixing their output in stereo (or mono if configured).
+
+But the real flexibility comes from the **four 8-bit DACs** (Digital-to-Analog Converters) labeled A, B, C, and D. DACs A and B feed the left audio channel, C and D feed the right. These DACs connect to various I/O ports (0xDF for Specdrum, 0xFB for Pentagon/ATM, 0xB3 for Covox, and others) providing hardware-level compatibility with numerous Spectrum audio peripherals. The Next can play 8-bit PCM samples, synthesized waveforms, or digitized music while the Z80 continues executing code - no CPU-hogging bit manipulation required.
+
+All audio sources - beeper, three AY chips, and four DACs - mix together in hardware and output via analog audio jacks, HDMI, or I²S digital interface. The audio subsystem is sophisticated enough for serious music applications (tracker modules, sample playback, real-time synthesis) yet simple enough that games can casually play sound effects without worrying about the mixing details.
+
+### Video Output: RGB, VGA, HDMI
+
+Original Spectrum video output: **RF modulator** (analog TV signal) or RGB if you were lucky. CRT TVs only. The Next provides:
+
+- **VGA output** (15 kHz RGB, perfect for retro monitors)
+- **HDMI output** (for modern displays)
+- **Scandoubler** (converts 15 kHz to 31 kHz for VGA monitors)
+
+The FPGA generates video signals directly - no emulation layer converting framebuffers. When you write to screen memory, you're literally controlling what signals appear on the video output pins. It's real-time, zero-latency video generation, just like the original ULA did, but with modern connectors.
+
+### Expansion: The Future Is Modular
+
+The Next has an **expansion bus** that's electrically compatible with the original Spectrum edge connector. You can plug in original Spectrum hardware (interfaces, sound cards, etc.) and it works. But the Next also adds:
+
+- **Raspberry Pi Zero connector** (for WiFi, Bluetooth, USB keyboard/mouse)
+- **GPIO pins** (for custom hardware projects)
+- **Accelerometer** (built into the board, for motion controls)
+
+The expansion philosophy is "make it possible, don't mandate it." You can build a completely standalone Next with no expansions, or turn it into a development platform with network connectivity, USB, and custom hardware. The choice is yours.
+
+## The Architecture: How It All Fits Together
+
+Let's zoom out and see the system architecture:
+
+**The FPGA (Xilinx Artix-7 or Spartan-6, depending on board revision)** implements:
+- **T80 CPU core** - cycle-accurate Z80 compatible CPU
+- **ULA** - original video and timing logic
+- **Layer 2, Tilemap, LoRes** - new graphics subsystems
+- **Sound systems** - beeper, three AY chips (TurboSound), four 8-bit DACs
+- **Memory controller** - handles MMU, DivMMC, Multiface, Layer 2 paging
+- **Video compositor** - combines all graphics layers in real-time
+- **I/O controllers** - keyboard, joystick, SD card, etc.
+
+**External to the FPGA:**
+- **2MB SRAM** - main memory (1x 2MB chip or 3x 512KB chips)
+- **SD card** - mass storage
+- **Audio DAC** - converts digital audio to analog
+- **Video DAC** - converts digital RGB to analog VGA
+- **HDMI transmitter** - generates HDMI signals
+- **Clock generators** - 27 MHz and 28 MHz system clocks
+
+The FPGA is the brain - everything else is peripherals. This centralization means firmware updates can add new features (within FPGA resource limits) without hardware changes. The Next has received multiple firmware updates adding features and fixing issues, something impossible with original discrete logic designs.
+
+## The Development Story: Kickstarter to Production
+
+The Next started as a Kickstarter project in 2017. Victor Trucco, Jim Bagley, and others had been working on FPGA Spectrum recreations for years. The Kickstarter asked: **what if we made this perfect, not just functional?** The community responded with over £600,000 pledged - enough to fund production of custom PCBs, injection-molded cases, and professional manufacturing.
+
+The journey from Kickstarter to production taught harsh lessons about hardware manufacturing. Multiple board revisions fixed design issues. Supply chain problems delayed production. COVID-19 disrupted everything. But the team persisted, and by 2020-2021, Next machines were shipping to backers.
+
+What started as a hobbyist project became a **community-driven hardware platform**. Hundreds of developers contribute software. Dozens design hardware expansions. The Next has an active scene creating new games, demos, and tools - not just preserving the old Spectrum, but extending it.
+
+## Why It Matters: Preserving Computing Culture
+
+The Next represents something bigger than one retro computer. It's a statement about computing philosophy: **machines should be understandable**. You can read the VHDL source code and see exactly how the hardware works. You can write assembly that directly controls hardware. You can build expansions that plug into real buses.
+
+Modern computing has lost this. We trade power and convenience for opacity. Most developers couldn't explain how their computer boots, how the GPU renders pixels, or how memory management works at the silicon level. These details are abstracted away, hidden behind APIs, sealed in black boxes.
+
+The Next proves you can have both: modern power **and** complete understanding. It's not a museum piece - it's a working development platform that teaches low-level computing through hands-on experience. Emulators are great for playing old games, but they don't teach you how hardware actually works. The Next does.
+
+## The Legacy: What Comes Next?
+
+The ZX Spectrum Next succeeded in its goal: it's both an authentic Spectrum and a powerful modern machine. It runs 40-year-old software flawlessly while enabling creations impossible on original hardware. It preserves computing history while pushing retro computing forward.
+
+But perhaps more importantly, it **inspired a movement**. Other platforms saw the Next's success and followed: Mega65 (Commodore 65 revival), X16 (inspired by C64), Agon (modern Z80 computer). The retro computing scene is thriving not just with emulation, but with real hardware, real development, real innovation.
+
+The Next proved there's demand for machines that are simultaneously old and new, simple and powerful, nostalgic and forward-thinking. It showed that "retro computing" doesn't mean "computing museum" - it means taking the best ideas from the past and giving them modern implementation.
+
+For those of us building emulators, understanding the Next's architecture teaches lessons about what made the original Spectrum special and how modern enhancements can respect that heritage. The Next isn't just a computer - it's a masterclass in backward-compatible hardware design.
+
+And in preserving the Spectrum's legacy, the Next ensures another generation can experience the joy of **truly understanding** the computer they're programming. That's the real next step: not just better hardware, but better programmers.
