@@ -2,6 +2,8 @@ import {
   BASIC_EDITOR,
   COMMAND_RESULT_EDITOR,
   CODE_EDITOR,
+  TEXT_EDITOR,
+  BIN_VIEWER,
   TAP_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
@@ -17,6 +19,7 @@ import {
   NXI_EDITOR,
   SPR_EDITOR,
   VID_VIEWER,
+  IMAGE_VIEWER,
   STATIC_MEMORY_DUMP_VIEWER,
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
@@ -33,6 +36,7 @@ import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
+import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
 import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LangaugeProvider";
 import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
@@ -77,6 +81,8 @@ import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEd
 import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEditorPanel";
 import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SpriteEditorPanel/SprFileEditorPanel";
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
+import { createBinFileViewerPanel } from "./appIde/DocumentPanels/BinFileViewerPanel";
+import { createImageViewerPanel } from "./appIde/DocumentPanels/ImageViewerPanel";
 import { createStaticMemoryDump } from "./appIde/DocumentPanels/Memory/StaticMemoryDump";
 import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 import {
@@ -304,6 +310,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createCodeEditorPanel
   },
   {
+    id: TEXT_EDITOR,
+    renderer: createTextEditorPanel,
+    icon: "note",
+    iconFill: "--console-ansi-bright-yellow"
+  },
+  {
     id: DISASSEMBLY_EDITOR,
     renderer: createBankedDisassemblyPanel,
     icon: "disassembly-icon",
@@ -424,6 +436,18 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     iconFill: "--console-ansi-bright-cyan"
   },
   {
+    id: BIN_VIEWER,
+    renderer: createBinFileViewerPanel,
+    icon: "file-code",
+    iconFill: "--console-ansi-bright-green"
+  },
+  {
+    id: IMAGE_VIEWER,
+    renderer: createImageViewerPanel,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan"
+  },
+  {
     id: SCRIPT_OUTPUT_VIEWER,
     renderer: createScriptOutputPanel,
     icon: "note",
@@ -526,8 +550,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".txt",
-    editor: CODE_EDITOR,
-    subType: "plain-text",
+    editor: TEXT_EDITOR,
     icon: "@file-text-txt"
   },
   {
@@ -698,8 +721,127 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     openPermanent: true
-  }
-];
+  },
+  {
+    matchType: "ends",
+    pattern: ".bin",
+    editor: BIN_VIEWER,
+    icon: "file-code",
+    iconFill: "--console-ansi-bright-green",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".rom",
+    editor: BIN_VIEWER,
+    icon: "file-code",
+    iconFill: "--console-ansi-bright-green",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".png",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".jpg",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".jpeg",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".gif",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".bmp",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".webp",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".ico",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".svg",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".tiff",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".tif",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },];
 
 export const unknownFileType: FileTypeEditor = {
   pattern: "*",

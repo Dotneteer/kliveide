@@ -18,7 +18,7 @@ import { C64Machine } from "@emu/machines/c64/C64Machine";
 export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
     machineId: MI_SPECTRUM_48,
-    factory: (_, model) => new ZxSpectrum48Machine(model)
+    factory: (_, model, config) => new ZxSpectrum48Machine(model, config)
   },
   {
     machineId: MI_SPECTRUM_128,

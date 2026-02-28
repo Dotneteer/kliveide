@@ -1,5 +1,14 @@
 # Klive IDE Changelog
 
+## 0.54.0
+
+### Features
+
+- You can change the ZX Spectrum 48 ROM
+- New text editor for text file types
+- New binary editor for viewing binary file content
+- New image viewer to display bitmap images
+
 ## 0.53.2
 
 ### Fixes

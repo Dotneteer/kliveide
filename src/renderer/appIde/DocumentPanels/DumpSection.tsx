@@ -1,7 +1,7 @@
 import { LabelSeparator, Label } from "@controls/Labels";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
-import { toHexa4, toHexa2, toDecimal5, toDecimal3, toBin8 } from "../services/ide-commands";
+import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "../services/ide-commands";
 import styles from "./DumpSection.module.scss";
 import { useAppServices } from "../services/AppServicesProvider";
 import { CharDescriptor } from "@common/machines/info-types";
@@ -19,6 +19,8 @@ type DumpProps = {
   lastJumpAddress: number;
   isRom?: boolean;
   editClicked?: (address: number) => void;
+  /** Number of hex digits used for the address label. Defaults to 4. */
+  addressDigits?: 4 | 6;
 };
 
 const DumpSectionComponent = ({
@@ -31,7 +33,8 @@ const DumpSectionComponent = ({
   pointedInfo,
   lastJumpAddress,
   isRom,
-  editClicked
+  editClicked,
+  addressDigits = 4
 }: DumpProps) => {
   if (!memory) return null;
 
@@ -66,8 +69,12 @@ const DumpSectionComponent = ({
         </>
       )}
       <Label
-        text={decimalView ? toDecimal5(address) : toHexa4(address)}
-        width={decimalView ? 48 : 40}
+        text={decimalView
+          ? (addressDigits === 6 ? toDecimal7(address) : toDecimal5(address))
+          : (addressDigits === 6 ? toHexa6Dash(address) : toHexa4(address))}
+        width={decimalView
+          ? (addressDigits === 6 ? 64 : 48)
+          : (addressDigits === 6 ? 72 : 40)}
       />
       <HexValues
         address={address}
@@ -100,6 +107,7 @@ export const DumpSection = memo(DumpSectionComponent, (prev, next) => {
   if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
   if (prev.isRom !== next.isRom) return false;
   if (prev.editClicked !== next.editClicked) return false;
+  if (prev.addressDigits !== next.addressDigits) return false;
 
   // Compare the 8 byte values actually rendered (address .. address+7)
   for (let i = 0; i < 8; i++) {

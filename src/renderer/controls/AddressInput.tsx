@@ -8,6 +8,8 @@ type Props = {
   tooltip?: string;
   clearOnEnter?: boolean;
   decimalView: boolean;
+  hexDigits?: number;
+  inputWidth?: number;
   onAddressSent?: (addr: number) => Promise<void>;
   onGotFocus?: () => void;
 };
@@ -17,6 +19,8 @@ export const AddressInput = ({
   tooltip,
   clearOnEnter = true,
   decimalView,
+  hexDigits = 4,
+  inputWidth,
   onAddressSent,
   onGotFocus,
 }: Props) => {
@@ -54,7 +58,8 @@ export const AddressInput = ({
         tabIndex={0}
         ref={inputRef}
         className={classnames(styles.addressPrompt)}
-        maxLength={radix === 10 ? 5 : 4}
+        maxLength={radix === 10 ? 7 : hexDigits}
+        style={inputWidth ? { width: inputWidth } : undefined}
         onBeforeInput={handleBeforeInput}
         onKeyDown={handleKeyDown}
         onFocus={() => onGotFocus?.()}

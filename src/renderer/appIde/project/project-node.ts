@@ -2,13 +2,38 @@ import type { ProjectNode, ProjectNodeWithChildren } from "@abstractions/Project
 import type { ITreeNode, ITreeView } from "@abstractions/ITreeNode";
 
 import { TreeNode, TreeView } from "@renderer/core/tree-node";
-import { customLanguagesRegistry, fileTypeRegistry, unknownFileType } from "@renderer/registry";
+import { customLanguagesRegistry, documentPanelRegistry, fileTypeRegistry, unknownFileType } from "@renderer/registry";
 import { FileTypeEditor } from "../../abstractions/FileTypePattern";
 import { getIsWindows } from "@renderer/os-utils";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { LANGUAGE_SETTINGS } from "@common/structs/project-const";
+import { TEXT_EDITOR, BIN_VIEWER } from "@state/common-ids";
+
+// --- Tracks files with unknown extensions that have been probed and confirmed as plain text.
+// --- Populated by ProjectService at document-open time; consulted during tree rebuild so that
+// --- the explorer shows the TEXT_EDITOR icon for those files.
+const detectedTextFilePaths = new Set<string>();
+
+export function registerDetectedTextFile(path: string): void {
+  detectedTextFilePaths.add(path);
+}
+
+export function clearDetectedTextFiles(): void {
+  detectedTextFilePaths.clear();
+}
+
+// --- Tracks files with unknown extensions that have been probed and confirmed as binary.
+const detectedBinaryFilePaths = new Set<string>();
+
+export function registerDetectedBinaryFile(path: string): void {
+  detectedBinaryFilePaths.add(path);
+}
+
+export function clearDetectedBinaryFiles(): void {
+  detectedBinaryFilePaths.clear();
+}
 
 /**
  * Gets the folder of the specified project node
@@ -72,7 +97,35 @@ export function buildProjectTree(
 
   function toTreeNode(node: ProjectNodeWithChildren): ITreeNode<ProjectNode> {
     // --- Get the file type information
-    const fileTypeEntry = getFileTypeEntry(node.name, store) ?? unknownFileType;
+    let fileTypeEntry = getFileTypeEntry(node.name, store) ?? unknownFileType;
+
+    // --- If the file has an unknown extension but was previously probed as plain text,
+    // --- use the TEXT_EDITOR icon/editor so the explorer shows the correct icon.
+    if (fileTypeEntry === unknownFileType && !node.isFolder && detectedTextFilePaths.has(node.fullPath)) {
+      const textRenderer = documentPanelRegistry.find((dp) => dp.id === TEXT_EDITOR);
+      fileTypeEntry = {
+        ...unknownFileType,
+        editor: TEXT_EDITOR,
+        icon: textRenderer?.icon ?? unknownFileType.icon,
+        iconFill: textRenderer?.iconFill ?? unknownFileType.iconFill
+      };
+    }
+
+    // --- If the file has an unknown extension but was previously probed as binary,
+    // --- use the BIN_VIEWER icon/editor so the explorer shows the correct icon.
+    if (fileTypeEntry === unknownFileType && !node.isFolder && detectedBinaryFilePaths.has(node.fullPath)) {
+      const binRenderer = documentPanelRegistry.find((dp) => dp.id === BIN_VIEWER);
+      fileTypeEntry = {
+        ...unknownFileType,
+        editor: BIN_VIEWER,
+        isBinary: true,
+        isReadOnly: true,
+        openPermanent: true,
+        icon: binRenderer?.icon ?? unknownFileType.icon,
+        iconFill: binRenderer?.iconFill ?? unknownFileType.iconFill
+      };
+    }
+
     if (fileTypeEntry) {
       node.icon = fileTypeEntry.icon;
       node.iconFill = fileTypeEntry.iconFill;
