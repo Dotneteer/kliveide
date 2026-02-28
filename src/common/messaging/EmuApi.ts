@@ -382,9 +382,17 @@ class EmuApiImpl {
 
   /**
    * Issues a recording command to the emu renderer's RecordingManager.
-   * @param _command One of "arm-native", "arm-half", or "disarm".
+   * @param _command The recording command to execute.
    */
-  async issueRecordingCommand(_command: "arm-native" | "arm-half" | "disarm"): Promise<void> {
+  async issueRecordingCommand(
+    _command:
+      | "set-fps-native"
+      | "set-fps-half"
+      | "start-recording"
+      | "disarm"
+      | "pause-recording"
+      | "resume-recording"
+  ): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 }

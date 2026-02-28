@@ -835,23 +835,31 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       label: "Recording",
       submenu: [
         {
-          id: "recording_arm_native",
-          label: "Arm recording – native fps",
+          id: "recording_half_fps",
+          label: "Half fps",
+          type: "checkbox",
+          checked: appState?.emulatorState?.screenRecordingFps === "half",
           enabled: isRecordingIdle,
-          click: async () => await getEmuApi().issueRecordingCommand("arm-native")
-        },
-        {
-          id: "recording_arm_half",
-          label: "Arm recording – half fps",
-          enabled: isRecordingIdle,
-          click: async () => await getEmuApi().issueRecordingCommand("arm-half")
+          click: async () => await getEmuApi().issueRecordingCommand(
+            appState?.emulatorState?.screenRecordingFps === "half" ? "set-fps-native" : "set-fps-half"
+          )
         },
         { type: "separator" },
         {
-          id: "recording_stop",
-          label: "Stop / cancel recording",
-          enabled: !isRecordingIdle,
-          click: async () => await getEmuApi().issueRecordingCommand("disarm")
+          id: "recording_start_stop",
+          label: isRecordingIdle ? "Start recording" : "Stop recording",
+          click: async () => await getEmuApi().issueRecordingCommand(
+            isRecordingIdle ? "start-recording" : "disarm"
+          )
+        },
+        { type: "separator" },
+        {
+          id: "recording_pause_resume",
+          label: recState === "paused" ? "Continue recording" : "Pause recording",
+          enabled: recState === "recording" || recState === "paused",
+          click: async () => await getEmuApi().issueRecordingCommand(
+            recState === "paused" ? "resume-recording" : "pause-recording"
+          )
         }
       ]
     }

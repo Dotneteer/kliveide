@@ -1099,19 +1099,36 @@ class EmuMessageProcessor {
    * Routes a recording command issued from the main-process menu to the
    * RecordingManager that lives in this renderer process.
    */
-  async issueRecordingCommand(command: "arm-native" | "arm-half" | "disarm"): Promise<void> {
+  async issueRecordingCommand(
+    command:
+      | "set-fps-native"
+      | "set-fps-half"
+      | "start-recording"
+      | "disarm"
+      | "pause-recording"
+      | "resume-recording"
+  ): Promise<void> {
     if (!_emuRecordingManager) return;
     const machineState = getCachedStore()?.getState()?.emulatorState?.machineState;
     const isRunning = machineState === MachineControllerState.Running;
     switch (command) {
-      case "arm-native":
-        _emuRecordingManager.arm("native", isRunning);
+      case "set-fps-native":
+        _emuRecordingManager.setFpsPreference("native");
         break;
-      case "arm-half":
-        _emuRecordingManager.arm("half", isRunning);
+      case "set-fps-half":
+        _emuRecordingManager.setFpsPreference("half");
+        break;
+      case "start-recording":
+        _emuRecordingManager.arm(undefined, isRunning);
         break;
       case "disarm":
         await _emuRecordingManager.disarm();
+        break;
+      case "pause-recording":
+        _emuRecordingManager.pauseRecording();
+        break;
+      case "resume-recording":
+        _emuRecordingManager.resumeRecording();
         break;
     }
   }

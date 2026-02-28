@@ -39,15 +39,26 @@ export class RecordingManager {
   // ---------------------------------------------------------------------------
 
   /**
+   * Sets the fps preference without starting a recording.
+   * Updates Redux so the menu checkbox reflects the choice immediately.
+   */
+  setFpsPreference(fps: RecordingFps): void {
+    this._fps = fps;
+    // Keep current recording state, just update the fps field in Redux.
+    this.dispatch(setScreenRecordingStateAction(this._state, undefined, fps));
+  }
+
+  /**
    * Arms the recorder. Recording begins when the machine next starts running.
+   * Uses the stored fps preference when called without an argument.
    * No-op if not idle.
    */
-  arm(fps: RecordingFps, startNow = false): void {
-    console.log(`[RecordingManager] arm(${fps}, startNow=${startNow}) called — current state: ${this._state}`);
+  arm(fps?: RecordingFps, startNow = false): void {
+    if (fps !== undefined) this._fps = fps;
+    console.log(`[RecordingManager] arm(${this._fps}, startNow=${startNow}) called — current state: ${this._state}`);
     if (this._state !== "idle") return;
-    this._fps = fps;
     this._state = "armed";
-    this.dispatch(setScreenRecordingStateAction("armed", undefined, fps));
+    this.dispatch(setScreenRecordingStateAction("armed", undefined, this._fps));
     console.log(`[RecordingManager] state → armed`);
     // If the machine is already running and we have valid dimensions, start immediately.
     if (startNow && this._width > 0 && this._height > 0) {
@@ -107,6 +118,30 @@ export class RecordingManager {
     this._state = "paused";
     this.dispatch(setScreenRecordingStateAction("paused"));
     console.log(`[RecordingManager] state → paused`);
+  }
+
+  /**
+   * Manually pauses an active recording (does not pause the machine).
+   * No-op if not currently recording.
+   */
+  pauseRecording(): void {
+    console.log(`[RecordingManager] pauseRecording() — state: ${this._state}`);
+    if (this._state !== "recording") return;
+    this._state = "paused";
+    this.dispatch(setScreenRecordingStateAction("paused"));
+    console.log(`[RecordingManager] state → paused (manual)`);
+  }
+
+  /**
+   * Resumes a manually-paused recording (the machine keeps running).
+   * No-op if not currently paused.
+   */
+  resumeRecording(): void {
+    console.log(`[RecordingManager] resumeRecording() — state: ${this._state}`);
+    if (this._state !== "paused") return;
+    this._state = "recording";
+    this.dispatch(setScreenRecordingStateAction("recording"));
+    console.log(`[RecordingManager] state → recording (manual resume)`);
   }
 
   /**

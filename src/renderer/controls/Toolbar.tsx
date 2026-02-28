@@ -361,7 +361,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             }
             clicked={
               !recState || recState === "idle"
-                ? () => recordingManagerRef?.current?.arm("native", isRunning)
+                ? () => recordingManagerRef?.current?.arm(undefined, isRunning)
                 : () => recordingManagerRef?.current?.disarm()
             }
           />
