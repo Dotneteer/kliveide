@@ -1,6 +1,6 @@
 import type { SysVar } from "@abstractions/SysVar";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { MachineModel } from "@common/machines/info-types";
+import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { TapeMode } from "@emu/abstractions/TapeMode";
@@ -12,7 +12,7 @@ import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
 import { ZxSpectrum48FloatingBusDevice } from "./ZxSpectrum48FloatingBusDevice";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "@common/machines/constants";
+import { MC_MEM_SIZE, MC_SCREEN_FREQ, MC_SP48_ROM_FILE } from "@common/machines/constants";
 import { zxSpectrum48SysVars } from "./ZxSpectrum48SysVars";
 
 /**
@@ -31,8 +31,8 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
   /**
    * Initialize the machine
    */
-  constructor(public readonly modelInfo?: MachineModel) {
-    super();
+  constructor(public readonly modelInfo?: MachineModel, config?: MachineConfigSet) {
+    super(config ?? modelInfo?.config ?? {});
 
     // --- Set up machine attributes
     this._is16KModel = modelInfo?.config?.[MC_MEM_SIZE] === 16;
@@ -59,10 +59,13 @@ export class ZxSpectrum48Machine extends ZxSpectrumBase {
    * Sets up the machine (async)
    */
   async setup(): Promise<void> {
-    // --- Get the ROM file
-    const romContents = await this.loadRomFromResource(this.romId);
+    // --- Check for a custom ROM file in config
+    const customRomFile = this.config?.[MC_SP48_ROM_FILE] as string | undefined;
+    const romContents = customRomFile
+      ? await this.loadRomFromResource(customRomFile)
+      : await this.loadRomFromResource(this.romId);
 
-    // --- Initialize the machine's ROM (roms/sp48.rom)
+    // --- Initialize the machine's ROM
     this.uploadRomBytes(romContents);
   }
 

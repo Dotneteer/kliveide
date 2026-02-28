@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.54.0
+
+### Features
+
+- You can change the ZX Spectrum 48 ROM
+
 ## 0.53.2
 
 ### Fixes

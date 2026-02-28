@@ -6,5 +6,6 @@ export default {
   "customize-syntax-colors": "Customizing syntax highlighting colors",
   "instant-screen": "Using the Instant Screen",
   "always-on-top": "Keeping the Emulator always on top",
-  "measure-t-states": "Measuring T-states"
+  "measure-t-states": "Measuring T-states",
+  "sp48-custom-rom": "Using a Custom ROM with ZX Spectrum 48K"
 };
