@@ -9,7 +9,7 @@ import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { LANGUAGE_SETTINGS } from "@common/structs/project-const";
-import { TEXT_EDITOR } from "@state/common-ids";
+import { TEXT_EDITOR, BIN_VIEWER } from "@state/common-ids";
 
 // --- Tracks files with unknown extensions that have been probed and confirmed as plain text.
 // --- Populated by ProjectService at document-open time; consulted during tree rebuild so that
@@ -22,6 +22,17 @@ export function registerDetectedTextFile(path: string): void {
 
 export function clearDetectedTextFiles(): void {
   detectedTextFilePaths.clear();
+}
+
+// --- Tracks files with unknown extensions that have been probed and confirmed as binary.
+const detectedBinaryFilePaths = new Set<string>();
+
+export function registerDetectedBinaryFile(path: string): void {
+  detectedBinaryFilePaths.add(path);
+}
+
+export function clearDetectedBinaryFiles(): void {
+  detectedBinaryFilePaths.clear();
 }
 
 /**
@@ -97,6 +108,21 @@ export function buildProjectTree(
         editor: TEXT_EDITOR,
         icon: textRenderer?.icon ?? unknownFileType.icon,
         iconFill: textRenderer?.iconFill ?? unknownFileType.iconFill
+      };
+    }
+
+    // --- If the file has an unknown extension but was previously probed as binary,
+    // --- use the BIN_VIEWER icon/editor so the explorer shows the correct icon.
+    if (fileTypeEntry === unknownFileType && !node.isFolder && detectedBinaryFilePaths.has(node.fullPath)) {
+      const binRenderer = documentPanelRegistry.find((dp) => dp.id === BIN_VIEWER);
+      fileTypeEntry = {
+        ...unknownFileType,
+        editor: BIN_VIEWER,
+        isBinary: true,
+        isReadOnly: true,
+        openPermanent: true,
+        icon: binRenderer?.icon ?? unknownFileType.icon,
+        iconFill: binRenderer?.iconFill ?? unknownFileType.iconFill
       };
     }
 

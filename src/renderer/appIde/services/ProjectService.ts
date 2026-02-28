@@ -1,7 +1,7 @@
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles } from "../project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles, registerDetectedBinaryFile, clearDetectedBinaryFiles } from "../project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -14,7 +14,7 @@ import {
   incExploreViewVersionAction
 } from "@common/state/actions";
 import { documentPanelRegistry } from "@renderer/registry";
-import { TEXT_EDITOR, UNKNOWN_EDITOR } from "@state/common-ids";
+import { TEXT_EDITOR, UNKNOWN_EDITOR, BIN_VIEWER } from "@state/common-ids";
 import { DelayedJobs } from "@common/utils/DelayedJobs";
 import { ILiteEvent } from "@abstractions/ILiteEvent";
 import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
@@ -79,6 +79,7 @@ class ProjectService implements IProjectService {
           this._projectOpened.fire();
         } else {
           clearDetectedTextFiles();
+          clearDetectedBinaryFiles();
           this._probedFilePaths.clear();
           this._projectClosed.fire();
         }
@@ -134,6 +135,9 @@ class ProjectService implements IProjectService {
         this._probedFilePaths.add(result.value.fullPath);
         if (result.value.isText) {
           registerDetectedTextFile(result.value.fullPath);
+          anyNew = true;
+        } else {
+          registerDetectedBinaryFile(result.value.fullPath);
           anyNew = true;
         }
       }
@@ -420,6 +424,9 @@ class ProjectService implements IProjectService {
         this.store.dispatch(incExploreViewVersionAction(), "ide");
       } else {
         contents = binary;
+        editorType = BIN_VIEWER;
+        registerDetectedBinaryFile(node.fullPath);
+        this.store.dispatch(incExploreViewVersionAction(), "ide");
       }
       // --- Store the resolved content in the file cache
       this._fileCache.set(node.fullPath, contents);
@@ -439,8 +446,8 @@ class ProjectService implements IProjectService {
       type: editorType,
       contents,
       language: node.subType,
-      iconName: editorType === TEXT_EDITOR ? docRenderer?.icon : (node.icon ?? docRenderer?.icon),
-      iconFill: editorType === TEXT_EDITOR ? docRenderer?.iconFill : (node.iconFill ?? docRenderer?.iconFill),
+      iconName: (editorType === TEXT_EDITOR || editorType === BIN_VIEWER) ? docRenderer?.icon : (node.icon ?? docRenderer?.icon),
+      iconFill: (editorType === TEXT_EDITOR || editorType === BIN_VIEWER) ? docRenderer?.iconFill : (node.iconFill ?? docRenderer?.iconFill),
       isReadOnly: node.isReadOnly,
       isTemporary: true,
       node,

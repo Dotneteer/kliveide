@@ -1,0 +1,12 @@
+@use "@styles/core.scss" as *;
+
+.message {
+  @include fill-parent-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9em;
+  color: var(--color-command-icon);
+  padding: 16px;
+  text-align: center;
+}

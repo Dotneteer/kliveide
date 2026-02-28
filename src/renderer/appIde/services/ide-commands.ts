@@ -191,6 +191,11 @@ export function toHexa6(value: number): string {
   return value.toString(16).toUpperCase().padStart(6, "0");
 }
 
+export function toHexa6Dash(value: number): string {
+  const hex = value.toString(16).toUpperCase().padStart(6, "0");
+  return hex.slice(0, 2) + "-" + hex.slice(2);
+}
+
 export function toHexa4(value: number): string {
   return value.toString(16).toUpperCase().padStart(4, "0");
 }
@@ -201,6 +206,10 @@ export function toHexa2(value: number): string {
 
 export function toDecimal5(value: number): string {
   return value.toString(10).toUpperCase().padStart(5, "0");
+}
+
+export function toDecimal7(value: number): string {
+  return value.toString(10).toUpperCase().padStart(7, "0");
 }
 
 export function toDecimal3(value: number): string {

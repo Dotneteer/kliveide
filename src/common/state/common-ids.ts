@@ -1,5 +1,6 @@
 export const CODE_EDITOR = "CodeEditor";
 export const TEXT_EDITOR = "TextEditor";
+export const BIN_VIEWER = "BinViewer";
 export const DISASSEMBLY_PANEL_ID = "$disassembly";
 export const DISASSEMBLY_EDITOR = "Disassembly";
 export const MEMORY_PANEL_ID = "$memory";
