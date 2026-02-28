@@ -1,0 +1,29 @@
+@use "@styles/core.scss" as *;
+
+.imageContainer {
+  flex: 1;
+  overflow: auto;
+  padding: 8px;
+}
+
+.message {
+  @include fill-parent-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-command-icon);
+}
+
+.zoomLabel {
+  min-width: 32px;
+  text-align: center;
+  font-size: 0.85em;
+  color: var(--color-command-icon);
+  cursor: pointer;
+  user-select: none;
+  padding: 0 2px;
+
+  &:hover {
+    color: var(--color-text);
+  }
+}

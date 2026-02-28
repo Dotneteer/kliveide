@@ -19,6 +19,7 @@ import {
   NXI_EDITOR,
   SPR_EDITOR,
   VID_VIEWER,
+  IMAGE_VIEWER,
   STATIC_MEMORY_DUMP_VIEWER,
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
@@ -81,6 +82,7 @@ import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEd
 import { createSprFileEditorPanel } from "./appIde/DocumentPanels/Next/SpriteEditorPanel/SprFileEditorPanel";
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
 import { createBinFileViewerPanel } from "./appIde/DocumentPanels/BinFileViewerPanel";
+import { createImageViewerPanel } from "./appIde/DocumentPanels/ImageViewerPanel";
 import { createStaticMemoryDump } from "./appIde/DocumentPanels/Memory/StaticMemoryDump";
 import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 import {
@@ -440,6 +442,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     iconFill: "--console-ansi-bright-green"
   },
   {
+    id: IMAGE_VIEWER,
+    renderer: createImageViewerPanel,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan"
+  },
+  {
     id: SCRIPT_OUTPUT_VIEWER,
     renderer: createScriptOutputPanel,
     icon: "note",
@@ -730,6 +738,16 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     editor: BIN_VIEWER,
     icon: "file-code",
     iconFill: "--console-ansi-bright-green",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".png",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
     isBinary: true,
     isReadOnly: true,
     openPermanent: true

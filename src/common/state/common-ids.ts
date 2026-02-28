@@ -25,4 +25,5 @@ export const NPL_EDITOR = "NplEditor";
 export const NXI_EDITOR = "NxiEditor";
 export const SPR_EDITOR = "SprEditor";
 export const VID_VIEWER = "VidViewer";
+export const IMAGE_VIEWER = "ImageViewer";
 export const SCRIPT_OUTPUT_VIEWER = "ScriptOutputViewer";
