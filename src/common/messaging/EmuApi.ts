@@ -379,6 +379,25 @@ class EmuApiImpl {
   async getDisassemblySections(_options: Record<string, any>): Promise<IMemorySection[]> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Issues a recording command to the emu renderer's RecordingManager.
+   * @param _command The recording command to execute.
+   */
+  async issueRecordingCommand(
+    _command:
+      | "set-fps-native"
+      | "set-fps-half"
+      | "set-quality-lossless"
+      | "set-quality-high"
+      | "set-quality-good"
+      | "start-recording"
+      | "disarm"
+      | "pause-recording"
+      | "resume-recording"
+  ): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 // --- The response with the CPU state chunk

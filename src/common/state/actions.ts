@@ -136,6 +136,22 @@ export const setAudioSampleRateAction: ActionCreator = (numValue: number) => ({
   payload: { numValue }
 });
 
+export const setScreenRecordingStateAction: ActionCreator = (
+  recordingState: import("./AppState").ScreenRecordingState,
+  file?: string,
+  fps?: import("./AppState").RecordingFps
+) => ({
+  type: "SET_SCREEN_RECORDING_STATE",
+  payload: { id: recordingState, value: file, text: fps }
+});
+
+export const setScreenRecordingQualityAction: ActionCreator = (
+  quality: import("./AppState").RecordingQuality
+) => ({
+  type: "SET_SCREEN_RECORDING_QUALITY",
+  payload: { id: quality }
+});
+
 export const setMediaAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_MEDIA",
   payload: { id, value }

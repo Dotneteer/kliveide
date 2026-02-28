@@ -18,6 +18,10 @@ import { useRef, useEffect } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
+import { RecordingContext } from "./recording/RecordingContext";
+import { RecordingManager } from "./recording/RecordingManager";
+import { setEmuRecordingManager } from "./MainToEmuProcessor";
+import { useMainApi } from "@renderer/core/MainApi";
 import {
   CREATE_DISK_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
@@ -54,6 +58,16 @@ const EmuApp = () => {
   const dispatch = useDispatch();
   const appServices = useAppServices();
   const { store, messenger } = useRendererContext();
+  const mainApi = useMainApi();
+
+  // --- Screen recording manager (created once; ref shared via context)
+  const recordingManagerRef = useRef<RecordingManager | null>(null);
+  if (!recordingManagerRef.current) {
+    console.log("[EmuApp] Creating RecordingManager instance");
+    recordingManagerRef.current = new RecordingManager(mainApi, dispatch);
+    setEmuRecordingManager(recordingManagerRef.current);
+    console.log("[EmuApp] RecordingManager created:", recordingManagerRef.current);
+  }
 
   // --- Visual state
   const showToolbar = useGlobalSetting(SETTING_EMU_SHOW_TOOLBAR);
@@ -101,8 +115,9 @@ const EmuApp = () => {
   }, [isWindows]);
 
   return (
+    <RecordingContext.Provider value={recordingManagerRef}>
     <FullPanel id="appMain" data-testid="emu-app">
-      {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} />}
+      {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} recordingManagerRef={recordingManagerRef} />}
       <EmulatorArea />
       <EmuStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
@@ -153,6 +168,7 @@ const EmuApp = () => {
         />
       )}
     </FullPanel>
+    </RecordingContext.Provider>
   );
 };
 

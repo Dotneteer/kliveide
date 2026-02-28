@@ -92,6 +92,20 @@ export function emulatorStateReducer(
         emuViewVersion: (state.emuViewVersion ?? 0) + 1
       };
 
+    case "SET_SCREEN_RECORDING_STATE":
+      return {
+        ...state,
+        screenRecordingState: payload?.id as import("./AppState").ScreenRecordingState,
+        screenRecordingFile: payload?.value ?? state.screenRecordingFile,
+        screenRecordingFps: (payload?.text as import("./AppState").RecordingFps) ?? state.screenRecordingFps
+      };
+
+    case "SET_SCREEN_RECORDING_QUALITY":
+      return {
+        ...state,
+        screenRecordingQuality: payload?.id as import("./AppState").RecordingQuality
+      };
+
     default:
       return state;
   }

@@ -96,4 +96,8 @@ export interface ActionTypes {
   ADD_WATCH: null;
   REMOVE_WATCH: null;
   CLEAR_WATCH: null;
+
+  // --- Screen recording
+  SET_SCREEN_RECORDING_STATE: null;
+  SET_SCREEN_RECORDING_QUALITY: null;
 }

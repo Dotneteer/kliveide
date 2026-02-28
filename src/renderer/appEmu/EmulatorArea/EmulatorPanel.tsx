@@ -8,6 +8,7 @@ import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
+import { RecordingStateOverlay } from "./RecordingStateOverlay";
 import { applyScanlineEffectToCanvas, getScanlineDarkening, type ScanlineIntensity } from "./scanlineEffect";
 import { AudioRenderer, getBeeperContext, releaseBeeperContext } from "./AudioRenderer";
 import { FAST_LOAD } from "@emu/machines/machine-props";
@@ -21,6 +22,7 @@ import { machineEmuToolRegistry } from "../tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
 import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN, SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
+import { useRecordingManager } from "../recording/RecordingContext";
 
 type Props = {
   keyStatusSet?: (code: number, down: boolean) => void;
@@ -102,6 +104,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Variables for audio management
   const beeperRenderer = useRef<AudioRenderer>();
 
+  // --- Screen recording
+  const recordingManagerRef = useRecordingManager();
+
   // --- Tools
   const machineTools = useRef<ReactNode>();
 
@@ -112,6 +117,19 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     machineFrameCompleted
   );
   const controllerRef = useRef<IMachineController>(controller);
+
+  // --- Wire the pre-delay recording hook whenever the controller changes
+  useEffect(() => {
+    if (!controller) return undefined;
+    controller.beforeFrameDelay = async () => {
+      if (imageBuffer8.current) {
+        await recordingManagerRef?.current?.submitFrame(imageBuffer8.current);
+      }
+    };
+    return () => {
+      controller.beforeFrameDelay = undefined;
+    };
+  }, [controller]);
 
   // --- Update key mappings
   const updateKeyMappings = () => {
@@ -236,6 +254,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             }}
           />
         )}
+        <RecordingStateOverlay />
         <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
         {machineTools.current}
       </div>
@@ -296,11 +315,25 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           case MachineControllerState.Running:
             setOverlay(controller?.isDebugging ? "Debug mode" : "");
             await beeperRenderer?.current?.play();
+            await recordingManagerRef?.current?.onMachineRunning(
+              controller.machine.screenWidthInPixels,
+              controller.machine.screenHeightInPixels,
+              Math.round(
+                controller.machine.baseClockFrequency *
+                controller.machine.frameTactMultiplier /
+                controller.machine.tactsInFrame /
+                controller.machine.uiFrameFrequency
+              ),
+              xRatio.current,
+              yRatio.current,
+              audioSampleRate ?? 44100
+            );
             break;
 
           case MachineControllerState.Paused:
             setPauseOverlay();
             await beeperRenderer?.current?.suspend();
+            recordingManagerRef?.current?.onMachinePaused();
             const showInstantScreen = getGlobalSetting(store, SETTING_EMU_SHOW_INSTANT_SCREEN);
             if (showInstantScreen) {
               const shadow = controller?.machine?.renderInstantScreen();
@@ -315,6 +348,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             componentStateRef.current.savedPixelBuffer = null;
             setOverlay(`Stopped (PC: $${toHexa4(controller.machine.pc)})`);
             await beeperRenderer?.current?.suspend();
+            await recordingManagerRef?.current?.onMachineStopped();
             componentStateRef.current.machineStateHandlerQueue.length = 0;
             break;
 
@@ -348,6 +382,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
         beeperRenderer.current.storeSamples(samples, soundLevel);
         await beeperRenderer.current.play();
+        await recordingManagerRef?.current?.submitAudioSamples(samples);
       }
     }
 

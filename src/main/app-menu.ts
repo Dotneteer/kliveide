@@ -109,6 +109,7 @@ const SOUND_LEVEL = "sound_level";
 const SCANLINE_EFFECT = "scanline_effect";
 const SELECT_KEY_MAPPING = "select_key_mapping";
 const RESET_KEY_MAPPING = "reset_key_mapping";
+const RECORDING_MENU = "recording_menu";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
@@ -145,6 +146,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const machineRuns = execState === MachineControllerState.Running;
   const machinePaused = execState === MachineControllerState.Paused;
   const machineRestartable = machineRuns || machinePaused;
+  const recState = appState?.emulatorState?.screenRecordingState;
+  const isRecordingIdle = !recState || recState === "idle";
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
   const hasBuildFile = !!appState?.project?.hasBuildFile;
@@ -825,6 +828,65 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         mainStore.dispatch(setKeyMappingsAction(undefined, undefined));
         await saveKliveProject();
       }
+    },
+    { type: "separator" },
+    {
+      id: RECORDING_MENU,
+      label: "Recording",
+      submenu: [
+        {
+          id: "recording_half_fps",
+          label: "Half fps",
+          type: "checkbox",
+          checked: appState?.emulatorState?.screenRecordingFps === "half",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand(
+            appState?.emulatorState?.screenRecordingFps === "half" ? "set-fps-native" : "set-fps-half"
+          )
+        },
+        { type: "separator" },
+        {
+          id: "recording_quality_lossless",
+          label: "Highest (lossless) quality",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingQuality ?? "good") === "lossless",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-quality-lossless")
+        },
+        {
+          id: "recording_quality_high",
+          label: "High quality",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingQuality ?? "good") === "high",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-quality-high")
+        },
+        {
+          id: "recording_quality_good",
+          label: "Best compression quality",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingQuality ?? "good") === "good",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-quality-good")
+        },
+        { type: "separator" },
+        {
+          id: "recording_start_stop",
+          label: isRecordingIdle ? "Start recording" : "Stop recording",
+          click: async () => await getEmuApi().issueRecordingCommand(
+            isRecordingIdle ? "start-recording" : "disarm"
+          )
+        },
+        { type: "separator" },
+        {
+          id: "recording_pause_resume",
+          label: recState === "paused" ? "Continue recording" : "Pause recording",
+          enabled: recState === "recording" || recState === "paused",
+          click: async () => await getEmuApi().issueRecordingCommand(
+            recState === "paused" ? "resume-recording" : "pause-recording"
+          )
+        }
+      ]
     }
   );
 

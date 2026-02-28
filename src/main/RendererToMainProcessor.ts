@@ -60,8 +60,14 @@ import { CimFile } from "./fat32/CimFileManager";
 import { Fat32Volume } from "./fat32/Fat32Volume";
 import { FileManager } from "./fat32/FileManager";
 import { O_RDONLY } from "./fat32/Fat32Types";
+import type { IRecordingBackend } from "./recording/IRecordingBackend";
+import { FfmpegRecordingBackend } from "./recording/FfmpegRecordingBackend";
+import { resolveRecordingPath } from "./recording/outputPath";
 
 const compilerRegistry = createCompilerRegistry();
+
+// Module-level so it survives across per-message MainMessageProcessor instances.
+let _recordingBackend: IRecordingBackend | null = null;
 
 class MainMessageProcessor {
   /**
@@ -758,6 +764,51 @@ class MainMessageProcessor {
     const vol = new Fat32Volume(cimFile);
     vol.init();
     return vol.open("nextzxos/autoexec.1st", O_RDONLY) !== null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Screen recording
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Starts a new screen recording session using the active backend.
+   * Returns the absolute path of the output file.
+   */
+  async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18): Promise<string> {
+    const homeDir = app.getPath("home");
+    const outputPath = resolveRecordingPath(homeDir, "mp4");
+    _recordingBackend = new FfmpegRecordingBackend();
+    _recordingBackend.start(outputPath, width, height, fps, xRatio, yRatio, sampleRate, crf);
+    return outputPath;
+  }
+
+  /**
+   * Appends one raw RGBA frame to the active recording.
+   */
+  async appendRecordingFrame(rgba: Uint8Array): Promise<void> {
+    _recordingBackend?.appendFrame(rgba);
+  }
+
+  /**
+   * Appends interleaved stereo f32le audio samples to the active recording.
+   */
+  async appendRecordingAudio(samples: Float32Array): Promise<void> {
+    _recordingBackend?.appendAudioSamples(samples);
+  }
+
+  /**
+   * Finalises the recording and returns the path of the finished file.
+   */
+  async stopScreenRecording(): Promise<string> {
+    if (!_recordingBackend) return "";
+    try {
+      const filePath = await _recordingBackend.finish();
+      _recordingBackend = null;
+      return filePath;
+    } catch (err) {
+      _recordingBackend = null;
+      return "";
+    }
   }
 }
 

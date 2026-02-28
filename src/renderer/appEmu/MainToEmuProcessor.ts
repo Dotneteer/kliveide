@@ -36,8 +36,18 @@ import { MachineCommand } from "@abstractions/MachineCommand";
 import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
+import type { RecordingManager } from "./recording/RecordingManager";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
+
+// Module-level ref so menu commands can reach the renderer RecordingManager.
+let _emuRecordingManager: RecordingManager | null = null;
+
+/** Called from EmuApp after the RecordingManager is created. */
+export function setEmuRecordingManager(mgr: RecordingManager | null): void {
+  _emuRecordingManager = mgr;
+}
 
 // --- Retrieves a controller error message
 function noController() {
@@ -1083,6 +1093,56 @@ class EmuMessageProcessor {
       noController();
     }
     return controller.machine.getDisassemblySections(_options);
+  }
+
+  /**
+   * Routes a recording command issued from the main-process menu to the
+   * RecordingManager that lives in this renderer process.
+   */
+  async issueRecordingCommand(
+    command:
+      | "set-fps-native"
+      | "set-fps-half"
+      | "set-quality-lossless"
+      | "set-quality-high"
+      | "set-quality-good"
+      | "start-recording"
+      | "disarm"
+      | "pause-recording"
+      | "resume-recording"
+  ): Promise<void> {
+    if (!_emuRecordingManager) return;
+    const machineState = getCachedStore()?.getState()?.emulatorState?.machineState;
+    const isRunning = machineState === MachineControllerState.Running;
+    switch (command) {
+      case "set-fps-native":
+        _emuRecordingManager.setFpsPreference("native");
+        break;
+      case "set-fps-half":
+        _emuRecordingManager.setFpsPreference("half");
+        break;
+      case "set-quality-lossless":
+        _emuRecordingManager.setQualityPreference("lossless");
+        break;
+      case "set-quality-high":
+        _emuRecordingManager.setQualityPreference("high");
+        break;
+      case "set-quality-good":
+        _emuRecordingManager.setQualityPreference("good");
+        break;
+      case "start-recording":
+        _emuRecordingManager.arm(undefined, isRunning);
+        break;
+      case "disarm":
+        await _emuRecordingManager.disarm();
+        break;
+      case "pause-recording":
+        _emuRecordingManager.pauseRecording();
+        break;
+      case "resume-recording":
+        _emuRecordingManager.resumeRecording();
+        break;
+    }
   }
 }
 
