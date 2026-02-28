@@ -340,7 +340,15 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           {/* Single recording status button — icon + title reflect current state */}
           <IconButton
             iconName="record"
-            fill="--color-toolbarbutton-red"
+            fill={
+              !recState || recState === "idle"
+                ? undefined
+                : recState === "armed"
+                  ? "#ffd700"
+                  : recState === "recording"
+                    ? "#ff4444"
+                    : "#ff8800"
+            }
             selected={recState === "recording" || recState === "armed"}
             title={
               !recState || recState === "idle"
