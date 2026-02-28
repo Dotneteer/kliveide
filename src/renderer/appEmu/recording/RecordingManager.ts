@@ -21,6 +21,8 @@ export class RecordingManager {
   private _width = 0;
   private _height = 0;
   private _nativeFps = 0;
+  private _xRatio = 1;
+  private _yRatio = 1;
   private _captureCount = 0; // increments every submitFrame call; used for half-fps skipping
 
   constructor(
@@ -78,11 +80,13 @@ export class RecordingManager {
    * Called whenever the machine transitions to the Running state (first start
    * or resume after pause).
    */
-  async onMachineRunning(width: number, height: number, nativeFps: number): Promise<void> {
-    console.log(`[RecordingManager] onMachineRunning(${width}x${height} @${nativeFps}fps) — state: ${this._state}`);
+  async onMachineRunning(width: number, height: number, nativeFps: number, xRatio = 1, yRatio = 1): Promise<void> {
+    console.log(`[RecordingManager] onMachineRunning(${width}x${height} @${nativeFps}fps ratio=${xRatio}:${yRatio}) — state: ${this._state}`);
     this._width = width;
     this._height = height;
     this._nativeFps = nativeFps;
+    this._xRatio = xRatio;
+    this._yRatio = yRatio;
 
     if (this._state === "armed") {
       await this._startRecording();
@@ -154,7 +158,9 @@ export class RecordingManager {
       const filePath = await this.mainApi.startScreenRecording(
         this._width,
         this._height,
-        effectiveFps
+        effectiveFps,
+        this._xRatio,
+        this._yRatio
       );
       console.log(`[RecordingManager] IPC startScreenRecording OK → ${filePath}`);
       this._state = "recording";

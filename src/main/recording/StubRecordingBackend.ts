@@ -24,7 +24,7 @@ export class StubRecordingBackend implements IRecordingBackend {
   private frameCount = 0;
   private startedAt: Date | null = null;
 
-  start(outputPath: string, width: number, height: number, fps: number): void {
+  start(outputPath: string, width: number, height: number, fps: number, _xRatio = 1, _yRatio = 1): void {
     this.outputPath = outputPath;
     this.width = width;
     this.height = height;

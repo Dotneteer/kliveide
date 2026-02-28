@@ -6,6 +6,7 @@
   productName: "Klive IDE",
   copyright: "Copyright © 2019-2023 ${author}",
   asar: true,
+  asarUnpack: ["node_modules/@ffmpeg-installer/**"],
   compression: "maximum",
   directories: {
     output: "release/${version}",

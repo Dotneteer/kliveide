@@ -37,9 +37,9 @@ EmulatorPanel
 
 ---
 
-## Phase A — UI + Stub Backend (implement & test first)
+## Phase A — UI + Stub Backend ✅ COMPLETED
 
-### Step A1 — Redux state extension
+### Step A1 — Redux state extension ✅
 
 **Files changed:**
 - `src/common/state/ActionTypes.ts` — add `SET_SCREEN_RECORDING_STATE`
@@ -57,7 +57,7 @@ EmulatorPanel
 
 ---
 
-### Step A2 — IPC API surface
+### Step A2 — IPC API surface ✅
 
 **Files changed:**
 - `src/common/messaging/MainApi.ts` — add three method stubs:
@@ -72,7 +72,7 @@ EmulatorPanel
 
 ---
 
-### Step A3 — Stub recording backend
+### Step A3 — Stub recording backend ✅
 
 **New file:** `src/main/recording/StubRecordingBackend.ts`
 
@@ -106,7 +106,7 @@ export interface IRecordingBackend {
 
 ---
 
-### Step A4 — Output path resolver
+### Step A4 — Output path resolver ✅
 
 **New file:** `src/main/recording/outputPath.ts`
 
@@ -129,7 +129,7 @@ export function resolveRecordingPath(
 
 ---
 
-### Step A5 — RecordingManager (renderer, framework-agnostic class)
+### Step A5 — RecordingManager (renderer, framework-agnostic class) ✅
 
 **New file:** `src/renderer/appEmu/recording/RecordingManager.ts`
 
@@ -172,7 +172,7 @@ State machine:
 
 ---
 
-### Step A6 — Integration into EmulatorPanel
+### Step A6 — Integration into EmulatorPanel ✅
 
 **File changed:** `src/renderer/appEmu/EmulatorArea/EmulatorPanel.tsx`
 
@@ -191,7 +191,7 @@ Purely additive changes:
 
 ---
 
-### Step A7 — Toolbar button
+### Step A7 — Toolbar button ✅
 
 **New file:** `src/renderer/appEmu/EmulatorArea/RecordingButton.tsx`
 
@@ -206,9 +206,9 @@ Purely additive changes:
 
 ---
 
-## Phase B — Real FFmpeg Backend (after Phase A is fully working)
+## Phase B — Real FFmpeg Backend ✅ COMPLETED
 
-### Step B1 — Install FFmpeg dependency
+### Step B1 — Install FFmpeg dependency ✅
 
 ```
 npm install @ffmpeg-installer/ffmpeg --save
@@ -221,7 +221,7 @@ Add to `package.json` `build` section:
 
 ---
 
-### Step B2 — FfmpegRecordingBackend
+### Step B2 — FfmpegRecordingBackend ✅
 
 **New file:** `src/main/recording/FfmpegRecordingBackend.ts`
 
@@ -240,7 +240,7 @@ ffmpeg -y -f rawvideo -pix_fmt rgba -s {W}x{H} -r {fps}
 
 ---
 
-### Step B3 — Switch backend in RendererToMainProcessor
+### Step B3 — Switch backend in RendererToMainProcessor ✅
 
 Change the one line in `RendererToMainProcessor.ts` that instantiates `StubRecordingBackend` to instantiate `FfmpegRecordingBackend` instead. No other files change.
 

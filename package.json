@@ -89,6 +89,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@radix-ui/react-select": "^2.1.6",
     "classnames": "^2.5.1",
     "electron-updater": "^6.6.2",

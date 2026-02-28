@@ -35,7 +35,6 @@ import { createIdeApi } from "@common/messaging/IdeApi";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
-import { add } from "lodash";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -134,6 +133,13 @@ export class MachineController implements IMachineController {
    * frame has been completed entirely (normal termination mode)
    */
   frameCompleted = new LiteEvent<FrameCompletedArgs>();
+
+  /**
+   * Optional async hook called just before the inter-frame delay inside the
+   * machine run loop. Assign this in EmulatorPanel to forward display data
+   * to the recording backend while the CPU is idle.
+   */
+  beforeFrameDelay?: () => Promise<void>;
 
   /**
    * Start the machine in normal mode.
@@ -580,6 +586,10 @@ export class MachineController implements IMachineController {
         if (frameCompleted) {
           // --- Calculate the time to wait before the next machine frame starts
           if (this.machine.frames % this.machine.uiFrameFrequency === 0) {
+            // --- Send recording data (and any other pre-delay work) before sleeping
+            if (this.beforeFrameDelay) {
+              await this.beforeFrameDelay();
+            }
             const curTime = performance.now();
             const toWait = Math.floor(nextFrameTime - curTime);
             await delay(toWait - 2);

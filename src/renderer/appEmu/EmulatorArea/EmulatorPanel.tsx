@@ -118,6 +118,19 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   );
   const controllerRef = useRef<IMachineController>(controller);
 
+  // --- Wire the pre-delay recording hook whenever the controller changes
+  useEffect(() => {
+    if (!controller) return undefined;
+    controller.beforeFrameDelay = async () => {
+      if (imageBuffer8.current) {
+        await recordingManagerRef?.current?.submitFrame(imageBuffer8.current);
+      }
+    };
+    return () => {
+      controller.beforeFrameDelay = undefined;
+    };
+  }, [controller]);
+
   // --- Update key mappings
   const updateKeyMappings = () => {
     if (!keyMappings) {
@@ -306,7 +319,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             await recordingManagerRef?.current?.onMachineRunning(
               controller.machine.screenWidthInPixels,
               controller.machine.screenHeightInPixels,
-              Math.round(controller.machine.baseClockFrequency / controller.machine.tactsInFrame)
+              Math.round(
+                controller.machine.baseClockFrequency *
+                controller.machine.frameTactMultiplier /
+                controller.machine.tactsInFrame /
+                controller.machine.uiFrameFrequency
+              ),
+              xRatio.current,
+              yRatio.current
             );
             break;
 
@@ -348,10 +368,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     // --- Update the screen
     if (controller.machine.frames % controller.machine.uiFrameFrequency === 0) {
       displayScreenData();
-      // --- Submit the current frame to the recording manager (if recording)
-      if (imageBuffer8.current) {
-        await recordingManagerRef?.current?.submitFrame(imageBuffer8.current);
-      }
     }
 
     if (args.fullFrame) {

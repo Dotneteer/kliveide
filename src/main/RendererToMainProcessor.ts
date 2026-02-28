@@ -61,7 +61,7 @@ import { Fat32Volume } from "./fat32/Fat32Volume";
 import { FileManager } from "./fat32/FileManager";
 import { O_RDONLY } from "./fat32/Fat32Types";
 import type { IRecordingBackend } from "./recording/IRecordingBackend";
-import { StubRecordingBackend } from "./recording/StubRecordingBackend";
+import { FfmpegRecordingBackend } from "./recording/FfmpegRecordingBackend";
 import { resolveRecordingPath } from "./recording/outputPath";
 
 const compilerRegistry = createCompilerRegistry();
@@ -774,12 +774,12 @@ class MainMessageProcessor {
    * Starts a new screen recording session using the active backend.
    * Returns the absolute path of the output file.
    */
-  async startScreenRecording(width: number, height: number, fps: number): Promise<string> {
+  async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1): Promise<string> {
     const homeDir = app.getPath("home");
-    const outputPath = resolveRecordingPath(homeDir, KLIVE_HOME_FOLDER, "txt");
+    const outputPath = resolveRecordingPath(homeDir, KLIVE_HOME_FOLDER, "mp4");
     console.log(`[Main:recording] startScreenRecording home=${homeDir} path=${outputPath}`);
-    _recordingBackend = new StubRecordingBackend();
-    _recordingBackend.start(outputPath, width, height, fps);
+    _recordingBackend = new FfmpegRecordingBackend();
+    _recordingBackend.start(outputPath, width, height, fps, xRatio, yRatio);
     console.log(`[Main:recording] backend started OK`);
     return outputPath;
   }

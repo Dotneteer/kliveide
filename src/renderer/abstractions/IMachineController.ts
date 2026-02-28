@@ -77,6 +77,13 @@ export interface IMachineController {
   frameCompleted: ILiteEvent<FrameCompletedArgs>;
 
   /**
+   * Optional async hook called just before the inter-frame delay inside the
+   * machine run loop. Use this to send display data to the main process while
+   * the CPU is idle, rather than during the frame-completed event handler.
+   */
+  beforeFrameDelay?: () => Promise<void>;
+
+  /**
    * Start the machine in normal mode.
    */
   start(): Promise<void>;
