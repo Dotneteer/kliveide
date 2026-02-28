@@ -457,6 +457,33 @@ class MainApiImpl {
   async hasNextAutoExec(): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Starts a new screen recording session.
+   * @param _width  Frame width in pixels.
+   * @param _height Frame height in pixels.
+   * @param _fps    Target frames-per-second for the recording.
+   * @returns The absolute path of the file being written.
+   */
+  async startScreenRecording(_width: number, _height: number, _fps: number): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Appends one raw RGBA frame to the current recording.
+   * @param _rgba Raw RGBA pixel data (width × height × 4 bytes).
+   */
+  async appendRecordingFrame(_rgba: Uint8Array): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Finalises the current recording and closes the output file.
+   * @returns The absolute path of the finished file.
+   */
+  async stopScreenRecording(): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 export type MainApi = MainApiImpl;

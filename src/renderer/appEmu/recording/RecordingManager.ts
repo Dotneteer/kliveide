@@ -1,0 +1,186 @@
+import type { MainApi } from "@common/messaging/MainApi";
+import type { RecordingFps, ScreenRecordingState } from "@common/state/AppState";
+import { setScreenRecordingStateAction } from "@common/state/actions";
+
+type Dispatch = (action: any) => void;
+
+/**
+ * Framework-agnostic state machine that coordinates screen recording.
+ *
+ * Lifecycle:
+ *   idle ──arm()──► armed ──onMachineRunning()──► recording ──onMachinePaused()──► paused
+ *                                                    │                                 │
+ *                                                    └────────onMachineRunning()───────┘
+ *   idle ◄──disarm() / onMachineStopped()──────────────────────────────────────────────┘
+ *
+ * inject `mainApi` and `dispatch` via the constructor — no React dependency.
+ */
+export class RecordingManager {
+  private _state: ScreenRecordingState = "idle";
+  private _fps: RecordingFps = "native";
+  private _width = 0;
+  private _height = 0;
+  private _nativeFps = 0;
+  private _captureCount = 0; // increments every submitFrame call; used for half-fps skipping
+
+  constructor(
+    private readonly mainApi: MainApi,
+    private readonly dispatch: Dispatch
+  ) {}
+
+  get state(): ScreenRecordingState {
+    return this._state;
+  }
+
+  // ---------------------------------------------------------------------------
+  // User controls
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Arms the recorder. Recording begins when the machine next starts running.
+   * No-op if not idle.
+   */
+  arm(fps: RecordingFps, startNow = false): void {
+    console.log(`[RecordingManager] arm(${fps}, startNow=${startNow}) called — current state: ${this._state}`);
+    if (this._state !== "idle") return;
+    this._fps = fps;
+    this._state = "armed";
+    this.dispatch(setScreenRecordingStateAction("armed", undefined, fps));
+    console.log(`[RecordingManager] state → armed`);
+    // If the machine is already running and we have valid dimensions, start immediately.
+    if (startNow && this._width > 0 && this._height > 0) {
+      void this._startRecording();
+    }
+  }
+
+  /**
+   * Stops or cancels the recording. Stops an active recording session if one
+   * is in progress. No-op if already idle.
+   */
+  async disarm(): Promise<void> {
+    console.log(`[RecordingManager] disarm() called — current state: ${this._state}`);
+    if (this._state === "idle") return;
+    if (this._state === "recording" || this._state === "paused") {
+      await this._stopRecording();
+    } else {
+      // armed but machine never ran
+      this._state = "idle";
+      this.dispatch(setScreenRecordingStateAction("idle"));
+      console.log(`[RecordingManager] state → idle (disarmed without recording)`);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Machine lifecycle hooks — called by EmulatorPanel
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Called whenever the machine transitions to the Running state (first start
+   * or resume after pause).
+   */
+  async onMachineRunning(width: number, height: number, nativeFps: number): Promise<void> {
+    console.log(`[RecordingManager] onMachineRunning(${width}x${height} @${nativeFps}fps) — state: ${this._state}`);
+    this._width = width;
+    this._height = height;
+    this._nativeFps = nativeFps;
+
+    if (this._state === "armed") {
+      await this._startRecording();
+    } else if (this._state === "paused") {
+      this._state = "recording";
+      this.dispatch(setScreenRecordingStateAction("recording"));
+      console.log(`[RecordingManager] state → recording (resumed)`);
+    }
+  }
+
+  /**
+   * Called when the machine transitions to the Paused state.
+   * Frame submission stops; the file stays open.
+   */
+  onMachinePaused(): void {
+    console.log(`[RecordingManager] onMachinePaused() — state: ${this._state}`);
+    if (this._state !== "recording") return;
+    this._state = "paused";
+    this.dispatch(setScreenRecordingStateAction("paused"));
+    console.log(`[RecordingManager] state → paused`);
+  }
+
+  /**
+   * Called when the machine transitions to the Stopped state.
+   * Finalises and closes the recording file if active.
+   */
+  async onMachineStopped(): Promise<void> {
+    console.log(`[RecordingManager] onMachineStopped() — state: ${this._state}`);
+    if (this._state === "armed") {
+      this._state = "idle";
+      this.dispatch(setScreenRecordingStateAction("idle"));
+      console.log(`[RecordingManager] state → idle (stopped while armed)`);
+      return;
+    }
+    if (this._state === "recording" || this._state === "paused") {
+      await this._stopRecording();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Frame submission — called by EmulatorPanel on every display frame
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Submits a raw RGBA frame to the recording.
+   * @param rgba Raw RGBA pixel data at machine resolution (width × height × 4 bytes).
+   */
+  async submitFrame(rgba: Uint8Array): Promise<void> {
+    if (this._state !== "recording") return;
+    this._captureCount++;
+    // For half fps, skip odd-numbered capture frames
+    if (this._fps === "half" && this._captureCount % 2 !== 0) return;
+    await this.mainApi.appendRecordingFrame(rgba);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  private async _startRecording(): Promise<void> {
+    const effectiveFps =
+      this._fps === "half"
+        ? Math.max(1, Math.round(this._nativeFps / 2))
+        : this._nativeFps;
+
+    console.log(`[RecordingManager] _startRecording — ${this._width}x${this._height} @${effectiveFps}fps (mode: ${this._fps})`);
+    this._captureCount = 0;
+    try {
+      const filePath = await this.mainApi.startScreenRecording(
+        this._width,
+        this._height,
+        effectiveFps
+      );
+      console.log(`[RecordingManager] IPC startScreenRecording OK → ${filePath}`);
+      this._state = "recording";
+      this.dispatch(setScreenRecordingStateAction("recording", filePath, this._fps));
+      console.log(`[RecordingManager] state → recording`);
+    } catch (err) {
+      console.error(`[RecordingManager] IPC startScreenRecording FAILED:`, err);
+      // Roll back to idle so the user can try again
+      this._state = "idle";
+      this.dispatch(setScreenRecordingStateAction("idle"));
+    }
+  }
+
+  private async _stopRecording(): Promise<void> {
+    console.log(`[RecordingManager] _stopRecording — state: ${this._state}`);
+    const prevState = this._state;
+    this._state = "idle";
+    this.dispatch(setScreenRecordingStateAction("idle"));
+    if (prevState === "recording" || prevState === "paused") {
+      try {
+        const filePath = await this.mainApi.stopScreenRecording();
+        console.log(`[RecordingManager] IPC stopScreenRecording OK → ${filePath}`);
+      } catch (err) {
+        console.error(`[RecordingManager] IPC stopScreenRecording FAILED:`, err);
+      }
+    }
+    console.log(`[RecordingManager] state → idle`);
+  }
+}

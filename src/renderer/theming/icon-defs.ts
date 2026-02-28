@@ -11,6 +11,13 @@ export const iconLibrary: IconInfo[] = [
     height: 16
   },
   {
+    name: "record-stop",
+    // Filled square — the universal "stop recording" symbol
+    path: "M3 3h10v10H3z",
+    width: 16,
+    height: 16
+  },
+  {
     name: "reverse-tape",
     path: "M13.5 2H12v12h1.5V2zm-3.5.18V14L1 8.062l9-5.881zM3.685 8.063L8.5 5v6.18L3.685 8.063z",
     width: 16,
@@ -613,6 +620,12 @@ export const iconLibrary: IconInfo[] = [
   {
     name: "zoom-out",
     path: "M7.5 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zM1 7.5a6.5 6.5 0 1 1 11.436 4.23l2.667 2.668-.707.707-2.668-2.668A6.5 6.5 0 0 1 1 7.5zM5.5 7h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1 0-1z",
+    width: 16,
+    height: 16
+  },
+  {
+    name: "record",
+    path: "M8 12C10.2091 12 12 10.2091 12 8C12 5.79086 10.2091 4 8 4C5.79086 4 4 5.79086 4 8C4 10.2091 5.79086 12 8 12ZM8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1ZM2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8Z",
     width: 16,
     height: 16
   },

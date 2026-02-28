@@ -36,8 +36,18 @@ import { MachineCommand } from "@abstractions/MachineCommand";
 import { CpuState, CpuStateChunk, VicState } from "@common/messaging/EmuApi";
 import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
+import type { RecordingManager } from "./recording/RecordingManager";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 const borderColors = ["Black", "Blue", "Red", "Magenta", "Green", "Cyan", "Yellow", "White"];
+
+// Module-level ref so menu commands can reach the renderer RecordingManager.
+let _emuRecordingManager: RecordingManager | null = null;
+
+/** Called from EmuApp after the RecordingManager is created. */
+export function setEmuRecordingManager(mgr: RecordingManager | null): void {
+  _emuRecordingManager = mgr;
+}
 
 // --- Retrieves a controller error message
 function noController() {
@@ -1083,6 +1093,27 @@ class EmuMessageProcessor {
       noController();
     }
     return controller.machine.getDisassemblySections(_options);
+  }
+
+  /**
+   * Routes a recording command issued from the main-process menu to the
+   * RecordingManager that lives in this renderer process.
+   */
+  async issueRecordingCommand(command: "arm-native" | "arm-half" | "disarm"): Promise<void> {
+    if (!_emuRecordingManager) return;
+    const machineState = getCachedStore()?.getState()?.emulatorState?.machineState;
+    const isRunning = machineState === MachineControllerState.Running;
+    switch (command) {
+      case "arm-native":
+        _emuRecordingManager.arm("native", isRunning);
+        break;
+      case "arm-half":
+        _emuRecordingManager.arm("half", isRunning);
+        break;
+      case "disarm":
+        await _emuRecordingManager.disarm();
+        break;
+    }
   }
 }
 

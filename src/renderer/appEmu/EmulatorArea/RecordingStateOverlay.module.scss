@@ -1,0 +1,44 @@
+@use "@styles/core.scss" as *;
+
+.recordingOverlay {
+    position: relative;
+    left: 8px;
+    /* Push below the ExecutionStateOverlay (~8px top + ~28px content height) */
+    top: 40px;
+    height: 0;
+    flex-shrink: 0;
+    flex-grow: 0;
+}
+
+%pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #303030;
+    opacity: 0.85;
+    font-size: 0.85em;
+    padding: 3px 10px 3px 8px;
+    border-radius: 4px;
+}
+
+.icon {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    font-size: 0.75em; /* smaller circle glyph */
+}
+
+.armed {
+    @extend %pill;
+    color: #ffd700;
+}
+
+.recording {
+    @extend %pill;
+    color: #ff4444;
+}
+
+.paused {
+    @extend %pill;
+    color: #ff8800;
+}

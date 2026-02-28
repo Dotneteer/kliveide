@@ -68,6 +68,16 @@ export type IdeView = {
   cursorColumn?: number;
 };
 
+/**
+ * The FPS mode for screen recording
+ */
+export type RecordingFps = "native" | "half";
+
+/**
+ * The lifecycle state of a screen recording session
+ */
+export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
+
 export type EmulatorState = {
   machineId?: string;
   modelId?: string;
@@ -84,6 +94,9 @@ export type EmulatorState = {
   audioSampleRate?: number;
   breakpointsVersion: number;
   emuViewVersion: number;
+  screenRecordingState?: ScreenRecordingState;
+  screenRecordingFile?: string;
+  screenRecordingFps?: RecordingFps;
 };
 
 export type FloppyDiskState = {

@@ -109,6 +109,7 @@ const SOUND_LEVEL = "sound_level";
 const SCANLINE_EFFECT = "scanline_effect";
 const SELECT_KEY_MAPPING = "select_key_mapping";
 const RESET_KEY_MAPPING = "reset_key_mapping";
+const RECORDING_MENU = "recording_menu";
 
 const IDE_MENU = "ide_menu";
 const IDE_SHOW_MEMORY = "show_memory";
@@ -145,6 +146,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const machineRuns = execState === MachineControllerState.Running;
   const machinePaused = execState === MachineControllerState.Paused;
   const machineRestartable = machineRuns || machinePaused;
+  const recState = appState?.emulatorState?.screenRecordingState;
+  const isRecordingIdle = !recState || recState === "idle";
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
   const hasBuildFile = !!appState?.project?.hasBuildFile;
@@ -825,6 +828,32 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         mainStore.dispatch(setKeyMappingsAction(undefined, undefined));
         await saveKliveProject();
       }
+    },
+    { type: "separator" },
+    {
+      id: RECORDING_MENU,
+      label: "Recording",
+      submenu: [
+        {
+          id: "recording_arm_native",
+          label: "Arm recording – native fps",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("arm-native")
+        },
+        {
+          id: "recording_arm_half",
+          label: "Arm recording – half fps",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("arm-half")
+        },
+        { type: "separator" },
+        {
+          id: "recording_stop",
+          label: "Stop / cancel recording",
+          enabled: !isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("disarm")
+        }
+      ]
     }
   );
 

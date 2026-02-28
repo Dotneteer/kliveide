@@ -5,7 +5,7 @@ import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/Rende
 import { muteSoundAction } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
-import { useEffect, useState } from "react";
+import { MutableRefObject, useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
@@ -16,6 +16,7 @@ import { useIdeApi } from "@renderer/core/IdeApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { HStack } from "./new/Panels";
 import Dropdown from "./Dropdown";
+import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
@@ -28,6 +29,7 @@ import { MEDIA_TAPE } from "@common/structs/project-const";
 type Props = {
   ide: boolean;
   kliveProjectLoaded: boolean;
+  recordingManagerRef?: MutableRefObject<RecordingManager | null>;
 };
 
 const emuStartOptions = [
@@ -64,7 +66,7 @@ const ideStartOptions = [
   }
 ];
 
-export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
+export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props) => {
   const dispatch = useDispatch();
   const emuApi = useEmuApi();
   const ideApi = useIdeApi();
@@ -77,6 +79,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
   const showKeyboard = useGlobalSetting(SETTING_EMU_SHOW_KEYBOARD);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const stayOnTop = useGlobalSetting(SETTING_EMU_STAY_ON_TOP);
+  const recState = useSelector((s) => s.emulatorState?.screenRecordingState);
   const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
@@ -333,6 +336,27 @@ export const Toolbar = ({ ide, kliveProjectLoaded }: Props) => {
               }}
             />
           )}
+          <ToolbarSeparator />
+          {/* Single recording status button — icon + title reflect current state */}
+          <IconButton
+            iconName="record"
+            fill="--color-toolbarbutton-red"
+            selected={recState === "recording" || recState === "armed"}
+            title={
+              !recState || recState === "idle"
+                ? "Arm recording — use Machine › Recording to choose fps"
+                : recState === "armed"
+                  ? "Armed – waiting for machine to run (click to cancel)"
+                  : recState === "recording"
+                    ? "Recording... (click to stop)"
+                    : "Recording paused (click to stop)"
+            }
+            clicked={
+              !recState || recState === "idle"
+                ? () => recordingManagerRef?.current?.arm("native", isRunning)
+                : () => recordingManagerRef?.current?.disarm()
+            }
+          />
         </>
       )}
       {ide && (

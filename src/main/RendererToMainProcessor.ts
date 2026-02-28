@@ -60,8 +60,14 @@ import { CimFile } from "./fat32/CimFileManager";
 import { Fat32Volume } from "./fat32/Fat32Volume";
 import { FileManager } from "./fat32/FileManager";
 import { O_RDONLY } from "./fat32/Fat32Types";
+import type { IRecordingBackend } from "./recording/IRecordingBackend";
+import { StubRecordingBackend } from "./recording/StubRecordingBackend";
+import { resolveRecordingPath } from "./recording/outputPath";
 
 const compilerRegistry = createCompilerRegistry();
+
+// Module-level so it survives across per-message MainMessageProcessor instances.
+let _recordingBackend: IRecordingBackend | null = null;
 
 class MainMessageProcessor {
   /**
@@ -758,6 +764,49 @@ class MainMessageProcessor {
     const vol = new Fat32Volume(cimFile);
     vol.init();
     return vol.open("nextzxos/autoexec.1st", O_RDONLY) !== null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Screen recording
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Starts a new screen recording session using the active backend.
+   * Returns the absolute path of the output file.
+   */
+  async startScreenRecording(width: number, height: number, fps: number): Promise<string> {
+    const homeDir = app.getPath("home");
+    const outputPath = resolveRecordingPath(homeDir, KLIVE_HOME_FOLDER, "txt");
+    console.log(`[Main:recording] startScreenRecording home=${homeDir} path=${outputPath}`);
+    _recordingBackend = new StubRecordingBackend();
+    _recordingBackend.start(outputPath, width, height, fps);
+    console.log(`[Main:recording] backend started OK`);
+    return outputPath;
+  }
+
+  /**
+   * Appends one raw RGBA frame to the active recording.
+   */
+  async appendRecordingFrame(rgba: Uint8Array): Promise<void> {
+    _recordingBackend?.appendFrame(rgba);
+  }
+
+  /**
+   * Finalises the recording and returns the path of the finished file.
+   */
+  async stopScreenRecording(): Promise<string> {
+    console.log(`[Main:recording] stopScreenRecording — backend=${_recordingBackend ? "set" : "null"}`);
+    if (!_recordingBackend) return "";
+    try {
+      const filePath = await _recordingBackend.finish();
+      console.log(`[Main:recording] finish() OK → ${filePath}`);
+      _recordingBackend = null;
+      return filePath;
+    } catch (err) {
+      console.error(`[Main:recording] finish() FAILED:`, err);
+      _recordingBackend = null;
+      return "";
+    }
   }
 }
 
