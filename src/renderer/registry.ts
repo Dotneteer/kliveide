@@ -751,6 +751,96 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".jpg",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".jpeg",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".gif",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".bmp",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".webp",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".ico",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".svg",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".tiff",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
+  },
+  {
+    matchType: "ends",
+    pattern: ".tif",
+    editor: IMAGE_VIEWER,
+    icon: "preview",
+    iconFill: "--console-ansi-bright-cyan",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true
   },];
 
 export const unknownFileType: FileTypeEditor = {

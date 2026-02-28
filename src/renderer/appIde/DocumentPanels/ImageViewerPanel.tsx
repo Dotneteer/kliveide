@@ -3,15 +3,24 @@ import { DocumentProps } from "@renderer/appIde/DocumentArea/DocumentsContainer"
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import { FullPanel } from "@renderer/controls/new/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";
-import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
+import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { IconButton } from "@renderer/controls/IconButton";
+import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import styles from "./ImageViewerPanel.module.scss";
+
+type FitMode = "original" | "fit-width" | "fit-page";
 
 type ImageViewerViewState = {
   zoomIndex?: number;
-  fitToWidth?: boolean;
+  fitMode?: FitMode;
 };
+
+const FIT_OPTIONS: DropdownOption[] = [
+  { value: "original", label: "Original size" },
+  { value: "fit-width", label: "Fit Width" },
+  { value: "fit-page", label: "Fit Page" }
+];
 
 const ZOOM_LEVELS = [0.125, 0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8];
 const DEFAULT_ZOOM_INDEX = ZOOM_LEVELS.indexOf(1);
@@ -21,6 +30,24 @@ function formatZoom(z: number): string {
   if (z === 0.25) return "¼×";
   if (z === 0.5) return "½×";
   return `${z}×`;
+}
+
+const MIME_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  bmp: "image/bmp",
+  webp: "image/webp",
+  ico: "image/x-icon",
+  svg: "image/svg+xml",
+  tiff: "image/tiff",
+  tif: "image/tiff"
+};
+
+function mimeTypeForName(name: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  return MIME_TYPES[ext] ?? "image/png";
 }
 
 const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
@@ -33,10 +60,12 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
   );
 
   const [zoomIndex, setZoomIndex] = useState(viewState.current?.zoomIndex ?? DEFAULT_ZOOM_INDEX);
-  const [fitToWidth, setFitToWidth] = useState(viewState.current?.fitToWidth ?? false);
+  const [fitMode, setFitMode] = useState<FitMode>(viewState.current?.fitMode ?? "original");
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [naturalWidth, setNaturalWidth] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [naturalHeight, setNaturalHeight] = useState(0);
+  const panContainerRef = useRef<HTMLDivElement>(null);
+  const scrollApi = useRef<ScrollViewerApi>(null);
   const isInitialMount = useRef(true);
 
   // Drag-to-pan state (refs to avoid re-renders)
@@ -47,16 +76,16 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
   // Register global mousemove / mouseup for panning
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!isPanning.current || !containerRef.current) return;
+      if (!isPanning.current || !scrollApi.current) return;
       const dx = e.clientX - panOrigin.current.x;
       const dy = e.clientY - panOrigin.current.y;
-      containerRef.current.scrollLeft = scrollOrigin.current.left - dx;
-      containerRef.current.scrollTop = scrollOrigin.current.top - dy;
+      scrollApi.current.scrollToHorizontal(scrollOrigin.current.left - dx);
+      scrollApi.current.scrollToVertical(scrollOrigin.current.top - dy);
     };
     const onMouseUp = () => {
       if (!isPanning.current) return;
       isPanning.current = false;
-      if (containerRef.current) containerRef.current.style.cursor = "grab";
+      if (panContainerRef.current) panContainerRef.current.style.cursor = "grab";
     };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
@@ -72,20 +101,22 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
       isInitialMount.current = false;
       return;
     }
-    documentHubService.saveActiveDocumentState({ zoomIndex, fitToWidth });
-  }, [zoomIndex, fitToWidth]);
+    documentHubService.saveActiveDocumentState({ zoomIndex, fitMode });
+  }, [zoomIndex, fitMode]);
 
   // Create an object URL for the binary image data and revoke it on cleanup
   useEffect(() => {
     if (!data || data.length === 0) {
       setDataUrl(null);
       setNaturalWidth(0);
+      setNaturalHeight(0);
       return () => {};
     }
-    const blob = new Blob([data.slice()], { type: "image/png" });
+    const blob = new Blob([data.slice()], { type: mimeTypeForName(document?.name ?? "") });
     const url = URL.createObjectURL(blob);
     setDataUrl(url);
     setNaturalWidth(0);
+    setNaturalHeight(0);
     return () => URL.revokeObjectURL(url);
   }, [data]);
 
@@ -94,23 +125,39 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
   }
 
   const zoom = ZOOM_LEVELS[zoomIndex];
+  const isOriginal = fitMode === "original";
   const scaledWidth = naturalWidth > 0 ? naturalWidth * zoom : undefined;
-  const imgStyle: React.CSSProperties = fitToWidth
-    ? { width: "100%", height: "auto", display: "block" }
-    : scaledWidth
-      ? { width: `${scaledWidth}px`, height: "auto", display: "block" }
-      : { maxWidth: "100%", height: "auto", display: "block" };
+  const scaledHeight = naturalHeight > 0 ? naturalHeight * zoom : undefined;
+  let imgStyle: React.CSSProperties;
+  if (fitMode === "fit-width") {
+    imgStyle = { width: "100%", height: "auto", display: "block" };
+  } else if (fitMode === "fit-page") {
+    imgStyle = {
+      maxWidth: "100%",
+      maxHeight: "100%",
+      width: "auto",
+      height: "auto",
+      objectFit: "contain",
+      display: "block"
+    };
+  } else {
+    // original
+    imgStyle =
+      scaledWidth && scaledHeight
+        ? { width: `${scaledWidth}px`, height: `${scaledHeight}px`, display: "block" }
+        : { maxWidth: "100%", height: "auto", display: "block" };
+  }
 
-  const zoomLabel = fitToWidth ? "Fit" : formatZoom(zoom);
+  const zoomLabel = isOriginal ? formatZoom(zoom) : "—";
 
   return (
     <FullPanel>
       <PanelHeader>
-        <LabeledSwitch
-          label="Fit Width"
-          title="Fit image to panel width"
-          value={fitToWidth}
-          clicked={(v) => setFitToWidth(v)}
+        <Dropdown
+          options={FIT_OPTIONS}
+          initialValue={fitMode}
+          width={110}
+          onChanged={(v) => setFitMode(v as FitMode)}
         />
         <LabelSeparator width={8} />
         <IconButton
@@ -119,10 +166,17 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
           buttonWidth={24}
           buttonHeight={24}
           title="Zoom out"
-          enable={!fitToWidth && zoomIndex > 0}
+          enable={isOriginal && zoomIndex > 0}
           clicked={() => setZoomIndex((i) => Math.max(0, i - 1))}
         />
-        <div className={styles.zoomLabel} title="Click to reset to 100%" onClick={() => { setZoomIndex(DEFAULT_ZOOM_INDEX); setFitToWidth(false); }}>
+        <div
+          className={styles.zoomLabel}
+          title={isOriginal ? "Click to reset to 100%" : undefined}
+          onClick={() => {
+            setFitMode("original");
+            setZoomIndex(DEFAULT_ZOOM_INDEX);
+          }}
+        >
           {zoomLabel}
         </div>
         <IconButton
@@ -131,33 +185,46 @@ const ImageViewerPanelComponent = ({ document, contents }: DocumentProps) => {
           buttonWidth={24}
           buttonHeight={24}
           title="Zoom in"
-          enable={!fitToWidth && zoomIndex < ZOOM_LEVELS.length - 1}
+          enable={isOriginal && zoomIndex < ZOOM_LEVELS.length - 1}
           clicked={() => setZoomIndex((i) => Math.min(ZOOM_LEVELS.length - 1, i + 1))}
         />
       </PanelHeader>
       <div
-        ref={containerRef}
-        className={styles.imageContainer}
+        ref={panContainerRef}
+        className={styles.panContainer}
         style={{ cursor: "grab" }}
         onMouseDown={(e) => {
-          if (!containerRef.current) return;
+          if (!scrollApi.current) return;
           isPanning.current = true;
           panOrigin.current = { x: e.clientX, y: e.clientY };
           scrollOrigin.current = {
-            left: containerRef.current.scrollLeft,
-            top: containerRef.current.scrollTop
+            left: scrollApi.current.getScrollLeft(),
+            top: scrollApi.current.getScrollTop()
           };
-          containerRef.current.style.cursor = "grabbing";
+          if (panContainerRef.current) panContainerRef.current.style.cursor = "grabbing";
           e.preventDefault();
         }}
       >
-        <img
-          src={dataUrl}
-          alt="Preview"
-          style={imgStyle}
-          draggable={false}
-          onLoad={(e) => setNaturalWidth(e.currentTarget.naturalWidth)}
-        />
+        <ScrollViewer
+          allowHorizontal={true}
+          allowVertical={true}
+          apiLoaded={(api) => (scrollApi.current = api)}
+        >
+          <div
+            className={`${styles.imageWrapper}${fitMode === "fit-page" ? " " + styles.imageWrapperFitPage : ""}`}
+          >
+            <img
+              src={dataUrl}
+              alt="Preview"
+              style={imgStyle}
+              draggable={false}
+              onLoad={(e) => {
+                setNaturalWidth(e.currentTarget.naturalWidth);
+                setNaturalHeight(e.currentTarget.naturalHeight);
+              }}
+            />
+          </div>
+        </ScrollViewer>
       </div>
     </FullPanel>
   );

@@ -1,3 +1,120 @@
+import { Callout } from 'nextra/components'
+
 # The Project Explorer
 
-_TBD_
+The **Project Explorer** is the left-side panel that shows the files and folders in your currently open Klive project. It lets you navigate, open, create, rename, and delete project files, and it automatically picks the right viewer or editor for each file type.
+
+## Opening the Project Explorer
+
+Click the **Explorer** icon (the stacked pages icon) in the activity bar on the far left of the IDE, or use the **View | Project Explorer** menu command. If no project is open, the panel will be empty. Open or create a project first via **File | Open Folder** or **File | New Project**.
+
+## The Explorer Tree
+
+The tree shows your project root and all subfolders beneath it. Folders can be expanded and collapsed by clicking their arrow. Clicking a file opens it in the document area on the right, using the viewer or editor that matches its file type.
+
+The file icon next to each entry indicates both the file type and the viewer that will be used to open it.
+
+## Context Menu Actions
+
+Right-clicking a folder or file in the Explorer shows a context menu with the following actions:
+
+- **New File** — Creates an empty file inside the selected folder.
+- **New Folder** — Creates a new subfolder.
+- **Rename** — Renames the selected file or folder in place.
+- **Delete** — Permanently removes the file or folder from disk.
+- **Set as Build Root** — (Source files only) Marks the selected file as the entry point for the build system.
+
+<Callout type="info" emoji="💡">
+Use **Rename** to change a file's extension if you want to switch which editor or viewer Klive uses to open it.
+</Callout>
+
+## File Type Binding
+
+Klive automatically selects an editor or viewer based on the file extension when you open a file. The rules are checked in order; the first match wins.
+
+### Source Code Editor
+
+The following extensions open in the **Code Editor** (Monaco-based), with the corresponding language mode activated:
+
+| Extension | Language |
+|---|---|
+| `.kz80.asm`, `.asm` | Klive Z80 Assembler |
+| `.zxb.asm` | ZXB Z80 Assembler |
+| `.zxbas`, `.bas` | ZX BASIC (Boriel Basic) |
+| `.sjasm` | SjASMPlus Z80 Assembler |
+| `.6510.asm` | 6510 Assembler |
+| `.c`, `.h` | C / C Header |
+| `.lua` | Lua |
+| `.ksx`, `build.ksx` | KSX Script |
+
+### Text Editor
+
+Files with the `.txt` extension open in a plain **Text Editor**.
+
+Files with *no registered extension* are probed when first opened. If the content is valid UTF-8 text, Klive opens them in the Text Editor and remembers that choice for the rest of the session.
+
+### Binary Dump Viewer
+
+The **Binary Dump Viewer** shows the raw hexadecimal content of a file alongside its ASCII character representation. It supports a two-column layout, decimal or hexadecimal address and value display, a **Go To** address box, and drag-to-pan scrolling.
+
+The following extensions open in the Binary Dump Viewer:
+
+| Extension | Description |
+|---|---|
+| `.bin` | Generic binary output file |
+| `.rom` | ROM image |
+
+Files with *no registered extension* that are **not** detected as text are also opened in the Binary Dump Viewer automatically.
+
+### Image Viewer
+
+The **Image Viewer** displays images in read-only mode. It supports multiple view modes selectable from a dropdown in the header:
+
+- **Original size** — Displays the image at its natural pixel dimensions, scaled by the current zoom factor.
+- **Fit Width** — Stretches the image horizontally to fill the panel width.
+- **Fit Page** — Scales the image proportionally so it fits entirely within the visible area.
+
+Zoom controls (zoom in/out buttons and a clickable zoom label that resets to 100%) are active in **Original size** mode. The image can be panned by clicking and dragging when it is larger than the visible area.
+
+The following extensions open in the Image Viewer:
+
+| Extension | MIME type |
+|---|---|
+| `.png` | PNG |
+| `.jpg`, `.jpeg` | JPEG |
+| `.gif` | GIF |
+| `.bmp` | BMP |
+| `.webp` | WebP |
+| `.svg` | SVG |
+| `.ico` | Windows Icon |
+| `.tiff`, `.tif` | TIFF |
+
+### Specialised Binary Viewers
+
+Klive includes dedicated read-only viewers for a number of well-known binary formats:
+
+| Extension | Viewer |
+|---|---|
+| `.tap`, `.tzx` | TAP / TZX Tape Viewer |
+| `.dsk` | Disk Image Viewer |
+| `.nex` | NEX File Viewer |
+| `.z80`, `.sna` | Z80 / SNA Snapshot Viewer |
+| `.scr` | ZX Spectrum Screen Viewer |
+| `.shc`, `.shr`, `.slr`, `.sl2` | ZX Spectrum Next Screen Viewers |
+| `.pal`, `.npl` | Palette Editor |
+| `.nxi` | NXI Layer Editor |
+| `.spr` | Sprite Editor |
+| `.vid` | Video Viewer |
+
+### Unknown Files
+
+If a file's extension does not match any registered type, Klive probes the file content when it is first opened:
+
+- If the content is valid **UTF-8 text**, the file is opened in the Text Editor.
+- Otherwise, it is treated as binary and opened in the Binary Dump Viewer.
+
+The detected type is remembered for the rest of the session and is reflected in the icon shown in the Explorer tree.
+
+<Callout type="info" emoji="💡">
+You can change the default file extensions used by the built-in assembler languages. See [Changing default file extensions](/howto/file-extensions) for details.
+</Callout>
