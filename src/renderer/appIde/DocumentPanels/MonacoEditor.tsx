@@ -208,10 +208,11 @@ type EditorProps = {
   document: ProjectDocumentState;
   value: string;
   apiLoaded?: (api: EditorApi) => void;
+  languageOverride?: string;
 };
 
 // --- This component wraps the Monaco editor
-export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
+export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: EditorProps) => {
   // --- Monaco editor instance and related state variables
   const editor = useRef<monacoEditor.editor.IStandaloneCodeEditor>(null);
   const mounted = useRef(false);
@@ -878,7 +879,7 @@ export const MonacoEditor = ({ document, value, apiLoaded }: EditorProps) => {
           width={width}
           height={height}
           key={document.id}
-          language={document.language}
+          language={languageOverride ?? document.language}
           theme={monacoTheme}
           value={value}
           path={document.id}

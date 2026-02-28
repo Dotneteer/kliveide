@@ -1,7 +1,7 @@
 import { AppState } from "@state/AppState";
 import { Store } from "@state/redux-light";
 import { IProjectService } from "../../abstractions/IProjectService";
-import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile } from "../project/project-node";
+import { compareProjectNode, getFileTypeEntry, getNodeDir, getNodeFile, registerDetectedTextFile, clearDetectedTextFiles } from "../project/project-node";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -10,9 +10,11 @@ import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService"
 import { createDocumentHubService } from "./DocumentHubService";
 import {
   incDocHubServiceVersionAction,
-  incProjectViewStateVersionAction
+  incProjectViewStateVersionAction,
+  incExploreViewVersionAction
 } from "@common/state/actions";
 import { documentPanelRegistry } from "@renderer/registry";
+import { TEXT_EDITOR, UNKNOWN_EDITOR } from "@state/common-ids";
 import { DelayedJobs } from "@common/utils/DelayedJobs";
 import { ILiteEvent } from "@abstractions/ILiteEvent";
 import { ITreeView, ITreeNode } from "@abstractions/ITreeNode";
@@ -21,6 +23,18 @@ import { LiteEvent } from "@emu/utils/lite-event";
 import { createMainApi } from "@common/messaging/MainApi";
 
 const JOB_KIND_SAVE_FILE = 21;
+
+/**
+ * Probes a byte buffer to determine whether its content looks like plain text.
+ * A file is considered text if it contains no null bytes in the first 8 KB.
+ */
+function looksLikeText(data: Uint8Array): boolean {
+  const sampleSize = Math.min(data.length, 8192);
+  for (let i = 0; i < sampleSize; i++) {
+    if (data[i] === 0x00) return false;
+  }
+  return true;
+}
 
 class ProjectService implements IProjectService {
   private _tree: ITreeView<ProjectNode>;
@@ -40,6 +54,8 @@ class ProjectService implements IProjectService {
   }>();
   private _fileCache = new Map<string, string | Uint8Array>();
   private _projectItemCache = new Map<string, ProjectDocumentState>();
+  // --- Tracks all files that have been probed for text content (both text and binary results)
+  private _probedFilePaths = new Set<string>();
 
   // --- Document hub related fields
   private _docHubIdSlots: boolean[] = [];
@@ -62,6 +78,8 @@ class ProjectService implements IProjectService {
         if (newFolderPath) {
           this._projectOpened.fire();
         } else {
+          clearDetectedTextFiles();
+          this._probedFilePaths.clear();
           this._projectClosed.fire();
         }
       }
@@ -70,10 +88,61 @@ class ProjectService implements IProjectService {
 
   setProjectTree(tree: ITreeView<ProjectNode>): void {
     this._tree = tree;
+    // --- Probe unknown-extension files in the background so the explorer
+    // --- can display the correct icon without waiting for the user to open them.
+    this.probeUnknownFilesInBackground(tree);
   }
 
   getProjectTree(): ITreeView<ProjectNode> | undefined {
     return this._tree;
+  }
+
+  /**
+   * Walks the project tree and probes every file whose editor is UNKNOWN_EDITOR to
+   * determine whether it contains plain text. Detected text files are registered and
+   * a single explorer-refresh action is dispatched if any new ones are found.
+   */
+  private async probeUnknownFilesInBackground(tree: ITreeView<ProjectNode>): Promise<void> {
+    // --- Collect all unknown-editor, non-folder nodes that haven't been probed yet
+    const candidates: string[] = [];
+    const collectUnknown = (node: ITreeNode<ProjectNode>) => {
+      const d = node.data;
+      if (!d.isFolder && d.editor === UNKNOWN_EDITOR && d.fullPath && !this._probedFilePaths.has(d.fullPath)) {
+        candidates.push(d.fullPath);
+      }
+      for (const child of node.children) {
+        collectUnknown(child);
+      }
+    };
+    collectUnknown(tree.rootNode);
+
+    if (candidates.length === 0) return;
+
+    // --- Probe all candidates in parallel
+    const mainApi = createMainApi(this.messenger);
+    const results = await Promise.allSettled(
+      candidates.map(async (fullPath) => {
+        const binary = await mainApi.readBinaryFile(fullPath);
+        return { fullPath, isText: looksLikeText(binary) };
+      })
+    );
+
+    // --- Register newly detected text files
+    let anyNew = false;
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        this._probedFilePaths.add(result.value.fullPath);
+        if (result.value.isText) {
+          registerDetectedTextFile(result.value.fullPath);
+          anyNew = true;
+        }
+      }
+    }
+
+    // --- Trigger a single explorer rebuild if we found at least one text file
+    if (anyNew) {
+      this.store.dispatch(incExploreViewVersionAction(), "ide");
+    }
   }
 
   get projectOpened(): ILiteEvent<void> {
@@ -335,22 +404,43 @@ class ProjectService implements IProjectService {
     const documentState = this._projectItemCache.get(node.fullPath);
     if (documentState) return documentState;
 
-    // --- Load the document's contents
-    const contents = await this.getFileContent(node.fullPath, node.isBinary);
+    let contents: string | Uint8Array;
+    let editorType = node.editor;
+
+    if (node.editor === UNKNOWN_EDITOR) {
+      // --- For files with no known extension, read as binary and probe for text content
+      const binary = await createMainApi(this.messenger).readBinaryFile(node.fullPath);
+      if (looksLikeText(binary)) {
+        // --- Decode as UTF-8 and open with the plain-text editor
+        contents = new TextDecoder("utf-8").decode(binary);
+        editorType = TEXT_EDITOR;
+        // --- Register this path so that buildProjectTree uses the TEXT_EDITOR icon,
+        // --- then trigger an explorer tree rebuild to show the updated icon.
+        registerDetectedTextFile(node.fullPath);
+        this.store.dispatch(incExploreViewVersionAction(), "ide");
+      } else {
+        contents = binary;
+      }
+      // --- Store the resolved content in the file cache
+      this._fileCache.set(node.fullPath, contents);
+    } else {
+      // --- Load the document's contents the normal way
+      contents = await this.getFileContent(node.fullPath, node.isBinary);
+    }
 
     // --- Get renderer information to extract icon properties
-    const docRenderer = documentPanelRegistry.find((dp) => dp.id === node.editor);
+    const docRenderer = documentPanelRegistry.find((dp) => dp.id === editorType);
 
     // --- Create the document's initial state
     const projectDoc: ProjectDocumentState = {
       id: node.fullPath,
       name: node.name,
       path: node.fullPath,
-      type: node.editor,
+      type: editorType,
       contents,
       language: node.subType,
-      iconName: node.icon ?? docRenderer?.icon,
-      iconFill: docRenderer?.iconFill,
+      iconName: editorType === TEXT_EDITOR ? docRenderer?.icon : (node.icon ?? docRenderer?.icon),
+      iconFill: editorType === TEXT_EDITOR ? docRenderer?.iconFill : (node.iconFill ?? docRenderer?.iconFill),
       isReadOnly: node.isReadOnly,
       isTemporary: true,
       node,

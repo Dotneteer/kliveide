@@ -2,6 +2,7 @@ import {
   BASIC_EDITOR,
   COMMAND_RESULT_EDITOR,
   CODE_EDITOR,
+  TEXT_EDITOR,
   TAP_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
@@ -33,6 +34,7 @@ import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
+import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
 import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LangaugeProvider";
 import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
@@ -304,6 +306,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     renderer: createCodeEditorPanel
   },
   {
+    id: TEXT_EDITOR,
+    renderer: createTextEditorPanel,
+    icon: "note",
+    iconFill: "--console-ansi-bright-yellow"
+  },
+  {
     id: DISASSEMBLY_EDITOR,
     renderer: createBankedDisassemblyPanel,
     icon: "disassembly-icon",
@@ -526,8 +534,7 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".txt",
-    editor: CODE_EDITOR,
-    subType: "plain-text",
+    editor: TEXT_EDITOR,
     icon: "@file-text-txt"
   },
   {
