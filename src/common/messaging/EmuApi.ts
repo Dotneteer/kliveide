@@ -388,6 +388,9 @@ class EmuApiImpl {
     _command:
       | "set-fps-native"
       | "set-fps-half"
+      | "set-quality-lossless"
+      | "set-quality-high"
+      | "set-quality-good"
       | "start-recording"
       | "disarm"
       | "pause-recording"

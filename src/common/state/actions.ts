@@ -145,6 +145,13 @@ export const setScreenRecordingStateAction: ActionCreator = (
   payload: { id: recordingState, value: file, text: fps }
 });
 
+export const setScreenRecordingQualityAction: ActionCreator = (
+  quality: import("./AppState").RecordingQuality
+) => ({
+  type: "SET_SCREEN_RECORDING_QUALITY",
+  payload: { id: quality }
+});
+
 export const setMediaAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_MEDIA",
   payload: { id, value }

@@ -774,13 +774,11 @@ class MainMessageProcessor {
    * Starts a new screen recording session using the active backend.
    * Returns the absolute path of the output file.
    */
-  async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1): Promise<string> {
+  async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18): Promise<string> {
     const homeDir = app.getPath("home");
-    const outputPath = resolveRecordingPath(homeDir, KLIVE_HOME_FOLDER, "mp4");
-    console.log(`[Main:recording] startScreenRecording home=${homeDir} path=${outputPath}`);
+    const outputPath = resolveRecordingPath(homeDir, "mp4");
     _recordingBackend = new FfmpegRecordingBackend();
-    _recordingBackend.start(outputPath, width, height, fps, xRatio, yRatio);
-    console.log(`[Main:recording] backend started OK`);
+    _recordingBackend.start(outputPath, width, height, fps, xRatio, yRatio, sampleRate, crf);
     return outputPath;
   }
 
@@ -792,18 +790,22 @@ class MainMessageProcessor {
   }
 
   /**
+   * Appends interleaved stereo f32le audio samples to the active recording.
+   */
+  async appendRecordingAudio(samples: Float32Array): Promise<void> {
+    _recordingBackend?.appendAudioSamples(samples);
+  }
+
+  /**
    * Finalises the recording and returns the path of the finished file.
    */
   async stopScreenRecording(): Promise<string> {
-    console.log(`[Main:recording] stopScreenRecording — backend=${_recordingBackend ? "set" : "null"}`);
     if (!_recordingBackend) return "";
     try {
       const filePath = await _recordingBackend.finish();
-      console.log(`[Main:recording] finish() OK → ${filePath}`);
       _recordingBackend = null;
       return filePath;
     } catch (err) {
-      console.error(`[Main:recording] finish() FAILED:`, err);
       _recordingBackend = null;
       return "";
     }

@@ -74,6 +74,14 @@ export type IdeView = {
 export type RecordingFps = "native" | "half";
 
 /**
+ * The quality preset for screen recording.
+ * lossless = CRF 0, preset ultrafast (true lossless H.264)
+ * medium   = CRF 10, preset fast     (visually transparent, smaller files)
+ * high     = CRF 18, preset fast     (near-lossless, default)
+ */
+export type RecordingQuality = "lossless" | "high" | "good";
+
+/**
  * The lifecycle state of a screen recording session
  */
 export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
@@ -97,6 +105,7 @@ export type EmulatorState = {
   screenRecordingState?: ScreenRecordingState;
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;
+  screenRecordingQuality?: RecordingQuality;
 };
 
 export type FloppyDiskState = {

@@ -313,7 +313,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         const toProcess = componentStateRef.current.machineStateHandlerQueue.shift();
         switch (toProcess.newState) {
           case MachineControllerState.Running:
-            console.log(`[EmulatorPanel] machineStateChanged → Running; recordingManagerRef=${recordingManagerRef?.current ? 'set' : 'null'}`);
             setOverlay(controller?.isDebugging ? "Debug mode" : "");
             await beeperRenderer?.current?.play();
             await recordingManagerRef?.current?.onMachineRunning(
@@ -326,12 +325,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
                 controller.machine.uiFrameFrequency
               ),
               xRatio.current,
-              yRatio.current
+              yRatio.current,
+              audioSampleRate ?? 44100
             );
             break;
 
           case MachineControllerState.Paused:
-            console.log(`[EmulatorPanel] machineStateChanged → Paused; recordingManagerRef=${recordingManagerRef?.current ? 'set' : 'null'}`);
             setPauseOverlay();
             await beeperRenderer?.current?.suspend();
             recordingManagerRef?.current?.onMachinePaused();
@@ -383,6 +382,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
         beeperRenderer.current.storeSamples(samples, soundLevel);
         await beeperRenderer.current.play();
+        await recordingManagerRef?.current?.submitAudioSamples(samples);
       }
     }
 

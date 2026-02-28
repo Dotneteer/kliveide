@@ -33,7 +33,7 @@ export const RecordingStateOverlay = () => {
 
   const text =
     recState === "armed"
-      ? "Armed \u2013 recording starts when machine runs"
+      ? "Ready – recording starts when machine runs"
       : recState === "recording"
         ? `Recording...${timerSuffix}`
         : "Recording paused";

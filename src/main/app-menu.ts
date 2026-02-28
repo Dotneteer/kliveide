@@ -846,6 +846,31 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         },
         { type: "separator" },
         {
+          id: "recording_quality_lossless",
+          label: "Highest (lossless) quality",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingQuality ?? "good") === "lossless",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-quality-lossless")
+        },
+        {
+          id: "recording_quality_high",
+          label: "High quality",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingQuality ?? "good") === "high",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-quality-high")
+        },
+        {
+          id: "recording_quality_good",
+          label: "Best compression quality",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingQuality ?? "good") === "good",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-quality-good")
+        },
+        { type: "separator" },
+        {
           id: "recording_start_stop",
           label: isRecordingIdle ? "Start recording" : "Stop recording",
           click: async () => await getEmuApi().issueRecordingCommand(

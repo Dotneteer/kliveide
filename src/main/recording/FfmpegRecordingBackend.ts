@@ -18,6 +18,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
   private _exitPromise: Promise<void> | null = null;
   private _outputPath = "";
   private _lastFrame: Buffer | null = null;
+  private _lastAudioChunk: Buffer | null = null;
   // Raw machine resolution
   private _rawWidth = 0;
   // Output (aspect-corrected) resolution fed to FFmpeg
@@ -32,9 +33,10 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    * e.g. xRatio=0.5, yRatio=1  →  scaleX=1, scaleY=2  (double vertical)
    *      xRatio=1,   yRatio=1  →  scaleX=1, scaleY=1  (unchanged)
    */
-  start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1): void {
+  start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18): void {
     this._outputPath = outputPath;
     this._lastFrame = null;
+    this._lastAudioChunk = null;
     this._rawWidth = width;
 
     const minRatio = Math.min(xRatio, yRatio);
@@ -45,20 +47,30 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
 
     const args = [
       "-y",
+      // Video input: raw RGBA frames from stdin (pipe:0)
       "-f", "rawvideo",
       "-pix_fmt", "rgba",
       "-s", `${this._outWidth}x${this._outHeight}`,
       "-r", String(fps),
       "-i", "pipe:0",
+      // Audio input: raw f32le stereo from fd 3 (pipe:3)
+      "-f", "f32le",
+      "-ar", String(sampleRate),
+      "-ac", "2",
+      "-i", "pipe:3",
+      // Video codec
       "-c:v", "libx264",
-      "-preset", "fast",
-      "-crf", "18",
+      "-preset", crf === 0 ? "ultrafast" : "fast",
+      "-crf", String(crf),
       "-vf", "format=yuv420p",
+      // Audio codec
+      "-c:a", "aac",
+      "-b:a", "192k",
       outputPath,
     ];
 
     this._process = spawn(ffmpegInstaller.path, args, {
-      stdio: ["pipe", "ignore", "ignore"],
+      stdio: ["pipe", "ignore", "ignore", "pipe"],
     });
 
     this._exitPromise = new Promise<void>((resolve, reject) => {
@@ -81,12 +93,28 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
   }
 
   /**
-   * Re-send the last frame (holds the image while the machine is paused so
-   * the encoded video timeline stays continuous).
+   * Re-send the last video frame and last audio chunk (holds both timelines
+   * continuous while the machine is paused).
    */
   holdFrame(): void {
     if (!this._process?.stdin || !this._lastFrame) return;
     this._process.stdin.write(this._lastFrame);
+    if (this._lastAudioChunk) {
+      const audioPipe = (this._process.stdio as any)[3];
+      audioPipe?.write(this._lastAudioChunk);
+    }
+  }
+
+  /**
+   * Write one batch of interleaved stereo f32le audio samples to FFmpeg's
+   * audio input pipe (fd 3).
+   */
+  appendAudioSamples(samples: Float32Array): void {
+    const audioPipe = (this._process?.stdio as any)?.[3];
+    if (!audioPipe) return;
+    const buf = Buffer.from(samples.buffer, samples.byteOffset, samples.byteLength);
+    this._lastAudioChunk = buf;
+    audioPipe.write(buf);
   }
 
   /**
@@ -121,7 +149,11 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    */
   async finish(): Promise<string> {
     if (!this._process) return this._outputPath;
+    // Close both the video pipe (stdin/fd 0) and the audio pipe (fd 3) so
+    // FFmpeg sees EOF on both inputs and can flush the output file.
     this._process.stdin?.end();
+    const audioPipe = (this._process.stdio as any)[3];
+    audioPipe?.end();
     await this._exitPromise;
     this._process = null;
     this._exitPromise = null;

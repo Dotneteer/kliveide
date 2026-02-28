@@ -352,9 +352,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             selected={recState === "recording" || recState === "armed"}
             title={
               !recState || recState === "idle"
-                ? "Arm recording — use Machine › Recording to choose fps"
+                ? "Start recording — use Machine › Recording to choose fps"
                 : recState === "armed"
-                  ? "Armed – waiting for machine to run (click to cancel)"
+                  ? "Ready – waiting for machine to run (click to cancel)"
                   : recState === "recording"
                     ? "Recording... (click to stop)"
                     : "Recording paused (click to stop)"

@@ -99,4 +99,5 @@ export interface ActionTypes {
 
   // --- Screen recording
   SET_SCREEN_RECORDING_STATE: null;
+  SET_SCREEN_RECORDING_QUALITY: null;
 }

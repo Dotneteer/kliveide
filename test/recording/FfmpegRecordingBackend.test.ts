@@ -23,8 +23,14 @@ vi.mock("child_process", () => {
     }),
   };
 
+  const mockAudioPipe = {
+    write: vi.fn(() => true),
+    end: vi.fn(),
+  };
+
   const mockProcess = {
     stdin: mockStdin,
+    stdio: [mockStdin, undefined, undefined, mockAudioPipe],
     once: vi.fn((event: string, cb: (code: number | null) => void) => {
       if (event === "exit") _exitCb = cb;
     }),
@@ -72,10 +78,21 @@ describe("FfmpegRecordingBackend", () => {
     expect(args[args.length - 1]).toBe(OUTPUT);
   });
 
-  it("start() passes stdio: ['pipe','ignore','ignore'] so stdin is writable", () => {
+  it("start() includes audio input args for pipe:3 (f32le stereo)", () => {
+    backend.start(OUTPUT, W, H, FPS, 1, 1, 44100);
+    const args = vi.mocked(spawn).mock.calls[0][1];
+    expect(args).toContain("f32le");
+    expect(args).toContain("44100");
+    expect(args).toContain("2");
+    expect(args).toContain("pipe:3");
+    expect(args).toContain("aac");
+    expect(args).toContain("192k");
+  });
+
+  it("start() passes stdio: ['pipe','ignore','ignore','pipe'] for video+audio", () => {
     backend.start(OUTPUT, W, H, FPS);
     const opts = vi.mocked(spawn).mock.calls[0][2];
-    expect(opts?.stdio).toEqual(["pipe", "ignore", "ignore"]);
+    expect(opts?.stdio).toEqual(["pipe", "ignore", "ignore", "pipe"]);
   });
 
   // ---- B2: appendFrame writes to stdin -----------------------------------
@@ -106,11 +123,44 @@ describe("FfmpegRecordingBackend", () => {
     expect(stdin.write.mock.calls[1][0]).toEqual(stdin.write.mock.calls[0][0]);
   });
 
-  it("holdFrame() is a no-op if no frame has been submitted yet", () => {
+  it("holdFrame() also re-sends the last audio chunk to the audio pipe", () => {
     backend.start(OUTPUT, W, H, FPS);
-    expect(() => backend.holdFrame()).not.toThrow();
-    const { stdin } = (spawn as ReturnType<typeof vi.fn>).mock.results[0].value;
-    expect(stdin.write).not.toHaveBeenCalled();
+    const proc = (spawn as ReturnType<typeof vi.fn>).mock.results[0].value;
+    const AUDIO = new Float32Array([0.1, -0.1, 0.2, -0.2]);
+    backend.appendFrame(RGBA);
+    backend.appendAudioSamples(AUDIO);
+    backend.holdFrame();
+    // Audio pipe write should have been called: once for appendAudioSamples, once for holdFrame
+    expect(proc.stdio[3].write).toHaveBeenCalledTimes(2);
+    expect(proc.stdio[3].write.mock.calls[1][0]).toEqual(proc.stdio[3].write.mock.calls[0][0]);
+  });
+
+  // ---- C2: audio pipe ---------------------------------------------------
+
+  it("appendAudioSamples() writes raw f32le bytes to the audio pipe (fd 3)", () => {
+    backend.start(OUTPUT, W, H, FPS);
+    const proc = (spawn as ReturnType<typeof vi.fn>).mock.results[0].value;
+    const AUDIO = new Float32Array([0.5, -0.5, 0.25, -0.25]);
+    backend.appendAudioSamples(AUDIO);
+    expect(proc.stdio[3].write).toHaveBeenCalledOnce();
+    const written: Buffer = proc.stdio[3].write.mock.calls[0][0];
+    expect(written.byteLength).toBe(AUDIO.byteLength);
+    // Verify actual bytes match the Float32Array
+    const view = new Float32Array(written.buffer, written.byteOffset, written.byteLength / 4);
+    expect(Array.from(view)).toEqual(Array.from(AUDIO));
+  });
+
+  it("appendAudioSamples() is a no-op before start()", () => {
+    const AUDIO = new Float32Array([0.1, 0.2]);
+    expect(() => backend.appendAudioSamples(AUDIO)).not.toThrow();
+  });
+
+  it("finish() closes both stdin and the audio pipe before resolving", async () => {
+    backend.start(OUTPUT, W, H, FPS);
+    const proc = (spawn as ReturnType<typeof vi.fn>).mock.results[0].value;
+    await backend.finish();
+    expect(proc.stdin.end).toHaveBeenCalledOnce();
+    expect(proc.stdio[3].end).toHaveBeenCalledOnce();
   });
 
   // ---- B4: pixel stretching -----------------------------------------------

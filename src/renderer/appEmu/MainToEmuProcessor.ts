@@ -1103,6 +1103,9 @@ class EmuMessageProcessor {
     command:
       | "set-fps-native"
       | "set-fps-half"
+      | "set-quality-lossless"
+      | "set-quality-high"
+      | "set-quality-good"
       | "start-recording"
       | "disarm"
       | "pause-recording"
@@ -1117,6 +1120,15 @@ class EmuMessageProcessor {
         break;
       case "set-fps-half":
         _emuRecordingManager.setFpsPreference("half");
+        break;
+      case "set-quality-lossless":
+        _emuRecordingManager.setQualityPreference("lossless");
+        break;
+      case "set-quality-high":
+        _emuRecordingManager.setQualityPreference("high");
+        break;
+      case "set-quality-good":
+        _emuRecordingManager.setQualityPreference("good");
         break;
       case "start-recording":
         _emuRecordingManager.arm(undefined, isRunning);

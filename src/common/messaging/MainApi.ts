@@ -465,7 +465,7 @@ class MainApiImpl {
    * @param _fps    Target frames-per-second for the recording.
    * @returns The absolute path of the file being written.
    */
-  async startScreenRecording(_width: number, _height: number, _fps: number, _xRatio = 1, _yRatio = 1): Promise<string> {
+  async startScreenRecording(_width: number, _height: number, _fps: number, _xRatio = 1, _yRatio = 1, _sampleRate = 44100, _crf = 18): Promise<string> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -474,6 +474,14 @@ class MainApiImpl {
    * @param _rgba Raw RGBA pixel data (width × height × 4 bytes).
    */
   async appendRecordingFrame(_rgba: Uint8Array): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Appends a batch of interleaved stereo audio samples to the current recording.
+   * @param _samples Interleaved stereo f32le samples [L, R, L, R, …].
+   */
+  async appendRecordingAudio(_samples: Float32Array): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

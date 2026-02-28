@@ -21,14 +21,16 @@ export class StubRecordingBackend implements IRecordingBackend {
   private width = 0;
   private height = 0;
   private fps = 0;
+  private sampleRate = 44100;
   private frameCount = 0;
   private startedAt: Date | null = null;
 
-  start(outputPath: string, width: number, height: number, fps: number, _xRatio = 1, _yRatio = 1): void {
+  start(outputPath: string, width: number, height: number, fps: number, _xRatio = 1, _yRatio = 1, sampleRate = 44100, _crf = 18): void {
     this.outputPath = outputPath;
     this.width = width;
     this.height = height;
     this.fps = fps;
+    this.sampleRate = sampleRate;
     this.frameCount = 0;
     this.startedAt = new Date();
   }
@@ -42,6 +44,11 @@ export class StubRecordingBackend implements IRecordingBackend {
     this.frameCount++;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  appendAudioSamples(_samples: Float32Array): void {
+    // No-op in the stub — audio samples are not recorded.
+  }
+
   async finish(): Promise<string> {
     const stoppedAt = new Date();
     const durationMs = stoppedAt.getTime() - (this.startedAt?.getTime() ?? 0);
@@ -53,7 +60,8 @@ export class StubRecordingBackend implements IRecordingBackend {
       `Duration (s):       ${durationSec}`,
       `Frames recorded:    ${this.frameCount}`,
       `Resolution:         ${this.width} x ${this.height}`,
-      `Target FPS:         ${this.fps}`
+      `Target FPS:         ${this.fps}`,
+      `Audio sample rate:  ${this.sampleRate} Hz`
     ].join("\n") + "\n";
 
     const dir = path.dirname(this.outputPath);
