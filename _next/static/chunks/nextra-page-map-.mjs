@@ -172,6 +172,12 @@ export const pageMap = [{
     frontMatter: {
       "sidebarTitle": "Shortcuts"
     }
+  }, {
+    name: "sp48-custom-rom",
+    route: "/howto/sp48-custom-rom",
+    frontMatter: {
+      "sidebarTitle": "Sp48 Custom Rom"
+    }
   }]
 }, {
   name: "index",
