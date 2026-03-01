@@ -27,12 +27,26 @@ import { SetMemoryDialog } from "@renderer/appIde/dialogs/SetMemoryDialog";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 
+type DumpViewMode = "8x1" | "8x2" | "16x1";
+
+function resolveViewMode(viewMode?: string, twoColumns?: boolean): DumpViewMode {
+  if (viewMode === "8x1" || viewMode === "8x2" || viewMode === "16x1") return viewMode;
+  return twoColumns === false ? "8x1" : "8x2";
+}
+
+const viewModeOptions = [
+  { value: "8x1", label: "8B / 1 col" },
+  { value: "8x2", label: "8B / 2 col" },
+  { value: "16x1", label: "16B / 1 col" },
+];
+
 type BankedMemoryPanelViewState = {
   topIndex?: number;
   isFullView?: boolean;
   currentSegment?: number;
   decimalView?: boolean;
-  twoColumns?: boolean;
+  twoColumns?: boolean; // kept for backward compatibility
+  viewMode?: string;
   charDump?: boolean;
   bankLabel?: boolean;
 };
@@ -81,8 +95,8 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   const [decimalView, setDecimalView] = useState(
     () => loadedViewState?.decimalView ?? workspace?.decimalView ?? false
   );
-  const [twoColumns, setTwoColumns] = useState(
-    () => loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true
+  const [viewMode, setViewMode] = useState<DumpViewMode>(
+    () => resolveViewMode(loadedViewState?.viewMode, loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true)
   );
   const [charDump, setCharDump] = useState(
     () => loadedViewState?.charDump ?? workspace?.charDump ?? true
@@ -97,8 +111,9 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   // Initialize both memoryItems state and cachedItems ref together
   const initialMemoryItems = useMemo(() => {
     const memItems: number[] = [];
-    const hasTwoColumns = loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true;
-    for (let addr = 0; addr < 0x1_0000; addr += hasTwoColumns ? 0x10 : 0x08) {
+    const initialViewMode = resolveViewMode(loadedViewState?.viewMode, loadedViewState?.twoColumns ?? workspace?.twoColumns ?? true);
+    const initialBytesPerRow = initialViewMode === "8x1" ? 8 : 16;
+    for (let addr = 0; addr < 0x1_0000; addr += initialBytesPerRow) {
       memItems.push(addr);
     }
     return memItems;
@@ -113,6 +128,11 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   const [scrollVersion, setScrollVersion] = useState(1);
   const [lastJumpAddress, setLastJumpAddress] = useState<number>(-1);
   const [romFlags, setRomFlags] = useState<boolean[]>([]);
+
+  // Derived layout values from viewMode
+  const bytesPerRow = viewMode === "8x1" ? 8 : 16;
+  const showTwoColumns = viewMode === "8x2";
+  const byteCount: 8 | 16 = viewMode === "16x1" ? 16 : 8;
 
   // --- We need to use a reference to autorefresh, as we pass this info to another trhead
   const cachedRefreshState = useRef<CachedRefreshState>({
@@ -239,7 +259,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
       isFullView,
       currentSegment,
       decimalView,
-      twoColumns,
+      viewMode,
       charDump,
       bankLabel
     };
@@ -256,9 +276,9 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
   };
 
   // --- Creates the addresses to represent dump sections
-  const createDumpSections = useCallback((length: number, hasTwoColums: boolean) => {
+  const createDumpSections = useCallback((length: number, rowBytes: number) => {
     const memItems: number[] = [];
-    for (let addr = 0; addr < length; addr += hasTwoColums ? 0x10 : 0x08) {
+    for (let addr = 0; addr < length; addr += rowBytes) {
       memItems.push(addr);
     }
 
@@ -318,7 +338,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
         extendPointedAddress("IR", response.ir);
         extendPointedAddress("WZ", response.sp);
       }
-      createDumpSections(memory.current.length, twoColumns);
+      createDumpSections(memory.current.length, bytesPerRow);
     } finally {
       refreshInProgress.current = false;
       // Don't increment scrollVersion here - it causes unnecessary re-renders
@@ -332,7 +352,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
         pointedRegs.current[regValue] = regName;
       }
     }
-  }, [emuApi, machineState, createDumpSections, twoColumns]);
+  }, [emuApi, machineState, createDumpSections, bytesPerRow]);
 
   // --- Save viewState changed
   useEffect(() => {
@@ -350,7 +370,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
       decimalView,
       currentSegment
     };
-  }, [topIndex, isFullView, decimalView, currentSegment, twoColumns, charDump, bankLabel]);
+  }, [topIndex, isFullView, decimalView, currentSegment, viewMode, charDump, bankLabel]);
 
   // --- Initial view: wait for machine setup, refresh memory, then mark as ready
   useEffect(() => {
@@ -413,8 +433,8 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
 
   // --- Change the length of the current dump section according to the view mode
   useEffect(
-    () => createDumpSections(isFullView ? 0x1_0000 : 0x4000, twoColumns),
-    [isFullView, twoColumns]
+    () => createDumpSections(isFullView ? 0x1_0000 : 0x4000, bytesPerRow),
+    [isFullView, viewMode]
   );
 
   // --- Take care of refreshing the screen
@@ -438,21 +458,32 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
           title="Use decimal numbers?"
           clicked={(v) => setDecimalView(v)}
         />
-        <LabeledSwitch
-          value={twoColumns}
-          label="2 Columns"
-          title="Use two-column layout?"
-          clicked={(v) => {
-            setTwoColumns(v);
-            createDumpSections(memory.current.length, v);
-            if (v) {
-              setTopIndex(Math.floor(topIndex / 2));
-            } else {
-              setTopIndex(topIndex * 2);
+        <LabelSeparator width={8} />
+        <Text text="View" />
+        <LabelSeparator width={4} />
+        <Dropdown
+          options={viewModeOptions}
+          initialValue={viewMode}
+          width={90}
+          onOpenChange={(open) => { allowRefresh.current = !open; }}
+          onChanged={(val) => {
+            const newMode = val as DumpViewMode;
+            const newBytesPerRow = newMode === "8x1" ? 8 : 16;
+            const oldBytesPerRow = viewMode === "8x1" ? 8 : 16;
+            // Adjust topIndex when switching between 8-per-row and 16-per-row
+            if (newBytesPerRow !== oldBytesPerRow) {
+              if (newBytesPerRow === 16) {
+                setTopIndex(Math.floor(topIndex / 2));
+              } else {
+                setTopIndex(topIndex * 2);
+              }
             }
+            setViewMode(newMode);
+            createDumpSections(memory.current.length, newBytesPerRow);
             setScrollVersion(scrollVersion + 1);
           }}
         />
+        <LabelSeparator width={8} />
         <LabeledSwitch
           value={charDump}
           label="Chars"
@@ -460,13 +491,17 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
           clicked={setCharDump}
         />
         {banksView && (
-          <LabeledSwitch
-            value={bankLabel}
-            label="Bank"
-            title="Display bank label information?"
-            clicked={setBankLabel}
-          />
+          <>
+            <LabelSeparator width={8} />
+            <LabeledSwitch
+              value={bankLabel}
+              label="Bank"
+              title="Display bank label information?"
+              clicked={setBankLabel}
+            />
+          </>
         )}
+        <LabelSeparator width={8} />
         <AddressInput
           label="Go To"
           clearOnEnter={true}
@@ -475,7 +510,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
             allowRefresh.current = false;
           }}
           onAddressSent={async (address) => {
-            const newTopIndex = Math.floor(address / (twoColumns ? 16 : 8));
+            const newTopIndex = Math.floor(address / bytesPerRow);
             setLastJumpAddress(address);
             setTopIndex(newTopIndex);
             setScrollVersion(scrollVersion + 1);
@@ -651,8 +686,9 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
                   lastJumpAddress={lastJumpAddress}
                   isRom={section1IsRom}
                   editClicked={editMemoryContent}
+                  byteCount={byteCount}
                 />
-                {twoColumns && (
+                {showTwoColumns && (
                   <DumpSection
                     showPartitions={bankLabel}
                     partitionLabel={partitionLabel}
@@ -664,6 +700,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
                     lastJumpAddress={lastJumpAddress}
                     isRom={section2IsRom}
                     editClicked={editMemoryContent}
+                    byteCount={byteCount}
                   />
                 )}
               </HStack>

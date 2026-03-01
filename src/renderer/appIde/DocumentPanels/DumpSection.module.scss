@@ -123,7 +123,6 @@
   justify-content: flex-start;
   color: var(--color-secondary-label);
   white-space: nowrap;
-  width: 64px;
 
   &:hover {
     background: var(--bgcolor-disass-hover);
@@ -131,14 +130,26 @@
   }
 }
 
-.char {
+.charItem {
   display: flex;
   flex-grow: 0;
   flex-shrink: 0;
   color: var(--color-secondary-label);
+  border: 1px solid transparent;
+}
 
-  &:hover {
-    background: var(--bgcolor-disass-hover);
-    opacity: 0.9;
-  }
+.charHighlight {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  background: var(--bgcolor-memory-hover);
+  color: var(--color-memory-pointed);
+  border: 1px solid var(--bgcolor-memory-pointed);
+}
+
+.charPlaceholder {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: transparent;
 }

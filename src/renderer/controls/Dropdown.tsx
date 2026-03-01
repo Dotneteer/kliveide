@@ -16,6 +16,7 @@ type Props = {
   width?: string | number;
   maxHeight?: string | number;
   onChanged?: (value: string) => void;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export default function Dropdown({
@@ -25,6 +26,7 @@ export default function Dropdown({
   width,
   maxHeight,
   onChanged,
+  onOpenChange,
 }: Props) {
   const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
   const [selectedValue, setSelectedValue] = useState(initialValue);
@@ -46,7 +48,7 @@ export default function Dropdown({
   }, [theme]);
 
   return (
-    <Select.Root value={selectedValue} onValueChange={handleSelectChange}>
+    <Select.Root value={selectedValue} onValueChange={handleSelectChange} onOpenChange={onOpenChange}>
       <Select.Trigger className={styles.SelectTrigger} style={{ width }}>
         <Select.Value placeholder={placeholder ?? "Select..."} />
         <div style={{ width: "100%" }} />
