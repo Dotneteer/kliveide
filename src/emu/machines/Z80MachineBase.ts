@@ -205,7 +205,10 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
     if (!fileProvider) {
       throw new Error("Could not obtain file provider instance");
     }
-    const filename = romName.startsWith("/")
+    // --- Treat as an absolute path on both Unix (starts with "/") and
+    // --- Windows (starts with a drive letter, e.g. "C:\")
+    const isAbsolutePath = romName.startsWith("/") || /^[A-Za-z]:[\\\/]/.test(romName);
+    const filename = isAbsolutePath
       ? romName
       : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
     return await fileProvider.readBinaryFile(filename);
