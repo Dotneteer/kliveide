@@ -18,6 +18,7 @@ type Props = {
   address: number;
   currentValue: number;
   decimal: boolean;
+  isRom?: boolean;
   onClose: () => void;
   onSetMemory: (value: string, option: string, bigEndian: boolean) => Promise<void>;
 };
@@ -26,6 +27,7 @@ export const SetMemoryDialog = ({
   address,
   currentValue,
   decimal,
+  isRom,
   onClose,
   onSetMemory
 }: Props) => {
@@ -52,8 +54,10 @@ export const SetMemoryDialog = ({
       width={300}
       onApiLoaded={(api) => (modalApi.current = api)}
       primaryLabel="Set"
-      primaryEnabled={valueValid}
-      initialFocus="none"
+      primaryVisible={!isRom}
+      primaryEnabled={!isRom && valueValid}
+      cancelLabel={isRom ? "Close" : "Cancel"}
+      initialFocus={isRom ? "cancel" : "none"}
       onPrimaryClicked={async (result) => {
         if (!result) {
           await onSetMemory?.(memValue, sizeOption, bigEndian);
@@ -64,51 +68,62 @@ export const SetMemoryDialog = ({
         onClose();
       }}
     >
-      <DialogRow rows={true} label={`Memory content at $${toHexa4(address)} (${address}): *`}>
-        <TextInput
-          value={memValue}
-          isValid={valueValid}
-          focusOnInit={true}
-          keyPressed={async (e) => {
-            if (e.code === "Enter") {
-              if (await validate(memValue)) {
-                await onSetMemory?.(memValue, sizeOption, bigEndian);
-                modalApi.current.triggerPrimary(-1);
-              }
-            }
-          }}
-          valueChanged={(val) => {
-            validate(val);
-            setMemValue(val);
-            modalApi.current.enablePrimaryButton(valueValid);
-            return false;
-          }}
-        />
-      </DialogRow>
-      <DialogRow label="Content size">
-        <div style={{ display: "flex", padding: "8px 0" }}>
-          <Dropdown
-            placeholder="Select..."
-            options={sizeOptions}
-            initialValue={`-b8`}
-            width={80}
-            onChanged={async (option) => {
-              setSizeOption(option);
-            }}
-          />
-        </div>
-      </DialogRow>
-      <DialogRow>
-        <Checkbox
-          enabled={sizeOption !== "-b8"}
-          initialValue={bigEndian}
-          label="Big-endian write"
-          right={true}
-          onChange={(value) => {
-            setBigEndian(value);
-          }}
-        />
-      </DialogRow>
+      {isRom && (
+        <DialogRow rows={true}>
+          <div style={{ color: "#ff6b6b", padding: "8px 0", fontWeight: "bold" }}>
+            This memory location is read-only (ROM) and cannot be modified.
+          </div>
+        </DialogRow>
+      )}
+      {!isRom && (
+        <>
+          <DialogRow rows={true} label={`Memory content at $${toHexa4(address)} (${address}): *`}>
+            <TextInput
+              value={memValue}
+              isValid={valueValid}
+              focusOnInit={true}
+              keyPressed={async (e) => {
+                if (e.code === "Enter") {
+                  if (await validate(memValue)) {
+                    await onSetMemory?.(memValue, sizeOption, bigEndian);
+                    modalApi.current.triggerPrimary(-1);
+                  }
+                }
+              }}
+              valueChanged={(val) => {
+                validate(val);
+                setMemValue(val);
+                modalApi.current.enablePrimaryButton(valueValid);
+                return false;
+              }}
+            />
+          </DialogRow>
+          <DialogRow label="Content size">
+            <div style={{ display: "flex", padding: "8px 0" }}>
+              <Dropdown
+                placeholder="Select..."
+                options={sizeOptions}
+                initialValue={`-b8`}
+                width={80}
+                onChanged={async (option) => {
+                  setSizeOption(option);
+                }}
+              />
+            </div>
+          </DialogRow>
+          <DialogRow>
+            <Checkbox
+              enabled={sizeOption !== "-b8"}
+              initialValue={bigEndian}
+              label="Big-endian write"
+              right={true}
+              onChange={(value) => {
+                setBigEndian(value);
+              }}
+            />
+          </DialogRow>
+        </>
+      )}
     </Modal>
   );
 };

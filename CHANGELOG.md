@@ -4,11 +4,13 @@
 
 ### Features
 
+- Add new view options to the memory panel, highlight the selected character too
 - Add experimental screen recording feature to the emulator
 
 ### Fixes
 
 - Fix the "Select ROM File" issue on Windows
+- Fix the Edit Memory Content function
 
 ## 0.54.0
 

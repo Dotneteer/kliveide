@@ -8,16 +8,26 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { VListHandle } from "virtua";
 import { AddressInput } from "@renderer/controls/AddressInput";
+import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
+import { Text } from "@renderer/controls/generic/Text";
 import styles from "./BinFileViewerPanel.module.scss";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
+
+type DumpViewMode = "8x1" | "8x2" | "16x1";
+
+const viewModeOptions: DropdownOption[] = [
+  { value: "8x1", label: "8B / 1 col" },
+  { value: "8x2", label: "8B / 2 col" },
+  { value: "16x1", label: "16B / 1 col" },
+];
 
 const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
   const data = contents as Uint8Array;
 
   const [decimalView, setDecimalView] = useState(false);
   const [charDump, setCharDump] = useState(true);
-  const [twoColumns, setTwoColumns] = useState(true);
+  const [viewMode, setViewMode] = useState<DumpViewMode>("8x2");
   const [lastJumpAddress, setLastJumpAddress] = useState(-1);
   const vlApi = useRef<VListHandle>(null);
   const lastScrolledIndex = useRef(-1);
@@ -25,7 +35,9 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
   // Use 4 hex digits for files up to 64 KB, 6 digits for larger files (up to 4 MB)
   const addressDigits: 4 | 6 = data && data.length <= 0x1_0000 ? 4 : 6;
 
-  const bytesPerRow = twoColumns ? 16 : 8;
+  const bytesPerRow = viewMode === "8x1" ? 8 : 16;
+  const showTwoColumns = viewMode === "8x2";
+  const byteCount: 8 | 16 = viewMode === "16x1" ? 16 : 8;
 
   const rows = useMemo(() => {
     if (!data || data.length === 0 || data.length > MAX_FILE_SIZE) return [];
@@ -59,11 +71,13 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
           clicked={(val) => setDecimalView(val)}
         />
         <LabelSeparator width={8} />
-        <LabeledSwitch
-          label="2 Columns"
-          title="Use two-column layout"
-          value={twoColumns}
-          clicked={(val) => setTwoColumns(val)}
+        <Text text="View" />
+        <LabelSeparator width={4} />
+        <Dropdown
+          options={viewModeOptions}
+          initialValue={viewMode}
+          width={88}
+          onChanged={(val) => setViewMode(val as DumpViewMode)}
         />
         <LabelSeparator width={8} />
         <LabeledSwitch
@@ -108,8 +122,9 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
                 charDump={charDump}
                 lastJumpAddress={lastJumpAddress}
                 addressDigits={addressDigits}
+                byteCount={byteCount}
               />
-              {twoColumns && rows[idx] + 0x08 < data.length && (
+              {showTwoColumns && rows[idx] + 0x08 < data.length && (
                 <DumpSection
                   address={rows[idx] + 0x08}
                   memory={data}
@@ -117,6 +132,7 @@ const BinFileViewerPanelComponent = ({ contents }: DocumentProps) => {
                   charDump={charDump}
                   lastJumpAddress={lastJumpAddress}
                   addressDigits={addressDigits}
+                  byteCount={byteCount}
                 />
               )}
             </HStack>
