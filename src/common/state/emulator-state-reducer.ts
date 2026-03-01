@@ -92,6 +92,12 @@ export function emulatorStateReducer(
         emuViewVersion: (state.emuViewVersion ?? 0) + 1
       };
 
+    case "SET_SCREEN_RECORDING_AVAILABLE":
+      return {
+        ...state,
+        screenRecordingAvailable: payload?.flag as boolean
+      };
+
     case "SET_SCREEN_RECORDING_STATE":
       return {
         ...state,

@@ -80,6 +80,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
   const stayOnTop = useGlobalSetting(SETTING_EMU_STAY_ON_TOP);
   const recState = useSelector((s) => s.emulatorState?.screenRecordingState);
+  const recordingAvailable = useSelector((s) => s.emulatorState?.screenRecordingAvailable !== false);
   const syncSourceBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
   const muted = useSelector((s) => s.emulatorState?.soundMuted ?? false);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
@@ -337,7 +338,8 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             />
           )}
           <ToolbarSeparator />
-          {/* Single recording status button — icon + title reflect current state */}
+          {/* Single recording status button — only shown if FFmpeg is available */}
+          {recordingAvailable && (
           <IconButton
             iconName="record"
             fill={
@@ -352,9 +354,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             selected={recState === "recording" || recState === "armed"}
             title={
               !recState || recState === "idle"
-                ? "Start recording — use Machine › Recording to choose fps"
+                ? "Start recording \u2014 use Machine \u203a Recording to choose fps"
                 : recState === "armed"
-                  ? "Ready – waiting for machine to run (click to cancel)"
+                  ? "Ready \u2013 waiting for machine to run (click to cancel)"
                   : recState === "recording"
                     ? "Recording... (click to stop)"
                     : "Recording paused (click to stop)"
@@ -365,6 +367,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
                 : () => recordingManagerRef?.current?.disarm()
             }
           />
+          )}
         </>
       )}
       {ide && (

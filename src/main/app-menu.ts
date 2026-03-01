@@ -833,6 +833,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     {
       id: RECORDING_MENU,
       label: "Recording",
+      visible: appState?.emulatorState?.screenRecordingAvailable !== false,
       submenu: [
         {
           id: "recording_half_fps",

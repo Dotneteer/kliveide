@@ -45,8 +45,10 @@ import {
   setMediaAction,
   initGlobalSettingsAction,
   setMachineTypeAction,
-  setModelTypeAction
+  setModelTypeAction,
+  setScreenRecordingAvailableAction
 } from "@state/actions";
+import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
@@ -292,6 +294,9 @@ async function createAppWindows() {
 
       // --- Set the flag indicating if we're using Windows
       mainStore.dispatch(isWindowsAction(__WIN32__));
+
+      // --- Detect FFmpeg availability (may be absent on some platforms, e.g. win32-arm64)
+      mainStore.dispatch(setScreenRecordingAvailableAction(isFFmpegAvailable()));
 
       // --- Store all global settings
       mainStore.dispatch(initGlobalSettingsAction(appSettings.globalSettings ?? {}));

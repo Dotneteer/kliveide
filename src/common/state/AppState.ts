@@ -102,6 +102,7 @@ export type EmulatorState = {
   audioSampleRate?: number;
   breakpointsVersion: number;
   emuViewVersion: number;
+  screenRecordingAvailable?: boolean;
   screenRecordingState?: ScreenRecordingState;
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;

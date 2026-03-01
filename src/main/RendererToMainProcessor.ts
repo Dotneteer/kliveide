@@ -62,6 +62,8 @@ import { FileManager } from "./fat32/FileManager";
 import { O_RDONLY } from "./fat32/Fat32Types";
 import type { IRecordingBackend } from "./recording/IRecordingBackend";
 import { FfmpegRecordingBackend } from "./recording/FfmpegRecordingBackend";
+import { StubRecordingBackend } from "./recording/StubRecordingBackend";
+import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { resolveRecordingPath } from "./recording/outputPath";
 
 const compilerRegistry = createCompilerRegistry();
@@ -777,7 +779,9 @@ class MainMessageProcessor {
   async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18): Promise<string> {
     const homeDir = app.getPath("home");
     const outputPath = resolveRecordingPath(homeDir, "mp4");
-    _recordingBackend = new FfmpegRecordingBackend();
+    _recordingBackend = isFFmpegAvailable()
+      ? new FfmpegRecordingBackend()
+      : new StubRecordingBackend();
     _recordingBackend.start(outputPath, width, height, fps, xRatio, yRatio, sampleRate, crf);
     return outputPath;
   }
