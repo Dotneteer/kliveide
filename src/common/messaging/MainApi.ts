@@ -465,7 +465,7 @@ class MainApiImpl {
    * @param _fps    Target frames-per-second for the recording.
    * @returns The absolute path of the file being written.
    */
-  async startScreenRecording(_width: number, _height: number, _fps: number, _xRatio = 1, _yRatio = 1, _sampleRate = 44100, _crf = 18): Promise<string> {
+  async startScreenRecording(_width: number, _height: number, _fps: number, _xRatio = 1, _yRatio = 1, _sampleRate = 44100, _crf = 18, _format: import("@common/state/AppState").RecordingFormat = "mp4"): Promise<string> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

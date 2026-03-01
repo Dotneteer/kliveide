@@ -1106,6 +1106,9 @@ class EmuMessageProcessor {
       | "set-quality-lossless"
       | "set-quality-high"
       | "set-quality-good"
+      | "set-format-mp4"
+      | "set-format-webm"
+      | "set-format-mkv"
       | "start-recording"
       | "disarm"
       | "pause-recording"
@@ -1129,6 +1132,15 @@ class EmuMessageProcessor {
         break;
       case "set-quality-good":
         _emuRecordingManager.setQualityPreference("good");
+        break;
+      case "set-format-mp4":
+        _emuRecordingManager.setFormatPreference("mp4");
+        break;
+      case "set-format-webm":
+        _emuRecordingManager.setFormatPreference("webm");
+        break;
+      case "set-format-mkv":
+        _emuRecordingManager.setFormatPreference("mkv");
         break;
       case "start-recording":
         _emuRecordingManager.arm(undefined, isRunning);

@@ -1,6 +1,8 @@
 import { spawn, ChildProcess } from "child_process";
+import path from "path";
 import { getFFmpegPath } from "./ffmpegAvailable";
 import type { IRecordingBackend } from "./IRecordingBackend";
+import type { RecordingFormat } from "@common/state/AppState";
 
 /**
  * Phase-B FFmpeg backend.
@@ -33,8 +35,13 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    * e.g. xRatio=0.5, yRatio=1  →  scaleX=1, scaleY=2  (double vertical)
    *      xRatio=1,   yRatio=1  →  scaleX=1, scaleY=1  (unchanged)
    */
-  start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18): void {
-    this._outputPath = outputPath;
+  start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4"): void {
+    // Replace file extension based on format
+    const dirName = path.dirname(outputPath);
+    const baseName = path.basename(outputPath, path.extname(outputPath));
+    const ext = format === "webm" ? ".webm" : format === "mkv" ? ".mkv" : ".mp4";
+    this._outputPath = path.join(dirName, baseName + ext);
+
     this._lastFrame = null;
     this._lastAudioChunk = null;
     this._rawWidth = width;
@@ -45,29 +52,8 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
     this._outWidth  = width  * this._scaleX;
     this._outHeight = height * this._scaleY;
 
-    const args = [
-      "-y",
-      // Video input: raw RGBA frames from stdin (pipe:0)
-      "-f", "rawvideo",
-      "-pix_fmt", "rgba",
-      "-s", `${this._outWidth}x${this._outHeight}`,
-      "-r", String(fps),
-      "-i", "pipe:0",
-      // Audio input: raw f32le stereo from fd 3 (pipe:3)
-      "-f", "f32le",
-      "-ar", String(sampleRate),
-      "-ac", "2",
-      "-i", "pipe:3",
-      // Video codec
-      "-c:v", "libx264",
-      "-preset", crf === 0 ? "ultrafast" : "fast",
-      "-crf", String(crf),
-      "-vf", "format=yuv420p",
-      // Audio codec
-      "-c:a", "aac",
-      "-b:a", "192k",
-      outputPath,
-    ];
+    // Build format-specific FFmpeg arguments
+    const args = this._buildFFmpegArgs(fps, sampleRate, crf, format);
 
     this._process = spawn(getFFmpegPath(), args, {
       stdio: ["pipe", "ignore", "ignore", "pipe"],
@@ -80,6 +66,71 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
       });
       this._process!.once("error", reject);
     });
+  }
+
+  /**
+   * Build FFmpeg command arguments based on the selected format.
+   */
+  private _buildFFmpegArgs(fps: number, sampleRate: number, crf: number, format: RecordingFormat): string[] {
+    const commonArgs = [
+      "-y",
+      // Video input: raw RGBA frames from stdin (pipe:0)
+      "-f", "rawvideo",
+      "-pix_fmt", "rgba",
+      "-s", `${this._outWidth}x${this._outHeight}`,
+      "-r", String(fps),
+      "-i", "pipe:0",
+      // Audio input: raw f32le stereo from fd 3 (pipe:3)
+      "-f", "f32le",
+      "-ar", String(sampleRate),
+      "-ac", "2",
+      "-i", "pipe:3",
+    ];
+
+    let codecArgs: string[] = [];
+
+    switch (format) {
+      case "webm":
+        // VP9 + Opus (best compression, slower)
+        codecArgs = [
+          "-c:v", "libvpx-vp9",
+          "-preset", crf === 0 ? "0" : "1", // 0=best (slowest), 1=fast
+          "-crf", String(crf),
+          "-b:v", "0", // VBR mode for VP9
+          "-c:a", "libopus",
+          "-b:a", "192k",
+          this._outputPath,
+        ];
+        break;
+
+      case "mkv":
+        // H.265/HEVC + AAC (better compression than H.264)
+        codecArgs = [
+          "-c:v", "libx265",
+          "-preset", crf === 0 ? "ultrafast" : "fast",
+          "-crf", String(crf),
+          "-c:a", "aac",
+          "-b:a", "192k",
+          this._outputPath,
+        ];
+        break;
+
+      case "mp4":
+      default:
+        // H.264 + AAC (universal, fast)
+        codecArgs = [
+          "-c:v", "libx264",
+          "-preset", crf === 0 ? "ultrafast" : "fast",
+          "-crf", String(crf),
+          "-vf", "format=yuv420p",
+          "-c:a", "aac",
+          "-b:a", "192k",
+          this._outputPath,
+        ];
+        break;
+    }
+
+    return [...commonArgs, ...codecArgs];
   }
 
   /**

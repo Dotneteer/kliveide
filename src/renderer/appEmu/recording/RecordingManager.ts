@@ -1,6 +1,6 @@
 import type { MainApi } from "@common/messaging/MainApi";
-import type { RecordingFps, RecordingQuality, ScreenRecordingState } from "@common/state/AppState";
-import { setScreenRecordingQualityAction, setScreenRecordingStateAction } from "@common/state/actions";
+import type { RecordingFps, RecordingQuality, RecordingFormat, ScreenRecordingState } from "@common/state/AppState";
+import { setScreenRecordingQualityAction, setScreenRecordingFormatAction, setScreenRecordingStateAction } from "@common/state/actions";
 
 type Dispatch = (action: any) => void;
 
@@ -19,6 +19,7 @@ export class RecordingManager {
   private _state: ScreenRecordingState = "idle";
   private _fps: RecordingFps = "native";
   private _quality: RecordingQuality = "good";
+  private _format: RecordingFormat = "mp4";
   private _width = 0;
   private _height = 0;
   private _nativeFps = 0;
@@ -57,6 +58,15 @@ export class RecordingManager {
   setQualityPreference(quality: RecordingQuality): void {
     this._quality = quality;
     this.dispatch(setScreenRecordingQualityAction(quality));
+  }
+
+  /**
+   * Sets the format preference without starting a recording.
+   * Updates Redux so the menu radio items reflect the choice immediately.
+   */
+  setFormatPreference(format: RecordingFormat): void {
+    this._format = format;
+    this.dispatch(setScreenRecordingFormatAction(format));
   }
 
   /**
@@ -222,7 +232,7 @@ export class RecordingManager {
         ? Math.max(1, Math.round(this._nativeFps / 2))
         : this._nativeFps;
 
-    console.log(`[RecordingManager] _startRecording — ${this._width}x${this._height} @${effectiveFps}fps audio=${this._sampleRate}Hz (mode: ${this._fps}, quality: ${this._quality})`);
+    console.log(`[RecordingManager] _startRecording — ${this._width}x${this._height} @${effectiveFps}fps audio=${this._sampleRate}Hz (mode: ${this._fps}, quality: ${this._quality}, format: ${this._format})`);
     this._captureCount = 0;
     try {
       const filePath = await this.mainApi.startScreenRecording(
@@ -232,7 +242,8 @@ export class RecordingManager {
         this._xRatio,
         this._yRatio,
         this._sampleRate,
-        this._getCrf()
+        this._getCrf(),
+        this._format
       );
       console.log(`[RecordingManager] IPC startScreenRecording OK → ${filePath}`);
       this._state = "recording";
