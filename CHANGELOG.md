@@ -1,5 +1,15 @@
 # Klive IDE Changelog
 
+## 0.55.0
+
+### Features
+
+- Add experimental screen recording feature to the emulator
+
+### Fixes
+
+- Fix the "Select ROM File" issue on Windows
+
 ## 0.54.0
 
 ### Features

@@ -212,7 +212,10 @@ export class RecordingManager {
     // Mirror the half-fps skip: _captureCount was already incremented by
     // submitFrame for this logical frame. Odd counts are the skipped ones.
     if (this._fps === "half" && this._captureCount % 2 !== 0) return;
-    if (!samples || samples.length === 0) return;
+    if (!samples || samples.length === 0) {
+      console.warn(`[RecordingManager] submitAudioSamples: empty samples, skipping`);
+      return;
+    }
     // Convert AudioSample[] → interleaved Float32Array [L0, R0, L1, R1, …]
     const interleaved = new Float32Array(samples.length * 2);
     for (let i = 0; i < samples.length; i++) {

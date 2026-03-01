@@ -22,16 +22,24 @@ vi.mock("child_process", () => {
       // Simulate FFmpeg exiting cleanly after stdin is closed.
       Promise.resolve().then(() => _exitCb?.(0));
     }),
+    on: vi.fn(),
   };
 
   const mockAudioPipe = {
     write: vi.fn(() => true),
     end: vi.fn(),
+    on: vi.fn(),
+  };
+
+  const mockStderr = {
+    setEncoding: vi.fn(),
+    on: vi.fn(),
   };
 
   const mockProcess = {
     stdin: mockStdin,
-    stdio: [mockStdin, undefined, undefined, mockAudioPipe],
+    stdio: [mockStdin, undefined, mockStderr, mockAudioPipe],
+    stderr: mockStderr,
     once: vi.fn((event: string, cb: (code: number | null) => void) => {
       if (event === "exit") _exitCb = cb;
     }),
@@ -75,7 +83,7 @@ describe("FfmpegRecordingBackend", () => {
     expect(args).toContain(String(FPS));
     expect(args).toContain("pipe:0");
     expect(args).toContain("libx264");
-    expect(args).toContain("format=yuv420p");
+    expect(args.some((a: string) => a.includes("format=yuv420p"))).toBe(true);
     expect(args[args.length - 1]).toBe(OUTPUT);
   });
 
@@ -90,10 +98,10 @@ describe("FfmpegRecordingBackend", () => {
     expect(args).toContain("192k");
   });
 
-  it("start() passes stdio: ['pipe','ignore','ignore','pipe'] for video+audio", () => {
+  it("start() passes stdio: ['pipe','ignore','pipe','pipe'] for video+audio", () => {
     backend.start(OUTPUT, W, H, FPS);
     const opts = vi.mocked(spawn).mock.calls[0][2];
-    expect(opts?.stdio).toEqual(["pipe", "ignore", "ignore", "pipe"]);
+    expect(opts?.stdio).toEqual(["pipe", "ignore", "pipe", "pipe"]);
   });
 
   // ---- B2: appendFrame writes to stdin -----------------------------------

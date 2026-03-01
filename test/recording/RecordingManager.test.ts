@@ -72,7 +72,7 @@ describe("RecordingManager — state machine", () => {
     manager.arm("native");
     await manager.onMachineRunning(W, H, FPS);
     expect(manager.state).toBe("recording");
-    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, FPS, 1, 1, 44100, 18);
+    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, FPS, 1, 1, 44100, 18, "mp4");
   });
 
   it("onMachineRunning while idle → stays idle", async () => {
@@ -192,21 +192,21 @@ describe("RecordingManager — submitFrame", () => {
     const { manager, mainApi } = makeManager();
     manager.arm("half");
     await manager.onMachineRunning(W, H, FPS);
-    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, 25, 1, 1, 44100, 18); // 50/2
+    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, 25, 1, 1, 44100, 18, "mp4"); // 50/2
   });
 
   it("startScreenRecording forwards xRatio and yRatio from onMachineRunning", async () => {
     const { manager, mainApi } = makeManager();
     manager.arm("native");
     await manager.onMachineRunning(W, H, FPS, 0.5, 1);
-    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, FPS, 0.5, 1, 44100, 18);
+    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, FPS, 0.5, 1, 44100, 18, "mp4");
   });
 
   it("startScreenRecording forwards sampleRate from onMachineRunning", async () => {
     const { manager, mainApi } = makeManager();
     manager.arm("native");
     await manager.onMachineRunning(W, H, FPS, 1, 1, 48000);
-    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, FPS, 1, 1, 48000, 18);
+    expect(mainApi.startScreenRecording).toHaveBeenCalledWith(W, H, FPS, 1, 1, 48000, 18, "mp4");
   });
 
   it("captureCount resets on each new recording session", async () => {

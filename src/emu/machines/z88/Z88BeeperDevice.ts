@@ -1,5 +1,6 @@
 import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import type { IZ88BeeperDevice } from "./IZ88BeeperDevice";
+import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 import { AudioDeviceBase } from "../AudioDeviceBase";
 import { COMFlags } from "./IZ88BlinkDevice";
@@ -53,7 +54,7 @@ export class Z88BeeperDevice extends AudioDeviceBase<IZ88Machine> implements IZ8
   /**
    * Gets the current sound sample (according to the current CPU tact)
    */
-  getCurrentSampleValue(): number {
+  getCurrentSampleValue(): AudioSample {
     const blink = this.machine.blinkDevice;
     let sampleBit =
       blink.COM & COMFlags.SRUN
@@ -61,6 +62,7 @@ export class Z88BeeperDevice extends AudioDeviceBase<IZ88Machine> implements IZ8
           ? false
           : this._oscillatorBit
         : this._earBit;
-    return sampleBit ? 1.0 : 0.0;
+    const value = sampleBit ? 1.0 : 0.0;
+    return { left: value, right: value };
   }
 }

@@ -378,7 +378,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     if (args.fullFrame && beeperRenderer.current) {
       const sampleGetter = (controller.machine as any).getAudioSamples;
       if (typeof sampleGetter === "function") {
-        const samples = sampleGetter.call(controller.machine) as AudioSample[];
+        // Snapshot immediately — the machine may clear _audioSamples on the next frame before async continuations run
+        const samples = (sampleGetter.call(controller.machine) as AudioSample[]).slice();
         const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
         beeperRenderer.current.storeSamples(samples, soundLevel);
         await beeperRenderer.current.play();

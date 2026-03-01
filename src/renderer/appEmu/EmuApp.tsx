@@ -63,10 +63,8 @@ const EmuApp = () => {
   // --- Screen recording manager (created once; ref shared via context)
   const recordingManagerRef = useRef<RecordingManager | null>(null);
   if (!recordingManagerRef.current) {
-    console.log("[EmuApp] Creating RecordingManager instance");
     recordingManagerRef.current = new RecordingManager(mainApi, dispatch);
     setEmuRecordingManager(recordingManagerRef.current);
-    console.log("[EmuApp] RecordingManager created:", recordingManagerRef.current);
   }
 
   // --- Visual state

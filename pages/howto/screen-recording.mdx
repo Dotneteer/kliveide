@@ -1,0 +1,85 @@
+import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
+
+# Recording the Emulator Screen
+
+Klive allows you to record the emulator display as a video file. This is useful for capturing gameplay, creating tutorials, or demonstrating your retro computer programs.
+
+## Starting a Recording
+
+To start recording, use the **Record** button in the toolbar or use the **Machine | Recording | Start Recording** menu command.
+
+When you click the Record button:
+1. The recording enters **armed** state (ready to record)
+2. When the machine starts running, the recording begins automatically
+3. The toolbar displays the recording status
+4. Video frames and audio samples are captured in real time
+
+To stop recording, click the Record button again or stop the machine.
+
+<Callout type="info" emoji="💡">
+The recording is automatically saved to the **KliveExports/video** folder in your home directory.
+</Callout>
+
+## Recording Options
+
+You can configure recording options before starting a recording through the menu:
+
+### Quality Setting
+Choose the video quality level:
+- **Lossless** – Maximum quality, largest file size (CRF 0)
+- **High** – High quality with moderate compression (CRF 10)
+- **Good** – Balanced quality and file size (CRF 18, default)
+
+### Frame Rate
+Select the frame rate for the output video:
+- **Native** – Records at the machine's native frame rate (50 fps for PAL, 60 fps for NTSC)
+- **Half** – Records at half the native frame rate (25 fps for PAL, 30 fps for NTSC)
+
+### Output Format
+Choose the video container format:
+- **MP4** – Universal compatibility, H.264 video codec with AAC audio (default)
+- **WebM** – Modern format, VP9 video codec with Opus audio
+- **Matroska (MKV)** – Maximum compatibility, HEVC video codec with AAC audio
+
+<Callout type="warning" emoji="⚠️">
+Higher quality settings produce larger files. Using "Lossless" quality can result in very large files, especially for longer recordings.
+</Callout>
+
+## Audio Recording
+
+Audio from the machine's beeper or audio device is automatically captured during recording. The audio sample rate matches the emulator's audio output (typically 48 kHz).
+
+If the machine has no audio output during recording, the video will contain silence. Program your machine or run software that produces sound to capture audio.
+
+## File Location
+
+Recorded videos are saved to:
+```
+~/KliveExports/video/recording_YYYYMMDD_HHMMSS.{mp4|webm|mkv}
+```
+
+The filename is automatically generated based on the recording date and time.
+
+<Callout type="info" emoji="💡">
+You can open the export folder from the menu or navigate to it manually to find your recordings.
+</Callout>
+
+## Tips for Better Recordings
+
+- **Test before recording** – Run a short test to ensure the machine produces the output you want to record
+- **Avoid pausing** – While paused, recording is temporarily suspended. Continue to resume recording
+- **Check quality settings** – For short clips, use high quality. For long sessions, consider "Good" quality to save space
+- **Use native frame rate** – The recorded video plays back at the same speed as the emulation for accurate representation
+
+## Supported Codec Details
+
+| Codec | Container | Video Codec | Audio Codec | Best For |
+|-------|-----------|-------------|------------|----------|
+| MP4 | MP4 | H.264 | AAC | Universal compatibility, most devices |
+| WebM | WebM | VP9 | Opus | Modern browsers, web streaming |
+| Matroska | MKV | HEVC | AAC | Archival, highest compression |
+
+<Callout type="info" emoji="💡">
+HEVC (H.265) in Matroska provides better compression than H.264, but requires modern players. MP4 is recommended for maximum compatibility.
+</Callout>

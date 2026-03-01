@@ -29,6 +29,8 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
   // Integer scale factors derived from xRatio / yRatio
   private _scaleX = 1;
   private _scaleY = 1;
+  // Set to true when FFmpeg exits early; suppresses further writes
+  private _dead = false;
 
   /**
    * Compute integer scale factors so that the smaller ratio becomes 1.
@@ -36,6 +38,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    *      xRatio=1,   yRatio=1  →  scaleX=1, scaleY=1  (unchanged)
    */
   start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4"): void {
+    this._dead = false;
     // Replace file extension based on format
     const dirName = path.dirname(outputPath);
     const baseName = path.basename(outputPath, path.extname(outputPath));
@@ -56,16 +59,48 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
     const args = this._buildFFmpegArgs(fps, sampleRate, crf, format);
 
     this._process = spawn(getFFmpegPath(), args, {
-      stdio: ["pipe", "ignore", "ignore", "pipe"],
+      stdio: ["pipe", "ignore", "pipe", "pipe"],
+    });
+
+    // Suppress EPIPE errors on the video and audio pipes so a premature FFmpeg
+    // exit does not crash the Electron main process.
+    this._process.stdin?.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code !== "EPIPE") console.error("[FFmpegBackend] stdin error:", err.message);
+    });
+    const audioPipe = (this._process.stdio as any)[3];
+    audioPipe?.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code !== "EPIPE") console.error("[FFmpegBackend] audio pipe error:", err.message);
+    });
+    // Consume stderr so FFmpeg errors are visible in the console and backpressure
+    // does not stall the child process.
+    const stderrLines: string[] = [];
+    this._process.stderr?.setEncoding("utf8");
+    this._process.stderr?.on("data", (chunk: string) => {
+      stderrLines.push(chunk);
     });
 
     this._exitPromise = new Promise<void>((resolve, reject) => {
-      this._process!.once("exit", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`FFmpeg exited with code ${code}`));
+      this._process!.once("exit", (code, signal) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          this._dead = true;
+          this._process = null;
+          const msg = `FFmpeg exited with code ${code ?? signal}`;
+          console.error(`[FFmpegBackend] ${msg}`);
+          if (stderrLines.length) console.error("[FFmpegBackend] stderr:", stderrLines.join(""));
+          reject(new Error(msg));
+        }
       });
-      this._process!.once("error", reject);
+      this._process!.once("error", (err) => {
+        this._dead = true;
+        this._process = null;
+        reject(err);
+      });
     });
+    // Prevent unhandled rejection from propagating — errors are reported via
+    // finish() rejection or the console above.
+    this._exitPromise.catch(() => {});
   }
 
   /**
@@ -92,11 +127,14 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
     switch (format) {
       case "webm":
         // VP9 + Opus (best compression, slower)
+        // VP9 uses -deadline (realtime=fast, good=balanced, best=slow) and -cpu-used (0–5)
         codecArgs = [
           "-c:v", "libvpx-vp9",
-          "-preset", crf === 0 ? "0" : "1", // 0=best (slowest), 1=fast
+          "-deadline", crf === 0 ? "good" : "realtime",
+          "-cpu-used", crf === 0 ? "2" : "5",
           "-crf", String(crf),
           "-b:v", "0", // VBR mode for VP9
+          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
           "-c:a", "libopus",
           "-b:a", "192k",
           this._outputPath,
@@ -109,6 +147,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
           "-c:v", "libx265",
           "-preset", crf === 0 ? "ultrafast" : "fast",
           "-crf", String(crf),
+          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
           "-c:a", "aac",
           "-b:a", "192k",
           this._outputPath,
@@ -122,7 +161,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
           "-c:v", "libx264",
           "-preset", crf === 0 ? "ultrafast" : "fast",
           "-crf", String(crf),
-          "-vf", "format=yuv420p",
+          "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
           "-c:a", "aac",
           "-b:a", "192k",
           this._outputPath,
@@ -137,7 +176,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    * Write one raw RGBA frame to FFmpeg's stdin, scaling as needed.
    */
   appendFrame(rgba: Uint8Array): void {
-    if (!this._process?.stdin) return;
+    if (this._dead || !this._process?.stdin) return;
     const buf = this._stretchFrame(rgba);
     this._lastFrame = buf;
     this._process.stdin.write(buf);
@@ -148,7 +187,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    * continuous while the machine is paused).
    */
   holdFrame(): void {
-    if (!this._process?.stdin || !this._lastFrame) return;
+    if (this._dead || !this._process?.stdin || !this._lastFrame) return;
     this._process.stdin.write(this._lastFrame);
     if (this._lastAudioChunk) {
       const audioPipe = (this._process.stdio as any)[3];
@@ -161,9 +200,18 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    * audio input pipe (fd 3).
    */
   appendAudioSamples(samples: Float32Array): void {
+    if (this._dead) return;
     const audioPipe = (this._process?.stdio as any)?.[3];
     if (!audioPipe) return;
-    const buf = Buffer.from(samples.buffer, samples.byteOffset, samples.byteLength);
+    // Sanitize: replace NaN / ±Inf with 0 to prevent AAC encoder failure.
+    let clean = samples;
+    for (let i = 0; i < samples.length; i++) {
+      if (!isFinite(samples[i])) {
+        if (clean === samples) clean = new Float32Array(samples); // copy-on-write
+        clean[i] = 0;
+      }
+    }
+    const buf = Buffer.from(clean.buffer, clean.byteOffset, clean.byteLength);
     this._lastAudioChunk = buf;
     audioPipe.write(buf);
   }
@@ -199,15 +247,25 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    * @returns The absolute path of the finished MP4 file.
    */
   async finish(): Promise<string> {
-    if (!this._process) return this._outputPath;
+    if (!this._process || this._dead) {
+      this._process = null;
+      this._exitPromise = null;
+      this._dead = false;
+      return this._outputPath;
+    }
     // Close both the video pipe (stdin/fd 0) and the audio pipe (fd 3) so
     // FFmpeg sees EOF on both inputs and can flush the output file.
     this._process.stdin?.end();
     const audioPipe = (this._process.stdio as any)[3];
     audioPipe?.end();
-    await this._exitPromise;
+    try {
+      await this._exitPromise;
+    } catch {
+      // FFmpeg exited non-zero; error already logged in the exit handler
+    }
     this._process = null;
     this._exitPromise = null;
+    this._dead = false;
     return this._outputPath;
   }
 }
