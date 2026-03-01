@@ -829,10 +829,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         await saveKliveProject();
       }
     },
-    { type: "separator" },
+    ...(appState?.emulatorState?.screenRecordingAvailable !== false ? [{ type: "separator" as const }] : []),
     {
       id: RECORDING_MENU,
       label: "Recording",
+      visible: appState?.emulatorState?.screenRecordingAvailable !== false,
       submenu: [
         {
           id: "recording_half_fps",
@@ -840,9 +841,12 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
           type: "checkbox",
           checked: appState?.emulatorState?.screenRecordingFps === "half",
           enabled: isRecordingIdle,
-          click: async () => await getEmuApi().issueRecordingCommand(
-            appState?.emulatorState?.screenRecordingFps === "half" ? "set-fps-native" : "set-fps-half"
-          )
+          click: async () =>
+            await getEmuApi().issueRecordingCommand(
+              appState?.emulatorState?.screenRecordingFps === "half"
+                ? "set-fps-native"
+                : "set-fps-half"
+            )
         },
         { type: "separator" },
         {
@@ -873,18 +877,18 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         {
           id: "recording_start_stop",
           label: isRecordingIdle ? "Start recording" : "Stop recording",
-          click: async () => await getEmuApi().issueRecordingCommand(
-            isRecordingIdle ? "start-recording" : "disarm"
-          )
+          click: async () =>
+            await getEmuApi().issueRecordingCommand(isRecordingIdle ? "start-recording" : "disarm")
         },
         { type: "separator" },
         {
           id: "recording_pause_resume",
           label: recState === "paused" ? "Continue recording" : "Pause recording",
           enabled: recState === "recording" || recState === "paused",
-          click: async () => await getEmuApi().issueRecordingCommand(
-            recState === "paused" ? "resume-recording" : "pause-recording"
-          )
+          click: async () =>
+            await getEmuApi().issueRecordingCommand(
+              recState === "paused" ? "resume-recording" : "pause-recording"
+            )
         }
       ]
     }

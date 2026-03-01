@@ -4,9 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mocks (must be declared before imports of the module under test)
 // ---------------------------------------------------------------------------
 
-// Mock @ffmpeg-installer/ffmpeg so tests don't require the real binary.
-vi.mock("@ffmpeg-installer/ffmpeg", () => ({
-  default: { path: "/fake/ffmpeg", version: "0.0.0", url: "" },
+// Mock ffmpegAvailable so tests don't require the real binary on any platform.
+vi.mock("@main/recording/ffmpegAvailable", () => ({
+  isFFmpegAvailable: () => true,
+  getFFmpegPath: () => "/fake/ffmpeg",
 }));
 
 // Mock child_process.spawn.

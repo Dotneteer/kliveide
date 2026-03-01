@@ -1,5 +1,5 @@
 import { spawn, ChildProcess } from "child_process";
-import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import { getFFmpegPath } from "./ffmpegAvailable";
 import type { IRecordingBackend } from "./IRecordingBackend";
 
 /**
@@ -69,7 +69,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
       outputPath,
     ];
 
-    this._process = spawn(ffmpegInstaller.path, args, {
+    this._process = spawn(getFFmpegPath(), args, {
       stdio: ["pipe", "ignore", "ignore", "pipe"],
     });
 
