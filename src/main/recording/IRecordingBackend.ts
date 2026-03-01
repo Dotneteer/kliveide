@@ -13,8 +13,10 @@ export interface IRecordingBackend {
    * @param xRatio      Horizontal pixel aspect-ratio factor (default 1).
    * @param yRatio      Vertical pixel aspect-ratio factor (default 1).
    * @param sampleRate  Audio sample rate in Hz (default 44100).
+   * @param crf         Quality parameter for H.264/H.265 (default 18).
+   * @param format      Output format: "mp4" (H.264), "webm" (VP9), or "mkv" (H.265).
    */
-  start(outputPath: string, width: number, height: number, fps: number, xRatio?: number, yRatio?: number, sampleRate?: number, crf?: number): void;
+  start(outputPath: string, width: number, height: number, fps: number, xRatio?: number, yRatio?: number, sampleRate?: number, crf?: number, format?: string): void;
 
   /**
    * Submit one frame of raw RGBA pixel data.

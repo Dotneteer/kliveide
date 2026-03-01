@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { SpectrumBeeperDevice } from "@emu/machines/BeeperDevice";
 import { ZxSpectrum128PsgDevice } from "@emu/machines/zxSpectrum128/ZxSpectrum128PsgDevice";
+import { Z88BeeperDevice } from "@emu/machines/z88/Z88BeeperDevice";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
 
 /**
  * Mock machine for testing audio integration
@@ -38,6 +41,42 @@ class MockMachine implements Partial<IAnyMachine> {
   /**
    * Simulate advancing by tacts within a frame
    */
+  advanceTacts(count: number): void {
+    this.currentFrameTact += count;
+    this.tacts += count;
+  }
+}
+
+/**
+ * Mock Z88BlinkDevice for testing Z88BeeperDevice
+ */
+class MockZ88BlinkDevice implements Partial<IZ88BlinkDevice> {
+  COM = 0x00;
+}
+
+/**
+ * Mock Z88Machine for testing Z88BeeperDevice
+ */
+class MockZ88Machine implements Partial<IZ88Machine> {
+  baseClockFrequency: number = 3_276_800; // Z88 clock frequency
+  tacts: number = 0;
+  clockMultiplier: number = 1;
+  currentFrameTact: number = 0;
+  tactsInFrame: number = 65_536;
+  frames: number = 0;
+  uiFrameFrequency: number = 1;
+  blinkDevice: IZ88BlinkDevice;
+
+  constructor() {
+    this.blinkDevice = new MockZ88BlinkDevice() as any;
+  }
+
+  advanceFrame(): void {
+    this.currentFrameTact = 0;
+    this.tacts += this.tactsInFrame;
+    this.frames++;
+  }
+
   advanceTacts(count: number): void {
     this.currentFrameTact += count;
     this.tacts += count;
@@ -628,6 +667,67 @@ describe("Audio Integration Tests", () => {
 
       expect(beeper.getAudioSamples().length).toBeGreaterThan(0);
       expect(psg.getAudioSamples().length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Z88BeeperDevice", () => {
+    let z88Machine: MockZ88Machine;
+    let z88Beeper: Z88BeeperDevice;
+
+    beforeEach(() => {
+      z88Machine = new MockZ88Machine();
+      z88Beeper = new Z88BeeperDevice(z88Machine as any);
+      z88Beeper.setAudioSampleRate(44100);
+    });
+
+    it("should collect audio samples with correct type", () => {
+      // Enable EAR bit
+      z88Beeper.setEarBit(true);
+
+      // Advance through a frame and collect samples
+      for (let tact = 0; tact < z88Machine.tactsInFrame; tact += 16) {
+        z88Machine.advanceTacts(16);
+        z88Beeper.setNextAudioSample();
+      }
+
+      const samples = z88Beeper.getAudioSamples();
+      expect(samples.length).toBeGreaterThan(0);
+
+      // Verify each sample is a proper AudioSample object
+      for (const sample of samples) {
+        expect(sample).toHaveProperty("left");
+        expect(sample).toHaveProperty("right");
+        expect(typeof sample.left).toBe("number");
+        expect(typeof sample.right).toBe("number");
+      }
+    });
+
+    it("should generate samples when EAR bit changes", () => {
+      z88Beeper.setEarBit(false);
+
+      // Advance a bit, ear bit off
+      for (let tact = 0; tact < 2000; tact += 16) {
+        z88Machine.advanceTacts(16);
+        z88Beeper.setNextAudioSample();
+      }
+
+      const samplesOff = z88Beeper.getAudioSamples().length;
+
+      // Clear and enable ear bit
+      z88Machine.blinkDevice.COM = 0x00;
+      z88Beeper.onNewFrame();
+      z88Beeper.setEarBit(true);
+
+      for (let tact = 0; tact < 2000; tact += 16) {
+        z88Machine.advanceTacts(16);
+        z88Beeper.setNextAudioSample();
+      }
+
+      const samplesOn = z88Beeper.getAudioSamples().length;
+
+      // Both should generate samples
+      expect(samplesOff).toBeGreaterThan(0);
+      expect(samplesOn).toBeGreaterThan(0);
     });
   });
 });

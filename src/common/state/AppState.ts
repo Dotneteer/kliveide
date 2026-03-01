@@ -82,6 +82,14 @@ export type RecordingFps = "native" | "half";
 export type RecordingQuality = "lossless" | "high" | "good";
 
 /**
+ * The format for screen recording output.
+ * mp4 = H.264 + AAC (universal, fast)
+ * webm = VP9 + Opus (best compression, slow)
+ * mkv = H.265 + AAC (high compression, slower)
+ */
+export type RecordingFormat = "mp4" | "webm" | "mkv";
+
+/**
  * The lifecycle state of a screen recording session
  */
 export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
@@ -107,6 +115,7 @@ export type EmulatorState = {
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;
   screenRecordingQuality?: RecordingQuality;
+  screenRecordingFormat?: RecordingFormat;
 };
 
 export type FloppyDiskState = {

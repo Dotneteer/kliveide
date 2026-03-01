@@ -65,6 +65,7 @@ import { FfmpegRecordingBackend } from "./recording/FfmpegRecordingBackend";
 import { StubRecordingBackend } from "./recording/StubRecordingBackend";
 import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { resolveRecordingPath } from "./recording/outputPath";
+import type { RecordingFormat } from "@common/state/AppState";
 
 const compilerRegistry = createCompilerRegistry();
 
@@ -776,13 +777,14 @@ class MainMessageProcessor {
    * Starts a new screen recording session using the active backend.
    * Returns the absolute path of the output file.
    */
-  async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18): Promise<string> {
+  async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4"): Promise<string> {
     const homeDir = app.getPath("home");
-    const outputPath = resolveRecordingPath(homeDir, "mp4");
+    const ext = format === "webm" ? "webm" : format === "mkv" ? "mkv" : "mp4";
+    const outputPath = resolveRecordingPath(homeDir, ext);
     _recordingBackend = isFFmpegAvailable()
       ? new FfmpegRecordingBackend()
       : new StubRecordingBackend();
-    _recordingBackend.start(outputPath, width, height, fps, xRatio, yRatio, sampleRate, crf);
+    _recordingBackend.start(outputPath, width, height, fps, xRatio, yRatio, sampleRate, crf, format);
     return outputPath;
   }
 

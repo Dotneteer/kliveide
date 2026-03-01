@@ -875,6 +875,31 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         },
         { type: "separator" },
         {
+          id: "recording_format_mp4",
+          label: "Format: MP4 (H.264) – Universal, small files",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingFormat ?? "mp4") === "mp4",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-format-mp4")
+        },
+        {
+          id: "recording_format_webm",
+          label: "Format: WebM (VP9) – Best for web sharing",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingFormat ?? "mp4") === "webm",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-format-webm")
+        },
+        {
+          id: "recording_format_mkv",
+          label: "Format: MKV (H.265) – Best compression",
+          type: "checkbox",
+          checked: (appState?.emulatorState?.screenRecordingFormat ?? "mp4") === "mkv",
+          enabled: isRecordingIdle,
+          click: async () => await getEmuApi().issueRecordingCommand("set-format-mkv")
+        },
+        { type: "separator" },
+        {
           id: "recording_start_stop",
           label: isRecordingIdle ? "Start recording" : "Stop recording",
           click: async () =>

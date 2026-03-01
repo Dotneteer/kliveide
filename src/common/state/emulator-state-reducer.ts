@@ -112,6 +112,12 @@ export function emulatorStateReducer(
         screenRecordingQuality: payload?.id as import("./AppState").RecordingQuality
       };
 
+    case "SET_SCREEN_RECORDING_FORMAT":
+      return {
+        ...state,
+        screenRecordingFormat: payload?.id as import("./AppState").RecordingFormat
+      };
+
     default:
       return state;
   }
