@@ -167,6 +167,12 @@ export const pageMap = [{
       "sidebarTitle": "Measure T States"
     }
   }, {
+    name: "screen-recording",
+    route: "/howto/screen-recording",
+    frontMatter: {
+      "sidebarTitle": "Screen Recording"
+    }
+  }, {
     name: "shortcuts",
     route: "/howto/shortcuts",
     frontMatter: {
