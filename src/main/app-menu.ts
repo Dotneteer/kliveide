@@ -829,7 +829,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         await saveKliveProject();
       }
     },
-    { type: "separator", visible: appState?.emulatorState?.screenRecordingAvailable !== false },
+    ...(appState?.emulatorState?.screenRecordingAvailable !== false ? [{ type: "separator" as const }] : []),
     {
       id: RECORDING_MENU,
       label: "Recording",
