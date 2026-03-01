@@ -126,6 +126,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
 
   const [isMemoryDialogOpen, setMemoryDialogOpen] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<number>(null);
+  const [addressToEditIsRom, setAddressToEditIsRom] = useState(false);
 
   // --- Track mount/unmount and initialization phase
   const isInitializing = useRef(true);
@@ -485,10 +486,12 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
     );
   };
 
-  const editMemoryContent = (address: number) => {
+  const editMemoryContent = useCallback((address: number) => {
+    const isRom = !!romFlags?.[(address >> 13) & 0x07];
     setMemoryDialogOpen(true);
     setAddressToEdit(address);
-  };
+    setAddressToEditIsRom(isRom);
+  }, [romFlags]);
 
   // --- Rename dialog box to display
   const setMemoryDialog = isMemoryDialogOpen && (
@@ -496,6 +499,7 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
       address={addressToEdit}
       currentValue={memory.current[addressToEdit]}
       decimal={decimalView}
+      isRom={addressToEditIsRom}
       onSetMemory={async (newValue: string, sizeOption: string, bigEndian: boolean) => {
         const command = `setmem ${addressToEdit} ${newValue.replace(" ", "")} ${sizeOption} ${bigEndian ? "-be" : ""}`;
         await ideCommandsService.executeCommand(command);

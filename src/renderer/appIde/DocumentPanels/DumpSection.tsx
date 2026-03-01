@@ -173,8 +173,7 @@ const HexValuesComponent = ({
   decimalView,
   pointedInfo,
   lastJumpAddress,
-  isRom: _isRom,
-  editClicked: _editClicked
+  editClicked
 }: HexValuesProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredByteIndex, setHoveredByteIndex] = useState<number | null>(null);
@@ -264,6 +263,31 @@ const HexValuesComponent = ({
     setHoveredByteIndex(null);
   }, []);
 
+  const handleContextMenu = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!editClicked || !containerRef.current || charWidth === 0) return;
+    e.preventDefault();
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+
+    const byteWidth = decimalView ? 3 : 2;
+    const spacing = 1;
+
+    let foundIndex: number | null = null;
+    for (let i = 0; i < hexParts.length; i++) {
+      const startPos = i * (byteWidth + spacing) * charWidth;
+      const endPos = startPos + byteWidth * charWidth;
+      if (x >= startPos && x < endPos) {
+        foundIndex = i;
+        break;
+      }
+    }
+
+    if (foundIndex !== null) {
+      editClicked(address + foundIndex);
+    }
+  }, [editClicked, charWidth, decimalView, hexParts, address]);
+
   // Tooltip content - memoized
   const tooltipContent = useMemo(() => {
     if (hoveredByteIndex === null || memory[address + hoveredByteIndex] === undefined) {
@@ -310,6 +334,7 @@ const HexValuesComponent = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseOut={handleMouseOut}
+      onContextMenu={handleContextMenu}
     >
       {hexString}
       {overlayStyle && hoveredByteIndex !== null && (
@@ -349,6 +374,7 @@ const HexValues = memo(HexValuesComponent, (prev, next) => {
   if (prev.address !== next.address) return false;
   if (prev.decimalView !== next.decimalView) return false;
   if (prev.lastJumpAddress !== next.lastJumpAddress) return false;
+  if (prev.editClicked !== next.editClicked) return false;
   
   // Check if the 8 bytes have changed
   for (let i = 0; i < 8; i++) {
