@@ -994,7 +994,7 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * This method processes the active non-maskable interrupt.
    */
-  private processNmi(): void {
+  protected processNmi(): void {
     // --- Acknowledge the NMI
     this.tactPlusN(4);
 

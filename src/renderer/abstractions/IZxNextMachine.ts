@@ -94,4 +94,10 @@ export interface IZxNextMachine extends IZ80Machine {
    * Accepted only when nmiAcceptCause is true.
    */
   requestDivMmcNmiFromSoftware(): void;
+
+  /**
+   * Called when config mode is entered (nextreg 0x03 = 0x07). Clears all
+   * pending NMI state to prevent stale NMIs from firing during config mode.
+   */
+  onConfigModeEntered(): void;
 }

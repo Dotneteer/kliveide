@@ -18,6 +18,9 @@ export class ExpansionBusDevice implements IGenericDevice<IZxNextMachine> {
   private _p3FDCEnabled: boolean;
   private _reservedBits: number;
 
+  /** Set to true by external hardware to assert /NMI via the expansion bus */
+  expansionBusNmiPending: boolean = false;
+
   constructor(public readonly machine: IZxNextMachine) {
     this.hardReset();
   }
@@ -69,6 +72,7 @@ export class ExpansionBusDevice implements IGenericDevice<IZxNextMachine> {
   hardReset(): void {
     this.nextReg80Value = 0x00;
     this.nextReg81Value = 0x00;
+    this.expansionBusNmiPending = false;
   }
 
   reset(): void {

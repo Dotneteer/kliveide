@@ -130,6 +130,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   private _pendingMfNmi: boolean = false;
   private _pendingDivMmcNmi: boolean = false;
 
+  /** Set to true when a stackless NMI was processed; cleared after RETN fixes PC. */
+  private _stacklessNmiProcessed: boolean = false;
+
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
@@ -303,6 +306,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._nmiSourceExpBus = false;
     this._pendingMfNmi = false;
     this._pendingDivMmcNmi = false;
+    this._stacklessNmiProcessed = false;
     this.sigNMI = false;
   }
 
@@ -354,8 +358,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     } else if (assertDivMmc && !mfIsActive) {
       this._nmiSourceDivMmc = true;
       this._pendingDivMmcNmi = false;
+    } else {
+      // Expansion bus NMI: active when expansion bus is enabled and nmiPending is set.
+      // When nmiDebounceDisabled is true the state machine is bypassed and /NMI is driven
+      // directly; for now we model it as a pending source that enters the normal path.
+      const expBus = this.expansionBusDevice;
+      if (expBus.expansionBusNmiPending && expBus.enabled) {
+        this._nmiSourceExpBus = true;
+        expBus.expansionBusNmiPending = false;
+      }
     }
-    // expansion bus NMI not yet modelled
   }
 
   /**
@@ -418,6 +430,48 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   requestDivMmcNmiFromSoftware(): void {
     if (this.nmiAcceptCause) {
       this._pendingDivMmcNmi = true;
+    }
+  }
+
+  /**
+   * Called when config mode is entered (nextreg 0x03 = 0x07).
+   * Clears all pending NMI sources to prevent stale NMIs from firing during config mode.
+   */
+  onConfigModeEntered(): void {
+    this._nmiState = 'IDLE';
+    this._nmiSourceMf = false;
+    this._nmiSourceDivMmc = false;
+    this._nmiSourceExpBus = false;
+    this._pendingMfNmi = false;
+    this._pendingDivMmcNmi = false;
+    this._stacklessNmiProcessed = false;
+    this.sigNMI = false;
+  }
+
+  /**
+   * Override the base Z80 NMI handler to support stackless NMI mode (nextreg 0xC0 bit 3).
+   * When `enableStacklessNmi` is true, SP is decremented by 2 but no stack writes occur;
+   * the return address is saved to `interruptDevice.nmiReturnAddress` instead.
+   */
+  protected override processNmi(): void {
+    if (this.interruptDevice.enableStacklessNmi) {
+      // Acknowledge NMI timing
+      this.tactPlusN(4);
+      this.removeFromHaltedState();
+
+      // Save and clear interrupt flip-flops as normal
+      this.iff2 = this.iff1;
+      this.iff1 = false;
+
+      // Decrement SP by 2 but suppress the memory writes; save return address in nextreg
+      this.sp = (this.sp - 2) & 0xffff;
+      this.interruptDevice.nmiReturnAddress = this.pc;
+      this._stacklessNmiProcessed = true;
+
+      this.refreshMemory();
+      this.pc = 0x0066;
+    } else {
+      super.processNmi();
     }
   }
 
@@ -913,6 +967,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
+
+    // --- Fix PC after stackless RETN: RETN read garbage from the stack (nothing was
+    //     written there), so we restore the correct return address from the nextreg.
+    if (this.retnExecuted && this._stacklessNmiProcessed) {
+      this.pc = this.interruptDevice.nmiReturnAddress;
+      this._stacklessNmiProcessed = false;
+    }
 
     // 1. Accept new NMI causes (only in IDLE or FETCH)
     if (this.nmiAcceptCause) {

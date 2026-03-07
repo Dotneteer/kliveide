@@ -58,6 +58,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Fast path optimization flags
   private _divMmcActive = false;
+  private _mfActive = false;
   private _layer2ReadActive = false;
   private _layer2WriteActive = false;
   private _useFastPath = true;
@@ -572,6 +573,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   updateFastPathFlags(): void {
     const divMmc = this.machine.divMmcDevice;
     this._divMmcActive = divMmc?.conmem || divMmc?.autoMapActive || false;
+    this._mfActive = this.machine.multifaceDevice?.mfEnabled || false;
 
     const screen = this.machine.composedScreenDevice;
     this._layer2ReadActive = screen?.layer2EnableMappingForReads || false;
@@ -583,7 +585,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Enable fast path only if no special mappings
-    this._useFastPath = !this._divMmcActive && !this._layer2ReadActive && !this._layer2WriteActive;
+    this._useFastPath = !this._divMmcActive && !this._mfActive && !this._layer2ReadActive && !this._layer2WriteActive;
 
     // --- Update specialized slot functions based on configuration
     this.updateSlotFunctions();
@@ -686,13 +688,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * Called after fast path flags change.
    */
   private updateSlotFunctions(): void {
-    // --- Slot 0 (0x0000-0x3FFF): Check DivMMC and Layer 2
-    const slot0Complex = this._divMmcActive || this._layer2ReadActive;
+    // --- Slot 0 (0x0000-0x3FFF): Check Multiface, DivMMC and Layer 2
+    const slot0Complex = this._mfActive || this._divMmcActive || this._layer2ReadActive;
     this._readSlot0 = slot0Complex
       ? this._readSlot0Complex.bind(this)
       : this._readSlot0Simple.bind(this);
 
-    const slot0WriteComplex = this._divMmcActive || this._layer2WriteActive;
+    const slot0WriteComplex = this._mfActive || this._divMmcActive || this._layer2WriteActive;
     this._writeSlot0 = slot0WriteComplex
       ? this._writeSlot0Complex.bind(this)
       : this._writeSlot0Simple.bind(this);
@@ -729,6 +731,11 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     const page = address >>> 13;
     const offset = address & 0x1fff;
     let readOffset = this.pageInfo[page].readOffset;
+
+    // --- Multiface has highest priority
+    if (this._mfActive) {
+      return this.memory[OFFS_MULTIFACE_MEM + (page * 0x2000) + offset];
+    }
 
     // --- DivMMC has priority
     if (this._divMmcActive) {
@@ -822,6 +829,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     const page = address >>> 13;
     const offset = address & 0x1fff;
     let writeOffset = this.pageInfo[page].writeOffset;
+
+    // --- Multiface has highest priority (MF SRAM is writable)
+    if (this._mfActive) {
+      this.memory[OFFS_MULTIFACE_MEM + (page * 0x2000) + offset] = data;
+      return;
+    }
 
     // --- DivMMC has priority
     if (this._divMmcActive) {

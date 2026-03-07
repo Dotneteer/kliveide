@@ -270,6 +270,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
         if (machineType === 0b111) {
           this.configMode = true;
+          machine.onConfigModeEntered();
         } else if (machineType !== 0b000) {
           this.configMode = false;
         }
