@@ -1125,7 +1125,8 @@ describe("Next - NextRegDevice", function () {
     const divMmcDevice = m.divMmcDevice;
     const mouseDevice = m.mouseDevice;
 
-    // --- Act
+    // --- Act (multifaceType requires config mode to write)
+    writeNextReg(m, 0x03, 0x07); // enter config mode
     writeNextReg(m, 0x0a, 0x40);
 
     // --- Assert

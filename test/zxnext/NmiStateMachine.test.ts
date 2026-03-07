@@ -123,8 +123,8 @@ describe("NmiStateMachine", async () => {
     // At this point multifaceDevice.nmiHold=true (pressNmiButton was called)
     expect(m.nmiHold).toBe(true);
     expect((m as any)._nmiState).toBe("HOLD");
-    // Clear nmiHold — simulates RETN completion
-    m.multifaceDevice.nmiHold = false;
+    // Clear nmiActive — simulates RETN completion (nmiHold mirrors nmiActive)
+    m.multifaceDevice.nmiActive = false;
     m.beforeOpcodeFetch();   // HOLD→END
     expect((m as any)._nmiState).toBe("END");
   });
@@ -148,7 +148,7 @@ describe("NmiStateMachine", async () => {
     m.beforeOpcodeFetch();   // IDLE→FETCH
     m.pc = 0x0066;
     m.beforeOpcodeFetch();   // FETCH→HOLD
-    m.multifaceDevice.nmiHold = false;
+    m.multifaceDevice.nmiActive = false;
     m.beforeOpcodeFetch();   // HOLD→END
     m.beforeOpcodeFetch();   // END→IDLE
     expect((m as any)._nmiState).toBe("IDLE");

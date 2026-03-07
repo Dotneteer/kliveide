@@ -166,11 +166,11 @@ describe("MultifaceDevice", async () => {
     expect(mf.mfEnabled).toBe(true); // should still page in
   });
 
-  it("readEnablePort(): no MF page-in when nmiActive=false and not invisible", () => {
-    mf.nmiActive = false;
+  it("readEnablePort(): pages in MF when invisible=false regardless of nmiActive (MAME: no nmiActive guard)", () => {
+    mf.nmiActive = false; // nmiActive does NOT gate enable port in MAME model
     mf.invisible = false;
     mf.readEnablePort();
-    expect(mf.mfEnabled).toBe(false);
+    expect(mf.mfEnabled).toBe(true); // mf_enable = !invisible_eff() = !false = true
   });
 
   // ─────────────────────────────
@@ -184,11 +184,11 @@ describe("MultifaceDevice", async () => {
     expect(mf.mfEnabled).toBe(false);
   });
 
-  it("readDisablePort(): clears nmiActive in MF+3 mode (type 0)", () => {
-    m.divMmcDevice.multifaceType = 0;
+  it("readDisablePort(): does NOT clear nmiActive (MAME: port_io_dly blocks nmiActive change)", () => {
+    m.divMmcDevice.multifaceType = 0; // MF+3 — old model cleared nmiActive, MAME does not
     mf.nmiActive = true;
     mf.readDisablePort();
-    expect(mf.nmiActive).toBe(false);
+    expect(mf.nmiActive).toBe(true); // nmiActive unchanged — only RETN clears it
   });
 
   it("readDisablePort(): does NOT clear nmiActive in non-MF+3 mode", () => {
@@ -202,20 +202,20 @@ describe("MultifaceDevice", async () => {
   //  writeEnablePort()
   // ─────────────────────────────
 
-  it("writeEnablePort(): clears nmiActive for all modes", () => {
+  it("writeEnablePort(): does NOT change nmiActive (MAME: port_io_dly makes writes no-ops)", () => {
     for (const t of [0, 1, 2, 3]) {
       m.divMmcDevice.multifaceType = t;
       mf.nmiActive = true;
       mf.writeEnablePort(0);
-      expect(mf.nmiActive).toBe(false);
+      expect(mf.nmiActive).toBe(true); // nmiActive unchanged — only RETN clears it
     }
   });
 
-  it("writeEnablePort(): sets invisible in MF+3 mode (type 0)", () => {
-    m.divMmcDevice.multifaceType = 0;
+  it("writeEnablePort(): does NOT set invisible (MAME: port_io_dly makes writes no-ops)", () => {
+    m.divMmcDevice.multifaceType = 0; // MF+3 — old model set invisible, MAME does not
     mf.invisible = false;
     mf.writeEnablePort(0);
-    expect(mf.invisible).toBe(true);
+    expect(mf.invisible).toBe(false); // invisible unchanged by port writes
   });
 
   it("writeEnablePort(): does NOT set invisible in non-MF+3 modes", () => {
@@ -231,21 +231,21 @@ describe("MultifaceDevice", async () => {
   //  writeDisablePort()
   // ─────────────────────────────
 
-  it("writeDisablePort(): clears nmiActive for all modes", () => {
+  it("writeDisablePort(): does NOT change nmiActive (MAME: port_io_dly makes writes no-ops)", () => {
     for (const t of [0, 1, 2, 3]) {
       m.divMmcDevice.multifaceType = t;
       mf.nmiActive = true;
       mf.writeDisablePort(0);
-      expect(mf.nmiActive).toBe(false);
+      expect(mf.nmiActive).toBe(true); // nmiActive unchanged — only RETN clears it
     }
   });
 
-  it("writeDisablePort(): sets invisible for non-MF+3 modes", () => {
+  it("writeDisablePort(): does NOT set invisible (MAME: port_io_dly makes writes no-ops)", () => {
     for (const t of [1, 2, 3]) {
       m.divMmcDevice.multifaceType = t;
       mf.invisible = false;
       mf.writeDisablePort(0);
-      expect(mf.invisible).toBe(true);
+      expect(mf.invisible).toBe(false); // invisible unchanged by port writes
     }
   });
 

@@ -733,7 +733,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     let readOffset = this.pageInfo[page].readOffset;
 
     // --- Multiface has highest priority
-    if (this._mfActive) {
+    // Check mfEnabled DIRECTLY (like MAME's bank_update rechecks mf_enabled_r on every M1)
+    // to avoid stale _mfActive cache issues
+    if (this.machine.multifaceDevice?.mfEnabled) {
       return this.memory[OFFS_MULTIFACE_MEM + (page * 0x2000) + offset];
     }
 
@@ -830,9 +832,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     const offset = address & 0x1fff;
     let writeOffset = this.pageInfo[page].writeOffset;
 
-    // --- Multiface has highest priority (MF SRAM is writable)
-    if (this._mfActive) {
-      this.memory[OFFS_MULTIFACE_MEM + (page * 0x2000) + offset] = data;
+    // --- Multiface has highest priority (MF RAM page 1 is writable, page 0 ROM is read-only)
+    // Check mfEnabled DIRECTLY (like MAME's bank_update rechecks on every access)
+    if (this.machine.multifaceDevice?.mfEnabled) {
+      if (page !== 0) {
+        // Only page 1 (0x2000-0x3FFF = MF RAM) is writable; page 0 is MF ROM (read-only)
+        this.memory[OFFS_MULTIFACE_MEM + (page * 0x2000) + offset] = data;
+      }
       return;
     }
 

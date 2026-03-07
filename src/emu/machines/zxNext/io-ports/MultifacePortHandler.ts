@@ -1,59 +1,19 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 /**
- * All multiface port handlers delegate to MultifaceDevice, which internally
- * resolves which operation to perform based on the current multifaceType.
+ * Unified multiface port handlers.
  *
- * The port addresses 0x1F/0x9F/0x3F/0xBF are shared across MF48, MF128 and
- * MF+3 modes. The device resolves enable vs. disable based on the active mode.
+ * The same physical port address (0x1F, 0x3F, 0x9F, 0xBF) serves as either
+ * the enable or disable port depending on the current multifaceType (NR 0x0A).
+ * The MultifaceDevice.handlePortRead/Write methods dynamically resolve which
+ * operation to perform, mirroring the VHDL's port_mf_enable_io_a /
+ * port_mf_disable_io_a address selection logic.
  */
 
-export function readMultifaceDisablePort(machine: IZxNextMachine): number {
-  return machine.multifaceDevice.readDisablePort();
+export function readMultifacePort(port: number, machine: IZxNextMachine): number {
+  return machine.multifaceDevice.handlePortRead(port);
 }
 
-export function writeMultifaceDisablePort(_port: number, _value: number, machine: IZxNextMachine): void {
-  machine.multifaceDevice.writeDisablePort(_value);
-}
-
-export function readMultifaceEnablePort(machine: IZxNextMachine): number {
-  return machine.multifaceDevice.readEnablePort();
-}
-
-export function writeMultifaceEnablePort(_port: number, _value: number, machine: IZxNextMachine): void {
-  machine.multifaceDevice.writeEnablePort(_value);
-}
-
-// MF128 v87.2 variants — same logic, device resolves mode
-export function readMultiface128DisablePort(machine: IZxNextMachine): number {
-  return machine.multifaceDevice.readDisablePort();
-}
-
-export function writeMultiface128DisablePort(_port: number, _value: number, machine: IZxNextMachine): void {
-  machine.multifaceDevice.writeDisablePort(_value);
-}
-
-export function readMultiface128EnablePort(machine: IZxNextMachine): number {
-  return machine.multifaceDevice.readEnablePort();
-}
-
-export function writeMultiface128EnablePort(_port: number, _value: number, machine: IZxNextMachine): void {
-  machine.multifaceDevice.writeEnablePort(_value);
-}
-
-// MF+3 variants — same logic, device resolves mode
-export function readMultifaceP3DisablePort(machine: IZxNextMachine): number {
-  return machine.multifaceDevice.readDisablePort();
-}
-
-export function writeMultifaceP3DisablePort(_port: number, _value: number, machine: IZxNextMachine): void {
-  machine.multifaceDevice.writeDisablePort(_value);
-}
-
-export function readMultifaceP3EnablePort(machine: IZxNextMachine): number {
-  return machine.multifaceDevice.readEnablePort();
-}
-
-export function writeMultifaceP3EnablePort(_port: number, _value: number, machine: IZxNextMachine): void {
-  machine.multifaceDevice.writeEnablePort(_value);
+export function writeMultifacePort(port: number, value: number, machine: IZxNextMachine): void {
+  machine.multifaceDevice.handlePortWrite(port, value);
 }

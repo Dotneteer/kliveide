@@ -602,7 +602,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x0a,
       description: "Peripheral 5 Setting",
       writeFn: (v) => {
-        machine.divMmcDevice.multifaceType = (v & 0xc0) >> 6;
+        // VHDL: nr_0a_mf_type can only be changed in config mode
+        if (this.configMode) {
+          machine.divMmcDevice.multifaceType = (v & 0xc0) >> 6;
+        }
         machine.divMmcDevice.enableAutomap = (v & 0x10) !== 0;
         machine.mouseDevice.swapButtons = (v & 0x08) !== 0;
         machine.mouseDevice.dpi = v & 0x03;

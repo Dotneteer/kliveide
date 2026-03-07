@@ -439,6 +439,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    * This is called from the test machine when RETN is detected
    */
   handleRetnExecution(): void {
+    this._nmiButtonPressed = false; // VHDL: button_nmi cleared by retn_seen
     this._autoMapActive = false;
     this._conmemActivated = false;
     this._conmem = false;

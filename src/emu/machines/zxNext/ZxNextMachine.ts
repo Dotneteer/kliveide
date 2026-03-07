@@ -317,9 +317,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     //     but the emulator wants F9/F10 to work without explicit NR06 configuration)
     this.divMmcDevice.enableMultifaceNmiByM1Button = true;
     this.divMmcDevice.enableDivMmcNmiByDriveButton = true;
-    // --- Default multiface type to MF128 v87.2 (type 1); the Next ROM bootloader
-    //     will set this via NR 0x0A, but without it the enNextMf.rom expects type 1.
-    this.divMmcDevice.multifaceType = 1;
+    // --- Default multiface type to MF+3 (type 0), matching VHDL default (nr_0a_mf_type := "00").
+    //     The Next is a +3 machine and enNextMf.rom expects MF+3 port layout.
+    this.divMmcDevice.multifaceType = 0;
   }
 
   // ─── NMI state machine helpers ───────────────────────────────────────────
@@ -485,9 +485,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // be called again on every subsequent cycle before beforeOpcodeFetch() gets
     // a chance to run the state machine (which is the only other place that clears it).
     this.sigNMI = false;
-    console.log(`[NMI] processNmi() acknowledged: stacklessNmi=${this.interruptDevice.enableStacklessNmi} pc=0x${this.pc.toString(16)}`);
 
-    if (this.interruptDevice.enableStacklessNmi) {
+    // MF hardware predates stackless NMI — always use standard push for MF NMI
+    // so the MF ROM's RETN can pop the correct return address from the stack.
+    const useStackless = this.interruptDevice.enableStacklessNmi && !this._nmiSourceMf;
+
+    if (useStackless) {
       // Acknowledge NMI timing
       this.tactPlusN(4);
       this.removeFromHaltedState();

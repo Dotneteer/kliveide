@@ -93,14 +93,17 @@ describe("MultifaceMemory", async () => {
   //  Write redirection
   // ─────────────────────────────
 
-  it("writes to 0x0000–0x1FFF redirect to OFFS_MULTIFACE_MEM when MF active", () => {
+  it("writes to 0x0000–0x1FFF are IGNORED (MF page 0 = ROM, read-only per MAME sram_pre_rdonly)", () => {
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
 
+    const mem = (m.memoryDevice as any).memory as Uint8Array;
+    const before = mem[OFFS_MULTIFACE_MEM + 0x0050];
+
     m.memoryDevice.writeMemory(0x0050, 0x42);
 
-    const mem = (m.memoryDevice as any).memory as Uint8Array;
-    expect(mem[OFFS_MULTIFACE_MEM + 0x0050]).toBe(0x42);
+    // Write must be ignored — page 0 is the MF ROM (read-only)
+    expect(mem[OFFS_MULTIFACE_MEM + 0x0050]).toBe(before);
   });
 
   it("writes to 0x2000–0x3FFF redirect to OFFS_MULTIFACE_MEM+0x2000 when MF active", () => {
@@ -146,10 +149,11 @@ describe("MultifaceMemory", async () => {
     (m.divMmcDevice as any)._conmem = true;
     m.memoryDevice.updateFastPathFlags();
 
-    m.memoryDevice.writeMemory(0x0080, 0x22);
+    // Use page 1 address (0x2000–0x3FFF = MF RAM, writable)
+    m.memoryDevice.writeMemory(0x2080, 0x22);
 
     const mem = (m.memoryDevice as any).memory as Uint8Array;
-    expect(mem[OFFS_MULTIFACE_MEM + 0x0080]).toBe(0x22);
+    expect(mem[OFFS_MULTIFACE_MEM + 0x2080]).toBe(0x22);
   });
 
   // ─────────────────────────────
@@ -160,8 +164,9 @@ describe("MultifaceMemory", async () => {
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
 
-    m.memoryDevice.writeMemory(0x1000, 0x55);
-    expect(m.memoryDevice.readMemory(0x1000)).toBe(0x55);
+    // Only page 1 (0x2000–0x3FFF) is the MF RAM (writable); use addresses in that range
+    m.memoryDevice.writeMemory(0x2000, 0x55);
+    expect(m.memoryDevice.readMemory(0x2000)).toBe(0x55);
 
     m.memoryDevice.writeMemory(0x3000, 0xaa);
     expect(m.memoryDevice.readMemory(0x3000)).toBe(0xaa);

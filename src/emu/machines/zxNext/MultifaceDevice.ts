@@ -11,10 +11,12 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
   nmiActive: boolean;
 
   /**
-   * True from pressNmiButton() until handleRetn() — the state machine stays in
-   * HOLD as long as this is true, regardless of port reads that may clear nmiActive.
+   * Mirrors VHDL: nmi_disable_o <= nmi_active.
+   * In hardware, mf_nmi_hold IS nmi_active — they are the same signal.
    */
-  nmiHold: boolean;
+  get nmiHold(): boolean {
+    return this.nmiActive;
+  }
 
   /** mf_enable in VHDL — multiface memory paged in */
   mfEnabled: boolean;
@@ -24,7 +26,6 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
 
   constructor(public readonly machine: IZxNextMachine) {
     this.nmiActive = false;
-    this.nmiHold = false;
     this.mfEnabled = false;
     this.invisible = true;
   }
@@ -88,7 +89,6 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
   pressNmiButton(): void {
     if (!this.nmiActive) {
       this.nmiActive = true;
-      this.nmiHold = true;
       this.invisible = false; // button press clears invisible flag (MF128/+3)
     }
   }
@@ -97,64 +97,49 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Handles a read of the enable port.
-   * If invisible_eff (invisible && !mode48): pages out MF, returns 0xFF.
-   * Otherwise: if nmiActive, pages in MF; returns 0xFF (emulator does not mirror port data).
+   * VHDL clock_w: mf_enable <= !invisible_eff (when not fetch_66 or disable_rd).
+   * Matches MAME: enable port read sets mf_enable based on invisible_eff.
+   * nmi_active and invisible are NOT modified (MAME port_io_dly prevents it).
    */
   readEnablePort(): number {
     const invisibleEff = this.invisible && !this.mode48;
-    if (invisibleEff) {
-      this.mfEnabled = false;
-      this.machine.memoryDevice.updateFastPathFlags();
-      return 0xff;
-    }
-    if (this.nmiActive) {
-      this.mfEnabled = true;
-      this.machine.memoryDevice.updateFastPathFlags();
-    }
+    this.mfEnabled = !invisibleEff;
+    this.machine.memoryDevice.updateFastPathFlags();
     return 0xff;
   }
 
   /**
    * Handles a read of the disable port.
-   * For MF+3 mode: pages out MF memory and clears nmiActive.
-   * For MF128/MF48 modes: reading the disable port does NOT page out — the MF ROM
-   * reads this port to sample joystick/hardware state during its initialization.
-   * Page-out for those modes happens only on writeDisablePort or hardware-detected RETN.
+   * VHDL clock_w: mf_enable is cleared by port_mf_disable_rd.
+   * nmi_active is NOT modified by port reads (MAME port_io_dly prevents it).
+   * Only RETN (handleRetn) clears nmi_active.
    */
   readDisablePort(): number {
-    console.log(`[NMI] readDisablePort: modeP3=${this.modeP3} mode128=${this.mode128} pc=0x${this.machine.pc.toString(16)} → ${this.modeP3 ? 'paging out' : 'no page-out (read-only for mode128/48)'}`);
-    if (this.modeP3) {
-      this.mfEnabled = false;
-      this.nmiActive = false;
-      this.machine.memoryDevice.updateFastPathFlags();
-    }
+    this.mfEnabled = false;
+    this.machine.memoryDevice.updateFastPathFlags();
     return 0xff;
   }
 
   // --- Port write handlers
+  // In MAME, port_io_dly (computed synchronously) effectively prevents
+  // port writes from modifying nmi_active, invisible, or mf_enable.
+  // Only RETN (cpu_retn_seen) and button_pulse affect nmi_active.
+  // Port writes are therefore no-ops for MF state.
 
   /**
    * Handles a write to the enable port.
-   * Clears nmiActive. For MF+3 mode also sets invisible.
+   * No-op: matches MAME behavior where port_io_dly prevents state changes.
    */
   writeEnablePort(_value: number): void {
-    console.log(`[NMI] writeEnablePort: clearing nmiActive modeP3=${this.modeP3} pc=0x${this.machine.pc.toString(16)}`);
-    this.nmiActive = false;
-    if (this.modeP3) {
-      this.invisible = true;
-    }
+    // No state changes — see MAME port_io_dly analysis
   }
 
   /**
    * Handles a write to the disable port.
-   * Clears nmiActive. For non-MF+3 modes sets invisible.
+   * No-op: matches MAME behavior where port_io_dly prevents state changes.
    */
   writeDisablePort(_value: number): void {
-    console.log(`[NMI] writeDisablePort: clearing nmiActive modeP3=${this.modeP3} pc=0x${this.machine.pc.toString(16)}`);
-    this.nmiActive = false;
-    if (!this.modeP3) {
-      this.invisible = true;
-    }
+    // No state changes — see MAME port_io_dly analysis
   }
 
   /**
@@ -176,9 +161,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * Clears nmiActive and mfEnabled (pages out MF memory).
    */
   handleRetn(): void {
-    console.log(`[NMI] handleRetn: clearing nmiActive+nmiHold pc=0x${this.machine.pc.toString(16)}`);
     this.nmiActive = false;
-    this.nmiHold = false;
     this.mfEnabled = false;
     this.machine.memoryDevice.updateFastPathFlags();
   }
@@ -186,9 +169,28 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * Resets the multiface device to its initial state.
    */
+  /**
+   * Handles a port read, routing to enable/disable based on current mode.
+   * Mirrors VHDL dynamic port decoding via port_mf_enable_io_a / port_mf_disable_io_a.
+   */
+  handlePortRead(portAddress: number): number {
+    const lowByte = portAddress & 0xff;
+    if (lowByte === this.enablePortAddress) return this.readEnablePort();
+    if (lowByte === this.disablePortAddress) return this.readDisablePort();
+    return 0xff; // Not a multiface port for the current mode
+  }
+
+  /**
+   * Handles a port write, routing to enable/disable based on current mode.
+   */
+  handlePortWrite(portAddress: number, value: number): void {
+    const lowByte = portAddress & 0xff;
+    if (lowByte === this.enablePortAddress) this.writeEnablePort(value);
+    else if (lowByte === this.disablePortAddress) this.writeDisablePort(value);
+  }
+
   reset(): void {
     this.nmiActive = false;
-    this.nmiHold = false;
     this.mfEnabled = false;
     this.invisible = true; // starts invisible to prevent accidental paging
   }
