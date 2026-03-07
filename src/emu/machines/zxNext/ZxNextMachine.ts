@@ -24,6 +24,7 @@ import { CopperDevice } from "./CopperDevice";
 import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
+import { MultifaceDevice } from "./MultifaceDevice";
 import { MouseDevice } from "./MouseDevice";
 import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
@@ -68,6 +69,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   nextRegDevice: NextRegDevice;
 
   divMmcDevice: DivMmcDevice;
+
+  multifaceDevice: MultifaceDevice;
 
   sdCardDevice: SdCardDevice;
 
@@ -145,6 +148,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Create and initialize devices
     this.divMmcDevice = new DivMmcDevice(this);
+    this.multifaceDevice = new MultifaceDevice(this);
     this.sdCardDevice = new SdCardDevice(this);
     this.paletteDevice = new PaletteDevice(this);
     this.tilemapDevice = new TilemapDevice(this);
@@ -235,6 +239,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }
 
     this.expansionBusDevice.reset();
+    this.multifaceDevice.reset();
 
     // --- This device is the last to reset, as it may override the reset of other devices
     this.nextRegDevice.reset();
