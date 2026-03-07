@@ -33,12 +33,13 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0x02, 0xff);
 
       // --- Assert
+      // Bits 7, 3, 2 are all set: busReset=true, mfNmiByNextReg=true, divMccNmiBtNextReg=true
       const value = readNextReg(m, 0x02);
-      expect(value).toBe(0x80);
+      expect(value).toBe(0x8c);
       expect(intDevice.busResetRequested).toBe(true);
       expect(intDevice.mfNmiByIoTrap).toBe(false);
-      expect(intDevice.mfNmiByNextReg).toBe(false);
-      expect(intDevice.divMccNmiBtNextReg).toBe(false);
+      expect(intDevice.mfNmiByNextReg).toBe(true);
+      expect(intDevice.divMccNmiBtNextReg).toBe(true);
       expect(intDevice.lastWasHardReset).toBe(false);
       expect(intDevice.lastWasSoftReset).toBe(false);
     });

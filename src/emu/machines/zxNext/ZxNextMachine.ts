@@ -121,6 +121,17 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   expansionBusDevice: ExpansionBusDevice;
 
+  // ─── NMI state machine ───────────────────────────────────────────────────
+
+  private _nmiState: 'IDLE' | 'FETCH' | 'HOLD' | 'END' = 'IDLE';
+  private _nmiSourceMf: boolean = false;
+  private _nmiSourceDivMmc: boolean = false;
+  private _nmiSourceExpBus: boolean = false;
+  private _pendingMfNmi: boolean = false;
+  private _pendingDivMmcNmi: boolean = false;
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
    * Initialize the machine
    */
@@ -285,7 +296,132 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.reset();
     this.nextRegDevice.hardReset();
     this.memoryDevice.hardReset();
+    // --- Clear NMI state machine on hard reset
+    this._nmiState = 'IDLE';
+    this._nmiSourceMf = false;
+    this._nmiSourceDivMmc = false;
+    this._nmiSourceExpBus = false;
+    this._pendingMfNmi = false;
+    this._pendingDivMmcNmi = false;
+    this.sigNMI = false;
   }
+
+  // ─── NMI state machine helpers ───────────────────────────────────────────
+
+  /** Mirrors VHDL nmi_activated — true when any NMI source is latched */
+  get nmiActivated(): boolean {
+    return this._nmiSourceMf || this._nmiSourceDivMmc || this._nmiSourceExpBus;
+  }
+
+  /**
+   * Mirrors VHDL nmi_hold — true while the active device is still handling its NMI.
+   * The state machine stays in HOLD until this drops false.
+   */
+  get nmiHold(): boolean {
+    if (this._nmiSourceMf) return this.multifaceDevice.nmiActive;
+    if (this._nmiSourceDivMmc) return this.divMmcDevice.divMmcNmiHold;
+    return false; // expansion bus: modelled as always released (no hold)
+  }
+
+  /**
+   * Mirrors VHDL nmi_accept_cause.
+   * New NMI causes are accepted only in IDLE or FETCH states.
+   */
+  get nmiAcceptCause(): boolean {
+    return this._nmiState === 'IDLE' || this._nmiState === 'FETCH';
+  }
+
+  /**
+   * Accepts pending NMI sources using first-come-first-served arbitration.
+   * Called from beforeOpcodeFetch() when nmiAcceptCause is true.
+   */
+  private updateNmiSources(): void {
+    if (this.nmiActivated) return; // one already active
+
+    const mfEnabled  = this.divMmcDevice.enableMultifaceNmiByM1Button;
+    const divEnabled = this.divMmcDevice.enableDivMmcNmiByDriveButton;
+
+    const assertMf     = this._pendingMfNmi && mfEnabled;
+    const assertDivMmc = this._pendingDivMmcNmi && divEnabled;
+
+    const conmemActive = (this.divMmcDevice.port0xe3Value & 0x80) !== 0; // port_e3_reg(7)
+    const mfIsActive   = this.multifaceDevice.isActive;
+    const divNmiHold   = this.divMmcDevice.divMmcNmiHold;
+
+    if (assertMf && !conmemActive && !divNmiHold) {
+      this._nmiSourceMf = true;
+      this._pendingMfNmi = false;
+    } else if (assertDivMmc && !mfIsActive) {
+      this._nmiSourceDivMmc = true;
+      this._pendingDivMmcNmi = false;
+    }
+    // expansion bus NMI not yet modelled
+  }
+
+  /**
+   * Advances the NMI state machine by one opcode-fetch boundary.
+   * Mirrors the VHDL sequential NMI state machine.
+   */
+  private stepNmiStateMachine(): void {
+    const pc = this.pc;
+    switch (this._nmiState) {
+      case 'IDLE':
+        if (this.nmiActivated) {
+          this._nmiState = 'FETCH';
+          this.sigNMI = true;
+          if (this._nmiSourceMf) {
+            this.multifaceDevice.pressNmiButton();
+          }
+          if (this._nmiSourceDivMmc) {
+            this.divMmcDevice.armNmiButton();
+          }
+        }
+        break;
+
+      case 'FETCH':
+        if (pc === 0x0066) {
+          if (this._nmiSourceMf) {
+            this.multifaceDevice.onFetch0066();
+          }
+          this._nmiState = 'HOLD';
+          this.sigNMI = false;
+        }
+        break;
+
+      case 'HOLD':
+        if (!this.nmiHold) {
+          this._nmiState = 'END';
+        }
+        break;
+
+      case 'END':
+        this._nmiSourceMf     = false;
+        this._nmiSourceDivMmc = false;
+        this._nmiSourceExpBus = false;
+        this._nmiState = 'IDLE';
+        break;
+    }
+  }
+
+  /**
+   * Called from nextreg 0x02 write when bit 3 is set and nmiAcceptCause is true.
+   */
+  requestMfNmiFromSoftware(): void {
+    if (this.nmiAcceptCause) {
+      this._pendingMfNmi = true;
+    }
+  }
+
+  /**
+   * Called from nextreg 0x02 write when bit 2 is set and nmiAcceptCause is true.
+   */
+  requestDivMmcNmiFromSoftware(): void {
+    if (this.nmiAcceptCause) {
+      this._pendingDivMmcNmi = true;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   /**
    * Executes the specified custom command
@@ -325,13 +461,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
-        // TODO: Implement multiface NMI
-        console.log("Multiface NMI - not yet implemented");
+        this._pendingMfNmi = true;
         break;
 
       case "divmmcNmi":
-        // TODO: Implement divmmc NMI
-        console.log("DivMMC NMI - not yet implemented");
+        this._pendingDivMmcNmi = true;
         break;
     }
   }
@@ -779,6 +913,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
+
+    // 1. Accept new NMI causes (only in IDLE or FETCH)
+    if (this.nmiAcceptCause) {
+      this.updateNmiSources();
+    }
+
+    // 2. Advance the NMI state machine
+    this.stepNmiStateMachine();
   }
 
   /**

@@ -82,4 +82,16 @@ export interface IZxNextMachine extends IZ80Machine {
    * @returns The byte at the specified screen memory location
    */
   readScreenMemory(offset: number): number;
+
+  /**
+   * Requests a Multiface NMI from the software path (nextreg 0x02 bit 3).
+   * Accepted only when nmiAcceptCause is true.
+   */
+  requestMfNmiFromSoftware(): void;
+
+  /**
+   * Requests a DivMMC NMI from the software path (nextreg 0x02 bit 2).
+   * Accepted only when nmiAcceptCause is true.
+   */
+  requestDivMmcNmiFromSoftware(): void;
 }
