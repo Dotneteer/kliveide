@@ -1,5 +1,6 @@
 import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
 import { DivMmcDevice } from "@emu/machines/zxNext/DivMmcDevice";
+import { MultifaceDevice } from "@emu/machines/zxNext/MultifaceDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
 import { InterruptDevice } from "@emu/machines/zxNext/InterruptDevice";
 import { NextIoPortManager } from "@emu/machines/zxNext/io-ports/NextIoPortManager";
@@ -43,6 +44,8 @@ export interface IZxNextMachine extends IZ80Machine {
 
   divMmcDevice: DivMmcDevice;
 
+  multifaceDevice: MultifaceDevice;
+
   sdCardDevice: SdCardDevice;
 
   paletteDevice: PaletteDevice;
@@ -79,4 +82,22 @@ export interface IZxNextMachine extends IZ80Machine {
    * @returns The byte at the specified screen memory location
    */
   readScreenMemory(offset: number): number;
+
+  /**
+   * Requests a Multiface NMI from the software path (nextreg 0x02 bit 3).
+   * Accepted only when nmiAcceptCause is true.
+   */
+  requestMfNmiFromSoftware(): void;
+
+  /**
+   * Requests a DivMMC NMI from the software path (nextreg 0x02 bit 2).
+   * Accepted only when nmiAcceptCause is true.
+   */
+  requestDivMmcNmiFromSoftware(): void;
+
+  /**
+   * Called when config mode is entered (nextreg 0x03 = 0x07). Clears all
+   * pending NMI state to prevent stale NMIs from firing during config mode.
+   */
+  onConfigModeEntered(): void;
 }

@@ -150,6 +150,23 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       : 0xff;
   }
 
+  /**
+   * Arms the DivMMC NMI button latch.
+   * Called by the NMI state machine when a DivMMC NMI source is accepted.
+   * Mirrors VHDL: button_nmi latched HIGH when i_divmmc_button asserted.
+   */
+  armNmiButton(): void {
+    this._nmiButtonPressed = true;
+  }
+
+  /**
+   * Mirrors VHDL o_disable_nmi = automap OR button_nmi.
+   * TRUE while DivMMC holds the NMI line (automap active or button latch set).
+   */
+  get divMmcNmiHold(): boolean {
+    return this._autoMapActive || this._nmiButtonPressed;
+  }
+
   set port0xe3Value(value: number) {
     if (!this._enabled) return;
 
@@ -422,6 +439,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    * This is called from the test machine when RETN is detected
    */
   handleRetnExecution(): void {
+    this._nmiButtonPressed = false; // VHDL: button_nmi cleared by retn_seen
     this._autoMapActive = false;
     this._conmemActivated = false;
     this._conmem = false;

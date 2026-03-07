@@ -2950,4 +2950,41 @@ describe("Next - DivMmcDevice", async function () {
     expect(addr1After).toBe(nextRom0Signature0[1]);
     expect(addr5After).toBe(nextRom0Signature0[5]);
   });
+
+  // ─────────────────────────────
+  //  Task 5: armNmiButton() and divMmcNmiHold
+  // ─────────────────────────────
+
+  it("divMmcNmiHold: false initially", async () => {
+    const m = await createTestNextMachine();
+    expect(m.divMmcDevice.divMmcNmiHold).toBe(false);
+  });
+
+  it("armNmiButton(): sets _nmiButtonPressed, divMmcNmiHold becomes true", async () => {
+    const m = await createTestNextMachine();
+    m.divMmcDevice.armNmiButton();
+    expect(m.divMmcDevice.divMmcNmiHold).toBe(true);
+  });
+
+  it("divMmcNmiHold: true when automap is active (even without button)", async () => {
+    const m = await createTestNextMachine();
+    const d = m.divMmcDevice;
+    // Enable automap and trigger a RST at $00 to activate it
+    d.enableAutomap = true;
+    d.rstTraps[0].enabled = true;
+    d.rstTraps[0].instantMapping = true;
+    d.rstTraps[0].onlyWithRom3 = false;
+    m.pc = 0x0000;
+    d.beforeOpcodeFetch();
+    expect(d.autoMapActive).toBe(true);
+    expect(d.divMmcNmiHold).toBe(true);
+  });
+
+  it("divMmcNmiHold: false after reset", async () => {
+    const m = await createTestNextMachine();
+    m.divMmcDevice.armNmiButton();
+    expect(m.divMmcDevice.divMmcNmiHold).toBe(true);
+    m.divMmcDevice.reset();
+    expect(m.divMmcDevice.divMmcNmiHold).toBe(false);
+  });
 });

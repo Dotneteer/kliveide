@@ -1,6 +1,15 @@
 import type { MainApi } from "@common/messaging/MainApi";
-import type { RecordingFps, RecordingQuality, RecordingFormat, ScreenRecordingState } from "@common/state/AppState";
-import { setScreenRecordingQualityAction, setScreenRecordingFormatAction, setScreenRecordingStateAction } from "@common/state/actions";
+import type {
+  RecordingFps,
+  RecordingQuality,
+  RecordingFormat,
+  ScreenRecordingState
+} from "@common/state/AppState";
+import {
+  setScreenRecordingQualityAction,
+  setScreenRecordingFormatAction,
+  setScreenRecordingStateAction
+} from "@common/state/actions";
 
 type Dispatch = (action: any) => void;
 
@@ -76,11 +85,9 @@ export class RecordingManager {
    */
   arm(fps?: RecordingFps, startNow = false): void {
     if (fps !== undefined) this._fps = fps;
-    console.log(`[RecordingManager] arm(${this._fps}, startNow=${startNow}) called — current state: ${this._state}`);
     if (this._state !== "idle") return;
     this._state = "armed";
     this.dispatch(setScreenRecordingStateAction("armed", undefined, this._fps));
-    console.log(`[RecordingManager] state → armed`);
     // If the machine is already running and we have valid dimensions, start immediately.
     if (startNow && this._width > 0 && this._height > 0) {
       void this._startRecording();
@@ -92,7 +99,6 @@ export class RecordingManager {
    * is in progress. No-op if already idle.
    */
   async disarm(): Promise<void> {
-    console.log(`[RecordingManager] disarm() called — current state: ${this._state}`);
     if (this._state === "idle") return;
     if (this._state === "recording" || this._state === "paused") {
       await this._stopRecording();
@@ -100,7 +106,6 @@ export class RecordingManager {
       // armed but machine never ran
       this._state = "idle";
       this.dispatch(setScreenRecordingStateAction("idle"));
-      console.log(`[RecordingManager] state → idle (disarmed without recording)`);
     }
   }
 
@@ -112,8 +117,14 @@ export class RecordingManager {
    * Called whenever the machine transitions to the Running state (first start
    * or resume after pause).
    */
-  async onMachineRunning(width: number, height: number, nativeFps: number, xRatio = 1, yRatio = 1, sampleRate = 44100): Promise<void> {
-    console.log(`[RecordingManager] onMachineRunning(${width}x${height} @${nativeFps}fps ratio=${xRatio}:${yRatio} audio=${sampleRate}Hz) — state: ${this._state}`);
+  async onMachineRunning(
+    width: number,
+    height: number,
+    nativeFps: number,
+    xRatio = 1,
+    yRatio = 1,
+    sampleRate = 44100
+  ): Promise<void> {
     this._width = width;
     this._height = height;
     this._nativeFps = nativeFps;
@@ -126,7 +137,6 @@ export class RecordingManager {
     } else if (this._state === "paused") {
       this._state = "recording";
       this.dispatch(setScreenRecordingStateAction("recording"));
-      console.log(`[RecordingManager] state → recording (resumed)`);
     }
   }
 
@@ -135,11 +145,9 @@ export class RecordingManager {
    * Frame submission stops; the file stays open.
    */
   onMachinePaused(): void {
-    console.log(`[RecordingManager] onMachinePaused() — state: ${this._state}`);
     if (this._state !== "recording") return;
     this._state = "paused";
     this.dispatch(setScreenRecordingStateAction("paused"));
-    console.log(`[RecordingManager] state → paused`);
   }
 
   /**
@@ -147,11 +155,9 @@ export class RecordingManager {
    * No-op if not currently recording.
    */
   pauseRecording(): void {
-    console.log(`[RecordingManager] pauseRecording() — state: ${this._state}`);
     if (this._state !== "recording") return;
     this._state = "paused";
     this.dispatch(setScreenRecordingStateAction("paused"));
-    console.log(`[RecordingManager] state → paused (manual)`);
   }
 
   /**
@@ -159,11 +165,9 @@ export class RecordingManager {
    * No-op if not currently paused.
    */
   resumeRecording(): void {
-    console.log(`[RecordingManager] resumeRecording() — state: ${this._state}`);
     if (this._state !== "paused") return;
     this._state = "recording";
     this.dispatch(setScreenRecordingStateAction("recording"));
-    console.log(`[RecordingManager] state → recording (manual resume)`);
   }
 
   /**
@@ -171,11 +175,9 @@ export class RecordingManager {
    * Finalises and closes the recording file if active.
    */
   async onMachineStopped(): Promise<void> {
-    console.log(`[RecordingManager] onMachineStopped() — state: ${this._state}`);
     if (this._state === "armed") {
       this._state = "idle";
       this.dispatch(setScreenRecordingStateAction("idle"));
-      console.log(`[RecordingManager] state → idle (stopped while armed)`);
       return;
     }
     if (this._state === "recording" || this._state === "paused") {
@@ -213,13 +215,12 @@ export class RecordingManager {
     // submitFrame for this logical frame. Odd counts are the skipped ones.
     if (this._fps === "half" && this._captureCount % 2 !== 0) return;
     if (!samples || samples.length === 0) {
-      console.warn(`[RecordingManager] submitAudioSamples: empty samples, skipping`);
       return;
     }
     // Convert AudioSample[] → interleaved Float32Array [L0, R0, L1, R1, …]
     const interleaved = new Float32Array(samples.length * 2);
     for (let i = 0; i < samples.length; i++) {
-      interleaved[i * 2]     = samples[i].left;
+      interleaved[i * 2] = samples[i].left;
       interleaved[i * 2 + 1] = samples[i].right;
     }
     await this.mainApi.appendRecordingAudio(interleaved);
@@ -231,11 +232,8 @@ export class RecordingManager {
 
   private async _startRecording(): Promise<void> {
     const effectiveFps =
-      this._fps === "half"
-        ? Math.max(1, Math.round(this._nativeFps / 2))
-        : this._nativeFps;
+      this._fps === "half" ? Math.max(1, Math.round(this._nativeFps / 2)) : this._nativeFps;
 
-    console.log(`[RecordingManager] _startRecording — ${this._width}x${this._height} @${effectiveFps}fps audio=${this._sampleRate}Hz (mode: ${this._fps}, quality: ${this._quality}, format: ${this._format})`);
     this._captureCount = 0;
     try {
       const filePath = await this.mainApi.startScreenRecording(
@@ -248,10 +246,8 @@ export class RecordingManager {
         this._getCrf(),
         this._format
       );
-      console.log(`[RecordingManager] IPC startScreenRecording OK → ${filePath}`);
       this._state = "recording";
       this.dispatch(setScreenRecordingStateAction("recording", filePath, this._fps));
-      console.log(`[RecordingManager] state → recording`);
     } catch (err) {
       console.error(`[RecordingManager] IPC startScreenRecording FAILED:`, err);
       // Roll back to idle so the user can try again
@@ -263,26 +259,26 @@ export class RecordingManager {
   /** Maps the quality preference to a CRF value for FFmpeg. */
   private _getCrf(): number {
     switch (this._quality) {
-      case "lossless": return 0;
-      case "high":     return 10;
+      case "lossless":
+        return 0;
+      case "high":
+        return 10;
       case "good":
-      default:         return 18;
+      default:
+        return 18;
     }
   }
 
   private async _stopRecording(): Promise<void> {
-    console.log(`[RecordingManager] _stopRecording — state: ${this._state}`);
     const prevState = this._state;
     this._state = "idle";
     this.dispatch(setScreenRecordingStateAction("idle"));
     if (prevState === "recording" || prevState === "paused") {
       try {
-        const filePath = await this.mainApi.stopScreenRecording();
-        console.log(`[RecordingManager] IPC stopScreenRecording OK → ${filePath}`);
+        await this.mainApi.stopScreenRecording();
       } catch (err) {
         console.error(`[RecordingManager] IPC stopScreenRecording FAILED:`, err);
       }
     }
-    console.log(`[RecordingManager] state → idle`);
   }
 }

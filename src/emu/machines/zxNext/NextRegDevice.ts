@@ -169,7 +169,30 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x02,
       description: "Reset",
       readFn: () => machine.interruptDevice.nextReg02Value,
-      writeFn: (v) => (machine.interruptDevice.busResetRequested = (v & 0x80) !== 0),
+      writeFn: (v) => {
+        machine.interruptDevice.busResetRequested = (v & 0x80) !== 0;
+
+        // Bit 3: generate multiface NMI
+        if (v & 0x08) {
+          machine.interruptDevice.mfNmiByNextReg = true;
+          machine.requestMfNmiFromSoftware();
+        } else {
+          machine.interruptDevice.mfNmiByNextReg = false;
+        }
+
+        // Bit 2: generate DivMMC NMI
+        if (v & 0x04) {
+          machine.interruptDevice.divMccNmiBtNextReg = true;
+          machine.requestDivMmcNmiFromSoftware();
+        } else {
+          machine.interruptDevice.divMccNmiBtNextReg = false;
+        }
+
+        // Bit 4 clear: clear I/O trap flag
+        if (!(v & 0x10)) {
+          machine.interruptDevice.mfNmiByIoTrap = false;
+        }
+      },
       slices: [
         {
           mask: 0x80,
@@ -247,6 +270,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
         if (machineType === 0b111) {
           this.configMode = true;
+          machine.onConfigModeEntered();
         } else if (machineType !== 0b000) {
           this.configMode = false;
         }
@@ -578,7 +602,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x0a,
       description: "Peripheral 5 Setting",
       writeFn: (v) => {
-        machine.divMmcDevice.multifaceType = (v & 0xc0) >> 6;
+        // VHDL: nr_0a_mf_type can only be changed in config mode
+        if (this.configMode) {
+          machine.divMmcDevice.multifaceType = (v & 0xc0) >> 6;
+        }
         machine.divMmcDevice.enableAutomap = (v & 0x10) !== 0;
         machine.mouseDevice.swapButtons = (v & 0x08) !== 0;
         machine.mouseDevice.dpi = v & 0x03;

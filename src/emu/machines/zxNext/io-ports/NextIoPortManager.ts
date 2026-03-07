@@ -32,20 +32,9 @@ import {
   readKempstonMouseYPort
 } from "./KempstonHandler";
 import {
-  readMultiface128DisablePort,
-  readMultiface128EnablePort,
-  readMultifaceDisablePort,
-  readMultifaceEnablePort,
-  readMultifaceP3DisablePort,
-  readMultifaceP3EnablePort,
-  writeMultiface128DisablePort,
-  writeMultiface128EnablePort,
-  writeMultifaceDisablePort,
-  writeMultifaceEnablePort,
-  writeMultifaceP3DisablePort,
-  writeMultifaceP3EnablePort
+  readMultifacePort,
+  writeMultifacePort
 } from "./MultifacePortHandler";
-import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 
 type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
 type IoPortWriterFn = (port: number, value: number) => void | boolean;
@@ -435,52 +424,36 @@ export class NextIoPortManager {
       readerFns: readKempstonJoy2Port
     });
     r({
-      description: "Multiface 1, 128 v87.12 disable",
+      description: "Multiface port 0x1F",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0001_1111,
-      readerFns: readMultifaceDisablePort,
-      writerFns: writeMultifaceDisablePort
+      readerFns: (p) => readMultifacePort(p, machine),
+      writerFns: (p, v) => writeMultifacePort(p, v, machine)
     });
     r({
-      description: "Multiface 1, 128 v87.12 enable",
+      description: "Multiface port 0x9F",
       port: 0x9f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1001_1111,
-      readerFns: readMultifaceEnablePort,
-      writerFns: writeMultifaceEnablePort
+      readerFns: (p) => readMultifacePort(p, machine),
+      writerFns: (p, v) => writeMultifacePort(p, v, machine)
     });
     r({
-      description: "Multiface 128 v87.2 disable",
+      description: "Multiface port 0x3F",
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      readerFns: readMultiface128DisablePort,
-      writerFns: writeMultiface128DisablePort
+      readerFns: (p) => readMultifacePort(p, machine),
+      writerFns: (p, v) => writeMultifacePort(p, v, machine)
     });
     r({
-      description: "Multiface 128 v87.2 disable",
-      port: 0xbf,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_0011_1111,
-      readerFns: readMultiface128EnablePort,
-      writerFns: writeMultiface128EnablePort
-    });
-    r({
-      description: "Multiface +3 disable",
+      description: "Multiface port 0xBF",
       port: 0xbf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1011_1111,
-      readerFns: readMultifaceP3DisablePort,
-      writerFns: writeMultifaceP3DisablePort
-    });
-    r({
-      description: "Multiface +3 enable",
-      port: 0x3f,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_0011_1111,
-      readerFns: readMultifaceP3EnablePort,
-      writerFns: writeMultifaceP3EnablePort
+      readerFns: (p) => readMultifacePort(p, machine),
+      writerFns: (p, v) => writeMultifacePort(p, v, machine)
     });
     r({
       description: "Sprite slot, flags",
