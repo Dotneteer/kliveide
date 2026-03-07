@@ -994,6 +994,12 @@ export class Z80Cpu implements IZ80Cpu {
   /**
    * This method processes the active non-maskable interrupt.
    */
+  /**
+   * Called after a RETN instruction finishes (after the stack pop has already set PC).
+   * Override in subclasses to fix PC for stackless NMI or perform device cleanup.
+   */
+  protected onRetnExecuted(): void {}
+
   protected processNmi(): void {
     // --- Acknowledge the NMI
     this.tactPlusN(4);
@@ -8019,6 +8025,7 @@ function retn(cpu: Z80Cpu) {
   cpu.iff1 = cpu.iff2;
   cpu.retnExecuted = true;
   ret(cpu);
+  cpu.onRetnExecuted();
 }
 
 // 0x46: IM 0

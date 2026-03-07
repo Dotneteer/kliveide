@@ -1,13 +1,20 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 
 /**
  * Implements the Multiface NMI device for ZX Spectrum Next.
  * Models the multiface.vhd logic: NMI activation, memory paging, and port handling.
  */
 export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
-  /** nmi_active in VHDL — also exposed as mfNmiHold */
+  /** nmi_active in VHDL — MF ROM is running and memory is paged in */
   nmiActive: boolean;
+
+  /**
+   * True from pressNmiButton() until handleRetn() — the state machine stays in
+   * HOLD as long as this is true, regardless of port reads that may clear nmiActive.
+   */
+  nmiHold: boolean;
 
   /** mf_enable in VHDL — multiface memory paged in */
   mfEnabled: boolean;
@@ -17,6 +24,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
 
   constructor(public readonly machine: IZxNextMachine) {
     this.nmiActive = false;
+    this.nmiHold = false;
     this.mfEnabled = false;
     this.invisible = true;
   }
@@ -80,6 +88,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
   pressNmiButton(): void {
     if (!this.nmiActive) {
       this.nmiActive = true;
+      this.nmiHold = true;
       this.invisible = false; // button press clears invisible flag (MF128/+3)
     }
   }
@@ -107,14 +116,18 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Handles a read of the disable port.
-   * Pages out MF memory. For MF+3 mode also clears nmiActive.
+   * For MF+3 mode: pages out MF memory and clears nmiActive.
+   * For MF128/MF48 modes: reading the disable port does NOT page out — the MF ROM
+   * reads this port to sample joystick/hardware state during its initialization.
+   * Page-out for those modes happens only on writeDisablePort or hardware-detected RETN.
    */
   readDisablePort(): number {
-    this.mfEnabled = false;
+    console.log(`[NMI] readDisablePort: modeP3=${this.modeP3} mode128=${this.mode128} pc=0x${this.machine.pc.toString(16)} → ${this.modeP3 ? 'paging out' : 'no page-out (read-only for mode128/48)'}`);
     if (this.modeP3) {
+      this.mfEnabled = false;
       this.nmiActive = false;
+      this.machine.memoryDevice.updateFastPathFlags();
     }
-    this.machine.memoryDevice.updateFastPathFlags();
     return 0xff;
   }
 
@@ -125,6 +138,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * Clears nmiActive. For MF+3 mode also sets invisible.
    */
   writeEnablePort(_value: number): void {
+    console.log(`[NMI] writeEnablePort: clearing nmiActive modeP3=${this.modeP3} pc=0x${this.machine.pc.toString(16)}`);
     this.nmiActive = false;
     if (this.modeP3) {
       this.invisible = true;
@@ -136,6 +150,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * Clears nmiActive. For non-MF+3 modes sets invisible.
    */
   writeDisablePort(_value: number): void {
+    console.log(`[NMI] writeDisablePort: clearing nmiActive modeP3=${this.modeP3} pc=0x${this.machine.pc.toString(16)}`);
     this.nmiActive = false;
     if (!this.modeP3) {
       this.invisible = true;
@@ -150,6 +165,9 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
     if (this.nmiActive) {
       this.mfEnabled = true;
       this.machine.memoryDevice.updateFastPathFlags();
+      const mem = (this.machine.memoryDevice as any).memory as Uint8Array;
+      const b0066 = mem[OFFS_MULTIFACE_MEM + 0x0066];
+      console.log(`[NMI] onFetch0066: mfEnabled=true MF_ROM[0x0066]=0x${b0066.toString(16)} (ROM ${b0066 !== 0 ? 'loaded ✓' : 'EMPTY – no ROM loaded!'})`)
     }
   }
 
@@ -158,7 +176,9 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * Clears nmiActive and mfEnabled (pages out MF memory).
    */
   handleRetn(): void {
+    console.log(`[NMI] handleRetn: clearing nmiActive+nmiHold pc=0x${this.machine.pc.toString(16)}`);
     this.nmiActive = false;
+    this.nmiHold = false;
     this.mfEnabled = false;
     this.machine.memoryDevice.updateFastPathFlags();
   }
@@ -168,6 +188,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    */
   reset(): void {
     this.nmiActive = false;
+    this.nmiHold = false;
     this.mfEnabled = false;
     this.invisible = true; // starts invisible to prevent accidental paging
   }

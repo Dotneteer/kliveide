@@ -21,7 +21,7 @@ import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
-import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM } from "./MemoryDevice";
+import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { MultifaceDevice } from "./MultifaceDevice";
@@ -124,6 +124,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   // ─── NMI state machine ───────────────────────────────────────────────────
 
   private _nmiState: 'IDLE' | 'FETCH' | 'HOLD' | 'END' = 'IDLE';
+  private _nmiHoldTicks = 0;
   private _nmiSourceMf: boolean = false;
   private _nmiSourceDivMmc: boolean = false;
   private _nmiSourceExpBus: boolean = false;
@@ -282,9 +283,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     let romContents = await this.loadRomFromFile("roms/enNextZX.rom");
     this.memoryDevice.upload(romContents, OFFS_NEXT_ROM);
 
-    // --- Get the ZX Spectrum Next ROM file
+    // --- Get the ZX Spectrum Next DivMMC ROM file
     romContents = await this.loadRomFromFile("roms/enNxtmmc.rom");
     this.memoryDevice.upload(romContents, OFFS_DIVMMC_ROM);
+
+    // --- Get the Multiface ROM file
+    romContents = await this.loadRomFromFile("roms/enNextMf.rom");
+    this.memoryDevice.upload(romContents, OFFS_MULTIFACE_MEM);
 
     // --- Get the alternate ROM file
     romContents = await this.loadRomFromFile("roms/enAltZX.rom");
@@ -308,6 +313,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._pendingDivMmcNmi = false;
     this._stacklessNmiProcessed = false;
     this.sigNMI = false;
+    // --- Enable NMI buttons by default (emulator convenience; hardware default is 0,
+    //     but the emulator wants F9/F10 to work without explicit NR06 configuration)
+    this.divMmcDevice.enableMultifaceNmiByM1Button = true;
+    this.divMmcDevice.enableDivMmcNmiByDriveButton = true;
+    // --- Default multiface type to MF128 v87.2 (type 1); the Next ROM bootloader
+    //     will set this via NR 0x0A, but without it the enNextMf.rom expects type 1.
+    this.divMmcDevice.multifaceType = 1;
   }
 
   // ─── NMI state machine helpers ───────────────────────────────────────────
@@ -322,7 +334,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * The state machine stays in HOLD until this drops false.
    */
   get nmiHold(): boolean {
-    if (this._nmiSourceMf) return this.multifaceDevice.nmiActive;
+    if (this._nmiSourceMf) return this.multifaceDevice.nmiHold;
     if (this._nmiSourceDivMmc) return this.divMmcDevice.divMmcNmiHold;
     return false; // expansion bus: modelled as always released (no hold)
   }
@@ -353,17 +365,21 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const divNmiHold   = this.divMmcDevice.divMmcNmiHold;
 
     if (assertMf && !conmemActive && !divNmiHold) {
+      console.log(`[NMI] MF NMI accepted → _nmiSourceMf=true (pc=0x${this.pc.toString(16)})`);
       this._nmiSourceMf = true;
       this._pendingMfNmi = false;
+    } else if (this._pendingMfNmi) {
+      console.log(`[NMI] MF NMI pending but blocked: mfEnabled=${mfEnabled} conmemActive=${conmemActive} divNmiHold=${divNmiHold}`);
     } else if (assertDivMmc && !mfIsActive) {
+      console.log(`[NMI] DivMMC NMI accepted → _nmiSourceDivMmc=true (pc=0x${this.pc.toString(16)})`);
       this._nmiSourceDivMmc = true;
       this._pendingDivMmcNmi = false;
+    } else if (this._pendingDivMmcNmi) {
+      console.log(`[NMI] DivMMC NMI pending but blocked: divEnabled=${divEnabled} mfIsActive=${mfIsActive}`);
     } else {
-      // Expansion bus NMI: active when expansion bus is enabled and nmiPending is set.
-      // When nmiDebounceDisabled is true the state machine is bypassed and /NMI is driven
-      // directly; for now we model it as a pending source that enters the normal path.
       const expBus = this.expansionBusDevice;
       if (expBus.expansionBusNmiPending && expBus.enabled) {
+        console.log(`[NMI] ExpBus NMI accepted → _nmiSourceExpBus=true (pc=0x${this.pc.toString(16)})`);
         this._nmiSourceExpBus = true;
         expBus.expansionBusNmiPending = false;
       }
@@ -379,6 +395,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     switch (this._nmiState) {
       case 'IDLE':
         if (this.nmiActivated) {
+          console.log(`[NMI] IDLE→FETCH: sigNMI=true sourceMf=${this._nmiSourceMf} sourceDivMmc=${this._nmiSourceDivMmc} sourceExpBus=${this._nmiSourceExpBus} pc=0x${pc.toString(16)}`);
           this._nmiState = 'FETCH';
           this.sigNMI = true;
           if (this._nmiSourceMf) {
@@ -392,6 +409,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case 'FETCH':
         if (pc === 0x0066) {
+          console.log(`[NMI] FETCH→HOLD: fetched 0x0066 sourceMf=${this._nmiSourceMf}`);
           if (this._nmiSourceMf) {
             this.multifaceDevice.onFetch0066();
           }
@@ -400,13 +418,21 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         }
         break;
 
-      case 'HOLD':
+      case 'HOLD': {
+        this._nmiHoldTicks++;
+        if (this._nmiHoldTicks % 50_000 === 1) {
+          console.log(`[NMI] HOLD tick=${this._nmiHoldTicks} pc=0x${pc.toString(16)} sp=0x${this.sp.toString(16)} mfEnabled=${this.multifaceDevice.mfEnabled} nmiHold=${this.multifaceDevice.nmiHold}`);
+        }
         if (!this.nmiHold) {
+          console.log(`[NMI] HOLD→END (after ${this._nmiHoldTicks} ticks)`);
+          this._nmiHoldTicks = 0;
           this._nmiState = 'END';
         }
         break;
+      }
 
       case 'END':
+        console.log(`[NMI] END→IDLE: clearing sources`);
         this._nmiSourceMf     = false;
         this._nmiSourceDivMmc = false;
         this._nmiSourceExpBus = false;
@@ -454,6 +480,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * the return address is saved to `interruptDevice.nmiReturnAddress` instead.
    */
   protected override processNmi(): void {
+    // De-assert sigNMI immediately: the CPU has acknowledged the interrupt.
+    // Without this, sigNMI stays true across the return and processNmi() would
+    // be called again on every subsequent cycle before beforeOpcodeFetch() gets
+    // a chance to run the state machine (which is the only other place that clears it).
+    this.sigNMI = false;
+    console.log(`[NMI] processNmi() acknowledged: stacklessNmi=${this.interruptDevice.enableStacklessNmi} pc=0x${this.pc.toString(16)}`);
+
     if (this.interruptDevice.enableStacklessNmi) {
       // Acknowledge NMI timing
       this.tactPlusN(4);
@@ -488,7 +521,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           !this.composedScreenDevice.scandoublerEnabled);
 
       case "toggle5060Hz":
-        return (this.composedScreenDevice.is60HzMode = !this.composedScreenDevice.is60HzMode);
+        if (this.nextRegDevice.hotkey50_60HzEnabled) {
+          return (this.composedScreenDevice.is60HzMode = !this.composedScreenDevice.is60HzMode);
+        }
+        break;
 
       case "cycleCpuSpeed":
         if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
@@ -498,7 +534,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case "enableExpansionBus":
         if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
-          this.expansionBusDevice.nextReg80Value ^= 0x80;
+          this.expansionBusDevice.nextReg80Value |= 0x80;
           return this.expansionBusDevice.enabled;
         }
         break;
@@ -515,10 +551,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
+        console.log(`[NMI] multifaceNmi hotkey: enableMultifaceNmiByM1Button=${this.divMmcDevice.enableMultifaceNmiByM1Button} nmiState=${this._nmiState} nmiAcceptCause=${this.nmiAcceptCause}`);
         this._pendingMfNmi = true;
         break;
 
       case "divmmcNmi":
+        console.log(`[NMI] divmmcNmi hotkey: enableDivMmcNmiByDriveButton=${this.divMmcDevice.enableDivMmcNmiByDriveButton} nmiState=${this._nmiState} nmiAcceptCause=${this.nmiAcceptCause}`);
         this._pendingDivMmcNmi = true;
         break;
     }
@@ -963,17 +1001,27 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
+   * Called by Z80Cpu after RETN has executed (stack pop already set PC to garbage for stackless NMI).
+   * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
+   */
+  protected override onRetnExecuted(): void {
+    if (this.multifaceDevice.nmiHold) {
+      // MF NMI is still in progress — RETN ends it regardless of whether memory is
+      // still mapped (the ROM pages itself out via port read before executing RETN).
+      this.multifaceDevice.handleRetn();
+    }
+    if (this._stacklessNmiProcessed) {
+      this._stacklessNmiProcessed = false;
+      this.pc = this.interruptDevice.nmiReturnAddress;
+      console.log(`[NMI] onRetnExecuted: stackless NMI return → restored pc=0x${this.interruptDevice.nmiReturnAddress.toString(16)}`);
+    }
+  }
+
+  /**
    * Execute this method before fetching the opcode of the next instruction
    */
   beforeOpcodeFetch(): void {
     this.divMmcDevice.beforeOpcodeFetch();
-
-    // --- Fix PC after stackless RETN: RETN read garbage from the stack (nothing was
-    //     written there), so we restore the correct return address from the nextreg.
-    if (this.retnExecuted && this._stacklessNmiProcessed) {
-      this.pc = this.interruptDevice.nmiReturnAddress;
-      this._stacklessNmiProcessed = false;
-    }
 
     // 1. Accept new NMI causes (only in IDLE or FETCH)
     if (this.nmiAcceptCause) {

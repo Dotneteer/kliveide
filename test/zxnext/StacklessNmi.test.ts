@@ -138,13 +138,11 @@ describe("StacklessNmi", async () => {
     m.executeCpuCycle();
     expect(m.interruptDevice.nmiReturnAddress).toBe(0x1234);
 
-    // Simulate RETN having executed: set retnExecuted = true
-    // (RETN would have read garbage from stack and set pc to garbage)
-    m.pc = 0xbeef; // simulate wrong pc after RETN read garbage
-    (m as any).retnExecuted = true;
+    // Simulate RETN having executed: ret() set pc to garbage (nothing was on stack)
+    m.pc = 0xbeef;
 
-    // beforeOpcodeFetch should fix PC
-    m.beforeOpcodeFetch();
+    // onRetnExecuted() is the hook called by retn() after ret() — test it directly
+    (m as any).onRetnExecuted();
 
     expect(m.pc).toBe(0x1234);
   });
@@ -157,8 +155,7 @@ describe("StacklessNmi", async () => {
     m.executeCpuCycle();
 
     m.pc = 0xbeef;
-    (m as any).retnExecuted = true;
-    m.beforeOpcodeFetch();
+    (m as any).onRetnExecuted();
 
     expect((m as any)._stacklessNmiProcessed).toBe(false);
   });

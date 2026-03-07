@@ -115,16 +115,16 @@ describe("NmiStateMachine", async () => {
   //  HOLD → END transition
   // ─────────────────────────────
 
-  it("HOLD→END when nmiHold drops false (MF: nmiActive cleared)", async () => {
+  it("HOLD→END when nmiHold drops false (MF: nmiHold cleared)", async () => {
     await m.executeCustomCommand("multifaceNmi");
     m.beforeOpcodeFetch();   // IDLE→FETCH
     m.pc = 0x0066;
     m.beforeOpcodeFetch();   // FETCH→HOLD
-    // At this point multifaceDevice.nmiActive=true (pressNmiButton was called)
+    // At this point multifaceDevice.nmiHold=true (pressNmiButton was called)
     expect(m.nmiHold).toBe(true);
     expect((m as any)._nmiState).toBe("HOLD");
-    // Clear nmiActive — simulates RETN completion
-    m.multifaceDevice.nmiActive = false;
+    // Clear nmiHold — simulates RETN completion
+    m.multifaceDevice.nmiHold = false;
     m.beforeOpcodeFetch();   // HOLD→END
     expect((m as any)._nmiState).toBe("END");
   });
@@ -148,7 +148,7 @@ describe("NmiStateMachine", async () => {
     m.beforeOpcodeFetch();   // IDLE→FETCH
     m.pc = 0x0066;
     m.beforeOpcodeFetch();   // FETCH→HOLD
-    m.multifaceDevice.nmiActive = false;
+    m.multifaceDevice.nmiHold = false;
     m.beforeOpcodeFetch();   // HOLD→END
     m.beforeOpcodeFetch();   // END→IDLE
     expect((m as any)._nmiState).toBe("IDLE");
