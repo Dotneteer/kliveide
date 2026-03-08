@@ -16,6 +16,7 @@
 
 ; Include the examples
 #include "01_intro/print.asm"
+#include "02_nextreg/write.asm"
 
 ; We keep 256 bytes for the stack
 STACK
@@ -26,8 +27,8 @@ STACK_TOP
 Main
     call _clearScreen
     // call PrintWelcome
-    call PrintValues
-   
+    // call PrintValues
+    call WiteNextReg1
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.

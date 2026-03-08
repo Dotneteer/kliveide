@@ -365,21 +365,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const divNmiHold   = this.divMmcDevice.divMmcNmiHold;
 
     if (assertMf && !conmemActive && !divNmiHold) {
-      console.log(`[NMI] MF NMI accepted → _nmiSourceMf=true (pc=0x${this.pc.toString(16)})`);
       this._nmiSourceMf = true;
       this._pendingMfNmi = false;
-    } else if (this._pendingMfNmi) {
-      console.log(`[NMI] MF NMI pending but blocked: mfEnabled=${mfEnabled} conmemActive=${conmemActive} divNmiHold=${divNmiHold}`);
     } else if (assertDivMmc && !mfIsActive) {
-      console.log(`[NMI] DivMMC NMI accepted → _nmiSourceDivMmc=true (pc=0x${this.pc.toString(16)})`);
       this._nmiSourceDivMmc = true;
       this._pendingDivMmcNmi = false;
-    } else if (this._pendingDivMmcNmi) {
-      console.log(`[NMI] DivMMC NMI pending but blocked: divEnabled=${divEnabled} mfIsActive=${mfIsActive}`);
     } else {
       const expBus = this.expansionBusDevice;
       if (expBus.expansionBusNmiPending && expBus.enabled) {
-        console.log(`[NMI] ExpBus NMI accepted → _nmiSourceExpBus=true (pc=0x${this.pc.toString(16)})`);
         this._nmiSourceExpBus = true;
         expBus.expansionBusNmiPending = false;
       }
@@ -395,7 +388,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     switch (this._nmiState) {
       case 'IDLE':
         if (this.nmiActivated) {
-          console.log(`[NMI] IDLE→FETCH: sigNMI=true sourceMf=${this._nmiSourceMf} sourceDivMmc=${this._nmiSourceDivMmc} sourceExpBus=${this._nmiSourceExpBus} pc=0x${pc.toString(16)}`);
           this._nmiState = 'FETCH';
           this.sigNMI = true;
           if (this._nmiSourceMf) {
@@ -409,7 +401,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case 'FETCH':
         if (pc === 0x0066) {
-          console.log(`[NMI] FETCH→HOLD: fetched 0x0066 sourceMf=${this._nmiSourceMf}`);
           if (this._nmiSourceMf) {
             this.multifaceDevice.onFetch0066();
           }
@@ -420,11 +411,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case 'HOLD': {
         this._nmiHoldTicks++;
-        if (this._nmiHoldTicks % 50_000 === 1) {
-          console.log(`[NMI] HOLD tick=${this._nmiHoldTicks} pc=0x${pc.toString(16)} sp=0x${this.sp.toString(16)} mfEnabled=${this.multifaceDevice.mfEnabled} nmiHold=${this.multifaceDevice.nmiHold}`);
-        }
         if (!this.nmiHold) {
-          console.log(`[NMI] HOLD→END (after ${this._nmiHoldTicks} ticks)`);
           this._nmiHoldTicks = 0;
           this._nmiState = 'END';
         }
@@ -432,7 +419,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       }
 
       case 'END':
-        console.log(`[NMI] END→IDLE: clearing sources`);
         this._nmiSourceMf     = false;
         this._nmiSourceDivMmc = false;
         this._nmiSourceExpBus = false;
@@ -554,12 +540,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
-        console.log(`[NMI] multifaceNmi hotkey: enableMultifaceNmiByM1Button=${this.divMmcDevice.enableMultifaceNmiByM1Button} nmiState=${this._nmiState} nmiAcceptCause=${this.nmiAcceptCause}`);
         this._pendingMfNmi = true;
         break;
 
       case "divmmcNmi":
-        console.log(`[NMI] divmmcNmi hotkey: enableDivMmcNmiByDriveButton=${this.divMmcDevice.enableDivMmcNmiByDriveButton} nmiState=${this._nmiState} nmiAcceptCause=${this.nmiAcceptCause}`);
         this._pendingDivMmcNmi = true;
         break;
     }
@@ -772,12 +756,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // Both should have the same length, but handle mismatch gracefully
     const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);
 
-    if (shouldLogDetail) {
-      console.log(
-        `[AUDIO F${frameCount}] Beeper:${beeperSamples.length}s TurboSound:${turboSoundSamples.length}s`
-      );
-    }
-
     // For each sample time, combine beeper + PSG + DAC in mixer
     const mixedSamples: AudioSample[] = [];
     const sampleDetails: Array<{
@@ -811,32 +789,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           mixR: mixed.right
         });
       }
-    }
-
-    // Log detailed sample information for diagnostic frame
-    if (shouldLogDetail) {
-      console.log(`[SAMPLES F${frameCount}] ${mixedSamples.length}s:`);
-
-      for (let i = 0; i < sampleDetails.length; i++) {
-        const s = sampleDetails[i];
-        console.log(
-          `  ${i}: ear=${s.ear.toFixed(2)} psg=(${s.psgL},${s.psgR}) → mix=(${s.mixL},${s.mixR})`
-        );
-      }
-
-      // Calculate statistics
-      const leftVals = mixedSamples.map((s) => s.left);
-      const rightVals = mixedSamples.map((s) => s.right);
-      const minL = Math.min(...leftVals);
-      const maxL = Math.max(...leftVals);
-      const avgL = leftVals.reduce((a, b) => a + b, 0) / leftVals.length;
-      const minR = Math.min(...rightVals);
-      const maxR = Math.max(...rightVals);
-      const avgR = rightVals.reduce((a, b) => a + b, 0) / rightVals.length;
-
-      console.log(
-        `  Stats: L(min=${minL} max=${maxL} avg=${avgL.toFixed(0)}) R(min=${minR} max=${maxR} avg=${avgR.toFixed(0)})`
-      );
     }
 
     return mixedSamples;
@@ -1016,7 +968,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     if (this._stacklessNmiProcessed) {
       this._stacklessNmiProcessed = false;
       this.pc = this.interruptDevice.nmiReturnAddress;
-      console.log(`[NMI] onRetnExecuted: stackless NMI return → restored pc=0x${this.interruptDevice.nmiReturnAddress.toString(16)}`);
     }
   }
 
@@ -1214,7 +1165,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Check for autoexec file
     const mainApi = createMainApi(this.messenger);
     const hasAutoExect = await mainApi.hasNextAutoExec();
-    console.log(`Autoexec file ${hasAutoExect ? "found" : "not found"}`);
 
     // --- Create QueueKey steps for the prompt
     const prompt = `.nexload ${additionalInfo}\n`;
