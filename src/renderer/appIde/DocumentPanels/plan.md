@@ -272,9 +272,9 @@ worker.on("message", (result: KliveCompilerOutput) => {
 
 ---
 
-### Phase 3: Build the renderer-side language intelligence service
+### Phase 3: Build the renderer-side language intelligence service ✅ COMPLETE
 
-#### Step 3.1 — Create `LanguageIntelService`
+#### Step 3.1 — Create `LanguageIntelService` ✅ COMPLETE
 
 **File:** New `src/renderer/appIde/services/LanguageIntelService.ts`
 
@@ -305,7 +305,7 @@ A class that:
 
 ---
 
-#### Step 3.2 — Static completion candidates (instructions, registers, pragmas)
+#### Step 3.2 — Static completion candidates (instructions, registers, pragmas) ✅ COMPLETE
 
 **File:** New `src/renderer/appIde/services/z80-completion-data.ts`
 
