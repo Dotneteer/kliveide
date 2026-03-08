@@ -16,6 +16,7 @@ import { AssemblyModule } from "../compiler-common/assembly-module";
 import {
   AssemblySymbolInfo,
   ISymbolScope,
+  SymbolDefinitionLocation,
   SymbolInfoMap,
   SymbolScope
 } from "../compiler-common/assembly-symbols";
@@ -947,6 +948,21 @@ export abstract class CommonAssembler<
   }
 
   /**
+   * Records a symbol reference at the given node position.
+   * Called from the expression evaluator when an identifier is resolved.
+   */
+  recordSymbolReference(symbolName: string, node: NodePosition): void {
+    if (!this._currentSourceLine) return;
+    this._output.symbolReferences.push({
+      symbolName: this.isCaseSensitive ? symbolName : symbolName.toLowerCase(),
+      fileIndex: this._currentSourceLine.fileIndex,
+      line: node.line,
+      startColumn: node.startColumn,
+      endColumn: node.endColumn
+    });
+  }
+
+  /**
    * Gets the current loop counter value
    */
   getLoopCounterValue(): ExpressionValue {
@@ -1133,6 +1149,7 @@ export abstract class CommonAssembler<
     } else {
       // --- This line contains elements to process
       let currentLabel: string | null;
+      let currentLabelLine: AssemblyLine<TInstruction> = asmLine;
       if (!this._overflowLabelLine) {
         // --- No hanging label, use the current line
         currentLabel = asmLine.label?.name;
@@ -1140,6 +1157,7 @@ export abstract class CommonAssembler<
         if (!asmLine.label) {
           // --- No current label, use the hanging label
           currentLabel = this._overflowLabelLine.label?.name;
+          currentLabelLine = this._overflowLabelLine as unknown as AssemblyLine<TInstruction>;
         } else {
           // --- Create a point for the hanging label and then use the current label
           if (
@@ -1175,7 +1193,7 @@ export abstract class CommonAssembler<
           if (!isFieldAssignment) {
             await this.addSymbol(
               currentLabel,
-              asmLine,
+              currentLabelLine,
               new ExpressionValue(this.getCurrentAddress())
             );
           }
@@ -1340,7 +1358,11 @@ export abstract class CommonAssembler<
 
     if (symbol.startsWith(".")) {
       symbol = symbol.substring(1);
-      this._output.symbols[symbol] = AssemblySymbolInfo.createLabel(symbol, value);
+      this._output.symbols[symbol] = AssemblySymbolInfo.createLabel(
+        symbol,
+        value,
+        locationFromLine(line)
+      );
       return;
     }
 
@@ -1394,7 +1416,7 @@ export abstract class CommonAssembler<
       return;
     }
 
-    lookup[symbol] = AssemblySymbolInfo.createLabel(symbol, value);
+    lookup[symbol] = AssemblySymbolInfo.createLabel(symbol, value, locationFromLine(line));
 
     /**
      * Gets the current symbol map that can be used for symbol resolution
@@ -1446,7 +1468,11 @@ export abstract class CommonAssembler<
    * @param name Variable name
    * @param value Variable value
    */
-  private setVariable(name: string, value: IExpressionValue): void {
+  private setVariable(
+    name: string,
+    value: IExpressionValue,
+    location?: SymbolDefinitionLocation
+  ): void {
     // --- Search for the variable from inside out
     for (const scope of this._currentModule.localScopes) {
       const symbolInfo = scope.getSymbol(name);
@@ -1466,7 +1492,7 @@ export abstract class CommonAssembler<
     // --- The variable does not exist, create it in the current scope
     const scope =
       this._currentModule.localScopes.length > 0 ? this.getTopLocalScope() : this._currentModule;
-    scope.addSymbol(name, AssemblySymbolInfo.createVar(name, value));
+    scope.addSymbol(name, AssemblySymbolInfo.createVar(name, value, location));
   }
 
   /**
@@ -1929,7 +1955,7 @@ export abstract class CommonAssembler<
       this.reportAssemblyError("Z0312", pragma);
       return;
     }
-    this.setVariable(label, value);
+    this.setVariable(label, value, locationFromLine(pragma));
   }
 
   /**
@@ -3089,7 +3115,8 @@ export abstract class CommonAssembler<
       macroDef.macroName,
       AssemblySymbolInfo.createLabel(
         macroDef.macroName,
-        new ExpressionValue(this.getCurrentAssemblyAddress())
+        new ExpressionValue(this.getCurrentAssemblyAddress()),
+        locationFromLine(macroOrStructStmt as unknown as AssemblyLine<TInstruction>)
       )
     );
 
@@ -3631,7 +3658,7 @@ export abstract class CommonAssembler<
     this._currentModule.addStruct(label, structDef);
     this._currentModule.addSymbol(
       label,
-      AssemblySymbolInfo.createLabel(label, new ExpressionValue(structOffset))
+      AssemblySymbolInfo.createLabel(label, new ExpressionValue(structOffset), locationFromLine(structStmt))
     );
   }
 
@@ -4874,7 +4901,14 @@ export abstract class CommonAssembler<
         if (symbolInfo) {
           symbolInfo.value = evalResult.value;
         } else {
-          scope.addSymbol(equ.label, AssemblySymbolInfo.createLabel(equ.label, evalResult.value));
+          scope.addSymbol(
+            equ.label,
+            AssemblySymbolInfo.createLabel(
+              equ.label,
+              evalResult.value,
+              locationFromLine(equ.sourceLine)
+            )
+          );
         }
       } else {
         success = false;
@@ -5227,6 +5261,20 @@ export abstract class CommonAssembler<
  */
 interface ProcessOps {
   ops: boolean;
+}
+
+/**
+ * Extracts a SymbolDefinitionLocation from an AssemblyLine.
+ */
+function locationFromLine<TInstruction extends TypedObject>(
+  line: AssemblyLine<TInstruction>
+): SymbolDefinitionLocation {
+  return {
+    fileIndex: line.fileIndex,
+    line: line.line,
+    startColumn: line.startColumn,
+    endColumn: line.endColumn
+  };
 }
 
 /**

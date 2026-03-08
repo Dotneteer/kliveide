@@ -278,6 +278,7 @@ export abstract class ExpressionEvaluator<
         if (valueInfo.usageInfo !== null) {
           valueInfo.usageInfo.isUsed = true;
         }
+        context.recordSymbolReference?.(expr.name, expr);
         return valueInfo.value;
       }
       context.reportEvaluationError(context, "Z0605", expr, expr.name);
@@ -298,6 +299,7 @@ export abstract class ExpressionEvaluator<
         if (valueInfo.usageInfo !== null) {
           valueInfo.usageInfo.isUsed = true;
         }
+        context.recordSymbolReference?.(expr.identifier.name, expr.identifier);
         return valueInfo.value;
       }
       context.reportEvaluationError(context, "Z0605", expr.identifier, expr.identifier.name);

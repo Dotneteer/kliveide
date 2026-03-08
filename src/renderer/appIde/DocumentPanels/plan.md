@@ -1,5 +1,22 @@
 # Plan: Z80 Assembly Language Intelligence for Monaco Editor
 
+## Implementation Workflow
+
+Each step follows this process before being marked complete:
+
+1. **Verify existing tests pass** — Run `npm run test` (unit tests only, no Playwright e2e tests) and confirm all pass before touching anything.
+2. **Implement the changes** — Modify or create source files as described in the step.
+3. **Check for lint/build issues** — Run `npm run build:check` to ensure no TypeScript or lint errors in updated files.
+4. **Create new unit tests** — Write test file(s) as specified for the step.
+5. **Ensure new tests pass** — Run the new test file(s) with `npm run test`; fix implementation or tests if needed.
+6. **Ensure all existing tests still pass** — Run `npm run test` again and confirm nothing regressed.
+7. **Mark step complete** — Update status in this plan.
+8. **Request approval** — Ask the user to approve before proceeding to the next step.
+
+> **Test command:** `npm run test` — runs all unit tests only. Do NOT run `npx vitest` or `playwright` directly.
+
+---
+
 ## Goal
 
 Add rich editor features (autocomplete, hover, go-to-definition, outlining, find references) for Z80 Assembly in the Monaco editor. Rather than running a separate LSP server process, we implement Monaco language providers directly in the renderer, powered by compilation data from the existing background compilation pipeline.
@@ -90,7 +107,7 @@ Add rich editor features (autocomplete, hover, go-to-definition, outlining, find
 
 ### Phase 1: Extend the compiler to track symbol locations
 
-#### Step 1.1 — Add location fields to `IAssemblySymbolInfo`
+#### Step 1.1 — Add location fields to `IAssemblySymbolInfo` ✅ COMPLETE
 
 **Files:** `src/main/compiler-common/abstractions.ts`, `src/main/compiler-common/assembly-symbols.ts`
 
@@ -116,7 +133,7 @@ Update `AssemblySymbolInfo.createLabel()` and `createVar()` to accept and store 
 
 ---
 
-#### Step 1.2 — Pass location data in `addSymbol()`
+#### Step 1.2 — Pass location data in `addSymbol()` ✅ COMPLETE
 
 **Files:** `src/main/compiler-common/common-assembler.ts`
 
@@ -133,7 +150,7 @@ Do the same for every other place symbols are created (`.equ`, `.var`, struct fi
 
 ---
 
-#### Step 1.3 — Track symbol references (usage locations)
+#### Step 1.3 — Track symbol references (usage locations) ✅ COMPLETE
 
 **Files:** `src/main/compiler-common/common-assembler.ts`, `src/main/compiler-common/abstractions.ts`
 
@@ -154,9 +171,9 @@ Populate it whenever a symbol is *resolved* during expression evaluation or inst
 
 ---
 
-### Phase 2: Get compilation intel data to the renderer
+### Phase 2: Get compilation intel data to the renderer ✅ COMPLETE
 
-#### Step 2.1 — Define the `LanguageIntelData` type
+#### Step 2.1 — Define the `LanguageIntelData` type ✅ COMPLETE
 
 **File:** `src/common/abstractions/CompilerInfo.ts`
 
@@ -205,7 +222,7 @@ export interface LanguageIntelData {
 
 ---
 
-#### Step 2.2 — Extract intel data from compiler output
+#### Step 2.2 — Extract intel data from compiler output ✅ COMPLETE
 
 **File:** New file `src/main/compiler-integration/extractIntelData.ts`
 
@@ -225,7 +242,7 @@ Create a function `extractLanguageIntelData(output: KliveCompilerOutput): Langua
 
 ---
 
-#### Step 2.3 — Send intel data through IPC
+#### Step 2.3 — Send intel data through IPC ✅ COMPLETE
 
 **Files:**
 - `src/main/compiler-integration/runWorker.ts` — Extract intel data after compilation and dispatch it

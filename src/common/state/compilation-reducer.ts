@@ -59,6 +59,12 @@ export function compilationReducer(
         backgroundResult: payload?.value
       };
 
+    case "SET_LANGUAGE_INTEL":
+      return {
+        ...state,
+        languageIntel: payload?.value
+      };
+
     default:
       return state;
   }
