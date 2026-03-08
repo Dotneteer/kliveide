@@ -3,6 +3,16 @@
 ;------------------------------------------------------------------------------
 LAST_K                    .equ $5c08
 
+// --- COLOR Codes
+COLOR_BLACK         .equ 0
+COLOR_BLUE          .equ 1
+COLOR_RED           .equ 2
+COLOR_MAGENTA       .equ 3
+COLOR_GREEN         .equ 4
+COLOR_CYAN          .equ 5
+COLOR_YELLOW        .equ 6
+COLOR_WHITE         .equ 7
+
 ; 256 byte buffer for conversions
 TMP_BUFF .defs $100
 
@@ -117,6 +127,18 @@ _printText
     rst $10;                    ; Print the character
     inc hl
     jr _printText               ; Continue the printing loop
+
+_printTitle
+    push hl
+    Bright(1)
+    Ink(COLOR_BLUE)
+    pop hl
+    call _printText
+    Bright(0)
+    Ink(COLOR_BLACK)
+    NewLine()
+    NewLine()
+    ret
 
 ; ------------------------------------------------------------------------------
 ; Converts HL to a five-digit decimal string
@@ -359,11 +381,11 @@ _waitForExit
     jp _printText
     
 Completed_Str
-    .dm "\a\x0E\x07" ; AT 14, 6
-    .dm "\p\x07"     ; PAPER 7
-    .dm "\i\x01"     ; INK 1
-    .dm "\b\x00"     ; BRIGH 0
-    .dm "Example completed."
-    .dm "\a\x0f\x08" ; AT 15, 8
-    .dm "\i\x02"     ; INK 2
-    .defn "Stop or restart!"
+    .dm "\a\x0E\x06" ; AT 14, 6
+    .dm "\p\x01"     ; PAPER 1
+    .dm "\i\x07"     ; INK 7
+    .dm "\b\x01"     ; BRIGH 1
+    .dm " Example completed. "
+    .dm "\a\x0f\x06" ; AT 15, 8
+    .dm "\i\x06"     ; INK 6
+    .defn "  Stop or restart!  "
