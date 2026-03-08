@@ -76,6 +76,8 @@ import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { getFileTypeEntry } from "../project/project-node";
 import { isDebuggableCompilerOutput } from "../utils/compiler-utils";
+import { languageIntelSingleton } from "../services/LanguageIntelService";
+import { registerZ80Providers } from "../services/z80-providers";
 
 let monacoInitialized = false;
 
@@ -144,6 +146,9 @@ export async function initializeMonaco() {
       }
     }
   }
+
+  // --- Register Z80 language intelligence providers (once, after languages are set up)
+  registerZ80Providers(monaco, () => languageIntelSingleton);
 }
 
 // --- This type represents the API that we can access from outside
@@ -271,6 +276,16 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Background compilation
   const backgroundResult = useSelector((s) => s.compilation.backgroundResult);
+
+  // --- Language intelligence data (updated after each background compile)
+  const languageIntel = useSelector((s) => s.compilation.languageIntel);
+
+  // --- Keep the singleton intel service in sync with the latest compiled data
+  useEffect(() => {
+    if (languageIntel) {
+      languageIntelSingleton.update(languageIntel);
+    }
+  }, [languageIntel]);
 
   // --- Sets the Auto complete editor option
   const updateAutoComplete = () => {

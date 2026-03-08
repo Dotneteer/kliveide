@@ -333,9 +333,9 @@ Each entry includes:
 
 ---
 
-### Phase 4: Register Monaco providers
+### Phase 4: Register Monaco providers ✅ COMPLETE
 
-#### Step 4.1 — CompletionItemProvider
+#### Step 4.1 — CompletionItemProvider ✅ COMPLETE
 
 **File:** New `src/renderer/appIde/services/z80-providers.ts`
 
@@ -361,7 +361,7 @@ The provider:
 
 ---
 
-#### Step 4.2 — HoverProvider
+#### Step 4.2 — HoverProvider ✅ COMPLETE
 
 **File:** `src/renderer/appIde/services/z80-providers.ts`
 
@@ -388,7 +388,7 @@ The provider:
 
 ---
 
-#### Step 4.3 — DefinitionProvider (Go-to-Definition)
+#### Step 4.3 — DefinitionProvider (Go-to-Definition) ✅ COMPLETE
 
 **File:** `src/renderer/appIde/services/z80-providers.ts`
 
@@ -411,7 +411,7 @@ The provider:
 
 ---
 
-#### Step 4.4 — ReferenceProvider (Find All References)
+#### Step 4.4 — ReferenceProvider (Find All References) ✅ COMPLETE
 
 **File:** `src/renderer/appIde/services/z80-providers.ts`
 
@@ -433,7 +433,7 @@ The provider:
 
 ---
 
-#### Step 4.5 — DocumentSymbolProvider (Outline / Breadcrumbs)
+#### Step 4.5 — DocumentSymbolProvider (Outline / Breadcrumbs) ✅ COMPLETE
 
 **File:** `src/renderer/appIde/services/z80-providers.ts`
 
@@ -460,9 +460,9 @@ The provider:
 
 ---
 
-### Phase 5: Wire everything together in MonacoEditor.tsx
+### Phase 5: Wire everything together in MonacoEditor.tsx ✅ COMPLETE
 
-#### Step 5.1 — Register providers during Monaco initialization
+#### Step 5.1 — Register providers during Monaco initialization ✅ COMPLETE
 
 **File:** `src/renderer/appIde/DocumentPanels/MonacoEditor.tsx`
 
@@ -475,7 +475,7 @@ In `initializeMonaco()`, after `ensureLanguage()`:
 
 ---
 
-#### Step 5.2 — Update intel data on background compile
+#### Step 5.2 — Update intel data on background compile ✅ COMPLETE
 
 **File:** `src/renderer/appIde/DocumentPanels/MonacoEditor.tsx`
 

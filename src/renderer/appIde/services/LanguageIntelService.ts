@@ -180,3 +180,13 @@ export class LanguageIntelService implements ILanguageIntelService {
 export function createLanguageIntelService(store?: Store<AppState>): ILanguageIntelService {
   return new LanguageIntelService(store);
 }
+
+// ---------------------------------------------------------------------------
+// Module-level singleton (no store — updated manually via .update())
+// ---------------------------------------------------------------------------
+
+/**
+ * Shared singleton used by `initializeMonaco()` (which has no React context)
+ * and by `MonacoEditor` (which calls `.update()` whenever new intel arrives).
+ */
+export const languageIntelSingleton: ILanguageIntelService = new LanguageIntelService();
