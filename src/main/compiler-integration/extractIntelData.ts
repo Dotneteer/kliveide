@@ -66,6 +66,8 @@ function visitModule(
   // --- Plain symbols (labels and vars in this module's scope)
   for (const [rawName, sym] of Object.entries(module.symbols)) {
     if (!sym || typeof sym !== "object") continue;
+    // --- Skip symbols whose name is also a macro — handled below with richer info
+    if (rawName in module.macros) continue;
     const fullName = modulePath ? `${modulePath}.${rawName}` : rawName;
     const kind = symKind(sym);
     const def = buildDefinitionInfo(fullName, sym, kind);
@@ -88,23 +90,35 @@ function visitModule(
   for (const [macroName, macro] of Object.entries(module.macros)) {
     if (!macro || typeof macro !== "object") continue;
     const fullName = modulePath ? `${modulePath}.${macroName}` : macroName;
-    const section = macro.section ?? { firstLine: 0, lastLine: 0 };
+
+    // --- Use the source location stored on the macro definition
+    const fileIndex: number = macro.fileIndex ?? 0;
+    const line: number = macro.sourceLine ?? ((macro.section?.firstLine ?? 0) + 1);
+    const startColumn: number = macro.startColumn ?? 0;
+    const endColumn: number = macro.endColumn ?? 0;
+
+    // --- Build a description showing the parameter list
+    const argNames: string[] = Array.isArray(macro.argNames)
+      ? macro.argNames.map((a: any) => (typeof a === "object" ? a.name : String(a)))
+      : [];
+    const description = `(${argNames.join(", ")})`;
+
     const def: SymbolDefinitionInfo = {
       name: fullName,
       kind: "macro",
-      // Macros don't carry fileIndex directly — use 0 as default
-      fileIndex: 0,
-      line: section.firstLine + 1,
-      startColumn: 0,
-      endColumn: 0
+      fileIndex,
+      line,
+      startColumn,
+      endColumn,
+      description
     };
     definitions.push(def);
     outline.push({
       name: fullName,
       kind: "macro",
-      fileIndex: 0,
-      line: section.firstLine + 1,
-      endLine: section.lastLine + 1,
+      fileIndex,
+      line,
+      endLine: (macro.section?.lastLine ?? 0) + 1,
       children: []
     });
   }

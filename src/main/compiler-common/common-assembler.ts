@@ -2996,6 +2996,7 @@ export abstract class CommonAssembler<
     const structDef = this._currentModule.getStruct(macroOrStructStmt.identifier.name);
     if (structDef) {
       // --- We have found a structure definition
+      this.recordSymbolReference(macroOrStructStmt.identifier.name, macroOrStructStmt.identifier);
       await this.processStructInvocation(macroOrStructStmt, structDef, allLines);
       return;
     }
@@ -3008,6 +3009,9 @@ export abstract class CommonAssembler<
       this.reportAssemblyError("Z1007", macroOrStructStmt, null, macroName);
       return;
     }
+
+    // --- Record the macro invocation as a symbol reference
+    this.recordSymbolReference(macroName, macroOrStructStmt.identifier);
 
     // --- Match parameters
     if (macroDef.argNames.length < macroOrStructStmt.operands.length) {
@@ -3466,6 +3470,7 @@ export abstract class CommonAssembler<
     }
 
     // --- Create macro definition
+    const macroLine = allLines[firstLine];
     const macroDef: IMacroDefinition<TInstruction> = {
       macroName: label,
       argNames: macro.parameters,
@@ -3473,25 +3478,29 @@ export abstract class CommonAssembler<
       section: {
         firstLine,
         lastLine: currentLineIndex.index
-      }
+      },
+      fileIndex: (macroLine as any).fileIndex ?? 0,
+      sourceLine: macroLine.line,
+      startColumn: macroLine.startColumn,
+      endColumn: macroLine.endColumn
     };
 
     // --- Check each macro line for invalid macro parameter names
     // --- or nested macro
     for (let i = firstLine + 1; i < currentLineIndex.index; i++) {
-      var macroLine = allLines[i];
+      var mLine = allLines[i];
 
       // --- Check for parse-time function parameters
       // --- (they can have only macro parameter arguments)
-      if (macroLine.type === "MacroStatement") {
-        this.reportAssemblyError("Z1005", macroLine);
+      if (mLine.type === "MacroStatement") {
+        this.reportAssemblyError("Z1005", mLine);
         errorFound = true;
         continue;
       }
 
       const isCaseSensitive = this.isCaseSensitive;
-      if (macroLine.macroParams) {
-        for (const param of macroLine.macroParams) {
+      if (mLine.macroParams) {
+        for (const param of mLine.macroParams) {
           const findParam = macro.parameters.find(
             (p) =>
               (isCaseSensitive ? p.name : p.name.toLowerCase()) ===
@@ -3502,7 +3511,7 @@ export abstract class CommonAssembler<
           }
 
           errorFound = true;
-          this.reportAssemblyError("Z1006", macroLine, null, param.identifier.name);
+          this.reportAssemblyError("Z1006", mLine, null, param.identifier.name);
         }
       }
     }

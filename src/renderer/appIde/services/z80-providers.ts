@@ -85,6 +85,14 @@ export type DocumentSymbolResult = {
   children: DocumentSymbolResult[];
 };
 
+export type RenameEdit = {
+  filePath: string;
+  line: number;
+  startColumn: number;
+  endColumn: number;
+  newText: string;
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -335,6 +343,79 @@ export function computeDocumentSymbols(
 }
 
 // ---------------------------------------------------------------------------
+// Step 4.6 — Rename Symbol
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate whether the word at the cursor can be renamed.
+ * Returns the symbol name and range if renamable, or null if not.
+ */
+export function computeRenameValidation(
+  word: string,
+  service: ILanguageIntelService
+): { text: string; startColumn: number; endColumn: number } | null {
+  if (!word) return null;
+  const lc = word.toLowerCase();
+  if (INSTRUCTION_LABELS.has(lc) || REGISTER_LABELS.has(lc)) return null;
+
+  const sym = service.getSymbolDefinition(word);
+  if (!sym) return null;
+
+  return {
+    text: sym.name,
+    startColumn: sym.startColumn,
+    endColumn: sym.endColumn
+  };
+}
+
+/**
+ * Compute all text edits needed to rename a symbol.
+ * Includes the definition site and all reference sites.
+ */
+export function computeRenameEdits(
+  oldName: string,
+  newName: string,
+  service: ILanguageIntelService
+): RenameEdit[] {
+  if (!oldName || !newName) return [];
+  const lc = oldName.toLowerCase();
+  if (INSTRUCTION_LABELS.has(lc) || REGISTER_LABELS.has(lc)) return [];
+
+  const edits: RenameEdit[] = [];
+
+  // --- Definition site
+  const sym = service.getSymbolDefinition(oldName);
+  if (sym) {
+    const filePath = service.getFilePath(sym.fileIndex);
+    if (filePath) {
+      edits.push({
+        filePath,
+        line: sym.line,
+        startColumn: sym.startColumn,
+        endColumn: sym.endColumn,
+        newText: newName
+      });
+    }
+  }
+
+  // --- All reference sites
+  for (const ref of service.getSymbolReferences(oldName)) {
+    const filePath = service.getFilePath(ref.fileIndex);
+    if (filePath) {
+      edits.push({
+        filePath,
+        line: ref.line,
+        startColumn: ref.startColumn,
+        endColumn: ref.endColumn,
+        newText: newName
+      });
+    }
+  }
+
+  return edits;
+}
+
+// ---------------------------------------------------------------------------
 // Monaco registration  (only call from a browser context with Monaco loaded)
 // ---------------------------------------------------------------------------
 
@@ -346,11 +427,15 @@ export function computeDocumentSymbols(
  * @param getFileIndex    Given a Monaco model URI string, returns the source file index
  *                        (0 for the current single file, or derived from the URI when
  *                        multi-file support is implemented).
+ * @param applyExternalEdits  Optional callback to apply rename edits to files other than
+ *                            the currently active model. Receives an array of RenameEdit
+ *                            objects for cross-file changes.
  */
 export function registerZ80Providers(
   monaco: any,
   getService: () => ILanguageIntelService,
-  getFileIndex: (modelUri: string) => number = () => 0
+  getFileIndex: (modelUri: string) => number = () => 0,
+  applyExternalEdits?: (edits: RenameEdit[]) => void
 ): void {
   const LANG = "kz80-asm";
 
@@ -432,6 +517,70 @@ export function registerZ80Providers(
           endColumn: r.endColumn + 1
         }
       }));
+    }
+  });
+
+  // --- Rename
+  monaco.languages.registerRenameProvider(LANG, {
+    provideRenameEdits(model: any, position: any, newName: string) {
+      const word = model.getWordAtPosition(position);
+      if (!word) return null;
+      const svc = getService();
+      const allEdits = computeRenameEdits(word.word, newName, svc);
+      if (allEdits.length === 0) return null;
+
+      // Determine the current file's path so we can use model.uri for it
+      const currentFileIndex = getFileIndex(model.uri.toString());
+      const currentFilePath = svc.getFilePath(currentFileIndex);
+
+      // Split edits: current file → Monaco workspace edits; other files → external callback
+      const monacoEdits: any[] = [];
+      const externalEdits: RenameEdit[] = [];
+
+      for (const e of allEdits) {
+        if (e.filePath === currentFilePath) {
+          monacoEdits.push({
+            resource: model.uri,
+            textEdit: {
+              range: {
+                startLineNumber: e.line,
+                endLineNumber: e.line,
+                startColumn: e.startColumn + 1,
+                endColumn: e.endColumn + 1
+              },
+              text: e.newText
+            },
+            versionId: undefined
+          });
+        } else {
+          externalEdits.push(e);
+        }
+      }
+
+      // Apply cross-file edits via the external callback
+      if (externalEdits.length > 0 && applyExternalEdits) {
+        applyExternalEdits(externalEdits);
+      }
+
+      return { edits: monacoEdits };
+    },
+
+    resolveRenameLocation(model: any, position: any) {
+      const word = model.getWordAtPosition(position);
+      if (!word) return { rejectReason: "No symbol found at cursor" };
+      const result = computeRenameValidation(word.word, getService());
+      if (!result) {
+        return { rejectReason: `'${word.word}' cannot be renamed` };
+      }
+      return {
+        range: {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn
+        },
+        text: word.word
+      };
     }
   });
 

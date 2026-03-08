@@ -56,20 +56,36 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 31,
-            "column": 5
+            "line": 29,
+            "column": 18
           }
         },
         {
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/testprojects/next/book/_helpers/display.asm",
           "position": {
-            "line": 385,
+            "line": 131,
+            "column": 12
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/testprojects/next/book/01_intro/print.asm",
+          "position": {
+            "line": 27,
             "column": 16
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/testprojects/next/book/02_nextreg/write.asm",
+          "position": {
+            "line": 6,
+            "column": 18
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/testprojects/next/book/_helpers/display.asm"
     },
     "Disassembly": {
       "topAddress": 33555,

@@ -34,6 +34,16 @@ export async function loadCustomTokenColors(
       if (customTokens.lightTheme && provider.lightTheme) {
         applyCustomTokens(provider.lightTheme.rules, customTokens.lightTheme);
       }
+
+      // Apply custom UI colors to dark theme
+      if (customTokens.darkColors && provider.darkTheme) {
+        applyCustomColors(provider.darkTheme.colors, customTokens.darkColors);
+      }
+
+      // Apply custom UI colors to light theme
+      if (customTokens.lightColors && provider.lightTheme) {
+        applyCustomColors(provider.lightTheme.colors, customTokens.lightColors);
+      }
     } catch (error) {
       // Silently skip errors as per requirements
       continue;
@@ -45,6 +55,31 @@ export async function loadCustomTokenColors(
  * Applies custom token definitions to existing theme rules.
  * Supports both simple string values (foreground color only) and object values (with fontStyle).
  * 
+ * @param rules Array of existing theme rules
+ * @param customTokens Custom token definitions from JSON file
+ */
+/**
+ * Applies custom UI color entries to a Monaco theme's colors map.
+ * Keys are Monaco color IDs (e.g. "input.foreground"); values are hex color strings.
+ *
+ * @param colors   The existing color map from the theme
+ * @param customColors  Custom color overrides from the JSON file
+ */
+function applyCustomColors(
+  colors: Record<string, string>,
+  customColors: Record<string, string>
+): void {
+  for (const [colorId, colorValue] of Object.entries(customColors)) {
+    if (typeof colorValue === "string") {
+      colors[colorId] = colorValue;
+    }
+  }
+}
+
+/**
+ * Applies custom token definitions to existing theme rules.
+ * Supports both simple string values (foreground color only) and object values (with fontStyle).
+ *
  * @param rules Array of existing theme rules
  * @param customTokens Custom token definitions from JSON file
  */

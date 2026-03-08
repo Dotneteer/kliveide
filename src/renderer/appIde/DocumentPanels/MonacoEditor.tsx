@@ -77,11 +77,19 @@ import { AppState } from "@common/state/AppState";
 import { getFileTypeEntry } from "../project/project-node";
 import { isDebuggableCompilerOutput } from "../utils/compiler-utils";
 import { languageIntelSingleton } from "../services/LanguageIntelService";
-import { registerZ80Providers } from "../services/z80-providers";
+import { registerZ80Providers, type RenameEdit } from "../services/z80-providers";
 
 let monacoInitialized = false;
 
 let MAX_BP_UNDO_STACK = 64;
+
+// --- Module-level callback set by the active MonacoEditor component so that
+// --- the globally-registered Monaco editor opener can navigate cross-file.
+let _navigateToFile: ((filePath: string, line: number) => void) | null = null;
+
+// --- Module-level callback set by the active MonacoEditor component so that
+// --- the rename provider can apply edits to files other than the current one.
+let _applyExternalEdits: ((edits: RenameEdit[]) => void) | null = null;
 
 // --- We use these shortcuts in this file for Monaco types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
@@ -91,6 +99,12 @@ type MarkdownString = monacoEditor.IMarkdownString;
 // --- We need to invoke this function while initializing the app. This is required to
 // --- render the Monaco editor with the supported language syntax highlighting.
 export async function initializeMonaco() {
+  // --- Guard against being called multiple times (e.g. from useLayoutEffect re-runs).
+  // --- Set the flag immediately (before any await) to prevent concurrent calls from
+  // --- passing the guard while the first call is still awaiting.
+  if (monacoInitialized) return;
+  monacoInitialized = true;
+
   // --- Use the ESM version of monaco-editor which is bundled by Vite
   // --- This avoids the AMD loader issues in production builds
   loader.config({ monaco: monacoEditor });
@@ -102,7 +116,6 @@ export async function initializeMonaco() {
   const monaco = await loader.init();
 
   customLanguagesRegistry.forEach((entry) => ensureLanguage(monaco, entry.id));
-  monacoInitialized = true;
 
   function ensureLanguage(monaco: any, language: string) {
     if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
@@ -148,7 +161,32 @@ export async function initializeMonaco() {
   }
 
   // --- Register Z80 language intelligence providers (once, after languages are set up)
-  registerZ80Providers(monaco, () => languageIntelSingleton);
+  registerZ80Providers(
+    monaco,
+    () => languageIntelSingleton,
+    () => 0,
+    (edits) => { if (_applyExternalEdits) _applyExternalEdits(edits); }
+  );
+
+  // --- Register an opener so that cross-file Go-to-Definition / Find References
+  // --- navigates through Klive's own document system instead of trying to open
+  // --- a second Monaco editor instance.
+  monacoEditor.editor.registerEditorOpener({
+    openCodeEditor(_source: any, resource: any, selectionOrPosition: any): boolean {
+      if (!_navigateToFile) return false;
+      const filePath: string = resource.fsPath ?? resource.path ?? resource.toString();
+      let line = 1;
+      if (selectionOrPosition) {
+        if (typeof selectionOrPosition.startLineNumber === "number") {
+          line = selectionOrPosition.startLineNumber;
+        } else if (typeof selectionOrPosition.lineNumber === "number") {
+          line = selectionOrPosition.lineNumber;
+        }
+      }
+      _navigateToFile(filePath, line);
+      return true;
+    }
+  });
 }
 
 // --- This type represents the API that we can access from outside
@@ -236,7 +274,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- We use these services to respond to various IDE events
   const { store, messenger } = useRendererContext();
-  const { projectService } = useAppServices();
+  const { projectService, ideCommandsService } = useAppServices();
   const emuApi = useEmuApi();
 
   // --- Recognize if something changed in the current document hub
@@ -286,6 +324,65 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       languageIntelSingleton.update(languageIntel);
     }
   }, [languageIntel]);
+
+  // --- Wire the module-level cross-file navigation callback to this component's
+  // --- ideCommandsService so that registerEditorOpener can open files in Klive.
+  useEffect(() => {
+    _navigateToFile = (filePath: string, line: number) => {
+      ideCommandsService.executeCommand(`nav "${filePath}" ${line}`);
+    };
+  }, [ideCommandsService]);
+
+  // --- Wire the module-level cross-file rename callback so that the rename
+  // --- provider can apply edits to files other than the currently open one.
+  useEffect(() => {
+    _applyExternalEdits = (edits: RenameEdit[]) => {
+      // Group edits by file path (process each file once, apply edits bottom-up)
+      const byFile = new Map<string, RenameEdit[]>();
+      for (const e of edits) {
+        let list = byFile.get(e.filePath);
+        if (!list) {
+          list = [];
+          byFile.set(e.filePath, list);
+        }
+        list.push(e);
+      }
+
+      for (const [filePath, fileEdits] of byFile) {
+        // Apply edits bottom-up so line/column offsets stay valid
+        const sorted = [...fileEdits].sort((a, b) =>
+          b.line !== a.line ? b.line - a.line : b.startColumn - a.startColumn
+        );
+
+        mainApi.readTextFile(filePath).then(async (content) => {
+          const lines = content.split("\n");
+          for (const edit of sorted) {
+            const lineIdx = edit.line - 1;
+            if (lineIdx >= 0 && lineIdx < lines.length) {
+              const line = lines[lineIdx];
+              lines[lineIdx] =
+                line.substring(0, edit.startColumn) +
+                edit.newText +
+                line.substring(edit.endColumn);
+            }
+          }
+          const newContent = lines.join("\n");
+
+          // Save via ProjectService so _fileCache is updated
+          await projectService.saveFileContent(filePath, newContent);
+
+          // Reload any open editors showing this file
+          for (const hub of projectService.getDocumentHubServiceInstances()) {
+            for (const doc of hub.getOpenDocuments()) {
+              if (doc.id === filePath || doc.path === filePath) {
+                await hub.reloadDocument(doc.id);
+              }
+            }
+          }
+        });
+      }
+    };
+  }, [mainApi, projectService]);
 
   // --- Sets the Auto complete editor option
   const updateAutoComplete = () => {
@@ -576,7 +673,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile]);
 
   useEffect(() => {
-    if (store && mainApi && allowBackgroundCompile) {
+    if (store && mainApi) {
       startBackgroundCompile(store, mainApi, allowBackgroundCompile);
     }
   }, [store, mainApi, allowBackgroundCompile]);
@@ -594,22 +691,83 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       ed.trigger("keyboard", "redo", null)
     );
 
-    // Copy with Ctrl+Shift+C
-    ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyC, () => {
-      const selection = ed.getSelection();
-      const text = ed.getModel()?.getValueInRange(selection);
-      if (text) {
-        navigator.clipboard.writeText(text);
-      }
-    });
+    // --- Clipboard handling for the entire Monaco editor (both the code area and
+    // --- widget inputs like Find/Replace and Rename).
+    // --- In Electron, native Cmd+C/V/X/A don't work. Monaco's addCommand always
+    // --- targets the editor model regardless of which element has focus, so we use
+    // --- a capture-phase DOM listener on the editor container instead.
+    const editorDom = ed.getContainerDomNode();
+    const clipboardHandler = async (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      if (key !== "c" && key !== "v" && key !== "x" && key !== "a") return;
 
-    // Paste with Ctrl+Shift+V
-    ed.addCommand(monacoEditor.KeyMod.CtrlCmd | monacoEditor.KeyCode.KeyV, async () => {
-      let text = await navigator.clipboard.readText();
-      // --- Correct line breaks for paste
-      text = text.replace(/\r?\n/g, "\r");
-      ed.trigger("keyboard", "type", { text });
-    });
+      const activeEl = window.document.activeElement;
+      const isWidgetInput = activeEl?.tagName === "INPUT" || 
+        (activeEl?.tagName === "TEXTAREA" && !activeEl.classList.contains("inputarea"));
+
+      if (isWidgetInput) {
+        // --- The focused element is a widget input (Find/Replace, Rename, etc.)
+        const input = activeEl as HTMLInputElement;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (key === "c") {
+          const text = input.value.slice(
+            input.selectionStart ?? 0,
+            input.selectionEnd ?? input.value.length
+          );
+          if (text) await navigator.clipboard.writeText(text);
+        } else if (key === "v") {
+          const clipText = await navigator.clipboard.readText();
+          const start = input.selectionStart ?? 0;
+          const end = input.selectionEnd ?? 0;
+          input.focus();
+          input.setSelectionRange(start, end);
+          window.document.execCommand("insertText", false, clipText);
+        } else if (key === "x") {
+          const text = input.value.slice(
+            input.selectionStart ?? 0,
+            input.selectionEnd ?? input.value.length
+          );
+          if (text) await navigator.clipboard.writeText(text);
+          window.document.execCommand("delete");
+        } else if (key === "a") {
+          input.select();
+        }
+      } else {
+        // --- The code editor text area has focus
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (key === "c") {
+          const selection = ed.getSelection();
+          const text = ed.getModel()?.getValueInRange(selection);
+          if (text) navigator.clipboard.writeText(text);
+        } else if (key === "v") {
+          let text = await navigator.clipboard.readText();
+          text = text.replace(/\r?\n/g, "\r");
+          ed.trigger("keyboard", "type", { text });
+        } else if (key === "x") {
+          const selection = ed.getSelection();
+          const text = ed.getModel()?.getValueInRange(selection);
+          if (text) {
+            navigator.clipboard.writeText(text);
+            ed.executeEdits("clipboard", [{
+              range: selection,
+              text: "",
+              forceMoveMarkers: true
+            }]);
+          }
+        } else if (key === "a") {
+          const model = ed.getModel();
+          if (model) {
+            ed.setSelection(model.getFullModelRange());
+          }
+        }
+      }
+    };
+    editorDom.addEventListener("keydown", clipboardHandler, true);
 
     const saveViewState = () => {
       if (mounted.current) {
@@ -714,6 +872,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Dispose event handlers when the editor is about to dispose
     editor.current.onDidDispose(() => {
       disposables.forEach((d) => d.dispose());
+      editorDom.removeEventListener("keydown", clipboardHandler, true);
     });
 
     mounted.current = true;
@@ -1312,11 +1471,6 @@ async function startBackgroundCompile(
   mainApi: ReturnType<typeof createMainApi>,
   allowCompile: boolean = true
 ): Promise<boolean> {
-  // --- Check if background compilation is allowed
-  if (!allowCompile) {
-    return false;
-  }
-
   // --- Check if we have a build root to compile
   const state = store.getState();
   if (!state.project?.isKliveProject) {
@@ -1328,6 +1482,14 @@ async function startBackgroundCompile(
   }
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
   const language = getFileTypeEntry(fullPath, store)?.subType;
+
+  // --- The built-in Klive Z80 assembler always runs background compilation;
+  // --- the flag only gates external compilers (ZxBasic, SjasmPlus, etc.)
+  const langInfo = customLanguagesRegistry.find((l) => l.id === language);
+  const isBuiltInCompiler = langInfo?.compiler === "Z80Compiler";
+  if (!allowCompile && !isBuiltInCompiler) {
+    return false;
+  }
 
   // --- Compile the build root
   store.dispatch(startBackgroundCompileAction());

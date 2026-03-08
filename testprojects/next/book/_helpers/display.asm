@@ -128,7 +128,7 @@ _printText
     inc hl
     jr _printText               ; Continue the printing loop
 
-_printTitle
+_printTitle2
     push hl
     Bright(1)
     Ink(COLOR_BLUE)

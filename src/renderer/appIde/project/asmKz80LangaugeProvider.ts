@@ -907,7 +907,14 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         foreground: "d7ba7d"
       }
     ],
-    colors: {}
+    colors: {
+      "input.background": "#3c3c3c",
+      "input.foreground": "#cccccc",
+      "input.border": "#007acc",
+      "editorWidget.background": "#252526",
+      "editorWidget.foreground": "#cccccc",
+      "editorWidget.border": "#454545"
+    }
   },
   lightTheme: {
     rules: [
@@ -955,7 +962,14 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         foreground: "a5673f"
       }
     ],
-    colors: {}
+    colors: {
+      "input.background": "#ffffff",
+      "input.foreground": "#333333",
+      "input.border": "#a0a0a0",
+      "editorWidget.background": "#f3f3f3",
+      "editorWidget.foreground": "#333333",
+      "editorWidget.border": "#c8c8c8"
+    }
   }
 };
 

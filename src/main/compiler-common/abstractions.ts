@@ -423,6 +423,14 @@ export interface IMacroDefinition<TNode extends TypedObject> {
   readonly argNames: IdentifierNode<TNode>[];
   readonly endLabel: string | null;
   readonly section: DefinitionSection;
+  /** Index of the source file where this macro is defined. */
+  readonly fileIndex?: number;
+  /** 1-based source line number of the macro declaration. */
+  readonly sourceLine?: number;
+  /** Start column (inclusive) of the macro label. */
+  readonly startColumn?: number;
+  /** End column (exclusive) of the macro label. */
+  readonly endColumn?: number;
 }
 
 /**

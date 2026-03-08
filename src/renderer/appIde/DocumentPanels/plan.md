@@ -495,7 +495,7 @@ useEffect(() => {
 
 ### Phase 6: Polish and edge cases
 
-#### Step 6.1 — Handle multi-file projects
+#### Step 6.1 — Handle multi-file projects ✅ COMPLETE
 
 Ensure go-to-definition works across files (e.g., jumping from `main.asm` to an included `utils.asm`). The `fileIndex` → `filePath` mapping from `sourceFileList` must be used to create the correct Monaco URI.
 
@@ -503,7 +503,7 @@ Ensure go-to-definition works across files (e.g., jumping from `main.asm` to an 
 
 ---
 
-#### Step 6.2 — Handle stale data gracefully
+#### Step 6.2 — Handle stale data gracefully ✅ COMPLETE
 
 When the user is typing and the last compilation had errors, the intel data may be stale. Providers should:
 - Return whatever data is available (last successful compile).
@@ -514,7 +514,7 @@ When the user is typing and the last compilation had errors, the intel data may 
 
 ---
 
-#### Step 6.3 — Performance: debounce and incremental updates
+#### Step 6.3 — Performance: debounce and incremental updates ✅ COMPLETE
 
 Background compilation is already debounced (triggered on each edit via `startBackgroundCompile`). Ensure:
 - Intel data extraction doesn't block the main process.
@@ -525,7 +525,7 @@ Background compilation is already debounced (triggered on each edit via `startBa
 
 ---
 
-#### Step 6.4 — Register providers for other assembly languages
+#### Step 6.4 — Register providers for other assembly languages ⏳ DEFERRED
 
 Once Z80 works, extend to `sjasm-z80`, `zxb-asm`, `asm-6510` by:
 - Reusing the same provider framework.

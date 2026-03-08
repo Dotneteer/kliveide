@@ -3,7 +3,7 @@
 ;==========================================================
 PrintWelcome
     ld hl,Title_Intro_1
-    call _printTitle
+    call _printTitle2
     ld hl,Welcome_Str
     jp _printText
     
@@ -24,7 +24,7 @@ Welcome_Str
 ;==========================================================
 PrintValues
     ld hl,Title_Intro_2
-    call _printTitle
+    call _printTitle2
     ;
     ; Print decimal and hexadecimal values
     ;
