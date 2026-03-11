@@ -91,6 +91,9 @@ let _navigateToFile: ((filePath: string, line: number) => void) | null = null;
 // --- the rename provider can apply edits to files other than the current one.
 let _applyExternalEdits: ((edits: RenameEdit[]) => void) | null = null;
 
+// --- Module-level store reference so that providers can read current state.
+let _store: Store<any> | null = null;
+
 // --- We use these shortcuts in this file for Monaco types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type EditorDecorationsCollection = monacoEditor.editor.IEditorDecorationsCollection;
@@ -165,7 +168,8 @@ export async function initializeMonaco() {
     monaco,
     () => languageIntelSingleton,
     () => 0,
-    (edits) => { if (_applyExternalEdits) _applyExternalEdits(edits); }
+    (edits) => { if (_applyExternalEdits) _applyExternalEdits(edits); },
+    () => _store?.getState()?.project?.folderPath ?? undefined
   );
 
   // --- Register an opener so that cross-file Go-to-Definition / Find References
@@ -332,6 +336,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       ideCommandsService.executeCommand(`nav "${filePath}" ${line}`);
     };
   }, [ideCommandsService]);
+
+  // --- Wire the module-level store reference so that providers can read current state.
+  useEffect(() => {
+    _store = store;
+  }, [store]);
 
   // --- Wire the module-level cross-file rename callback so that the rename
   // --- provider can apply edits to files other than the currently open one.

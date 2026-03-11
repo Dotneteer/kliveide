@@ -93,6 +93,12 @@ export type RenameEdit = {
   newText: string;
 };
 
+export type FoldingRangeResult = {
+  line: number;
+  endLine: number;
+  kind?: "region" | "comment" | "imports" | "folds";
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -208,7 +214,12 @@ export function computeCompletionItems(
  */
 export function computeHover(
   word: string,
-  service: ILanguageIntelService
+  service: ILanguageIntelService,
+  /** 1-based editor line number of the cursor. When provided, macro body is only
+   * shown when the cursor is NOT on the definition line (i.e. it's an invocation). */
+  lineNumber?: number,
+  /** Optional project folder path to display relative paths in the hover panel. */
+  projectFolder?: string
 ): HoverResult | null {
   if (!word) return null;
   const lc = word.toLowerCase();
@@ -235,12 +246,32 @@ export function computeHover(
   // --- Compiled symbol?
   const sym = service.getSymbolDefinition(word);
   if (sym) {
-    const filePath = service.getFilePath(sym.fileIndex) ?? `file ${sym.fileIndex}`;
+    const absPath = service.getFilePath(sym.fileIndex) ?? `file ${sym.fileIndex}`;
+    let displayPath = absPath;
+    if (projectFolder) {
+      const sep = projectFolder.endsWith("/") ? "" : "/";
+      const prefix = projectFolder + sep;
+      if (absPath.startsWith(prefix)) {
+        displayPath = absPath.slice(prefix.length);
+      }
+    }
     const lines: string[] = [
       `**${sym.name}** *(${sym.kind})*`
     ];
     if (sym.description) lines.push(sym.description);
-    lines.push(`Defined in \`${filePath}\` line ${sym.line}`);
+    if (sym.kind === "macro" && sym.bodyLines && sym.bodyLines.length > 0) {
+      const isDefinitionLine = lineNumber !== undefined && lineNumber === sym.line;
+      if (!isDefinitionLine) {
+        const bodyText = sym.bodyLines
+          .map(l => l.trimEnd())
+          .filter(l => l.trim().length > 0)
+          .join("\n");
+        if (bodyText) {
+          lines.push("```\n" + bodyText + "\n```");
+        }
+      }
+    }
+    lines.push(`Defined in \`${displayPath}\` line ${sym.line}`);
     return { contents: lines };
   }
 
@@ -343,6 +374,77 @@ export function computeDocumentSymbols(
 }
 
 // ---------------------------------------------------------------------------
+// Step 4.5a — Code Folding for Blocks
+// ---------------------------------------------------------------------------
+
+const BLOCK_OPENERS = new Set([
+  ".macro", ".loop", ".repeat", ".while", ".for",
+  ".proc", ".struct", ".if", ".module",
+  "#if", "#ifdef", "#ifndef"
+]);
+
+const CLOSER_TO_OPENERS = new Map<string, string[]>([
+  [".endm",      [".macro"]],
+  [".endl",      [".loop"]],
+  [".until",     [".repeat"]],
+  [".endw",      [".while"]],
+  [".next",      [".for"]],
+  [".endp",      [".proc"]],
+  [".ends",      [".struct"]],
+  [".endif",     [".if"]],
+  [".endmodule", [".module"]],
+  [".endmod",    [".module"]],
+  ["#endif",     ["#if", "#ifdef", "#ifndef"]]
+]);
+
+/** Extract the block-relevant keyword from a source line, or null if none. */
+function extractBlockKeyword(line: string): string | null {
+  const trimmed = line.trimStart();
+  if (!trimmed || trimmed.startsWith(";")) return null;
+  // Match optional label (with or without trailing colon), then .keyword or #keyword
+  const m = trimmed.match(/^(?:[A-Za-z_$@][A-Za-z0-9_$@]*:?\s+)?(\.[A-Za-z]+|#[A-Za-z]+)\b/);
+  if (!m) return null;
+  return m[1].toLowerCase();
+}
+
+/**
+ * Compute folding ranges via text-based block matching.
+ * Handles all 10 block construct pairs by scanning source lines directly —
+ * works immediately on file open with no compilation required.
+ *
+ * @param lines Array of source lines (lines[0] = line 1 in the editor).
+ */
+export function computeFoldingRanges(lines: string[]): FoldingRangeResult[] {
+  const ranges: FoldingRangeResult[] = [];
+  const stack: Array<{ opener: string; lineNumber: number }> = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineNumber = i + 1; // Monaco lines are 1-indexed
+    const kw = extractBlockKeyword(lines[i]);
+    if (!kw) continue;
+
+    if (BLOCK_OPENERS.has(kw)) {
+      stack.push({ opener: kw, lineNumber });
+    } else if (CLOSER_TO_OPENERS.has(kw)) {
+      const validOpeners = CLOSER_TO_OPENERS.get(kw)!;
+      // Find the most recent matching opener (handle proper nesting)
+      for (let j = stack.length - 1; j >= 0; j--) {
+        if (validOpeners.includes(stack[j].opener)) {
+          const { lineNumber: startLine } = stack[j];
+          stack.splice(j, 1);
+          if (lineNumber > startLine) {
+            ranges.push({ line: startLine, endLine: lineNumber });
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  return ranges;
+}
+
+// ---------------------------------------------------------------------------
 // Step 4.6 — Rename Symbol
 // ---------------------------------------------------------------------------
 
@@ -430,12 +532,15 @@ export function computeRenameEdits(
  * @param applyExternalEdits  Optional callback to apply rename edits to files other than
  *                            the currently active model. Receives an array of RenameEdit
  *                            objects for cross-file changes.
+ * @param getProjectFolder    Optional callback returning the current project root folder
+ *                            path, used to display workspace-relative paths in hover panels.
  */
 export function registerZ80Providers(
   monaco: any,
   getService: () => ILanguageIntelService,
   getFileIndex: (modelUri: string) => number = () => 0,
-  applyExternalEdits?: (edits: RenameEdit[]) => void
+  applyExternalEdits?: (edits: RenameEdit[]) => void,
+  getProjectFolder?: () => string | undefined
 ): void {
   const LANG = "kz80-asm";
 
@@ -471,7 +576,7 @@ export function registerZ80Providers(
     provideHover(model: any, position: any) {
       const word = model.getWordAtPosition(position);
       if (!word) return null;
-      const result = computeHover(word.word, getService());
+      const result = computeHover(word.word, getService(), position.lineNumber, getProjectFolder?.());
       if (!result) return null;
       return {
         contents: result.contents.map((value) => ({ value }))
@@ -611,6 +716,21 @@ export function registerZ80Providers(
       }
 
       return symbols.map(toMonaco);
+    }
+  });
+
+  // --- Code Folding
+  monaco.languages.registerFoldingRangeProvider(LANG, {
+    provideFoldingRanges(model: any) {
+      const lineCount = model.getLineCount();
+      const lines: string[] = [];
+      for (let i = 1; i <= lineCount; i++) {
+        lines.push(model.getLineContent(i));
+      }
+      return computeFoldingRanges(lines).map((range) => ({
+        start: range.line,
+        end: range.endLine
+      }));
     }
   });
 }

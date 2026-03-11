@@ -89,7 +89,9 @@ function visitModule(
   // --- Macros
   for (const [macroName, macro] of Object.entries(module.macros)) {
     if (!macro || typeof macro !== "object") continue;
-    const fullName = modulePath ? `${modulePath}.${macroName}` : macroName;
+    // Use macro.macroName (original case from source) instead of the dict key (which may be lowercased)
+    const displayName = (typeof macro.macroName === "string" && macro.macroName) ? macro.macroName : macroName;
+    const fullName = modulePath ? `${modulePath}.${displayName}` : displayName;
 
     // --- Use the source location stored on the macro definition
     const fileIndex: number = macro.fileIndex ?? 0;
@@ -103,6 +105,9 @@ function visitModule(
       : [];
     const description = `(${argNames.join(", ")})`;
 
+    const bodyLines: readonly string[] | undefined = Array.isArray(macro.bodyLines)
+      ? macro.bodyLines
+      : undefined;
     const def: SymbolDefinitionInfo = {
       name: fullName,
       kind: "macro",
@@ -110,7 +115,8 @@ function visitModule(
       line,
       startColumn,
       endColumn,
-      description
+      description,
+      bodyLines
     };
     definitions.push(def);
     outline.push({

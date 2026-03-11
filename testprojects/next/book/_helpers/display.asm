@@ -29,6 +29,8 @@ Border .macro(color)
     pop af
 .endm
 
+
+
 Ink .macro(color)
     push af
     ld a,$10

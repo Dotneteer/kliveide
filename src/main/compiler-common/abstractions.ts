@@ -431,6 +431,8 @@ export interface IMacroDefinition<TNode extends TypedObject> {
   readonly startColumn?: number;
   /** End column (exclusive) of the macro label. */
   readonly endColumn?: number;
+  /** Raw source text of each body line (between .macro and .endm, exclusive). */
+  readonly bodyLines?: readonly string[];
 }
 
 /**

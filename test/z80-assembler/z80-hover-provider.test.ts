@@ -96,6 +96,19 @@ describe("computeHover", () => {
     expect(text).toContain("main.asm");
   });
 
+  it("symbol hover shows relative path when projectFolder is provided", () => {
+    const result = computeHover("Entry", svc, undefined, "/project")!;
+    const text = result.contents.join("\n");
+    expect(text).toContain("main.asm");
+    expect(text).not.toContain("/project/main.asm");
+  });
+
+  it("symbol hover shows full path when projectFolder does not match", () => {
+    const result = computeHover("Entry", svc, undefined, "/other")!;
+    const text = result.contents.join("\n");
+    expect(text).toContain("/project/main.asm");
+  });
+
   it("symbol hover mentions the definition line", () => {
     const result = computeHover("Entry", svc)!;
     const text = result.contents.join("\n");
@@ -106,6 +119,87 @@ describe("computeHover", () => {
     const result = computeHover("MAXVAL", svc)!;
     const text = result.contents.join("\n");
     expect(text).toContain("$FF");
+  });
+
+  // --- Macro body preview
+  it("macro hover includes body lines as a code block when not on definition line", () => {
+    const svcWithBody = new LanguageIntelService();
+    svcWithBody.update(makeData([
+      makeSym({
+        name: "Border",
+        kind: "macro",
+        line: 1,
+        description: "(color)",
+        bodyLines: ["  push af", "  ld a,{{color}}", "  out ($fe),a", "  pop af"]
+      })
+    ]));
+    // lineNumber 35 ≠ sym.line 1 → invocation → body shown
+    const result = computeHover("Border", svcWithBody, 35)!;
+    expect(result).not.toBeNull();
+    const text = result.contents.join("\n");
+    expect(text).toContain("push af");
+    expect(text).toContain("{{color}}");
+    expect(text).toContain("out ($fe),a");
+    expect(text).toContain("```");
+  });
+
+  it("macro hover does NOT show body when cursor is on definition line", () => {
+    const svcWithBody = new LanguageIntelService();
+    svcWithBody.update(makeData([
+      makeSym({
+        name: "Border",
+        kind: "macro",
+        line: 1,
+        description: "(color)",
+        bodyLines: ["  push af", "  pop af"]
+      })
+    ]));
+    // lineNumber 1 === sym.line 1 → definition → body suppressed
+    const result = computeHover("Border", svcWithBody, 1)!;
+    expect(result).not.toBeNull();
+    const text = result.contents.join("\n");
+    expect(text).not.toContain("push af");
+    expect(text).not.toContain("```");
+  });
+
+  it("macro hover shows body when lineNumber is not provided (backward compat)", () => {
+    const svcWithBody = new LanguageIntelService();
+    svcWithBody.update(makeData([
+      makeSym({
+        name: "Border",
+        kind: "macro",
+        line: 1,
+        bodyLines: ["  push af", "  pop af"]
+      })
+    ]));
+    const result = computeHover("Border", svcWithBody)!;
+    const text = result.contents.join("\n");
+    expect(text).toContain("push af");
+  });
+
+  it("macro body filters out blank lines", () => {
+    const svcWithBody = new LanguageIntelService();
+    svcWithBody.update(makeData([
+      makeSym({
+        name: "Delay",
+        kind: "macro",
+        line: 10,
+        bodyLines: ["  push bc", "", "  ld bc, 0", "  ", "  pop bc"]
+      })
+    ]));
+    const result = computeHover("Delay", svcWithBody, 20)!;
+    const codeBlock = result.contents.find(c => c.startsWith("```"))!;
+    expect(codeBlock).not.toContain("\n\n");   // no consecutive blank lines
+    expect(codeBlock).toContain("push bc");
+    expect(codeBlock).toContain("pop bc");
+  });
+
+  it("macro hover without body lines shows no code block", () => {
+    const result = computeHover("NextMacro", svc)!;
+    expect(result).not.toBeNull();
+    const text = result.contents.join("\n");
+    expect(text).toContain("NextMacro");
+    expect(text).not.toContain("```");
   });
 
   // --- Unknown word

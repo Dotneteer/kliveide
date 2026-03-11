@@ -519,6 +519,8 @@ export type SymbolDefinitionInfo = {
   readonly value?: number;
   /** Human-readable value string, e.g. "= $6000". */
   readonly description?: string;
+  /** For macros: raw source text of each body line (between .macro and .endm). */
+  readonly bodyLines?: readonly string[];
 };
 
 /**

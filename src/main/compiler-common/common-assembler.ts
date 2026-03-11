@@ -3471,6 +3471,10 @@ export abstract class CommonAssembler<
 
     // --- Create macro definition
     const macroLine = allLines[firstLine];
+    const bodyLines: string[] = [];
+    for (let bi = firstLine + 1; bi < currentLineIndex.index; bi++) {
+      bodyLines.push((allLines[bi].sourceText as string) ?? "");
+    }
     const macroDef: IMacroDefinition<TInstruction> = {
       macroName: label,
       argNames: macro.parameters,
@@ -3482,7 +3486,8 @@ export abstract class CommonAssembler<
       fileIndex: (macroLine as any).fileIndex ?? 0,
       sourceLine: macroLine.line,
       startColumn: macroLine.startColumn,
-      endColumn: macroLine.endColumn
+      endColumn: macroLine.endColumn,
+      bodyLines: bodyLines.length > 0 ? bodyLines : undefined
     };
 
     // --- Check each macro line for invalid macro parameter names

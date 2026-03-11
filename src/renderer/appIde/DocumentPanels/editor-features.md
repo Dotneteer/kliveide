@@ -12,13 +12,13 @@ When a developer types a macro invocation like `Delay(` or a built-in function l
 
 Show compiler errors and warnings directly in the editor as red/yellow squiggles under the offending text, with messages in the Problems panel. **This feature is already live** — background compilation sets Monaco decorations with red wavy underlines and inline error badges.
 
-## 3. Macro Expansion Preview
+## ~~3. Macro Expansion Preview~~ — Already Implemented
 
-When hovering over a macro invocation like `Delay(#24)`, show the expanded Z80 instructions that the compiler will emit. This is critical because Klive macros are not simple text substitution — they support argument injection into operands, multi-line string parameters via `&`, and compile-time loops inside macro bodies. Seeing the expansion helps developers verify correctness without running the program.
+When hovering over a macro invocation like `Delay(#24)`, show the expanded Z80 instructions that the compiler will emit. **This feature is now live** — hover over any macro name to see its body with parameter placeholders (e.g. `{{color}}`), giving you an immediate preview of the code the macro expands to.
 
-## 4. Code Folding for Blocks
+## ~~4. Code Folding for Blocks~~ — Already Implemented
 
-Enable folding regions for all block constructs: `.macro`/`.endm`, `.loop`/`.endl`, `.repeat`/`.until`, `.while`/`.endw`, `.for`/`.next`, `.proc`/`.endp`, `.struct`/`.ends`, `.if`/`.endif`, `.module`/`.endmodule`, and `#if`/`#endif` directives. This lets developers collapse sections they are not actively working on, especially in larger assembly files.
+Enable folding regions for all block constructs: `.macro`/`.endm`, `.loop`/`.endl`, `.repeat`/`.until`, `.while`/`.endw`, `.for`/`.next`, `.proc`/`.endp`, `.struct`/`.ends`, `.if`/`.endif`, `.module`/`.endmodule`, and `#if`/`#endif` directives. **This feature is now live** — click the folding triangles in the editor gutter to collapse/expand blocks and focus on the code you're working on.
 
 ## ~~5. Rename Symbol~~ — Already Implemented
 
