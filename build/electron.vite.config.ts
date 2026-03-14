@@ -26,8 +26,8 @@ export default defineConfig({
       reportCompressedSize: false,
       rollupOptions: {
         input: {
-          index: resolve(__dirname, "src/main/index.ts"),
-          compilerWorker: resolve(__dirname, "src/main/compiler-integration/compilerWorker.ts") // Updated to match actual filename
+          index: resolve(__dirname, "../src/main/index.ts"),
+          compilerWorker: resolve(__dirname, "../src/main/compiler-integration/compilerWorker.ts") // Updated to match actual filename
         },
         // Created separate entry-specific externals
         external: (id, parentId) => {

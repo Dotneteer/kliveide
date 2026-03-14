@@ -1,8 +1,14 @@
-# 1. Using Klive IDE with ZX Spectrum Next Development
+# Flying Start
+
+Every chapter in this book comes with working code examples — real Z80 assembly projects you can load straight into Klive IDE and run. All of them are bundled into a single archive: download **[next-examples.zip](/next-examples.zip)**, unzip it somewhere convenient, and you'll have the full set of sample projects ready to open.
+
+Each subfolder in the archive corresponds to a chapter. You don't need all of them right now — we'll point to the relevant project at the start of each section. For the moment, just have the archive unpacked and Klive IDE installed, and you're ready to go.
+
+## Using Klive IDE with ZX Spectrum Next Development
 
 Throughout this book, you'll build, run, and debug all the code examples using **Klive IDE** — an open-source emulator and development environment for ZX Spectrum machines, including the ZX Spectrum Next.
 
-## Two Windows, One Workflow
+### Two Windows, One Workflow
 
 Klive runs as two separate windows: an **Emulator window** and an **IDE window**. The emulator is where your code actually runs — you see the ZX Spectrum Next screen, hear the audio, and interact with the machine. The IDE window is where you write code, manage projects, set breakpoints, inspect memory, and trigger builds.
 
@@ -12,7 +18,7 @@ Having two independent windows is no accident. If you have a dual-monitor setup,
 
 The first time you start Klive, only the Emulator window opens. Use **View | Show IDE** to bring up the IDE window alongside it.
 
-## What We'll Use It For
+### What We'll Use It For
 
 Every code example in this book lives in a **Klive project** — a folder with a `klive.project` file that tells the IDE which machine to target, which file to compile, and how to inject the built code into the emulator. You create a new project with **File | New project**, pick the ZX Spectrum Next as the machine type, choose a template, and the IDE sets everything up.
 
@@ -23,7 +29,7 @@ From there, the typical loop is:
 
 All the machine control commands — start, pause, stop, step into, step over — are available from both windows, so you can drive the debug session from whichever screen you're looking at.
 
-## Finding Your Way Around the Documentation
+### Finding Your Way Around the Documentation
 
 The complete Klive IDE documentation lives at [https://dotneteer.github.io/kliveide/](https://dotneteer.github.io/kliveide/). Here are the sections most relevant to getting up and running:
 

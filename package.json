@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -23,21 +23,18 @@
   "homepage": "https://github.com/Dotneteer/kliveide",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "tsc && electron-vite build && electron-builder",
+    "dev": "electron-vite dev --config build/electron.vite.config.ts",
+    "build": "tsc && electron-vite build --config build/electron.vite.config.ts && electron-builder --config build/electron-builder.json5",
     "build:check": "tsc",
-    "build:win": "npm run build && electron-builder build --win --x64",
-    "build:mac": "npm run build && electron-builder build --mac --x64",
-    "build:mac:arm64": "npm run build && electron-builder build --mac --arm64",
-    "build:linux": "npm run build && electron-builder build --linux --x64",
-    "build:linux:arm64": "npm run build && electron-builder build --linux --arm64",
-    "test": "vitest run",
+    "build:win": "npm run build && electron-builder build --win --x64 --config build/electron-builder.json5",
+    "build:mac": "npm run build && electron-builder build --mac --x64 --config build/electron-builder.json5",
+    "build:mac:arm64": "npm run build && electron-builder build --mac --arm64 --config build/electron-builder.json5",
+    "build:linux": "npm run build && electron-builder build --linux --x64 --config build/electron-builder.json5",
+    "build:linux:arm64": "npm run build && electron-builder build --linux --arm64 --config build/electron-builder.json5",
+    "test": "vitest run --config build/vitest.config.ts",
     "doc:dev": "cd docs && next dev",
-    "doc:build": "cd docs && next build",
-    "bootstrap:ci": "npm ci",
-    "convert-c64": "node convert-c64-rom.js",
-    "convert-c64:1000": "node convert-c64-rom.js --lines 1000",
-    "convert-c64:full": "node convert-c64-rom.js"
+    "doc:build": "(rm -f _experiments/testprojects/next-examples.zip && cd _experiments/testprojects/next && zip -r ../next-examples.zip book && cp ../next-examples.zip ../../../docs/public/) && (cd docs && next build)",
+    "bootstrap:ci": "npm ci"
   },
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
