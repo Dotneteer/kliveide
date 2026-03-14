@@ -3,7 +3,7 @@
 ;==========================================================
 WiteNextReg1
     ld hl,Title_WNextReg_1
-    call _printTitle
+    call _printTitle2
     ld hl,PrintStep1_Str
     call _printText
     ;
@@ -51,5 +51,4 @@ PrintStep1_Str
     .defn "Write 162 to NextReg $7F (#1)"
 PrintStep2_Str
     .defn "Value of NextReg $7F: "
-
 

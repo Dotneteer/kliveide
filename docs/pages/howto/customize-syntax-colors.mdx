@@ -104,7 +104,15 @@ Let's customize the syntax highlighting for Klive Z80 Assembly:
       "fontStyle": "bold"
     },
     "identifier": "dcdcaa",
-    "register": "9cdcfe"
+    "register": "9cdcfe",
+    "variable": "dcdcaa",
+    "namespace": "86c691",
+    "struct": "4ec9b0",
+    "equ": "4fcfff",
+    "macro": {
+      "foreground": "4ec9b0",
+      "fontStyle": "bold italic"
+    }
   },
   "lightTheme": {
     "comment": "237122",
@@ -113,7 +121,15 @@ Let's customize the syntax highlighting for Klive Z80 Assembly:
       "fontStyle": "bold"
     },
     "identifier": "795e26",
-    "register": "0089ba"
+    "register": "0089ba",
+    "variable": "795e26",
+    "namespace": "267f99",
+    "struct": "267f99",
+    "equ": "0070c1",
+    "macro": {
+      "foreground": "267f99",
+      "fontStyle": "bold italic"
+    }
   }
 }
 ```
@@ -128,6 +144,7 @@ You must restart Klive IDE for token color changes to take effect.
 
 ### Assembly Languages (Z80, 6510, ZXB Assembly, SjASM)
 
+**Syntax tokens:**
 - `comment` - Comments
 - `keyword` - CPU instructions (LD, ADD, SUB, etc.)
 - `statement` - Assembler directives and statements
@@ -138,6 +155,13 @@ You must restart Klive IDE for token color changes to take effect.
 - `function` - Built-in functions
 - `macroparam` - Macro parameters
 - `escape` - Escape sequences in strings
+
+**Semantic tokens (compiler-resolved):**
+- `variable` - Resolved labels and variables
+- `namespace` - Module scopes
+- `struct` - Struct type definitions
+- `equ` - .equ constant definitions
+- `macro` - Macro and procedure definitions
 
 ### ZX Basic
 

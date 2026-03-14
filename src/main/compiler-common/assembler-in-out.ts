@@ -3,7 +3,7 @@ import path from "path";
 import type { ErrorCodes } from "./assembler-errors";
 
 import { AssemblyModule } from "./assembly-module";
-import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolValueMap, TypedObject } from "@main/compiler-common/abstractions";
+import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolReferenceInfo, SymbolValueMap, TypedObject } from "@main/compiler-common/abstractions";
 import { CommonTokenType } from "./common-tokens";
 
 /**
@@ -89,6 +89,12 @@ export class AssemblerOutput<
    * Items of the list file
    */
   readonly listFileItems: IListFileItem[];
+
+  /**
+   * All symbol references recorded during compilation.
+   * Each entry describes one use (not definition) of a symbol in source code.
+   */
+  readonly symbolReferences: SymbolReferenceInfo[] = [];
 
   /**
    * Trace outputs

@@ -160,4 +160,9 @@ export interface IDocumentHubService {
    * Disposes the resources held by the instance
    */
   dispose(): void;
+
+  /**
+   * Reloads a document from disk
+   */
+  reloadDocument(documentId: string): Promise<void>
 }

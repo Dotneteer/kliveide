@@ -4,17 +4,34 @@ import { FixupEntry } from "./fixups";
 import { CommonTokenType } from "@main/compiler-common/common-tokens";
 
 /**
+ * Optional location information for a symbol definition.
+ */
+export type SymbolDefinitionLocation = {
+  fileIndex: number;
+  line: number;
+  startColumn: number;
+  endColumn: number;
+};
+
+/**
  * This class represents an assembly symbol
  */
 export class AssemblySymbolInfo implements IAssemblySymbolInfo {
   constructor(
     public readonly name: string,
     public readonly type: SymbolType,
-    public value: IExpressionValue
+    public value: IExpressionValue,
+    location?: SymbolDefinitionLocation
   ) {
     this.isModuleLocal = name.startsWith("@");
     this.isShortTerm = name.startsWith("`");
     this.isUsed = false;
+    if (location) {
+      this.definitionFileIndex = location.fileIndex;
+      this.definitionLine = location.line;
+      this.definitionStartColumn = location.startColumn;
+      this.definitionEndColumn = location.endColumn;
+    }
   }
 
   /**
@@ -32,22 +49,45 @@ export class AssemblySymbolInfo implements IAssemblySymbolInfo {
    */
   isUsed: boolean;
 
+  readonly definitionFileIndex?: number;
+  readonly definitionLine?: number;
+  readonly definitionStartColumn?: number;
+  readonly definitionEndColumn?: number;
+
   /**
    * Factory method that creates a label
    * @param name Label name
    * @param value Label value
+   * @param location Optional source location of the definition
    */
-  static createLabel(name: string, value: IExpressionValue): AssemblySymbolInfo {
-    return new AssemblySymbolInfo(name, SymbolType.Label, value);
+  static createLabel(
+    name: string,
+    value: IExpressionValue,
+    location?: SymbolDefinitionLocation
+  ): AssemblySymbolInfo {
+    return new AssemblySymbolInfo(name, SymbolType.Label, value, location);
   }
 
   /**
    * Factory method that creates a variable
    * @param name Variable name
    * @param value Variable value
+   * @param location Optional source location of the definition
    */
-  static createVar(name: string, value: IExpressionValue): AssemblySymbolInfo {
-    return new AssemblySymbolInfo(name, SymbolType.Var, value);
+  static createVar(
+    name: string,
+    value: IExpressionValue,
+    location?: SymbolDefinitionLocation
+  ): AssemblySymbolInfo {
+    return new AssemblySymbolInfo(name, SymbolType.Var, value, location);
+  }
+
+  static createEqu(
+    name: string,
+    value: IExpressionValue,
+    location?: SymbolDefinitionLocation
+  ): AssemblySymbolInfo {
+    return new AssemblySymbolInfo(name, SymbolType.Equ, value, location);
   }
 }
 

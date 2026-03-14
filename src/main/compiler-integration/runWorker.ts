@@ -7,8 +7,9 @@ import {
   KliveCompilerOutput
 } from "@abstractions/CompilerInfo";
 import { mainStore } from "@main/main-store";
-import { endBackgroundCompileAction } from "@common/state/actions";
+import { endBackgroundCompileAction, setLanguageIntelAction } from "@common/state/actions";
 import { AppState } from "@common/state/AppState";
+import { extractLanguageIntelData } from "./extractIntelData";
 import { __DARWIN__ } from "@main/electron-utils";
 
 export const COMPILER_WORKER_FILE = "compilerWorker";
@@ -46,6 +47,12 @@ export function runBackgroundCompileWorker(
               errors: []
             };
       mainStore.dispatch(endBackgroundCompileAction(backgroundResult));
+      // Only update intel data on success — preserve the last good
+      // semantic state so that tokens survive compilation errors.
+      if (backgroundResult.success) {
+        const intelData = extractLanguageIntelData(result);
+        mainStore.dispatch(setLanguageIntelAction(intelData));
+      }
       resolve(backgroundResult);
     });
 

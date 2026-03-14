@@ -15,6 +15,15 @@ code {
     monospace;
 }
 
+/* Force Monaco editor input widgets (e.g. rename input) to inherit theme colors.
+   Chromium's user-agent stylesheet sets input color to 'fieldtext' instead of
+   inheriting from the parent, so Monaco's themed inline styles don't reach them. */
+.monaco-editor .rename-box .rename-input,
+.monaco-editor .find-widget input,
+.monaco-editor .monaco-inputbox input {
+  color: inherit;
+}
+
 .baseRootComponent {
   display: inline-block;
   width: 100%;

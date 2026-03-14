@@ -4,7 +4,10 @@ import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { ExportDialogSettings, IdeSettings } from "@main/settings";
-import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import {
+  KliveCompilerOutput,
+  LanguageIntelData
+} from "@abstractions/CompilerInfo";
 import { CompilationCompleted } from "@main/compiler-integration/runWorker";
 
 /**
@@ -155,6 +158,8 @@ export type CompilationState = {
   injectionVersion?: number;
   backgroundInProgress?: boolean;
   backgroundResult?: CompilationCompleted;
+  /** Language intelligence data populated after each successful background compile. */
+  languageIntel?: LanguageIntelData;
 };
 
 /**

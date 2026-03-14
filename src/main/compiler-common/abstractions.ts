@@ -28,7 +28,8 @@ export interface ParserErrorMessage<T> {
 export enum SymbolType {
   None,
   Label,
-  Var
+  Var,
+  Equ
 }
 
 /**
@@ -133,6 +134,42 @@ export interface IAssemblySymbolInfo extends IHasUsageInfo {
    * Tests if this symbol is a short-term symbol.
    */
   readonly isShortTerm: boolean;
+
+  /**
+   * Index of the source file where this symbol is defined.
+   */
+  readonly definitionFileIndex?: number;
+
+  /**
+   * Line number (1-based) in the source file where this symbol is defined.
+   */
+  readonly definitionLine?: number;
+
+  /**
+   * Start column (inclusive) of the symbol definition in the source line.
+   */
+  readonly definitionStartColumn?: number;
+
+  /**
+   * End column (exclusive) of the symbol definition in the source line.
+   */
+  readonly definitionEndColumn?: number;
+}
+
+/**
+ * Represents a single usage (reference) of a symbol in source code.
+ */
+export interface SymbolReferenceInfo {
+  /** The (lowercased, canonical) symbol name. */
+  readonly symbolName: string;
+  /** Index into the source file list. */
+  readonly fileIndex: number;
+  /** 1-based line number. */
+  readonly line: number;
+  /** Inclusive start column. */
+  readonly startColumn: number;
+  /** Exclusive end column. */
+  readonly endColumn: number;
 }
 
 /**
@@ -166,6 +203,14 @@ export interface IEvaluationContext<TNode extends TypedObject, TToken extends Co
    * Gets the current loop counter value
    */
   getLoopCounterValue(): IExpressionValue;
+
+  /**
+   * Records a symbol reference at the specified node position.
+   * Called whenever a symbol identifier is successfully resolved during evaluation.
+   * @param symbolName The canonical symbol name
+   * @param node The expression node whose position describes the reference
+   */
+  recordSymbolReference?(symbolName: string, node: NodePosition): void;
 
   /**
    * Evaluates the value if the specified expression node
@@ -379,6 +424,16 @@ export interface IMacroDefinition<TNode extends TypedObject> {
   readonly argNames: IdentifierNode<TNode>[];
   readonly endLabel: string | null;
   readonly section: DefinitionSection;
+  /** Index of the source file where this macro is defined. */
+  readonly fileIndex?: number;
+  /** 1-based source line number of the macro declaration. */
+  readonly sourceLine?: number;
+  /** Start column (inclusive) of the macro label. */
+  readonly startColumn?: number;
+  /** End column (exclusive) of the macro label. */
+  readonly endColumn?: number;
+  /** Raw source text of each body line (between .macro and .endm, exclusive). */
+  readonly bodyLines?: readonly string[];
 }
 
 /**

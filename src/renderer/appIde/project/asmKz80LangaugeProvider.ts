@@ -10,6 +10,9 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   allowBuildRoot: true,
   supportsKlive: true,
   options: {
+    // Include '.' '#' '@' as word-start chars so that getWordAtPosition()
+    // returns e.g. '.macro' or '#ifdef' — required for completion ranges/hover.
+    wordPattern: /([#.@][a-zA-Z0-9_]*)|([a-zA-Z_][a-zA-Z0-9_]*)/g,
     comments: {
       lineComment: ";"
     }
@@ -467,19 +470,10 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".onsuccess",
       ".ONSUCCESS",
       "onsuccess",
-      "ONSUCCESS",
+      "ONSUCCESS"
     ],
 
-    boolLiterals: [
-      "true",
-      "TRUE",
-      "false",
-      "FALSE",
-      ".false",
-      ".FALSE",
-      ".true",
-      ".TRUE"
-    ],
+    boolLiterals: ["true", "TRUE", "false", "FALSE", ".false", ".FALSE", ".true", ".TRUE"],
 
     operators: [
       ":",
@@ -734,22 +728,7 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".CNT"
     ],
 
-    conditions: [
-      "z",
-      "Z",
-      "nz",
-      "NZ",
-      "nc",
-      "NC",
-      "po",
-      "PO",
-      "pe",
-      "PE",
-      "p",
-      "P",
-      "m",
-      "M"
-    ],
+    conditions: ["z", "Z", "nz", "NZ", "nc", "NC", "po", "PO", "pe", "PE", "p", "P", "m", "M"],
 
     escapes: /\\(?:[ipfbIoatPC0\\"']|x[0-9A-Fa-f]{2})/,
 
@@ -905,9 +884,38 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       {
         token: "escape",
         foreground: "d7ba7d"
-      }
+      },
+      // --- Semantic token type colours (bare names — matched by getTokenStyleMetadata)
+      {
+        token: "variable",
+        foreground: "dcdcaa"
+      }, // labels / vars
+      {
+        token: "namespace",
+        foreground: "86c691"
+      }, // modules
+      {
+        token: "struct",
+        foreground: "4ec9b0"
+      }, // struct types
+      {
+        token: "equ",
+        foreground: "4fcfff"
+      }, // equ constants
+      {
+        token: "macro",
+        foreground: "4ec9b0",
+        fontStyle: "bold italic"
+      } // macros / procs
     ],
-    colors: {}
+    colors: {
+      "input.background": "#3c3c3c",
+      "input.foreground": "#cccccc",
+      "input.border": "#007acc",
+      "editorWidget.background": "#252526",
+      "editorWidget.foreground": "#cccccc",
+      "editorWidget.border": "#454545"
+    }
   },
   lightTheme: {
     rules: [
@@ -953,9 +961,37 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       {
         token: "escape",
         foreground: "a5673f"
-      }
+      },
+      // --- Semantic token type colours (bare names — matched by getTokenStyleMetadata)
+      {
+        token: "variable",
+        foreground: "795e26"
+      }, // labels / vars
+      {
+        token: "namespace",
+        foreground: "267f99"
+      }, // modules
+      {
+        token: "struct",
+        foreground: "267f99"
+      }, // struct types
+      {
+        token: "equ",
+        foreground: "0070c1"
+      }, // equ constants
+      {
+        token: "macro",
+        foreground: "267f99",
+        fontStyle: "bold italic"
+      } // macros / procs
     ],
-    colors: {}
+    colors: {
+      "input.background": "#ffffff",
+      "input.foreground": "#333333",
+      "input.border": "#a0a0a0",
+      "editorWidget.background": "#f3f3f3",
+      "editorWidget.foreground": "#333333",
+      "editorWidget.border": "#c8c8c8"
+    }
   }
 };
-

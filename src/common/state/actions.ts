@@ -365,6 +365,11 @@ export const endBackgroundCompileAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
+export const setLanguageIntelAction: ActionCreator = (value: any) => ({
+  type: "SET_LANGUAGE_INTEL",
+  payload: { value }
+});
+
 // --- Watch expression actions
 export const addWatchAction: ActionCreator = (watch: any) => ({
   type: "ADD_WATCH",

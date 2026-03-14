@@ -145,6 +145,11 @@ export interface CompilerOutput extends CompiledModule {
   readonly listFileItems: ListFileItem[];
 
   /**
+   * Symbol usage references recorded during compilation.
+   */
+  readonly symbolReferences: SymbolReferenceInfo[];
+
+  /**
    * Trace outputs
    */
   readonly traceOutput: string[];
@@ -268,6 +273,18 @@ type AssemblySymbolInfo = {
    * Signs if the object has been used
    */
   readonly isUsed: boolean;
+
+  /** Index of the source file where this symbol is defined. */
+  readonly definitionFileIndex?: number;
+
+  /** 1-based line number of the definition. */
+  readonly definitionLine?: number;
+
+  /** Inclusive start column of the definition. */
+  readonly definitionStartColumn?: number;
+
+  /** Exclusive end column of the definition. */
+  readonly definitionEndColumn?: number;
 };
 
 /**
@@ -476,6 +493,79 @@ interface CompiledModule {
    */
   readonly localScopes: SymbolScope[];
 }
+
+/**
+ * A single symbol usage recorded during compilation.
+ */
+export type SymbolReferenceInfo = {
+  readonly symbolName: string;
+  readonly fileIndex: number;
+  readonly line: number;
+  readonly startColumn: number;
+  readonly endColumn: number;
+};
+
+/**
+ * Location of a symbol definition.
+ */
+export type SymbolDefinitionInfo = {
+  readonly name: string;
+  readonly kind: "label" | "var" | "equ" | "macro" | "struct" | "proc" | "module";
+  readonly fileIndex: number;
+  readonly line: number;
+  readonly startColumn: number;
+  readonly endColumn: number;
+  /** Computed numeric value, if known. */
+  readonly value?: number;
+  /** Human-readable value string, e.g. "= $6000". */
+  readonly description?: string;
+  /** For macros: raw source text of each body line (between .macro and .endm). */
+  readonly bodyLines?: readonly string[];
+};
+
+/**
+ * A node in the document outline (labels, macros, structs, modules, procs).
+ */
+export type DocumentOutlineEntry = {
+  readonly name: string;
+  readonly kind: "label" | "var" | "equ" | "macro" | "struct" | "proc" | "module";
+  readonly fileIndex: number;
+  readonly line: number;
+  readonly endLine: number;
+  readonly children?: DocumentOutlineEntry[];
+};
+
+/**
+ * Serialisable subset of compiler output used by language intelligence
+ * features (autocomplete, hover, go-to-definition, outline, references).
+ * This type is safe to send through IPC (no class instances, no Maps).
+ */
+export type LanguageIntelData = {
+  /** All symbol definitions, including nested modules/procs. */
+  readonly symbolDefinitions: SymbolDefinitionInfo[];
+  /** All symbol usage references. */
+  readonly symbolReferences: SymbolReferenceInfo[];
+  /** Per-file document outline (labels, macros, structs, modules, procs). */
+  readonly documentOutline: DocumentOutlineEntry[];
+  /** Source file index → absolute path mapping. */
+  readonly sourceFiles: ReadonlyArray<{ index: number; filename: string }>;
+  /** Per-line address and emitted bytes for instructions that emit code. */
+  readonly lineInfo: LineIntelInfo[];
+};
+
+/**
+ * Per-line address and emitted bytes, extracted from the compiler's listFileItems.
+ * Used by language intelligence to show address/byte info in hover tooltips.
+ */
+export type LineIntelInfo = {
+  readonly fileIndex: number;
+  /** 1-based line number in the source file. */
+  readonly lineNumber: number;
+  /** Assembled address of the first byte emitted by this line. */
+  readonly address: number;
+  /** Machine-code bytes emitted by this line. */
+  readonly bytes: readonly number[];
+};
 
 /**
  * Describes a source file item
