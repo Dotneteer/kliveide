@@ -549,6 +549,22 @@ export type LanguageIntelData = {
   readonly documentOutline: DocumentOutlineEntry[];
   /** Source file index → absolute path mapping. */
   readonly sourceFiles: ReadonlyArray<{ index: number; filename: string }>;
+  /** Per-line address and emitted bytes for instructions that emit code. */
+  readonly lineInfo: LineIntelInfo[];
+};
+
+/**
+ * Per-line address and emitted bytes, extracted from the compiler's listFileItems.
+ * Used by language intelligence to show address/byte info in hover tooltips.
+ */
+export type LineIntelInfo = {
+  readonly fileIndex: number;
+  /** 1-based line number in the source file. */
+  readonly lineNumber: number;
+  /** Assembled address of the first byte emitted by this line. */
+  readonly address: number;
+  /** Machine-code bytes emitted by this line. */
+  readonly bytes: readonly number[];
 };
 
 /**

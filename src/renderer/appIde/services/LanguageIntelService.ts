@@ -4,6 +4,9 @@ import type {
   SymbolDefinitionInfo,
   SymbolReferenceInfo
 } from "@abstractions/CompilerInfo";
+
+/** Address and bytes for a single assembled line. */
+export type LineAddressInfo = { address: number; bytes: readonly number[] };
 import type { AppState } from "@common/state/AppState";
 import type { Store } from "@common/state/redux-light";
 
@@ -35,6 +38,19 @@ export interface ILanguageIntelService {
 
   /** File index for the given absolute path, or undefined. */
   getFileIndex(filePath: string): number | undefined;
+
+  /**
+   * Find the absolute path of a known source file whose path ends with the
+   * given relative path (e.g. "lib/macros.z80asm"). Returns the first match,
+   * or undefined if no known file matches.
+   */
+  findFileByRelativePath(relativePath: string): string | undefined;
+
+  /**
+   * Returns the assembled address and emitted bytes for the given
+   * (fileIndex, 1-based lineNumber), or undefined if the line emits no code.
+   */
+  getLineAddress(fileIndex: number, lineNumber: number): LineAddressInfo | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -49,6 +65,7 @@ export class LanguageIntelService implements ILanguageIntelService {
   private _outlineByFile = new Map<number, DocumentOutlineEntry[]>();
   private _fileIndexToPath = new Map<number, string>();
   private _filePathToIndex = new Map<string, number>();
+  private _lineInfoMap = new Map<string, LineAddressInfo>();
 
   /**
    * Constructs the service.
@@ -79,6 +96,7 @@ export class LanguageIntelService implements ILanguageIntelService {
     this._outlineByFile.clear();
     this._fileIndexToPath.clear();
     this._filePathToIndex.clear();
+    this._lineInfoMap.clear();
 
     // --- Index symbol definitions
     for (const sym of data.symbolDefinitions) {
@@ -119,6 +137,11 @@ export class LanguageIntelService implements ILanguageIntelService {
     for (const sf of data.sourceFiles) {
       this._fileIndexToPath.set(sf.index, sf.filename);
       this._filePathToIndex.set(sf.filename, sf.index);
+    }
+
+    // --- Index per-line address/byte information
+    for (const li of data.lineInfo ?? []) {
+      this._lineInfoMap.set(`${li.fileIndex}:${li.lineNumber}`, { address: li.address, bytes: li.bytes });
     }
   }
 
@@ -170,6 +193,23 @@ export class LanguageIntelService implements ILanguageIntelService {
 
   getFileIndex(filePath: string): number | undefined {
     return this._filePathToIndex.get(filePath);
+  }
+
+  getLineAddress(fileIndex: number, lineNumber: number): LineAddressInfo | undefined {
+    return this._lineInfoMap.get(`${fileIndex}:${lineNumber}`);
+  }
+
+  findFileByRelativePath(relativePath: string): string | undefined {
+    // Normalise to forward slashes so Windows paths work too
+    const rel = relativePath.replace(/\\/g, "/");
+    const suffix = rel.startsWith("/") ? rel : "/" + rel;
+    for (const [absPath] of this._filePathToIndex) {
+      const normalised = absPath.replace(/\\/g, "/");
+      if (normalised.endsWith(suffix) || normalised === rel) {
+        return absPath;
+      }
+    }
+    return undefined;
   }
 }
 

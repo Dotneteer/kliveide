@@ -22,7 +22,8 @@ function makeData(
     sourceFiles: [
       { index: 0, filename: "/project/main.asm" },
       { index: 1, filename: "/project/lib.asm" }
-    ]
+    ],
+    lineInfo: []
   };
 }
 

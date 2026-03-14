@@ -12,7 +12,8 @@ function makeData(syms: SymbolDefinitionInfo[] = []): LanguageIntelData {
     symbolDefinitions: syms,
     symbolReferences: [],
     documentOutline: [],
-    sourceFiles: [{ index: 0, filename: "/project/main.asm" }]
+    sourceFiles: [{ index: 0, filename: "/project/main.asm" }],
+    lineInfo: []
   };
 }
 
@@ -207,3 +208,4 @@ describe("computeHover", () => {
     expect(computeHover("UnknownXyz", svc)).toBeNull();
   });
 });
+

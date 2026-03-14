@@ -267,6 +267,26 @@ const directives: StaticCompletionItem[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Block snippet templates
+// ---------------------------------------------------------------------------
+
+const snippets: StaticCompletionItem[] = [
+  { label: ".macro\u2026endm",        kind: "snippet", detail: "Macro block skeleton",            insertText: "${1:Name}: .macro(${2:params})\n\t$3\n.endm" },
+  { label: ".proc\u2026endp",         kind: "snippet", detail: "Procedure block skeleton",        insertText: "${1:Name}: .proc\n\t$2\n.endp" },
+  { label: ".loop\u2026endl",         kind: "snippet", detail: "Loop N-times block skeleton",     insertText: ".loop ${1:count}\n\t$2\n.endl" },
+  { label: ".repeat\u2026until",      kind: "snippet", detail: "Repeat\u2026until block skeleton", insertText: ".repeat\n\t$1\n.until ${2:condition}" },
+  { label: ".while\u2026endw",        kind: "snippet", detail: "While loop block skeleton",       insertText: ".while ${1:condition}\n\t$2\n.endw" },
+  { label: ".for\u2026next",          kind: "snippet", detail: "For loop block skeleton",         insertText: ".for ${1:var} = ${2:from} .to ${3:to}\n\t$4\n.next" },
+  { label: ".struct\u2026ends",       kind: "snippet", detail: "Structure definition skeleton",   insertText: "${1:Name}: .struct\n\t$2\n.ends" },
+  { label: ".module\u2026endmodule",  kind: "snippet", detail: "Module scope skeleton",           insertText: "${1:Name}: .module\n\t$2\n.endmodule" },
+  { label: ".if\u2026endif",          kind: "snippet", detail: "If block skeleton",               insertText: ".if ${1:condition}\n\t$2\n.endif" },
+  { label: ".if\u2026else\u2026endif",kind: "snippet", detail: "If/else block skeleton",          insertText: ".if ${1:condition}\n\t$2\n.else\n\t$3\n.endif" },
+  { label: "#ifdef\u2026endif",       kind: "snippet", detail: "#ifdef block skeleton",           insertText: "#ifdef ${1:SYMBOL}\n\t$2\n#endif" },
+  { label: "#ifndef\u2026endif",      kind: "snippet", detail: "#ifndef block skeleton",          insertText: "#ifndef ${1:SYMBOL}\n\t$2\n#endif" },
+  { label: "#if\u2026endif",          kind: "snippet", detail: "#if block skeleton",              insertText: "#if ${1:condition}\n\t$2\n#endif" },
+];
+
+// ---------------------------------------------------------------------------
 // Combined export
 // ---------------------------------------------------------------------------
 

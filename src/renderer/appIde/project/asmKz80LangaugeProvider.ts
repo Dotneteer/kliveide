@@ -10,6 +10,9 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   allowBuildRoot: true,
   supportsKlive: true,
   options: {
+    // Include '.' '#' '@' as word-start chars so that getWordAtPosition()
+    // returns e.g. '.macro' or '#ifdef' — required for completion ranges/hover.
+    wordPattern: /([#.@][a-zA-Z0-9_]*)|([a-zA-Z_][a-zA-Z0-9_]*)/g,
     comments: {
       lineComment: ";"
     }
@@ -905,7 +908,13 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       {
         token: "escape",
         foreground: "d7ba7d"
-      }
+      },
+      // --- Semantic token type colours (bare names — matched by getTokenStyleMetadata)
+      { token: "variable",   foreground: "dcdcaa" }, // labels / vars
+      { token: "namespace",  foreground: "86c691" }, // modules
+      { token: "struct",     foreground: "4ec9b0" }, // struct types
+      { token: "enumMember", foreground: "4fcfff" }, // equ constants
+      { token: "macro",      foreground: "4ec9b0" }  // macros / procs
     ],
     colors: {
       "input.background": "#3c3c3c",
@@ -960,7 +969,13 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       {
         token: "escape",
         foreground: "a5673f"
-      }
+      },
+      // --- Semantic token type colours (bare names — matched by getTokenStyleMetadata)
+      { token: "variable",   foreground: "5a5adb" }, // labels / vars
+      { token: "namespace",  foreground: "267f99" }, // modules
+      { token: "struct",     foreground: "267f99" }, // struct types
+      { token: "enumMember", foreground: "098658" }, // equ constants
+      { token: "macro",      foreground: "a5673f" }  // macros / procs
     ],
     colors: {
       "input.background": "#ffffff",

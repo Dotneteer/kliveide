@@ -1347,7 +1347,8 @@ export abstract class CommonAssembler<
   private async addSymbol(
     symbol: string,
     line: AssemblyLine<TInstruction>,
-    value: IExpressionValue
+    value: IExpressionValue,
+    symbolType: SymbolType = SymbolType.Label
   ): Promise<void> {
     const assembler = this;
 
@@ -1358,8 +1359,9 @@ export abstract class CommonAssembler<
 
     if (symbol.startsWith(".")) {
       symbol = symbol.substring(1);
-      this._output.symbols[symbol] = AssemblySymbolInfo.createLabel(
+      this._output.symbols[symbol] = new AssemblySymbolInfo(
         symbol,
+        symbolType,
         value,
         locationFromLine(line)
       );
@@ -1416,7 +1418,7 @@ export abstract class CommonAssembler<
       return;
     }
 
-    lookup[symbol] = AssemblySymbolInfo.createLabel(symbol, value, locationFromLine(line));
+    lookup[symbol] = new AssemblySymbolInfo(symbol, symbolType, value, locationFromLine(line));
 
     /**
      * Gets the current symbol map that can be used for symbol resolution
@@ -1442,7 +1444,7 @@ export abstract class CommonAssembler<
       lookup = localScopes[localScopes.length - 1].symbols;
     }
     const symbolInfo = lookup[symbol];
-    return symbolInfo && symbolInfo.type === SymbolType.Label;
+    return symbolInfo && (symbolInfo.type === SymbolType.Label || symbolInfo.type === SymbolType.Equ);
   }
 
   /**
@@ -1926,7 +1928,7 @@ export abstract class CommonAssembler<
     if (value.isNonEvaluated) {
       this.recordFixup(asmLine, FixupType.Equ, pragma.value, label);
     } else {
-      await this.addSymbol(label, asmLine, value);
+      await this.addSymbol(label, asmLine, value, SymbolType.Equ);
     }
   }
 
@@ -4917,7 +4919,7 @@ export abstract class CommonAssembler<
         } else {
           scope.addSymbol(
             equ.label,
-            AssemblySymbolInfo.createLabel(
+            AssemblySymbolInfo.createEqu(
               equ.label,
               evalResult.value,
               locationFromLine(equ.sourceLine)

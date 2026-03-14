@@ -8,7 +8,7 @@ function makeSym(partial: Partial<SymbolDefinitionInfo> & { name: string }): Sym
 }
 
 function makeData(syms: SymbolDefinitionInfo[] = []): LanguageIntelData {
-  return { symbolDefinitions: syms, symbolReferences: [], documentOutline: [], sourceFiles: [] };
+  return { symbolDefinitions: syms, symbolReferences: [], documentOutline: [], sourceFiles: [], lineInfo: [] };
 }
 
 describe("computeCompletionItems", () => {
@@ -128,18 +128,14 @@ describe("computeCompletionItems", () => {
   // --- Trigger character: "." → only pragmas and keywords
   it("trigger '.' returns only pragmas and keywords", () => {
     const results = computeCompletionItems("", ".", svc);
-    for (const item of results) {
-      expect(["pragma", "keyword"]).toContain(
-        item.label.startsWith(".") ? (item.kind === CIK.Keyword ? "pragma" : "keyword") : "keyword"
-      );
-    }
-    // Instructions should NOT be present
     const labels = results.map((r) => r.label);
+    // Instructions should NOT be present
     expect(labels).not.toContain("nop");
     expect(labels).not.toContain("ld");
-    // Pragmas should be present
+    // Pragmas and keywords should be present
     expect(labels).toContain(".org");
     expect(labels).toContain(".db");
+    expect(labels).toContain(".macro");
   });
 
   it("trigger '#' returns only directives", () => {

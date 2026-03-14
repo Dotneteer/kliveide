@@ -100,6 +100,150 @@ export type FoldingRangeResult = {
 };
 
 // ---------------------------------------------------------------------------
+// Step 4.7 — ZX Spectrum Color Decorators
+// ---------------------------------------------------------------------------
+
+/** ZX Spectrum non-bright color palette [r, g, b] 0-255. */
+const ZX_COLORS: readonly [number, number, number][] = [
+  [0,   0,   0  ],  // 0 Black
+  [0,   0,   204],  // 1 Blue
+  [204, 0,   0  ],  // 2 Red
+  [204, 0,   204],  // 3 Magenta
+  [0,   204, 0  ],  // 4 Green
+  [0,   204, 204],  // 5 Cyan
+  [204, 204, 0  ],  // 6 Yellow
+  [204, 204, 204],  // 7 White
+];
+
+/** ZX Spectrum bright color palette [r, g, b] 0-255. */
+const ZX_BRIGHT_COLORS: readonly [number, number, number][] = [
+  [0,   0,   0  ],  // 0 Black (unchanged)
+  [0,   0,   255],  // 1 Blue
+  [255, 0,   0  ],  // 2 Red
+  [255, 0,   255],  // 3 Magenta
+  [0,   255, 0  ],  // 4 Green
+  [0,   255, 255],  // 5 Cyan
+  [255, 255, 0  ],  // 6 Yellow
+  [255, 255, 255],  // 7 White
+];
+
+function zxRgb(index: number, bright: number): [number, number, number] {
+  const i = index >= 0 && index <= 7 ? index : 0;
+  return bright ? ZX_BRIGHT_COLORS[i] : ZX_COLORS[i];
+}
+
+/** Returns the ZX Spectrum palette index (0-7) closest to the given RGB. */
+export function nearestZxIndex(r: number, g: number, b: number): number {
+  let minDist = Infinity;
+  let bestIndex = 0;
+  // Check both normal and bright palettes — index is the same in both
+  for (const palette of [ZX_COLORS, ZX_BRIGHT_COLORS]) {
+    for (let i = 0; i < 8; i++) {
+      const [pr, pg, pb] = palette[i];
+      const d = (r - pr) ** 2 + (g - pg) ** 2 + (b - pb) ** 2;
+      if (d < minDist) { minDist = d; bestIndex = i; }
+    }
+  }
+  return bestIndex;
+}
+
+/** A single color swatch to show inline next to a ZX color argument. */
+export type ColorDecoration = {
+  /** 1-based line number. */
+  line: number;
+  /** 1-based start column (inclusive). */
+  startColumn: number;
+  /** 1-based end column (exclusive). */
+  endColumn: number;
+  /** Red component 0-255. */
+  r: number;
+  /** Green component 0-255. */
+  g: number;
+  /** Blue component 0-255. */
+  b: number;
+};
+
+// Regex for attr(ink, paper[, bright[, flash]]) — no whitespace inside captures
+const ATTR_RE = /\battr\s*\(\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*(\d+))?(?:\s*,\s*(\d+))?\s*\)/gi;
+// Regex for ink(color) and paper(color)
+const INK_RE   = /\bink\s*\(\s*(\d+)\s*\)/gi;
+const PAPER_RE = /\bpaper\s*\(\s*(\d+)\s*\)/gi;
+
+/**
+ * Appends a ColorDecoration for `token` found inside `fullMatch` at or after
+ * `searchFrom` (offset within fullMatch).  Returns the next searchFrom offset.
+ */
+function pushTokenColor(
+  result: ColorDecoration[],
+  line: number,
+  matchIndex: number,
+  fullMatch: string,
+  token: string,
+  searchFrom: number,
+  rgb: [number, number, number]
+): number {
+  const off = fullMatch.indexOf(token, searchFrom);
+  if (off < 0) return searchFrom;
+  const col0 = matchIndex + off; // 0-based in the line
+  result.push({ line, startColumn: col0 + 1, endColumn: col0 + token.length + 1, r: rgb[0], g: rgb[1], b: rgb[2] });
+  return off + token.length;
+}
+
+/**
+ * Scans assembly source lines for ZX Spectrum color expressions:
+ *   attr(ink, paper[, bright[, flash]])
+ *   ink(color)
+ *   paper(color)
+ * Returns one ColorDecoration per color argument (two for attr).
+ * Part of line before the first `;` comment marker is searched.
+ *
+ * @param lines 0-indexed array of source strings (each string = one line).
+ */
+export function computeColorDecorations(lines: string[]): ColorDecoration[] {
+  const result: ColorDecoration[] = [];
+
+  for (let li = 0; li < lines.length; li++) {
+    const lineNum = li + 1;
+    // Strip comment tail (rough — doesn't handle ';' inside strings)
+    const raw = lines[li];
+    const semi = raw.indexOf(";");
+    const lineText = semi >= 0 ? raw.slice(0, semi) : raw;
+
+    // attr(ink, paper[, bright[, flash]])
+    ATTR_RE.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = ATTR_RE.exec(lineText)) !== null) {
+      const inkVal   = parseInt(m[1]);
+      const paperVal = parseInt(m[2]);
+      const bright   = m[3] !== undefined ? Math.min(1, parseInt(m[3])) : 0;
+      if (inkVal < 0 || inkVal > 7 || paperVal < 0 || paperVal > 7) continue;
+
+      let pos = 0;
+      pos = pushTokenColor(result, lineNum, m.index, m[0], m[1], pos, zxRgb(inkVal, bright));
+      pushTokenColor(result, lineNum, m.index, m[0], m[2], pos, zxRgb(paperVal, bright));
+    }
+
+    // ink(color)
+    INK_RE.lastIndex = 0;
+    while ((m = INK_RE.exec(lineText)) !== null) {
+      const val = parseInt(m[1]);
+      if (val < 0 || val > 7) continue;
+      pushTokenColor(result, lineNum, m.index, m[0], m[1], 0, zxRgb(val, 0));
+    }
+
+    // paper(color)
+    PAPER_RE.lastIndex = 0;
+    while ((m = PAPER_RE.exec(lineText)) !== null) {
+      const val = parseInt(m[1]);
+      if (val < 0 || val > 7) continue;
+      pushTokenColor(result, lineNum, m.index, m[0], m[1], 0, zxRgb(val, 0));
+    }
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -279,6 +423,36 @@ export function computeHover(
 }
 
 // ---------------------------------------------------------------------------
+// Step 4.3a — Go-to-Definition for #include directives
+// ---------------------------------------------------------------------------
+
+/** Regex matching `#include "path"` or `#include 'path'` (case-insensitive). */
+const INCLUDE_RE = /#include\s+["']([^"']+)["']/i;
+
+/**
+ * If `lineContent` is an `#include` directive and `column` (1-based Monaco
+ * column) falls within the quoted filename, return the absolute path of the
+ * included file as known by the language service. Returns null otherwise.
+ */
+export function computeIncludeDefinition(
+  lineContent: string,
+  column: number,
+  service: ILanguageIntelService
+): string | null {
+  const m = INCLUDE_RE.exec(lineContent);
+  if (!m) return null;
+
+  const filename = m[1];
+  // m.index = start of the full match; the filename starts after '#include "'
+  const filenameStart = m.index + m[0].indexOf(filename) + 1; // 1-based
+  const filenameEnd = filenameStart + filename.length;         // 1-based, inclusive
+
+  if (column < filenameStart || column > filenameEnd) return null;
+
+  return service.findFileByRelativePath(filename) ?? null;
+}
+
+// ---------------------------------------------------------------------------
 // Step 4.3 — Definition (Go-to-Definition)
 // ---------------------------------------------------------------------------
 
@@ -414,6 +588,114 @@ function extractBlockKeyword(line: string): string | null {
  *
  * @param lines Array of source lines (lines[0] = line 1 in the editor).
  */
+// ---------------------------------------------------------------------------
+// Step 4.8 — Block Bracket Matching
+// ---------------------------------------------------------------------------
+
+/** A pair of 1-based line numbers where a block opens and closes. */
+export type BlockMatchResult = {
+  /** 1-based line number of the opening keyword. */
+  openLine: number;
+  /** Column within that line where the keyword starts (1-based, inclusive). */
+  openStartColumn: number;
+  /** Column where the opening keyword ends (1-based, exclusive). */
+  openEndColumn: number;
+  /** 1-based line number of the closing keyword. */
+  closeLine: number;
+  /** Column within that line where the closing keyword starts (1-based). */
+  closeStartColumn: number;
+  /** Column where the closing keyword ends (1-based, exclusive). */
+  closeEndColumn: number;
+};
+
+/**
+ * Returns the column range (1-based, inclusive start, exclusive end) of the
+ * block keyword on `line`, or null if the line has no block keyword.
+ * Strips any leading label so the range covers only the keyword token.
+ */
+function keywordRange(line: string): { kw: string; start: number; end: number } | null {
+  const kw = extractBlockKeyword(line);
+  if (!kw) return null;
+  const trimmed = line.trimStart();
+  const leadingSpaces = line.length - trimmed.length;
+  // Case-insensitive search so ".MACRO" matches the lowercased kw ".macro"
+  const kwOffInTrimmed = trimmed.toLowerCase().indexOf(kw);
+  if (kwOffInTrimmed < 0) return null;
+  const start = leadingSpaces + kwOffInTrimmed + 1; // 1-based inclusive
+  return { kw, start, end: start + kw.length };    // end: 1-based exclusive
+}
+
+/**
+ * Given the 1-based `lineNumber` that the cursor is on, finds the matching
+ * block opener/closer pair.  Returns null if the cursor is not on a block
+ * keyword or if no matching partner is found.
+ *
+ * @param lines    Array of source lines (lines[0] = line 1 in the editor).
+ * @param lineNumber 1-based line number where the cursor sits.
+ */
+export function computeBlockMatch(lines: string[], lineNumber: number): BlockMatchResult | null {
+  const idx = lineNumber - 1;
+  if (idx < 0 || idx >= lines.length) return null;
+
+  const info = keywordRange(lines[idx]);
+  if (!info) return null;
+  const { kw } = info;
+
+  if (BLOCK_OPENERS.has(kw)) {
+    // --- Search forward for the matching closer
+    let depth = 0;
+    for (let i = idx; i < lines.length; i++) {
+      const k2 = extractBlockKeyword(lines[i]);
+      if (!k2) continue;
+      if (k2 === kw) {
+        depth++;
+      } else if (CLOSER_TO_OPENERS.has(k2) && CLOSER_TO_OPENERS.get(k2)!.includes(kw)) {
+        depth--;
+        if (depth === 0) {
+          const closeInfo = keywordRange(lines[i])!;
+          return {
+            openLine: lineNumber, openStartColumn: info.start, openEndColumn: info.end,
+            closeLine: i + 1,  closeStartColumn: closeInfo.start, closeEndColumn: closeInfo.end
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  if (CLOSER_TO_OPENERS.has(kw)) {
+    const validOpeners = CLOSER_TO_OPENERS.get(kw)!;
+    // --- Search backward for the matching opener
+    let depth = 0;
+    for (let i = idx; i >= 0; i--) {
+      const k2 = extractBlockKeyword(lines[i]);
+      if (!k2) continue;
+      if (k2 === kw || (CLOSER_TO_OPENERS.has(k2) && CLOSER_TO_OPENERS.get(k2)!.some(o => validOpeners.includes(o)))) {
+        depth++;
+      } else if (validOpeners.includes(k2)) {
+        depth--;
+        if (depth === 0) {
+          const openInfo = keywordRange(lines[i])!;
+          return {
+            openLine: i + 1, openStartColumn: openInfo.start, openEndColumn: openInfo.end,
+            closeLine: lineNumber, closeStartColumn: info.start, closeEndColumn: info.end
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Compute folding ranges via text-based block matching.
+ * Handles all 10 block construct pairs by scanning source lines directly —
+ * works immediately on file open with no compilation required.
+ *
+ * @param lines Array of source lines (lines[0] = line 1 in the editor).
+ */
 export function computeFoldingRanges(lines: string[]): FoldingRangeResult[] {
   const ranges: FoldingRangeResult[] = [];
   const stack: Array<{ opener: string; lineNumber: number }> = [];
@@ -518,6 +800,83 @@ export function computeRenameEdits(
 }
 
 // ---------------------------------------------------------------------------
+// Step 4.9 — Semantic Syntax Highlighting
+// ---------------------------------------------------------------------------
+
+/**
+ * Monaco semantic token type names used in the SemanticTokensLegend.
+ * Each index maps to a theme rule with the same bare token name.
+ */
+export const SEMANTIC_LEGEND_TYPES: readonly string[] = [
+  "variable",    // 0 — labels and .var symbols
+  "namespace",   // 1 — .module names
+  "struct",      // 2 — .struct type names
+  "enumMember",  // 3 — .equ constants
+  "macro"        // 4 — .macro and .proc definitions
+];
+
+/** Maps a kz80-asm symbol kind to a SEMANTIC_LEGEND_TYPES index. */
+const KIND_TO_SEMANTIC_TYPE: Partial<Record<string, number>> = {
+  label:  0,
+  var:    0,
+  module: 1,
+  struct: 2,
+  equ:    3,
+  macro:  4,
+  proc:   4
+};
+
+/** Matches kz80-asm identifiers (may start with ./$/@ for local labels). */
+const SEMANTIC_IDENT_RE = /[A-Za-z_$@.][A-Za-z0-9_$@.!?]*/g;
+
+/**
+ * Builds Monaco semantic token data for the given source lines.
+ *
+ * Returns a flat array of 5-integer tuples:
+ *   [deltaLine, deltaStartChar, length, tokenTypeIndex, tokenModifierBitmask]
+ * ready to be wrapped in a `Uint32Array` and returned from
+ * `provideDocumentSemanticTokens`.
+ *
+ * Pure function — no Monaco dependency; suitable for unit-testing.
+ *
+ * @param lines   0-indexed source lines (one string per line).
+ * @param service Compiled-symbol lookup service.
+ */
+export function computeSemanticTokenData(
+  lines: string[],
+  service: ILanguageIntelService
+): number[] {
+  const data: number[] = [];
+  let prevLine = 0;
+  let prevCol  = 0;
+
+  for (let li = 0; li < lines.length; li++) {
+    const raw  = lines[li];
+    // Strip comment tail (rough — doesn't handle ';' inside strings, but
+    // symbol lookups for comment contents always return null anyway).
+    const semi = raw.indexOf(";");
+    const lineText = semi >= 0 ? raw.slice(0, semi) : raw;
+
+    SEMANTIC_IDENT_RE.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = SEMANTIC_IDENT_RE.exec(lineText)) !== null) {
+      const word = m[0];
+      const sym = service.getSymbolDefinition(word);
+      if (!sym) continue;
+      const typeIndex = KIND_TO_SEMANTIC_TYPE[sym.kind];
+      if (typeIndex === undefined) continue;
+
+      const deltaLine = li - prevLine;
+      const deltaCol  = deltaLine === 0 ? m.index - prevCol : m.index;
+      data.push(deltaLine, deltaCol, word.length, typeIndex, 0);
+      prevLine = li;
+      prevCol  = m.index;
+    }
+  }
+  return data;
+}
+
+// ---------------------------------------------------------------------------
 // Monaco registration  (only call from a browser context with Monaco loaded)
 // ---------------------------------------------------------------------------
 
@@ -534,23 +893,100 @@ export function computeRenameEdits(
  *                            objects for cross-file changes.
  * @param getProjectFolder    Optional callback returning the current project root folder
  *                            path, used to display workspace-relative paths in hover panels.
+ * @param navigateToFile      Optional callback to open a file at a given 1-based line number.
+ *                            Used by the include-file link provider for single-click navigation.
  */
 export function registerZ80Providers(
   monaco: any,
   getService: () => ILanguageIntelService,
   getFileIndex: (modelUri: string) => number = () => 0,
   applyExternalEdits?: (edits: RenameEdit[]) => void,
-  getProjectFolder?: () => string | undefined
+  getProjectFolder?: () => string | undefined,
+  navigateToFile?: (filePath: string, line: number) => void
 ): void {
   const LANG = "kz80-asm";
+  const OPEN_INCLUDE_CMD = "klive.openIncludeFile";
 
-  // --- Completion
+  // Register a Monaco command so that the link provider can trigger navigation
+  // via a command: URI (single-click, no modifier key required).
+  try {
+    monaco.editor.registerCommand(OPEN_INCLUDE_CMD, (_accessor: any, absolutePath: string) => {
+      navigateToFile?.(absolutePath, 1);
+    });
+  } catch {
+    // Already registered on a previous initializeMonaco call
+  }
+
+  // --- #include file links (single-click, full path highlighted)
+  monaco.languages.registerLinkProvider(LANG, {
+    provideLinks(model: any) {
+      const lineCount = model.getLineCount();
+      const links: any[] = [];
+      for (let i = 1; i <= lineCount; i++) {
+        const lineText = model.getLineContent(i);
+        const m = INCLUDE_RE.exec(lineText);
+        if (!m) continue;
+        const filename = m[1];
+        const absPath = getService().findFileByRelativePath(filename);
+        if (!absPath) continue;
+        const startCol = m.index + m[0].indexOf(filename) + 1; // 1-based, inclusive
+        const endCol = startCol + filename.length;             // 1-based, exclusive
+        links.push({
+          range: { startLineNumber: i, endLineNumber: i, startColumn: startCol, endColumn: endCol },
+          url: `command:${OPEN_INCLUDE_CMD}?${encodeURIComponent(JSON.stringify(absPath))}`,
+          tooltip: "Go to included file"
+        });
+      }
+      return { links };
+    }
+  });
+
+  // --- ZX Spectrum color decorators (inline swatches for attr/ink/paper calls)
+  monaco.languages.registerColorProvider(LANG, {
+    provideDocumentColors(model: any) {
+      const lineCount = model.getLineCount();
+      const lines: string[] = [];
+      for (let i = 1; i <= lineCount; i++) lines.push(model.getLineContent(i));
+      return computeColorDecorations(lines).map((d) => ({
+        color: { red: d.r / 255, green: d.g / 255, blue: d.b / 255, alpha: 1 },
+        range: { startLineNumber: d.line, endLineNumber: d.line, startColumn: d.startColumn, endColumn: d.endColumn }
+      }));
+    },
+    provideColorPresentations(_model: any, colorInfo: any) {
+      // Map the picked color back to the nearest ZX Spectrum palette index.
+      const c = colorInfo.color;
+      const idx = nearestZxIndex(
+        Math.round(c.red * 255),
+        Math.round(c.green * 255),
+        Math.round(c.blue * 255)
+      );
+      return [{ label: String(idx) }];
+    }
+  });
+
   monaco.languages.registerCompletionItemProvider(LANG, {
     triggerCharacters: [".", "#"],
     provideCompletionItems(model: any, position: any, context: any) {
       const word = model.getWordAtPosition(position);
       const prefix = word ? word.word : "";
       const items = computeCompletionItems(prefix, context.triggerCharacter, getService());
+      // Always supply an explicit range so Monaco knows what text to replace.
+      // When a word was found (wordPattern includes '.', '#') use its span;
+      // when the trigger character was just typed and no word was matched yet,
+      // the range covers just that one trigger character.
+      const range = word
+        ? {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn
+          }
+        : {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: position.column - (context.triggerCharacter ? 1 : 0),
+            endColumn: position.column
+          };
       return {
         suggestions: items.map((item) => ({
           label: item.label,
@@ -558,14 +994,7 @@ export function registerZ80Providers(
           detail: item.detail,
           insertText: item.insertText,
           insertTextRules: item.isSnippet ? 4 /* InsertAsSnippet */ : 0,
-          range: word
-            ? {
-                startLineNumber: position.lineNumber,
-                endLineNumber: position.lineNumber,
-                startColumn: word.startColumn,
-                endColumn: word.endColumn
-              }
-            : undefined
+          range
         }))
       };
     }
@@ -575,18 +1004,58 @@ export function registerZ80Providers(
   monaco.languages.registerHoverProvider(LANG, {
     provideHover(model: any, position: any) {
       const word = model.getWordAtPosition(position);
-      if (!word) return null;
-      const result = computeHover(word.word, getService(), position.lineNumber, getProjectFolder?.());
-      if (!result) return null;
-      return {
-        contents: result.contents.map((value) => ({ value }))
-      };
+      const svc = getService();
+
+      // --- Symbol / instruction hover
+      const result = word
+        ? computeHover(word.word, svc, position.lineNumber, getProjectFolder?.())
+        : null;
+
+      // --- Numeric literal hover (hex/decimal/binary/octal conversions)
+      const lineContent: string = model.getLineContent(position.lineNumber) ?? "";
+      const numResult = result ? null : computeNumericHover(lineContent, position.column);
+
+      // --- Address + byte info for the current line
+      const modelPath: string = model.uri?.fsPath ?? model.uri?.path ?? "";
+      const fileIndex = svc.getFileIndex(modelPath);
+      const lineAddr =
+        fileIndex !== undefined
+          ? svc.getLineAddress(fileIndex, position.lineNumber)
+          : undefined;
+
+      if (!result && !numResult && !lineAddr) return null;
+
+      const activeResult = result ?? numResult;
+      const contents: { value: string }[] = activeResult
+        ? activeResult.contents.map((value) => ({ value }))
+        : [];
+
+      if (lineAddr) {
+        const addrHex = lineAddr.address.toString(16).toUpperCase().padStart(4, "0");
+        const bytesHex = lineAddr.bytes
+          .map((b) => b.toString(16).toUpperCase().padStart(2, "0"))
+          .join(" ");
+        contents.push({ value: `**$${addrHex}**  \`${bytesHex}\`` });
+      }
+
+      return { contents };
     }
   });
 
   // --- Definition
   monaco.languages.registerDefinitionProvider(LANG, {
     provideDefinition(model: any, position: any) {
+      // --- Check for #include directive first
+      const lineContent = model.getLineContent(position.lineNumber);
+      const includePath = computeIncludeDefinition(lineContent, position.column, getService());
+      if (includePath) {
+        return {
+          uri: monaco.Uri.file(includePath),
+          range: { startLineNumber: 1, endLineNumber: 1, startColumn: 1, endColumn: 1 }
+        };
+      }
+
+      // --- Symbol definition
       const word = model.getWordAtPosition(position);
       if (!word) return null;
       const result = computeDefinition(word.word, getService());
@@ -733,4 +1202,144 @@ export function registerZ80Providers(
       }));
     }
   });
+
+  // --- Block bracket matching (highlight opener ↔ closer)
+  monaco.languages.registerDocumentHighlightProvider(LANG, {
+    provideDocumentHighlights(model: any, position: any) {
+      const lineCount = model.getLineCount();
+      const lines: string[] = [];
+      for (let i = 1; i <= lineCount; i++) lines.push(model.getLineContent(i));
+      const match = computeBlockMatch(lines, position.lineNumber);
+      if (!match) return [];
+      // Monaco DocumentHighlightKind: 2 = Read (shown in a distinct colour)
+      return [
+        { range: { startLineNumber: match.openLine,  endLineNumber: match.openLine,  startColumn: match.openStartColumn,  endColumn: match.openEndColumn  }, kind: 2 },
+        { range: { startLineNumber: match.closeLine, endLineNumber: match.closeLine, startColumn: match.closeStartColumn, endColumn: match.closeEndColumn }, kind: 2 }
+      ];
+    }
+  });
+
+  // --- Semantic syntax highlighting (compiler-resolved symbol kinds → colours)
+  monaco.languages.registerDocumentSemanticTokensProvider(LANG, {
+    getLegend() {
+      return { tokenTypes: SEMANTIC_LEGEND_TYPES.slice(), tokenModifiers: [] };
+    },
+    provideDocumentSemanticTokens(model: any) {
+      const lineCount = model.getLineCount();
+      const lines: string[] = [];
+      for (let i = 1; i <= lineCount; i++) lines.push(model.getLineContent(i));
+      const data = computeSemanticTokenData(lines, getService());
+      return { data: new Uint32Array(data), resultId: undefined };
+    },
+    releaseDocumentSemanticTokens(_resultId: string | undefined) {}
+  });
+
+}
+
+
+// ---------------------------------------------------------------------------
+// Step 4.10 — Numeric Literal Hover (Hex/Decimal/Binary Conversions)
+// ---------------------------------------------------------------------------
+
+/**
+ * Combined regex that matches kz80-asm numeric literals in order of
+ * specificity.  Capture groups:
+ *   1  $hex        $FF / $4000
+ *   2  0xhex       0xFF / 0x4000
+ *   3  #hex        #FF / #4000   (max 4 digits)
+ *   4  hexH        0FFh / 4000H
+ *   5  %binary     %01010101 / %1111_0000
+ *   6  octal       377o / 377q
+ *   7  decimal     255 / 65535
+ */
+const NUM_RE =
+  /\$([0-9A-Fa-f]+)|0[xX]([0-9A-Fa-f]+)|#([0-9A-Fa-f]{1,4})\b|([0-9][0-9A-Fa-f]*)[hH]\b|%([01_]+)|([0-7]+)[oOqQ]\b|([0-9]+)/g;
+
+/** Format a value ≤ 255 as a padded binary string, e.g. `%11111111`. */
+function toBin8(v: number): string {
+  return "%" + v.toString(2).padStart(8, "0");
+}
+
+/** Format a value as `$XXXX` (uppercase hex). */
+function toHex(v: number): string {
+  return "$" + v.toString(16).toUpperCase();
+}
+
+/**
+ * If the cursor at `column` (1-based Monaco column) is positioned within a
+ * numeric literal on `lineText`, returns a hover showing the value in all
+ * useful alternate bases.  Returns `null` if the cursor is not on a number
+ * or the conversion is trivial (value ≤ 9).
+ *
+ * Numbers that appear after the first `;` (comment) on the line are ignored.
+ *
+ * Pure function — no Monaco dependency.
+ */
+export function computeNumericHover(
+  lineText: string,
+  column: number
+): HoverResult | null {
+  // Strip comment tail
+  const semi = lineText.indexOf(";");
+  const code = semi >= 0 ? lineText.slice(0, semi) : lineText;
+
+  // 1-based column → 0-based index
+  const col0 = column - 1;
+  if (col0 > code.length) return null;
+
+  NUM_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+
+  while ((m = NUM_RE.exec(code)) !== null) {
+    const start = m.index;
+    const end   = m.index + m[0].length;
+    if (col0 < start || col0 >= end) continue;
+
+    // --- Cursor is within this token — determine value and source format
+    let value: number;
+    let sourceFormat: "hex" | "binary" | "octal" | "decimal";
+
+    if (m[1] !== undefined) {
+      value = parseInt(m[1], 16);          sourceFormat = "hex";
+    } else if (m[2] !== undefined) {
+      value = parseInt(m[2], 16);          sourceFormat = "hex";
+    } else if (m[3] !== undefined) {
+      value = parseInt(m[3], 16);          sourceFormat = "hex";
+    } else if (m[4] !== undefined) {
+      const digits = m[4];
+      if (!/^[0-9A-Fa-f]+$/.test(digits)) continue;
+      value = parseInt(digits, 16);        sourceFormat = "hex";
+    } else if (m[5] !== undefined) {
+      const bits = m[5].replace(/_/g, "");
+      if (!bits) continue;
+      value = parseInt(bits, 2);           sourceFormat = "binary";
+    } else if (m[6] !== undefined) {
+      value = parseInt(m[6], 8);           sourceFormat = "octal";
+    } else if (m[7] !== undefined) {
+      value = parseInt(m[7], 10);          sourceFormat = "decimal";
+    } else {
+      continue;
+    }
+
+    if (isNaN(value) || value === 0) continue;
+
+    // --- Build the list of alternate representations to show
+    const parts: string[] = [];
+
+    if (sourceFormat !== "decimal") parts.push(`${value} decimal`);
+    if (sourceFormat !== "hex")     parts.push(`${toHex(value)} hex`);
+    // Binary: for non-binary 8-bit values also show binary representation.
+    // For binary inputs ≤ 65535, show nibble-grouped form (useful for 16-bit).
+    if (sourceFormat !== "binary" && value <= 0xFF) {
+      parts.push(`${toBin8(value)} binary`);
+    } else if (sourceFormat === "binary" && value > 0xFF && value <= 0xFFFF) {
+      const binRaw = value.toString(2).padStart(16, "0");
+      const nibbled = binRaw.replace(/(.{4})(?=.)/g, "$1_");
+      parts.push(`%${nibbled} (grouped)`);
+    }
+
+    return { contents: [`**\`${m[0]}\`** = ${parts.join(" · ")}`] };
+  }
+
+  return null;
 }

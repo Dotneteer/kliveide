@@ -43,31 +43,29 @@ Provide snippet completions for assembler statements and patterns:
 
 Typing the keyword prefix should offer the full block template with tab stops for the user to fill in.
 
-## 8. Address and Byte Count Display
+## ~~8. Address and Byte Count Display~~ — Already Implemented
 
-Show the resolved address (`$` value) and byte count for each instruction or data pragma in an inline annotation or hover. For example, hovering over `ld hl,#4000` should show the machine code bytes (`21 00 40`) and the current address. This is critical for assembly developers who need to track memory layout.
+Show the resolved address (`$` value) and byte count for each instruction or data pragma in an inline annotation or hover. **This feature is now live** — hover over any instruction, directive, or data statement to see the assembled address (e.g., `$4000`) and the emitted machine-code bytes (e.g., `21 00 40`) in the tooltip. Lines that emit no bytes (pure labels, comments, equates) show no address info.
 
-## 9. Go to Included File
+## ~~9. Go to Included File~~ — Already Implemented
 
-Make `#include "filename.z80asm"` paths clickable. Ctrl+Click or Go to Definition on the file string should open the referenced file. This improves navigation in multi-file projects that use `#include` directives.
+Make `#include "filename.z80asm"` paths clickable. **This feature is now live** — Ctrl+Click (or press F12) anywhere on the filename string in an `#include` directive to jump directly to that file.
 
-## 10. Color Decorators for Attribute Values
+## ~~10. Color Decorators for Attribute Values~~ — Already Implemented
 
-When code uses `attr(ink, paper, bright, flash)`, `ink()`, `paper()`, or direct color values in `out (#fe),a` patterns, show a small color swatch in the gutter or inline that represents the ZX Spectrum color. This gives immediate visual feedback for screen attribute manipulation code.
+When code uses `attr(ink, paper, bright, flash)`, `ink()`, or `paper()`, show a small color swatch inline next to each color argument representing the ZX Spectrum palette color. **This feature is now live** — each numeric argument to `attr()`, `ink()`, and `paper()` displays a colored square beside it. For `attr()`, the ink and paper arguments each show their own swatch, and the bright flag is taken into account (non-bright vs bright palette). Clicking a swatch opens a color picker; choosing a different color snaps to the nearest palette index and updates the source automatically.
 
-## 11. Bracket Matching for Assembler Blocks
+## ~~11. Bracket Matching for Assembler Blocks~~ — Already Implemented
 
-Highlight matching block pairs: when the cursor is on `.macro`, highlight the corresponding `.endm`; when on `.loop`, highlight `.endl`, etc. This helps developers navigate nested control flow structures and catch mismatched blocks.
+Highlight matching block pairs: when the cursor is on `.macro`, highlight the corresponding `.endm`; when on `.loop`, highlight `.endl`, etc. **This feature is now live** — place the cursor on any block-opening keyword (`.macro`, `.loop`, `.repeat`, `.while`, `.for`, `.proc`, `.struct`, `.if`, `.module`, `#if`, `#ifdef`, `#ifndef`) or its matching closer and both keywords are highlighted simultaneously. Nesting is handled correctly so inner and outer pairs highlight independently.
 
 ## 12. Symbol Value Preview on Hover
 
-For `.equ` symbols, variables (`.var`, `=`, `:=`), and the `$` current address token, show the computed value on hover. For example, hovering over `BorderColor` defined as `.equ 4` should show `BorderColor = 4`. For `$`, show the current address at that point in the code.
-
-## 13. Inlay Hints for Hex/Decimal Conversions
+## 13. Inlay Hints for Hex/Decimal Conversions ✅ DONE
 
 Show unobtrusive inline hints next to numeric literals showing their alternate representation: hex values show decimal equivalents and vice versa. For example, next to `#FF` show `255`, next to `65535` show `$FFFF`. Binary literals could show both hex and decimal. This saves developers from mental arithmetic.
 
-## 14. Semantic Syntax Highlighting
+## 14. Semantic Syntax Highlighting ✅ DONE
 
 Differentiate token types with distinct colors: labels, macro names, struct names, macro parameter placeholders (`{{param}}`), `.equ` constants, variables, register names, instructions, directives, pragmas, and comments should each have distinguishable styling. The current basic syntax highlighting may not distinguish compiler-resolved categories.
 

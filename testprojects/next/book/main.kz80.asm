@@ -37,4 +37,3 @@ trap
     call _waitForExit
     jp $
 
-

@@ -286,4 +286,49 @@ describe("LanguageIntelService", () => {
     expect(svc.getFileIndex("/a.asm")).toBe(0);
     expect(svc.getFileIndex("/b.asm")).toBe(1);
   });
+
+  // -------------------------------------------------------------------------
+  // getLineAddress() — address and emitted bytes per line
+  // -------------------------------------------------------------------------
+
+  it("returns undefined for a line with no emitted code", () => {
+    svc.update(makeIntelData({ lineInfo: [] }));
+    expect(svc.getLineAddress(0, 5)).toBeUndefined();
+  });
+
+  it("returns address and bytes for a known file+line", () => {
+    svc.update(makeIntelData({
+      lineInfo: [{ fileIndex: 0, lineNumber: 3, address: 0x4000, bytes: [0x21, 0x00, 0x40] }]
+    }));
+    const li = svc.getLineAddress(0, 3);
+    expect(li).not.toBeUndefined();
+    expect(li!.address).toBe(0x4000);
+    expect(Array.from(li!.bytes)).toEqual([0x21, 0x00, 0x40]);
+  });
+
+  it("looks up by file index — different files same line number", () => {
+    svc.update(makeIntelData({
+      lineInfo: [
+        { fileIndex: 0, lineNumber: 1, address: 0x8000, bytes: [0x00] },
+        { fileIndex: 1, lineNumber: 1, address: 0x8001, bytes: [0xc9] }
+      ]
+    }));
+    expect(svc.getLineAddress(0, 1)!.address).toBe(0x8000);
+    expect(svc.getLineAddress(1, 1)!.address).toBe(0x8001);
+  });
+
+  it("is cleared on the next update", () => {
+    svc.update(makeIntelData({
+      lineInfo: [{ fileIndex: 0, lineNumber: 5, address: 0x1000, bytes: [0x00] }]
+    }));
+    expect(svc.getLineAddress(0, 5)).not.toBeUndefined();
+    svc.update(makeIntelData({ lineInfo: [] }));
+    expect(svc.getLineAddress(0, 5)).toBeUndefined();
+  });
+
+  it("tolerates lineInfo being absent (undefined) from old data", () => {
+    // Old LanguageIntelData snapshots (before lineInfo was added) may omit the field.
+    svc.update(makeIntelData({ lineInfo: undefined as any }));
+    expect(svc.getLineAddress(0, 1)).toBeUndefined();
+  });
 });

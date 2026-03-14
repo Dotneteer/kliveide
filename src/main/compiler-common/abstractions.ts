@@ -28,7 +28,8 @@ export interface ParserErrorMessage<T> {
 export enum SymbolType {
   None,
   Label,
-  Var
+  Var,
+  Equ
 }
 
 /**

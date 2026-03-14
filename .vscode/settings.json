@@ -72,6 +72,10 @@
     "/^cd /Users/dotneteer/source/kliveide && node -e \"\nconst \\{ Z80Assembler \\} = require\\('\\./src/main/z80-compiler/z80-assembler'\\);\n\" 2>&1 \\| head -5$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "/^node -e \"const m = require\\('/Users/dotneteer/source/kliveide/node_modules/monaco-editor/esm/vs/editor/standalone/browser/standaloneThemeService\\.js'\\); console\\.log\\(Object\\.keys\\(m\\)\\)\" 2>&1 \\| head -5$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }

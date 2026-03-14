@@ -169,7 +169,8 @@ export async function initializeMonaco() {
     () => languageIntelSingleton,
     () => 0,
     (edits) => { if (_applyExternalEdits) _applyExternalEdits(edits); },
-    () => _store?.getState()?.project?.folderPath ?? undefined
+    () => _store?.getState()?.project?.folderPath ?? undefined,
+    (filePath: string, line: number) => { if (_navigateToFile) _navigateToFile(filePath, line); }
   );
 
   // --- Register an opener so that cross-file Go-to-Definition / Find References
@@ -1056,7 +1057,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           options={{
             fontSize: editorFontSize,
             readOnly: document.isReadOnly || (isProjectDebugging && document.isLocked),
-            glyphMargin: languageInfo?.supportsBreakpoints
+            glyphMargin: languageInfo?.supportsBreakpoints,
+            "semanticHighlighting.enabled": true
           }}
           loading=""
           width={width}

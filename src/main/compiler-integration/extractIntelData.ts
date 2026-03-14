@@ -2,6 +2,7 @@ import {
   DocumentOutlineEntry,
   KliveCompilerOutput,
   LanguageIntelData,
+  LineIntelInfo,
   SymbolDefinitionInfo,
   SymbolReferenceInfo
 } from "@abstractions/CompilerInfo";
@@ -34,11 +35,38 @@ export function extractLanguageIntelData(output: KliveCompilerOutput): LanguageI
     visitModule(output as any, "", symbolDefinitions, outline);
   }
 
+  // --- Build per-line address and byte information from listFileItems + segments
+  const lineInfo: LineIntelInfo[] = [];
+  const listFileItems: any[] =
+    "listFileItems" in output && Array.isArray((output as any).listFileItems)
+      ? (output as any).listFileItems
+      : [];
+  const segments: any[] =
+    "segments" in output && Array.isArray((output as any).segments)
+      ? (output as any).segments
+      : [];
+  for (const item of listFileItems) {
+    if (!item.codeLength) continue;
+    const segment = segments[item.segmentIndex];
+    if (!segment?.emittedCode) continue;
+    const bytes: number[] = (segment.emittedCode as number[]).slice(
+      item.codeStartIndex,
+      item.codeStartIndex + item.codeLength
+    );
+    lineInfo.push({
+      fileIndex: item.fileIndex,
+      lineNumber: item.lineNumber,
+      address: item.address,
+      bytes
+    });
+  }
+
   return {
     symbolDefinitions,
     symbolReferences,
     documentOutline: outline,
-    sourceFiles: sourceFileList
+    sourceFiles: sourceFileList,
+    lineInfo
   };
 }
 
@@ -174,7 +202,8 @@ function visitModule(
 }
 
 function symKind(sym: any): SymbolDefinitionInfo["kind"] {
-  // SymbolType: 0=None, 1=Label, 2=Var
+  // SymbolType: 0=None, 1=Label, 2=Var, 3=Equ
+  if (sym.type === 3) return "equ";
   if (sym.type === 2) return "var";
   return "label";
 }

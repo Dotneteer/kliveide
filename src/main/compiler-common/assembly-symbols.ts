@@ -81,6 +81,14 @@ export class AssemblySymbolInfo implements IAssemblySymbolInfo {
   ): AssemblySymbolInfo {
     return new AssemblySymbolInfo(name, SymbolType.Var, value, location);
   }
+
+  static createEqu(
+    name: string,
+    value: IExpressionValue,
+    location?: SymbolDefinitionLocation
+  ): AssemblySymbolInfo {
+    return new AssemblySymbolInfo(name, SymbolType.Equ, value, location);
+  }
 }
 
 /**
