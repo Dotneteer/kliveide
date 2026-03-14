@@ -1,0 +1,1 @@
+(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[6308],{5156:(_,e,n)=>{"use strict";n.r(e),n.d(e,{__N_SSG:()=>u,default:()=>t});var u=!0;let t=()=>null},6272:(_,e,n)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/working-with-ide/_meta",function(){return n(5156)}])}},_=>{_.O(0,[636,6593,8792],()=>_(_.s=6272)),_N_E=_.O()}]);
