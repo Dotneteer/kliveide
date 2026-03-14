@@ -470,19 +470,10 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".onsuccess",
       ".ONSUCCESS",
       "onsuccess",
-      "ONSUCCESS",
+      "ONSUCCESS"
     ],
 
-    boolLiterals: [
-      "true",
-      "TRUE",
-      "false",
-      "FALSE",
-      ".false",
-      ".FALSE",
-      ".true",
-      ".TRUE"
-    ],
+    boolLiterals: ["true", "TRUE", "false", "FALSE", ".false", ".FALSE", ".true", ".TRUE"],
 
     operators: [
       ":",
@@ -737,22 +728,7 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".CNT"
     ],
 
-    conditions: [
-      "z",
-      "Z",
-      "nz",
-      "NZ",
-      "nc",
-      "NC",
-      "po",
-      "PO",
-      "pe",
-      "PE",
-      "p",
-      "P",
-      "m",
-      "M"
-    ],
+    conditions: ["z", "Z", "nz", "NZ", "nc", "NC", "po", "PO", "pe", "PE", "p", "P", "m", "M"],
 
     escapes: /\\(?:[ipfbIoatPC0\\"']|x[0-9A-Fa-f]{2})/,
 
@@ -910,11 +886,27 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         foreground: "d7ba7d"
       },
       // --- Semantic token type colours (bare names — matched by getTokenStyleMetadata)
-      { token: "variable",   foreground: "dcdcaa" }, // labels / vars
-      { token: "namespace",  foreground: "86c691" }, // modules
-      { token: "struct",     foreground: "4ec9b0" }, // struct types
-      { token: "enumMember", foreground: "4fcfff" }, // equ constants
-      { token: "macro",      foreground: "4ec9b0" }  // macros / procs
+      {
+        token: "variable",
+        foreground: "dcdcaa"
+      }, // labels / vars
+      {
+        token: "namespace",
+        foreground: "86c691"
+      }, // modules
+      {
+        token: "struct",
+        foreground: "4ec9b0"
+      }, // struct types
+      {
+        token: "enumMember",
+        foreground: "4fcfff"
+      }, // equ constants
+      {
+        token: "macro",
+        foreground: "4ec9b0",
+        fontStyle: "bold italic"
+      } // macros / procs
     ],
     colors: {
       "input.background": "#3c3c3c",
@@ -971,11 +963,27 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         foreground: "a5673f"
       },
       // --- Semantic token type colours (bare names — matched by getTokenStyleMetadata)
-      { token: "variable",   foreground: "5a5adb" }, // labels / vars
-      { token: "namespace",  foreground: "267f99" }, // modules
-      { token: "struct",     foreground: "267f99" }, // struct types
-      { token: "enumMember", foreground: "098658" }, // equ constants
-      { token: "macro",      foreground: "a5673f" }  // macros / procs
+      {
+        token: "variable",
+        foreground: "795e26"
+      }, // labels / vars
+      {
+        token: "namespace",
+        foreground: "267f99"
+      }, // modules
+      {
+        token: "struct",
+        foreground: "267f99"
+      }, // struct types
+      {
+        token: "enumMember",
+        foreground: "0070c1"
+      }, // equ constants
+      {
+        token: "macro",
+        foreground: "267f99",
+        fontStyle: "bold italic"
+      } // macros / procs
     ],
     colors: {
       "input.background": "#ffffff",
@@ -987,4 +995,3 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
     }
   }
 };
-

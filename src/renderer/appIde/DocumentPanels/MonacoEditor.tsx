@@ -77,7 +77,7 @@ import { AppState } from "@common/state/AppState";
 import { getFileTypeEntry } from "../project/project-node";
 import { isDebuggableCompilerOutput } from "../utils/compiler-utils";
 import { languageIntelSingleton } from "../services/LanguageIntelService";
-import { registerZ80Providers, type RenameEdit } from "../services/z80-providers";
+import { registerZ80Providers, notifySemanticTokensChanged, type RenameEdit } from "../services/z80-providers";
 
 let monacoInitialized = false;
 
@@ -327,6 +327,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   useEffect(() => {
     if (languageIntel) {
       languageIntelSingleton.update(languageIntel);
+      // Tell Monaco to re-request semantic tokens immediately
+      notifySemanticTokensChanged();
     }
   }, [languageIntel]);
 
@@ -593,8 +595,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   }, [breakpointsVersion, compilation, execState, hubVersion]);
 
   useEffect(() => {
-    // Clear previous decorations
+    // Clear previous decorations and model markers
     errorWarningDecorations.current?.clear();
+    const currentModel = editor.current?.getModel();
+    if (currentModel) {
+      monacoEditor.editor.setModelMarkers(currentModel, "klive-z80", []);
+    }
 
     // Don't proceed if no editor or no background result or if background compilation is disabled
     if (!editor.current || !backgroundResult || !allowBackgroundCompile) {
@@ -614,71 +620,62 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     const currentFile = document.node?.projectPath;
     if (!currentFile) return;
 
-    // Filter errors for the current file - try different matching approaches
-    let fileErrors = backgroundResult.errors.filter((err) => err.filename.endsWith(currentFile));
+    // Filter errors for the current file
+    const fileErrors = backgroundResult.errors.filter((err) => err.filename.endsWith(currentFile));
+    if (fileErrors.length === 0) return;
 
-    if (fileErrors.length === 0) {
-      return;
-    }
+    const model = editor.current.getModel();
+    if (!model) return;
 
-    console.log("Errors", fileErrors);
+    const markers: monacoEditor.editor.IMarkerData[] = [];
+    const afterDecorations: Decoration[] = [];
 
-    // Create decorations for errors and warnings
-    const decorations: Decoration[] = [];
     fileErrors.forEach((err) => {
-      // Ensure we have valid line/column information
       const lineNo = err.line || 1;
+      const isWarning = err.isWarning;
 
-      // Determine startCol - use first non-whitespace character if not defined
-      let startCol = err.startColumn;
-      if (editor.current) {
-        const model = editor.current.getModel();
-        if (model && lineNo <= model.getLineCount()) {
-          const lineContent = model.getLineContent(lineNo);
-          // Find position of first non-whitespace character in the line
-          const match = lineContent.match(/\S/);
-          if (match) {
-            startCol = match.index + 1; // Convert to 1-based index
-          } else {
-            startCol = 1; // Default to beginning of line if it's all whitespace
-          }
-        } else {
-          startCol = 1; // Default fallback
-        }
-      } else {
-        startCol = 1; // Default if no editor or model
+      // Determine startCol — first non-whitespace character on the line
+      let startCol = 1;
+      if (lineNo <= model.getLineCount()) {
+        const lineContent = model.getLineContent(lineNo);
+        const match = lineContent.match(/\S/);
+        startCol = match ? (match.index ?? 0) + 1 : 1;
       }
 
-      // Calculate endCol from the current line's length if not provided
-      let endCol = err.endColumn;
-      if (editor.current) {
-        const model = editor.current.getModel();
-        if (model && lineNo <= model.getLineCount()) {
-          // Use the line length as the end column, or startCol + 10 as fallback
-          endCol = model.getLineLength(lineNo) + 1;
-        } else {
-          endCol = startCol + 10; // Default fallback
-        }
+      // endCol — end of the line
+      let endCol = startCol + 1;
+      if (lineNo <= model.getLineCount()) {
+        endCol = model.getLineLength(lineNo) + 1;
       }
 
-      // Create the decoration
-      decorations.push({
+      // Standard Monaco marker: squiggles + scrollbar overview ruler + minimap + hover tooltip
+      markers.push({
+        severity: isWarning
+          ? monacoEditor.MarkerSeverity.Warning
+          : monacoEditor.MarkerSeverity.Error,
+        message: err.message || "Issue detected",
+        startLineNumber: lineNo,
+        startColumn: startCol,
+        endLineNumber: lineNo,
+        endColumn: endCol
+      });
+
+      // Custom inline pill/badge displayed after the line content
+      afterDecorations.push({
         range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
         options: {
-          className: err.isWarning ? styles.warningDecoration : styles.errorDecoration,
           after: {
             content: err.message || "Issue detected",
-            inlineClassName: err.isWarning ? styles.warningIcon : styles.errorIcon
+            inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
           },
           isWholeLine: false
         }
       });
     });
 
-    // Apply decorations
-    if (decorations.length > 0) {
-      errorWarningDecorations.current = editor.current.createDecorationsCollection(decorations);
-      console.log("Decorations applied:", decorations);
+    monacoEditor.editor.setModelMarkers(model, "klive-z80", markers);
+    if (afterDecorations.length > 0) {
+      errorWarningDecorations.current = editor.current.createDecorationsCollection(afterDecorations);
     }
   }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile]);
 
@@ -887,6 +884,10 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     mounted.current = true;
 
+    // --- Nudge Monaco to re-apply semantic tokens immediately (avoids the
+    // --- colour-shift delay that's visible after switching back to this tab)
+    setTimeout(() => notifySemanticTokensChanged(), 0);
+
     // --- Start background compilation
     startBackgroundCompile(store, mainApi, allowBackgroundCompile);
 
@@ -1058,7 +1059,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             fontSize: editorFontSize,
             readOnly: document.isReadOnly || (isProjectDebugging && document.isLocked),
             glyphMargin: languageInfo?.supportsBreakpoints,
-            "semanticHighlighting.enabled": true
+            "semanticHighlighting.enabled": true,
+            overviewRulerBorder: true
           }}
           loading=""
           width={width}

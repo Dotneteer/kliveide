@@ -21,6 +21,19 @@ import {
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
 
 // ---------------------------------------------------------------------------
+// Semantic-token change notification
+// ---------------------------------------------------------------------------
+let _fireSemanticChange: (() => void) | undefined;
+
+/**
+ * Fires the semantic-token onDidChange event so Monaco immediately
+ * re-requests tokens (e.g. after a background compile or tab switch).
+ */
+export function notifySemanticTokensChanged(): void {
+  _fireSemanticChange?.();
+}
+
+// ---------------------------------------------------------------------------
 // Numeric constants that mirror Monaco enum values (no runtime Monaco dep)
 // ---------------------------------------------------------------------------
 
@@ -1220,7 +1233,11 @@ export function registerZ80Providers(
   });
 
   // --- Semantic syntax highlighting (compiler-resolved symbol kinds → colours)
+  const semanticEmitter = new monaco.Emitter();
+  _fireSemanticChange = () => semanticEmitter.fire(undefined);
+
   monaco.languages.registerDocumentSemanticTokensProvider(LANG, {
+    onDidChange: semanticEmitter.event,
     getLegend() {
       return { tokenTypes: SEMANTIC_LEGEND_TYPES.slice(), tokenModifiers: [] };
     },

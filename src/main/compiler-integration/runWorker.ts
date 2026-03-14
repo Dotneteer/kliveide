@@ -47,8 +47,12 @@ export function runBackgroundCompileWorker(
               errors: []
             };
       mainStore.dispatch(endBackgroundCompileAction(backgroundResult));
-      const intelData = extractLanguageIntelData(result);
-      mainStore.dispatch(setLanguageIntelAction(intelData));
+      // Only update intel data on success — preserve the last good
+      // semantic state so that tokens survive compilation errors.
+      if (backgroundResult.success) {
+        const intelData = extractLanguageIntelData(result);
+        mainStore.dispatch(setLanguageIntelAction(intelData));
+      }
       resolve(backgroundResult);
     });
 

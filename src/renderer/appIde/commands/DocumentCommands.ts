@@ -56,7 +56,6 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       // TODO: Allow the currently active document to save itself before opening the new one
 
       // --- Open it
-      console.log("Opening document", newDoc);
       await docService.openDocument(newDoc, undefined, false);
     }
 

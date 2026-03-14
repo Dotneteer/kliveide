@@ -126,7 +126,8 @@ _printText
 `singleChar
     rst $10;                    ; Print the character
     inc hl
-    jr _printText               ; Continue the printing loop
+    jr _printText
+               ; Continue the printing loop
 
 _printTitle2
     push hl
@@ -134,6 +135,7 @@ _printTitle2
     Ink(COLOR_BLUE)
     pop hl
     call _printText
+
     Bright(0)
     Ink(COLOR_BLACK)
     NewLine()
@@ -379,6 +381,7 @@ _waitForExit
     out ($fe),a
     ld hl,Completed_Str
     jp _printText
+
     
 Completed_Str
     .dm "\a\x0E\x06" ; AT 14, 6
