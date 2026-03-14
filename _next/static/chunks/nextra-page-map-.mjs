@@ -23,6 +23,18 @@ export const pageMap = [{
       "sidebarTitle": "App B Nextreg Reference"
     }
   }, {
+    name: "book-writing-guidelines",
+    route: "/book/book-writing-guidelines",
+    frontMatter: {
+      "sidebarTitle": "Book Writing Guidelines"
+    }
+  }, {
+    name: "flying-start",
+    route: "/book/flying-start",
+    frontMatter: {
+      "sidebarTitle": "Flying Start"
+    }
+  }, {
     name: "introduction",
     route: "/book/introduction",
     frontMatter: {
@@ -33,12 +45,6 @@ export const pageMap = [{
     route: "/book/preface",
     frontMatter: {
       "sidebarTitle": "Preface"
-    }
-  }, {
-    name: "using-klive-ide",
-    route: "/book/using-klive-ide",
-    frontMatter: {
-      "sidebarTitle": "Using Klive Ide"
     }
   }, {
     name: "z80-z80n-overview",
