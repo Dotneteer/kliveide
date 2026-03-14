@@ -75,7 +75,7 @@ describe("SEMANTIC_LEGEND_TYPES", () => {
     expect(SEMANTIC_LEGEND_TYPES).toContain("variable");
     expect(SEMANTIC_LEGEND_TYPES).toContain("namespace");
     expect(SEMANTIC_LEGEND_TYPES).toContain("struct");
-    expect(SEMANTIC_LEGEND_TYPES).toContain("enumMember");
+    expect(SEMANTIC_LEGEND_TYPES).toContain("equ");
     expect(SEMANTIC_LEGEND_TYPES).toContain("macro");
   });
 
@@ -148,11 +148,11 @@ describe("computeSemanticTokenData — single token per kind", () => {
     expect(toks[0].type).toBe("struct");
   });
 
-  it("equ → enumMember type", () => {
+  it("equ → equ type", () => {
     const data = tokens("  ld hl, SCREEN_ADDR", [{ name: "SCREEN_ADDR", kind: "equ" }]);
     const toks = decode(data);
     expect(toks).toHaveLength(1);
-    expect(toks[0].type).toBe("enumMember");
+    expect(toks[0].type).toBe("equ");
   });
 
   it("macro → macro type", () => {
@@ -211,7 +211,7 @@ describe("computeSemanticTokenData — multiple tokens", () => {
     const toks = decode(data);
     expect(toks).toHaveLength(2);
     expect(toks[0].type).toBe("variable");
-    expect(toks[1].type).toBe("enumMember");
+    expect(toks[1].type).toBe("equ");
     // Second token delta line = 0, delta col relative to Alpha's start
     expect(data[5]).toBe(0); // deltaLine of second token
     expect(data[6]).toBeGreaterThan(0); // deltaCol of second token
@@ -264,7 +264,7 @@ lbl:  nop
     const toks = decode(data);
     expect(toks).toHaveLength(3);
     expect(toks[0].type).toBe("macro");
-    expect(toks[1].type).toBe("enumMember");
+    expect(toks[1].type).toBe("equ");
     expect(toks[2].type).toBe("variable");
     expect(toks[1].deltaLine).toBe(1);
     expect(toks[2].deltaLine).toBe(1);

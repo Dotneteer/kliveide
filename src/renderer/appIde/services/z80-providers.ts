@@ -824,7 +824,7 @@ export const SEMANTIC_LEGEND_TYPES: readonly string[] = [
   "variable",    // 0 — labels and .var symbols
   "namespace",   // 1 — .module names
   "struct",      // 2 — .struct type names
-  "enumMember",  // 3 — .equ constants
+  "equ",          // 3 — .equ constants
   "macro"        // 4 — .macro and .proc definitions
 ];
 

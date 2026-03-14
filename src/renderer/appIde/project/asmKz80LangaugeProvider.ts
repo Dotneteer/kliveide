@@ -899,7 +899,7 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         foreground: "4ec9b0"
       }, // struct types
       {
-        token: "enumMember",
+        token: "equ",
         foreground: "4fcfff"
       }, // equ constants
       {
@@ -976,7 +976,7 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         foreground: "267f99"
       }, // struct types
       {
-        token: "enumMember",
+        token: "equ",
         foreground: "0070c1"
       }, // equ constants
       {

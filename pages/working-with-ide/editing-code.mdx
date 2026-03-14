@@ -4,7 +4,28 @@ import { Callout } from 'nextra/components'
 
 Klive IDE leverages Monaco editor (the one in Visual Studio Code) as its code editor, so search for VS Code documentation about basic usage patterns. While the editor in Klive uses the same experience as in VS Code, it does not have the tools that language servers and VS Code extensions provide.
 
-You can set some preferences with the menu items within the **View | Editor Options** menu. 
+## Monaco editor basics
+
+Because Klive uses Monaco, you get the full standard editing experience out of the box:
+
+- **Multi-cursor editing**: Hold `Alt` and click to place additional cursors. Use `Ctrl+Alt+Down` / `Ctrl+Alt+Up` (macOS: `Opt+Cmd+Down` / `Opt+Cmd+Up`) to add a cursor on the line below or above.
+- **Find and replace**: Press `Ctrl+F` (`Cmd+F`) to open the search widget. Press `Ctrl+H` (`Cmd+H`) to also replace matches. Supports plain text, case-sensitive, whole-word, and regex search.
+- **Go to line**: Press `Ctrl+G` to jump to any line number.
+- **Command palette**: Press `F1` to open the command palette and search for any editor action by name.
+- **Minimap**: The vertical strip on the right edge of the editor is a zoomed-out map of the entire file. Click anywhere on it to jump to that position. It also shows error and warning markers as colored marks so you can locate problems at a glance.
+- **Code folding**: Click the triangle icons in the gutter (left margin) to collapse or expand any block. You can also use `Ctrl+Shift+[` and `Ctrl+Shift+]` (`Cmd+Opt+[` / `Cmd+Opt+]`) to fold/unfold the block around the cursor.
+- **Bracket highlighting**: When your cursor is next to an opening or closing bracket, parenthesis, or brace, the matching counterpart is highlighted automatically.
+- **Auto-indentation and bracket closing**: The editor automatically indents new lines and closes brackets, parentheses, and quotes as you type.
+- **Undo / redo**: `Ctrl+Z` / `Ctrl+Y` (`Cmd+Z` / `Cmd+Shift+Z`). The editor keeps a deep undo history per file, persisted across tab switches.
+- **Multiple selection via keyboard**: `Ctrl+D` (`Cmd+D`) selects the next occurrence of the current word or selection, letting you edit all copies simultaneously.
+
+<Callout type="info" emoji="💡">
+All standard VS Code keyboard shortcuts work in Klive's editor. Refer to the VS Code key bindings reference for the full list.
+</Callout>
+
+## Editor preferences
+
+You can set some preferences with the menu items within the **View | Editor Options** menu.
 
 <Callout type="info" emoji="💡">
 These settings are saved to your project and the Klive settings file. When you load a project, the project settings override the previous Klive settings.
@@ -20,5 +41,51 @@ These are the preferences you can set:
 - **Insert Spaces instead of Tabs**. This option controls whether pressing the Tab key inserts actual spaces or a tab character.
 - **Render Whitespaces**. This option controls whether and how whitespace characters (spaces, tabs) are visibly rendered in the editor.
 - **Tab Size**. The tabulator size to use with the editor.
+
+## Assembly editor extensions
+
+Klive extends Monaco with features that are specific to Z80 (and 6510) assembly development. These features are driven by Klive's background compiler, which analyses your source continuously as you type.
+
+### Semantic syntax highlighting
+
+The Klive editor uses **semantic tokens** — a form of syntax highlighting driven by the compiler's understanding of your code, not just its textual patterns. Beyond the basic tokenizer colors, Klive uses the compiler's knowledge of your code to color tokens by their resolved role: labels, macro names, struct names, `.equ` constants, variables, and macro parameter placeholders each get a distinct style. These **semantic colors** update a moment after you finish typing, reflecting the compiler's current interpretation of your source.
+
+You can customize every semantic color and token style (including font weight and emphasis) via **View | Customize Colors**. For in-depth information, including how token definitions work and how to create your own theme, see the [Customize Syntax Colors](../howto/customize-syntax-colors) how-to guide.
+
+### Inline error diagnostics
+
+After each background compilation pass, Klive underlines errors in red directly in the editor. Hover over any underlined token to read the error message in a tooltip. Error positions are also marked in the **scrollbar overview ruler** and the **minimap**, so you can see at a glance how many errors exist and where they are in a long file.
+
+### Macro expansion preview
+
+Hover over a macro name at its invocation site to see the macro's body in a tooltip, with each parameter placeholder shown in its `{{name}}` form. This lets you quickly verify what code a macro will emit without navigating to its definition.
+
+### Code folding for assembler blocks
+
+All assembler block constructs can be folded independently: `.macro`/`.endm`, `.loop`/`.endl`, `.repeat`/`.until`, `.while`/`.endw`, `.for`/`.next`, `.proc`/`.endp`, `.struct`/`.ends`, `.if`/`.endif`, `.module`/`.endmodule`, and `#if`/`#ifdef`/`#ifndef`/`#endif`. Click the triangle in the gutter next to any opening keyword to collapse the block.
+
+### Block pair highlighting
+
+When the cursor rests on a block-opening keyword (`.macro`, `.if`, `.loop`, etc.) or its matching closer, both keywords are highlighted simultaneously. Nesting is handled correctly: inner pairs highlight independently from outer ones.
+
+### Rename symbol
+
+Press `F2` on any label, macro name, struct name, variable, or `.equ` constant to rename it. A small rename widget appears inline; type the new name and press `Enter`. Klive updates every reference across all files in the project automatically, respecting module scope so only the right symbols are renamed.
+
+### Address and byte count on hover
+
+Hover over any instruction, data statement, or directive to see two pieces of information in the tooltip: the **assembled address** (e.g., `$4000`) at which that line is placed, and the **emitted machine-code bytes** (e.g., `21 00 40`). Lines that emit no bytes — pure labels, `.equ` statements, comments — show no address information.
+
+### Go to included file
+
+Hover over the filename string in any `#include` directive and press `F12`, or hold `Ctrl` (`Cmd`) and click the filename, to open that file directly in a new editor tab.
+
+### Color decorators for attribute values
+
+When your code calls `attr()`, `ink()`, or `paper()`, a small colored square appears next to each color argument, showing the actual ZX Spectrum palette color that the argument evaluates to. For `attr()`, the ink and paper arguments each show their own swatch, and the bright flag is factored in. Click a swatch to open a color picker; selecting a different color snaps to the nearest palette index and updates the numeric argument in your source automatically.
+
+### Inlay hints for numeric literals
+
+Unobtrusive inline hints appear next to numeric literals showing their alternate representation: hexadecimal values show their decimal equivalent, and decimal values show their hexadecimal equivalent. For example, `#FF` shows `255` and `65535` shows `$FFFF`. These hints can be toggled off if you prefer a cleaner view.
 
 

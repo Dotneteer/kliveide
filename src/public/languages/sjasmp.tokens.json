@@ -15,7 +15,15 @@
     "condition": "9cdcfe",
     "specop": "4fc1ff",
     "escape": "d7ba7d",
-    "luadef": "ff8500"
+    "luadef": "ff8500",
+    "variable": "dcdcaa",
+    "namespace": "86c691",
+    "struct": "4ec9b0",
+    "equ": "4fcfff",
+    "macro": {
+      "foreground": "4ec9b0",
+      "fontStyle": "bold italic"
+    }
   },
   "lightTheme": {
     "comment": "237122",
@@ -33,6 +41,14 @@
     "condition": "0089ba",
     "specop": "007acc",
     "escape": "a5673f",
-    "luadef": "cc6600"
+    "luadef": "cc6600",
+    "variable": "795e26",
+    "namespace": "267f99",
+    "struct": "267f99",
+    "equ": "0070c1",
+    "macro": {
+      "foreground": "267f99",
+      "fontStyle": "bold italic"
+    }
   }
 }
