@@ -3,83 +3,141 @@ import { ClickableImage } from '../../page-components'
 
 # Recording the Emulator Screen
 
-Klive allows you to record the emulator display as a video file. This is useful for capturing gameplay, creating tutorials, or demonstrating your retro computer programs.
-
-## Starting a Recording
-
-To start recording, use the **Record** button in the toolbar or use the **Machine | Recording | Start Recording** menu command.
-
-When you click the Record button:
-1. The recording enters **armed** state (ready to record)
-2. When the machine starts running, the recording begins automatically
-3. The toolbar displays the recording status
-4. Video frames and audio samples are captured in real time
-
-To stop recording, click the Record button again or stop the machine.
+Klive can capture the emulator display (plus audio) as a video file.
+This is ideal for sharing gameplay clips, building tutorials, or demonstrating your retro programs to the community.
 
 <Callout type="info" emoji="💡">
-The recording is automatically saved to the **KliveExports/video** folder in your home directory.
+FFmpeg is **bundled with Klive** — no separate installation is required. The Record button and Machine › Recording menu are available out of the box on all platforms.
 </Callout>
 
-## Recording Options
+---
 
-You can configure recording options before starting a recording through the menu:
+## Quick-Start: Record in Three Steps
 
-### Quality Setting
-Choose the video quality level:
-- **Lossless** – Maximum quality, largest file size (CRF 0)
-- **High** – High quality with moderate compression (CRF 10)
-- **Good** – Balanced quality and file size (CRF 18, default)
+1. **Configure** — Use **Machine › Recording** to choose your format, quality, and frame rate _before_ you start (settings are locked while recording).
+2. **Arm** — Click the **Record** button (⏺) in the toolbar, or choose **Machine › Recording › Start Recording**.
+   The button turns **gold** — the recorder is now _armed_ and waiting for the machine to run.
+3. **Play** — Start or continue the machine. Recording begins automatically the moment the machine runs.
+   The Record button turns **red** while capturing.
 
-### Frame Rate
-Select the frame rate for the output video:
-- **Native** – Records at the machine's native frame rate (50 fps for PAL, 60 fps for NTSC)
-- **Half** – Records at half the native frame rate (25 fps for PAL, 30 fps for NTSC)
+To finish, click the Record button again (or stop the machine). The video file is written to disk immediately.
+
+---
+
+## Understanding the Record Button
+
+The Record button shows the recorder's current status by changing colour:
+
+| Colour | What it means | What to do |
+|---|---|---|
+| Default (grey) | **Idle** — not recording | Click to arm the recorder; it will wait for the machine to start |
+| 🟡 Gold | **Armed** — waiting for the machine | Start or run the machine; recording begins automatically |
+| 🔴 Red | **Recording** — capturing now | Recording is live; frames and audio are being saved |
+| 🟠 Orange | **Paused** — recording suspended | The machine is paused (e.g., debug step); resume to continue recording |
+
+**How it flows:**
+
+1. Click the gold Record button → the button turns **gold** (armed). Now the recorder is ready.
+2. Start or run the machine → the button turns **red** (recording). Frames are being captured.
+3. Pause the machine (for debug) → the button turns **orange** (paused). Recording pauses too.
+4. Resume the machine → the button turns **red** again. Recording continues seamlessly.
+5. Stop the machine or click the button again → back to default. The video file is saved.
+
+<Callout type="info" emoji="💡">
+Because the recorder arms _before_ the machine starts, you never miss the first frame. Arm it, then click Run — the recording captures everything from the very first instruction.
+</Callout>
+
+---
+
+## Configuring the Recording
+
+All options live under **Machine › Recording**. They can only be changed while recording is **idle**.
 
 ### Output Format
-Choose the video container format:
-- **MP4** – Universal compatibility, H.264 video codec with AAC audio (default)
-- **WebM** – Modern format, VP9 video codec with Opus audio
-- **Matroska (MKV)** – Maximum compatibility, HEVC video codec with AAC audio
+
+| Format | Video codec | Audio codec | Best for |
+|---|---|---|---|
+| **MP4** (default) | H.264 | AAC | Maximum device compatibility, YouTube, social media |
+| **WebM** | VP9 | Opus | Modern web browsers, web streaming |
+| **MKV** | H.265 (HEVC) | AAC | Archival, smallest file sizes, modern players |
+
+<Callout type="info" emoji="💡">
+If in doubt, use **MP4**. It plays everywhere — phones, tablets, all major desktop players, and video platforms.
+</Callout>
+
+### Quality
+
+Quality is expressed as a CRF (Constant Rate Factor) value passed to FFmpeg. Lower CRF = higher quality = larger file.
+
+| Setting | CRF | File size | Use when |
+|---|---|---|---|
+| **Highest (lossless)** | 0 | Very large | Archiving, post-processing in a video editor |
+| **High** | 10 | Large | Short demos, maximum visual fidelity |
+| **Best compression** (default) | 18 | Moderate | Everyday sharing; visually near-lossless |
 
 <Callout type="warning" emoji="⚠️">
-Higher quality settings produce larger files. Using "Lossless" quality can result in very large files, especially for longer recordings.
+Lossless mode produces enormous files. A one-minute ZX Spectrum recording at lossless MP4 can exceed several hundred megabytes.
 </Callout>
+
+### Frame Rate
+
+| Setting | FPS (PAL machine) | FPS (NTSC machine) | Use when |
+|---|---|---|---|
+| **Native** (default) | 50 fps | 60 fps | Accurate playback speed, full smoothness |
+| **Half** | 25 fps | 30 fps | Smaller files; still very smooth on screen |
+
+When **Half** is selected, both video frames and audio samples are sub-sampled together so audio and video remain in perfect sync.
+
+---
+
+## Pausing and Resuming a Recording
+
+You can pause a recording independently of the machine:
+
+- **Machine paused** (debug step, Pause button): the recorder automatically suspends. It resumes the moment the machine runs again.
+- **Manual pause/resume** (via **Machine › Recording › Pause Recording** / **Continue Recording**): pause the capture while the machine keeps running. Use this to skip sections you don't want in the output.
+
+During a pause the output file stays open — no data is lost, and the resume is seamless.
+
+---
 
 ## Audio Recording
 
-Audio from the machine's beeper or audio device is automatically captured during recording. The audio sample rate matches the emulator's audio output (typically 48 kHz).
+Stereo audio from the emulated machine (beeper, AY, SID, …) is captured automatically at the emulator's native sample rate (typically 44.1 kHz). Audio and video are muxed into the same file.
 
-If the machine has no audio output during recording, the video will contain silence. Program your machine or run software that produces sound to capture audio.
+If the machine produces no sound, the video will contain silence — that is normal.
 
-## File Location
+---
 
-Recorded videos are saved to:
+## Where Files Are Saved
+
+Klive writes each recording to:
 ```
 ~/KliveExports/video/recording_YYYYMMDD_HHMMSS.{mp4|webm|mkv}
 ```
 
-The filename is automatically generated based on the recording date and time.
+The filename is generated from the date and time the recording _started_. Navigate there in Finder / Explorer, or open a terminal and run:
+```bash
+open ~/KliveExports/video        # macOS
+explorer %USERPROFILE%\KliveExports\video   # Windows
+```
 
-<Callout type="info" emoji="💡">
-You can open the export folder from the menu or navigate to it manually to find your recordings.
-</Callout>
+---
 
-## Tips for Better Recordings
+## Tips
 
-- **Test before recording** – Run a short test to ensure the machine produces the output you want to record
-- **Avoid pausing** – While paused, recording is temporarily suspended. Continue to resume recording
-- **Check quality settings** – For short clips, use high quality. For long sessions, consider "Good" quality to save space
-- **Use native frame rate** – The recorded video plays back at the same speed as the emulation for accurate representation
+- **Set options before arming** — format, quality, and fps are locked while the recorder is armed or recording.
+- **Arm before starting** — clicking Record while the machine is already running starts capturing immediately (no armed state shown because the machine is already live).
+- **Lossless for editing** — if you plan to edit or re-encode the clip, use lossless quality and MKV for the smallest lossless file.
+- **Keep recordings short** — native 50 fps recordings generate a lot of data. For long game sessions, use Half fps + Best compression.
+- **Check FFmpeg version** — older FFmpeg versions may not support all codecs. FFmpeg 5.x or later is recommended.
 
-## Supported Codec Details
+---
 
-| Codec | Container | Video Codec | Audio Codec | Best For |
-|-------|-----------|-------------|------------|----------|
-| MP4 | MP4 | H.264 | AAC | Universal compatibility, most devices |
-| WebM | WebM | VP9 | Opus | Modern browsers, web streaming |
-| Matroska | MKV | HEVC | AAC | Archival, highest compression |
+## Codec Reference
 
-<Callout type="info" emoji="💡">
-HEVC (H.265) in Matroska provides better compression than H.264, but requires modern players. MP4 is recommended for maximum compatibility.
-</Callout>
+| Container | Video codec | Audio codec | CRF support | Notes |
+|---|---|---|---|---|
+| MP4 | H.264 (libx264) | AAC | 0 – 51 | Best compatibility |
+| WebM | VP9 (libvpx-vp9) | Opus (libopus) | 0 – 63 | Best for web sharing |
+| MKV | H.265 (libx265) | AAC | 0 – 51 | Best compression, requires modern player |
