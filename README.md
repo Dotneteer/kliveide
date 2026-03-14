@@ -1,6 +1,6 @@
 <div align="center">
 
-![Klive Logo](public/images/klive-logo.png)
+![Klive Logo](docs/public/images/klive-logo.png)
 
 # Klive IDE
 
@@ -37,13 +37,7 @@
 
 ---
 
-## 📸 Screenshots
-
-### Emulator + IDE side-by-side (dual-monitor support)
-
-![Klive IDE in action](public/images/intro/klive-ide-intro.png)
-
-> _More screenshots below in each feature section. Placeholders mark areas where additional screenshots will be added._
+![Klive IDE in action](docs/public/images/intro/klive-ide-intro.png)
 
 ---
 
@@ -85,10 +79,6 @@ Run, pause, continue, restart, and stop the emulated machine at any time—witho
 
 ### Debugging Views
 
-> **[SCREENSHOT PLACEHOLDER]** — _CPU register view showing full Z80 state_
-
-> **[SCREENSHOT PLACEHOLDER]** — _Disassembly view tracking the program counter in real time_
-
 | View                     | What it shows                                                                                                                                                            |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **CPU View**             | All Z80 registers (AF, BC, DE, HL, SP, IX, IY, I, R), interrupt mode, halt state, internal WZ/MEMPTR register, T-state counter, last memory read/write and I/O addresses |
@@ -98,7 +88,7 @@ Run, pause, continue, restart, and stop the emulated machine at any time—witho
 | **Breakpoints Panel**    | All active breakpoints with type, address, resolved/unresolved status, and enable/disable toggle                                                                         |
 | **Watch Panel**          | Monitor named variables with configurable data types (8-bit, 16-bit, 32-bit, flags, strings, arrays)                                                                     |
 | **BASIC Listing Viewer** | Displays the BASIC program currently in the emulator's memory; toggleable non-printable characters, ZX Spectrum font, and corruption detection                           |
-| **System Variables**     | Inspect live system variable values                                                                                                                                      |
+| **System Variables**     | Inspect live system variable values |
 
 ### Loading Programs
 
@@ -106,8 +96,6 @@ Run, pause, continue, restart, and stop the emulated machine at any time—witho
 - **Fast load** — ROM-hook technique; loads tape files in a fraction of a second instead of the real tape time
 - **Disk files** (`.dsk`) on ZX Spectrum +3E with single or dual drive models
 - Manual tape rewind and control
-
-> **[SCREENSHOT PLACEHOLDER]** — _Virtual keyboard: ZX Spectrum 48K style_
 
 ### Virtual Keyboard
 
@@ -147,8 +135,6 @@ Klive's signature feature: a single toolbar button takes your source code from t
 
 The automated pipeline restarts the machine, injects the compiled bytes at the correct address, sets the program counter, and begins execution—all in one click.
 
-> **[SCREENSHOT PLACEHOLDER]** — _IDE window with build toolbar and open project_
-
 ### Monaco-Based Code Editor
 
 Klive's editor is powered by the same Monaco engine that runs VS Code, giving you:
@@ -165,8 +151,6 @@ Unlike most assembler editors, Klive's syntax highlighting is driven by the comp
 - **Labels**, **macros**, **struct names**, **`.equ` constants**, **variables**, and **macro parameters** each get distinct colours
 - Inline **error diagnostics** with red underlines and hover tooltips
 - **Macro expansion preview** on hover—see the expanded code before it assembles
-
-> **[SCREENSHOT PLACEHOLDER]** — _Semantic syntax highlighting in the Z80 assembly editor_
 
 ### Additional Editor Intelligence
 
@@ -203,8 +187,6 @@ Compile your project and export it for use outside Klive or for distribution:
 - Customisable **border colour** during loading screen
 - Optional **loading screen** (`.scr`) file inclusion
 - **Multi-bank code** support for ZX Spectrum 128K and +3E
-
-> **[SCREENSHOT PLACEHOLDER]** — _Export dialog showing format and loader options_
 
 ### Interactive Command Panel
 
@@ -255,8 +237,6 @@ A modern BASIC dialect for ZX Spectrum with modern language features (pointers, 
 - Standard Spectrum BASIC compatibility
 - Extended library functions
 
-Klive launches [Boriel's ZX BASIC compiler](https://github.com/boriel/zxbasic) automatically, so no external setup required.
-
 ### SJASMPLUS (`.sjasm`)
 
 For developers familiar with the SJASMPLUS assembler format, Klive integrates third-party SJASMPLUS compilation:
@@ -268,7 +248,7 @@ For developers familiar with the SJASMPLUS assembler format, Klive integrates th
 - Compatible with existing SJASMPLUS projects
 - Rich syntax highlighting for `.sjasm` files
 
-> **Note:** Both ZX BASIC and SJASMPLUS rely on external toolchains (auto-installed on first use); the Klive Z80 Assembler is built-in with no external dependencies.
+> **Note:** Both ZX BASIC and SJASMPLUS rely on external toolchains; the Klive Z80 Assembler is built-in with no external dependencies.
 
 ---
 
@@ -341,8 +321,6 @@ SetBorderColor(2)   ; assembles as: ld a, 2 / out ($FE), a
 | **Scope**                 | `.proc`/`.endp`, `.module`/`.endmodule`, `.struct`/`.ends` |
 | **Model**                 | `.model` (SPECTRUM48, SPECTRUM128, SPECTRUMP3, NEXT)       |
 
-> **[SCREENSHOT PLACEHOLDER]** — _Klive Z80 Assembly editor with semantic highlighting, address inlay hints, and macro hover preview_
-
 ---
 
 ## 📜 Scripting
@@ -371,8 +349,6 @@ async function runCode() {
 - Debug mode for scripts: set breakpoints inside `.ksx` files
 - Override `buildCode()`, `injectCode()`, `runCode()`, `debugCode()`, `exportCode()` in `build.ksx` to fully customise your build pipeline
 
-> **[SCREENSHOT PLACEHOLDER]** — _Script editor with output pane and scripting history_
-
 ---
 
 ## 🚀 Getting Started
@@ -396,10 +372,6 @@ Full documentation: [dotneteer.github.io/kliveide](https://dotneteer.github.io/k
 4. Write code in the editor; mark your main file as the **build root**
 5. Click **Run** — your code compiles, injects, and executes immediately
 6. Click **Debug** to step through with breakpoints
-
-> **[SCREENSHOT PLACEHOLDER]** — _New project wizard with machine type and template selection_
-
-> **[SCREENSHOT PLACEHOLDER]** — _IDE with a ZX Spectrum 48K project open and code running in the emulator_
 
 ### Building from Source
 
