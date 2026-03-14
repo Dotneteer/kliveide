@@ -28,7 +28,7 @@ jobs:
         run: npm run doc:build && touch docs/out/.nojekyll
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.4.3
+        uses: JamesIves/github-pages-deploy-action@v4.6.4
         with:
           git-config-name: https://dotneteer.github.io/kliveide
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

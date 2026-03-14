@@ -1,15 +1,14 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
   "include": [
-    "electron.vite.config.*", 
-    "src/main/**/*", 
-    "src/preload/**/*",
-    "src/common/**/*",
-    "src/renderer/**/*",
-    "src/emu/**/*",
-    "src/lib/**/*",
-    "src/script-packages/**/*",
-
+    "./electron.vite.config.*", 
+    "../src/main/**/*", 
+    "../src/preload/**/*",
+    "../src/common/**/*",
+    "../src/renderer/**/*",
+    "../src/emu/**/*",
+    "../src/lib/**/*",
+    "../src/script-packages/**/*"
   ],
   "compilerOptions": {
     "composite": true,
@@ -17,6 +16,7 @@
     "strict":false,
     "skipLibCheck": true,
     "removeComments": true,
+    "baseUrl": "..",
     "types": ["electron-vite/node"],
     "paths": {
       "@abstractions/*": ["./src/common/abstractions/*"],
@@ -29,7 +29,7 @@
       "@emu/*": ["./src/emu/*"],
       "@appIde/*": ["./src/renderer/appIde/*"],
       "@main/*": ["./src/main/*"],
-      "@controls/*": ["./src/renderer/controls/*"],
+      "@controls/*": ["./src/renderer/controls/*"]
 		}
   }
 }

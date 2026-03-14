@@ -1,5 +1,20 @@
 # Klive IDE Changelog
 
+## 0.56.0
+
+### Features
+
+- Extending the Z80 Assembly editor:
+  - Semantic syntax highlighting
+  - Macro expansion preview
+  - Code folding for assembler blocks
+  - Block pair highlighting
+  - Rename symbol
+  - Address and byte count on hover
+  - Go to included file
+  - Color decorators for attribute 
+- Extending the table of ZX Spectrum Next system variables
+
 ## 0.55.0
 
 ### Features

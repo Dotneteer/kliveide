@@ -13,8 +13,7 @@
     buildResources: "src/electron/resources",
   },
   files: [
-    "dist-electron",
-    "dist"
+    "out"
   ],
   win: {
     target: [
@@ -30,7 +29,6 @@
     perMachine: false,
     allowToChangeInstallationDirectory: true,
     deleteAppDataOnUninstall: false,
-    compression: "maximum",
   },
   mac: {
     target: ["dmg", "zip"],
@@ -42,8 +40,5 @@
     artifactName: "${productName}-Linux-${version}.${ext}",
   },
   appImage: {
-    // Disable sandbox for AppImage due to SUID limitations in AppImage format
-    // See: https://github.com/electron/electron/issues/17972
-    sandbox: false,
   },
 }

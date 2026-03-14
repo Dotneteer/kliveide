@@ -34,3 +34,4 @@ dist-electron
 out
 docs-out
 tsconfig.tsbuildinfo
+tsconfig.web.tsbuildinfo

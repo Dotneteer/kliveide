@@ -2,6 +2,7 @@ import { resolve } from "path";
 
 const config = {
   test: {
+    root: resolve(__dirname, ".."),
     /**
      * By default, vitest search test files in all packages.
      * For e2e tests have sense search only is project root tests folder
