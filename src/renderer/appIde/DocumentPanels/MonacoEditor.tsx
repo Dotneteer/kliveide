@@ -298,6 +298,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const execPointDecoration = useRef<EditorDecorationsCollection>(null);
   const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
 
+  // --- Debounce timer for background compilation (1200ms)
+  const compileDebounce = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // --- True when a compile was requested while one was already in progress
+  const pendingCompile = useRef(false);
+
   // --- The name of the resource this editor displays
   const resourceName = document.node?.projectPath;
 
@@ -319,6 +325,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Background compilation
   const backgroundResult = useSelector((s) => s.compilation.backgroundResult);
+  const backgroundInProgress = useSelector((s) => s.compilation.backgroundInProgress ?? false);
 
   // --- Language intelligence data (updated after each background compile)
   const languageIntel = useSelector((s) => s.compilation.languageIntel);
@@ -642,10 +649,13 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         startCol = match ? (match.index ?? 0) + 1 : 1;
       }
 
-      // endCol — end of the line
+      // endCol — end of the line (ensure minimum width of 1 for empty lines)
       let endCol = startCol + 1;
       if (lineNo <= model.getLineCount()) {
         endCol = model.getLineLength(lineNo) + 1;
+      }
+      if (endCol <= startCol) {
+        endCol = startCol + 1;
       }
 
       // Standard Monaco marker: squiggles + scrollbar overview ruler + minimap + hover tooltip
@@ -676,6 +686,12 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     monacoEditor.editor.setModelMarkers(model, "klive-z80", markers);
     if (afterDecorations.length > 0) {
       errorWarningDecorations.current = editor.current.createDecorationsCollection(afterDecorations);
+    }
+
+    // --- If a compile was requested while this one was in progress, start it now
+    if (pendingCompile.current) {
+      pendingCompile.current = false;
+      startBackgroundCompile(store, mainApi, allowBackgroundCompile);
     }
   }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile]);
 
@@ -1046,8 +1062,17 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       }
     );
 
-    // --- Start background compilation
-    startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+    // --- Start background compilation (debounced to prevent multiple rapid compilations)
+    clearTimeout(compileDebounce.current);
+    compileDebounce.current = setTimeout(() => {
+      if (backgroundInProgress) {
+        // A compile is already running — mark that we need another one when it finishes
+        pendingCompile.current = true;
+      } else {
+        pendingCompile.current = false;
+        startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+      }
+    }, 1200);
   };
 
   // --- render the editor when monaco has been initialized

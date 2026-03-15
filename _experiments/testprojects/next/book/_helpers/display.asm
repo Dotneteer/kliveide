@@ -360,6 +360,50 @@ _printAHexadecimal
     jr _printBufferByB
 
 ; ------------------------------------------------------------------------------
+; Prints A as an eight-digit binary number
+; IN:
+;   A=Input value
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
+; ------------------------------------------------------------------------------
+_printABinary
+    ld b,8
+`printDigit
+    rla
+    ld d,a
+    ld a,'0'
+    jr nc,`printIt
+    ld a,'1'
+`printIt
+    rst $10
+    ld a,b
+    cp 5
+    jr nz,`next
+    ld a,'_'
+    rst $10
+`next
+    ld a,d
+    djnz `printDigit
+    ret
+
+; ------------------------------------------------------------------------------
+; Prints the value of the Z flag
+; IN:
+;   A=Input value
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
+; ------------------------------------------------------------------------------
+_printZFlag
+    ld a,'0'
+    jr nz,`printIt
+    ld a,'1'
+`printIt
+    rst $10
+    ret
+
+; ------------------------------------------------------------------------------
 ; Clears the ULA screen (white paper, black ink) and resets the cursor to (0,0)
 ; OUT:
 ;   ......../IX same

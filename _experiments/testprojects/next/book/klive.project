@@ -56,36 +56,36 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 34,
+            "line": 36,
             "column": 16
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_z80n/extinstr.asm",
           "position": {
-            "line": 136,
-            "column": 1
+            "line": 70,
+            "column": 13
           }
         },
         {
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_intro/print.asm",
           "position": {
-            "line": 47,
-            "column": 15
+            "line": 39,
+            "column": 1
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_nextreg/write.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
           "position": {
-            "line": 18,
-            "column": 15
+            "line": 373,
+            "column": 8
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_nextreg/write.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 34211,

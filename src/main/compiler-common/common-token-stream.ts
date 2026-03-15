@@ -18,6 +18,9 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
   // --- Prefetched character column (from the next token)
   private _prefetchedColumn: number | null = null;
 
+  // --- Prefetched character line (from the next token)
+  private _prefetchedLine: number | null = null;
+
   // --- The last end-of-line comment
   private _lastComment: string | null = null;
 
@@ -128,7 +131,7 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
     const lexer = this;
     const input = this.input;
     const startPos = this._prefetchedPos || input.position;
-    const line = input.line;
+    const line = this._prefetchedLine ?? input.line;
     const startColumn = this._prefetchedColumn || input.column;
     let text = "";
     let tokenType: CommonTokenType = CommonTokens.Eof;
@@ -930,6 +933,7 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
       lexer._prefetched = null;
       lexer._prefetchedPos = null;
       lexer._prefetchedColumn = null;
+      lexer._prefetchedLine = null;
       lastEndPos = input.position;
       lastEndColumn = input.column;
     }
@@ -941,6 +945,7 @@ export abstract class CommonTokenStream<TToken extends CommonTokenType> {
       if (!lexer._prefetched) {
         lexer._prefetchedPos = input.position;
         lexer._prefetchedColumn = input.column;
+        lexer._prefetchedLine = input.line;
         lexer._prefetched = input.get();
       }
       return lexer._prefetched;

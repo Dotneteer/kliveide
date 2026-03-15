@@ -1,3 +1,6 @@
+import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
+
 # Z80N: The Next's Z80 CPU
 
 The heart of the ZX Spectrum Next is the **Z80N** — a modern FPGA recreation of the legendary Zilog Z80, extended with carefully chosen new instructions. Everything that made the original Z80 great is preserved: the same programming model, the same timing, the same opcodes. But the Z80N adds a layer of modern convenience that programmers in 1976 could only dream about.
@@ -145,13 +148,13 @@ INC IYH       ; FD 24 — increment the high byte of IY
 
 This works because the `DD`/`FD` prefix replaces what the CPU treats as "H" and "L" with `IXH`/`IXL` or `IYH`/`IYL` throughout many instructions. Note that you can't mix half IX/IY registers with `(HL)` memory access in the same instruction — the prefix is already doing double duty.
 
-**IN F,(C)** — opcode `ED 70`:
+**IN (C)** — opcode `ED 70`:
 
 ```z80klive
-IN F,(C)     ; Read from port BC, update flags, discard the data value
+IN (C)     ; Read from port BC, update flags, discard the data value
 ```
 
-This is the undocumented variant of `IN r,(C)` where the destination register would be `F`. The data read from the port isn't stored, but the flags update normally based on the value. Useful for testing I/O ports for their effect on flags without loading a register.
+This is the undocumented variant of `IN r,(C)` where the data read from the port isn't stored, but the flags update normally based on the value. Useful for testing I/O ports for their effect on flags without loading a register.
 
 ## I/O Operations: The Full 16-Bit Address
 
@@ -263,7 +266,7 @@ The Z80N extensions live in previously unused `ED`-prefix opcode slots. The orig
 
 ### Nibble Manipulation
 
-**`SWAPNIB`** (opcode: `ED 23`)
+**`SWAPNIB`** / `SWAP` (opcode: `ED 23`)
 
 Swaps the high and low nibbles of `A`:
 
@@ -274,7 +277,11 @@ SWAPNIB        ; A = 0b1111_0011  (= 0xF3)
 
 One instruction instead of four rotations. Useful for BCD operations, palette color swaps, or reordering any packed pair of 4-bit values.
 
-**`MIRROR A`** (opcode: `ED 24`)
+<Callout type="info" emoji="💡">
+Try the `SwapnibDemo` example.
+</Callout>
+
+**`MIRROR A`** / `MIRR` (opcode: `ED 24`)
 
 Reverses the bit order of `A` — bit 7 becomes bit 0, bit 0 becomes bit 7:
 
@@ -285,7 +292,11 @@ MIRROR A           ; A = 0b10001101  (= 0x8D)
 
 The classic use case is horizontal sprite flipping in 1-bit-per-pixel graphics. Without `MIRROR`, you'd need eight shift-and-OR operations per byte. With it, one instruction.
 
-**`TEST n`** (opcode: `ED 27`)
+<Callout type="info" emoji="💡">
+Try the `MirrorDemo` example.
+</Callout>
+
+**`TEST n`** / `TEST` (opcode: `ED 27`)
 
 Performs a bitwise AND between `A` and an immediate byte, updates flags, but **does not modify `A`**:
 
@@ -296,11 +307,15 @@ JP NZ, bit_set
 
 Think of it as `AND n` minus the side effect. The flag behavior is identical to `AND`: `H` is always set, `N` and `C` are cleared, `S`, `Z`, and `PV` reflect the result.
 
+<Callout type="info" emoji="💡">
+Try the `TestDemo` example.
+</Callout>
+
 ### Barrel Shifts
 
 The original Z80's shift instructions move one bit at a time. Shifting by 5 positions costs five instructions. The Z80N adds five barrel shift operations that operate on the full 16-bit `DE` register pair, using `B` as the shift count:
 
-**`BSLA DE,B`** (opcode: `ED 28`) — Barrel Shift Left Arithmetic:
+**`BSLA DE,B`** / `BSLA` (opcode: `ED 28`) — Barrel Shift Left Arithmetic:
 
 ```z80klive
 LD DE, 0x0012
@@ -308,7 +323,7 @@ LD B, 4
 BSLA DE, B     ; DE = 0x0120 (shifted left 4 bits)
 ```
 
-**`BSRA DE,B`** (opcode: `ED 29`) — Barrel Shift Right Arithmetic (sign-preserving):
+**`BSRA DE,B`** / `BSRA` (opcode: `ED 29`) — Barrel Shift Right Arithmetic (sign-preserving):
 
 ```z80klive
 LD DE, 0xFFE0  ; Negative value (-32 in signed 16-bit)
@@ -316,7 +331,7 @@ LD B, 2
 BSRA DE, B     ; DE = 0xFFF8 (sign bit preserved, fills from top)
 ```
 
-**`BSRL DE,B`** (opcode: `ED 2A`) — Barrel Shift Right Logical (zero-filled):
+**`BSRL DE,B`** / `BSRL` (opcode: `ED 2A`) — Barrel Shift Right Logical (zero-filled):
 
 ```z80klive
 LD DE, 0xFFE0
@@ -324,7 +339,7 @@ LD B, 2
 BSRL DE, B     ; DE = 0x3FF8 (zeros fill from the top)
 ```
 
-**`BSRF DE,B`** (opcode: `ED 2B`) — Barrel Shift Right Fill (ones-filled):
+**`BSRF DE,B`** / `BSRF` (opcode: `ED 2B`) — Barrel Shift Right Fill (ones-filled):
 
 ```z80klive
 LD DE, 0x0060
@@ -332,7 +347,7 @@ LD B, 2
 BSRF DE, B     ; DE = 0xC018 (ones fill from the top)
 ```
 
-**`BRLC DE,B`** (opcode: `ED 2C`) — Barrel Rotate Left Circular:
+**`BRLC DE,B`** / `BRLC` (opcode: `ED 2C`) — Barrel Rotate Left Circular:
 
 ```z80klive
 LD DE, 0x8001
@@ -346,7 +361,7 @@ All five operate on `DE` as a 16-bit value. The shift count in `B` is masked to 
 
 ### Multiplication
 
-**`MUL D,E`** (opcode: `ED 30`)
+**`MUL D,E`** / `MUL` (opcode: `ED 30`)
 
 Unsigned 8×8 → 16-bit multiply:
 
@@ -358,7 +373,7 @@ MUL D, E    ; DE = 120 (0x007C)
 
 `D` and `E` are the two operands; the 16-bit result replaces `DE`. The operation is **unsigned** — both operands are treated as values in the range 0–255. Maximum result: 255 × 255 = 65025 (0xFEFF), which fits in 16 bits. For signed multiplication, you'll handle signs separately, but unsigned multiply covers the vast majority of practical cases: sprite dimensions, color values, screen coordinates.
 
-Flags are not affected. And unlike the software loop shown earlier, `MUL` completes in a handful of T-states — dramatically faster, and far less code.
+Flags are not affected. And unlike the software loop shown earlier, `MUL` completes in a 8 T-states — dramatically faster, and far less code.
 
 ### Extended Arithmetic on Register Pairs
 
@@ -384,7 +399,7 @@ None of these update flags. The original `ADD HL,rr` updates carry and half-carr
 
 ### Push Immediate
 
-**`PUSH nn`** (opcode: `ED 8A`)
+**`PUSH nn`** / `PUSH` (opcode: `ED 8A`)
 
 Pushes a 16-bit literal value directly onto the stack:
 
@@ -409,32 +424,32 @@ One point worth noting: unlike every other 16-bit immediate in the Z80 instructi
 
 The Z80N adds a family of block-copy instructions that work like `LDI`/`LDIR`/`LDD`/`LDDR` but with a twist: they skip the write if the source byte equals the value in `A`. This is the **transparent color** idiom — load `A` with your background or transparency color, and the instruction automatically skips pixels that match it.
 
-**`LDIX`** (opcode: `ED A4`) — LDI with exclusion:
+**`LDIX`** / `LDIX` (opcode: `ED A4`) — LDI with exclusion:
 
 ```z80klive
 ; A = transparent color
 LDIX    ; if (HL) != A: (DE) = (HL); always: HL++, DE++, BC--
 ```
 
-**`LDDX`** (opcode: `ED AC`) — LDD with exclusion (HL decrements):
+**`LDDX`** / `LDDX` (opcode: `ED AC`) — LDD with exclusion (HL decrements):
 
 ```z80klive
 LDDX    ; if (HL) != A: (DE) = (HL); always: HL--, DE++, BC--
 ```
 
-**`LDIRX`** (opcode: `ED B4`) — Repeating LDIX:
+**`LDIRX`** / `LIRX` (opcode: `ED B4`) — Repeating LDIX:
 
 ```z80klive
 LDIRX   ; Repeat LDIX until BC = 0
 ```
 
-**`LDDRX`** (opcode: `ED BC`) — Repeating LDDX:
+**`LDDRX`** / `LDRX` (opcode: `ED BC`) — Repeating LDDX:
 
 ```z80klive
 LDDRX   ; Repeat LDDX until BC = 0
 ```
 
-**`LDWS`** (opcode: `ED A5`) — Load Word and Swap:
+**`LDWS`** / `LDWS` (opcode: `ED A5`) — Load Word and Swap:
 
 An unusual one — copies a byte from `(HL)` to `(DE)`, then increments only the **low bytes**: `L++` and `D++`. The high bytes `H` and `E` stay fixed.
 
@@ -444,7 +459,7 @@ LDWS    ; (DE) = (HL), L++, D++
 
 This keeps both pointers within the same 256-byte pages. Designed for operations where you want to step through two memory areas that share their high-address byte — useful in certain screen and buffer manipulation patterns.
 
-**`LDPIRX`** (opcode: `ED B7`) — Block copy from page-aligned source with exclusion:
+**`LDPIRX`** / `LPRX` (opcode: `ED B7`) — Block copy from page-aligned source with exclusion:
 
 The most specialized of the bunch. The source address is built from an 8-byte aligned block:
 
@@ -468,7 +483,7 @@ This is designed specifically for rendering 8-pixel-wide sprites: `HL` is your s
 
 These three instructions exist specifically because the ZX Spectrum's screen memory layout is... creative. The 192 pixel rows are stored in a non-linear, interleaved order — the screen is divided into three 2KB thirds, and within each third, rows are organized in 8-pixel character bands before the pixel rows. Navigating vertically in screen memory is not a simple pointer increment.
 
-**`PIXELAD`** (opcode: `ED 94`) — Pixel Address:
+**`PIXELAD`** / `PXAD` (opcode: `ED 94`) — Pixel Address:
 
 Computes the screen memory byte address for the pixel at logical coordinates (`D`, `E`) — where `D` is the row (0–191) and `E` is the column (0–255) — and loads the result into `HL`:
 
@@ -485,7 +500,7 @@ HL = 0x4000 | (D & 0xC0) << 5 | (D & 0x07) << 8 | (D & 0x38) << 2 | (E >> 3)
 
 Without `PIXELAD`, computing a screen address from (row, column) coordinates requires 8–10 instructions. With it, two loads and one instruction.
 
-**`PIXELDN`** (opcode: `ED 93`) — Pixel Down:
+**`PIXELDN`** / `PXDN` (opcode: `ED 93`) — Pixel Down:
 
 Advances `HL` to the corresponding address one pixel row lower in screen memory:
 
@@ -500,7 +515,7 @@ Because of the interleaved layout, "one row down" is not `HL + 32`. The instruct
 
 The equivalent in original Z80 assembly is eight instructions plus a conditional branch. `PIXELDN` handles all three cases in one.
 
-**`SETAE`** (opcode: `ED 95`) — Set A from E:
+**`SETAE`** / `STAE` (opcode: `ED 95`) — Set A from E:
 
 Sets `A` to a single-bit pixel mask, where the bit position within a byte is given by the lower 3 bits of `E`:
 
@@ -516,19 +531,19 @@ SETAE       ; A = 0b00000100 (0x04)
 
 ### I/O Extension
 
-**`OUTINB`** (opcode: `ED 90`) — Output, Increment, and update flags:
+**`OUTINB`** / `OTIB` (opcode: `ED 90`) — Output, Increment, and update flags:
 
 Reads a byte from `(HL)`, writes it to port `BC`, then increments `HL`. Flags are updated based on the transferred byte and the current value of `B`:
 
 ```z80klive
-OUTINB    ; OUT(BC) ← (HL), HL++, update flags
+OUTINB    ; OUT (BC) ← (HL), HL++, update flags
 ```
 
 The key difference from `OUTI`: this instruction does **not** decrement `B`. `OUTI` is designed as a counter-based loop instruction (like the block instruction family); `OUTINB` is for streaming data to a port when you're managing the count separately.
 
 ### Hardware Access: NEXTREG
 
-**`NEXTREG reg,n`** (opcode: `ED 91`) and **`NEXTREG reg,A`** (opcode: `ED 92`)
+**`NEXTREG reg,n`** / `NREG` (opcode: `ED 91`) and **`NEXTREG reg,A`** / `NREG` (opcode: `ED 92`)
 
 These are the Z80N instructions you'll use most often in Next-specific code. They write directly to the ZX Spectrum Next's hardware configuration registers (NextReg registers) without the normal two-port I/O dance.
 
@@ -578,34 +593,34 @@ This is a hardware-facing instruction for page-switched environments. It allows 
 
 ## Z80N Instruction Summary
 
-| Instruction | Opcode | Description |
-|-------------|--------|-------------|
-| `SWAPNIB` | `ED 23` | Swap nibbles of A |
-| `MIRROR A` | `ED 24` | Reverse bit order of A |
-| `TEST n` | `ED 27` | AND n with A, update flags, keep A |
-| `BSLA DE,B` | `ED 28` | Barrel shift DE left by B bits |
-| `BSRA DE,B` | `ED 29` | Barrel shift DE right arithmetic (sign-extend) |
-| `BSRL DE,B` | `ED 2A` | Barrel shift DE right logical (zero-fill) |
-| `BSRF DE,B` | `ED 2B` | Barrel shift DE right, fill with ones |
-| `BRLC DE,B` | `ED 2C` | Barrel rotate DE left circular |
-| `MUL D,E` | `ED 30` | Unsigned 8×8 multiply → DE |
-| `ADD HL,A` | `ED 31` | HL = HL + A (zero-extended) |
-| `ADD DE,A` | `ED 32` | DE = DE + A (zero-extended) |
-| `ADD BC,A` | `ED 33` | BC = BC + A (zero-extended) |
-| `ADD HL,nn` | `ED 34` | HL = HL + 16-bit immediate |
-| `ADD DE,nn` | `ED 35` | DE = DE + 16-bit immediate |
-| `ADD BC,nn` | `ED 36` | BC = BC + 16-bit immediate |
-| `PUSH nn` | `ED 8A` | Push 16-bit immediate value onto stack |
-| `OUTINB` | `ED 90` | OUT(BC) ← (HL), HL++, update flags |
-| `NEXTREG r,n` | `ED 91` | Write immediate n to NextReg register r |
-| `NEXTREG r,A` | `ED 92` | Write A to NextReg register r |
-| `PIXELDN` | `ED 93` | Advance HL to next pixel row in screen memory |
-| `PIXELAD` | `ED 94` | HL = screen byte address for pixel at (D, E) |
-| `SETAE` | `ED 95` | A = pixel bit mask for column position E[2:0] |
-| `JP (C)` | `ED 98` | Jump to page-relative address via port BC |
-| `LDIX` | `ED A4` | LDI, skip write if (HL) == A |
-| `LDWS` | `ED A5` | (DE) ← (HL), L++, D++ (page-preserving) |
-| `LDDX` | `ED AC` | LDD, skip write if (HL) == A |
-| `LDIRX` | `ED B4` | Repeat LDIX until BC = 0 |
-| `LDPIRX` | `ED B7` | Block copy from 8-aligned source pattern, skip if == A |
-| `LDDRX` | `ED BC` | Repeat LDDX until BC = 0 |
+| Instruction | 4-letter | Opcode | Description |
+|-------------|----------|--------|-------------|
+| `SWAPNIB` | `SWAP` | `ED 23` | Swap nibbles of A |
+| `MIRROR A` | `MIRR A` | `ED 24` | Reverse bit order of A |
+| `TEST n` | same | `ED 27` | AND n with A, update flags, keep A |
+| `BSLA DE,B` | same | `ED 28` | Barrel shift DE left by B bits |
+| `BSRA DE,B` | same | `ED 29` | Barrel shift DE right arithmetic (sign-extend) |
+| `BSRL DE,B` | same | `ED 2A` | Barrel shift DE right logical (zero-fill) |
+| `BSRF DE,B` | same | `ED 2B` | Barrel shift DE right, fill with ones |
+| `BRLC DE,B` | same | `ED 2C` | Barrel rotate DE left circular |
+| `MUL D,E` | same | `ED 30` | Unsigned 8×8 multiply → DE |
+| `ADD HL,A` | same | `ED 31` | HL = HL + A (zero-extended) |
+| `ADD DE,A` | same | `ED 32` | DE = DE + A (zero-extended) |
+| `ADD BC,A` | same | `ED 33` | BC = BC + A (zero-extended) |
+| `ADD HL,nn` | same | `ED 34` | HL = HL + 16-bit immediate |
+| `ADD DE,nn` | same | `ED 35` | DE = DE + 16-bit immediate |
+| `ADD BC,nn` | same | `ED 36` | BC = BC + 16-bit immediate |
+| `PUSH nn` | same | `ED 8A` | Push 16-bit immediate value onto stack |
+| `OUTINB` | `OTIB` | `ED 90` | OUT(BC) ← (HL), HL++, update flags |
+| `NEXTREG r,n` | `NREG r,n` | `ED 91` | Write immediate n to NextReg register r |
+| `NEXTREG r,A` | `NREG r,A` | `ED 92` | Write A to NextReg register r |
+| `PIXELDN` | `PXDN` | `ED 93` | Advance HL to next pixel row in screen memory |
+| `PIXELAD` | `PXAD` | `ED 94` | HL = screen byte address for pixel at (D, E) |
+| `SETAE` | `STAE` | `ED 95` | A = pixel bit mask for column position E[2:0] |
+| `JP (C)` | same | `ED 98` | Jump to page-relative address via port BC |
+| `LDIX` | same | `ED A4` | LDI, skip write if (HL) == A |
+| `LDWS` | same | `ED A5` | (DE) ← (HL), L++, D++ (page-preserving) |
+| `LDDX` | same | `ED AC` | LDD, skip write if (HL) == A |
+| `LDIRX` | `LIRX` | `ED B4` | Repeat LDIX until BC = 0 |
+| `LDPIRX` | `LPRX` | `ED B7` | Block copy from 8-aligned source pattern, skip if == A |
+| `LDDRX` | `LDRX` | `ED BC` | Repeat LDDX until BC = 0 |
