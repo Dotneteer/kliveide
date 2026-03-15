@@ -1,5 +1,5 @@
 ;------------------------------------------------------------------------------
-; ZX Spectrun Next system variables
+; ZX Spectrum Next system variables
 ;------------------------------------------------------------------------------
 LAST_K                    .equ $5c08
 
@@ -88,7 +88,10 @@ NewLine .macro()
 .endm
 
 ; ------------------------------------------------------------------------------
-; Reset screen attribute
+; Resets screen attributes (Flash=0, Bright=0, Paper=7, Ink=0)
+; OUT:
+;   AF....../IX same
+;   ..BCDEHL/.. different
 ; ------------------------------------------------------------------------------
 _resetScreenAttributes
     Flash(0)
@@ -102,12 +105,15 @@ _resetScreenAttributes
 ; terminated with 0. The bytes following control characters such as
 ; PAPER, INK, AT, etc. can be zeros; they do not terminate the text.
 ; IN:
-;   HL=Start of the text
+;   HL=Start of the text (zero-terminated)
+; OUT:
+;   ..BCDE../IX same
+;   AF....HL/.. different
 ; ------------------------------------------------------------------------------
 _printText
     ld a,(hl)                   ; Read the current character
     and a                       ; Check for terminating zero
-    ret z                       ; Treminator found, done.
+    ret z                       ; Terminator found, done.
 
     ; Check for characters with argument bytes
     cp $10                      ; $00-$0f
@@ -124,12 +130,19 @@ _printText
     inc hl
     ld a,(hl)                   ; Get the next argument byte
 `singleChar
-    rst $10;                    ; Print the character
+    rst $10                     ; Print the character
     inc hl
-    jr _printText
-               ; Continue the printing loop
+    jr _printText               ; Continue the printing loop
 
-_printTitle2
+; ------------------------------------------------------------------------------
+; Prints text as a title (bright blue ink, followed by two newlines)
+; IN:
+;   HL=Start of the text (zero-terminated)
+; OUT:
+;   ..BCDE../IX same
+;   AF....HL/.. different
+; ------------------------------------------------------------------------------
+_printTitle
     push hl
     Bright(1)
     Ink(COLOR_BLUE)
@@ -178,10 +191,10 @@ _convLastDigit
     ret
 
 ; ------------------------------------------------------------------------------
-; Converts HL to a five-digit decimal string
+; Converts A to a three-digit decimal string
 ; IN:
-;   HL=Input value
-;   DE=Destination buffer (at least with 5 bytes)
+;   A=Input value
+;   DE=Destination buffer (at least with 3 bytes)
 ; OUT:
 ;   ......../IX same
 ;   AFBCDEHL/.. different
@@ -202,8 +215,8 @@ _convAToDecimal
 ;   HL=Input value
 ;   DE=Destination buffer (at least with 4 bytes)
 ; OUT:
-;   BCHL/IX same
-;   AFDE/.. different
+;   ..BC..HL/IX same
+;   AF..DE../.. different
 ; ------------------------------------------------------------------------------
 _convHlToHexadecimal
     ld a,h
@@ -235,11 +248,11 @@ _convHexaDigit
 ; ------------------------------------------------------------------------------
 ; Converts A to a two-digit hexadecimal string
 ; IN:
-;   HL=Input value
-;   DE=Destination buffer (at least with 4 bytes)
+;   A=Input value
+;   DE=Destination buffer (at least with 2 bytes)
 ; OUT:
-;   BCHL/IX same
-;   AFDE/.. different
+;   ..BC..HL/IX same
+;   AF..DE../.. different
 ; ------------------------------------------------------------------------------
 _convAToHexadecimal
     push af
@@ -252,10 +265,13 @@ _convAToHexadecimal
     jr _convHexaDigit
 
 ; ------------------------------------------------------------------------------
-; Prints the specified number or LSB digits of HL
+; Prints HL as a decimal number, showing A least-significant digits
 ; IN:
 ;   HL=Input value
-;   A=number of digit (LSBs), 1-5. Default: 5
+;   A=Number of digits to print (1-5), default: 5
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
 _printHLDecimal
     ld a,5
@@ -286,10 +302,13 @@ _printBufferByB
     ret
 
 ; ------------------------------------------------------------------------------
-; Prints the specified number or LSB digits of HL
+; Prints HL as a hexadecimal number, showing A least-significant digits
 ; IN:
 ;   HL=Input value
-;   A=number of digit (LSBs), 1-4. Default: 4
+;   A=Number of digits to print (1-4), default: 4
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
 _printHLHexadecimal
     ld a,4
@@ -309,10 +328,12 @@ _printHLHexadecimal2
     jr _printFromEnd
 
 ; ------------------------------------------------------------------------------
-; Prints the specified number or LSB digits of HL
+; Prints A as a three-digit decimal number
 ; IN:
-;   HL=Input value
-;   A=number of digit (LSBs), 1-5. Default: 5
+;   A=Input value
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
 _printADecimal
     ld de,TMP_BUFF
@@ -323,10 +344,12 @@ _printADecimal
     jr _printBufferByB
 
 ; ------------------------------------------------------------------------------
-; Prints the specified number or LSB digits of HL
+; Prints A as a two-digit hexadecimal number
 ; IN:
-;   HL=Input value
-;   A=number of digit (LSBs), 1-5. Default: 5
+;   A=Input value
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
 _printAHexadecimal
     ld de,TMP_BUFF
@@ -337,7 +360,10 @@ _printAHexadecimal
     jr _printBufferByB
 
 ; ------------------------------------------------------------------------------
-; Clears the ULA screen using white paper and black ink
+; Clears the ULA screen (white paper, black ink) and resets the cursor to (0,0)
+; OUT:
+;   ......../IX same
+;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
 _clearScreen
     push hl
@@ -357,11 +383,14 @@ _clearScreen
     pop bc
     pop de
     pop hl
-    ret
+    jp _resetScreenAttributes
 
 ; ------------------------------------------------------------------------------
-; Wait for a keypress
-; (Interrupt must be enabled)
+; Waits for a keypress (interrupt must be enabled)
+; OUT:
+;   A=ASCII code of the pressed key
+;   ..BCDEHL/IX same
+;   AF....../.. different
 ; ------------------------------------------------------------------------------
 _waitForKey
     xor a
@@ -373,8 +402,10 @@ _waitForKey
     ret
 
 ; ------------------------------------------------------------------------------
-; Wait for an exit keypress
-; (Interrupt must be enabled)
+; Displays the 'Example completed' message and sets the border to white
+; OUT:
+;   ..BCDE../IX same
+;   AF....HL/.. different
 ; ------------------------------------------------------------------------------
 _waitForExit
     ld a,7
@@ -387,8 +418,8 @@ Completed_Str
     .dm "\a\x0E\x06" ; AT 14, 6
     .dm "\p\x01"     ; PAPER 1
     .dm "\i\x07"     ; INK 7
-    .dm "\b\x01"     ; BRIGH 1
+    .dm "\b\x01"     ; BRIGHT 1
     .dm " Example completed. "
-    .dm "\a\x0f\x06" ; AT 15, 8
+    .dm "\a\x0f\x06" ; AT 15, 6
     .dm "\i\x06"     ; INK 6
     .defn "  Stop or restart!  "

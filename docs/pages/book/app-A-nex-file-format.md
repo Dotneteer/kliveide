@@ -1,9 +1,5 @@
 # Appendix A: The NEX File Format
 
-Throughout this book, every hands-on exercise loads and runs code using the NEX file format. It's the standard way to distribute ZX Spectrum Next applications - a single file that contains everything needed to load and run a program. Understanding NEX files isn't just academic curiosity; it's essential for testing your emulator, running examples, and eventually creating your own Next software. This chapter breaks down the format from the user's perspective first, then dives into the implementation details you'll need for your emulator's loader.
-
-## Why NEX Files Exist: The Problem They Solve
-
 The original ZX Spectrum had multiple file formats: TAP files for tape images, SNA and Z80 for snapshots, raw binaries that needed manual loading. Each format served a purpose, but none were ideal for modern distribution. TAP files included tape loading headers with checksums. Snapshot formats saved entire machine state but couldn't preserve modern Next features. Raw binaries required complex multi-step loading procedures.
 
 The Next needed something better: **a self-contained executable format** that could:

@@ -54,30 +54,46 @@
       "documents": [
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 34,
+            "column": 16
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 136,
+            "column": 1
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_intro/print.asm",
+          "position": {
+            "line": 47,
+            "column": 15
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_nextreg/write.asm",
+          "position": {
+            "line": 18,
+            "column": 15
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_nextreg/write.asm"
     },
     "Disassembly": {
-      "topAddress": 33555,
+      "topAddress": 34211,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,
       "bankLabel": true,
-      "autoRefresh": true,
+      "autoRefresh": false,
       "ram": true,
       "screen": false,
       "disassOffset": 0

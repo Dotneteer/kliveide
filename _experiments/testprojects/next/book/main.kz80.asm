@@ -26,6 +26,9 @@ STACK_TOP
 ; The start of the example
 Main
     call _clearScreen
+
+;
+; Here are the examples. Uncomment the one you want to run
     // call PrintWelcome
     // call PrintValues
     call WiteNextReg1
