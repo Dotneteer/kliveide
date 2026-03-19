@@ -1363,7 +1363,7 @@ const simpleInstructionCodes: { [key: string]: number } = {
  */
 const nextInstructionCodes: { [key: string]: boolean } = {
   ldix: true,
-  lsws: true,
+  ldws: true,
   ldirx: true,
   lirx: true,
   lddx: true,

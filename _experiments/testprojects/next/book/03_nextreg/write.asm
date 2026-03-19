@@ -3,7 +3,7 @@
 ;==========================================================
 WiteNextReg1
     ld hl,Title_WNextReg_1
-    call _printTitle2
+    call _printTitle
     ld hl,PrintStep1_Str
     call _printText
     ;

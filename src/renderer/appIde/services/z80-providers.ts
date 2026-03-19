@@ -18,6 +18,7 @@ import {
   Z80_REGISTER_ITEMS,
   type StaticCompletionItem
 } from "./z80-completion-data";
+import { lookupTstates } from "./z80-tstates-data";
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
 
 // ---------------------------------------------------------------------------
@@ -376,7 +377,9 @@ export function computeHover(
    * shown when the cursor is NOT on the definition line (i.e. it's an invocation). */
   lineNumber?: number,
   /** Optional project folder path to display relative paths in the hover panel. */
-  projectFolder?: string
+  projectFolder?: string,
+  /** Full source line text — used to look up T-states for the instruction form. */
+  lineContent?: string
 ): HoverResult | null {
   if (!word) return null;
   const lc = word.toLowerCase();
@@ -384,12 +387,21 @@ export function computeHover(
   // --- Known instruction mnemonic?
   if (INSTRUCTION_LABELS.has(lc)) {
     const item = Z80_INSTRUCTION_ITEMS.find((i) => i.label === lc)!;
-    return {
-      contents: [
-        `**${lc}** *(Z80 instruction${item.next ? " — ZX Spectrum Next" : ""})*`,
-        item.detail
-      ]
-    };
+    const contents = [
+      `**${lc}** *(Z80 instruction${item.next ? " — ZX Spectrum Next" : ""})*`,
+      item.detail
+    ];
+    // --- T-states from the full instruction form
+    if (lineContent) {
+      const ts = lookupTstates(lineContent);
+      if (ts) {
+        const tsText = ts.t2
+          ? `**T-states:** ${ts.t} / ${ts.t2} *(condition met / not met)*`
+          : `**T-states:** ${ts.t}`;
+        contents.push(tsText);
+      }
+    }
+    return { contents };
   }
 
   // --- Known register?
@@ -1018,14 +1030,14 @@ export function registerZ80Providers(
     provideHover(model: any, position: any) {
       const word = model.getWordAtPosition(position);
       const svc = getService();
+      const lineContent: string = model.getLineContent(position.lineNumber) ?? "";
 
       // --- Symbol / instruction hover
       const result = word
-        ? computeHover(word.word, svc, position.lineNumber, getProjectFolder?.())
+        ? computeHover(word.word, svc, position.lineNumber, getProjectFolder?.(), lineContent)
         : null;
 
       // --- Numeric literal hover (hex/decimal/binary/octal conversions)
-      const lineContent: string = model.getLineContent(position.lineNumber) ?? "";
       const numResult = result ? null : computeNumericHover(lineContent, position.column);
 
       // --- Address + byte info for the current line

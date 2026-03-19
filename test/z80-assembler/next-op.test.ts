@@ -47,16 +47,41 @@ describe("Assembler - NEXT operations", async () => {
   });
 
   it("next ops in non-next mode", async () => {
+    // Compound Next instructions
     await codeRaisesError("mul d,e", "Z0414");
     await codeRaisesError("test #1234", "Z0414");
     await codeRaisesError("nextreg #12, #34", "Z0414");
     await codeRaisesError("nextreg #12, a", "Z0414");
+    await codeRaisesError("nreg #12, #34", "Z0414");
+    await codeRaisesError("nreg #12, a", "Z0414");
     await codeRaisesError("mirror a", "Z0414");
+    await codeRaisesError("mirr a", "Z0414");
     await codeRaisesError("bsla de,b", "Z0414");
     await codeRaisesError("bsra de,b", "Z0414");
     await codeRaisesError("bsrl de,b", "Z0414");
     await codeRaisesError("bsrf de,b", "Z0414");
     await codeRaisesError("brlc de,b", "Z0414");
+    await codeRaisesError("jp (c)", "Z0414");
+    // Simple Next instructions and their 4-letter aliases
+    await codeRaisesError("swapnib", "Z0414");
+    await codeRaisesError("swap", "Z0414");
+    await codeRaisesError("outinb", "Z0414");
+    await codeRaisesError("otib", "Z0414");
+    await codeRaisesError("pixeldn", "Z0414");
+    await codeRaisesError("pxdn", "Z0414");
+    await codeRaisesError("pixelad", "Z0414");
+    await codeRaisesError("pxad", "Z0414");
+    await codeRaisesError("setae", "Z0414");
+    await codeRaisesError("stae", "Z0414");
+    await codeRaisesError("ldix", "Z0414");
+    await codeRaisesError("ldws", "Z0414");
+    await codeRaisesError("lddx", "Z0414");
+    await codeRaisesError("ldirx", "Z0414");
+    await codeRaisesError("lirx", "Z0414");
+    await codeRaisesError("lddrx", "Z0414");
+    await codeRaisesError("ldrx", "Z0414");
+    await codeRaisesError("ldpirx", "Z0414");
+    await codeRaisesError("lprx", "Z0414");
   });
 });
 

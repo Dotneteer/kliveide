@@ -16,7 +16,8 @@
 
 ; Include the examples
 #include "01_intro/print.asm"
-#include "02_nextreg/write.asm"
+#include "02_z80n/extinstr.asm"
+#include "03_nextreg/write.asm"
 
 ; We keep 256 bytes for the stack
 STACK
@@ -26,9 +27,14 @@ STACK_TOP
 ; The start of the example
 Main
     call _clearScreen
+;
+; Here are the examples. Uncomment the one you want to run
     // call PrintWelcome
     // call PrintValues
-    call WiteNextReg1
+    // call SwapnibDemo
+    // call MirrorDemo
+    call TestDemo
+    // call WiteNextReg1
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.

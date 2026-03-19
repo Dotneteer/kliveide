@@ -1,0 +1,626 @@
+import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
+
+# Z80N: The Next's Z80 CPU
+
+The heart of the ZX Spectrum Next is the **Z80N** — a modern FPGA recreation of the legendary Zilog Z80, extended with carefully chosen new instructions. Everything that made the original Z80 great is preserved: the same programming model, the same timing, the same opcodes. But the Z80N adds a layer of modern convenience that programmers in 1976 could only dream about.
+
+This chapter covers the Z80 and Z80N architecture with the emulator builder in mind. We won't go deep into every instruction — that's what reference manuals are for. Instead, we'll focus on the pieces that matter most for emulation: what the CPU actually does behind the scenes, including a few behaviors that Zilog never officially documented. And then we'll dig into the new Z80N instructions that make the Next more than just a faster Spectrum.
+
+## A Quick Look at the Registers
+
+The Z80 gives you two complete sets of general-purpose registers, only one of which is active at any time. You can swap between them in a single instruction: `EX AF,AF'` swaps the accumulator pair, `EXX` swaps BC/DE/HL. The duplicates exist for fast context switching — no need to push and pop a dozen bytes when an interrupt fires.
+
+**Main registers:**
+
+| Register | Width | Purpose |
+|----------|-------|---------|
+| `A` | 8-bit | Accumulator — the center of almost all arithmetic and logic |
+| `F` | 8-bit | Flags — updated automatically, not directly writable |
+| `BC`, `DE`, `HL` | 16-bit | General-purpose pairs, each accessible as individual 8-bit registers |
+
+**Alternate registers:** `A'`, `F'`, `BC'`, `DE'`, `HL'` — exact mirrors of the main set, dormant until you swap.
+
+**Special-purpose registers:**
+
+| Register | Width | Purpose |
+|----------|-------|---------|
+| `PC` | 16-bit | Program counter |
+| `SP` | 16-bit | Stack pointer (grows downward) |
+| `IX`, `IY` | 16-bit | Index registers for displacement addressing |
+| `I` | 8-bit | Interrupt vector — high byte of the IM2 handler table address |
+| `R` | 8-bit | Memory refresh counter — incremented on every instruction fetch |
+
+A few things worth knowing: `HL` occupies a privileged position among the general-purpose pairs. Most memory-access instructions default to `HL` as the pointer, and it has addressing modes that `BC` and `DE` simply don't. And `IX`/`IY` displacement addressing is powerful when you need it — but it costs 4-8 extra T-states per instruction compared to `HL`, so don't reach for it instinctively.
+
+## How Instructions Execute
+
+The Z80 processes instructions in **machine cycles**, each made up of T-states (clock periods). The flow for most instructions starts with an M1 cycle:
+
+1. **M1 (opcode fetch)**: The CPU puts `PC` on the address bus, reads the opcode byte from memory, increments `PC`, and also increments `R`. The memory refresh cycle happens automatically here — one of the Z80's more elegant design choices.
+2. **Subsequent cycles**: Depending on the instruction, more memory reads (for operands), write cycles, or internal calculation cycles follow.
+
+The total cost of an instruction is measured in T-states. Simple register-to-register operations take 4 T-states. Memory reads add 3. Indexed operations with displacement can cost 19 T-states or more.
+
+When writing assembly code, you can quickly look up T-state costs: Klive IDE displays timing information when you hover your mouse over an instruction in the editor, and the **Z80 Disassembly** view shows T-states for every disassembled instruction. Useful for spotting expensive operations in time-critical code paths.
+
+> **Prefixed instructions**: The Z80 instruction space is organized using prefix bytes. `0xCB` introduces bit manipulation instructions, `0xED` introduces extended instructions (like block operations), and `0xDD`/`0xFD` switch the CPU into IX/IY addressing mode for the following instruction. The Z80N new instructions all live behind the `0xED` prefix — they co-exist with the original extended set, occupying opcode slots that the original Z80 left empty or treated as no-ops.
+
+When the CPU encounters a `0xDD` or `0xFD` prefix, it updates an internal prefix state variable and goes back for another fetch. This means prefix bytes can be chained (multiple `0xDD` prefixes in a row before an instruction is valid, if odd).
+
+## Interrupts: Maskable and Not
+
+The Z80 has two interrupt pins: `/INT` (maskable) and `/NMI` (non-maskable). They behave quite differently, and getting both right is critical for accurate emulation.
+
+### Maskable Interrupts (INT)
+
+Maskable interrupts can be enabled or disabled by software using `EI` (Enable Interrupts) and `DI` (Disable Interrupts). The CPU's internal **IFF1** and **IFF2** flip-flops track the enabled state.
+
+The Z80 checks for `/INT` at the end of each completed instruction — never mid-instruction. If `/INT` is active and `IFF1` is set, the CPU accepts the interrupt:
+
+1. Pushes the return address (`PC`) onto the stack
+2. Clears `IFF1` and `IFF2` (prevents nested interrupts unless explicitly re-enabled)
+3. Jumps to the handler address, which depends on the current **interrupt mode**:
+
+| Mode | Behavior |
+|------|----------|
+| **IM 0** | A peripheral device places an instruction on the data bus and the CPU executes it. On ZX Spectrum, nothing does this — it behaves like IM 1. |
+| **IM 1** | Always jump to `0x0038`. Simple and predictable. |
+| **IM 2** | Build a 16-bit pointer from the `I` register (high byte) and a byte from the peripheral device (low byte). Read the actual handler address from that memory location. |
+
+In practice, the ZX Spectrum runs almost exclusively in IM 1 or IM 2. IM 2 is particularly clever: you load `I` with the high byte of a jump table somewhere in RAM, and each peripheral device's interrupt points to a different handler through that table. The ZX Spectrum Next uses IM 2, letting different hardware components (DMA, sprites, frame events) each have their own handler.
+
+> **The EI backlog**: A subtle behavior that trips up many emulators — after executing `EI`, interrupts are only enabled *after* the next instruction completes. This means `EI` / `RET` (the classic interrupt handler epilogue) processes no interrupt between those two instructions.
+
+### Non-Maskable Interrupts (NMI)
+
+NMIs cannot be blocked by software. When `/NMI` goes active, the CPU responds at the end of the current instruction regardless of `IFF1`. The sequence:
+
+1. Saves `IFF1` into `IFF2`
+2. Clears `IFF1` (maskable interrupts are now disabled)
+3. Pushes `PC` onto the stack
+4. Jumps unconditionally to `0x0066`
+
+That address is hardwired — no configuration possible. To return from an NMI, the handler uses `RETN` (Return from Non-Maskable Interrupt), which restores `IFF1` from `IFF2`. A plain `RET` would work mechanically, but the interrupt-enable state won't be recovered correctly.
+
+> The ZX Spectrum Next uses NMI in interesting ways — the Multiface device triggers one to let you intercept running programs for debugging. Since NMIs are truly non-maskable, they'll fire even when the program under test has disabled interrupts. Which is exactly the point.
+
+## The Hidden Register: WZ
+
+Here's something Zilog never officially documented: the Z80 has an internal **16-bit register** that's not directly accessible from software but has observable effects on certain instructions. It's known as **MEMPTR** or **WZ** — with **W** as the high byte and **Z** as the low byte.
+
+WZ acts as a temporary address latch. The CPU uses it for multi-step address calculations, particularly when building 16-bit addresses from two consecutive byte fetches, or when certain instructions need a "next expected address" for their side effects.
+
+Understanding WZ matters for emulation accuracy because it affects the behavior of the `BIT` instruction in a detectable way. After `BIT n,(HL)`, the undocumented `R5` and `R3` flags (more on those in a moment) are set from bits 5 and 3 of the address held in WZ — not from the memory data that was actually read. Whether that's a design quirk or a happy accident from the silicon implementation, it's a real behavior that existing test suites check for.
+
+Some common operations that update WZ:
+
+- `LD A,(nn)` — `WZ = nn + 1`
+- `IN A,(n)` — `WZ = (A << 8 | n) + 1`
+- `OUT (n),A` — `W = A, Z = n + 1`
+- `JP nn` / `CALL nn` — `WZ = nn` (the destination address)
+- `JR e` — `WZ =` the computed destination
+- IM 2 interrupt acceptance — `WZ` is used to assemble the handler address before it moves to `PC`
+
+WZ is not something you'll explicitly load or read in assembly code. Getting WZ wrong manifests as subtle flag behavior differences in programs that test bits through memory, or in code that deliberately exploits MEMPTR-observable behavior (some protection schemes on the original Spectrum were built around this).
+
+## Undocumented Flags
+
+The `F` register has 8 bits, but the official Zilog documentation marks two of them as "undefined" or "unused." In practice, the silicon is perfectly consistent about what it puts in these positions — they just weren't documented.
+
+```
+Bit:  7  6  5  4  3  2  1  0
+Flag: S  Z  Y  H  X  PV N  C
+```
+
+Bits 5 (`Y`) and 3 (`X`) are the undocumented flags — known as `R5` and `R3`. After most arithmetic and logical operations, these bits are **copied from the corresponding bits of the result**:
+
+- After `ADD A, n` or most arithmetic: R5 = bit 5 of result, R3 = bit 3 of result
+- After `CP n`: R5 and R3 = bits 5 and 3 of the *operand* (not the subtraction result)
+- After `BIT n, r`: R5 = bit 5 of operand, R3 = bit 3 of operand
+- After `BIT n, (HL)`: R5 and R3 = bits 5 and 3 of **WZ.high** (the W register) — not from the memory data
+
+That last case — `BIT n,(HL)` reading flags from WZ rather than from the memory byte — is the kind of behavior that separates a cycle-accurate emulator from a rough approximation. The ZX Spectrum community has published comprehensive test suites that specifically exercise these undocumented behaviors. Correct implementation of this behavior demonstrates cycle-accurate emulation.
+
+## Undocumented Instructions
+
+The Z80 has instructions that Zilog never documented, but the silicon executes reliably. They've been reverse-engineered from real hardware and are used by existing software. Any Z80 implementation should support them.
+
+**SLL (Shift Left Logical)** — also called `SL1` by some assemblers:
+
+```z80klive
+SLL A    ; CB 37 — shift A left, insert 1 into bit 0
+SLL B    ; CB 30 — same for B
+```
+
+Unlike `SLA` (which shifts left and inserts 0 in bit 0), `SLL` inserts a 1. The name implies "logical shift" but the real meaning is "shift left, set". It lives in the `CB`-prefix opcode space that Zilog left reserved — the chip executes it anyway.
+
+**Half-register access on IX and IY:**
+
+The high and low bytes of `IX` (called `IXH` and `IXL`) and `IY` (`IYH`, `IYL`) can be used in many standard 8-bit instructions when prefixed with `DD` or `FD`:
+
+```z80klive
+LD A,IXH      ; DD 7C — load A with the high byte of IX
+LD IYL,42     ; FD 2E 2A — load the low byte of IY with 42
+ADD A,IXL     ; DD 85 — add the low byte of IX to A
+INC IYH       ; FD 24 — increment the high byte of IY
+```
+
+This works because the `DD`/`FD` prefix replaces what the CPU treats as "H" and "L" with `IXH`/`IXL` or `IYH`/`IYL` throughout many instructions. Note that you can't mix half IX/IY registers with `(HL)` memory access in the same instruction — the prefix is already doing double duty.
+
+**IN (C)** — opcode `ED 70`:
+
+```z80klive
+IN (C)     ; Read from port BC, update flags, discard the data value
+```
+
+This is the undocumented variant of `IN r,(C)` where the data read from the port isn't stored, but the flags update normally based on the value. Useful for testing I/O ports for their effect on flags without loading a register.
+
+## I/O Operations: The Full 16-Bit Address
+
+Here's something that often surprises Z80 newcomers: when you execute `OUT (n),A` or `IN A,(n)`, the instruction appears to use an 8-bit port number — but the Z80 puts a **full 16-bit address** on the address bus.
+
+For the simple forms with an 8-bit port operand:
+
+```
+Port address = (A << 8) | n
+```
+
+The accumulator's current value forms the high byte. So `OUT (0xFE),A` when `A` holds `0x01` outputs to port address `0x01FE`, not just port `0xFE`. The WZ register is also updated: for `OUT (n),A`, WZ.high = A, WZ.low = n + 1.
+
+For the register forms — `IN r,(C)` and `OUT (C),r` — the full `BC` register pair is the port address:
+
+```z80klive
+LD BC, 0x7FFE   ; Full 16-bit port address
+IN A,(C)        ; Read from port 0x7FFE
+```
+
+The block I/O instructions (`INI`, `OUTI`, `INIR`, `OTIR`, etc.) also use `BC` as the full port address.
+
+Why does this matter? Because the ZX Spectrum's ULA is decoded on port `0xFE` — but the ULA only checks the lower address bit, not all 8 or 16. Most original Spectrum hardware decodes only the lower bits of the address bus. In the ZX Spectrum Next, hardware devices sometimes decode more bits, so emulating the full 16-bit port address is no longer optional. Get it right or certain ports won't respond correctly.
+
+## Block Instructions
+
+The Z80 has four families of block operations, each with an increment variant (I) and a decrement variant (D), plus repeating forms (R) that loop until a condition is met.
+
+**Memory-to-memory block copy:**
+
+```z80klive
+LDI     ; (DE) ← (HL), DE++, HL++, BC--
+LDD     ; (DE) ← (HL), DE--, HL--, BC--
+LDIR    ; Repeat LDI until BC = 0
+LDDR    ; Repeat LDD until BC = 0
+```
+
+**Memory search:**
+
+```z80klive
+CPI     ; Compare A with (HL), HL++, BC--
+CPD     ; Compare A with (HL), HL--, BC--
+CPIR    ; Repeat CPI until BC = 0 or A matches
+CPDR    ; Repeat CPD until BC = 0 or A matches
+```
+
+**Block I/O from port to memory:**
+
+```z80klive
+INI     ; (HL) ← IN(BC), B--, HL++
+IND     ; (HL) ← IN(BC), B--, HL--
+INIR    ; Repeat INI until B = 0
+INDR    ; Repeat IND until B = 0
+```
+
+**Block I/O from memory to port:**
+
+```z80klive
+OUTI    ; OUT(BC) ← (HL), B--, HL++
+OUTD    ; OUT(BC) ← (HL), B--, HL--
+OTIR    ; Repeat OUTI until B = 0
+OTDR    ; Repeat OUTD until B = 0
+```
+
+The repeating forms work by re-executing from the same PC position when the loop condition is still true — no separate branch instruction needed. When `BC` reaches zero, the instruction simply doesn't loop back. This is why `LDIR` achieves high throughput: it costs 21 T-states per iteration while looping, and 16 T-states on the final iteration. Both timings matter for timing-sensitive code.
+
+> The block I/O instructions use `B` (not `BC`) as their counter, while `LDI`/`LDD` use the full `BC`. This asymmetry catches people occasionally. Also, `OUTI`/`OUTD` and their repeating forms set flags in an unusual way: the N flag reflects bit 7 of the transferred byte, and parity is calculated from the sum of the byte and `L`.
+
+## Arithmetic: Simple by Design
+
+The Z80's arithmetic capabilities are deliberately limited. Keeping the instruction set compact made sense in 1976 — chip area was expensive, and simplicity meant lower cost and higher reliability. What you get:
+
+**What the Z80 can do:**
+- 8-bit and 16-bit add and subtract (with or without carry for multi-byte chains)
+- Increment and decrement (8-bit and 16-bit)
+- Compare (subtract without storing the result — just updates flags)
+- Bit rotations and shifts: `SLA`, `SRA`, `SRL`, `RLC`, `RRC`, `RL`, `RR`, and the undocumented `SLL`
+- BCD adjustment with `DAA` after BCD arithmetic
+
+**What the Z80 cannot do:**
+- Multiply (not 8×8, not anything)
+- Divide
+- Floating-point arithmetic of any kind
+
+Multiplication in original Z80 assembly is a loop:
+
+```z80klive
+; Multiply D by E, unsigned, result in HL
+    LD HL, 0
+    LD B, 8
+mul_loop:
+    ADD HL, HL     ; Shift result left
+    SLA E          ; Shift multiplier left, high bit into carry
+    JR NC, no_add
+    ADD HL, DE     ; Add multiplicand
+no_add:
+    DJNZ mul_loop  ; Eight iterations
+```
+
+Eight iterations, roughly 13 cycles each plus overhead: somewhere around 115 T-states for an 8×8 multiply. At 3.5 MHz, that's about 33 microseconds — a noticeable chunk of time in a tight graphics loop.
+
+The Z80N resolves this with `MUL D,E`. More on that shortly.
+
+---
+
+## Z80N: What the Next Adds
+
+The Z80N extensions live in previously unused `ED`-prefix opcode slots. The original Z80 would treat most of these as no-ops — so Z80N code running on original hardware silently does nothing instead of crashing.
+
+### Nibble Manipulation
+
+**`SWAPNIB`** / `SWAP` (opcode: `ED 23`)
+
+Swaps the high and low nibbles of `A`:
+
+```z80klive
+LD A, 0x3F     ; A = 0b0011_1111
+SWAPNIB        ; A = 0b1111_0011  (= 0xF3)
+```
+
+One instruction instead of four rotations. Useful for BCD operations, palette color swaps, or reordering any packed pair of 4-bit values.
+
+<Callout type="info" emoji="💡">
+Try the `SwapnibDemo` example.
+</Callout>
+
+**`MIRROR A`** / `MIRR` (opcode: `ED 24`)
+
+Reverses the bit order of `A` — bit 7 becomes bit 0, bit 0 becomes bit 7:
+
+```z80klive
+LD A, 0b10110001   ; 0xB1
+MIRROR A           ; A = 0b10001101  (= 0x8D)
+```
+
+The classic use case is horizontal sprite flipping in 1-bit-per-pixel graphics. Without `MIRROR`, you'd need eight shift-and-OR operations per byte. With it, one instruction.
+
+<Callout type="info" emoji="💡">
+Try the `MirrorDemo` example.
+</Callout>
+
+**`TEST n`** / `TEST` (opcode: `ED 27`)
+
+Performs a bitwise AND between `A` and an immediate byte, updates flags, but **does not modify `A`**:
+
+```z80klive
+TEST 0x80    ; Check bit 7 of A — A is unchanged
+JP NZ, bit_set
+```
+
+Think of it as `AND n` minus the side effect. The flag behavior is identical to `AND`: `H` is always set, `N` and `C` are cleared, `S`, `Z`, and `PV` reflect the result.
+
+<Callout type="info" emoji="💡">
+Try the `TestDemo` example.
+</Callout>
+
+### Barrel Shifts
+
+The original Z80's shift instructions move one bit at a time. Shifting by 5 positions costs five instructions. The Z80N adds five barrel shift operations that operate on the full 16-bit `DE` register pair, using `B` as the shift count:
+
+**`BSLA DE,B`** / `BSLA` (opcode: `ED 28`) — Barrel Shift Left Arithmetic:
+
+```z80klive
+LD DE, 0x0012
+LD B, 4
+BSLA DE, B     ; DE = 0x0120 (shifted left 4 bits)
+```
+
+**`BSRA DE,B`** / `BSRA` (opcode: `ED 29`) — Barrel Shift Right Arithmetic (sign-preserving):
+
+```z80klive
+LD DE, 0xFFE0  ; Negative value (-32 in signed 16-bit)
+LD B, 2
+BSRA DE, B     ; DE = 0xFFF8 (sign bit preserved, fills from top)
+```
+
+**`BSRL DE,B`** / `BSRL` (opcode: `ED 2A`) — Barrel Shift Right Logical (zero-filled):
+
+```z80klive
+LD DE, 0xFFE0
+LD B, 2
+BSRL DE, B     ; DE = 0x3FF8 (zeros fill from the top)
+```
+
+**`BSRF DE,B`** / `BSRF` (opcode: `ED 2B`) — Barrel Shift Right Fill (ones-filled):
+
+```z80klive
+LD DE, 0x0060
+LD B, 2
+BSRF DE, B     ; DE = 0xC018 (ones fill from the top)
+```
+
+**`BRLC DE,B`** / `BRLC` (opcode: `ED 2C`) — Barrel Rotate Left Circular:
+
+```z80klive
+LD DE, 0x8001
+LD B, 1
+BRLC DE, B     ; DE = 0x0003 (rotated left, top bit wraps to bottom)
+```
+
+All five operate on `DE` as a 16-bit value. The shift count in `B` is masked to 5 bits for `BSLA`/`BSRA`/`BSRL`/`BSRF` (so 0–31 are meaningful), and to 4 bits for `BRLC` (0–15). A count of 0 leaves `DE` unchanged. None of these update flags.
+
+> These instructions shine in fixed-point arithmetic and graphics manipulation. Shifting a 16-bit coordinate or scale factor by multiple bits used to require N separate shift instructions. Now it's one — and `DE` gives you the same 16-bit range as `HL` without `HL`'s special "pointer register" overhead.
+
+### Multiplication
+
+**`MUL D,E`** / `MUL` (opcode: `ED 30`)
+
+Unsigned 8×8 → 16-bit multiply:
+
+```z80klive
+LD D, 12
+LD E, 10
+MUL D, E    ; DE = 120 (0x007C)
+```
+
+`D` and `E` are the two operands; the 16-bit result replaces `DE`. The operation is **unsigned** — both operands are treated as values in the range 0–255. Maximum result: 255 × 255 = 65025 (0xFEFF), which fits in 16 bits. For signed multiplication, you'll handle signs separately, but unsigned multiply covers the vast majority of practical cases: sprite dimensions, color values, screen coordinates.
+
+Flags are not affected. And unlike the software loop shown earlier, `MUL` completes in a 8 T-states — dramatically faster, and far less code.
+
+### Extended Arithmetic on Register Pairs
+
+The original Z80 can add 16-bit register pairs together, but only with `HL` as the destination and only register-to-register. The Z80N extends this in two useful directions.
+
+**Add accumulator to a register pair** (zero-extended to 16 bits):
+
+```z80klive
+ADD HL, A    ; HL = HL + A  (ED 31)
+ADD DE, A    ; DE = DE + A  (ED 32)
+ADD BC, A    ; BC = BC + A  (ED 33)
+```
+
+**Add a 16-bit immediate to a register pair:**
+
+```z80klive
+ADD HL, 1000  ; HL = HL + 1000  (ED 34)
+ADD DE, 0x20  ; DE = DE + 32    (ED 35)
+ADD BC, 5     ; BC = BC + 5     (ED 36)
+```
+
+None of these update flags. The original `ADD HL,rr` updates carry and half-carry; these new variants skip flag updates entirely. That makes them safe for pointer arithmetic inside loops where you don't want to trash the status flags used by an upcoming conditional jump.
+
+### Push Immediate
+
+**`PUSH nn`** / `PUSH` (opcode: `ED 8A`)
+
+Pushes a 16-bit literal value directly onto the stack:
+
+```z80klive
+PUSH 0x1234    ; SP -= 2, stack now holds 0x1234
+```
+
+This saves the common two-instruction sequence:
+
+```z80klive
+; Original Z80:
+LD HL, 0x1234
+PUSH HL
+
+; Z80N:
+PUSH 0x1234    ; One instruction
+```
+
+One point worth noting: unlike every other 16-bit immediate in the Z80 instruction set (which uses little-endian byte order — low byte first), `PUSH nn` encodes its 16-bit operand **high byte first** in the instruction stream. The assembler handles this for you, but it's a quirk to know if you're hand-patching binary code.
+
+### Memory Operations: Block Copies with Exclusion
+
+The Z80N adds a family of block-copy instructions that work like `LDI`/`LDIR`/`LDD`/`LDDR` but with a twist: they skip the write if the source byte equals the value in `A`. This is the **transparent color** idiom — load `A` with your background or transparency color, and the instruction automatically skips pixels that match it.
+
+**`LDIX`** / `LDIX` (opcode: `ED A4`) — LDI with exclusion:
+
+```z80klive
+; A = transparent color
+LDIX    ; if (HL) != A: (DE) = (HL); always: HL++, DE++, BC--
+```
+
+**`LDDX`** / `LDDX` (opcode: `ED AC`) — LDD with exclusion (HL decrements):
+
+```z80klive
+LDDX    ; if (HL) != A: (DE) = (HL); always: HL--, DE++, BC--
+```
+
+**`LDIRX`** / `LIRX` (opcode: `ED B4`) — Repeating LDIX:
+
+```z80klive
+LDIRX   ; Repeat LDIX until BC = 0
+```
+
+**`LDDRX`** / `LDRX` (opcode: `ED BC`) — Repeating LDDX:
+
+```z80klive
+LDDRX   ; Repeat LDDX until BC = 0
+```
+
+**`LDWS`** / `LDWS` (opcode: `ED A5`) — Load Word and Swap:
+
+An unusual one — copies a byte from `(HL)` to `(DE)`, then increments only the **low bytes**: `L++` and `D++`. The high bytes `H` and `E` stay fixed.
+
+```z80klive
+LDWS    ; (DE) = (HL), L++, D++
+```
+
+This keeps both pointers within the same 256-byte pages. Designed for operations where you want to step through two memory areas that share their high-address byte — useful in certain screen and buffer manipulation patterns.
+
+**`LDPIRX`** / `LPRX` (opcode: `ED B7`) — Block copy from page-aligned source with exclusion:
+
+The most specialized of the bunch. The source address is built from an 8-byte aligned block:
+
+```z80klive
+source = (HL & ~0x07) | (E & 7)
+```
+
+`HL` provides the block base address (rounded down to the nearest 8-byte boundary), and the lower 3 bits of `E` provide the offset within that block. As `DE` increments with each iteration, `E` cycles through the 8-byte pattern automatically. Transparent pixels (matching `A`) are skipped as with the other exclusion instructions.
+
+```z80klive
+; HL points to an 8-byte aligned sprite pattern
+; DE points to the screen destination
+; BC = number of pixels to copy
+; A  = transparent color
+LDPIRX
+```
+
+This is designed specifically for rendering 8-pixel-wide sprites: `HL` is your sprite data (8-aligned), `DE` is your screen destination. For each of `BC` iterations, the instruction reads from successive bytes of the sprite pattern, skipping any that match the transparent color.
+
+### Screen Navigation
+
+These three instructions exist specifically because the ZX Spectrum's screen memory layout is... creative. The 192 pixel rows are stored in a non-linear, interleaved order — the screen is divided into three 2KB thirds, and within each third, rows are organized in 8-pixel character bands before the pixel rows. Navigating vertically in screen memory is not a simple pointer increment.
+
+**`PIXELAD`** / `PXAD` (opcode: `ED 94`) — Pixel Address:
+
+Computes the screen memory byte address for the pixel at logical coordinates (`D`, `E`) — where `D` is the row (0–191) and `E` is the column (0–255) — and loads the result into `HL`:
+
+```z80klive
+LD D, 50     ; pixel row
+LD E, 120    ; pixel column
+PIXELAD      ; HL = address of the screen byte containing this pixel
+```
+
+The formula applied internally:
+```
+HL = 0x4000 | (D & 0xC0) << 5 | (D & 0x07) << 8 | (D & 0x38) << 2 | (E >> 3)
+```
+
+Without `PIXELAD`, computing a screen address from (row, column) coordinates requires 8–10 instructions. With it, two loads and one instruction.
+
+**`PIXELDN`** / `PXDN` (opcode: `ED 93`) — Pixel Down:
+
+Advances `HL` to the corresponding address one pixel row lower in screen memory:
+
+```z80klive
+PIXELDN    ; HL = same column, next pixel row
+```
+
+Because of the interleaved layout, "one row down" is not `HL + 32`. The instruction handles three cases:
+- Not at the last pixel row of a character cell: increment `H`
+- At the last pixel row but not the last character row in this screen third: add 0x20 to `L`
+- At the last row of a screen third: jump to the next third
+
+The equivalent in original Z80 assembly is eight instructions plus a conditional branch. `PIXELDN` handles all three cases in one.
+
+**`SETAE`** / `STAE` (opcode: `ED 95`) — Set A from E:
+
+Sets `A` to a single-bit pixel mask, where the bit position within a byte is given by the lower 3 bits of `E`:
+
+```z80klive
+LD E, 0     ; column within byte = 0 (leftmost)
+SETAE       ; A = 0b10000000 (0x80)
+
+LD E, 5     ; column within byte = 5
+SETAE       ; A = 0b00000100 (0x04)
+```
+
+`PIXELAD` gives you the byte in screen memory; `SETAE` gives you the bit mask within that byte. Together, they replace what would otherwise be a lookup table or a several-instruction calculation.
+
+### I/O Extension
+
+**`OUTINB`** / `OTIB` (opcode: `ED 90`) — Output, Increment, and update flags:
+
+Reads a byte from `(HL)`, writes it to port `BC`, then increments `HL`. Flags are updated based on the transferred byte and the current value of `B`:
+
+```z80klive
+OUTINB    ; OUT (BC) ← (HL), HL++, update flags
+```
+
+The key difference from `OUTI`: this instruction does **not** decrement `B`. `OUTI` is designed as a counter-based loop instruction (like the block instruction family); `OUTINB` is for streaming data to a port when you're managing the count separately.
+
+### Hardware Access: NEXTREG
+
+**`NEXTREG reg,n`** / `NREG` (opcode: `ED 91`) and **`NEXTREG reg,A`** / `NREG` (opcode: `ED 92`)
+
+These are the Z80N instructions you'll use most often in Next-specific code. They write directly to the ZX Spectrum Next's hardware configuration registers (NextReg registers) without the normal two-port I/O dance.
+
+The traditional approach to writing a NextReg:
+
+```z80klive
+LD BC, 0x243B    ; NextReg select port
+LD A, 0x15       ; Register number
+OUT (C), A
+LD BC, 0x253B    ; NextReg data port
+LD A, 0x80       ; Value to write
+OUT (C), A
+```
+
+Six instructions, 12 bytes, roughly 60 T-states.
+
+The Z80N approach:
+
+```z80klive
+NEXTREG 0x15, 0x80    ; 4 bytes, ~20 T-states
+```
+
+When the value comes from `A`:
+
+```z80klive
+LD A, (palette_value)
+NEXTREG 0x41, A       ; Write A to NextReg 0x41 (palette value register)
+```
+
+NextReg registers control everything specific to the Next: layer priorities, palette entries, memory mapping, sprite visibility, DMA configuration, clock speed, copper timing. `NEXTREG` is the instruction you'll reach for in virtually all Next hardware setup code.
+
+### Indirect Jump
+
+**`JP (C)`** (opcode: `ED 98`) — Jump via Port:
+
+Reads from port `BC`, then builds a jump address from the result:
+
+```z80klive
+JP (C)    ; PC = (PC & 0xC000) | (IN(BC) << 6)
+```
+
+The top two bits of `PC` (which 16KB region you're in) are preserved. The lower 14 bits of the destination are filled from the 8-bit port value shifted left by 6, so the jump target is any 64-byte-aligned address within the current 16KB region.
+
+This is a hardware-facing instruction for page-switched environments. It allows ROM or external hardware to redirect execution by controlling what's readable from the port — a kind of software-visible ROM paging mechanism.
+
+---
+
+## Z80N Instruction Summary
+
+| Instruction | 4-letter | Opcode | Description |
+|-------------|----------|--------|-------------|
+| `SWAPNIB` | `SWAP` | `ED 23` | Swap nibbles of A |
+| `MIRROR A` | `MIRR A` | `ED 24` | Reverse bit order of A |
+| `TEST n` | same | `ED 27` | AND n with A, update flags, keep A |
+| `BSLA DE,B` | same | `ED 28` | Barrel shift DE left by B bits |
+| `BSRA DE,B` | same | `ED 29` | Barrel shift DE right arithmetic (sign-extend) |
+| `BSRL DE,B` | same | `ED 2A` | Barrel shift DE right logical (zero-fill) |
+| `BSRF DE,B` | same | `ED 2B` | Barrel shift DE right, fill with ones |
+| `BRLC DE,B` | same | `ED 2C` | Barrel rotate DE left circular |
+| `MUL D,E` | same | `ED 30` | Unsigned 8×8 multiply → DE |
+| `ADD HL,A` | same | `ED 31` | HL = HL + A (zero-extended) |
+| `ADD DE,A` | same | `ED 32` | DE = DE + A (zero-extended) |
+| `ADD BC,A` | same | `ED 33` | BC = BC + A (zero-extended) |
+| `ADD HL,nn` | same | `ED 34` | HL = HL + 16-bit immediate |
+| `ADD DE,nn` | same | `ED 35` | DE = DE + 16-bit immediate |
+| `ADD BC,nn` | same | `ED 36` | BC = BC + 16-bit immediate |
+| `PUSH nn` | same | `ED 8A` | Push 16-bit immediate value onto stack |
+| `OUTINB` | `OTIB` | `ED 90` | OUT(BC) ← (HL), HL++, update flags |
+| `NEXTREG r,n` | `NREG r,n` | `ED 91` | Write immediate n to NextReg register r |
+| `NEXTREG r,A` | `NREG r,A` | `ED 92` | Write A to NextReg register r |
+| `PIXELDN` | `PXDN` | `ED 93` | Advance HL to next pixel row in screen memory |
+| `PIXELAD` | `PXAD` | `ED 94` | HL = screen byte address for pixel at (D, E) |
+| `SETAE` | `STAE` | `ED 95` | A = pixel bit mask for column position E[2:0] |
+| `JP (C)` | same | `ED 98` | Jump to page-relative address via port BC |
+| `LDIX` | same | `ED A4` | LDI, skip write if (HL) == A |
+| `LDWS` | same | `ED A5` | (DE) ← (HL), L++, D++ (page-preserving) |
+| `LDDX` | same | `ED AC` | LDD, skip write if (HL) == A |
+| `LDIRX` | `LIRX` | `ED B4` | Repeat LDIX until BC = 0 |
+| `LDPIRX` | `LPRX` | `ED B7` | Block copy from 8-aligned source pattern, skip if == A |
+| `LDDRX` | `LDRX` | `ED BC` | Repeat LDDX until BC = 0 |
