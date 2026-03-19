@@ -52,6 +52,12 @@ export const pageMap = [{
     frontMatter: {
       "sidebarTitle": "Z80 Z80n Overview"
     }
+  }, {
+    name: "z80n",
+    route: "/book/z80n",
+    frontMatter: {
+      "sidebarTitle": "Z80n"
+    }
   }]
 }, {
   name: "book",
