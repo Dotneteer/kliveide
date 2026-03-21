@@ -2,6 +2,9 @@ name: Build artifacts
 
 on: workflow_dispatch
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-on-windows:
     runs-on: windows-latest
@@ -28,9 +31,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-kit-winx86
-          path: |
-            artifacts/*.exe
-            artifacts/*.msi
+          path: release/**/*.exe
 
   build-on-linux:
     runs-on: ubuntu-latest
@@ -57,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-kit-linux
-          path: artifacts/*x86_64.AppImage
+          path: release/**/*.AppImage
 
   build-on-linux-arm64:
     runs-on: ubuntu-latest
@@ -84,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-kit-linux-arm64
-          path: artifacts/*arm64.AppImage
+          path: release/**/*.AppImage
 
   build-on-mac:
     runs-on: macos-latest
@@ -111,7 +112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-kit-mac
-          path: artifacts/*x64.pkg
+          path: release/**/*.dmg
 
   build-on-mac-arm64:
     runs-on: macos-latest
@@ -138,4 +139,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-kit-mac-arm64
-          path: artifacts/*arm64.pkg
+          path: release/**/*.dmg
