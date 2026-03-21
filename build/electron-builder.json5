@@ -31,7 +31,7 @@
     deleteAppDataOnUninstall: false,
   },
   mac: {
-    target: ["dmg", "zip"],
+    target: ["pkg"],
     artifactName: "${productName}-Mac-${version}-Installer.${ext}",
   },
   linux: {

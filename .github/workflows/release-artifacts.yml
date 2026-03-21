@@ -112,7 +112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-kit-mac
-          path: release/**/*.dmg
+          path: release/**/*.pkg
 
   build-on-mac-arm64:
     runs-on: macos-latest
@@ -139,4 +139,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: install-kit-mac-arm64
-          path: release/**/*.dmg
+          path: release/**/*.pkg
