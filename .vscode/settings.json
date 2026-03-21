@@ -76,6 +76,12 @@
     "/^node -e \"const m = require\\('/Users/dotneteer/source/kliveide/node_modules/monaco-editor/esm/vs/editor/standalone/browser/standaloneThemeService\\.js'\\); console\\.log\\(Object\\.keys\\(m\\)\\)\" 2>&1 \\| head -5$/": {
       "approve": true,
       "matchCommandLine": true
+    },
+    "git ls-tree": true,
+    "./node_modules/.bin/electron-vite": true,
+    "/^python3 -c \"import json; p=json\\.load\\(open\\('package\\.json'\\)\\); print\\(json\\.dumps\\(p\\.get\\('build', 'NOT FOUND'\\), indent=2\\)\\)\"$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
   }
 }
