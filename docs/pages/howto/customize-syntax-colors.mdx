@@ -27,6 +27,7 @@ You can customize token colors for these languages:
 | ZX Basic | `zxbas.tokens.json` |
 | Klive Script | `ksx.tokens.json` |
 | SjASM Plus | `sjasmp.tokens.json` |
+| pasta80 Pascal | `pasta80.tokens.json` |
 
 ## Token File Format
 
@@ -172,6 +173,21 @@ You must restart Klive IDE for token color changes to take effect.
 - `escape` - Escape sequences
 - `asmdel` - ASM block delimiters
 - `directive` - Preprocessor directives
+
+### pasta80 Pascal
+
+- `comment` - Comments (`{ }`, `(* *)`)
+- `keyword` - Language keywords (`program`, `begin`, `end`, `var`, etc.) — **bold**
+- `type` - Built-in types (`integer`, `string`, `boolean`, etc.)
+- `constant` - Built-in constants (`true`, `false`, `maxint`)
+- `support.function` - Built-in functions (`writeln`, `readln`, `chr`, etc.)
+- `identifier` - User-defined identifiers
+- `string` - String and character literals (`'...'`, `#65`)
+- `string.escape` - Escaped quote inside string (`''`)
+- `number` - Decimal number literals
+- `number.hex` - Hexadecimal literals (`$FF`)
+- `annotation` - Compiler directives (`{$...}`)
+- `delimiter` - Operators and punctuation
 
 ### Klive Script
 

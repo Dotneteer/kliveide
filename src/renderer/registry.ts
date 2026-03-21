@@ -105,6 +105,7 @@ import { m6510CpuPanelRenderer } from "./appIde/SiteBarPanels/M6510CpuPanel";
 import { asm6510LanguageProvider } from "./appIde/project/asm6510LangaugeProvider";
 import { vicPanelRenderer } from "./appIde/SiteBarPanels/VicPanel";
 import { watchPanelRenderer } from "./appIde/SiteBarPanels/WatchPanel";
+import { turboPascalLanguageProvider } from "./appIde/project/turboPascalLanguageProvider";
 
 const ACTIVITY_FILE_ID = "file-view";
 const ACTIVITY_DEBUG_ID = "debug-view";
@@ -549,6 +550,13 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   },
   {
     matchType: "ends",
+    pattern: ".pas",
+    editor: CODE_EDITOR,
+    subType: "pasta80",
+    icon: "@file-text-txt"
+  },
+  {
+    matchType: "ends",
     pattern: ".txt",
     editor: TEXT_EDITOR,
     icon: "@file-text-txt"
@@ -607,16 +615,16 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isReadOnly: true,
     openPermanent: true
   },
-  {
-    matchType: "ends",
-    pattern: ".z80",
-    editor: Z80_VIEWER,
-    icon: "chip",
-    iconFill: "--console-ansi-bright-magenta",
-    isBinary: true,
-    isReadOnly: true,
-    openPermanent: true
-  },
+  // {
+  //   matchType: "ends",
+  //   pattern: ".z80",
+  //   editor: Z80_VIEWER,
+  //   icon: "chip",
+  //   iconFill: "--console-ansi-bright-magenta",
+  //   isBinary: true,
+  //   isReadOnly: true,
+  //   openPermanent: true
+  // },
   {
     matchType: "ends",
     pattern: ".sna",
@@ -858,4 +866,5 @@ export const customLanguagesRegistry: MonacoAwareCustomLanguageInfo[] = [
   ksxLanguageProvider,
   sjasmZ80LanguageProvider,
   asm6510LanguageProvider,
+  turboPascalLanguageProvider,
 ];

@@ -1,4 +1,5 @@
 import type { IKliveCompiler } from "@abstractions/CompilerInfo";
+import { Pasta80Compiler } from "@main/pasta80-integration/Pasta80Compiler";
 import { SjasmPCompiler } from "@main/sjasmp-integration/SjasmPCompiler";
 import { Z80Compiler } from "@main/z80-compiler/Z80Compiler";
 import { ZxBasicCompiler } from "@main/zxb-integration/ZxBasicCompiler";
@@ -28,5 +29,6 @@ export function createCompilerRegistry(): CompilerRegistry {
   registry.registerCompiler(new Z80Compiler());
   registry.registerCompiler(new ZxBasicCompiler());
   registry.registerCompiler(new SjasmPCompiler());
+  registry.registerCompiler(new Pasta80Compiler());
   return registry;
 }

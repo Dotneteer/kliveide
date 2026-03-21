@@ -197,6 +197,13 @@ export type RunnerOptions = {
    * @default process.env
    */
   readonly env?: NodeJS.ProcessEnv;
+
+  /**
+   * Run the command inside a shell. Useful when the executable is a shell script or
+   * requires the user's PATH (e.g. when launched from an Electron process).
+   * @default false
+   */
+  readonly shell?: boolean;
 };
 
 /**
