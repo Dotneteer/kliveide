@@ -143,6 +143,12 @@ export const pageMap = [{
       "sidebarTitle": "Always on Top"
     }
   }, {
+    name: "background-compilation",
+    route: "/howto/background-compilation",
+    frontMatter: {
+      "sidebarTitle": "Background Compilation"
+    }
+  }, {
     name: "customize-syntax-colors",
     route: "/howto/customize-syntax-colors",
     frontMatter: {
@@ -297,6 +303,12 @@ export const pageMap = [{
     route: "/working-with-ide/memory",
     frontMatter: {
       "sidebarTitle": "Memory"
+    }
+  }, {
+    name: "pasta80",
+    route: "/working-with-ide/pasta80",
+    frontMatter: {
+      "sidebarTitle": "Pasta80"
     }
   }, {
     name: "project-explorer",
