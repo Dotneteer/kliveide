@@ -1,0 +1,40 @@
+import { Callout } from 'nextra/components';
+
+# Using Background Compilation
+
+Background compilation is an optional feature that keeps the compiler running quietly while you write code. Whenever you pause typing, Klive recompiles your source file in the background and uses the result to power the editor's live feedback.
+
+## Enabling the feature
+
+Background compilation is **off by default**. Turn it on from the application menu:
+
+**View → Editor Options → Allow Background Compile**
+
+The setting is saved globally with the IDE (not per-project), so it applies to every project you open.
+
+<Callout type="info" emoji="💡">
+If you find the editor feels sluggish on large projects, try turning background compilation off. The setting can be toggled at any time without restarting.
+</Callout>
+
+## How it works
+
+Background compilation is **lazy**: it does not run on every keystroke. Instead, it waits until you have stopped typing for about **1.2 seconds**, then silently compiles your file in a worker thread so the editor stays responsive.
+
+Each time a background compile finishes:
+
+- **Inline error diagnostics** are updated — errors and warnings appear as red/yellow underlines directly in the editor. Hover over an underlined token to read the message. Error positions are also reflected in the scrollbar overview ruler and the minimap.
+- **Semantic token colors** are refreshed — identifiers, labels, macros, structs, and `.equ` constants are re-coloured according to the compiler's current understanding of their role.
+- **Editor intelligence** (hover info, go-to-definition, rename symbol, etc.) is updated with the latest compilation data.
+
+## What file gets compiled
+
+Background compilation always targets the **promoted build root** — the source file that is currently open and has been marked as the project's build root. If the currently active file is not a build root, no background compilation is triggered.
+
+<Callout type="info" emoji="💡">
+To designate a file as the build root, right-click it in the Project Explorer and choose **Set as build root**.
+</Callout>
+
+## Tips
+
+- **Slow machines or large files**: increase the debounce window by raising the **Quick Suggestion Delay** in **View → Editor Options**. While this setting primarily affects autocomplete, a longer pause before suggestions also reduces the rate at which the background compiler fires.
+- **Temporary files**: background compilation does not produce any output files on disk — it runs entirely in memory.

@@ -142,6 +142,7 @@ import {
   SETTING_IDE_TOOLS_ON_TOP
 } from "@common/settings/setting-const";
 import { ResetSjasmPlusCommand } from "./commands/SjasmPlusCommands";
+import { ResetPasta80Command } from "./commands/Pasta80Commands";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
 
@@ -432,4 +433,5 @@ function registerCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new SetMemoryContentCommand());
 
   cmdSrv.registerCommand(new ResetSjasmPlusCommand());
+  cmdSrv.registerCommand(new ResetPasta80Command());
 }

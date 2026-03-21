@@ -1,0 +1,44 @@
+{
+  "darkTheme": {
+    "keyword.block": {
+      "foreground": "c586c0",
+      "fontStyle": "bold"
+    },
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "type": "4ec9b0",
+    "constant": "9cdcfe",
+    "support.function": "dcdcaa",
+    "identifier": "9cdcfe",
+    "string": "ce9178",
+    "string.escape": "d7ba7d",
+    "number": "b5cea8",
+    "number.hex": "b5cea8",
+    "comment": "6a9955",
+    "annotation": "c586c0",
+    "delimiter": "d4d4d4"
+  },
+  "lightTheme": {
+    "keyword.block": {
+      "foreground": "af00db",
+      "fontStyle": "bold"
+    },
+    "keyword": {
+      "foreground": "0000ff",
+      "fontStyle": "bold"
+    },
+    "type": "008080",
+    "constant": "098658",
+    "support.function": "795e26",
+    "identifier": "000000",
+    "string": "a31515",
+    "string.escape": "a5673f",
+    "number": "098658",
+    "number.hex": "098658",
+    "comment": "008000",
+    "annotation": "af00db",
+    "delimiter": "000000"
+  }
+}

@@ -4,6 +4,7 @@ export default {
   "shortcuts": "Changing keyboard shortcuts",
   "file-extensions": "Changing default file extensions",
   "customize-syntax-colors": "Customizing syntax highlighting colors",
+  "background-compilation": "Using background compilation",
   "instant-screen": "Using the Instant Screen",
   "screen-recording": "Recording the Emulator Screen",
   "always-on-top": "Keeping the Emulator always on top",

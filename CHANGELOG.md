@@ -1,5 +1,11 @@
 # Klive IDE Changelog
 
+## 0.57.0
+
+### Features
+
+- Experimental integration with PASTA/80
+
 ## 0.56.0
 
 ### Features
