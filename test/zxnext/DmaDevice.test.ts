@@ -741,7 +741,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       dmaDevice.writeWR2(0x48); // D6=1 (timing byte follows), D3=1 (I/O)
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R2_BYTE_0);
       
-      dmaDevice.writeWR2(0x00); // Timing byte
+      dmaDevice.writeWR2(0x20); // Timing byte with D5=1 → prescaler follows
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R2_BYTE_1);
       
       dmaDevice.writeWR2(0x00); // Prescalar byte
@@ -750,7 +750,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
 
     it("should store prescalar value", () => {
       dmaDevice.writeWR2(0x40); // D6=1, timing byte follows
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x20); // Timing byte with D5=1 → prescaler follows
       dmaDevice.writeWR2(0x7b); // Prescalar = 123
       
       expect(dmaDevice.getRegisters().portBPrescalar).toBe(0x7b);
@@ -766,7 +766,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
 
     it("should handle prescalar 0xff", () => {
       dmaDevice.writeWR2(0x40);
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x20); // Timing byte with D5=1 → prescaler follows
       dmaDevice.writeWR2(0xff);
       
       expect(dmaDevice.getRegisters().portBPrescalar).toBe(0xff);
@@ -790,7 +790,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
 
       // Configure Port B as Memory with Fixed
       dmaDevice.writeWR2(0x60); // D6=1 (timing byte), D5=1 (Fixed), D3=0 (Memory)
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x20); // Timing byte with D5=1 → prescaler follows
       dmaDevice.writeWR2(0x50); // Prescalar = 80
 
       const registers = dmaDevice.getRegisters();
@@ -811,7 +811,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
       expect(registersAfterWR1.portATimingCycleLength).toBe(CycleLength.CYCLES_3);
 
       dmaDevice.writeWR2(0x60); // D6=1, D5=1 (Fixed), D3=0 (Memory)
-      dmaDevice.writeWR2(0x01); // Timing byte with D1-D0 = 01 (CYCLES_3)
+      dmaDevice.writeWR2(0x21); // Timing byte with D5=1 (prescaler follows), D1-D0=01 (CYCLES_3)
       dmaDevice.writeWR2(0x64);
 
       const registersAfterWR2 = dmaDevice.getRegisters();
@@ -915,7 +915,7 @@ describe("DmaDevice - Step 3: Register Write Sequencing (WR1-WR2)", () => {
 
     it("should handle WR2 with maximum prescalar value", () => {
       dmaDevice.writeWR2(0x40); // D6=1, timing byte follows
-      dmaDevice.writeWR2(0x00);
+      dmaDevice.writeWR2(0x20); // Timing byte with D5=1 → prescaler follows
       dmaDevice.writeWR2(0xff);
 
       expect(dmaDevice.getRegisters().portBPrescalar).toBe(0xff);

@@ -197,9 +197,14 @@ const RNUM_WR2_BASE      = 16;  // (2<<3)+0 – WR2 base byte
 const RNUM_PORT_B_TIMING = 17;  // (2<<3)+1 – Port B timing byte
 const RNUM_ZXN_PRESCALER = 18;  // (2<<3)+2 – ZXN prescaler byte
 const RNUM_WR3_BASE      = 24;  // (3<<3)+0 – WR3 base byte
+const RNUM_MASK_BYTE     = 25;  // (3<<3)+1 – WR3 mask byte parameter
+const RNUM_MATCH_BYTE    = 26;  // (3<<3)+2 – WR3 match byte parameter
 const RNUM_WR4_BASE      = 32;  // (4<<3)+0 – WR4 base byte
 const RNUM_PORT_B_ADDR_L = 33;  // (4<<3)+1 – Port B starting address (low)
 const RNUM_PORT_B_ADDR_H = 34;  // (4<<3)+2 – Port B starting address (high)
+const RNUM_INTERRUPT_CTRL   = 35;  // (4<<3)+3 – WR4 interrupt control
+const RNUM_INTERRUPT_VECTOR = 36;  // (4<<3)+4 – WR4 interrupt vector
+const RNUM_PULSE_CTRL       = 37;  // (4<<3)+5 – WR4 pulse control
 const RNUM_WR5_BASE      = 40;  // (5<<3)+0 – WR5 base byte
 const RNUM_WR6_BASE      = 48;  // (6<<3)+0 – WR6 base byte
 const RNUM_READ_MASK     = 49;  // (6<<3)+1 – Read mask byte
@@ -735,6 +740,26 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.registers.portBStartAddress =
           (this.registers.portBStartAddress & 0x00ff) | ((value & 0xff) << BYTE_SHIFT);
         break;
+      case RNUM_MASK_BYTE:
+        // WR3 mask byte — stored in raw regs; no decoded RegisterState field yet
+        break;
+      case RNUM_MATCH_BYTE:
+        // WR3 match byte — stored in raw regs; no decoded RegisterState field yet
+        break;
+      case RNUM_INTERRUPT_CTRL:
+        // WR4 interrupt control byte — conditionally queue PULSE_CTRL and INTERRUPT_VECTOR
+        // This mirrors MAME z80dma.cpp follow-byte processing for REG(4,3)
+        this.numFollow = 0;
+        this.curFollow = 0;
+        if (value & 0x08) this.regsFollow[this.numFollow++] = RNUM_PULSE_CTRL;
+        if (value & 0x10) this.regsFollow[this.numFollow++] = RNUM_INTERRUPT_VECTOR;
+        break;
+      case RNUM_INTERRUPT_VECTOR:
+        // WR4 interrupt vector — stored in raw regs
+        break;
+      case RNUM_PULSE_CTRL:
+        // WR4 pulse control — stored in raw regs
+        break;
       case RNUM_READ_MASK:
         this.registers.readMask = value & 0x7f;
         break;
@@ -771,7 +796,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       case 6: // WR6: only READ_MASK_FOLLOWS (0xBB) needs a follow byte
         if (baseValue === 0xbb) this.regsFollow[this.numFollow++] = RNUM_READ_MASK;
         break;
-      default: // WR3, WR5: no follow bytes
+      case 3: // WR3: D3=mask_byte, D4=match_byte; D6 triggers DMA start (not dmaEnabled flag)
+        if (baseValue & 0x08) this.regsFollow[this.numFollow++] = RNUM_MASK_BYTE;
+        if (baseValue & 0x10) this.regsFollow[this.numFollow++] = RNUM_MATCH_BYTE;
+        if (baseValue & 0x40) {
+          this.dmaState = DmaState.START_DMA;
+        }
+        break;
+      default: // WR5: no follow bytes
         break;
     }
     // Keep registerWriteSeq in sync with the new queue state
@@ -821,38 +853,38 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
-    // Base byte dispatch — determine target register and call the handler.
-    // NOTE: dispatch masks are intentionally kept as-is (wrong vs MAME);
-    //       they will be corrected in Step 3.
-    let regGroup = -1;
-    if ((value & PATTERN_WR6_COMMAND) !== 0) {
-      // D7=1: WR4 or WR6
-      if ((value & PATTERN_WR4_MASK) === PATTERN_WR4_BITS) {
-        this.writeWR4(value);
-        regGroup = 4;
-      } else {
-        this.writeWR6(value);
-        regGroup = 6;
-      }
+    // Step 3: Base byte dispatch using MAME's z80dma.cpp write() order and masks exactly.
+    //   1. (data & 0x87) == 0x00  → WR2
+    //   2. (data & 0x87) == 0x04  → WR1
+    //   3. (data & 0x80) == 0x00  → WR0 (catch-all for D7=0)
+    //   4. (data & 0x83) == 0x80  → WR3
+    //   5. (data & 0x83) == 0x81  → WR4
+    //   6. (data & 0xc7) == 0x82  → WR5
+    //   7. else                   → WR6
+    let regGroup: number;
+    if ((value & 0x87) === 0x00) {
+      this.writeWR2(value);
+      regGroup = 2;
+    } else if ((value & 0x87) === 0x04) {
+      this.writeWR1(value);
+      regGroup = 1;
+    } else if ((value & 0x80) === 0x00) {
+      // Catch-all for D7=0: WR0
+      this.writeWR0(value);
+      regGroup = 0;
+    } else if ((value & 0x83) === 0x80) {
+      this.writeWR3(value);
+      regGroup = 3;
+    } else if ((value & 0x83) === 0x81) {
+      this.writeWR4(value);
+      regGroup = 4;
+    } else if ((value & 0xc7) === 0x82) {
+      this.writeWR5(value);
+      regGroup = 5;
     } else {
-      // D7=0: WR0-WR5
-      const lowBits = value & MASK_REGISTER_ID;
-      if (lowBits === PATTERN_WR1) {
-        this.writeWR1(value);
-        regGroup = 1;
-      } else if (lowBits === PATTERN_WR2) {
-        this.writeWR2(value);
-        regGroup = 2;
-      } else if ((value & PATTERN_WR5_MASK) === PATTERN_WR5_BASE) {
-        this.writeWR5(value);
-        regGroup = 5;
-      } else if (lowBits === PATTERN_WR3_ENABLE || lowBits === PATTERN_WR3_DISABLE) {
-        this.writeWR3(value);
-        regGroup = 3;
-      } else {
-        this.writeWR0(value);
-        regGroup = 0;
-      }
+      // (value & 0x83) === 0x83: WR6 command register
+      this.writeWR6(value);
+      regGroup = 6;
     }
     // Step 2: Set up the follow queue for the detected register group.
     // This overrides registerWriteSeq set inside writeWRx() so that subsequent
@@ -982,7 +1014,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.registers.portBTimingValue = value;
       const cycleLengthBits = value & MASK_CYCLE_LENGTH;
       this.registers.portBTimingCycleLength = cycleLengthBits as CycleLength;
-      this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_1;
+      // Step 5: Prescaler follows only when timing byte D5=1 (matches specnext_dma behaviour)
+      this.registerWriteSeq = (value & 0x20)
+        ? RegisterWriteSequence.R2_BYTE_1
+        : RegisterWriteSequence.IDLE;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_1) {
       // Step 1: Store prescaler in raw register array
       this.regs[RNUM_ZXN_PRESCALER] = value;
@@ -1003,6 +1038,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.regs[RNUM_WR3_BASE] = value;
       // D0: DMA enable flag
       this.registers.dmaEnabled = (value & 0x01) !== 0;
+      // Step 6: D6=1 triggers DMA start (like MAME's enable()), without changing the dmaEnabled flag
+      if (value & 0x40) {
+        this.dmaState = DmaState.START_DMA;
+      }
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
   }

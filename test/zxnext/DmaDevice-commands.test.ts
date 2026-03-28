@@ -53,7 +53,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     it("should reset Port B timing to default (3 cycles)", () => {
       // Setup - change Port B timing
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter bit
-      dmaDevice.writeWR2(0x00); // Timing byte (4 cycles)
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
       dmaDevice.writeWR2(0x55); // Prescalar
 
       // Execute RESET
@@ -176,7 +176,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     it("should not affect Port B prescalar", () => {
       // Setup - set prescalar
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter
-      dmaDevice.writeWR2(0x00); // Timing byte
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows)
       dmaDevice.writeWR2(0x55); // Prescalar = 85
 
       // Execute RESET_PORT_A_TIMING
@@ -232,7 +232,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     it("should reset Port B timing to default (3 cycles)", () => {
       // Setup - change Port B timing to 4 cycles
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter
-      dmaDevice.writeWR2(0x00); // Timing byte (4 cycles)
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
       dmaDevice.writeWR2(0x55); // Prescalar
 
       // Execute RESET_PORT_B_TIMING
@@ -394,7 +394,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     it("should not affect prescalar", () => {
       // Setup - set prescalar
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter
-      dmaDevice.writeWR2(0x00); // Timing byte
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows)
       dmaDevice.writeWR2(0x37); // Prescalar = 55
 
       // Execute DISABLE_DMA

@@ -77,7 +77,7 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
 
     // WR2: Port B configuration - increment mode + prescalar
     dma.writeWR2(0x50); // Increment + timing follows (bit 6=1)
-    dma.writeWR2(0x00); // Timing byte (placeholder)
+    dma.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
     dma.writeWR2(prescalar); // Prescalar value
 
     // WR4: Burst mode + Port B address

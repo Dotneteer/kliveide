@@ -105,7 +105,7 @@ describe("DMA Z80 Code-Driven Tests - Timing Parameters", () => {
         0x01, 0x6B, 0x00, // LD BC, 006BH
         0x3E, 0x50, // LD A, 50H (WR2: D6=1, timing follows, D3=0)
         0xED, 0x79, // OUT (C), A
-        0x3E, 0x01, // LD A, 01H (Timing byte: CYCLES_3)
+        0x3E, 0x21, // LD A, 21H (Timing byte: D5=1 prescaler follows, bits 1:0=01 CYCLES_3)
         0xED, 0x79, // OUT (C), A
         0x3E, 0xAA, // LD A, AAH (Prescalar: 170)
         0xED, 0x79, // OUT (C), A
@@ -117,7 +117,7 @@ describe("DMA Z80 Code-Driven Tests - Timing Parameters", () => {
       m.runUntilHalt();
 
       const timing = m.dmaDevice.getTimingParameters();
-      expect(timing.portB.rawValue).toBe(0x01);
+      expect(timing.portB.rawValue).toBe(0x21);
       expect(timing.portB.cycleLength).toBe(CycleLength.CYCLES_3);
 
       const regs = m.getDmaRegisters();
@@ -131,7 +131,7 @@ describe("DMA Z80 Code-Driven Tests - Timing Parameters", () => {
         0x01, 0x6B, 0x00, // LD BC, 006BH
         0x3E, 0x50, // LD A, 50H (WR2: D6=1, timing follows)
         0xED, 0x79, // OUT (C), A
-        0x3E, 0x02, // LD A, 02H (Timing byte: CYCLES_2)
+        0x3E, 0x22, // LD A, 22H (Timing byte: D5=1 prescaler follows, bits 1:0=10 CYCLES_2)
         0xED, 0x79, // OUT (C), A
         0x3E, 0x55, // LD A, 55H (Prescalar: 85)
         0xED, 0x79, // OUT (C), A
@@ -143,7 +143,7 @@ describe("DMA Z80 Code-Driven Tests - Timing Parameters", () => {
       m.runUntilHalt();
 
       const timing = m.dmaDevice.getTimingParameters();
-      expect(timing.portB.rawValue).toBe(0x02);
+      expect(timing.portB.rawValue).toBe(0x22);
       expect(timing.portB.cycleLength).toBe(CycleLength.CYCLES_2);
 
       const regs = m.getDmaRegisters();
@@ -179,7 +179,7 @@ describe("DMA Z80 Code-Driven Tests - Timing Parameters", () => {
         0x01, 0x6B, 0x00, // LD BC, 006BH
         0x3E, 0x50, // LD A, 50H (WR2: D6=1)
         0xED, 0x79, // OUT (C), A
-        0x3E, 0x00, // LD A, 00H (Timing byte: CYCLES_4)
+        0x3E, 0x20, // LD A, 20H (Timing byte: D5=1 prescaler follows, bits 1:0=00 CYCLES_4)
         0xED, 0x79, // OUT (C), A
         0x3E, 0xFF, // LD A, FFH (Prescalar: 255)
         0xED, 0x79, // OUT (C), A
@@ -191,7 +191,7 @@ describe("DMA Z80 Code-Driven Tests - Timing Parameters", () => {
       m.runUntilHalt();
 
       const timing = m.dmaDevice.getTimingParameters();
-      expect(timing.portB.rawValue).toBe(0x00);
+      expect(timing.portB.rawValue).toBe(0x20);
       expect(timing.portB.cycleLength).toBe(CycleLength.CYCLES_4);
 
       const regs = m.getDmaRegisters();

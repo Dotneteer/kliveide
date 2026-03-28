@@ -176,7 +176,7 @@ describe("DmaDevice - Phase 7: Validation Tests", () => {
   describe("Counter Overflow Detection", () => {
     it("should return false when not in overflow condition", () => {
       dma.setDmaMode(DmaMode.ZXNDMA);
-      dma.writePort(0x07); // WR0
+      dma.writePort(0x7D); // WR0 base (D7=0, D6-D3=1 → portA lo+hi+blockLen lo+hi follow)
       dma.writePort(0x00);
       dma.writePort(0x00);
       dma.writePort(0x10); // Block length = 16 bytes
@@ -218,7 +218,7 @@ describe("DmaDevice - Phase 7: Validation Tests", () => {
         dma.setDmaMode(DmaMode.ZXNDMA);
         
         // Set block length
-        dma.writePort(0x07);
+        dma.writePort(0x7D); // WR0 base (D6-D3=1 → portA lo+hi+blockLen lo+hi follow)
         dma.writePort(0x00);
         dma.writePort(0x00);
         dma.writePort(blockLength & 0xFF);
@@ -378,7 +378,7 @@ describe("DmaDevice - Phase 7: Validation Tests", () => {
       expect(dma.validateAddressBounds()).toBe(true);
       // When block length is 0, transfer length is 0, counter starts at 0
       // So overflow check will be true (0 >= 0). Set non-zero block length first
-      dma.writePort(0x07); // WR0
+      dma.writePort(0x7D); // WR0 base (D6-D3=1 → portA lo+hi+blockLen lo+hi follow)
       dma.writePort(0x00);
       dma.writePort(0x00);
       dma.writePort(0x10); // Block length = 16

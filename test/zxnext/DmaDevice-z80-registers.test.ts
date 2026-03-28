@@ -515,7 +515,7 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
       const m = await createTestNextMachine();
       const code = [
         0x01, 0x6B, 0x00,    // LD BC, 006BH
-        0x3E, 0x32,          // LD A, 32H (WR5: D5=1 auto-restart, D4D3=10, D1D0=10)
+        0x3E, 0xB2,          // LD A, B2H (WR5: (0xB2 & 0xC7)==0x82 → WR5, D5=1 auto-restart)
         0xED, 0x79,          // OUT (C), A
         0x76                 // HALT
       ];

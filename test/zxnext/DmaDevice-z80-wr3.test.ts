@@ -1,14 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 
-describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
-  describe("WR3 Enable/Disable via Port Write", () => {
-    it("should enable DMA via WR3 port write (0x03)", async () => {
+describe("DMA Z80 Code-Driven Tests - DMA Enable/Disable via Port Write", () => {
+  describe("WR6 Enable/Disable via Port Write", () => {
+    it("should enable DMA via WR6 ENABLE_DMA command (0x87)", async () => {
       const m = await createTestNextMachine();
 
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        0x3E, 0x03, // LD A, 03H (WR3: xxx00011, D0=1 enable)
+        0x3E, 0x87, // LD A, 87H (WR6 ENABLE_DMA command)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -21,7 +21,7 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
       expect(regs.dmaEnabled).toBe(true);
     });
 
-    it("should disable DMA via WR3 port write (0x02)", async () => {
+    it("should disable DMA via WR6 DISABLE_DMA command (0x83)", async () => {
       const m = await createTestNextMachine();
 
       // Set DMA enabled first
@@ -30,7 +30,7 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
 
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        0x3E, 0x02, // LD A, 02H (WR3: xxx00010, D0=0 disable)
+        0x3E, 0x83, // LD A, 83H (WR6 DISABLE_DMA command)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -43,12 +43,12 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
       expect(regs.dmaEnabled).toBe(false);
     });
 
-    it("should enable DMA via WR3 with upper bits set", async () => {
+    it("should enable DMA via WR6 ENABLE_DMA (standard command byte)", async () => {
       const m = await createTestNextMachine();
 
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        0x3E, 0x43, // LD A, 43H (WR3: 01000011, upper bits ignored, D0=1)
+        0x3E, 0x87, // LD A, 87H (WR6 ENABLE_DMA — only the command byte matters)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -83,7 +83,7 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
     });
   });
 
-  describe("WR3 vs Direct Method Equivalence", () => {
+  describe("WR6 vs Direct Method Equivalence", () => {
     it("should produce same result as setDmaEnabled(true)", async () => {
       const m1 = await createTestNextMachine();
       m1.dmaDevice.setDmaEnabled(true);
@@ -91,7 +91,7 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
       const m2 = await createTestNextMachine();
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        0x3E, 0x03, // LD A, 03H (enable via port)
+        0x3E, 0x87, // LD A, 87H (WR6 ENABLE_DMA)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -112,7 +112,7 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
       m2.dmaDevice.setDmaEnabled(true);
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        0x3E, 0x02, // LD A, 02H (disable via port)
+        0x3E, 0x83, // LD A, 83H (WR6 DISABLE_DMA)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -125,24 +125,23 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
     });
   });
 
-  describe("WR3 Bit Pattern Matching", () => {
-    it("should recognize WR3 pattern xxx00011", async () => {
-      const m = await createTestNextMachine();
-
+  describe("DMA Enable/Disable Pattern Tests", () => {
+    it("should recognize WR6 ENABLE_DMA (0x87) enables DMA", async () => {
+      // With MAME dispatch, bytes are routed by bit-mask patterns.
+      // ENABLE_DMA (0x87) and DISABLE_DMA (0x83) are the correct WR6 commands.
       const testCases = [
-        0x03, // 00000011
-        0x23, // 00100011
-        0x43, // 01000011
-        0x63, // 01100011
+        { value: 0x87, expectedEnabled: true },  // ENABLE_DMA
+        { value: 0x83, expectedEnabled: false }, // DISABLE_DMA
       ];
 
-      for (const testValue of testCases) {
+      for (const tc of testCases) {
         const m2 = await createTestNextMachine();
+        if (!tc.expectedEnabled) m2.dmaDevice.setDmaEnabled(true); // Pre-enable so disable has effect
         const code = [
           0x01, 0x6B, 0x00, // LD BC, 006BH
-          0x3E, testValue, // LD A, test value
-          0xED, 0x79, // OUT (C), A
-          0x76, // HALT
+          0x3E, tc.value,   // LD A, command byte
+          0xED, 0x79,       // OUT (C), A
+          0x76,             // HALT
         ];
 
         m2.initCode(code, 0xC000);
@@ -150,9 +149,7 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
         m2.runUntilHalt();
 
         const regs = m2.getDmaRegisters();
-        // Pattern xxx011 with D0=1 should enable DMA
-        const expectedEnabled = (testValue & 0x01) !== 0;
-        expect(regs.dmaEnabled).toBe(expectedEnabled);
+        expect(regs.dmaEnabled).toBe(tc.expectedEnabled);
       }
     });
 
@@ -180,13 +177,13 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
     });
   });
 
-  describe("WR3 Bit D0 Interpretation", () => {
-    it("should treat D0=1 as enable", async () => {
+  describe("WR6 Enable/Disable Bit Interpretation", () => {
+    it("should treat WR6 0x87 as enable", async () => {
       const m = await createTestNextMachine();
 
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        0x3E, 0x03, // LD A, 03H (WR3 with D0=1, pattern xxx011)
+        0x3E, 0x87, // LD A, 87H (WR6 ENABLE_DMA)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -198,13 +195,13 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
       expect(m.getDmaRegisters().dmaEnabled).toBe(true);
     });
 
-    it("should treat D0=0 as disable", async () => {
+    it("should treat WR6 0x83 as disable", async () => {
       const m = await createTestNextMachine();
       m.dmaDevice.setDmaEnabled(true);
 
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        0x3E, 0x02, // LD A, 02H (WR3 with D0=0, pattern xxx010)
+        0x3E, 0x83, // LD A, 83H (WR6 DISABLE_DMA)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -216,19 +213,19 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
       expect(m.getDmaRegisters().dmaEnabled).toBe(false);
     });
 
-    it("should handle repeated WR3 writes", async () => {
+    it("should handle alternating enable/disable writes", async () => {
       const m = await createTestNextMachine();
 
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
         // Enable
-        0x3E, 0x03, // LD A, 03H
+        0x3E, 0x87, // LD A, 87H (ENABLE_DMA)
         0xED, 0x79, // OUT (C), A
         // Disable
-        0x3E, 0x02, // LD A, 02H
+        0x3E, 0x83, // LD A, 83H (DISABLE_DMA)
         0xED, 0x79, // OUT (C), A
         // Enable again
-        0x3E, 0x03, // LD A, 03H
+        0x3E, 0x87, // LD A, 87H (ENABLE_DMA)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];
@@ -241,14 +238,14 @@ describe("DMA Z80 Code-Driven Tests - WR3 Port Routing", () => {
     });
   });
 
-  describe("WR3 Port Routing Validation", () => {
-    it("should validate WR3 routing is functional", async () => {
+  describe("DMA Port Routing Validation", () => {
+    it("should validate DMA enable via port write is functional", async () => {
       const m = await createTestNextMachine();
 
       const code = [
         0x01, 0x6B, 0x00, // LD BC, 006BH
-        // Set WR3 to enable
-        0x3E, 0x03, // LD A, 03H (enable)
+        // Enable DMA via WR6 ENABLE_DMA command
+        0x3E, 0x87, // LD A, 87H (WR6 ENABLE_DMA)
         0xED, 0x79, // OUT (C), A
         0x76, // HALT
       ];

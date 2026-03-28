@@ -44,7 +44,7 @@ describe("DMA Burst Transfer Mode", () => {
 
     // WR2: Port B configuration with prescalar
     dma.writeWR2(0x50); // Memory, increment, timing byte follows
-    dma.writeWR2(0x00); // Timing byte
+    dma.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
     dma.writeWR2(prescalar & 0xff); // Prescalar value
 
     // WR4: Burst mode + Port B address

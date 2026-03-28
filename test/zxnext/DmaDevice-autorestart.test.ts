@@ -224,7 +224,7 @@ describe("DMA Auto-Restart Feature", () => {
       dma.writeWR0((blockLength >> 8) & 0xff);
       dma.writeWR1(0x14);
       dma.writeWR2(0x50);
-      dma.writeWR2(0x00);
+      dma.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows)
       dma.writeWR2(prescalar & 0xff);
       dma.writeWR4(0xad); // Burst mode
       dma.writeWR4((destAddr >> 0) & 0xff);
