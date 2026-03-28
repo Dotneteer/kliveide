@@ -2,7 +2,8 @@ import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 /**
- * DMA state machine states
+ * DMA state machine states (legacy – kept for backward-compat)
+ * getDmaState() derives a value from dmaSeq for callers that still import this enum.
  */
 export const enum DmaState {
   IDLE = 0,
@@ -18,6 +19,22 @@ export const enum DmaState {
   TRANSFERRING_WRITE_4 = 10,
   WAITING_CYCLES = 11,
   FINISH_DMA = 12
+}
+
+/**
+ * Step 10: MAME-style DMA sequence states (m_dma_seq in z80dma.cpp).
+ * stepDma() uses this enum internally; getDmaState() maps back to DmaState.
+ */
+export const enum DmaSeq {
+  SEQ_IDLE = 0,
+  SEQ_WAIT_READY = 1,
+  SEQ_REQUEST_BUS = 2,
+  SEQ_WAITING_ACK = 3,
+  SEQ_TRANS1_INC_DEC_SOURCE = 4,
+  SEQ_TRANS1_READ_SOURCE = 5,
+  SEQ_TRANS1_INC_DEC_DEST = 6,
+  SEQ_TRANS1_WRITE_DEST = 7,
+  SEQ_FINISH = 8
 }
 
 /**
@@ -287,6 +304,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private busControl: BusControlState;
 
   private dmaState: DmaState = DmaState.IDLE;
+  // Step 10: MAME-style sequence state (replaces dmaState internally)
+  private dmaSeq: DmaSeq = DmaSeq.SEQ_IDLE;
   private registerWriteSeq: RegisterWriteSequence = RegisterWriteSequence.IDLE;
   private registerReadSeq: RegisterReadSequence = RegisterReadSequence.RD_STATUS;
   private _tempRegisterByte: number = 0;  // Stores first byte of WR0-WR6 for parameter parsing
@@ -402,6 +421,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.transferState = this.initializeTransferState();
     this.statusFlags = this.initializeStatusFlags();
     this.dmaState = DmaState.IDLE;
+    this.dmaSeq = DmaSeq.SEQ_IDLE;  // Step 10
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
     this.registerReadSeq = RegisterReadSequence.RD_STATUS;
     this._tempRegisterByte = 0;
@@ -425,7 +445,23 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   // ============================================================================
 
   getDmaState(): DmaState {
-    return this.dmaState;
+    // Step 10: derive from MAME-style dmaSeq for backward compatibility
+    switch (this.dmaSeq) {
+      case DmaSeq.SEQ_IDLE:             return DmaState.IDLE;
+      case DmaSeq.SEQ_WAIT_READY:
+      case DmaSeq.SEQ_REQUEST_BUS:      return DmaState.START_DMA;
+      case DmaSeq.SEQ_WAITING_ACK:      return DmaState.WAITING_ACK;
+      case DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE: return DmaState.TRANSFERRING_READ_1;
+      case DmaSeq.SEQ_TRANS1_READ_SOURCE:    return DmaState.TRANSFERRING_READ_2;
+      case DmaSeq.SEQ_TRANS1_INC_DEC_DEST:   return DmaState.TRANSFERRING_WRITE_1;
+      case DmaSeq.SEQ_TRANS1_WRITE_DEST:     return DmaState.TRANSFERRING_WRITE_2;
+      case DmaSeq.SEQ_FINISH:           return DmaState.FINISH_DMA;
+      default:                          return DmaState.IDLE;
+    }
+  }
+
+  getDmaSeq(): DmaSeq {
+    return this.dmaSeq;
   }
 
   getRegisterWriteSeq(): RegisterWriteSequence {
@@ -830,7 +866,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         if (baseValue & 0x08) this.regsFollow[this.numFollow++] = RNUM_MASK_BYTE;
         if (baseValue & 0x10) this.regsFollow[this.numFollow++] = RNUM_MATCH_BYTE;
         if (baseValue & 0x40) {
-          this.dmaState = DmaState.START_DMA;
+          this.enable();  // Step 10: D6=1 → enable() (sets dmaSeq = SEQ_WAIT_READY)
         }
         break;
       default: // WR5: no follow bytes
@@ -1068,9 +1104,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.regs[RNUM_WR3_BASE] = value;
       // D0: DMA enable flag
       this.registers.dmaEnabled = (value & 0x01) !== 0;
-      // Step 6: D6=1 triggers DMA start (like MAME's enable()), without changing the dmaEnabled flag
+      // Step 6/10: D6=1 triggers DMA start via enable() (like MAME's enable())
       if (value & 0x40) {
-        this.dmaState = DmaState.START_DMA;
+        this.enable();
       }
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
@@ -1204,10 +1240,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * RESET command (0xC3) - Reset all DMA state
    */
   private executeReset(): void {
-    // Step 7: Match MAME COMMAND_RESET
-    // Disable DMA (equivalent to disable())
-    this.dmaState = DmaState.IDLE;
-    this.registers.dmaEnabled = false;
+    // Step 7/10: Match MAME COMMAND_RESET — disable() then progressive column reset
+    this.disableDma();  // dmaSeq = SEQ_IDLE, bus released (does not touch dmaEnabled)
+    this.registers.dmaEnabled = false;  // explicitly clear on RESET
 
     // Clear control flags (m_force_ready, m_ip, m_ius)
     this.forceReady = false;
@@ -1265,8 +1300,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * DISABLE_DMA command (0x83) - Stop DMA transfer
    */
   private executeDisableDma(): void {
-    this.dmaState = DmaState.IDLE;
-    this.registers.dmaEnabled = false;
+    this.registers.dmaEnabled = false;  // explicitly clear dmaEnabled flag
+    this.disableDma();  // Step 10: use shared helper (does not touch dmaEnabled)
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
@@ -1349,15 +1384,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Initializes counter based on mode: 0 for zxnDMA, -1 for legacy
    */
   private executeEnableDma(): void {
-    // Enable DMA (enable())
-    this.registers.dmaEnabled = true;
-
     // Step 7: mode-dependent byte counter initialization.
     // zxnDMA (specnext) override: set to 0. Legacy Zilog mode: set to 0xFFFF.
     this.transferState.byteCounter = this.dmaMode === DmaMode.ZXNDMA ? 0 : 0xFFFF;
 
-    // Set DMA state to START_DMA so stepDma() will begin transfer
-    this.dmaState = DmaState.START_DMA;
+    // Explicitly set dmaEnabled flag (enable() does not touch it)
+    this.registers.dmaEnabled = true;
+
+    // Step 10: call enable() like MAME (sets dmaSeq = SEQ_WAIT_READY)
+    this.enable();
 
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
@@ -1581,9 +1616,42 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Returns true if DMA is enabled and not in IDLE state
    */
   shouldRequestBus(): boolean {
-    return this.registers.dmaEnabled &&
-           this.dmaState !== DmaState.IDLE &&
-           this.dmaState !== DmaState.FINISH_DMA;
+    // Step 10: use dmaSeq (SEQ_IDLE means DMA is off / done)
+    return this.dmaSeq !== DmaSeq.SEQ_IDLE;
+  }
+
+  // ============================================================================
+  // Step 10: MAME-style enable / disable / isReady helpers
+  // ============================================================================
+
+  /**
+   * Enable DMA – sets the MAME SEQ_WAIT_READY state (m_dma_seq = SEQ_WAIT_READY).
+   * Called internally by ENABLE_DMA command and WR3/WR0 D6 trigger.
+   * Does NOT touch registers.dmaEnabled — callers manage that flag explicitly.
+   */
+  private enable(): void {
+    this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+    this.dmaState = DmaState.START_DMA;  // keep legacy field in sync
+  }
+
+  /**
+   * Disable DMA – stops the state machine, releases bus.
+   * Equivalent to MAME's z80dma_device::disable().
+   * Does NOT touch registers.dmaEnabled — callers manage that flag explicitly.
+   */
+  private disableDma(): void {
+    this.dmaSeq = DmaSeq.SEQ_IDLE;
+    this.dmaState = DmaState.IDLE;       // keep legacy field in sync
+    this.releaseBus();
+  }
+
+  /**
+   * Check if DMA is ready to transfer (MAME is_ready()).
+   * In this emulator there is no external RDY pin, so the DMA is always
+   * considered ready (unless forceReady is the only gate – which still passes).
+   */
+  private isReady(): boolean {
+    return true;  // No external RDY signal in this emulator
   }
 
   /**
@@ -1740,73 +1808,166 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   // ============================================================================
 
   /**
-   * Step DMA state machine forward by one operation
-   * This method is called from the machine frame loop to allow incremental DMA execution
-   * Returns the number of T-states consumed by this step
-   * @returns T-states consumed (0 if no operation performed)
+   * Step 10: Step the MAME-style DMA state machine forward by one "clock tick".
+   *
+   * Modelled on z80dma_device::clock_w() (base) and specnext_dma_device::clock_w()
+   * (overrides for dma_delay / prescaler).  In our emulator the state machine runs
+   * synchronously inside this method instead of via hardware timers:
+   *
+   *   SEQ_IDLE → (never enters)
+   *   SEQ_WAIT_READY → SEQ_REQUEST_BUS (or skip to SEQ_TRANS1 in continuous mode)
+   *   SEQ_REQUEST_BUS → SEQ_WAITING_ACK (bus request sent, return 0)
+   *   SEQ_WAITING_ACK → SEQ_TRANS1_INC_DEC_SOURCE + full byte transfer
+   *   SEQ_TRANS1_* → full byte transfer in one call (read + write) → return T-states
+   *   SEQ_FINISH → disable() + auto-restart check, return 0
+   *
+   * Returns the T-states consumed (0 when waiting / done, >0 when a byte was moved).
    */
   stepDma(): number {
-    // If DMA is not enabled or idle, nothing to do
-    if (!this.registers.dmaEnabled || this.dmaState === DmaState.IDLE) {
-      return 0;
-    }
+    switch (this.dmaSeq) {
+      case DmaSeq.SEQ_IDLE:
+        return 0;
 
-    // Check if transfer is already complete
-    if (!this.shouldContinueTransfer()) {
-      // Transfer complete - check for auto-restart
-      if (this.checkAndHandleAutoRestart()) {
-        // Restarted - continue with next byte
-      } else {
-        // No restart - mark complete and release bus (if held)
-        this.statusFlags.endOfBlockReached = true;
-        this.releaseBus();
-        this.dmaState = DmaState.IDLE;
+      case DmaSeq.SEQ_WAIT_READY: {
+        if (!this.isReady()) return 0;
+        // Zero-length transfer: finish immediately without requesting bus
+        if (this._count === 0) {
+          this.handleTransferFinish();
+          return 0;
+        }
+        // Determine configured operating mode from decoded registers (not raw WR4 bits)
+        const configuredOpMode = this.registers.transferMode === TransferMode.BURST ? 0b10
+                               : this.registers.transferMode === TransferMode.CONTINUOUS ? 0b01
+                               : 0b00;
+        // Continuous mode skips bus re-request after the first byte
+        if (configuredOpMode === 0b01 && this.transferState.byteCounter !== 0) {
+          this.dmaSeq = DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE;
+          return this.executeTransferByte();
+        }
+        this.requestBus();
+        this.dmaSeq = DmaSeq.SEQ_WAITING_ACK;
         return 0;
       }
-    }
 
-    // Check if we need bus access
-    if (!this.isBusAvailable()) {
-      // Request bus if not already requested
-      if (this.busControl.state !== BusState.REQUESTED) {
-        this.requestBus();
-      }
-      // Wait for bus acknowledgment - no T-states consumed yet
-      return 0;
-    }
+      case DmaSeq.SEQ_REQUEST_BUS:
+        // Bus request was already sent in SEQ_WAIT_READY; just wait for ack.
+        return 0;
 
-    // Perform one byte transfer
-    // Read cycle: typically 3 T-states for memory, 4 for I/O
-    // Write cycle: typically 3 T-states for memory, 4 for I/O
+      case DmaSeq.SEQ_WAITING_ACK:
+        if (!this.isBusAvailable()) return 0;
+        this.dmaSeq = DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE;
+        return this.executeTransferByte();
+
+      case DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE:
+      case DmaSeq.SEQ_TRANS1_READ_SOURCE:
+      case DmaSeq.SEQ_TRANS1_INC_DEC_DEST:
+      case DmaSeq.SEQ_TRANS1_WRITE_DEST:
+        return this.executeTransferByte();
+
+      case DmaSeq.SEQ_FINISH:
+        this.handleTransferFinish();
+        return 0;
+
+      default:
+        return 0;
+    }
+  }
+
+  /**
+   * Execute one complete byte transfer (INC_DEC_SOURCE → READ → INC_DEC_DEST → WRITE)
+   * and dispatch to the next state based on the operating mode / is_final flag.
+   * Returns the T-states consumed by the read+write cycle.
+   *
+   * is_final logic: triggers when (byteCounter + 1) === count, meaning the CURRENT byte
+   * being processed is the last one.  After performWriteCycle() increments byteCounter,
+   * the final value will be exactly equal to _count.  No separate specnext pre-increment
+   * is needed — this formula naturally handles both zxnDMA (exact N bytes) and legacy
+   * (N+1 bytes, since byteCounter starts at 0xFFFF = -1) modes.
+   */
+  private executeTransferByte(): number {
+    // INC_DEC_SOURCE + READ_SOURCE: do_read
+    this.dmaSeq = DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE;
     this.performReadCycle();
+
+    // is_final: true when this is the last byte to transfer.
+    // (byteCounter + 1) == count means "writing this byte will bring counter to count".
+    const isFinal = this._count !== 0 &&
+                    (this.transferState.byteCounter + 1) === this._count;
+
+    // INC_DEC_DEST + WRITE_DEST: do_write (updates addresses + increments byteCounter)
+    this.dmaSeq = DmaSeq.SEQ_TRANS1_WRITE_DEST;
     this.performWriteCycle();
 
-    // Check if transfer just completed
-    if (!this.shouldContinueTransfer()) {
-      // Transfer complete - check for auto-restart
-      if (this.checkAndHandleAutoRestart()) {
-        // Restarted - keep bus for next iteration
-      } else {
-        // No restart - mark complete and release bus
-        this.statusFlags.endOfBlockReached = true;
+    // Configured operating mode from decoded registers (handles WR4 byte encoding correctly)
+    const configuredOpMode = this.registers.transferMode === TransferMode.BURST ? 0b10
+                            : this.registers.transferMode === TransferMode.CONTINUOUS ? 0b01
+                            : 0b00;
+
+    // Effective mode: override to 0b11 (FINISH) when this was the last byte
+    const effectiveOpMode = isFinal ? 0b11 : configuredOpMode;
+
+    switch (effectiveOpMode) {
+      case 0b00: // Byte mode: release bus, wait for next trigger
         this.releaseBus();
-        this.dmaState = DmaState.IDLE;
-      }
+        this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+        break;
+
+      case 0b01: // Continuous: stay on bus, go straight back to INC_DEC_SOURCE
+        this.dmaSeq = this.isReady()
+          ? DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE
+          : DmaSeq.SEQ_WAIT_READY;
+        break;
+
+      case 0b10: // Burst: release bus after each byte (for prescaler delay / CPU time)
+        this.releaseBus();
+        this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+        break;
+
+      default: // 0b11 = is_final → FINISH
+        this.dmaSeq = DmaSeq.SEQ_FINISH;
+        this.handleTransferFinish();
+        break;
     }
 
-    // In burst mode, release bus after each byte
-    if (this.registers.transferMode === TransferMode.BURST) {
-      this.releaseBusForBurst();
-      
-      // Calculate prescalar delay for burst mode
+    // Return T-states based on the CONFIGURED mode (not the effective/overridden mode).
+    // Burst mode always uses prescaler timing, even for the final byte.
+    if (configuredOpMode === 0b10) {
       const prescalar = this.registers.portBPrescalar || 1;
-      const cpuFreq = PRESCALAR_REFERENCE_FREQ; // 3.5MHz base clock
-      const prescalarFreq = PRESCALAR_AUDIO_FREQ; // 875kHz reference
-      const tStatesPerByte = Math.floor((prescalar * cpuFreq) / prescalarFreq);
-      return tStatesPerByte;
-    } else {
-      // Continuous mode - calculate accurate transfer time including contention/wait states
-      return this.calculateDmaTransferTiming();
+      return Math.floor((prescalar * PRESCALAR_REFERENCE_FREQ) / PRESCALAR_AUDIO_FREQ);
+    }
+    return this.calculateDmaTransferTiming();
+  }
+
+  /**
+   * Handle transfer completion (MAME SEQ_FINISH handler + specnext auto-restart).
+   * Sets m_status, disables DMA, and restarts if AUTO_RESTART is set.
+   */
+  private handleTransferFinish(): void {
+    this.disableDma();  // stops state machine and releases bus (does not clear dmaEnabled)
+
+    // MAME: m_status = 0x09 | (!is_ready << 1) | (TM_TRANSFER ? 0x10 : 0)
+    this.m_status = 0x09;
+    // In our emulator is_ready() is always true, so bit 1 stays 0.
+    const transferMode = this.regs[RNUM_WR0_BASE] & 0x03;
+    if (transferMode === 1) {  // TM_TRANSFER
+      this.m_status |= 0x10;
+    }
+
+    // Legacy status flags: endOfBlock reached; atLeastOneByteTransferred preserved
+    // (remains true if bytes were transferred; cleared only by REINITIALIZE_STATUS_BYTE)
+    this.statusFlags.endOfBlockReached = true;
+
+    // Auto-restart (MAME AUTO_RESTART handler)
+    if (this.registers.autoRestart) {
+      this._addressA = this.registers.portAStartAddress;
+      this._addressB = this.registers.portBStartAddress;
+      this._count = this.registers.blockLength;
+      this.transferState.byteCounter = 0;
+      this.m_status |= 0x30;
+      // Also reinitialise legacy transferState addresses
+      this.transferState.sourceAddress = this.registers.portAStartAddress;
+      this.transferState.destAddress = this.registers.portBStartAddress;
+      this.enable();
     }
   }
 
@@ -1861,32 +2022,33 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Perform a read cycle from source port
-   * Reads data from memory or IO port based on source configuration
+   * Step 9: Perform a read cycle from the correct source port.
+   * Uses PORTA_IS_SOURCE (WR0 bit 2) per MAME: read from _addressA when port A
+   * is the source, else from _addressB.
+   *
+   * Includes specnext_dma do_read override: in zxnDMA mode, if (byteCounter+1)==count
+   * the byte counter is pre-incremented here, which causes the is_final check in
+   * executeTransferSequence() to trigger at the right time.
+   *
    * @returns The data byte read from the source
    */
   performReadCycle(): number {
-    // Determine which port is the source based on transfer direction
-    let sourceAddress: number;
+    // Step 9: MAME PORTA_IS_SOURCE selects read address
+    let address: number;
     let isIO: boolean;
-    
-    if (this.registers.directionAtoB) {
-      // A->B: Port A is source
-      sourceAddress = this.transferState.sourceAddress;
+
+    if (this.portaIsSource()) {
+      address = this._addressA;
       isIO = this.registers.portAIsIO;
     } else {
-      // B->A: Port B is source
-      sourceAddress = this.transferState.destAddress;
+      address = this._addressB;
       isIO = this.registers.portBIsIO;
     }
 
-    // Read from memory or IO port
     if (isIO) {
-      // IO port read
-      this._transferDataByte = this.machine.portManager.readPort(sourceAddress);
+      this._transferDataByte = this.machine.portManager.readPort(address);
     } else {
-      // Memory read
-      this._transferDataByte = this.machine.memoryDevice.readMemory(sourceAddress);
+      this._transferDataByte = this.machine.memoryDevice.readMemory(address);
     }
 
     return this._transferDataByte;
@@ -1900,91 +2062,94 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Set source address in transfer state (for testing)
+   * Step 9: Direction bit — bit 6 of WR0 (matches the legacy directionAtoB encoding).
+   * Returns true when Port A is the source (A→B direction).
+   * Note: bit 6=1 means A→B (portA is source), bit 6=0 means B→A (portB is source).
+   * This matches MASK_WR0_DIRECTION and the directionAtoB decoded field.
+   */
+  private portaIsSource(): boolean {
+    return (this.regs[RNUM_WR0_BASE] & 0x40) !== 0;
+  }
+
+  /**
+   * Set source address in transfer state (for testing).
+   * Step 9: also syncs _addressA for MAME-aligned reads.
    */
   setSourceAddress(address: number): void {
     this.transferState.sourceAddress = address;
+    this._addressA = address;  // Step 9: sourceAddress = portA addr in all conventions
   }
 
   /**
-   * Set destination address in transfer state (for testing)
+   * Set destination address in transfer state (for testing).
+   * Step 9: also syncs _addressB for MAME-aligned writes.
    */
   setDestAddress(address: number): void {
     this.transferState.destAddress = address;
+    this._addressB = address;  // Step 9: destAddress = portB addr in all conventions
   }
 
   /**
-   * Perform a write cycle to destination port
-   * Writes data to memory or IO port based on destination configuration
-   * Updates addresses based on address mode and increments byte counter
+   * Step 9: Perform a write cycle to the correct destination port.
+   * Uses PORTA_IS_SOURCE (WR0 bit 2) per MAME: write to _addressB when port A
+   * is the source (A→B), else write to _addressA (B→A).
+   *
+   * After the write, both _addressA and _addressB are updated independently
+   * based on their respective port address modes (MAME do_write() behaviour).
+   * The legacy transferState.sourceAddress/destAddress fields are also updated
+   * via existing function pointers for backward-compat with older tests.
+   *
+   * Finally, byteCounter is incremented (16-bit wraparound).
    */
   performWriteCycle(): void {
-    // Ensure function pointers are up-to-date with current register settings
-    // (This handles test cases that call performWriteCycle() directly without LOAD)
+    // Ensure function pointers are up-to-date (for tests that bypass LOAD)
     this.updateAddressFunctionPointers();
-    
-    // Determine which port is the destination based on transfer direction
+
+    // Step 9: MAME PORTA_IS_SOURCE selects write address
     let destAddress: number;
     let isIO: boolean;
-    
-    if (this.registers.directionAtoB) {
-      // A->B: Port B is destination
-      destAddress = this.transferState.destAddress;
+
+    if (this.portaIsSource()) {
+      // Port A is source → write to Port B
+      destAddress = this._addressB;
       isIO = this.registers.portBIsIO;
     } else {
-      // B->A: Port A is destination
-      destAddress = this.transferState.sourceAddress;
+      // Port B is source → write to Port A
+      destAddress = this._addressA;
       isIO = this.registers.portAIsIO;
     }
 
     // Write to memory or IO port
     if (isIO) {
-      // IO port write
       this.machine.portManager.writePort(destAddress, this._transferDataByte);
     } else {
-      // Memory write
       this.machine.memoryDevice.writeMemory(destAddress, this._transferDataByte);
     }
 
-    // Update addresses using function pointers (Phase 3 optimization)
-    // Replaces string-based dispatch with direct function calls
+    // Step 9: Update legacy transferState.source/dest via old function pointers
+    // (kept for backward-compat with tests that check transferState.*)
     this.transferState.updateSourceAddress();
     this.transferState.updateDestAddress();
 
-    // Step 8: Sync _addressA/_addressB to always track per-port running addresses.
-    // After update, map source/dest back to Port A / Port B based on direction.
-    if (this.registers.directionAtoB) {
-      this._addressA = this.transferState.sourceAddress;  // Port A is source in A→B
-      this._addressB = this.transferState.destAddress;    // Port B is dest in A→B
-    } else {
-      this._addressB = this.transferState.sourceAddress;  // Port B is source in B→A
-      this._addressA = this.transferState.destAddress;    // Port A is dest in B→A
-    }
+    // Step 9: MAME-style independent _addressA/_addressB update.
+    // Each port's address advances according to its own address mode,
+    // regardless of which is source or destination.
+    const portADelta = this.registers.portAAddressMode === AddressMode.FIXED ? 0
+                     : this.registers.portAAddressMode === AddressMode.INCREMENT ? 1 : -1;
+    const portBDelta = this.registers.portBAddressMode === AddressMode.FIXED ? 0
+                     : this.registers.portBAddressMode === AddressMode.INCREMENT ? 1 : -1;
+    this._addressA = (this._addressA + portADelta) & MASK_16BIT;
+    this._addressB = (this._addressB + portBDelta) & MASK_16BIT;
 
     // Increment byte counter (16-bit with wraparound)
     this.transferState.byteCounter = (this.transferState.byteCounter + 1) & MASK_16BIT;
-    
-    // Phase 7: Detect counter overflow in zxnDMA mode (potential bug indicator)
-    if (this.detectCounterOverflow()) {
-      // Log warning but don't halt transfer - could be legitimate in some cases
-      // This helps identify unexpected behavior during debugging
-      console.warn(
-        `[DMA] Counter overflow detected in zxnDMA mode. ` +
-        `byteCounter=${this.transferState.byteCounter}, ` +
-        `blockLength=${this.registers.blockLength}. ` +
-        `Transfer may have completed unexpectedly.`
-      );
-    }
-    
+
     // Update status flags
-    // In zxnDMA mode: first byte = byteCounter 1
-    // In legacy mode: first byte = byteCounter 0 (starts at 0xFFFF, wraps to 0)
-    const isFirstByte = this.dmaMode === DmaMode.LEGACY 
+    const isFirstByte = this.dmaMode === DmaMode.LEGACY
       ? this.transferState.byteCounter === 0
       : this.transferState.byteCounter === 1;
-    
+
     if (isFirstByte) {
-      // First byte transferred
       this.statusFlags.atLeastOneByteTransferred = true;
       this.statusFlags.endOfBlockReached = false;
     }

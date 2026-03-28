@@ -269,7 +269,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
 
       // Configure WR2: Prescalar = 1, Port B increment mode
       machine.portManager.writePort(0x0b, 0x50);
-      machine.portManager.writePort(0x0b, 0x00);
+      machine.portManager.writePort(0x0b, 0x20);  // Timing byte (D5=1 → prescaler follows; CYCLES_4=0)
       machine.portManager.writePort(0x0b, 0x01);
 
       // Configure WR4: Burst mode, Port B

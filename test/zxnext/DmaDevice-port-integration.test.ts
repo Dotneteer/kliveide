@@ -317,7 +317,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
 
       // Configure WR2: Prescalar = 1, Port B increment mode
       machine.portManager.writePort(0x6b, 0x50);  // WR2 base: D6=1 (timing follows), D5-D4=01 (increment)
-      machine.portManager.writePort(0x6b, 0x00);  // Timing byte (unused)
+      machine.portManager.writePort(0x6b, 0x20);  // Timing byte (D5=1 → prescaler follows; CYCLES_4=0)
       machine.portManager.writePort(0x6b, 0x01);  // Prescalar = 1
 
       // Configure WR4: Burst mode, Port B
