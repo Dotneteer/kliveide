@@ -133,16 +133,17 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
     it("should read initial status byte from port 0x6B", () => {
       const status = machine.portManager.readPort(0x6b);
       
-      // Initial state: endOfBlockReached=true, atLeastOneByteTransferred=false
-      expect(status).toBe(0x38);
+      // Initial state: MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
+      expect(status).toBe(0x00);
     });
 
     it("should read status after INITIALIZE_READ_SEQUENCE command", () => {
       // Initialize read sequence
       machine.portManager.writePort(0x6b, 0xa7);
       
+      // MAME device_reset() sets m_status = 0 (no COMMAND_RESET)
       const status = machine.portManager.readPort(0x6b);
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x00);
     });
 
     it("should read counter values after configuring read mask", () => {
@@ -160,9 +161,9 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       // INITIALIZE_READ_SEQUENCE
       machine.portManager.writePort(0x6b, 0xa7);
 
-      // Read status
+      // Read status — MAME: after device_reset + writePort WR0 (no LOAD): m_status = 0
       const status = machine.portManager.readPort(0x6b);
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x00);
 
       // Read counter low
       const counterLo = machine.portManager.readPort(0x6b);
@@ -384,8 +385,8 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       // Bits 7-6 must be 0
       expect(status & 0xc0).toBe(0x00);
       
-      // Initial state: 0x38 (end of block, no transfer)
-      expect(status).toBe(0x38);
+      // MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
+      expect(status).toBe(0x00);
     });
 
     it("should show status changes through port 0x6B after transfer", () => {

@@ -21,12 +21,12 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
       const status = dmaDevice.readStatusByte();
       
-      // MAME: readStatusByte() at pos 0 returns m_status = 0x38 directly
+      // MAME: device_reset() sets m_status = 0. After hardware reset (no COMMAND_RESET), status = 0.
       // Bits 7-6 must be 0
       expect(status & 0xc0).toBe(0x00);
       
-      // MAME m_status = 0x38: bits 5-3 are set (0x38 = 0b00111000)
-      expect(status).toBe(0x38);
+      // MAME m_status = 0 after device_reset() (before any COMMAND_RESET)
+      expect(status).toBe(0x00);
     });
 
     it("should set E bit to 0 when endOfBlockReached is true", () => {
@@ -45,8 +45,8 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xa7);
       const status = dmaDevice.readStatusByte();
       
-      // With initial state, endOfBlockReached is true, so bit 5 = 1
-      expect((status >> 5) & 0x01).toBe(1);
+      // MAME device_reset() sets m_status = 0, so bit 5 = 0 (not set until COMMAND_RESET)
+      expect((status >> 5) & 0x01).toBe(0);
     });
 
     it("should set T bit to 0 when no bytes transferred", () => {
@@ -342,8 +342,9 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
+      // MAME: after device_reset + COMMAND_LOAD: m_status = 0 | 0x30 = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       const counterLo = dmaDevice.readStatusByte();
       expect(counterLo).toBe(0x00);
@@ -382,8 +383,9 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
+      // MAME: after device_reset + COMMAND_LOAD: m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       const counterLo = dmaDevice.readStatusByte();
       expect(counterLo).toBe(0x00);
@@ -393,7 +395,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
 
     it("should read alternating bytes with mask 0x55", () => {
@@ -414,8 +416,9 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
+      // MAME: after device_reset + COMMAND_LOAD: m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       const counterLo = dmaDevice.readStatusByte();
       expect(counterLo).toBe(0x00);
@@ -428,7 +431,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       // Wrap
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
   });
 
@@ -456,9 +459,9 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.readStatusByte(); // Counter lo (pos 1)
       dmaDevice.readStatusByte(); // Counter hi (pos 2)
 
-      // Should wrap to status
+      // MAME: after device_reset + COMMAND_LOAD: m_status = 0x30
       const status1 = dmaDevice.readStatusByte();
-      expect(status1).toBe(0x38);
+      expect(status1).toBe(0x30);
 
       // Second cycle
       dmaDevice.readStatusByte(); // Counter lo
@@ -466,7 +469,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       // Should wrap again
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
 
     it("should wrap immediately with mask 0x00", () => {
@@ -476,14 +479,15 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xa7);
 
       // With mask=0: setupNextRead stays at pos 0, returns m_status repeatedly
+      // MAME device_reset() sets m_status = 0 (no COMMAND_RESET issued)
       const status1 = dmaDevice.readStatusByte();
-      expect(status1).toBe(0x38);
+      expect(status1).toBe(0x00);
 
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x00);
 
       const status3 = dmaDevice.readStatusByte();
-      expect(status3).toBe(0x38);
+      expect(status3).toBe(0x00);
     });
 
     it("should not reset read position on REINITIALIZE (MAME behavior)", () => {
@@ -678,8 +682,9 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       }
 
       // Second cycle should give same values
+      // MAME: after device_reset + COMMAND_LOAD: m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       dmaDevice.readStatusByte(); // counter lo
       dmaDevice.readStatusByte(); // counter hi
@@ -700,12 +705,13 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       // READ_STATUS_BYTE resets position to 0 AND sets READ_MASK = 1 (status only)
       dmaDevice.writeWR6(0xbf);
       
+      // MAME device_reset() sets m_status = 0 (no COMMAND_RESET issued)
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x00);
       
       // READ_MASK is now 1 (status only), so next read also returns status
       const statusAgain = dmaDevice.readStatusByte();
-      expect(statusAgain).toBe(0x38);
+      expect(statusAgain).toBe(0x00);
     });
 
     it("should handle B->A direction correctly", () => {
@@ -761,7 +767,8 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       // Read pointer must now sit at RD_STATUS (bit 0 is the first set bit in 0x03)
       expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_STATUS);
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38); // initial status
+      // MAME device_reset() sets m_status = 0 (no COMMAND_RESET through writePort)
+      expect(status).toBe(0x00); // initial status after hardware reset
     });
 
     it("should reset read pointer even when pointer was previously advanced", () => {
@@ -778,7 +785,8 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writePort(0x01); // only status bit set
       expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_STATUS);
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      // MAME device_reset() sets m_status = 0 (no COMMAND_RESET through writePort)
+      expect(status).toBe(0x00);
     });
 
     it("should advance read sequence on each read", () => {

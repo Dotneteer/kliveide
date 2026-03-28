@@ -1152,8 +1152,8 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf);
       const status = dmaDevice.readStatusByte();
       
-      // MAME: readStatusByte() returns m_status = 0x38 (initial value)
-      expect(status).toBe(0x38);
+      // MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
+      expect(status).toBe(0x00);
     });
 
     it("should reflect endOfBlockReached flag correctly", () => {
@@ -1161,8 +1161,8 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf);
       let status = dmaDevice.readStatusByte();
       
-      // MAME: m_status = 0x38 (initial value)
-      expect(status).toBe(0x38);
+      // MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
+      expect(status).toBe(0x00);
     });
 
     it("should reflect atLeastOneByteTransferred flag correctly", () => {
@@ -1243,9 +1243,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
 
-      // Read status
+      // Read status — MAME: after device_reset + COMMAND_LOAD: m_status = 0 | 0x30 = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       // Read counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1373,9 +1373,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       // Counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1387,7 +1387,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
 
     it("should read only Port A with mask 0x18", () => {
@@ -1396,9 +1396,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       // Port A low
       const portALo = dmaDevice.readStatusByte();
@@ -1410,7 +1410,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
 
     it("should read only Port B with mask 0x06", () => {
@@ -1419,9 +1419,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       // Port B low
       const portBLo = dmaDevice.readStatusByte();
@@ -1433,7 +1433,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
 
     it("should read only status with mask 0x00", () => {
@@ -1443,12 +1443,13 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xa7);
 
       // Status (mask=0: setupNextRead stays at pos 0, returns m_status)
+      // MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status1 = dmaDevice.readStatusByte();
-      expect(status1).toBe(0x38);
+      expect(status1).toBe(0x30);
 
       // Should immediately wrap to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
 
     it("should read specific combination with mask 0x50", () => {
@@ -1457,9 +1458,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
 
       // Counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1471,7 +1472,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Wrap to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x38);
+      expect(status2).toBe(0x30);
     });
   });
 
@@ -1490,8 +1491,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
       dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
 
+      // MAME: after device_reset + COMMAND_LOAD: m_status = 0 | 0x30 = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x30);
     });
 
     it("should allow REINITIALIZE after INITIALIZE", () => {
@@ -1527,8 +1529,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0x7f);
       dmaDevice.writeWR6(0xa7);
 
+      // MAME device_reset() sets m_status = 0 (no COMMAND_RESET or COMMAND_LOAD)
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x00);
 
       // Should read zeros for addresses/counter
       const counterLo = dmaDevice.readStatusByte();
@@ -1541,10 +1544,10 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
-      // Read sequence multiple times
+      // Read sequence multiple times (no COMMAND_RESET: m_status = 0)
       for (let i = 0; i < 3; i++) {
         const status = dmaDevice.readStatusByte();
-        expect(status).toBe(0x38);
+        expect(status).toBe(0x00);
 
         const counterLo = dmaDevice.readStatusByte();
         expect(counterLo).toBe(0x00);
@@ -1574,7 +1577,8 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x38);
+      // REINITIALIZE_STATUS_BYTE (0x8b) sets m_status |= 0x30; no COMMAND_RESET → m_status = 0x30
+      expect(status).toBe(0x30);
     });
   });
 });

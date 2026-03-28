@@ -54,8 +54,8 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       
       const statusByte = dma.readStatusByte();
-      // MAME: readStatusByte() returns m_status = 0x38 (initial value)
-      expect(statusByte).toBe(0x38);
+      // MAME: readStatusByte() returns m_status = 0x30 (after COMMAND_LOAD, no COMMAND_RESET)
+      expect(statusByte).toBe(0x30);
     });
   });
 
@@ -112,8 +112,8 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       const statusByte = dma.readStatusByte();
       
-      // MAME: m_status is not modified during individual byte transfers, stays 0x38
-      expect(statusByte).toBe(0x38);
+      // MAME: m_status = 0x30 after COMMAND_LOAD (no COMMAND_RESET), stays 0x30 during byte transfers
+      expect(statusByte).toBe(0x30);
     });
   });
 
@@ -342,15 +342,15 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
 
       const statusByte = dma.readStatusByte();
-      // MAME: m_status = 0x38 (initial value, bit 5=1 and bit 0=0)
-      expect(statusByte).toBe(0x38);
+      // MAME: m_status = 0x30 after COMMAND_LOAD (no COMMAND_RESET), bit 5=1 and bit 0=0
+      expect(statusByte).toBe(0x30);
       
       // Verify key bit positions (bit 5 and bit 0 have same values as old format)
       const eBit = (statusByte >> 5) & 1; // Bit 5
       const tBit = statusByte & 1;        // Bit 0
       
-      expect(eBit).toBe(1); // bit 5 = 1 in 0x38
-      expect(tBit).toBe(0); // bit 0 = 0 in 0x38
+      expect(eBit).toBe(1); // bit 5 = 1 in 0x30
+      expect(tBit).toBe(0); // bit 0 = 0 in 0x30
     });
 
     it("should format status byte correctly for in-progress (E=0, T=1)", () => {
@@ -368,14 +368,14 @@ describe("DMA Status Flags and Completion", () => {
 
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       const statusByte = dma.readStatusByte();
-      // MAME: m_status = 0x38 (unchanged during individual byte transfers)
-      expect(statusByte).toBe(0x38);
+      // MAME: m_status = 0x30 after COMMAND_LOAD (no COMMAND_RESET), unchanged during byte transfers
+      expect(statusByte).toBe(0x30);
       
       const eBit = (statusByte >> 5) & 1;
       const tBit = statusByte & 1;
       
-      expect(eBit).toBe(1); // bit 5 = 1 in 0x38 (MAME doesn't encode in-progress in m_status)
-      expect(tBit).toBe(0); // bit 0 = 0 in 0x38
+      expect(eBit).toBe(1); // bit 5 = 1 in 0x30 (MAME doesn't encode in-progress in m_status)
+      expect(tBit).toBe(0); // bit 0 = 0 in 0x30
     });
 
     it("should format status byte correctly for complete (E=1, T=1)", () => {

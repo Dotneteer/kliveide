@@ -1035,3 +1035,73 @@ case RNUM_READ_MASK:
 | 33   | `resetPointer` not incremented after follow bytes | 🟢 Low | ✅ Done |
 | 34   | `RESET_PORT_A/B_TIMING` not zeroing raw registers | 🟢 Low | ✅ Done |
 | 35   | `READ_MASK_FOLLOWS` missing `setupNextRead(0)` after follow byte | 🟡 Moderate | ✅ Done |
+
+---
+
+## Final Cross-Check (Cross-Check #3) — Steps 36
+
+This cross-check compared the complete MAME `z80dma.cpp` + `specnext_dma.cpp` source against the current Klive `DmaDevice.ts`. Areas examined:
+- `device_reset()` / `reset()` initial state
+- `COMMAND_READ_STATUS_BYTE` → `readCurFollow = 0` vs `registerReadSeq = RD_STATUS`
+- `readStatusByte()` single-bit READ_MASK advance guard
+- `specnext write()` follow-byte path: prescaler injection ordering vs parent call
+- `device_reset()` `m_status = 0` vs Klive field initializer `0x38`
+- All WR6 commands: RESET, LOAD, CONTINUE, ENABLE_DMA, READ_MASK_FOLLOWS
+- `enable()` / `disable()` semantics
+
+**All areas matched correctly except one (Step 36).**
+
+---
+
+### Step 36: Fix `reset()` initial `m_status` — must be `0`, not `0x38`
+
+**File**: `src/emu/machines/zxNext/DmaDevice.ts`
+
+**MAME behavior** (`z80dma_device::device_reset()`):
+```cpp
+void z80dma_device::device_reset()
+{
+    m_timer->reset();
+    m_status = 0;       // <-- hardware reset sets status to 0
+    m_dma_seq = ~0;
+    m_rdy = 0;
+    m_force_ready = 0;
+    // ...
+}
+```
+`specnext_dma_device::device_reset()` calls `z80dma_device::device_reset()`, so also starts with `m_status = 0`.
+
+`m_status = 0x38` is set by `COMMAND_RESET` (software reset), not by hardware power-on reset.
+
+**Klive behavior**:
+- Field initializer: `private m_status: number = 0x38;`
+- `reset()` does NOT set `m_status` — it retains `0x38` from the field initializer after object construction.
+
+**Impact**: After power-on (hardware) reset but before any COMMAND_RESET, reading the status byte returns `0x38` instead of `0`. In practice the ZX Next firmware always issues COMMAND_RESET before reading status, so this has minimal real-world impact. However, it is a semantic discrepancy.
+
+**Fix**:
+```ts
+reset(): void {
+  // ...
+  this.m_status = 0;   // MAME device_reset() sets m_status = 0 (NOT 0x38)
+  // ...
+}
+```
+
+Also update the field initializer comment to clarify:
+```ts
+private m_status: number = 0;   // Raw status byte; set to 0x38 only by COMMAND_RESET
+```
+
+**Tests to add** (in `DmaDevice-step7-8.test.ts`):
+1. After `new TestZxNextMachine()` (hardware reset), `getStatus()` must return `0`.
+2. After `reset()` call (no COMMAND_RESET), `getStatus()` must return `0`.
+3. After `COMMAND_RESET`, `getStatus()` must return `0x38` (existing test 23 covers this indirectly).
+
+---
+
+### Updated Summary Table (Steps 36)
+
+| Step | Issue | Severity | Status |
+|------|-------|----------|--------|
+| 36   | `reset()` leaves `m_status = 0x38` instead of `0` (MAME: `device_reset` sets 0) | 🟢 Low | ✅ Done |

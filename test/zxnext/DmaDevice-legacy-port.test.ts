@@ -104,14 +104,14 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
   describe("Port 0x0B Read Operations", () => {
     it("should read initial status byte from port 0x0B", () => {
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x38); // End of block, no transfer yet
+      expect(status).toBe(0x00); // Hardware reset initializes m_status = 0
       expect(dmaDevice.getDmaMode()).toBe(DmaMode.LEGACY);
     });
 
     it("should read status after INITIALIZE_READ_SEQUENCE command", () => {
       machine.portManager.writePort(0x0b, 0xa7); // INITIALIZE_READ_SEQUENCE
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x38);
+      expect(status).toBe(0x00); // m_status = 0 (no COMMAND_RESET/COMMAND_LOAD)
       expect(dmaDevice.getDmaMode()).toBe(DmaMode.LEGACY);
     });
 
@@ -123,7 +123,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
 
       // First read should be status
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x38); // End of block reached
+      expect(status).toBe(0x00); // m_status = 0 (no COMMAND_RESET/COMMAND_LOAD)
       
       // Second read should be counter low (0 initially - counter initialized to 0)
       const counterLow = machine.portManager.readPort(0x0b);

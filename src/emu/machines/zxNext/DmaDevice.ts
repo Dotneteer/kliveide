@@ -322,7 +322,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   // ============================================================================
   // Step 7: MAME-style status and control fields
   // ============================================================================
-  private m_status: number = 0x38;     // Raw status byte (m_status in MAME)
+  private m_status: number = 0;        // Raw status byte (m_status in MAME); 0x38 set by COMMAND_RESET only
   private forceReady: boolean = false;  // FORCE_READY flag (m_force_ready)
   private ip: number = 0;              // Interrupt pending (m_ip)
   private ius: number = 0;             // Interrupt under service (m_ius)
@@ -429,6 +429,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.numFollow = 0;
     this.curFollow = 0;
     this.regsFollow.fill(0);
+
+    // Step 36: MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
+    this.m_status = 0;
     
     // Cache fields cleared on reset
   }

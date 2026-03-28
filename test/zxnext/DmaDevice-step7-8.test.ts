@@ -567,3 +567,32 @@ describe("DmaDevice - Step 8: Address Update Model (addressA/addressB independen
     expect(portB).toBe(0x5678); // Should be addressB = portBAddr, not portAAddr
   });
 });
+
+// ============================================================================
+// Step 36: hardware reset initial m_status = 0 (MAME device_reset)
+// ============================================================================
+describe("DmaDevice - Step 36: hardware reset m_status = 0", () => {
+  it("should set m_status = 0 on construction (hardware reset)", () => {
+    const machine = new TestZxNextMachine();
+    expect(machine.dmaDevice.getStatus()).toBe(0);
+  });
+
+  it("should set m_status = 0 after explicit reset() without COMMAND_RESET", () => {
+    const machine = new TestZxNextMachine();
+    const dma = machine.dmaDevice;
+    // Dirty m_status via COMMAND_RESET
+    dma.writeWR6(0xc3); // sets m_status = 0x38
+    expect(dma.getStatus()).toBe(0x38);
+    // Now hardware reset
+    dma.reset();
+    expect(dma.getStatus()).toBe(0);
+  });
+
+  it("COMMAND_RESET still sets m_status = 0x38 after hardware reset", () => {
+    const machine = new TestZxNextMachine();
+    const dma = machine.dmaDevice;
+    expect(dma.getStatus()).toBe(0); // hardware reset = 0
+    dma.writeWR6(0xc3);              // COMMAND_RESET
+    expect(dma.getStatus()).toBe(0x38);
+  });
+});
