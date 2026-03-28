@@ -396,11 +396,13 @@ describe("DmaDevice - Step 11: Memory/IO Write Cycle", () => {
       
       dma.performWriteCycle();
       
-      // In B->A, sourceAddress is the destination
+      // In B->A, Port A is the destination: verify data was written to Port A address
       expect(machine.memoryDevice.readMemory(startDestAddr)).toBe(0x99);
       
       const transferState = dma.getTransferState();
-      expect(transferState.sourceAddress).toBe(startDestAddr + 1);
+      // sourceAddress now reflects the actual source (Port B = _addressB = 0x5001)
+      // destAddress now reflects the actual destination (Port A = _addressA = 0x4001)
+      expect(transferState.destAddress).toBe(startDestAddr + 1);
     });
 
     it("should update both addresses in A->B transfer", () => {

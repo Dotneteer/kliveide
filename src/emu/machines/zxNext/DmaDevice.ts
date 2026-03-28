@@ -316,6 +316,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   private dmaMode: DmaMode = DmaMode.ZXNDMA;
   private prescalarTimer: number = 0;  // Timer for fixed-rate transfers
+  // Monotonically-increasing counter incremented each time handleTransferFinish() runs.
+  // Used by executeContinuousTransfer() to detect block completions without relying on
+  // SEQ_FINISH being a stable observable state (it is immediately overwritten inline).
+  private _blockCompletionCount: number = 0;
 
   // ============================================================================
   // Step 1: Raw register storage (MAME m_regs style)
@@ -489,7 +493,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   getTransferState(): Readonly<TransferState> {
-    return { ...this.transferState };
+    // Derive source/dest addresses from the MAME-style independent A/B addresses.
+    // Port A is source when WR0 bit 6 = 1 (A→B direction); Port B is source otherwise.
+    const portAIsSource = this.portaIsSource();
+    return {
+      ...this.transferState,
+      sourceAddress: portAIsSource ? this._addressA : this._addressB,
+      destAddress:   portAIsSource ? this._addressB : this._addressA,
+    };
   }
 
   getStatusFlags(): Readonly<StatusFlags> {
@@ -1906,6 +1917,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Sets m_status, disables DMA, and restarts if AUTO_RESTART is set.
    */
   private handleTransferFinish(): void {
+    this._blockCompletionCount++;
     this.disableDma();  // stops state machine and releases bus (does not clear dmaEnabled)
 
     // MAME: m_status = 0x09 | (!is_ready << 1) | (TM_TRANSFER ? 0x10 : 0)
@@ -2038,7 +2050,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * This matches MASK_WR0_DIRECTION and the directionAtoB decoded field.
    */
   private portaIsSource(): boolean {
-    return (this.regs[RNUM_WR0_BASE] & 0x40) !== 0;
+    // Use the decoded registers.directionAtoB rather than the raw regs[] value:
+    // the RESET command's progressive column wipe clears regs[RNUM_WR0_BASE] but does
+    // NOT clear the decoded registers object, so directionAtoB remains reliable.
+    return this.registers.directionAtoB;
   }
 
   /**
@@ -2126,146 +2141,45 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Execute a complete continuous transfer
-   * Performs the entire block transfer without releasing the bus
+   * Execute a complete continuous transfer using the MAME-aligned state machine.
+   * Runs stepDma() in a loop (acknowledging bus requests as the machine would) until
+   * the transfer completes or the auto-restart safety limit is reached.
    * @returns Number of bytes transferred
    */
   executeContinuousTransfer(): number {
-    if (!this.registers.dmaEnabled) {
-      return 0;
-    }
+    if (!this.registers.dmaEnabled) return 0;
+    if (this.registers.transferMode !== TransferMode.CONTINUOUS) return 0;
 
-    // Check if transfer mode is continuous
-    if (this.registers.transferMode !== TransferMode.CONTINUOUS) {
-      return 0;
-    }
-
-    const bytesToTransfer = this.getTransferLength();
-    let totalBytesTransferred = 0;
-    const maxIterations = this.registers.autoRestart ? 1000 : 1; // Safety limit for auto-restart
-
-    // Request and wait for bus
-    this.requestBus();
-    
-    // Perform the transfer (with potential auto-restart loops)
-    let iteration = 0;
-    do {
-      let bytesTransferred = 0;
-      
-      while (bytesTransferred < bytesToTransfer) {
-        // Read from source
-        this.performReadCycle();
-        
-        // Write to destination
-        this.performWriteCycle();
-        
-        bytesTransferred++;
-        totalBytesTransferred++;
-
-        // Check if we've completed the block
-        if (bytesTransferred >= bytesToTransfer) {
-          break;
-        }
-      }
-      
-      iteration++;
-      
-      // Check for auto-restart after completing the block
-      // If auto-restart is enabled, this will reset addresses and counter
-      // Safety: limit iterations to prevent infinite loops
-    } while (this.checkAndHandleAutoRestart() && iteration < maxIterations);
-    
-    // If we exited the loop without auto-restart (or hit the safety limit), finalize transfer.
-    if (!this.registers.autoRestart || iteration >= maxIterations) {
-      this.statusFlags.endOfBlockReached = true;
-      // Step 13: Update m_status as MAME SEQ_FINISH handler does.
-      this.m_status = 0x09;
-      if ((this.regs[RNUM_WR0_BASE] & 0x03) === 1) {
-        this.m_status |= 0x10;  // TM_TRANSFER mode
-      }
-      if (this.registers.autoRestart) {
-        // maxIterations reached with auto-restart active — MAME sets bits 5+4
-        this.m_status |= 0x30;
-      }
-    }
-
-    // Release bus
-    this.releaseBus();
-
-    return totalBytesTransferred;
-  }
-
-  /**
-   * Execute a burst transfer with prescalar timing
-   * Performs transfers with delays between each byte, releasing the bus to allow CPU execution
-   * @param tStatesToExecute Number of T-states available for transfer
-   * @returns Number of bytes transferred
-   */
-  executeBurstTransfer(tStatesToExecute: number): number {
-    if (!this.registers.dmaEnabled) {
-      return 0;
-    }
-
-    // Check if transfer mode is burst
-    if (this.registers.transferMode !== TransferMode.BURST) {
-      return 0;
-    }
-
-    const bytesToTransfer = this.getTransferLength();
-    const bytesAlreadyTransferred = this.getBytesTransferred();
-    const bytesRemaining = bytesToTransfer - bytesAlreadyTransferred;
-    
-    if (bytesRemaining <= 0) {
-      return 0; // Transfer already complete
-    }
-    
     let bytesTransferred = 0;
-    let tStatesUsed = 0;
+    // Track block completions via the monotonic counter incremented by handleTransferFinish().
+    // SEQ_FINISH is NOT a stable observable state (it is set then immediately overwritten
+    // inline, so prevSeq === SEQ_FINISH is never seen by this loop).
+    const startCount = this._blockCompletionCount;
+    // maxBlocks total completions we are willing to execute:
+    //   No auto-restart → 1 (state machine goes SEQ_IDLE naturally after 1 block).
+    //   Auto-restart    → 2 (run original block + 1 restart, then stop).
+    const maxCount = startCount + (this.registers.autoRestart ? 2 : 1);
 
-    // Calculate T-states per transfer based on prescalar
-    // Prescalar formula: Frate = 875kHz / prescalar
-    // At 3.5MHz base clock (3500000 Hz), 875kHz = 3500000 / 4
-    // Delay in T-states = (prescalar * CPU_FREQ) / 875000
-    const prescalar = this.registers.portBPrescalar || 1; // Minimum 1 to avoid divide by zero
-    const cpuFreq = PRESCALAR_REFERENCE_FREQ; // 3.5MHz base clock
-    const prescalarFreq = PRESCALAR_AUDIO_FREQ; // 875kHz reference
-    const tStatesPerByte = Math.floor((prescalar * cpuFreq) / prescalarFreq);
-
-    // Perform transfers while we have T-states and bytes to transfer
-    while (bytesTransferred < bytesRemaining && tStatesUsed < tStatesToExecute) {
-      // Request bus for this byte
-      this.requestBus();
-      
-      // Read from source
-      this.performReadCycle();
-      
-      // Write to destination
-      this.performWriteCycle();
-      
-      bytesTransferred++;
-      
-      // Release bus between transfers (burst mode behavior)
-      this.releaseBusForBurst();
-      
-      // Account for T-states used (prescalar delay + transfer time)
-      tStatesUsed += tStatesPerByte;
-      
-      // Check if we've completed the block
-      if (bytesTransferred >= bytesRemaining) {
-        break;
+    while (this.dmaSeq !== DmaSeq.SEQ_IDLE) {
+      // Acknowledge bus request (mirrors ZxNextMachine.beforeInstructionExecuted)
+      if (this.busControl.state === BusState.REQUESTED) {
+        this.acknowledgeBus();
       }
-      
-      // Check if we've run out of T-states for this execution slice
-      if (tStatesUsed >= tStatesToExecute) {
-        break;
-      }
-    }
+      const tStates = this.stepDma();
+      if (tStates > 0) bytesTransferred++;
 
-    // Check for auto-restart if block is complete
-    if (bytesTransferred >= bytesRemaining) {
-      if (!this.checkAndHandleAutoRestart()) {
-        // Transfer complete, no auto-restart
-        this.statusFlags.endOfBlockReached = true;
+      // Did handleTransferFinish() run?  If so, check limit.
+      if (this._blockCompletionCount >= maxCount) break;
+
+      // Zero-length guard: SEQ_WAIT_READY → handleTransferFinish (blockCount bumped)
+      // with auto-restart loops back to SEQ_WAIT_READY with no bytes.
+      // The maxCount check above handles this naturally, but also guard the degenerate
+      // case where _count === 0 and autoRestart is false (would exit via SEQ_IDLE anyway,
+      // but belt-and-suspenders: if somehow stuck, prevent infinite empty loops).
+      if (tStates === 0 && bytesTransferred === 0 &&
+          this.dmaSeq === DmaSeq.SEQ_WAIT_READY &&
+          this._blockCompletionCount > startCount) {
+        break;
       }
     }
 
@@ -2273,39 +2187,38 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Check if transfer is complete and handle auto-restart
-   * @returns true if transfer restarted, false otherwise
+   * Execute a burst transfer with prescalar timing using the MAME-aligned state machine.
+   * Runs stepDma() within the given T-state budget, acknowledging bus requests as needed.
+   * Stops after one block's worth of bytes (auto-restart reloads addresses for the next call).
+   * @param tStatesToExecute Number of T-states available for transfer
+   * @returns Number of bytes transferred
    */
-  private checkAndHandleAutoRestart(): boolean {
-    // Check if we've completed the block
-    if (this.transferState.byteCounter < this.registers.blockLength) {
-      return false; // Transfer not complete yet
+  executeBurstTransfer(tStatesToExecute: number): number {
+    if (!this.registers.dmaEnabled) return 0;
+    if (this.registers.transferMode !== TransferMode.BURST) return 0;
+
+    const targetBytes = this.getTransferLength() - this.getBytesTransferred();
+    if (targetBytes <= 0) return 0;
+
+    let bytesTransferred = 0;
+    let tStatesUsed = 0;
+
+    while (bytesTransferred < targetBytes &&
+           tStatesUsed < tStatesToExecute &&
+           this.dmaSeq !== DmaSeq.SEQ_IDLE) {
+      if (this.busControl.state === BusState.REQUESTED) {
+        this.acknowledgeBus();
+      }
+      const tStates = this.stepDma();
+      if (tStates > 0) {
+        bytesTransferred++;
+        tStatesUsed += tStates;
+      }
+      // Stop after the block completes (FINISH handler may have called enable() for auto-restart)
+      if (bytesTransferred >= targetBytes) break;
     }
 
-    // Transfer is complete - check auto-restart flag
-    if (!this.registers.autoRestart) {
-      return false; // No auto-restart
-    }
-
-    // Auto-restart: reload addresses and reset counter
-    if (this.registers.directionAtoB) {
-      // A → B: Port A is source, Port B is destination
-      this.transferState.sourceAddress = this.registers.portAStartAddress;
-      this.transferState.destAddress = this.registers.portBStartAddress;
-    } else {
-      // B → A: Port B is source, Port A is destination
-      this.transferState.sourceAddress = this.registers.portBStartAddress;
-      this.transferState.destAddress = this.registers.portAStartAddress;
-    }
-
-    // Reset byte counter based on DMA mode
-    if (this.dmaMode === DmaMode.ZXNDMA) {
-      this.transferState.byteCounter = 0;
-    } else {
-      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit for legacy mode
-    }
-
-    return true; // Transfer restarted
+    return bytesTransferred;
   }
 
   /**
