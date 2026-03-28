@@ -181,6 +181,30 @@ const PATTERN_WR5_MASK = 0x17;         // Mask for WR5 detection (0x18 with D0)
 const PATTERN_WR5_BASE = 0x12;         // xxx1x010 (D4=1, D3=0, D1D0=10)
 const PATTERN_WR6_COMMAND = 0x80;      // 1xxxxxxx (command)
 
+// ============================================================================
+// Step 1: MAME-style raw register index constants
+// Each register group occupies 8 slots: group 0 = WR0, group 1 = WR1, etc.
+// RNUM(m, s) = (m << 3) + s
+// ============================================================================
+const RNUM_WR0_BASE      = 0;   // (0<<3)+0 – WR0 base byte
+const RNUM_PORT_A_ADDR_L = 1;   // (0<<3)+1 – Port A starting address (low)
+const RNUM_PORT_A_ADDR_H = 2;   // (0<<3)+2 – Port A starting address (high)
+const RNUM_BLOCKLEN_L    = 3;   // (0<<3)+3 – Block length (low)
+const RNUM_BLOCKLEN_H    = 4;   // (0<<3)+4 – Block length (high)
+const RNUM_WR1_BASE      = 8;   // (1<<3)+0 – WR1 base byte
+const RNUM_PORT_A_TIMING = 9;   // (1<<3)+1 – Port A timing byte
+const RNUM_WR2_BASE      = 16;  // (2<<3)+0 – WR2 base byte
+const RNUM_PORT_B_TIMING = 17;  // (2<<3)+1 – Port B timing byte
+const RNUM_ZXN_PRESCALER = 18;  // (2<<3)+2 – ZXN prescaler byte
+const RNUM_WR3_BASE      = 24;  // (3<<3)+0 – WR3 base byte
+const RNUM_WR4_BASE      = 32;  // (4<<3)+0 – WR4 base byte
+const RNUM_PORT_B_ADDR_L = 33;  // (4<<3)+1 – Port B starting address (low)
+const RNUM_PORT_B_ADDR_H = 34;  // (4<<3)+2 – Port B starting address (high)
+const RNUM_WR5_BASE      = 40;  // (5<<3)+0 – WR5 base byte
+const RNUM_WR6_BASE      = 48;  // (6<<3)+0 – WR6 base byte
+const RNUM_READ_MASK     = 49;  // (6<<3)+1 – Read mask byte
+const RNUM_ARRAY_SIZE    = 50;  // total entries (max index = 49)
+
 /**
  * Internal register
  */
@@ -266,6 +290,27 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private dmaMode: DmaMode = DmaMode.ZXNDMA;
   private prescalarTimer: number = 0;  // Timer for fixed-rate transfers
 
+  // ============================================================================
+  // Step 1: Raw register storage (MAME m_regs style)
+  // Flat array: index = (group << 3) + slot.  50 entries covers all WR0-WR6.
+  // ============================================================================
+  private regs: Uint16Array = new Uint16Array(RNUM_ARRAY_SIZE);
+
+  // Step 1: MAME-style independent address/count tracking fields
+  // These are loaded by the LOAD command (separate from raw register storage).
+  private _addressA: number = 0;   // Current port A running address (m_addressA)
+  private _addressB: number = 0;   // Current port B running address (m_addressB)
+  private _count: number = 0;      // Block length loaded at LOAD time (m_count)
+
+  // ============================================================================
+  // Step 2: Follow-byte queue (MAME m_regs_follow / m_num_follow / m_cur_follow)
+  // When numFollow > 0, writePort() routes follow bytes via this queue rather
+  // than the legacy registerWriteSeq mechanism.
+  // ============================================================================
+  private numFollow: number = 0;
+  private curFollow: number = 0;
+  private regsFollow: number[] = [0, 0, 0, 0, 0];
+
   // Cache for frequently calculated values
   // Cache fields reserved for Phase 2 optimization
   // (Currently unused - prepared for future performance improvements)
@@ -348,6 +393,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this._tempRegisterByte = 0;
     this.prescalarTimer = 0;
     this.dmaMode = DmaMode.ZXNDMA;
+
+    // Step 1+2: Clear raw registers and follow state
+    this.regs.fill(0);
+    this._addressA = 0;
+    this._addressB = 0;
+    this._count = 0;
+    this.numFollow = 0;
+    this.curFollow = 0;
+    this.regsFollow.fill(0);
     
     // Cache fields cleared on reset
   }
@@ -576,8 +630,155 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   // ============================================================================
-  // Port I/O & Register Write Methods
+  // Step 1: Raw register accessors
   // ============================================================================
+
+  /** Helper: compute register index from group m and slot s */
+  private regNum(m: number, s: number): number {
+    return (m << 3) + s;
+  }
+
+  /** Get a raw register value at group m, slot s (for testing and internal use) */
+  getRawReg(m: number, s: number): number {
+    return this.regs[this.regNum(m, s)];
+  }
+
+  /** Get MAME-style port A address (loaded by LOAD command) */
+  getAddressA(): number {
+    return this._addressA;
+  }
+
+  /** Get MAME-style port B address (loaded by LOAD command) */
+  getAddressB(): number {
+    return this._addressB;
+  }
+
+  /** Get MAME-style count (block length loaded by LOAD command) */
+  getMameCount(): number {
+    return this._count;
+  }
+
+  // ============================================================================
+  // Step 2: Follow-byte mechanism helpers
+  // ============================================================================
+
+  /** Get current follow queue length (for testing) */
+  getNumFollow(): number {
+    return this.numFollow;
+  }
+
+  /**
+   * Map a raw register index back to the legacy RegisterWriteSequence value.
+   * Used to keep getRegisterWriteSeq() correct after follow-queue updates.
+   */
+  private regSeqFromRegNum(nreg: number): RegisterWriteSequence {
+    if (nreg === RNUM_PORT_A_ADDR_L) return RegisterWriteSequence.R0_BYTE_0;
+    if (nreg === RNUM_PORT_A_ADDR_H) return RegisterWriteSequence.R0_BYTE_1;
+    if (nreg === RNUM_BLOCKLEN_L)    return RegisterWriteSequence.R0_BYTE_2;
+    if (nreg === RNUM_BLOCKLEN_H)    return RegisterWriteSequence.R0_BYTE_3;
+    if (nreg === RNUM_PORT_A_TIMING) return RegisterWriteSequence.R1_BYTE_0;
+    if (nreg === RNUM_PORT_B_TIMING) return RegisterWriteSequence.R2_BYTE_0;
+    if (nreg === RNUM_ZXN_PRESCALER) return RegisterWriteSequence.R2_BYTE_1;
+    if (nreg === RNUM_PORT_B_ADDR_L) return RegisterWriteSequence.R4_BYTE_0;
+    if (nreg === RNUM_PORT_B_ADDR_H) return RegisterWriteSequence.R4_BYTE_1;
+    if (nreg === RNUM_READ_MASK)     return RegisterWriteSequence.R6_BYTE_0;
+    return RegisterWriteSequence.IDLE;
+  }
+
+  /**
+   * Process a follow byte: write to raw regs and sync the decoded RegisterState.
+   * Called by writePort() when numFollow > 0 (AFTER curFollow has been advanced).
+   * For the WR2 timing byte, handles the specnext_dma prescaler-follows logic.
+   */
+  private handleFollowByte(nreg: number, value: number): void {
+    this.regs[nreg] = value;
+    switch (nreg) {
+      case RNUM_PORT_A_ADDR_L:
+        this.registers.portAStartAddress =
+          (this.registers.portAStartAddress & ADDR_MASK_HIGH_BYTE) | (value & 0xff);
+        break;
+      case RNUM_PORT_A_ADDR_H:
+        this.registers.portAStartAddress =
+          (this.registers.portAStartAddress & ADDR_MASK_LOW_BYTE) | ((value & 0xff) << BYTE_SHIFT);
+        break;
+      case RNUM_BLOCKLEN_L:
+        this.registers.blockLength =
+          (this.registers.blockLength & ADDR_MASK_HIGH_BYTE) | (value & 0xff);
+        break;
+      case RNUM_BLOCKLEN_H:
+        this.registers.blockLength =
+          (this.registers.blockLength & ADDR_MASK_LOW_BYTE) | ((value & 0xff) << BYTE_SHIFT);
+        break;
+      case RNUM_PORT_A_TIMING:
+        this.registers.portATimingValue = value;
+        this.registers.portATimingCycleLength = (value & MASK_CYCLE_LENGTH) as CycleLength;
+        break;
+      case RNUM_PORT_B_TIMING:
+        this.registers.portBTimingValue = value;
+        this.registers.portBTimingCycleLength = (value & MASK_CYCLE_LENGTH) as CycleLength;
+        // specnext_dma override: if D5 of the timing byte is set the prescaler byte follows
+        // At this point curFollow has already been advanced and numFollow may be 0; add it fresh.
+        if (value & 0x20) {
+          this.regsFollow[0] = RNUM_ZXN_PRESCALER;
+          this.numFollow = 1;
+          this.curFollow = 0;
+        }
+        break;
+      case RNUM_ZXN_PRESCALER:
+        this.registers.portBPrescalar = value & 0xff;
+        break;
+      case RNUM_PORT_B_ADDR_L:
+        this.registers.portBStartAddress =
+          (this.registers.portBStartAddress & 0xff00) | (value & 0xff);
+        break;
+      case RNUM_PORT_B_ADDR_H:
+        this.registers.portBStartAddress =
+          (this.registers.portBStartAddress & 0x00ff) | ((value & 0xff) << BYTE_SHIFT);
+        break;
+      case RNUM_READ_MASK:
+        this.registers.readMask = value & 0x7f;
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * Set up the follow-byte queue based on the register group and base byte.
+   * Called by writePort() after a base byte has been dispatched.
+   * Also updates registerWriteSeq to reflect the new queue state.
+   */
+  private setupFollowQueue(regGroup: number, baseValue: number): void {
+    this.numFollow = 0;
+    this.curFollow = 0;
+    switch (regGroup) {
+      case 0: // WR0: D3=portA_addr_lo, D4=portA_addr_hi, D5=blockLen_lo, D6=blockLen_hi
+        if (baseValue & 0x08) this.regsFollow[this.numFollow++] = RNUM_PORT_A_ADDR_L;
+        if (baseValue & 0x10) this.regsFollow[this.numFollow++] = RNUM_PORT_A_ADDR_H;
+        if (baseValue & 0x20) this.regsFollow[this.numFollow++] = RNUM_BLOCKLEN_L;
+        if (baseValue & 0x40) this.regsFollow[this.numFollow++] = RNUM_BLOCKLEN_H;
+        break;
+      case 1: // WR1: D6=port_a_timing
+        if (baseValue & 0x40) this.regsFollow[this.numFollow++] = RNUM_PORT_A_TIMING;
+        break;
+      case 2: // WR2: D6=port_b_timing (prescaler is gated by timing byte D5, handled in handleFollowByte)
+        if (baseValue & 0x40) this.regsFollow[this.numFollow++] = RNUM_PORT_B_TIMING;
+        break;
+      case 4: // WR4: D2=portB_addr_lo, D3=portB_addr_hi
+        if (baseValue & 0x04) this.regsFollow[this.numFollow++] = RNUM_PORT_B_ADDR_L;
+        if (baseValue & 0x08) this.regsFollow[this.numFollow++] = RNUM_PORT_B_ADDR_H;
+        break;
+      case 6: // WR6: only READ_MASK_FOLLOWS (0xBB) needs a follow byte
+        if (baseValue === 0xbb) this.regsFollow[this.numFollow++] = RNUM_READ_MASK;
+        break;
+      default: // WR3, WR5: no follow bytes
+        break;
+    }
+    // Keep registerWriteSeq in sync with the new queue state
+    this.registerWriteSeq = this.numFollow > 0
+      ? this.regSeqFromRegNum(this.regsFollow[0])
+      : RegisterWriteSequence.IDLE;
+  }
 
   /**
    * Write to DMA port - dispatches to appropriate WRx register based on byte value
@@ -585,7 +786,25 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * @param value The byte value to write
    */
   writePort(value: number): void {
-    // Check if we're in the middle of a multi-byte sequence
+    // Step 2: Follow-byte mechanism — check if in the middle of a follow sequence.
+    // This takes priority over the legacy registerWriteSeq path.
+    if (this.numFollow > 0) {
+      const nreg = this.regsFollow[this.curFollow];
+      this.curFollow++;
+      if (this.curFollow >= this.numFollow) {
+        this.numFollow = 0;
+        this.curFollow = 0;
+      }
+      this.handleFollowByte(nreg, value);
+      // Keep registerWriteSeq in sync with remaining follow state
+      this.registerWriteSeq = this.numFollow > 0
+        ? this.regSeqFromRegNum(this.regsFollow[this.curFollow])
+        : RegisterWriteSequence.IDLE;
+      return;
+    }
+
+    // Legacy: check if in a multi-byte sequence driven by registerWriteSeq.
+    // This path is used when writeWRx() is called directly (e.g. from tests).
     if (this.registerWriteSeq !== RegisterWriteSequence.IDLE) {
       // Continue the current sequence
       if (this.registerWriteSeq >= RegisterWriteSequence.R0_BYTE_0 && this.registerWriteSeq <= RegisterWriteSequence.R0_BYTE_3) {
@@ -602,62 +821,43 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
-    // We're in IDLE state, so this is a base byte
-    // In Z80 DMA, the register is identified by specific bit patterns:
-    // - WR6 (commands): 10xxxxxx or 11xxxxxx specific patterns
-    // - WR4: 1xxx1101 (burst/continuous mode)
-    // - WR0-WR5: Various patterns with D7=0
-    
-    // The safest approach: route ALL writes through the write methods
-    // and let them handle the byte based on context. But we need to determine
-    // the initial target register.
-    
-    // Simplified Z80 DMA logic:
-    // 1. WR6 commands have D7=1 with specific patterns (0xC3, 0xC7, 0xCB, 0x83, 0x87, 0xBB, 0xBF, 0xA7, 0xCF, 0xD3, etc.)
-    // 2. WR4 has pattern 1xxx1101 (0x8D, 0xCD, etc.)  
-    // 3. Everything else with D7=0 is configuration (WR0-WR5)
-    
+    // Base byte dispatch — determine target register and call the handler.
+    // NOTE: dispatch masks are intentionally kept as-is (wrong vs MAME);
+    //       they will be corrected in Step 3.
+    let regGroup = -1;
     if ((value & PATTERN_WR6_COMMAND) !== 0) {
-      // D7=1: Check if it's WR4 or WR6
-      // WR4 pattern: bits 3,2,1,0 must be 1101 (xxxx1101)
-      // WR4 values: 0x8D (burst), 0xCD (continuous)
+      // D7=1: WR4 or WR6
       if ((value & PATTERN_WR4_MASK) === PATTERN_WR4_BITS) {
         this.writeWR4(value);
+        regGroup = 4;
       } else {
-        // It's a WR6 command
         this.writeWR6(value);
+        regGroup = 6;
       }
     } else {
-      // D7=0: Start of a register configuration
-      // Z80 DMA register identification by bit patterns:
-      // - WR1 (Port A config): D2=1, D1D0=00 → xxx100  
-      // - WR2 (Port B config): D2D1D0=000 → xxx000
-      // - WR3 (DMA enable): D2D1D0=011 or 010 → xxx011 or xxx010
-      // - WR5 (auto-restart): D4D3=10, D1D0=10 → xxx1x010  
-      // - WR0 (transfer): Everything else with D7=0
-      // 
-      // NOTE: Check WR5 before WR3 since WR5 has D1D0=10 (same as low 2 bits of WR3)
-      // but is distinguished by D4D3=10 requirement
-      
+      // D7=0: WR0-WR5
       const lowBits = value & MASK_REGISTER_ID;
-      
       if (lowBits === PATTERN_WR1) {
-        // WR1: xxx100 (D2=1, D1D0=00)
         this.writeWR1(value);
+        regGroup = 1;
       } else if (lowBits === PATTERN_WR2) {
-        // WR2: xxx000 (D2D1D0=000)
         this.writeWR2(value);
+        regGroup = 2;
       } else if ((value & PATTERN_WR5_MASK) === PATTERN_WR5_BASE) {
-        // WR5: xxx1x010 (D4=1, D3=0, D1D0=10) - Check BEFORE WR3!
         this.writeWR5(value);
+        regGroup = 5;
       } else if (lowBits === PATTERN_WR3_ENABLE || lowBits === PATTERN_WR3_DISABLE) {
-        // WR3: xxx011 (enable) or xxx010 (disable) - DMA enable/disable flag
         this.writeWR3(value);
+        regGroup = 3;
       } else {
-        // WR0: Everything else
         this.writeWR0(value);
+        regGroup = 0;
       }
     }
+    // Step 2: Set up the follow queue for the detected register group.
+    // This overrides registerWriteSeq set inside writeWRx() so that subsequent
+    // writePort() calls use the conditional follow mechanism.
+    this.setupFollowQueue(regGroup, value);
   }
 
   /**
@@ -667,6 +867,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR0(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // Step 1: Store base byte in raw register array
+      this.regs[RNUM_WR0_BASE] = value;
       // First write - store base byte and extract WR0 control bits
       this._tempRegisterByte = value;
       
@@ -682,18 +884,26 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_0;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_0) {
+      // Step 1: Store in raw register array
+      this.regs[RNUM_PORT_A_ADDR_L] = value;
       // Port A start address - low byte
       this.registers.portAStartAddress = (this.registers.portAStartAddress & ADDR_MASK_HIGH_BYTE) | value;
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_1;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_1) {
+      // Step 1: Store in raw register array
+      this.regs[RNUM_PORT_A_ADDR_H] = value;
       // Port A start address - high byte
       this.registers.portAStartAddress = (this.registers.portAStartAddress & ADDR_MASK_LOW_BYTE) | (value << BYTE_SHIFT);
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_2;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_2) {
+      // Step 1: Store in raw register array
+      this.regs[RNUM_BLOCKLEN_L] = value;
       // Block length - low byte
       this.registers.blockLength = (this.registers.blockLength & ADDR_MASK_HIGH_BYTE) | value;
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_3;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_3) {
+      // Step 1: Store in raw register array
+      this.regs[RNUM_BLOCKLEN_H] = value;
       // Block length - high byte (final parameter)
       this.registers.blockLength = (this.registers.blockLength & ADDR_MASK_LOW_BYTE) | (value << BYTE_SHIFT);
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
@@ -707,6 +917,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR1(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // Step 1: Store base byte in raw register array
+      this.regs[RNUM_WR1_BASE] = value;
       // First write - store base byte and extract Port A configuration
       this._tempRegisterByte = value;
       
@@ -726,6 +938,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.registerWriteSeq = RegisterWriteSequence.R1_BYTE_0;
       }
     } else if (this.registerWriteSeq === RegisterWriteSequence.R1_BYTE_0) {
+      // Step 1: Store timing byte in raw register array
+      this.regs[RNUM_PORT_A_TIMING] = value;
       // Store timing byte and extract cycle length from D1-D0
       this.registers.portATimingValue = value;
       const cycleLengthBits = value & MASK_CYCLE_LENGTH;
@@ -741,6 +955,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR2(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // Step 1: Store base byte in raw register array
+      this.regs[RNUM_WR2_BASE] = value;
       // First write - store base byte and extract Port B configuration
       this._tempRegisterByte = value;
       
@@ -760,12 +976,16 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_0;
       }
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_0) {
+      // Step 1: Store timing byte in raw register array
+      this.regs[RNUM_PORT_B_TIMING] = value;
       // Store timing byte and extract cycle length from D1-D0
       this.registers.portBTimingValue = value;
       const cycleLengthBits = value & MASK_CYCLE_LENGTH;
       this.registers.portBTimingCycleLength = cycleLengthBits as CycleLength;
       this.registerWriteSeq = RegisterWriteSequence.R2_BYTE_1;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R2_BYTE_1) {
+      // Step 1: Store prescaler in raw register array
+      this.regs[RNUM_ZXN_PRESCALER] = value;
       // Prescalar byte (8-bit value for fixed-rate transfers)
       this.registers.portBPrescalar = value & 0xff;
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
@@ -779,6 +999,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR3(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // Step 1: Store base byte in raw register array
+      this.regs[RNUM_WR3_BASE] = value;
       // D0: DMA enable flag
       this.registers.dmaEnabled = (value & 0x01) !== 0;
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
@@ -792,6 +1014,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR4(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // Step 1: Store base byte in raw register array
+      this.regs[RNUM_WR4_BASE] = value;
       // First write - store base byte and extract transfer mode
       this._tempRegisterByte = value;
       
@@ -801,10 +1025,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       
       this.registerWriteSeq = RegisterWriteSequence.R4_BYTE_0;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R4_BYTE_0) {
+      // Step 1: Store in raw register array
+      this.regs[RNUM_PORT_B_ADDR_L] = value;
       // Port B start address - low byte
       this.registers.portBStartAddress = (this.registers.portBStartAddress & 0xff00) | value;
       this.registerWriteSeq = RegisterWriteSequence.R4_BYTE_1;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R4_BYTE_1) {
+      // Step 1: Store in raw register array
+      this.regs[RNUM_PORT_B_ADDR_H] = value;
       // Port B start address - high byte (final parameter)
       this.registers.portBStartAddress = (this.registers.portBStartAddress & 0x00ff) | (value << 8);
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
@@ -817,6 +1045,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR5(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // Step 1: Store base byte in raw register array
+      this.regs[RNUM_WR5_BASE] = value;
       // D5: Auto-restart flag
       this.registers.autoRestart = (value & 0x20) !== 0;
       
@@ -833,6 +1063,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   writeWR6(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
+      // Step 1: Store base byte in raw register array
+      this.regs[RNUM_WR6_BASE] = value;
       this._tempRegisterByte = value;
       
       // Parse command byte
@@ -888,6 +1120,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       }
     } else if (this.registerWriteSeq === RegisterWriteSequence.R6_BYTE_0) {
       // Read mask byte follows READ_MASK_FOLLOWS command
+      // Step 1: Store in raw register array
+      this.regs[RNUM_READ_MASK] = value;
       this.registers.readMask = value & 0x7f;
       this.registerWriteSeq = RegisterWriteSequence.IDLE;
     }
@@ -991,6 +1225,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
     }
     
+    // Step 1: Update MAME-style independent address/count tracking
+    this._addressA = this.registers.portAStartAddress;
+    this._addressB = this.registers.portBStartAddress;
+    this._count = this.registers.blockLength;
+
     // Keep register write sequence in IDLE
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
