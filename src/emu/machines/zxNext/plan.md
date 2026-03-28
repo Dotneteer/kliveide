@@ -863,7 +863,10 @@ Klive only applies the prescaler formula for Burst mode.
 | 22   | Missing WR6 interrupt commands 0xAF/0xAB/0xA3 | 🟡 Moderate | ✅ Done |
 | 23   | Interrupt trigger missing !ius / INTERRUPT_ENABLE guards | 🟢 Low | ✅ Done |
 | 24   | count=0 immediate finish vs MAME infinite loop | 🟢 Low | ✅ Done (documented intentional deviation) |
-| 25   | DMA `ip` flag not connected to Z80 INT line | 🟡 Moderate | ⬜ New |
-| 26   | Search mode (WR0 D1-D0=10/11) not implemented | 🟢 Low | ⬜ New |
-| 27   | performReadCycle() docstring incorrectly claims pre-increment | 🟢 Low | ⬜ New |
-| 28   | Prescaler timing only applied for Burst, not all modes | 🟢 Low | ⬜ New |
+| 25   | DMA `ip` flag not connected to Z80 INT line | 🟡 Moderate | ✅ Done |
+| 26   | Search mode (WR0 D1-D0=10/11) not implemented | 🟢 Low | ✅ Done |
+| 27   | performReadCycle() docstring incorrectly claims pre-increment | 🟢 Low | ✅ Done |
+| 28   | Prescaler timing only applied for Burst, not all modes | 🟢 Low | ✅ Done |
+| 29   | Search match formula: AND vs OR mask semantics | 🔴 Critical | ✅ Done |
+| 30   | INT_ON_MATCH gate missing before match interrupt | 🟡 Moderate | ✅ Done |
+| 31   | Status bit 2 (0x04) "match found" is non-standard | 🟢 Low | ✅ Done |

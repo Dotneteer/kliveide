@@ -184,20 +184,6 @@ const TSTATES_WAIT_STATE = 1;       // Additional T-state for bank contention
 const PRESCALAR_REFERENCE_FREQ = 3500000;  // Reference frequency in Hz
 const PRESCALAR_AUDIO_FREQ = 875000;       // Audio sample frequency in Hz
 
-/**
- * Register routing bit patterns (for port write dispatch)
- */
-const MASK_REGISTER_ID = 0x07;        // D2-D0: Register identifier
-const PATTERN_WR1 = 0x04;              // xxx100
-const PATTERN_WR2 = 0x00;              // xxx000
-const PATTERN_WR3_ENABLE = 0x03;       // xxx011 (D2D1D0=011)
-const PATTERN_WR3_DISABLE = 0x02;      // xxx010 (D2D1D0=010)
-const PATTERN_WR4_MASK = 0x0F;         // Mask for WR4 detection
-const PATTERN_WR4_BITS = 0x0D;         // xxxx1101
-const PATTERN_WR5_MASK = 0x17;         // Mask for WR5 detection (0x18 with D0)
-const PATTERN_WR5_BASE = 0x12;         // xxx1x010 (D4=1, D3=0, D1D0=10)
-const PATTERN_WR6_COMMAND = 0x80;      // 1xxxxxxx (command)
-
 // ============================================================================
 // Step 1: MAME-style raw register index constants
 // Each register group occupies 8 slots: group 0 = WR0, group 1 = WR1, etc.
@@ -1710,13 +1696,6 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     return this.transferState.byteCounter;
   }
 
-  /**
-   * Check if transfer should continue based on current progress
-   * @returns true if more bytes need to be transferred
-   */
-  private shouldContinueTransfer(): boolean {
-    return this.getBytesTransferred() < this.getTransferLength();
-  }
 
   // ============================================================================
   // Address Update & Helper Methods
@@ -1932,10 +1911,22 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     if (searchActive) {
       const maskByte  = this.regs[RNUM_MASK_BYTE];
       const matchByte = this.regs[RNUM_MATCH_BYTE];
-      matchFound = (this._transferDataByte & maskByte) === (matchByte & maskByte);
+      // Step 29: MAME do_search() OR semantics — mask 1-bits are don't-care.
+      // (byte | MASK) === (MATCH | MASK): both sides have mask bits forced to 1,
+      // so only bits where MASK=0 are compared.
+      //   MASK=0x00 → exact byte match;  MASK=0xFF → always matches (all bits don't-care).
+      matchFound = (this._transferDataByte | maskByte) === (matchByte | maskByte);
       if (matchFound) {
-        this.m_status |= 0x04;     // set match-found bit in status
-        this.triggerInterrupt(1);  // INT_MATCH = level 1
+        // Step 31: bit 2 (0x04) is a ZXN-specific extension — not in Z80 DMA spec or MAME.
+        // MAME do_search() fires an interrupt but sets no status bit; the match is signalled
+        // only via INT_MATCH. We keep this bit as a useful non-standard diagnostic indicator.
+        this.m_status |= 0x04;
+        // Step 30: Gate the interrupt on INT_ON_MATCH (INTERRUPT_CTRL bit 0), mirroring MAME:
+        //   `if (INT_ON_MATCH && load_byte == match_byte) trigger_interrupt(INT_MATCH);`
+        const intOnMatch = (this.regs[RNUM_INTERRUPT_CTRL] & 0x01) !== 0;
+        if (intOnMatch) {
+          this.triggerInterrupt(1);  // INT_MATCH = level 1
+        }
       }
     }
 
@@ -2022,8 +2013,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.disableDma();  // stops state machine and releases bus (does not clear dmaEnabled)
 
     // MAME: m_status = 0x09 | (!is_ready << 1) | (TM_TRANSFER ? 0x10 : 0)
-    // Preserve the match-found bit (0x04) if a search found a match this block,
-    // so the interrupt handler can distinguish match-stop from end-of-block.
+    // Step 31: Preserve ZXN-specific match bit (0x04) — MAME sets m_status=0x09 unconditionally
+    // (bit 2 is undefined/reserved in the Z80 DMA spec). Klive extends it as a non-standard
+    // "match found this block" indicator, cleared only when a new block starts.
     const matchBit = this.m_status & 0x04;
     this.m_status = 0x09 | matchBit;
     // In our emulator is_ready() is always true, so bit 1 stays 0.

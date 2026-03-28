@@ -503,13 +503,14 @@ describe("DmaDevice - Step 26: Search Mode", () => {
     });
 
     it("stops at matching byte when STOP_ON_MATCH is set", () => {
-      configureSearch(0b10, 0xFF, 0xAA);
+      // mask=0x00 → exact match (OR semantics: no don't-care bits → all bits compared).
+      // Only 0xAA (index 2) matches 0xAA exactly.
+      configureSearch(0b10, 0x00, 0xAA);
       dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
       dma.writeWR6(0xcf); dma.writeWR6(0x87);
       const bytes = dma.executeContinuousTransfer();
-      // Should stop after byte 3 (0xAA is at index 2), so 3 bytes "read"
-      // (addresses advanced for bytes 0,1,2 and match found at 2 stops it)
-      expect(bytes).toBe(3); // reads 0x11, 0x22, 0xAA (stops at match)
+      // Reads 0x11, 0x22, 0xAA — stops at 0xAA (3 bytes)
+      expect(bytes).toBe(3);
     });
 
     it("continues to end of block when STOP_ON_MATCH is NOT set", () => {
@@ -523,42 +524,71 @@ describe("DmaDevice - Step 26: Search Mode", () => {
 
   describe("Search+Transfer mode (D1D0=11) — write and search", () => {
     it("writes bytes to destination AND checks for match", () => {
-      configureSearch(0b11, 0xFF, 0xAA); // Search+Transfer mode
+      // mask=0x00 → exact match; only 0xAA (index 2) matches.
+      configureSearch(0b11, 0x00, 0xAA); // Search+Transfer mode
       dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
       dma.writeWR6(0xcf); dma.writeWR6(0x87);
       dma.executeContinuousTransfer();
-      // Bytes before match are written
+      // All three bytes up to and including the match byte are written
       expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x11);
       expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x22);
-      expect(machine.memoryDevice.readMemory(0x9002)).toBe(0xAA); // match byte is written too
+      expect(machine.memoryDevice.readMemory(0x9002)).toBe(0xAA); // match byte is also written
     });
 
     it("sets match bit and stops at matching byte with STOP_ON_MATCH", () => {
-      configureSearch(0b11, 0xFF, 0xAA);
+      // mask=0x00 → exact match; 0xAA is at index 2.
+      configureSearch(0b11, 0x00, 0xAA);
       dma.writeWR5(0x14 | 0x04);
       dma.writeWR6(0xcf); dma.writeWR6(0x87);
       const bytes = dma.executeContinuousTransfer();
-      expect(dma.getStatus() & 0x04).toBe(0x04);
+      expect(dma.getStatus() & 0x04).toBe(0x04); // ZXN extension: match-found bit
       expect(bytes).toBe(3); // 0x11, 0x22, 0xAA
     });
   });
 
-  describe("Mask byte gating", () => {
-    it("does not match when masked bits differ", () => {
-      configureSearch(0b10, 0x0F, 0x0A); // mask=0x0F, match=0x0A — only low nibble
-      dma.writeWR5(0x14 | 0x04);
+  describe("Mask byte gating (OR semantics: mask 1-bits are don't-care)", () => {
+    it("matches when don't-care bits differ but compared bits agree", () => {
+      // OR semantics: mask=0x0F → lower nibble is don't-care, upper nibble is compared.
+      // match=0xA0 → compared upper nibble = 0xA.
+      // 0xAA: (0xAA | 0x0F) = 0xAF === (0xA0 | 0x0F) = 0xAF → match ✓
+      configureSearch(0b10, 0x0F, 0xA0);
+      dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
       dma.writeWR6(0xcf); dma.writeWR6(0x87);
-      dma.executeContinuousTransfer();
-      // 0xAA & 0x0F = 0x0A = 0x0A & 0x0F → match! (0xAA low nibble = 0xA)
-      expect(dma.getStatus() & 0x04).toBe(0x04);
+      const bytes = dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0x04); // match found at 0xAA
+      expect(bytes).toBe(3); // 0x11, 0x22, 0xAA
     });
 
-    it("no match when masked data differs from match byte", () => {
-      configureSearch(0b10, 0xFF, 0xFF); // must match 0xFF exactly — no byte is 0xFF
+    it("no match when compared bits differ regardless of don't-care bits", () => {
+      // OR semantics: mask=0x0F → lower nibble is don't-care, upper nibble is compared.
+      // match=0xB0 → compared upper nibble = 0xB.
+      // Source: 0x11(0x1), 0x22(0x2), 0xAA(0xA), 0x33(0x3) — none has upper nibble 0xB.
+      configureSearch(0b10, 0x0F, 0xB0);
       dma.writeWR5(0x14 | 0x04);
       dma.writeWR6(0xcf); dma.writeWR6(0x87);
       dma.executeContinuousTransfer();
       expect(dma.getStatus() & 0x04).toBe(0); // no match
+    });
+
+    it("mask=0x00 is exact match (no don't-care bits)", () => {
+      // mask=0x00 → all bits compared exactly (no don't-care bits)
+      // match=0xFF → none of 0x11, 0x22, 0xAA, 0x33 equals 0xFF
+      configureSearch(0b10, 0x00, 0xFF);
+      dma.writeWR5(0x14 | 0x04);
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0); // no match
+    });
+
+    it("mask=0xFF means all bits are don't-care (always matches)", () => {
+      // mask=0xFF → every bit is don't-care → any byte matches any MATCH_BYTE
+      // First byte 0x11: (0x11 | 0xFF) = 0xFF === (0xAA | 0xFF) = 0xFF → match
+      configureSearch(0b10, 0xFF, 0xAA);
+      dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      const bytes = dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0x04); // match on first byte
+      expect(bytes).toBe(1); // stopped immediately on 0x11
     });
   });
 });
