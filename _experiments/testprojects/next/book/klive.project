@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "0.56.0",
+  "kliveVersion": "0.57.0",
   "machineType": "zxnext",
   "modelId": "pal",
   "clockMultiplier": 1,
@@ -7,7 +7,7 @@
   "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
-    "tape": "/Users/dotneteer/KliveExports/myTzx.tzx",
+    "tape": "/Users/dotneteer/KliveExports/test123.tzx",
     "sdCard": "/Users/dotneteer/Klive/ks2.cim"
   },
   "machineSpecific": {},
@@ -29,7 +29,7 @@
   },
   "builder": {
     "roots": [
-      "main.pas"
+      "main.kz80.asm"
     ]
   },
   "settings": {
@@ -54,22 +54,22 @@
       "documents": [
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/sample.pas",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_intro/print.asm",
           "position": {
-            "line": 20,
-            "column": 5
+            "line": 0,
+            "column": 0
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.pas",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
             "line": 0,
             "column": 0
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.pas"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 34211,
