@@ -235,80 +235,74 @@ describe("DMA Audio Sampling", () => {
       configureAudioPlayback(0x8000, 0x9000, numSamples, prescalar);
 
       const initialTacts = machine.tacts;
-      const sampleTacts: number[] = [];
 
       // --- Act
-      let lastTacts = initialTacts;
-      for (let i = 0; i < numSamples; i++) {
-        // Request bus
+      // MAME burst: once the bus is acquired, all bytes transfer consecutively
+      // without releasing the bus between them.  One call for the initial bus
+      // request + one call per sample = numSamples + 1 calls total.
+      for (let i = 0; i < numSamples + 1; i++) {
         machine.beforeInstructionExecuted();
-        // Transfer sample
-        machine.beforeInstructionExecuted();
-        
-        const currentTacts = machine.tacts;
-        sampleTacts.push(currentTacts - lastTacts);
-        lastTacts = currentTacts;
       }
 
       // --- Assert
-      // Each sample should consume exactly the prescalar-defined T-states
-      for (const tacts of sampleTacts) {
-        expect(tacts).toBe(expectedTStatesPerSample);
+      // Total T-states = numSamples × prescalar-defined T-states per sample
+      const totalTStates = machine.tacts - initialTacts;
+      expect(totalTStates).toBe(numSamples * expectedTStatesPerSample);
+
+      // All samples were transferred correctly
+      for (let i = 0; i < numSamples; i++) {
+        expect(machine.memoryDevice.readMemory(0x9000 + i)).toBe(i * 10);
       }
     });
   });
 
   describe("Burst Mode Audio Streaming", () => {
-    it("should release bus between samples in burst mode", () => {
+    it("burst mode holds bus after each byte transfer when ready=true (MAME behavior)", () => {
       // --- Arrange
       machine.memoryDevice.writeMemory(0x8000, 0x80);
       machine.memoryDevice.writeMemory(0x8001, 0x90);
       configureAudioPlayback(0x8000, 0x9000, 2, 55);
 
       // --- Act & Assert
-      // Sample 1: Request bus
+      // Request bus
       machine.beforeInstructionExecuted();
       let busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(true);
+      expect(busControl.busRequested).toBe(true); // bus requested
 
-      // Sample 1: Transfer
+      // Ack + transfer byte 1
       machine.beforeInstructionExecuted();
       busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(false); // Released after burst byte
+      // MAME: burst mode holds bus when isReady()=true
+      expect(busControl.busRequested).toBe(true); // bus still held after byte 1
 
-      // Sample 2: Request bus again
+      // Transfer byte 2 (final) → block completes → bus released
       machine.beforeInstructionExecuted();
       busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(true);
-
-      // Sample 2: Transfer
-      machine.beforeInstructionExecuted();
-      busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(false); // Released again
+      expect(busControl.busRequested).toBe(false); // bus released after final byte
     });
 
-    it("should allow CPU execution between audio samples", () => {
+    it("audio samples transfer correctly in burst mode", () => {
       // --- Arrange
       machine.memoryDevice.writeMemory(0x8000, 0x80);
       machine.memoryDevice.writeMemory(0x8001, 0x90);
       configureAudioPlayback(0x8000, 0x9000, 2, 20); // Short prescalar for faster test
 
       // --- Act
-      // Transfer first sample
-      machine.beforeInstructionExecuted(); // Request
-      machine.beforeInstructionExecuted(); // Transfer + release bus
+      // MAME burst: both samples transfer without releasing bus between them.
+      // 1 request call + 2 transfer calls = 3 calls to transfer 2 bytes.
+      machine.beforeInstructionExecuted(); // Request bus
+      machine.beforeInstructionExecuted(); // Ack + transfer byte 1 (bus held)
+      machine.beforeInstructionExecuted(); // Transfer byte 2 (final) → bus released
 
-      // CPU can execute here (bus is released)
+      // --- Assert
+      // After the block completes, bus is released (CPU can execute)
       const busControl = dma.getBusControl();
       expect(busControl.busRequested).toBe(false);
       expect(busControl.busAcknowledged).toBe(false);
 
-      // Transfer second sample
-      machine.beforeInstructionExecuted(); // Request
-      machine.beforeInstructionExecuted(); // Transfer + release bus
-
-      // --- Assert
-      // Both samples transferred successfully despite CPU having access between them
+      // Both samples were transferred successfully
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x80);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x90);
       expect(dma.getStatusFlags().atLeastOneByteTransferred).toBe(true);
     });
   });

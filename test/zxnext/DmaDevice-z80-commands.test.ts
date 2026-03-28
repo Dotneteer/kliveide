@@ -516,7 +516,7 @@ describe("DMA Z80 Code-Driven Tests - Commands", () => {
         0x3E, 0x10,          // LD A, 10H (increment)
         0xED, 0x79,          // OUT (C), A
         // Step 5: Configure WR4 (Port B address + mode)
-        0x3E, 0xBD,          // LD A, BDH (continuous)
+        0x3E, 0xAD,          // LD A, BDH (continuous)
         0xED, 0x79,          // OUT (C), A
         0x3E, 0x00, 0xED, 0x79,  // Port B low
         0x3E, 0x70, 0xED, 0x79,  // Port B high (0x7000)

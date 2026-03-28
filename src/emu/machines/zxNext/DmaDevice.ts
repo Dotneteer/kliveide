@@ -879,9 +879,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       case 2: // WR2: D6=port_b_timing (prescaler is gated by timing byte D5, handled in handleFollowByte)
         if (baseValue & 0x40) this.regsFollow[this.numFollow++] = RNUM_PORT_B_TIMING;
         break;
-      case 4: // WR4: D2=portB_addr_lo, D3=portB_addr_hi
+      case 4: // WR4: D2=portB_addr_lo, D3=portB_addr_hi, D4=interrupt_ctrl
         if (baseValue & 0x04) this.regsFollow[this.numFollow++] = RNUM_PORT_B_ADDR_L;
         if (baseValue & 0x08) this.regsFollow[this.numFollow++] = RNUM_PORT_B_ADDR_H;
+        if (baseValue & 0x10) this.regsFollow[this.numFollow++] = RNUM_INTERRUPT_CTRL;
         break;
       case 6: // WR6: only READ_MASK_FOLLOWS (0xBB) needs a follow byte
         if (baseValue === 0xbb) this.regsFollow[this.numFollow++] = RNUM_READ_MASK;
@@ -1241,10 +1242,30 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
           this.executeReinitializeStatusByte();
           break;
 
+        case 0xaf: // DISABLE_INTERRUPTS: WR3 &= ~0x20 (clear interrupt enable bit D5)
+          this.regs[RNUM_WR3_BASE] &= ~0x20;
+          break;
+
+        case 0xab: // ENABLE_INTERRUPTS: WR3 |= 0x20 (set interrupt enable bit D5)
+          this.regs[RNUM_WR3_BASE] |= 0x20;
+          break;
+
+        case 0xa3: // RESET_AND_DISABLE_INTERRUPTS: disable interrupts + clear ip/ius/force_ready
+          this.regs[RNUM_WR3_BASE] &= ~0x20;
+          this.ip = 0;
+          this.ius = 0;
+          this.forceReady = false;
+          this.m_status |= 0x08;
+          break;
+
         case 0xb3: // FORCE_READY
           this.forceReady = true;
           break;
-          
+
+        case 0xb7: // ENABLE_AFTER_RETI — not implemented (matches MAME fatalerror)
+          // MAME calls fatalerror(); we silently ignore.
+          break;
+
         default:
           // Unknown command - ignore
           break;
@@ -1879,9 +1900,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
           : DmaSeq.SEQ_WAIT_READY;
         break;
 
-      case 0b10: // Burst: release bus after each byte (for prescaler delay / CPU time)
-        this.releaseBus();
-        this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+      case 0b10: // Burst: keep bus if ready (MAME behavior), release only if not ready
+        if (this.isReady()) {
+          this.dmaSeq = DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE;
+        } else {
+          this.releaseBus();
+          this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+        }
         break;
 
       default: // 0b11 = is_final → FINISH
@@ -1894,9 +1919,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     //   if (dma_delay && next-state == SEQ_TRANS1_INC_DEC_SOURCE_ADDRESS) {
     //     set_busrq(CLEAR_LINE); dma_seq = SEQ_WAIT_READY; return; }
     // When the delay is active and the mode dispatch has set the next state to
-    // INC_DEC_SOURCE (continuous mode about to continue to the next byte),
+    // INC_DEC_SOURCE (continuous or burst mode continuing to the next byte),
     // intercept and force "release bus → WAIT_READY" instead.
-    // Burst mode is unaffected here because it already goes to WAIT_READY.
     if (this.dmaDelay && this.dmaSeq === DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE) {
       this.releaseBus();
       this.dmaSeq = DmaSeq.SEQ_WAIT_READY;

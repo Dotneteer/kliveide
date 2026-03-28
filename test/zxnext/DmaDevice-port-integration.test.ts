@@ -224,7 +224,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       machine.portManager.writePort(0x6b, 0x00);
 
       // Configure WR4: Continuous mode, Port B address 0x9000
-      machine.portManager.writePort(0x6b, 0xbd);
+      machine.portManager.writePort(0x6b, 0xad);
       machine.portManager.writePort(0x6b, 0x00);
       machine.portManager.writePort(0x6b, 0x90);
 
@@ -277,7 +277,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       machine.portManager.writePort(0x6b, 0x05);
       machine.portManager.writePort(0x6b, 0x00);
 
-      machine.portManager.writePort(0x6b, 0xbd);
+      machine.portManager.writePort(0x6b, 0xad);
       machine.portManager.writePort(0x6b, 0x00);
       machine.portManager.writePort(0x6b, 0x90);
 
@@ -398,7 +398,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       machine.portManager.writePort(0x6b, 0x01);
       machine.portManager.writePort(0x6b, 0x00);
 
-      machine.portManager.writePort(0x6b, 0xbd);
+      machine.portManager.writePort(0x6b, 0xad);
       machine.portManager.writePort(0x6b, 0x00);
       machine.portManager.writePort(0x6b, 0x90);
 

@@ -445,8 +445,8 @@ export class TestZxNextMachine extends ZxNextMachine {
       0xED, 0x79,                // OUT (C), A
       
       // WR4: Port B address, Continuous mode
-      // BDH = 1011_1101: D7=1, D6=0, D5=1 → D6D5=01 → Continuous (MAME decode)
-      0x3E, 0xBD,                // LD A, BDH (continuous mode)
+      // ADH = 1010_1101: D7=1, D6=0, D5=1 → D6D5=01 → Continuous; D4=0 no INTERRUPT_CTRL
+      0x3E, 0xAD,                // LD A, ADH (continuous mode, D4=0 no INTERRUPT_CTRL)
       0xED, 0x79,                // OUT (C), A
       0x3E, destAddr & 0xFF,     // LD A, low byte
       0xED, 0x79,                // OUT (C), A
