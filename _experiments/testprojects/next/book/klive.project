@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "0.56.0",
+  "kliveVersion": "0.57.0",
   "machineType": "zxnext",
   "modelId": "pal",
   "clockMultiplier": 1,
@@ -7,7 +7,7 @@
   "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
-    "tape": "/Users/dotneteer/KliveExports/myTzx.tzx",
+    "tape": "/Users/dotneteer/KliveExports/test123.tzx",
     "sdCard": "/Users/dotneteer/Klive/ks2.cim"
   },
   "machineSpecific": {},
@@ -20,6 +20,13 @@
   "debugger": {
     "breakpoints": [
       {
+        "resource": "main.kz80.asm",
+        "line": 36,
+        "exec": true,
+        "ioMask": 65535,
+        "resolvedAddress": 34606
+      },
+      {
         "resource": "code/code.kz80.asm",
         "line": 24,
         "exec": true,
@@ -29,7 +36,7 @@
   },
   "builder": {
     "roots": [
-      "main.pas"
+      "main.kz80.asm"
     ]
   },
   "settings": {
@@ -54,30 +61,46 @@
       "documents": [
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/sample.pas",
-          "position": {
-            "line": 20,
-            "column": 5
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.pas",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
             "line": 0,
             "column": 0
           }
+        },
+        {
+          "type": "TextEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.z80",
+          "position": {
+            "line": 0,
+            "column": 0
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_z80n/extinstr.asm",
+          "position": {
+            "line": 68,
+            "column": 1
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
+          "position": {
+            "line": 122,
+            "column": 1
+          }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.pas"
+      "activeDocumentId": "$disassembly"
     },
     "Disassembly": {
-      "topAddress": 34211,
+      "topAddress": 5619,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,
       "bankLabel": true,
-      "autoRefresh": false,
+      "autoRefresh": true,
       "ram": true,
       "screen": false,
       "disassOffset": 0
