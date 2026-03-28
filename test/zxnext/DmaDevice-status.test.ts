@@ -54,9 +54,8 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       
       const statusByte = dma.readStatusByte();
-      // Format: 00E1101T where E=1 (not complete), T=0 (no bytes)
-      // = 00110110 = 0x36
-      expect(statusByte).toBe(0x36);
+      // MAME: readStatusByte() returns m_status = 0x38 (initial value)
+      expect(statusByte).toBe(0x38);
     });
   });
 
@@ -113,9 +112,8 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       const statusByte = dma.readStatusByte();
       
-      // Format: 00E1101T where E=0 (in progress), T=1 (at least one byte)
-      // = 00011011 = 0x1B
-      expect(statusByte).toBe(0x1b);
+      // MAME: m_status is not modified during individual byte transfers, stays 0x38
+      expect(statusByte).toBe(0x38);
     });
   });
 
@@ -161,9 +159,8 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       const statusByte = dma.readStatusByte();
       
-      // Format: 00E1101T where E=1 (complete), T=1 (bytes transferred)
-      // = 00110111 = 0x37
-      expect(statusByte).toBe(0x37);
+      // MAME: after TM_TRANSFER (WR0 bits 0-1 = 1), m_status = 0x09 | 0x10 = 0x19
+      expect(statusByte).toBe(0x19);
     });
   });
 
@@ -227,7 +224,8 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
 
       const statusByte = dma.readStatusByte();
-      expect(statusByte).toBe(0x36); // 00110110
+      // MAME: after complete (m_status=0x19) then REINIT (m_status |= 0x30) = 0x39
+      expect(statusByte).toBe(0x39);
     });
   });
 
@@ -344,15 +342,15 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
 
       const statusByte = dma.readStatusByte();
-      // 00E1101T = 00110110 = 0x36
-      expect(statusByte).toBe(0x36);
+      // MAME: m_status = 0x38 (initial value, bit 5=1 and bit 0=0)
+      expect(statusByte).toBe(0x38);
       
-      // Verify bit positions
+      // Verify key bit positions (bit 5 and bit 0 have same values as old format)
       const eBit = (statusByte >> 5) & 1; // Bit 5
       const tBit = statusByte & 1;        // Bit 0
       
-      expect(eBit).toBe(1); // E=1 (end of block)
-      expect(tBit).toBe(0); // T=0 (no bytes transferred)
+      expect(eBit).toBe(1); // bit 5 = 1 in 0x38
+      expect(tBit).toBe(0); // bit 0 = 0 in 0x38
     });
 
     it("should format status byte correctly for in-progress (E=0, T=1)", () => {
@@ -370,14 +368,14 @@ describe("DMA Status Flags and Completion", () => {
 
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       const statusByte = dma.readStatusByte();
-      // 00E1101T = 00011011 = 0x1B
-      expect(statusByte).toBe(0x1b);
+      // MAME: m_status = 0x38 (unchanged during individual byte transfers)
+      expect(statusByte).toBe(0x38);
       
       const eBit = (statusByte >> 5) & 1;
       const tBit = statusByte & 1;
       
-      expect(eBit).toBe(0); // E=0 (not complete)
-      expect(tBit).toBe(1); // T=1 (at least one byte)
+      expect(eBit).toBe(1); // bit 5 = 1 in 0x38 (MAME doesn't encode in-progress in m_status)
+      expect(tBit).toBe(0); // bit 0 = 0 in 0x38
     });
 
     it("should format status byte correctly for complete (E=1, T=1)", () => {
@@ -392,14 +390,14 @@ describe("DMA Status Flags and Completion", () => {
 
       dma.writeWR6(0x8f); // READ_STATUS_BYTE
       const statusByte = dma.readStatusByte();
-      // 00E1101T = 00110111 = 0x37
-      expect(statusByte).toBe(0x37);
+      // MAME: after TM_TRANSFER complete, m_status = 0x09 | 0x10 = 0x19
+      expect(statusByte).toBe(0x19);
       
       const eBit = (statusByte >> 5) & 1;
       const tBit = statusByte & 1;
       
-      expect(eBit).toBe(1); // E=1 (complete)
-      expect(tBit).toBe(1); // T=1 (at least one byte)
+      expect(eBit).toBe(0); // bit 5 = 0 in 0x19
+      expect(tBit).toBe(1); // bit 0 = 1 in 0x19 (transfer complete)
     });
   });
 

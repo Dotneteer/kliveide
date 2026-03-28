@@ -21,12 +21,12 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
       const status = dmaDevice.readStatusByte();
       
-      // Format: 00E1101T
+      // MAME: readStatusByte() at pos 0 returns m_status = 0x38 directly
       // Bits 7-6 must be 0
       expect(status & 0xc0).toBe(0x00);
       
-      // Bits 4-1 must be 1011 (0x36 >> 1 & 0x0F = 0x0B)
-      expect((status >> 1) & 0x0f).toBe(0x0b);
+      // MAME m_status = 0x38: bits 5-3 are set (0x38 = 0b00111000)
+      expect(status).toBe(0x38);
     });
 
     it("should set E bit to 0 when endOfBlockReached is true", () => {
@@ -84,11 +84,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD (sets counter to 0)
 
       dmaDevice.writeWR6(0xbb); // READ_MASK_FOLLOWS
-      dmaDevice.writeWR6(0x40); // Counter low only
+      dmaDevice.writeWR6(0x02); // Counter low only (MAME bit 1)
 
       dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
 
-      dmaDevice.readStatusByte(); // Status
       const counterLo = dmaDevice.readStatusByte();
       
       expect(counterLo).toBe(0x00);
@@ -108,11 +107,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x20); // Counter high only
+      dmaDevice.writeWR6(0x04); // Counter high only (MAME bit 2)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte(); // Status
       const counterHi = dmaDevice.readStatusByte();
       
       expect(counterHi).toBe(0x00);
@@ -132,11 +130,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60); // Counter low + high
+      dmaDevice.writeWR6(0x06); // Counter low + high (MAME bits 1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte(); // Status
       const counterLo = dmaDevice.readStatusByte();
       const counterHi = dmaDevice.readStatusByte();
       
@@ -150,11 +147,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0x87); // ENABLE_DMA
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60);
+      dmaDevice.writeWR6(0x06); // Counter low + high (MAME bits 1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const counterLo = dmaDevice.readStatusByte();
       const counterHi = dmaDevice.readStatusByte();
       
@@ -178,11 +174,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x10); // Port A low only
+      dmaDevice.writeWR6(0x08); // Port A low only (MAME bit 3)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const portALo = dmaDevice.readStatusByte();
       
       expect(portALo).toBe(0x34);
@@ -202,11 +197,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x08); // Port A high only
+      dmaDevice.writeWR6(0x10); // Port A high only (MAME bit 4)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const portAHi = dmaDevice.readStatusByte();
       
       expect(portAHi).toBe(0x12);
@@ -226,11 +220,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x18); // Port A low + high
+      dmaDevice.writeWR6(0x18); // Port A low + high (MAME bits 3+4 — same value as before)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const portALo = dmaDevice.readStatusByte();
       const portAHi = dmaDevice.readStatusByte();
       
@@ -252,11 +245,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x04); // Port B low only
+      dmaDevice.writeWR6(0x20); // Port B low only (MAME bit 5)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const portBLo = dmaDevice.readStatusByte();
       
       expect(portBLo).toBe(0x78);
@@ -276,11 +268,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x02); // Port B high only
+      dmaDevice.writeWR6(0x40); // Port B high only (MAME bit 6)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const portBHi = dmaDevice.readStatusByte();
       
       expect(portBHi).toBe(0x56);
@@ -300,11 +291,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x06); // Port B low + high
+      dmaDevice.writeWR6(0x60); // Port B low + high (MAME bits 5+6)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const portBLo = dmaDevice.readStatusByte();
       const portBHi = dmaDevice.readStatusByte();
       
@@ -353,7 +343,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xa7);
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
 
       const counterLo = dmaDevice.readStatusByte();
       expect(counterLo).toBe(0x00);
@@ -388,12 +378,12 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x50); // Counter low + Port A low
+      dmaDevice.writeWR6(0x0b); // Status + Counter low + Port A low (MAME bits 0+1+3)
 
       dmaDevice.writeWR6(0xa7);
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
 
       const counterLo = dmaDevice.readStatusByte();
       expect(counterLo).toBe(0x00);
@@ -403,7 +393,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x38);
     });
 
     it("should read alternating bytes with mask 0x55", () => {
@@ -420,12 +410,12 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x55); // Counter lo, Port A lo, Port B lo
+      dmaDevice.writeWR6(0x2b); // Status + Counter lo + Port A lo + Port B lo (MAME bits 0+1+3+5)
 
       dmaDevice.writeWR6(0xa7);
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
 
       const counterLo = dmaDevice.readStatusByte();
       expect(counterLo).toBe(0x00);
@@ -438,7 +428,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       // Wrap
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x38);
     });
   });
 
@@ -457,18 +447,18 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60); // Counter only
+      dmaDevice.writeWR6(0x07); // Status + Counter low + high (MAME bits 0+1+2)
 
       dmaDevice.writeWR6(0xa7);
 
       // First cycle
-      dmaDevice.readStatusByte(); // Status
-      dmaDevice.readStatusByte(); // Counter lo
-      dmaDevice.readStatusByte(); // Counter hi
+      dmaDevice.readStatusByte(); // Status (pos 0)
+      dmaDevice.readStatusByte(); // Counter lo (pos 1)
+      dmaDevice.readStatusByte(); // Counter hi (pos 2)
 
       // Should wrap to status
       const status1 = dmaDevice.readStatusByte();
-      expect(status1).toBe(0x36);
+      expect(status1).toBe(0x38);
 
       // Second cycle
       dmaDevice.readStatusByte(); // Counter lo
@@ -476,7 +466,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       // Should wrap again
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x38);
     });
 
     it("should wrap immediately with mask 0x00", () => {
@@ -485,37 +475,39 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
+      // With mask=0: setupNextRead stays at pos 0, returns m_status repeatedly
       const status1 = dmaDevice.readStatusByte();
-      expect(status1).toBe(0x36);
+      expect(status1).toBe(0x38);
 
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x38);
 
       const status3 = dmaDevice.readStatusByte();
-      expect(status3).toBe(0x36);
+      expect(status3).toBe(0x38);
     });
 
-    it("should maintain wraparound after REINITIALIZE", () => {
+    it("should not reset read position on REINITIALIZE (MAME behavior)", () => {
+      // MAME: REINITIALIZE_STATUS_BYTE does NOT reset readCurFollow (read position)
+      // Only INITIALIZE_READ_SEQUENCE resets the read position
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x40); // Counter low only
+      dmaDevice.writeWR6(0x07); // Status + Counter low + high (bits 0+1+2)
 
-      dmaDevice.writeWR6(0xa7);
+      dmaDevice.writeWR6(0xa7); // INITIALIZE: pos = 0 (status)
 
-      dmaDevice.readStatusByte(); // Status
-      dmaDevice.readStatusByte(); // Counter lo
+      // Read status (pos 0), advancing to pos 1 (counter lo)
+      dmaDevice.readStatusByte();
+      expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_COUNTER_LO);
 
-      dmaDevice.writeWR6(0x8b); // REINITIALIZE
+      // REINITIALIZE should NOT reset read position (MAME behavior)
+      dmaDevice.writeWR6(0x8b);
+      expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_COUNTER_LO);
 
-      // Should start fresh
-      const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
-
+      // Next read continues from counter lo (not status)
       const counterLo = dmaDevice.readStatusByte();
       expect(counterLo).toBe(0x00);
 
-      // Wrap
-      const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      // Position advances to counter hi
+      expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_COUNTER_HI);
     });
   });
 
@@ -525,11 +517,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0x87); // ENABLE (sets counter to 0xFFFF)
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60);
+      dmaDevice.writeWR6(0x06); // Counter low + high (MAME bits 1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const counterLo = dmaDevice.readStatusByte();
       const counterHi = dmaDevice.readStatusByte();
 
@@ -552,11 +543,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x18);
+      dmaDevice.writeWR6(0x18); // Port A low + high (MAME bits 3+4 — same value)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       let portALo = dmaDevice.readStatusByte();
       let portAHi = dmaDevice.readStatusByte();
 
@@ -574,7 +564,6 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       portALo = dmaDevice.readStatusByte();
       portAHi = dmaDevice.readStatusByte();
 
@@ -586,11 +575,10 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.writeWR6(0xd3); // CONTINUE (resets counter to 0)
 
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60);
+      dmaDevice.writeWR6(0x06); // Counter low + high (MAME bits 1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte();
       const counterLo = dmaDevice.readStatusByte();
       const counterHi = dmaDevice.readStatusByte();
 
@@ -691,7 +679,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
       // Second cycle should give same values
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
 
       dmaDevice.readStatusByte(); // counter lo
       dmaDevice.readStatusByte(); // counter hi
@@ -702,22 +690,22 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
     it("should handle READ_STATUS_BYTE command resetting position", () => {
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60);
+      dmaDevice.writeWR6(0x06); // Counter low + high (MAME bits 1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte(); // Status
       dmaDevice.readStatusByte(); // Counter lo
+      dmaDevice.readStatusByte(); // Counter hi
       
-      // READ_STATUS_BYTE resets position AND sets READ_MASK = 1 (status only per MAME)
+      // READ_STATUS_BYTE resets position to 0 AND sets READ_MASK = 1 (status only)
       dmaDevice.writeWR6(0xbf);
       
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
       
       // READ_MASK is now 1 (status only), so next read also returns status
       const statusAgain = dmaDevice.readStatusByte();
-      expect(statusAgain).toBe(0x36);
+      expect(statusAgain).toBe(0x38);
     });
 
     it("should handle B->A direction correctly", () => {
@@ -744,14 +732,14 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
   describe("Sequence State Management", () => {
     it("should preserve read sequence position during writes", () => {
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60);
+      dmaDevice.writeWR6(0x07); // Status + Counter low + high (MAME bits 0+1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      dmaDevice.readStatusByte(); // Status
-      dmaDevice.readStatusByte(); // Counter lo
+      dmaDevice.readStatusByte(); // Status (pos 0 → advances to pos 1)
+      dmaDevice.readStatusByte(); // Counter lo (pos 1 → advances to pos 2)
       
-      // Current position is counter hi
+      // Current position is counter hi (pos 2)
       expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_COUNTER_HI);
       
       // Write a register

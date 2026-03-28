@@ -134,7 +134,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       const status = machine.portManager.readPort(0x6b);
       
       // Initial state: endOfBlockReached=true, atLeastOneByteTransferred=false
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
     });
 
     it("should read status after INITIALIZE_READ_SEQUENCE command", () => {
@@ -142,7 +142,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       machine.portManager.writePort(0x6b, 0xa7);
       
       const status = machine.portManager.readPort(0x6b);
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
     });
 
     it("should read counter values after configuring read mask", () => {
@@ -162,7 +162,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
 
       // Read status
       const status = machine.portManager.readPort(0x6b);
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
 
       // Read counter low
       const counterLo = machine.portManager.readPort(0x6b);
@@ -190,7 +190,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
 
       // READ_MASK_FOLLOWS - Port A only
       machine.portManager.writePort(0x6b, 0xbb);
-      machine.portManager.writePort(0x6b, 0x18);
+      machine.portManager.writePort(0x6b, 0x19);
 
       // INITIALIZE_READ_SEQUENCE
       machine.portManager.writePort(0x6b, 0xa7);
@@ -384,8 +384,8 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       // Bits 7-6 must be 0
       expect(status & 0xc0).toBe(0x00);
       
-      // Initial state: 0x36 (end of block, no transfer)
-      expect(status).toBe(0x36);
+      // Initial state: 0x38 (end of block, no transfer)
+      expect(status).toBe(0x38);
     });
 
     it("should show status changes through port 0x6B after transfer", () => {
@@ -413,7 +413,7 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       // Read status via INITIALIZE_READ_SEQUENCE first
       machine.portManager.writePort(0x6b, 0xa7);
       const status = machine.portManager.readPort(0x6b);
-      expect(status).toBe(0x37);
+      expect(status).toBe(0x19);
     });
   });
 });

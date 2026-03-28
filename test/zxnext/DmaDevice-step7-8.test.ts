@@ -542,7 +542,7 @@ describe("DmaDevice - Step 8: Address Update Model (addressA/addressB independen
     configureBtoATransfer(0x1234, 0x5678, 4);
 
     dma.writeWR6(0xbb);
-    dma.writeWR6(0x18); // Port A low + high in mask
+    dma.writeWR6(0x19); // Status + Port A low + high in mask (MAME: bits 0+3+4)
     dma.writeWR6(0xa7); // INIT_READ_SEQUENCE
 
     dma.readStatusByte(); // status
@@ -557,7 +557,7 @@ describe("DmaDevice - Step 8: Address Update Model (addressA/addressB independen
     configureBtoATransfer(0x1234, 0x5678, 4);
 
     dma.writeWR6(0xbb);
-    dma.writeWR6(0x06); // Port B low + high in mask
+    dma.writeWR6(0x61); // Status + Port B low + high in mask (MAME: bits 0+5+6)
     dma.writeWR6(0xa7);
 
     dma.readStatusByte(); // status

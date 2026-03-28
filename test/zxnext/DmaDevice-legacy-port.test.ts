@@ -104,26 +104,26 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
   describe("Port 0x0B Read Operations", () => {
     it("should read initial status byte from port 0x0B", () => {
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x36); // End of block, no transfer yet
+      expect(status).toBe(0x38); // End of block, no transfer yet
       expect(dmaDevice.getDmaMode()).toBe(DmaMode.LEGACY);
     });
 
     it("should read status after INITIALIZE_READ_SEQUENCE command", () => {
       machine.portManager.writePort(0x0b, 0xa7); // INITIALIZE_READ_SEQUENCE
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x38);
       expect(dmaDevice.getDmaMode()).toBe(DmaMode.LEGACY);
     });
 
     it("should read counter values after configuring read mask", () => {
       // Configure for reading counter
       machine.portManager.writePort(0x0b, 0xbb); // READ_MASK_FOLLOWS
-      machine.portManager.writePort(0x0b, 0x60); // Mask with counter enabled (bits 6,5)
+      machine.portManager.writePort(0x0b, 0x07); // Mask with status+counter (MAME bits 0+1+2)
       machine.portManager.writePort(0x0b, 0xa7); // INITIALIZE_READ_SEQUENCE
 
       // First read should be status
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x36); // End of block reached
+      expect(status).toBe(0x38); // End of block reached
       
       // Second read should be counter low (0 initially - counter initialized to 0)
       const counterLow = machine.portManager.readPort(0x0b);
@@ -362,7 +362,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       // Read status after transfer
       machine.portManager.writePort(0x0b, 0xa7);
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x37); // End of block reached, transfer occurred
+      expect(status).toBe(0x19); // End of block reached, transfer occurred
     });
   });
 

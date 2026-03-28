@@ -1446,7 +1446,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.statusFlags.endOfBlockReached = true;
     this.statusFlags.atLeastOneByteTransferred = false;
 
-    this.registerReadSeq = RegisterReadSequence.RD_STATUS;
+    // Step 13: MAME does NOT reset readCurFollow on REINITIALIZE_STATUS_BYTE.
+    // Only INITIALIZE_READ_SEQUENCE (0xA7) resets the read position.
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
@@ -1455,118 +1456,52 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   // ============================================================================
 
   /**
-   * Read the next byte in the register read sequence
-   * Called when DMA port is read after a read command
-   * Status format: 00E1101T where E=end of block (inverted), T=at least one byte
+   * Read the next byte in the register read sequence.
+   * Step 13: Matches MAME z80dma_device::read() exactly.
+   * - Position 0: m_status (raw status byte, NOT computed from legacy flags)
+   * - Positions 1-6: byte counter, addressA, addressB
+   * - Advance only when READ_MASK has more than one bit set
+   *   (READ_STATUS_BYTE sets mask=1, so status is returned permanently).
    */
   readStatusByte(): number {
-    let value = 0;
-    
-    if (this.registerReadSeq === RegisterReadSequence.RD_STATUS) {
-      // Format depends on end-of-block status:
-      // Complete (E): 00110110 (0x36) + T bit
-      // In progress (!E): 00011011 (0x1B) - bit 3 + T bit, without bits 5,2
-      const tBit = this.statusFlags.atLeastOneByteTransferred ? 1 : 0;
-      
-      if (this.statusFlags.endOfBlockReached) {
-        // Complete: bits 5,4,2,1 set (0x36) plus T at bit 0
-        value = 0x36 | tBit;
-      } else {
-        // In progress: bits 4,3,1 set (0x1A) plus T at bit 0
-        value = 0x1a | tBit;
-      }
-      
-      // Advance to next read position based on read mask
-      this.advanceReadSequence();
-    } else if (this.registerReadSeq === RegisterReadSequence.RD_COUNTER_LO) {
-      // Counter low byte
-      value = this.transferState.byteCounter & 0xff;
-      this.advanceReadSequence();
-    } else if (this.registerReadSeq === RegisterReadSequence.RD_COUNTER_HI) {
-      // Counter high byte
-      value = (this.transferState.byteCounter >> 8) & 0xff;
-      this.advanceReadSequence();
-    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_A_LO) {
-      // Step 8: Port A address low byte - always use _addressA (Port A = m_addressA)
-      value = this._addressA & 0xff;
-      this.advanceReadSequence();
-    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_A_HI) {
-      // Step 8: Port A address high byte - always use _addressA
-      value = (this._addressA >> 8) & 0xff;
-      this.advanceReadSequence();
-    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_B_LO) {
-      // Step 8: Port B address low byte - always use _addressB (Port B = m_addressB)
-      value = this._addressB & 0xff;
-      this.advanceReadSequence();
-    } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_B_HI) {
-      // Step 8: Port B address high byte - always use _addressB
-      value = (this._addressB >> 8) & 0xff;
-      this.advanceReadSequence();
+    const pos = this.registerReadSeq;
+    let value: number;
+
+    switch (pos) {
+      case 0: value = this.m_status;                                break; // RR0: status
+      case 1: value = this.transferState.byteCounter & 0xff;       break; // RR1: byte counter lo
+      case 2: value = (this.transferState.byteCounter >> 8) & 0xff; break; // RR2: byte counter hi
+      case 3: value = this._addressA & 0xff;                        break; // RR3: port A lo
+      case 4: value = (this._addressA >> 8) & 0xff;                 break; // RR4: port A hi
+      case 5: value = this._addressB & 0xff;                        break; // RR5: port B lo
+      default: value = (this._addressB >> 8) & 0xff;                break; // RR6: port B hi
     }
-    
+
+    // MAME advance condition: only advance when READ_MASK has more than one bit set.
+    // Single-bit mask (e.g. READ_MASK=1) keeps cursor fixed on that position forever.
+    const mask = this.regs[RNUM_READ_MASK];
+    if ((mask & (mask - 1)) !== 0) {
+      this.setupNextRead((pos + 1) & 7);
+    }
+
     return value;
   }
 
   /**
-   * MAME setup_next_read: advance to first enabled position >= rr in read mask
+   * Step 13: MAME setup_next_read — find first enabled position >= rr in READ_MASK.
+   * READ_MASK bit layout (MAME): bit n enables position n.
+   *   Bit 0 → pos 0 (status)       Bit 4 → pos 4 (port A hi)
+   *   Bit 1 → pos 1 (byte ctr lo)  Bit 5 → pos 5 (port B lo)
+   *   Bit 2 → pos 2 (byte ctr hi)  Bit 6 → pos 6 (port B hi)
+   *   Bit 3 → pos 3 (port A lo)
    */
   private setupNextRead(rr: number): void {
-    const mask = this.registers.readMask;
-    if (!mask) return;
-    // RD_STATUS (pos 0) is always enabled; any other position is enabled by its mask bit
-    let pos = rr % 7;
-    while (!this.isReadPositionEnabled(pos as RegisterReadSequence, mask)) {
-      pos = (pos + 1) % 7;
+    const mask = this.regs[RNUM_READ_MASK];
+    if (!mask) return;  // no bits set — leave cursor unchanged
+    while (!(mask & (1 << rr))) {
+      rr = (rr + 1) & 7;
     }
-    this.registerReadSeq = pos as RegisterReadSequence;
-  }
-
-  /**
-   * Advance read sequence to next position based on read mask
-   */
-  private advanceReadSequence(): void {
-    const mask = this.registers.readMask;
-    let nextSeq = (this.registerReadSeq + 1) % 7;
-    
-    // Skip positions not enabled by mask
-    while (nextSeq !== RegisterReadSequence.RD_STATUS && !this.isReadPositionEnabled(nextSeq, mask)) {
-      nextSeq = (nextSeq + 1) % 7;
-    }
-    
-    this.registerReadSeq = nextSeq as RegisterReadSequence;
-  }
-
-  /**
-   * Check if a read position is enabled by the read mask
-   */
-  private isReadPositionEnabled(position: RegisterReadSequence, mask: number): boolean {
-    // Read mask bits:
-    // Bit 6: Counter low
-    // Bit 5: Counter high
-    // Bit 4: Port A address low
-    // Bit 3: Port A address high
-    // Bit 2: Port B address low
-    // Bit 1: Port B address high
-    // Bit 0: (unused/reserved)
-    
-    switch (position) {
-      case RegisterReadSequence.RD_STATUS:
-        return true; // Status is always included
-      case RegisterReadSequence.RD_COUNTER_LO:
-        return (mask & 0x40) !== 0;
-      case RegisterReadSequence.RD_COUNTER_HI:
-        return (mask & 0x20) !== 0;
-      case RegisterReadSequence.RD_PORT_A_LO:
-        return (mask & 0x10) !== 0;
-      case RegisterReadSequence.RD_PORT_A_HI:
-        return (mask & 0x08) !== 0;
-      case RegisterReadSequence.RD_PORT_B_LO:
-        return (mask & 0x04) !== 0;
-      case RegisterReadSequence.RD_PORT_B_HI:
-        return (mask & 0x02) !== 0;
-      default:
-        return false;
-    }
+    this.registerReadSeq = rr as RegisterReadSequence;
   }
   // ============================================================================
   // Bus Control & Arbitration
@@ -1985,6 +1920,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // (remains true if bytes were transferred; cleared only by REINITIALIZE_STATUS_BYTE)
     this.statusFlags.endOfBlockReached = true;
 
+    // Step 14: INT_ON_END_OF_BLOCK — bit 1 of INTERRUPT_CTRL (WR4 interrupt control byte)
+    // Mirrors MAME: if (INT_ON_END_OF_BLOCK) { trigger_interrupt(INT_END_OF_BLOCK); }
+    if (this.regs[RNUM_INTERRUPT_CTRL] & 0x02) {
+      this.ip = 1;
+      this.m_status &= ~0x08;  // MAME trigger_interrupt clears bit 3 (IUS)
+    }
+
     // Auto-restart (MAME AUTO_RESTART handler)
     if (this.registers.autoRestart) {
       this._addressA = this.registers.portAStartAddress;
@@ -2233,9 +2175,18 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // Safety: limit iterations to prevent infinite loops
     } while (this.checkAndHandleAutoRestart() && iteration < maxIterations);
     
-    // If we exited the loop without auto-restart, mark block as complete
+    // If we exited the loop without auto-restart (or hit the safety limit), finalize transfer.
     if (!this.registers.autoRestart || iteration >= maxIterations) {
       this.statusFlags.endOfBlockReached = true;
+      // Step 13: Update m_status as MAME SEQ_FINISH handler does.
+      this.m_status = 0x09;
+      if ((this.regs[RNUM_WR0_BASE] & 0x03) === 1) {
+        this.m_status |= 0x10;  // TM_TRANSFER mode
+      }
+      if (this.registers.autoRestart) {
+        // maxIterations reached with auto-restart active — MAME sets bits 5+4
+        this.m_status |= 0x30;
+      }
     }
 
     // Release bus
