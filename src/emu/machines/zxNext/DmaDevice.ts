@@ -837,6 +837,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         break;
       case RNUM_READ_MASK:
         this.registers.readMask = value & 0x7f;
+        // Step 35: MAME calls setup_next_read(0) after the READ_MASK follow byte is
+        // consumed, re-initialising the read pointer to the first set bit in the new mask.
+        this.setupNextRead(0);
         break;
       default:
         break;
@@ -904,6 +907,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.curFollow = 0;
       }
       this.handleFollowByte(nreg, value);
+      // Step 33: MAME increments m_reset_pointer after every follow byte (wraps at 6).
+      this.resetPointer = (this.resetPointer + 1) % 6;
       // Keep registerWriteSeq in sync with remaining follow state
       this.registerWriteSeq = this.numFollow > 0
         ? this.regSeqFromRegNum(this.regsFollow[this.curFollow])
@@ -937,6 +942,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     //   5. (data & 0x83) == 0x81  → WR4
     //   6. (data & 0xc7) == 0x82  → WR5
     //   7. else                   → WR6
+    // Step 32: MAME resets m_reset_pointer to 0 at the start of every base-byte write.
+    this.resetPointer = 0;
     let regGroup: number;
     if ((value & 0x87) === 0x00) {
       this.writeWR2(value);
@@ -1316,6 +1323,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * RESET_PORT_A_TIMING command (0xC7) - Reset Port A timing to default
    */
   private executeResetPortATiming(): void {
+    // Step 34: MAME writes PORTA_TIMING = REG(1,1) = 0; zero raw register too.
+    this.regs[RNUM_PORT_A_TIMING] = 0;
     this.registers.portATimingCycleLength = CycleLength.CYCLES_3;
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
@@ -1324,6 +1333,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * RESET_PORT_B_TIMING command (0xCB) - Reset Port B timing to default
    */
   private executeResetPortBTiming(): void {
+    // Step 34: MAME writes PORTB_TIMING = REG(2,1) = 0; zero raw register too.
+    this.regs[RNUM_PORT_B_TIMING] = 0;
     this.registers.portBTimingCycleLength = CycleLength.CYCLES_3;
     this.registers.portBPrescalar = 0;
     this.prescalarTimer = 0;

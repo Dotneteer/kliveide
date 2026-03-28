@@ -749,6 +749,38 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_COUNTER_HI);
     });
 
+    // Step 35: READ_MASK_FOLLOWS (0xBB) should call setupNextRead(0)
+    // Note: setupNextRead is only triggered when going through writePort() → handleFollowByte().
+    // Direct writeWR6(0xbb) + writeWR6(mask) uses the legacy registerWriteSeq path and
+    // does NOT trigger setupNextRead automatically (requires explicit INIT_READ_SEQUENCE).
+    it("should reset read pointer to first set bit after READ_MASK_FOLLOWS via writePort", () => {
+      // Write READ_MASK = 0x03 via the MAME-path (writePort → follow queue → handleFollowByte)
+      dmaDevice.writePort(0xbb); // READ_MASK_FOLLOWS — sets up follow queue
+      dmaDevice.writePort(0x03); // mask byte — goes through handleFollowByte, triggers setupNextRead(0)
+
+      // Read pointer must now sit at RD_STATUS (bit 0 is the first set bit in 0x03)
+      expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_STATUS);
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x38); // initial status
+    });
+
+    it("should reset read pointer even when pointer was previously advanced", () => {
+      // Setup: full mask, explicit init, advance pointer past status by reading twice
+      dmaDevice.writeWR6(0xbb);
+      dmaDevice.writeWR6(0x7f);
+      dmaDevice.writeWR6(0xa7);
+      dmaDevice.readStatusByte(); // advance: RD_STATUS → RD_COUNTER_LO
+      dmaDevice.readStatusByte(); // advance: RD_COUNTER_LO → RD_COUNTER_HI
+      expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_COUNTER_HI);
+
+      // Write a new READ_MASK via writePort (MAME path) — Step 35 resets pointer automatically
+      dmaDevice.writePort(0xbb);
+      dmaDevice.writePort(0x01); // only status bit set
+      expect(dmaDevice.getRegisterReadSeq()).toBe(RegisterReadSequence.RD_STATUS);
+      const status = dmaDevice.readStatusByte();
+      expect(status).toBe(0x38);
+    });
+
     it("should advance read sequence on each read", () => {
       dmaDevice.writeWR6(0xbb);
       dmaDevice.writeWR6(0x7f);

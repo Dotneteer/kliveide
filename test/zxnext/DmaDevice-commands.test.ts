@@ -147,6 +147,56 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
       const registers = dmaDevice.getRegisters();
       expect(registers.directionAtoB).toBe(true);
     });
+
+    // Step 32: resetPointer reset to 0 on every base byte
+    it("should reset resetPointer to 0 when any base byte is written", () => {
+      // Advance resetPointer by issuing one RESET (pointer goes 0→1)
+      dmaDevice.writeWR6(0xc3);
+      expect(dmaDevice.getResetPointer()).toBe(1);
+
+      // Writing any base byte via writePort must reset pointer back to 0
+      dmaDevice.writePort(0x7d); // WR0 base byte
+      expect(dmaDevice.getResetPointer()).toBe(0);
+    });
+
+    it("should reset resetPointer to 0 when WR6 command is written after partial RESETs", () => {
+      // RESET via writePort: Step 32 resets pointer to 0, executeReset then increments to 1
+      dmaDevice.writePort(0xc3); // RESET
+      expect(dmaDevice.getResetPointer()).toBe(1);
+      // Any subsequent base byte via writePort resets pointer to 0
+      dmaDevice.writePort(0x87); // ENABLE_DMA (WR6 command)
+      expect(dmaDevice.getResetPointer()).toBe(0);
+    });
+
+    // Step 33: resetPointer incremented after every follow byte
+    it("should increment resetPointer after each follow byte", () => {
+      // WR0 base byte 0x7D: D6+D5+D4+D3 all set → 4 follow bytes; Step 32 → resetPointer=0
+      // 0x7D = 0b01111101: (& 0x87)=0x05≠0x00/0x04, (& 0x80)=0 → dispatches to WR0 ✓
+      dmaDevice.writePort(0x7d);
+      expect(dmaDevice.getResetPointer()).toBe(0);
+
+      dmaDevice.writePort(0x00); // Port A addr lo → resetPointer→1
+      expect(dmaDevice.getResetPointer()).toBe(1);
+      dmaDevice.writePort(0x00); // Port A addr hi → resetPointer→2
+      expect(dmaDevice.getResetPointer()).toBe(2);
+      dmaDevice.writePort(0x04); // Block len lo  → resetPointer→3
+      expect(dmaDevice.getResetPointer()).toBe(3);
+      dmaDevice.writePort(0x00); // Block len hi  → resetPointer→4
+      expect(dmaDevice.getResetPointer()).toBe(4);
+    });
+
+    it("should wrap resetPointer to 0 when follow-byte increment reaches 6", () => {
+      // Use direct writeWR6 calls (bypass Step 32) to set pointer to 5
+      for (let i = 0; i < 5; i++) dmaDevice.writeWR6(0xc3);
+      expect(dmaDevice.getResetPointer()).toBe(5);
+
+      // WR1 base via writePort: Step 32 resets to 0, timing-byte follows enqueued
+      dmaDevice.writePort(0x44); // WR1 base with D6=1 (timing follows)
+      expect(dmaDevice.getResetPointer()).toBe(0);
+      // Step 33: follow byte increments 0 → 1
+      dmaDevice.writePort(0x00); // timing byte
+      expect(dmaDevice.getResetPointer()).toBe(1);
+    });
   });
 
   describe("RESET_PORT_A_TIMING Command (0xC7)", () => {
@@ -225,6 +275,17 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
 
       const registers = dmaDevice.getRegisters();
       expect(registers.portAIsIO).toBe(true);
+    });
+
+    // Step 34: RESET_PORT_A_TIMING must zero raw register REG(1,1)
+    it("should zero raw PORTA_TIMING register (REG(1,1))", () => {
+      // Write a non-zero timing byte via WR1
+      dmaDevice.writeWR1(0x04 | 0x40); // timing follows
+      dmaDevice.writeWR1(0x02);        // timing byte = 0x02 (CYCLES_2)
+      expect(dmaDevice.getRawReg(1, 1)).toBe(0x02);
+
+      dmaDevice.writeWR6(0xc7); // RESET_PORT_A_TIMING
+      expect(dmaDevice.getRawReg(1, 1)).toBe(0);
     });
   });
 
@@ -311,6 +372,17 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
 
       const registers = dmaDevice.getRegisters();
       expect(registers.portBIsIO).toBe(true);
+    });
+
+    // Step 34: RESET_PORT_B_TIMING must zero raw register REG(2,1)
+    it("should zero raw PORTB_TIMING register (REG(2,1))", () => {
+      // Write a non-zero timing byte via WR2 (without prescaler)
+      dmaDevice.writeWR2(0x00 | 0x40); // timing follows
+      dmaDevice.writeWR2(0x03);        // timing byte = 0x03 (CYCLES_1)
+      expect(dmaDevice.getRawReg(2, 1)).toBe(0x03);
+
+      dmaDevice.writeWR6(0xcb); // RESET_PORT_B_TIMING
+      expect(dmaDevice.getRawReg(2, 1)).toBe(0);
     });
   });
 

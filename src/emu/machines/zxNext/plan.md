@@ -870,3 +870,168 @@ Klive only applies the prescaler formula for Burst mode.
 | 29   | Search match formula: AND vs OR mask semantics | 🔴 Critical | ✅ Done |
 | 30   | INT_ON_MATCH gate missing before match interrupt | 🟡 Moderate | ✅ Done |
 | 31   | Status bit 2 (0x04) "match found" is non-standard | 🟢 Low | ✅ Done |
+
+---
+
+## Second Final Cross-Check: Post-Steps-25-31 Gap Analysis
+
+*Performed after Steps 25–31 are complete (16,758 tests passing).*  
+*Full re-read of `z80dma.cpp` (947 lines) and `specnext_dma.cpp` (148 lines) against current `DmaDevice.ts`.*
+
+---
+
+### Step 32: Fix `resetPointer` Not Reset on New Base Byte
+
+**Severity**: 🟡 Moderate
+
+**MAME** (`z80dma.cpp` `write()`, lines ~688-689):
+```cpp
+if (m_num_follow == 0)
+{
+    m_reset_pointer = 0;   // reset at the START of every new base byte
+    // ... dispatch WR0-WR6 ...
+    m_cur_follow = 0;
+}
+```
+Every time a new base byte is received (outside follow mode), `m_reset_pointer` is reset to **0**. This means that the progressive-reset column pointer only advances while the device is in follow mode between base bytes; receiving any new base byte resets the counter.
+
+**Klive** (`writePort()`, `setupFollowQueue()`):
+`resetPointer` is **never reset to 0** when a new base byte arrives. It is only incremented inside `executeReset()`. This means that after partial reset sequences (e.g., fewer than 6 RESET commands), writing any other WR register byte will not reset the pointer to 0.
+
+**Impact**: MAME semantics: `resetPointer` is effectively a "how many RESET commands in a row have been received" counter that resets the moment any other base byte is written. In Klive, `resetPointer` drifts permanently once incremented, even after unrelated register writes. For programs that rely on issuing exactly N consecutive RESET commands to clear N columns, any intervening non-RESET write between RESET commands would break the column pattern differently in Klive vs MAME.
+
+**Fix**:
+In `writePort()`, at the start of the base-byte dispatch (i.e., after the `numFollow > 0` and `registerWriteSeq != IDLE` checks, before the dispatch), add `this.resetPointer = 0`. This mirrors MAME's behavior exactly.
+
+```ts
+// At the top of base-byte dispatch in writePort():
+this.resetPointer = 0;
+// then continue with the WR0-WR6 dispatch...
+```
+
+**Tests to add**: Test that writing WR0 between two RESET commands resets the pointer back to column 0.
+
+---
+
+### Step 33: Fix `resetPointer` Not Incremented After Follow Bytes
+
+**Severity**: 🟢 Low
+
+**MAME** (`z80dma.cpp` `write()`, follow-byte branch, lines ~860-869):
+```cpp
+else  // m_num_follow > 0
+{
+    // ... store follow byte, advance cur_follow, handle special cases ...
+
+    m_reset_pointer++;
+    if (m_reset_pointer >= 6)
+        m_reset_pointer = 0;
+}
+```
+After processing **every** follow byte, `m_reset_pointer` is incremented (and wraps at 6).
+
+**Klive** (`writePort()`, follow-byte branch):
+After `handleFollowByte()` is called, `resetPointer` is **never touched**. It stays at whatever value it had before.
+
+**Impact**: Combined with Step 32, `resetPointer` in MAME tracks "which column has been written most recently" across all register writes (base bytes always reset it to 0; follow bytes increment it). In practice, this affects only the extremely rare case of exercising the progressive RESET mechanism while interleaved with multi-byte register writes. Low practical impact.
+
+**Fix**:
+In `writePort()`, in the follow-byte path (after `handleFollowByte(nreg, value)` returns), add:
+```ts
+this.resetPointer = (this.resetPointer + 1) % 6;
+```
+
+---
+
+### Step 34: Fix `RESET_PORT_A_TIMING` and `RESET_PORT_B_TIMING` Not Zeroing Raw Registers
+
+**Severity**: 🟢 Low
+
+**MAME** (`z80dma.cpp` `write()`):
+```cpp
+case COMMAND_RESET_PORT_A_TIMING:
+    PORTA_TIMING = 0;   // REG(1,1) = 0
+    break;
+case COMMAND_RESET_PORT_B_TIMING:
+    PORTB_TIMING = 0;   // REG(2,1) = 0
+    break;
+```
+Both commands write **zero** to the respective raw timing register `REG(1,1)` / `REG(2,1)`.
+
+**Klive** (`executeResetPortATiming()`, `executeResetPortBTiming()`):
+```ts
+// executeResetPortATiming:
+this.registers.portATimingCycleLength = CycleLength.CYCLES_3;
+
+// executeResetPortBTiming:
+this.registers.portBTimingCycleLength = CycleLength.CYCLES_3;
+this.registers.portBPrescalar = 0;
+this.prescalarTimer = 0;
+```
+Neither method writes `0` to the corresponding raw register index (`regs[RNUM_PORT_A_TIMING]` or `regs[RNUM_PORT_B_TIMING]`). The raw registers retain their old values, so a `REINITIALIZE_READ_SEQUENCE` + `read()` call would return stale timing values.
+
+Note: MAME's `PORTA_TIMING = 0` maps to `CycleLength.CYCLES_3` (i.e., the 3-cycle base), so the decoded field is correct. Only the raw register is wrong.
+
+**Fix**:
+```ts
+// executeResetPortATiming():
+this.regs[RNUM_PORT_A_TIMING] = 0;
+this.registers.portATimingCycleLength = CycleLength.CYCLES_3;
+
+// executeResetPortBTiming():
+this.regs[RNUM_PORT_B_TIMING] = 0;
+this.registers.portBTimingCycleLength = CycleLength.CYCLES_3;
+// (prescaler clear already present — keep it)
+```
+
+**Tests to add**: After `RESET_PORT_A_TIMING`, verify `getRawReg(1, 1) === 0`. After `RESET_PORT_B_TIMING`, verify `getRawReg(2, 1) === 0`.
+
+---
+
+### Step 35: Fix `READ_MASK_FOLLOWS` Missing `setupNextRead(0)` After Follow Byte
+
+**Severity**: 🟡 Moderate
+
+**MAME** (`z80dma.cpp` `write()`, follow-byte branch, lines ~855-859):
+```cpp
+else if (m_regs_follow[m_num_follow] == GET_REGNUM(READ_MASK))
+{
+    setup_next_read(0);
+}
+```
+After the READ_MASK follow byte is consumed (queue becomes empty, `m_num_follow` now 0), MAME checks `m_regs_follow[0]` — which still holds `GET_REGNUM(READ_MASK)` from the `READ_MASK_FOLLOWS (0xBB)` command. When true, it calls `setup_next_read(0)`, which advances `m_read_cur_follow` to the first bit set in the new `READ_MASK`.
+
+This means that writing a new read mask via `READ_MASK_FOLLOWS` automatically re-initialises the read pointer, just as `INIT_READ_SEQUENCE (0xA7)` would. Without this, the read pointer may be left pointing at a position that is no longer valid for the new mask, causing `read()` to return the wrong register on the very next read operation.
+
+**Klive** (`handleFollowByte()`, `case RNUM_READ_MASK:`):
+```ts
+case RNUM_READ_MASK:
+    this.registers.readMask = value & 0x7f;
+    break;
+```
+`setupNextRead(0)` is **not called** after writing the READ_MASK follow byte. The `registerReadSeq` / `readCurFollow` position is unchanged.
+
+**Fix**:
+In `handleFollowByte()`, after updating `registers.readMask`, call `setupNextRead(0)`:
+```ts
+case RNUM_READ_MASK:
+    this.registers.readMask = value & 0x7f;
+    this.regs[RNUM_READ_MASK] = value;   // also sync raw reg (already done by caller, but explicit)
+    this.setupNextRead(0);
+    break;
+```
+
+**Tests to add**:
+1. Write `READ_MASK_FOLLOWS (0xBB)` + mask byte `0x03` (status + byte counter low). Verify that `readPort()` returns the status byte first (read pointer at 0). 
+2. Advance the read pointer by reading once. Write a new `READ_MASK_FOLLOWS` + `0x01`. Verify `readPort()` returns status byte (position reset to 0, not the advanced position).
+
+---
+
+### Updated Summary Table (Steps 32–35)
+
+| Step | Issue | Severity | Status |
+|------|-------|----------|--------|
+| 32   | `resetPointer` not reset to 0 on new base byte | 🟡 Moderate | ✅ Done |
+| 33   | `resetPointer` not incremented after follow bytes | 🟢 Low | ✅ Done |
+| 34   | `RESET_PORT_A/B_TIMING` not zeroing raw registers | 🟢 Low | ✅ Done |
+| 35   | `READ_MASK_FOLLOWS` missing `setupNextRead(0)` after follow byte | 🟡 Moderate | ✅ Done |
