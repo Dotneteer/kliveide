@@ -43,7 +43,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
 
     it("should route WR4 commands through port 0x0B", () => {
       // Configure WR4: Continuous mode, Port B address 0x9000
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xbd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -78,7 +78,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x04);
       machine.portManager.writePort(0x0b, 0x00);
 
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xbd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -168,7 +168,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x10);
 
       // Configure WR4: Continuous mode, Port B address 0x9000
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xbd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -229,7 +229,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       // Configure WR2: Port B increment
       machine.portManager.writePort(0x0b, 0x10);
 
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xbd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -273,7 +273,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x01);
 
       // Configure WR4: Burst mode, Port B
-      machine.portManager.writePort(0x0b, 0x8d);
+      machine.portManager.writePort(0x0b, 0xcd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -342,7 +342,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x10); // WR2
 
       // Configure WR4: Continuous mode (for completeness), Port B address 0x9000
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xbd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -401,7 +401,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x6b, 0x14);
       machine.portManager.writePort(0x6b, 0x10);
 
-      machine.portManager.writePort(0x6b, 0xdd);
+      machine.portManager.writePort(0x6b, 0xbd);
       machine.portManager.writePort(0x6b, 0x00);
       machine.portManager.writePort(0x6b, 0x90);
 
@@ -428,7 +428,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x14);
       machine.portManager.writePort(0x0b, 0x10);
 
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xbd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0xa0); // Different dest address
 

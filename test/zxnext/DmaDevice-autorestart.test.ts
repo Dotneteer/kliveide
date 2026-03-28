@@ -123,9 +123,9 @@ describe("DMA Auto-Restart Feature", () => {
     });
 
     it("should work with B→A direction", () => {
-      // Write source data at Port B
+      // In B→A mode, Port B (destAddr=0x8000) is source, Port A (sourceAddr=0x9000) is destination
       for (let i = 0; i < 4; i++) {
-        machine.memoryDevice.writeMemory(0x9000 + i, 0x20 + i);
+        machine.memoryDevice.writeMemory(0x8000 + i, 0x20 + i);
       }
 
       configureContinuousTransferWithAutoRestart("BtoA", 0x9000, 0x8000, 2, true);
@@ -134,8 +134,8 @@ describe("DMA Auto-Restart Feature", () => {
       const transferred = dma.executeContinuousTransfer();
       
       expect(transferred).toBeGreaterThanOrEqual(4);
-      expect(machine.memoryDevice.readMemory(0x8000)).toBe(0x20);
-      expect(machine.memoryDevice.readMemory(0x8001)).toBe(0x21);
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x20);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x21);
     });
   });
 
@@ -226,7 +226,7 @@ describe("DMA Auto-Restart Feature", () => {
       dma.writeWR2(0x50);
       dma.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows)
       dma.writeWR2(prescalar & 0xff);
-      dma.writeWR4(0xad); // Burst mode
+      dma.writeWR4(0xcd); // Burst mode
       dma.writeWR4((destAddr >> 0) & 0xff);
       dma.writeWR4((destAddr >> 8) & 0xff);
       

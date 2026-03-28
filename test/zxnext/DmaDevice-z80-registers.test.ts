@@ -28,11 +28,11 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
   // ============================================================================
   
   describe("WR0 - Direction Flag", () => {
-    it("should set direction A→B when D6=1", async () => {
+    it("should set direction A→B when D2=1", async () => {
       const m = await createTestNextMachine();
       const code = [
         0x01, 0x6B, 0x00,    // LD BC, 006BH
-        0x3E, 0x79,          // LD A, 79H (WR0: D6=1, D5-D3=111, D2-D0=001 enable Port A address)
+        0x3E, 0x7D,          // LD A, 7DH (WR0: D2=1 → A→B direction)
         0xED, 0x79,          // OUT (C), A
         0x76                 // HALT
       ];
@@ -430,7 +430,7 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
       const m = await createTestNextMachine();
       const code = [
         0x01, 0x6B, 0x00,    // LD BC, 006BH
-        0x3E, 0xAD,          // LD A, ADH (WR4: burst mode)
+        0x3E, 0xCD,          // LD A, ADH (WR4: burst mode)
         0xED, 0x79,          // OUT (C), A
         0x76                 // HALT
       ];
@@ -692,7 +692,7 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
         0x3E, 0x10,          // LD A, 10H
         0xED, 0x79,          // OUT (C), A
         // WR4: Burst mode + Port B address
-        0x3E, 0xAD,          // LD A, ADH
+        0x3E, 0xCD,          // LD A, ADH
         0xED, 0x79,          // OUT (C), A
         0x3E, 0x00,          // LD A, 00H (Port B low)
         0xED, 0x79,          // OUT (C), A

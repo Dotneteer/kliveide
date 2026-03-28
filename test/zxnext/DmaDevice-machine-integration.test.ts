@@ -81,7 +81,7 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
     dma.writeWR2(prescalar); // Prescalar value
 
     // WR4: Burst mode + Port B address
-    dma.writeWR4(0x8d); // Burst mode (bit 6=0)
+    dma.writeWR4(0xcd); // Burst mode (bit 6=0)
     dma.writeWR4((destAddr >> 0) & 0xff); // Port B low
     dma.writeWR4((destAddr >> 8) & 0xff); // Port B high
 

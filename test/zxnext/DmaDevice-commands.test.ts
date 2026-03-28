@@ -371,7 +371,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
 
     it("should not affect transfer mode", () => {
       // Setup - configure burst mode
-      dmaDevice.writeWR4(0x81 | 0x04); // Burst mode + parameters
+      dmaDevice.writeWR4(0xC1 | 0x04); // Burst mode (D6D5=10) + Port B addr low follows
 
       // Execute DISABLE_DMA
       dmaDevice.writeWR6(0x83);
@@ -612,7 +612,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
   describe("LOAD Command (0xCF)", () => {
     it("should load addresses with A→B direction", () => {
       // Configure Port A and Port B addresses
-      dmaDevice.writeWR0(0x40); // D6=1 (A→B direction)
+      dmaDevice.writeWR0(0x44); // D6=1 (A→B direction)
       dmaDevice.writeWR0(0x00); // Port A low = 0x00
       dmaDevice.writeWR0(0x10); // Port A high = 0x10
       dmaDevice.writeWR0(0x00); // Block length low
@@ -652,7 +652,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
 
     it("should reset byte counter to 0", () => {
       // Configure addresses
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -670,7 +670,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should keep register write sequence in IDLE", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -687,7 +687,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
 
     it("should handle multiple LOAD commands", () => {
       // Configure first addresses
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -702,7 +702,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
       expect(transferState.sourceAddress).toBe(0x1000);
 
       // Change Port A address
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x30);
       dmaDevice.writeWR0(0x00);
@@ -715,7 +715,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should work with zero addresses", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -733,7 +733,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should work with maximum addresses", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0x00);
@@ -754,7 +754,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
   describe("CONTINUE Command (0xD3)", () => {
     it("should reset byte counter to 0", () => {
       // Setup addresses first
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -776,7 +776,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should preserve source address", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -796,7 +796,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should preserve destination address", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -821,7 +821,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should work multiple times", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -926,7 +926,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
 
   describe("Command Sequencing", () => {
     it("should execute LOAD then ENABLE in sequence", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -947,7 +947,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should execute LOAD, CONTINUE, then ENABLE", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -975,7 +975,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should allow LOAD after ENABLE", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1014,7 +1014,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should preserve addresses through RESET and LOAD", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1033,7 +1033,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should handle all three commands in quick succession", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1153,7 +1153,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
     it("should allow reading full sequence", () => {
       // Setup addresses and counter
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1282,7 +1282,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
   describe("Read Mask Filtering", () => {
     beforeEach(() => {
       // Setup addresses and counter
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -1405,7 +1405,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
   describe("Command Sequencing", () => {
     it("should allow READ_STATUS_BYTE after LOAD", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);

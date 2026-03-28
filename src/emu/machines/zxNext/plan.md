@@ -471,3 +471,268 @@ Step 17 (update tests)
 - **MAME's progressive RESET**: Requires 6 RESET commands to fully clear all register columns. This is a Z80 DMA quirk we must replicate.
 - **zxnDMA vs Zilog mode**: Selected by port (0x6B vs 0x0B). Key difference: zxnDMA transfers exactly `blockLength` bytes; Zilog mode transfers `blockLength + 1`. The `do_read` override in specnext_dma handles this.
 - **T bit in status**: Per technical details, the T bit (bit 0) is not set in zxnDMA. This is an intentional deviation from the Z80 DMA spec.
+
+---
+
+## Cross-Check: Klive DmaDevice vs MAME specnext_dma / z80dma
+
+Final cross-check performed against:
+- `_input/mame/devices/machine/z80dma.cpp` (base class, 947 lines)
+- `_input/mame/devices/machine/z80dma.h` (base header, 202 lines)
+- `_input/mame/mame/sinclair/specnext_dma.cpp` (specnext override, ~140 lines)
+- `_input/mame/mame/sinclair/specnext_dma.h` (specnext header)
+
+### Severity Legend
+
+- 🔴 **Critical** — Causes wrong behavior for common DMA programming patterns
+- 🟡 **Moderate** — Affects specific features or edge cases that real programs may use
+- 🟢 **Low** — Minor difference, cosmetic, or already handled via alternative approach
+
+---
+
+### Step 18: Fix WR0 Direction Bit (PORTA_IS_SOURCE)
+
+**Severity**: 🔴 Critical
+
+**MAME** (`z80dma.cpp`):
+```c
+#define PORTA_IS_SOURCE  ((WR0 >> 2) & 0x01)   // bit 2 of WR0
+```
+
+**Klive** (`DmaDevice.ts`):
+```ts
+const MASK_WR0_DIRECTION = 0x40;    // bit 6 of WR0 — WRONG
+```
+
+In the Z80 DMA spec, WR0 D7=0 (identifier), D6-D3 are follow-byte selectors, D2 is PORTA_IS_SOURCE (direction), D1-D0 is transfer mode. Klive misinterprets D6 (which is "block length high byte follows") as the direction bit.
+
+**Why existing tests pass**: Most tests use WR0=`0x7D` (A→B, all follow bytes) where D2=1 and D6=1, or `0x39` (B→A) where D2=0 and D6=0 — both bits happen to agree. But for values like `0x79` (D2=0, D6=1), MAME says B→A while Klive says A→B.
+
+**Fix**:
+1. Change `MASK_WR0_DIRECTION` from `0x40` to `0x04` (bit 2).
+2. Update `writeWR0()` to extract direction from D2: `(value & 0x04) !== 0`.
+3. Update `portaIsSource()` accordingly: `registers.directionAtoB` will now reflect D2.
+4. Audit and update the `writeWR0()` comment (currently says "D6: Direction bit").
+5. Also fix the wrong WR0 D5/D4-D3 decoding (searchControl from D5, interruptControl from D4-D3 — see Step 18b).
+6. Update all tests that check `directionAtoB` or use WR0 values where D2 ≠ D6. For example, `DmaDevice-z80-registers.test.ts` uses `0x79` (D6=1, D2=0) and expects A→B — this must be updated.
+
+---
+
+### Step 18b: Fix WR0 Decoded Semantic Bit Fields
+
+**Severity**: 🟢 Low (fields are decoded but never read by transfer logic)
+
+**MAME** (`z80dma.cpp`):
+```
+WR0 bit layout:
+  D7   = 0 (WR0 identifier)
+  D6   = Block Length High byte follows
+  D5   = Block Length Low byte follows
+  D4   = Port A Address High byte follows
+  D3   = Port A Address Low byte follows
+  D2   = PORTA_IS_SOURCE (direction: 0=B→A, 1=A→B)
+  D1-D0 = Transfer Mode (01=Transfer, 10=Search, 11=Search+Transfer)
+```
+
+**Klive** incorrect decoding:
+```
+  D6 → directionAtoB          (should be: follow-byte indicator only)
+  D5 → searchControl          (should be: follow-byte indicator only)
+  D4-D3 → interruptControl    (should be: follow-byte indicators only)
+  D2-D0 → "parameters"        (should be: D2=direction, D1-D0=transfer mode)
+```
+
+The follow-byte queue (`setupFollowQueue`) correctly interprets D3-D6. Only the decoded `RegisterState` fields map wrong bits. Since `searchControl` and `interruptControl` are never read by the transfer logic, this has no functional impact. But it should be fixed for correctness.
+
+**Fix**:
+1. Decode D2 as `directionAtoB` (see Step 18).
+2. No longer decode D5 as `searchControl` or D4-D3 as `interruptControl` from WR0 — these are follow-byte indicators only. If search/interrupt fields are needed, they should come from the correct registers (WR0 D1-D0 for transfer mode, WR4 for interrupt control).
+3. Optionally add `transferModeWR0` decoded from D1-D0 to `RegisterState` for completeness.
+
+---
+
+### Step 19: Fix WR4 Operating Mode Bit (OPERATING_MODE)
+
+**Severity**: 🔴 Critical
+
+**MAME** (`z80dma.cpp`):
+```c
+#define OPERATING_MODE  ((WR4 >> 5) & 0x03)
+// 0b00=Byte, 0b01=Continuous, 0b10=Burst, 0b11=Do not program
+```
+Uses D6-D5 of WR4.
+
+**Klive** (`DmaDevice.ts` `writeWR4()`):
+```ts
+const modeValue = (value >> 4) & 0x01;   // uses D4 — WRONG
+this.registers.transferMode = modeValue === 0 ? TransferMode.BURST : TransferMode.CONTINUOUS;
+```
+Uses D4 of WR4, which in MAME is "INTERRUPT_CTRL follows".
+
+**Why existing tests pass**: For commonly used values like `0xBD` (10**11**1101), D6-D5=01 (Continuous in MAME) and D4=1 (Continuous in Klive) — both agree. But for `0xDD` (11**01**1101), MAME says Burst (D6D5=10) while Klive says Continuous (D4=1).
+
+**Fix**:
+1. Change to `(value >> 5) & 0x03` to extract D6-D5.
+2. Map `0b00` to Byte mode (currently not supported — add `TransferMode.BYTE`), `0b01` to Continuous, `0b10` to Burst, `0b11` to "do not program" / undefined.
+3. The `executeTransferByte()` mode dispatch already uses the correct 2-bit encoding internally, so `configuredOpMode` derivation should work once the register decoding is fixed.
+4. Update tests that use WR4 values where D4 ≠ (D6-D5 mapped mode).
+
+---
+
+### Step 20: Fix WR4 Follow-Byte Queue (Missing INTERRUPT_CTRL)
+
+**Severity**: 🟡 Moderate
+
+**MAME** (`z80dma.cpp` `write()`):
+```c
+// WR4 follow bytes
+if (data & 0x04) m_regs_follow[m_num_follow++] = PORTB_ADDRESS_L;   // D2
+if (data & 0x08) m_regs_follow[m_num_follow++] = PORTB_ADDRESS_H;   // D3
+if (data & 0x10) m_regs_follow[m_num_follow++] = INTERRUPT_CTRL;     // D4
+```
+
+**Klive** (`setupFollowQueue` case 4):
+```ts
+if (baseValue & 0x04) this.regsFollow[this.numFollow++] = RNUM_PORT_B_ADDR_L;
+if (baseValue & 0x08) this.regsFollow[this.numFollow++] = RNUM_PORT_B_ADDR_H;
+// Missing: if (baseValue & 0x10) → RNUM_INTERRUPT_CTRL
+```
+
+When WR4 has D4=1, MAME expects an INTERRUPT_CTRL follow byte. Klive doesn't enqueue it. For a program sending WR4 with D4=1 plus portB address plus an interrupt control byte, the interrupt byte would be misinterpreted as the next register base byte, breaking the command sequence.
+
+Additionally, MAME's interrupt control byte handler re-initializes the follow queue:
+```c
+if (nreg == REGNUM(4,3)) {
+    m_num_follow = 0;
+    if (data & 0x08) m_regs_follow[m_num_follow++] = PULSE_CTRL;
+    if (data & 0x10) m_regs_follow[m_num_follow++] = INTERRUPT_VECTOR;
+    m_cur_follow = 0;
+}
+```
+This chained follow-byte mechanism (INTERRUPT_CTRL → PULSE_CTRL / INTERRUPT_VECTOR) is not implemented in Klive.
+
+**Fix**:
+1. Add `if (baseValue & 0x10) this.regsFollow[this.numFollow++] = RNUM_INTERRUPT_CTRL;` to WR4 setup.
+2. In `handleFollowByte`, when `RNUM_INTERRUPT_CTRL` is received, reset the follow queue and conditionally enqueue `RNUM_PULSE_CTRL` (D3 set) and `RNUM_INTERRUPT_VECTOR` (D4 set), mirroring MAME.
+
+---
+
+### Step 21: Fix Burst Mode Dispatch (Keep Bus While Ready)
+
+**Severity**: 🟡 Moderate
+
+**MAME** (`z80dma.cpp` `clock_w` at `SEQ_TRANS1_WRITE_DEST`):
+```c
+case 0b10: // Burst/Demand
+    if (is_ready())
+        m_dma_seq = SEQ_TRANS1_INC_DEC_SOURCE_ADDRESS;  // stay on bus
+    else {
+        set_busrq(CLEAR_LINE);
+        m_dma_seq = SEQ_WAIT_READY;
+    }
+    break;
+```
+
+**Klive** (`executeTransferByte()` mode dispatch):
+```ts
+case 0b10: // Burst: release bus after each byte
+    this.releaseBus();
+    this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+    break;
+```
+
+In MAME, burst mode keeps the bus and continues to the next byte while ready. In Klive, burst mode releases the bus after every byte, behaving like byte mode. This matters for the specnext prescaler logic: burst mode timing relies on continuous bus ownership with prescaler-timed delays between bytes.
+
+**Fix**:
+1. Change burst case to mirror MAME: if ready, continue to `SEQ_TRANS1_INC_DEC_SOURCE`; else release bus and go to `SEQ_WAIT_READY`.
+2. Verify that `executeBurstTransfer()` still works correctly with this change (the outer loop gives the T-state budget; the inner state machine should naturally stop when the budget is exhausted or the block completes).
+
+---
+
+### Step 22: Add Missing WR6 Interrupt Commands
+
+**Severity**: 🟡 Moderate
+
+**MAME** handles these WR6 commands that Klive ignores:
+
+| Command | Code | MAME Action |
+|---------|------|-------------|
+| DISABLE_INTERRUPTS | `0xAF` | `WR3 &= ~0x20` |
+| ENABLE_INTERRUPTS | `0xAB` | `WR3 \|= 0x20` |
+| RESET_AND_DISABLE_INTERRUPTS | `0xA3` | `WR3 &= ~0x20; m_ip=0; m_ius=0; m_force_ready=0; m_status\|=0x08;` |
+| ENABLE_AFTER_RETI | `0xB7` | `fatalerror` (not implemented in MAME either) |
+
+**Fix**: Add cases for `0xAF`, `0xAB`, and `0xA3` in `writeWR6()`. `0xB7` can remain unimplemented (matches MAME).
+
+---
+
+### Step 23: Fix Interrupt Trigger Gating
+
+**Severity**: 🟢 Low (interrupt-driven DMA is rarely used on the Next)
+
+**MAME** `trigger_interrupt()`:
+```c
+if (!m_ius && INTERRUPT_ENABLE) {
+    m_ip = 1;
+    if (STATUS_AFFECTS_VECTOR)
+        m_vector = (INTERRUPT_VECTOR & 0xf9) | (level << 1);
+    else
+        m_vector = INTERRUPT_VECTOR;
+    m_status &= ~0x08;
+    interrupt_check();
+}
+```
+
+**Klive** `handleTransferFinish()`:
+```ts
+if (this.regs[RNUM_INTERRUPT_CTRL] & 0x02) {
+    this.ip = 1;
+    this.m_status &= ~0x08;
+}
+```
+
+Differences:
+1. Missing `!m_ius` guard — interrupt should not fire if one is already under service.
+2. Missing `INTERRUPT_ENABLE` (WR3 bit 5) guard — interrupts must be globally enabled.
+3. Missing `STATUS_AFFECTS_VECTOR` logic for dynamic vector computation.
+4. Missing `interrupt_check()` call to drive INT output line.
+
+**Fix**: Add the missing guards and vector logic to `handleTransferFinish()`. Factor out a `triggerInterrupt(level)` method mirroring MAME.
+
+---
+
+### Step 24: Fix count=0 Behavior
+
+**Severity**: 🟢 Low
+
+**MAME**: When `m_count=0`, `is_final` is always false (`m_count && ...` short-circuits). Transfer runs indefinitely (acknowledged as a "hack" in MAME comments).
+
+**Klive**: When `_count=0`, `stepDma()` at `SEQ_WAIT_READY` immediately calls `handleTransferFinish()`, terminating the transfer with 0 bytes.
+
+This is arguably more correct behavior. Document as intentional deviation if keeping. The `_count=0` check in `SEQ_WAIT_READY` mirrors the practical reality that transferring 0 bytes should be a no-op.
+
+**Fix**: Keep current behavior but document the deviation. Add a comment referencing the MAME "hack" comment.
+
+---
+
+### Summary Table
+
+| Step | Issue | Severity | Category |
+|------|-------|----------|----------|
+| 18 | WR0 direction bit: D6 → should be D2 | 🔴 Critical | Register decode |
+| 18b | WR0 D5/D4-D3 semantic fields wrong | 🟢 Low | Register decode |
+| 19 | WR4 operating mode: D4 → should be D6-D5 | 🔴 Critical | Register decode |
+| 20 | WR4 missing INTERRUPT_CTRL follow byte | 🟡 Moderate | Follow-byte queue |
+| 21 | Burst mode releases bus instead of keeping it | 🟡 Moderate | State machine |
+| 22 | Missing WR6 interrupt commands (0xAF, 0xAB, 0xA3) | 🟡 Moderate | Commands |
+| 23 | Interrupt trigger missing guards and vector logic | 🟢 Low | Interrupts |
+| 24 | count=0 immediate finish vs MAME infinite loop | 🟢 Low | Edge case |
+
+### Recommended Fix Order
+
+1. **Step 18** + **Step 19** (Critical register decode fixes — must be done together with test updates)
+2. **Step 21** (Burst mode fix)
+3. **Step 20** (WR4 follow-byte chain)
+4. **Step 22** (Missing commands)
+5. **Step 23** (Interrupt gating)
+6. **Step 18b** + **Step 24** (Low priority cleanup)

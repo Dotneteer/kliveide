@@ -46,7 +46,7 @@ function configureBurst(
   dma.writeWR2(0x20);                            // timing: D5=1 → prescaler follows
   dma.writeWR2(prescalar & 0xff);
 
-  dma.writeWR4(0x8d);                            // burst mode, portB addr follows
+  dma.writeWR4(0xcd);                            // burst mode, portB addr follows
   dma.writeWR4((dstAddr >> 0) & 0xff);
   dma.writeWR4((dstAddr >> 8) & 0xff);
 

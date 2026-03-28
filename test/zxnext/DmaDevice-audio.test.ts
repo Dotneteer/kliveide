@@ -47,7 +47,7 @@ describe("DMA Audio Sampling", () => {
     dma.writeWR2(prescalar); // Prescalar value
 
     // WR4: Burst mode + Port B address
-    dma.writeWR4(0x8d); // Burst mode, memory
+    dma.writeWR4(0xcd); // Burst mode, memory
     dma.writeWR4((destAddr >> 0) & 0xff); // Port B low
     dma.writeWR4((destAddr >> 8) & 0xff); // Port B high
 

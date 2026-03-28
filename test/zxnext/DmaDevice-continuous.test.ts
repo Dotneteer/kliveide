@@ -85,22 +85,22 @@ describe("DMA Continuous Transfer Mode", () => {
     });
 
     it("should transfer a block in reverse direction (B→A)", () => {
-      // Setup: Write test data to Port B
-      machine.memoryDevice.writeMemory(0x9000, 0xaa);
-      machine.memoryDevice.writeMemory(0x9001, 0xbb);
-      machine.memoryDevice.writeMemory(0x9002, 0xcc);
+      // Setup: In B→A mode, Port B is the source. Port B addr = destAddr param = 0x8000
+      machine.memoryDevice.writeMemory(0x8000, 0xaa);
+      machine.memoryDevice.writeMemory(0x8001, 0xbb);
+      machine.memoryDevice.writeMemory(0x8002, 0xcc);
 
-      // Configure DMA for B→A
+      // Configure DMA for B→A: Port A (sourceAddr=0x9000) is destination, Port B (destAddr=0x8000) is source
       configureContinuousTransfer("BtoA", 0x9000, 0x8000, 3);
 
       // Execute transfer
       const transferred = dma.executeContinuousTransfer();
 
-      // Verify: All 3 bytes transferred in reverse direction
+      // Verify: 3 bytes transferred from Port B (0x8000) to Port A (0x9000)
       expect(transferred).toBe(3);
-      expect(machine.memoryDevice.readMemory(0x8000)).toBe(0xaa);
-      expect(machine.memoryDevice.readMemory(0x8001)).toBe(0xbb);
-      expect(machine.memoryDevice.readMemory(0x8002)).toBe(0xcc);
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0xaa);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0xbb);
+      expect(machine.memoryDevice.readMemory(0x9002)).toBe(0xcc);
     });
 
     it("should handle single byte transfer", () => {

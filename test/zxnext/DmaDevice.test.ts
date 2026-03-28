@@ -278,23 +278,23 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
   });
 
   describe("WR0 Base Byte - Direction Flag", () => {
-    it("should set direction flag when D6=1 (A->B)", () => {
-      dmaDevice.writeWR0(0x40); // D6=1
+    it("should set direction flag when D2=1 (A->B)", () => {
+      dmaDevice.writeWR0(0x44); // D2=1 (A->B)
       expect(dmaDevice.getRegisters().directionAtoB).toBe(true);
     });
 
-    it("should clear direction flag when D6=0 (B->A)", () => {
-      dmaDevice.writeWR0(0x00); // D6=0
+    it("should clear direction flag when D2=0 (B->A)", () => {
+      dmaDevice.writeWR0(0x00); // D2=0 (B->A)
       expect(dmaDevice.getRegisters().directionAtoB).toBe(false);
     });
 
     it("should set direction flag with other bits set", () => {
-      dmaDevice.writeWR0(0x7f); // D6=1, all other bits set
+      dmaDevice.writeWR0(0x7f); // D2=1 (also D6=1), all other bits set
       expect(dmaDevice.getRegisters().directionAtoB).toBe(true);
     });
 
     it("should transition to R0_BYTE_0 sequence after base byte", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R0_BYTE_0);
     });
   });
@@ -303,7 +303,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     it("should sequence through all WR0 parameters in order", () => {
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.IDLE);
       
-      dmaDevice.writeWR0(0x40); // Base byte
+      dmaDevice.writeWR0(0x44); // Base byte
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R0_BYTE_0);
       
       dmaDevice.writeWR0(0x00); // Port A address low
@@ -320,7 +320,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should return to IDLE after complete WR0 sequence", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -331,7 +331,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
 
     it("should allow starting new WR0 sequence after completing previous one", () => {
       // First sequence
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -346,14 +346,14 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
 
   describe("WR0 Port A Address Handling", () => {
     it("should correctly handle Port A start address - low byte only", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34); // Port A address low byte
       
       expect(dmaDevice.getRegisters().portAStartAddress).toBe(0x0034);
     });
 
     it("should correctly handle Port A start address - complete 16-bit", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34); // Port A address low byte
       dmaDevice.writeWR0(0x12); // Port A address high byte
       dmaDevice.writeWR0(0x00); // Block length low (dummy)
@@ -363,7 +363,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should preserve lower bits when writing high byte of Port A address", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0xff); // Port A address low byte = 0xff
       dmaDevice.writeWR0(0xaa); // Port A address high byte = 0xaa
       dmaDevice.writeWR0(0x00); // Block length low (dummy)
@@ -373,7 +373,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should handle Port A address 0x0000", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -383,7 +383,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should handle Port A address 0xffff", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0x00);
@@ -395,7 +395,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
 
   describe("WR0 Block Length Handling", () => {
     it("should correctly handle block length - low byte only", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00); // Port A address low
       dmaDevice.writeWR0(0x00); // Port A address high
       dmaDevice.writeWR0(0x78); // Block length low byte
@@ -404,7 +404,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should correctly handle block length - complete 16-bit", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00); // Port A address low
       dmaDevice.writeWR0(0x00); // Port A address high
       dmaDevice.writeWR0(0x56); // Block length low byte
@@ -414,7 +414,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should preserve lower bits when writing high byte of block length", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0xff); // Block length low byte = 0xff
@@ -424,7 +424,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should handle block length 0x0000", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -434,7 +434,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should handle block length 0xffff", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0xff);
@@ -446,7 +446,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
 
   describe("WR0 Combined Parameters", () => {
     it("should correctly load all parameters in a single sequence", () => {
-      dmaDevice.writeWR0(0x40); // Base: A->B
+      dmaDevice.writeWR0(0x44); // Base: A->B
       dmaDevice.writeWR0(0xcd); // Port A address low
       dmaDevice.writeWR0(0xab); // Port A address high
       dmaDevice.writeWR0(0x34); // Block length low
@@ -473,7 +473,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
 
     it("should allow overwriting previous WR0 values with new sequence", () => {
       // First write
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -483,7 +483,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
       expect(firstRegisters.portAStartAddress).toBe(0x0000);
       
       // Second write
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
@@ -497,7 +497,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
 
   describe("WR0 Partial Sequences", () => {
     it("should maintain sequence state when partially written", () => {
-      dmaDevice.writeWR0(0x40); // Base
+      dmaDevice.writeWR0(0x44); // Base
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R0_BYTE_0);
       
       dmaDevice.writeWR0(0x11); // Port A address low
@@ -510,7 +510,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should complete partial sequence on subsequent calls", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x11);
       dmaDevice.writeWR0(0x22);
       dmaDevice.writeWR0(0x33);
@@ -535,7 +535,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
       ];
 
       testCases.forEach(testCase => {
-        dmaDevice.writeWR0(testCase.direction ? 0x40 : 0x00);
+        dmaDevice.writeWR0(testCase.direction ? 0x44 : 0x00);
         dmaDevice.writeWR0(testCase.addr & 0xff);
         dmaDevice.writeWR0((testCase.addr >> 8) & 0xff);
         dmaDevice.writeWR0(testCase.length & 0xff);
@@ -551,7 +551,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
 
   describe("WR0 State Isolation", () => {
     it("should not affect other register groups", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
@@ -567,7 +567,7 @@ describe("DmaDevice - Step 2: Register Write Sequencing (WR0)", () => {
     });
 
     it("should preserve reset state after WR0 writes", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x11);
       dmaDevice.writeWR0(0x22);
       dmaDevice.writeWR0(0x33);
@@ -998,7 +998,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
     });
 
     it("should not affect other registers", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x11);
       dmaDevice.writeWR0(0x22);
       dmaDevice.writeWR0(0x33);
@@ -1015,30 +1015,30 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
   });
 
   describe("WR4 - Mode and Port B Address Configuration", () => {
-    it("should set transfer mode - Continuous (D4=1)", () => {
-      dmaDevice.writeWR4(0x10);
+    it("should set transfer mode - Continuous (D6D5=01)", () => {
+      dmaDevice.writeWR4(0x20);
       expect(dmaDevice.getRegisters().transferMode).toBe(TransferMode.CONTINUOUS);
     });
 
-    it("should set transfer mode - Burst (D4=0)", () => {
-      dmaDevice.writeWR4(0x00);
+    it("should set transfer mode - Burst (D6D5=10)", () => {
+      dmaDevice.writeWR4(0x40);
       expect(dmaDevice.getRegisters().transferMode).toBe(TransferMode.BURST);
     });
 
     it("should transition to R4_BYTE_0 after base byte", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       expect(dmaDevice.getRegisterWriteSeq()).toBe(RegisterWriteSequence.R4_BYTE_0);
     });
 
     it("should correctly handle Port B start address - low byte", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x78);
       
       expect(dmaDevice.getRegisters().portBStartAddress).toBe(0x0078);
     });
 
     it("should correctly handle Port B start address - complete 16-bit", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0xcd);
       dmaDevice.writeWR4(0xab);
       
@@ -1046,7 +1046,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
     });
 
     it("should return to IDLE after complete WR4 sequence", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR4(0x00);
       
@@ -1070,7 +1070,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
     });
 
     it("should allow starting new WR4 sequence after completing previous one", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR4(0x00);
 
@@ -1079,7 +1079,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
     });
 
     it("should preserve transfer mode across address writes", () => {
-      dmaDevice.writeWR4(0x10); // Continuous mode
+      dmaDevice.writeWR4(0x20); // Continuous mode
       expect(dmaDevice.getRegisters().transferMode).toBe(TransferMode.CONTINUOUS);
       
       dmaDevice.writeWR4(0x11); // Address low byte
@@ -1147,7 +1147,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
       dmaDevice.writeWR3(0x01);
       
       // Configure WR4
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x34);
       dmaDevice.writeWR4(0x12);
       
@@ -1164,7 +1164,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
 
     it("should preserve previous configuration when setting control registers", () => {
       // Set up Port A configuration via WR0
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x11);
       dmaDevice.writeWR0(0x22);
       dmaDevice.writeWR0(0x33);
@@ -1174,7 +1174,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
 
       // Now configure control registers
       dmaDevice.writeWR3(0x01);
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR5(0x20);
@@ -1191,7 +1191,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
       dmaDevice.writeWR3(0x01);
       expect(dmaDevice.getRegisters().dmaEnabled).toBe(true);
       
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0xaa);
       dmaDevice.writeWR4(0xbb);
       expect(dmaDevice.getRegisters().portBStartAddress).toBe(0xbbaa);
@@ -1206,22 +1206,22 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
 
   describe("WR4 Continuous vs Burst Mode", () => {
     it("should configure Continuous mode correctly", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       expect(dmaDevice.getRegisters().transferMode).toBe(TransferMode.CONTINUOUS);
     });
 
     it("should configure Burst mode correctly", () => {
-      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x40);
       expect(dmaDevice.getRegisters().transferMode).toBe(TransferMode.BURST);
     });
 
     it("should switch between modes in consecutive writes", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR4(0x00);
       expect(dmaDevice.getRegisters().transferMode).toBe(TransferMode.CONTINUOUS);
       
-      dmaDevice.writeWR4(0x00);
+      dmaDevice.writeWR4(0x40);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR4(0x00);
       expect(dmaDevice.getRegisters().transferMode).toBe(TransferMode.BURST);
@@ -1238,7 +1238,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
     });
 
     it("should reset WR4 (transferMode and Port B address) on device reset", () => {
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0xff);
       dmaDevice.writeWR4(0xff);
       
@@ -1275,7 +1275,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
     });
 
     it("should handle WR4 with maximum Port B address", () => {
-      dmaDevice.writeWR4(0x1f); // Mode bit + address bits
+      dmaDevice.writeWR4(0x2f); // Mode bit + address bits
       dmaDevice.writeWR4(0xff);
       dmaDevice.writeWR4(0xff);
       
@@ -1291,7 +1291,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
 
     it("should preserve Port B address across multiple WR4 configurations", () => {
       // First configuration
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x12);
       dmaDevice.writeWR4(0x34);
       
@@ -1310,7 +1310,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
 
   describe("WR3-WR5 State Isolation", () => {
     it("should not affect WR0 registers", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x11);
       dmaDevice.writeWR0(0x22);
       dmaDevice.writeWR0(0x33);
@@ -1319,7 +1319,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
       const registersBeforeControl = dmaDevice.getRegisters();
 
       dmaDevice.writeWR3(0x01);
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR5(0x30);
@@ -1341,7 +1341,7 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
       const registersBeforeControl = dmaDevice.getRegisters();
 
       dmaDevice.writeWR3(0x01);
-      dmaDevice.writeWR4(0x10);
+      dmaDevice.writeWR4(0x20);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR4(0x00);
       dmaDevice.writeWR5(0x30);

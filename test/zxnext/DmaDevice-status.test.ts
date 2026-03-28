@@ -247,7 +247,7 @@ describe("DMA Status Flags and Completion", () => {
       dma.writeWR2(0x50);
       dma.writeWR2(0x00);
       dma.writeWR2(prescalar & 0xff);
-      dma.writeWR4(0xad); // Burst mode
+      dma.writeWR4(0xcd); // Burst mode
       dma.writeWR4((destAddr >> 0) & 0xff);
       dma.writeWR4((destAddr >> 8) & 0xff);
       dma.writeWR5(0x00);

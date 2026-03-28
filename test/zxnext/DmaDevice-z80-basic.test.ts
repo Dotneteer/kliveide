@@ -401,7 +401,7 @@ describe("DMA Z80 Code-Driven Tests - Basic Configuration", () => {
       
       const wr4Code = [
         0x01, 0x6B, 0x00,          // LD BC, 006BH
-        0x3E, 0xAD,                // LD A, ADH (WR4: bit 4 after shift = 0 = BURST)
+        0x3E, 0xCD,                // LD A, ADH (WR4: bit 4 after shift = 0 = BURST)
         0xED, 0x79,                // OUT (C), A
         0x76                       // HALT
       ];

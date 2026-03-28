@@ -84,8 +84,13 @@ export const enum AddressMode {
 
 /**
  * Transfer modes
+ * Matches MAME z80dma OPERATING_MODE encoding (WR4 D6-D5):
+ *   0b00 = Byte (one byte per bus cycle, not yet used by zxnDMA)
+ *   0b01 = Continuous
+ *   0b10 = Burst
  */
 export const enum TransferMode {
+  BYTE = 0,
   CONTINUOUS = 1,
   BURST = 2
 }
@@ -123,16 +128,11 @@ export const enum BusState {
 // ============================================================================
 
 /**
- * WR0 Register direction bit mask
+ * WR0 Register direction bit mask.
+ * Per Z80 DMA spec and MAME: PORTA_IS_SOURCE = (WR0 >> 2) & 0x01 — bit D2.
+ * D2=1 → Port A is source (A→B transfer); D2=0 → Port B is source (B→A).
  */
-const MASK_WR0_DIRECTION = 0x40;    // Direction bit (A->B vs B->A)
-
-/**
- * WR0 Register control bits (additional fields beyond direction)
- */
-const MASK_WR0_SEARCH_CONTROL = 0x20;   // D5: 0=Transfer, 1=Search
-const MASK_WR0_INTERRUPT_MODE = 0x18;   // D4-D3: Interrupt mode
-const SHIFT_WR0_INTERRUPT_MODE = 3;     // Bits to shift for interrupt mode
+const MASK_WR0_DIRECTION = 0x04;    // Direction bit D2 (A->B vs B->A)
 
 /**
  * WR1/WR2 Register configuration bits
@@ -686,9 +686,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       errors.push(`Port B address overflow: 0x${this.registers.portBStartAddress.toString(16)}`);
     }
 
-    // Transfer mode validation
+    // Transfer mode validation (BYTE mode is not yet used by zxnDMA but is a valid Z80 DMA mode)
     if (this.registers.transferMode !== TransferMode.CONTINUOUS && 
-        this.registers.transferMode !== TransferMode.BURST) {
+        this.registers.transferMode !== TransferMode.BURST &&
+        this.registers.transferMode !== TransferMode.BYTE) {
       errors.push(`Invalid transfer mode: ${this.registers.transferMode}`);
     }
 
@@ -993,15 +994,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // First write - store base byte and extract WR0 control bits
       this._tempRegisterByte = value;
       
-      // D6: Direction bit (0=A→B, 1=B→A)
-      const direction = (value & MASK_WR0_DIRECTION) !== 0;
-      this.registers.directionAtoB = direction;
-      
-      // D5: Search control (0=Transfer mode, 1=Search mode)
-      this.registers.searchControl = (value & MASK_WR0_SEARCH_CONTROL) !== 0;
-      
-      // D4-D3: Interrupt control mode
-      this.registers.interruptControl = (value & MASK_WR0_INTERRUPT_MODE) >> SHIFT_WR0_INTERRUPT_MODE;
+      // D2: Direction bit — 1 = Port A is source (A→B); 0 = Port B is source (B→A)
+      // Per Z80 DMA spec and MAME: PORTA_IS_SOURCE = (WR0 >> 2) & 0x01
+      this.registers.directionAtoB = (value & MASK_WR0_DIRECTION) !== 0;
       
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_0;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_0) {
@@ -1137,19 +1132,23 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Write to WR4 register
-   * Base byte: D7=0, D4=transferMode, D3-D0=parameters
-   * Parameters: Port B start address (16-bit)
+   * Base byte: D7=1, D6-D5=operatingMode, D4=interrupt ctrl follows, D3=portB addr hi follows,
+   *            D2=portB addr lo follows, D1=0, D0=1 (WR4 identifier)
+   * Parameters: Port B start address (16-bit), optionally interrupt ctrl byte
    */
   writeWR4(value: number): void {
     if (this.registerWriteSeq === RegisterWriteSequence.IDLE) {
       // Step 1: Store base byte in raw register array
       this.regs[RNUM_WR4_BASE] = value;
-      // First write - store base byte and extract transfer mode
+      // First write - store base byte and extract operating mode
       this._tempRegisterByte = value;
       
-      // D4: Transfer mode (1=Continuous, 2=Burst)
-      const modeValue = (value >> 4) & 0x01;
-      this.registers.transferMode = modeValue === 0 ? TransferMode.BURST : TransferMode.CONTINUOUS;
+      // D6-D5: Operating mode per MAME z80dma: 0b00=Byte, 0b01=Continuous, 0b10=Burst, 0b11=do not program
+      const modeValue = (value >> 5) & 0x03;
+      if (modeValue === 0b01) this.registers.transferMode = TransferMode.CONTINUOUS;
+      else if (modeValue === 0b10) this.registers.transferMode = TransferMode.BURST;
+      else if (modeValue === 0b00) this.registers.transferMode = TransferMode.BYTE;
+      // 0b11 = "do not program": leave transferMode unchanged
       
       this.registerWriteSeq = RegisterWriteSequence.R4_BYTE_0;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R4_BYTE_0) {

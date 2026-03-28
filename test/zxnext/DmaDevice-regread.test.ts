@@ -71,7 +71,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
   describe("Counter Read Operations", () => {
     it("should read counter low byte", () => {
       // Setup counter to known value
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -94,7 +94,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read counter high byte", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -117,7 +117,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read full counter in correct byte order", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -161,7 +161,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
   describe("Port Address Read Operations", () => {
     it("should read Port A address low byte", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -184,7 +184,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read Port A address high byte", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -207,7 +207,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read full Port A address", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -232,7 +232,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read Port B address low byte", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -255,7 +255,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read Port B address high byte", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -278,7 +278,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read full Port B address", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -304,7 +304,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
     it("should respect A->B vs B->A direction in address reading", () => {
       // A->B: Port A is source, Port B is dest
-      dmaDevice.writeWR0(0x40); // A->B
+      dmaDevice.writeWR0(0x44); // A->B
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -325,7 +325,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
   describe("Full Sequence Read", () => {
     it("should read complete sequence with mask 0x7F", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -365,7 +365,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read partial sequence with custom mask 0x50", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -397,7 +397,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should read alternating bytes with mask 0x55", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -434,7 +434,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
   describe("Read Sequence Wraparound", () => {
     it("should wrap to status after completing full sequence", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -530,7 +530,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
     it("should read updated addresses after LOAD", () => {
       // First setup
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -554,7 +554,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       expect(portAHi).toBe(0x10);
 
       // Update Port A address
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -589,7 +589,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
 
   describe("Edge Cases", () => {
     it("should handle reading with all address bits set", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0x00);
@@ -622,7 +622,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should handle reading with zero addresses", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -655,7 +655,7 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
     });
 
     it("should handle multiple read cycles without reinitialize", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x00);
