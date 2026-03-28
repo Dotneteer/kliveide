@@ -131,7 +131,9 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       expect(t).toBe(4); // 1 * 4
     });
 
-    it("prescaler=0 defaults to 1 → 4 T-states (no-prescaler sentinel)", () => {
+    it("prescaler=0 means no prescaler → uses calculateDmaTransferTiming() (Step 28)", () => {
+      // Step 28: prescaler=0 is treated as "not configured" (mirrors MAME where the prescaler
+      // path is gated on portBPrescalar !== 0). Normal timing is used instead.
       machine.memoryDevice.writeMemory(0x8000, 0xdd);
       configureBurst(dma, machine, 0x8000, 0x9000, 1, 0);
 
@@ -139,7 +141,7 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       dma.acknowledgeBus();
       const t = dma.stepDma();
 
-      expect(t).toBe(4); // 0 || 1 = 1 → 1 * 4
+      expect(t).toBe(6); // calculateDmaTransferTiming() for Burst mode
     });
 
     it("prescaler=110 → 440 T-states per byte (8kHz audio)", () => {

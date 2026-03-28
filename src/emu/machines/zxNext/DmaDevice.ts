@@ -236,9 +236,9 @@ interface RegisterState {
   portAStartAddress: number;  // 16-bit starting address
   blockLength: number;  // 16-bit transfer length
   
-  // WR0 - Control bits (D5, D4-D3)
-  searchControl: boolean;  // D5: 0=Transfer mode, 1=Search mode
-  interruptControl: number;  // D4-D3: Interrupt mode (0-3)
+  // WR0 - Control bits (D1-D0)
+  // Note: D3-D6 are follow-byte indicators only (not decoded here).
+  transferModeWR0: number;  // D1-D0: Transfer mode (01=Transfer, 10=Search, 11=Search+Transfer)
 
   // WR1 - Port A configuration
   portAIsIO: boolean;  // true = I/O, false = Memory
@@ -374,8 +374,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       blockLength: 0,
       
       // WR0 control bits
-      searchControl: false,
-      interruptControl: 0,
+      transferModeWR0: 0,
       
       portAIsIO: false,
       portAAddressMode: AddressMode.INCREMENT,
@@ -985,7 +984,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Write to WR0 register
-   * Base byte: D7=0, D6=direction, D5=search control, D4-D3=interrupt mode, D2-D0=parameters
+   * Base byte: D7=0, D6=Block length hi follows, D5=Block length lo follows,
+   *            D4=Port A addr hi follows, D3=Port A addr lo follows,
+   *            D2=PORTA_IS_SOURCE (direction), D1-D0=Transfer mode
    * Parameters: Port A start address (16-bit), block length (16-bit)
    */
   writeWR0(value: number): void {
@@ -998,6 +999,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // D2: Direction bit — 1 = Port A is source (A→B); 0 = Port B is source (B→A)
       // Per Z80 DMA spec and MAME: PORTA_IS_SOURCE = (WR0 >> 2) & 0x01
       this.registers.directionAtoB = (value & MASK_WR0_DIRECTION) !== 0;
+
+      // D1-D0: Transfer mode (01=Transfer, 10=Search, 11=Search+Transfer)
+      // Step 18b: D3-D6 are follow-byte indicators only, not decoded as control fields.
+      this.registers.transferModeWR0 = value & 0x03;
       
       this.registerWriteSeq = RegisterWriteSequence.R0_BYTE_0;
     } else if (this.registerWriteSeq === RegisterWriteSequence.R0_BYTE_0) {
@@ -1632,6 +1637,50 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     return true;  // No external RDY signal in this emulator
   }
 
+  // ============================================================================
+  // Step 23: MAME-aligned interrupt trigger
+  // ============================================================================
+
+  /**
+   * Trigger a DMA interrupt — mirrors MAME z80dma_device::trigger_interrupt(level).
+   *
+   * Guards:
+   *   1. !m_ius — do not fire if an interrupt is already under service.
+   *   2. INTERRUPT_ENABLE (WR3 bit D5) — global interrupt enable gate.
+   *
+   * Vector computation:
+   *   If STATUS_AFFECTS_VECTOR (INTERRUPT_CTRL bit D2 of WR4 follow byte):
+   *     vector = (INTERRUPT_VECTOR & 0xF9) | (level << 1)
+   *   Else:
+   *     vector = INTERRUPT_VECTOR
+   *
+   * @param level  Interrupt level (0 = INT_END_OF_BLOCK, as used by MAME)
+   */
+  private triggerInterrupt(level: number): void {
+    // Guard 1: do not fire if an interrupt is already under service
+    if (this.ius) return;
+
+    // Guard 2: INTERRUPT_ENABLE — WR3 bit D5
+    const interruptEnable = (this.regs[RNUM_WR3_BASE] & 0x20) !== 0;
+    if (!interruptEnable) return;
+
+    // Set interrupt pending
+    this.ip = 1;
+
+    // STATUS_AFFECTS_VECTOR — INTERRUPT_CTRL bit D2 (WR4 interrupt control byte)
+    const statusAffectsVector = (this.regs[RNUM_INTERRUPT_CTRL] & 0x04) !== 0;
+    if (statusAffectsVector) {
+      this.regs[RNUM_INTERRUPT_VECTOR] =
+        (this.regs[RNUM_INTERRUPT_VECTOR] & 0xF9) | ((level & 0x03) << 1);
+    }
+    // (else: INTERRUPT_VECTOR remains as programmed)
+
+    // MAME trigger_interrupt clears bit 3 of m_status (IUS flag in status byte)
+    this.m_status &= ~0x08;
+    // Note: interrupt_check() drives the INT output line; not applicable
+    // in a pure-emulator context without external interrupt routing.
+  }
+
   /**
    * Get the total number of bytes to transfer
    * In legacy mode, adds 1 to blockLength for compatibility
@@ -1812,7 +1861,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         // When delay is active, do NOT request the bus.  An external setDmaDelay(false) call
         // is needed to allow the transfer to continue.
         if (this.dmaDelay) return 0;
-        // Zero-length transfer: finish immediately without requesting bus
+        // Step 24: Zero-length transfer — intentional deviation from MAME.
+        // MAME: when m_count=0, is_final is always false (m_count && ... short-circuits),
+        // so the transfer runs indefinitely (acknowledged as a "hack" in MAME comments).
+        // We treat count=0 as an immediate no-op / completion, which is more practical:
+        // transferring 0 bytes should finish cleanly rather than loop forever.
         if (this._count === 0) {
           this.handleTransferFinish();
           return 0;
@@ -1871,14 +1924,36 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.dmaSeq = DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE;
     this.performReadCycle();
 
+    // Step 26: Search mode — check for byte match after reading.
+    // transferModeWR0: 0b01=Transfer, 0b10=Search, 0b11=Search+Transfer.
+    // Bit 1 (0x02) of transferModeWR0 means "search active".
+    const searchActive = (this.registers.transferModeWR0 & 0x02) !== 0;
+    let matchFound = false;
+    if (searchActive) {
+      const maskByte  = this.regs[RNUM_MASK_BYTE];
+      const matchByte = this.regs[RNUM_MATCH_BYTE];
+      matchFound = (this._transferDataByte & maskByte) === (matchByte & maskByte);
+      if (matchFound) {
+        this.m_status |= 0x04;     // set match-found bit in status
+        this.triggerInterrupt(1);  // INT_MATCH = level 1
+      }
+    }
+
     // is_final: true when this is the last byte to transfer.
     // (byteCounter + 1) == count means "writing this byte will bring counter to count".
-    const isFinal = this._count !== 0 &&
-                    (this.transferState.byteCounter + 1) === this._count;
+    // Also final when search mode produced a match and STOP_ON_MATCH (WR5 D2) is set.
+    const stopOnMatch = (this.regs[RNUM_WR5_BASE] & 0x04) !== 0;
+    const isFinal = (this._count !== 0 &&
+                     (this.transferState.byteCounter + 1) === this._count)
+                 || (searchActive && matchFound && stopOnMatch);
 
-    // INC_DEC_DEST + WRITE_DEST: do_write (updates addresses + increments byteCounter)
+    // INC_DEC_DEST + WRITE_DEST: do_write (updates addresses + increments byteCounter).
+    // Pure Search mode (transferModeWR0=0b10, bit 0 clear) skips the actual memory write
+    // but still updates addresses and the counter (mirrors MAME do_write() behaviour).
+    const doWrite = (this.registers.transferModeWR0 & 0x01) !== 0  // Transfer bit
+                 || this.registers.transferModeWR0 === 0;            // mode 0 = default transfer
     this.dmaSeq = DmaSeq.SEQ_TRANS1_WRITE_DEST;
-    this.performWriteCycle();
+    this.performWriteCycle(doWrite);
 
     // Configured operating mode from decoded registers (handles WR4 byte encoding correctly)
     const configuredOpMode = this.registers.transferMode === TransferMode.BURST ? 0b10
@@ -1927,9 +2002,12 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // Return T-states based on the CONFIGURED mode (not the effective/overridden mode).
-    // Burst mode always uses prescaler timing, even for the final byte.
-    if (configuredOpMode === 0b10) {
-      const prescalar = this.registers.portBPrescalar || 1;
+    // Step 28: When ZXN_PRESCALER is non-zero, apply prescaler timing for ALL operating
+    // modes, not just Burst — mirroring MAME specnext_dma_device::clock_w() which gates
+    // the prescaler delay on `m_r2_portB_preescaler_s != 0` regardless of mode.
+    // The bus is only released (forcing WAIT_READY) for Burst mode.
+    if (this.registers.portBPrescalar !== 0) {
+      const prescalar = this.registers.portBPrescalar;
       return Math.floor((prescalar * PRESCALAR_REFERENCE_FREQ) / PRESCALAR_AUDIO_FREQ);
     }
     return this.calculateDmaTransferTiming();
@@ -1944,7 +2022,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.disableDma();  // stops state machine and releases bus (does not clear dmaEnabled)
 
     // MAME: m_status = 0x09 | (!is_ready << 1) | (TM_TRANSFER ? 0x10 : 0)
-    this.m_status = 0x09;
+    // Preserve the match-found bit (0x04) if a search found a match this block,
+    // so the interrupt handler can distinguish match-stop from end-of-block.
+    const matchBit = this.m_status & 0x04;
+    this.m_status = 0x09 | matchBit;
     // In our emulator is_ready() is always true, so bit 1 stays 0.
     const transferMode = this.regs[RNUM_WR0_BASE] & 0x03;
     if (transferMode === 1) {  // TM_TRANSFER
@@ -1955,11 +2036,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // (remains true if bytes were transferred; cleared only by REINITIALIZE_STATUS_BYTE)
     this.statusFlags.endOfBlockReached = true;
 
-    // Step 14: INT_ON_END_OF_BLOCK — bit 1 of INTERRUPT_CTRL (WR4 interrupt control byte)
+    // Step 14 / Step 23: INT_ON_END_OF_BLOCK — bit 1 of INTERRUPT_CTRL (WR4 interrupt control byte)
     // Mirrors MAME: if (INT_ON_END_OF_BLOCK) { trigger_interrupt(INT_END_OF_BLOCK); }
     if (this.regs[RNUM_INTERRUPT_CTRL] & 0x02) {
-      this.ip = 1;
-      this.m_status &= ~0x08;  // MAME trigger_interrupt clears bit 3 (IUS)
+      this.triggerInterrupt(0); // INT_END_OF_BLOCK = 0
     }
 
     // Auto-restart (MAME AUTO_RESTART handler)
@@ -2031,9 +2111,12 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Uses PORTA_IS_SOURCE (WR0 bit 2) per MAME: read from _addressA when port A
    * is the source, else from _addressB.
    *
-   * Includes specnext_dma do_read override: in zxnDMA mode, if (byteCounter+1)==count
-   * the byte counter is pre-incremented here, which causes the is_final check in
-   * executeTransferSequence() to trigger at the right time.
+   * Note: the docstring previously stated that a byte-counter pre-increment was
+   * applied here (matching specnext_dma::do_read()). That pre-increment is NOT
+   * present in this implementation. The equivalent effect is achieved by the
+   * isFinal check in executeTransferByte(), which evaluates
+   * `(byteCounter + 1) === _count` between the read and write phases — the same
+   * condition MAME would reach after do_read()'s pre-increment.
    *
    * @returns The data byte read from the source
    */
@@ -2108,8 +2191,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * via existing function pointers for backward-compat with older tests.
    *
    * Finally, byteCounter is incremented (16-bit wraparound).
+   *
+   * @param writeData  When false (Search-only mode, Step 26), skip the actual
+   *                   memory/IO write but still update addresses and counters.
    */
-  performWriteCycle(): void {
+  performWriteCycle(writeData: boolean = true): void {
     // Ensure function pointers are up-to-date (for tests that bypass LOAD)
     this.updateAddressFunctionPointers();
 
@@ -2127,11 +2213,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       isIO = this.registers.portAIsIO;
     }
 
-    // Write to memory or IO port
-    if (isIO) {
-      this.machine.portManager.writePort(destAddress, this._transferDataByte);
-    } else {
-      this.machine.memoryDevice.writeMemory(destAddress, this._transferDataByte);
+    // Write to memory or IO port (skipped in pure Search mode)
+    if (writeData) {
+      if (isIO) {
+        this.machine.portManager.writePort(destAddress, this._transferDataByte);
+      } else {
+        this.machine.memoryDevice.writeMemory(destAddress, this._transferDataByte);
+      }
     }
 
     // Step 9: Update legacy transferState.source/dest via old function pointers

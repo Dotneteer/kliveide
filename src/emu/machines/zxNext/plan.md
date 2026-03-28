@@ -736,3 +736,134 @@ This is arguably more correct behavior. Document as intentional deviation if kee
 4. **Step 22** (Missing commands)
 5. **Step 23** (Interrupt gating)
 6. **Step 18b** + **Step 24** (Low priority cleanup)
+
+---
+
+## Final Cross-Check: Post-Implementation Gap Analysis
+
+*Performed after Steps 18–24 were completed and all 16 740 tests pass.*  
+*Source of truth: `_input/mame/mame/sinclair/specnext_dma.cpp` + knowledge of z80dma base class.*
+
+---
+
+### Step 25: Connect DMA Interrupt Pending to Z80 INT Line
+
+**Severity**: 🟡 Moderate
+
+**MAME** (`z80dma.cpp` `trigger_interrupt()`):
+```cpp
+m_ip = 1;
+interrupt_check();   // drives the physical INT output pin
+```
+`interrupt_check()` asserts the INT output line, which the Z80 CPU samples at the start of each instruction.
+
+**Klive** (`triggerInterrupt()`):
+```ts
+this.ip = 1;
+// Note: interrupt_check() drives the INT output line; not applicable
+```
+`ip` is set to `1` but `ZxNextMachine.shouldRaiseInterrupt()` only checks `this.composedScreenDevice.pulseIntActive` — it never reads `dmaDevice.getIp()`. Therefore a DMA end-of-block interrupt never reaches the Z80.
+
+**Fix**: In `ZxNextMachine.shouldRaiseInterrupt()`, OR the DMA pending flag into the result:
+```ts
+shouldRaiseInterrupt(): boolean {
+  return this.composedScreenDevice.pulseIntActive
+      || (this.dmaDevice.getIp() === 1);
+}
+```
+Optionally also clear `ip` once the Z80 acknowledges the interrupt (IACKcycle) by hooking  `afterInstruction` or the IM2 vector read. For now, simply ORing the flag makes DMA interrupts visible to the CPU.
+
+**Tests to add**: Verify that after `executeContinuousTransfer()` with INTERRUPT_ENABLE=1 and INT_ON_END_OF_BLOCK=1, `shouldRaiseInterrupt()` returns `true`.
+
+---
+
+### Step 26: Implement Search Mode (WR0 D1-D0 = 10 / 11)
+
+**Severity**: 🟢 Low  
+*(Search mode is very rarely used on ZX Spectrum Next; practically all DMA use is pure transfer.)*
+
+**MAME** (`z80dma.cpp`):
+When `TRANSFER_MODE = TM_SEARCH (0b10)` or `TM_SEARCH_TRANSFER (0b11)`:
+- After each read byte, compare `(data & MASK_BYTE) == MATCH_BYTE`.
+- On match: set `m_status` match-found bit; call `trigger_interrupt(INT_MATCH)` (level 1); stop transfer.
+- `STOP_ON_MATCH` (WR5 D2): if set, the transfer halts on a match even if not end-of-block.
+
+**Klive**: `transferModeWR0` is decoded from WR0 D1-D0 (Step 18b) but `performReadCycle()` and `executeTransferByte()` ignore it entirely — all transfers are treated as pure Transfer mode.
+
+**Fix** (when implementing):
+1. After `performReadCycle()` in `executeTransferByte()`, check `transferModeWR0`:
+   - If 2 or 3 (search mode active): compare `(_transferDataByte & regs[RNUM_MASK_BYTE]) === regs[RNUM_MATCH_BYTE]`.
+   - On match: set status match bit, call `triggerInterrupt(1)` (INT_MATCH level), set `isFinal=true`.
+2. For pure Search mode (mode=2), skip the write phase entirely when executing a search.
+3. For Search+Transfer (mode=3), write the byte AND check for match.
+
+---
+
+### Step 27: Fix performReadCycle() Misleading Docstring
+
+**Severity**: 🟢 Low (documentation/maintenance)
+
+**Issue**: The docstring of `performReadCycle()` states:
+> *"Includes specnext_dma do_read override: in zxnDMA mode, if (byteCounter+1)==count the byte counter is pre-incremented here, which causes the is_final check in executeTransferSequence() to trigger at the right time."*
+
+This is **incorrect** — the function does NOT pre-increment the byte counter. The MAME `specnext_dma::do_read()` pre-increment was deliberately **not** ported because Klive achieves the same effect via the `isFinal` check computed in `executeTransferByte()` between the read and write phases:
+```ts
+const isFinal = this._count !== 0 &&
+                (this.transferState.byteCounter + 1) === this._count;
+```
+The two approaches are semantically equivalent: MAME: counter is `count` before the write → `is_final` triggers. Klive: counter is `count-1` before the write → `(count-1)+1 == count` → `isFinal` triggers.
+
+**Fix**: Update the `performReadCycle()` docstring to accurately describe that no pre-increment happens and explain why the behavior is equivalent.
+
+---
+
+### Step 28: Prescaler Timing Applies to All Modes (Minor MAME Deviation)
+
+**Severity**: 🟢 Low  
+*(Prescaler is only ever programmed for audio DMA, which exclusively uses Burst mode.)*
+
+**MAME** (`specnext_dma_device::clock_w()`):
+```cpp
+const bool may_prescaled = m_dma_seq == SEQ_TRANS1_WRITE_DEST && m_r2_portB_preescaler_s;
+// ...
+if (may_prescaled && m_dma_seq != SEQ_FINISH) {
+    // prescaler delay — active for ALL operating modes when prescaler != 0
+    if (OPERATING_MODE == 0b10) // Burst only: also release bus during wait
+        set_busrq(CLEAR_LINE);
+    // reschedule timer for prescaler interval
+}
+```
+When `ZXN_PRESCALER != 0`, MAME inserts a prescaler delay between bytes regardless of operating mode (Continuous, Burst, or Byte). The bus is only released for Burst mode.
+
+**Klive** (`executeTransferByte()` T-state return):
+```ts
+if (configuredOpMode === 0b10) {   // Burst only
+    const prescalar = this.registers.portBPrescalar || 1;
+    return Math.floor((prescalar * PRESCALAR_REFERENCE_FREQ) / PRESCALAR_AUDIO_FREQ);
+}
+return this.calculateDmaTransferTiming();   // other modes: no prescaler
+```
+Klive only applies the prescaler formula for Burst mode.
+
+**Impact**: Minimal. The ZXN prescaler register is populated exclusively via the WR2 timing-byte follow path (D5=1 in the timing byte), which is a Next-specific audio-DMA extension designed for Burst mode. No real Next software programs the prescaler with Continuous or Byte mode.
+
+**Fix** (if needed for completeness): When `registers.portBPrescalar !== 0`, use the prescaler formula for all modes, not just Burst. Keep the current Burst-specific bus-release behavior unchanged.
+
+---
+
+### Updated Summary Table
+
+| Step | Issue | Severity | Status |
+|------|-------|----------|--------|
+| 18   | WR0 direction bit: D6 → D2 | 🔴 Critical | ✅ Done |
+| 18b  | WR0 semantic fields: removed searchControl/interruptControl, added transferModeWR0 | 🟢 Low | ✅ Done |
+| 19   | WR4 operating mode: D4 → D6-D5 | 🔴 Critical | ✅ Done |
+| 20   | WR4 INTERRUPT_CTRL follow byte missing from queue | 🟡 Moderate | ✅ Done |
+| 21   | Burst mode: release bus → keep bus while ready | 🟡 Moderate | ✅ Done |
+| 22   | Missing WR6 interrupt commands 0xAF/0xAB/0xA3 | 🟡 Moderate | ✅ Done |
+| 23   | Interrupt trigger missing !ius / INTERRUPT_ENABLE guards | 🟢 Low | ✅ Done |
+| 24   | count=0 immediate finish vs MAME infinite loop | 🟢 Low | ✅ Done (documented intentional deviation) |
+| 25   | DMA `ip` flag not connected to Z80 INT line | 🟡 Moderate | ⬜ New |
+| 26   | Search mode (WR0 D1-D0=10/11) not implemented | 🟢 Low | ⬜ New |
+| 27   | performReadCycle() docstring incorrectly claims pre-increment | 🟢 Low | ⬜ New |
+| 28   | Prescaler timing only applied for Burst, not all modes | 🟢 Low | ⬜ New |

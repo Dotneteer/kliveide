@@ -307,3 +307,128 @@ describe("DMA Timing and Contention", () => {
     });
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 28: Prescaler timing applies to all operating modes
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("DmaDevice - Step 28: Prescaler timing for all modes", () => {
+  let machine: TestZxNextMachine;
+  let dma: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dma = machine.dmaDevice;
+  });
+
+  /**
+   * Configure a transfer with the given operating mode and prescaler.
+   * Returns T-states from executeContinuousTransfer's internal stepDma calls;
+   * we verify by directly testing calculateDmaTransferTiming vs prescaler path.
+   */
+  function configurePrescaledTransfer(continuousMode: boolean, prescaler: number) {
+    dma.writeWR6(0xc7); dma.writeWR6(0xcb);
+    dma.writeWR0(0x7d);
+    dma.writeWR0(0x00); dma.writeWR0(0x80); // Port A = 0x8000
+    dma.writeWR0(0x01); dma.writeWR0(0x00); // block = 1
+    dma.writeWR1(0x14);
+    // WR2 with timing byte D5=1 (prescaler follows): 0x50 | timing_follows(0x40) | D5=0x20
+    // 0x10 = Port B memory increment.  Timing=0x60: D6=1 (timing follows), D5=1 (prescaler follows)
+    dma.writeWR2(0x50); // Port B: memory, increment, timing byte follows
+    dma.writeWR2(0x60 | (prescaler > 0 ? 0x20 : 0x00)); // timing byte: D6=timing_follows was already handled; use 0x20 for prescaler
+    if (prescaler > 0) dma.writeWR2(prescaler);
+    // WR4: Continuous (0b01) or Burst (0b10)
+    const wr4 = continuousMode ? 0xad : 0xcd; // Continuous=0xAD (D6D5=01), Burst=0xCD (D6D5=10)
+    dma.writePort(wr4);
+    dma.writePort(0x00); dma.writePort(0x90); // Port B = 0x9000
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+    dma.writeWR6(0xcf);
+    dma.writeWR6(0x87);
+  }
+
+  it("Burst mode with prescaler returns prescaler-based T-states", () => {
+    // Independent unit test: directly set portBPrescalar and call executeTransferByte
+    dma.writeWR6(0xc7); dma.writeWR6(0xcb);
+    dma.writeWR0(0x7d);
+    dma.writeWR0(0x00); dma.writeWR0(0x80);
+    dma.writeWR0(0x04); dma.writeWR0(0x00);
+    dma.writeWR1(0x14);
+    dma.writeWR2(0x50);
+    dma.writeWR2(0x60 | 0x20); // timing byte: D5=1 (prescaler follows)
+    dma.writeWR2(0x04);        // prescaler = 4
+    dma.writePort(0xcd); // WR4: Burst mode (D6D5=10), portB addr follows
+    dma.writePort(0x00); dma.writePort(0x90);
+    [0x11, 0x22, 0x33, 0x44].forEach((v, i) => machine.memoryDevice.writeMemory(0x8000 + i, v));
+    dma.writeWR6(0xcf);
+    dma.writeWR6(0x87);
+    // prescaler=4 → floor((4 * 3_500_000) / 875_000) = floor(16) = 16 T-states per byte
+    const expectedTStates = Math.floor((4 * 3500000) / 875000);
+    // executeTransferByte is called by stepDma; we track by running manually
+    const machine2 = machine;
+    machine2.dmaDevice.acknowledgeBus();
+    machine2.dmaDevice.acknowledgeBus(); // ensure bus is available
+    // Step once to get into transfer state
+    let tStates = 0;
+    machine2.dmaDevice.requestBus();
+    machine2.dmaDevice.acknowledgeBus();
+    for (let i = 0; i < 10; i++) {
+      machine2.dmaDevice.requestBus();
+      machine2.dmaDevice.acknowledgeBus();
+      const t = machine2.dmaDevice.stepDma();
+      if (t > 0) { tStates = t; break; }
+    }
+    expect(tStates).toBe(expectedTStates);
+  });
+
+  it("Continuous mode with non-zero prescaler uses prescaler T-states (Step 28)", () => {
+    // Configure continuous mode with prescaler=2
+    dma.writeWR6(0xc7); dma.writeWR6(0xcb);
+    dma.writeWR0(0x7d);
+    dma.writeWR0(0x00); dma.writeWR0(0x80);
+    dma.writeWR0(0x01); dma.writeWR0(0x00);
+    dma.writeWR1(0x14);
+    dma.writeWR2(0x50);
+    dma.writeWR2(0x60 | 0x20); // timing: D5=1 (prescaler follows)
+    dma.writeWR2(0x02);        // prescaler = 2
+    dma.writePort(0xad); // WR4: Continuous
+    dma.writePort(0x00); dma.writePort(0x90);
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+    dma.writeWR6(0xcf); dma.writeWR6(0x87);
+    // prescaler=2 → floor((2 * 3_500_000) / 875_000) = 8 T-states per byte
+    const expectedTStates = Math.floor((2 * 3500000) / 875000);
+    let tStates = 0;
+    machine.dmaDevice.requestBus();
+    machine.dmaDevice.acknowledgeBus();
+    for (let i = 0; i < 10; i++) {
+      machine.dmaDevice.requestBus();
+      machine.dmaDevice.acknowledgeBus();
+      const t = machine.dmaDevice.stepDma();
+      if (t > 0) { tStates = t; break; }
+    }
+    expect(tStates).toBe(expectedTStates);
+  });
+
+  it("Continuous mode with zero prescaler uses standard memory timing", () => {
+    // prescaler=0 → no prescaler → standard 3+3=6 T-states
+    dma.writeWR6(0xc7); dma.writeWR6(0xcb);
+    dma.writeWR0(0x7d);
+    dma.writeWR0(0x00); dma.writeWR0(0x80);
+    dma.writeWR0(0x01); dma.writeWR0(0x00);
+    dma.writeWR1(0x14); dma.writeWR2(0x10);
+    dma.writePort(0xad);
+    dma.writePort(0x00); dma.writePort(0x90);
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+    dma.writeWR6(0xcf); dma.writeWR6(0x87);
+    let tStates = 0;
+    machine.dmaDevice.requestBus();
+    machine.dmaDevice.acknowledgeBus();
+    for (let i = 0; i < 10; i++) {
+      machine.dmaDevice.requestBus();
+      machine.dmaDevice.acknowledgeBus();
+      const t = machine.dmaDevice.stepDma();
+      if (t > 0) { tStates = t; break; }
+    }
+    expect(tStates).toBe(6); // 3 (mem read) + 3 (mem write) = 6
+  });
+});
+

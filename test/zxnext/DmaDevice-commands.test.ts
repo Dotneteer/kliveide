@@ -1506,3 +1506,210 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
     });
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 23: Interrupt Trigger Gating
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("DmaDevice - Step 23: Interrupt Trigger Gating", () => {
+  let machine: TestZxNextMachine;
+  let dmaDevice: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dmaDevice = machine.dmaDevice;
+  });
+
+  /**
+   * Configure a 1-byte Continuous transfer with INT_ON_END_OF_BLOCK set.
+   * Uses writePort() for the WR4 sequence so the follow-byte queue handles
+   * the INTERRUPT_CTRL byte correctly (D4=1 in WR4 base byte).
+   * @param enableInterrupt  true → 0xAB (ENABLE_INTERRUPTS), false → 0xAF (DISABLE_INTERRUPTS)
+   */
+  function configureEobInterrupt(enableInterrupt: boolean) {
+    dmaDevice.writeWR6(0xc7); // RESET_PORT_A_TIMING
+    dmaDevice.writeWR6(0xcb); // RESET_PORT_B_TIMING
+
+    dmaDevice.writeWR0(0x7d);
+    dmaDevice.writeWR0(0x00);  // Port A addr low  (0x8000)
+    dmaDevice.writeWR0(0x80);  // Port A addr high
+    dmaDevice.writeWR0(0x01);  // Block length low = 1
+    dmaDevice.writeWR0(0x00);  // Block length high
+
+    dmaDevice.writeWR1(0x14);  // Port A: memory, increment
+    dmaDevice.writeWR2(0x10);  // Port B: memory, increment
+
+    // WR4 using writePort() so the follow-byte queue runs.
+    // 0xBD = 1011_1101: D6D5=01 (Continuous), D4=1 (INTERRUPT_CTRL follows), D3D2=11 (both addr)
+    dmaDevice.writePort(0xbd); // WR4 base — triggers setupFollowQueue: [portB_L, portB_H, INTERRUPT_CTRL]
+    dmaDevice.writePort(0x00); // portB addr low  (0x9000)
+    dmaDevice.writePort(0x90); // portB addr high
+    dmaDevice.writePort(0x02); // INTERRUPT_CTRL = 0x02 (bit 1 = INT_ON_END_OF_BLOCK)
+    // Note: INTERRUPT_CTRL.D3=0, D4=0 → no further follow bytes (PULSE_CTRL/INTERRUPT_VECTOR)
+
+    // WR3 interrupt enable via WR6 commands (Step 22)
+    if (enableInterrupt) {
+      dmaDevice.writeWR6(0xab); // ENABLE_INTERRUPTS  → WR3 |= 0x20
+    } else {
+      dmaDevice.writeWR6(0xaf); // DISABLE_INTERRUPTS → WR3 &= ~0x20
+    }
+
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+
+    dmaDevice.writeWR6(0xcf); // LOAD
+    dmaDevice.writeWR6(0x87); // ENABLE_DMA
+  }
+
+  describe("INTERRUPT_ENABLE (WR3 D5) gate", () => {
+    it("interrupt fires when INTERRUPT_ENABLE=1 and INT_ON_END_OF_BLOCK=1", () => {
+      configureEobInterrupt(true);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+    });
+
+    it("interrupt does not fire when INTERRUPT_ENABLE=0 (WR3 D5=0)", () => {
+      configureEobInterrupt(false);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(0);
+    });
+
+    it("ip is cleared by RESET_AND_DISABLE_INTERRUPTS (0xA3)", () => {
+      configureEobInterrupt(true);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+      dmaDevice.writeWR6(0xa3); // RESET_AND_DISABLE_INTERRUPTS: ip=0, ius=0, WR3 D5=0
+      expect(dmaDevice.getIp()).toBe(0);
+    });
+  });
+
+  describe("IUS state", () => {
+    it("ius is initially 0 and cleared by RESET_AND_DISABLE_INTERRUPTS", () => {
+      expect(dmaDevice.getIus()).toBe(0);
+      dmaDevice.writeWR6(0xa3);
+      expect(dmaDevice.getIus()).toBe(0);
+    });
+
+    it("RESET (0xC3) clears ip and ius", () => {
+      configureEobInterrupt(true);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+      dmaDevice.writeWR6(0xc3); // RESET
+      expect(dmaDevice.getIp()).toBe(0);
+      expect(dmaDevice.getIus()).toBe(0);
+    });
+  });
+
+  describe("STATUS_AFFECTS_VECTOR (INTERRUPT_CTRL bit D2)", () => {
+    it("stores interrupt vector when INTERRUPT_VECTOR follow byte provided", () => {
+      dmaDevice.writeWR6(0xc7); dmaDevice.writeWR6(0xcb);
+      dmaDevice.writeWR0(0x7d);
+      dmaDevice.writeWR0(0x00); dmaDevice.writeWR0(0x80);
+      dmaDevice.writeWR0(0x01); dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR1(0x14);
+      dmaDevice.writeWR2(0x10);
+
+      // WR4: 0xBD + portB addr + INTERRUPT_CTRL (D4=1 → INTERRUPT_VECTOR follows)
+      dmaDevice.writePort(0xbd);
+      dmaDevice.writePort(0x00); dmaDevice.writePort(0x90);
+      // INTERRUPT_CTRL: D4=1 (INTERRUPT_VECTOR follows), D1=1 (INT_ON_END_OF_BLOCK)
+      dmaDevice.writePort(0x12); // 0001_0010: D4=1 (vector follows), D1=1 (EOB)
+      dmaDevice.writePort(0xE4); // INTERRUPT_VECTOR = 0xE4
+
+      dmaDevice.writeWR6(0xab); // ENABLE_INTERRUPTS
+      machine.memoryDevice.writeMemory(0x8000, 0x42);
+      dmaDevice.writeWR6(0xcf); dmaDevice.writeWR6(0x87);
+
+      dmaDevice.executeContinuousTransfer();
+
+      expect(dmaDevice.getIp()).toBe(1); // interrupt fired
+    });
+  });
+
+  describe("DISABLE_INTERRUPTS / ENABLE_INTERRUPTS interaction (Step 22)", () => {
+    it("0xAF disables interrupt trigger even if INT_ON_END_OF_BLOCK=1", () => {
+      configureEobInterrupt(true);  // configure with ENABLE, then...
+      dmaDevice.writeWR6(0xaf);    // ...disable before transfer
+      dmaDevice.writeWR6(0xcf);   // re-LOAD
+      dmaDevice.writeWR6(0x87);   // re-ENABLE_DMA
+
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(0);
+    });
+
+    it("0xAB enables interrupt trigger so it fires at end of transfer", () => {
+      configureEobInterrupt(true); // configures with ENABLE_INTERRUPTS
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 25: DMA interrupt-pending flag drives Z80 INT line
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("DmaDevice - Step 25: DMA ip connected to Z80 INT line", () => {
+  let machine: TestZxNextMachine;
+  let dmaDevice: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dmaDevice = machine.dmaDevice;
+  });
+
+  /** Wire up a 1-byte EOB-interrupt transfer identical to configureEobInterrupt(true) above. */
+  function configureEobInterruptForMachine() {
+    dmaDevice.writeWR6(0xc7); dmaDevice.writeWR6(0xcb);
+    dmaDevice.writeWR0(0x7d);
+    dmaDevice.writeWR0(0x00); dmaDevice.writeWR0(0x80);
+    dmaDevice.writeWR0(0x01); dmaDevice.writeWR0(0x00);
+    dmaDevice.writeWR1(0x14);
+    dmaDevice.writeWR2(0x10);
+    dmaDevice.writePort(0xbd);
+    dmaDevice.writePort(0x00); dmaDevice.writePort(0x90);
+    dmaDevice.writePort(0x02); // INTERRUPT_CTRL: INT_ON_END_OF_BLOCK
+    dmaDevice.writeWR6(0xab); // ENABLE_INTERRUPTS
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+    dmaDevice.writeWR6(0xcf); dmaDevice.writeWR6(0x87);
+  }
+
+  it("shouldRaiseInterrupt returns false before transfer", () => {
+    configureEobInterruptForMachine();
+    expect(machine.shouldRaiseInterrupt()).toBe(false);
+  });
+
+  it("shouldRaiseInterrupt returns true after EOB interrupt fires", () => {
+    configureEobInterruptForMachine();
+    dmaDevice.executeContinuousTransfer();
+    expect(dmaDevice.getIp()).toBe(1);
+    expect(machine.shouldRaiseInterrupt()).toBe(true);
+  });
+
+  it("shouldRaiseInterrupt returns false when ip is cleared by RESET_AND_DISABLE_INTERRUPTS", () => {
+    configureEobInterruptForMachine();
+    dmaDevice.executeContinuousTransfer();
+    expect(machine.shouldRaiseInterrupt()).toBe(true);
+    dmaDevice.writeWR6(0xa3); // RESET_AND_DISABLE_INTERRUPTS: ip=0, ius=0
+    expect(machine.shouldRaiseInterrupt()).toBe(false);
+  });
+
+  it("shouldRaiseInterrupt returns false when INTERRUPT_ENABLE=0 (no DMA ip set)", () => {
+    // Configure without enabling interrupts
+    dmaDevice.writeWR6(0xc7); dmaDevice.writeWR6(0xcb);
+    dmaDevice.writeWR0(0x7d);
+    dmaDevice.writeWR0(0x00); dmaDevice.writeWR0(0x80);
+    dmaDevice.writeWR0(0x01); dmaDevice.writeWR0(0x00);
+    dmaDevice.writeWR1(0x14);
+    dmaDevice.writeWR2(0x10);
+    dmaDevice.writePort(0xbd);
+    dmaDevice.writePort(0x00); dmaDevice.writePort(0x90);
+    dmaDevice.writePort(0x02);
+    dmaDevice.writeWR6(0xaf); // DISABLE_INTERRUPTS
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+    dmaDevice.writeWR6(0xcf); dmaDevice.writeWR6(0x87);
+
+    dmaDevice.executeContinuousTransfer();
+    expect(dmaDevice.getIp()).toBe(0);
+    expect(machine.shouldRaiseInterrupt()).toBe(false);
+  });
+});

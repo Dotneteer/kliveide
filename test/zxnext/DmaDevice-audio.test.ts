@@ -170,12 +170,13 @@ describe("DMA Audio Sampling", () => {
       expect(tStates).toBe(4);
     });
 
-    it("should handle prescalar = 0 (defaults to 1)", () => {
+    it("should handle prescalar = 0 (no prescalar configured)", () => {
       // --- Arrange
       const prescalar = 0;
       
-      // Prescalar 0 is treated as 1: (1 * 3500000) / 875000 = 4 T-states
-      const expectedTStates = 4;
+      // Step 28: Prescalar 0 means "not configured" — falls through to calculateDmaTransferTiming().
+      // For Burst mode that returns 6 T-states (normal burst timing).
+      const expectedTStates = 6;
 
       machine.memoryDevice.writeMemory(0x8000, 0x80);
       configureAudioPlayback(0x8000, 0x9000, 1, prescalar);

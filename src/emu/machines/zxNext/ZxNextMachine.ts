@@ -1333,7 +1333,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt(): boolean {
-    return this.composedScreenDevice.pulseIntActive;
+    // Step 25: OR in DMA interrupt-pending flag so a DMA end-of-block interrupt
+    // (triggered by triggerInterrupt()) drives the Z80 INT line, mirroring MAME's
+    // interrupt_check() which asserts the physical INT output pin.
+    return this.composedScreenDevice.pulseIntActive
+        || (this.dmaDevice.getIp() === 1);
   }
 
   /**
