@@ -155,9 +155,9 @@ describe("DMA Continuous Transfer Mode", () => {
 
       dma.executeContinuousTransfer();
 
-      // Byte counter should be 2 after transfer
+      // Step 41: MAME byte_counter ends at count+1 after completion
       const transferState = dma.getTransferState();
-      expect(transferState.byteCounter).toBe(2);
+      expect(transferState.byteCounter).toBe(3);
     });
 
     it("should update addresses during transfer", () => {

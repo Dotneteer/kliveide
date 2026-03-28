@@ -348,7 +348,8 @@ describe("DMA Burst Transfer Mode", () => {
 
       const transferState = dma.getTransferState();
       expect(transferState.byteCounter).toBeGreaterThan(0);
-      expect(transferState.byteCounter).toBeLessThanOrEqual(5);
+      // Step 41: MAME byte_counter ends at count+1 after completion
+      expect(transferState.byteCounter).toBeLessThanOrEqual(6);
     });
 
     it("should update addresses during burst transfer", () => {

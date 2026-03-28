@@ -1100,8 +1100,337 @@ private m_status: number = 0;   // Raw status byte; set to 0x38 only by COMMAND_
 
 ---
 
-### Updated Summary Table (Steps 36)
+### Step 37: `triggerInterrupt()` uses wrong bit for STATUS_AFFECTS_VECTOR
+
+**File**: `src/emu/machines/zxNext/DmaDevice.ts`
+
+**MAME behavior** (`z80dma.cpp`):
+```cpp
+#define STATUS_AFFECTS_VECTOR   (INTERRUPT_CTRL & 0x20)   // bit D5
+
+void z80dma_device::trigger_interrupt(int level)
+{
+    if (!m_ius && INTERRUPT_ENABLE)
+    {
+        // ...
+        if (STATUS_AFFECTS_VECTOR)  // INTERRUPT_CTRL bit D5 = 0x20
+            m_vector = (INTERRUPT_VECTOR & 0xf9) | (level << 1);
+        else
+            m_vector = INTERRUPT_VECTOR;
+        // ...
+    }
+}
+```
+
+Z80 DMA INTERRUPT_CTRL byte bit assignments (from MAME macros):
+- D0 (0x01) = `INT_ON_MATCH`
+- D1 (0x02) = `INT_ON_END_OF_BLOCK`
+- D2 (0x04) = `PULSE_GENERATED`
+- D5 (0x20) = `STATUS_AFFECTS_VECTOR`
+- D6 (0x40) = `INT_ON_READY`
+
+**Klive behavior** (`triggerInterrupt()` at ~line 1671):
+```ts
+// STATUS_AFFECTS_VECTOR — INTERRUPT_CTRL bit D2 (WR4 interrupt control byte)
+const statusAffectsVector = (this.regs[RNUM_INTERRUPT_CTRL] & 0x04) !== 0;
+```
+
+Klive uses **bit D2 (0x04)** — which is actually `PULSE_GENERATED` in MAME, not `STATUS_AFFECTS_VECTOR`. The correct check should use **bit D5 (0x20)**.
+
+**Impact**: When `PULSE_GENERATED` (D2) is set in INTERRUPT_CTRL, Klive incorrectly modifies the interrupt vector to encode the interrupt level. When `STATUS_AFFECTS_VECTOR` (D5) is actually programmed, Klive does NOT modify the vector. In practice ZX Next firmware rarely uses this feature, so real-world impact is minimal.
+
+**Fix**:
+```ts
+// WRONG:
+const statusAffectsVector = (this.regs[RNUM_INTERRUPT_CTRL] & 0x04) !== 0;
+// CORRECT (MAME: STATUS_AFFECTS_VECTOR = INTERRUPT_CTRL & 0x20):
+const statusAffectsVector = (this.regs[RNUM_INTERRUPT_CTRL] & 0x20) !== 0;
+```
+
+Also correct the docstring comment on `triggerInterrupt()`:
+```ts
+// STATUS_AFFECTS_VECTOR (INTERRUPT_CTRL bit D5 of WR4 follow byte):
+```
+
+---
+
+### Step 38: `reset()` does not clear `ip`, `ius`, `forceReady`, and `resetPointer`
+
+**File**: `src/emu/machines/zxNext/DmaDevice.ts`
+
+**MAME behavior** (`z80dma_device::device_reset()`):
+```cpp
+void z80dma_device::device_reset()
+{
+    m_timer->reset();
+    m_status = 0;
+    // ...
+    m_force_ready = 0;     // ← hardware reset clears force_ready
+    // ...
+    m_num_follow = 0;
+    m_read_cur_follow = 0;
+    m_reset_pointer = 0;   // ← hardware reset clears the progressive column pointer
+    // ...
+    WR3 &= ~0x20;
+    m_ip = 0;              // ← hardware reset clears interrupt pending
+    m_ius = 0;             // ← hardware reset clears interrupt under service
+    m_vector = 0;
+}
+```
+
+**Klive behavior** (`reset()` method):
+```ts
+reset(): void {
+    this.registers = this.initializeRegisters();
+    // ...
+    this.regs.fill(0);      // clears WR3 D5 (interrupt enable) ✅
+    this.m_status = 0;      // ✅ (Step 36)
+    // Missing:
+    // this.ip = 0;          ← NOT reset
+    // this.ius = 0;         ← NOT reset
+    // this.forceReady = false; ← NOT reset
+    // this.resetPointer = 0; ← NOT reset
+}
+```
+
+These fields are only 0 after `new DmaDevice()` construction (from TypeScript field initializers). If `reset()` is called after the device has been running (e.g., hardware reset while interrupts were active), stale `ip`, `ius`, `forceReady`, and `resetPointer` values persist.
+
+**Fix**: Add the following lines to `reset()`:
+```ts
+// Step 38: MAME device_reset() explicitly clears these (not just field-initialised).
+this.ip = 0;
+this.ius = 0;
+this.forceReady = false;
+this.resetPointer = 0;
+```
+
+---
+
+## Final Cross-Check (Cross-Check #4) — Steps 37–38
+
+This cross-check compared the complete MAME `z80dma.cpp` + `specnext_dma.cpp` source against the current Klive `DmaDevice.ts` (after Step 36 was applied). Areas examined:
+- `device_reset()` / `reset()` — ip, ius, forceReady, resetPointer cleared?
+- `triggerInterrupt()` — STATUS_AFFECTS_VECTOR bit mask
+- `COMMAND_RESET` progressive column reset mechanics
+- `COMMAND_LOAD` / `COMMAND_CONTINUE` / `COMMAND_ENABLE_DMA` semantics
+- `specnext_dma::write()` — prescaler inject-before-parent ordering
+- SEQ_FINISH / `handleTransferFinish()` — m_status construction
+- `readStatusByte()` / `setupNextRead()` — READ_MASK advance guard
+- `COMMAND_REINITIALIZE_STATUS_BYTE` / `COMMAND_RESET_AND_DISABLE_INTERRUPTS`
+- Daisy-chain interrupt (z80daisy_irq_ack / z80daisy_irq_reti) — not applicable in emulator context
+
+**All areas matched correctly except two (Steps 37 and 38).**
+
+---
+
+### Step 39: `triggerInterrupt()` modifies `regs[RNUM_INTERRUPT_VECTOR]` directly instead of a separate `m_vector` field
+
+**File**: `src/emu/machines/zxNext/DmaDevice.ts`
+
+**MAME behavior** (`z80dma_device::trigger_interrupt()`):
+```cpp
+void z80dma_device::trigger_interrupt(int level)
+{
+    if (!m_ius && INTERRUPT_ENABLE)
+    {
+        m_ip = 1;
+        if (STATUS_AFFECTS_VECTOR)
+            m_vector = (INTERRUPT_VECTOR & 0xf9) | (level << 1);  // ← writes to m_vector
+        else
+            m_vector = INTERRUPT_VECTOR;                           // ← writes to m_vector
+        // INTERRUPT_VECTOR register (REG(4,4)) is NEVER modified here
+    }
+}
+```
+
+`m_vector` is a separate `uint8_t` field in MAME, reset to 0 in `device_reset()`. The INTERRUPT_VECTOR register itself is never touched by `trigger_interrupt()`.
+
+**Klive behavior**:
+```ts
+if (statusAffectsVector) {
+    this.regs[RNUM_INTERRUPT_VECTOR] =            // ← modifies the register directly!
+        (this.regs[RNUM_INTERRUPT_VECTOR] & 0xF9) | ((level & 0x03) << 1);
+}
+```
+
+Klive writes back into the stored INTERRUPT_VECTOR register. If `trigger_interrupt` is called multiple times with STATUS_AFFECTS_VECTOR set, subsequent calls start from the already-modified register (although for level=0 the result converges to the same value). More importantly, a subsequent `z80daisy_irq_ack()` (if added) would need to read `m_vector`, not the register.
+
+**Fix**: Add `private m_vector: number = 0;` field, compute the vector into it in `triggerInterrupt()` without modifying the register, and clear it in `reset()`.
+
+```ts
+// In triggerInterrupt():
+if (statusAffectsVector) {
+    this.m_vector = (this.regs[RNUM_INTERRUPT_VECTOR] & 0xF9) | ((level & 0x03) << 1);
+} else {
+    this.m_vector = this.regs[RNUM_INTERRUPT_VECTOR];
+}
+```
+
+---
+
+### Step 40: Address mode 0b11 (WR1/WR2 D5=1/D4=1, "do not program") treated as Decrement instead of Fixed
+
+**File**: `src/emu/machines/zxNext/DmaDevice.ts`
+
+**MAME behavior** (`z80dma.cpp` macros):
+```cpp
+#define PORTA_FIXED  (((WR1 >> 4) & 0x02) == 0x02)  // true when D5=1, regardless of D4
+#define PORTA_INC    (WR1 & 0x10)                    // D4
+```
+
+So for WR1 D5-D4 = 0b11: `PORTA_FIXED = 1` → address delta = 0 (Fixed). Same for 0b10.
+
+**Klive behavior** (`performWriteCycle()`):
+```ts
+const portADelta = this.registers.portAAddressMode === AddressMode.FIXED ? 0  // only exact 2
+                 : this.registers.portAAddressMode === AddressMode.INCREMENT ? 1 : -1;
+// If portAAddressMode = 3 (D5=1,D4=1) → falls through to -1 (Decrement) ← wrong
+```
+
+`getAddressUpdateFunction()` already handles mode 3 correctly (via `default:` → `noOpAddressUpdate`). Only the direct `_addressA`/`_addressB` delta computation in `performWriteCycle()` is wrong.
+
+**Fix**: Change `=== AddressMode.FIXED` to `>= AddressMode.FIXED` in `performWriteCycle()`:
+```ts
+const portADelta = this.registers.portAAddressMode >= AddressMode.FIXED ? 0   // 2 or 3 = Fixed
+                 : this.registers.portAAddressMode === AddressMode.INCREMENT ? 1 : -1;
+const portBDelta = this.registers.portBAddressMode >= AddressMode.FIXED ? 0
+                 : this.registers.portBAddressMode === AddressMode.INCREMENT ? 1 : -1;
+```
+
+**Impact**: Only triggers when WR1/WR2 D5-D4 = 0b11, which is a "do not program" encoding. No valid ZX Next firmware programs this, so real-world impact is nil. Severity: 🟢 Very Low.
+
+---
+
+## Final Cross-Check (Cross-Check #5) — Steps 39–40
+
+This cross-check compared the complete MAME `z80dma.cpp` + `specnext_dma.cpp` source against the current Klive `DmaDevice.ts` (after Steps 36–38 applied). Areas examined:
+- `triggerInterrupt()` — vector storage: separate `m_vector` field vs. in-place register modification
+- `performWriteCycle()` — address mode 0b11 Fixed vs. Decrement
+- `rdy_write_callback` — m_status bit 1 (no RDY in emulator, intentional)
+- `specnext write()` follow-byte ordering — prescaler inject before parent ✓
+- `specnext COMMAND_ENABLE_DMA` — byte counter zeroed after parent ✓
+- `specnext device_reset()` — dma_mode, dma_delay, prescaler, timer_0 all cleared ✓
+- Auto-restart address reload ✓
+- `COMMAND_RESET_AND_DISABLE_INTERRUPTS` — all fields ✓
+- SEQ_FINISH `is_final` with count=0 (documented intentional deviation, Step 24) ✓
+- WR5 AUTO_RESTART and READY_ACTIVE_HIGH bits ✓
+
+**All areas matched correctly except two (Steps 39 and 40).**
+
+---
+
+### Updated Summary Table (Steps 36–40)
 
 | Step | Issue | Severity | Status |
 |------|-------|----------|--------|
 | 36   | `reset()` leaves `m_status = 0x38` instead of `0` (MAME: `device_reset` sets 0) | 🟢 Low | ✅ Done |
+| 37   | `triggerInterrupt()` uses `INTERRUPT_CTRL & 0x04` (PULSE_GENERATED) instead of `& 0x20` (STATUS_AFFECTS_VECTOR) | 🟢 Low | ✅ Done |
+| 38   | `reset()` does not clear `ip`, `ius`, `forceReady`, `resetPointer` (MAME `device_reset` zeros all) | 🟢 Low | ✅ Done |
+| 39   | `triggerInterrupt()` modifies `regs[RNUM_INTERRUPT_VECTOR]` directly; MAME uses separate `m_vector` field | 🟢 Low | ✅ Done |
+| 40   | Address mode 0b11 (WR1/WR2 D5=1/D4=1) treated as Decrement instead of Fixed in `performWriteCycle()` | 🟢 Very Low | ✅ Done |
+
+---
+
+## Cross-Check #6 — Step 41
+
+Exhaustive element-by-element comparison of every function, state transition, register handler,
+command handler, follow-byte path, and specnext override against MAME sources.
+
+### Areas verified (all matched):
+
+- `device_reset()` / `reset()` — all field clears ✓
+- `enable()` / `disable()` — timer vs seq, bus release conditions ✓
+- `is_ready()` — always-true in Klive (no RDY pin), intentional ✓
+- `trigger_interrupt()` — guards, vector computation, status bit clear ✓
+- `do_read()` / `performReadCycle()` — PORTA_IS_SOURCE dispatch, memory/IO ✓
+- `do_transfer_write()` — dest selection, memory/IO ✓
+- `do_search()` — OR-mask semantics, INT_ON_MATCH gate ✓
+- `do_write()` — TRANSFER_MODE dispatch, address delta, byte counter ✓
+- `clock_w()` / `stepDma()` state machine:
+  - SEQ_WAIT_READY bus-skip for continuous after first byte ✓
+  - SEQ_REQUEST_BUS / SEQ_WAITING_ACK ✓
+  - SEQ_TRANS1_WRITE_DEST mode dispatch (byte/continuous/burst/final) ✓
+  - SEQ_FINISH → disable + status + INT_ON_END_OF_BLOCK + AUTO_RESTART ✓
+- `write()` / `writePort()` base-byte dispatch masks and ordering ✓
+- Follow-byte mechanism: curFollow/numFollow, REGNUM(4,3) chain, READ_MASK ✓
+- specnext `write()` override: ENABLE_DMA bc=0, RESET prescaler=0, timing D5 prescaler ✓
+- specnext `do_read()` pre-increment — equivalent via `(bc+1)===count` formula ✓
+- specnext `clock_w()` dma_delay at WAIT_READY + post-write intercept ✓
+- specnext prescaler timing (different formula, same intent) ✓
+- All WR6 commands: RESET, LOAD, CONTINUE, ENABLE/DISABLE_DMA,
+  READ_STATUS_BYTE, INITIATE_READ_SEQUENCE, REINITIALIZE_STATUS_BYTE,
+  RESET_PORT_A/B_TIMING, FORCE_READY, ENABLE/DISABLE_INTERRUPTS,
+  RESET_AND_DISABLE_INTERRUPTS, READ_MASK_FOLLOWS ✓
+- `read()` / `readStatusByte()` — positions 0-6, advance condition, setup_next_read ✓
+- PULSE_GENERATED — not implemented (not used by ZXN DMA), intentional ✓
+- Daisy chain (irq_ack/irq_reti) — not needed (Klive reads ip/ius directly) ✓
+
+### Step 41: Final byte_counter value off by 1 after transfer completion
+
+**MAME behaviour** (`z80dma.cpp` `clock_w` + `do_write` + `specnext_dma::do_read`):
+
+In zxnDMA mode:
+```cpp
+// specnext_dma::do_read() — pre-increments on last byte:
+if (m_dma_mode == 0 && (m_byte_counter + 1) == m_count)
+    m_byte_counter++;
+
+// clock_w SEQ_TRANS1_WRITE_DEST:
+const bool is_final = m_count && m_byte_counter == m_count;
+do_write();          // always increments m_byte_counter
+```
+
+Trace for count=3 (zxnDMA):
+- Byte 1: do_read (0+1≠3), is_final=(0==3)?No, do_write→bc=1
+- Byte 2: do_read (1+1≠3), is_final=(1==3)?No, do_write→bc=2
+- Byte 3: do_read (2+1==3 → pre-incr → bc=3), is_final=(3==3)?YES, do_write→bc=4
+- Final byte_counter = **4** (count + 1)
+
+In legacy (base z80dma, no pre-increment):
+- Byte 3: is_final=(2==3)?No, do_write→bc=3
+- Byte 4: is_final=(3==3)?YES, do_write→bc=4
+- Final byte_counter = **4** (count + 1), total bytes = count + 1
+
+**Klive behaviour** (`DmaDevice.ts` `executeTransferByte` + `performWriteCycle`):
+
+```typescript
+const isFinal = (this._count !== 0 &&
+                 (this.transferState.byteCounter + 1) === this._count);
+this.performWriteCycle(doWrite);  // increments byteCounter
+```
+
+Trace for count=3 (zxnDMA):
+- Byte 1: isFinal=(0+1==3)?No, write→bc=1
+- Byte 2: isFinal=(1+1==3)?No, write→bc=2
+- Byte 3: isFinal=(2+1==3)?YES, write→bc=3
+- Final byte_counter = **3** (count), missing the extra increment
+
+**Root cause**: Klive's `(bc+1)===count` formula correctly determines is_final (transferring
+exactly the right number of bytes), but the final byte_counter value is one less than MAME because
+MAME's `do_write()` always runs after the `is_final` check, adding one final increment that Klive
+does not replicate.
+
+**Fix**: After `performWriteCycle()` in `executeTransferByte()`, when `isFinal` is true,
+add one extra byte_counter increment:
+```typescript
+if (isFinal) {
+  this.transferState.byteCounter = (this.transferState.byteCounter + 1) & MASK_16BIT;
+}
+```
+
+This makes `byte_counter` end at `count + 1` (matching MAME) without changing the transfer count.
+
+**Impact**: Observable via `readStatusByte()` positions 1-2 (byte counter lo/hi) if software
+reads the DMA byte counter after transfer completion. Auto-restart resets byte_counter to 0,
+so the difference is only visible when auto-restart is off. Severity: 🟢 Low.
+
+### Updated Summary Table (Steps 36–41)
+
+| Step | Issue | Severity | Status |
+|------|-------|----------|--------|
+| 36   | `reset()` leaves `m_status = 0x38` instead of `0` | 🟢 Low | ✅ Done |
+| 37   | `triggerInterrupt()` uses wrong bit mask for STATUS_AFFECTS_VECTOR | 🟢 Low | ✅ Done |
+| 38   | `reset()` does not clear `ip`, `ius`, `forceReady`, `resetPointer` | 🟢 Low | ✅ Done |
+| 39   | `triggerInterrupt()` modifies register directly; needs separate `m_vector` | 🟢 Low | ✅ Done |
+| 40   | Address mode 0b11 treated as Decrement instead of Fixed | 🟢 Very Low | ✅ Done |
+| 41   | Final byte_counter = count (should be count+1 per MAME) | 🟢 Low | ✅ Done |

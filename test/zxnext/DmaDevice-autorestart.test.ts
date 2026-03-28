@@ -183,7 +183,8 @@ describe("DMA Auto-Restart Feature", () => {
       dma.executeContinuousTransfer();
 
       const finalState = dma.getTransferState();
-      expect(finalState.byteCounter).toBe(3);
+      // Step 41: MAME byte_counter ends at count+1 after completion
+      expect(finalState.byteCounter).toBe(4);
     });
   });
 
@@ -271,7 +272,8 @@ describe("DMA Auto-Restart Feature", () => {
       const state = dma.getTransferState();
       expect(state.sourceAddress).toBe(0x8002);
       expect(state.destAddress).toBe(0x9002);
-      expect(state.byteCounter).toBe(2);
+      // Step 41: MAME byte_counter ends at count+1 after completion
+      expect(state.byteCounter).toBe(3);
     });
   });
 

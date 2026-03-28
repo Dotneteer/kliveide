@@ -204,10 +204,10 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       expect(statusFlags.atLeastOneByteTransferred).toBe(true);
 
       // Verify byte counter (get fresh state after transfer)
-      // In legacy mode: starts at 0xFFFF, after 4 bytes transferred = 3
-      // (0xFFFF -> 0 -> 1 -> 2 -> 3)
+      // In legacy mode: starts at 0xFFFF, after 4 bytes transferred = 3, +1 MAME offset = 4
+      // Step 41: MAME byte_counter ends at count+1 after completion
       const transferStateAfter = dmaDevice.getTransferState();
-      expect(transferStateAfter.byteCounter).toBe(3);
+      expect(transferStateAfter.byteCounter).toBe(4);
     });
 
     it("should verify length+1 behavior in legacy mode", () => {

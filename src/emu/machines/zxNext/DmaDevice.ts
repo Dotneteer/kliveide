@@ -323,6 +323,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   // Step 7: MAME-style status and control fields
   // ============================================================================
   private m_status: number = 0;        // Raw status byte (m_status in MAME); 0x38 set by COMMAND_RESET only
+  private m_vector: number = 0;        // Computed interrupt vector (m_vector in MAME)
   private forceReady: boolean = false;  // FORCE_READY flag (m_force_ready)
   private ip: number = 0;              // Interrupt pending (m_ip)
   private ius: number = 0;             // Interrupt under service (m_ius)
@@ -432,8 +433,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
     // Step 36: MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
     this.m_status = 0;
-    
-    // Cache fields cleared on reset
+
+    // Step 38: MAME device_reset() explicitly zeros these (not just field-initialised).
+    this.ip = 0;
+    this.ius = 0;
+    this.forceReady = false;
+    this.resetPointer = 0;
+    // Step 39: MAME device_reset() clears m_vector = 0
+    this.m_vector = 0;
   }
 
   // ============================================================================
@@ -518,6 +525,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   getIus(): number {
     return this.ius;
+  }
+
+  // Step 39: expose the computed interrupt vector (m_vector in MAME)
+  getMVector(): number {
+    return this.m_vector;
   }
 
   getResetPointer(): number {
@@ -1649,7 +1661,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    *   2. INTERRUPT_ENABLE (WR3 bit D5) — global interrupt enable gate.
    *
    * Vector computation:
-   *   If STATUS_AFFECTS_VECTOR (INTERRUPT_CTRL bit D2 of WR4 follow byte):
+   *   If STATUS_AFFECTS_VECTOR (INTERRUPT_CTRL bit D5 of WR4 follow byte):
    *     vector = (INTERRUPT_VECTOR & 0xF9) | (level << 1)
    *   Else:
    *     vector = INTERRUPT_VECTOR
@@ -1667,13 +1679,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // Set interrupt pending
     this.ip = 1;
 
-    // STATUS_AFFECTS_VECTOR — INTERRUPT_CTRL bit D2 (WR4 interrupt control byte)
-    const statusAffectsVector = (this.regs[RNUM_INTERRUPT_CTRL] & 0x04) !== 0;
+    // STATUS_AFFECTS_VECTOR — INTERRUPT_CTRL bit D5 (WR4 interrupt control byte)
+    // MAME: #define STATUS_AFFECTS_VECTOR (INTERRUPT_CTRL & 0x20)
+    // Step 39: compute into m_vector WITHOUT modifying the register (MAME uses separate m_vector field)
+    const statusAffectsVector = (this.regs[RNUM_INTERRUPT_CTRL] & 0x20) !== 0;
     if (statusAffectsVector) {
-      this.regs[RNUM_INTERRUPT_VECTOR] =
-        (this.regs[RNUM_INTERRUPT_VECTOR] & 0xF9) | ((level & 0x03) << 1);
+      this.m_vector = (this.regs[RNUM_INTERRUPT_VECTOR] & 0xF9) | ((level & 0x03) << 1);
+    } else {
+      this.m_vector = this.regs[RNUM_INTERRUPT_VECTOR];
     }
-    // (else: INTERRUPT_VECTOR remains as programmed)
 
     // MAME trigger_interrupt clears bit 3 of m_status (IUS flag in status byte)
     this.m_status &= ~0x08;
@@ -1960,6 +1974,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.dmaSeq = DmaSeq.SEQ_TRANS1_WRITE_DEST;
     this.performWriteCycle(doWrite);
 
+    // Step 41: MAME's is_final check fires when byte_counter == count (BEFORE do_write),
+    // then do_write increments once more, leaving byte_counter = count + 1.  Our unified
+    // formula `(bc+1) === count` transfers the correct number of bytes but the final
+    // counter value is one less.  Add the extra increment so the observable counter matches.
+    if (isFinal) {
+      this.transferState.byteCounter = (this.transferState.byteCounter + 1) & MASK_16BIT;
+    }
+
     // Configured operating mode from decoded registers (handles WR4 byte encoding correctly)
     const configuredOpMode = this.registers.transferMode === TransferMode.BURST ? 0b10
                             : this.registers.transferMode === TransferMode.CONTINUOUS ? 0b01
@@ -2236,9 +2258,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // Step 9: MAME-style independent _addressA/_addressB update.
     // Each port's address advances according to its own address mode,
     // regardless of which is source or destination.
-    const portADelta = this.registers.portAAddressMode === AddressMode.FIXED ? 0
+    // Step 40: use >= FIXED to treat mode 3 (D5=1,D4=1, "do not program") as Fixed, matching MAME.
+    const portADelta = this.registers.portAAddressMode >= AddressMode.FIXED ? 0
                      : this.registers.portAAddressMode === AddressMode.INCREMENT ? 1 : -1;
-    const portBDelta = this.registers.portBAddressMode === AddressMode.FIXED ? 0
+    const portBDelta = this.registers.portBAddressMode >= AddressMode.FIXED ? 0
                      : this.registers.portBAddressMode === AddressMode.INCREMENT ? 1 : -1;
     this._addressA = (this._addressA + portADelta) & MASK_16BIT;
     this._addressB = (this._addressB + portBDelta) & MASK_16BIT;

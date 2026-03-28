@@ -261,8 +261,9 @@ describe("DmaDevice - Step 16: Port Handler Integration (0x6B)", () => {
       expect(statusFlags.atLeastOneByteTransferred).toBe(true);
 
       // Verify byte counter (get fresh state after transfer)
+      // Step 41: MAME byte_counter ends at count+1 after completion
       const transferStateAfter = dmaDevice.getTransferState();
-      expect(transferStateAfter.byteCounter).toBe(4);
+      expect(transferStateAfter.byteCounter).toBe(5);
     });
 
     it("should verify exact length behavior in zxnDMA mode", () => {

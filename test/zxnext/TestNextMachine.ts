@@ -246,13 +246,17 @@ export class TestZxNextMachine extends ZxNextMachine {
   }
 
   /**
-   * Assert DMA performed expected transfer
+   * Assert DMA performed expected transfer.
+   * Note (Step 41): MAME byte_counter ends at count+1 after a complete transfer
+   * (do_write always increments after is_final). The expectedBytes parameter is
+   * the number of bytes transferred; the counter value is expectedBytes + 1.
    */
   assertDmaTransferred(expectedBytes: number): void {
     const dmaState = this.dmaDevice.getTransferState();
-    if (dmaState.byteCounter !== expectedBytes) {
+    const expectedCounter = expectedBytes + 1;
+    if (dmaState.byteCounter !== expectedCounter) {
       throw new Error(
-        `DMA byte counter mismatch: expected ${expectedBytes}, ` +
+        `DMA byte counter mismatch: expected ${expectedCounter} (${expectedBytes} bytes + 1 MAME offset), ` +
         `got ${dmaState.byteCounter}`
       );
     }
