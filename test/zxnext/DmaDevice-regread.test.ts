@@ -709,15 +709,15 @@ describe("DmaDevice - Step 8: Register Read Operations", () => {
       dmaDevice.readStatusByte(); // Status
       dmaDevice.readStatusByte(); // Counter lo
       
-      // Now in middle of sequence, reset with READ_STATUS_BYTE
+      // READ_STATUS_BYTE resets position AND sets READ_MASK = 1 (status only per MAME)
       dmaDevice.writeWR6(0xbf);
       
       const status = dmaDevice.readStatusByte();
       expect(status).toBe(0x36);
       
-      // Should continue with counter
-      const counterLo = dmaDevice.readStatusByte();
-      expect(counterLo).toBe(0x00);
+      // READ_MASK is now 1 (status only), so next read also returns status
+      const statusAgain = dmaDevice.readStatusByte();
+      expect(statusAgain).toBe(0x36);
     });
 
     it("should handle B->A direction correctly", () => {

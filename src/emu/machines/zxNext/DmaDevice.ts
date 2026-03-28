@@ -308,6 +308,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private _count: number = 0;      // Block length loaded at LOAD time (m_count)
 
   // ============================================================================
+  // Step 7: MAME-style status and control fields
+  // ============================================================================
+  private m_status: number = 0x38;     // Raw status byte (m_status in MAME)
+  private forceReady: boolean = false;  // FORCE_READY flag (m_force_ready)
+  private ip: number = 0;              // Interrupt pending (m_ip)
+  private ius: number = 0;             // Interrupt under service (m_ius)
+  private resetPointer: number = 0;    // Progressive RESET column index (m_reset_pointer)
+
+  // ============================================================================
   // Step 2: Follow-byte queue (MAME m_regs_follow / m_num_follow / m_cur_follow)
   // When numFollow > 0, writePort() routes follow bytes via this queue rather
   // than the legacy registerWriteSeq mechanism.
@@ -445,6 +454,27 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   setDmaMode(mode: DmaMode): void {
     this.dmaMode = mode;
+  }
+
+  // Step 7: MAME-style status accessor
+  getStatus(): number {
+    return this.m_status;
+  }
+
+  getForceReady(): boolean {
+    return this.forceReady;
+  }
+
+  getIp(): number {
+    return this.ip;
+  }
+
+  getIus(): number {
+    return this.ius;
+  }
+
+  getResetPointer(): number {
+    return this.resetPointer;
   }
 
   /**
@@ -1152,6 +1182,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         case 0x8b: // REINITIALIZE_STATUS_BYTE
           this.executeReinitializeStatusByte();
           break;
+
+        case 0xb3: // FORCE_READY
+          this.forceReady = true;
+          break;
           
         default:
           // Unknown command - ignore
@@ -1170,26 +1204,42 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * RESET command (0xC3) - Reset all DMA state
    */
   private executeReset(): void {
-    // Reset DMA state
+    // Step 7: Match MAME COMMAND_RESET
+    // Disable DMA (equivalent to disable())
     this.dmaState = DmaState.IDLE;
-    
-    // Reset status flags
-    this.statusFlags.endOfBlockReached = true;
-    this.statusFlags.atLeastOneByteTransferred = false;
-    
-    // Reset timing to default (3 cycles)
-    this.registers.portATimingCycleLength = CycleLength.CYCLES_3;
-    this.registers.portBTimingCycleLength = CycleLength.CYCLES_3;
-    
-    // Reset prescalar
+    this.registers.dmaEnabled = false;
+
+    // Clear control flags (m_force_ready, m_ip, m_ius)
+    this.forceReady = false;
+    this.ip = 0;
+    this.ius = 0;
+
+    // Progressive column reset: clear one column per RESET call (m_reset_pointer)
+    // Needs 6 RESET commands to fully clear all register columns (WR0-WR6)
+    for (let WRi = 0; WRi < 7; WRi++) {
+      this.regs[WRi * 8 + this.resetPointer] = 0;
+    }
+    this.resetPointer = (this.resetPointer + 1) % 6;
+
+    // specnext override: also clear prescaler on RESET
     this.registers.portBPrescalar = 0;
     this.prescalarTimer = 0;
-    
-    // Reset control flags
+
+    // Legacy compat: explicitly reset decoded fields that tests historically expect.
+    // In full MAME progressive-reset semantics, these clear across multiple RESETs.
+    // Kept for backward compatibility until Step 15 legacy cleanup.
+    this.registers.portATimingCycleLength = CycleLength.CYCLES_3;
+    this.registers.portBTimingCycleLength = CycleLength.CYCLES_3;
     this.registers.ceWaitMultiplexed = false;
     this.registers.autoRestart = false;
-    
-    // Keep register write sequence in IDLE
+
+    // Set status to initial value (m_status = 0x38)
+    this.m_status = 0x38;
+
+    // Legacy status flags for backward compat
+    this.statusFlags.endOfBlockReached = true;
+    this.statusFlags.atLeastOneByteTransferred = false;
+
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
@@ -1254,22 +1304,25 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     
     // Set up function pointers for address update operations (Phase 3 optimization)
     this.updateAddressFunctionPointers();
-    
-    // Reset byte counter based on mode
-    // zxnDMA mode: counter starts at 0
-    // Legacy mode: counter starts at -1 (0xFFFF) for compatibility
+
+    // Step 7: forceReady = false per MAME COMMAND_LOAD
+    this.forceReady = false;
+
+    // Step 7: Reset byte counter (specnext: 0; legacy Zilog: 0xFFFF for length+1 compat)
     if (this.dmaMode === DmaMode.ZXNDMA) {
       this.transferState.byteCounter = 0;
     } else {
-      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
+      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit (legacy mode)
     }
-    
-    // Step 1: Update MAME-style independent address/count tracking
+
+    // Step 7: Load MAME-style independent address/count tracking
     this._addressA = this.registers.portAStartAddress;
     this._addressB = this.registers.portBStartAddress;
     this._count = this.registers.blockLength;
 
-    // Keep register write sequence in IDLE
+    // Step 7: Set status bits 5 and 4 per MAME (m_status |= 0x30)
+    this.m_status |= 0x30;
+
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
@@ -1278,17 +1331,16 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Used to continue a transfer from current positions
    */
   private executeContinue(): void {
-    // Reset byte counter to restart counting based on mode
-    // zxnDMA mode: counter starts at 0
-    // Legacy mode: counter starts at -1 (0xFFFF) for compatibility
-    if (this.dmaMode === DmaMode.ZXNDMA) {
-      this.transferState.byteCounter = 0;
-    } else {
-      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
-    }
-    
+    // Step 7: Reload count from registers per MAME (m_count = BLOCKLEN)
+    this._count = this.registers.blockLength;
+
+    // Step 7: Always reset byte counter to 0
+    this.transferState.byteCounter = 0;
+
+    // Step 7: Set status bits per MAME (m_status |= 0x30)
+    this.m_status |= 0x30;
+
     // Keep current source and destination addresses unchanged
-    // Keep register write sequence in IDLE
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
@@ -1297,25 +1349,16 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Initializes counter based on mode: 0 for zxnDMA, -1 for legacy
    */
   private executeEnableDma(): void {
-    // Enable DMA
+    // Enable DMA (enable())
     this.registers.dmaEnabled = true;
-    
-    // Initialize byte counter based on mode
-    // zxnDMA mode: counter starts at 0
-    // Legacy mode: counter starts at -1 (0xFFFF) for compatibility
-    if (this.dmaMode === DmaMode.ZXNDMA) {
-      this.transferState.byteCounter = 0;
-    } else {
-      this.transferState.byteCounter = 0xFFFF;  // -1 in 16-bit
-    }
-    
-    // Transfer length will be calculated on-demand during transfer
-    
+
+    // Step 7: mode-dependent byte counter initialization.
+    // zxnDMA (specnext) override: set to 0. Legacy Zilog mode: set to 0xFFFF.
+    this.transferState.byteCounter = this.dmaMode === DmaMode.ZXNDMA ? 0 : 0xFFFF;
+
     // Set DMA state to START_DMA so stepDma() will begin transfer
-    // (actual transfer will start when bus is available)
     this.dmaState = DmaState.START_DMA;
-    
-    // Keep register write sequence in IDLE
+
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
@@ -1326,7 +1369,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * - T (bit 0): At least one byte transferred
    */
   private executeReadStatusByte(): void {
-    // Set read sequence to return status byte on next read
+    // Step 7: Set READ_MASK = 1 (status only) per MAME
+    this.regs[RNUM_READ_MASK] = 1;
+    this.registers.readMask = 1;
     this.registerReadSeq = RegisterReadSequence.RD_STATUS;
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
@@ -1336,8 +1381,8 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Uses read mask to determine which registers to include in read sequence
    */
   private executeInitializeReadSequence(): void {
-    // Initialize read sequence to first position
-    this.registerReadSeq = RegisterReadSequence.RD_STATUS;
+    // Step 7: setup_next_read(0) — find first set bit in READ_MASK from position 0
+    this.setupNextRead(0);
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
 
@@ -1346,11 +1391,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * Resets status flags and reinitializes the read sequence
    */
   private executeReinitializeStatusByte(): void {
-    // Reset status flags
+    // Step 7: Match MAME COMMAND_REINITIALIZE_STATUS_BYTE
+    this.m_status |= 0x30;
+    this.ip = 0;
+
+    // Legacy compat: reset status flags
     this.statusFlags.endOfBlockReached = true;
     this.statusFlags.atLeastOneByteTransferred = false;
-    
-    // Reinitialize read sequence to status byte
+
     this.registerReadSeq = RegisterReadSequence.RD_STATUS;
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
   }
@@ -1392,24 +1440,38 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       value = (this.transferState.byteCounter >> 8) & 0xff;
       this.advanceReadSequence();
     } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_A_LO) {
-      // Port A address low byte
-      value = this.transferState.sourceAddress & 0xff;
+      // Step 8: Port A address low byte - always use _addressA (Port A = m_addressA)
+      value = this._addressA & 0xff;
       this.advanceReadSequence();
     } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_A_HI) {
-      // Port A address high byte
-      value = (this.transferState.sourceAddress >> 8) & 0xff;
+      // Step 8: Port A address high byte - always use _addressA
+      value = (this._addressA >> 8) & 0xff;
       this.advanceReadSequence();
     } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_B_LO) {
-      // Port B address low byte
-      value = this.transferState.destAddress & 0xff;
+      // Step 8: Port B address low byte - always use _addressB (Port B = m_addressB)
+      value = this._addressB & 0xff;
       this.advanceReadSequence();
     } else if (this.registerReadSeq === RegisterReadSequence.RD_PORT_B_HI) {
-      // Port B address high byte
-      value = (this.transferState.destAddress >> 8) & 0xff;
+      // Step 8: Port B address high byte - always use _addressB
+      value = (this._addressB >> 8) & 0xff;
       this.advanceReadSequence();
     }
     
     return value;
+  }
+
+  /**
+   * MAME setup_next_read: advance to first enabled position >= rr in read mask
+   */
+  private setupNextRead(rr: number): void {
+    const mask = this.registers.readMask;
+    if (!mask) return;
+    // RD_STATUS (pos 0) is always enabled; any other position is enabled by its mask bit
+    let pos = rr % 7;
+    while (!this.isReadPositionEnabled(pos as RegisterReadSequence, mask)) {
+      pos = (pos + 1) % 7;
+    }
+    this.registerReadSeq = pos as RegisterReadSequence;
   }
 
   /**
@@ -1888,6 +1950,16 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     // Replaces string-based dispatch with direct function calls
     this.transferState.updateSourceAddress();
     this.transferState.updateDestAddress();
+
+    // Step 8: Sync _addressA/_addressB to always track per-port running addresses.
+    // After update, map source/dest back to Port A / Port B based on direction.
+    if (this.registers.directionAtoB) {
+      this._addressA = this.transferState.sourceAddress;  // Port A is source in A→B
+      this._addressB = this.transferState.destAddress;    // Port B is dest in A→B
+    } else {
+      this._addressB = this.transferState.sourceAddress;  // Port B is source in B→A
+      this._addressA = this.transferState.destAddress;    // Port A is dest in B→A
+    }
 
     // Increment byte counter (16-bit with wraparound)
     this.transferState.byteCounter = (this.transferState.byteCounter + 1) & MASK_16BIT;
