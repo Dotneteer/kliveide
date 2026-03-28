@@ -43,7 +43,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
 
     it("should route WR4 commands through port 0x0B", () => {
       // Configure WR4: Continuous mode, Port B address 0x9000
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xad);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -78,7 +78,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x04);
       machine.portManager.writePort(0x0b, 0x00);
 
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xad);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -104,26 +104,26 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
   describe("Port 0x0B Read Operations", () => {
     it("should read initial status byte from port 0x0B", () => {
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x36); // End of block, no transfer yet
+      expect(status).toBe(0x00); // Hardware reset initializes m_status = 0
       expect(dmaDevice.getDmaMode()).toBe(DmaMode.LEGACY);
     });
 
     it("should read status after INITIALIZE_READ_SEQUENCE command", () => {
       machine.portManager.writePort(0x0b, 0xa7); // INITIALIZE_READ_SEQUENCE
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x00); // m_status = 0 (no COMMAND_RESET/COMMAND_LOAD)
       expect(dmaDevice.getDmaMode()).toBe(DmaMode.LEGACY);
     });
 
     it("should read counter values after configuring read mask", () => {
       // Configure for reading counter
       machine.portManager.writePort(0x0b, 0xbb); // READ_MASK_FOLLOWS
-      machine.portManager.writePort(0x0b, 0x60); // Mask with counter enabled (bits 6,5)
+      machine.portManager.writePort(0x0b, 0x07); // Mask with status+counter (MAME bits 0+1+2)
       machine.portManager.writePort(0x0b, 0xa7); // INITIALIZE_READ_SEQUENCE
 
       // First read should be status
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x36); // End of block reached
+      expect(status).toBe(0x00); // m_status = 0 (no COMMAND_RESET/COMMAND_LOAD)
       
       // Second read should be counter low (0 initially - counter initialized to 0)
       const counterLow = machine.portManager.readPort(0x0b);
@@ -168,7 +168,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x10);
 
       // Configure WR4: Continuous mode, Port B address 0x9000
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xad);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -204,10 +204,10 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       expect(statusFlags.atLeastOneByteTransferred).toBe(true);
 
       // Verify byte counter (get fresh state after transfer)
-      // In legacy mode: starts at 0xFFFF, after 4 bytes transferred = 3
-      // (0xFFFF -> 0 -> 1 -> 2 -> 3)
+      // In legacy mode: starts at 0xFFFF, after 4 bytes transferred = 3, +1 MAME offset = 4
+      // Step 41: MAME byte_counter ends at count+1 after completion
       const transferStateAfter = dmaDevice.getTransferState();
-      expect(transferStateAfter.byteCounter).toBe(3);
+      expect(transferStateAfter.byteCounter).toBe(4);
     });
 
     it("should verify length+1 behavior in legacy mode", () => {
@@ -229,7 +229,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       // Configure WR2: Port B increment
       machine.portManager.writePort(0x0b, 0x10);
 
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xad);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -269,11 +269,11 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
 
       // Configure WR2: Prescalar = 1, Port B increment mode
       machine.portManager.writePort(0x0b, 0x50);
-      machine.portManager.writePort(0x0b, 0x00);
+      machine.portManager.writePort(0x0b, 0x20);  // Timing byte (D5=1 → prescaler follows; CYCLES_4=0)
       machine.portManager.writePort(0x0b, 0x01);
 
       // Configure WR4: Burst mode, Port B
-      machine.portManager.writePort(0x0b, 0x8d);
+      machine.portManager.writePort(0x0b, 0xcd);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -342,7 +342,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x10); // WR2
 
       // Configure WR4: Continuous mode (for completeness), Port B address 0x9000
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xad);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0x90);
 
@@ -362,7 +362,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       // Read status after transfer
       machine.portManager.writePort(0x0b, 0xa7);
       const status = machine.portManager.readPort(0x0b);
-      expect(status).toBe(0x37); // End of block reached, transfer occurred
+      expect(status).toBe(0x19); // End of block reached, transfer occurred
     });
   });
 
@@ -401,7 +401,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x6b, 0x14);
       machine.portManager.writePort(0x6b, 0x10);
 
-      machine.portManager.writePort(0x6b, 0xdd);
+      machine.portManager.writePort(0x6b, 0xad);
       machine.portManager.writePort(0x6b, 0x00);
       machine.portManager.writePort(0x6b, 0x90);
 
@@ -428,7 +428,7 @@ describe("DmaDevice - Step 17: Port Handler Integration (0x0B - Legacy Mode)", (
       machine.portManager.writePort(0x0b, 0x14);
       machine.portManager.writePort(0x0b, 0x10);
 
-      machine.portManager.writePort(0x0b, 0xdd);
+      machine.portManager.writePort(0x0b, 0xad);
       machine.portManager.writePort(0x0b, 0x00);
       machine.portManager.writePort(0x0b, 0xa0); // Different dest address
 

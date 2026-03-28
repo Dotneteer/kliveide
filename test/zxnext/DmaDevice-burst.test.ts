@@ -44,11 +44,11 @@ describe("DMA Burst Transfer Mode", () => {
 
     // WR2: Port B configuration with prescalar
     dma.writeWR2(0x50); // Memory, increment, timing byte follows
-    dma.writeWR2(0x00); // Timing byte
+    dma.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
     dma.writeWR2(prescalar & 0xff); // Prescalar value
 
     // WR4: Burst mode + Port B address
-    dma.writeWR4(0xad); // Burst mode (bit 4=0)
+    dma.writeWR4(0xcd); // Burst mode (bit 4=0)
     dma.writeWR4((destAddr >> 0) & 0xff); // Port B low
     dma.writeWR4((destAddr >> 8) & 0xff); // Port B high
 
@@ -87,16 +87,17 @@ describe("DMA Burst Transfer Mode", () => {
     });
 
     it("should support B→A direction in burst mode", () => {
-      machine.memoryDevice.writeMemory(0x9000, 0xaa);
-      machine.memoryDevice.writeMemory(0x9001, 0xbb);
+      // In B→A mode, Port B (destAddr=0x8000) is source, Port A (sourceAddr=0x9000) is destination
+      machine.memoryDevice.writeMemory(0x8000, 0xaa);
+      machine.memoryDevice.writeMemory(0x8001, 0xbb);
 
       configureBurstTransfer("BtoA", 0x9000, 0x8000, 2, 1);
 
       const transferred = dma.executeBurstTransfer(5000);
 
       expect(transferred).toBe(2);
-      expect(machine.memoryDevice.readMemory(0x8000)).toBe(0xaa);
-      expect(machine.memoryDevice.readMemory(0x8001)).toBe(0xbb);
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0xaa);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0xbb);
     });
   });
 
@@ -347,7 +348,8 @@ describe("DMA Burst Transfer Mode", () => {
 
       const transferState = dma.getTransferState();
       expect(transferState.byteCounter).toBeGreaterThan(0);
-      expect(transferState.byteCounter).toBeLessThanOrEqual(5);
+      // Step 41: MAME byte_counter ends at count+1 after completion
+      expect(transferState.byteCounter).toBeLessThanOrEqual(6);
     });
 
     it("should update addresses during burst transfer", () => {

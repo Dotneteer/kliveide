@@ -184,7 +184,7 @@ describe("DmaDevice - Step 9: Bus Control and Handshaking", () => {
   describe("Burst Mode Bus Release", () => {
     it("should not release bus in continuous mode", () => {
       // Set transfer mode to continuous (bit 4 = 1)
-      dma.writeWR4(0x95); // WR4: continuous (bit 4 = 1, 0b10010101)
+      dma.writeWR4(0xb5); // WR4: continuous (bit 4 = 1, 0b10010101)
       dma.writeWR4(0x00);
       dma.writeWR4(0x50);
       
@@ -203,7 +203,7 @@ describe("DmaDevice - Step 9: Bus Control and Handshaking", () => {
 
     it("should release bus in burst mode", () => {
       // Set transfer mode to burst (bit 4 = 0)
-      dma.writeWR4(0x85); // WR4: burst (bit 4 = 0, 0b10000101)
+      dma.writeWR4(0xc5); // WR4: burst (bit 4 = 0, 0b10000101)
       dma.writeWR4(0x00);
       dma.writeWR4(0x50);
       

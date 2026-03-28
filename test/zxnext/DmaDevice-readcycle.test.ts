@@ -419,3 +419,177 @@ describe("DmaDevice - Step 10: Memory/IO Read Cycle", () => {
     });
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 26: Search Mode (WR0 D1-D0)
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { DmaDevice, DmaMode, TransferMode, AddressMode } from "@emu/machines/zxNext/DmaDevice";
+
+describe("DmaDevice - Step 26: Search Mode", () => {
+  let machine: TestZxNextMachine;
+  let dma: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dma = machine.dmaDevice;
+  });
+
+  /**
+   * Configure a Continuous transfer with Search or Search+Transfer mode.
+   * WR0 byte:
+   *   - 0x7D = 0111_1101: D6D5D4D3=1111 (all follow bytes), D2=1 (A→B), D1D0=01 (Transfer)
+   *   - Replace D1D0 to get mode:
+   *       D1D0=10  → 0x7E: Search only (no write)
+   *       D1D0=11  → 0x7F: Search+Transfer
+   */
+  function configureSearch(wr0Mode: number, maskByte: number, matchByte: number, enableIntr = false) {
+    dma.writeWR6(0xc7); dma.writeWR6(0xcb);
+    // WR0: D6D5D4D3=1111 (four follow bytes), D2=1 (A→B), D1D0 = wr0Mode & 0x03
+    const wr0Base = 0x7C | (wr0Mode & 0x03);
+    dma.writeWR0(wr0Base);
+    dma.writeWR0(0x00); dma.writeWR0(0x80); // Port A addr = 0x8000
+    dma.writeWR0(0x04); dma.writeWR0(0x00); // Block length = 4
+    dma.writeWR1(0x14);  // Port A: memory, increment
+    dma.writeWR2(0x10);  // Port B: memory, increment
+    dma.writePort(0xad); // WR4: Continuous (D6D5=01), portB addr follows (D3D2=11)
+    dma.writePort(0x00); dma.writePort(0x90); // Port B addr = 0x9000
+    // WR3 base byte: (value & 0x83) must equal 0x80 → D7=1, D1=D0=0.
+    // 0x98 = 1001_1000: D4=1 (MATCH_BYTE follows), D3=1 (MASK_BYTE follows), D1D0=00.
+    dma.writePort(0x98);
+    dma.writePort(maskByte);  // MASK_BYTE (stored via follow queue)
+    dma.writePort(matchByte); // MATCH_BYTE (stored via follow queue)
+    if (enableIntr) {
+      dma.writeWR6(0xab); // ENABLE_INTERRUPTS
+    }
+    // Fill source with: 0x11, 0x22, 0xAA, 0x33 (0xAA is the search target)
+    machine.memoryDevice.writeMemory(0x8000, 0x11);
+    machine.memoryDevice.writeMemory(0x8001, 0x22);
+    machine.memoryDevice.writeMemory(0x8002, 0xAA);
+    machine.memoryDevice.writeMemory(0x8003, 0x33);
+    dma.writeWR6(0xcf);
+    dma.writeWR6(0x87);
+  }
+
+  describe("Transfer mode (D1D0=01) — baseline unchanged", () => {
+    it("writes all bytes to destination in Transfer mode", () => {
+      configureSearch(0b01, 0xFF, 0xAA); // Transfer mode, mask=0xFF, match=0xAA
+      dma.executeContinuousTransfer();
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x11);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x22);
+      expect(machine.memoryDevice.readMemory(0x9002)).toBe(0xAA);
+      expect(machine.memoryDevice.readMemory(0x9003)).toBe(0x33);
+    });
+  });
+
+  describe("Search-only mode (D1D0=10) — no write, stops on match", () => {
+    it("does not write to destination in Search mode", () => {
+      machine.memoryDevice.writeMemory(0x9000, 0xFF); // sentinel
+      configureSearch(0b10, 0xFF, 0xAA); // Search mode, mask=0xFF, match=0xAA
+      // WR5: set STOP_ON_MATCH (D2=1) so transfer halts at match
+      dma.writeWR5(0x14 | 0x04); // D4=CE_ONLY, D2=STOP_ON_MATCH
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      dma.executeContinuousTransfer();
+      // No byte should have been written — destination stays 0xFF
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0xFF);
+    });
+
+    it("sets status match bit (0x04) when match found", () => {
+      configureSearch(0b10, 0xFF, 0xAA);
+      dma.writeWR5(0x14 | 0x04);
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0x04);
+    });
+
+    it("stops at matching byte when STOP_ON_MATCH is set", () => {
+      // mask=0x00 → exact match (OR semantics: no don't-care bits → all bits compared).
+      // Only 0xAA (index 2) matches 0xAA exactly.
+      configureSearch(0b10, 0x00, 0xAA);
+      dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      const bytes = dma.executeContinuousTransfer();
+      // Reads 0x11, 0x22, 0xAA — stops at 0xAA (3 bytes)
+      expect(bytes).toBe(3);
+    });
+
+    it("continues to end of block when STOP_ON_MATCH is NOT set", () => {
+      configureSearch(0b10, 0xFF, 0xAA); // no STOP_ON_MATCH
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      const bytes = dma.executeContinuousTransfer();
+      // Transfer runs to end of block (4 bytes)
+      expect(bytes).toBe(4);
+    });
+  });
+
+  describe("Search+Transfer mode (D1D0=11) — write and search", () => {
+    it("writes bytes to destination AND checks for match", () => {
+      // mask=0x00 → exact match; only 0xAA (index 2) matches.
+      configureSearch(0b11, 0x00, 0xAA); // Search+Transfer mode
+      dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      dma.executeContinuousTransfer();
+      // All three bytes up to and including the match byte are written
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x11);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x22);
+      expect(machine.memoryDevice.readMemory(0x9002)).toBe(0xAA); // match byte is also written
+    });
+
+    it("sets match bit and stops at matching byte with STOP_ON_MATCH", () => {
+      // mask=0x00 → exact match; 0xAA is at index 2.
+      configureSearch(0b11, 0x00, 0xAA);
+      dma.writeWR5(0x14 | 0x04);
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      const bytes = dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0x04); // ZXN extension: match-found bit
+      expect(bytes).toBe(3); // 0x11, 0x22, 0xAA
+    });
+  });
+
+  describe("Mask byte gating (OR semantics: mask 1-bits are don't-care)", () => {
+    it("matches when don't-care bits differ but compared bits agree", () => {
+      // OR semantics: mask=0x0F → lower nibble is don't-care, upper nibble is compared.
+      // match=0xA0 → compared upper nibble = 0xA.
+      // 0xAA: (0xAA | 0x0F) = 0xAF === (0xA0 | 0x0F) = 0xAF → match ✓
+      configureSearch(0b10, 0x0F, 0xA0);
+      dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      const bytes = dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0x04); // match found at 0xAA
+      expect(bytes).toBe(3); // 0x11, 0x22, 0xAA
+    });
+
+    it("no match when compared bits differ regardless of don't-care bits", () => {
+      // OR semantics: mask=0x0F → lower nibble is don't-care, upper nibble is compared.
+      // match=0xB0 → compared upper nibble = 0xB.
+      // Source: 0x11(0x1), 0x22(0x2), 0xAA(0xA), 0x33(0x3) — none has upper nibble 0xB.
+      configureSearch(0b10, 0x0F, 0xB0);
+      dma.writeWR5(0x14 | 0x04);
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0); // no match
+    });
+
+    it("mask=0x00 is exact match (no don't-care bits)", () => {
+      // mask=0x00 → all bits compared exactly (no don't-care bits)
+      // match=0xFF → none of 0x11, 0x22, 0xAA, 0x33 equals 0xFF
+      configureSearch(0b10, 0x00, 0xFF);
+      dma.writeWR5(0x14 | 0x04);
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0); // no match
+    });
+
+    it("mask=0xFF means all bits are don't-care (always matches)", () => {
+      // mask=0xFF → every bit is don't-care → any byte matches any MATCH_BYTE
+      // First byte 0x11: (0x11 | 0xFF) = 0xFF === (0xAA | 0xFF) = 0xFF → match
+      configureSearch(0b10, 0xFF, 0xAA);
+      dma.writeWR5(0x14 | 0x04); // STOP_ON_MATCH
+      dma.writeWR6(0xcf); dma.writeWR6(0x87);
+      const bytes = dma.executeContinuousTransfer();
+      expect(dma.getStatus() & 0x04).toBe(0x04); // match on first byte
+      expect(bytes).toBe(1); // stopped immediately on 0x11
+    });
+  });
+});
+

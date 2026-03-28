@@ -77,11 +77,11 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
 
     // WR2: Port B configuration - increment mode + prescalar
     dma.writeWR2(0x50); // Increment + timing follows (bit 6=1)
-    dma.writeWR2(0x00); // Timing byte (placeholder)
+    dma.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
     dma.writeWR2(prescalar); // Prescalar value
 
     // WR4: Burst mode + Port B address
-    dma.writeWR4(0x8d); // Burst mode (bit 6=0)
+    dma.writeWR4(0xcd); // Burst mode (bit 6=0)
     dma.writeWR4((destAddr >> 0) & 0xff); // Port B low
     dma.writeWR4((destAddr >> 8) & 0xff); // Port B high
 
@@ -244,7 +244,7 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
   });
 
   describe("Burst Mode CPU Interleaving", () => {
-    it("should release bus between bytes in burst mode", () => {
+    it("burst mode holds bus after byte transfer when ready=true (MAME behavior)", () => {
       // Setup burst transfer
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       machine.memoryDevice.writeMemory(0x8001, 0x22);
@@ -256,12 +256,12 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       // Second call: Acknowledge + transfer first byte
       machine.beforeInstructionExecuted();
 
-      // In burst mode, bus should be released after byte
+      // MAME: burst holds bus when isReady()=true; CPU must wait for block completion
       const busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(false);
+      expect(busControl.busRequested).toBe(true); // bus still held
     });
 
-    it("should allow CPU and DMA to interleave via beforeInstructionExecuted", () => {
+    it("burst mode transfers complete block before CPU resumes (MAME behavior)", () => {
       // Setup burst transfer
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       machine.memoryDevice.writeMemory(0x8001, 0x22);
@@ -273,15 +273,16 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       machine.beforeInstructionExecuted();
       expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x11);
       
-      // After burst byte, bus is released so CPU can execute
+      // MAME: burst holds bus between bytes when isReady()=true
       const busControl1 = dma.getBusControl();
-      expect(busControl1.busRequested).toBe(false);
+      expect(busControl1.busRequested).toBe(true); // bus still held, byte 2 pending
 
-      // Byte 2: Request bus
-      machine.beforeInstructionExecuted();
-      // Byte 2: Acknowledge + transfer
+      // Byte 2: transferred on the next call (bus still held, no re-request needed)
       machine.beforeInstructionExecuted();
       expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x22);
+
+      // After block completes, bus is released and CPU can run
+      expect(dma.getBusControl().busRequested).toBe(false);
     });
 
     it("should calculate correct prescalar delays for burst mode", () => {

@@ -246,13 +246,17 @@ export class TestZxNextMachine extends ZxNextMachine {
   }
 
   /**
-   * Assert DMA performed expected transfer
+   * Assert DMA performed expected transfer.
+   * Note (Step 41): MAME byte_counter ends at count+1 after a complete transfer
+   * (do_write always increments after is_final). The expectedBytes parameter is
+   * the number of bytes transferred; the counter value is expectedBytes + 1.
    */
   assertDmaTransferred(expectedBytes: number): void {
     const dmaState = this.dmaDevice.getTransferState();
-    if (dmaState.byteCounter !== expectedBytes) {
+    const expectedCounter = expectedBytes + 1;
+    if (dmaState.byteCounter !== expectedCounter) {
       throw new Error(
-        `DMA byte counter mismatch: expected ${expectedBytes}, ` +
+        `DMA byte counter mismatch: expected ${expectedCounter} (${expectedBytes} bytes + 1 MAME offset), ` +
         `got ${dmaState.byteCounter}`
       );
     }
@@ -424,7 +428,8 @@ export class TestZxNextMachine extends ZxNextMachine {
       0x01, 0x6B, 0x00,          // LD BC, 006BH
       
       // WR0: Port A start address and block length
-      0x3E, 0x79,                // LD A, 79H (WR0 base)
+      // 7DH = 0111_1101: D7=0 (WR0), D6-D3=1111 (all follow bytes), D2=1 (A→B), D1D0=01 (Transfer)
+      0x3E, 0x7D,                // LD A, 7DH (WR0 base: A→B, all follow bytes)
       0xED, 0x79,                // OUT (C), A
       0x3E, sourceAddr & 0xFF,   // LD A, low byte
       0xED, 0x79,                // OUT (C), A
@@ -444,7 +449,8 @@ export class TestZxNextMachine extends ZxNextMachine {
       0xED, 0x79,                // OUT (C), A
       
       // WR4: Port B address, Continuous mode
-      0x3E, 0xBD,                // LD A, BDH (continuous mode)
+      // ADH = 1010_1101: D7=1, D6=0, D5=1 → D6D5=01 → Continuous; D4=0 no INTERRUPT_CTRL
+      0x3E, 0xAD,                // LD A, ADH (continuous mode, D4=0 no INTERRUPT_CTRL)
       0xED, 0x79,                // OUT (C), A
       0x3E, destAddr & 0xFF,     // LD A, low byte
       0xED, 0x79,                // OUT (C), A
@@ -472,7 +478,8 @@ export class TestZxNextMachine extends ZxNextMachine {
       0x01, 0x6B, 0x00,          // LD BC, 006BH
       
       // WR0: Port A start address and block length
-      0x3E, 0x79,                // LD A, 79H (WR0 base)
+      // 7DH = 0111_1101: D7=0 (WR0), D6-D3=1111 (all follow bytes), D2=1 (A→B), D1D0=01 (Transfer)
+      0x3E, 0x7D,                // LD A, 7DH (WR0 base: A→B, all follow bytes)
       0xED, 0x79,                // OUT (C), A
       0x3E, sourceAddr & 0xFF,
       0xED, 0x79,
@@ -494,7 +501,8 @@ export class TestZxNextMachine extends ZxNextMachine {
       0xED, 0x79,
       
       // WR4: Port B address, Burst mode
-      0x3E, 0xAD,                // Burst mode (bit 4 = 0)
+      // CDH = 1100_1101: D7=1, D6=1, D5=0 → D6D5=10 → Burst (MAME decode)
+      0x3E, 0xCD,                // Burst mode (D6D5=10)
       0xED, 0x79,
       0x3E, destAddr & 0xFF,
       0xED, 0x79,

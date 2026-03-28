@@ -53,7 +53,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     it("should reset Port B timing to default (3 cycles)", () => {
       // Setup - change Port B timing
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter bit
-      dmaDevice.writeWR2(0x00); // Timing byte (4 cycles)
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
       dmaDevice.writeWR2(0x55); // Prescalar
 
       // Execute RESET
@@ -147,6 +147,56 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
       const registers = dmaDevice.getRegisters();
       expect(registers.directionAtoB).toBe(true);
     });
+
+    // Step 32: resetPointer reset to 0 on every base byte
+    it("should reset resetPointer to 0 when any base byte is written", () => {
+      // Advance resetPointer by issuing one RESET (pointer goes 0→1)
+      dmaDevice.writeWR6(0xc3);
+      expect(dmaDevice.getResetPointer()).toBe(1);
+
+      // Writing any base byte via writePort must reset pointer back to 0
+      dmaDevice.writePort(0x7d); // WR0 base byte
+      expect(dmaDevice.getResetPointer()).toBe(0);
+    });
+
+    it("should reset resetPointer to 0 when WR6 command is written after partial RESETs", () => {
+      // RESET via writePort: Step 32 resets pointer to 0, executeReset then increments to 1
+      dmaDevice.writePort(0xc3); // RESET
+      expect(dmaDevice.getResetPointer()).toBe(1);
+      // Any subsequent base byte via writePort resets pointer to 0
+      dmaDevice.writePort(0x87); // ENABLE_DMA (WR6 command)
+      expect(dmaDevice.getResetPointer()).toBe(0);
+    });
+
+    // Step 33: resetPointer incremented after every follow byte
+    it("should increment resetPointer after each follow byte", () => {
+      // WR0 base byte 0x7D: D6+D5+D4+D3 all set → 4 follow bytes; Step 32 → resetPointer=0
+      // 0x7D = 0b01111101: (& 0x87)=0x05≠0x00/0x04, (& 0x80)=0 → dispatches to WR0 ✓
+      dmaDevice.writePort(0x7d);
+      expect(dmaDevice.getResetPointer()).toBe(0);
+
+      dmaDevice.writePort(0x00); // Port A addr lo → resetPointer→1
+      expect(dmaDevice.getResetPointer()).toBe(1);
+      dmaDevice.writePort(0x00); // Port A addr hi → resetPointer→2
+      expect(dmaDevice.getResetPointer()).toBe(2);
+      dmaDevice.writePort(0x04); // Block len lo  → resetPointer→3
+      expect(dmaDevice.getResetPointer()).toBe(3);
+      dmaDevice.writePort(0x00); // Block len hi  → resetPointer→4
+      expect(dmaDevice.getResetPointer()).toBe(4);
+    });
+
+    it("should wrap resetPointer to 0 when follow-byte increment reaches 6", () => {
+      // Use direct writeWR6 calls (bypass Step 32) to set pointer to 5
+      for (let i = 0; i < 5; i++) dmaDevice.writeWR6(0xc3);
+      expect(dmaDevice.getResetPointer()).toBe(5);
+
+      // WR1 base via writePort: Step 32 resets to 0, timing-byte follows enqueued
+      dmaDevice.writePort(0x44); // WR1 base with D6=1 (timing follows)
+      expect(dmaDevice.getResetPointer()).toBe(0);
+      // Step 33: follow byte increments 0 → 1
+      dmaDevice.writePort(0x00); // timing byte
+      expect(dmaDevice.getResetPointer()).toBe(1);
+    });
   });
 
   describe("RESET_PORT_A_TIMING Command (0xC7)", () => {
@@ -176,7 +226,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     it("should not affect Port B prescalar", () => {
       // Setup - set prescalar
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter
-      dmaDevice.writeWR2(0x00); // Timing byte
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows)
       dmaDevice.writeWR2(0x55); // Prescalar = 85
 
       // Execute RESET_PORT_A_TIMING
@@ -226,13 +276,24 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
       const registers = dmaDevice.getRegisters();
       expect(registers.portAIsIO).toBe(true);
     });
+
+    // Step 34: RESET_PORT_A_TIMING must zero raw register REG(1,1)
+    it("should zero raw PORTA_TIMING register (REG(1,1))", () => {
+      // Write a non-zero timing byte via WR1
+      dmaDevice.writeWR1(0x04 | 0x40); // timing follows
+      dmaDevice.writeWR1(0x02);        // timing byte = 0x02 (CYCLES_2)
+      expect(dmaDevice.getRawReg(1, 1)).toBe(0x02);
+
+      dmaDevice.writeWR6(0xc7); // RESET_PORT_A_TIMING
+      expect(dmaDevice.getRawReg(1, 1)).toBe(0);
+    });
   });
 
   describe("RESET_PORT_B_TIMING Command (0xCB)", () => {
     it("should reset Port B timing to default (3 cycles)", () => {
       // Setup - change Port B timing to 4 cycles
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter
-      dmaDevice.writeWR2(0x00); // Timing byte (4 cycles)
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows, bits 1:0=00 → CYCLES_4)
       dmaDevice.writeWR2(0x55); // Prescalar
 
       // Execute RESET_PORT_B_TIMING
@@ -312,6 +373,17 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
       const registers = dmaDevice.getRegisters();
       expect(registers.portBIsIO).toBe(true);
     });
+
+    // Step 34: RESET_PORT_B_TIMING must zero raw register REG(2,1)
+    it("should zero raw PORTB_TIMING register (REG(2,1))", () => {
+      // Write a non-zero timing byte via WR2 (without prescaler)
+      dmaDevice.writeWR2(0x00 | 0x40); // timing follows
+      dmaDevice.writeWR2(0x03);        // timing byte = 0x03 (CYCLES_1)
+      expect(dmaDevice.getRawReg(2, 1)).toBe(0x03);
+
+      dmaDevice.writeWR6(0xcb); // RESET_PORT_B_TIMING
+      expect(dmaDevice.getRawReg(2, 1)).toBe(0);
+    });
   });
 
   describe("DISABLE_DMA Command (0x83)", () => {
@@ -371,7 +443,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
 
     it("should not affect transfer mode", () => {
       // Setup - configure burst mode
-      dmaDevice.writeWR4(0x81 | 0x04); // Burst mode + parameters
+      dmaDevice.writeWR4(0xC1 | 0x04); // Burst mode (D6D5=10) + Port B addr low follows
 
       // Execute DISABLE_DMA
       dmaDevice.writeWR6(0x83);
@@ -394,7 +466,7 @@ describe("DmaDevice - Step 5: WR6 Command Register - Basic Commands", () => {
     it("should not affect prescalar", () => {
       // Setup - set prescalar
       dmaDevice.writeWR2(0x00 | 0x40); // Base byte with timing parameter
-      dmaDevice.writeWR2(0x00); // Timing byte
+      dmaDevice.writeWR2(0x20); // Timing byte (D5=1 → prescaler follows)
       dmaDevice.writeWR2(0x37); // Prescalar = 55
 
       // Execute DISABLE_DMA
@@ -612,7 +684,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
   describe("LOAD Command (0xCF)", () => {
     it("should load addresses with A→B direction", () => {
       // Configure Port A and Port B addresses
-      dmaDevice.writeWR0(0x40); // D6=1 (A→B direction)
+      dmaDevice.writeWR0(0x44); // D6=1 (A→B direction)
       dmaDevice.writeWR0(0x00); // Port A low = 0x00
       dmaDevice.writeWR0(0x10); // Port A high = 0x10
       dmaDevice.writeWR0(0x00); // Block length low
@@ -652,7 +724,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
 
     it("should reset byte counter to 0", () => {
       // Configure addresses
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -670,7 +742,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should keep register write sequence in IDLE", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -687,7 +759,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
 
     it("should handle multiple LOAD commands", () => {
       // Configure first addresses
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -702,7 +774,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
       expect(transferState.sourceAddress).toBe(0x1000);
 
       // Change Port A address
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x30);
       dmaDevice.writeWR0(0x00);
@@ -715,7 +787,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should work with zero addresses", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x00);
@@ -733,7 +805,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should work with maximum addresses", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0xff);
       dmaDevice.writeWR0(0x00);
@@ -754,7 +826,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
   describe("CONTINUE Command (0xD3)", () => {
     it("should reset byte counter to 0", () => {
       // Setup addresses first
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -776,7 +848,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should preserve source address", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -796,7 +868,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should preserve destination address", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -821,7 +893,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should work multiple times", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -926,7 +998,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
 
   describe("Command Sequencing", () => {
     it("should execute LOAD then ENABLE in sequence", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -947,7 +1019,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should execute LOAD, CONTINUE, then ENABLE", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -975,7 +1047,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should allow LOAD after ENABLE", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1014,7 +1086,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should preserve addresses through RESET and LOAD", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1033,7 +1105,7 @@ describe("DmaDevice - Step 6: WR6 Command Register - Transfer Commands", () => {
     });
 
     it("should handle all three commands in quick succession", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1080,10 +1152,8 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf);
       const status = dmaDevice.readStatusByte();
       
-      // Status format: 00E1101T
-      // Initially: endOfBlockReached=true, atLeastOneByteTransferred=false (T=0)
-      // Binary: 00110110 = 0x36
-      expect(status).toBe(0x36);
+      // MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
+      expect(status).toBe(0x00);
     });
 
     it("should reflect endOfBlockReached flag correctly", () => {
@@ -1091,9 +1161,8 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf);
       let status = dmaDevice.readStatusByte();
       
-      // endOfBlockReached=true gives status 0x36
-      // Format: 00110110 = 0x36
-      expect(status).toBe(0x36);
+      // MAME device_reset() sets m_status = 0 (COMMAND_RESET sets 0x38)
+      expect(status).toBe(0x00);
     });
 
     it("should reflect atLeastOneByteTransferred flag correctly", () => {
@@ -1145,17 +1214,18 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
     });
 
     it("should work with different read masks", () => {
-      // Set read mask for counter only
+      // Set read mask for counter only (MAME bit layout: bit 1=ctrLo, bit 2=ctrHi)
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60); // Counter low + high
+      dmaDevice.writeWR6(0x06); // Counter low + high (MAME bits 1+2)
       
       dmaDevice.writeWR6(0xa7);
-      expect(dmaDevice.getRegisterReadSeq()).toBe(0);
+      // With MAME bit layout, first enabled position is bit 1 (ctrLo) = seq pos 1
+      expect(dmaDevice.getRegisterReadSeq()).toBe(1);
     });
 
     it("should allow reading full sequence", () => {
       // Setup addresses and counter
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1173,9 +1243,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7); // INITIALIZE_READ_SEQUENCE
 
-      // Read status
+      // Read status — MAME: after device_reset + COMMAND_LOAD: m_status = 0 | 0x30 = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x30);
 
       // Read counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1284,7 +1354,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
   describe("Read Mask Filtering", () => {
     beforeEach(() => {
       // Setup addresses and counter
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x34);
       dmaDevice.writeWR0(0x12);
       dmaDevice.writeWR0(0x00);
@@ -1299,13 +1369,13 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
     it("should read only counter with mask 0x60", () => {
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60); // Counter low + high
+      dmaDevice.writeWR6(0x07); // Status + Counter low + high (MAME: bits 0+1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x30);
 
       // Counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1317,18 +1387,18 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x30);
     });
 
     it("should read only Port A with mask 0x18", () => {
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x18); // Port A low + high
+      dmaDevice.writeWR6(0x19); // Status + Port A low + high (MAME: bits 0+3+4)
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x30);
 
       // Port A low
       const portALo = dmaDevice.readStatusByte();
@@ -1340,18 +1410,18 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x30);
     });
 
     it("should read only Port B with mask 0x06", () => {
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x06); // Port B low + high
+      dmaDevice.writeWR6(0x61); // Status + Port B low + high (MAME: bits 0+5+6)
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x30);
 
       // Port B low
       const portBLo = dmaDevice.readStatusByte();
@@ -1363,7 +1433,7 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Should wrap back to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x30);
     });
 
     it("should read only status with mask 0x00", () => {
@@ -1372,24 +1442,25 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status (mask=0: setupNextRead stays at pos 0, returns m_status)
+      // MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status1 = dmaDevice.readStatusByte();
-      expect(status1).toBe(0x36);
+      expect(status1).toBe(0x30);
 
       // Should immediately wrap to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x30);
     });
 
     it("should read specific combination with mask 0x50", () => {
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x50); // Counter low + Port A low
+      dmaDevice.writeWR6(0x0b); // Status + Counter low + Port A low (MAME: bits 0+1+3)
 
       dmaDevice.writeWR6(0xa7);
 
-      // Status
+      // Status — MAME: after device_reset + COMMAND_LOAD (beforeEach): m_status = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x30);
 
       // Counter low
       const counterLo = dmaDevice.readStatusByte();
@@ -1401,13 +1472,13 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
       // Wrap to status
       const status2 = dmaDevice.readStatusByte();
-      expect(status2).toBe(0x36);
+      expect(status2).toBe(0x30);
     });
   });
 
   describe("Command Sequencing", () => {
     it("should allow READ_STATUS_BYTE after LOAD", () => {
-      dmaDevice.writeWR0(0x40);
+      dmaDevice.writeWR0(0x44);
       dmaDevice.writeWR0(0x00);
       dmaDevice.writeWR0(0x10);
       dmaDevice.writeWR0(0x00);
@@ -1420,8 +1491,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xcf); // LOAD
       dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
 
+      // MAME: after device_reset + COMMAND_LOAD: m_status = 0 | 0x30 = 0x30
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x30);
     });
 
     it("should allow REINITIALIZE after INITIALIZE", () => {
@@ -1446,9 +1518,8 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
 
       const status = dmaDevice.readStatusByte();
-      // After RESET: endOfBlock=true, atLeastOneByte=false
-      // Status byte: 00110110 = 0x36
-      expect(status).toBe(0x36);
+      // After RESET: m_status = 0x38 (reset sets m_status = 0x38)
+      expect(status).toBe(0x38);
     });
   });
 
@@ -1458,8 +1529,9 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0x7f);
       dmaDevice.writeWR6(0xa7);
 
+      // MAME device_reset() sets m_status = 0 (no COMMAND_RESET or COMMAND_LOAD)
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      expect(status).toBe(0x00);
 
       // Should read zeros for addresses/counter
       const counterLo = dmaDevice.readStatusByte();
@@ -1468,14 +1540,14 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
 
     it("should handle multiple sequential reads", () => {
       dmaDevice.writeWR6(0xbb);
-      dmaDevice.writeWR6(0x60); // Counter only
+      dmaDevice.writeWR6(0x07); // Status + Counter low + high (MAME: bits 0+1+2)
 
       dmaDevice.writeWR6(0xa7);
 
-      // Read sequence multiple times
+      // Read sequence multiple times (no COMMAND_RESET: m_status = 0)
       for (let i = 0; i < 3; i++) {
         const status = dmaDevice.readStatusByte();
-        expect(status).toBe(0x36);
+        expect(status).toBe(0x00);
 
         const counterLo = dmaDevice.readStatusByte();
         expect(counterLo).toBe(0x00);
@@ -1505,7 +1577,215 @@ describe("DmaDevice - Step 7: WR6 Command Register - Read Operations", () => {
       dmaDevice.writeWR6(0xbf); // READ_STATUS_BYTE
 
       const status = dmaDevice.readStatusByte();
-      expect(status).toBe(0x36);
+      // REINITIALIZE_STATUS_BYTE (0x8b) sets m_status |= 0x30; no COMMAND_RESET → m_status = 0x30
+      expect(status).toBe(0x30);
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 23: Interrupt Trigger Gating
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("DmaDevice - Step 23: Interrupt Trigger Gating", () => {
+  let machine: TestZxNextMachine;
+  let dmaDevice: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dmaDevice = machine.dmaDevice;
+  });
+
+  /**
+   * Configure a 1-byte Continuous transfer with INT_ON_END_OF_BLOCK set.
+   * Uses writePort() for the WR4 sequence so the follow-byte queue handles
+   * the INTERRUPT_CTRL byte correctly (D4=1 in WR4 base byte).
+   * @param enableInterrupt  true → 0xAB (ENABLE_INTERRUPTS), false → 0xAF (DISABLE_INTERRUPTS)
+   */
+  function configureEobInterrupt(enableInterrupt: boolean) {
+    dmaDevice.writeWR6(0xc7); // RESET_PORT_A_TIMING
+    dmaDevice.writeWR6(0xcb); // RESET_PORT_B_TIMING
+
+    dmaDevice.writeWR0(0x7d);
+    dmaDevice.writeWR0(0x00);  // Port A addr low  (0x8000)
+    dmaDevice.writeWR0(0x80);  // Port A addr high
+    dmaDevice.writeWR0(0x01);  // Block length low = 1
+    dmaDevice.writeWR0(0x00);  // Block length high
+
+    dmaDevice.writeWR1(0x14);  // Port A: memory, increment
+    dmaDevice.writeWR2(0x10);  // Port B: memory, increment
+
+    // WR4 using writePort() so the follow-byte queue runs.
+    // 0xBD = 1011_1101: D6D5=01 (Continuous), D4=1 (INTERRUPT_CTRL follows), D3D2=11 (both addr)
+    dmaDevice.writePort(0xbd); // WR4 base — triggers setupFollowQueue: [portB_L, portB_H, INTERRUPT_CTRL]
+    dmaDevice.writePort(0x00); // portB addr low  (0x9000)
+    dmaDevice.writePort(0x90); // portB addr high
+    dmaDevice.writePort(0x02); // INTERRUPT_CTRL = 0x02 (bit 1 = INT_ON_END_OF_BLOCK)
+    // Note: INTERRUPT_CTRL.D3=0, D4=0 → no further follow bytes (PULSE_CTRL/INTERRUPT_VECTOR)
+
+    // WR3 interrupt enable via WR6 commands (Step 22)
+    if (enableInterrupt) {
+      dmaDevice.writeWR6(0xab); // ENABLE_INTERRUPTS  → WR3 |= 0x20
+    } else {
+      dmaDevice.writeWR6(0xaf); // DISABLE_INTERRUPTS → WR3 &= ~0x20
+    }
+
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+
+    dmaDevice.writeWR6(0xcf); // LOAD
+    dmaDevice.writeWR6(0x87); // ENABLE_DMA
+  }
+
+  describe("INTERRUPT_ENABLE (WR3 D5) gate", () => {
+    it("interrupt fires when INTERRUPT_ENABLE=1 and INT_ON_END_OF_BLOCK=1", () => {
+      configureEobInterrupt(true);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+    });
+
+    it("interrupt does not fire when INTERRUPT_ENABLE=0 (WR3 D5=0)", () => {
+      configureEobInterrupt(false);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(0);
+    });
+
+    it("ip is cleared by RESET_AND_DISABLE_INTERRUPTS (0xA3)", () => {
+      configureEobInterrupt(true);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+      dmaDevice.writeWR6(0xa3); // RESET_AND_DISABLE_INTERRUPTS: ip=0, ius=0, WR3 D5=0
+      expect(dmaDevice.getIp()).toBe(0);
+    });
+  });
+
+  describe("IUS state", () => {
+    it("ius is initially 0 and cleared by RESET_AND_DISABLE_INTERRUPTS", () => {
+      expect(dmaDevice.getIus()).toBe(0);
+      dmaDevice.writeWR6(0xa3);
+      expect(dmaDevice.getIus()).toBe(0);
+    });
+
+    it("RESET (0xC3) clears ip and ius", () => {
+      configureEobInterrupt(true);
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+      dmaDevice.writeWR6(0xc3); // RESET
+      expect(dmaDevice.getIp()).toBe(0);
+      expect(dmaDevice.getIus()).toBe(0);
+    });
+  });
+
+  describe("STATUS_AFFECTS_VECTOR (INTERRUPT_CTRL bit D2)", () => {
+    it("stores interrupt vector when INTERRUPT_VECTOR follow byte provided", () => {
+      dmaDevice.writeWR6(0xc7); dmaDevice.writeWR6(0xcb);
+      dmaDevice.writeWR0(0x7d);
+      dmaDevice.writeWR0(0x00); dmaDevice.writeWR0(0x80);
+      dmaDevice.writeWR0(0x01); dmaDevice.writeWR0(0x00);
+      dmaDevice.writeWR1(0x14);
+      dmaDevice.writeWR2(0x10);
+
+      // WR4: 0xBD + portB addr + INTERRUPT_CTRL (D4=1 → INTERRUPT_VECTOR follows)
+      dmaDevice.writePort(0xbd);
+      dmaDevice.writePort(0x00); dmaDevice.writePort(0x90);
+      // INTERRUPT_CTRL: D4=1 (INTERRUPT_VECTOR follows), D1=1 (INT_ON_END_OF_BLOCK)
+      dmaDevice.writePort(0x12); // 0001_0010: D4=1 (vector follows), D1=1 (EOB)
+      dmaDevice.writePort(0xE4); // INTERRUPT_VECTOR = 0xE4
+
+      dmaDevice.writeWR6(0xab); // ENABLE_INTERRUPTS
+      machine.memoryDevice.writeMemory(0x8000, 0x42);
+      dmaDevice.writeWR6(0xcf); dmaDevice.writeWR6(0x87);
+
+      dmaDevice.executeContinuousTransfer();
+
+      expect(dmaDevice.getIp()).toBe(1); // interrupt fired
+    });
+  });
+
+  describe("DISABLE_INTERRUPTS / ENABLE_INTERRUPTS interaction (Step 22)", () => {
+    it("0xAF disables interrupt trigger even if INT_ON_END_OF_BLOCK=1", () => {
+      configureEobInterrupt(true);  // configure with ENABLE, then...
+      dmaDevice.writeWR6(0xaf);    // ...disable before transfer
+      dmaDevice.writeWR6(0xcf);   // re-LOAD
+      dmaDevice.writeWR6(0x87);   // re-ENABLE_DMA
+
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(0);
+    });
+
+    it("0xAB enables interrupt trigger so it fires at end of transfer", () => {
+      configureEobInterrupt(true); // configures with ENABLE_INTERRUPTS
+      dmaDevice.executeContinuousTransfer();
+      expect(dmaDevice.getIp()).toBe(1);
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 25: DMA interrupt-pending flag drives Z80 INT line
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("DmaDevice - Step 25: DMA ip connected to Z80 INT line", () => {
+  let machine: TestZxNextMachine;
+  let dmaDevice: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dmaDevice = machine.dmaDevice;
+  });
+
+  /** Wire up a 1-byte EOB-interrupt transfer identical to configureEobInterrupt(true) above. */
+  function configureEobInterruptForMachine() {
+    dmaDevice.writeWR6(0xc7); dmaDevice.writeWR6(0xcb);
+    dmaDevice.writeWR0(0x7d);
+    dmaDevice.writeWR0(0x00); dmaDevice.writeWR0(0x80);
+    dmaDevice.writeWR0(0x01); dmaDevice.writeWR0(0x00);
+    dmaDevice.writeWR1(0x14);
+    dmaDevice.writeWR2(0x10);
+    dmaDevice.writePort(0xbd);
+    dmaDevice.writePort(0x00); dmaDevice.writePort(0x90);
+    dmaDevice.writePort(0x02); // INTERRUPT_CTRL: INT_ON_END_OF_BLOCK
+    dmaDevice.writeWR6(0xab); // ENABLE_INTERRUPTS
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+    dmaDevice.writeWR6(0xcf); dmaDevice.writeWR6(0x87);
+  }
+
+  it("shouldRaiseInterrupt returns false before transfer", () => {
+    configureEobInterruptForMachine();
+    expect(machine.shouldRaiseInterrupt()).toBe(false);
+  });
+
+  it("shouldRaiseInterrupt returns true after EOB interrupt fires", () => {
+    configureEobInterruptForMachine();
+    dmaDevice.executeContinuousTransfer();
+    expect(dmaDevice.getIp()).toBe(1);
+    expect(machine.shouldRaiseInterrupt()).toBe(true);
+  });
+
+  it("shouldRaiseInterrupt returns false when ip is cleared by RESET_AND_DISABLE_INTERRUPTS", () => {
+    configureEobInterruptForMachine();
+    dmaDevice.executeContinuousTransfer();
+    expect(machine.shouldRaiseInterrupt()).toBe(true);
+    dmaDevice.writeWR6(0xa3); // RESET_AND_DISABLE_INTERRUPTS: ip=0, ius=0
+    expect(machine.shouldRaiseInterrupt()).toBe(false);
+  });
+
+  it("shouldRaiseInterrupt returns false when INTERRUPT_ENABLE=0 (no DMA ip set)", () => {
+    // Configure without enabling interrupts
+    dmaDevice.writeWR6(0xc7); dmaDevice.writeWR6(0xcb);
+    dmaDevice.writeWR0(0x7d);
+    dmaDevice.writeWR0(0x00); dmaDevice.writeWR0(0x80);
+    dmaDevice.writeWR0(0x01); dmaDevice.writeWR0(0x00);
+    dmaDevice.writeWR1(0x14);
+    dmaDevice.writeWR2(0x10);
+    dmaDevice.writePort(0xbd);
+    dmaDevice.writePort(0x00); dmaDevice.writePort(0x90);
+    dmaDevice.writePort(0x02);
+    dmaDevice.writeWR6(0xaf); // DISABLE_INTERRUPTS
+    machine.memoryDevice.writeMemory(0x8000, 0x42);
+    dmaDevice.writeWR6(0xcf); dmaDevice.writeWR6(0x87);
+
+    dmaDevice.executeContinuousTransfer();
+    expect(dmaDevice.getIp()).toBe(0);
+    expect(machine.shouldRaiseInterrupt()).toBe(false);
   });
 });

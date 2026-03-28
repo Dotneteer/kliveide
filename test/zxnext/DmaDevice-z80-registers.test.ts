@@ -28,11 +28,11 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
   // ============================================================================
   
   describe("WR0 - Direction Flag", () => {
-    it("should set direction A→B when D6=1", async () => {
+    it("should set direction A→B when D2=1", async () => {
       const m = await createTestNextMachine();
       const code = [
         0x01, 0x6B, 0x00,    // LD BC, 006BH
-        0x3E, 0x79,          // LD A, 79H (WR0: D6=1, D5-D3=111, D2-D0=001 enable Port A address)
+        0x3E, 0x7D,          // LD A, 7DH (WR0: D2=1 → A→B direction)
         0xED, 0x79,          // OUT (C), A
         0x76                 // HALT
       ];
@@ -430,7 +430,7 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
       const m = await createTestNextMachine();
       const code = [
         0x01, 0x6B, 0x00,    // LD BC, 006BH
-        0x3E, 0xAD,          // LD A, ADH (WR4: burst mode)
+        0x3E, 0xCD,          // LD A, ADH (WR4: burst mode)
         0xED, 0x79,          // OUT (C), A
         0x76                 // HALT
       ];
@@ -515,7 +515,7 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
       const m = await createTestNextMachine();
       const code = [
         0x01, 0x6B, 0x00,    // LD BC, 006BH
-        0x3E, 0x32,          // LD A, 32H (WR5: D5=1 auto-restart, D4D3=10, D1D0=10)
+        0x3E, 0xB2,          // LD A, B2H (WR5: (0xB2 & 0xC7)==0x82 → WR5, D5=1 auto-restart)
         0xED, 0x79,          // OUT (C), A
         0x76                 // HALT
       ];
@@ -692,7 +692,7 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
         0x3E, 0x10,          // LD A, 10H
         0xED, 0x79,          // OUT (C), A
         // WR4: Burst mode + Port B address
-        0x3E, 0xAD,          // LD A, ADH
+        0x3E, 0xCD,          // LD A, ADH
         0xED, 0x79,          // OUT (C), A
         0x3E, 0x00,          // LD A, 00H (Port B low)
         0xED, 0x79,          // OUT (C), A
@@ -741,6 +741,86 @@ describe("DMA Z80 Code-Driven Tests - Register Writing", () => {
       expect(m.dmaDevice.getDmaMode()).toBe(DmaMode.LEGACY);
       const regs = m.getDmaRegisters();
       expect(regs.portAStartAddress).toBe(0x7000);
+    });
+  });
+
+  // ============================================================================
+  // Step 18b: WR0 Decoded Semantic Bit Fields
+  // ============================================================================
+
+  describe("WR0 - Transfer Mode (D1-D0) Decoding (Step 18b)", () => {
+    it("should decode D1-D0=01 as transferModeWR0=1 (Transfer)", async () => {
+      const m = await createTestNextMachine();
+      const code = [
+        0x01, 0x6B, 0x00,    // LD BC, 006BH
+        0x3E, 0x79,          // LD A, 79H = 0111_1001: D2=0 (B→A), D1D0=01 (Transfer)
+        0xED, 0x79,          // OUT (C), A
+        0x76                 // HALT
+      ];
+      m.initCode(code, 0xC000);
+      m.pc = 0xC000;
+      m.runUntilHalt();
+      const regs = m.getDmaRegisters();
+      expect(regs.transferModeWR0).toBe(1); // D1-D0 = 01 = Transfer
+    });
+
+    it("should decode D1-D0=10 as transferModeWR0=2 (Search)", async () => {
+      const m = await createTestNextMachine();
+      const code = [
+        0x01, 0x6B, 0x00,    // LD BC, 006BH
+        0x3E, 0x7A,          // LD A, 7AH = 0111_1010: D2=0, D1D0=10 (Search)
+        0xED, 0x79,          // OUT (C), A
+        0x76                 // HALT
+      ];
+      m.initCode(code, 0xC000);
+      m.pc = 0xC000;
+      m.runUntilHalt();
+      const regs = m.getDmaRegisters();
+      expect(regs.transferModeWR0).toBe(2); // D1-D0 = 10 = Search
+    });
+
+    it("should decode D1-D0=11 as transferModeWR0=3 (Search+Transfer)", async () => {
+      const m = await createTestNextMachine();
+      const code = [
+        0x01, 0x6B, 0x00,    // LD BC, 006BH
+        // 0x07 = 0000_0111: D7=0 (WR0 ident), D6-D3=0 (no follow bytes), D2=1 (A→B), D1D0=11
+        0x3E, 0x07,          // LD A, 07H — D2=1 (A→B), D1D0=11 (Search+Transfer), no follow bytes
+        0xED, 0x79,          // OUT (C), A
+        0x76                 // HALT
+      ];
+      m.initCode(code, 0xC000);
+      m.pc = 0xC000;
+      m.runUntilHalt();
+      const regs = m.getDmaRegisters();
+      expect(regs.transferModeWR0).toBe(3); // D1-D0 = 11 = Search+Transfer
+      expect(regs.directionAtoB).toBe(true); // D2=1
+    });
+
+    it("D3-D6 (follow-byte indicators) do not affect transferModeWR0", async () => {
+      const m = await createTestNextMachine();
+      // 0x7D = 0111_1101: all follow bits set, D2=1 (A→B), D1D0=01 (Transfer)
+      const code = [
+        0x01, 0x6B, 0x00,    // LD BC, 006BH
+        0x3E, 0x7D,          // LD A, 7DH
+        0xED, 0x79,          // OUT (C), A
+        0x3E, 0x00,          // Port A low byte
+        0xED, 0x79,
+        0x3E, 0x80,          // Port A high byte
+        0xED, 0x79,
+        0x3E, 0x04,          // Block len low
+        0xED, 0x79,
+        0x3E, 0x00,          // Block len high
+        0xED, 0x79,
+        0x76                 // HALT
+      ];
+      m.initCode(code, 0xC000);
+      m.pc = 0xC000;
+      m.runUntilHalt();
+      const regs = m.getDmaRegisters();
+      expect(regs.transferModeWR0).toBe(1); // D1-D0 only = 01 (Transfer)
+      expect(regs.directionAtoB).toBe(true);
+      expect(regs.portAStartAddress).toBe(0x8000);
+      expect(regs.blockLength).toBe(4);
     });
   });
 });
