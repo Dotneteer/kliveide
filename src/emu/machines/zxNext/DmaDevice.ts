@@ -306,6 +306,9 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private dmaState: DmaState = DmaState.IDLE;
   // Step 10: MAME-style sequence state (replaces dmaState internally)
   private dmaSeq: DmaSeq = DmaSeq.SEQ_IDLE;
+  // Step 12: specnext_dma m_dma_delay — stalls DMA at WAIT_READY and forces single-byte
+  // mode for continuous transfers (one byte per external trigger).
+  private dmaDelay: boolean = false;
   private registerWriteSeq: RegisterWriteSequence = RegisterWriteSequence.IDLE;
   private registerReadSeq: RegisterReadSequence = RegisterReadSequence.RD_STATUS;
   private _tempRegisterByte: number = 0;  // Stores first byte of WR0-WR6 for parameter parsing
@@ -422,6 +425,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.statusFlags = this.initializeStatusFlags();
     this.dmaState = DmaState.IDLE;
     this.dmaSeq = DmaSeq.SEQ_IDLE;  // Step 10
+    this.dmaDelay = false;           // Step 12
     this.registerWriteSeq = RegisterWriteSequence.IDLE;
     this.registerReadSeq = RegisterReadSequence.RD_STATUS;
     this._tempRegisterByte = 0;
@@ -462,6 +466,14 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   getDmaSeq(): DmaSeq {
     return this.dmaSeq;
+  }
+
+  getDmaDelay(): boolean {
+    return this.dmaDelay;
+  }
+
+  setDmaDelay(value: boolean): void {
+    this.dmaDelay = value;
   }
 
   getRegisterWriteSeq(): RegisterWriteSequence {
@@ -1830,6 +1842,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
       case DmaSeq.SEQ_WAIT_READY: {
         if (!this.isReady()) return 0;
+        // Step 12: dma_delay stall — mirrors specnext_dma clock_w early return at WAIT_READY.
+        // When delay is active, do NOT request the bus.  An external setDmaDelay(false) call
+        // is needed to allow the transfer to continue.
+        if (this.dmaDelay) return 0;
         // Zero-length transfer: finish immediately without requesting bus
         if (this._count === 0) {
           this.handleTransferFinish();
@@ -1927,6 +1943,18 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         this.dmaSeq = DmaSeq.SEQ_FINISH;
         this.handleTransferFinish();
         break;
+    }
+
+    // Step 12: dma_delay override — mirrors specnext_dma clock_w logic:
+    //   if (dma_delay && next-state == SEQ_TRANS1_INC_DEC_SOURCE_ADDRESS) {
+    //     set_busrq(CLEAR_LINE); dma_seq = SEQ_WAIT_READY; return; }
+    // When the delay is active and the mode dispatch has set the next state to
+    // INC_DEC_SOURCE (continuous mode about to continue to the next byte),
+    // intercept and force "release bus → WAIT_READY" instead.
+    // Burst mode is unaffected here because it already goes to WAIT_READY.
+    if (this.dmaDelay && this.dmaSeq === DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE) {
+      this.releaseBus();
+      this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
     }
 
     // Return T-states based on the CONFIGURED mode (not the effective/overridden mode).
