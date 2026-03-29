@@ -58,6 +58,21 @@ export class PsgChip {
   // --- 2 = chip 2
   readonly chipId: number;
 
+  // --- Chip type: AY = AY-3-8910 (Spectrum 128K), YM = YM2149 (ZX Next)
+  readonly chipType: 'AY' | 'YM';
+
+  // --- AY-3-8910 volume table (from hardware-measured resistor model, normalized to 0-65535)
+  private static readonly AY_VOLUME_TABLE: readonly number[] = [
+    0, 836, 1212, 1773, 2619, 3875, 5765, 8589,
+    10207, 17157, 24956, 32768, 43520, 55424, 65120, 65535
+  ];
+
+  // --- YM2149 volume table (from YM2149 resistor model, normalized to 0-65535)
+  private static readonly YM_VOLUME_TABLE: readonly number[] = [
+    0, 0, 1057, 1521, 2130, 2987, 4119, 5765,
+    7783, 10207, 13311, 17157, 23420, 32768, 43520, 65535
+  ];
+
   // --- The last register index set
   private _psgRegisterIndex = 0;
 
@@ -67,11 +82,8 @@ export class PsgChip {
   // --- Stores the envelopes volume forms
   private readonly _psgEnvelopes = new Uint8Array(0x800);
 
-  // --- Table of volume levels
-  private readonly _psgVolumeTable: number[] = [
-    0x0000, 0x0201, 0x033c, 0x04d7, 0x0783, 0x0ca6, 0x133e, 0x2393, 0x2868,
-    0x45d4, 0x606a, 0x76ea, 0x97bc, 0xb8a6, 0xdc52, 0xffff
-  ];
+  // --- Active volume table (selected at construction time based on chipType)
+  private readonly _psgVolumeTable: readonly number[];
 
   // --- Channel A
   private _toneA: number; // 12-bit
@@ -155,9 +167,15 @@ export class PsgChip {
 
   /**
    * Reset the device when creating it
+   * @param chipId Chip identifier (0-3, used in TurboSound multi-chip systems)
+   * @param chipType Chip variant: 'AY' = AY-3-8910 (Spectrum 128K), 'YM' = YM2149 (ZX Next)
    */
-  constructor (chipId: number = 0) {
+  constructor (chipId: number = 0, chipType: 'AY' | 'YM' = 'AY') {
     this.chipId = chipId & 0x03; // Limit to 0-3
+    this.chipType = chipType;
+    this._psgVolumeTable = chipType === 'YM'
+      ? PsgChip.YM_VOLUME_TABLE
+      : PsgChip.AY_VOLUME_TABLE;
     this.reset();
   }
 
@@ -538,30 +556,31 @@ export class PsgChip {
     let vol = 0;
 
     // --- Increment TONE A counter
-    if (this._toneA) {
+    // Period 0 is treated as period 1 (highest frequency), matching MAME hardware behaviour.
+    {
+      const periodA = this._toneA || 1;
       this._cntA++;
-      if (this._cntA >= this._toneA) {
-        // --- Reset counter and reverse output bit
+      if (this._cntA >= periodA) {
         this._cntA = 0;
         this._bitA = !this._bitA;
       }
     }
 
     // --- Increment TONE B counter
-    if (this._toneB) {
+    {
+      const periodB = this._toneB || 1;
       this._cntB++;
-      if (this._cntB >= this._toneB) {
-        // --- Reset counter and reverse output bit
+      if (this._cntB >= periodB) {
         this._cntB = 0;
         this._bitB = !this._bitB;
       }
     }
 
     // --- Increment TONE C counter
-    if (this._toneC) {
+    {
+      const periodC = this._toneC || 1;
       this._cntC++;
-      if (this._cntC >= this._toneC) {
-        // --- Reset counter and reverse output bit
+      if (this._cntC >= periodC) {
         this._cntC = 0;
         this._bitC = !this._bitC;
       }
@@ -742,6 +761,7 @@ export class PsgChip {
         counter: this._cntNoise,
         bit: this._bitNoise
       },
+      chipType: this.chipType,
       envelope: {
         frequency: this._envFreq,
         style: this._envStyle,

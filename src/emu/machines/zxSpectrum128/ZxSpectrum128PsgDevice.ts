@@ -25,7 +25,7 @@ export class ZxSpectrum128PsgDevice
    */
   constructor (public readonly machine: IZxSpectrumMachine) {
     super(machine);
-    this._psg = new PsgChip();
+    this._psg = new PsgChip(0, 'AY'); // ZX Spectrum 128K uses AY-3-8912
 
     // --- Set the first tact to create a sample for
     this._psgNextClockTact = PSG_CLOCK_STEP;

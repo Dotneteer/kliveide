@@ -60,9 +60,9 @@ import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
 export class TurboSoundDevice {
   // --- The three PSG chips
   private readonly _chips: PsgChip[] = [
-    new PsgChip(0),
-    new PsgChip(1),
-    new PsgChip(2),
+    new PsgChip(0, 'YM'), // ZX Next uses YM2149
+    new PsgChip(1, 'YM'),
+    new PsgChip(2, 'YM'),
   ];
 
   // --- Currently selected chip (0, 1, or 2)
