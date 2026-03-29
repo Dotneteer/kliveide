@@ -3647,8 +3647,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private spritesCurrentX: number;
   // Cached pattern data for current sprite
   private spritesPatternData: Uint8Array | null;
-  // Current sprite being processed (cached reference)
-  private spritesCurrentSprite: SpriteAttributes | null;
+  // Effective attributes for the sprite currently being processed
+  private spritesEffX: number;
+  private spritesEffPaletteOffset: number;
+  private spritesEffIs4Bit: boolean;
+  private spritesEffScaleX: number;
+  private spritesEffWidth: number;
   
   // Precalculated sprite clipping boundaries (updated when spritesOverBorderEnabled changes)
   private spritesClipXMin: number;
@@ -3663,22 +3667,39 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * @param cell - ULA Standard rendering cell with activity flags
    */
   /**
-   * Update sprite clipping boundaries based on spritesOverBorderEnabled flag.
-   * Called when NextReg 0x15 bit 1 changes.
+   * Update sprite clipping boundaries based on spritesOverBorderEnabled and clip window registers.
+   * Called when NextReg 0x15 or NR $19 changes.
+   * 
+   * FPGA has three modes:
+   * 1. over_border=1, clip_en=0: full 0-319, 0-255
+   * 2. over_border=1, clip_en=1: clip_x1<<1 to clip_x2<<1|1, clip_y1 to clip_y2
+   * 3. over_border=0: ((clip_x[7:5]+1) & clip_x[4:0]) formula (adds 32 to upper bits)
    */
   updateSpriteClipBoundaries(): void {
-    if (this.spriteDevice.spritesOverBorderEnabled) {
-      // Full sprite area: 320×256 pixels
-      this.spritesClipXMin = 0;
-      this.spritesClipXMax = 319;
-      this.spritesClipYMin = 0;
-      this.spritesClipYMax = 255;
+    const sd = this.spriteDevice;
+    if (sd.spritesOverBorderEnabled) {
+      if (!sd.spriteClippingEnabled) {
+        // Mode 1: Full sprite area: 320×256 pixels
+        this.spritesClipXMin = 0;
+        this.spritesClipXMax = 319;
+        this.spritesClipYMin = 0;
+        this.spritesClipYMax = 255;
+      } else {
+        // Mode 2: over_border + clip_en: use scaled clip registers
+        // FPGA: x_s_v <= clip_x1_i & '0'; x_e_v <= clip_x2_i & '1'
+        this.spritesClipXMin = sd.clipWindowX1 << 1;
+        this.spritesClipXMax = (sd.clipWindowX2 << 1) | 1;
+        // FPGA: y_s_v <= '0' & clip_y1_i; y_e_v <= '0' & clip_y2_i
+        this.spritesClipYMin = sd.clipWindowY1;
+        this.spritesClipYMax = sd.clipWindowY2;
+      }
     } else {
-      // Restricted to ULA area: 256×192 pixels (X: 32-287, Y: 32-223)
-      this.spritesClipXMin = 32;
-      this.spritesClipXMax = 287;
-      this.spritesClipYMin = 32;
-      this.spritesClipYMax = 223;
+      // Mode 3: !over_border — FPGA formula adds 32 to upper 3 bits
+      // x_s_v <= (('0' & clip_x1(7:5)) + 1) & clip_x1(4:0)
+      this.spritesClipXMin = (((((sd.clipWindowX1 >> 5) & 0x07) + 1) & 0x0f) << 5) | (sd.clipWindowX1 & 0x1f);
+      this.spritesClipXMax = (((((sd.clipWindowX2 >> 5) & 0x07) + 1) & 0x0f) << 5) | (sd.clipWindowX2 & 0x1f);
+      this.spritesClipYMin = (((((sd.clipWindowY1 >> 5) & 0x07) + 1) & 0x0f) << 5) | (sd.clipWindowY1 & 0x1f);
+      this.spritesClipYMax = (((((sd.clipWindowY2 >> 5) & 0x07) + 1) & 0x0f) << 5) | (sd.clipWindowY2 & 0x1f);
     }
   }
 
@@ -3686,24 +3707,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // This function executes the next CLK_28 cycle (implementing the QUALIFY/PROCESS phases)
     const renderPixelClk28 = () => {
       if (this.spritesRenderingDone) {
-        // Nothing to render for this scanline; all sprites processed
         return;
       }
 
       if (this.spritesQualifying) {
         // QUALIFYING phase: Check if current sprite is visible on this scanline
 
-        // Early exit: If the scanline is entirely outside vertical clip boundaries,
-        // no sprite can be visible on this scanline
-        if (this.spritesVc < this.spritesClipYMin || this.spritesVc > this.spritesClipYMax) {
-          // Scanline is outside vertical clip bounds; skip all sprites
-          this.spritesRenderingDone = true;
-          return;
-        }
-
         // Check if we've processed all sprites (128)
         if (this.spritesIndex >= 128) {
-          // All sprites have been checked; switch to IDLE
           this.spritesRenderingDone = true;
           return;
         }
@@ -3711,60 +3722,82 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         // Fetch the sprite attributes for the current sprite
         const spriteAttrs = this.spriteDevice.attributes[this.spritesIndex];
         
-        // Safety check: ensure sprite attributes exist
-        if (!spriteAttrs) {
-          // Invalid sprite index, stop processing
-          this.spritesRenderingDone = true;
-          return;
-        }
-
-        // Check if sprite is globally enabled (attr3 bit 7)
-        if (!spriteAttrs.visible) {
-          // Sprite is not visible; skip to next sprite
-          this.spritesIndex++;
-          return;
-        }
-
-        // Check if the current scanline intersects with the sprite's vertical position
-        const spriteY = spriteAttrs.y;
-        const spriteHeight = spriteAttrs.height;
-        const spriteBottom = spriteY + spriteHeight;
+        // Check if this is a relative sprite (attr3[6]=1 AND attr4[7:6]="01")
+        const isRelative = this.spriteDevice.isRelativeSprite(this.spritesIndex);
         
-        const scanlineIntersects =
-          this.spritesVc >= spriteY && 
-          this.spritesVc < spriteBottom &&
-          spriteY <= this.spritesClipYMax && 
-          spriteBottom > this.spritesClipYMin;
-
-        if (!scanlineIntersects) {
-          // Sprite does not intersect this scanline or is outside vertical clip bounds
-          this.spritesIndex++;
-          return;
-        }
-
-        // Check if sprite is within horizontal clip boundaries
-        const spriteX = spriteAttrs.x;
-        const spriteWidth = spriteAttrs.width;
-        const spriteRight = spriteX + spriteWidth;
+        // Resolve the effective attributes for this sprite
+        let effX: number;
+        let effY: number;
+        let effVisible: boolean;
+        let effPaletteOffset: number;
+        let effIs4Bit: boolean;
+        let effHas5Bytes: boolean;
+        let effScaleX: number;
+        let effScaleY: number;
+        let effPatternVariantIndex: number;
+        let effWidth: number;
         
-        const horizontallyVisible = 
-          spriteX <= this.spritesClipXMax && 
-          spriteRight > this.spritesClipXMin;
+        if (isRelative) {
+          // Resolve relative sprite against current anchor state
+          const resolved = this.spriteDevice.resolveRelativeSprite(this.spritesIndex);
+          effX = resolved.x;
+          effY = resolved.y;
+          effVisible = resolved.visible;
+          effPaletteOffset = resolved.paletteOffset;
+          effIs4Bit = resolved.is4BitPattern;
+          effHas5Bytes = resolved.has5AttributeBytes;
+          effScaleX = resolved.scaleX;
+          effScaleY = resolved.scaleY;
+          effPatternVariantIndex = resolved.patternVariantIndex;
+          // Compute effective width from scale and rotation
+          const baseSize = 16;
+          if (resolved.rotate) {
+            effWidth = baseSize << effScaleY;
+          } else {
+            effWidth = baseSize << effScaleX;
+          }
+        } else {
+          // Non-relative (anchor) sprite: update anchor state
+          this.spriteDevice.updateAnchorState(this.spritesIndex);
+          effX = spriteAttrs.x;
+          effY = spriteAttrs.y;
+          effVisible = spriteAttrs.visible;
+          effPaletteOffset = spriteAttrs.paletteOffset;
+          effIs4Bit = spriteAttrs.is4BitPattern;
+          effHas5Bytes = spriteAttrs.has5AttributeBytes;
+          effScaleX = spriteAttrs.scaleX;
+          effScaleY = spriteAttrs.scaleY;
+          effPatternVariantIndex = spriteAttrs.patternVariantIndex;
+          effWidth = spriteAttrs.width;
+        }
 
-        if (!horizontallyVisible) {
-          // Sprite is outside horizontal clip bounds
+        // Check if sprite is visible
+        if (!effVisible) {
           this.spritesIndex++;
           return;
         }
 
-        // Check if there is still time for processing this sprite on this scanline
-        // The PROCESSING phase needs enough CLK_28 cycles to render the sprite width
-        // (+2 CLK_28 tacts for setup/overhead)
-        const cyclesNeeded = spriteWidth + 2;
+        // Y offset: 9-bit modular arithmetic (FPGA: spr_y_offset_raw = spr_cur_vcount - spr_cur_y)
+        const yOffsetRaw = (this.spritesVc - effY) & 0x1ff;
+        const scaleY = effHas5Bytes ? effScaleY : 0;
+        let yOffset: number;
+        if (scaleY === 0) {
+          yOffset = yOffsetRaw;
+        } else {
+          const signed = (yOffsetRaw & 0x100) ? (yOffsetRaw | ~0x1ff) : yOffsetRaw;
+          yOffset = (signed >> scaleY) & 0x1ff;
+        }
+        // Qualifies when bits 8:4 are all zero
+        if ((yOffset & 0x1f0) !== 0) {
+          this.spritesIndex++;
+          return;
+        }
+
+        // Check timing budget
+        const cyclesNeeded = effWidth + 2;
         if (this.spritesRemainingClk7Tacts * 4 < cyclesNeeded) {
-          // Not enough time to render this sprite (no_time condition)
-          // Set sprite overflow flag and skip remaining sprites
           this.spritesOvertime = true;
+          this.spriteDevice.tooManySpritesPerLine = true;
           this.spritesRenderingDone = true;
           return;
         }
@@ -3772,123 +3805,91 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         // Sprite qualifies! Switch to PROCESSING phase
         this.spritesQualifying = false;
 
-        // Cache sprite reference for PROCESSING phase
-        this.spritesCurrentSprite = spriteAttrs;
+        // Store effective rendering attributes for PROCESSING phase
+        this.spritesEffX = effX;
+        this.spritesEffPaletteOffset = effPaletteOffset;
+        this.spritesEffIs4Bit = effIs4Bit;
+        this.spritesEffScaleX = effScaleX;
+        this.spritesEffWidth = effWidth;
 
-        // 1. Calculate Y index within pattern (accounting for scale only)
-        //    This represents which row of the 16×16 pattern we're rendering
-        //    Note: Y-mirror is already applied in the pre-transformed pattern variant
-        const yOffset = this.spritesVc - spriteAttrs.y;
-        this.spritesPatternYIndex = yOffset >> spriteAttrs.scaleY;  // Apply Y-scale (0-15)
+        // Calculate Y index within pattern (bits 3:0 of the scaled offset)
+        this.spritesPatternYIndex = yOffset & 0x0f;
 
-        // 2. Get pre-transformed pattern variant using cached variant index
-        //    The variant index is precalculated when sprite attributes are written
-        this.spritesPatternData = spriteAttrs.is4BitPattern
-          ? this.spriteDevice.patternMemory4bit[spriteAttrs.patternVariantIndex]
-          : this.spriteDevice.patternMemory8bit[spriteAttrs.patternVariantIndex];
+        // Get pre-transformed pattern variant
+        this.spritesPatternData = effIs4Bit
+          ? this.spriteDevice.patternMemory4bit[effPatternVariantIndex]
+          : this.spriteDevice.patternMemory8bit[effPatternVariantIndex];
 
-        // 3. Initialize counters
-        this.spritesCurrentPixel = 0;           // Pixel counter (0 to sprite.width-1)
-        this.spritesCurrentX = spriteAttrs.x;   // Line buffer write position (9-bit)
+        // Initialize counters
+        this.spritesCurrentPixel = 0;
+        this.spritesCurrentX = effX;
 
       } else {
         // PROCESSING phase: Render sprite pixels
         
-        // Safety check: ensure we have a valid sprite reference
-        if (!this.spritesCurrentSprite) {
-          // This shouldn't happen, but if it does, go back to QUALIFYING
-          this.spritesQualifying = true;
-          return;
-        }
-        
         // Check completion first
-        if (this.spritesCurrentPixel >= this.spritesCurrentSprite.width) {
-          // Sprite rendering complete - transition back to QUALIFYING
+        if (this.spritesCurrentPixel >= this.spritesEffWidth) {
           this.spritesQualifying = true;
           this.spritesIndex++;
           return;
         }
 
-        const sprite = this.spritesCurrentSprite;
+        // Calculate X index within pattern (0-15)
+        const xScaled = this.spritesCurrentPixel >> this.spritesEffScaleX;
+        const xIndex = xScaled & 0x0f;
 
-        // 1. Calculate X index within pattern (0-15)
-        //    Account for scaling: multiple output pixels map to same pattern pixel
-        const xScaled = this.spritesCurrentPixel >> sprite.scaleX;  // Divide by 2^scaleX
-        const xIndex = xScaled & 0x0f;                              // Modulo 16
-
-        // 2. Fetch pixel from pre-transformed pattern (DIRECT LOOKUP - no transform!)
-        //    Pattern is always indexed as [y][x] because transformation is pre-applied
+        // Fetch pixel from pre-transformed pattern
         const patternOffset = (this.spritesPatternYIndex << 4) | xIndex;
         const pixelValue = this.spritesPatternData![patternOffset];
 
-        // 3. Check transparency FIRST (before any color processing)
-        //    Compare against global transparency index (NextReg 0x4B, default 0xE3)
-        const isTransparent = (pixelValue === this.spriteDevice.transparencyIndex);
+        // Check transparency
+        const transpIdx = this.spriteDevice.transparencyIndex;
+        const isTransparent = this.spritesEffIs4Bit
+          ? (pixelValue === (transpIdx & 0x0f))
+          : (pixelValue === transpIdx);
 
         if (isTransparent) {
-          // Skip transparent pixels - advance to next pixel
           this.spritesCurrentPixel++;
           this.spritesCurrentX++;
           return;
         }
 
-        // 4. Extract pixel color value
-        //    For 4-bit: only lower nibble is used (upper nibble ignored)
-        //    For 8-bit: full byte is used
-        let colorValue: number;
-        if (sprite.is4BitPattern) {
-          colorValue = pixelValue & 0x0f;  // Use only lower nibble
-        } else {
-          colorValue = pixelValue;  // Use full byte
-        }
-
-        // 5. Apply palette offset
+        // Extract and apply palette
         let paletteIndex: number;
-        if (sprite.is4BitPattern) {
-          // 4-bit mode: palette offset replaces upper 4 bits
-          paletteIndex = (sprite.paletteOffset << 4) | colorValue;
+        if (this.spritesEffIs4Bit) {
+          paletteIndex = (this.spritesEffPaletteOffset << 4) | (pixelValue & 0x0f);
         } else {
-          // 8-bit mode: add palette offset to upper 4 bits only
-          const upper = ((colorValue >> 4) + sprite.paletteOffset) & 0x0f;
-          const lower = colorValue & 0x0f;
-          paletteIndex = (upper << 4) | lower;
+          const upper = ((pixelValue >> 4) + this.spritesEffPaletteOffset) & 0x0f;
+          paletteIndex = (upper << 4) | (pixelValue & 0x0f);
         }
 
-        // 6. Check line buffer bounds
-        //    Only write if X position is within visible display (0-319)
-        //    Negative positions and positions >= 320 are clipped
+        // Line buffer bounds check
         const bufferPos = this.spritesCurrentX;
         const inBounds = (bufferPos >= 0 && bufferPos < 320);
 
-        // 7. Read existing line buffer value (for collision and zero-on-top)
-        let existingValue = 0;
+        // Read existing value
         let existingValid = false;
         if (inBounds) {
-          existingValue = this.spritesBuffer[bufferPos];
-          existingValid = (existingValue & 0x100) !== 0;  // Bit 8 = valid flag
+          existingValid = (this.spritesBuffer[bufferPos] & 0x100) !== 0;
         }
 
-        // 8. Determine write enable
+        // Write enable
         let writeEnable = inBounds;
-        
         if (this.spriteDevice.sprite0OnTop && existingValid) {
-          // Zero-on-top mode: don't overwrite existing valid pixels
           writeEnable = false;
         }
 
-        // 9. Write to line buffer
-        if (writeEnable) {
-          // Set bit 8 (valid flag) and bits 7:0 (palette index)
-          this.spritesBuffer[bufferPos] = 0x100 | paletteIndex;
-          
-          // 10. Collision detection
-          //     Trigger when writing to a position that already has a valid pixel
-          if (existingValid) {
-            this.spriteDevice.collisionDetected = true;
-          }
+        // Collision detection (independent of zero-on-top)
+        if (inBounds && existingValid) {
+          this.spriteDevice.collisionDetected = true;
         }
 
-        // 11. Advance to next pixel
+        // Write to line buffer
+        if (writeEnable) {
+          this.spritesBuffer[bufferPos] = 0x100 | paletteIndex;
+        }
+
+        // Advance
         this.spritesCurrentPixel++;
         this.spritesCurrentX++;
       }
@@ -3913,6 +3914,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.spritesRenderingDone = false;
       this.spritesOvertime = false;
       this.spritesRemainingClk7Tacts = 120; // Total CLK_28 tacts available (480 CLK_28 ÷ 4 = 120 CLK_7 tacts)
+      this.spriteDevice.resetAnchorState();
     }
 
     if ((cell & SCR_SPRITE_INIT_DISPLAY) !== 0) {

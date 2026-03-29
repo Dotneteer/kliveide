@@ -417,7 +417,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -450,7 +450,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -483,7 +483,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -516,7 +516,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -549,7 +549,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -583,7 +583,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -617,7 +617,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -651,7 +651,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -685,7 +685,7 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
+    expect(attrs.x).toBe(0x123);
     expect(attrs.y).toBe(0x45);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
@@ -720,7 +720,7 @@ describe("Next - SpriteDevice", async function () {
     // --- Assert
     const attrs = spr.attributes[0];
     expect(attrs.x).toBe(0x123);
-    expect(attrs.y).toBe(0x45);
+    expect(attrs.y).toBe(0x145);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
     expect(attrs.mirrorY).toBe(false);
@@ -753,8 +753,8 @@ describe("Next - SpriteDevice", async function () {
 
     // --- Assert
     const attrs = spr.attributes[0];
-    expect(attrs.x).toBe(0x23);
-    expect(attrs.y).toBe(0x45);
+    expect(attrs.x).toBe(0x123);
+    expect(attrs.y).toBe(0x145);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
     expect(attrs.mirrorY).toBe(false);
@@ -788,7 +788,7 @@ describe("Next - SpriteDevice", async function () {
     // --- Assert
     const attrs = spr.attributes[0];
     expect(attrs.x).toBe(0x123);
-    expect(attrs.y).toBe(0x45);
+    expect(attrs.y).toBe(0x145);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
     expect(attrs.mirrorY).toBe(false);
@@ -822,7 +822,7 @@ describe("Next - SpriteDevice", async function () {
     // --- Assert
     const attrs = spr.attributes[0];
     expect(attrs.x).toBe(0x123);
-    expect(attrs.y).toBe(0x45);
+    expect(attrs.y).toBe(0x145);
     expect(attrs.paletteOffset).toBe(0x0a);
     expect(attrs.mirrorX).toBe(false);
     expect(attrs.mirrorY).toBe(false);
@@ -2575,7 +2575,7 @@ describe("9-bit Coordinate Validation", async function () {
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
     spr.writeIndexedSpriteAttribute(0, 0, 0xff);  // X LSB = 0xFF
-    spr.writeIndexedSpriteAttribute(0, 4, 0x01);  // X MSB = 1, colorMode = 0
+    spr.writeIndexedSpriteAttribute(0, 2, 0x01);  // X MSB = 1 via attr2[0]
 
     // --- Assert: X = 0x1FF (9-bit max)
     expect(attrs.x).toBe(0x1ff);
@@ -2586,7 +2586,7 @@ describe("9-bit Coordinate Validation", async function () {
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
     spr.writeIndexedSpriteAttribute(0, 0, 0x00);  // X LSB = 0
-    spr.writeIndexedSpriteAttribute(0, 4, 0x01);  // X MSB = 1, colorMode = 0
+    spr.writeIndexedSpriteAttribute(0, 2, 0x01);  // X MSB = 1 via attr2[0]
 
     // --- Assert: X = 0x100
     expect(attrs.x).toBe(0x100);
@@ -2596,7 +2596,7 @@ describe("9-bit Coordinate Validation", async function () {
     const machine = await createTestNextMachine();
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
-    spr.writeIndexedSpriteAttribute(0, 4, 0x01);  // X MSB = 1 → x = 0x100
+    spr.writeIndexedSpriteAttribute(0, 2, 0x01);  // X MSB = 1 via attr2[0]
     spr.writeIndexedSpriteAttribute(0, 0, 0x42);  // X LSB = 0x42 → x = 0x142
 
     // --- Assert: X = 0x142
@@ -2608,11 +2608,11 @@ describe("9-bit Coordinate Validation", async function () {
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
     spr.writeIndexedSpriteAttribute(0, 0, 0xff);  // X LSB = 0xFF
-    spr.writeIndexedSpriteAttribute(0, 4, 0x03);  // X MSB = 1, colorMode = 0 → x = 0x1FF
+    spr.writeIndexedSpriteAttribute(0, 2, 0x01);  // X MSB = 1 via attr2[0] → x = 0x1FF
 
     // Now try to set X beyond 9-bit
     spr.writeIndexedSpriteAttribute(0, 0, 0x00);  // X LSB = 0
-    spr.writeIndexedSpriteAttribute(0, 4, 0x03);  // X MSB = 1 (unchanged) → x = 0x100
+    // X MSB still 1 from attr2, so x = 0x100
 
     // --- Assert: Values masked to 9-bit
     expect(attrs.x & 0x1ff).toBe(attrs.x);  // Verify it's within 9-bit range
@@ -2660,10 +2660,11 @@ describe("9-bit Coordinate Validation", async function () {
     spr.writeIndexedSpriteAttribute(0, 0, 0x80);  // X LSB = 0x80
     spr.writeIndexedSpriteAttribute(0, 1, 0x60);  // Y LSB = 0x60
     spr.writeIndexedSpriteAttribute(0, 3, 0x40);  // has5AttributeBytes = 1, enableVisibility = 0
-    spr.writeIndexedSpriteAttribute(0, 4, 0xc1);  // colorMode = 3 (11), attr2 = 0, X MSB = 1
+    spr.writeIndexedSpriteAttribute(0, 4, 0xc1);  // colorMode = 3 (11), Y MSB = 1 via attr4[0]
 
-    // --- Assert: X MSB applied because colorMode != 1 (not relative sprite mode)
-    expect(attrs.x).toBe(0x180);  // X = 0x80 | 0x100
+    // --- Assert: X MSB=0 (not set via attr2), Y MSB=1 from attr4[0] (has5bytes=true)
+    expect(attrs.x).toBe(0x80);
+    expect(attrs.y).toBe(0x160);
   });
 
   it("X coordinate: anchor sprite applies MSB", async () => {
@@ -2673,10 +2674,11 @@ describe("9-bit Coordinate Validation", async function () {
     spr.writeIndexedSpriteAttribute(0, 0, 0x80);  // X LSB = 0x80
     spr.writeIndexedSpriteAttribute(0, 1, 0x60);  // Y LSB = 0x60
     spr.writeIndexedSpriteAttribute(0, 3, 0x40);  // has5AttributeBytes = 1, enableVisibility = 0
-    spr.writeIndexedSpriteAttribute(0, 4, 0x01);  // colorMode = 0 (anchor), X MSB = 1
+    spr.writeIndexedSpriteAttribute(0, 4, 0x01);  // colorMode = 0 (anchor), Y MSB = 1 via attr4[0]
 
-    // --- Assert: X MSB applied because colorMode = 0 (anchor)
-    expect(attrs.x).toBe(0x180);  // 0x80 | 0x100
+    // --- Assert: X MSB=0 (not set via attr2), Y MSB=1 from attr4[0]
+    expect(attrs.x).toBe(0x80);
+    expect(attrs.y).toBe(0x160);
   });
 
   it("Both X and Y coordinates: various values", async () => {
@@ -2696,7 +2698,7 @@ describe("9-bit Coordinate Validation", async function () {
       const attrs = spr.attributes[sprite];
       spr.writeIndexedSpriteAttribute(sprite, 0, tc.xLsb);
       spr.writeIndexedSpriteAttribute(sprite, 1, tc.yLsb);
-      spr.writeIndexedSpriteAttribute(sprite, 4, tc.xMsb ? 0x01 : 0x00);  // colorMode = 0
+      spr.writeIndexedSpriteAttribute(sprite, 2, tc.xMsb ? 0x01 : 0x00);  // X MSB via attr2[0]
 
       expect(attrs.x).toBe(tc.expected.x);
       expect(attrs.y).toBe(tc.expected.y);
@@ -2711,10 +2713,10 @@ describe("9-bit Coordinate Validation", async function () {
     spr.writeIndexedSpriteAttribute(0, 1, 0xff);   // Y LSB
     spr.writeIndexedSpriteAttribute(0, 2, 0x5a);   // Palette, mirrors, rotate
     spr.writeIndexedSpriteAttribute(0, 3, 0xbf);   // Visibility, 5-byte, pattern
-    spr.writeIndexedSpriteAttribute(0, 4, 0xd9);   // colorMode, scales, X MSB
+    spr.writeIndexedSpriteAttribute(0, 4, 0xd9);   // colorMode, scales
 
     // --- Assert: All fields correct
-    expect(attrs.x).toBe(0x1ff);
+    expect(attrs.x).toBe(0xff);  // X MSB=0 (attr2[0]=0)
     expect(attrs.y).toBe(0xff);
     expect(attrs.paletteOffset).toBe(0x05);
     expect(attrs.mirrorX).toBe(true);
@@ -2908,14 +2910,14 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     spr.writeIndexedSpriteAttribute(0, 1, 0xaa);  // Y LSB
     spr.writeIndexedSpriteAttribute(0, 2, 0x4c);  // Palette, mirrors, rotate
     spr.writeIndexedSpriteAttribute(0, 3, 0xbf);  // Visibility, pattern
-    spr.writeIndexedSpriteAttribute(0, 4, 0xf9);  // colorMode, scales, pattern MSB, 4-bit, X MSB
+    spr.writeIndexedSpriteAttribute(0, 4, 0xf9);  // colorMode, scales, pattern MSB, 4-bit
 
     // --- Verify computed fields
     expect(attrs.pattern7Bit).toBe(63 + 64);  // 0x3f | 0x40
     expect(attrs.is4BitPattern).toBe(true);
 
     // --- Verify all other attributes unchanged
-    expect(attrs.x).toBe(0x155);               // 0x55 | 0x100
+    expect(attrs.x).toBe(0x55);               // X MSB=0 (attr2[0]=0)
     expect(attrs.y).toBe(0xaa);
     expect(attrs.paletteOffset).toBe(0x04);
     expect(attrs.mirrorX).toBe(true);

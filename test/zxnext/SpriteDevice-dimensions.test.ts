@@ -354,7 +354,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(attrs.height).toBe(64);
 
       // --- Enable rotation: should swap to 64×32
-      io.writePort(0x3357, 0xa2); // rotate=true
+      spriteDevice.writeIndexedSpriteAttribute(0, 2, 0xa2); // rotate=true
 
       attrs = spriteDevice.attributes[0];
       expect(attrs.width).toBe(64);
@@ -581,8 +581,7 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       io.writePort(0x3557, 0x10); // 64×16
 
       // --- Modify sprite 10 only
-      io.writePort(0x303b, 0x0a);
-      io.writePort(0x3357, 0xa2); // Add rotation
+      spriteDevice.writeIndexedSpriteAttribute(10, 2, 0xa2); // Add rotation
 
       // --- Verify sprite 10 changed, sprite 20 unchanged
       expect(spriteDevice.attributes[10].width).toBe(32);
@@ -671,14 +670,13 @@ describe("SpriteDevice - Sprite Dimensions", () => {
       expect(spriteDevice.attributes[0].height).toBe(16);
 
       // --- Modify to 64×128
-      io.writePort(0x303b, 0x00);
-      io.writePort(0x3557, 0x16); // scaleX=2, scaleY=3
+      spriteDevice.writeIndexedSpriteAttribute(0, 4, 0x16); // scaleX=2, scaleY=3
 
       expect(spriteDevice.attributes[0].width).toBe(64);
       expect(spriteDevice.attributes[0].height).toBe(128);
 
       // --- Add rotation: 128×64
-      io.writePort(0x3357, 0xa2);
+      spriteDevice.writeIndexedSpriteAttribute(0, 2, 0xa2);
 
       expect(spriteDevice.attributes[0].width).toBe(128);
       expect(spriteDevice.attributes[0].height).toBe(64);

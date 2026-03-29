@@ -875,7 +875,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x19,
       description: "Clip Window Sprites",
       readFn: () => machine.spriteDevice.nextReg19Value,
-      writeFn: (v) => (machine.spriteDevice.nextReg19Value = v & 0xff)
+      writeFn: (v) => {
+        machine.spriteDevice.nextReg19Value = v & 0xff;
+        machine.composedScreenDevice.updateSpriteClipBoundaries();
+      }
     });
     r({
       id: 0x1a,

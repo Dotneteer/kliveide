@@ -37,13 +37,19 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
 
   lastVisibileSpriteIndex: number;
 
-  // --- Anchor sprite properties for relative sprite chains
-  // --- These store the transformation state of the last anchor sprite
-  private anchorX: number = 0;
-  private anchorY: number = 0;
-  private anchorRotate: boolean = false;
-  private anchorMirrorX: boolean = false;
-  private anchorMirrorY: boolean = false;
+  // --- Anchor sprite state for relative sprite chains (updated at render time)
+  anchorRelType: boolean = false;
+  anchorH: boolean = false;
+  anchorVis: boolean = false;
+  anchorX: number = 0;        // 9-bit X
+  anchorY: number = 0;        // 9-bit Y
+  anchorPattern: number = 0;  // 7-bit pattern index (patternIndex[5:0] & N6)
+  anchorPaloff: number = 0;   // 4-bit palette offset
+  anchorRotate: boolean = false;
+  anchorXmirror: boolean = false;
+  anchorYmirror: boolean = false;
+  anchorXscale: number = 0;   // 2-bit X scale
+  anchorYscale: number = 0;   // 2-bit Y scale
 
   constructor(public readonly machine: IZxNextMachine) {
     // --- Allocate 8-bit pattern memory: 64 patterns × 8 variants = 512 arrays of 256 bytes each
@@ -82,7 +88,12 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         transformVariant: 0,
         patternVariantIndex: 0,
         width: 16,
-        height: 16
+        height: 16,
+        rawAttr0: 0,
+        rawAttr1: 0,
+        rawAttr2: 0,
+        rawAttr3: 0,
+        rawAttr4: 0
       };
     }
 
@@ -133,47 +144,181 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       this.attributes[i].patternVariantIndex = 0;
       this.attributes[i].width = 16;
       this.attributes[i].height = 16;
+      this.attributes[i].rawAttr0 = 0;
+      this.attributes[i].rawAttr1 = 0;
+      this.attributes[i].rawAttr2 = 0;
+      this.attributes[i].rawAttr3 = 0;
+      this.attributes[i].rawAttr4 = 0;
     }
   }
 
   /**
-   * Gets the anchor sprite's X coordinate.
-   * Used for relative sprite positioning (colorMode = 0x01).
+   * Resets the anchor state at the start of each scanline.
+   * Called by the renderer at the start of sprite rendering for a new scanline.
+   * (FPGA: anchor_vis <= '0' in S_START)
    */
-  getAnchorX(): number {
-    return this.anchorX;
+  resetAnchorState(): void {
+    this.anchorVis = false;
   }
 
   /**
-   * Gets the anchor sprite's Y coordinate.
-   * Used for relative sprite positioning (colorMode = 0x01).
+   * Updates the anchor state from a non-relative sprite during the QUALIFY phase.
+   * Called by the renderer for each non-relative sprite encountered.
+   * (FPGA: state_s = S_QUALIFY and spr_relative = '0')
    */
-  getAnchorY(): number {
-    return this.anchorY;
+  updateAnchorState(spriteIdx: number): void {
+    const a = this.attributes[spriteIdx];
+    const attr3 = a.rawAttr3;
+    const attr4 = a.rawAttr4;
+    const has5bytes = (attr3 & 0x40) !== 0;
+    
+    this.anchorRelType = has5bytes && ((attr4 & 0x20) !== 0);
+    this.anchorH = has5bytes && ((attr4 & 0x80) !== 0);
+    this.anchorVis = (attr3 & 0x80) !== 0;
+    this.anchorX = a.x;
+    this.anchorY = a.y;
+    this.anchorPaloff = (a.rawAttr2 >> 4) & 0x0f;
+    
+    // Compute pattern: (patternIndex[5:0] & N6) where N6 = attr4[6] AND h
+    const n6 = this.anchorH ? ((attr4 >> 6) & 1) : 0;
+    this.anchorPattern = ((attr3 & 0x3f) << 1) | n6;
+    
+    // Only store transforms when has5bytes AND attr4[5]=1 (rel_type)
+    // (FPGA: sprite_attr_3(6) = '1' and sprite_attr_4(5) = '1')
+    if (has5bytes && ((attr4 & 0x20) !== 0)) {
+      this.anchorRotate = (a.rawAttr2 & 0x02) !== 0;
+      this.anchorXmirror = (a.rawAttr2 & 0x08) !== 0;
+      this.anchorYmirror = (a.rawAttr2 & 0x04) !== 0;
+      this.anchorXscale = (attr4 >> 3) & 0x03;
+      this.anchorYscale = (attr4 >> 1) & 0x03;
+    } else {
+      this.anchorRotate = false;
+      this.anchorXmirror = false;
+      this.anchorYmirror = false;
+      this.anchorXscale = 0;
+      this.anchorYscale = 0;
+    }
   }
 
   /**
-   * Gets the anchor sprite's rotation flag.
-   * Used for relative sprite transformations (colorMode = 0x01).
+   * Checks if a sprite is a relative sprite (attr3[6]=1 AND attr4[7:6]="01")
    */
-  isAnchorRotated(): boolean {
-    return this.anchorRotate;
+  isRelativeSprite(spriteIdx: number): boolean {
+    const a = this.attributes[spriteIdx];
+    return (a.rawAttr3 & 0x40) !== 0 && ((a.rawAttr4 & 0xc0) === 0x40);
   }
 
   /**
-   * Gets the anchor sprite's horizontal mirror flag.
-   * Used for relative sprite transformations (colorMode = 0x01).
+   * Resolves a relative sprite's effective attributes at render time.
+   * Returns an object with resolved X, Y, visible, paletteOffset, transformVariant,
+   * patternVariantIndex, is4BitPattern, scaleX, scaleY, has5AttributeBytes.
+   * 
+   * Implements the FPGA combinatorial logic from sprites.vhd lines 762-798.
    */
-  isAnchorMirroredX(): boolean {
-    return this.anchorMirrorX;
-  }
-
-  /**
-   * Gets the anchor sprite's vertical mirror flag.
-   * Used for relative sprite transformations (colorMode = 0x01).
-   */
-  isAnchorMirroredY(): boolean {
-    return this.anchorMirrorY;
+  resolveRelativeSprite(spriteIdx: number): ResolvedSpriteAttrs {
+    const a = this.attributes[spriteIdx];
+    const attr0 = a.rawAttr0; // X offset (signed 8-bit)
+    const attr1 = a.rawAttr1; // Y offset (signed 8-bit)
+    const attr2 = a.rawAttr2;
+    const attr3 = a.rawAttr3;
+    const attr4 = a.rawAttr4;
+    
+    // Step 1: Swap X/Y offsets if anchor is rotated
+    const relX0 = this.anchorRotate ? attr1 : attr0;
+    const relY0 = this.anchorRotate ? attr0 : attr1;
+    
+    // Step 2: Negate offsets based on anchor mirror/rotate
+    // FPGA: spr_rel_x1 <= spr_rel_x0 when (anchor_rotate xor anchor_xmirror) = '0' else (not(spr_rel_x0) + 1)
+    const negateX = this.anchorRotate !== this.anchorXmirror;
+    const negateY = this.anchorYmirror;
+    const relX1 = negateX ? ((~relX0 + 1) & 0xff) : relX0;
+    const relY1 = negateY ? ((~relY0 + 1) & 0xff) : relY0;
+    
+    // Step 3: Scale offsets by anchor scale
+    // Sign-extend 8-bit to 9-bit, then shift left by scale
+    const signExtX = (relX1 & 0x80) ? (relX1 | 0x100) : relX1; // 9-bit signed
+    const signExtY = (relY1 & 0x80) ? (relY1 | 0x100) : relY1;
+    const relX2 = (signExtX << this.anchorXscale) & 0x1ff;
+    const relY2 = (signExtY << this.anchorYscale) & 0x1ff;
+    
+    // Step 4: Add anchor position
+    const relX3 = (this.anchorX + relX2) & 0x1ff;
+    const relY3 = (this.anchorY + relY2) & 0x1ff;
+    
+    // Palette offset: replace or add depending on attr2[0]
+    const relPaloff = (attr2 & 0x01) === 0
+      ? (attr2 >> 4) & 0x0f
+      : ((this.anchorPaloff + ((attr2 >> 4) & 0x0f)) & 0x0f);
+    
+    // Effective mirror/rotate depends on anchor_rel_type
+    let effRotate: boolean;
+    let effMirrorX: boolean;
+    let effMirrorY: boolean;
+    let effXscale: number;
+    let effYscale: number;
+    
+    if (!this.anchorRelType) {
+      // rel_type=0: relative sprite uses its own transforms from attr2/attr4
+      effRotate = (attr2 & 0x02) !== 0;
+      effMirrorX = (attr2 & 0x08) !== 0;
+      effMirrorY = (attr2 & 0x04) !== 0;
+      effXscale = (attr4 >> 3) & 0x03;
+      effYscale = (attr4 >> 1) & 0x03;
+    } else {
+      // rel_type=1: XOR sprite's transforms with anchor's
+      // FPGA: spr_rel_xm <= sprite_attr_2(3) when anchor_rotate='0' else sprite_attr_2(2) xor sprite_attr_2(1)
+      const relXm = !this.anchorRotate ? ((attr2 & 0x08) !== 0) : (((attr2 & 0x04) !== 0) !== ((attr2 & 0x02) !== 0));
+      const relYm = !this.anchorRotate ? ((attr2 & 0x04) !== 0) : (((attr2 & 0x08) !== 0) !== ((attr2 & 0x02) !== 0));
+      effRotate = this.anchorRotate !== ((attr2 & 0x02) !== 0);
+      effMirrorX = this.anchorXmirror !== relXm;
+      effMirrorY = this.anchorYmirror !== relYm;
+      effXscale = this.anchorXscale;
+      effYscale = this.anchorYscale;
+    }
+    
+    // Visibility: anchor_vis AND sprite_attr_3(7)
+    const effVisible = this.anchorVis && ((attr3 & 0x80) !== 0);
+    
+    // H flag: anchor_h (the anchor's 4-bit mode flag)
+    const effH = this.anchorH;
+    const effIs4Bit = effH;
+    
+    // Pattern: (attr3[5:0] & N6) possibly + anchor_pattern
+    const n6 = effH ? ((attr4 >> 6) & 1) : 0;
+    let effPattern = ((attr3 & 0x3f) << 1) | n6;
+    if ((attr4 & 0x01) !== 0) {
+      // Add to anchor pattern when attr4[0]=1
+      // FPGA: spr_rel_pattern <= ((sprite_attr_3 & spr_cur_n6) + anchor_pattern) when spr_relative='1' and sprite_attr_4(0)='1'
+      effPattern = (effPattern + this.anchorPattern) & 0x7f;
+    }
+    
+    // Transform variant
+    const effTransformVariant = (effRotate ? 4 : 0) | (effMirrorX ? 2 : 0) | (effMirrorY ? 1 : 0);
+    
+    // Pattern variant index for memory lookup
+    let effPatternVariantIndex: number;
+    if (effIs4Bit) {
+      effPatternVariantIndex = (effPattern << 3) | effTransformVariant;
+    } else {
+      // 8-bit: use upper 6 bits of pattern
+      effPatternVariantIndex = ((effPattern >> 1) << 3) | effTransformVariant;
+    }
+    
+    return {
+      x: relX3,
+      y: relY3,
+      visible: effVisible,
+      paletteOffset: relPaloff,
+      rotate: effRotate,
+      mirrorX: effMirrorX,
+      mirrorY: effMirrorY,
+      scaleX: effXscale,
+      scaleY: effYscale,
+      is4BitPattern: effIs4Bit,
+      has5AttributeBytes: true,
+      transformVariant: effTransformVariant,
+      patternVariantIndex: effPatternVariantIndex
+    };
   }
 
   /**
@@ -251,63 +396,26 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
-  writeSpriteAttribute(port: number, value: number): void {
-    // --- Check if upper byte specifies a direct attribute index
-    // --- Upper nibble must be 0x3, and lower nibble 0x1-0x5 maps to attribute 0-4
-    const upperByte = (port >> 8) & 0xFF;
-    const upperNibble = (upperByte >> 4) & 0x0F;
-    const lowerNibble = upperByte & 0x0F;
-    
-    // --- Determine if this is a direct write (port indicates specific attr that doesn't match current subIndex)
-    const portAttrIndex = lowerNibble - 1;
-    const isDirect = upperNibble === 0x3 && 
-                     lowerNibble >= 0x01 && 
-                     lowerNibble <= 0x05 && 
-                     portAttrIndex !== this.spriteSubIndex;
-    
-    if (isDirect) {
-      // --- Direct attribute write
-      // --- If spriteSubIndex is 0 but we're writing to a non-zero attribute,
-      // --- check if we just completed a sprite (by seeing if we can write attr0 to current sprite)
-      // --- If so, target the previous sprite. Otherwise, target current sprite.
-      let targetSpriteIndex = this.spriteIndex;
-      
-      // --- If subIndex is 0 and we're accessing a later attribute (2, 3, 4),
-      // --- we might be modifying the just-completed sprite
-      if (this.spriteSubIndex === 0 && portAttrIndex >= 2) {
-        // --- Check if the current sprite has already been configured (has non-default values)
-        // --- If X or Y is still 0 and other attrs are default, we're on a fresh sprite
-        const currentAttrs = this.attributes[this.spriteIndex];
-        const prevAttrs = this.attributes[(this.spriteIndex - 1) & 0x7f];
-        
-        // --- If previous sprite has been configured recently (non-zero X or has scaling),
-        // --- assume we want to modify it
-        if (prevAttrs.scaleX !== 0 || prevAttrs.scaleY !== 0 || prevAttrs.x !== 0) {
-          targetSpriteIndex = (this.spriteIndex - 1) & 0x7f;
-        }
-      }
-      
-      this.writeIndexedSpriteAttribute(targetSpriteIndex, portAttrIndex, value);
-    } else {
-      // --- Sequential write using spriteSubIndex
-      this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
-      const attributes = this.attributes[this.spriteIndex];
-      if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
-        this.spriteSubIndex++;
-        attributes.colorMode = 0x00;
-        attributes.attributeFlag2 = false;
-        attributes.scaleX = 0;
-        attributes.scaleY = 0;
-        // --- Update dimensions for 4-byte sprites (no scaling)
-        this.updateSpriteDimensions(attributes);
-      }
-
-      // --- Increment subindex and sprite index
+  writeSpriteAttribute(_port: number, value: number): void {
+    // --- Sequential write using spriteSubIndex
+    // --- (FPGA: flat 10-bit attr_index into raw byte RAM, no port address decoding)
+    this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
+    const attributes = this.attributes[this.spriteIndex];
+    if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
       this.spriteSubIndex++;
-      if (this.spriteSubIndex >= 5) {
-        this.spriteSubIndex = 0;
-        this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
-      }
+      attributes.colorMode = 0x00;
+      attributes.attributeFlag2 = false;
+      attributes.scaleX = 0;
+      attributes.scaleY = 0;
+      // --- Update dimensions for 4-byte sprites (no scaling)
+      this.updateSpriteDimensions(attributes);
+    }
+
+    // --- Increment subindex and sprite index
+    this.spriteSubIndex++;
+    if (this.spriteSubIndex >= 5) {
+      this.spriteSubIndex = 0;
+      this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
     }
   }
 
@@ -391,10 +499,12 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       case 0:
         // --- X position (lower 8 bits)
         attributes.x = ((attributes.x & 0x100) | (value & 0xff)) & 0x1ff;
+        attributes.rawAttr0 = value & 0xff;
         break;
       case 1:
         // --- Y position (lower 8 bits)
         attributes.y = ((attributes.y & 0x100) | (value & 0xff)) & 0x1ff;
+        attributes.rawAttr1 = value & 0xff;
         break;
       case 2:
         attributes.paletteOffset = (value & 0xf0) >> 4;
@@ -402,6 +512,9 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.mirrorY = (value & 0x04) !== 0;
         attributes.rotate = (value & 0x02) !== 0;
         attributes.attributeFlag1 = (value & 0x01) !== 0;
+        // --- X MSB comes from attr2[0] (FPGA: spr_cur_x <= spr_cur_attr_2(0) & spr_cur_attr_0)
+        attributes.x = ((value & 0x01) << 8) | (attributes.x & 0xff);
+        attributes.rawAttr2 = value & 0xff;
         // --- Cache transformation variant (0-7) for fast renderer lookup
         attributes.transformVariant =
           (attributes.rotate ? 4 : 0) | (attributes.mirrorX ? 2 : 0) | (attributes.mirrorY ? 1 : 0);
@@ -409,14 +522,6 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         this.updatePatternVariantIndex(attributes);
         // --- Recalculate width and height
         this.updateSpriteDimensions(attributes);
-        // --- Track anchor sprite if this is an anchor sprite (non-relative with 5 attribute bytes)
-        if (attributes.has5AttributeBytes && attributes.colorMode !== 0x01) {
-          this.anchorX = attributes.x;
-          this.anchorY = attributes.y;
-          this.anchorRotate = attributes.rotate;
-          this.anchorMirrorX = attributes.mirrorX;
-          this.anchorMirrorY = attributes.mirrorY;
-        }
         break;
       case 3:
         attributes.visible = (value & 0x80) !== 0;
@@ -426,6 +531,12 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.pattern7Bit = attributes.patternIndex | (attributes.attributeFlag2 ? 64 : 0);
         // --- Cache complete pattern variant index for direct memory lookup
         this.updatePatternVariantIndex(attributes);
+        // --- Y MSB is only valid when has5AttributeBytes; reset to 0 when 4-byte sprite
+        // --- (FPGA: spr_y8 <= '0' when sprite_attr_3(6) = '0')
+        if (!attributes.has5AttributeBytes) {
+          attributes.y = attributes.y & 0xff;
+        }
+        attributes.rawAttr3 = value & 0xff;
         break;
       default:
         // --- attr4 (5th attribute byte)
@@ -433,6 +544,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.attributeFlag2 = (value & 0x20) !== 0;
         attributes.is4BitPattern = (value & 0x80) !== 0;
         attributes.scaleX = (value & 0x18) >> 3;
+        attributes.rawAttr4 = value & 0xff;
         attributes.scaleY = (value & 0x06) >> 1;
         // --- Update computed 7-bit pattern index (bit 6 of attr4 extends patternIndex)
         attributes.pattern7Bit = attributes.patternIndex | (attributes.attributeFlag2 ? 64 : 0);
@@ -440,9 +552,9 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         this.updatePatternVariantIndex(attributes);
         // --- Recalculate width and height
         this.updateSpriteDimensions(attributes);
-        if (attributes.colorMode !== 0x01) {
-          // --- Anchor sprite: set X MSB (bit 0 of attr4)
-          attributes.x = (((value & 0x01) << 8) | (attributes.x & 0xff)) & 0x1ff;
+        // --- Y MSB comes from attr4[0] (FPGA: spr_y8 <= spr_cur_attr_4(0) when sprite_attr_3(6)='1')
+        if (attributes.has5AttributeBytes) {
+          attributes.y = ((value & 0x01) << 8) | (attributes.y & 0xff);
         }
         break;
     }
@@ -533,8 +645,33 @@ export type SpriteAttributes = {
   patternVariantIndex: number; // Cached pattern variant index for direct lookup in patternMemory arrays
   width: number; // Effective sprite width in pixels after scaling and rotation
   height: number; // Effective sprite height in pixels after scaling and rotation
+  // --- Raw attribute bytes for render-time relative sprite resolution
+  rawAttr0: number; // attr0: X position lower 8 bits
+  rawAttr1: number; // attr1: Y position lower 8 bits
+  rawAttr2: number; // attr2: palette|mirrorX|mirrorY|rotate|X_MSB
+  rawAttr3: number; // attr3: visible|has5bytes|patternIndex[5:0]
+  rawAttr4: number; // attr4: colorMode|N6|xscale|yscale|Y_MSB
 };
 
 export type SpriteInfo = {
   attributes: SpriteAttributes;
+};
+
+/**
+ * Resolved sprite attributes for rendering (used after relative sprite resolution)
+ */
+export type ResolvedSpriteAttrs = {
+  x: number;
+  y: number;
+  visible: boolean;
+  paletteOffset: number;
+  rotate: boolean;
+  mirrorX: boolean;
+  mirrorY: boolean;
+  scaleX: number;
+  scaleY: number;
+  is4BitPattern: boolean;
+  has5AttributeBytes: boolean;
+  transformVariant: number;
+  patternVariantIndex: number;
 };
