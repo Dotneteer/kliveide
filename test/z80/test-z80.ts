@@ -310,7 +310,6 @@ export class Z80TestMachine {
    */
   writeTbBlue (addr: number, value: number): void {
     this.tbBlueAccessLog.push(new IoOp(addr, value, true));
-    this.cpu.tactPlusN(6);
   }
 
   /**

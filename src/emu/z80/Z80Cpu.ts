@@ -870,10 +870,10 @@ export class Z80Cpu implements IZ80Cpu {
 
     // --- Let's handle the halted state.
     if (this.halted) {
-      // --- While in halted state, the CPU does not execute any instructions. It just refreshes the memory
-      // --- page pointed by R and waits for four T-states.
+      // --- While in halted state, the CPU executes a dummy M1 cycle: contention on PC + 3T read + refresh + 1T.
+      this.delayMemoryRead(this.pc);
       this.refreshMemory();
-      this.tactPlusN(4);
+      this.tactPlus1WithAddress(this.ir);
       return;
     }
 
@@ -892,7 +892,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.opCode = this.readMemory(this.pc);
     if (m1Active) {
       this.refreshMemory();
-      this.tactPlusN(1);
+      this.tactPlus1WithAddress(this.ir);
 
       // --- After the M1 refresh cycle, DivMMC may page out memory banks
       this.afterOpcodeFetch();
@@ -3119,7 +3119,6 @@ export class Z80Cpu implements IZ80Cpu {
 
 // --------------------------------------------------------------------------------------------------------------------
 // ALU helpers
-const incFlags: number[] = [];
 const decFlags: number[] = [];
 const halfCarryAddFlags: number[] = [0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10];
 const halfCarrySubFlags: number[] = [0x00, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x10];
@@ -3127,6 +3126,7 @@ const overflowAddFlags: number[] = [0x00, 0x00, 0x00, 0x04, 0x04, 0x00, 0x00, 0x
 const overflowSubFlags: number[] = [0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00];
 
 // --- We use these tables from Z80N CPU, too
+export const incFlags: number[] = [];
 export const parityTable: number[] = [];
 export const sz53Table: number[] = [];
 export const sz53pvTable: number[] = [];
