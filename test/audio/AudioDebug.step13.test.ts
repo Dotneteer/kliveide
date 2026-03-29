@@ -47,7 +47,7 @@ describe("Step 13: Audio Debug Support", () => {
       expect(debug.channels.a).toBeDefined();
       expect(debug.channels.a.tone).toBe(0x42);
       expect(debug.channels.a.volume).toBe(0x0f);
-      expect(debug.channels.a.toneEnabled).toBe(false); // Disabled by default (mixer reg 7)
+      expect(debug.channels.a.toneEnabled).toBe(true); // Enabled by default (R7 = 0x00, MAME-accurate)
     });
 
     it("should track channel B state in debug info", () => {
@@ -90,7 +90,7 @@ describe("Step 13: Audio Debug Support", () => {
       const debug = chip.getDebugInfo();
       expect(debug.noise).toBeDefined();
       expect(debug.noise.frequency).toBe(0x1f);
-      expect(debug.noise.seed).toBe(0);
+      expect(debug.noise.seed).toBe(1); // Hardware-correct initial seed (MAME-verified)
       expect(debug.noise.counter).toBe(0);
     });
 

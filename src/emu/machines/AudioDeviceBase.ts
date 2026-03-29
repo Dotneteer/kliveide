@@ -10,6 +10,14 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   private _audioNextSampleTact = 0;
   private readonly _audioSamples: AudioSample[] = [];
 
+  // --- DC offset high-pass filter state (MAME spkrdev.cpp form)
+  // y[n] = x[n] - x[n-1] + α × y[n-1] where α ≈ 0.995
+  private static readonly DC_FILTER_ALPHA = 0.995;
+  private _dcFilterPrevInputLeft = 0;
+  private _dcFilterPrevInputRight = 0;
+  private _dcFilterPrevOutputLeft = 0;
+  private _dcFilterPrevOutputRight = 0;
+
   /**
    * Initialize the audio device and assign it to its host machine.
    * @param machine The machine hosting this device
@@ -23,6 +31,10 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
     this._audioSampleLength = 0;
     this._audioNextSampleTact = 0;
     this._audioSamples.length = 0;
+    this._dcFilterPrevInputLeft = 0;
+    this._dcFilterPrevInputRight = 0;
+    this._dcFilterPrevOutputLeft = 0;
+    this._dcFilterPrevOutputRight = 0;
   }
 
   /**
@@ -64,15 +76,36 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   }
 
   /**
-   * Renders the subsequent beeper sample according to the current EAR bit value
+   * Renders the subsequent beeper sample according to the current EAR bit value.
+   * Applies a DC offset high-pass filter to remove constant bias.
    */
   setNextAudioSample (): void {
     this.calculateCurrentAudioValue();
     if (this.machine.tacts <= this._audioNextSampleTact) return;
 
-    this._audioSamples.push(this.getCurrentSampleValue());
+    const raw = this.getCurrentSampleValue();
+    const filtered = this.applyDcFilter(raw);
+    this._audioSamples.push(filtered);
     this._audioNextSampleTact +=
       this._audioSampleLength * this.machine.clockMultiplier;
+  }
+
+  /**
+   * Applies a first-order high-pass (AC coupling) filter to remove DC offset.
+   * y[n] = x[n] - x[n-1] + α × y[n-1]   (MAME spkrdev.cpp form)
+   */
+  private applyDcFilter (sample: AudioSample): AudioSample {
+    const a = AudioDeviceBase.DC_FILTER_ALPHA;
+
+    const outLeft = sample.left - this._dcFilterPrevInputLeft + a * this._dcFilterPrevOutputLeft;
+    const outRight = sample.right - this._dcFilterPrevInputRight + a * this._dcFilterPrevOutputRight;
+
+    this._dcFilterPrevInputLeft = sample.left;
+    this._dcFilterPrevInputRight = sample.right;
+    this._dcFilterPrevOutputLeft = outLeft;
+    this._dcFilterPrevOutputRight = outRight;
+
+    return { left: outLeft, right: outRight };
   }
 
   /**

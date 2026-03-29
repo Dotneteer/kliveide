@@ -58,6 +58,29 @@ export class PsgChip {
   // --- 2 = chip 2
   readonly chipId: number;
 
+  // --- Chip type: AY = AY-3-8910 (Spectrum 128K), YM = YM2149 (ZX Next)
+  readonly chipType: 'AY' | 'YM';
+
+  // --- AY-3-8910 register read masks: unused bits read as 0 on real hardware.
+  // --- YM2149 returns all bits unmasked.
+  // --- Source: MAME ay8910.cpp mask[0x10] table.
+  private static readonly AY_READ_MASKS: readonly number[] = [
+    0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
+    0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
+  ];
+
+  // --- AY-3-8910 volume table (MAME ay8910.cpp resistor-network model, normalized to 0-65535)
+  private static readonly AY_VOLUME_TABLE: readonly number[] = [
+    0, 890, 1158, 1512, 2059, 2856, 3833, 6238,
+    7696, 12607, 17452, 23178, 30968, 39233, 51935, 65535
+  ];
+
+  // --- YM2149 volume table (MAME ay8910.cpp resistor-network model, normalized to 0-65535)
+  private static readonly YM_VOLUME_TABLE: readonly number[] = [
+    0, 436, 762, 1099, 1638, 2217, 3221, 4329,
+    6266, 8473, 12221, 16447, 23948, 32562, 47873, 65535
+  ];
+
   // --- The last register index set
   private _psgRegisterIndex = 0;
 
@@ -67,11 +90,8 @@ export class PsgChip {
   // --- Stores the envelopes volume forms
   private readonly _psgEnvelopes = new Uint8Array(0x800);
 
-  // --- Table of volume levels
-  private readonly _psgVolumeTable: number[] = [
-    0x0000, 0x0201, 0x033c, 0x04d7, 0x0783, 0x0ca6, 0x133e, 0x2393, 0x2868,
-    0x45d4, 0x606a, 0x76ea, 0x97bc, 0xb8a6, 0xdc52, 0xffff
-  ];
+  // --- Active volume table (selected at construction time based on chipType)
+  private readonly _psgVolumeTable: readonly number[];
 
   // --- Channel A
   private _toneA: number; // 12-bit
@@ -104,6 +124,7 @@ export class PsgChip {
   private _noiseSeed: number;
   private _noiseFreq: number;
   private _cntNoise: number;
+  private _noisePrescale: boolean;
   private _bitNoise: boolean;
 
   // --- Envelope data
@@ -154,9 +175,15 @@ export class PsgChip {
 
   /**
    * Reset the device when creating it
+   * @param chipId Chip identifier (0-3, used in TurboSound multi-chip systems)
+   * @param chipType Chip variant: 'AY' = AY-3-8910 (Spectrum 128K), 'YM' = YM2149 (ZX Next)
    */
-  constructor (chipId: number = 0) {
+  constructor (chipId: number = 0, chipType: 'AY' | 'YM' = 'AY') {
     this.chipId = chipId & 0x03; // Limit to 0-3
+    this.chipType = chipType;
+    this._psgVolumeTable = chipType === 'YM'
+      ? PsgChip.YM_VOLUME_TABLE
+      : PsgChip.AY_VOLUME_TABLE;
     this.reset();
   }
 
@@ -177,13 +204,13 @@ export class PsgChip {
       this._regValues[i] = 0;
     }
     
-    // --- Initialize mixer register to 0xFF (all channels disabled) to match hardware
-    this._regValues[7] = 0xff;
+    // --- Initialize mixer register to 0x00 (all channels enabled), matching MAME ay8910_reset_ym()
+    this._regValues[7] = 0x00;
 
     // --- Channel A setup
     this._toneA = 0;
-    this._toneAEnabled = false;
-    this._noiseAEnabled = false;
+    this._toneAEnabled = true;
+    this._noiseAEnabled = true;
     this._volA = 0;
     this._envA = false;
     this._cntA = 0;
@@ -191,8 +218,8 @@ export class PsgChip {
 
     // --- Channel B setup
     this._toneB = 0;
-    this._toneBEnabled = false;
-    this._noiseBEnabled = false;
+    this._toneBEnabled = true;
+    this._noiseBEnabled = true;
     this._volB = 0;
     this._envB = false;
     this._cntB = 0;
@@ -200,18 +227,19 @@ export class PsgChip {
 
     // --- Channel C setup
     this._toneC = 0;
-    this._toneCEnabled = false;
-    this._noiseCEnabled = false;
+    this._toneCEnabled = true;
+    this._noiseCEnabled = true;
     this._volC = 0;
     this._envC = false;
     this._cntC = 0;
     this._bitC = false;
 
     // --- Noise channel setup
-    this._noiseSeed = 0;
+    this._noiseSeed = 1;         // Hardware-correct initial seed (MAME-verified)
     this._noiseFreq = 0;
     this._cntNoise = 0;
-    this._bitNoise = false;
+    this._noisePrescale = false;  // Hardware ÷2 prescaler starts low
+    this._bitNoise = (this._noiseSeed & 1) !== 0;  // Initial noise output = HIGH
 
     // --- Other registers
     this._envFreq = 0;
@@ -227,54 +255,44 @@ export class PsgChip {
   }
 
   /**
-   * Initialize the PSG envelope tables
+   * Initialize the PSG envelope tables.
+   *
+   * AY-3-8910: 16 envelope steps (vol 0-15). Each step lasts ×2 the period register
+   *   value, preserving the same total envelope duration as YM. Volume index: vol & 0x0f.
+   * YM2149:    32 envelope steps (vol 0-31). Each step lasts ×1 the period register
+   *   value. Volume index: (vol & 0x1f) >> 1 (maps 32 sub-steps to 16-entry table).
    */
   private initEnvelopData (): void {
-    // Reset the sample pointer
+    // Step boundary: 16 for AY (hardware-verified), 32 for YM
+    const stepMax = this.chipType === 'AY' ? 16 : 32;
+    const initVol = this.chipType === 'AY' ? stepMax : stepMax; // identical expression; kept for clarity
+
     let samplePtr = 0;
 
-    // --- Iterate through envelopes
     for (let env = 0; env < 16; env++) {
-      // --- Reset hold
       let hold = false;
-
-      // --- Set dir according to env
       let dir = (env & 0x04) !== 0 ? 1 : -1;
+      let vol = (env & 0x04) !== 0 ? -1 : stepMax;
 
-      // --- Set vol according to env
-      let vol = (env & 0x04) !== 0 ? -1 : 0x20;
-
-      // --- Iterate through envelope positions
       for (let pos = 0; pos < 128; pos++) {
         if (!hold) {
           vol += dir;
-          if (vol < 0 || vol >= 32) {
-            // -- Continue flag is set?
+          if (vol < 0 || vol >= stepMax) {
             if ((env & 0x08) !== 0) {
-              // --- Yes, continue.
-              // --- If alternate is set, reverse the direction
               if ((env & 0x02) !== 0) {
                 dir = -dir;
               }
-
-              // --- Set start volume according to direction
-              vol = dir > 0 ? 0 : 31;
-
-              // --- Hold is set?
+              vol = dir > 0 ? 0 : stepMax - 1;
               if ((env & 0x01) !== 0) {
-                // --- Hold, and set up next volume
                 hold = true;
-                vol = dir > 0 ? 31 : 0;
+                vol = dir > 0 ? stepMax - 1 : 0;
               }
             } else {
-              // --- Mute and hold this value
               vol = 0;
               hold = true;
             }
           }
         }
-
-        // --- Store the envelop sample and move to the next position
         this._psgEnvelopes[samplePtr++] = vol & 0xff;
       }
     }
@@ -311,6 +329,7 @@ export class PsgChip {
       noiseSeed: this._noiseSeed,
       noiseFreq: this._noiseFreq,
       cntNoise: this._cntNoise,
+      noisePrescale: this._noisePrescale,
       bitNoise: this._bitNoise,
       envFreq: this._envFreq,
       envStyle: this._envStyle,
@@ -350,6 +369,7 @@ export class PsgChip {
       noiseSeed: this._noiseSeed,
       noiseFreq: this._noiseFreq,
       cntNoise: this._cntNoise,
+      noisePrescale: this._noisePrescale,
       bitNoise: this._bitNoise,
       envFreq: this._envFreq,
       envStyle: this._envStyle,
@@ -391,10 +411,11 @@ export class PsgChip {
     this._envC = state.envC ?? false;
     this._cntC = state.cntC ?? 0;
     this._bitC = state.bitC ?? false;
-    this._noiseSeed = state.noiseSeed ?? 0;
+    this._noiseSeed = state.noiseSeed ?? 1;
     this._noiseFreq = state.noiseFreq ?? 0;
     this._cntNoise = state.cntNoise ?? 0;
-    this._bitNoise = state.bitNoise ?? false;
+    this._noisePrescale = state.noisePrescale ?? false;
+    this._bitNoise = state.bitNoise ?? true;
     this._envFreq = state.envFreq ?? 0;
     this._envStyle = state.envStyle ?? 0;
     this._cntEnv = state.cntEnv ?? 0;
@@ -429,7 +450,10 @@ export class PsgChip {
    * Reads the value of the register addressed by the register index last set
    */
   readPsgRegisterValue (): number {
-    return this._regValues[this._psgRegisterIndex & 0x0f];
+    const raw = this._regValues[this._psgRegisterIndex & 0x0f];
+    return this.chipType === 'AY'
+      ? raw & PsgChip.AY_READ_MASKS[this._psgRegisterIndex]
+      : raw;
   }
 
   /**
@@ -533,53 +557,65 @@ export class PsgChip {
     let vol = 0;
 
     // --- Increment TONE A counter
-    if (this._toneA) {
+    // Period 0 is treated as period 1 (highest frequency), matching MAME hardware behaviour.
+    {
+      const periodA = this._toneA || 1;
       this._cntA++;
-      if (this._cntA >= this._toneA) {
-        // --- Reset counter and reverse output bit
+      if (this._cntA >= periodA) {
         this._cntA = 0;
         this._bitA = !this._bitA;
       }
     }
 
     // --- Increment TONE B counter
-    if (this._toneB) {
+    {
+      const periodB = this._toneB || 1;
       this._cntB++;
-      if (this._cntB >= this._toneB) {
-        // --- Reset counter and reverse output bit
+      if (this._cntB >= periodB) {
         this._cntB = 0;
         this._bitB = !this._bitB;
       }
     }
 
     // --- Increment TONE C counter
-    if (this._toneC) {
+    {
+      const periodC = this._toneC || 1;
       this._cntC++;
-      if (this._cntC >= this._toneC) {
-        // --- Reset counter and reverse output bit
+      if (this._cntC >= periodC) {
         this._cntC = 0;
         this._bitC = !this._bitC;
       }
     }
 
-    // --- Calculate noise sample
-    if (this._noiseFreq) {
+    // --- Calculate noise sample using hardware-verified 17-bit LFSR with ÷2 prescaler.
+    // The LFSR is verified on real AY-3-8910 and YM2149 chips (MAME ay8910.cpp):
+    // bit0 XOR bit3 feeds back into bit16. The prescaler halves the effective noise rate.
+    // Period=0 behaves as max-speed advance (same as period=1), matching MAME.
+    {
+      const noisePeriod = this._noiseFreq || 1;
       this._cntNoise++;
-      if (this._cntNoise >= this._noiseFreq) {
-        // --- It is time to generate the next noise sample
+      if (this._cntNoise >= noisePeriod) {
         this._cntNoise = 0;
-        this._noiseSeed =
-          (this._noiseSeed * 2 + 1) ^
-          (((this._noiseSeed >>> 16) ^ (this._noiseSeed >>> 13)) & 0x01);
-        this._bitNoise = ((this._noiseSeed >>> 16) & 0x01) != 0;
+        this._noisePrescale = !this._noisePrescale;
+        if (!this._noisePrescale) {
+          // Tick LFSR only on every second period expiry
+          const feedback = (this._noiseSeed & 1) ^ ((this._noiseSeed >> 3) & 1);
+          this._noiseSeed = ((this._noiseSeed >> 1) | (feedback << 16)) & 0x1ffff;
+          this._bitNoise = (this._noiseSeed & 1) !== 0;
+        }
       }
     }
 
-    // --- Calculate envelope position
-    if (this._envFreq) {
+    // --- Calculate envelope position.
+    // AY-3-8910: 16-step envelope with ×2 period multiplier (hardware-verified, MAME ay8910.cpp).
+    // YM2149:    32-step envelope with ×1 period multiplier.
+    // Both produce the same total envelope duration for a given frequency register value.
+    const envPeriod = this.chipType === 'AY' ? this._envFreq * 2 : this._envFreq;
+    // Period=0 advances envelope at max speed (MAME: "period 0 is half as period 1")
+    {
+      const effectiveEnvPeriod = envPeriod || 1;
       this._cntEnv++;
-      if (this._cntEnv >= this._envFreq) {
-        // --- Move to the new position
+      if (this._cntEnv >= effectiveEnvPeriod) {
         this._cntEnv = 0;
         this._posEnv++;
         if (this._posEnv > 0x7f) {
@@ -588,76 +624,55 @@ export class PsgChip {
       }
     }
 
-    // --- Calculate channel volumes
+    // --- Calculate channel volumes using hardware-accurate MAME mixer logic.
+    // Hardware formula: vol_enabled = (tone_output | tone_disable) & (noise_output | noise_disable)
+    // A disabled channel input acts as bypass (always HIGH = 1), enabling DC-level output.
+    // Both disabled + non-zero volume = constant DC amplitude (used for digi-drum volume modulation).
     let volA = 0;
     let volB = 0;
     let volC = 0;
 
-    // --- Channel A volume value (UNSIGNED output - matching VHDL hardware)
-    let tmpVol = 0;
-    
-    if (this._toneAEnabled || this._noiseAEnabled) {
-      if (this._envA) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volA * 2 + 1;
-      }
+    // AY: envelope table stores values 0-15, index directly with (vol & 0x0f).
+    // YM: envelope table stores values 0-31, map to 16-entry table with (vol & 0x1f) >> 1.
+    // Non-envelope path (_volX * 2 + 1) always maps 0-15 → valid range, so >>1 is used for both.
+    const envOK = this.chipType === 'AY';
 
-      // --- Convert to amplitude (0-65535 range for 16-bit software)
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0 (unsigned DC-biased square wave)
-      if (this._toneAEnabled && this._bitA) {
-        volA = amplitude;
-      } else if (this._noiseAEnabled && this._bitNoise) {
-        volA = amplitude;
-      }
-      // else volA remains 0
-      
-      vol += volA;  // Total volume uses unsigned addition
+    // --- Channel A
+    {
+      const tmpVolA = this._envA
+        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+        : this._volA * 2 + 1;
+      const envIdxA = this._envA ? (envOK ? (tmpVolA & 0x0f) : ((tmpVolA & 0x1f) >> 1)) : ((tmpVolA & 0x1f) >> 1);
+      const amplitudeA = this._psgVolumeTable[envIdxA];
+      const toneBitA = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
+      const noiseBitA = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
+      volA = (toneBitA & noiseBitA) ? amplitudeA : 0;
+      vol += volA;
     }
 
-    // --- Channel B volume value (UNSIGNED output)
-    
-    if (this._toneBEnabled || this._noiseBEnabled) {
-      if (this._envB) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volB * 2 + 1;
-      }
-
-      // --- Convert to amplitude (0-65535 range)
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0
-      if (this._toneBEnabled && this._bitB) {
-        volB = amplitude;
-      } else if (this._noiseBEnabled && this._bitNoise) {
-        volB = amplitude;
-      }
-      
+    // --- Channel B
+    {
+      const tmpVolB = this._envB
+        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+        : this._volB * 2 + 1;
+      const envIdxB = this._envB ? (envOK ? (tmpVolB & 0x0f) : ((tmpVolB & 0x1f) >> 1)) : ((tmpVolB & 0x1f) >> 1);
+      const amplitudeB = this._psgVolumeTable[envIdxB];
+      const toneBitB = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
+      const noiseBitB = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
+      volB = (toneBitB & noiseBitB) ? amplitudeB : 0;
       vol += volB;
     }
 
-    // --- Channel C volume value (UNSIGNED output)
-    
-    if (this._toneCEnabled || this._noiseCEnabled) {
-      if (this._envC) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volC * 2 + 1;
-      }
-
-      // --- Convert to amplitude (0-65535 range)
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0
-      if (this._toneCEnabled && this._bitC) {
-        volC = amplitude;
-      } else if (this._noiseCEnabled && this._bitNoise) {
-        volC = amplitude;
-      }
-      
+    // --- Channel C
+    {
+      const tmpVolC = this._envC
+        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+        : this._volC * 2 + 1;
+      const envIdxC = this._envC ? (envOK ? (tmpVolC & 0x0f) : ((tmpVolC & 0x1f) >> 1)) : ((tmpVolC & 0x1f) >> 1);
+      const amplitudeC = this._psgVolumeTable[envIdxC];
+      const toneBitC = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
+      const noiseBitC = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
+      volC = (toneBitC & noiseBitC) ? amplitudeC : 0;
       vol += volC;
     }
 
@@ -675,78 +690,54 @@ export class PsgChip {
   }
 
   /**
-   * Gets the current output volume for channel A (-32768 to +32767)
+   * Gets the current output level for channel A (unsigned 0-65535).
+   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelAVolume (): number {
-    let vol = 0;
-    
-    if (this._toneAEnabled || this._noiseAEnabled) {
-      let tmpVol = 0;
-      if (this._envA) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volA * 2 + 1;
-      }
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Return signed value based on tone bit state
-      if (this._toneAEnabled) {
-        vol = this._bitA ? amplitude : -amplitude;
-      } else if (this._noiseAEnabled) {
-        vol = this._bitNoise ? amplitude : -amplitude;
-      }
-    }
-    return vol;
+    const tmpVol = this._envA
+      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+      : this._volA * 2 + 1;
+    const idx = this._envA
+      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
+      : ((tmpVol & 0x1f) >> 1);
+    const amplitude = this._psgVolumeTable[idx];
+    const toneBit = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
+    const noiseBit = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
+    return (toneBit & noiseBit) ? amplitude : 0;
   }
 
   /**
-   * Gets the current output volume for channel B (-32768 to +32767)
+   * Gets the current output level for channel B (unsigned 0-65535).
+   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelBVolume (): number {
-    let vol = 0;
-    
-    if (this._toneBEnabled || this._noiseBEnabled) {
-      let tmpVol = 0;
-      if (this._envB) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volB * 2 + 1;
-      }
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Return signed value based on tone bit state
-      if (this._toneBEnabled) {
-        vol = this._bitB ? amplitude : -amplitude;
-      } else if (this._noiseBEnabled) {
-        vol = this._bitNoise ? amplitude : -amplitude;
-      }
-    }
-    return vol;
+    const tmpVol = this._envB
+      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+      : this._volB * 2 + 1;
+    const idx = this._envB
+      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
+      : ((tmpVol & 0x1f) >> 1);
+    const amplitude = this._psgVolumeTable[idx];
+    const toneBit = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
+    const noiseBit = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
+    return (toneBit & noiseBit) ? amplitude : 0;
   }
 
   /**
-   * Gets the current output volume for channel C (-32768 to +32767)
+   * Gets the current output level for channel C (unsigned 0-65535).
+   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelCVolume (): number {
-    let vol = 0;
-    
-    if (this._toneCEnabled || this._noiseCEnabled) {
-      let tmpVol = 0;
-      if (this._envC) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volC * 2 + 1;
-      }
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Return signed value based on tone bit state
-      if (this._toneCEnabled) {
-        vol = this._bitC ? amplitude : -amplitude;
-      } else if (this._noiseCEnabled) {
-        vol = this._bitNoise ? amplitude : -amplitude;
-      }
-    }
-    return vol;
+    const tmpVol = this._envC
+      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+      : this._volC * 2 + 1;
+    const idx = this._envC
+      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
+      : ((tmpVol & 0x1f) >> 1);
+    const amplitude = this._psgVolumeTable[idx];
+    const toneBit = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
+    const noiseBit = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
+    return (toneBit & noiseBit) ? amplitude : 0;
   }
 
   /**
@@ -795,6 +786,7 @@ export class PsgChip {
         counter: this._cntNoise,
         bit: this._bitNoise
       },
+      chipType: this.chipType,
       envelope: {
         frequency: this._envFreq,
         style: this._envStyle,

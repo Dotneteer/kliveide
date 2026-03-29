@@ -22,7 +22,8 @@ import {
   writeDacAandDPort,
   writeDacBPort,
   writeDacBandCPort,
-  writeDacCPort
+  writeDacCPort,
+  writeDacDPort
 } from "./DacPortHandler";
 import {
   readKempstonJoy1AliasPort,

@@ -39,6 +39,7 @@ export type PsgChipState = {
   noiseSeed: number;
   noiseFreq: number;
   cntNoise: number;
+  noisePrescale: boolean;
   bitNoise: boolean;
 
   // --- Envelope data

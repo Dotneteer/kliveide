@@ -114,13 +114,13 @@ export class AudioMixerDevice {
 
   /**
    * Set EAR (Beeper) output level
-   * @param level Normalized beeper value (0.0 when LOW, 1.0 when HIGH)
-   * Converts to audio range: 0 = silent, 512 = beeper active
+   * @param level DC-filtered beeper sample (-1.0 to +1.0). The BeeperDevice
+   *   already applies a DC high-pass filter, so this is an AC-coupled signal.
+   * Converts to internal amplitude range: -512 to +512.
    */
   setEarLevel(level: number): void {
-    // Convert normalized 0.0/1.0 to amplitude
-    // Explicitly check for 1.0 (beeper HIGH state)
-    this.earLevel = (level === 1.0 || level > 0.9) ? 512 : 0;
+    // Convert normalized AC signal to internal amplitude scale
+    this.earLevel = Math.round(level * 512);
   }
 
   /**
@@ -231,15 +231,12 @@ export class AudioMixerDevice {
     let mixedLeft = 0;
     let mixedRight = 0;
 
-    // Add EAR (Beeper): 0 or 512, scaled by 8 = 0 or 4096
-    // Only AC-couple when active (non-zero)
-    const beeperScaled = this.earLevel * 8;  // 0 or 4096
-    if (beeperScaled > 0) {
-      // AC coupling: remove DC bias (midpoint of 0-4096 range is 2048)
-      const beeperAC = beeperScaled - 2048;  // becomes +2048 when ON
-      mixedLeft += beeperAC;
-      mixedRight += beeperAC;
-    }
+    // Add EAR (Beeper): -512 to +512 (AC signal, already DC-filtered by BeeperDevice).
+    // Scale by 12 to match 48K beeper loudness in the mix.
+    // No additional AC coupling needed — the signal is already centered at zero.
+    const beeperScaled = this.earLevel * 12;  // -6144 to +6144
+    mixedLeft += beeperScaled;
+    mixedRight += beeperScaled;
 
     // Add MIC: 0 or 128
     // Only AC-couple when active (non-zero)
@@ -250,24 +247,20 @@ export class AudioMixerDevice {
       mixedRight += micAC;
     }
 
-    // Add PSG output (unsigned 0-196605)
-    // Hardware PSG is 0-2295 (12-bit), our software is 0-196605 (16-bit scaled)
-    // Scale down: 196605 / 24 ≈ 8192
-    // Only AC-couple when PSG is active (non-zero output)
+    // Add PSG output (unsigned 0-196605 per stereo channel).
+    // Scale down from software range to mixer range (÷24 gives ≤ 8192 for mono, ≤ 4095 for Phase-6 stereo).
+    // AC coupling: subtract the peak-based midpoint from BOTH channels simultaneously.
+    // Using Math.max(left, right) as the reference ensures both channels contribute even when
+    // one side is silent (e.g. only channel A active in ABC stereo mode), fixing the
+    // "only left channel" audio bug where psgOutput.right = 0 previously produced silence on right.
     const psgLeftScaled = Math.floor(this.psgOutput.left / 24);
     const psgRightScaled = Math.floor(this.psgOutput.right / 24);
-    
-    if (psgLeftScaled > 0) {
-      // AC coupling: remove DC bias (midpoint of 0-8192 range is 4096)
-      const psgLeftAC = psgLeftScaled - 4096;
-      mixedLeft += psgLeftAC;
-    }
-    
-    if (psgRightScaled > 0) {
-      // AC coupling: remove DC bias
-      const psgRightAC = psgRightScaled - 4096;
-      mixedRight += psgRightAC;
-    }
+    // Apply AC coupling unconditionally: when both channels are 0, midpoint=0 and contribution
+    // is zero regardless. This avoids a DC-offset gate and ensures consistent per-sample behaviour.
+    const psgPeak = Math.max(psgLeftScaled, psgRightScaled);
+    const midpoint = Math.floor(psgPeak / 2);
+    mixedLeft  += psgLeftScaled  - midpoint;
+    mixedRight += psgRightScaled - midpoint;
 
     // Add DAC output (already signed, centered around 0)
     // DAC outputs signed 16-bit values: -65536 to +65024 per channel (two channels per side)

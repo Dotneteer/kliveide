@@ -308,32 +308,29 @@ describe("Step 17: Audio Mixing Testing", () => {
       // Reset DAC to center
       dac.reset();
 
-      // Set all sources to maximum
-      mixer.setEarLevel(1); // 512
-      mixer.setMicLevel(1); // 128
+      // Use a mid-range beeper level to avoid clamping when combining sources
+      mixer.setEarLevel(0.5); // earLevel=256, beeperScaled=3072
+      mixer.setMicLevel(1);
       
       // No PSG or DAC - keep simple for this test
       mixer.setPsgOutput({ left: 0, right: 0 });
 
       const output1 = mixer.getMixedOutput();
-      // AC-coupled (only when active): beeper(+2048) + mic(+64) + psg(0, not added) + dac(0) = +2112
-      // Scaled by 5.5: +11616, normalized: +0.354
-      expect(output1.left).toBeCloseTo(0.354, 2);
-      expect(output1.right).toBeCloseTo(0.354, 2);
+      // Beeper(256*12=3072) + MIC(+64) = 3136, * 5.5 = 17248, normalized: 0.526
+      expect(output1.left).toBeCloseTo(0.526, 2);
+      expect(output1.right).toBeCloseTo(0.526, 2);
 
       // Disable MIC
       mixer.setMicLevel(0);
       const output2 = mixer.getMixedOutput();
-      // AC-coupled: beeper(+2048) + mic(0, not added) + psg(0) + dac(0) = +2048
-      // Scaled by 5.5: +11264, normalized: +0.344
-      expect(output2.left).toBeCloseTo(0.344, 2);
-      expect(output2.right).toBeCloseTo(0.344, 2);
+      // Beeper(3072) only, * 5.5 = 16896, normalized: 0.516
+      expect(output2.left).toBeCloseTo(0.516, 2);
+      expect(output2.right).toBeCloseTo(0.516, 2);
 
       // Disable EAR
       mixer.setEarLevel(0);
       const output3 = mixer.getMixedOutput();
-      // AC-coupled: all sources at 0, nothing added = 0
-      // Normalized: 0
+      // All sources at 0
       expect(output3.left).toBeCloseTo(0, 2);
       expect(output3.right).toBeCloseTo(0, 2);
     });
@@ -429,11 +426,10 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setPsgOutput({ left: -999999, right: -999999 });
 
       const output = mixer.getMixedOutput();
-      // Negative PSG values are clamped, then scaled becomes large negative after AC coupling
-      // Should clamp to -1.0, but actual behavior: PSG is negative so not "active" (> 0), not added
-      // With all inactive, output is 0
-      expect(output.left).toBeCloseTo(0, 2);
-      expect(output.right).toBeCloseTo(0, 2);
+      // Phase 8: AC coupling applied unconditionally; negative PSG → negative AC contribution
+      // psgScaled ≈ -41667, midpoint ≈ -20834, AC ≈ -20833 → scaled → clamped to -1.0
+      expect(output.left).toBeCloseTo(-1.0, 1);
+      expect(output.right).toBeCloseTo(-1.0, 1);
     });
 
     it("should clamp positive values to maximum", () => {
@@ -510,10 +506,9 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setEarLevel(1);
       const output = mixer.getMixedOutput();
 
-      // AC-coupled (only when active): beeper(+2048) + others at 0 = +2048
-      // Scaled by 5.5: +11264, normalized: +0.344
-      expect(output.left).toBeCloseTo(0.344, 2);
-      expect(output.right).toBeCloseTo(0.344, 2);
+      // Beeper(512*12=6144) * 5.5 = 33792 → clamped → ~1.0
+      expect(output.left).toBeCloseTo(1.0, 2);
+      expect(output.right).toBeCloseTo(1.0, 2);
     });
 
     it("should apply half volume at scale 0.5", () => {
@@ -525,10 +520,9 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setEarLevel(1);
       const output = mixer.getMixedOutput();
 
-      // AC-coupled: beeper(+2048) + others at 0 = +2048
-      // Scaled by 5.5 * 0.5: +5632, normalized: +0.172
-      expect(output.left).toBeCloseTo(0.172, 2);
-      expect(output.right).toBeCloseTo(0.172, 2);
+      // Beeper(+6144) * 5.5 = 33792, * 0.5 = 16896, normalized: +0.516
+      expect(output.left).toBeCloseTo(0.516, 2);
+      expect(output.right).toBeCloseTo(0.516, 2);
     });
 
     it("should mute at scale 0.0", () => {
@@ -559,7 +553,9 @@ describe("Step 17: Audio Mixing Testing", () => {
       chip.writePsgRegisterValue(0x0f);
       chip.generateOutputValue();
 
-      mixer.setEarLevel(1);
+      // Use ear=0.25 to avoid saturation clamping on left channel
+      // (PSG left=65535 with ear=1 → mixed*5.5 > 32767 clamp, breaking the ratio)
+      mixer.setEarLevel(0.25);
       mixer.setMicLevel(1);
 
       const psgOutput = turbo.getChipStereoOutput(0);

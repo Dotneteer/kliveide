@@ -60,9 +60,9 @@ import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
 export class TurboSoundDevice {
   // --- The three PSG chips
   private readonly _chips: PsgChip[] = [
-    new PsgChip(0),
-    new PsgChip(1),
-    new PsgChip(2),
+    new PsgChip(0, 'YM'), // ZX Next uses YM2149
+    new PsgChip(1, 'YM'),
+    new PsgChip(2, 'YM'),
   ];
 
   // --- Currently selected chip (0, 1, or 2)
@@ -327,15 +327,21 @@ export class TurboSoundDevice {
       left = mono;
       right = mono;
     } else {
-      // Stereo mode (UNSIGNED addition)
+      // Stereo mode with hardware-accurate MAME center-channel routing.
+      // The center channel (B in ABC, C in ACB) routes at 50% to each side.
+      // MAME: route(A,left,0.50), route(B,left,0.25), route(B,right,0.25), route(C,right,0.50)
+      // Normalised to 100% for outer channels: A→full-left, B(50%)→both, C→full-right.
+      // Max per output: 65535 + 32767 = 98302
       if (this._ayStereoMode) {
-        // ACB mode: Left = A + C, Right = B + C
-        left = Math.min(131070, volA + volC);   // Max: 2 * 65535 = 131070
-        right = Math.min(131070, volB + volC);
+        // ACB mode: A=full-left, C=center(50%/50%), B=full-right
+        const halfC = Math.floor(volC / 2);
+        left  = Math.min(98302, volA + halfC);
+        right = Math.min(98302, halfC + volB);
       } else {
-        // ABC mode: Left = A + B, Right = B + C
-        left = Math.min(131070, volA + volB);
-        right = Math.min(131070, volB + volC);
+        // ABC mode: A=full-left, B=center(50%/50%), C=full-right
+        const halfB = Math.floor(volB / 2);
+        left  = Math.min(98302, volA + halfB);
+        right = Math.min(98302, halfB + volC);
       }
     }
 
