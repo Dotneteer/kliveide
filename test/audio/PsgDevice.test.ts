@@ -42,11 +42,17 @@ describe("PsgChip", () => {
     });
 
     it("should support all 16 registers", () => {
+      // AY-3-8910 (default chip type) applies read masks to unused bits.
+      // Expected read = written_value & AY_MASK[reg]
+      const AY_MASKS = [
+        0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
+        0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
+      ];
       for (let reg = 0; reg < 16; reg++) {
         psg.setPsgRegisterIndex(reg);
         const value = (reg * 17) & 0xff; // Create unique value per register
         psg.writePsgRegisterValue(value);
-        expect(psg.readPsgRegisterValue()).toBe(value);
+        expect(psg.readPsgRegisterValue()).toBe(value & AY_MASKS[reg]);
       }
     });
 

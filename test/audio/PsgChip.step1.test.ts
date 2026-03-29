@@ -103,12 +103,17 @@ describe("Step 1: PsgChip Multi-Instance Support", () => {
     });
 
     it("should support full register operations", () => {
-      // Test all 16 registers
+      // AY-3-8910 (default chip type) applies read masks to unused bits.
+      // Expected read = written_value & AY_MASK[reg]
+      const AY_MASKS = [
+        0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
+        0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
+      ];
       for (let reg = 0; reg < 16; reg++) {
         psg.setPsgRegisterIndex(reg);
         const testValue = (reg * 17) & 0xff;
         psg.writePsgRegisterValue(testValue);
-        expect(psg.readPsgRegisterValue()).toBe(testValue);
+        expect(psg.readPsgRegisterValue()).toBe(testValue & AY_MASKS[reg]);
       }
     });
 

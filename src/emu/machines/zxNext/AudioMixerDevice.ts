@@ -255,12 +255,12 @@ export class AudioMixerDevice {
     // "only left channel" audio bug where psgOutput.right = 0 previously produced silence on right.
     const psgLeftScaled = Math.floor(this.psgOutput.left / 24);
     const psgRightScaled = Math.floor(this.psgOutput.right / 24);
+    // Apply AC coupling unconditionally: when both channels are 0, midpoint=0 and contribution
+    // is zero regardless. This avoids a DC-offset gate and ensures consistent per-sample behaviour.
     const psgPeak = Math.max(psgLeftScaled, psgRightScaled);
-    if (psgPeak > 0) {
-      const midpoint = Math.floor(psgPeak / 2);
-      mixedLeft  += psgLeftScaled  - midpoint;
-      mixedRight += psgRightScaled - midpoint;
-    }
+    const midpoint = Math.floor(psgPeak / 2);
+    mixedLeft  += psgLeftScaled  - midpoint;
+    mixedRight += psgRightScaled - midpoint;
 
     // Add DAC output (already signed, centered around 0)
     // DAC outputs signed 16-bit values: -65536 to +65024 per channel (two channels per side)

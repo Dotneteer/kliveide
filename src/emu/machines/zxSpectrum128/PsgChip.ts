@@ -61,6 +61,14 @@ export class PsgChip {
   // --- Chip type: AY = AY-3-8910 (Spectrum 128K), YM = YM2149 (ZX Next)
   readonly chipType: 'AY' | 'YM';
 
+  // --- AY-3-8910 register read masks: unused bits read as 0 on real hardware.
+  // --- YM2149 returns all bits unmasked.
+  // --- Source: MAME ay8910.cpp mask[0x10] table.
+  private static readonly AY_READ_MASKS: readonly number[] = [
+    0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
+    0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
+  ];
+
   // --- AY-3-8910 volume table (from hardware-measured resistor model, normalized to 0-65535)
   private static readonly AY_VOLUME_TABLE: readonly number[] = [
     0, 836, 1212, 1773, 2619, 3875, 5765, 8589,
@@ -442,7 +450,10 @@ export class PsgChip {
    * Reads the value of the register addressed by the register index last set
    */
   readPsgRegisterValue (): number {
-    return this._regValues[this._psgRegisterIndex & 0x0f];
+    const raw = this._regValues[this._psgRegisterIndex & 0x0f];
+    return this.chipType === 'AY'
+      ? raw & PsgChip.AY_READ_MASKS[this._psgRegisterIndex]
+      : raw;
   }
 
   /**

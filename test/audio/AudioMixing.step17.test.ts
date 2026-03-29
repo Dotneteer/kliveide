@@ -426,11 +426,10 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setPsgOutput({ left: -999999, right: -999999 });
 
       const output = mixer.getMixedOutput();
-      // Negative PSG values are clamped, then scaled becomes large negative after AC coupling
-      // Should clamp to -1.0, but actual behavior: PSG is negative so not "active" (> 0), not added
-      // With all inactive, output is 0
-      expect(output.left).toBeCloseTo(0, 2);
-      expect(output.right).toBeCloseTo(0, 2);
+      // Phase 8: AC coupling applied unconditionally; negative PSG → negative AC contribution
+      // psgScaled ≈ -41667, midpoint ≈ -20834, AC ≈ -20833 → scaled → clamped to -1.0
+      expect(output.left).toBeCloseTo(-1.0, 1);
+      expect(output.right).toBeCloseTo(-1.0, 1);
     });
 
     it("should clamp positive values to maximum", () => {
