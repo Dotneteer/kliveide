@@ -562,6 +562,13 @@ export class Z80Cpu implements IZ80Cpu {
   retnExecuted: boolean;
 
   /**
+   * Set after LD A,I or LD A,R executes; cleared at the start of every executeCpuCycle.
+   * When an INT or NMI is accepted while this flag is set, the PV flag is reset to 0
+   * (Z80 silicon bug: the IFF2-→PV copy is overwritten by the interrupt acceptance).
+   */
+  afterLdAIR: boolean;
+
+  /**
    * We keep subroutine return addresses in this stack to implement the step-over debugger function
    */
   stepOutStack: number[];
@@ -702,6 +709,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.eiBacklog = 0;
     this.retExecuted = false;
     this.retnExecuted = false;
+    this.afterLdAIR = false;
     this.stepOutStack = [];
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
@@ -746,6 +754,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.eiBacklog = 0;
     this.retExecuted = false;
     this.retnExecuted = false;
+    this.afterLdAIR = false;
     this.stepOutStack = [];
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
@@ -839,6 +848,8 @@ export class Z80Cpu implements IZ80Cpu {
     // --- No RET executed yet
     this.retExecuted = false;
     this.retnExecuted = false;
+    // NOTE: afterLdAIR is cleared below, AFTER the interrupt check, so that
+    // processInt/processNmi can see the value set by the previous LD A,I/LD A,R.
 
     // --- Modify the EI interrupt backlog value
     if (this.eiBacklog > 0) {
@@ -867,6 +878,11 @@ export class Z80Cpu implements IZ80Cpu {
         return;
       }
     }
+
+    // --- D2: Clear the LD A,I / LD A,R quirk flag here, after any interrupt that
+    // --- may have consumed it. From this point on the flag is irrelevant until the
+    // --- next LD A,I or LD A,R instruction sets it again.
+    this.afterLdAIR = false;
 
     // --- Let's handle the halted state.
     if (this.halted) {
@@ -998,7 +1014,23 @@ export class Z80Cpu implements IZ80Cpu {
    * Called after a RETN instruction finishes (after the stack pop has already set PC).
    * Override in subclasses to fix PC for stackless NMI or perform device cleanup.
    */
-  protected onRetnExecuted(): void {}
+  onRetnExecuted(): void {}
+
+  /**
+   * Returns the interrupt vector byte placed on the data bus during an INT acknowledge cycle.
+   * The default (classic Spectrum) always returns 0xFF.
+   * Override in machine subclasses to support programmable IM2 vector systems.
+   */
+  protected getInterruptVector(): number {
+    return 0xff;
+  }
+
+  /**
+   * Called when the CPU acknowledges a maskable interrupt, just before the interrupt handling
+   * logic (push, vector look-up) runs.  Override to react to interrupt acknowledgment
+   * (e.g. clear the winning interrupt source's status flag).
+   */
+  onInterruptAcknowledged(): void {}
 
   protected processNmi(): void {
     // --- Acknowledge the NMI
@@ -1014,26 +1046,53 @@ export class Z80Cpu implements IZ80Cpu {
     this.iff2 = this.iff1;
     this.iff1 = false;
 
+    // --- D2: LD A,I/R parity quirk — if the previous instruction was LD A,I or LD A,R, the
+    // --- PV flag (which reflects IFF2) gets cleared to 0 by the interrupt acceptance.
+    // --- The flag is consumed here so that a second NMI cannot see it again.
+    if (this.afterLdAIR) {
+      this.f &= ~FlagsSetMask.PV;
+      this.afterLdAIR = false;
+    }
+
     // --- Push the return address to the stack
     this.pushPC();
     this.refreshMemory();
 
     // --- Carry on the execution at the NMI handler routine address, $0066.
     this.pc = 0x0066;
+    // --- D5: Update WZ to match the new PC (matches MAME take_nmi: WZ = PC).
+    this.wz = 0x0066;
   }
 
   /**
    * This method executes an active and enabled maskable interrupt using the current Interrupt Mode.
    */
-  private processInt(): void {
+  protected processInt(): void {
     // --- It takes six T-states to acknowledge the interrupt
     this.tactPlusN(6);
 
     this.removeFromHaltedState();
 
+    // --- D1: Resolve the interrupt vector BEFORE notifying the acknowledge callback so
+    // --- that subclasses (e.g. ZX Next) can determine the winning source from the
+    // --- currently-pending status flags before onInterruptAcknowledged() clears them.
+    const intVector = this.getInterruptVector();
+
+    // --- D4: Notify machines/devices that an interrupt is being acknowledged.
+    // --- Called AFTER getInterruptVector() so the source flags are still active.
+    this.onInterruptAcknowledged();
+
     // --- Disable the maskable interrupt unless it is enabled again with the EI instruction.
     this.iff1 = false;
     this.iff2 = false;
+
+    // --- D2: LD A,I/R parity quirk — if the previous instruction was LD A,I or LD A,R, the
+    // --- PV flag (which reflects IFF2) gets cleared to 0 by the interrupt acceptance.
+    // --- The flag is consumed here so that a second INT cannot see it again.
+    if (this.afterLdAIR) {
+      this.f &= ~FlagsSetMask.PV;
+      this.afterLdAIR = false;
+    }
 
     // --- Push the return address to the stack
     this.pushPC();
@@ -1048,19 +1107,20 @@ export class Z80Cpu implements IZ80Cpu {
       // --- be loaded with the applicable value by the programmer. A CPU reset clears the I register so that it
       // --- is initialized to 0.
       // --- The lower eight bits of the pointer must be supplied by the interrupting device. Only seven bits are
-      // --- required from the interrupting device because the least-significant bit must be a 0.This process is
-      // --- required because the pointer must receive two adjacent bytes to form a complete 16 - bit service
+      // --- required from the interrupting device because the least-significant bit must be a 0. This process is
+      // --- required because the pointer must receive two adjacent bytes to form a complete 16-bit service
       // --- routine starting address; addresses must always start in even locations."
-      // --- However, this article shows that we need to reset the least significant bit of:
-      // --- http://www.z80.info/interrup2.htm
-      var addr = (this.i << 8) + 0xff;
-      this.wl = this.readMemory(addr++);
-      this.wh = this.readMemory(addr);
+      // --- D1: intVector was resolved above, before the acknowledge callback.
+      var addr = (this.i << 8) | intVector;
+      this.wl = this.readMemory(addr);
+      this.wh = this.readMemory(addr + 1);
     } else {
       // --- On ZX Spectrum, Interrupt Mode 0 and 1 result in the same behavior, as no peripheral device would put
       // --- an instruction on the data bus. In Interrupt Mode 0, the CPU would read a $FF value from the bus, the
       // --- opcode for the RST $38 instruction. In Interrupt Mode 1, the CPU responds to an interrupt by executing
       // --- an RST $38 instruction.
+      // --- D6: IM0 always acts as RST $38 on Spectrum/Next (pull-up resistors force 0xFF on the bus).
+      // ---     This is an intentional simplification; non-Spectrum IM0 is not emulated.
       this.wz = 0x0038;
     }
 
@@ -8108,6 +8168,8 @@ function ldAI(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.a = cpu.i;
   cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
+  // D2: signal that LD A,I just ran so processInt/processNmi can apply the PV quirk
+  cpu.afterLdAIR = true;
 }
 
 // 0x58: IN E,(C)
@@ -8149,6 +8211,8 @@ function ldAR(cpu: Z80Cpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   cpu.a = cpu.r;
   cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
+  // D2: signal that LD A,R just ran so processInt/processNmi can apply the PV quirk
+  cpu.afterLdAIR = true;
 }
 
 // 0x60: IN H,(C)

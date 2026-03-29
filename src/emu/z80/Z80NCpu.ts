@@ -1,6 +1,6 @@
 import type { IZ80NCpu } from "@emu/abstractions/IZ80NCpu";
 
-import { Z80Cpu, Z80Operation, incFlags, parityTable, sz53Table, sz53pvTable } from "./Z80Cpu";
+import { Z80Cpu, Z80Operation, incFlags, sz53pvTable } from "./Z80Cpu";
 import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
