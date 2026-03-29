@@ -29,10 +29,9 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       mixer.setEarLevel(1);
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
       const output = mixer.getMixedOutput();
-      // Both channels should have AC-coupled beeper (+2048), DAC center (0) = +2048
-      // Scaled by 5.5: +11264, normalized: +0.344
-      expect(output.left).toBeCloseTo(0.344, 2);
-      expect(output.right).toBeCloseTo(0.344, 2);
+      // Beeper: 512 * 12 = 6144, * 5.5 = 33792 → clamped to 32767 → ~1.0
+      expect(output.left).toBeCloseTo(1.0, 2);
+      expect(output.right).toBeCloseTo(1.0, 2);
     });
 
     it("should toggle EAR on and off", () => {
@@ -80,10 +79,9 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // AC-coupled: beeper (+2048) + MIC (+64) + DAC (0) = +2112
-      // Scaled by 5.5: +11616, normalized: +0.354
-      expect(output.left).toBeCloseTo(0.354, 2);
-      expect(output.right).toBeCloseTo(0.354, 2);
+      // Beeper: 6144, MIC AC: +64, total=6208, * 5.5=34144 → clamped → ~1.0
+      expect(output.left).toBeCloseTo(1.0, 2);
+      expect(output.right).toBeCloseTo(1.0, 2);
     });
   });
 
@@ -123,10 +121,10 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // beeper(+2048) + MIC(+64) + PSG(-3763) + DAC(0) = -1651
-      // Scaled: -9080, normalized: -0.277
-      expect(output.left).toBeCloseTo(-0.277, 2);
-      expect(output.right).toBeCloseTo(-0.277, 2);
+      // Beeper(+6144) + MIC(+64) + PSG(8000/24=333, AC: 333-4096=-3763) = +2445
+      // Scaled: +13447, normalized: +0.410
+      expect(output.left).toBeCloseTo(0.410, 2);
+      expect(output.right).toBeCloseTo(0.410, 2);
     });
 
     it("should handle zero PSG output", () => {
@@ -135,10 +133,9 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // beeper(+2048) + PSG(0, not added) + DAC(0) = +2048
-      // Scaled: +11264, normalized: +0.344
-      expect(output.left).toBeCloseTo(0.344, 2);
-      expect(output.right).toBeCloseTo(0.344, 2);
+      // Beeper(+6144), PSG not added (0), * 5.5 = 33792 → clamped → ~1.0
+      expect(output.left).toBeCloseTo(1.0, 2);
+      expect(output.right).toBeCloseTo(1.0, 2);
     });
 
     it("should handle maximum PSG output", () => {
@@ -193,10 +190,9 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
 
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
       const output = mixer.getMixedOutput();
-      // beeper(+2048) + MIC(+64) + DAC(0) = +2112
-      // Scaled: +11616, normalized: +0.354
-      expect(output.left).toBeCloseTo(0.354, 2);
-      expect(output.right).toBeCloseTo(0.354, 2);
+      // Beeper(+6144) + MIC(+64) + DAC(0) = +6208, * 5.5 = 34144 → clamped → ~1.0
+      expect(output.left).toBeCloseTo(1.0, 2);
+      expect(output.right).toBeCloseTo(1.0, 2);
     });
   });
 
@@ -239,10 +235,10 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // beeper(+2048) + MIC(+64) + PSG(-3763) + I2S(0) + DAC(0) = -1651
-      // Scaled: -9080, normalized: -0.277
-      expect(output.left).toBeCloseTo(-0.277, 2);
-      expect(output.right).toBeCloseTo(-0.277, 2);
+      // Beeper(+6144) + MIC(+64) + PSG(-3763) + I2S(0, not impl) = +2445
+      // Scaled: +13447, normalized: +0.410
+      expect(output.left).toBeCloseTo(0.410, 2);
+      expect(output.right).toBeCloseTo(0.410, 2);
     });
   });
 
@@ -262,9 +258,9 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       mixer.setVolumeScale(0.5);
       const output = mixer.getMixedOutput();
 
-      // beeper(+2048) * 0.5 = +1024, scaled: +5632, normalized: +0.172
-      expect(output.left).toBeCloseTo(0.172, 2);
-      expect(output.right).toBeCloseTo(0.172, 2);
+      // Beeper(+6144) * 5.5 = 33792 * 0.5 = 16896, normalized: +0.516
+      expect(output.left).toBeCloseTo(0.516, 2);
+      expect(output.right).toBeCloseTo(0.516, 2);
     });
 
     it("should clamp volume scale to 0.0-1.0 range", () => {
@@ -441,12 +437,12 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       mixer.setMicLevel(1);
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
       const output1 = mixer.getMixedOutput();
-      // beeper(+2048) + MIC(+64) = +2112, scaled: +11616, normalized: +0.354
-      expect(output1.left).toBeCloseTo(0.354, 2);
+      // Beeper(+6144) + MIC(+64) = +6208, * 5.5 = 34144 → clamped → ~1.0
+      expect(output1.left).toBeCloseTo(1.0, 2);
 
       mixer.setEarLevel(0);
       const output2 = mixer.getMixedOutput();
-      // MIC(+64) only, scaled: +352, normalized: +0.0107
+      // MIC(+64) only, * 5.5 = 352, normalized: +0.0107
       expect(output2.left).toBeCloseTo(0.0107, 2);
 
       mixer.setMicLevel(0);
@@ -507,9 +503,9 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // beeper(+2048), scaled: +11264, normalized: +0.344
-      expect(output.left).toBeCloseTo(0.344, 2);
-      expect(output.right).toBeCloseTo(0.344, 2);
+      // Beeper(+6144) * 5.5 = 33792 → clamped → ~1.0
+      expect(output.left).toBeCloseTo(1.0, 2);
+      expect(output.right).toBeCloseTo(1.0, 2);
     });
 
     it("should simulate PSG-only playback", () => {
@@ -548,9 +544,10 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // beeper(+2048) + PSG(4000/24 = 166.67, AC: -3929.33) = -1881.33, scaled: -10347, normalized: -0.316
-      expect(output.left).toBeCloseTo(-0.316, 2);
-      expect(output.right).toBeCloseTo(-0.316, 2);
+      // Beeper(+6144) + PSG(4000/24=166, AC: 166-4096=-3930) = +2214
+      // * 5.5 = 12177, normalized: +0.372
+      expect(output.left).toBeCloseTo(0.372, 2);
+      expect(output.right).toBeCloseTo(0.372, 2);
     });
 
     it("should simulate complete audio playback with all sources", () => {

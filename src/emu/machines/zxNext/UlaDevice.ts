@@ -70,10 +70,12 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Store the last EAR bit
     var bit4 = value & 0x10;
-    this.machine.beeperDevice.setEarBit(bit4 !== 0);
 
     // --- Set the last value of bit3
     this._portBit3LastValue = (value & 0x08) !== 0;
+
+    // --- Set speaker output level using both EAR (bit 4) and MIC (bit 3)
+    this.machine.beeperDevice.setOutputLevel(bit4 !== 0, this._portBit3LastValue);
 
     // --- Manage bit 4 value
     if (this._portBit4LastValue) {

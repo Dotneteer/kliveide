@@ -114,13 +114,13 @@ export class AudioMixerDevice {
 
   /**
    * Set EAR (Beeper) output level
-   * @param level Normalized beeper value (0.0 when LOW, 1.0 when HIGH)
-   * Converts to audio range: 0 = silent, 512 = beeper active
+   * @param level DC-filtered beeper sample (-1.0 to +1.0). The BeeperDevice
+   *   already applies a DC high-pass filter, so this is an AC-coupled signal.
+   * Converts to internal amplitude range: -512 to +512.
    */
   setEarLevel(level: number): void {
-    // Convert normalized 0.0/1.0 to amplitude
-    // Explicitly check for 1.0 (beeper HIGH state)
-    this.earLevel = (level === 1.0 || level > 0.9) ? 512 : 0;
+    // Convert normalized AC signal to internal amplitude scale
+    this.earLevel = Math.round(level * 512);
   }
 
   /**
@@ -231,15 +231,12 @@ export class AudioMixerDevice {
     let mixedLeft = 0;
     let mixedRight = 0;
 
-    // Add EAR (Beeper): 0 or 512, scaled by 8 = 0 or 4096
-    // Only AC-couple when active (non-zero)
-    const beeperScaled = this.earLevel * 8;  // 0 or 4096
-    if (beeperScaled > 0) {
-      // AC coupling: remove DC bias (midpoint of 0-4096 range is 2048)
-      const beeperAC = beeperScaled - 2048;  // becomes +2048 when ON
-      mixedLeft += beeperAC;
-      mixedRight += beeperAC;
-    }
+    // Add EAR (Beeper): -512 to +512 (AC signal, already DC-filtered by BeeperDevice).
+    // Scale by 12 to match 48K beeper loudness in the mix.
+    // No additional AC coupling needed — the signal is already centered at zero.
+    const beeperScaled = this.earLevel * 12;  // -6144 to +6144
+    mixedLeft += beeperScaled;
+    mixedRight += beeperScaled;
 
     // Add MIC: 0 or 128
     // Only AC-couple when active (non-zero)

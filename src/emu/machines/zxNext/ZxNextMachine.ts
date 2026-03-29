@@ -768,7 +768,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     for (let i = 0; i < sampleCount; i++) {
       // Get beeper sample (or 0 if out of range)
-      const earLevel = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
+      // Phase 4: Gate beeper through internal speaker enable (NR 0x08 bit 4)
+      const rawEarLevel = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
+      const earLevel = this.soundDevice.enableInternalSpeaker ? rawEarLevel : 0.0;
       mixer.setEarLevel(earLevel);
 
       // Get PSG sample (or 0 if out of range or disabled)
