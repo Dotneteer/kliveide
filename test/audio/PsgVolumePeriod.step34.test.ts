@@ -16,16 +16,16 @@ import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
  *   - With period 0, the tone bit should toggle every single sample tick
  */
 describe("Step 34: PSG chipType and Volume Tables (Phase 3)", () => {
-  // ------- Known table values for sanity checks -------
-  // AY-3-8910 table (phase 3 specification)
+  // ------- Known table values (MAME ay8910.cpp resistor-network model) -------
+  // AY-3-8910 table
   const AY_TABLE = [
-    0, 836, 1212, 1773, 2619, 3875, 5765, 8589,
-    10207, 17157, 24956, 32768, 43520, 55424, 65120, 65535
+    0, 890, 1158, 1512, 2059, 2856, 3833, 6238,
+    7696, 12607, 17452, 23178, 30968, 39233, 51935, 65535
   ];
-  // YM2149 table (phase 3 specification)
+  // YM2149 table
   const YM_TABLE = [
-    0, 0, 1057, 1521, 2130, 2987, 4119, 5765,
-    7783, 10207, 13311, 17157, 23420, 32768, 43520, 65535
+    0, 436, 762, 1099, 1638, 2217, 3221, 4329,
+    6266, 8473, 12221, 16447, 23948, 32562, 47873, 65535
   ];
 
   // Helper: enable only tone A (no noise), then read instantaneous amplitude
@@ -141,12 +141,12 @@ describe("Step 34: PSG chipType and Volume Tables (Phase 3)", () => {
       }
     });
 
-    it("YM vol 1 equals AY vol 0 (YM steps 0-1 are both 0)", () => {
-      // YM table[0]=0, table[1]=0 — first two levels identical
+    it("YM vol 1 produces a small non-zero output (MAME table[1]=436)", () => {
+      // MAME YM table: level 0 = 0, level 1 = 436 (distinct from old Unreal table where both were 0)
       const ym0 = amplitudeAt(new PsgChip(0, "YM"), 0);
       const ym1 = amplitudeAt(new PsgChip(0, "YM"), 1);
       expect(ym0).toBe(0);
-      expect(ym1).toBe(0);
+      expect(ym1).toBe(436);
     });
   });
 

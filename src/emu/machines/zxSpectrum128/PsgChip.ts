@@ -69,16 +69,16 @@ export class PsgChip {
     0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
   ];
 
-  // --- AY-3-8910 volume table (from hardware-measured resistor model, normalized to 0-65535)
+  // --- AY-3-8910 volume table (MAME ay8910.cpp resistor-network model, normalized to 0-65535)
   private static readonly AY_VOLUME_TABLE: readonly number[] = [
-    0, 836, 1212, 1773, 2619, 3875, 5765, 8589,
-    10207, 17157, 24956, 32768, 43520, 55424, 65120, 65535
+    0, 890, 1158, 1512, 2059, 2856, 3833, 6238,
+    7696, 12607, 17452, 23178, 30968, 39233, 51935, 65535
   ];
 
-  // --- YM2149 volume table (from YM2149 resistor model, normalized to 0-65535)
+  // --- YM2149 volume table (MAME ay8910.cpp resistor-network model, normalized to 0-65535)
   private static readonly YM_VOLUME_TABLE: readonly number[] = [
-    0, 0, 1057, 1521, 2130, 2987, 4119, 5765,
-    7783, 10207, 13311, 17157, 23420, 32768, 43520, 65535
+    0, 436, 762, 1099, 1638, 2217, 3221, 4329,
+    6266, 8473, 12221, 16447, 23948, 32562, 47873, 65535
   ];
 
   // --- The last register index set
@@ -204,13 +204,13 @@ export class PsgChip {
       this._regValues[i] = 0;
     }
     
-    // --- Initialize mixer register to 0xFF (all channels disabled) to match hardware
-    this._regValues[7] = 0xff;
+    // --- Initialize mixer register to 0x00 (all channels enabled), matching MAME ay8910_reset_ym()
+    this._regValues[7] = 0x00;
 
     // --- Channel A setup
     this._toneA = 0;
-    this._toneAEnabled = false;
-    this._noiseAEnabled = false;
+    this._toneAEnabled = true;
+    this._noiseAEnabled = true;
     this._volA = 0;
     this._envA = false;
     this._cntA = 0;
@@ -218,8 +218,8 @@ export class PsgChip {
 
     // --- Channel B setup
     this._toneB = 0;
-    this._toneBEnabled = false;
-    this._noiseBEnabled = false;
+    this._toneBEnabled = true;
+    this._noiseBEnabled = true;
     this._volB = 0;
     this._envB = false;
     this._cntB = 0;
@@ -227,8 +227,8 @@ export class PsgChip {
 
     // --- Channel C setup
     this._toneC = 0;
-    this._toneCEnabled = false;
-    this._noiseCEnabled = false;
+    this._toneCEnabled = true;
+    this._noiseCEnabled = true;
     this._volC = 0;
     this._envC = false;
     this._cntC = 0;
@@ -590,9 +590,11 @@ export class PsgChip {
     // --- Calculate noise sample using hardware-verified 17-bit LFSR with ÷2 prescaler.
     // The LFSR is verified on real AY-3-8910 and YM2149 chips (MAME ay8910.cpp):
     // bit0 XOR bit3 feeds back into bit16. The prescaler halves the effective noise rate.
-    if (this._noiseFreq) {
+    // Period=0 behaves as max-speed advance (same as period=1), matching MAME.
+    {
+      const noisePeriod = this._noiseFreq || 1;
       this._cntNoise++;
-      if (this._cntNoise >= this._noiseFreq) {
+      if (this._cntNoise >= noisePeriod) {
         this._cntNoise = 0;
         this._noisePrescale = !this._noisePrescale;
         if (!this._noisePrescale) {
@@ -609,9 +611,11 @@ export class PsgChip {
     // YM2149:    32-step envelope with ×1 period multiplier.
     // Both produce the same total envelope duration for a given frequency register value.
     const envPeriod = this.chipType === 'AY' ? this._envFreq * 2 : this._envFreq;
-    if (envPeriod) {
+    // Period=0 advances envelope at max speed (MAME: "period 0 is half as period 1")
+    {
+      const effectiveEnvPeriod = envPeriod || 1;
       this._cntEnv++;
-      if (this._cntEnv >= envPeriod) {
+      if (this._cntEnv >= effectiveEnvPeriod) {
         this._cntEnv = 0;
         this._posEnv++;
         if (this._posEnv > 0x7f) {

@@ -457,12 +457,12 @@ describe("Step 21: PSG Noise Generator (Phase 2)", () => {
       expect(psg.getPsgData().noiseSeed).not.toBe(initialSeed);
     });
 
-    it("should not advance LFSR when noiseFreq=0 (counter blocked)", () => {
-      // noiseFreq=0 causes the counter guard to skip the block
+    it("should advance LFSR at max speed when noiseFreq=0 (period-0 = period-1)", () => {
+      // noiseFreq=0 is treated as period=1 (max speed), matching MAME behaviour
       psg.setPsgRegisterIndex(6); psg.writePsgRegisterValue(0);
       const initialSeed = psg.getPsgData().noiseSeed;
       for (let i = 0; i < 20; i++) psg.generateOutputValue();
-      expect(psg.getPsgData().noiseSeed).toBe(initialSeed);
+      expect(psg.getPsgData().noiseSeed).not.toBe(initialSeed);
     });
   });
 

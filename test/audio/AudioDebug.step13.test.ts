@@ -47,7 +47,7 @@ describe("Step 13: Audio Debug Support", () => {
       expect(debug.channels.a).toBeDefined();
       expect(debug.channels.a.tone).toBe(0x42);
       expect(debug.channels.a.volume).toBe(0x0f);
-      expect(debug.channels.a.toneEnabled).toBe(false); // Disabled by default (mixer reg 7)
+      expect(debug.channels.a.toneEnabled).toBe(true); // Enabled by default (R7 = 0x00, MAME-accurate)
     });
 
     it("should track channel B state in debug info", () => {

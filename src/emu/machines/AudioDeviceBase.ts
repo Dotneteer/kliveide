@@ -10,8 +10,8 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   private _audioNextSampleTact = 0;
   private readonly _audioSamples: AudioSample[] = [];
 
-  // --- DC offset high-pass filter state (Phase 3)
-  // y[n] = α × (y[n-1] + x[n] - x[n-1]) where α ≈ 0.995
+  // --- DC offset high-pass filter state (MAME spkrdev.cpp form)
+  // y[n] = x[n] - x[n-1] + α × y[n-1] where α ≈ 0.995
   private static readonly DC_FILTER_ALPHA = 0.995;
   private _dcFilterPrevInputLeft = 0;
   private _dcFilterPrevInputRight = 0;
@@ -92,13 +92,13 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
 
   /**
    * Applies a first-order high-pass (AC coupling) filter to remove DC offset.
-   * y[n] = α × (y[n-1] + x[n] - x[n-1])
+   * y[n] = x[n] - x[n-1] + α × y[n-1]   (MAME spkrdev.cpp form)
    */
   private applyDcFilter (sample: AudioSample): AudioSample {
     const a = AudioDeviceBase.DC_FILTER_ALPHA;
 
-    const outLeft = a * (this._dcFilterPrevOutputLeft + sample.left - this._dcFilterPrevInputLeft);
-    const outRight = a * (this._dcFilterPrevOutputRight + sample.right - this._dcFilterPrevInputRight);
+    const outLeft = sample.left - this._dcFilterPrevInputLeft + a * this._dcFilterPrevOutputLeft;
+    const outRight = sample.right - this._dcFilterPrevInputRight + a * this._dcFilterPrevOutputRight;
 
     this._dcFilterPrevInputLeft = sample.left;
     this._dcFilterPrevInputRight = sample.right;
