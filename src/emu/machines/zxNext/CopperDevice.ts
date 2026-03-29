@@ -127,7 +127,16 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
       this._memory[this._copperListAddr * 2 + 1];
 
     if (this._copperListData & 0x8000) {
-      // WAIT instruction — handled in Step 3
+      // WAIT instruction: bit 15 == 1
+      // Encoding: 1 HHHHHH LLLLLLLLL
+      //   bits 14:9 = hc6  → target HC = hc6 * 8 + 12  (FPGA: hc6&"000" + 12)
+      //   bits  8:0 = waitLine (9-bit vertical counter)
+      const waitLine = this._copperListData & 0x1ff;
+      const waitHC = ((this._copperListData >> 9) & 0x3f) * 8 + 12;
+      if (vc === waitLine && hc >= waitHC) {
+        this._copperListAddr = (this._copperListAddr + 1) % 0x400;
+      }
+      // If condition not met: stall — stay on this instruction.
       return;
     }
 

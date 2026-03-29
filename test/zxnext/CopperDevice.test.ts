@@ -259,3 +259,206 @@ describe("CopperDevice – Step 2: MOVE instruction", () => {
     expect(readNextReg(0x40)).not.toBe(0xcc);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Step 3 — WAIT instruction
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 3: WAIT instruction", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("should advance the pointer when vc and hc both match", () => {
+    // WAIT for line 100, hc6=0 → waitHC = 0*8+12 = 12
+    writeInstruction(copper, 0, waitInstr(0, 100));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(100, 12); // exact match
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should advance when hc is greater than the target", () => {
+    writeInstruction(copper, 0, waitInstr(0, 100));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(100, 200); // hc well past target
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should NOT advance when vc is wrong (too early)", () => {
+    writeInstruction(copper, 0, waitInstr(0, 100));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(99, 200);
+    expect(copper._copperListAddr).toBe(0);
+  });
+
+  it("should NOT advance when vc is wrong (too late)", () => {
+    writeInstruction(copper, 0, waitInstr(0, 100));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(101, 200);
+    expect(copper._copperListAddr).toBe(0);
+  });
+
+  it("should NOT advance when hc is below the target (hc < waitHC)", () => {
+    // hc6=1 → waitHC = 1*8+12 = 20
+    writeInstruction(copper, 0, waitInstr(1, 100));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(100, 19); // one short
+    expect(copper._copperListAddr).toBe(0);
+  });
+
+  it("should advance exactly at the target hc boundary", () => {
+    // hc6=2 → waitHC = 2*8+12 = 28
+    writeInstruction(copper, 0, waitInstr(2, 50));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(50, 28); // exactly at boundary
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should encode hc6 correctly: WAIT for line 0 hc6=0 matches at hc=12", () => {
+    writeInstruction(copper, 0, waitInstr(0, 0));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(0, 11); // hc=11 < 12 → no advance
+    expect(copper._copperListAddr).toBe(0);
+
+    copper.executeTick(0, 12); // hc=12 >= 12 → advance
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should stall multiple ticks until condition is met, then advance exactly once", () => {
+    writeInstruction(copper, 0, waitInstr(0, 10)); // waitHC = 12
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    // Stall for several ticks on the wrong line
+    for (let i = 0; i < 5; i++) {
+      copper.executeTick(9, 200);
+      expect(copper._copperListAddr).toBe(0);
+    }
+    // Now provide the matching position
+    copper.executeTick(10, 12);
+    expect(copper._copperListAddr).toBe(1);
+    // One more tick: pointer is now on the next instruction (NOP/0)
+    copper.executeTick(10, 13);
+    expect(copper._copperListAddr).toBe(2); // NOP at slot 1 advances
+  });
+
+  it("should execute a MOVE after a WAIT only once the WAIT passes", () => {
+    // Slot 0: WAIT line=20, hc6=0
+    // Slot 1: MOVE reg=0x45, val=0x77
+    writeInstruction(copper, 0, waitInstr(0, 20));
+    writeInstruction(copper, 1, moveInstr(0x45, 0x77));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+
+    // Before the wait line: MOVE must not fire
+    copper.executeTick(19, 200);
+    expect(spy).not.toHaveBeenCalledWith(0x45, 0x77);
+
+    // Pass the WAIT
+    copper.executeTick(20, 12); // WAIT passes → addr = 1
+    expect(copper._copperListAddr).toBe(1);
+
+    // Fetch MOVE
+    copper.executeTick(20, 13); // fetch → dout=true
+    expect(copper._copperDout).toBe(true);
+
+    // Output MOVE
+    copper.executeTick(20, 14);
+    expect(spy).toHaveBeenCalledWith(0x45, 0x77);
+
+    vi.restoreAllMocks();
+  });
+
+  it("should handle maximum hc6 value (63): waitHC = 63*8+12 = 516", () => {
+    writeInstruction(copper, 0, waitInstr(63, 5));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(5, 515); // one short
+    expect(copper._copperListAddr).toBe(0);
+
+    copper.executeTick(5, 516);
+    expect(copper._copperListAddr).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 4 — Stop mode (FullyStopped = 0b00)
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 4: Stop mode", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("should do nothing when mode is FullyStopped (default)", () => {
+    writeInstruction(copper, 0, moveInstr(0x40, 0xbb));
+    // Default mode is FullyStopped — never call setMode
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    for (let i = 0; i < 10; i++) copper.executeTick(0, i);
+
+    expect(spy).not.toHaveBeenCalled();
+    expect(copper._copperDout).toBe(false);
+    expect(copper._copperListAddr).toBe(0);
+    vi.restoreAllMocks();
+  });
+
+  it("should not advance the pointer when stopped", () => {
+    writeInstruction(copper, 0, moveInstr(0x40, 0x01));
+    for (let i = 0; i < 50; i++) copper.executeTick(i, 0);
+    expect(copper._copperListAddr).toBe(0);
+  });
+
+  it("should halt immediately when mode changes to FullyStopped from StartFromZeroAndLoop", () => {
+    writeInstruction(copper, 0, moveInstr(0x40, 0xcc));
+    writeInstruction(copper, 1, moveInstr(0x41, 0xdd));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(0, 0); // fetch slot 0 → dout=true
+    expect(copper._copperDout).toBe(true);
+
+    // Stop before the output tick
+    copper.nextReg62Value = CopperStartMode.FullyStopped << 6;
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    copper.executeTick(0, 1); // must do nothing
+    copper.executeTick(0, 2);
+    expect(spy).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("should resume execution after being stopped and restarted", () => {
+    writeInstruction(copper, 0, moveInstr(0x50, 0x11));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+    copper.executeTick(0, 0); // fetch → dout=true
+
+    // Stop
+    copper.nextReg62Value = CopperStartMode.FullyStopped << 6;
+    copper.executeTick(0, 1); // no output
+
+    // Restart (transition 0→1 resets list addr to 0)
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+    expect(copper._copperListAddr).toBe(0);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    copper.executeTick(0, 0); // fetch slot 0 again → dout=true
+    copper.executeTick(0, 1); // output
+    expect(spy).toHaveBeenCalledWith(0x50, 0x11);
+    vi.restoreAllMocks();
+  });
+});
