@@ -119,12 +119,14 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // ABC mode: Left = A+B, Right = B+C
+      // ABC mode (Phase 6): A = full-left, B = center (50% each side), C = full-right
+      // Left = volA + floor(volB/2), Right = floor(volB/2) + volC
       const volA = chip.getChannelAVolume();
       const volB = chip.getChannelBVolume();
       const volC = chip.getChannelCVolume();
-      expect(output.left).toBe(Math.min(131070, volA + volB));
-      expect(output.right).toBe(Math.min(131070, volB + volC));
+      const halfB = Math.floor(volB / 2);
+      expect(output.left).toBe(Math.min(98302, volA + halfB));
+      expect(output.right).toBe(Math.min(98302, halfB + volC));
     });
 
     it("should handle zero output for disabled channels", () => {
@@ -178,12 +180,14 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // ACB mode: Left = A+C, Right = B+C
+      // ACB mode (Phase 6): A = full-left, C = center (50% each side), B = full-right
+      // Left = volA + floor(volC/2), Right = floor(volC/2) + volB
       const volA = chip.getChannelAVolume();
       const volB = chip.getChannelBVolume();
       const volC = chip.getChannelCVolume();
-      expect(output.left).toBe(Math.min(131070, volA + volC));
-      expect(output.right).toBe(Math.min(131070, volB + volC));
+      const halfC = Math.floor(volC / 2);
+      expect(output.left).toBe(Math.min(98302, volA + halfC));
+      expect(output.right).toBe(Math.min(98302, halfC + volB));
     });
   });
 
@@ -225,11 +229,11 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       // In mono mode, left and right should be the same
       expect(output.left).toBe(output.right);
       
-      // In mono mode, should be sum of all channels (capped at 65535)
+      // In mono mode, should be sum of all channels (capped at 3 * 65535 = 196605)
       const volA = chip.getChannelAVolume();
       const volB = chip.getChannelBVolume();
       const volC = chip.getChannelCVolume();
-      const expected = Math.min(65535, volA + volB + volC);
+      const expected = Math.min(196605, volA + volB + volC);
       expect(output.left).toBe(expected);
     });
 
@@ -360,8 +364,8 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // Left = volA + volB; max two-channel sum is 2 * 65535 = 131070
-      expect(output.left).toBeLessThanOrEqual(131070);
+      // ABC mode (Phase 6): Left = volA + floor(volB/2). Max = 65535 + 32767 = 98302
+      expect(output.left).toBeLessThanOrEqual(98302);
       expect(output.left).toBeGreaterThan(0);
     });
 
@@ -389,8 +393,8 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // Left = volA + volC; max two-channel sum is 2 * 65535 = 131070
-      expect(output.left).toBeLessThanOrEqual(131070);
+      // ACB mode (Phase 6): Left = volA + floor(volC/2). Max = 65535 + 32767 = 98302
+      expect(output.left).toBeLessThanOrEqual(98302);
       expect(output.left).toBeGreaterThan(0);
     });
 

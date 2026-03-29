@@ -247,54 +247,44 @@ export class PsgChip {
   }
 
   /**
-   * Initialize the PSG envelope tables
+   * Initialize the PSG envelope tables.
+   *
+   * AY-3-8910: 16 envelope steps (vol 0-15). Each step lasts ×2 the period register
+   *   value, preserving the same total envelope duration as YM. Volume index: vol & 0x0f.
+   * YM2149:    32 envelope steps (vol 0-31). Each step lasts ×1 the period register
+   *   value. Volume index: (vol & 0x1f) >> 1 (maps 32 sub-steps to 16-entry table).
    */
   private initEnvelopData (): void {
-    // Reset the sample pointer
+    // Step boundary: 16 for AY (hardware-verified), 32 for YM
+    const stepMax = this.chipType === 'AY' ? 16 : 32;
+    const initVol = this.chipType === 'AY' ? stepMax : stepMax; // identical expression; kept for clarity
+
     let samplePtr = 0;
 
-    // --- Iterate through envelopes
     for (let env = 0; env < 16; env++) {
-      // --- Reset hold
       let hold = false;
-
-      // --- Set dir according to env
       let dir = (env & 0x04) !== 0 ? 1 : -1;
+      let vol = (env & 0x04) !== 0 ? -1 : stepMax;
 
-      // --- Set vol according to env
-      let vol = (env & 0x04) !== 0 ? -1 : 0x20;
-
-      // --- Iterate through envelope positions
       for (let pos = 0; pos < 128; pos++) {
         if (!hold) {
           vol += dir;
-          if (vol < 0 || vol >= 32) {
-            // -- Continue flag is set?
+          if (vol < 0 || vol >= stepMax) {
             if ((env & 0x08) !== 0) {
-              // --- Yes, continue.
-              // --- If alternate is set, reverse the direction
               if ((env & 0x02) !== 0) {
                 dir = -dir;
               }
-
-              // --- Set start volume according to direction
-              vol = dir > 0 ? 0 : 31;
-
-              // --- Hold is set?
+              vol = dir > 0 ? 0 : stepMax - 1;
               if ((env & 0x01) !== 0) {
-                // --- Hold, and set up next volume
                 hold = true;
-                vol = dir > 0 ? 31 : 0;
+                vol = dir > 0 ? stepMax - 1 : 0;
               }
             } else {
-              // --- Mute and hold this value
               vol = 0;
               hold = true;
             }
           }
         }
-
-        // --- Store the envelop sample and move to the next position
         this._psgEnvelopes[samplePtr++] = vol & 0xff;
       }
     }
@@ -603,11 +593,14 @@ export class PsgChip {
       }
     }
 
-    // --- Calculate envelope position
-    if (this._envFreq) {
+    // --- Calculate envelope position.
+    // AY-3-8910: 16-step envelope with ×2 period multiplier (hardware-verified, MAME ay8910.cpp).
+    // YM2149:    32-step envelope with ×1 period multiplier.
+    // Both produce the same total envelope duration for a given frequency register value.
+    const envPeriod = this.chipType === 'AY' ? this._envFreq * 2 : this._envFreq;
+    if (envPeriod) {
       this._cntEnv++;
-      if (this._cntEnv >= this._envFreq) {
-        // --- Move to the new position
+      if (this._cntEnv >= envPeriod) {
         this._cntEnv = 0;
         this._posEnv++;
         if (this._posEnv > 0x7f) {
@@ -624,12 +617,18 @@ export class PsgChip {
     let volB = 0;
     let volC = 0;
 
+    // AY: envelope table stores values 0-15, index directly with (vol & 0x0f).
+    // YM: envelope table stores values 0-31, map to 16-entry table with (vol & 0x1f) >> 1.
+    // Non-envelope path (_volX * 2 + 1) always maps 0-15 → valid range, so >>1 is used for both.
+    const envOK = this.chipType === 'AY';
+
     // --- Channel A
     {
       const tmpVolA = this._envA
         ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
         : this._volA * 2 + 1;
-      const amplitudeA = this._psgVolumeTable[(tmpVolA & 0x1f) >> 1];
+      const envIdxA = this._envA ? (envOK ? (tmpVolA & 0x0f) : ((tmpVolA & 0x1f) >> 1)) : ((tmpVolA & 0x1f) >> 1);
+      const amplitudeA = this._psgVolumeTable[envIdxA];
       const toneBitA = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
       const noiseBitA = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
       volA = (toneBitA & noiseBitA) ? amplitudeA : 0;
@@ -641,7 +640,8 @@ export class PsgChip {
       const tmpVolB = this._envB
         ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
         : this._volB * 2 + 1;
-      const amplitudeB = this._psgVolumeTable[(tmpVolB & 0x1f) >> 1];
+      const envIdxB = this._envB ? (envOK ? (tmpVolB & 0x0f) : ((tmpVolB & 0x1f) >> 1)) : ((tmpVolB & 0x1f) >> 1);
+      const amplitudeB = this._psgVolumeTable[envIdxB];
       const toneBitB = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
       const noiseBitB = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
       volB = (toneBitB & noiseBitB) ? amplitudeB : 0;
@@ -653,7 +653,8 @@ export class PsgChip {
       const tmpVolC = this._envC
         ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
         : this._volC * 2 + 1;
-      const amplitudeC = this._psgVolumeTable[(tmpVolC & 0x1f) >> 1];
+      const envIdxC = this._envC ? (envOK ? (tmpVolC & 0x0f) : ((tmpVolC & 0x1f) >> 1)) : ((tmpVolC & 0x1f) >> 1);
+      const amplitudeC = this._psgVolumeTable[envIdxC];
       const toneBitC = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
       const noiseBitC = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
       volC = (toneBitC & noiseBitC) ? amplitudeC : 0;
@@ -681,7 +682,10 @@ export class PsgChip {
     const tmpVol = this._envA
       ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
       : this._volA * 2 + 1;
-    const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    const idx = this._envA
+      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
+      : ((tmpVol & 0x1f) >> 1);
+    const amplitude = this._psgVolumeTable[idx];
     const toneBit = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
     const noiseBit = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
     return (toneBit & noiseBit) ? amplitude : 0;
@@ -695,7 +699,10 @@ export class PsgChip {
     const tmpVol = this._envB
       ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
       : this._volB * 2 + 1;
-    const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    const idx = this._envB
+      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
+      : ((tmpVol & 0x1f) >> 1);
+    const amplitude = this._psgVolumeTable[idx];
     const toneBit = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
     const noiseBit = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
     return (toneBit & noiseBit) ? amplitude : 0;
@@ -709,7 +716,10 @@ export class PsgChip {
     const tmpVol = this._envC
       ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
       : this._volC * 2 + 1;
-    const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    const idx = this._envC
+      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
+      : ((tmpVol & 0x1f) >> 1);
+    const amplitude = this._psgVolumeTable[idx];
     const toneBit = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
     const noiseBit = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
     return (toneBit & noiseBit) ? amplitude : 0;
