@@ -104,6 +104,7 @@ export class PsgChip {
   private _noiseSeed: number;
   private _noiseFreq: number;
   private _cntNoise: number;
+  private _noisePrescale: boolean;
   private _bitNoise: boolean;
 
   // --- Envelope data
@@ -208,10 +209,11 @@ export class PsgChip {
     this._bitC = false;
 
     // --- Noise channel setup
-    this._noiseSeed = 0;
+    this._noiseSeed = 1;         // Hardware-correct initial seed (MAME-verified)
     this._noiseFreq = 0;
     this._cntNoise = 0;
-    this._bitNoise = false;
+    this._noisePrescale = false;  // Hardware ÷2 prescaler starts low
+    this._bitNoise = (this._noiseSeed & 1) !== 0;  // Initial noise output = HIGH
 
     // --- Other registers
     this._envFreq = 0;
@@ -311,6 +313,7 @@ export class PsgChip {
       noiseSeed: this._noiseSeed,
       noiseFreq: this._noiseFreq,
       cntNoise: this._cntNoise,
+      noisePrescale: this._noisePrescale,
       bitNoise: this._bitNoise,
       envFreq: this._envFreq,
       envStyle: this._envStyle,
@@ -350,6 +353,7 @@ export class PsgChip {
       noiseSeed: this._noiseSeed,
       noiseFreq: this._noiseFreq,
       cntNoise: this._cntNoise,
+      noisePrescale: this._noisePrescale,
       bitNoise: this._bitNoise,
       envFreq: this._envFreq,
       envStyle: this._envStyle,
@@ -391,10 +395,11 @@ export class PsgChip {
     this._envC = state.envC ?? false;
     this._cntC = state.cntC ?? 0;
     this._bitC = state.bitC ?? false;
-    this._noiseSeed = state.noiseSeed ?? 0;
+    this._noiseSeed = state.noiseSeed ?? 1;
     this._noiseFreq = state.noiseFreq ?? 0;
     this._cntNoise = state.cntNoise ?? 0;
-    this._bitNoise = state.bitNoise ?? false;
+    this._noisePrescale = state.noisePrescale ?? false;
+    this._bitNoise = state.bitNoise ?? true;
     this._envFreq = state.envFreq ?? 0;
     this._envStyle = state.envStyle ?? 0;
     this._cntEnv = state.cntEnv ?? 0;
@@ -562,16 +567,20 @@ export class PsgChip {
       }
     }
 
-    // --- Calculate noise sample
+    // --- Calculate noise sample using hardware-verified 17-bit LFSR with ÷2 prescaler.
+    // The LFSR is verified on real AY-3-8910 and YM2149 chips (MAME ay8910.cpp):
+    // bit0 XOR bit3 feeds back into bit16. The prescaler halves the effective noise rate.
     if (this._noiseFreq) {
       this._cntNoise++;
       if (this._cntNoise >= this._noiseFreq) {
-        // --- It is time to generate the next noise sample
         this._cntNoise = 0;
-        this._noiseSeed =
-          (this._noiseSeed * 2 + 1) ^
-          (((this._noiseSeed >>> 16) ^ (this._noiseSeed >>> 13)) & 0x01);
-        this._bitNoise = ((this._noiseSeed >>> 16) & 0x01) != 0;
+        this._noisePrescale = !this._noisePrescale;
+        if (!this._noisePrescale) {
+          // Tick LFSR only on every second period expiry
+          const feedback = (this._noiseSeed & 1) ^ ((this._noiseSeed >> 3) & 1);
+          this._noiseSeed = ((this._noiseSeed >> 1) | (feedback << 16)) & 0x1ffff;
+          this._bitNoise = (this._noiseSeed & 1) !== 0;
+        }
       }
     }
 
@@ -588,76 +597,47 @@ export class PsgChip {
       }
     }
 
-    // --- Calculate channel volumes
+    // --- Calculate channel volumes using hardware-accurate MAME mixer logic.
+    // Hardware formula: vol_enabled = (tone_output | tone_disable) & (noise_output | noise_disable)
+    // A disabled channel input acts as bypass (always HIGH = 1), enabling DC-level output.
+    // Both disabled + non-zero volume = constant DC amplitude (used for digi-drum volume modulation).
     let volA = 0;
     let volB = 0;
     let volC = 0;
 
-    // --- Channel A volume value (UNSIGNED output - matching VHDL hardware)
-    let tmpVol = 0;
-    
-    if (this._toneAEnabled || this._noiseAEnabled) {
-      if (this._envA) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volA * 2 + 1;
-      }
-
-      // --- Convert to amplitude (0-65535 range for 16-bit software)
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0 (unsigned DC-biased square wave)
-      if (this._toneAEnabled && this._bitA) {
-        volA = amplitude;
-      } else if (this._noiseAEnabled && this._bitNoise) {
-        volA = amplitude;
-      }
-      // else volA remains 0
-      
-      vol += volA;  // Total volume uses unsigned addition
+    // --- Channel A
+    {
+      const tmpVolA = this._envA
+        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+        : this._volA * 2 + 1;
+      const amplitudeA = this._psgVolumeTable[(tmpVolA & 0x1f) >> 1];
+      const toneBitA = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
+      const noiseBitA = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
+      volA = (toneBitA & noiseBitA) ? amplitudeA : 0;
+      vol += volA;
     }
 
-    // --- Channel B volume value (UNSIGNED output)
-    
-    if (this._toneBEnabled || this._noiseBEnabled) {
-      if (this._envB) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volB * 2 + 1;
-      }
-
-      // --- Convert to amplitude (0-65535 range)
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0
-      if (this._toneBEnabled && this._bitB) {
-        volB = amplitude;
-      } else if (this._noiseBEnabled && this._bitNoise) {
-        volB = amplitude;
-      }
-      
+    // --- Channel B
+    {
+      const tmpVolB = this._envB
+        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+        : this._volB * 2 + 1;
+      const amplitudeB = this._psgVolumeTable[(tmpVolB & 0x1f) >> 1];
+      const toneBitB = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
+      const noiseBitB = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
+      volB = (toneBitB & noiseBitB) ? amplitudeB : 0;
       vol += volB;
     }
 
-    // --- Channel C volume value (UNSIGNED output)
-    
-    if (this._toneCEnabled || this._noiseCEnabled) {
-      if (this._envC) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volC * 2 + 1;
-      }
-
-      // --- Convert to amplitude (0-65535 range)
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Hardware behavior: bit HIGH = amplitude, bit LOW = 0
-      if (this._toneCEnabled && this._bitC) {
-        volC = amplitude;
-      } else if (this._noiseCEnabled && this._bitNoise) {
-        volC = amplitude;
-      }
-      
+    // --- Channel C
+    {
+      const tmpVolC = this._envC
+        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+        : this._volC * 2 + 1;
+      const amplitudeC = this._psgVolumeTable[(tmpVolC & 0x1f) >> 1];
+      const toneBitC = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
+      const noiseBitC = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
+      volC = (toneBitC & noiseBitC) ? amplitudeC : 0;
       vol += volC;
     }
 
@@ -675,78 +655,45 @@ export class PsgChip {
   }
 
   /**
-   * Gets the current output volume for channel A (-32768 to +32767)
+   * Gets the current output level for channel A (unsigned 0-65535).
+   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelAVolume (): number {
-    let vol = 0;
-    
-    if (this._toneAEnabled || this._noiseAEnabled) {
-      let tmpVol = 0;
-      if (this._envA) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volA * 2 + 1;
-      }
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Return signed value based on tone bit state
-      if (this._toneAEnabled) {
-        vol = this._bitA ? amplitude : -amplitude;
-      } else if (this._noiseAEnabled) {
-        vol = this._bitNoise ? amplitude : -amplitude;
-      }
-    }
-    return vol;
+    const tmpVol = this._envA
+      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+      : this._volA * 2 + 1;
+    const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    const toneBit = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
+    const noiseBit = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
+    return (toneBit & noiseBit) ? amplitude : 0;
   }
 
   /**
-   * Gets the current output volume for channel B (-32768 to +32767)
+   * Gets the current output level for channel B (unsigned 0-65535).
+   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelBVolume (): number {
-    let vol = 0;
-    
-    if (this._toneBEnabled || this._noiseBEnabled) {
-      let tmpVol = 0;
-      if (this._envB) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volB * 2 + 1;
-      }
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Return signed value based on tone bit state
-      if (this._toneBEnabled) {
-        vol = this._bitB ? amplitude : -amplitude;
-      } else if (this._noiseBEnabled) {
-        vol = this._bitNoise ? amplitude : -amplitude;
-      }
-    }
-    return vol;
+    const tmpVol = this._envB
+      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+      : this._volB * 2 + 1;
+    const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    const toneBit = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
+    const noiseBit = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
+    return (toneBit & noiseBit) ? amplitude : 0;
   }
 
   /**
-   * Gets the current output volume for channel C (-32768 to +32767)
+   * Gets the current output level for channel C (unsigned 0-65535).
+   * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelCVolume (): number {
-    let vol = 0;
-    
-    if (this._toneCEnabled || this._noiseCEnabled) {
-      let tmpVol = 0;
-      if (this._envC) {
-        tmpVol = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
-      } else {
-        tmpVol = this._volC * 2 + 1;
-      }
-      const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
-      
-      // Return signed value based on tone bit state
-      if (this._toneCEnabled) {
-        vol = this._bitC ? amplitude : -amplitude;
-      } else if (this._noiseCEnabled) {
-        vol = this._bitNoise ? amplitude : -amplitude;
-      }
-    }
-    return vol;
+    const tmpVol = this._envC
+      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
+      : this._volC * 2 + 1;
+    const amplitude = this._psgVolumeTable[(tmpVol & 0x1f) >> 1];
+    const toneBit = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
+    const noiseBit = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
+    return (toneBit & noiseBit) ? amplitude : 0;
   }
 
   /**

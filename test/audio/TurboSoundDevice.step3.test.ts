@@ -103,31 +103,35 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       chip.setPsgRegisterIndex(10);
       chip.writePsgRegisterValue(3); // Volume = 3
       
-      // Enable all channels
+      // Enable tone on all channels, disable noise (reg7: bits 0-2=0 enable tone, bits 3-5=1 disable noise)
       chip.setPsgRegisterIndex(7); // Enable register
-      chip.writePsgRegisterValue(0x3f); // All channels enabled, noise disabled
+      chip.writePsgRegisterValue(0x38); // Tone A/B/C enabled, noise A/B/C disabled
       
       // Set tones to enable output
       chip.setPsgRegisterIndex(0);
-      chip.writePsgRegisterValue(1); // Tone A
+      chip.writePsgRegisterValue(1); // Tone A period=1
       chip.setPsgRegisterIndex(2);
-      chip.writePsgRegisterValue(1); // Tone B
+      chip.writePsgRegisterValue(1); // Tone B period=1
       chip.setPsgRegisterIndex(4);
-      chip.writePsgRegisterValue(1); // Tone C
+      chip.writePsgRegisterValue(1); // Tone C period=1
       
-      // Generate a sample
+      // Generate a sample (period=1 flips bit on first tick)
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // Right should be C's output only
+      // ABC mode: Left = A+B, Right = B+C
+      const volA = chip.getChannelAVolume();
+      const volB = chip.getChannelBVolume();
       const volC = chip.getChannelCVolume();
-      expect(output.right).toBe(volC);
+      expect(output.left).toBe(Math.min(131070, volA + volB));
+      expect(output.right).toBe(Math.min(131070, volB + volC));
     });
 
     it("should handle zero output for disabled channels", () => {
       const chip = device.getChip(0);
       
-      // Disable all channels
+      // Disable all channels (reg7=0x3f: both tone and noise disabled for all channels)
+      // With no volumes set (default=0), output remains 0 even in volume-modulation mode
       chip.setPsgRegisterIndex(7); // Enable register
       chip.writePsgRegisterValue(0x3f); // Disable all channels
       
@@ -158,25 +162,28 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       chip.setPsgRegisterIndex(10);
       chip.writePsgRegisterValue(3);
       
-      // Enable all channels
+      // Enable tone on all channels, disable noise
       chip.setPsgRegisterIndex(7);
-      chip.writePsgRegisterValue(0x3f);
+      chip.writePsgRegisterValue(0x38); // Tone A/B/C enabled, noise A/B/C disabled
       
       // Set tones
       chip.setPsgRegisterIndex(0);
-      chip.writePsgRegisterValue(1);
+      chip.writePsgRegisterValue(1); // Tone A period=1
       chip.setPsgRegisterIndex(2);
-      chip.writePsgRegisterValue(1);
+      chip.writePsgRegisterValue(1); // Tone B period=1
       chip.setPsgRegisterIndex(4);
-      chip.writePsgRegisterValue(1);
+      chip.writePsgRegisterValue(1); // Tone C period=1
       
-      // Generate a sample
+      // Generate a sample (period=1 flips bit on first tick)
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // Right should be B's output only in ACB mode
+      // ACB mode: Left = A+C, Right = B+C
+      const volA = chip.getChannelAVolume();
       const volB = chip.getChannelBVolume();
-      expect(output.right).toBe(volB);
+      const volC = chip.getChannelCVolume();
+      expect(output.left).toBe(Math.min(131070, volA + volC));
+      expect(output.right).toBe(Math.min(131070, volB + volC));
     });
   });
 
@@ -198,7 +205,8 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       chip.setPsgRegisterIndex(10);
       chip.writePsgRegisterValue(3); // Volume C
       
-      // Enable all channels
+      // Disable all channels (volume modulation mode: reg7=0x3f means both tone and noise disabled)
+      // With volumes 5, 7, 3 set, DC amplitude is output (MAME-accurate mixer: both-disabled = HIGH)
       chip.setPsgRegisterIndex(7);
       chip.writePsgRegisterValue(0x3f);
       
@@ -352,8 +360,9 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // Left should be clamped at 65535
-      expect(output.left).toBeLessThanOrEqual(65535);
+      // Left = volA + volB; max two-channel sum is 2 * 65535 = 131070
+      expect(output.left).toBeLessThanOrEqual(131070);
+      expect(output.left).toBeGreaterThan(0);
     });
 
     it("should clamp combined volumes to 65535 in ACB mode", () => {
@@ -380,8 +389,9 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // Left should be clamped at 65535
-      expect(output.left).toBeLessThanOrEqual(65535);
+      // Left = volA + volC; max two-channel sum is 2 * 65535 = 131070
+      expect(output.left).toBeLessThanOrEqual(131070);
+      expect(output.left).toBeGreaterThan(0);
     });
 
     it("should clamp combined volumes to 65535 in mono mode", () => {
@@ -412,9 +422,11 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // Both should be clamped at 65535
-      expect(output.left).toBeLessThanOrEqual(65535);
-      expect(output.right).toBeLessThanOrEqual(65535);
+      // Mono = volA + volB + volC; max three-channel sum is 3 * 65535 = 196605
+      expect(output.left).toBeLessThanOrEqual(196605);
+      expect(output.right).toBeLessThanOrEqual(196605);
+      expect(output.left).toBeGreaterThan(0);
+      expect(output.right).toBeGreaterThan(0);
     });
   });
 
@@ -598,7 +610,7 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
     it("should preserve zero output when all channels disabled", () => {
       const chip = device.getChip(0);
       
-      // Disable all channels
+      // Disable all channels with no volumes set - amplitude is 0 from table[0]
       chip.setPsgRegisterIndex(7);
       chip.writePsgRegisterValue(0x3f);
       

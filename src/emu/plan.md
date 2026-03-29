@@ -1,223 +1,449 @@
-# Beeper Emulation: MAME vs Klive — Differences and Improvement Plan
+# PSG (AY/YM) Implementation Comparison: MAME vs Klive
 
-## 1. MAME Beeper Implementation Summary
+## Executive Summary
 
-MAME uses a **`speaker_sound_device`** (in `sound/spkrdev.h`) which is a dedicated MAME
-core sound device operating on a continuous audio stream driven by the emulation framework.
+The Klive PSG implementation has **several critical behavioral differences** from MAME's hardware-verified AY-3-8910/YM2149 emulation. The most impactful issues are the **mixer logic** (AND vs OR for combined tone+noise), **disabled-channel behavior** (MAME outputs HIGH; Klive outputs silence), the **noise LFSR algorithm**, and the **volume curve**. These affect audible accuracy for games that use noise effects, volume modulation tricks, or mixed tone+noise channels.
 
-### Key characteristics
+---
 
-| Aspect | MAME |
-|--------|------|
-| **Device type** | `speaker_sound_device` — MAME built-in speaker with discrete levels |
-| **Output levels** | 4 discrete levels: `{0.0, 0.33, 0.66, 1.0}` |
-| **Level selection** | Uses **both bit 3 (MIC) and bit 4 (EAR)** of port `0xFE` as a 2-bit value — `BIT(data, 3, 2)` extracts bits 3–4 into a 0–3 index |
-| **Timing** | Each call to `level_w()` is time-stamped by MAME's internal sound stream infrastructure, providing **sample-accurate** transitions at the exact CPU cycle |
-| **Audio routing** | Single mono channel routed to `"speakers"` at 50% gain; cassette audio mixed at 5% |
-| **Sample generation** | MAME's `speaker_sound_device` internally computes the waveform by interpolating between level transitions at the stream's native sample rate (typically 48 kHz) |
-| **DC removal** | Handled internally by MAME's speaker device (high-pass filter built in) |
-| **ZX Next** | Speaker routed to right channel (`speakers, 0.50, 1`); 4× DAC 8-bit R2R (`dac_byte_interface`) for DAC channels; 3× YM2149 for TurboSound PSG; internal speaker enable/beep flags via NR 0x06/0x08 |
+## Detailed Comparison
 
-### Critical detail: MIC bit contribution to speaker output
+### 1. Mixer Logic — Combined Tone + Noise (CRITICAL)
 
-In MAME's `spectrum_ula_w()`:
+**MAME** (hardware-verified):
+```
+vol_enabled = (tone_output | tone_disable) & (noise_output | noise_disable)
+```
+- Both enabled → **AND** of tone and noise (both must be HIGH for output)
+- Tone only → tone_output
+- Noise only → noise_output
+- Both disabled → **always 1** (volume modulation possible)
 
+**Klive** (`PsgChip.ts` `generateOutputValue()`):
+```typescript
+if (toneAEnabled && bitA) volA = amplitude;
+else if (noiseAEnabled && bitNoise) volA = amplitude;
+```
+- Both enabled → **OR** of tone and noise (either HIGH gives output)
+- Both disabled → **0** (silence)
+
+**Impact**: AND vs OR changes the character of combined tone+noise effects significantly. AND produces a "gated" sound; OR produces a fuller sound. Many games use register 7 with both tone+noise to create metallic/drum effects that rely on AND behavior.
+
+The "both disabled = always on" behavior is used by some music players for pure volume-register modulation (digi-drumming).
+
+### 2. Noise Generator LFSR Algorithm (CRITICAL)
+
+**MAME** (verified on real AY-3-8910 and YM2149 chips):
 ```cpp
-m_speaker->level_w(BIT(data, 3, 2)); // Extracts bits 3 and 4 → levels 0..3
+// 17-bit shift register, bit0 XOR bit3 feedback
+m_rng = (m_rng >> 1) | ((BIT(m_rng, 0) ^ BIT(m_rng, 3)) << 16);
+```
+- Initial value: `m_rng = 1`
+- Produces a maximal-length 17-bit LFSR sequence (131071 values)
+- Verified from die photographs by Dr. Stack van Hay
+
+**Klive** (`PsgChip.ts`):
+```typescript
+this._noiseSeed = (this._noiseSeed * 2 + 1) ^
+  (((this._noiseSeed >>> 16) ^ (this._noiseSeed >>> 13)) & 0x01);
+```
+- Initial value: `this._noiseSeed = 0`
+- Different algorithm, different sequence
+- Seed of 0 is problematic (LFSR may produce wrong initial sequence)
+
+**Impact**: Different noise character. The MAME LFSR is hardware-verified. The noise sequence affects all noise-based sound effects (drums, explosions, wind, etc.).
+
+### 3. Noise Prescaler (÷2 Division) (HIGH)
+
+**MAME**:
+```cpp
+if ((++m_count_noise) >= noise_period()) {
+    m_count_noise = 0;
+    m_prescale_noise ^= 1;  // Toggle prescaler
+    if (!m_prescale_noise)   // Only tick LFSR every OTHER time
+        noise_rng_tick();
+}
+```
+The noise counter has a ÷2 prescaler, so the LFSR only advances once every two periods.
+
+**Klive**:
+```typescript
+if (this._cntNoise >= this._noiseFreq) {
+    this._cntNoise = 0;
+    // LFSR ticked immediately, no prescaler
+    this._noiseSeed = ...;
+}
+```
+No prescaler — LFSR ticks every period.
+
+**Impact**: Klive noise runs at **2× the frequency** of real hardware. All noise effects will sound higher-pitched.
+
+### 4. Tone Period = 0 Behavior (MEDIUM)
+
+**MAME**:
+```cpp
+const int period = std::max<int>(1, tone->period);
+```
+Period 0 is treated as period 1 — produces the highest possible frequency.
+
+**Klive**:
+```typescript
+if (this._toneA) {  // Period 0 → condition is false → no output
+    this._cntA++;
+    ...
+}
+```
+Period 0 means the counter never ticks — no tone output for that channel.
+
+**Impact**: Programs that set period 0 expecting maximum frequency will get silence in Klive.
+
+### 5. Volume Table / DAC Curve (HIGH)
+
+**MAME AY-3-8910** (from Matthew Westcott's real-chip measurements):
+```
+Level  Voltage    Resistor (Ω)
+ 0     1.147V     15950
+ 1     1.162V     15350
+ 2     1.169V     15090
+ 3     1.178V     14760
+ 4     1.192V     14275
+ 5     1.213V     13620
+ 6     1.238V     12890
+ 7     1.299V     11370
+ 8     1.336V     10600
+ 9     1.457V      8590
+10     1.573V      7190
+11     1.707V      5985
+12     1.882V      4820
+13     2.060V      3945
+14     2.320V      3017
+15     2.580V      2345
+```
+Uses MOSFET-based resistor model for accurate voltage-to-amplitude conversion.
+
+**MAME YM2149** (different resistor network):
+```
+Resistor values: { 73770, 37586, 27458, 21451, 15864, 12371, 8922, 6796,
+                    4763,  3521,  2403,  1737,  1123,   762,  438,  251 }
 ```
 
-This means:
-- Bit 3 = 0, Bit 4 = 0 → level 0 → amplitude **0.00**
-- Bit 3 = 1, Bit 4 = 0 → level 1 → amplitude **0.33**
-- Bit 3 = 0, Bit 4 = 1 → level 2 → amplitude **0.66**
-- Bit 3 = 1, Bit 4 = 1 → level 3 → amplitude **1.00**
+**Klive** (single table for all chip types):
+```typescript
+[0x0000, 0x0201, 0x033c, 0x04d7, 0x0783, 0x0ca6, 0x133e, 0x2393,
+ 0x2868, 0x45d4, 0x606a, 0x76ea, 0x97bc, 0xb8a6, 0xdc52, 0xffff]
+```
+Linear-ish spacing in 16-bit range with no physical circuit modeling.
 
-This accurately reflects the real Spectrum hardware where **both the EAR and MIC lines
-feed into a simple resistor mixer** before driving the internal speaker.
+**Impact**: Different volume curves affect relative loudness between levels. The AY chip has a roughly exponential curve matching human hearing. The YM2149 has a different curve. Klive uses the same table for both chip types, where ideally 128K (AY) and Next (YM) should use different curves.
 
----
+### 6. Envelope Resolution: AY (16-step) vs YM (32-step) (MEDIUM)
 
-## 2. Klive Beeper Implementation Summary
+**MAME**:
+| Chip | Steps | Step Mask | Period Multiplier |
+|------|-------|-----------|-------------------|
+| AY-3-8910 | 16 | 0x0F | 2 (compensates for fewer steps) |
+| YM2149 | 32 | 0x1F | 1 |
 
-Klive uses `SpectrumBeeperDevice` extending `AudioDeviceBase`.
+The AY envelope has 16 steps with the period doubled to maintain the same total envelope duration as the 32-step YM.
 
-### Key characteristics
+**Klive**: Uses 32-step envelopes (0-31) for all chip types, then shifts right by 1 to map to 16 volume levels: `(tmpVol & 0x1f) >> 1`. No period multiplier.
 
-| Aspect | Klive |
-|--------|-------|
-| **Device type** | `SpectrumBeeperDevice` extending `AudioDeviceBase` |
-| **Output levels** | Binary only: `0.0` or `1.0` (based on EAR bit only) |
-| **Level selection** | Uses **only bit 4 (EAR)** — `(value & 0x10) !== 0` |
-| **Timing** | Samples generated on each tact increment via `setNextAudioSample()`, which checks `machine.tacts > _audioNextSampleTact` to emit one sample per audio-rate interval |
-| **Audio routing** | Stereo (same value in both L and R); sent to AudioWorklet via interleaved Float32Array |
-| **Sample generation** | Snapshot-based: captures the _current_ EAR bit state at the sampling instant; no interpolation between transitions within a sample period |
-| **DC removal** | None in beeper (48K/128K). ZX Next mixer does manual AC coupling by subtracting midpoint when source is active |
-| **ZX Next** | `AudioMixerDevice` combines EAR (0/512), MIC (0/128), PSG, DAC, I2S; AC-coupled per-source; gain scaling 5.5×; normalized to ±1.0 |
+**Impact**: On the 128K (AY chip), envelopes should have 16 coarser steps with doubled period, not 32 fine steps. This changes the "staircase" shape of envelope waveforms. On the Next (YM), the 32-step behavior is correct.
 
----
+### 7. Envelope Shape Reset Behavior (LOW-MEDIUM)
 
-## 3. Key Differences
+**MAME** (`set_shape()`):
+```cpp
+void set_shape(u8 shape, u8 mask) {
+    attack = (shape & 0x04) ? mask : 0x00;
+    if ((shape & 0x08) == 0) {
+        hold = 1;
+        alternate = attack;  // Maps shapes 0-7 to equiv. shapes with Continue=1
+    } else {
+        hold = shape & 0x01;
+        alternate = shape & 0x02;
+    }
+    step = mask;  // Start at max (counts DOWN)
+    holding = 0;
+    volume = (step ^ attack);
+}
+```
+- Step counts DOWN from mask
+- Volume = step XOR attack
+- Shapes 0-7 are mapped to equivalent shapes 8-15 (Continue=1 equivalents)
 
-### 3.1. MIC bit ignored for speaker output (**HIGH IMPACT**)
+**Klive** (`initEnvelopData()`):
+Precomputes a lookup table of 128 positions per shape, with `vol` tracking (0-31 range). Position increments up from 0.
 
-**MAME** combines bit 3 (MIC) and bit 4 (EAR) into a 4-level speaker signal.  
-**Klive** only uses bit 4 (EAR), ignoring bit 3's contribution to the speaker.
+**Impact**: The core envelopes should produce the same shapes, but edge cases in cycling/holding may differ. MAME uses real-time computation; Klive uses a precomputed table.
 
-On real hardware, the MIC output line (bit 3 of port 0xFE) feeds through a resistor into
-the speaker circuit. Many games and loaders produce distinct audio through the combination
-of both bits. Some tape loading routines produce audible clicks/tones only via the MIC bit.
+### 8. Register Read Masking (LOW)
 
-**Impact**: Some programs will sound incorrect or silent when they manipulate the MIC bit
-for audio effects.
+**MAME** (AY-3-8910):
+```cpp
+const u8 mask[0x10] = {
+    0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
+    0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
+};
+return m_regs[r] & mask[r];
+```
+Unused bits in registers read back as 0 on AY-3-8910. YM2149 returns all bits.
 
-### 3.2. Binary vs 4-level output (**MEDIUM IMPACT**)
+**Klive**: Returns the full stored value without masking:
+```typescript
+readPsgRegisterValue(): number {
+    return this._regValues[this._psgRegisterIndex & 0x0f];
+}
+```
 
-**MAME** outputs 4 discrete amplitude levels (0.0, 0.33, 0.66, 1.0).  
-**Klive** outputs only 2 levels (0.0 or 1.0).
+**Impact**: Programs that read PSG registers and rely on unused bits being 0 may get incorrect results. Low impact in practice but affects hardware accuracy.
 
-The missing intermediate levels (0.33, 0.66) mean the tonal quality differs, particularly
-for programs that exploit the MIC/EAR combination to create crude multi-level audio.
+### 9. 3D Cross-Channel Mixing (LOW-MEDIUM)
 
-### 3.3. Transition timing precision (**LOW-MEDIUM IMPACT**)
+**MAME**: Implements `mix_3D()` which models the resistor network interaction between all three channels when they share a common load resistor. When all three channels output simultaneously, the combined voltage is not simply the sum due to current sharing.
 
-**MAME**: `level_w()` timestamps each transition at the exact CPU cycle within the audio
-stream. The speaker device then interpolates between transitions at the output sample rate.
-This means a level change mid-sample is correctly rendered as a fractional contribution.
+**Klive**: Uses simple addition: `vol += volA + volB + volC`. No cross-channel interaction modeling.
 
-**Klive**: Takes a snapshot of the current EAR bit at regular intervals
-(`_audioNextSampleTact`). If the EAR bit toggles multiple times between sample points,
-only the final state is captured. At a typical 48 kHz sample rate vs ~3.5 MHz CPU clock,
-each sample period spans ~73 T-states, so multiple transitions can be lost.
+**Impact**: When multiple channels play at high volume, the combined output should be slightly less than the simple sum due to the resistor network. This produces a subtle "compression" effect that Klive doesn't model. Low audible impact for most content.
 
-**Impact**: High-frequency beeper effects (multi-channel engines like Tim Follin's,
-Tritone, etc.) may lose detail. Simple beeper tones (BEEP command) are unaffected.
+### 10. Stereo Channel Routing: MAME vs Klive (Next) (MEDIUM)
 
-### 3.4. DC offset handling (**LOW IMPACT for 48K, MEDIUM for Next**)
+**MAME** ACB stereo routing for Next:
+```cpp
+m_ay[i]->add_route(0, "lspeaker", 0.50);  // Ch A → Left at 50%
+m_ay[i]->add_route(1, "lspeaker", 0.25);  // Ch B → Left at 25%
+m_ay[i]->add_route(1, "rspeaker", 0.25);  // Ch B → Right at 25%
+m_ay[i]->add_route(2, "rspeaker", 0.50);  // Ch C → Right at 50%
+```
+Channel B (center) is routed at **half** the level of A and C to preserve stereo field.
 
-**MAME**: The speaker device internally handles DC removal.  
-**Klive 48K/128K**: Raw 0.0/1.0 values are sent directly to the audio output. A sustained
-HIGH EAR bit produces a DC offset rather than silence.  
-**Klive Next mixer**: Manually applies AC coupling per-source (subtracts midpoint), but
-only when the source is active — resulting in a different DC profile than hardware.
+**Klive** (ACB mode):
+```typescript
+// ACB mode: Left = A + C, Right = B + C  (equal weight)
+left = volA + volC;
+right = volB + volC;
+```
+All channels are mixed at equal weight — no center-channel attenuation.
 
-### 3.5. ZX Next internal speaker control (**LOW IMPACT — already partially done**)
+Note: Klive's ACB mode routing also appears wrong. MAME routes ACB as A→left, C→both(center), B→right. Klive routes it as A+C→left, B+C→right. The "B" and "C" channels appear swapped in Klive's ACB mode compared to MAME.
 
-**MAME**: Implements NR 0x06 bit 6 (`internal_speaker_beep`) and NR 0x08 bit 4
-(`internal_speaker_en`) to gate the speaker output.  
-**Klive**: Has audio control device but does not clearly gate beeper output through
-the internal speaker enable register.
+**Impact**: Stereo imaging is wider in MAME due to the center channel being quieter. Klive's equal-weight mixing makes the stereo field feel narrower/more mono. The swapped channels in ACB mode are clearly wrong.
 
-### 3.6. Cassette audio not mixed into speaker (**VERY LOW IMPACT**)
+### 11. Zero-Is-Off (YM2149 DC Offset) (LOW)
 
-**MAME** mixes cassette playback at 5% volume into the speaker output.  
-**Klive** handles tape audio separately and does not mix it into the beeper stream.
+**MAME**:
+- AY-3-8910: `zero_is_off = 1` — Volume 0 truly disconnects the output
+- YM2149: `zero_is_off = 0` — Volume 0 still produces a small DC offset (~2V)
 
----
+**Klive**: Volume table[0] = `0x0000` — always silent at volume 0 for both chip types.
 
-## 4. Improvement Plan
+**Impact**: Very subtle. On the YM2149, volume 0 should produce a tiny residual output. Inaudible in most cases.
 
-### Phase 1: Add MIC bit contribution to beeper output (HIGH PRIORITY)
+### 12. Tone Counter Carry-Over (LOW)
 
-**Goal**: Match MAME's 4-level speaker model.
+**MAME**:
+```cpp
+tone->count += 1;
+while (tone->count >= period) {
+    tone->count -= period;  // Carries over fractional remainder
+    ...
+}
+```
+Uses a `while` loop with subtraction — if the count overshoots by more than one period (shouldn't happen normally), it handles it properly.
 
-**Changes**:
+**Klive**:
+```typescript
+this._cntA++;
+if (this._cntA >= this._toneA) {
+    this._cntA = 0;  // Hard reset, no carry-over
+    ...
+}
+```
+Hard resets counter to 0, discarding any remainder. This is fine since the counter only increments by 1, so it can overshoot by at most 0.
 
-1. **`SpectrumBeeperDevice`**: Change from binary `earBit` to a 4-level model.
-   - Add `setOutputLevel(earBit: boolean, micBit: boolean)` method or extend
-     `setEarBit()` to accept microphone bit.
-   - Map the 2-bit combination to 4 amplitude levels matching MAME:
-     ```
-     (mic=0, ear=0) → 0.00
-     (mic=1, ear=0) → 0.33
-     (mic=0, ear=1) → 0.66
-     (mic=1, ear=1) → 1.00
-     ```
-   - Update `getCurrentSampleValue()` to return the selected level.
-
-2. **`ZxSpectrumBase.writePort0xFE()`**: Pass both bit 3 and bit 4 to the beeper device.
-   - Currently: `this.beeperDevice.setEarBit(bit4 !== 0)`
-   - Change to: `this.beeperDevice.setOutputLevel(!!(value & 0x10), !!(value & 0x08))`
-
-3. **`ZxNextMachine` (UlaDevice)**: Same change for the Next's ULA write handler.
-
-4. **`AudioMixerDevice`**: Update EAR level to accept 4 discrete amplitudes rather than
-   binary 0/512. Adjust AC coupling midpoint accordingly, or remap levels so 0.0=0,
-   0.33=170, 0.66=341, 1.0=512.
-
-5. **Tests**: Update `BeeperDevice.test.ts` to verify all 4 output levels.
-
-**Estimated scope**: ~6 files, backward-compatible interface change.
-
-### Phase 2: Improve sample timing accuracy (MEDIUM PRIORITY)
-
-**Goal**: Capture level transitions within inter-sample periods for more accurate rendering
-of high-frequency beeper effects.
-
-**Changes**:
-
-1. **`AudioDeviceBase`**: Instead of capturing a single snapshot per sample period,
-   accumulate a weighted average of the beeper level based on how many T-states each
-   level was active during the sample period.
-   - Track `_lastLevelChangeTact` and `_currentLevel`.
-   - In `setNextAudioSample()`, compute:
-     ```
-     sampleValue = (level1 * duration1 + level2 * duration2 + ...) / totalDuration
-     ```
-   - This matches MAME's approach of timestamped transitions interpolated to sample rate.
-
-2. **`SpectrumBeeperDevice`**: Override to record level changes with timestamps:
-   - When `setOutputLevel()` is called, push `{tact, level}` to a transition buffer.
-   - In `getCurrentSampleValue()`, integrate over the transition buffer for the current
-     sample window.
-
-3. **Tests**: Add tests with rapid bit toggles within a single sample period to verify
-   averaging produces intermediate values.
-
-**Estimated scope**: Core change to `AudioDeviceBase` + `SpectrumBeeperDevice`, ~3 files.
-
-### Phase 3: DC offset filtering (LOW PRIORITY)
-
-**Goal**: Remove DC bias from the beeper output so a constant HIGH state doesn't produce
-a DC offset.
-
-**Changes**:
-
-1. Add a simple high-pass (AC coupling) filter to `AudioDeviceBase` or the
-   `AudioRenderer`:
-   ```
-   y[n] = α × (y[n-1] + x[n] - x[n-1])  where α ≈ 0.995
-   ```
-   This removes DC drift while preserving the audible square-wave signal.
-
-2. For the ZX Next mixer: replace the ad-hoc per-source AC coupling with a unified
-   high-pass filter applied after mixing.
-
-**Estimated scope**: ~2 files, small filter kernel.
-
-### Phase 4: ZX Next internal speaker gating (LOW PRIORITY)
-
-**Goal**: Honor NR 0x06 bit 6 and NR 0x08 bit 4 (internal speaker enable controls).
-
-**Changes**:
-
-1. When `internal_speaker_en` is cleared, mute the beeper contribution in the mixer.
-2. When `internal_speaker_beep` is set, the speaker outputs only a system beep
-   (ignore beeper bit); when cleared, normal operation.
-3. Verify with existing `AudioControlDevice` tests.
-
-**Estimated scope**: ~2 files, conditional checks only.
+**Impact**: Negligible — in practice the overshoot is always 0 or 1.
 
 ---
 
-## 5. Priority Summary
+## Implementation Plan
 
-| Phase | Description | Impact | Effort |
-|-------|-------------|--------|--------|
-| 1 | MIC bit → 4-level speaker | **High** | Medium |
-| 2 | Transition-accurate sampling | **Medium** | Medium |
-| 3 | DC offset filter | **Low** | Small |
-| 4 | Next speaker gating | **Low** | Small |
+### Phase 1: Mixer Logic Fix (CRITICAL — Affects all PSG audio)
 
-Phase 1 should be done first as it fixes a clear hardware inaccuracy visible in many
-programs. Phase 2 significantly improves multi-channel beeper engines. Phases 3–4 are
-polish items.
+**Files**: `src/emu/machines/zxSpectrum128/PsgChip.ts`
+
+Fix `generateOutputValue()` and `getChannelXVolume()` methods to use MAME's hardware-correct mixer formula:
+```
+vol_enabled = (tone_output | tone_disable) & (noise_output | noise_disable)
+```
+
+Changes:
+1. When both tone and noise are **enabled** for a channel: output = amplitude only when BOTH tone_bit AND noise_bit are HIGH (AND logic, not OR)
+2. When both tone and noise are **disabled**: output = amplitude (always on, volume-only modulation)
+3. When only one is enabled: output follows that signal
+
+This changes `generateOutputValue()` and the three `getChannelXVolume()` methods.
+
+**Tests to update**: `test/audio/PsgDevice.test.ts`, `test/audio/PsgChip.step1.test.ts`, `test/audio/PsgCompatibility.step14.test.ts`
+
+### Phase 2: Noise Generator Fix (CRITICAL — Affects all noise effects)
+
+**Files**: `src/emu/machines/zxSpectrum128/PsgChip.ts`
+
+Two sub-tasks:
+
+**2a. Fix LFSR algorithm** to match the hardware-verified 17-bit shift register:
+```typescript
+// Correct: bit0 XOR bit3 feedback into bit16
+this._noiseSeed = (this._noiseSeed >> 1) |
+  (((this._noiseSeed & 1) ^ ((this._noiseSeed >> 3) & 1)) << 16);
+this._bitNoise = (this._noiseSeed & 1) !== 0;
+```
+
+**2b. Add ÷2 prescaler** to noise counter:
+```typescript
+private _noisePrescale = false;
+
+// In generateOutputValue():
+if (this._cntNoise >= this._noiseFreq) {
+    this._cntNoise = 0;
+    this._noisePrescale = !this._noisePrescale;
+    if (!this._noisePrescale) {
+        // Tick LFSR only every other period
+        this._noiseSeed = ...;
+        this._bitNoise = ...;
+    }
+}
+```
+
+**2c. Fix initial seed** from 0 to 1.
+
+**Tests to update**: `test/audio/PsgDevice.test.ts` (noise tests), `test/audio/PsgCompatibility.step14.test.ts`
+
+### Phase 3: Volume Table / DAC Curve (HIGH — Affects overall sound character)
+
+**Files**: `src/emu/machines/zxSpectrum128/PsgChip.ts`
+
+Two sub-tasks:
+
+**3a. Implement separate volume curves** for AY-3-8910 and YM2149:
+
+The AY curve (from MAME's `ay8910_param` resistor model, normalized to 0-65535):
+```typescript
+// AY-3-8910 volume table (from real-chip measurements)
+private static readonly AY_VOLUME_TABLE: number[] = [
+    0, 836, 1212, 1773, 2619, 3875, 5765, 8589,
+    10207, 17157, 24956, 32768, 43520, 55424, 65120, 65535
+];
+
+// YM2149 volume table (from ym2149_param resistor model)
+private static readonly YM_VOLUME_TABLE: number[] = [
+    0, 0, 1057, 1521, 2130, 2987, 4119, 5765,
+    7783, 10207, 13311, 17157, 23420, 32768, 43520, 65535
+];
+```
+
+**3b. Select curve based on chip type**: Add a `chipType` parameter (AY or YM) to PsgChip constructor enabling the proper table selection.
+
+For 128K machines: use AY table.
+For Next machines: use YM table.
+
+**Tests to update**: All tests that check specific output amplitude values.
+
+### Phase 4: Tone Period 0 Handling (MEDIUM)
+
+**Files**: `src/emu/machines/zxSpectrum128/PsgChip.ts`
+
+Change tone counter logic to treat period 0 as period 1:
+```typescript
+// Instead of: if (this._toneA) { this._cntA++; ... }
+// Use: 
+const periodA = this._toneA || 1;  // Period 0 → 1
+this._cntA++;
+if (this._cntA >= periodA) {
+    this._cntA = 0;
+    this._bitA = !this._bitA;
+}
+```
+
+Apply to all three channels.
+
+**Tests to update**: May need new tests for period-0 behavior.
+
+### Phase 5: Envelope AY/YM Differentiation (MEDIUM)
+
+**Files**: `src/emu/machines/zxSpectrum128/PsgChip.ts`
+
+Two sub-tasks:
+
+**5a. AY envelope: 16 steps with ×2 period multiplier**:
+For AY chip type, envelope should have 16 steps (mask 0x0F) with the period doubled internally to maintain the same total duration.
+
+**5b. YM envelope: 32 steps with ×1 period multiplier**:
+For YM chip type, envelope has 32 steps (mask 0x1F) with normal period.
+
+This requires modifying `initEnvelopData()` and the envelope advancement in `generateOutputValue()` to use chip-type-dependent step masks and period multipliers.
+
+### Phase 6: Stereo Routing Fix (MEDIUM — Next only)
+
+**Files**: `src/emu/machines/zxNext/TurboSoundDevice.ts`
+
+Fix `getChipStereoOutput()` stereo routing to match MAME:
+
+**ABC mode** (standard):
+- Left = Channel A (100%) + Channel B (50%)
+- Right = Channel B (50%) + Channel C (100%)
+
+**ACB mode**:
+- Left = Channel A (100%) + Channel C (50%)
+- Right = Channel C (50%) + Channel B (100%)
+
+The center channel (B in ABC, C in ACB) should be routed at half amplitude to each side, matching MAME's 0.50/0.25/0.25/0.50 routing.
+
+**Tests to update**: `test/audio/TurboSoundDevice.step3.test.ts`, `test/audio/TurboSoundDevice.step4.test.ts`
+
+### Phase 7: Register Read Masking (LOW)
+
+**Files**: `src/emu/machines/zxSpectrum128/PsgChip.ts`
+
+Add register read masks for AY-3-8910 chip type:
+```typescript
+private static readonly AY_READ_MASKS = [
+    0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff,
+    0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
+];
+
+readPsgRegisterValue(): number {
+    const raw = this._regValues[this._psgRegisterIndex & 0x0f];
+    return this._chipType === 'AY' ? raw & PsgChip.AY_READ_MASKS[this._psgRegisterIndex] : raw;
+}
+```
+
+### Phase 8: AudioMixer PSG AC Coupling Fix (MEDIUM)
+
+**Files**: `src/emu/machines/zxNext/AudioMixerDevice.ts`
+
+The current mixer has a "conditional AC coupling" that only applies DC bias removal when the PSG output is non-zero. This creates a DC offset jump when PSG transitions between active and silent. The AC coupling should be applied consistently regardless of signal level, or the PSG hardware's natural DC behavior should be modeled properly.
+
+---
+
+## Priority Summary
+
+| Phase | Description | Priority | Impact |
+|-------|-------------|----------|--------|
+| 1 | Mixer logic (AND vs OR) | CRITICAL | All PSG audio |
+| 2 | Noise LFSR + prescaler | CRITICAL | All noise effects |
+| 3 | Volume table / DAC curve | HIGH | Overall sound character |
+| 4 | Tone period 0 handling | MEDIUM | Edge case programs |
+| 5 | Envelope AY/YM steps | MEDIUM | Envelope-heavy music |
+| 6 | Stereo routing fix | MEDIUM | Next stereo field |
+| 7 | Register read masking | LOW | Hardware accuracy |
+| 8 | AudioMixer AC coupling | MEDIUM | PSG clarity |
+
+## Notes
+
+- Phases 1-2 should be done first as they fix fundamental sound generation bugs
+- Phase 3 (volume curves) will change many test assertions but is important for authentic sound
+- Phases 4-5 require the `chipType` parameter added in Phase 3
+- Phase 6 only affects the ZX Next model
+- All changes should maintain backward compatibility with existing save states
+- Each phase should include running the full test suite (`npx vitest run --config build/vitest.config.ts`) to catch regressions
