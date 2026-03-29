@@ -462,3 +462,160 @@ describe("CopperDevice – Step 4: Stop mode", () => {
     vi.restoreAllMocks();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Step 5 — Wrap-around at end of 1024-entry list
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 5: Wrap-around", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("should wrap pointer from 0x3FF to 0 after 1024 NOP ticks", () => {
+    // Memory is all zeros after reset → all 1024 slots are NOPs (0x0000)
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    for (let i = 0; i < 1024; i++) copper.executeTick(0, i);
+
+    expect(copper._copperListAddr).toBe(0);
+  });
+
+  it("should continue running after wrap (pointer reaches 1 on tick 1025)", () => {
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    for (let i = 0; i < 1025; i++) copper.executeTick(0, i);
+
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should execute a MOVE at slot 0 twice after one full pass through the list", () => {
+    // Slot 0: MOVE reg=0x44, val=0x99 — all other slots remain NOP (0)
+    writeInstruction(copper, 0, moveInstr(0x44, 0x99));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+
+    // Expected timeline:
+    //  Tick 1   : fetch slot 0 MOVE → dout=true, addr=1
+    //  Tick 2   : output MOVE (call #1), dout=false
+    //  Ticks 3–1024: fetch NOP slots 1–1022 → addr=1023  (1022 ticks)
+    //  Tick 1025: fetch NOP slot 1023 → addr wraps to 0
+    //  Tick 1026: fetch slot 0 MOVE again → dout=true, addr=1
+    //  Tick 1027: output MOVE (call #2)
+    for (let i = 0; i < 1027; i++) copper.executeTick(0, i);
+
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy).toHaveBeenNthCalledWith(1, 0x44, 0x99);
+    expect(spy).toHaveBeenNthCalledWith(2, 0x44, 0x99);
+    vi.restoreAllMocks();
+  });
+
+  it("should wrap correctly in mode StartFromLastPointAndLoop (0b10)", () => {
+    setMode(copper, CopperStartMode.StartFromLastPointAndLoop);
+    // Manually place the pointer at the last slot
+    copper._copperListAddr = 0x3ff;
+    // Memory at slot 0x3FF is NOP by default → advances to 0x400 % 0x400 = 0
+    copper.executeTick(0, 0);
+    expect(copper._copperListAddr).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 6 — Frame-restart mode (StartFromZeroRestartOnPositionReached = 0b11)
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 6: Frame-restart mode", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("should reset pointer to 0 when executeTick(0, 0) is called in mode 0b11", () => {
+    setMode(copper, CopperStartMode.StartFromZeroRestartOnPositionReached);
+    copper._copperListAddr = 0x2aa;
+    copper.executeTick(0, 0);
+    expect(copper._copperListAddr).toBe(0);
+  });
+
+  it("should clear _copperDout when restarting at (0, 0)", () => {
+    setMode(copper, CopperStartMode.StartFromZeroRestartOnPositionReached);
+    copper._copperDout = true;
+    copper.executeTick(0, 0);
+    expect(copper._copperDout).toBe(false);
+  });
+
+  it("should NOT restart at (0, 0) in mode 0b01 (StartFromZeroAndLoop)", () => {
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+    // Advance pointer a few steps
+    copper.executeTick(0, 1); // NOP → addr=1
+    copper.executeTick(0, 2); // NOP → addr=2
+    copper._copperListAddr = 0x1ff;
+    // (0, 0) should NOT reset in mode 0b01
+    copper.executeTick(0, 0); // NOP fetch at slot 0x1ff → addr=0x200
+    expect(copper._copperListAddr).toBe(0x200);
+  });
+
+  it("should NOT restart at positions other than (0, 0) in mode 0b11", () => {
+    setMode(copper, CopperStartMode.StartFromZeroRestartOnPositionReached);
+    copper._copperListAddr = 0x100;
+    copper.executeTick(0, 1);   // hc != 0 → no restart
+    expect(copper._copperListAddr).not.toBe(0);
+    copper._copperListAddr = 0x100;
+    copper.executeTick(1, 0);   // vc != 0 → no restart
+    expect(copper._copperListAddr).not.toBe(0);
+  });
+
+  it("should resume executing the list from slot 0 on the tick after (0, 0)", () => {
+    // Slot 0: MOVE reg=0x42, val=0xff
+    writeInstruction(copper, 0, moveInstr(0x42, 0xff));
+    setMode(copper, CopperStartMode.StartFromZeroRestartOnPositionReached);
+    // Advance pointer away from slot 0
+    copper._copperListAddr = 0x1aa;
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+
+    copper.executeTick(0, 0);   // frame-restart tick: reset addr=0, return (no execute)
+    expect(copper._copperListAddr).toBe(0);
+    expect(spy).not.toHaveBeenCalled();
+
+    copper.executeTick(0, 1);   // fetch slot 0 MOVE → dout=true
+    expect(copper._copperDout).toBe(true);
+
+    copper.executeTick(0, 2);   // output MOVE
+    expect(spy).toHaveBeenCalledWith(0x42, 0xff);
+    vi.restoreAllMocks();
+  });
+
+  it("should restart the list on every frame (two consecutive frames)", () => {
+    writeInstruction(copper, 0, moveInstr(0x43, 0xab));
+    setMode(copper, CopperStartMode.StartFromZeroRestartOnPositionReached);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+
+    // --- Frame 1 ---
+    copper.executeTick(0, 0);  // frame restart
+    copper.executeTick(0, 1);  // fetch slot 0 MOVE
+    copper.executeTick(0, 2);  // output (call #1)
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    // Advance well into the list
+    for (let i = 0; i < 500; i++) copper.executeTick(1, i);
+
+    // --- Frame 2 ---
+    copper.executeTick(0, 0);  // frame restart again
+    expect(copper._copperListAddr).toBe(0);
+
+    copper.executeTick(0, 1);  // fetch slot 0 MOVE
+    copper.executeTick(0, 2);  // output (call #2)
+    expect(spy).toHaveBeenCalledTimes(2);
+    vi.restoreAllMocks();
+  });
+});

@@ -112,6 +112,18 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
   executeTick(vc: number, hc: number): void {
     if (this._startMode === CopperStartMode.FullyStopped) return;
 
+    // Frame-restart (mode 0b11): at position (vc=0, hc=0) reset the list and
+    // skip execution for that tick — matches the FPGA elsif branch.
+    if (
+      this._startMode === CopperStartMode.StartFromZeroRestartOnPositionReached &&
+      vc === 0 &&
+      hc === 0
+    ) {
+      this._copperListAddr = 0;
+      this._copperDout = false;
+      return;
+    }
+
     if (this._copperDout) {
       // Output the pending MOVE (registers above 0x7F are inaccessible to the copper)
       const reg = (this._copperListData >> 8) & 0x7f;
