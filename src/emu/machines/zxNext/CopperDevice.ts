@@ -9,6 +9,19 @@ export enum CopperStartMode {
 }
 
 export class CopperDevice implements IGenericDevice<IZxNextMachine> {
+  /**
+   * Returns a snapshot of the copper's internal state for IDE diagnostics.
+   */
+  getState(): CopperDeviceState {
+    return {
+      startMode: this._startMode,
+      instructionAddress: this._copperListAddr,
+      listData: this._copperListData,
+      dout: this._copperDout,
+      verticalLineOffset: this.verticalLineOffset,
+      memory: new Uint8Array(this._memory)
+    };
+  }
   private readonly _memory: Uint8Array = new Uint8Array(0x800);
   private _startMode: CopperStartMode;
   private _instructionAddress: number;
@@ -112,11 +125,16 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
   executeTick(vc: number, hc: number): void {
     if (this._startMode === CopperStartMode.FullyStopped) return;
 
-    // Frame-restart (mode 0b11): at position (vc=0, hc=0) reset the list and
+    // Step 7: apply the vertical line offset (NextReg 0x64) so that waitLine 0
+    // corresponds to the adjusted frame origin rather than raw vc=0.
+    const totalVC = this.machine.composedScreenDevice.config.totalVC;
+    const adjustedVC = (vc + this.verticalLineOffset) % totalVC;
+
+    // Frame-restart (mode 0b11): at adjusted position (0, 0) reset the list and
     // skip execution for that tick — matches the FPGA elsif branch.
     if (
       this._startMode === CopperStartMode.StartFromZeroRestartOnPositionReached &&
-      vc === 0 &&
+      adjustedVC === 0 &&
       hc === 0
     ) {
       this._copperListAddr = 0;
@@ -145,7 +163,7 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
       //   bits  8:0 = waitLine (9-bit vertical counter)
       const waitLine = this._copperListData & 0x1ff;
       const waitHC = ((this._copperListData >> 9) & 0x3f) * 8 + 12;
-      if (vc === waitLine && hc >= waitHC) {
+      if (adjustedVC === waitLine && hc >= waitHC) {
         this._copperListAddr = (this._copperListAddr + 1) % 0x400;
       }
       // If condition not met: stall — stay on this instruction.
@@ -162,3 +180,22 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// State snapshot (Step 11)
+// ---------------------------------------------------------------------------
+
+export type CopperDeviceState = {
+  /** Current start/mode control value (0–3) */
+  startMode: CopperStartMode;
+  /** Instruction pointer into the 1024-entry list (0–0x3FF) */
+  instructionAddress: number;
+  /** Last fetched 16-bit instruction word */
+  listData: number;
+  /** True when a MOVE output is pending for the next tick */
+  dout: boolean;
+  /** Vertical line offset applied to beam-position comparisons */
+  verticalLineOffset: number;
+  /** Full 2 KB instruction-memory snapshot */
+  memory: Uint8Array;
+};

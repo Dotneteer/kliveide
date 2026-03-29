@@ -1359,7 +1359,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   onTactIncremented(): void {
     if (this.frameCompleted) return;
+    const totalHC = this.composedScreenDevice.config.totalHC;
     while (this.lastRenderedFrameTact < this.currentFrameTact) {
+      const tact = this.lastRenderedFrameTact;
+      this.copperDevice.executeTick((tact / totalHC) | 0, tact % totalHC);
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();

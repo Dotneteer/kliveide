@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { CopperDevice, CopperStartMode } from "@emu/machines/zxNext/CopperDevice";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { CopperDevice, CopperStartMode, CopperDeviceState } from "@emu/machines/zxNext/CopperDevice";
 import { TestZxNextMachine } from "./TestNextMachine";
 
 // ---------------------------------------------------------------------------
@@ -180,15 +180,16 @@ describe("CopperDevice – Step 2: MOVE instruction", () => {
   });
 
   it("should execute a NOP (MOVE 0,0) without writing any NextReg and advance the pointer", () => {
-    // NOP = instruction word 0x0000
+    // NOP at slot 0; a not-yet-matching WAIT at slot 1 acts as a stopper so the
+    // NOP-batching loop halts after processing exactly one NOP.
     writeInstruction(copper, 0, 0x0000);
     setMode(copper, CopperStartMode.StartFromZeroAndLoop);
 
-    copper.executeTick(0, 0); // fetch NOP → dout stays false, addr advances
+    copper.executeTick(0, 0); // fetch NOP → dout stays false, addr advances by 1
     expect(copper._copperDout).toBe(false);
     expect(copper._copperListAddr).toBe(1);
 
-    // A second tick should also do nothing (dout never became true)
+    // A second tick also produces no write (there is no pending MOVE)
     copper.executeTick(0, 1);
     expect(copper._copperDout).toBe(false);
   });
@@ -617,5 +618,379 @@ describe("CopperDevice – Step 6: Frame-restart mode", () => {
     copper.executeTick(0, 2);  // output (call #2)
     expect(spy).toHaveBeenCalledTimes(2);
     vi.restoreAllMocks();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 7 — Vertical line offset (NextReg 0x64)
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 7: Vertical line offset", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+  let totalVC: number;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+    totalVC = machine.composedScreenDevice.config.totalVC; // 311 for 50Hz
+  });
+
+  it("should use raw vc when offset is 0 (default)", () => {
+    // WAIT for line 10
+    writeInstruction(copper, 0, waitInstr(0, 10));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(10, 12); // raw vc=10 = adjusted vc=10 → advance
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should apply offset so that WAIT matches at adjusted line", () => {
+    // With offset=10: adjusted = (rawVC + 10) % totalVC
+    // WAIT for adjusted line 5 → raw vc where match = totalVC - 10 + 5 = totalVC - 5
+    copper.verticalLineOffset = 10;
+    writeInstruction(copper, 0, waitInstr(0, 5));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const matchingRawVC = (5 + totalVC - 10) % totalVC; // totalVC - 5
+
+    // One short: should not match
+    copper.executeTick(matchingRawVC - 1, 12);
+    expect(copper._copperListAddr).toBe(0);
+
+    // Exact match
+    copper.executeTick(matchingRawVC, 12);
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should NOT match when offset makes adjusted vc different from wait line", () => {
+    copper.verticalLineOffset = 5;
+    // WAIT for adjusted line 20
+    writeInstruction(copper, 0, waitInstr(0, 20));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    // raw vc=20 → adjusted = 25 → no match
+    copper.executeTick(20, 12);
+    expect(copper._copperListAddr).toBe(0);
+
+    // raw vc=15 → adjusted = 20 → match
+    copper.executeTick(15, 12);
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should apply offset correctly near totalVC boundary (wrap)", () => {
+    // offset = totalVC - 1 → adjusted = (vc + totalVC - 1) % totalVC = vc - 1 (mod totalVC)
+    copper.verticalLineOffset = totalVC - 1;
+    // WAIT for adjusted line 0 → raw vc = 1 (since 1 + totalVC - 1 = totalVC ≡ 0)
+    writeInstruction(copper, 0, waitInstr(0, 0));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(0, 12); // adjusted = totalVC - 1 → no match
+    expect(copper._copperListAddr).toBe(0);
+
+    copper.executeTick(1, 12); // adjusted = 0 → match
+    expect(copper._copperListAddr).toBe(1);
+  });
+
+  it("should apply offset to frame-restart check in mode 0b11", () => {
+    // With offset=10, frame-restart fires when adjustedVC=0, i.e. rawVC = totalVC-10 = 301
+    copper.verticalLineOffset = 10;
+    setMode(copper, CopperStartMode.StartFromZeroRestartOnPositionReached);
+    copper._copperListAddr = 0x3aa;
+
+    // rawVC=0, hc=0 → adjustedVC = 10 → NOT the restart position; addr unchanged by restart
+    // (normal execution runs, but we only need to confirm rawVC=restartVC resets to 0 below)
+
+    const restartRawVC = (totalVC - 10) % totalVC; // 301 for 50Hz totalVC=311
+
+    // At the restart position: adjustedVC = (301+10)%311 = 0, hc=0 → addr resets to 0
+    copper._copperListAddr = 0x3aa;
+    copper.executeTick(restartRawVC, 0);
+    expect(copper._copperListAddr).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 8 — Machine integration
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 8: Machine integration", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+    // Set frame state directly to avoid calling onInitNewFrame (which would
+    // call composedScreenDevice.onNewFrame() and other setup-requiring methods).
+    machine.lastRenderedFrameTact = 0;
+    machine.currentFrameTact = 0;
+    machine.frameCompleted = false;
+    // Stub renderTact so it doesn't access uninitialised module-level arrays.
+    vi.spyOn(machine.composedScreenDevice, "renderTact").mockReturnValue(false);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * Drive the machine's onTactIncremented up to (but not including) tact `to`.
+   */
+  function driveToTact(to: number): void {
+    machine.currentFrameTact = to;
+    machine.onTactIncremented();
+  }
+
+  it("should call executeTick with correct vc/hc derived from tact", () => {
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(copper, "executeTick");
+    driveToTact(3);
+
+    // tact 0 → vc=0, hc=0; tact 1 → vc=0, hc=1; tact 2 → vc=0, hc=2
+    expect(spy).toHaveBeenCalledWith(0, 0);
+    expect(spy).toHaveBeenCalledWith(0, 1);
+    expect(spy).toHaveBeenCalledWith(0, 2);
+  });
+
+  it("should pass correct vc for tacts on the second scan-line", () => {
+    const totalHC = machine.composedScreenDevice.config.totalHC; // 456
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(copper, "executeTick");
+    driveToTact(totalHC + 1);
+
+    expect(spy).toHaveBeenCalledWith(1, 0); // first tact of line 1
+  });
+
+  it("should deliver a MOVE to the NextReg through the machine loop", () => {
+    // Slot 0: WAIT for vc=0, hc6=0 (waitHC = 0*8+12 = 12)
+    // Slot 1: MOVE reg=0x55 val=0xAB
+    writeInstruction(copper, 0, waitInstr(0, 0));
+    writeInstruction(copper, 1, moveInstr(0x55, 0xab));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+
+    // tact 12: WAIT passes (hc=12 >= waitHC=12) → addr advances to 1
+    // tact 13: fetch MOVE → _copperDout=true, addr=2
+    // tact 14: output MOVE → directSetRegValue(0x55, 0xAB)
+    driveToTact(15);
+
+    expect(spy).toHaveBeenCalledWith(0x55, 0xab);
+  });
+
+  it("should not execute copper when mode is FullyStopped", () => {
+    writeInstruction(copper, 0, moveInstr(0x33, 0x77));
+    // copper stays in FullyStopped (default)
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    driveToTact(100);
+    expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 9 — Register restrictions
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 9: Register restrictions", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("should write a valid register (0x45)", () => {
+    writeInstruction(copper, 0, moveInstr(0x45, 0xab));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    copper.executeTick(0, 0); // fetch
+    copper.executeTick(0, 1); // emit
+    expect(spy).toHaveBeenCalledWith(0x45, 0xab);
+    vi.restoreAllMocks();
+  });
+
+  it("should not write any register for a NOP (reg == 0)", () => {
+    writeInstruction(copper, 0, moveInstr(0x00, 0xff));
+    writeInstruction(copper, 1, waitInstr(0, 200)); // stopper
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    copper.executeTick(0, 0);
+    copper.executeTick(0, 1);
+    expect(spy).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("should write to register 0x7F (maximum addressable register)", () => {
+    // Instruction with reg field = 0x7F (7 bits all set): word = 0b0_1111111_11001101 = 0x7FCD
+    writeInstruction(copper, 0, moveInstr(0x7f, 0xcd));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    copper.executeTick(0, 0); // fetch
+    copper.executeTick(0, 1); // emit
+    expect(spy).toHaveBeenCalledWith(0x7f, 0xcd);
+    vi.restoreAllMocks();
+  });
+
+  it("should mask the register field to 7 bits when the instruction is constructed manually", () => {
+    // Manually craft a MOVE word where bits 14:8 are all 1s (0b1111111 = 0x7F).
+    // Result after & 0x7F mask: 0x7F — same as moveInstr(0x7F, val).
+    const rawWord = 0x7f99; // bit15=0 (MOVE), bits14:8 = 0x7F, bits7:0 = 0x99
+    writeInstruction(copper, 0, rawWord);
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    copper.executeTick(0, 0);
+    copper.executeTick(0, 1);
+    expect(spy).toHaveBeenCalledWith(0x7f, 0x99);
+    vi.restoreAllMocks();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 10 — One-instruction-per-tick execution model
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 10: One-instruction-per-tick execution model", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("should process exactly one NOP per tick (each tick advances the pointer by 1)", () => {
+    // 3 NOPs at slots 0-2; a not-yet-matching WAIT at slot 3 caps the check.
+    writeInstruction(copper, 3, waitInstr(0, 200));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    copper.executeTick(0, 0); // tick 1: NOP at 0 → addr=1
+    expect(copper._copperListAddr).toBe(1);
+
+    copper.executeTick(0, 1); // tick 2: NOP at 1 → addr=2
+    expect(copper._copperListAddr).toBe(2);
+
+    copper.executeTick(0, 2); // tick 3: NOP at 2 → addr=3
+    expect(copper._copperListAddr).toBe(3);
+  });
+
+  it("should require exactly two ticks per MOVE (fetch on tick N, emit on tick N+1)", () => {
+    writeInstruction(copper, 0, moveInstr(0x10, 0x11));
+    writeInstruction(copper, 1, moveInstr(0x20, 0x22));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+
+    copper.executeTick(0, 0); // fetch MOVE-0 → dout=true, no write yet
+    expect(spy).not.toHaveBeenCalled();
+
+    copper.executeTick(0, 1); // emit MOVE-0 → write(0x10, 0x11)
+    expect(spy).toHaveBeenCalledWith(0x10, 0x11);
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    copper.executeTick(0, 2); // fetch MOVE-1 → dout=true, no second write yet
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    copper.executeTick(0, 3); // emit MOVE-1 → write(0x20, 0x22)
+    expect(spy).toHaveBeenCalledWith(0x20, 0x22);
+    expect(spy).toHaveBeenCalledTimes(2);
+
+    vi.restoreAllMocks();
+  });
+
+  it("should process 1024 NOPs in exactly 1024 ticks (one per tick)", () => {
+    // Memory is all zeros (NOPs); add a WAIT at slot 0 after full pass to confirm wrap
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    // After 1024 ticks the pointer should have wrapped back to 0
+    for (let i = 0; i < 1024; i++) {
+      copper.executeTick(0, i);
+    }
+    expect(copper._copperListAddr).toBe(0); // wrapped around
+  });
+
+  it("should not output any NextReg writes during 1024 NOP ticks", () => {
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const spy = vi.spyOn(machine.nextRegDevice, "directSetRegValue");
+    for (let i = 0; i < 1024; i++) {
+      copper.executeTick(0, i);
+    }
+    expect(spy).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Step 11 — State snapshot (CopperDeviceState / getState)
+// ---------------------------------------------------------------------------
+
+describe("CopperDevice – Step 11: State snapshot", () => {
+  let machine: TestZxNextMachine;
+  let copper: CopperDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    copper = machine.copperDevice;
+  });
+
+  it("should return initial state after reset", () => {
+    const state = copper.getState();
+    expect(state.startMode).toBe(CopperStartMode.FullyStopped);
+    expect(state.instructionAddress).toBe(0);
+    expect(state.listData).toBe(0);
+    expect(state.dout).toBe(false);
+    expect(state.verticalLineOffset).toBe(0);
+    expect(state.memory.length).toBe(0x800);
+  });
+
+  it("should reflect execution state after programming and stepping", () => {
+    writeInstruction(copper, 0, moveInstr(0x55, 0xbb));
+    writeInstruction(copper, 1, waitInstr(0, 99)); // stopper
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+    copper.verticalLineOffset = 7;
+
+    copper.executeTick(0, 0); // fetch MOVE-0 → dout=true, addr=1
+
+    const state = copper.getState();
+    expect(state.startMode).toBe(CopperStartMode.StartFromZeroAndLoop);
+    expect(state.instructionAddress).toBe(1);
+    expect(state.dout).toBe(true);
+    expect(state.listData).toBe(moveInstr(0x55, 0xbb));
+    expect(state.verticalLineOffset).toBe(7);
+  });
+
+  it("should return a copy of memory (not a live reference)", () => {
+    writeInstruction(copper, 0, moveInstr(0x11, 0x22));
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+
+    const state = copper.getState();
+    const originalByte = state.memory[0];
+
+    // Mutate the snapshot copy
+    state.memory[0] = 0xff;
+
+    // Device memory must be unchanged
+    expect(copper.readMemory(0)).toBe(originalByte);
+  });
+
+  it("should reflect updated state after a mode change", () => {
+    setMode(copper, CopperStartMode.StartFromZeroAndLoop);
+    copper._copperListAddr = 0x1aa;
+
+    // Switch to StartFromLastPointAndLoop (addr kept)
+    copper.nextReg62Value = 0x80; // mode 0b10 = StartFromLastPointAndLoop (addr kept)
+
+    const state = copper.getState();
+    expect(state.startMode).toBe(CopperStartMode.StartFromLastPointAndLoop);
+    expect(state.instructionAddress).toBe(0x1aa); // not reset for mode 0b10
   });
 });
