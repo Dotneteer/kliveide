@@ -490,6 +490,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         const prevTurbosound = machine.soundDevice.enableTurbosound;
         machine.soundDevice.enableTurbosound = (v & 0x02) !== 0;
         this.implementIssue2Keyboard = (v & 0x01) !== 0;
+        machine.audioControlDevice.applyConfiguration();
       },
       slices: [
         {
@@ -553,6 +554,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.divMmcDevice.resetDivMmcMapramFlag = (v & 0x08) !== 0;
         machine.soundDevice.silenceHdmiAudio = (v & 0x04) !== 0;
         machine.composedScreenDevice.scanlineWeight = v & 0x03;
+        machine.audioControlDevice.applyConfiguration();
       },
       slices: [
         {

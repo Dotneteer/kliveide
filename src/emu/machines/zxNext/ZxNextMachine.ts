@@ -749,9 +749,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const firstNonZeroFrame = (turboSound as any)._firstNonZeroFrame;
     const shouldLogDetail = firstNonZeroFrame > 0 && frameCount === firstNonZeroFrame + 2;
 
-    // Get time-series sample arrays from both devices
+    // Get time-series sample arrays from both devices.
+    // PSG chip 0 is always active on real ZX Next hardware (like the ZX 128K AY chip).
+    // "Enable TurboSound" (NR 0x08 bit 1) enables the multi-chip selection feature and
+    // stereo routing.  When disabled, chip 0 still runs as a standard mono AY for
+    // backward compatibility with ZX 128K software.
     const beeperSamples = this.beeperDevice.getAudioSamples();
-    const turboSoundSamples = this.soundDevice.enableTurbosound ? turboSound.getAudioSamples() : [];
+    const rawPsgSamples = turboSound.getAudioSamples();
+    const turboSoundSamples: AudioSample[] = this.soundDevice.enableTurbosound
+      ? rawPsgSamples
+      : rawPsgSamples.map(s => {
+          // Mono mode: combine left + right to get A+B+C on both channels
+          const mono = Math.min(196605, s.left + s.right);
+          return { left: mono, right: mono };
+        });
 
     // Both should have the same length, but handle mismatch gracefully
     const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);

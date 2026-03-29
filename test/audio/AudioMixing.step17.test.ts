@@ -554,7 +554,9 @@ describe("Step 17: Audio Mixing Testing", () => {
       chip.writePsgRegisterValue(0x0f);
       chip.generateOutputValue();
 
-      mixer.setEarLevel(1);
+      // Use ear=0.25 to avoid saturation clamping on left channel
+      // (PSG left=65535 with ear=1 → mixed*5.5 > 32767 clamp, breaking the ratio)
+      mixer.setEarLevel(0.25);
       mixer.setMicLevel(1);
 
       const psgOutput = turbo.getChipStereoOutput(0);

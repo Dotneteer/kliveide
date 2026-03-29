@@ -247,23 +247,19 @@ export class AudioMixerDevice {
       mixedRight += micAC;
     }
 
-    // Add PSG output (unsigned 0-196605)
-    // Hardware PSG is 0-2295 (12-bit), our software is 0-196605 (16-bit scaled)
-    // Scale down: 196605 / 24 ≈ 8192
-    // Only AC-couple when PSG is active (non-zero output)
+    // Add PSG output (unsigned 0-196605 per stereo channel).
+    // Scale down from software range to mixer range (÷24 gives ≤ 8192 for mono, ≤ 4095 for Phase-6 stereo).
+    // AC coupling: subtract the peak-based midpoint from BOTH channels simultaneously.
+    // Using Math.max(left, right) as the reference ensures both channels contribute even when
+    // one side is silent (e.g. only channel A active in ABC stereo mode), fixing the
+    // "only left channel" audio bug where psgOutput.right = 0 previously produced silence on right.
     const psgLeftScaled = Math.floor(this.psgOutput.left / 24);
     const psgRightScaled = Math.floor(this.psgOutput.right / 24);
-    
-    if (psgLeftScaled > 0) {
-      // AC coupling: remove DC bias (midpoint of 0-8192 range is 4096)
-      const psgLeftAC = psgLeftScaled - 4096;
-      mixedLeft += psgLeftAC;
-    }
-    
-    if (psgRightScaled > 0) {
-      // AC coupling: remove DC bias
-      const psgRightAC = psgRightScaled - 4096;
-      mixedRight += psgRightAC;
+    const psgPeak = Math.max(psgLeftScaled, psgRightScaled);
+    if (psgPeak > 0) {
+      const midpoint = Math.floor(psgPeak / 2);
+      mixedLeft  += psgLeftScaled  - midpoint;
+      mixedRight += psgRightScaled - midpoint;
     }
 
     // Add DAC output (already signed, centered around 0)
