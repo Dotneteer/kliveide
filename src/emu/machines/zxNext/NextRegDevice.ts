@@ -3182,7 +3182,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x23, 0x00); // --- Line interrupt value LSB = 0
     this.directSetRegValue(0x32, 0x00); // --- LoRes X Scroll = 0
     this.directSetRegValue(0x33, 0x00); // --- LoRes Y Scroll = 0
-    this.directSetRegValue(0x42, 0x0f); // --- ULA Next Attribute byte format = 0x0f
+    this.directSetRegValue(0x42, 0x07); // --- ULA Next Attribute byte format = 0x07
     this.directSetRegValue(0x43, 0x00); // --- Enable palette write auto increment
     // --- Select ULA first palette
     // --- First sprite palette

@@ -381,8 +381,8 @@ describe("ULA HiRes rendering", () => {
     expect(buffer).toBeDefined();
 
     // --- Check magenta border
-    expect(getFirstBorderPixel(buffer)).toBe(0xffb6b6b6); // black border
-    const matchingBorderPixels = getMatchingBorderPixels(d.config, buffer, 0xffb6b6b6);
+    expect(getFirstBorderPixel(buffer)).toBe(0xffffffff); // black border
+    const matchingBorderPixels = getMatchingBorderPixels(d.config, buffer, 0xffffffff);
     const borderPixelCount = getBorderPixelCount(d.config);
     expect(matchingBorderPixels).toBe(borderPixelCount);
 
@@ -397,15 +397,15 @@ describe("ULA HiRes rendering", () => {
     expect(getDisplayPixel(d.config, buffer, startPx + 6, 0)).toBe(0xff000000); // ink
     expect(getDisplayPixel(d.config, buffer, startPx + 7, 0)).toBe(0xff000000); // ink
     expect(getDisplayPixel(d.config, buffer, startPx + 8, 0)).toBe(0xff000000); // ink
-    expect(getDisplayPixel(d.config, buffer, startPx + 9, 0)).toBe(0xffb6b6b6); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 9, 0)).toBe(0xffffffff); // ink
     expect(getDisplayPixel(d.config, buffer, startPx + 10, 0)).toBe(0xff000000); // ink
-    expect(getDisplayPixel(d.config, buffer, startPx + 11, 0)).toBe(0xffb6b6b6); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 11, 0)).toBe(0xffffffff); // ink
     expect(getDisplayPixel(d.config, buffer, startPx + 12, 0)).toBe(0xff000000); // ink
-    expect(getDisplayPixel(d.config, buffer, startPx + 13, 0)).toBe(0xffb6b6b6); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 13, 0)).toBe(0xffffffff); // ink
     expect(getDisplayPixel(d.config, buffer, startPx + 14, 0)).toBe(0xff000000); // ink
-    expect(getDisplayPixel(d.config, buffer, startPx + 15, 0)).toBe(0xffb6b6b6); // ink
+    expect(getDisplayPixel(d.config, buffer, startPx + 15, 0)).toBe(0xffffffff); // ink
     expect(getMatchingDisplayPixels(d.config, buffer, 0xff000000)).toBe(12);
-    expect(getMatchingDisplayPixels(d.config, buffer, 0xffb6b6b6)).toBe(getDisplayPixelCount(d.config) - 12);
+    expect(getMatchingDisplayPixels(d.config, buffer, 0xffffffff)).toBe(getDisplayPixelCount(d.config) - 12);
   });
 });
 

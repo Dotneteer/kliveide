@@ -145,6 +145,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaHiResColor = 0;
     this.ulaHiColorMode = false;
     this.ulaHiColorModeSampled = false;
+    this.ulaHalfPixelScrollSampled = false;
+    this.ulaPreviousPixelRgb333 = 0;
+    this.ulaPreviousPixelTransparent = true;
 
     // --- Initialize LoRes state
     this.loResEnabled = false;
@@ -161,7 +164,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Initialize ULANext state
     this.ulaNextEnabledField = false;
-    this.ulaNextFormat = 0x0f; // Default: 4-bit INK, 4-bit PAPER
+    this.ulaNextFormat = 0x07; // Default: 3-bit INK, 5-bit PAPER
 
     // --- Initialize Layer 2 state
     this.layer2Enabled = false; // Port 0x123B bit 1: disabled by default
@@ -345,13 +348,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    *                    = 192 + 8 + border_color = 200 + border_color
    */
   updateBorderRgbCache(): void {
-    if (this.ulaPlusEnabledField) {
+    if (this.ulaNextEnabledField) {
+      // ULANext: border resolves through paper path (palette indices 128+)
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(128 + this.borderColorField);
+    } else if (this.ulaPlusEnabledField) {
       // ULA+: Border uses palette indices 200-207 (for border colors 0-7)
       const ulaPlusPaletteIndex = 200 + this.borderColorField;
       this.borderRgbCache = this.paletteDevice.getUlaRgb333(ulaPlusPaletteIndex);
     } else {
-      // Standard: Border uses palette indices 0-7
-      this.borderRgbCache = this.paletteDevice.getUlaRgb333(this.borderColorField);
+      // Standard: Border uses paper palette indices 16-23
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(16 + this.borderColorField);
     }
   }
 
@@ -718,44 +724,61 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Apply the ULA/Tilemap merging process from Section 4.2.1
     // LoRes is already integrated into ulaOutput (not kept separate)
 
-    // TODO: Apply the complete merging logic from Section 4.2.1 here:
-    // 1. Calculate ula_transparent, tm_transparent
-    // 2. If stencil mode: ula_final = ula & tilemap (bitwise AND)
-    // 3. Else: ula_final = tm_pixel_below ? (ula or tm) : (tm or ula)
-    // 4. Calculate mix_rgb, mix_top_rgb, mix_bot_rgb based on blend mode
-    // For now, using simplified approach (incomplete implementation)
-
-    // Merge tilemap into ULA if both enabled (simplified version)
+    // Merge tilemap into ULA if both enabled
     if (this.tilemapEnabled && this.tilemapPixel1Rgb333 !== null) {
-      if (
-        this.ulaPixel1Rgb333 != null &&
-        !this.ulaPixel1Transparent &&
-        !this.tilemapPixel1Transparent
-      ) {
-        // Both non-transparent: apply tm_pixel_below logic
-        // TODO: Read tm_pixel_below from tilemap attributes
-        // For now, tilemap on top (simplified)
-        this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-        this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
-      } else if (!this.tilemapPixel1Transparent) {
-        // Only tilemap non-transparent
-        this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-        this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+      if (this.ulaEnableStencilMode) {
+        // Stencil mode: AND of both colours; transparent if either is transparent
+        if (
+          this.ulaPixel1Rgb333 != null &&
+          !this.ulaPixel1Transparent &&
+          !this.tilemapPixel1Transparent
+        ) {
+          this.ulaPixel1Rgb333 = this.ulaPixel1Rgb333 & this.tilemapPixel1Rgb333!;
+          this.ulaPixel1Transparent = false;
+        } else {
+          this.ulaPixel1Transparent = true;
+        }
+      } else {
+        if (
+          this.ulaPixel1Rgb333 != null &&
+          !this.ulaPixel1Transparent &&
+          !this.tilemapPixel1Transparent
+        ) {
+          // Both non-transparent: tilemap on top (simplified)
+          this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
+          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+        } else if (!this.tilemapPixel1Transparent) {
+          // Only tilemap non-transparent
+          this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
+          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+        }
       }
-      // If only ULA non-transparent, keep ulaOutput1 as-is
     }
 
     if (this.tilemapEnabled && this.tilemapPixel2Rgb333 !== null) {
-      if (
-        this.ulaPixel2Rgb333 != null &&
-        !this.ulaPixel2Transparent &&
-        !this.tilemapPixel2Transparent
-      ) {
-        this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-        this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
-      } else if (!this.tilemapPixel2Transparent) {
-        this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-        this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+      if (this.ulaEnableStencilMode) {
+        if (
+          this.ulaPixel2Rgb333 != null &&
+          !this.ulaPixel2Transparent &&
+          !this.tilemapPixel2Transparent
+        ) {
+          this.ulaPixel2Rgb333 = this.ulaPixel2Rgb333 & this.tilemapPixel2Rgb333!;
+          this.ulaPixel2Transparent = false;
+        } else {
+          this.ulaPixel2Transparent = true;
+        }
+      } else {
+        if (
+          this.ulaPixel2Rgb333 != null &&
+          !this.ulaPixel2Transparent &&
+          !this.tilemapPixel2Transparent
+        ) {
+          this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
+          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+        } else if (!this.tilemapPixel2Transparent) {
+          this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
+          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+        }
       }
     }
 
@@ -872,8 +895,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set timexPortValue(value: number) {
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
-    this.ulaHiResInkRgb333 = this.paletteDevice.getUlaRgb333(this.ulaHiResColor);
-    this.ulaHiResPaperRgb333 = this.paletteDevice.getUlaRgb333(7 - this.ulaHiResColor);
+    this.ulaHiResInkRgb333 = this.paletteDevice.getUlaRgb333(8 + this.ulaHiResColor);
+    this.ulaHiResPaperRgb333 = this.paletteDevice.getUlaRgb333(24 + (7 - this.ulaHiResColor));
     const mode = value & 0x07;
     switch (mode) {
       case 0:
@@ -1044,6 +1067,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set nextReg0x42Value(value: number) {
     this.ulaNextFormat = value;
     this.updateFallbackRgb333Cache();
+    this.updateBorderRgbCache();
   }
 
   get nextReg0x42Value(): number {
@@ -1146,6 +1170,32 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     if (layer2PixelRgb333 != null && layer2Priority && !layer2Transparent) {
       selectedPixel = layer2PixelRgb333;
       selectedTransparent = layer2Transparent;
+    } else if (this.layerPriority >= 6 && this.ulaBlendingInSLUModes !== 0b01) {
+      // === Blend Modes (priority 6-7) ===
+      // Blend source (ULA/tilemap merged) with Layer 2
+      // Mode 6 (bit 0 = 0): saturate-add per RGB333 channel, clamped to [0,7]
+      // Mode 7 (bit 0 = 1): add channels then subtract 5, clamped to [0,7]
+      const blendSource = ulaPixelRgb333;
+      const blendTransparent = ulaTransparent;
+      const hasBlend = blendSource != null && !blendTransparent;
+      const hasL2 = layer2PixelRgb333 != null && !layer2Transparent;
+
+      if (spritesPixelRgb333 != null && !spritesTransparent) {
+        selectedPixel = spritesPixelRgb333;
+        selectedTransparent = false;
+      } else if (hasBlend && hasL2) {
+        selectedPixel = blendRgb333(blendSource, layer2PixelRgb333!, this.layerPriority & 1);
+        selectedTransparent = false;
+      } else if (hasL2) {
+        selectedPixel = layer2PixelRgb333;
+        selectedTransparent = false;
+      } else if (hasBlend) {
+        selectedPixel = blendSource;
+        selectedTransparent = false;
+      } else {
+        selectedPixel = null;
+        selectedTransparent = true;
+      }
     } else {
       // Select first non-transparent layer in priority order
       switch (this.layerPriority) {
@@ -1320,6 +1370,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private ulaHiColorModeSampled: boolean;
   private ulaHiResInkRgb333: number;
   private ulaHiResPaperRgb333: number;
+  private ulaHalfPixelScrollSampled: boolean;
+  private ulaPreviousPixelRgb333: number;
+  private ulaPreviousPixelTransparent: boolean;
 
   // Active attribute lookup tables (references to module-level tables, switch based on flash state)
   private ulaActiveAttrToInk: Uint8Array;
@@ -1409,18 +1462,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === Border Area ===
     if ((cell & SCR_DISPLAY_AREA) === 0) {
-      // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
       if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
         this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 =
           this.machine.composedScreenDevice.fallbackRgb333Cache;
         this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
-        return;
+      } else {
+        this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
+        this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
       }
-
-      // --- Use cached border RGB value (updated when borderColor changes)
-      // --- This eliminates method call overhead for ~30% of pixels
-      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      if (this.ulaHalfPixelScrollSampled) {
+        this.ulaPreviousPixelRgb333 = this.ulaPixel2Rgb333;
+        this.ulaPreviousPixelTransparent = this.ulaPixel2Transparent;
+      }
       return;
     }
 
@@ -1489,9 +1542,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       displayVC > this.ulaClipWindowY2;
 
     // Return layer output for composition stage
-    this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
-    this.ulaPixel1Transparent = this.ulaPixel2Transparent =
-      pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
+    const transparent = pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
+    if (this.ulaHalfPixelScrollSampled) {
+      // Half-pixel scroll: shift ULA output right by one 14 MHz dot
+      this.ulaPixel1Rgb333 = this.ulaPreviousPixelRgb333;
+      this.ulaPixel1Transparent = this.ulaPreviousPixelTransparent;
+      this.ulaPixel2Rgb333 = pixelRgb333;
+      this.ulaPixel2Transparent = transparent;
+      this.ulaPreviousPixelRgb333 = pixelRgb333;
+      this.ulaPreviousPixelTransparent = transparent;
+    } else {
+      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = transparent;
+    }
   }
 
   /**
@@ -1846,6 +1909,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaHiResModeSampled = this.ulaHiResMode;
     // --- ULA Hi-Color mode
     this.ulaHiColorModeSampled = this.ulaHiColorMode;
+
+    // --- Half-pixel scroll
+    this.ulaHalfPixelScrollSampled = this.ulaHalfPixelScroll;
 
     // --- Lo-Res mode
     this.loResEnabledSampled = this.loResEnabled;
@@ -4499,6 +4565,28 @@ let attrToPaperFlashOn: Uint8Array | undefined;
 let ulaPlusAttrToInk: Uint8Array | undefined;
 let ulaPlusAttrToPaper: Uint8Array | undefined;
 
+/**
+ * Blend two RGB333 (9-bit) colours per the ZX Next layer blend modes.
+ * @param a First RGB333 colour (blend source: ULA/tilemap)
+ * @param b Second RGB333 colour (Layer 2)
+ * @param mixer 0 = saturate-add (clamp to 7), 1 = darken (add − 5, clamp 0-7)
+ */
+function blendRgb333(a: number, b: number, mixer: number): number {
+  const rA = (a >> 6) & 7, gA = (a >> 3) & 7, bA = a & 7;
+  const rB = (b >> 6) & 7, gB = (b >> 3) & 7, bB = b & 7;
+  let r: number, g: number, bl: number;
+  if (mixer === 0) {
+    r = Math.min(7, rA + rB);
+    g = Math.min(7, gA + gB);
+    bl = Math.min(7, bA + bB);
+  } else {
+    r = Math.max(0, Math.min(7, rA + rB - 5));
+    g = Math.max(0, Math.min(7, gA + gB - 5));
+    bl = Math.max(0, Math.min(7, bA + bB - 5));
+  }
+  return (r << 6) | (g << 3) | bl;
+}
+
 function generateAttributeDecodeTables(): {
   attrToInkFlashOff: Uint8Array;
   attrToPaperFlashOff: Uint8Array;
@@ -4520,7 +4608,7 @@ function generateAttributeDecodeTables(): {
 
     const brightOffset = bright << 3;
     const inkPaletteIndex = inkColor + brightOffset;
-    const paperPaletteIndex = paperColor + brightOffset;
+    const paperPaletteIndex = paperColor + brightOffset + 0x10;
 
     if (flash) {
       attrToInkFlashOff[attr] = inkPaletteIndex;

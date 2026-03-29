@@ -1712,7 +1712,7 @@ describe("Next - ComposedScreenDevice", function () {
       const d = m.composedScreenDevice;
 
       // --- Assert (check default value)
-      expect(d.ulaNextFormat).toBe(0x0f); // Default: 4-bit INK, 4-bit PAPER
+      expect(d.ulaNextFormat).toBe(0x07); // Default per FPGA spec: soft reset = 0x07
     });
 
     it("NextReg 0x42 writes and reads format mask", async () => {
@@ -1841,7 +1841,7 @@ describe("Next - ComposedScreenDevice", function () {
 
       // --- Assert
       expect(d.ulaNextEnabled).toBe(false); // ULANext disabled by default
-      expect(d.ulaNextFormat).toBe(0x0f); // Default: 4-bit INK, 4-bit PAPER
+      expect(d.ulaNextFormat).toBe(0x07); // Default per FPGA spec: soft reset = 0x07
     });
 
     it("NextReg 0x42 masks to 8 bits", async () => {
