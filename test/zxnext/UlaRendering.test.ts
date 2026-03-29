@@ -224,19 +224,19 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     expect(result).toBe(expectedResult);
   });
 
-  it("blend mode 01 (no blend) uses standard ULS priority", () => {
+  it("blend mode with ulaBlendingInSLUModes=01 still blends (D7 fix)", () => {
     csd().layerPriority = 6;
-    csd().ulaBlendingInSLUModes = 0b01; // no blending
+    csd().ulaBlendingInSLUModes = 0b01;
 
-    // With blend disabled, should use standard priority (default = ULS)
-    // ULA non-transparent, L2 non-transparent → ULA wins in ULS (position 5 = default)
+    // After D7: blend IS applied even with ulaBlendingInSLUModes=0b01
     const result = (csd() as any).composeSinglePixel(
       0x0aa, false, 0x0bb, false, false, null, true
     );
 
-    // ULS: U first → ULA wins
+    // 0x0aa = R2 G5 B2, 0x0bb = R2 G7 B3; saturate-add → R4 G7 B5 = 0x13D
+    const blended = 0x13d;
     const expectedResult = (csd() as any).composeSinglePixel(
-      0x0aa, false, null, true, false, null, true
+      blended, false, null, true, false, null, true
     );
     expect(result).toBe(expectedResult);
   });
@@ -256,7 +256,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     expect(result).toBe(expectedResult);
   });
 
-  it("L2 priority overrides blend", () => {
+  it("L2 priority in blend mode blends with ULA (D6 fix)", () => {
     csd().layerPriority = 6;
     csd().ulaBlendingInSLUModes = 0b00;
 
@@ -264,9 +264,11 @@ describe("D4 — Blend modes (priority 6-7)", () => {
       0x100, false, 0x038, false, true, null, true // L2 priority bit set
     );
 
-    // L2 priority should win
+    // After D6: L2 priority in blend mode → blend(ULA, L2), not short-circuit
+    // 0x100 = R4 G0 B0, 0x038 = R0 G7 B0; saturate-add → R4 G7 B0 = 0x138
+    const blended = 0x138;
     const expectedResult = (csd() as any).composeSinglePixel(
-      0x038, false, null, true, false, null, true
+      blended, false, null, true, false, null, true
     );
     expect(result).toBe(expectedResult);
   });
