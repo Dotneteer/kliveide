@@ -1031,11 +1031,19 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
    */
   override onRetnExecuted(): void {
-    if (this.multifaceDevice.nmiHold) {
-      // MF NMI is still in progress — RETN ends it regardless of whether memory is
-      // still mapped (the ROM pages itself out via port read before executing RETN).
+    // FPGA multiface.vhd: cpu_retn_seen clears mf_enable unconditionally,
+    // and also clears nmi_active. Route RETN to multiface first.
+    if (this.multifaceDevice.mfEnabledEff || this.multifaceDevice.nmiHold) {
       this.multifaceDevice.handleRetn();
     }
+
+    // FPGA zxnext.vhd: divmmc_retn_seen <= z80_retn_seen AND NOT mf_is_active.
+    // After handleRetn() has cleared MF state, check if MF is still active.
+    const mfIsActive = this.multifaceDevice.isActive;
+    if (!mfIsActive && this.divMmcDevice.enabled) {
+      this.divMmcDevice.handleRetnExecution();
+    }
+
     if (this._stacklessNmiProcessed) {
       this._stacklessNmiProcessed = false;
       this.pc = this.interruptDevice.nmiReturnAddress;

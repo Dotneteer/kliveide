@@ -119,7 +119,8 @@ describe("Next - DivMmcDevice: CONMEM Manual Control (Issue #1)", function () {
  * When Z80 executes RETN (0xED 0x45), DivMMC should:
  * - Clear automap_held
  * - Clear automap_hold
- * - Clear conmem bit
+ * - Clear button_nmi
+ * - conmem is NOT cleared by RETN (it's a user-controlled register)
  * - Return to normal memory mapping
  */
 describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function () {
@@ -156,12 +157,12 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     // Execute RETN instruction
     machine.executeOneInstruction();
     
-    // After RETN, conmem should be cleared
-    expect(divmmc.conmem).toBe(false);
+    // After RETN, automap is cleared but conmem is NOT (FPGA: conmem is user-controlled)
+    expect(divmmc.conmem).toBe(true);
     expect(divmmc.autoMapActive).toBe(false);
   });
 
-  it("RETN should clear conmem flag from port 0xE3", async () => {
+  it("RETN should NOT clear conmem flag from port 0xE3 (FPGA: conmem is user-controlled)", async () => {
     const divmmc = machine.divMmcDevice;
     
     for (let i = 0; i < 8; i++) {
@@ -188,8 +189,8 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     // Execute RETN
     machine.executeOneInstruction();
     
-    // conmem should be cleared
-    expect(divmmc.conmem).toBe(false);
+    // conmem should NOT be cleared by RETN (FPGA: conmem is a user-controlled register)
+    expect(divmmc.conmem).toBe(true);
   });
 
   it("RETN should work independent of how automap was activated", async () => {
@@ -244,7 +245,7 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     machine.executeOneInstruction();
     
     // conmem should be cleared by RETN execution
-    expect(divmmc.conmem).toBe(false);
+    expect(divmmc.conmem).toBe(true); // FPGA: conmem is NOT cleared by RETN
   });
 
   it("RETN should clear automap across multiple consecutive instructions", async () => {
@@ -282,9 +283,9 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     // Execute RETN
     machine.executeOneInstruction();
     
-    // After RETN, everything should be cleared
+    // After RETN, automap is cleared but conmem is preserved (FPGA behavior)
     expect(divmmc.autoMapActive).toBe(false);
-    expect(divmmc.conmem).toBe(false);
+    expect(divmmc.conmem).toBe(true);
   });
 });
 

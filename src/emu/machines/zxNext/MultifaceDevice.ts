@@ -1,6 +1,5 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 
 /**
  * Implements the Multiface NMI device for ZX Spectrum Next.
@@ -9,14 +8,6 @@ import { OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
   /** nmi_active in VHDL — MF ROM is running and memory is paged in */
   nmiActive: boolean;
-
-  /**
-   * Mirrors VHDL: nmi_disable_o <= nmi_active.
-   * In hardware, mf_nmi_hold IS nmi_active — they are the same signal.
-   */
-  get nmiHold(): boolean {
-    return this.nmiActive;
-  }
 
   /** mf_enable in VHDL — multiface memory paged in */
   mfEnabled: boolean;
@@ -28,6 +19,34 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
     this.nmiActive = false;
     this.mfEnabled = false;
     this.invisible = true;
+  }
+
+  // --- Enable gating (FPGA: reset <= reset_i or not enable_i)
+  // MAME gates outputs by m_enable; we match that approach.
+
+  /**
+   * Maps to FPGA enable_i / MAME m_enable.
+   * Reflects nextreg 0x83 bit 1 (portMultifaceEnabled).
+   */
+  get enabled(): boolean {
+    return this.machine.nextRegDevice.portMultifaceEnabled;
+  }
+
+  /**
+   * Mirrors VHDL: nmi_disable_o <= nmi_active, gated by enable.
+   * MAME: nmi_disable_r() { return m_enable && m_nmi_active; }
+   */
+  get nmiHold(): boolean {
+    return this.enabled && this.nmiActive;
+  }
+
+  /**
+   * Mirrors VHDL: mf_enabled_o <= mf_enable_eff, gated by enable.
+   * MAME: mf_enabled_r() { return m_enable && mf_enable_eff(); }
+   * (fetch_66 term omitted — handled imperatively by onFetch0066)
+   */
+  get mfEnabledEff(): boolean {
+    return this.enabled && this.mfEnabled;
   }
 
   // --- Mode helpers (derived from multifaceType = nr_0a_mf_type bits 7:6)
@@ -49,10 +68,10 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * MF is considered active when memory is paged in or NMI is pending.
-   * Mirrors VHDL mf_is_active = mf_mem_en OR mf_nmi_hold.
+   * Mirrors VHDL mf_is_active = mf_mem_en OR mf_nmi_hold, gated by enable.
    */
   get isActive(): boolean {
-    return this.mfEnabled || this.nmiActive;
+    return this.enabled && (this.mfEnabled || this.nmiActive);
   }
 
   /**
@@ -150,9 +169,6 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
     if (this.nmiActive) {
       this.mfEnabled = true;
       this.machine.memoryDevice.updateFastPathFlags();
-      const mem = (this.machine.memoryDevice as any).memory as Uint8Array;
-      const b0066 = mem[OFFS_MULTIFACE_MEM + 0x0066];
-      console.log(`[NMI] onFetch0066: mfEnabled=true MF_ROM[0x0066]=0x${b0066.toString(16)} (ROM ${b0066 !== 0 ? 'loaded ✓' : 'EMPTY – no ROM loaded!'})`)
     }
   }
 

@@ -9,6 +9,8 @@ describe("MultifaceDevice", async () => {
   beforeEach(async () => {
     m = await createTestNextMachine();
     mf = m.multifaceDevice;
+    // Enable multiface port decoding (FPGA enable_i)
+    m.nextRegDevice.portMultifaceEnabled = true;
   });
 
   // ─────────────────────────────

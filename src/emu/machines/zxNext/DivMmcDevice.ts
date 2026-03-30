@@ -439,22 +439,11 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    * This is called from the test machine when RETN is detected
    */
   handleRetnExecution(): void {
-    this._nmiButtonPressed = false; // VHDL: button_nmi cleared by retn_seen
+    // FPGA divmmc.vhd: retn_seen clears only button_nmi, automap_hold, automap_held.
+    // conmem (port 0xE3 bit 7) is a user-controlled register — never cleared by RETN.
+    this._nmiButtonPressed = false;
     this._autoMapActive = false;
-    this._conmemActivated = false;
-    this._conmem = false;
-    this._portLastE3Value = this._portLastE3Value & 0x7f; // Clear bit 7 (conmem)
     this.machine.memoryDevice.updateFastPathFlags();
-  }
-
-  /**
-   * Detects if the last instruction executed was RETN (0xED 0x45)
-   * If detected, clears automap and conmem flags
-   */
-  private checkAndHandleRetn(): void {
-    if (this.machine.retnExecuted) {
-      this.handleRetnExecution();
-    }
   }
 
   // --- Pages in ROM/RAM into the lower 16K, if requested so
@@ -483,9 +472,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Pages in and out ROM/RAM into the lower 16K, if requested so
   afterOpcodeFetch(): void {
-    // --- Check for RETN instruction (0xED 0x45) - unmaps DivMMC
-    this.checkAndHandleRetn();
-
     // --- Process delayed automap requests
     this.processDelayedAutomapRequests();
   }

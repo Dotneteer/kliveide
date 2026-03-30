@@ -17,6 +17,8 @@ describe("NmiStateMachine", async () => {
     // Enable the NMI enable flags so sources are accepted
     m.divMmcDevice.enableMultifaceNmiByM1Button = true;
     m.divMmcDevice.enableDivMmcNmiByDriveButton = true;
+    // Enable multiface port decoding (FPGA enable_i)
+    m.nextRegDevice.portMultifaceEnabled = true;
   });
 
   // ─────────────────────────────

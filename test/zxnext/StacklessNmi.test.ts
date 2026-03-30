@@ -15,6 +15,8 @@ describe("StacklessNmi", async () => {
   beforeEach(async () => {
     m = await createTestNextMachine();
     m.divMmcDevice.enableMultifaceNmiByM1Button = true;
+    // Enable multiface port decoding (FPGA enable_i)
+    m.nextRegDevice.portMultifaceEnabled = true;
   });
 
   // ─────────────────────────────
