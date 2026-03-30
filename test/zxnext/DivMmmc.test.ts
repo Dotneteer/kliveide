@@ -2917,7 +2917,7 @@ describe("Next - DivMmcDevice", async function () {
     expect(addr5After).toBe(nextRom0Signature0[5]);
   });
 
-  it("$1ff8 pages out (enabled, delayed)", async () => {
+  it("$1ff8 does NOT page out when automapOff1ff8 disabled (D5)", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
     const d = m.divMmcDevice;
@@ -2941,14 +2941,13 @@ describe("Next - DivMmcDevice", async function () {
     const addr1After = memDevice.readMemory(0x0001);
     const addr5After = memDevice.readMemory(0x0005);
 
-    // --- Assert
+    // --- Assert: automap stays active since automapOff1ff8 = false (D5)
     expect(addr0Before).toBe(divMmcRomSignature[0]);
     expect(addr1Before).toBe(divMmcRomSignature[1]);
     expect(addr5Before).toBe(divMmcRomSignature[5]);
-    expect(m.opCode).toBe(nextRom0_1ff8);
-    expect(addr0After).toBe(nextRom0Signature0[0]);
-    expect(addr1After).toBe(nextRom0Signature0[1]);
-    expect(addr5After).toBe(nextRom0Signature0[5]);
+    expect(addr0After).toBe(divMmcRomSignature[0]);
+    expect(addr1After).toBe(divMmcRomSignature[1]);
+    expect(addr5After).toBe(divMmcRomSignature[5]);
   });
 
   // ─────────────────────────────

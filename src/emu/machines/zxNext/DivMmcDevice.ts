@@ -11,7 +11,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   private _requestAutomapOn: boolean;
   private _requestAutomapOff: boolean;
   private _autoMapActive: boolean;
-  private _conmemActivated: boolean; // Track if conmem activated the mapping
   private _nmiButtonPressed: boolean; // Track if NMI button is pressed
 
   readonly rstTraps: TrapInfo[] = [];
@@ -96,7 +95,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this._enableAutomap = false;
     this._requestAutomapOn = false;
     this._requestAutomapOff = false;
-    this._conmemActivated = false;
     this._nmiButtonPressed = false;
     for (let i = 0; i < 8; i++) {
       this.rstTraps[i].enabled = false;
@@ -139,7 +137,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (!value) {
       // --- Automap is disabled
       this._autoMapActive = false;
-      this._conmemActivated = false;
       this.machine.memoryDevice.updateFastPathFlags();
     }
   }
@@ -194,7 +191,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     } else {
       // --- DivMMC is disabled
       this._autoMapActive = false;
-      this._conmemActivated = false;
       this.machine.memoryDevice.updateFastPathFlags();
     }
   }
@@ -310,26 +306,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Checks and applies manual CONMEM control (port 0xE3 bit 7)
-   * This works independently of entry points, but still requires enableAutomap
-   */
-  private checkManualConmem(): void {
-    if (!this.enableAutomap) return;
-
-    if (this._conmem && !this._conmemActivated) {
-      // --- conmem=1: activate mapping if not already activated by conmem
-      this._autoMapActive = true;
-      this._conmemActivated = true;
-      this.machine.memoryDevice.updateFastPathFlags();
-    } else if (!this._conmem && this._conmemActivated) {
-      // --- conmem=0: deactivate mapping if it was activated by conmem
-      this._autoMapActive = false;
-      this._conmemActivated = false;
-      this.machine.memoryDevice.updateFastPathFlags();
-    }
-  }
-
-  /**
    * Checks RST trap entry points (0x0000, 0x0008, ..., 0x0038)
    */
   private checkRstTraps(pc: number, rom3Present: boolean): void {
@@ -346,20 +322,27 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Checks NMI entry point (0x0066)
+   * D9: button_nmi gating is sufficient (upstream already checks enable).
+   * D10: Both instant and delayed contribute to the hold equation.
    */
   private checkNmiEntry(pc: number): void {
     if (pc !== 0x0066) return;
-    if (!this.enableDivMmcNmiByDriveButton) return;
-    if (!(this as any)._nmiButtonPressed) return;
+    if (!this._nmiButtonPressed) return;
 
     const isInstant = this.automapOn0066;
     const isDelayed = this.automapOn0066Delayed;
-    
+
     // Only activate if at least one mode is enabled
     if (!isInstant && !isDelayed) return;
-    
-    // Prefer instant mode if both are enabled
-    this.setAutomapRequest(isInstant);
+
+    // Both instant and delayed contribute (MAME: both enter automap_hold OR).
+    // Instant gives immediate paging; delayed also establishes the hold.
+    if (isInstant) {
+      this._autoMapActive = true;
+    }
+    if (isDelayed) {
+      this._requestAutomapOn = true;
+    }
   }
 
   /**
@@ -386,13 +369,10 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
       // Special handling for 0x1FF8-0x1FFF auto-unmap
       if (ep.handler === 'autoUnmap1ff8') {
+        // D5: When NR $BB bit 6 = 0, the exit is disabled — do nothing.
+        // When bit 6 = 1, delayed unmap (request for next instruction).
         if (this.automapOff1ff8) {
-          // Delayed unmap (request for next instruction)
           this._requestAutomapOff = true;
-        } else {
-          // Immediate unmap
-          this._autoMapActive = false;
-          this.machine.memoryDevice.updateFastPathFlags();
         }
       } else if (ep.handler === 'activate') {
         if (!ep.flag()) continue;
@@ -435,15 +415,16 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Clears automap and conmem state when RETN is detected
-   * This is called from the test machine when RETN is detected
+   * Clears automap state when RETN is detected.
+   * MAME/FPGA: retn_seen clears only the 3 automap flip-flops
+   * (button_nmi, automap_hold, automap_held). The divmmc_reg
+   * (port 0xE3 value including conmem/mapram/bank) is NOT modified.
    */
   handleRetnExecution(): void {
     this._nmiButtonPressed = false; // VHDL: button_nmi cleared by retn_seen
-    this._autoMapActive = false;
-    this._conmemActivated = false;
-    this._conmem = false;
-    this._portLastE3Value = this._portLastE3Value & 0x7f; // Clear bit 7 (conmem)
+    this._autoMapActive = false;    // VHDL: automap_held cleared by retn_seen
+    this._requestAutomapOn = false; // VHDL: automap_hold cleared by retn_seen
+    this._requestAutomapOff = false;
     this.machine.memoryDevice.updateFastPathFlags();
   }
 
@@ -458,16 +439,19 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   // --- Pages in ROM/RAM into the lower 16K, if requested so
+  // D7: Pipeline mapping — beforeOpcodeFetch ≈ M1 cycle (MREQ_n=0+M1_n=0),
+  // afterOpcodeFetch ≈ post-MREQ (automap_held latched from automap_hold).
+  // _autoMapActive ≈ automap_held, _requestAutomapOn ≈ automap_hold for delayed.
   beforeOpcodeFetch(): void {
-    const pc = this.machine.pc;
-
-    // --- Check manual conmem control via helper method
-    this.checkManualConmem();
+    // D8: Gate automap by device enable (MAME: automap_reset = !en || !automap_en)
+    if (!this._enabled) return;
 
     if (!this.enableAutomap) {
       // --- No page in/out if automap is disabled
       return;
     }
+
+    const pc = this.machine.pc;
 
     const rom3Present = this.isRom3PagedIn();
 
@@ -488,6 +472,12 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Process delayed automap requests
     this.processDelayedAutomapRequests();
+
+    // D6: VHDL clears button_nmi when automap_held is true (lower priority
+    // than reset/retn/button). Approximate by clearing at end of each cycle.
+    if (this._autoMapActive) {
+      this._nmiButtonPressed = false;
+    }
   }
 
   /**
