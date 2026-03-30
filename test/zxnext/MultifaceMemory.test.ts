@@ -15,6 +15,11 @@ describe("MultifaceMemory", async () => {
     m = await createTestNextMachine();
   });
 
+  /** Enable the NR $85 multiface IO gate so mfEnabledEff works (D4) */
+  function enableMf(): void {
+    m.nextRegDevice.portMultifaceEnabled = true;
+  }
+
   // ─────────────────────────────
   //  Fast path / flag state
   // ─────────────────────────────
@@ -24,12 +29,14 @@ describe("MultifaceMemory", async () => {
   });
 
   it("_mfActive becomes true when mfEnabled set and updateFastPathFlags called", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
     expect((m.memoryDevice as any)._mfActive).toBe(true);
   });
 
   it("_mfActive returns to false when mfEnabled cleared and updateFastPathFlags called", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
     m.multifaceDevice.mfEnabled = false;
@@ -38,6 +45,7 @@ describe("MultifaceMemory", async () => {
   });
 
   it("_useFastPath is false when _mfActive is true", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
     expect((m.memoryDevice as any)._useFastPath).toBe(false);
@@ -53,6 +61,7 @@ describe("MultifaceMemory", async () => {
 
   it("reads from 0x0000–0x1FFF redirect to OFFS_MULTIFACE_MEM when MF active", () => {
     // Write a sentinel value into MF memory page 0
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
     const mem = (m.memoryDevice as any).memory as Uint8Array;
@@ -63,6 +72,7 @@ describe("MultifaceMemory", async () => {
   });
 
   it("reads from 0x2000–0x3FFF redirect to OFFS_MULTIFACE_MEM+0x2000 when MF active", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
     const mem = (m.memoryDevice as any).memory as Uint8Array;
@@ -81,6 +91,7 @@ describe("MultifaceMemory", async () => {
   });
 
   it("reads from addresses outside slot 0 are not affected by MF active", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
     // Slot 1 (0x4000) should be unaffected
@@ -94,6 +105,7 @@ describe("MultifaceMemory", async () => {
   // ─────────────────────────────
 
   it("writes to 0x0000–0x1FFF are IGNORED (MF page 0 = ROM, read-only per MAME sram_pre_rdonly)", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
 
@@ -107,6 +119,7 @@ describe("MultifaceMemory", async () => {
   });
 
   it("writes to 0x2000–0x3FFF redirect to OFFS_MULTIFACE_MEM+0x2000 when MF active", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
 
@@ -136,6 +149,7 @@ describe("MultifaceMemory", async () => {
     mem[OFFS_MULTIFACE_MEM + 0x0080] = 0x11;
 
     // Activate both
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     (m.divMmcDevice as any)._conmem = true;
     m.memoryDevice.updateFastPathFlags();
@@ -145,6 +159,7 @@ describe("MultifaceMemory", async () => {
   });
 
   it("MF holds highest write priority over DivMMC when both active", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     (m.divMmcDevice as any)._conmem = true;
     m.memoryDevice.updateFastPathFlags();
@@ -161,6 +176,7 @@ describe("MultifaceMemory", async () => {
   // ─────────────────────────────
 
   it("write then read through MF memory is consistent", () => {
+    enableMf();
     m.multifaceDevice.mfEnabled = true;
     m.memoryDevice.updateFastPathFlags();
 
