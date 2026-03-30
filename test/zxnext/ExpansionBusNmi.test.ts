@@ -81,6 +81,7 @@ describe("ExpansionBusNmi", async () => {
   it("expbus NMI not accepted when MF NMI is already active", () => {
     // First accept a MF NMI
     m.divMmcDevice.enableMultifaceNmiByM1Button = true;
+    m.nextRegDevice.portMultifaceEnabled = true;
     (m as any)._pendingMfNmi = true;
     m.beforeOpcodeFetch(); // _nmiSourceMf = true, state → FETCH, sigNMI = true
 

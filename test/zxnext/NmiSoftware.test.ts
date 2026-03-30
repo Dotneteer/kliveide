@@ -11,6 +11,8 @@ describe("NmiSoftware – nextreg 0x02", async () => {
     m = await createTestNextMachine();
     m.divMmcDevice.enableMultifaceNmiByM1Button = true;
     m.divMmcDevice.enableDivMmcNmiByDriveButton = true;
+    // FPGA: button_pulse gated by enable_i — MF NMI requires this
+    m.nextRegDevice.portMultifaceEnabled = true;
   });
 
   // ─────────────────────────────

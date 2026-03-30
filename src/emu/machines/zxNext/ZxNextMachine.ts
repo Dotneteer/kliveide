@@ -357,8 +357,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const mfEnabled  = this.divMmcDevice.enableMultifaceNmiByM1Button;
     const divEnabled = this.divMmcDevice.enableDivMmcNmiByDriveButton;
 
-    const assertMf     = this._pendingMfNmi && mfEnabled;
+    const assertMf     = this._pendingMfNmi && mfEnabled && this.multifaceDevice.enabled;
     const assertDivMmc = this._pendingDivMmcNmi && divEnabled;
+
+    // FPGA: button_pulse is a one-clock event — consume pending flags regardless of acceptance
+    if (this._pendingMfNmi && !this.multifaceDevice.enabled) {
+      this._pendingMfNmi = false;
+    }
 
     const conmemActive = (this.divMmcDevice.port0xe3Value & 0x80) !== 0; // port_e3_reg(7)
     const mfIsActive   = this.multifaceDevice.isActive;

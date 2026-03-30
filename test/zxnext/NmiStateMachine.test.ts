@@ -232,4 +232,32 @@ describe("NmiStateMachine", async () => {
     // armNmiButton sets _nmiButtonPressed → divMmcNmiHold should be true
     expect(m.divMmcDevice.divMmcNmiHold).toBe(true);
   });
+
+  // ─────────────────────────────
+  //  MF NMI gated by portMultifaceEnabled (FPGA: button_pulse <= enable_i AND ...)
+  // ─────────────────────────────
+
+  it("MF NMI not accepted when portMultifaceEnabled=false", async () => {
+    m.nextRegDevice.portMultifaceEnabled = false;
+    await m.executeCustomCommand("multifaceNmi");
+    m.beforeOpcodeFetch();
+    expect((m as any)._nmiState).toBe("IDLE");
+    expect(m.sigNMI).toBe(false);
+    expect((m as any)._nmiSourceMf).toBe(false);
+    // Pending flag should be consumed (FPGA: pulse is lost when enable_i=false)
+    expect((m as any)._pendingMfNmi).toBe(false);
+  });
+
+  it("MF NMI pending flag consumed even when portMultifaceEnabled=false", async () => {
+    m.nextRegDevice.portMultifaceEnabled = false;
+    await m.executeCustomCommand("multifaceNmi");
+    expect((m as any)._pendingMfNmi).toBe(true);
+    m.beforeOpcodeFetch();
+    expect((m as any)._pendingMfNmi).toBe(false);
+    // Re-enable — no stale NMI should fire
+    m.nextRegDevice.portMultifaceEnabled = true;
+    m.beforeOpcodeFetch();
+    expect((m as any)._nmiState).toBe("IDLE");
+    expect(m.sigNMI).toBe(false);
+  });
 });
