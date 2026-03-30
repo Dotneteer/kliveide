@@ -1030,7 +1030,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Called by Z80Cpu after RETN has executed (stack pop already set PC to garbage for stackless NMI).
    * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
    */
-  protected override onRetnExecuted(): void {
+  override onRetnExecuted(): void {
     if (this.multifaceDevice.nmiHold) {
       // MF NMI is still in progress — RETN ends it regardless of whether memory is
       // still mapped (the ROM pages itself out via port read before executing RETN).
