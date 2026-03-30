@@ -141,12 +141,14 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Apply PSG mode configuration
     // PSG mode: 0=YM, 1=AY, 2=ZXN-8950, 3=Hold all PSGs in reset
-    const holdInReset = (soundConfig.psgMode & 0x03) === 0x03;
-    // When hold in reset is active, PSGs don't generate sound
-    // This would be handled by the PSG chip reset when psgMode changes
+    const psgMode = soundConfig.psgMode & 0x03;
+    this.turboSoundDevice.setPsgHoldInReset(psgMode === 0x03);
 
     // --- Apply stereo mode (0=ABC, 1=ACB)
     this.turboSoundDevice.setAyStereoMode(soundConfig.ayStereoMode);
+
+    // --- Apply turbosound enable
+    this.turboSoundDevice.setTurbosoundEnabled(soundConfig.enableTurbosound);
 
     // --- Apply mono modes per chip (bits 7:5 of Reg 0x09)
     // Bit 7: AY 2 mono mode
@@ -155,14 +157,6 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
     this.turboSoundDevice.setChipMonoMode(0, soundConfig.ay0Mono);
     this.turboSoundDevice.setChipMonoMode(1, soundConfig.ay1Mono);
     this.turboSoundDevice.setChipMonoMode(2, soundConfig.ay2Mono);
-
-    // --- DAC enable flag controls whether DAC output is routed to mixer
-    // When disabled, DAC doesn't contribute to audio output
-    // This is handled at the mixing level
-
-    // --- TurboSound enable flag controls whether PSG output is routed to mixer
-    // When disabled, PSG output is not mixed with other sources
-    // This is also handled at the mixing level
   }
 
   /**

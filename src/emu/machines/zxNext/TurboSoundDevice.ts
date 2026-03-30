@@ -79,6 +79,12 @@ export class TurboSoundDevice {
   // --- Mono mode per chip
   private readonly _chipMonoMode = [false, false, false];
 
+  // --- PSG hold-in-reset (NR06 mode 3): all chips held in reset, output silence
+  private _holdInReset = false;
+
+  // --- Turbosound enabled (NR08 bit 1): controls multi-chip access and output gating
+  private _turbosoundEnabled = false;
+
   // --- Audio sampling controls (following BeeperDevice pattern)
   // Uses fixed audio sample rate and adjusts for clock multiplier changes automatically
   private _audioSampleRate = 0;
@@ -136,10 +142,46 @@ export class TurboSoundDevice {
     this._chipMonoMode[0] = false;
     this._chipMonoMode[1] = false;
     this._chipMonoMode[2] = false;
+    this._holdInReset = false;
+    this._turbosoundEnabled = false;
     this._audioNextSampleTact = 0;
     this._audioSamples.length = 0;
     this._lastCpuTact = 0;
     this._psgTactRemainder = 0;
+  }
+
+  /**
+   * Sets the PSG hold-in-reset flag (NR06 mode 3)
+   * When true, all PSG chips are held in reset and output silence.
+   * FPGA: audio_ay_reset <= '1' when reset='1' or nr_06_psg_mode="11"
+   */
+  setPsgHoldInReset(hold: boolean): void {
+    if (hold && !this._holdInReset) {
+      // Entering reset: reset all chips
+      this._chips.forEach((chip) => chip.reset());
+    }
+    this._holdInReset = hold;
+  }
+
+  /**
+   * Gets the PSG hold-in-reset flag
+   */
+  getPsgHoldInReset(): boolean {
+    return this._holdInReset;
+  }
+
+  /**
+   * Sets the turbosound enabled flag (NR08 bit 1)
+   */
+  setTurbosoundEnabled(enabled: boolean): void {
+    this._turbosoundEnabled = enabled;
+  }
+
+  /**
+   * Gets the turbosound enabled flag
+   */
+  getTurbosoundEnabled(): boolean {
+    return this._turbosoundEnabled;
   }
 
   /**
@@ -250,7 +292,7 @@ export class TurboSoundDevice {
       this._chipPanning[this._selectedChip] = panning;
     } else if ((value & 0xe0) === 0) {
       // Register selection (bits 7:5 = 000)
-      this._chips[this._selectedChip].setPsgRegisterIndex(value & 0x0f);
+      this._chips[this._selectedChip].setPsgRegisterIndex(value & 0x1f);
     }
     // Ignore other bit patterns
   }
@@ -290,6 +332,7 @@ export class TurboSoundDevice {
    * Generates the next output value for all chips
    */
   generateAllOutputValues(): void {
+    if (this._holdInReset) return;
     this._chips.forEach((chip) => chip.generateOutputValue());
   }
 
@@ -301,6 +344,18 @@ export class TurboSoundDevice {
    */
   getChipStereoOutput(chipId: number): { left: number; right: number } {
     const id = chipId & 0x03;
+
+    // Hold-in-reset: all chips output silence
+    if (this._holdInReset) {
+      return { left: 0, right: 0 };
+    }
+
+    // When turbosound is disabled, only the selected chip (always chip 0 after gating)
+    // produces output; other chips output silence (FPGA behaviour)
+    if (!this._turbosoundEnabled && id !== 0) {
+      return { left: 0, right: 0 };
+    }
+
     const chip = this._chips[id];
     const panning = this._chipPanning[id];
 
@@ -327,21 +382,19 @@ export class TurboSoundDevice {
       left = mono;
       right = mono;
     } else {
-      // Stereo mode with hardware-accurate MAME center-channel routing.
-      // The center channel (B in ABC, C in ACB) routes at 50% to each side.
-      // MAME: route(A,left,0.50), route(B,left,0.25), route(B,right,0.25), route(C,right,0.50)
-      // Normalised to 100% for outer channels: A→full-left, B(50%)→both, C→full-right.
-      // Max per output: 65535 + 32767 = 98302
+      // Stereo mode with FPGA-accurate additive channel routing.
+      // FPGA (turbosound.vhd): center channel is added at full amplitude to both sides.
+      // ABC mode: Left = A + B, Right = B + C
+      // ACB mode: Left = A + C, Right = C + B
+      // Max per output: 2 * 65535 = 131070
       if (this._ayStereoMode) {
-        // ACB mode: A=full-left, C=center(50%/50%), B=full-right
-        const halfC = Math.floor(volC / 2);
-        left  = Math.min(98302, volA + halfC);
-        right = Math.min(98302, halfC + volB);
+        // ACB mode: A=left, C=center, B=right
+        left  = volA + volC;
+        right = volC + volB;
       } else {
-        // ABC mode: A=full-left, B=center(50%/50%), C=full-right
-        const halfB = Math.floor(volB / 2);
-        left  = Math.min(98302, volA + halfB);
-        right = Math.min(98302, halfB + volC);
+        // ABC mode: A=left, B=center, C=right
+        left  = volA + volB;
+        right = volB + volC;
       }
     }
 
@@ -413,10 +466,10 @@ export class TurboSoundDevice {
 
   /**
    * Selects a register on the currently selected chip (for port handler use)
-   * @param registerIndex The register index (0-15 for AY)
+   * @param registerIndex The register index (0-31 for 5-bit address)
    */
   selectRegister(registerIndex: number): void {
-    this._chips[this._selectedChip].setPsgRegisterIndex(registerIndex & 0x0f);
+    this._chips[this._selectedChip].setPsgRegisterIndex(registerIndex & 0x1f);
   }
 
   /**
@@ -459,6 +512,8 @@ export class TurboSoundDevice {
       chipPanning: [...this._chipPanning],
       ayStereoMode: this._ayStereoMode,
       chipMonoMode: [...this._chipMonoMode],
+      holdInReset: this._holdInReset,
+      turbosoundEnabled: this._turbosoundEnabled,
       audioNextSampleTact: this._audioNextSampleTact,
       chipStates: this._chips.map(chip => chip.getState())
     };
@@ -482,6 +537,8 @@ export class TurboSoundDevice {
       this._chipMonoMode[1] = state.chipMonoMode[1] ?? false;
       this._chipMonoMode[2] = state.chipMonoMode[2] ?? false;
     }
+    this._holdInReset = state.holdInReset ?? false;
+    this._turbosoundEnabled = state.turbosoundEnabled ?? false;
     this._audioNextSampleTact = state.audioNextSampleTact ?? 0;
     
     if (state.chipStates) {

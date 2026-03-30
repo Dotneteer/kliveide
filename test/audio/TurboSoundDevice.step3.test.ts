@@ -119,14 +119,12 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // ABC mode (Phase 6): A = full-left, B = center (50% each side), C = full-right
-      // Left = volA + floor(volB/2), Right = floor(volB/2) + volC
+      // ABC mode (FPGA): Left = A + B, Right = B + C (full amplitude center channel)
       const volA = chip.getChannelAVolume();
       const volB = chip.getChannelBVolume();
       const volC = chip.getChannelCVolume();
-      const halfB = Math.floor(volB / 2);
-      expect(output.left).toBe(Math.min(98302, volA + halfB));
-      expect(output.right).toBe(Math.min(98302, halfB + volC));
+      expect(output.left).toBe(volA + volB);
+      expect(output.right).toBe(volB + volC);
     });
 
     it("should handle zero output for disabled channels", () => {
@@ -180,14 +178,12 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // ACB mode (Phase 6): A = full-left, C = center (50% each side), B = full-right
-      // Left = volA + floor(volC/2), Right = floor(volC/2) + volB
+      // ACB mode (FPGA): Left = A + C, Right = C + B (full amplitude center channel)
       const volA = chip.getChannelAVolume();
       const volB = chip.getChannelBVolume();
       const volC = chip.getChannelCVolume();
-      const halfC = Math.floor(volC / 2);
-      expect(output.left).toBe(Math.min(98302, volA + halfC));
-      expect(output.right).toBe(Math.min(98302, halfC + volB));
+      expect(output.left).toBe(volA + volC);
+      expect(output.right).toBe(volC + volB);
     });
   });
 
@@ -364,8 +360,8 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // ABC mode (Phase 6): Left = volA + floor(volB/2). Max = 65535 + 32767 = 98302
-      expect(output.left).toBeLessThanOrEqual(98302);
+      // ABC mode (FPGA): Left = A + B. Max = 65535 + 65535 = 131070
+      expect(output.left).toBeLessThanOrEqual(131070);
       expect(output.left).toBeGreaterThan(0);
     });
 
@@ -393,8 +389,8 @@ describe("TurboSoundDevice Step 3: PSG Stereo Mixing", () => {
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       
-      // ACB mode (Phase 6): Left = volA + floor(volC/2). Max = 65535 + 32767 = 98302
-      expect(output.left).toBeLessThanOrEqual(98302);
+      // ACB mode (FPGA): Left = A + C. Max = 65535 + 65535 = 131070
+      expect(output.left).toBeLessThanOrEqual(131070);
       expect(output.left).toBeGreaterThan(0);
     });
 

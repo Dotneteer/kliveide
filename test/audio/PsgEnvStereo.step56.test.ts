@@ -317,21 +317,19 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
 
   // ==================== ABC mode ====================
 
-  describe("ABC mode: A=full-left, B=centre (50%/50%), C=full-right", () => {
-    it("left = volA + floor(volB/2)", () => {
+  describe("ABC mode: A=left, B=center (full), C=right — FPGA additive", () => {
+    it("left = volA + volB", () => {
       device.setAyStereoMode(false); // ABC
       const chip = setupStereoChip(8, 10, 5);
       const output = device.getChipStereoOutput(0);
-      const halfB = Math.floor(chip.getChannelBVolume() / 2);
-      expect(output.left).toBe(chip.getChannelAVolume() + halfB);
+      expect(output.left).toBe(chip.getChannelAVolume() + chip.getChannelBVolume());
     });
 
-    it("right = floor(volB/2) + volC", () => {
+    it("right = volB + volC", () => {
       device.setAyStereoMode(false);
       const chip = setupStereoChip(8, 10, 5);
       const output = device.getChipStereoOutput(0);
-      const halfB = Math.floor(chip.getChannelBVolume() / 2);
-      expect(output.right).toBe(halfB + chip.getChannelCVolume());
+      expect(output.right).toBe(chip.getChannelBVolume() + chip.getChannelCVolume());
     });
 
     it("left != right when A and C have different volumes", () => {
@@ -348,20 +346,12 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       expect(output.left).toBe(output.right);
     });
 
-    it("ABC left is less than old equal-weight sum (A+B)", () => {
-      device.setAyStereoMode(false);
-      const chip = setupStereoChip(10, 12, 6);
-      const output = device.getChipStereoOutput(0);
-      const oldLeft = chip.getChannelAVolume() + chip.getChannelBVolume(); // old formula
-      expect(output.left).toBeLessThan(oldLeft); // new = A + B/2 < A + B
-    });
-
-    it("maximum left output is capped at 98302", () => {
+    it("maximum left output is 2*65535 = 131070", () => {
       device.setAyStereoMode(false);
       setupStereoChip(15, 15, 15); // max all
       const output = device.getChipStereoOutput(0);
-      expect(output.left).toBeLessThanOrEqual(98302);
-      expect(output.right).toBeLessThanOrEqual(98302);
+      expect(output.left).toBeLessThanOrEqual(131070);
+      expect(output.right).toBeLessThanOrEqual(131070);
     });
 
     it("left + right together represent balanced stereo field", () => {
@@ -372,7 +362,7 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       expect(output.left).toBe(output.right);
     });
 
-    it("channel B alone (A=0, C=0) routes equally to both sides", () => {
+    it("channel B alone (A=0, C=0) routes equally to both sides at full volume", () => {
       device.setAyStereoMode(false);
       const chip = device.getChip(0);
       chip.setPsgRegisterIndex(2); chip.writePsgRegisterValue(1);
@@ -380,9 +370,9 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       chip.setPsgRegisterIndex(9); chip.writePsgRegisterValue(10);
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
-      const halfB = Math.floor(chip.getChannelBVolume() / 2);
-      expect(output.left).toBe(halfB);
-      expect(output.right).toBe(halfB);
+      const volB = chip.getChannelBVolume();
+      expect(output.left).toBe(volB);
+      expect(output.right).toBe(volB);
     });
 
     it("channel A alone (B=0, C=0) routes only to left", () => {
@@ -412,24 +402,22 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
 
   // ==================== ACB mode ====================
 
-  describe("ACB mode: A=full-left, C=centre (50%/50%), B=full-right", () => {
-    it("left = volA + floor(volC/2)", () => {
+  describe("ACB mode: A=left, C=center (full), B=right — FPGA additive", () => {
+    it("left = volA + volC", () => {
       device.setAyStereoMode(true); // ACB
       const chip = setupStereoChip(8, 5, 10);
       const output = device.getChipStereoOutput(0);
-      const halfC = Math.floor(chip.getChannelCVolume() / 2);
-      expect(output.left).toBe(chip.getChannelAVolume() + halfC);
+      expect(output.left).toBe(chip.getChannelAVolume() + chip.getChannelCVolume());
     });
 
-    it("right = floor(volC/2) + volB", () => {
+    it("right = volC + volB", () => {
       device.setAyStereoMode(true);
       const chip = setupStereoChip(8, 5, 10);
       const output = device.getChipStereoOutput(0);
-      const halfC = Math.floor(chip.getChannelCVolume() / 2);
-      expect(output.right).toBe(halfC + chip.getChannelBVolume());
+      expect(output.right).toBe(chip.getChannelCVolume() + chip.getChannelBVolume());
     });
 
-    it("ACB differs from ABC for same channel volumes", () => {
+    it("ACB differs from ABC for left channel (right = B+C is commutative)", () => {
       const chip0 = device.getChip(0);
       chip0.setPsgRegisterIndex(0); chip0.writePsgRegisterValue(1);
       chip0.setPsgRegisterIndex(2); chip0.writePsgRegisterValue(1);
@@ -446,8 +434,10 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       device.setAyStereoMode(true); // ACB
       const acbOut = device.getChipStereoOutput(0);
 
+      // ABC: Left = A+B, ACB: Left = A+C — differ when B ≠ C
       expect(abcOut.left).not.toBe(acbOut.left);
-      expect(abcOut.right).not.toBe(acbOut.right);
+      // ABC: Right = B+C, ACB: Right = C+B — same (addition is commutative)
+      expect(abcOut.right).toBe(acbOut.right);
     });
 
     it("channel C alone routes equally to both sides in ACB", () => {
@@ -461,12 +451,12 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       expect(output.left).toBe(output.right); // volA=0 + halfC == halfC + volB=0
     });
 
-    it("maximum output in ACB is capped at 98302", () => {
+    it("maximum output in ACB is 2*65535 = 131070", () => {
       device.setAyStereoMode(true);
       setupStereoChip(15, 15, 15);
       const output = device.getChipStereoOutput(0);
-      expect(output.left).toBeLessThanOrEqual(98302);
-      expect(output.right).toBeLessThanOrEqual(98302);
+      expect(output.left).toBeLessThanOrEqual(131070);
+      expect(output.right).toBeLessThanOrEqual(131070);
     });
   });
 

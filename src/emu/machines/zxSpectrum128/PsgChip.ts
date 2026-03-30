@@ -433,10 +433,10 @@ export class PsgChip {
 
   /**
    * Set the PSG register index
-   * @param index PSG register index (0-15)
+   * @param index PSG register index (0-31; 5-bit address as per FPGA ym2149.vhd)
    */
   setPsgRegisterIndex (index: number): void {
-    this._psgRegisterIndex = index & 0x0f;
+    this._psgRegisterIndex = index & 0x1f;
   }
 
   /**
@@ -450,7 +450,11 @@ export class PsgChip {
    * Reads the value of the register addressed by the register index last set
    */
   readPsgRegisterValue (): number {
-    const raw = this._regValues[this._psgRegisterIndex & 0x0f];
+    // FPGA: addr(4) = '1' returns 0xFF in YM mode; AY mode masks unused bits
+    if (this._psgRegisterIndex > 15) {
+      return 0xff;
+    }
+    const raw = this._regValues[this._psgRegisterIndex];
     return this.chipType === 'AY'
       ? raw & PsgChip.AY_READ_MASKS[this._psgRegisterIndex]
       : raw;
@@ -461,6 +465,9 @@ export class PsgChip {
    * @param v Parameter value
    */
   writePsgRegisterValue (v: number): void {
+    // --- FPGA: writes only accepted when addr(4) = '0' (registers 0-15)
+    if (this._psgRegisterIndex > 15) return;
+
     // --- Normalize to a byte
     v = v & 0xff;
 
@@ -557,70 +564,73 @@ export class PsgChip {
     let vol = 0;
 
     // --- Increment TONE A counter
-    // Period 0 is treated as period 1 (highest frequency), matching MAME hardware behaviour.
+    // FPGA: compares cnt >= (freq - 1), toggling output and resetting to 0.
+    // Period 0 or 1: comp = 0 → toggles every tick.
     {
-      const periodA = this._toneA || 1;
-      this._cntA++;
-      if (this._cntA >= periodA) {
+      const compA = this._toneA <= 1 ? 0 : this._toneA - 1;
+      if (this._cntA >= compA) {
         this._cntA = 0;
         this._bitA = !this._bitA;
+      } else {
+        this._cntA++;
       }
     }
 
     // --- Increment TONE B counter
     {
-      const periodB = this._toneB || 1;
-      this._cntB++;
-      if (this._cntB >= periodB) {
+      const compB = this._toneB <= 1 ? 0 : this._toneB - 1;
+      if (this._cntB >= compB) {
         this._cntB = 0;
         this._bitB = !this._bitB;
+      } else {
+        this._cntB++;
       }
     }
 
     // --- Increment TONE C counter
     {
-      const periodC = this._toneC || 1;
-      this._cntC++;
-      if (this._cntC >= periodC) {
+      const compC = this._toneC <= 1 ? 0 : this._toneC - 1;
+      if (this._cntC >= compC) {
         this._cntC = 0;
         this._bitC = !this._bitC;
+      } else {
+        this._cntC++;
       }
     }
 
     // --- Calculate noise sample using hardware-verified 17-bit LFSR with ÷2 prescaler.
-    // The LFSR is verified on real AY-3-8910 and YM2149 chips (MAME ay8910.cpp):
-    // bit0 XOR bit3 feeds back into bit16. The prescaler halves the effective noise rate.
-    // Period=0 behaves as max-speed advance (same as period=1), matching MAME.
+    // FPGA: comp = (freq - 1) when freq(4:1) != 0 else 0. Counts up, resets on >= comp.
+    // LFSR feedback: bit0 XOR bit3 (MAME-verified on real AY/YM silicon).
     {
-      const noisePeriod = this._noiseFreq || 1;
-      this._cntNoise++;
-      if (this._cntNoise >= noisePeriod) {
+      const noiseComp = (this._noiseFreq >> 1) !== 0 ? this._noiseFreq - 1 : 0;
+      if (this._cntNoise >= noiseComp) {
         this._cntNoise = 0;
         this._noisePrescale = !this._noisePrescale;
         if (!this._noisePrescale) {
-          // Tick LFSR only on every second period expiry
           const feedback = (this._noiseSeed & 1) ^ ((this._noiseSeed >> 3) & 1);
           this._noiseSeed = ((this._noiseSeed >> 1) | (feedback << 16)) & 0x1ffff;
           this._bitNoise = (this._noiseSeed & 1) !== 0;
         }
+      } else {
+        this._cntNoise++;
       }
     }
 
     // --- Calculate envelope position.
-    // AY-3-8910: 16-step envelope with ×2 period multiplier (hardware-verified, MAME ay8910.cpp).
-    // YM2149:    32-step envelope with ×1 period multiplier.
-    // Both produce the same total envelope duration for a given frequency register value.
+    // FPGA: comp = (freq - 1) when freq(15:1) != 0 else 0. Counts up, resets on >= comp.
+    // AY-3-8910: ×2 period multiplier (hardware-verified).
+    // YM2149: ×1 period multiplier.
     const envPeriod = this.chipType === 'AY' ? this._envFreq * 2 : this._envFreq;
-    // Period=0 advances envelope at max speed (MAME: "period 0 is half as period 1")
     {
-      const effectiveEnvPeriod = envPeriod || 1;
-      this._cntEnv++;
-      if (this._cntEnv >= effectiveEnvPeriod) {
+      const envComp = (envPeriod >> 1) !== 0 ? envPeriod - 1 : 0;
+      if (this._cntEnv >= envComp) {
         this._cntEnv = 0;
         this._posEnv++;
         if (this._posEnv > 0x7f) {
           this._posEnv = 0x40;
         }
+      } else {
+        this._cntEnv++;
       }
     }
 

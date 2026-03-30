@@ -74,9 +74,9 @@ describe("Port Handlers Step 10: I/O Port Integration", () => {
       expect(turboSound.getChipPanning(0)).toBe(0x03);
     });
 
-    it("should mask register index to 4 bits", () => {
-      turboSound.selectRegister(0xFF); // Should be masked to 0x0F
-      expect(turboSound.getSelectedRegister()).toBe(0x0F);
+    it("should mask register index to 5 bits", () => {
+      turboSound.selectRegister(0xFF); // Should be masked to 0x1F
+      expect(turboSound.getSelectedRegister()).toBe(0x1F);
     });
 
     it("should mask chip ID to 2 bits", () => {
@@ -405,7 +405,7 @@ describe("Port Handlers Step 10: I/O Port Integration", () => {
   describe("Edge Cases", () => {
     it("should handle register 0xFFFF mask correctly", () => {
       turboSound.selectRegister(0xFFFF);
-      expect(turboSound.getSelectedRegister()).toBe(0x0F); // Masked to 4 bits
+      expect(turboSound.getSelectedRegister()).toBe(0x1F); // Masked to 5 bits
     });
 
     it("should handle chip ID 0xFFFF mask correctly", () => {
