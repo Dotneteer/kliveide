@@ -141,7 +141,7 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
 
   set nextReg6eValue(value: number) {
     this.baseAddressUseBank7 = (value & 0x80) !== 0;
-    this.baseAddressMsb = value & 0x01f;
+    this.baseAddressMsb = value & 0x3f;
   }
 
   get nextReg6fValue(): number {
@@ -150,6 +150,6 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
 
   set nextReg6fValue(value: number) {
     this.definitionAddressUseBank7 = (value & 0x80) !== 0;
-    this.definitionAddressMsb = value & 0x01f;
+    this.definitionAddressMsb = value & 0x3f;
   }
 }

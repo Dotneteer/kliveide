@@ -227,6 +227,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Initialize tile transformation flags
     this.tilemapTilePriority = false;
+    this.tilemapNextTilePriority = false;
     this.tilemapTilePaletteOffset = 0;
 
     // --- Initialize pixel buffer
@@ -625,8 +626,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private layer2Pixel2Priority: boolean;
   tilemapPixel1Rgb333: number | null;
   tilemapPixel1Transparent: boolean;
+  tilemapPixel1Below: boolean; // true = tilemap below ULA for this pixel (pixel_below in FPGA)
   tilemapPixel2Rgb333: number | null;
   tilemapPixel2Transparent: boolean;
+  tilemapPixel2Below: boolean; // true = tilemap below ULA for this pixel
   private spritesPixel1Rgb333: number | null;
   private spritesPixel1Transparent: boolean;
   private spritesPixel2Rgb333: number | null;
@@ -739,19 +742,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           this.ulaPixel1Transparent = true;
         }
       } else {
-        if (
-          this.ulaPixel1Rgb333 != null &&
-          !this.ulaPixel1Transparent &&
-          !this.tilemapPixel1Transparent
-        ) {
-          // Both non-transparent: tilemap on top (simplified)
+        // pixel_below = (attr[0] OR mode_512) AND NOT force_on_top (FPGA zxnext.vhd)
+        // When pixel_below=0: tilemap on top; when pixel_below=1: ULA on top
+        if (!this.tilemapPixel1Transparent && (!this.tilemapPixel1Below || this.ulaPixel1Transparent)) {
+          // Tilemap shown: either it's on top, or ULA is transparent
           this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
-        } else if (!this.tilemapPixel1Transparent) {
-          // Only tilemap non-transparent
-          this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+          this.ulaPixel1Transparent = false;
         }
+        // else: keep ULA pixel as-is (ULA wins when tilemap is below and ULA is non-transparent)
       }
     }
 
@@ -768,16 +766,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           this.ulaPixel2Transparent = true;
         }
       } else {
-        if (
-          this.ulaPixel2Rgb333 != null &&
-          !this.ulaPixel2Transparent &&
-          !this.tilemapPixel2Transparent
-        ) {
+        if (!this.tilemapPixel2Transparent && (!this.tilemapPixel2Below || this.ulaPixel2Transparent)) {
           this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
-        } else if (!this.tilemapPixel2Transparent) {
-          this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+          this.ulaPixel2Transparent = false;
         }
       }
     }
@@ -2700,7 +2691,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private tilemapNextTileAttr: number; // Next tile's attribute (fetched ahead)
 
   // --- Current tile transformation flags (for rendering)
-  private tilemapTilePriority: boolean;
+  private tilemapTilePriority: boolean; // attr[0]: 1 = tile below ULA, 0 = tile on top
+  private tilemapNextTilePriority: boolean; // buffered priority for next tile (like tilemapNextTileAttr)
   private tilemapTilePaletteOffset: number;
 
   // --- Next tile transformation flags (fetched ahead, applied at tile boundary)
@@ -2940,6 +2932,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         );
       } else {
         this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+        // When 512-tile mode + attributes eliminated, bit 8 of tile index comes from default attr[0]
+        if (this.tilemap512TileModeSampled) {
+          this.tilemapCurrentTileIndex |= (this.tilemapDefaultAttrCache & 0x01) << 8;
+        }
       }
 
       this.tilemapNextTileAttr = this.tilemapCurrentAttr;
@@ -2947,7 +2943,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3008,6 +3004,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       // Swap buffers: what was "next" is now "current"
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
@@ -3071,6 +3068,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Store same pixel to both outputs (CLK_7 rate)
     this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
     this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+    // pixel_below = (attr[0] OR mode_512) AND NOT force_on_top (FPGA tilemap.vhd)
+    const pixelBelow = (this.tilemapTilePriority || this.tilemap512TileModeSampled) && !this.tilemapForceOnTopOfUla;
+    this.tilemapPixel1Below = this.tilemapPixel2Below = pixelBelow;
   }
 
   /**
@@ -3130,6 +3130,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         );
       } else {
         this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+        // When 512-tile mode + attributes eliminated, bit 8 of tile index comes from default attr[0]
+        if (this.tilemap512TileModeSampled) {
+          this.tilemapCurrentTileIndex |= (this.tilemapDefaultAttrCache & 0x01) << 8;
+        }
       }
 
       this.tilemapNextTileAttr = this.tilemapCurrentAttr;
@@ -3137,7 +3141,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3180,6 +3184,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
       // This handles the first tile of each line where attribute hasn't been fetched
@@ -3220,6 +3225,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Store output (no clipping check needed in fast path)
     this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
     this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+    const pixelBelow = (this.tilemapTilePriority || this.tilemap512TileModeSampled) && !this.tilemapForceOnTopOfUla;
+    this.tilemapPixel1Below = this.tilemapPixel2Below = pixelBelow;
   }
 
   /**
@@ -3280,6 +3287,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         );
       } else {
         this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+        // When 512-tile mode + attributes eliminated, bit 8 of tile index comes from default attr[0]
+        if (this.tilemap512TileModeSampled) {
+          this.tilemapCurrentTileIndex |= (this.tilemapDefaultAttrCache & 0x01) << 8;
+        }
       }
 
       this.tilemapNextTileAttr = this.tilemapCurrentAttr;
@@ -3287,7 +3298,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3330,6 +3341,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
       if (this.tilemapEliminateAttrSampled) {
@@ -3392,6 +3404,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapPixel1Transparent = transparent1;
     this.tilemapPixel2Rgb333 = rgb333_2;
     this.tilemapPixel2Transparent = transparent2;
+    const pixelBelow80fp = (this.tilemapTilePriority || this.tilemap512TileModeSampled) && !this.tilemapForceOnTopOfUla;
+    this.tilemapPixel1Below = pixelBelow80fp;
+    this.tilemapPixel2Below = pixelBelow80fp;
   }
 
   /**
@@ -3461,6 +3476,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         );
       } else {
         this.tilemapCurrentAttr = this.tilemapDefaultAttrCache;
+        // When 512-tile mode + attributes eliminated, bit 8 of tile index comes from default attr[0]
+        if (this.tilemap512TileModeSampled) {
+          this.tilemapCurrentTileIndex |= (this.tilemapDefaultAttrCache & 0x01) << 8;
+        }
       }
 
       this.tilemapNextTileAttr = this.tilemapCurrentAttr;
@@ -3468,7 +3487,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3525,6 +3544,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       // Swap buffers: what was "next" is now "current"
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
@@ -3614,6 +3634,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapPixel1Transparent = transparent1;
     this.tilemapPixel2Rgb333 = rgb333_2;
     this.tilemapPixel2Transparent = transparent2;
+    const pixelBelow80 = (this.tilemapTilePriority || this.tilemap512TileModeSampled) && !this.tilemapForceOnTopOfUla;
+    this.tilemapPixel1Below = pixelBelow80;
+    this.tilemapPixel2Below = pixelBelow80;
   }
 
   // ==============================================================================================
