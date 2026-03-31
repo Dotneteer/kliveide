@@ -373,3 +373,41 @@ Only the selected card (always card 0) receives data. Card 1 is completely inert
 ### Step 5 — Dual card support (🟡 Medium)
 1. Replace single `SdCardDevice` with two instances or a 2-slot device.
 2. Wire card 1 IPC path to a second storage slot.
+
+### Step 6 — Remaining gaps to reach full implementation (🟡 Medium)
+
+The following items are still open after Steps 1–5:
+
+1. **CMD18 (READ_MULTIPLE_BLOCK, 0x52)** — Implement `DATA_MULTI` state in card 0.
+   CMD18 should store `m_blknext`, send R1 `[0x00]`, then continuously issue IPC
+   `sd-read` for successive sectors, prepending each with a `0xFE` data token and
+   appending CRC16. CMD12 stops the transfer. Some NextZXOS operations depend on
+   multi-block reads for performance.
+   - Add `SdState.DATA_MULTI` to the enum.
+   - In `readMmcData`, when the current response is fully consumed and
+     `_state === DATA_MULTI`, automatically trigger the next block read IPC.
+   - CMD12 transitions from `DATA_MULTI` to `TRAN`.
+
+2. **CMD59 (CRC_ON_OFF, 0x7B)** — Toggle `_crcOff` flag (🟢 Low).
+   MAME uses this to allow invalid CRC7 on incoming commands when CRC is disabled.
+   Klive currently ignores CRC7 on all commands unconditionally, so the only
+   observable difference is the R1 response byte. Add the case and return `[0x00]`.
+
+3. **Wire `setCardInfo` to the main process** — The `SdCardDevice.setCardInfo(totalSectors)`
+   method exists but is never called. The `CimHandler` on the main process knows the
+   card geometry (`CimInfo.maxSize` in MB, `CimInfo.clusterCount`, etc.). During machine
+   start-up (or when the SD card image is mounted), the main process should send the
+   total sector count via IPC so that `buildCsd()` produces an accurate CSD register
+   instead of falling back to the 4 GB default.
+   - Add a `getSdCardInfo` method to `MainApi` that returns `{ totalSectors: number }`.
+   - Call it from `ZxNextMachine` during `setup()` or the first `processFrameCommand`
+     round, and forward the result to `sdCardDevice.setCardInfo(totalSectors)`.
+   - Compute `totalSectors` from `CimInfo`:
+     `totalSectors = maxSize * 1024 * 1024 / (sectorSize * 512)`.
+
+4. **Card 1 IPC storage path** — Card 1's state machine responds to init commands but
+   returns `0x40` (parameter error) for all data commands because there is no IPC
+   storage path. To fully support dual cards, add a second `CimHandler` instance on the
+   main-process side keyed to a separate SD card image file, and add `sd-read-card1` /
+   `sd-write-card1` frame command variants. Low priority unless software explicitly
+   accesses card 1 for data.

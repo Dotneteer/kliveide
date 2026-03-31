@@ -1443,6 +1443,19 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Processes the frame command
    */
   async processFrameCommand(messenger: MessengerBase): Promise<void> {
+    // --- Lazy card-info initialization: fetch once on first frame command
+    if (!this.sdCardDevice.hasCardInfo) {
+      try {
+        const info = await this.withIpcTimeout(
+          createMainApi(messenger).getSdCardInfo(),
+          "getSdCardInfo"
+        );
+        this.sdCardDevice.setCardInfo(info.totalSectors);
+      } catch (err) {
+        console.warn("SD card info fetch failed, using default CSD", err);
+      }
+    }
+
     const frameCommand = this.getFrameCommand();
     switch (frameCommand.command) {
       case "sd-write":
@@ -1491,6 +1504,43 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           console.log("SD card sector read error", err);
           // --- Return error response using setMmcResponse with error status
           (this.sdCardDevice as any).setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+        }
+        break;
+      }
+      case "sd-write-card1":
+        try {
+          const result = await this.withIpcTimeout(
+            createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data),
+            "writeSdCard1Sector"
+          );
+          if (result?.persistenceConfirmed) {
+            this.sdCardDevice.setCard1WriteResponse();
+          } else {
+            console.error("SD card 1 write error: No persistence confirmation");
+            this.sdCardDevice.setCard1WriteErrorResponse("Persistence not confirmed");
+          }
+        } catch (err) {
+          console.log("SD card 1 sector write error", err);
+          this.sdCardDevice.setCard1WriteErrorResponse((err as Error).message);
+        }
+        break;
+      case "sd-read-card1": {
+        try {
+          const sectorData = await this.withIpcTimeout(
+            createMainApi(messenger).readSdCardSector(frameCommand.sector),
+            "readSdCard1Sector"
+          );
+          if (sectorData instanceof Uint8Array) {
+            this.sdCardDevice.setCard1ReadResponse(sectorData);
+          } else if (Array.isArray(sectorData)) {
+            this.sdCardDevice.setCard1ReadResponse(new Uint8Array(sectorData));
+          } else {
+            console.error("SD card 1 read error: Invalid response data type", typeof sectorData);
+            this.sdCardDevice.setCard1WriteErrorResponse("Invalid data type");
+          }
+        } catch (err) {
+          console.log("SD card 1 sector read error", err);
+          this.sdCardDevice.setCard1WriteErrorResponse((err as Error).message);
         }
         break;
       }

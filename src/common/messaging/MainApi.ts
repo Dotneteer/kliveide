@@ -419,6 +419,13 @@ class MainApiImpl {
   }
 
   /**
+   * Returns the total number of 512-byte sectors on the mounted SD card image.
+   */
+  async getSdCardInfo(): Promise<{ totalSectors: number }> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Opens a file or folder with the system shell.
    * @param _path The path to open.
    * @returns An object with the opened path or error.
