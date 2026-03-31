@@ -267,6 +267,7 @@ export function getSdCardHandler(): CimHandler {
   
   // --- Invalidate cache if SD card file has changed
   if (cimHandler && currentSdCardFile !== sdCardFile) {
+    cimHandler.close();
     cimHandler = undefined;
   }
   
@@ -275,6 +276,18 @@ export function getSdCardHandler(): CimHandler {
     currentSdCardFile = sdCardFile;
   }
   return cimHandler;
+}
+
+/**
+ * Invalidates the cached CimHandler so it is re-created with fresh header data
+ * on the next access. Must be called after external modifications to the .cim file
+ * (e.g. copyToSdCard) so that the emulator sees the updated cluster map.
+ */
+export function invalidateSdCardHandler(): void {
+  if (cimHandler) {
+    cimHandler.close();
+    cimHandler = undefined;
+  }
 }
 
 // ============================================================================

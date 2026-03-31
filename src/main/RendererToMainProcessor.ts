@@ -52,7 +52,7 @@ import { Action } from "@common/state/Action";
 import { MessageBoxType } from "@common/messaging/MainApi";
 import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
-import { DEFAULT_SD_CARD_FILE, getSdCardHandler } from "./machine-menus/zx-next-menus";
+import { DEFAULT_SD_CARD_FILE, getSdCardHandler, invalidateSdCardHandler } from "./machine-menus/zx-next-menus";
 import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
@@ -401,11 +401,18 @@ class MainMessageProcessor {
       return;
     }
 
+    // --- Invalidate the cached CimHandler before modifying the .cim file,
+    // --- so its stale file handle doesn't conflict with the CimFile writes.
+    invalidateSdCardHandler();
+
     const cimFile = new CimFile(sdCardPath);
     const vol = new Fat32Volume(cimFile);
     vol.init();
     const fm = new FileManager(vol);
-    fm.copyFile(srcFile, destFile);
+    await fm.copyFile(srcFile, destFile);
+
+    // --- Close the CimFile to release its file descriptor and flush data.
+    cimFile.close();
   }
 
   /**

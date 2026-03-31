@@ -30,10 +30,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _blockToWrite: Uint8Array;
   private _dataIndex: number;
   private _bACMD: boolean;
-  private _xferblk: number;
   private _totalSectors: number;
   private _blknext: number;
-  private _crcOff: boolean;
   // Tracks whether an IPC-backed response is ready to be read by the Z80
   private _responseReady: boolean;
 
@@ -49,10 +47,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _totalSectors1: number;
   private _lastByteReceived1: number;
   private _responseReady1: boolean;
-  private _xferblk1: number;
   private _blockToWrite1: Uint8Array;
   private _dataIndex1: number;
-  private _crcOff1: boolean;
   private _blknext1: number;
 
   constructor(public readonly machine: IZxNextMachine) {
@@ -60,6 +56,13 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
+    // --- Preserve card sector counts across reset. On real ZX Spectrum Next hardware, a
+    // --- CPU reset does NOT power-cycle the SD card — the card retains its initialized
+    // --- (TRAN) state. Preserving _totalSectors lets us restore TRAN after reset so that
+    // --- NextZXOS warm-start (which skips re-initialization) continues to work correctly.
+    const savedSectors0 = this._totalSectors;
+    const savedSectors1 = this._totalSectors1;
+
     this._selectedCard = 0;
     this._cid = Uint8Array.from([
       0x01, // Manufacturer ID
@@ -88,14 +91,19 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._responseReady = false;
     this._ocr = new Uint8Array([0x00, 0xc0, 0xff, 0x80, 0x00]);
     this._commandParams = [];
-    this._state = SdState.IDLE;
     this._blockToWrite = new Uint8Array(0);
     this._dataIndex = 0;
     this._bACMD = false;
-    this._xferblk = BYTES_PER_SECTOR;
-    this._totalSectors = 0;
     this._blknext = 0;
-    this._crcOff = true;
+
+    // --- Restore card 0 to TRAN (ready) if it was previously initialized; otherwise IDLE.
+    if (savedSectors0 > 0) {
+      this._state = SdState.TRAN;
+      this._totalSectors = savedSectors0;
+    } else {
+      this._state = SdState.IDLE;
+      this._totalSectors = 0;
+    }
 
     // --- Card 1 state reset
     this._cid1 = Uint8Array.from([
@@ -120,18 +128,23 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._commandIndex1 = 0;
     this._lastCommand1 = 0;
     this._commandParams1 = [];
-    this._state1 = SdState.IDLE;
     this._bACMD1 = false;
     this._response1 = new Uint8Array(0);
     this._responseIndex1 = -1;
-    this._totalSectors1 = 0;
     this._lastByteReceived1 = 0;
     this._responseReady1 = false;
-    this._xferblk1 = BYTES_PER_SECTOR;
     this._blockToWrite1 = new Uint8Array(0);
     this._dataIndex1 = 0;
-    this._crcOff1 = true;
     this._blknext1 = 0;
+
+    // --- Restore card 1 to TRAN (ready) if it was previously initialized; otherwise IDLE.
+    if (savedSectors1 > 0) {
+      this._state1 = SdState.TRAN;
+      this._totalSectors1 = savedSectors1;
+    } else {
+      this._state1 = SdState.IDLE;
+      this._totalSectors1 = 0;
+    }
   }
 
   get selectedCard(): number {
@@ -391,7 +404,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             ((this._commandParams[2] & 0xff) << 8)  |
              (this._commandParams[3] & 0xff);
           if (blockLen === BYTES_PER_SECTOR) {
-            this._xferblk = blockLen;
             this.setMmcResponse(new Uint8Array([0x00])); // OK
           } else {
             this.setMmcResponse(new Uint8Array([0x40])); // parameter error
@@ -497,7 +509,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         this._commandIndex++;
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
-          this._crcOff = (this._commandParams[3] & 1) === 0;
           this.setMmcResponse(new Uint8Array([0x00]));
         }
         break;
@@ -761,7 +772,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             ((this._commandParams1[2] & 0xff) << 8)  |
              (this._commandParams1[3] & 0xff);
           if (blockLen1 === BYTES_PER_SECTOR) {
-            this._xferblk1 = blockLen1;
             this.setCard1Response(new Uint8Array([0x00]));
           } else {
             this.setCard1Response(new Uint8Array([0x40]));
@@ -863,7 +873,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         this._commandIndex1++;
         if (this._commandIndex1 === 6) {
           this._commandIndex1 = 0;
-          this._crcOff1 = (this._commandParams1[3] & 1) === 0;
           this.setCard1Response(new Uint8Array([0x00]));
         }
         break;

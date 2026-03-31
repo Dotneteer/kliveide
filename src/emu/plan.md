@@ -19,7 +19,7 @@ and outlines a plan to implement the missing devices.
 | 10 | LoRes (specnext_lores) | NextComposedScreenDevice | ✅ Complete |
 | 11 | Sprites (specnext_sprites) | SpriteDevice | ✅ Complete |
 | 12 | Tilemap (specnext_tiles) | TilemapDevice | ✅ Complete |
-| 13 | SPI SD Card ×2 (spi_sdcard) | SdCardDevice (high-level) + SPI port stubs | ⚠️ Partial |
+| 13 | SPI SD Card ×2 (spi_sdcard) | SdCardDevice (high-level) + SPI port stubs | ✅ Complete |
 | 14 | DivMMC (specnext_divmmc) | DivMmcDevice | ✅ Complete |
 | 15 | Multiface (specnext_multiface) | MultifaceDevice | ✅ Complete |
 | 16 | YM2149 PSG ×3 (TurboSound) | TurboSoundDevice | ✅ Complete |
