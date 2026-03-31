@@ -103,7 +103,7 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextReg41Value(): number {
-    return this.getCurrentPalette()[this._paletteIndex] >> 1;
+    return (this.getCurrentPalette()[this._paletteIndex] & 0x1ff) >> 1;
   }
 
   set nextReg41Value(value: number) {
@@ -145,17 +145,24 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextReg44Value(): number {
-    const value = this.getCurrentPalette()[this._paletteIndex];
-    return value & 0x01;
+    const palette = this.getCurrentPalette();
+    const value = palette[this._paletteIndex];
+    const blueLsb = value & 0x01;
+    // --- Include L2 priority bit in readback (bit 7) for Layer 2 palettes
+    if (palette === this.layer2First || palette === this.layer2Second) {
+      return ((value & 0x200) ? 0x80 : 0) | blueLsb;
+    }
+    return blueLsb;
   }
 
   set nextReg44Value(value: number) {
-    this.storedPaletteValue = value & 0xff;
     const palette = this.getCurrentPalette();
     if (!this._secondWrite) {
-      palette[this._paletteIndex] = (value & 0xff) << 1;
+      // --- First write: only store the value, do NOT modify palette yet (matches MAME/hardware)
+      this.storedPaletteValue = value & 0xff;
     } else {
-      palette[this._paletteIndex] = palette[this._paletteIndex] | (value & 0x01);
+      // --- Second write: combine stored first byte with second byte to form 9-bit color
+      palette[this._paletteIndex] = (this.storedPaletteValue << 1) | (value & 0x01);
       if (palette === this.layer2First || palette === this.layer2Second) {
         if (value & 0x80) {
           // --- Sign priority color for Layer 2 palettes

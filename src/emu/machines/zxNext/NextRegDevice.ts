@@ -1262,11 +1262,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x4a,
       description: "Fallback Colour",
+      readFn: () => machine.composedScreenDevice.fallbackColor,
       writeFn: (v) => (machine.composedScreenDevice.fallbackColor = v & 0xff)
     });
     r({
       id: 0x4b,
       description: "Sprite Transparency Index",
+      readFn: () => machine.spriteDevice.transparencyIndex,
       writeFn: (v) => (machine.spriteDevice.transparencyIndex = v & 0xff)
     });
     r({
@@ -3195,7 +3197,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- First layer 2 palette
     // --- First ULA palette
     // --- Disable ULA Next mode
-    this.directSetRegValue(0x4a, 0x00); // --- Fallback color = 0x00
+    this.directSetRegValue(0x4a, 0xe3); // --- Fallback color = 0xE3 (default transparent)
     this.directSetRegValue(0x4b, TBBLUE_DEF_TRANSPARENT_COLOR);
     this.directSetRegValue(0x4c, 0x0f); // --- Tilemap transparency index = 0x0f
     this.directSetRegValue(0x61, 0x00); // --- Copper address LSB

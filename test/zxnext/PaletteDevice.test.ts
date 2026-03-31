@@ -243,6 +243,7 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
     nrDevice.directSetRegValue(0x43, 0x00);
     const secondWriteBefore = pal.secondWrite;
+    const oldValue = pal.ulaFirst[0x1c];
 
     // --- Act
     nrDevice.directSetRegValue(0x40, 0x1c);
@@ -250,7 +251,8 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x1c);
-    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    // First write to 0x44 should NOT modify palette (value stored only)
+    expect(pal.ulaFirst[0x1c]).toBe(oldValue);
     expect(secondWriteBefore).toBe(false);
     expect(pal.secondWrite).toBe(true);
   });
@@ -443,6 +445,7 @@ describe("Next - PaletteDevice", async function () {
     const pal = m.paletteDevice;
     nrDevice.directSetRegValue(0x43, 0x00);
     nrDevice.directSetRegValue(0x40, 0x1c);
+    const oldValue = pal.ulaFirst[0x1c];
     nrDevice.directSetRegValue(0x44, 0x20);
     const secondWriteBefore = pal.secondWrite;
 
@@ -451,7 +454,8 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x1c);
-    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    // First write to 0x44 should NOT modify palette
+    expect(pal.ulaFirst[0x1c]).toBe(oldValue);
     expect(secondWriteBefore).toBe(true);
     expect(pal.secondWrite).toBe(false);
   });
@@ -1383,6 +1387,226 @@ describe("Next - PaletteDevice", async function () {
       // --- Assert
       expect(readNextReg(m, 0x6b)).toBe(0x10);
       expect(paletteDevice.secondTilemapPalette).toBe(true);
+    });
+  });
+
+  // ========================================================================
+  // D1: First 0x44 write should NOT modify palette; only second write applies
+  // ========================================================================
+  describe("D1 - Reg 0x44 first write deferred", () => {
+    it("First 0x44 write does not modify palette", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      // Select ULA first palette, index 0
+      writeNextReg(m, 0x43, 0x00);
+      writeNextReg(m, 0x40, 0x00);
+      const valueBefore = pal.ulaFirst[0x00];
+
+      // First write to 0x44
+      writeNextReg(m, 0x44, 0xff);
+
+      // Palette should be unchanged
+      expect(pal.ulaFirst[0x00]).toBe(valueBefore);
+      expect(pal.secondWrite).toBe(true);
+    });
+
+    it("Second 0x44 write applies the 9-bit color", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      // Select ULA first palette, index 5
+      writeNextReg(m, 0x43, 0x00);
+      writeNextReg(m, 0x40, 0x05);
+      const valueBefore = pal.ulaFirst[0x05];
+
+      // First write: RRRGGGBB (0x49 = 010_010_01)
+      writeNextReg(m, 0x44, 0x49);
+      // Palette unchanged after first write
+      expect(pal.ulaFirst[0x05]).toBe(valueBefore);
+
+      // Second write: bit 0 = blue LSB
+      writeNextReg(m, 0x44, 0x01);
+      // 9-bit value: (0x49 << 1) | 0x01 = 0x93
+      expect(pal.ulaFirst[0x05]).toBe(0x93);
+      expect(pal.secondWrite).toBe(false);
+    });
+
+    it("0x44 two-write auto-increments palette index", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      writeNextReg(m, 0x43, 0x00); // ULA first, auto-inc enabled
+      writeNextReg(m, 0x40, 0x0a);
+
+      // First write (no palette change, no index change)
+      writeNextReg(m, 0x44, 0x20);
+      expect(pal.paletteIndex).toBe(0x0a);
+
+      // Second write (palette written, index incremented)
+      writeNextReg(m, 0x44, 0x00);
+      expect(pal.paletteIndex).toBe(0x0b);
+    });
+
+    it("0x44 two-write respects auto-inc disable", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      writeNextReg(m, 0x43, 0x80); // ULA first, auto-inc disabled
+      writeNextReg(m, 0x40, 0x0a);
+
+      writeNextReg(m, 0x44, 0x20); // first write
+      writeNextReg(m, 0x44, 0x00); // second write
+      expect(pal.paletteIndex).toBe(0x0a); // no increment
+    });
+  });
+
+  // ========================================================================
+  // D2: Reg 0x41 read should mask off priority bit (bit 9) for L2 palettes
+  // ========================================================================
+  describe("D2 - Reg 0x41 read masks L2 priority", () => {
+    it("0x41 read returns correct value for L2 palette with priority set", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      // Select Layer 2 first palette
+      writeNextReg(m, 0x43, 0x10);
+      writeNextReg(m, 0x40, 0x03);
+
+      // Write a 9-bit color with priority via two 0x44 writes
+      // First write: RRRGGGBB = 0x49 (010_010_01)
+      writeNextReg(m, 0x44, 0x49);
+      // Second write: bit 7 = priority, bit 0 = blue LSB
+      writeNextReg(m, 0x44, 0x81); // priority=1, blueLSB=1
+
+      // Re-select same index to read back
+      writeNextReg(m, 0x40, 0x03);
+
+      // 0x41 should return (9-bit & 0x1ff) >> 1, ignoring priority bit
+      // 9-bit color = (0x49 << 1) | 0x01 = 0x93
+      // (0x93 & 0x1ff) >> 1 = 0x49
+      expect(readNextReg(m, 0x41)).toBe(0x49);
+    });
+
+    it("0x41 read is correct for non-L2 palette (no priority concern)", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      // Select ULA first palette
+      writeNextReg(m, 0x43, 0x00);
+      writeNextReg(m, 0x40, 0x02);
+
+      // Write 8-bit color via 0x41
+      writeNextReg(m, 0x41, 0x55);
+
+      // Re-select to read
+      writeNextReg(m, 0x40, 0x02);
+      // For non-L2, (regValue & 0x1ff) >> 1 should match the written value
+      expect(readNextReg(m, 0x41)).toBe(0x55);
+    });
+  });
+
+  // ========================================================================
+  // D3: Reg 0x4A (Fallback Colour) should be readable
+  // ========================================================================
+  describe("D3 - Reg 0x4A readable", () => {
+    it("0x4A returns last written fallback color", async () => {
+      const m = await createTestNextMachine();
+
+      writeNextReg(m, 0x4a, 0xab);
+      expect(readNextReg(m, 0x4a)).toBe(0xab);
+      expect(m.composedScreenDevice.fallbackColor).toBe(0xab);
+    });
+
+    it("0x4A returns default after reset", async () => {
+      const m = await createTestNextMachine();
+      expect(readNextReg(m, 0x4a)).toBe(0xe3);
+    });
+  });
+
+  // ========================================================================
+  // D4: Reg 0x4B (Sprite Transparency Index) should be readable
+  // ========================================================================
+  describe("D4 - Reg 0x4B readable", () => {
+    it("0x4B returns last written sprite transparency index", async () => {
+      const m = await createTestNextMachine();
+
+      writeNextReg(m, 0x4b, 0x42);
+      expect(readNextReg(m, 0x4b)).toBe(0x42);
+      expect(m.spriteDevice.transparencyIndex).toBe(0x42);
+    });
+
+    it("0x4B returns default 0xE3 after reset", async () => {
+      const m = await createTestNextMachine();
+      expect(readNextReg(m, 0x4b)).toBe(0xe3);
+    });
+  });
+
+  // ========================================================================
+  // D5: Reg 0x4A reset value should be 0xE3 (not 0x00)
+  // ========================================================================
+  describe("D5 - Reg 0x4A reset to 0xE3", () => {
+    it("Fallback color is 0xE3 after machine creation", async () => {
+      const m = await createTestNextMachine();
+      expect(m.composedScreenDevice.fallbackColor).toBe(0xe3);
+    });
+
+    it("Fallback color resets to 0xE3 after changing and resetting", async () => {
+      const m = await createTestNextMachine();
+      writeNextReg(m, 0x4a, 0x10);
+      expect(m.composedScreenDevice.fallbackColor).toBe(0x10);
+
+      // Soft reset
+      m.nextRegDevice.reset();
+      expect(m.composedScreenDevice.fallbackColor).toBe(0xe3);
+    });
+  });
+
+  // ========================================================================
+  // D6: Reg 0x44 read returns priority bit in bit 7 for L2 palettes
+  // ========================================================================
+  describe("D6 - Reg 0x44 read with L2 priority", () => {
+    it("0x44 read returns priority in bit 7 for L2 first palette", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      // Select Layer 2 first palette
+      writeNextReg(m, 0x43, 0x10);
+      writeNextReg(m, 0x40, 0x07);
+
+      // Write color with priority=1, blue LSB=1
+      writeNextReg(m, 0x44, 0x30); // first write: RRRGGGBB
+      writeNextReg(m, 0x44, 0x81); // second write: priority=1, blueLSB=1
+
+      // Re-select to read
+      writeNextReg(m, 0x40, 0x07);
+      // 0x44 read should return: bit7=priority(1), bit0=blueLSB(1) → 0x81
+      expect(readNextReg(m, 0x44)).toBe(0x81);
+    });
+
+    it("0x44 read returns priority=0 for L2 palette without priority", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      // Select Layer 2 second palette
+      writeNextReg(m, 0x43, 0x14);
+      writeNextReg(m, 0x40, 0x07);
+
+      // Write color without priority, blue LSB=1
+      writeNextReg(m, 0x44, 0x30); // first write
+      writeNextReg(m, 0x44, 0x01); // second write: priority=0, blueLSB=1
+
+      writeNextReg(m, 0x40, 0x07);
+      // 0x44 read: bit7=0, bit0=1 → 0x01
+      expect(readNextReg(m, 0x44)).toBe(0x01);
+    });
+
+    it("0x44 read for non-L2 palette does not include priority bit", async () => {
+      const m = await createTestNextMachine();
+      const pal = m.paletteDevice;
+      // Select sprite first palette
+      writeNextReg(m, 0x43, 0x20);
+      writeNextReg(m, 0x40, 0x07);
+
+      // Write color with bit 7 set in second byte (not L2, so no priority)
+      writeNextReg(m, 0x44, 0x30); // first write
+      writeNextReg(m, 0x44, 0x81); // second write
+
+      writeNextReg(m, 0x40, 0x07);
+      // For sprites, only bit 0 (blue LSB) is returned, no priority
+      expect(readNextReg(m, 0x44)).toBe(0x01);
     });
   });
 });

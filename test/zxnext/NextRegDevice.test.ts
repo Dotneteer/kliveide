@@ -71,7 +71,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x42)).toBe(0x07);
     expect(d.directGetRegValue(0x43)).toBe(0x00);
     expect(d.directGetRegValue(0x44)).toBe(0x00);
-    expect(d.directGetRegValue(0x4a)).toBe(0x00);
+    expect(d.directGetRegValue(0x4a)).toBe(0xe3);
     expect(d.directGetRegValue(0x4b)).toBe(0xe3);
     expect(d.directGetRegValue(0x4c)).toBe(0x0f);
     expect(d.directGetRegValue(0x50)).toBe(0xff);
@@ -223,7 +223,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x42)).toBe(0x07);
     expect(d.directGetRegValue(0x43)).toBe(0x00);
     expect(d.directGetRegValue(0x44)).toBe(0x00);
-    expect(d.directGetRegValue(0x4a)).toBe(0x00);
+    expect(d.directGetRegValue(0x4a)).toBe(0xe3);
     expect(d.directGetRegValue(0x4b)).toBe(0xe3);
     expect(d.directGetRegValue(0x4c)).toBe(0x0f);
     expect(d.directGetRegValue(0x50)).toBe(0xff);
