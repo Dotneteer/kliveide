@@ -176,7 +176,20 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.updateFastPathFlags();
   }
 
-  hardReset(): void {}
+  hardReset(): void {
+    // --- Clear DivMMC RAM and all main RAM banks on hard reset to simulate a power-on.
+    // --- This forces NextZXOS to perform a cold start on the next boot, which means:
+    // ---   1. ESXDOS re-initializes its filesystem state from the SD card.
+    // ---   2. The SD card is re-initialized through the full CMD0/ACMD41 sequence.
+    // --- Without this, preserved BASIC in RAM causes NextZXOS to warm-start and reuse
+    // --- a stale ESXDOS directory cache that was built before any new files were copied
+    // --- to the SD card, resulting in "Not DIR" errors for newly-created directories.
+    // ---
+    // --- ROM areas (0x000000–0x01FFFF) are NOT cleared: their content is uploaded once
+    // --- by setup() and must survive subsequent hard resets.
+    // --- The sentinel page at OFFS_ERR_PAGE (0x7E bytes) is also preserved.
+    this.memory.fill(0, OFFS_DIVMMC_RAM, OFFS_ERR_PAGE);
+  }
 
   /**
    * Sets the page information for the specified 8K memory page

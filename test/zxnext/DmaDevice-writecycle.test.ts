@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { TestZxNextMachine } from "./TestNextMachine";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
-import { AddressMode } from "@emu/machines/zxNext/dma-helpers";
 
 describe("DmaDevice - Step 11: Memory/IO Write Cycle", () => {
   let machine: TestZxNextMachine;
