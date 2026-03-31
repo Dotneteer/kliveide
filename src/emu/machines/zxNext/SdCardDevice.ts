@@ -29,8 +29,20 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _blockToWrite: Uint8Array;
   private _dataIndex: number;
   private _bACMD: boolean;
+  private _xferblk: number;
+  private _totalSectors: number;
   // Tracks whether an IPC-backed response is ready to be read by the Z80
   private _responseReady: boolean;
+
+  // --- Card 1 independent state machine (init-only; no IPC storage)
+  private _cid1: Uint8Array;
+  private _commandIndex1: number;
+  private _lastCommand1: number;
+  private _commandParams1: number[];
+  private _state1: SdState;
+  private _bACMD1: boolean;
+  private _response1: Uint8Array;
+  private _responseIndex1: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
@@ -69,6 +81,36 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._blockToWrite = new Uint8Array(0);
     this._dataIndex = 0;
     this._bACMD = false;
+    this._xferblk = BYTES_PER_SECTOR;
+    this._totalSectors = 0;
+
+    // --- Card 1 state reset
+    this._cid1 = Uint8Array.from([
+      0x02, // Manufacturer ID (different from card 0)
+      "K".charCodeAt(0), // Application ID (0)
+      "l".charCodeAt(0), // Application ID (1)
+      "i".charCodeAt(0), // Card name (0)
+      "v".charCodeAt(0), // Card name (1)
+      "e".charCodeAt(0), // Card name (2)
+      "I".charCodeAt(0), // Card name (3)
+      "D".charCodeAt(0), // Card name (4)
+      "1".charCodeAt(0), // Card name (5) — slot 1
+      1, // Revision
+      5, // Serial number
+      6,
+      7,
+      8,
+      127, // Manufacture date
+      128  // CRC7
+    ]);
+    this._cid1[15] = ((calculateCRC7(this._cid1.slice(0, 15)) << 1) | 0x01) & 0xff;
+    this._commandIndex1 = 0;
+    this._lastCommand1 = 0;
+    this._commandParams1 = [];
+    this._state1 = SdState.IDLE;
+    this._bACMD1 = false;
+    this._response1 = new Uint8Array(0);
+    this._responseIndex1 = -1;
   }
 
   get selectedCard(): number {
@@ -116,21 +158,60 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // Card is selected when its SS bit (active-low) is 0 in the shadow register.
-    // We support only card 0 in this implementation; card 1 is acknowledged but inert.
-    this._selectedCard = (reg & 1) === 0 ? 0 : 1;
+    this._selectedCard = (reg & 1) === 0 ? 0 : ((reg & 2) === 0 ? 1 : 0xff);
   }
 
   get cid(): Uint8Array {
     return this._cid;
   }
 
+  /** Notify the device of the total number of 512-byte sectors on the SD image. */
+  setCardInfo(totalSectors: number): void {
+    this._totalSectors = totalSectors;
+  }
+
+  /**
+   * Build a 16-byte SDHC CSD v2.0 register dynamically from the mounted image size.
+   * Uses _totalSectors if known; falls back to 4 GB.
+   */
+  private buildCsd(): Uint8Array {
+    const csd = new Uint8Array(16);
+    // SDHC always uses 512-byte blocks (block_size_exp = 9)
+    // c_size = (totalSectors / 1024) - 1  (CSD v2.0, bits 69:48)
+    const totalSectors = this._totalSectors > 0 ? this._totalSectors : 8 * 1024 * 1024; // default 4 GB
+    const cSize = (totalSectors >>> 10) - 1;
+    csd[0]  = 0x40;                      // CSD_STRUCTURE=1 (v2.0), reserved=0
+    csd[1]  = 0x0e;                      // TAAC = 1ms
+    csd[2]  = 0x00;                      // NSAC = 0
+    csd[3]  = 0x32;                      // TRAN_SPEED = 25 MHz
+    csd[4]  = 0x5b;                      // CCC[11:4]
+    csd[5]  = 0x59;                      // CCC[3:0] | READ_BL_LEN=9 (512 bytes)
+    csd[6]  = 0x00;                      // READ_BL_PARTIAL=0 etc.
+    csd[7]  = (cSize >>> 16) & 0x3f;    // C_SIZE bits 21:16
+    csd[8]  = (cSize >>> 8)  & 0xff;    // C_SIZE bits 15:8
+    csd[9]  = cSize & 0xff;             // C_SIZE bits 7:0
+    csd[10] = 0x3f;                      // ERASE_BLK_EN=1, SECTOR_SIZE=0x1f
+    csd[11] = 0x80;                      // WP_GRP_SIZE=0
+    csd[12] = 0x06;                      // R2W_FACTOR=1, WRITE_BL_LEN bits 3:2 = 0b10
+    csd[13] = 0x40;                      // WRITE_BL_LEN bits 1:0 = 0b01
+    csd[14] = 0x00;
+    csd[15] = 0x01;                      // CRC7 | 1 (not computed per MAME)
+    return csd;
+  }
+
   writeMmcData(data: number): void {
-    // Every incoming byte interrupts any pending response read
+    // Dispatch to the appropriate card's state machine
+    if (this._selectedCard === 1) {
+      this.writeMmcDataCard1(data);
+      return;
+    }
+
+    // Every incoming byte interrupts any pending card-0 response read
     this._responseIndex = -1;
     this._responseReady = false;
 
-    if (this._selectedCard) {
-      // We can use only card 0
+    if (this._selectedCard !== 0) {
+      // Unknown card index — ignore
       return;
     }
 
@@ -213,15 +294,34 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         break;
 
       case 0x49:
-        // CMD9: SEND_CSD — R1 + token + 16-byte CSD + 2 dummy CRC bytes
+        // CMD9: SEND_CSD — R1 + dummy + token + 16-byte CSD (per MAME: no trailing CRC16)
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this.setMmcResponse(
-            new Uint8Array([
-              0x00, 0xfe, 0x40, 0x00, 0x00, 0x5b, 0x50, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-              0x00, 0x00, 0x00, 0xff, 0xff, 0xff
-            ])
-          );
+          const csdData = this.buildCsd();
+          const csdResponse = new Uint8Array(19); // 3 header + 16 CSD
+          csdResponse[0] = 0x00;
+          csdResponse[1] = 0xff;
+          csdResponse[2] = 0xfe;
+          csdResponse.set(csdData, 3);
+          this.setMmcResponse(csdResponse);
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x4a:
+        // CMD10: SEND_CID — R1 + dummy + token + 16-byte CID + CRC16 (21 bytes)
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          const cidResponse = new Uint8Array(21); // 3 header + 16 CID + 2 CRC16
+          cidResponse[0] = 0x00;
+          cidResponse[1] = 0xff;
+          cidResponse[2] = 0xfe;
+          cidResponse.set(this._cid, 3);
+          const cidCrc = calculateCRC16(this._cid);
+          cidResponse[19] = (cidCrc >> 8) & 0xff;
+          cidResponse[20] = cidCrc & 0xff;
+          this.setMmcResponse(cidResponse);
         } else {
           this._commandIndex++;
         }
@@ -244,6 +344,26 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
           this.setMmcResponse(new Uint8Array([0x00, 0x00]));
         } else {
           this._commandIndex++;
+        }
+        break;
+
+      case 0x50:
+        // CMD16: SET_BLOCKLEN — for SDHC fixed at 512; accept 512, reject others
+        this._commandParams.push(data);
+        this._commandIndex++;
+        if (this._commandIndex === 6) {
+          this._commandIndex = 0;
+          const blockLen =
+            ((this._commandParams[0] & 0xff) << 24) |
+            ((this._commandParams[1] & 0xff) << 16) |
+            ((this._commandParams[2] & 0xff) << 8)  |
+             (this._commandParams[3] & 0xff);
+          if (blockLen === BYTES_PER_SECTOR) {
+            this._xferblk = blockLen;
+            this.setMmcResponse(new Uint8Array([0x00])); // OK
+          } else {
+            this.setMmcResponse(new Uint8Array([0x40])); // parameter error
+          }
         }
         break;
 
@@ -328,8 +448,15 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   readMmcData(): number {
+    if (this._selectedCard === 1) {
+      // Card 1: serve from card-1 response buffer
+      if (this._responseIndex1 >= 0 && this._responseIndex1 < this._response1.length) {
+        return this._response1[this._responseIndex1++];
+      }
+      return 0xff;
+    }
+
     if (this._selectedCard !== 0) {
-      // We can use only card 0
       return 0xff;
     }
 
@@ -403,5 +530,164 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     response[3 + BYTES_PER_SECTOR + 1] = crc & 0xff;
 
     this.setMmcResponse(response);
+  }
+
+  /**
+   * Card 1 state machine — handles initialization commands and returns
+   * appropriate responses. Data commands (read/write) return 0xFF error
+   * because there is no IPC storage path for card 1.
+   */
+  private writeMmcDataCard1(data: number): void {
+    // Clear card-1 response on each new incoming byte
+    this._responseIndex1 = -1;
+
+    // --- Command byte reception
+    if (this._commandIndex1 === 0) {
+      this._lastCommand1 = data;
+      this._commandParams1 = [];
+      this._commandIndex1 = 1;
+      return;
+    }
+
+    switch (this._lastCommand1) {
+      case 0x40:
+        // CMD0: GO_IDLE_STATE
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          this._state1 = SdState.IDLE;
+          this.setCard1Response(new Uint8Array([0x01]));
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x41:
+        // CMD1: SEND_OP_COND
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          this._state1 = SdState.READY;
+          this.setCard1Response(new Uint8Array([0x00]));
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x48:
+        // CMD8: SEND_IF_COND
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          this.setCard1Response(new Uint8Array([0x01, 0x00, 0x00, 0x01, 0xaa]));
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x49:
+        // CMD9: SEND_CSD — card 1 has no media, return zeroed CSD
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          const csd1 = new Uint8Array(19);
+          csd1[0] = 0x00; csd1[1] = 0xff; csd1[2] = 0xfe;
+          this.setCard1Response(csd1);
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x4a:
+        // CMD10: SEND_CID
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          const cid1Resp = new Uint8Array(21);
+          cid1Resp[0] = 0x00; cid1Resp[1] = 0xff; cid1Resp[2] = 0xfe;
+          cid1Resp.set(this._cid1, 3);
+          const crc1 = calculateCRC16(this._cid1);
+          cid1Resp[19] = (crc1 >> 8) & 0xff;
+          cid1Resp[20] = crc1 & 0xff;
+          this.setCard1Response(cid1Resp);
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x4c:
+        // CMD12: STOP_TRANSMISSION
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          this.setCard1Response(new Uint8Array([0x00]));
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x4d:
+        // CMD13: SEND_STATUS
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          this.setCard1Response(new Uint8Array([0x00, 0x00]));
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x51:
+      case 0x52:
+      case 0x58:
+        // CMD17/CMD18/CMD24: no storage for card 1 — return parameter error (0x40 R1)
+        this._commandIndex1++;
+        if (this._commandIndex1 === 6) {
+          this._commandIndex1 = 0;
+          this.setCard1Response(new Uint8Array([0x40]));
+        }
+        break;
+
+      case 0x69:
+        // CMD41 / ACMD41
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          if (this._bACMD1) {
+            this._state1 = SdState.READY;
+            this.setCard1Response(new Uint8Array([0x00]));
+          } else {
+            this.setCard1Response(new Uint8Array([0xff]));
+          }
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x77:
+        // CMD55: APP_CMD
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          this.setCard1Response(new Uint8Array([0x01]));
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      case 0x7a:
+        // CMD58: READ_OCR — card 1 has no media, report busy / no CCS
+        if (this._commandIndex1 === 5) {
+          this._commandIndex1 = 0;
+          this.setCard1Response(new Uint8Array([0x00, 0x40, 0x00, 0x00, 0x00]));
+        } else {
+          this._commandIndex1++;
+        }
+        break;
+
+      default:
+        this._commandIndex1 = 0;
+        break;
+    }
+
+    if (this._commandIndex1 === 0) {
+      this._bACMD1 = this._lastCommand1 === 0x77;
+    }
+  }
+
+  private setCard1Response(response: Uint8Array): void {
+    this._response1 = response;
+    this._responseIndex1 = 0;
   }
 }
