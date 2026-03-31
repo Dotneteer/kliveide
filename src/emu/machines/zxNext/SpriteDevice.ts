@@ -246,63 +246,26 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
   }
 
-  writeSpriteAttribute(port: number, value: number): void {
-    // --- Check if upper byte specifies a direct attribute index
-    // --- Upper nibble must be 0x3, and lower nibble 0x1-0x5 maps to attribute 0-4
-    const upperByte = (port >> 8) & 0xFF;
-    const upperNibble = (upperByte >> 4) & 0x0F;
-    const lowerNibble = upperByte & 0x0F;
-    
-    // --- Determine if this is a direct write (port indicates specific attr that doesn't match current subIndex)
-    const portAttrIndex = lowerNibble - 1;
-    const isDirect = upperNibble === 0x3 && 
-                     lowerNibble >= 0x01 && 
-                     lowerNibble <= 0x05 && 
-                     portAttrIndex !== this.spriteSubIndex;
-    
-    if (isDirect) {
-      // --- Direct attribute write
-      // --- If spriteSubIndex is 0 but we're writing to a non-zero attribute,
-      // --- check if we just completed a sprite (by seeing if we can write attr0 to current sprite)
-      // --- If so, target the previous sprite. Otherwise, target current sprite.
-      let targetSpriteIndex = this.spriteIndex;
-      
-      // --- If subIndex is 0 and we're accessing a later attribute (2, 3, 4),
-      // --- we might be modifying the just-completed sprite
-      if (this.spriteSubIndex === 0 && portAttrIndex >= 2) {
-        // --- Check if the current sprite has already been configured (has non-default values)
-        // --- If X or Y is still 0 and other attrs are default, we're on a fresh sprite
-        const currentAttrs = this.attributes[this.spriteIndex];
-        const prevAttrs = this.attributes[(this.spriteIndex - 1) & 0x7f];
-        
-        // --- If previous sprite has been configured recently (non-zero X or has scaling),
-        // --- assume we want to modify it
-        if (prevAttrs.scaleX !== 0 || prevAttrs.scaleY !== 0 || prevAttrs.x !== 0) {
-          targetSpriteIndex = (this.spriteIndex - 1) & 0x7f;
-        }
-      }
-      
-      this.writeIndexedSpriteAttribute(targetSpriteIndex, portAttrIndex, value);
-    } else {
-      // --- Sequential write using spriteSubIndex
-      this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
-      const attributes = this.attributes[this.spriteIndex];
-      if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
-        this.spriteSubIndex++;
-        attributes.colorMode = 0x00;
-        attributes.attributeFlag2 = false;
-        attributes.scaleX = 0;
-        attributes.scaleY = 0;
-        // --- Update dimensions for 4-byte sprites (no scaling)
-        this.updateSpriteDimensions(attributes);
-      }
-
-      // --- Increment subindex and sprite index
+  writeSpriteAttribute(_port: number, value: number): void {
+    // D7: sequential write only — the upper-byte "direct write" heuristic was dead code
+    // (port 0x57 is matched by lower 8 bits only, upper byte is always 0x00)
+    this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
+    const attributes = this.attributes[this.spriteIndex];
+    if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
       this.spriteSubIndex++;
-      if (this.spriteSubIndex >= 5) {
-        this.spriteSubIndex = 0;
-        this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
-      }
+      attributes.colorMode = 0x00;
+      attributes.attributeFlag2 = false;
+      attributes.scaleX = 0;
+      attributes.scaleY = 0;
+      // --- Update dimensions for 4-byte sprites (no scaling)
+      this.updateSpriteDimensions(attributes);
+    }
+
+    // --- Increment subindex and sprite index
+    this.spriteSubIndex++;
+    if (this.spriteSubIndex >= 5) {
+      this.spriteSubIndex = 0;
+      this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
     }
   }
 
@@ -314,7 +277,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   writeSpriteAttributeDirectWithAutoInc(attrIndex: number, value: number): void {
     this.writeSpriteAttributeDirect(attrIndex, value);
     if (this.spriteIdLockstep) {
+      // D6: MAME mirror_tie — sync patternIndex from new spriteIndex after increment
       this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
+      this.patternIndex = this.spriteIndex & 0x3f;
+      this.patternSubIndex = 0;
       this.spriteSubIndex = 0;
     } else {
       this.spriteMirrorIndex = (this.spriteMirrorIndex + 1) & 0x7f;

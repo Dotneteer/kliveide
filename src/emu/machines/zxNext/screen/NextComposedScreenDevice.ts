@@ -3737,7 +3737,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         }
 
         // Check if the current scanline intersects with the sprite's vertical position
-        const spriteY = spriteAttrs.y;
+        // D4: Wrap 9-bit Y to signed range (MAME: if desty > 255 then desty -= 512)
+        let spriteY = spriteAttrs.y;
+        if (spriteY > 255) spriteY -= 512;
         const spriteHeight = spriteAttrs.height;
         const spriteBottom = spriteY + spriteHeight;
         
@@ -3754,7 +3756,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         }
 
         // Check if sprite is within horizontal clip boundaries
-        const spriteX = spriteAttrs.x;
+        // D4: Wrap 9-bit X to signed range (MAME: if destx > 319 then destx -= 512)
+        let spriteX = spriteAttrs.x;
+        if (spriteX > 319) spriteX -= 512;
         const spriteWidth = spriteAttrs.width;
         const spriteRight = spriteX + spriteWidth;
         
@@ -3789,7 +3793,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         // 1. Calculate Y index within pattern (accounting for scale only)
         //    This represents which row of the 16×16 pattern we're rendering
         //    Note: Y-mirror is already applied in the pre-transformed pattern variant
-        const yOffset = this.spritesVc - spriteAttrs.y;
+        const yOffset = this.spritesVc - spriteY;  // use wrapped Y (D4)
         this.spritesPatternYIndex = yOffset >> spriteAttrs.scaleY;  // Apply Y-scale (0-15)
 
         // 2. Get pre-transformed pattern variant using cached variant index
@@ -3800,7 +3804,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
         // 3. Initialize counters
         this.spritesCurrentPixel = 0;           // Pixel counter (0 to sprite.width-1)
-        this.spritesCurrentX = spriteAttrs.x;   // Line buffer write position (9-bit)
+        this.spritesCurrentX = spriteX;         // Line buffer write position (wrapped, D4)
 
       } else {
         // PROCESSING phase: Render sprite pixels
