@@ -2,7 +2,15 @@ import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
-  spriteIdLockstep: boolean;
+  /** D6: Bidirectional sync flag (MAME mirror_tie / NR $09 bit 4). */
+  mirrorTie: boolean;
+  /** D6: Mirror's selected sprite number (MAME mirror_sprite_q / formerly spriteMirrorIndex). */
+  mirrorSpriteQ: number;
+  /** D6: Which attribute byte (0-4) or sprite-number mode (7) the mirror targets. Reset default: 7. */
+  mirrorIndex: number;
+  /** D6: Auto-increment mirrorSpriteQ after each attribute write. Set by NR $75-$79. */
+  mirrorInc: boolean;
+
   sprite0OnTop: boolean;
   spritesEnabled: boolean;
   spriteClippingEnabled: boolean;
@@ -22,7 +30,6 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   patternSubIndex: number;
   spriteIndex: number;
   spriteSubIndex: number;
-  spriteMirrorIndex: number;
 
   tooManySpritesPerLine: boolean;
   collisionDetected: boolean;
@@ -81,7 +88,9 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.patternIndex = 0;
     this.patternSubIndex = 0;
     this.spriteIndex = 0;
-    this.spriteMirrorIndex = 0;
+    this.mirrorSpriteQ = 0;
+    this.mirrorIndex = 7;
+    this.mirrorInc = false;
     this.spriteSubIndex = 0;
     this.lastVisibileSpriteIndex = -1;
     this.tooManySpritesPerLine = false;
@@ -90,7 +99,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
-    this.spriteIdLockstep = false;
+    this.mirrorTie = false;
+    this.mirrorSpriteQ = 0;
+    this.mirrorIndex = 7; // default: sprite-number mode (MAME reset: mirror_index_w(0b111))
+    this.mirrorInc = false;
     this.sprite0OnTop = false;
     this.spriteClippingEnabled = false;
     this.spritesEnabled = false;
@@ -235,14 +247,43 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextReg34Value(): number {
-    return this.spriteMirrorIndex;
+    // MAME mirror_num_r(): lower 7 bits of mirror_sprite_q
+    return this.mirrorSpriteQ & 0x7f;
   }
 
   set nextReg34Value(value: number) {
-    if (this.spriteIdLockstep) {
-      this.writePort303bValue(value);
-    } else {
-      this.spriteMirrorIndex = value & 0x7f;
+    // NR $34 write → mirror_data_w with current mirrorIndex
+    this.mirrorDataW(value & 0xff);
+  }
+
+  /**
+   * D6: Full MAME mirror_data_w protocol.
+   *
+   * - mirrorIndex 0-4: write data to sprite attribute [mirrorSpriteQ][mirrorIndex];
+   *   then if mirrorInc, advance mirrorSpriteQ.
+   * - mirrorIndex 7: set mirrorSpriteQ = data (sprite-number mode).
+   * - On mirrorSpriteQ change: if mirrorTie, sync spriteIndex + patternIndex.
+   */
+  mirrorDataW(data: number): void {
+    if (this.mirrorIndex <= 4) {
+      this.writeIndexedSpriteAttribute(this.mirrorSpriteQ, this.mirrorIndex, data);
+    }
+
+    let mirrorNumChange = false;
+    if (this.mirrorIndex === 7) {
+      this.mirrorSpriteQ = data & 0x7f;
+      mirrorNumChange = true;
+    } else if (this.mirrorInc) {
+      this.mirrorSpriteQ = (this.mirrorSpriteQ + 1) & 0x7f;
+      mirrorNumChange = true;
+    }
+
+    if (mirrorNumChange && this.mirrorTie) {
+      // Sync main-port sprite+pattern indices from new mirrorSpriteQ
+      this.spriteIndex = this.mirrorSpriteQ;
+      this.patternIndex = this.mirrorSpriteQ & 0x3f;
+      this.patternSubIndex = 0;
+      this.spriteSubIndex = 0;
     }
   }
 
@@ -266,25 +307,25 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     if (this.spriteSubIndex >= 5) {
       this.spriteSubIndex = 0;
       this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
+      // D6: MAME io_w attr_num_change — sync mirrorSpriteQ from spriteIndex when mirrorTie
+      if (this.mirrorTie) {
+        this.mirrorSpriteQ = this.spriteIndex;
+      }
     }
   }
 
   writeSpriteAttributeDirect(attrIndex: number, value: number): void {
-    const spriteIndex = this.spriteIdLockstep ? this.spriteIndex : this.spriteMirrorIndex;
-    this.writeIndexedSpriteAttribute(spriteIndex, attrIndex, value);
+    // D6: Set mirrorInc=false, mirrorIndex=attrIndex, call mirrorDataW
+    this.mirrorInc = false;
+    this.mirrorIndex = attrIndex;
+    this.mirrorDataW(value);
   }
 
   writeSpriteAttributeDirectWithAutoInc(attrIndex: number, value: number): void {
-    this.writeSpriteAttributeDirect(attrIndex, value);
-    if (this.spriteIdLockstep) {
-      // D6: MAME mirror_tie — sync patternIndex from new spriteIndex after increment
-      this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
-      this.patternIndex = this.spriteIndex & 0x3f;
-      this.patternSubIndex = 0;
-      this.spriteSubIndex = 0;
-    } else {
-      this.spriteMirrorIndex = (this.spriteMirrorIndex + 1) & 0x7f;
-    }
+    // D6: Set mirrorInc=true, mirrorIndex=attrIndex, call mirrorDataW
+    this.mirrorInc = true;
+    this.mirrorIndex = attrIndex;
+    this.mirrorDataW(value);
   }
 
   writeSpritePattern(value: number): void {

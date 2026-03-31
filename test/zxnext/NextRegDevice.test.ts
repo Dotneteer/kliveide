@@ -1021,7 +1021,7 @@ describe("Next - NextRegDevice", function () {
     expect(soundDevice.ay2Mono).toBe(true);
     expect(soundDevice.ay1Mono).toBe(false);
     expect(soundDevice.ay0Mono).toBe(false);
-    expect(m.spriteDevice.spriteIdLockstep).toBe(false);
+    expect(m.spriteDevice.mirrorTie).toBe(false);
     expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
@@ -1040,7 +1040,7 @@ describe("Next - NextRegDevice", function () {
     expect(soundDevice.ay2Mono).toBe(false);
     expect(soundDevice.ay1Mono).toBe(true);
     expect(soundDevice.ay0Mono).toBe(false);
-    expect(m.spriteDevice.spriteIdLockstep).toBe(false);
+    expect(m.spriteDevice.mirrorTie).toBe(false);
     expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
@@ -1059,13 +1059,13 @@ describe("Next - NextRegDevice", function () {
     expect(soundDevice.ay2Mono).toBe(false);
     expect(soundDevice.ay1Mono).toBe(false);
     expect(soundDevice.ay0Mono).toBe(true);
-    expect(m.spriteDevice.spriteIdLockstep).toBe(false);
+    expect(m.spriteDevice.mirrorTie).toBe(false);
     expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
   });
 
-  it("Reg $09 spriteIdLockstep", async () => {
+  it("Reg $09 mirrorTie", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
 
@@ -1077,7 +1077,7 @@ describe("Next - NextRegDevice", function () {
     expect(m.soundDevice.ay2Mono).toBe(false);
     expect(m.soundDevice.ay1Mono).toBe(false);
     expect(m.soundDevice.ay0Mono).toBe(false);
-    expect(m.spriteDevice.spriteIdLockstep).toBe(true);
+    expect(m.spriteDevice.mirrorTie).toBe(true);
     expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(m.soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
@@ -1095,7 +1095,7 @@ describe("Next - NextRegDevice", function () {
     expect(m.soundDevice.ay2Mono).toBe(false);
     expect(m.soundDevice.ay1Mono).toBe(false);
     expect(m.soundDevice.ay0Mono).toBe(false);
-    expect(m.spriteDevice.spriteIdLockstep).toBe(false);
+    expect(m.spriteDevice.mirrorTie).toBe(false);
     expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(true);
     expect(m.soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
@@ -1113,7 +1113,7 @@ describe("Next - NextRegDevice", function () {
     expect(m.soundDevice.ay2Mono).toBe(false);
     expect(m.soundDevice.ay1Mono).toBe(false);
     expect(m.soundDevice.ay0Mono).toBe(false);
-    expect(m.spriteDevice.spriteIdLockstep).toBe(false);
+    expect(m.spriteDevice.mirrorTie).toBe(false);
     expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(m.soundDevice.silenceHdmiAudio).toBe(true);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);

@@ -546,14 +546,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.soundDevice.ay2Mono ? 0x80 : 0x00) |
         (machine.soundDevice.ay1Mono ? 0x40 : 0x00) |
         (machine.soundDevice.ay0Mono ? 0x20 : 0x00) |
-        (machine.spriteDevice.spriteIdLockstep ? 0x10 : 0x00) |
+        (machine.spriteDevice.mirrorTie ? 0x10 : 0x00) |
         (machine.soundDevice.silenceHdmiAudio ? 0x04 : 0x00) |
         (machine.composedScreenDevice.scanlineWeight & 0x03),
       writeFn: (v) => {
         machine.soundDevice.ay2Mono = (v & 0x80) !== 0;
         machine.soundDevice.ay1Mono = (v & 0x40) !== 0;
         machine.soundDevice.ay0Mono = (v & 0x20) !== 0;
-        machine.spriteDevice.spriteIdLockstep = (v & 0x10) !== 0;
+        machine.spriteDevice.mirrorTie = (v & 0x10) !== 0;
         machine.divMmcDevice.resetDivMmcMapramFlag = (v & 0x08) !== 0;
         machine.soundDevice.silenceHdmiAudio = (v & 0x04) !== 0;
         machine.composedScreenDevice.scanlineWeight = v & 0x03;

@@ -111,7 +111,17 @@ function wrapX(x: number): number {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("Auto-inc lockstep patternIndex sync (D6)", () => {
+describe("Mirror port protocol (D6)", () => {
+  /**
+   * Full MAME-compatible mirror_data_w protocol.
+   *
+   * - mirrorIndex defaults to 7 (sprite-number mode) after reset.
+   * - NR $34 write calls mirrorDataW with current mirrorIndex.
+   * - NR $35-$39: mirrorInc=false, mirrorIndex=0-4, then mirrorDataW.
+   * - NR $75-$79: mirrorInc=true, mirrorIndex=0-4, then mirrorDataW (auto-inc mirrorSpriteQ).
+   * - mirrorTie (NR $09 bit 4): when mirrorSpriteQ changes, sync spriteIndex+patternIndex.
+   * - mirrorTie: when port 0x57 advances spriteIndex, sync mirrorSpriteQ.
+   */
   let machine: IZxNextMachine;
   let spr: SpriteDevice;
 
@@ -120,81 +130,174 @@ describe("Auto-inc lockstep patternIndex sync (D6)", () => {
     spr = machine.spriteDevice;
   });
 
-  it("with lockstep: NR $75 auto-inc increments spriteIndex and syncs patternIndex", () => {
-    writeNextReg(machine, 0x09, 0x10); // spriteIdLockstep = true
-    writeNextReg(machine, 0x34, 0x05); // spriteIndex = 5, patternIndex = 5
+  // ── mirrorIndex defaults ─────────────────────────────────────────────────
 
-    // sanity check before write
+  it("mirrorIndex defaults to 7 (sprite-number mode) after reset", () => {
+    expect(spr.mirrorIndex).toBe(7);
+    expect(spr.mirrorInc).toBe(false);
+    expect(spr.mirrorTie).toBe(false);
+    expect(spr.mirrorSpriteQ).toBe(0);
+  });
+
+  it("NR $34 with mirrorIndex=7 sets mirrorSpriteQ (sprite-number mode)", () => {
+    // Default mirrorIndex=7 → mirrorDataW(5) → mirrorSpriteQ=5
+    writeNextReg(machine, 0x34, 0x05);
+    expect(spr.mirrorSpriteQ).toBe(5);
+  });
+
+  it("NR $34 with mirrorIndex=7 only stores lower 7 bits", () => {
+    writeNextReg(machine, 0x34, 0xff);
+    expect(spr.mirrorSpriteQ).toBe(0x7f);
+  });
+
+  // ── NR $35-$39: write to attribute, no auto-inc ──────────────────────────
+
+  it("NR $35 writes attr0 of mirrorSpriteQ without auto-inc", () => {
+    writeNextReg(machine, 0x34, 0x02);        // mirrorSpriteQ = 2
+    writeNextReg(machine, 0x35, 0xab);        // mirrorInc=false, mirrorIndex=0, write x-lsb
+    expect(spr.attributes[2].x & 0xff).toBe(0xab);
+    expect(spr.mirrorSpriteQ).toBe(2);        // no auto-inc
+    expect(spr.mirrorIndex).toBe(0);          // mirrorIndex set to 0 by NR $35
+  });
+
+  it("NR $36 writes attr1 of mirrorSpriteQ", () => {
+    writeNextReg(machine, 0x34, 0x04);
+    writeNextReg(machine, 0x36, 0x55);
+    expect(spr.attributes[4].y).toBe(0x55);
+    expect(spr.mirrorSpriteQ).toBe(4);        // no auto-inc
+  });
+
+  it("NR $39 writes attr4 of mirrorSpriteQ", () => {
+    writeNextReg(machine, 0x34, 0x01);
+    writeNextReg(machine, 0x39, 0x20);        // attr4 = 0x20 → attributeFlag2=true
+    expect(spr.attributes[1].attributeFlag2).toBe(true);
+    expect(spr.mirrorSpriteQ).toBe(1);
+  });
+
+  // ── NR $75-$79: write to attribute + auto-inc mirrorSpriteQ ─────────────
+
+  it("NR $75 writes attr0 and auto-increments mirrorSpriteQ", () => {
+    writeNextReg(machine, 0x34, 0x03);        // mirrorSpriteQ = 3
+    writeNextReg(machine, 0x75, 0x10);        // mirrorInc=true, mirrorIndex=0, write
+    expect(spr.attributes[3].x & 0xff).toBe(0x10);
+    expect(spr.mirrorSpriteQ).toBe(4);        // auto-incremented
+  });
+
+  it("NR $75 auto-inc wraps mirrorSpriteQ at 7-bit boundary", () => {
+    writeNextReg(machine, 0x34, 0x7f);
+    writeNextReg(machine, 0x75, 0x00);
+    expect(spr.mirrorSpriteQ).toBe(0);        // (127+1) & 0x7f = 0
+  });
+
+  it("multiple NR $75 writes walk mirrorSpriteQ sequentially", () => {
+    writeNextReg(machine, 0x34, 0x05);
+    for (let i = 0; i < 5; i++) {
+      writeNextReg(machine, 0x75, 0x10 + i);
+    }
+    expect(spr.mirrorSpriteQ).toBe(10);
+    // attrs 5-9 should have their x-lsb set
+    for (let i = 0; i < 5; i++) {
+      expect(spr.attributes[5 + i].x & 0xff).toBe(0x10 + i);
+    }
+  });
+
+  // ── NR $34 reuses mirrorIndex set by NR $35-$39 ─────────────────────────
+
+  it("NR $35 sets mirrorIndex=0; subsequent NR $34 write goes to attr0 not sprite number", () => {
+    writeNextReg(machine, 0x34, 0x07);        // mirrorSpriteQ=7 (mirrorIndex still 7 at this point)
+    writeNextReg(machine, 0x35, 0xaa);        // sets mirrorIndex=0; writes attr0 of sprite 7
+    writeNextReg(machine, 0x34, 0xbb);        // mirrorIndex=0, writes attr0 of sprite 7 again
+    expect(spr.attributes[7].x & 0xff).toBe(0xbb);
+    expect(spr.mirrorSpriteQ).toBe(7);        // mirrorSpriteQ unchanged (mirrorInc=false)
+  });
+
+  // ── mirrorTie: mirrorSpriteQ change → sync spriteIndex+patternIndex ──────
+
+  it("mirrorTie=true: NR $34 sprite-number write syncs spriteIndex and patternIndex", () => {
+    writeNextReg(machine, 0x09, 0x10);        // mirrorTie = true
+    writeNextReg(machine, 0x34, 0x05);        // mirrorSpriteQ=5, mirrorTie → spriteIndex=5
+    expect(spr.mirrorSpriteQ).toBe(5);
     expect(spr.spriteIndex).toBe(5);
     expect(spr.patternIndex).toBe(5);
-
-    // write attr0 with auto-inc
-    writeNextReg(machine, 0x75, 0x40); // any value
-    expect(spr.spriteIndex).toBe(6);   // incremented
-    expect(spr.patternIndex).toBe(6);  // D6: synced from new spriteIndex
-    expect(spr.patternSubIndex).toBe(0);
     expect(spr.spriteSubIndex).toBe(0);
   });
 
-  it("with lockstep: NR $76 auto-inc syncs patternIndex", () => {
+  it("mirrorTie=true: NR $75 auto-inc syncs spriteIndex and patternIndex", () => {
     writeNextReg(machine, 0x09, 0x10);
-    writeNextReg(machine, 0x34, 0x0a); // spriteIndex = 10
-
-    writeNextReg(machine, 0x76, 0x50);
-    expect(spr.spriteIndex).toBe(11);
-    expect(spr.patternIndex).toBe(11);
+    writeNextReg(machine, 0x34, 0x05);        // mirrorSpriteQ=5, syncs spriteIndex=5
+    writeNextReg(machine, 0x75, 0x40);        // auto-inc → mirrorSpriteQ=6, syncs spriteIndex=6
+    expect(spr.spriteIndex).toBe(6);
+    expect(spr.patternIndex).toBe(6);
   });
 
-  it("with lockstep: patternIndex wraps at 6-bit boundary (& 0x3f)", () => {
+  it("mirrorTie=true: patternIndex wraps at 6-bit boundary", () => {
     writeNextReg(machine, 0x09, 0x10);
-    writeNextReg(machine, 0x34, 0x3f); // spriteIndex = 63
-
-    writeNextReg(machine, 0x75, 0x00);
-    // spriteIndex: (63+1) & 0x7f = 64; patternIndex: 64 & 0x3f = 0
+    writeNextReg(machine, 0x34, 0x3f);        // sprite 63
+    writeNextReg(machine, 0x75, 0x00);        // auto-inc → 64; patternIndex = 64 & 0x3f = 0
     expect(spr.spriteIndex).toBe(64);
-    expect(spr.patternIndex).toBe(0);  // wrapped to 0
+    expect(spr.patternIndex).toBe(0);
   });
 
-  it("with lockstep: spriteIndex wraps at 7-bit boundary (& 0x7f)", () => {
+  it("mirrorTie=true: spriteIndex wraps at 7-bit boundary", () => {
     writeNextReg(machine, 0x09, 0x10);
-    writeNextReg(machine, 0x34, 0x7f); // spriteIndex = 127
-
+    writeNextReg(machine, 0x34, 0x7f);
     writeNextReg(machine, 0x75, 0x00);
-    // spriteIndex: (127+1) & 0x7f = 0; patternIndex: 0 & 0x3f = 0
     expect(spr.spriteIndex).toBe(0);
     expect(spr.patternIndex).toBe(0);
   });
 
-  it("without lockstep: NR $75 auto-inc increments spriteMirrorIndex, patternIndex unchanged", () => {
-    writeNextReg(machine, 0x09, 0x00); // spriteIdLockstep = false
-    writeNextReg(machine, 0x34, 0x03); // spriteMirrorIndex = 3
-    spr.patternIndex = 12;             // set to distinctive value via direct assignment
-
-    writeNextReg(machine, 0x75, 0x40);
-    expect(spr.spriteMirrorIndex).toBe(4); // incremented
-    expect(spr.patternIndex).toBe(12);     // unchanged
-    expect(spr.spriteIndex).toBe(0);       // unaffected (no lockstep)
-  });
-
-  it("without lockstep: NR $75 does not affect spriteSubIndex via lockstep path", () => {
-    writeNextReg(machine, 0x09, 0x00);
-    writeNextReg(machine, 0x34, 0x07);
-
-    writeNextReg(machine, 0x75, 0x00);
-    // lockstep path resets spriteSubIndex to 0 — without lockstep it should not do that
-    // spriteMirrorIndex increments; spriteSubIndex state unchanged (was 0 by default)
-    expect(spr.spriteMirrorIndex).toBe(8);
-  });
-
-  it("multiple lockstep auto-inc writes walk spriteIndex and patternIndex together", () => {
+  it("mirrorTie=true: multiple auto-inc writes walk spriteIndex and patternIndex together", () => {
     writeNextReg(machine, 0x09, 0x10);
     writeNextReg(machine, 0x34, 0x00);
-
     for (let i = 0; i < 8; i++) {
       writeNextReg(machine, 0x75, 0x00);
     }
     expect(spr.spriteIndex).toBe(8);
     expect(spr.patternIndex).toBe(8);
+  });
+
+  it("mirrorTie=false: NR $75 auto-inc does not sync spriteIndex or patternIndex", () => {
+    writeNextReg(machine, 0x09, 0x00);        // mirrorTie = false
+    writeNextReg(machine, 0x34, 0x03);        // mirrorSpriteQ=3 (no sync — mirrorTie=false)
+    spr.patternIndex = 12;
+    writeNextReg(machine, 0x75, 0x40);
+    expect(spr.mirrorSpriteQ).toBe(4);        // incremented
+    expect(spr.patternIndex).toBe(12);        // unchanged
+    expect(spr.spriteIndex).toBe(0);          // unaffected
+  });
+
+  // ── mirrorTie: port 0x57 sprite advance → sync mirrorSpriteQ ────────────
+
+  it("mirrorTie=true: port 0x57 advance syncs mirrorSpriteQ from new spriteIndex", () => {
+    const io = machine.portManager;
+    writeNextReg(machine, 0x09, 0x10);        // mirrorTie=true
+    io.writePort(0x303b, 0x00);               // spriteIndex=0
+
+    // Write 5 bytes for sprite 0 (has5AttributeBytes) — this advances spriteIndex to 1
+    io.writePort(0x57, 0x10);                 // attr0 X-LSB
+    io.writePort(0x57, 0x20);                 // attr1 Y-LSB
+    io.writePort(0x57, 0x00);                 // attr2
+    io.writePort(0x57, 0xc0);                 // attr3: visible=1, has5bytes=1, pattern=0
+    io.writePort(0x57, 0x00);                 // attr4 → sprite advances to index 1
+
+    expect(spr.spriteIndex).toBe(1);
+    expect(spr.mirrorSpriteQ).toBe(1);        // D6: synced from new spriteIndex
+  });
+
+  it("mirrorTie=false: port 0x57 advance does not sync mirrorSpriteQ", () => {
+    const io = machine.portManager;
+    writeNextReg(machine, 0x09, 0x00);        // mirrorTie=false
+    writeNextReg(machine, 0x34, 0x05);        // mirrorSpriteQ=5
+    io.writePort(0x303b, 0x00);
+
+    io.writePort(0x57, 0x10);
+    io.writePort(0x57, 0x20);
+    io.writePort(0x57, 0x00);
+    io.writePort(0x57, 0xc0);
+    io.writePort(0x57, 0x00);                 // sprite advances to 1
+
+    expect(spr.spriteIndex).toBe(1);
+    expect(spr.mirrorSpriteQ).toBe(5);        // unchanged — no mirrorTie
   });
 });
 
