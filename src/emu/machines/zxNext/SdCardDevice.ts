@@ -79,6 +79,47 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._selectedCard = value === 0xfe ? 0 : 1;
   }
 
+  /**
+   * Implements the port 0xE7 chip-select decode matching MAME's port_e7_reg_w.
+   *
+   * Bit layout of the shadow register (m_port_e7_reg):
+   *   bit 7 = FPGA flash CS  (active-low)
+   *   bit 3 = RPi CS1        (active-low)
+   *   bit 2 = RPi CS0        (active-low)
+   *   bit 1 = SD card 1 SS   (active-low)
+   *   bit 0 = SD card 0 SS   (active-low)
+   *
+   * A card is selected when its bit in the shadow register is 0.
+   */
+  spiCsWrite(data: number): void {
+    const swap = this.machine.nextRegDevice.sdSwap;
+    const configMode = this.machine.nextRegDevice.configMode;
+
+    let reg: number;
+    if ((data & 3) === 0b10) {
+      // Select primary SD card: default → SD0 (bit 0 low); if swapped → SD1 (bit 1 low)
+      // MAME: reg = 0b11111100 | (!swap << 1) | swap
+      reg = 0b11111100 | (swap ? 1 : 2);
+    } else if ((data & 3) === 0b01) {
+      // Select secondary SD card: default → SD1 (bit 1 low); if swapped → SD0 (bit 0 low)
+      // MAME: reg = 0b11111100 | (swap << 1) | !swap
+      reg = 0b11111100 | (swap ? 2 : 1);
+    } else if (data === 0xfb || data === 0xf7) {
+      // RPi chip-select lines; both SD cards deselected
+      reg = data;
+    } else if (data === 0x7f && configMode) {
+      // FPGA flash CS; only allowed in config mode
+      reg = 0x7f;
+    } else {
+      // Deselect all
+      reg = 0xff;
+    }
+
+    // Card is selected when its SS bit (active-low) is 0 in the shadow register.
+    // We support only card 0 in this implementation; card 1 is acknowledged but inert.
+    this._selectedCard = (reg & 1) === 0 ? 0 : 1;
+  }
+
   get cid(): Uint8Array {
     return this._cid;
   }

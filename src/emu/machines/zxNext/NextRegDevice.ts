@@ -96,6 +96,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   port0x1fEnabled: boolean;
   port0x37Enabled: boolean;
 
+  // --- Reg $0A state
+  sdSwap: boolean;
+
   // --- Reg $83 state
   portDivMmcEnabled: boolean;
   portMultifaceEnabled: boolean;
@@ -608,12 +611,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         if (this.configMode) {
           machine.divMmcDevice.multifaceType = (v & 0xc0) >> 6;
         }
+        this.sdSwap = (v & 0x20) !== 0;
         machine.divMmcDevice.enableAutomap = (v & 0x10) !== 0;
         machine.mouseDevice.swapButtons = (v & 0x08) !== 0;
         machine.mouseDevice.dpi = v & 0x03;
       },
       readFn: () =>
         (machine.divMmcDevice.multifaceType << 6) |
+        (this.sdSwap ? 0x20 : 0x00) |
         (machine.divMmcDevice.enableAutomap ? 0x10 : 0x00) |
         (machine.mouseDevice.swapButtons ? 0x08 : 0x00) |
         (machine.mouseDevice.dpi & 0x03),
@@ -628,6 +633,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
             0b10: "Multiface 128 v87.12 (enable port 0x9F, disable port 0x1F)",
             0b11: "Multiface 1 (enable port 0x9F, disable port 0x1F)"
           }
+        },
+        {
+          mask: 0x20,
+          shift: 5,
+          description: "1 to swap SD card 0 and 1 (hard reset = 0)"
         },
         {
           mask: 0x10,
