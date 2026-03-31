@@ -940,8 +940,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   delayMemoryWrite(_address: number): void {
     this.tactPlusN(3);
-    this.totalContentionDelaySinceStart += 3;
-    this.contentionDelaySincePause += 3;
   }
 
   /**

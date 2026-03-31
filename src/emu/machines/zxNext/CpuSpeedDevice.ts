@@ -7,7 +7,7 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
  * Registers involved:
  * 0x07 - CPU Speed
  * Hard Reset: 0x00 (3.5 MHz)  
- * Soft Reset: Unchanged
+ * Soft Reset: 0x00 (3.5 MHz)
  * Read:
  *   Bits 5:4 = Current actual speed
  *   Bits 1:0 = Programmed speed
@@ -44,7 +44,10 @@ export class CpuSpeedDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
-    // --- CPU speed is preserved
+    // --- Soft reset resets CPU speed to 3.5 MHz (FPGA spec: "soft reset = 00")
+    this._programmedSpeed = 0x00;
+    this._effectiveSpeed = 0x00;
+    this._effectiveClockMultiplier = 1;
   }
 
   hardReset(): void {

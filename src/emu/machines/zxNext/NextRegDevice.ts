@@ -3294,7 +3294,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
     this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
-    this.directSetRegValue(0x06, 0x00); // --- All Peripheral settings #2 are 0
+    this.directSetRegValue(0x06, 0x80); // --- Enable F8 cpu speed hotkey (bit 7 = 1)
     this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
     this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound
     this.directSetRegValue(0x09, 0x00); // --- All Peripheral settings #4 are 0
