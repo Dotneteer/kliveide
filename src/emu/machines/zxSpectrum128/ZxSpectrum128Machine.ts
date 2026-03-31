@@ -348,6 +348,16 @@ export class ZxSpectrum128Machine extends ZxSpectrumBase {
   }
 
   /**
+   * Tests if the specified port address falls in a contended I/O address range.
+   * On 128K, 0x4000-0x7FFF is always contended, and 0xC000-0xFFFF is contended when an odd-numbered
+   * bank (1,3,5,7) is paged in at bank 3.
+   */
+  protected isContendedIoAddress(address: number): boolean {
+    const page = address & 0xc000;
+    return page === 0x4000 || (page === 0xc000 && (this.selectedBank & 0x01) === 1);
+  }
+
+  /**
    * This function reads a byte (8-bit) from an I/O port using the provided 16-bit address.
    * @param address
    * @returns Byte read from the specified port

@@ -1,6 +1,6 @@
 import type { IZ80NCpu } from "@emu/abstractions/IZ80NCpu";
 
-import { Z80Cpu, Z80Operation, parityTable, sz53Table, sz53pvTable } from "./Z80Cpu";
+import { Z80Cpu, Z80Operation, incFlags, sz53pvTable } from "./Z80Cpu";
 import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
@@ -40,7 +40,6 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
    */
   tbblueOut(_address: number, _value: number): void {
     // --- Override this method in derived classes
-    this.tactPlusN(6);
   }
 
   /**
@@ -292,15 +291,8 @@ function pushNN(cpu: Z80NCpu) {
 function outinb(cpu: Z80NCpu) {
   cpu.tactPlus1WithAddress(cpu.ir);
   const tmp = cpu.readMemory(cpu.hl);
-  cpu.wz = cpu.bc + 1;
   cpu.writePort(cpu.bc, tmp);
   cpu.hl++;
-  const tmp2 = (tmp + cpu.l) & 0xff;
-  cpu.f =
-    ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
-    (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
-    (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
-    sz53Table[cpu.b];
 }
 
 // 0x91: NEXTREG NN,NN
@@ -308,12 +300,14 @@ function nextregn(cpu: Z80NCpu) {
   const register = cpu.fetchCodeByte();
   const value = cpu.fetchCodeByte();
   cpu.tbblueOut(register, value);
+  cpu.tactPlusN(6);
 }
 
 // 0x92: NEXTREG NN,A
 function nextrega(cpu: Z80NCpu) {
   const register = cpu.fetchCodeByte();
   cpu.tbblueOut(register, cpu.a);
+  cpu.tactPlusN(3);
 }
 
 // 0x93: PIXELDN
@@ -362,7 +356,7 @@ function ldws(cpu: Z80NCpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.writeMemory(cpu.de, tmp);
   cpu.l++;
-  cpu.d++;
+  cpu.f = incFlags[cpu.d++] | cpu.flagCValue;
 }
 
 // 0xAC: LDDX

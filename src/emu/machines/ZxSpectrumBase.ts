@@ -311,6 +311,16 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
   }
 
   /**
+   * Tests if the specified port address falls in a contended I/O address range.
+   * Override in derived classes to support additional contended ranges (e.g. 128K odd banks, +3E banks 4-7).
+   * @param address Port address
+   * @returns True if the address is in a contended range
+   */
+  protected isContendedIoAddress(address: number): boolean {
+    return (address & 0xc000) === 0x4000;
+  }
+
+  /**
    * Delays the I/O access according to address bus contention
    * @param address Port address
    */
@@ -318,8 +328,8 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
     const spectrum = this;
     var lowbit = (address & 0x0001) !== 0;
 
-    // --- Check for contended range
-    if ((address & 0xc000) === 0x4000) {
+    // --- Check for contended range using the polymorphic check
+    if (this.isContendedIoAddress(address)) {
       if (lowbit) {
         // --- Low bit set, C:1, C:1, C:1, C:1
         applyContentionDelay();
@@ -348,9 +358,6 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
         this.tactPlusN(3);
       }
     }
-
-    this.totalContentionDelaySinceStart += 4;
-    this.contentionDelaySincePause += 4;
 
     // --- Apply I/O contention
     function applyContentionDelay(): void {

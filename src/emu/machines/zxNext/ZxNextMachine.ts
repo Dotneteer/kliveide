@@ -497,6 +497,64 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }
   }
 
+  /**
+   * D1: In hardware IM2 mode the IM2 vector byte is determined by the highest-priority
+   * pending interrupt source rather than being fixed at 0xFF.  Priority order (lowest
+   * index = highest priority):
+   *   0  – line interrupt
+   *   1  – UART0 RX (near-full or available)
+   *   2  – UART1 RX (near-full or available)
+   *   3-10 – CTC channels 0-7
+   *   11 – ULA
+   *   12 – UART0 TX empty
+   *   13 – UART1 TX empty
+   *
+   * Vector = im2TopBits | (priority << 1).
+   * When hwIm2Mode is false the classic Spectrum value 0xFF is returned.
+   */
+  protected override getInterruptVector(): number {
+    const id = this.interruptDevice;
+    if (!id.hwIm2Mode) return 0xff;
+    const base = id.im2TopBits;
+    if (id.lineInterruptStatus) return base | 0x00;
+    if (id.uart0RxNearFullStatus || id.uart0RxAvailableStatus) return base | 0x02;
+    if (id.uart1RxNearFullStatus || id.uart1RxAvailableStatus) return base | 0x04;
+    for (let i = 0; i < 8; i++) {
+      if (id.ctcIntStatus[i]) return base | ((3 + i) << 1);
+    }
+    if (id.ulaInterruptStatus) return base | 0x16;
+    if (id.uart0TxEmptyStatus) return base | 0x18;
+    if (id.uart1TxEmptyStatus) return base | 0x1a;
+    return 0xff;
+  }
+
+  /**
+   * D4: When the CPU acknowledges an interrupt in hardware IM2 mode, clear the
+   * status flag of the winning (highest-priority) source so that the same event
+   * is not re-triggered on the next cycle.
+   */
+  override onInterruptAcknowledged(): void {
+    const id = this.interruptDevice;
+    if (!id.hwIm2Mode) return;
+    if (id.lineInterruptStatus) { id.lineInterruptStatus = false; return; }
+    if (id.uart0RxNearFullStatus || id.uart0RxAvailableStatus) {
+      id.uart0RxNearFullStatus = false;
+      id.uart0RxAvailableStatus = false;
+      return;
+    }
+    if (id.uart1RxNearFullStatus || id.uart1RxAvailableStatus) {
+      id.uart1RxNearFullStatus = false;
+      id.uart1RxAvailableStatus = false;
+      return;
+    }
+    for (let i = 0; i < 8; i++) {
+      if (id.ctcIntStatus[i]) { id.ctcIntStatus[i] = false; return; }
+    }
+    if (id.ulaInterruptStatus) { id.ulaInterruptStatus = false; return; }
+    if (id.uart0TxEmptyStatus) { id.uart0TxEmptyStatus = false; return; }
+    if (id.uart1TxEmptyStatus) { id.uart1TxEmptyStatus = false; return; }
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
@@ -1385,6 +1443,19 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Processes the frame command
    */
   async processFrameCommand(messenger: MessengerBase): Promise<void> {
+    // --- Lazy card-info initialization: fetch once on first frame command
+    if (!this.sdCardDevice.hasCardInfo) {
+      try {
+        const info = await this.withIpcTimeout(
+          createMainApi(messenger).getSdCardInfo(),
+          "getSdCardInfo"
+        );
+        this.sdCardDevice.setCardInfo(info.totalSectors);
+      } catch (err) {
+        console.warn("SD card info fetch failed, using default CSD", err);
+      }
+    }
+
     const frameCommand = this.getFrameCommand();
     switch (frameCommand.command) {
       case "sd-write":
@@ -1433,6 +1504,43 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           console.log("SD card sector read error", err);
           // --- Return error response using setMmcResponse with error status
           (this.sdCardDevice as any).setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
+        }
+        break;
+      }
+      case "sd-write-card1":
+        try {
+          const result = await this.withIpcTimeout(
+            createMainApi(messenger).writeSdCardSector(frameCommand.sector, frameCommand.data),
+            "writeSdCard1Sector"
+          );
+          if (result?.persistenceConfirmed) {
+            this.sdCardDevice.setCard1WriteResponse();
+          } else {
+            console.error("SD card 1 write error: No persistence confirmation");
+            this.sdCardDevice.setCard1WriteErrorResponse("Persistence not confirmed");
+          }
+        } catch (err) {
+          console.log("SD card 1 sector write error", err);
+          this.sdCardDevice.setCard1WriteErrorResponse((err as Error).message);
+        }
+        break;
+      case "sd-read-card1": {
+        try {
+          const sectorData = await this.withIpcTimeout(
+            createMainApi(messenger).readSdCardSector(frameCommand.sector),
+            "readSdCard1Sector"
+          );
+          if (sectorData instanceof Uint8Array) {
+            this.sdCardDevice.setCard1ReadResponse(sectorData);
+          } else if (Array.isArray(sectorData)) {
+            this.sdCardDevice.setCard1ReadResponse(new Uint8Array(sectorData));
+          } else {
+            console.error("SD card 1 read error: Invalid response data type", typeof sectorData);
+            this.sdCardDevice.setCard1WriteErrorResponse("Invalid data type");
+          }
+        } catch (err) {
+          console.log("SD card 1 sector read error", err);
+          this.sdCardDevice.setCard1WriteErrorResponse((err as Error).message);
         }
         break;
       }

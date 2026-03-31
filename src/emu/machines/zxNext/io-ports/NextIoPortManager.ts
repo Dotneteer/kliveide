@@ -362,15 +362,24 @@ export class NextIoPortManager {
       port: 0xe7,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0111,
-      writerFns: (_, v) => { machine.sdCardDevice.selectedCard = v },
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portSpiEnabled) {
+          machine.sdCardDevice.spiCsWrite(v);
+        }
+      },
     });
     r({
       description: "SPI DATA",
       port: 0xeb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_1011,
-      readerFns: () => machine.sdCardDevice.readMmcData(),
-      writerFns: (_, v) => { machine.sdCardDevice.writeMmcData(v) }
+      readerFns: () =>
+        machine.nextRegDevice.portSpiEnabled ? machine.sdCardDevice.readMmcData() : 0xff,
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portSpiEnabled) {
+          machine.sdCardDevice.writeMmcData(v);
+        }
+      }
     });
     r({
       description: "divMMC Control",

@@ -1185,6 +1185,7 @@ describe("Z80 next ops", () => {
     ]);
     m.cpu.bc = 0x10cc;
     m.cpu.hl = 0x1000;
+    m.cpu.f = 0;
     m.memory[m.cpu.hl] = 0x29;
 
     // --- Act
@@ -1192,7 +1193,7 @@ describe("Z80 next ops", () => {
 
     // --- Assert
     const cpu = m.cpu;
-    m.shouldKeepRegisters("F, HL");
+    m.shouldKeepRegisters("HL");
     m.shouldKeepMemory("1000");
 
     expect(cpu.b).toBe(0x10);
@@ -1221,6 +1222,7 @@ describe("Z80 next ops", () => {
     ]);
     m.cpu.bc = 0x01cc;
     m.cpu.hl = 0x1000;
+    m.cpu.f = 0;
     m.memory[m.cpu.hl] = 0x29;
 
     // --- Act
@@ -1228,7 +1230,7 @@ describe("Z80 next ops", () => {
 
     // --- Assert
     const cpu = m.cpu;
-    m.shouldKeepRegisters("F, BC, HL");
+    m.shouldKeepRegisters("HL");
     m.shouldKeepMemory("1000");
 
     expect(cpu.b).toBe(0x01);
@@ -1245,6 +1247,31 @@ describe("Z80 next ops", () => {
     expect(m.ioAccessLog[0].isOutput).toBe(true);
 
     expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(16);
+  });
+
+  it("0x90: OUTINB preserves flags", () => {
+    // OUTINB must not modify F at all (D2 fix: removed incorrect flag computation)
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.UntilEnd, true);
+    m.initCode([
+      0xed,
+      0x90 // OUTINB
+    ]);
+    m.cpu.bc = 0x10cc;
+    m.cpu.hl = 0x1000;
+    // Set F to a non-zero value that includes S, Z, H, PV, N, C
+    m.cpu.f = 0xff;
+    m.memory[m.cpu.hl] = 0x29;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    // F must be completely unchanged after OUTINB
+    expect(cpu.f).toBe(0xff);
+    expect(cpu.hl).toBe(0x1001);
     expect(cpu.tacts).toBe(16);
   });
 
@@ -1339,7 +1366,7 @@ describe("Z80 next ops", () => {
     expect(m.tbBlueAccessLog[0].isOutput).toBe(true);
 
     expect(cpu.pc).toBe(0x0003);
-    expect(cpu.tacts).toBe(17);
+    expect(cpu.tacts).toBe(14);
   });
 
   it("0x93: PIXELDN (ext not allowed)", () => {
@@ -1835,7 +1862,7 @@ describe("Z80 next ops", () => {
 
     // --- Assert
     const cpu = m.cpu;
-    m.shouldKeepRegisters("DE, HL");
+    m.shouldKeepRegisters("DE, HL, F");
     m.shouldKeepMemory("2001");
 
     expect(m.memory[0x2001]).toBe(0xa5);
@@ -1843,6 +1870,85 @@ describe("Z80 next ops", () => {
     expect(cpu.de).toBe(0x2101);
 
     expect(cpu.pc).toBe(0x0002);
+    expect(cpu.tacts).toBe(14);
+  });
+
+  it("0xA5: LDWS sets S,Z,H,PV,N=0 flags based on INC D; preserves C", () => {
+    // D1 fix: ldws must set flags using the incFlags table (same as INC D).
+    // The test uses D=0x0F so that after increment D=0x10, triggering H flag.
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0xa5 // LDWS
+    ]);
+    m.cpu.hl = 0x1000;
+    m.cpu.de = 0x0f00; // D=0x0F, E=0x00
+    m.cpu.f = 0x01;    // C flag set initially — must be preserved
+    m.memory[m.cpu.hl] = 0x55;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    // D incremented from 0x0F to 0x10 — H flag must be set, N=0
+    expect(cpu.isHFlagSet()).toBe(true);
+    expect(cpu.isNFlagSet()).toBe(false);
+    expect(cpu.isZFlagSet()).toBe(false);
+    expect(cpu.isSFlagSet()).toBe(false);
+    // C preserved from initial F
+    expect(cpu.isCFlagSet()).toBe(true);
+    expect(cpu.de).toBe(0x1000); // D=0x10, E=0x00
+    expect(cpu.tacts).toBe(14);
+  });
+
+  it("0xA5: LDWS sets Z flag when D wraps to 0", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0xa5 // LDWS
+    ]);
+    m.cpu.hl = 0x1000;
+    m.cpu.de = 0xff01; // D=0xFF — will wrap to 0 on increment
+    m.cpu.f = 0x00;    // C clear — must stay clear
+    m.memory[m.cpu.hl] = 0x55;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    expect(cpu.isZFlagSet()).toBe(true);
+    expect(cpu.isNFlagSet()).toBe(false);
+    expect(cpu.isCFlagSet()).toBe(false);
+    expect(cpu.de).toBe(0x0001); // D wrapped to 0x00
+    expect(cpu.tacts).toBe(14);
+  });
+
+  it("0xA5: LDWS sets PV flag when D overflows 0x7F", () => {
+    // --- Arrange
+    const m = new Z80TestMachine(RunMode.OneInstruction, true);
+    m.initCode([
+      0xed,
+      0xa5 // LDWS
+    ]);
+    m.cpu.hl = 0x1000;
+    m.cpu.de = 0x7f00; // D=0x7F — overflow to 0x80 sets PV
+    m.cpu.f = 0x01;    // C set — must be preserved
+    m.memory[m.cpu.hl] = 0x55;
+
+    // --- Act
+    m.run();
+
+    // --- Assert
+    const cpu = m.cpu;
+    expect(cpu.isPvFlagSet()).toBe(true);
+    expect(cpu.isSFlagSet()).toBe(true); // 0x80 has bit 7 set
+    expect(cpu.isNFlagSet()).toBe(false);
+    expect(cpu.isCFlagSet()).toBe(true); // C preserved
+    expect(cpu.de).toBe(0x8000);
     expect(cpu.tacts).toBe(14);
   });
 

@@ -145,6 +145,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaHiResColor = 0;
     this.ulaHiColorMode = false;
     this.ulaHiColorModeSampled = false;
+    this.ulaHalfPixelScrollSampled = false;
+    this.ulaPreviousPixelRgb333 = 0;
+    this.ulaPreviousPixelTransparent = true;
 
     // --- Initialize LoRes state
     this.loResEnabled = false;
@@ -161,7 +164,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Initialize ULANext state
     this.ulaNextEnabledField = false;
-    this.ulaNextFormat = 0x0f; // Default: 4-bit INK, 4-bit PAPER
+    this.ulaNextFormat = 0x07; // Default: 3-bit INK, 5-bit PAPER
 
     // --- Initialize Layer 2 state
     this.layer2Enabled = false; // Port 0x123B bit 1: disabled by default
@@ -345,13 +348,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    *                    = 192 + 8 + border_color = 200 + border_color
    */
   updateBorderRgbCache(): void {
-    if (this.ulaPlusEnabledField) {
+    if (this.ulaNextEnabledField) {
+      // ULANext: border resolves through paper path (palette indices 128+)
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(128 + this.borderColorField);
+    } else if (this.ulaPlusEnabledField) {
       // ULA+: Border uses palette indices 200-207 (for border colors 0-7)
       const ulaPlusPaletteIndex = 200 + this.borderColorField;
       this.borderRgbCache = this.paletteDevice.getUlaRgb333(ulaPlusPaletteIndex);
     } else {
-      // Standard: Border uses palette indices 0-7
-      this.borderRgbCache = this.paletteDevice.getUlaRgb333(this.borderColorField);
+      // Standard: Border uses paper palette indices 16-23
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(16 + this.borderColorField);
     }
   }
 
@@ -718,44 +724,61 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Apply the ULA/Tilemap merging process from Section 4.2.1
     // LoRes is already integrated into ulaOutput (not kept separate)
 
-    // TODO: Apply the complete merging logic from Section 4.2.1 here:
-    // 1. Calculate ula_transparent, tm_transparent
-    // 2. If stencil mode: ula_final = ula & tilemap (bitwise AND)
-    // 3. Else: ula_final = tm_pixel_below ? (ula or tm) : (tm or ula)
-    // 4. Calculate mix_rgb, mix_top_rgb, mix_bot_rgb based on blend mode
-    // For now, using simplified approach (incomplete implementation)
-
-    // Merge tilemap into ULA if both enabled (simplified version)
+    // Merge tilemap into ULA if both enabled
     if (this.tilemapEnabled && this.tilemapPixel1Rgb333 !== null) {
-      if (
-        this.ulaPixel1Rgb333 != null &&
-        !this.ulaPixel1Transparent &&
-        !this.tilemapPixel1Transparent
-      ) {
-        // Both non-transparent: apply tm_pixel_below logic
-        // TODO: Read tm_pixel_below from tilemap attributes
-        // For now, tilemap on top (simplified)
-        this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-        this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
-      } else if (!this.tilemapPixel1Transparent) {
-        // Only tilemap non-transparent
-        this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-        this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+      if (this.ulaEnableStencilMode) {
+        // Stencil mode: AND of both colours; transparent if either is transparent
+        if (
+          this.ulaPixel1Rgb333 != null &&
+          !this.ulaPixel1Transparent &&
+          !this.tilemapPixel1Transparent
+        ) {
+          this.ulaPixel1Rgb333 = this.ulaPixel1Rgb333 & this.tilemapPixel1Rgb333!;
+          this.ulaPixel1Transparent = false;
+        } else {
+          this.ulaPixel1Transparent = true;
+        }
+      } else {
+        if (
+          this.ulaPixel1Rgb333 != null &&
+          !this.ulaPixel1Transparent &&
+          !this.tilemapPixel1Transparent
+        ) {
+          // Both non-transparent: tilemap on top (simplified)
+          this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
+          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+        } else if (!this.tilemapPixel1Transparent) {
+          // Only tilemap non-transparent
+          this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
+          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+        }
       }
-      // If only ULA non-transparent, keep ulaOutput1 as-is
     }
 
     if (this.tilemapEnabled && this.tilemapPixel2Rgb333 !== null) {
-      if (
-        this.ulaPixel2Rgb333 != null &&
-        !this.ulaPixel2Transparent &&
-        !this.tilemapPixel2Transparent
-      ) {
-        this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-        this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
-      } else if (!this.tilemapPixel2Transparent) {
-        this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-        this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+      if (this.ulaEnableStencilMode) {
+        if (
+          this.ulaPixel2Rgb333 != null &&
+          !this.ulaPixel2Transparent &&
+          !this.tilemapPixel2Transparent
+        ) {
+          this.ulaPixel2Rgb333 = this.ulaPixel2Rgb333 & this.tilemapPixel2Rgb333!;
+          this.ulaPixel2Transparent = false;
+        } else {
+          this.ulaPixel2Transparent = true;
+        }
+      } else {
+        if (
+          this.ulaPixel2Rgb333 != null &&
+          !this.ulaPixel2Transparent &&
+          !this.tilemapPixel2Transparent
+        ) {
+          this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
+          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+        } else if (!this.tilemapPixel2Transparent) {
+          this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
+          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+        }
       }
     }
 
@@ -872,8 +895,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set timexPortValue(value: number) {
     this.timexPortBits = value & 0x3f;
     this.ulaHiResColor = (value >> 3) & 0x07;
-    this.ulaHiResInkRgb333 = this.paletteDevice.getUlaRgb333(this.ulaHiResColor);
-    this.ulaHiResPaperRgb333 = this.paletteDevice.getUlaRgb333(7 - this.ulaHiResColor);
+    this.ulaHiResInkRgb333 = this.paletteDevice.getUlaRgb333(8 + this.ulaHiResColor);
+    this.ulaHiResPaperRgb333 = this.paletteDevice.getUlaRgb333(24 + (7 - this.ulaHiResColor));
     const mode = value & 0x07;
     switch (mode) {
       case 0:
@@ -1044,6 +1067,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   set nextReg0x42Value(value: number) {
     this.ulaNextFormat = value;
     this.updateFallbackRgb333Cache();
+    this.updateBorderRgbCache();
   }
 
   get nextReg0x42Value(): number {
@@ -1141,11 +1165,45 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     let selectedPixel: number | null = null;
     let selectedTransparent: boolean = false;
 
-    // === Layer 2 Priority Override ===
-    // If Layer 2 priority bit is set, it renders on top regardless of priority setting
-    if (layer2PixelRgb333 != null && layer2Priority && !layer2Transparent) {
+    // === Layer 2 Priority Override (standard modes only) ===
+    // In non-blend modes, priority L2 renders on top regardless of priority setting
+    if (layer2PixelRgb333 != null && layer2Priority && !layer2Transparent && this.layerPriority < 6) {
       selectedPixel = layer2PixelRgb333;
       selectedTransparent = layer2Transparent;
+    } else if (this.layerPriority >= 6) {
+      // === Blend Modes (priority 6-7) ===
+      // Blend source (ULA/tilemap merged) with Layer 2
+      // Mode 6 (bit 0 = 0): saturate-add per RGB333 channel, clamped to [0,7]
+      // Mode 7 (bit 0 = 1): add channels then subtract 5, clamped to [0,7]
+      const blendSource = ulaPixelRgb333;
+      const blendTransparent = ulaTransparent;
+      const hasBlend = blendSource != null && !blendTransparent;
+      const hasL2 = layer2PixelRgb333 != null && !layer2Transparent;
+
+      if (layer2Priority && hasL2) {
+        // Priority L2 in blend mode: blend with ULA, result overrides sprites
+        if (hasBlend) {
+          selectedPixel = blendRgb333(blendSource, layer2PixelRgb333!, this.layerPriority & 1);
+        } else {
+          selectedPixel = layer2PixelRgb333;
+        }
+        selectedTransparent = false;
+      } else if (spritesPixelRgb333 != null && !spritesTransparent) {
+        selectedPixel = spritesPixelRgb333;
+        selectedTransparent = false;
+      } else if (hasBlend && hasL2) {
+        selectedPixel = blendRgb333(blendSource, layer2PixelRgb333!, this.layerPriority & 1);
+        selectedTransparent = false;
+      } else if (hasL2) {
+        selectedPixel = layer2PixelRgb333;
+        selectedTransparent = false;
+      } else if (hasBlend) {
+        selectedPixel = blendSource;
+        selectedTransparent = false;
+      } else {
+        selectedPixel = null;
+        selectedTransparent = true;
+      }
     } else {
       // Select first non-transparent layer in priority order
       switch (this.layerPriority) {
@@ -1320,6 +1378,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private ulaHiColorModeSampled: boolean;
   private ulaHiResInkRgb333: number;
   private ulaHiResPaperRgb333: number;
+  private ulaHalfPixelScrollSampled: boolean;
+  private ulaPreviousPixelRgb333: number;
+  private ulaPreviousPixelTransparent: boolean;
 
   // Active attribute lookup tables (references to module-level tables, switch based on flash state)
   private ulaActiveAttrToInk: Uint8Array;
@@ -1409,18 +1470,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // === Border Area ===
     if ((cell & SCR_DISPLAY_AREA) === 0) {
-      // Check if ULANext is enabled with mask 0xFF - if so, use fallback color
       if (this.ulaNextEnabled && this.ulaNextFormat === 0xff) {
         this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 =
           this.machine.composedScreenDevice.fallbackRgb333Cache;
         this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
-        return;
+      } else {
+        this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
+        this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
       }
-
-      // --- Use cached border RGB value (updated when borderColor changes)
-      // --- This eliminates method call overhead for ~30% of pixels
-      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = this.borderRgbCache;
-      this.ulaPixel1Transparent = this.ulaPixel2Transparent = false;
+      if (this.ulaHalfPixelScrollSampled) {
+        this.ulaPreviousPixelRgb333 = this.ulaPixel2Rgb333;
+        this.ulaPreviousPixelTransparent = this.ulaPixel2Transparent;
+      }
       return;
     }
 
@@ -1489,9 +1550,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       displayVC > this.ulaClipWindowY2;
 
     // Return layer output for composition stage
-    this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
-    this.ulaPixel1Transparent = this.ulaPixel2Transparent =
-      pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
+    const transparent = pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
+    if (this.ulaHalfPixelScrollSampled) {
+      // Half-pixel scroll: shift ULA output right by one 14 MHz dot
+      this.ulaPixel1Rgb333 = this.ulaPreviousPixelRgb333;
+      this.ulaPixel1Transparent = this.ulaPreviousPixelTransparent;
+      this.ulaPixel2Rgb333 = pixelRgb333;
+      this.ulaPixel2Transparent = transparent;
+      this.ulaPreviousPixelRgb333 = pixelRgb333;
+      this.ulaPreviousPixelTransparent = transparent;
+    } else {
+      this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
+      this.ulaPixel1Transparent = this.ulaPixel2Transparent = transparent;
+    }
   }
 
   /**
@@ -1847,6 +1918,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- ULA Hi-Color mode
     this.ulaHiColorModeSampled = this.ulaHiColorMode;
 
+    // --- Half-pixel scroll
+    this.ulaHalfPixelScrollSampled = this.ulaHalfPixelScroll;
+
     // --- Lo-Res mode
     this.loResEnabledSampled = this.loResEnabled;
   }
@@ -1927,7 +2001,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       // Fetch when entering new block horizontally
       // Standard mode: fetch when x[0]=0 (every 2 pixels)
       // Radastan mode: fetch when x[1:0]=0 (every 4 pixels)
-      const shouldFetch = !this.loResRadastanModeSampled ? (x & 0x01) === 0 : (x & 0x03) === 0;
+      // Pre-display position always fetches unconditionally to avoid stale data
+      const isPreDisplay = (cell & SCR_DISPLAY_AREA) === 0;
+      const shouldFetch = isPreDisplay
+        || (!this.loResRadastanModeSampled ? (x & 0x01) === 0 : (x & 0x03) === 0);
 
       if (shouldFetch) {
         let blockAddr: number;
@@ -1945,11 +2022,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           // Address: timexDFile bit + y(7 downto 1) * 64 + x(7 downto 2)
           // VHDL: lores_addr_rad <= dfile_i & y(7 downto 1) & x(7 downto 2)
           // Bit layout: [dfile(1)][y(7:1)(7)][x(7:2)(6)] = 14 bits
-          blockAddr = (this.loResRadastanTimexXor ? 0x2000 : 0) | ((y >> 1) << 6) | (x >> 2);
+          // FPGA: lores_dfile_0 <= port_ff_screen_mode(0) xor nr_6a_lores_radastan_xor
+          const dfile = ((this.timexPortBits & 0x01) !== 0) !== this.loResRadastanTimexXor;
+          blockAddr = (dfile ? 0x2000 : 0) | ((y >> 1) << 6) | (x >> 2);
         }
 
-        // Read from Bank 5 memory (ULA memory space)
-        this.loResBlockByte = this.machine.memoryDevice.readScreenMemory(blockAddr);
+        // Read from Bank 5 memory (LoRes always uses bank 5, never shadow screen bank 7)
+        // FPGA: lores has dedicated port on bank-5 SRAM arbitrator
+        this.loResBlockByte = this.machine.memoryDevice.memory[OFFS_BANK_05 + (blockAddr & 0x3fff)];
       }
     }
 
@@ -1991,9 +2071,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
       // Palette index construction follows VHDL implementation (lores.vhd lines 110-112)
       let paletteIndex: number;
-      if (this.ulaPlusEnabled) {
-        // ULA+ mode: use group 3 (bits 7:6 = 11) with palette offset in bits 3:2
-        paletteIndex = 0xc0 | ((this.loResPaletteOffset & 0x03) << 2) | nibble;
+      if (this.ulaPlusEnabled && !this.ulaNextEnabled) {
+        // ULA+ mode: use group 3 (bits 7:6 = 11) with palette offset in bits 5:4
+        // FPGA: pixel_rad_nib_H <= ("11" & lores_palette_offset_i(1 downto 0))
+        paletteIndex = 0xc0 | ((this.loResPaletteOffset & 0x03) << 4) | nibble;
       } else {
         // Standard mode: palette offset in upper nibble
         paletteIndex = ((this.loResPaletteOffset & 0x0f) << 4) | nibble;
@@ -2109,16 +2190,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const offset = (this.layer2Scanline192Y << 8) | x;
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(this.layer2Scanline192Bank, offset);
 
-    if (pixelValue === this.globalTransparencyColor) {
+    // Apply palette offset before transparency check (per FPGA layer2.vhd line 207)
+    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
+    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
+
+    if (paletteIndex === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
-
-    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
-    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
     const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
-    const priority = (rgb333 & 0x100) !== 0;
+    const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
     this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
@@ -2144,8 +2226,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       return false;
     }
 
-    // Pre-calculate Y coordinate with modulo and store in member variable
-    this.layer2Scanline192Y = (displayVC + this.layer2ScrollY) % 192;
+    // Pre-calculate Y coordinate with FPGA wrapping formula (layer2.vhd lines 147-149):
+    // When y_pre >= 192, add 1 to bits[7:6] (not simple modulo)
+    this.layer2Scanline192Y = loResYWrapTable![displayVC + this.layer2ScrollY];
 
     // Pre-select bank and store in member variable
     this.layer2Scanline192Bank = this.layer2UseShadowBank
@@ -2211,16 +2294,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const offset = (this.layer2Scanline192Y << 8) | displayHC;
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(this.layer2Scanline192Bank, offset);
 
-    if (pixelValue === this.globalTransparencyColor) {
+    // Apply palette offset before transparency check (per FPGA layer2.vhd line 207)
+    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
+    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
+
+    if (paletteIndex === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
-
-    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
-    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
     const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
-    const priority = (rgb333 & 0x100) !== 0;
+    const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
     this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
@@ -2279,16 +2363,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const offset = (x << 8) | this.layer2Scanline320x256Y;
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(this.layer2Scanline320x256Bank, offset);
 
-    if (pixelValue === this.globalTransparencyColor) {
+    // Apply palette offset before transparency check (per FPGA layer2.vhd line 207)
+    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
+    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
+
+    if (paletteIndex === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
 
-    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
-    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
     const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
-    const priority = (rgb333 & 0x100) !== 0;
+    const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
     this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
@@ -2348,16 +2434,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const offset = (displayHC_wide << 8) | this.layer2Scanline320x256Y;
     const pixelValue = this.getLayer2PixelFromSRAM_Cached(this.layer2Scanline320x256Bank, offset);
 
-    if (pixelValue === this.globalTransparencyColor) {
+    // Apply palette offset before transparency check (per FPGA layer2.vhd line 207)
+    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
+    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
+
+    if (paletteIndex === this.globalTransparencyColor) {
       this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = 0;
       this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = true;
       return;
     }
 
-    const upperNibble = ((pixelValue >> 4) + (this.layer2PaletteOffset & 0x0f)) & 0x0f;
-    const paletteIndex = (upperNibble << 4) | (pixelValue & 0x0f);
     const rgb333 = this.paletteDevice.getLayer2Rgb333(paletteIndex);
-    const priority = (rgb333 & 0x100) !== 0;
+    const priority = (rgb333 & 0x200) !== 0;
 
     this.layer2Pixel1Rgb333 = this.layer2Pixel2Rgb333 = rgb333 & 0x1ff;
     this.layer2Pixel1Transparent = this.layer2Pixel2Transparent = false;
@@ -2451,10 +2539,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const pixelByte = this.getLayer2PixelFromSRAM_Cached(this.layer2Scanline640x256Bank, offset);
 
     // Extract two 4-bit pixels from the byte (per VHDL line 206)
-    // Lower nibble [3:0] = pixel1 (left pixel, output first)
-    // Upper nibble [7:4] = pixel2 (right pixel, output second)
-    const pixel1_4bit = pixelByte & 0x0f;
-    const pixel2_4bit = (pixelByte >> 4) & 0x0f;
+    // Upper nibble [7:4] = pixel1 (left pixel, output first)
+    // Lower nibble [3:0] = pixel2 (right pixel, output second)
+    const pixel1_4bit = (pixelByte >> 4) & 0x0f;
+    const pixel2_4bit = pixelByte & 0x0f;
 
     // Process pixel 1 (left pixel)
     // In 640x256 mode, palette index = (palette_offset << 4) | pixel_4bit
@@ -2466,7 +2554,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel1Priority = false;
     } else {
       const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
-      const priority1 = (rgb333_1 & 0x100) !== 0;
+      const priority1 = (rgb333_1 & 0x200) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
       this.layer2Pixel1Transparent = false;
@@ -2482,7 +2570,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel2Priority = false;
     } else {
       const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
-      const priority2 = (rgb333_2 & 0x100) !== 0;
+      const priority2 = (rgb333_2 & 0x200) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
       this.layer2Pixel2Transparent = false;
@@ -2510,10 +2598,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const pixelByte = this.getLayer2PixelFromSRAM_Cached(this.layer2Scanline640x256Bank, offset);
 
     // Extract two 4-bit pixels from the byte (per VHDL line 206)
-    // Lower nibble [3:0] = pixel1 (left pixel, output first)
-    // Upper nibble [7:4] = pixel2 (right pixel, output second)
-    const pixel1_4bit = pixelByte & 0x0f;
-    const pixel2_4bit = (pixelByte >> 4) & 0x0f;
+    // Upper nibble [7:4] = pixel1 (left pixel, output first)
+    // Lower nibble [3:0] = pixel2 (right pixel, output second)
+    const pixel1_4bit = (pixelByte >> 4) & 0x0f;
+    const pixel2_4bit = pixelByte & 0x0f;
 
     // Process pixel 1 (left pixel)
     const paletteIndex1 = ((this.layer2PaletteOffset & 0x0f) << 4) | pixel1_4bit;
@@ -2524,7 +2612,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel1Priority = false;
     } else {
       const rgb333_1 = this.paletteDevice.getLayer2Rgb333(paletteIndex1);
-      const priority1 = (rgb333_1 & 0x100) !== 0;
+      const priority1 = (rgb333_1 & 0x200) !== 0;
 
       this.layer2Pixel1Rgb333 = rgb333_1 & 0x1ff;
       this.layer2Pixel1Transparent = false;
@@ -2540,7 +2628,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.layer2Pixel2Priority = false;
     } else {
       const rgb333_2 = this.paletteDevice.getLayer2Rgb333(paletteIndex2);
-      const priority2 = (rgb333_2 & 0x100) !== 0;
+      const priority2 = (rgb333_2 & 0x200) !== 0;
 
       this.layer2Pixel2Rgb333 = rgb333_2 & 0x1ff;
       this.layer2Pixel2Transparent = false;
@@ -4499,6 +4587,28 @@ let attrToPaperFlashOn: Uint8Array | undefined;
 let ulaPlusAttrToInk: Uint8Array | undefined;
 let ulaPlusAttrToPaper: Uint8Array | undefined;
 
+/**
+ * Blend two RGB333 (9-bit) colours per the ZX Next layer blend modes.
+ * @param a First RGB333 colour (blend source: ULA/tilemap)
+ * @param b Second RGB333 colour (Layer 2)
+ * @param mixer 0 = saturate-add (clamp to 7), 1 = darken (add − 5, clamp 0-7)
+ */
+function blendRgb333(a: number, b: number, mixer: number): number {
+  const rA = (a >> 6) & 7, gA = (a >> 3) & 7, bA = a & 7;
+  const rB = (b >> 6) & 7, gB = (b >> 3) & 7, bB = b & 7;
+  let r: number, g: number, bl: number;
+  if (mixer === 0) {
+    r = Math.min(7, rA + rB);
+    g = Math.min(7, gA + gB);
+    bl = Math.min(7, bA + bB);
+  } else {
+    r = Math.max(0, Math.min(7, rA + rB - 5));
+    g = Math.max(0, Math.min(7, gA + gB - 5));
+    bl = Math.max(0, Math.min(7, bA + bB - 5));
+  }
+  return (r << 6) | (g << 3) | bl;
+}
+
 function generateAttributeDecodeTables(): {
   attrToInkFlashOff: Uint8Array;
   attrToPaperFlashOff: Uint8Array;
@@ -4520,7 +4630,7 @@ function generateAttributeDecodeTables(): {
 
     const brightOffset = bright << 3;
     const inkPaletteIndex = inkColor + brightOffset;
-    const paperPaletteIndex = paperColor + brightOffset;
+    const paperPaletteIndex = paperColor + brightOffset + 0x10;
 
     if (flash) {
       attrToInkFlashOff[attr] = inkPaletteIndex;
@@ -4908,7 +5018,7 @@ function initializeLayer2HelperTables(): void {
 
   for (let i = 0; i < 1024; i++) {
     let x = i;
-    if (x >= 320 && x < 512) {
+    if (x >= 320) {
       const upper = ((x >> 6) & 0x7) + 3;
       x = (upper << 6) | (x & 0x3f);
     }

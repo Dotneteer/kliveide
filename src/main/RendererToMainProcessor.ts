@@ -727,6 +727,16 @@ class MainMessageProcessor {
   }
 
   /**
+   * Returns the total number of 512-byte sectors on the mounted SD card image.
+   */
+  async getSdCardInfo(): Promise<{ totalSectors: number }> {
+    const sdHandler = getSdCardHandler();
+    const info = sdHandler.cimInfo;
+    const totalSectors = (info.maxSize * 2048) / info.sectorSize;
+    return { totalSectors };
+  }
+
+  /**
    * Returns the current application settings object.
    */
   async getAppSettings(): Promise<AppSettings> {

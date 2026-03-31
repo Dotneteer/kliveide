@@ -1,291 +1,250 @@
-# Copper Device Implementation Plan
+# ZX Spectrum Next — MAME vs Klive Device Implementation Plan
 
-## Overview
+This document compares the MAME ZX Spectrum Next (TBBlue) emulation with the Klive IDE implementation
+and outlines a plan to implement the missing devices.
 
-The ZX Spectrum Next **Copper** is a simple coprocessor that executes a list of up to 1024 16-bit instructions from dedicated 2 KB memory. Each instruction is either a **MOVE** (write a value to a NextReg) or a **WAIT** (pause until the raster reaches a specific screen position). The Copper enables cycle-exact register changes synchronized to the video beam, used for palette swaps, scroll effects, and other raster tricks.
+## Summary
 
-### Reference implementations
-
-| Source | Location | Notes |
-|--------|----------|-------|
-| MAME C++ | `_input/src/mame/sinclair/specnext_copper.cpp/.h` | Two-timer model: execution timer + frame-restart timer |
-| FPGA VHDL | `_input/next-fpga/src/device/copper.vhd` | Single-clock process; compares `hcount_i`/`vcount_i` against WAIT target |
-| NextReg docs | `_input/next-fpga/nextreg.txt` (regs 0x60–0x64) | Register interface specification |
-
-### Current state in Klive
-
-`src/emu/machines/zxNext/CopperDevice.ts` is a **data-store only**:
-- 2 KB instruction memory, register I/O for NextRegs 0x60–0x64.
-- No execution engine, no clock integration, no MOVE/WAIT processing.
-
-The machine (`ZxNextMachine.ts`) creates and resets the copper device but **never clocks it**. There is no call from `onTactIncremented()` or `onInitNewFrame()` to drive copper execution.
-
----
-
-## Instruction set (from FPGA & MAME)
-
-| Bit 15 | Meaning | Encoding |
-|--------|---------|----------|
-| 0 | **MOVE** reg, val | `0RRRRRRR VVVVVVVV` — write value V to NextReg R (R < 0x80). If R == 0 the instruction is a **NOP**. |
-| 1 | **WAIT** line, hc | `1HHHHHH LLLLLLLLL` — wait until vertical line == L and horizontal counter ≥ H×8 + 12 (the `+12` offset matches the FPGA). |
-
-When the instruction pointer reaches the end of the 1024-entry list it **wraps to 0**.
-
----
-
-## Implementation steps
-
-Each step below is independently **testable**. Steps are ordered so that each builds on the previous, enabling incremental development with green tests at every stage.
-
----
-
-### Step 1 — Add execution state fields to CopperDevice
-
-**Goal:** Extend the existing data-store device with the internal state needed by the execution engine.
-
-**New fields:**
-- `_copperListAddr: number` — current instruction pointer (0–0x3FF), index into the 1024-instruction list.
-- `_copperListData: number` — the 16-bit instruction word last fetched.
-- `_copperDout: boolean` — `true` when a MOVE result is pending output on the next tick.
-
-**Changes to `reset()`:** Initialize `_copperListAddr = 0`, `_copperListData = 0`, `_copperDout = false`.
-
-**Changes to `set nextReg62Value`:** When the start-mode transitions to `0b01` or `0b11`, reset `_copperListAddr = 0` and `_copperDout = false` (matches MAME `copper_en_w`). Mode `0b10` must **not** reset the pointer.
-
-**Tests:**
-- After `reset()`, verify all new fields are at their initial values.
-- Write `0b01 << 6` to nextReg62: verify `_copperListAddr` resets to 0.
-- Write `0b11 << 6` to nextReg62: verify `_copperListAddr` resets to 0.
-- Write `0b10 << 6` to nextReg62: verify `_copperListAddr` is unchanged.
-- Write the same start-mode twice: verify the pointer is **not** reset on the second write (per nextreg spec: "Writing the same start control value does not reset the copper").
+| # | MAME Device | Klive Equivalent | Status |
+|---|-------------|------------------|--------|
+| 1 | Z80N CPU | Z80NMachineBase | ✅ Complete |
+| 2 | Spectrum ULA contention | UlaDevice / MemoryDevice | ✅ Complete |
+| 3 | IM2 Line Interrupt | InterruptDevice | ✅ Complete |
+| 4 | IM2 ULA Interrupt | InterruptDevice | ✅ Complete |
+| 5 | Z80 CTC (specnext_ctc) | CtcPortHandler (stub) | ❌ Missing |
+| 6 | Z80 DMA (specnext_dma) | DmaDevice | ✅ Complete |
+| 7 | Screen ULA / ULA+ / ULANext | NextComposedScreenDevice | ✅ Complete |
+| 8 | Copper (specnext_copper) | CopperDevice | ✅ Complete |
+| 9 | Layer 2 (specnext_layer2) | NextComposedScreenDevice | ✅ Complete |
+| 10 | LoRes (specnext_lores) | NextComposedScreenDevice | ✅ Complete |
+| 11 | Sprites (specnext_sprites) | SpriteDevice | ✅ Complete |
+| 12 | Tilemap (specnext_tiles) | TilemapDevice | ✅ Complete |
+| 13 | SPI SD Card ×2 (spi_sdcard) | SdCardDevice (high-level) + SPI port stubs | ⚠️ Partial |
+| 14 | DivMMC (specnext_divmmc) | DivMmcDevice | ✅ Complete |
+| 15 | Multiface (specnext_multiface) | MultifaceDevice | ✅ Complete |
+| 16 | YM2149 PSG ×3 (TurboSound) | TurboSoundDevice | ✅ Complete |
+| 17 | DAC 8-bit R2R ×4 | DacDevice / DacPortDevice / DacNextRegDevice | ✅ Complete |
+| 18 | Speaker | AudioMixerDevice (beeper) | ✅ Complete |
+| 19 | Palette (512×4 + 1) | PaletteDevice | ✅ Complete |
+| 20 | DS1307 I2C RTC | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ❌ Missing |
+| 21 | I2C Bus | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ❌ Missing |
+| 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ❌ Missing |
+| 23 | ZX Bus / Expansion Slot | ExpansionBusDevice (framework only) | ⚠️ Partial |
+| 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |
+| 25 | Kempston Joystick ports | KempstonHandler (stubs) | ❌ Missing |
+| 26 | Z80 Daisy Chain | InterruptDevice (priority, no daisy chain) | ⚠️ Partial |
+| 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ❌ Missing |
+| 28 | NextReg bank device | NextRegDevice | ✅ Complete |
+| 29 | Memory paging | MemoryDevice | ✅ Complete |
+| 30 | CPU speed control | CpuSpeedDevice | ✅ Complete |
+| 31 | Keyboard | NextKeyboardDevice | ✅ Complete |
 
 ---
 
-### Step 2 — Implement the MOVE instruction
+## Missing Devices — Implementation Plan
 
-**Goal:** When `executeTick()` is called and the current instruction is a MOVE, write the value to the target NextReg.
+### Phase 1: CTC Device (High Priority)
 
-**New method:** `executeTick(vc: number, hc: number): void` — the per-tick step function.
+**What**: Z80 CTC (Counter/Timer Circuit) — `specnext_ctc_device` in MAME  
+**Why**: Required by timing-dependent demos, games, and system software. The CTC generates
+interrupts on timer expiry and is part of the IM2 daisy chain. 8 CTC channels are mapped to
+interrupt sources in the Next.  
+**MAME Reference**: `_input/src/mame/sinclair/specnext_ctc.h`, `specnext_ctc.cpp`, `_input/src/devices/machine/z80ctc.h`, `z80ctc.cpp`  
+**Klive Stubs**: `io-ports/CtcPortHandler.ts`
 
-**MOVE logic (bit 15 == 0):**
-1. If `_copperDout` is `true` from a previous tick:
-   - Execute the pending MOVE: call `machine.nextRegDevice.directSetRegValue(reg, val)` where `reg = (_copperListData >> 8) & 0x7F` and `val = _copperListData & 0xFF`.
-   - Clear `_copperDout = false`.
-2. If the current instruction's bit 15 is 0:
-   - Fetch the instruction word from memory: `_copperListData = (mem[addr*2] << 8) | mem[addr*2+1]`.
-   - If `reg != 0` (not NOP), set `_copperDout = true`.
-   - Advance `_copperListAddr = (_copperListAddr + 1) % 0x400`.
-3. A NOP (MOVE 0, 0) advances the pointer but does **not** set `_copperDout`.
-
-**Tests:**
-- Program a single MOVE instruction (e.g., MOVE reg 0x40, value 0xAA). Call `executeTick()` twice. After the second tick the target NextReg should hold 0xAA.
-- Program a NOP (0x0000). Call `executeTick()` once. Verify pointer advanced but no NextReg write occurred.
-- Program multiple consecutive MOVEs. Verify each is executed in sequence, one MOVE output per two ticks (fetch + output).
-
----
-
-### Step 3 — Implement the WAIT instruction
-
-**Goal:** When the current instruction is a WAIT, compare the target position against the current beam position and advance only when the condition is met.
-
-**WAIT logic (bit 15 == 1):**
-1. Decode the target: `waitLine = instruction & 0x1FF`, `waitHC = ((instruction >> 9) & 0x3F) * 8 + 12`.
-2. Compare: if `vc == waitLine && hc >= waitHC`, advance `_copperListAddr` and clear `_copperDout`.
-3. Otherwise, do nothing (the copper stalls on this instruction).
-
-**Tests:**
-- Program a WAIT for line 100, HC 0. Call `executeTick(100, 12)` — verify pointer advances.
-- Call `executeTick(99, 200)` on the same WAIT — verify pointer does **not** advance (wrong line).
-- Call `executeTick(100, 4)` — verify pointer does **not** advance (HC too early; 4 < 12).
-- Program WAIT followed by MOVE. Step the copper: verify the MOVE only fires after the WAIT line is reached.
-- Test edge: WAIT for line 0, HC 0 — should match when `vc == 0 && hc >= 12`.
+**Implementation Steps**:
+1. Create `src/emu/machines/zxNext/CtcDevice.ts`
+2. Implement 4 CTC channels, each with:
+   - Timer mode (prescaler: 16 or 256) and counter mode (external trigger)
+   - Time constant register (8-bit down counter)
+   - Interrupt generation on zero-count
+   - Channel control word decoding
+3. Wire CTC channels to the InterruptDevice (8 CTC interrupt sources)
+4. Implement I/O port handler at 0x183B+ (4 channels)
+5. Integrate with the DMA device (CTC can trigger DMA transfers)
+6. Add CTC state to machine snapshot (getState/setState)
 
 ---
 
-### Step 4 — Implement the stop mode (mode 0b00)
+### Phase 2: SPI SD Card Ports (High Priority)
 
-**Goal:** When start-mode is `0b00`, `executeTick()` must do nothing.
+**What**: SPI protocol support for SD card communication  
+**Why**: Klive has a high-level `SdCardDevice` that handles MMC commands via IPC, but the I/O port
+handlers (`SpiCsPortHandler`, `SpiDataPortHandler`) are stubs. Software that directly accesses the
+SPI ports (0xE7 chip select, 0xEB data) will not work. The ports need to bridge to the existing
+SdCardDevice.  
+**MAME Reference**: `_input/src/devices/machine/spi_sdcard.h`, `spi_sdcard.cpp`  
+**Klive Stubs**: `io-ports/SpiCsPortHandler.ts`, `io-ports/SpiDataPortHandler.ts`
 
-**Logic:** At the top of `executeTick()`, if `_startMode == 0`, return immediately.
-
-**Tests:**
-- Set mode 0b00, program a MOVE, call `executeTick()` many times — verify no NextReg writes occur.
-- Transition from mode 0b01 to 0b00 mid-list — verify execution halts immediately.
-
----
-
-### Step 5 — Implement wrap-around for modes 0b01 and 0b10
-
-**Goal:** When the instruction pointer reaches 0x400, it wraps to 0 and the copper keeps running.
-
-**Logic:** After every instruction-pointer increment: `_copperListAddr %= 0x400`.
-
-This is already implied in Step 2, but this step adds the explicit test coverage for the wrap scenario.
-
-**Tests:**
-- Fill all 1024 slots with NOPs. Start mode 0b01. Step 1024+ times. Verify the pointer wraps to 0 and continues.
-- Place a MOVE at slot 0, NOPs everywhere else. Run 1025 ticks. Verify the MOVE at slot 0 executes twice (i.e., the list looped).
+**Implementation Steps**:
+1. Implement `writeSpiCsPort` to route chip select to `SdCardDevice`
+2. Implement `readSpiDataPort` / `writeSpiDataPort` to route SPI data through `SdCardDevice`
+3. Test with Next boot sequence (SD card initialization uses SPI commands)
 
 ---
 
-### Step 6 — Implement frame-restart mode (mode 0b11)
+### Phase 3: I2C Bus + DS1307 RTC (Medium Priority)
 
-**Goal:** In mode `0b11`, the copper restarts from address 0 every time the beam reaches position (vc=0, hc=0).
+**What**: I2C master bit-bang protocol and DS1307 real-time clock  
+**Why**: The Next uses I2C to communicate with a DS1307 RTC. Software can read date/time and
+use the 56 bytes of battery-backed SRAM. Some games and system tools depend on this.  
+**MAME Reference**: `_input/src/devices/machine/ds1307.h`, `ds1307.cpp`  
+**Klive Stubs**: `io-ports/I2cSclPortHandler.ts`, `io-ports/I2cSdaPortHandler.ts`
 
-**Logic in `executeTick(vc, hc)`:**
-- If `_startMode == 0b11 && vc == 0 && hc == 0`: reset `_copperListAddr = 0` and `_copperDout = false`.
-- Then proceed with normal MOVE/WAIT execution.
-
-This matches the FPGA:
-```vhdl
-elsif copper_en_i = "11" and vcount_i = 0 and hcount_i = 0 then
-    copper_list_addr_s <= (others=>'0');
-    copper_dout_s <= '0';
-```
-
-**Tests:**
-- Mode 0b11, program MOVE at slot 0 and WAIT-forever at slot 1. Step through a full frame, then call `executeTick(0, 0)`. Verify pointer resets to 0 and the MOVE fires again.
-- Mode 0b01 with the same program: stepping through `(0, 0)` does **not** reset the pointer (only mode 0b11 does frame restart).
-
----
-
-### Step 7 — Implement the vertical line offset (NextReg 0x64)
-
-**Goal:** The copper's beam comparison uses an **offset** vertical count: `copperVC = (vc + verticalLineOffset) % totalVC`.
-
-This allows software to shift the copper's sense of "line 0" (e.g., to start effects relative to the active display area).
-
-**Logic:** In `executeTick()`, before WAIT comparison and frame-restart check, compute:
-```
-adjustedVC = (vc + this.verticalLineOffset) % this.machine.screenConfig.totalVC
-```
-Use `adjustedVC` instead of raw `vc` for all position comparisons (WAIT match and frame-restart `vc == 0` check).
-
-**Tests:**
-- Set offset = 10. WAIT for line 5. Call `executeTick(vc=totalVC-5, hc=12)`. Since `(totalVC - 5 + 10) % totalVC == 5`, the WAIT should match.
-- Set offset = 0 (default). Same test at `vc = 5` — should still match.
-- Verify frame-restart (mode 0b11) uses the offset: restart should happen when the **adjusted** VC == 0.
+**Implementation Steps**:
+1. Create `src/emu/machines/zxNext/I2cDevice.ts` — I2C bus master:
+   - SCL (clock) and SDA (data) line state tracking
+   - START/STOP condition detection
+   - Bit-level shift register (8 bits + ACK)
+   - Device address decoding (DS1307 = 0x68)
+2. Create `src/emu/machines/zxNext/RtcDevice.ts` — DS1307 RTC:
+   - 64×8-bit register file (7 time registers + 56 SRAM bytes)
+   - BCD-encoded time: seconds, minutes, hours, day-of-week, date, month, year
+   - 12/24-hour mode
+   - Oscillator enable/disable (CH bit)
+   - Square wave output configuration
+   - NVRAM persistence (save/restore state)
+3. Wire I2C port handlers (port 0x103B SCL, 0x113B SDA) to I2cDevice
+4. Connect I2cDevice to RtcDevice as slave at address 0x68
+5. Populate RTC from host system clock on machine start
+6. Add state serialization
 
 ---
 
-### Step 8 — Wire CopperDevice into the machine frame loop
+### Phase 4: UART Serial Communication (Medium Priority)
 
-**Goal:** Call `copperDevice.executeTick(vc, hc)` from `ZxNextMachine.onTactIncremented()` so the copper runs in sync with the video beam.
+**What**: Dual UART (UART0 and UART1) for serial communication  
+**Why**: Used for Wi-Fi modules (ESP8266), serial debugging, and communication between devices.
+The UART generates RX/TX interrupts that feed into the IM2 interrupt system.  
+**MAME Reference**: No direct MAME C++ implementation (handled via FPGA VHDL in real hardware)  
+**Klive Stubs**: `io-ports/UartTxPortHandler.ts`, `UartRxPortHandler.ts`, `UartSelectPortHandler.ts`, `UartFramePortHandler.ts`
 
-**Changes to `ZxNextMachine.onTactIncremented()`:**
-```typescript
-onTactIncremented(): void {
-  if (this.frameCompleted) return;
-  while (this.lastRenderedFrameTact < this.currentFrameTact) {
-    // --- Copper executes once per tact
-    const vc = this.composedScreenDevice.tactToVC[this.lastRenderedFrameTact];
-    const hc = this.composedScreenDevice.tactToHC[this.lastRenderedFrameTact];
-    this.copperDevice.executeTick(vc, hc);
-
-    this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
-  }
-  // ... audio samples ...
-}
-```
-
-The copper runs **before** `renderTact()` so that any register changes it makes (palette, scroll, etc.) take effect on the current tact.
-
-**Changes to `ZxNextMachine.onInitNewFrame()`:** Not strictly required (mode 0b11 frame-restart is handled by the `(vc==0, hc==0)` check in `executeTick()`), but optionally add:
-```typescript
-this.copperDevice.onNewFrame();
-```
-as a hook for future cleanup or debugging.
-
-**Tests (integration):**
-- Program a WAIT for visible line + a MOVE that changes a palette register. Run a full emulated frame. Verify the palette register value is set after the target line.
-- Mode 0b00: run a full frame with copper programmed — verify no register writes occur.
-- Mode 0b11: run two full frames — verify the copper list executes fully in each frame (MOVE fires in both frames).
+**Implementation Steps**:
+1. Create `src/emu/machines/zxNext/UartDevice.ts` with two UART channels:
+   - 512-byte RX FIFO and 64-byte TX FIFO per channel
+   - Prescaler-based baud rate generation
+   - Data frame configuration (stop bits, parity, word length 5-8)
+   - Status flags: TX empty, RX data available, RX near-full, RX full
+   - Break condition detection
+2. Implement port handlers:
+   - 0x143B: UART TX data write
+   - 0x143B: UART RX data read
+   - 0x153B: UART select (channel 0 or 1)
+   - 0x163B: UART frame configuration
+3. Wire UART interrupts to InterruptDevice:
+   - UART0 RX → interrupt source 1
+   - UART1 RX → interrupt source 2
+   - UART0 TX → interrupt source 12
+   - UART1 TX → interrupt source 13
+4. Optionally provide a virtual serial terminal or WebSocket bridge for external I/O
 
 ---
 
-### Step 9 — Copper writes to NextRegs must be restricted to 0x00–0x7F
+### Phase 5: Kempston Mouse + Joystick Ports (Medium Priority)
 
-**Goal:** The copper can only write to NextRegs 0x00–0x7F (bit 7 of the register is stripped). Registers above 0x80 are inaccessible (per nextreg.txt: "Registers 0x80 and above are inaccessible to the copper").
+**What**: Kempston mouse (3-axis: X, Y, wheel + buttons) and joystick port reads  
+**Why**: Many Next games and applications support mouse input. The Kempston joystick port reads
+are also used by virtually all games. Currently, Klive's `JoystickDevice` has configuration logic
+but the actual I/O port handlers are stubs.  
+**MAME Reference**: Port mappings in `specnext.cpp` (ports 0x1F, 0x37, 0xFBDF, 0xFFDF, 0xFADF)  
+**Klive Stubs**: `io-ports/KempstonHandler.ts`
 
-**Logic:** Already implicit in the `& 0x7F` mask on the register number, but add an explicit guard that **no** write is emitted for register 0.
-
-**Tests:**
-- MOVE to register 0x45 — verify write occurs.
-- MOVE to register 0x00 (NOP) — verify no write occurs.
-- MOVE with raw register field 0xFF (bit 7 set) — verify the write targets register 0x7F (bit 7 masked off).
-
----
-
-### Step 10 — Performance: batch consecutive MOVEs
-
-**Goal:** Following MAME's optimization, when multiple consecutive MOVEs are queued with no intervening WAIT, execute them in a batch within a single `executeTick()` call rather than requiring one call per MOVE.
-
-From MAME (`specnext_copper.cpp`):
-```cpp
-/* This loop has been added for performance reasons. */
-++times;
-} while (m_copper_dout == 0 && m_copper_list_addr < 0x400);
-m_timer->adjust(clocks_to_attotime(times));
-```
-
-**Logic:** Inside `executeTick()`, after processing a MOVE output, loop to process additional instructions as long as:
-- The next instruction is also a MOVE (not WAIT).
-- The list address hasn't wrapped.
-
-Track the number of instructions consumed for timing.
-
-**Tests:**
-- Program 10 consecutive MOVEs to different registers. Call `executeTick()` once. Verify all 10 registers are set.
-- Program a MOVE, then a WAIT. Verify only the MOVE executes; the WAIT stalls.
-- Program 1024 NOPs. A single `executeTick()` should process all of them (pointer wraps to 0) without hanging.
+**Implementation Steps**:
+1. Implement `readKempstonJoy1Port` (0x1F) — map JoystickDevice state to 8-bit value
+   (right, left, down, up, fire, fire2, fire3)
+2. Implement `readKempstonJoy2Port` (0x37) — second joystick port
+3. Implement `readKempstonMouseXPort` (0xFBDF) — return accumulated X delta (wrapping 8-bit)
+4. Implement `readKempstonMouseYPort` (0xFFDF) — return accumulated Y delta (wrapping 8-bit) 
+5. Implement `readKempstonMouseWheelPort` (0xFADF) — return wheel delta + button state
+6. Wire to MouseDevice for mouse position tracking
+7. Wire to JoystickDevice for joystick button mapping
 
 ---
 
-### Step 11 — Add CopperDeviceState for IDE diagnostics
+### Phase 6: Z80 Daisy Chain (Low Priority)
 
-**Goal:** Expose a snapshot of the copper's internal state for the Klive debugger/inspector UI.
+**What**: Proper Z80 daisy chain interrupt priority mechanism  
+**Why**: MAME implements formal daisy chain with the priority order:
+Line → CTC ch0-3 → ULA → DMA. Klive's InterruptDevice handles priority but uses a simpler
+model. Once CTC is implemented, proper daisy chain sequencing becomes more important for
+accurate interrupt acknowledgment and RETI handling.  
+**MAME Reference**: `_input/src/devices/machine/z80daisy.h`, `z80daisy.cpp`
 
-**New type:** `CopperDeviceState` (in `src/emu/abstractions/` or alongside the device):
-```typescript
-type CopperDeviceState = {
-  startMode: CopperStartMode;
-  instructionAddress: number;    // 0–0x3FF
-  listData: number;              // last fetched 16-bit instruction
-  dout: boolean;                 // pending MOVE output
-  verticalLineOffset: number;
-  memory: Uint8Array;            // full 2 KB snapshot
-};
-```
-
-**New method:** `getState(): CopperDeviceState`.
-
-**Tests:**
-- After programming and stepping the copper, call `getState()` and verify all fields match expected values.
+**Implementation Steps**:
+1. Review Klive's InterruptDevice to assess whether it already satisfies daisy chain semantics
+2. Add IEI/IEO (Interrupt Enable In/Out) chain traversal if missing
+3. Ensure interrupt acknowledge delivers the correct vector from the highest-priority pending device
+4. Ensure RETI instruction propagates through the chain correctly
+5. Wire CTC channels into the chain between Line and ULA interrupts
 
 ---
 
-## Summary of files to modify
+### Phase 7: +3 FDC (Floppy Disk Controller) (Low Priority)
 
-| File | Changes |
-|------|---------|
-| `src/emu/machines/zxNext/CopperDevice.ts` | Add execution state, `executeTick()`, mode transitions, MOVE/WAIT logic, batching, `getState()` |
-| `src/emu/machines/zxNext/ZxNextMachine.ts` | Wire `copperDevice.executeTick(vc, hc)` into `onTactIncremented()` |
-| `test/zxnext/copper-device.test.ts` (new) | Unit tests for all steps above |
+**What**: Spectrum +3 Floppy Disk Controller  
+**Why**: The ZX Spectrum Next can emulate +3 mode with floppy disk support.
+Lower priority because most Next software uses SD card storage.  
+**MAME Reference**: +3 emulation in MAME  
+**Klive Stubs**: `io-ports/SpectrumP3FdcControlPortHandler.ts`, `io-ports/SpectrumP3FdcStatusPortHandler.ts`
 
-## Test file structure
+**Implementation Steps**:
+1. Create `src/emu/machines/zxNext/FdcDevice.ts`
+2. Implement basic NEC 765 FDC command set:
+   - Read/Write sector
+   - Seek/Recalibrate
+   - Sense interrupt status
+   - Specify
+3. Add DSK image file loading support
+4. Wire to I/O ports
 
-```
-test/zxnext/copper-device.test.ts
-  describe("CopperDevice")
-    describe("Step 1: Execution state initialization")
-    describe("Step 2: MOVE instruction")
-    describe("Step 3: WAIT instruction")
-    describe("Step 4: Stop mode")
-    describe("Step 5: Wrap-around")
-    describe("Step 6: Frame-restart mode")
-    describe("Step 7: Vertical line offset")
-    describe("Step 8: Machine integration")
-    describe("Step 9: Register restrictions")
-    describe("Step 10: MOVE batching")
-    describe("Step 11: State snapshot")
-```
+---
+
+### Phase 8: ZX Bus Expansion Slot (Low Priority)
+
+**What**: External expansion bus device support  
+**Why**: Klive has an `ExpansionBusDevice` framework but no actual external device support.
+MAME implements ZXBUS with expansion slot capability.  
+**MAME Reference**: `_input/src/devices/bus/spectrum/zxbus/bus.h`, `bus.cpp`
+
+**Implementation Steps**:
+1. Define expansion device interface in Klive
+2. Allow loading virtual expansion ROMs
+3. Route I/O and memory requests through expansion bus filter
+4. This is primarily an extensibility feature for the future
+
+---
+
+## Implementation Priority Summary
+
+| Priority | Device | Effort | Impact |
+|----------|--------|--------|--------|
+| 🔴 High | CTC Device | Medium | Timing-critical software support |
+| 🔴 High | SPI SD Card Ports | Low | Bridge to existing SdCardDevice |
+| 🟡 Medium | I2C Bus + DS1307 RTC | Medium | Date/time and NVRAM support |
+| 🟡 Medium | UART (dual) | Medium-High | Serial communication, Wi-Fi |
+| 🟡 Medium | Kempston Mouse/Joystick | Low-Medium | Game input support |
+| 🟢 Low | Z80 Daisy Chain | Low | Interrupt accuracy refinement |
+| 🟢 Low | +3 FDC | High | Legacy floppy support |
+| 🟢 Low | ZX Bus Expansion | Medium | Future extensibility |
+
+## Already Complete in Klive (No Action Needed)
+
+- Z80N CPU with extended instructions
+- Copper coprocessor (FPGA-accurate model)
+- DMA controller (both legacy and ZXN modes)
+- Layer 2 graphics (256×192, 320×256, 640×256)
+- LoRes/Radastan graphics
+- ULA / ULA+ / ULANext rendering
+- Tilemap layer (40×32, 80×32, text mode)
+- Sprite engine (128 sprites, rotation, scaling, relative sprites)
+- Palette management (4 palette sets ×2 alternates)
+- TurboSound (3× YM2149 PSG)
+- 4-channel DAC (SpecDrum/SoundDrive)
+- Audio mixer with beeper
+- Memory paging (2MB, NextReg MMU)
+- DivMMC with automap
+- Multiface (4 variants)
+- Keyboard with extended keys
+- NextReg register system (256 registers)
+- CPU speed control (3.5/7/14/28 MHz)
+- Interrupt system (IM2 with multiple sources)

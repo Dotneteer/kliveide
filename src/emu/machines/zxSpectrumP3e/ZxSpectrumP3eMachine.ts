@@ -447,6 +447,15 @@ export class ZxSpectrumP3EMachine extends ZxSpectrumBase {
   }
 
   /**
+   * Tests if the specified port address falls in a contended I/O address range.
+   * On +3E, 0x4000-0x7FFF is always contended, and 0xC000-0xFFFF is contended when
+   * bank 4, 5, 6, or 7 is paged in at bank 3. Also considers special paging mode.
+   */
+  protected isContendedIoAddress(address: number): boolean {
+    return this.isContendedMemoryAddress(address);
+  }
+
+  /**
    * This function reads a byte (8-bit) from an I/O port using the provided 16-bit address.
    * @param address
    * @returns Byte read from the specified port
