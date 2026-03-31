@@ -94,9 +94,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._blockToWrite = new Uint8Array(0);
     this._dataIndex = 0;
     this._bACMD = false;
-    this._xferblk = BYTES_PER_SECTOR;
     this._blknext = 0;
-    this._crcOff = true;
 
     // --- Restore card 0 to TRAN (ready) if it was previously initialized; otherwise IDLE.
     if (savedSectors0 > 0) {
@@ -135,10 +133,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._responseIndex1 = -1;
     this._lastByteReceived1 = 0;
     this._responseReady1 = false;
-    this._xferblk1 = BYTES_PER_SECTOR;
     this._blockToWrite1 = new Uint8Array(0);
     this._dataIndex1 = 0;
-    this._crcOff1 = true;
     this._blknext1 = 0;
 
     // --- Restore card 1 to TRAN (ready) if it was previously initialized; otherwise IDLE.
@@ -408,7 +404,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             ((this._commandParams[2] & 0xff) << 8)  |
              (this._commandParams[3] & 0xff);
           if (blockLen === BYTES_PER_SECTOR) {
-            this._xferblk = blockLen;
             this.setMmcResponse(new Uint8Array([0x00])); // OK
           } else {
             this.setMmcResponse(new Uint8Array([0x40])); // parameter error
@@ -514,7 +509,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         this._commandIndex++;
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
-          this._crcOff = (this._commandParams[3] & 1) === 0;
           this.setMmcResponse(new Uint8Array([0x00]));
         }
         break;
@@ -778,7 +772,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             ((this._commandParams1[2] & 0xff) << 8)  |
              (this._commandParams1[3] & 0xff);
           if (blockLen1 === BYTES_PER_SECTOR) {
-            this._xferblk1 = blockLen1;
             this.setCard1Response(new Uint8Array([0x00]));
           } else {
             this.setCard1Response(new Uint8Array([0x40]));
@@ -880,7 +873,6 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         this._commandIndex1++;
         if (this._commandIndex1 === 6) {
           this._commandIndex1 = 0;
-          this._crcOff1 = (this._commandParams1[3] & 1) === 0;
           this.setCard1Response(new Uint8Array([0x00]));
         }
         break;
