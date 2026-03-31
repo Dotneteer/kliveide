@@ -300,7 +300,7 @@ describe("SdCardDevice", () => {
     // --- Assert: Response should be properly set
     const response = (device as any)._response;
     expect(response).toBeInstanceOf(Uint8Array);
-    expect(response.length).toBe(515); // 3 bytes header + 512 bytes data
+    expect(response.length).toBe(517); // 3 bytes header + 512 bytes data + 2 bytes CRC16
     expect(response[0]).toBe(0x00); // Response header
     expect(response[1]).toBe(0xff);
     expect(response[2]).toBe(0xfe);
@@ -330,7 +330,7 @@ describe("SdCardDevice", () => {
     // --- Assert: Response should be properly set
     const response = (device as any)._response;
     expect(response).toBeInstanceOf(Uint8Array);
-    expect(response.length).toBe(515); // 3 bytes header + 512 bytes data
+    expect(response.length).toBe(517); // 3 bytes header + 512 bytes data + 2 bytes CRC16
     expect(response[0]).toBe(0x00); // Response header
     expect(response[1]).toBe(0xff);
     expect(response[2]).toBe(0xfe);

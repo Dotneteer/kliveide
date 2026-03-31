@@ -1,9 +1,19 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import { calculateCRC7 } from "@emu/utils/crc";
+import { calculateCRC7, calculateCRC16 } from "@emu/utils/crc";
 import { BYTES_PER_SECTOR } from "@main/fat32/Fat32Types";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 const READ_DELAY = 56;
+
+// SD card state machine — matches SD Physical Layer Spec Table 4-1
+const enum SdState {
+  IDLE,
+  READY,
+  TRAN,
+  DATA,
+  WRITE_WAITFE, // waiting for 0xFE data-start token from host
+  WRITE_DATA    // receiving data block bytes + 2 CRC bytes
+}
 
 export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _selectedCard: number;
@@ -15,12 +25,13 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _responseIndex: number;
   private _ocr: Uint8Array;
   private _commandParams: number[];
-  private _waitForBlock: boolean;
+  private _state: SdState;
   private _blockToWrite: Uint8Array;
   private _dataIndex: number;
-  // --- FIX for ISSUE #1: Response Timing Race Condition
-  // --- Tracks whether the response from the main process is ready to be read by the Z80
+  private _bACMD: boolean;
+  // Tracks whether an IPC-backed response is ready to be read by the Z80
   private _responseReady: boolean;
+
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
@@ -51,13 +62,13 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._lastCommand = 0;
     this._response = new Uint8Array(0);
     this._responseIndex = -1;
-    // --- FIX for ISSUE #1: Initialize responseReady flag
     this._responseReady = false;
     this._ocr = new Uint8Array([0x00, 0xc0, 0xff, 0x80, 0x00]);
     this._commandParams = [];
-    this._waitForBlock = false;
+    this._state = SdState.IDLE;
     this._blockToWrite = new Uint8Array(0);
     this._dataIndex = 0;
+    this._bACMD = false;
   }
 
   get selectedCard(): number {
@@ -73,68 +84,95 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   writeMmcData(data: number): void {
-    // --- New command, we ignore the rest of the response
+    // Every incoming byte interrupts any pending response read
     this._responseIndex = -1;
-    // --- FIX for ISSUE #1: Mark response as not ready when starting a new command
     this._responseReady = false;
 
     if (this._selectedCard) {
-      // --- We can use only card 0
+      // We can use only card 0
       return;
     }
 
-    // --- Note the time of the last byte received
     this._lastByteReceived = this.machine.tacts;
 
-    if (this._waitForBlock) {
-      // --- We are waiting for a block to be written
+    // --- WRITE_WAITFE: waiting for the 0xFE data-start token from the host
+    if (this._state === SdState.WRITE_WAITFE) {
+      if (data === 0xfe) {
+        this._state = SdState.WRITE_DATA;
+        // Receive 512 data bytes + 2 CRC bytes
+        this._blockToWrite = new Uint8Array(BYTES_PER_SECTOR + 2);
+        this._dataIndex = 0;
+      }
+      // Ignore any byte other than the start token
+      return;
+    }
+
+    // --- WRITE_DATA: accumulating sector data + CRC
+    if (this._state === SdState.WRITE_DATA) {
       this._blockToWrite[this._dataIndex++] = data;
       if (this._dataIndex === this._blockToWrite.length) {
-        this._waitForBlock = false;
-        this._responseIndex = 0;
-
-        // --- Sector to write
+        this._state = SdState.TRAN;
         const sectorIndex =
           (this._commandParams[0] << 24) |
           (this._commandParams[1] << 16) |
           (this._commandParams[2] << 8) |
           this._commandParams[3];
-
-        // --- Read the specified sector and prepare the response
-        const sectorData = this._blockToWrite.slice(1, 1 + BYTES_PER_SECTOR);
+        // Send only the 512 data bytes (not the 2 trailing CRC bytes) to storage
         this.machine.setFrameCommand({
           command: "sd-write",
           sector: sectorIndex,
-          data: sectorData
+          data: this._blockToWrite.slice(0, BYTES_PER_SECTOR)
         });
-        // --- FIX for ISSUE #1: Response is NOT ready yet - waiting for IPC response
+        // Response not ready yet — waiting for IPC round-trip
         this._responseReady = false;
       }
       return;
     }
 
+    // --- Command byte reception
     if (this._commandIndex === 0) {
-      // --- We have just received the command byte
       this._lastCommand = data;
       this._commandParams = [];
       this._commandIndex = 1;
       return;
     }
 
-    // --- Subsequent command byte
+    // --- Subsequent command bytes (arg[0..3] + CRC)
     switch (this._lastCommand) {
       case 0x40:
-        // --- CMD0: GO_IDLE_STATE
+        // CMD0: GO_IDLE_STATE — R1 = 0x01 (idle)
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this.setMmcResponse(new Uint8Array([0x01, 0xff, 0xff, 0xff, 0xff]));
+          this._state = SdState.IDLE;
+          this.setMmcResponse(new Uint8Array([0x01]));
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x41:
+        // CMD1: SEND_OP_COND — R1 = 0x00 (ready)
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this._state = SdState.READY;
+          this.setMmcResponse(new Uint8Array([0x00]));
+        } else {
+          this._commandIndex++;
+        }
+        break;
+
+      case 0x48:
+        // CMD8: SEND_IF_COND — R7 (voltage + check pattern echo)
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          this.setMmcResponse(new Uint8Array([0x01, 0x00, 0x00, 0x01, 0xaa]));
         } else {
           this._commandIndex++;
         }
         break;
 
       case 0x49:
-        // --- CMD9: SEND_CSD
+        // CMD9: SEND_CSD — R1 + token + 16-byte CSD + 2 dummy CRC bytes
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
           this.setMmcResponse(
@@ -149,92 +187,89 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         break;
 
       case 0x4c:
-        // --- CMD12: STOP_TRANSMISSION
+        // CMD12: STOP_TRANSMISSION — R1 = 0x00
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this.setMmcResponse(new Uint8Array([0x04, 0xff, 0xff, 0xff, 0xff]));
+          this.setMmcResponse(new Uint8Array([0x00]));
         } else {
           this._commandIndex++;
         }
         break;
 
       case 0x4d:
-        // --- CMD13: SEND_STATUS
+        // CMD13: SEND_STATUS — R2 = [0x00, 0x00] (no errors)
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this.setMmcResponse(new Uint8Array([0xff, 0x00, 0x00, 0xff]));
-        } else {
-          this._commandIndex++;
-        }
-        break;
-
-      case 0x48:
-        // --- CMD8: SEND_EXT_CSD
-        if (this._commandIndex === 5) {
-          this._commandIndex = 0;
-          this.setMmcResponse(new Uint8Array([0x01, 0x00, 0x00, 0x01, 0xaa]));
+          this.setMmcResponse(new Uint8Array([0x00, 0x00]));
         } else {
           this._commandIndex++;
         }
         break;
 
       case 0x51:
+        // CMD17: READ_SINGLE_BLOCK — sector index in arg[0..3]; response via IPC
         this._commandParams.push(data);
         this._commandIndex++;
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
-
-          // --- Sector to read
+          this._state = SdState.DATA;
           const sectorIndex =
             (this._commandParams[0] << 24) |
             (this._commandParams[1] << 16) |
             (this._commandParams[2] << 8) |
             this._commandParams[3];
-
-          // --- Read the specified sector and prepare the response
           this.machine.setFrameCommand({
             command: "sd-read",
             sector: sectorIndex
           });
-          // --- FIX for ISSUE #1: Response is NOT ready yet - waiting for IPC response
+          // Response not ready yet — waiting for IPC round-trip
           this._responseReady = false;
         }
         break;
 
       case 0x58:
+        // CMD24: WRITE_BLOCK — returns R1=0x00, then waits for 0xFE + data + CRC
         this._commandParams.push(data);
         this._commandIndex++;
         if (this._commandIndex === 6) {
           this._commandIndex = 0;
-          this._waitForBlock = true;
-          this._blockToWrite = new Uint8Array(3 + BYTES_PER_SECTOR);
-          this._dataIndex = 0;
-          // --- FIX for ISSUE #1: Use intermediate response (no IPC wait needed for this)
-          this.setMmcResponseIntermediate(new Uint8Array([0xff, 0x00]));
+          this._state = SdState.WRITE_WAITFE;
+          // Immediate R1 acknowledgment — readable but not IPC-backed
+          this.setMmcResponseIntermediate(new Uint8Array([0x00]));
         }
         break;
 
       case 0x69:
-        // --- CMD41: Send operation condition
-        this._commandIndex = 0;
+        // CMD41 / ACMD41: SEND_OP_COND
+        // Only valid as ACMD41 (following CMD55). Bare CMD41 returns illegal-command.
+        if (this._commandIndex === 5) {
+          this._commandIndex = 0;
+          if (this._bACMD) {
+            this._state = SdState.READY;
+            this.setMmcResponse(new Uint8Array([0x00]));
+          } else {
+            this.setMmcResponse(new Uint8Array([0xff]));
+          }
+        } else {
+          this._commandIndex++;
+        }
         break;
 
       case 0x77:
-        // --- CMD55: Application specific command
+        // CMD55: APP_CMD — prefix for the next ACMD; R1 = 0x01 (idle)
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this._responseIndex = -1;
+          this.setMmcResponse(new Uint8Array([0x01]));
         } else {
           this._commandIndex++;
         }
         break;
 
       case 0x7a:
-        // --- CMD58: Read OCR
+        // CMD58: READ_OCR — returns OCR register
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this._response = this._ocr;
-          this._responseIndex = 0;
+          this.setMmcResponse(this._ocr.slice());
         } else {
           this._commandIndex++;
         }
@@ -244,21 +279,24 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         this._commandIndex = 0;
         break;
     }
+
+    // Mirror MAME bACMD logic: flag is true only immediately after CMD55 completes
+    if (this._commandIndex === 0) {
+      this._bACMD = this._lastCommand === 0x77;
+    }
   }
 
   readMmcData(): number {
     if (this._selectedCard !== 0) {
-      // --- We can use only card 0
+      // We can use only card 0
       return 0xff;
     }
 
     const now = this.machine.tacts;
-    // --- FIX for ISSUE #1: Check if response is ready before reading
     if (!this._responseReady) {
-      // --- Response from main process is not yet available
-      // --- Check if we should still apply read delay for immediate responses (like simple commands)
+      // Response from main process is not yet available
       if (this._responseIndex === -1 && now - this._lastByteReceived < READ_DELAY) {
-        // --- We are still waiting for result
+        // Still within the read-delay window
         return 0xff;
       }
     }
@@ -273,58 +311,56 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         return 0xff;
     }
 
-    // --- No result
+    // No result
     return 0x00;
   }
 
   setMmcResponse(response: Uint8Array): void {
     this._response = response;
     this._responseIndex = 0;
-    // --- FIX for ISSUE #1: Mark response as ready when response is set
     this._responseReady = true;
   }
 
-  // --- FIX for ISSUE #1: Set response but keep it marked as not ready (for intermediate responses)
-  // --- This is used for command acknowledgments that don't wait for main process
+  // Set a response that is readable immediately (responseIndex=0) but is not
+  // IPC-backed (responseReady stays false). Used for CMD24 R1 acknowledgment.
   private setMmcResponseIntermediate(response: Uint8Array): void {
     this._response = response;
     this._responseIndex = 0;
-    // --- Do NOT mark as ready - this is an immediate response that doesn't need IPC
-    this._responseReady = false;
+    // Do NOT set responseReady — no IPC round-trip is involved
   }
 
   setWriteResponse(): void {
     this.setMmcResponse(new Uint8Array([0x05, 0xff, 0xfe]));
-    // --- FIX for ISSUE #1: setMmcResponse marks response as ready
   }
 
-  setWriteErrorResponse(errorMessage?: string): void {
-    // --- SD card error response: status byte indicates write error
-    // --- 0x0D indicates a write error in SD card protocol
+  setWriteErrorResponse(_errorMessage?: string): void {
+    // 0x0D = write error token per SD card data-response format
     this.setMmcResponse(new Uint8Array([0x0d, 0xff, 0xff]));
-    // --- FIX for ISSUE #1: setMmcResponse marks response as ready
   }
 
   setReadResponse(sectorData: Uint8Array): void {
-    const response = new Uint8Array(3 + BYTES_PER_SECTOR);
-    response.set(new Uint8Array([0x00, 0xff, 0xfe]));
-    
-    // --- FIX for ISSUE #6: Response Data Type Mismatch Potential
-    // --- Defensive type checking to handle IPC deserialization edge cases
-    // --- The main process might deserialize Uint8Array as Array due to IPC serialization
-    // --- Ensure we always work with Uint8Array
+    // Response layout: R1(0x00) + dummy(0xff) + token(0xfe) + 512 data bytes + CRC16(2 bytes)
+    const response = new Uint8Array(3 + BYTES_PER_SECTOR + 2);
+    response[0] = 0x00;
+    response[1] = 0xff;
+    response[2] = 0xfe;
+
+    let data: Uint8Array;
     if (sectorData instanceof Uint8Array) {
-      response.set(sectorData, 3);
+      data = sectorData;
     } else if (Array.isArray(sectorData)) {
-      // --- Convert Array to Uint8Array if needed (IPC edge case)
-      response.set(new Uint8Array(sectorData), 3);
+      // IPC serialisation edge case: Uint8Array may arrive as plain Array
+      data = new Uint8Array(sectorData);
     } else {
-      // --- Fallback: Try to copy as-is or log warning
-      console.warn('setReadResponse: Unexpected response data type', typeof sectorData);
-      response.set(new Uint8Array(sectorData as any), 3);
+      console.warn("setReadResponse: Unexpected response data type", typeof sectorData);
+      data = new Uint8Array(sectorData as any);
     }
-    
+    response.set(data, 3);
+
+    const crc = calculateCRC16(data);
+    response[3 + BYTES_PER_SECTOR] = (crc >> 8) & 0xff;
+    response[3 + BYTES_PER_SECTOR + 1] = crc & 0xff;
+
     this.setMmcResponse(response);
-    // --- FIX for ISSUE #1: setMmcResponse marks response as ready
   }
 }
