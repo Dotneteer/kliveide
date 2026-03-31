@@ -166,11 +166,13 @@ export class DacDevice {
       return val - 128;
     };
 
-    // Convert to 16-bit by multiplying by 256
-    const dacA = toSignedByte(this._dacChannels[0]) * 256;
-    const dacB = toSignedByte(this._dacChannels[1]) * 256;
-    const dacC = toSignedByte(this._dacChannels[2]) * 256;
-    const dacD = toSignedByte(this._dacChannels[3]) * 256;
+    // Convert to 16-bit by multiplying by 256, apply 0.75 per-channel gain
+    // to prevent clipping when multiple channels are active (matches MAME)
+    const GAIN = 0.75;
+    const dacA = toSignedByte(this._dacChannels[0]) * 256 * GAIN;
+    const dacB = toSignedByte(this._dacChannels[1]) * 256 * GAIN;
+    const dacC = toSignedByte(this._dacChannels[2]) * 256 * GAIN;
+    const dacD = toSignedByte(this._dacChannels[3]) * 256 * GAIN;
 
     return {
       left: dacA + dacB,

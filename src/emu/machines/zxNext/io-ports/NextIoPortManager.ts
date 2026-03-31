@@ -18,12 +18,17 @@ import { readZxnDmaPort, writeZxnDmaPort } from "./ZxnDmaPortHandler";
 import { readAyRegPort, writeAyRegPort } from "./AyRegPortHandler";
 import { readAyDatPort, writeAyDatPort } from "./AyDatPortHandler";
 import {
-  writeDacAPort,
-  writeDacAandDPort,
-  writeDacBPort,
-  writeDacBandCPort,
-  writeDacCPort,
-  writeDacDPort
+  writeDacPort0x1F,
+  writeDacPort0x0F,
+  writeDacPort0x3F,
+  writeDacPort0x4F,
+  writeDacPort0x5F,
+  writeDacPort0xB3,
+  writeDacPort0xDF,
+  writeDacPort0xF1,
+  writeDacPort0xF3,
+  writeDacPort0xF9,
+  writeDacPort0xFB
 } from "./DacPortHandler";
 import {
   readKempstonJoy1AliasPort,
@@ -281,81 +286,81 @@ export class NextIoPortManager {
       writerFns: (_, v) => writeAyDatPort(machine, v)
     });
     r({
-      description: "DAC A",
+      description: "DAC A (SoundDrive mode 1)",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b1000_0000_0001_1111,
-      writerFns: (_, v) => writeDacAPort(machine, v)
+      writerFns: (_, v) => writeDacPort0x1F(machine, v)
     });
     r({
-      description: "DAC A",
+      description: "DAC A (SoundDrive mode 2)",
       port: 0xf1,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0001,
-      writerFns: (_, v) => writeDacAPort(machine, v)
+      writerFns: (_, v) => writeDacPort0xF1(machine, v)
     });
     r({
-      description: "DAC A",
+      description: "DAC A (profi covox)",
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      writerFns: (_, v) => writeDacAPort(machine, v)
+      writerFns: (_, v) => writeDacPort0x3F(machine, v)
     });
     r({
-      description: "DAC B",
+      description: "DAC B (SoundDrive mode 1 / covox)",
       port: 0x0f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0000_1111,
-      writerFns: (_, v) => writeDacBPort(machine, v)
+      writerFns: (_, v) => writeDacPort0x0F(machine, v)
     });
     r({
-      description: "DAC B",
+      description: "DAC B (SoundDrive mode 2)",
       port: 0xf3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0011,
-      writerFns: (_, v) => writeDacBPort(machine, v)
+      writerFns: (_, v) => writeDacPort0xF3(machine, v)
     });
     r({
-      description: "DAC A,D",
+      description: "DAC A+D (specdrum)",
       port: 0xdf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
-      writerFns: (_, v) => writeDacAandDPort(machine, v)
+      writerFns: (_, v) => writeDacPort0xDF(machine, v)
     });
     r({
-      description: "DAC A,D",
+      description: "DAC A+D (pentagon) / D (SoundDrive mode 2)",
       port: 0xfb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1011,
-      writerFns: (_, v) => writeDacAandDPort(machine, v)
+      writerFns: (_, v) => writeDacPort0xFB(machine, v)
     });
     r({
-      description: "DAC B,C",
+      description: "DAC B+C (gs covox)",
       port: 0xb3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1011_0011,
-      writerFns: (_, v) => writeDacBandCPort(machine, v)
+      writerFns: (_, v) => writeDacPort0xB3(machine, v)
     });
     r({
-      description: "DAC C",
+      description: "DAC C (SoundDrive mode 1 / covox)",
       port: 0x4f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0100_1111,
-      writerFns: (_, v) => writeDacCPort(machine, v)
+      writerFns: (_, v) => writeDacPort0x4F(machine, v)
     });
     r({
-      description: "DAC C",
+      description: "DAC C (SoundDrive mode 2)",
       port: 0xf9,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1001,
-      writerFns: (_, v) => writeDacCPort(machine, v)
+      writerFns: (_, v) => writeDacPort0xF9(machine, v)
     });
     r({
-      description: "DAC D",
+      description: "DAC D (SoundDrive mode 1 / profi covox)",
       port: 0x5f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1111,
-      writerFns: (_, v) => writeDacDPort(machine, v)
+      writerFns: (_, v) => writeDacPort0x5F(machine, v)
     });
     r({
       description: "SPI CS",

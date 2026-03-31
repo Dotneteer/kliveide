@@ -1061,21 +1061,24 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     });
     r({
       id: 0x2c,
-      description: "DAC B Mirror (left)",
-      readFn: () => 0x00,
-      writeFn: () => {}
+      description: "DAC B Mirror (left) / I2S left MSB (read)",
+      readFn: () => 0, // Read returns I2S left MSB (not implemented, returns 0)
+      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacB(v)
     });
     r({
       id: 0x2d,
-      description: "DAC A+D Mirror (mono)",
-      readFn: () => 0x00,
-      writeFn: () => {}
+      description: "DAC A+D Mirror (mono) / I2S LSB (read)",
+      readFn: () => 0, // Read returns I2S LSB (not implemented, returns 0)
+      writeFn: (v) => {
+        machine.audioControlDevice.getDacDevice().setDacA(v);
+        machine.audioControlDevice.getDacDevice().setDacD(v);
+      }
     });
     r({
       id: 0x2e,
-      description: "DAC C Mirror (right)",
-      readFn: () => 0x00,
-      writeFn: () => {}
+      description: "DAC C Mirror (right) / I2S right MSB (read)",
+      readFn: () => 0, // Read returns I2S right MSB (not implemented, returns 0)
+      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacC(v)
     });
     r({
       id: 0x2f,

@@ -4,10 +4,10 @@ import { DacDevice } from "./DacDevice";
  * DAC NextReg Device for ZX Spectrum Next
  * Provides NextReg mirrors for DAC control
  * 
- * NextReg Mapping:
- * - 0x2C (44): Mono DAC (writes to both DAC A and DAC D)
- * - 0x2D (45): Left DAC (writes to DAC B)
- * - 0x2E (46): Right DAC (writes to DAC C)
+ * NextReg Mapping (FPGA spec):
+ * - 0x2C (44): DAC B Mirror (left)
+ * - 0x2D (45): DAC A+D Mirror (mono)
+ * - 0x2E (46): DAC C Mirror (right)
  */
 export class DacNextRegDevice {
   private dac: DacDevice;
@@ -24,16 +24,16 @@ export class DacNextRegDevice {
    */
   writeNextReg(reg: number, value: number): boolean {
     switch (reg) {
-      case 0x2c: // Mono DAC (A + D)
+      case 0x2c: // DAC B Mirror (left)
+        this.dac.setDacB(value);
+        return true;
+
+      case 0x2d: // DAC A+D Mirror (mono)
         this.dac.setDacA(value);
         this.dac.setDacD(value);
         return true;
 
-      case 0x2d: // Left DAC (B)
-        this.dac.setDacB(value);
-        return true;
-
-      case 0x2e: // Right DAC (C)
+      case 0x2e: // DAC C Mirror (right)
         this.dac.setDacC(value);
         return true;
 
@@ -49,14 +49,14 @@ export class DacNextRegDevice {
    */
   readNextReg(reg: number): number | undefined {
     switch (reg) {
-      case 0x2c: // Mono DAC (read A - should match D)
-        return this.dac.getDacA();
+      case 0x2c: // I2S left MSB (not implemented, returns 0)
+        return 0;
 
-      case 0x2d: // Left DAC (read B)
-        return this.dac.getDacB();
+      case 0x2d: // I2S LSB (not implemented, returns 0)
+        return 0;
 
-      case 0x2e: // Right DAC (read C)
-        return this.dac.getDacC();
+      case 0x2e: // I2S right MSB (not implemented, returns 0)
+        return 0;
 
       default:
         return undefined;

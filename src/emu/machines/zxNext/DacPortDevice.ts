@@ -5,7 +5,9 @@ import { DacDevice } from "./DacDevice";
  * Routes I/O port writes to DAC channels
  * 
  * Port Mapping (all even addresses):
- * - 0x1F, 0xF1, 0x3F → DAC A
+ * - 0x1F → DAC A + DAC B + DAC C + DAC D (SoundDrive mode 1)
+ * - 0xF1 → DAC A
+ * - 0x3F → DAC A + DAC D (profi covox stereo)
  * - 0x0F, 0xF3 → DAC B
  * - 0xDF, 0xFB → DAC A + DAC D
  * - 0xB3 → DAC B + DAC C
@@ -30,11 +32,23 @@ export class DacPortDevice {
     const normalizedPort = port & 0xfe;
 
     switch (normalizedPort) {
-      // DAC A
+      // DAC A + B + C + D (SoundDrive mode 1)
       case 0x1e:
+        this.dac.setDacA(value);
+        this.dac.setDacB(value);
+        this.dac.setDacC(value);
+        this.dac.setDacD(value);
+        break;
+
+      // DAC A
       case 0xf0:
+        this.dac.setDacA(value);
+        break;
+
+      // DAC A + DAC D (profi covox)
       case 0x3e:
         this.dac.setDacA(value);
+        this.dac.setDacD(value);
         break;
 
       // DAC B

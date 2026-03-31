@@ -13,10 +13,13 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
 
   // ==================== DAC A Port Tests ====================
 
-  describe("DAC A Ports (0x1F, 0xF1, 0x3F)", () => {
-    it("should write to DAC A via port 0x1F", () => {
+  describe("DAC A Ports", () => {
+    it("should write to all four DAC channels via port 0x1F (SoundDrive mode 1)", () => {
       portDevice.writePort(0x1f, 0x50);
       expect(dac.getDacA()).toBe(0x50);
+      expect(dac.getDacB()).toBe(0x50);
+      expect(dac.getDacC()).toBe(0x50);
+      expect(dac.getDacD()).toBe(0x50);
     });
 
     it("should write to DAC A via port 0xF1", () => {
@@ -24,26 +27,30 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
       expect(dac.getDacA()).toBe(0x60);
     });
 
-    it("should write to DAC A via port 0x3F", () => {
+    it("should write to DAC A and D via port 0x3F (profi covox)", () => {
       portDevice.writePort(0x3f, 0x70);
       expect(dac.getDacA()).toBe(0x70);
+      expect(dac.getDacD()).toBe(0x70);
     });
 
-    it("should handle both even and odd port addresses for DAC A (0x1F → 0x1E)", () => {
+    it("should handle both even and odd port addresses for all-channel write (0x1F → 0x1E)", () => {
       portDevice.writePort(0x1f, 0x40);
       portDevice.writePort(0x1e, 0x50);
-      // Both should write to the same channel
+      // Both should write to all channels
       expect(dac.getDacA()).toBe(0x50);
+      expect(dac.getDacB()).toBe(0x50);
+      expect(dac.getDacC()).toBe(0x50);
+      expect(dac.getDacD()).toBe(0x50);
     });
 
     it("should mask values to 8 bits when writing to DAC A", () => {
-      portDevice.writePort(0x1f, 0x1ff);
+      portDevice.writePort(0xf1, 0x1ff);
       expect(dac.getDacA()).toBe(0xff);
     });
 
-    it("should only affect DAC A, not other channels", () => {
+    it("port 0xF1 should only affect DAC A, not other channels", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]);
-      portDevice.writePort(0x1f, 0x30);
+      portDevice.writePort(0xf1, 0x30);
       
       expect(dac.getDacA()).toBe(0x30);
       expect(dac.getDacB()).toBe(0x80);
@@ -193,13 +200,14 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
     });
 
     it("should normalize all DAC A port variants", () => {
-      const dacAPorts = [0x1f, 0x1e, 0xf1, 0xf0, 0x3f, 0x3e];
+      // 0xF1/0xF0 -> DAC A only
+      dac.reset();
+      portDevice.writePort(0xf1, 0x50);
+      expect(dac.getDacA()).toBe(0x50);
       
-      dacAPorts.forEach((port, idx) => {
-        dac.reset();
-        portDevice.writePort(port, 0x50 + idx);
-        expect(dac.getDacA()).toBe((0x50 + idx) & 0xff);
-      });
+      dac.reset();
+      portDevice.writePort(0xf0, 0x51);
+      expect(dac.getDacA()).toBe(0x51);
     });
 
     it("should normalize all DAC B port variants", () => {
@@ -256,7 +264,7 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
 
   describe("Multi-Port Write Sequences", () => {
     it("should handle sequential writes to different ports", () => {
-      portDevice.writePort(0x1f, 0x11);
+      portDevice.writePort(0xf1, 0x11);
       portDevice.writePort(0x0f, 0x22);
       portDevice.writePort(0x4f, 0x33);
       portDevice.writePort(0x5f, 0x44);
@@ -269,7 +277,7 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
 
     it("should handle rapid repeated writes to same port", () => {
       for (let i = 0; i < 256; i++) {
-        portDevice.writePort(0x1f, i);
+        portDevice.writePort(0xf1, i);
         expect(dac.getDacA()).toBe(i & 0xff);
       }
     });
@@ -283,7 +291,7 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
       expect(dac.getDacC()).toBe(0xbb);
       expect(dac.getDacD()).toBe(0xaa);
 
-      portDevice.writePort(0x1f, 0x55); // Update A only
+      portDevice.writePort(0xf1, 0x55); // Update A only
       expect(dac.getDacA()).toBe(0x55);
       expect(dac.getDacD()).toBe(0xaa); // D unchanged
     });
@@ -291,7 +299,7 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
     it("should support stereo sweep pattern", () => {
       // Sweep left channel (A+B) from quiet to loud
       for (let i = 0; i <= 255; i++) {
-        portDevice.writePort(0x1f, i); // DAC A
+        portDevice.writePort(0xf1, i); // DAC A
         portDevice.writePort(0x0f, i); // DAC B
         
         expect(dac.getDacA()).toBe(i & 0xff);
@@ -312,14 +320,40 @@ describe("DacPortDevice Step 6: DAC I/O Ports", () => {
   // ==================== Port Mapping Verification ====================
 
   describe("Complete Port Mapping Verification", () => {
-    it("should verify all DAC A port aliases write to same channel", () => {
-      const dacAPorts = [0x1f, 0x1e, 0xf1, 0xf0, 0x3f, 0x3e];
+    it("should verify all DAC A-only port aliases write to A only", () => {
+      const dacAPorts = [0xf1, 0xf0];
       
       dacAPorts.forEach((port) => {
         dac.reset();
         portDevice.writePort(port, 0x55);
         expect(dac.getDacA()).toBe(0x55);
         expect(dac.getDacB()).toBe(0x80); // Unchanged
+      });
+    });
+
+    it("should verify port 0x1F writes all four channels", () => {
+      const allPorts = [0x1f, 0x1e];
+      
+      allPorts.forEach((port) => {
+        dac.reset();
+        portDevice.writePort(port, 0x55);
+        expect(dac.getDacA()).toBe(0x55);
+        expect(dac.getDacB()).toBe(0x55);
+        expect(dac.getDacC()).toBe(0x55);
+        expect(dac.getDacD()).toBe(0x55);
+      });
+    });
+
+    it("should verify port 0x3F writes A+D", () => {
+      const adPorts = [0x3f, 0x3e];
+      
+      adPorts.forEach((port) => {
+        dac.reset();
+        portDevice.writePort(port, 0x55);
+        expect(dac.getDacA()).toBe(0x55);
+        expect(dac.getDacB()).toBe(0x80); // Unchanged
+        expect(dac.getDacC()).toBe(0x80); // Unchanged
+        expect(dac.getDacD()).toBe(0x55);
       });
     });
 

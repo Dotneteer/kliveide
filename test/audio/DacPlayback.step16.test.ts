@@ -115,8 +115,8 @@ describe("Step 16: DAC Playback Testing", () => {
       dac.setDacA(0x00);
       dac.setDacB(0x00);
       const output = dac.getStereoOutput();
-      // 0x00 = -128 when signed, so -128 * 256 * 2 = -65536
-      expect(output.left).toBe(-65536);
+      // 0x00 = -128 when signed, so -128 * 256 * 0.75 * 2 = -49152
+      expect(output.left).toBe(-49152);
     });
 
     it("should combine left channels (A + B)", () => {
@@ -162,10 +162,10 @@ describe("Step 16: DAC Playback Testing", () => {
       dac.setDacD(0xFF);
 
       const output = dac.getStereoOutput();
-      // Left: 0x00 = -128 when signed, -128 * 256 = -32768 for each, so -65536 total
-      expect(output.left).toBe(-65536);
-      // Right: 0xFF = 127 when signed, 127 * 256 = 32512 for each, so 65024 total
-      expect(output.right).toBe(65024);
+      // Left: 0x00 = -128 when signed, -128 * 256 * 0.75 = -24576 for each, so -49152 total
+      expect(output.left).toBe(-49152);
+      // Right: 0xFF = 127 when signed, 127 * 256 * 0.75 = 24384 for each, so 48768 total
+      expect(output.right).toBe(48768);
     });
   });
 
