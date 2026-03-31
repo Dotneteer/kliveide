@@ -30,10 +30,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _blockToWrite: Uint8Array;
   private _dataIndex: number;
   private _bACMD: boolean;
-  private _xferblk: number;
   private _totalSectors: number;
   private _blknext: number;
-  private _crcOff: boolean;
   // Tracks whether an IPC-backed response is ready to be read by the Z80
   private _responseReady: boolean;
 
@@ -49,10 +47,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _totalSectors1: number;
   private _lastByteReceived1: number;
   private _responseReady1: boolean;
-  private _xferblk1: number;
   private _blockToWrite1: Uint8Array;
   private _dataIndex1: number;
-  private _crcOff1: boolean;
   private _blknext1: number;
 
   constructor(public readonly machine: IZxNextMachine) {
