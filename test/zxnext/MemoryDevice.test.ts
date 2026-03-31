@@ -138,51 +138,71 @@ describe("Next - MemoryDevice", async function () {
     expect(romSlotSignatureMatches(memDevice, 1, nextRom3Signature1)).toBe(true);
   });
 
+  const romSignatures = [
+    [nextRom0Signature0, nextRom0Signature1],
+    [nextRom1Signature0, nextRom1Signature1],
+    [nextRom2Signature0, nextRom2Signature1],
+    [nextRom3Signature0, nextRom3Signature1]
+  ];
+
+  function expectedRomWithLock(baseRom: number, r8c: number): number {
+    const lockRom0 = (r8c & 0x10) !== 0;
+    const lockRom1 = (r8c & 0x20) !== 0;
+    if (lockRom0 || lockRom1) {
+      return (lockRom1 ? 2 : 0) | (lockRom0 ? 1 : 0);
+    }
+    return baseRom;
+  }
+
   for (let i = 0; i < 8; i++) {
-    it(`ROM 0 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+    it(`ROM 0 with R8C lock bits (R8C: ${(i << 4).toString(16)})`, async () => {
       io.writePort(0x7ffd, 0x00);
       io.writePort(0x1ffd, 0x00);
       nrDevice.directSetRegValue(0x8c, i << 4);
+      const rom = expectedRomWithLock(0, i << 4);
       expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom0Signature0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, romSignatures[rom][0])).toBe(true);
       expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom0Signature1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, romSignatures[rom][1])).toBe(true);
     });
   }
 
   for (let i = 0; i < 8; i++) {
-    it(`ROM 1 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+    it(`ROM 1 with R8C lock bits (R8C: ${(i << 4).toString(16)})`, async () => {
       io.writePort(0x7ffd, 0x10);
       io.writePort(0x1ffd, 0x00);
       nrDevice.directSetRegValue(0x8c, i << 4);
+      const rom = expectedRomWithLock(1, i << 4);
       expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom1Signature0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, romSignatures[rom][0])).toBe(true);
       expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom1Signature1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, romSignatures[rom][1])).toBe(true);
     });
   }
 
   for (let i = 0; i < 8; i++) {
-    it(`ROM 2 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+    it(`ROM 2 with R8C lock bits (R8C: ${(i << 4).toString(16)})`, async () => {
       io.writePort(0x7ffd, 0x00);
       io.writePort(0x1ffd, 0x04);
       nrDevice.directSetRegValue(0x8c, i << 4);
+      const rom = expectedRomWithLock(2, i << 4);
       expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom2Signature0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, romSignatures[rom][0])).toBe(true);
       expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom2Signature1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, romSignatures[rom][1])).toBe(true);
     });
   }
 
   for (let i = 0; i < 8; i++) {
-    it(`ROM 3 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
+    it(`ROM 3 with R8C lock bits (R8C: ${(i << 4).toString(16)})`, async () => {
       io.writePort(0x7ffd, 0x10);
       io.writePort(0x1ffd, 0x04);
       nrDevice.directSetRegValue(0x8c, i << 4);
+      const rom = expectedRomWithLock(3, i << 4);
       expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom3Signature0)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 0, romSignatures[rom][0])).toBe(true);
       expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom3Signature1)).toBe(true);
+      expect(romSlotSignatureMatches(memDevice, 1, romSignatures[rom][1])).toBe(true);
     });
   }
 
@@ -1001,5 +1021,426 @@ describe("Next - MemoryDevice - Layer 2", async function () {
       // --- Assert: 4 + 3 + 4 = 11 T-states total
       expect(m.tacts - startTacts).toBe(11);
     });
+  });
+});
+
+// ===== Tests for memory paging discrepancy fixes (D1-D9) =====
+
+describe("Next - MemoryDevice - D1: Reg 0x08 bit 7 unlocks 7FFD", async function () {
+  it("Writing reg 0x08 bit 7 unlocks paging after 7FFD bit 5 lock", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    // Lock paging via 7FFD bit 5
+    io.writePort(0x7ffd, 0x20);
+    expect(d.pagingEnabled).toBe(false);
+
+    // Unlock via NextReg 0x08 bit 7
+    nr.directSetRegValue(0x08, 0x80);
+    expect(d.pagingEnabled).toBe(true);
+
+    // Verify 7FFD writes work again
+    io.writePort(0x7ffd, 0x05);
+    expect(d.selectedBankLsb).toBe(5);
+  });
+
+  it("Reading reg 0x08 bit 7 returns actual pagingEnabled state", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const nr = m.nextRegDevice;
+
+    // Initially paging is enabled
+    expect(nr.directGetRegValue(0x08) & 0x80).toBe(0x80);
+
+    // Lock paging
+    io.writePort(0x7ffd, 0x20);
+    expect(nr.directGetRegValue(0x08) & 0x80).toBe(0x00);
+
+    // Unlock paging
+    nr.directSetRegValue(0x08, 0x80);
+    expect(nr.directGetRegValue(0x08) & 0x80).toBe(0x80);
+  });
+
+  it("Writing reg 0x08 with bit 7=0 does not lock paging", async () => {
+    const m = await createTestNextMachine();
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    expect(d.pagingEnabled).toBe(true);
+    nr.directSetRegValue(0x08, 0x00);
+    expect(d.pagingEnabled).toBe(true);
+  });
+});
+
+describe("Next - MemoryDevice - D2: Port 1FFD lock check", async function () {
+  it("1FFD write is blocked when paging is locked", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    // Lock paging
+    io.writePort(0x7ffd, 0x20);
+
+    // Try to enter all-RAM mode via 1FFD
+    io.writePort(0x1ffd, 0x01);
+    expect(d.allRamMode).toBe(false);
+  });
+
+  it("1FFD write is accepted when paging is enabled", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0x1ffd, 0x01);
+    expect(d.allRamMode).toBe(true);
+  });
+
+  it("1FFD write works after unlock via reg 0x08", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    // Lock then unlock
+    io.writePort(0x7ffd, 0x20);
+    nr.directSetRegValue(0x08, 0x80);
+
+    // 1FFD should work now
+    io.writePort(0x1ffd, 0x01);
+    expect(d.allRamMode).toBe(true);
+  });
+});
+
+describe("Next - MemoryDevice - D3: Port DFFD lock check", async function () {
+  it("DFFD write is blocked when paging is locked", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    // Lock paging
+    io.writePort(0x7ffd, 0x20);
+    const prevBankMsb = d.selectedBankMsb;
+
+    // Try to change bank MSB via DFFD
+    io.writePort(0xdffd, 0x05);
+    expect(d.selectedBankMsb).toBe(prevBankMsb);
+  });
+
+  it("DFFD write is accepted when paging is enabled", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0xdffd, 0x05);
+    expect(d.selectedBankMsb).toBe(5);
+  });
+});
+
+describe("Next - MemoryDevice - D4: All-RAM exit restores slots 2-3 to bank 5", async function () {
+  it("Exiting all-RAM mode restores MMU[2-3] to 0x0a/0x0b (bank 5)", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    // Enter all-RAM mode
+    io.writePort(0x1ffd, 0x01);
+    expect(d.allRamMode).toBe(true);
+
+    // Exit all-RAM mode
+    io.writePort(0x1ffd, 0x00);
+    expect(d.allRamMode).toBe(false);
+
+    // Check MMU registers restored correctly
+    expect(d.mmuRegs[2]).toBe(0x0a);
+    expect(d.mmuRegs[3]).toBe(0x0b);
+
+    // Verify slots 2-3 map to bank 5
+    expect(isPagedIn(d, 2, 0x0a)).toBe(true);
+    expect(isPagedIn(d, 3, 0x0b)).toBe(true);
+  });
+
+  it("Exiting all-RAM mode restores all MMU registers to defaults", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    // Enter and exit all-RAM mode
+    io.writePort(0x1ffd, 0x01);
+    io.writePort(0x1ffd, 0x00);
+
+    expect(d.mmuRegs[0]).toBe(0xff);
+    expect(d.mmuRegs[1]).toBe(0xff);
+    expect(d.mmuRegs[2]).toBe(0x0a);
+    expect(d.mmuRegs[3]).toBe(0x0b);
+    expect(d.mmuRegs[4]).toBe(0x04);
+    expect(d.mmuRegs[5]).toBe(0x05);
+    expect(d.mmuRegs[6]).toBe(0x00);
+    expect(d.mmuRegs[7]).toBe(0x01);
+  });
+});
+
+describe("Next - MemoryDevice - D6: Config mode ROM mapping", async function () {
+  it("Config mode maps configRomRamBank to slots 0-1 as R/W RAM", async () => {
+    const m = await createTestNextMachine();
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    // Enter config mode
+    nr.configMode = true;
+    d.configRomRamBank = 5;
+    d.updateMemoryConfig();
+
+    // Slots 0-1 should be R/W RAM (bank 5: pages 10, 11)
+    expect(isRam(d, 0)).toBe(true);
+    expect(isPagedIn(d, 0, 10)).toBe(true);
+    expect(isRam(d, 1)).toBe(true);
+    expect(isPagedIn(d, 1, 11)).toBe(true);
+  });
+
+  it("Config mode bank 0 maps pages 0 and 1", async () => {
+    const m = await createTestNextMachine();
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    nr.configMode = true;
+    d.configRomRamBank = 0;
+    d.updateMemoryConfig();
+
+    expect(isRam(d, 0)).toBe(true);
+    expect(isPagedIn(d, 0, 0)).toBe(true);
+    expect(isRam(d, 1)).toBe(true);
+    expect(isPagedIn(d, 1, 1)).toBe(true);
+  });
+
+  it("Exiting config mode restores ROM mapping", async () => {
+    const m = await createTestNextMachine();
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    // Enter config mode
+    nr.configMode = true;
+    d.configRomRamBank = 5;
+    d.updateMemoryConfig();
+    expect(isRam(d, 0)).toBe(true);
+
+    // Exit config mode
+    nr.configMode = false;
+    d.updateMemoryConfig();
+    expect(isRom(d, 0)).toBe(true);
+    expect(isRom(d, 1)).toBe(true);
+  });
+
+  it("Writing reg 0x04 triggers memory update", async () => {
+    const m = await createTestNextMachine();
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    nr.configMode = true;
+    nr.directSetRegValue(0x04, 3);
+
+    expect(d.configRomRamBank).toBe(3);
+    expect(isRam(d, 0)).toBe(true);
+    expect(isPagedIn(d, 0, 6)).toBe(true);
+    expect(isRam(d, 1)).toBe(true);
+    expect(isPagedIn(d, 1, 7)).toBe(true);
+  });
+});
+
+describe("Next - MemoryDevice - D7: All-RAM mode updates MMU registers", async function () {
+  it("All-RAM config 0 updates MMU regs to banks 0,1,2,3", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0x1ffd, 0x01); // allRamMode, specialConfig=0
+
+    expect(d.mmuRegs[0]).toBe(0);
+    expect(d.mmuRegs[1]).toBe(1);
+    expect(d.mmuRegs[2]).toBe(2);
+    expect(d.mmuRegs[3]).toBe(3);
+    expect(d.mmuRegs[4]).toBe(4);
+    expect(d.mmuRegs[5]).toBe(5);
+    expect(d.mmuRegs[6]).toBe(6);
+    expect(d.mmuRegs[7]).toBe(7);
+  });
+
+  it("All-RAM config 1 updates MMU regs to banks 4,5,6,7", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0x1ffd, 0x03); // allRamMode, specialConfig=1
+
+    expect(d.mmuRegs[0]).toBe(8);
+    expect(d.mmuRegs[1]).toBe(9);
+    expect(d.mmuRegs[2]).toBe(10);
+    expect(d.mmuRegs[3]).toBe(11);
+    expect(d.mmuRegs[4]).toBe(12);
+    expect(d.mmuRegs[5]).toBe(13);
+    expect(d.mmuRegs[6]).toBe(14);
+    expect(d.mmuRegs[7]).toBe(15);
+  });
+
+  it("All-RAM config 2 updates MMU regs to banks 4,5,6,3", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0x1ffd, 0x05); // allRamMode, specialConfig=2
+
+    expect(d.mmuRegs[0]).toBe(8);
+    expect(d.mmuRegs[1]).toBe(9);
+    expect(d.mmuRegs[2]).toBe(10);
+    expect(d.mmuRegs[3]).toBe(11);
+    expect(d.mmuRegs[4]).toBe(12);
+    expect(d.mmuRegs[5]).toBe(13);
+    expect(d.mmuRegs[6]).toBe(6);
+    expect(d.mmuRegs[7]).toBe(7);
+  });
+
+  it("All-RAM config 3 updates MMU regs to banks 4,7,6,3", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0x1ffd, 0x07); // allRamMode, specialConfig=3
+
+    expect(d.mmuRegs[0]).toBe(8);
+    expect(d.mmuRegs[1]).toBe(9);
+    expect(d.mmuRegs[2]).toBe(14);
+    expect(d.mmuRegs[3]).toBe(15);
+    expect(d.mmuRegs[4]).toBe(12);
+    expect(d.mmuRegs[5]).toBe(13);
+    expect(d.mmuRegs[6]).toBe(6);
+    expect(d.mmuRegs[7]).toBe(7);
+  });
+});
+
+describe("Next - MemoryDevice - D8: ROM lock bits without alt ROM", async function () {
+  it("lockRom0 forces ROM 1 when port selects ROM 0", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    io.writePort(0x7ffd, 0x00);
+    io.writePort(0x1ffd, 0x00);
+    nr.directSetRegValue(0x8c, 0x10); // lockRom0=1, enableAltRom=0
+
+    expect(isRom(d, 0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 0, nextRom1Signature0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 1, nextRom1Signature1)).toBe(true);
+  });
+
+  it("lockRom1 forces ROM 2 when port selects ROM 0", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    io.writePort(0x7ffd, 0x00);
+    io.writePort(0x1ffd, 0x00);
+    nr.directSetRegValue(0x8c, 0x20); // lockRom1=1
+
+    expect(isRom(d, 0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 0, nextRom2Signature0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 1, nextRom2Signature1)).toBe(true);
+  });
+
+  it("lockRom0+lockRom1 forces ROM 3 regardless of port selection", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    io.writePort(0x7ffd, 0x10); // port selects ROM 1
+    io.writePort(0x1ffd, 0x00);
+    nr.directSetRegValue(0x8c, 0x30); // lockRom0+lockRom1 → ROM 3
+
+    expect(isRom(d, 0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 0, nextRom3Signature0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 1, nextRom3Signature1)).toBe(true);
+  });
+
+  it("No lock bits uses port-selected ROM", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const nr = m.nextRegDevice;
+    const d = m.memoryDevice;
+
+    io.writePort(0x7ffd, 0x00);
+    io.writePort(0x1ffd, 0x04);
+    nr.directSetRegValue(0x8c, 0x00); // no lock bits
+
+    expect(isRom(d, 0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 0, nextRom2Signature0)).toBe(true);
+    expect(romSlotSignatureMatches(d, 1, nextRom2Signature1)).toBe(true);
+  });
+});
+
+describe("Next - MemoryDevice - D9: Port EFF7 handler", async function () {
+  it("EFF7 bit 3 maps RAM bank 0 into slots 0-1", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    // Initially slots 0-1 are ROM
+    expect(isRom(d, 0)).toBe(true);
+
+    // Set EFF7 bit 3
+    io.writePort(0xeff7, 0x08);
+
+    // Slots 0-1 should now be R/W RAM (bank 0, pages 0 and 1)
+    expect(isRam(d, 0)).toBe(true);
+    expect(isPagedIn(d, 0, 0)).toBe(true);
+    expect(isRam(d, 1)).toBe(true);
+    expect(isPagedIn(d, 1, 1)).toBe(true);
+  });
+
+  it("Clearing EFF7 bit 3 restores ROM", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    // Set EFF7 bit 3
+    io.writePort(0xeff7, 0x08);
+    expect(isRam(d, 0)).toBe(true);
+
+    // Clear EFF7 bit 3
+    io.writePort(0xeff7, 0x00);
+    expect(isRom(d, 0)).toBe(true);
+    expect(isRom(d, 1)).toBe(true);
+  });
+
+  it("EFF7 value is stored and reported in memory mappings", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0xeff7, 0x42);
+    expect(d.portEff7Value).toBe(0x42);
+    expect(d.getMemoryMappings().portEff7).toBe(0x42);
+  });
+
+  it("EFF7 bit 3 with other bits set still maps RAM bank 0", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0xeff7, 0xff); // all bits set including bit 3
+    expect(isRam(d, 0)).toBe(true);
+    expect(isPagedIn(d, 0, 0)).toBe(true);
+  });
+
+  it("EFF7 without bit 3 doesn't affect ROM mapping", async () => {
+    const m = await createTestNextMachine();
+    const io = m.portManager;
+    const d = m.memoryDevice;
+
+    io.writePort(0xeff7, 0xf7); // all bits except bit 3
+    expect(isRom(d, 0)).toBe(true);
+    expect(isRom(d, 1)).toBe(true);
   });
 });

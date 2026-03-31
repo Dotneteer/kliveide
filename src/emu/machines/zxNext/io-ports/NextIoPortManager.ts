@@ -139,7 +139,10 @@ export class NextIoPortManager {
       port: 0xeff7,
       pmask: 0b1111_0000_1111_1111,
       value: 0b1110_0000_1111_0111,
-      writerFns: () => {}
+      writerFns: (_, v) => {
+        machine.memoryDevice.portEff7Value = v & 0xff;
+        machine.memoryDevice.updateMemoryConfig();
+      }
     });
     r({
       description: "NextREG Register Select",

@@ -51,6 +51,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   reg8CLowNibble: number;
   configRomRamBank: number;
   mappingMode: number;
+  portEff7Value: number;
 
   readonly mmuRegs = new Uint8Array(0x08);
 
@@ -160,6 +161,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.reg8CLowNibble = 0;
     this.configRomRamBank = 0;
     this.mappingMode = 0;
+    this.portEff7Value = 0;
 
     // --- Default MMU register values
     this.mmuRegs[0] = 0xff;
@@ -313,6 +315,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * Updates the memory configuration based on the new 0x1ffd port value
    */
   set port1ffdValue(value: number) {
+    if (!this.pagingEnabled) return;
     this.allRamMode = (value & 0x01) !== 0;
     this.specialConfig = (value >> 1) & 0x03;
     this.selectedRomMsb = this.specialConfig & 0x02;
@@ -353,6 +356,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * Updates the memory configuration based on the new 0xdffd port value
    */
   set portDffdValue(value: number) {
+    if (!this.pagingEnabled) return;
     this.selectedBankMsb = value & 0x0f;
     this.mmuRegs[6] = this.selectedBankMsb * 8 + this.selectedBankLsb * 2;
     this.mmuRegs[7] = this.mmuRegs[6] + 1;
@@ -1003,8 +1007,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         // --- Restore the original configuration
         this.mmuRegs[0] = 0xff;
         this.mmuRegs[1] = 0xff;
-        this.mmuRegs[2] = 0x10;
-        this.mmuRegs[3] = 0x11;
+        this.mmuRegs[2] = 0x0a;
+        this.mmuRegs[3] = 0x0b;
         this.mmuRegs[4] = 0x04;
         this.mmuRegs[5] = 0x05;
         this.mmuRegs[6] = 0x00;
@@ -1014,8 +1018,16 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
       // --- Normal mode page setup
       if (!this.machine.divMmcDevice?.conmem) {
-        this.setRomSlotByMmu(0);
-        this.setRomSlotByMmu(1);
+        if (this.portEff7Value & 0x08) {
+          // --- EFF7 bit 3: force RAM bank 0 into slots 0-1
+          const offset0 = OFFS_NEXT_RAM;
+          this.setPageInfo(0, offset0, offset0, 0, 0);
+          const offset1 = OFFS_NEXT_RAM + 0x2000;
+          this.setPageInfo(1, offset1, offset1, 0, 1);
+        } else {
+          this.setRomSlotByMmu(0);
+          this.setRomSlotByMmu(1);
+        }
       }
 
       this.setRamSlotByMmu(2);
@@ -1039,7 +1051,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       port7ffd: this.port7ffdValue,
       port1ffd: this.port1ffdValue,
       portDffd: this.portDffdValue,
-      portEff7: 0x00,
+      portEff7: this.portEff7Value,
       portLayer2: 0x00,
       portTimex: 0x00,
       divMmc: divMmc.port0xe3Value,
@@ -1071,6 +1083,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    */
   private setRamSlotAndMmu(slotNo: number, bank16k: number): void {
     let bank8k = bank16k * 2;
+    this.mmuRegs[slotNo * 2] = bank8k;
+    this.mmuRegs[slotNo * 2 + 1] = bank8k + 1;
     if (bank8k >= this.maxPages) {
       this.setPageInfo(slotNo * 2, OFFS_ERR_PAGE, null, bank16k, bank8k);
     } else {
@@ -1094,7 +1108,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     if (bank8k >= 224) {
       // --- Use priority decode chain (same logic as setRomSlotByMmu)
       const slotNo = pageNo & 0x01;
-      const romPage = this.selectedRomMsb | this.selectedRomLsb;
+      const romPage = (this.lockRom1 || this.lockRom0)
+        ? (this.lockRom1 ? 2 : 0) | (this.lockRom0 ? 1 : 0)
+        : this.selectedRomMsb | this.selectedRomLsb;
       const slotIndex = romPage * 2 + slotNo;
       const romOffs = OFFS_NEXT_ROM + (slotIndex << 13);
       const altRomOffs = this.getAltRomOffset() + (slotNo << 13);
@@ -1132,8 +1148,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   private setRomSlotByMmu(slotNo: number): void {
     slotNo = slotNo & 0x01;
-    const romPage = this.selectedRomMsb | this.selectedRomLsb;
-    const slotIndex = romPage * 2 + slotNo;
     const bank8k = this.mmuRegs[slotNo];
 
     // --- MMU values 224-255 (0xE0-0xFF) trigger overflow detection
@@ -1144,7 +1158,23 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
+    // --- Config mode: map configRomRamBank to slots 0-1 as R/W RAM
+    if (this.machine.nextRegDevice?.configMode) {
+      const page = this.configRomRamBank * 2 + slotNo;
+      if (page >= this.maxPages) {
+        this.setPageInfo(slotNo, OFFS_ERR_PAGE, null, page >> 1, page);
+      } else {
+        const offset = OFFS_NEXT_RAM + (page << 13);
+        this.setPageInfo(slotNo, offset, offset, page >> 1, page);
+      }
+      return;
+    }
+
     // --- System Region access via priority decode chain
+    const romPage = (this.lockRom1 || this.lockRom0)
+      ? (this.lockRom1 ? 2 : 0) | (this.lockRom0 ? 1 : 0)
+      : this.selectedRomMsb | this.selectedRomLsb;
+    const slotIndex = romPage * 2 + slotNo;
     const romOffs = OFFS_NEXT_ROM + (slotIndex << 13);
     const altRomOffs = this.getAltRomOffset() + (slotNo << 13);
     if (this.enableAltRom) {

@@ -314,7 +314,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x04,
       description: "Config Mapping",
-      writeFn: (v) => (machine.memoryDevice.configRomRamBank = v & 0x7f),
+      writeFn: (v) => {
+        machine.memoryDevice.configRomRamBank = v & 0x7f;
+        machine.memoryDevice.updateMemoryConfig();
+      },
       slices: [
         {
           mask: 0x7f,
@@ -472,7 +475,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x08,
       description: "Peripheral 3 Setting",
       readFn: () =>
-        (this.unlockPort7ffd ? 0x80 : 0x00) |
+        (machine.memoryDevice.pagingEnabled ? 0x80 : 0x00) |
         (this.disableRamPortContention ? 0x40 : 0x00) |
         (machine.soundDevice.ayStereoMode ? 0x20 : 0x00) |
         (machine.soundDevice.enableInternalSpeaker ? 0x10 : 0x00) |
@@ -481,7 +484,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.soundDevice.enableTurbosound ? 0x02 : 0x00) |
         (this.implementIssue2Keyboard ? 0x01 : 0x00),
       writeFn: (v) => {
-        this.unlockPort7ffd = (v & 0x80) !== 0;
+        if (v & 0x80) {
+          machine.memoryDevice.pagingEnabled = true;
+        }
         this.disableRamPortContention = (v & 0x40) !== 0;
         machine.soundDevice.ayStereoMode = (v & 0x20) !== 0;
         machine.soundDevice.enableInternalSpeaker = (v & 0x10) !== 0;

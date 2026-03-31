@@ -21,7 +21,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0x00);
     expect(d.directGetRegValue(0x07)).toBe(0x00);
-    expect(d.directGetRegValue(0x08)).toBe(0x1a);
+    expect(d.directGetRegValue(0x08)).toBe(0x9a);
     expect(d.directGetRegValue(0x09)).toBe(0x00);
     expect(d.directGetRegValue(0x0a)).toBe(0x01);
     expect(d.directGetRegValue(0x0b)).toBe(0x01);
@@ -173,7 +173,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0xa0);
     expect(d.directGetRegValue(0x07)).toBe(0x00);
-    expect(d.directGetRegValue(0x08)).toBe(0x1a);
+    expect(d.directGetRegValue(0x08)).toBe(0x9a);
     expect(d.directGetRegValue(0x09)).toBe(0x00);
     expect(d.directGetRegValue(0x0a)).toBe(0x01);
     expect(d.directGetRegValue(0x0b)).toBe(0x01);
@@ -858,7 +858,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x80);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(true);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -878,7 +878,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x40);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(true);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -898,7 +898,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x20);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(true);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -918,7 +918,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x10);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(true);
@@ -938,7 +938,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x08);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -958,7 +958,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x04);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -978,7 +978,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x02);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -998,7 +998,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x01);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
