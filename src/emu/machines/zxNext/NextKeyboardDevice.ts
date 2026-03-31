@@ -3,6 +3,25 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import { SpectrumKeyCode } from "../zxSpectrum/SpectrumKeyCode";
 
+export enum NextExtendedKey {
+  Semicolon = 0,
+  DoubleQuote = 1,
+  Comma = 2,
+  Dot = 3,
+  Up = 4,
+  Down = 5,
+  Left = 6,
+  Right = 7,
+  Delete = 8,
+  Edit = 9,
+  Break = 10,
+  InvVideo = 11,
+  TrueVideo = 12,
+  Graph = 13,
+  CapsLock = 14,
+  Extend = 15
+}
+
 export class NextKeyboardDevice extends KeyboardDevice {
   /**
    * Initialize the keyboard device and assign it to its host machine.
@@ -73,6 +92,94 @@ export class NextKeyboardDevice extends KeyboardDevice {
     this.cancelExtendedKeyEntries = false;
   }
 
+  setExtendedKeyStatus(extKey: NextExtendedKey, isDown: boolean): void {
+    switch (extKey) {
+      case NextExtendedKey.Semicolon: this.semicolonPressed = isDown; break;
+      case NextExtendedKey.DoubleQuote: this.doubleQuotePressed = isDown; break;
+      case NextExtendedKey.Comma: this.commaPressed = isDown; break;
+      case NextExtendedKey.Dot: this.dotPressed = isDown; break;
+      case NextExtendedKey.Up: this.upPressed = isDown; break;
+      case NextExtendedKey.Down: this.downPressed = isDown; break;
+      case NextExtendedKey.Left: this.leftPressed = isDown; break;
+      case NextExtendedKey.Right: this.rightPressed = isDown; break;
+      case NextExtendedKey.Delete: this.deletePressed = isDown; break;
+      case NextExtendedKey.Edit: this.editPressed = isDown; break;
+      case NextExtendedKey.Break: this.breakPressed = isDown; break;
+      case NextExtendedKey.InvVideo: this.invVideoPressed = isDown; break;
+      case NextExtendedKey.TrueVideo: this.trueVideoPressed = isDown; break;
+      case NextExtendedKey.Graph: this.graphPressed = isDown; break;
+      case NextExtendedKey.CapsLock: this.capsLockPressed = isDown; break;
+      case NextExtendedKey.Extend: this.extendPressed = isDown; break;
+    }
+  }
+
+  override getKeyLineStatus(address: number): number {
+    let status = 0;
+    const lines = ~(address >> 8) & 0xff;
+    const joy = this.machine.joystickDevice;
+
+    for (let line = 0; line < 8; line++) {
+      if ((lines & (1 << line)) !== 0) {
+        let lineVal = this.getKeyLineValue(line);
+
+        // --- Inject extended key matrix equivalents (unless cancelled by reg 0x68 bit 4)
+        if (!this.cancelExtendedKeyEntries) {
+          lineVal |= this.getExtendedKeyOverlay(line);
+        }
+
+        // --- Merge joystick state into keyboard rows 3 and 4
+        if (line === 3) lineVal |= joy.joy2State & 0x1f;
+        if (line === 4) lineVal |= joy.joy1State & 0x1f;
+
+        status |= lineVal;
+      }
+    }
+    return ~status & 0xff;
+  }
+
+  private getExtendedKeyOverlay(line: number): number {
+    let overlay = 0;
+    switch (line) {
+      case 0: // CShift row — all CShift-based extended keys force CShift
+        if (this.upPressed || this.downPressed || this.leftPressed || this.rightPressed ||
+            this.deletePressed || this.editPressed || this.breakPressed ||
+            this.invVideoPressed || this.trueVideoPressed || this.graphPressed ||
+            this.capsLockPressed || this.extendPressed) {
+          overlay |= 0x01; // CShift = bit 0
+        }
+        break;
+      case 3: // N1, N2, N3, N4, N5
+        if (this.editPressed) overlay |= 0x01;      // N1 = bit 0
+        if (this.capsLockPressed) overlay |= 0x02;   // N2 = bit 1
+        if (this.trueVideoPressed) overlay |= 0x04;  // N3 = bit 2
+        if (this.invVideoPressed) overlay |= 0x08;   // N4 = bit 3
+        if (this.leftPressed) overlay |= 0x10;        // N5 = bit 4
+        break;
+      case 4: // N0, N9, N8, N7, N6
+        if (this.deletePressed) overlay |= 0x01;     // N0 = bit 0
+        if (this.graphPressed) overlay |= 0x02;       // N9 = bit 1
+        if (this.rightPressed) overlay |= 0x04;       // N8 = bit 2
+        if (this.upPressed) overlay |= 0x08;           // N7 = bit 3
+        if (this.downPressed) overlay |= 0x10;         // N6 = bit 4
+        break;
+      case 5: // P, O, I, U, Y
+        if (this.doubleQuotePressed) overlay |= 0x01; // P = bit 0
+        if (this.semicolonPressed) overlay |= 0x02;   // O = bit 1
+        break;
+      case 7: // Space, SShift, M, N, B
+        if (this.breakPressed) overlay |= 0x01;       // Space = bit 0
+        // SShift for SShift-based extended keys
+        if (this.semicolonPressed || this.doubleQuotePressed || this.commaPressed ||
+            this.dotPressed || this.extendPressed) {
+          overlay |= 0x02; // SShift = bit 1
+        }
+        if (this.dotPressed) overlay |= 0x04;         // M = bit 2
+        if (this.commaPressed) overlay |= 0x08;       // N = bit 3
+        break;
+    }
+    return overlay;
+  }
+
   get nextRegB0Value(): number {
     return (
       (this.semicolonPressed ? 0x80 : 0x00) |
@@ -100,16 +207,8 @@ export class NextKeyboardDevice extends KeyboardDevice {
   }
 
   get nextRegB2Value(): number {
-    return (
-      (this.rightPadXPressed ? 0x80 : 0x00) |
-      (this.rightPadZPressed ? 0x40 : 0x00) |
-      (this.rightPadYPressed ? 0x20 : 0x00) |
-      (this.rightPadModePressed ? 0x10 : 0x00) |
-      (this.leftPadXPressed ? 0x08 : 0x00) |
-      (this.leftPadZPressed ? 0x04 : 0x00) |
-      (this.leftPadYPressed ? 0x02 : 0x00) |
-      (this.leftPadModePressed ? 0x01 : 0x00)
-    );
+    const joy = this.machine.joystickDevice;
+    return ((joy.joy2MdPadState & 0x0f) << 4) | (joy.joy1MdPadState & 0x0f);
   }
 }
 

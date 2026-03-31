@@ -416,21 +416,21 @@ export class NextIoPortManager {
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0001_1111,
-      readerFns: readKempstonJoy1Port
+      readerFns: (p) => readKempstonJoy1Port(p, machine)
     });
     r({
       description: "Kempston joy 1 alias",
       port: 0xdf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
-      readerFns: readKempstonJoy1AliasPort
+      readerFns: (p) => readKempstonJoy1AliasPort(p, machine)
     });
     r({
       description: "Kempston joy 2",
       port: 0x37,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_0111,
-      readerFns: readKempstonJoy2Port
+      readerFns: (p) => readKempstonJoy2Port(p, machine)
     });
     r({
       description: "Multiface port 0x1F",

@@ -19,6 +19,14 @@ export class JoystickDevice implements IGenericDevice<IZxNextMachine> {
   ioMode: number;
   ioModeParam: boolean;
 
+  // --- Joystick state (active high: bit0=right, bit1=left, bit2=down, bit3=up, bit4=fire, bits5-7=extra)
+  joy1State: number;
+  joy2State: number;
+
+  // --- MD pad extra button state (bit3=X, bit2=Z, bit1=Y, bit0=Mode)
+  joy1MdPadState: number;
+  joy2MdPadState: number;
+
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
   }
@@ -29,5 +37,9 @@ export class JoystickDevice implements IGenericDevice<IZxNextMachine> {
     this.ioModeEnabled = false;
     this.ioMode = 0;
     this.ioModeParam = true;
+    this.joy1State = 0;
+    this.joy2State = 0;
+    this.joy1MdPadState = 0;
+    this.joy2MdPadState = 0;
   }
 }
