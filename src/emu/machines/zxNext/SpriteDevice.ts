@@ -34,11 +34,14 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   patternMemory8bit: Uint8Array[];   // 512 entries (64 × 8)
   patternMemory4bit: Uint8Array[];   // 1024 entries (128 × 8)
   attributes: SpriteAttributes[];
+  resolvedAttributes: SpriteAttributes[]; // post-relative-compositing snapshot used by renderer
 
   lastVisibileSpriteIndex: number;
 
-  // --- Anchor sprite properties for relative sprite chains
-  // --- These store the transformation state of the last anchor sprite
+  // --- Dirty flag: set whenever sprite attributes change; cleared by resolveRelativeSprites()
+  private _attrsDirty: boolean;
+
+  // --- Anchor sprite properties for relative sprite chains (legacy cached fields)
   private anchorX: number = 0;
   private anchorY: number = 0;
   private anchorRotate: boolean = false;
@@ -60,31 +63,20 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Allocate sprite attribute memory
+    const makeBlankAttr = (): SpriteAttributes => ({
+      x: 0, y: 0, paletteOffset: 0, mirrorX: false, mirrorY: false, rotate: false,
+      attributeFlag1: false, visible: false, has5AttributeBytes: false, patternIndex: 0,
+      colorMode: 0, attributeFlag2: false, scaleX: 0, scaleY: 0, pattern7Bit: 0,
+      is4BitPattern: false, transformVariant: 0, patternVariantIndex: 0,
+      width: 16, height: 16, patternRelative: false
+    });
     this.attributes = new Array(128);
+    this.resolvedAttributes = new Array(128);
     for (let i = 0; i < 128; i++) {
-      this.attributes[i] = {
-        x: 0,
-        y: 0,
-        paletteOffset: 0,
-        mirrorX: false,
-        mirrorY: false,
-        rotate: false,
-        attributeFlag1: false,
-        visible: false,
-        has5AttributeBytes: false,
-        patternIndex: 0,
-        colorMode: 0,
-        attributeFlag2: false,
-        scaleX: 0,
-        scaleY: 0,
-        pattern7Bit: 0,
-        is4BitPattern: false,
-        transformVariant: 0,
-        patternVariantIndex: 0,
-        width: 16,
-        height: 16
-      };
+      this.attributes[i] = makeBlankAttr();
+      this.resolvedAttributes[i] = makeBlankAttr();
     }
+    this._attrsDirty = true;
 
     this.patternIndex = 0;
     this.patternSubIndex = 0;
@@ -133,7 +125,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       this.attributes[i].patternVariantIndex = 0;
       this.attributes[i].width = 16;
       this.attributes[i].height = 16;
+      this.attributes[i].patternRelative = false;
+      this.resolvedAttributes[i].visible = false;
     }
+    this._attrsDirty = true;
   }
 
   /**
@@ -443,9 +438,15 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         if (attributes.colorMode !== 0x01) {
           // --- Anchor sprite: set X MSB (bit 0 of attr4)
           attributes.x = (((value & 0x01) << 8) | (attributes.x & 0xff)) & 0x1ff;
+        } else {
+          // --- Relative sprite: bit 0 = pattern-relative flag (add anchor's pattern index)
+          attributes.patternRelative = (value & 0x01) !== 0;
         }
         break;
     }
+
+    // --- Invalidate resolved-sprite cache whenever raw attributes change
+    this._attrsDirty = true;
 
     // --- Select the last visible sprite
     if (attridx === 3 && attributes.visible) {
@@ -477,6 +478,172 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       attributes.patternVariantIndex = (pattern7bit << 3) | attributes.transformVariant;
     } else {
       attributes.patternVariantIndex = (attributes.patternIndex << 3) | attributes.transformVariant;
+    }
+  }
+
+  /**
+   * Resolve all 128 sprites into resolvedAttributes[], compositing relative sprites
+   * onto their anchor's position and transforms (mirrors MAME update_sprites_cache()).
+   * Called once per scanline batch before the sprite render loop begins.
+   * The result is cached until any sprite attribute write marks _attrsDirty.
+   */
+  resolveRelativeSprites(): void {
+    if (!this._attrsDirty) return;
+    this._attrsDirty = false;
+
+    let anchorIdx = -1;
+    let anchorVisible = false;
+
+    for (let i = 0; i < 128; i++) {
+      const src = this.attributes[i];
+      const dst = this.resolvedAttributes[i];
+
+      // A sprite is relative when has5AttributeBytes AND colorMode === 0b01
+      const isRelative = src.has5AttributeBytes && src.colorMode === 0x01;
+
+      let isVisible = src.visible;
+      if (isRelative) {
+        isVisible = isVisible && anchorVisible;
+      } else {
+        anchorVisible = isVisible;
+      }
+
+      if (!isVisible) {
+        dst.visible = false;
+        if (!isRelative) anchorIdx = -1; // anchor lost visibility — no anchor for relatives
+        continue;
+      }
+
+      if (!isRelative) {
+        // ── Anchor sprite: copy as-is ───────────────────────────────────────
+        Object.assign(dst, src);
+        dst.visible = true;
+        anchorIdx = i;
+      } else {
+        // ── Relative sprite: composite onto anchor ─────────────────────────
+        if (anchorIdx < 0) { dst.visible = false; continue; }
+        const anchor = this.attributes[anchorIdx];
+
+        // rel_type: bit 5 of anchor's attr4 AND anchor has 5 bytes
+        const relType = anchor.attributeFlag2 && anchor.has5AttributeBytes;
+
+        // Effective anchor transforms (zeroed when uniform rel_type)
+        const aRotate  = relType ? anchor.rotate   : false;
+        const aMirrorX = relType ? anchor.mirrorX  : false;
+        const aMirrorY = relType ? anchor.mirrorY  : false;
+        const aScaleX  = relType ? anchor.scaleX   : 0;
+        const aScaleY  = relType ? anchor.scaleY   : 0;
+
+        // Raw 8-bit signed offsets from relative sprite attr0 / attr1
+        const rawX = src.x & 0xff;
+        const rawY = src.y & 0xff;
+
+        // Rotate swaps X/Y (MAME: spr_rel_x0/y0)
+        const x0 = aRotate ? rawY : rawX;
+        const y0 = aRotate ? rawX : rawY;
+
+        // Mirror negates (MAME: spr_rel_x1/y1; negate = two's complement)
+        const x1 = (aRotate !== aMirrorX) ? ((~x0 + 1) & 0xff) : x0;
+        const y1 = aMirrorY              ? ((~y0 + 1) & 0xff) : y0;
+
+        // Sign-extend 8→9-bit and scale (MAME: spr_rel_x2/y2)
+        const x1s = x1 | (x1 >= 0x80 ? 0x100 : 0);
+        const y1s = y1 | (y1 >= 0x80 ? 0x100 : 0);
+        const x2 = (x1s << aScaleX) & 0x1ff;
+        const y2 = (y1s << aScaleY) & 0x1ff;
+
+        // Add anchor position (MAME: spr_rel_x3/y3)
+        const x3 = (anchor.x + x2) & 0x1ff;
+        const y3 = (anchor.y + y2) & 0x1ff;
+
+        // Palette offset composition (MAME: spr_rel_paloff)
+        // attributeFlag1 = attr2 bit 0 = "use anchor palette + relative palette"
+        const palOff = src.attributeFlag1
+          ? (anchor.paletteOffset + src.paletteOffset) & 0x0f
+          : src.paletteOffset;
+
+        // Mirror / rotate composition
+        let finalMirrorX: boolean, finalMirrorY: boolean, finalRotate: boolean;
+        if (relType) {
+          // Composite: XOR anchor transforms with relative sprite's pre-rotated mirrors
+          // MAME: spr_rel_xm = anchor_rotate ? (ymirror xor rotate) : xmirror
+          //        spr_rel_ym = anchor_rotate ? (xmirror xor rotate) : ymirror
+          const relXm = aRotate ? (src.mirrorY !== src.rotate) : src.mirrorX;
+          const relYm = aRotate ? (src.mirrorX !== src.rotate) : src.mirrorY;
+          finalMirrorX = aMirrorX !== relXm;
+          finalMirrorY = aMirrorY !== relYm;
+          finalRotate  = aRotate  !== src.rotate;
+        } else {
+          // Uniform: take relative sprite's own transforms unchanged
+          finalMirrorX = src.mirrorX;
+          finalMirrorY = src.mirrorY;
+          finalRotate  = src.rotate;
+        }
+
+        // Scale: inherited from anchor when composite, own when uniform
+        const finalScaleX = relType ? anchor.scaleX : src.scaleX;
+        const finalScaleY = relType ? anchor.scaleY : src.scaleY;
+
+        // 4-bit mode is always inherited from anchor
+        const is4Bit = anchor.is4BitPattern;
+
+        // Pattern 7-bit index (MAME: uses N6 bit; Klive stores bit 5 as attributeFlag2 proxy)
+        //   N6 proxy for relative sprite = src.attributeFlag2 && is4Bit (matches MAME attr4 bit 6
+        //   synthesised from relative-sprite bit 5 when building spr_cur_attr[4])
+        const relN6 = src.attributeFlag2 && is4Bit;
+        let resolvedPat7: number;
+
+        if (src.patternRelative) {
+          // MAME: (relPat + anchorPat) & 0x7f — both in MAME 7-bit encoding
+          // Anchor 7-bit MAME pattern: (patternIndex<<1) | (anchorN6 && is4Bit)
+          const anchorN6 = anchor.attributeFlag2 && anchor.is4BitPattern;
+          const anchorPat7 = (anchor.patternIndex << 1) | (anchorN6 ? 1 : 0);
+          const relPat7    = (src.patternIndex   << 1) | (relN6    ? 1 : 0);
+          resolvedPat7 = (relPat7 + anchorPat7) & 0x7f;
+        } else {
+          resolvedPat7 = (src.patternIndex << 1) | (relN6 ? 1 : 0);
+        }
+
+        // Fill resolved attributes
+        dst.x = x3;
+        dst.y = y3;
+        dst.paletteOffset = palOff;
+        dst.mirrorX = finalMirrorX;
+        dst.mirrorY = finalMirrorY;
+        dst.rotate  = finalRotate;
+        dst.attributeFlag1 = src.attributeFlag1;
+        dst.visible = true;
+        dst.has5AttributeBytes = true;
+        dst.patternIndex = src.patternIndex;
+        dst.colorMode = src.colorMode;
+        dst.attributeFlag2 = src.attributeFlag2;
+        dst.scaleX = finalScaleX;
+        dst.scaleY = finalScaleY;
+        dst.is4BitPattern = is4Bit;
+        dst.patternRelative = src.patternRelative;
+
+        // Derived transform variant
+        dst.transformVariant =
+          (finalRotate ? 4 : 0) | (finalMirrorX ? 2 : 0) | (finalMirrorY ? 1 : 0);
+
+        // Pattern variant index for lookup in patternMemory4bit / patternMemory8bit
+        if (is4Bit) {
+          // resolvedPat7 is a 7-bit index into 128 × 8 = 1024 entries of patternMemory4bit
+          dst.patternVariantIndex = (resolvedPat7 << 3) | dst.transformVariant;
+        } else {
+          // For 8-bit, resolvedPat7 = patternIndex<<1; divide by 2 to get 0-63 index
+          // (consistent with how updatePatternVariantIndex stores 8-bit sprites)
+          dst.patternVariantIndex = ((resolvedPat7 >> 1) << 3) | dst.transformVariant;
+        }
+        dst.pattern7Bit = resolvedPat7;
+
+        // Effective dimensions
+        const baseSize = 16;
+        const scaledW = baseSize << finalScaleX;
+        const scaledH = baseSize << finalScaleY;
+        dst.width  = finalRotate ? scaledH : scaledW;
+        dst.height = finalRotate ? scaledW : scaledH;
+      }
     }
   }
 
@@ -533,6 +700,7 @@ export type SpriteAttributes = {
   patternVariantIndex: number; // Cached pattern variant index for direct lookup in patternMemory arrays
   width: number; // Effective sprite width in pixels after scaling and rotation
   height: number; // Effective sprite height in pixels after scaling and rotation
+  patternRelative: boolean; // (relative sprites only) add anchor's pattern index to own
 };
 
 export type SpriteInfo = {

@@ -3667,18 +3667,29 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * Called when NextReg 0x15 bit 1 changes.
    */
   updateSpriteClipBoundaries(): void {
-    if (this.spriteDevice.spritesOverBorderEnabled) {
-      // Full sprite area: 320×256 pixels
-      this.spritesClipXMin = 0;
-      this.spritesClipXMax = 319;
-      this.spritesClipYMin = 0;
-      this.spritesClipYMax = 255;
+    const sd = this.spriteDevice;
+    const OVER_BORDER = 32;
+    if (sd.spritesOverBorderEnabled) {
+      if (!sd.spriteClippingEnabled) {
+        // Mode 1: over-border, no clip → full 320×256 display area
+        this.spritesClipXMin = 0;
+        this.spritesClipXMax = 319;
+        this.spritesClipYMin = 0;
+        this.spritesClipYMax = 255;
+      } else {
+        // Mode 3: over-border with clip → clip regs are direct (X regs in 2-pixel units,
+        // matching MAME: clip_x1<<1 → sprite-pixel = clip_x1*2)
+        this.spritesClipXMin = sd.clipWindowX1 << 1;
+        this.spritesClipXMax = (sd.clipWindowX2 << 1) | 1;
+        this.spritesClipYMin = sd.clipWindowY1;
+        this.spritesClipYMax = sd.clipWindowY2;
+      }
     } else {
-      // Restricted to ULA area: 256×192 pixels (X: 32-287, Y: 32-223)
-      this.spritesClipXMin = 32;
-      this.spritesClipXMax = 287;
-      this.spritesClipYMin = 32;
-      this.spritesClipYMax = 223;
+      // Mode 2: not over-border → clip regs are ULA-relative; add OVER_BORDER offset
+      this.spritesClipXMin = sd.clipWindowX1 + OVER_BORDER;
+      this.spritesClipXMax = sd.clipWindowX2 + OVER_BORDER;
+      this.spritesClipYMin = sd.clipWindowY1 + OVER_BORDER;
+      this.spritesClipYMax = sd.clipWindowY2 + OVER_BORDER;
     }
   }
 
@@ -3709,7 +3720,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         }
 
         // Fetch the sprite attributes for the current sprite
-        const spriteAttrs = this.spriteDevice.attributes[this.spritesIndex];
+        const spriteAttrs = this.spriteDevice.resolvedAttributes[this.spritesIndex];
         
         // Safety check: ensure sprite attributes exist
         if (!spriteAttrs) {
@@ -3822,8 +3833,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         const pixelValue = this.spritesPatternData![patternOffset];
 
         // 3. Check transparency FIRST (before any color processing)
-        //    Compare against global transparency index (NextReg 0x4B, default 0xE3)
-        const isTransparent = (pixelValue === this.spriteDevice.transparencyIndex);
+        //    For 4-bit sprites mask transparencyIndex to 4 bits (MAME: transp_colour & 0x0f)
+        const transpMask = sprite.is4BitPattern ? 0x0f : 0xff;
+        const isTransparent = (pixelValue === (this.spriteDevice.transparencyIndex & transpMask));
 
         if (isTransparent) {
           // Skip transparent pixels - advance to next pixel
@@ -3902,6 +3914,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     if ((cell & SCR_SPRITE_INIT_RENDER) !== 0) {
+      // Resolve relative sprites onto their anchors (once per dirty cycle)
+      this.spriteDevice.resolveRelativeSprites();
       // Initialize sprite rendering for the next scanline (index 0)
       this.spritesBufferPosition = 0;
       this.spritesBuffer.fill(0x00); // Clear sprite buffer
