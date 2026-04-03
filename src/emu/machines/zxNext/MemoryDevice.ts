@@ -152,6 +152,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.useShadowScreen = false;
     this.allRamMode = false;
     this.specialConfig = 0;
+    this._portEff7Value = 0;
 
     this.enableAltRom = false;
     this.altRomVisibleOnlyForWrites = false;
@@ -326,10 +327,11 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * Updates the memory configuration based on the new 0x1ffd port value
    */
   set port1ffdValue(value: number) {
+    if (!this.pagingEnabled) return;
     this.allRamMode = (value & 0x01) !== 0;
     this.specialConfig = (value >> 1) & 0x03;
     this.selectedRomMsb = this.specialConfig & 0x02;
-    this.updateMemoryConfig();
+    this.updateMemoryConfig(true);
   }
 
   get port7ffdValue(): number {
@@ -350,12 +352,12 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Update port value changes
     const newBank16k = (this.selectedBankLsb = value & 0x07);
-    this.mmuRegs[6] = this.selectedBankMsb * 8 + newBank16k * 2;
+    this.mmuRegs[6] = this.selectedBankMsb * 16 + newBank16k * 2;
     this.mmuRegs[7] = this.mmuRegs[6] + 1;
     this.useShadowScreen = !!((value >> 3) & 0x01);
     this.selectedRomLsb = (value >> 4) & 0x01;
     this.pagingEnabled = !(value & 0x20);
-    this.updateMemoryConfig();
+    this.updateMemoryConfig(true);
   }
 
   get portDffdValue(): number {
@@ -366,14 +368,24 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
    * Updates the memory configuration based on the new 0xdffd port value
    */
   set portDffdValue(value: number) {
+    if (!this.pagingEnabled) return;
     this.selectedBankMsb = value & 0x0f;
-    this.mmuRegs[6] = this.selectedBankMsb * 8 + this.selectedBankLsb * 2;
+    this.mmuRegs[6] = this.selectedBankMsb * 16 + this.selectedBankLsb * 2;
     this.mmuRegs[7] = this.mmuRegs[6] + 1;
-    this.updateMemoryConfig();
+    this.updateMemoryConfig(true);
   }
 
   /** Port 0xEFF7 value — FPGA stores bits 2-3 only (pentagon 1024K control) */
-  portEff7Value: number = 0;
+  private _portEff7Value: number = 0;
+
+  get portEff7Value(): number {
+    return this._portEff7Value;
+  }
+
+  set portEff7Value(value: number) {
+    this._portEff7Value = value;
+    this.updateMemoryConfig(true);
+  }
 
   /**
    * Gets the value of the specified MMU register
@@ -983,7 +995,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * Updates the memory configuration based on the current settings
    */
-  updateMemoryConfig(): void {
+  updateMemoryConfig(fromPort: boolean = false): void {
     if (this.allRamMode) {
       // --- All RAM page setup
       this._wasInAllRamMode = true;
@@ -1020,11 +1032,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       return;
     } else {
       if (this._wasInAllRamMode) {
-        // --- Restore the original configuration
-        this.mmuRegs[0] = 0xff;
-        this.mmuRegs[1] = 0xff;
-        this.mmuRegs[2] = 0x10;
-        this.mmuRegs[3] = 0x11;
+        // --- Restore the original configuration (M2 fix: 0x0a/0x0b not 0x10/0x11)
+        // --- M5: EFF7 bit 3 maps 16K bank 0 to slot 0 even when restoring
+        const eff7Bank0 = (this._portEff7Value & 0x08) !== 0;
+        this.mmuRegs[0] = eff7Bank0 ? 0x00 : 0xff;
+        this.mmuRegs[1] = eff7Bank0 ? 0x01 : 0xff;
+        this.mmuRegs[2] = 0x0a;
+        this.mmuRegs[3] = 0x0b;
         this.mmuRegs[4] = 0x04;
         this.mmuRegs[5] = 0x05;
         this.mmuRegs[6] = 0x00;
@@ -1034,6 +1048,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
       // --- Normal mode page setup
       if (!this.machine.divMmcDevice?.conmem) {
+        // --- M5: port writes (7FFD, DFFD, 1FFD, EFF7) always re-evaluate EFF7 bit 3
+        // --- for slot 0/1, matching FPGA behaviour. NextReg writes skip this override.
+        if (fromPort) {
+          const eff7Bank0 = (this._portEff7Value & 0x08) !== 0;
+          this.mmuRegs[0] = eff7Bank0 ? 0x00 : 0xff;
+          this.mmuRegs[1] = eff7Bank0 ? 0x01 : 0xff;
+        }
         this.setRomSlotByMmu(0);
         this.setRomSlotByMmu(1);
       }
@@ -1059,7 +1080,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       port7ffd: this.port7ffdValue,
       port1ffd: this.port1ffdValue,
       portDffd: this.portDffdValue,
-      portEff7: 0x00,
+      portEff7: this.portEff7Value,
       portLayer2: 0x00,
       portTimex: 0x00,
       divMmc: divMmc.port0xe3Value,
