@@ -834,11 +834,18 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }> = [];
 
     for (let i = 0; i < sampleCount; i++) {
-      // Get beeper sample (or 0 if out of range)
-      // Phase 4: Gate beeper through internal speaker enable (NR 0x08 bit 4)
-      const rawEarLevel = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
-      const earLevel = this.soundDevice.enableInternalSpeaker ? rawEarLevel : 0.0;
-      mixer.setEarLevel(earLevel);
+      // Get beeper samples (or 0 if out of range).
+      // BeeperDevice: left = EAR time-weighted [0,1], right = MIC time-weighted [0,1].
+      const rawEarSample = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
+      const rawMicSample = i < beeperSamples.length ? beeperSamples[i].right : 0.0;
+      // FPGA: beep_spkr_excl = nr_06_internal_speaker_beep AND nr_08_internal_speaker_en.
+      // When excl=1: EAR and MIC are zeroed from the PCM/headphone mixer.
+      // nr_08_internal_speaker_en=0 only powers off the physical speaker transistor — the
+      // headphone/HDMI PCM output is unaffected.
+      const beepExcl = this.soundDevice.beepOnlyToInternalSpeaker
+                     && this.soundDevice.enableInternalSpeaker;
+      mixer.setEarLevel(beepExcl ? 0.0 : rawEarSample);
+      mixer.setMicLevel(beepExcl ? 0.0 : rawMicSample);
 
       // Get PSG sample (or 0 if out of range or disabled)
       const psgSample = i < turboSoundSamples.length ? turboSoundSamples[i] : { left: 0, right: 0 };
