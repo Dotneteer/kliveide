@@ -107,7 +107,6 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextReg41Value(value: number) {
-    this.storedPaletteValue = value & 0xff;
     const regValue = (value << 1) | (value & 0x03 ? 1 : 0);
     this.getCurrentPalette()[this._paletteIndex] = regValue;
     if (!this._disablePaletteWriteAutoInc) {
@@ -146,22 +145,20 @@ export class PaletteDevice implements IGenericDevice<IZxNextMachine> {
 
   get nextReg44Value(): number {
     const value = this.getCurrentPalette()[this._paletteIndex];
-    return value & 0x01;
+    return ((value & 0x200) !== 0 ? 0x80 : 0) | ((value & 0x400) !== 0 ? 0x40 : 0) | (value & 0x01);
   }
 
   set nextReg44Value(value: number) {
-    this.storedPaletteValue = value & 0xff;
     const palette = this.getCurrentPalette();
     if (!this._secondWrite) {
+      this.storedPaletteValue = value & 0xff;
       palette[this._paletteIndex] = (value & 0xff) << 1;
     } else {
-      palette[this._paletteIndex] = palette[this._paletteIndex] | (value & 0x01);
-      if (palette === this.layer2First || palette === this.layer2Second) {
-        if (value & 0x80) {
-          // --- Sign priority color for Layer 2 palettes
-          palette[this._paletteIndex] |= 0x200;
-        }
-      }
+      // Compose the 9-bit color entry with priority bit (all palette types per FPGA)
+      palette[this._paletteIndex] =
+        (palette[this._paletteIndex] & ~0x01) |
+        (value & 0x01) |
+        ((value & 0x80) !== 0 ? 0x200 : 0);
       if (!this._disablePaletteWriteAutoInc) {
         this._paletteIndex = (this._paletteIndex + 1) & 0xff;
       }

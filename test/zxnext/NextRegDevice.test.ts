@@ -1571,10 +1571,10 @@ describe("Next - NextRegDevice", function () {
   });
 
   it("Reg $28 read returns last stored palette value", async () => {
-    // --- Arrange
+    // --- Arrange: NR 0x44 first-byte write sets storedPaletteValue (NR 0x41 does not)
     const m = await createTestNextMachine();
     writeNextReg(m, 0x40, 0x20);
-    writeNextReg(m, 0x41, 0x5a);
+    writeNextReg(m, 0x44, 0x5a); // first byte of 9-bit write → storedPaletteValue = 0x5a
 
     // --- Assert
     expect(readNextReg(m, 0x28)).toBe(0x5a);

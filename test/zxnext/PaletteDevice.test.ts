@@ -331,7 +331,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x1d);
-    expect(pal.ulaFirst[0x1c]).toBe(0x40);
+    expect(pal.ulaFirst[0x1c]).toBe(0x240);
     expect(secondWriteBefore).toBe(false);
     expect(pal.secondWrite).toBe(false);
   });
@@ -351,7 +351,7 @@ describe("Next - PaletteDevice", async function () {
 
     // --- Assert
     expect(pal.paletteIndex).toBe(0x1d);
-    expect(pal.ulaFirst[0x1c]).toBe(0x41);
+    expect(pal.ulaFirst[0x1c]).toBe(0x241);
     expect(secondWriteBefore).toBe(false);
     expect(pal.secondWrite).toBe(false);
   });
@@ -479,7 +479,7 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.ulaFirst[0x1f]).toBe(0x1ff); // Unchanged
     expect(pal.ulaFirst[0x20]).toBe(0x41);
     expect(pal.ulaFirst[0x21]).toBe(0x43);
-    expect(pal.ulaFirst[0x22]).toBe(0x45);
+    expect(pal.ulaFirst[0x22]).toBe(0x245);
     expect(pal.ulaFirst[0x23]).toBe(0x47);
     expect(pal.ulaFirst[0x24]).toBe(0x28); // Unchanged
   });
@@ -507,7 +507,7 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.ulaSecond[0x1f]).toBe(0x1ff); // Unchanged
     expect(pal.ulaSecond[0x20]).toBe(0x41);
     expect(pal.ulaSecond[0x21]).toBe(0x43);
-    expect(pal.ulaSecond[0x22]).toBe(0x45);
+    expect(pal.ulaSecond[0x22]).toBe(0x245);
     expect(pal.ulaSecond[0x23]).toBe(0x47);
     expect(pal.ulaSecond[0x24]).toBe(0x28); // Unchanged
   });
@@ -591,7 +591,7 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.spriteFirst[0x1f]).toBe(0x3f); // Unchanged
     expect(pal.spriteFirst[0x20]).toBe(0x41);
     expect(pal.spriteFirst[0x21]).toBe(0x43);
-    expect(pal.spriteFirst[0x22]).toBe(0x45);
+    expect(pal.spriteFirst[0x22]).toBe(0x245);
     expect(pal.spriteFirst[0x23]).toBe(0x47);
     expect(pal.spriteFirst[0x24]).toBe(0x48); // Unchanged
   });
@@ -619,7 +619,7 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.spriteSecond[0x1f]).toBe(0x3f); // Unchanged
     expect(pal.spriteSecond[0x20]).toBe(0x41);
     expect(pal.spriteSecond[0x21]).toBe(0x43);
-    expect(pal.spriteSecond[0x22]).toBe(0x45);
+    expect(pal.spriteSecond[0x22]).toBe(0x245);
     expect(pal.spriteSecond[0x23]).toBe(0x47);
     expect(pal.spriteSecond[0x24]).toBe(0x48); // Unchanged
   });
@@ -647,7 +647,7 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.tilemapFirst[0x1f]).toBe(0x3f); // Unchanged
     expect(pal.tilemapFirst[0x20]).toBe(0x41);
     expect(pal.tilemapFirst[0x21]).toBe(0x43);
-    expect(pal.tilemapFirst[0x22]).toBe(0x45);
+    expect(pal.tilemapFirst[0x22]).toBe(0x245);
     expect(pal.tilemapFirst[0x23]).toBe(0x47);
     expect(pal.tilemapFirst[0x24]).toBe(0x48); // Unchanged
   });
@@ -675,7 +675,7 @@ describe("Next - PaletteDevice", async function () {
     expect(pal.tilemapSecond[0x1f]).toBe(0x3f); // Unchanged
     expect(pal.tilemapSecond[0x20]).toBe(0x41);
     expect(pal.tilemapSecond[0x21]).toBe(0x43);
-    expect(pal.tilemapSecond[0x22]).toBe(0x45);
+    expect(pal.tilemapSecond[0x22]).toBe(0x245);
     expect(pal.tilemapSecond[0x23]).toBe(0x47);
     expect(pal.tilemapSecond[0x24]).toBe(0x48); // Unchanged
   });
