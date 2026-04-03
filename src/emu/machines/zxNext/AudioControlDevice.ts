@@ -159,9 +159,11 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
     // --- Propagate turbosound enable to TurboSoundDevice (FPGA turbosound_en_i)
     this.turboSoundDevice.enableTurbosound = soundConfig.enableTurbosound;
 
-    // --- DAC enable flag controls whether DAC output is routed to mixer
-    // When disabled, DAC doesn't contribute to audio output
-    // This is handled at the mixing level
+    // --- FPGA soundrive.vhd: reset_i => reset or not nr_08_dac_en
+    // When DAC is disabled, the soundrive entity is held in continuous reset (all channels = 0x80)
+    if (!soundConfig.enable8BitDacs) {
+      this.dacDevice.reset();
+    }
 
     // --- TurboSound enable flag controls whether PSG output is routed to mixer
     // When disabled, PSG output is not mixed with other sources

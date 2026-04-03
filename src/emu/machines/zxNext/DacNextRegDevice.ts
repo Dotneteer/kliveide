@@ -4,10 +4,10 @@ import { DacDevice } from "./DacDevice";
  * DAC NextReg Device for ZX Spectrum Next
  * Provides NextReg mirrors for DAC control
  * 
- * NextReg Mapping:
- * - 0x2C (44): Mono DAC (writes to both DAC A and DAC D)
- * - 0x2D (45): Left DAC (writes to DAC B)
- * - 0x2E (46): Right DAC (writes to DAC C)
+ * FPGA soundrive.vhd / zxnext.vhd mapping:
+ * - 0x2C (44): nr_left_we_i  → chB (left channel)
+ * - 0x2D (45): nr_mono_we_i  → chA + chD (mono)
+ * - 0x2E (46): nr_right_we_i → chC (right channel)
  */
 export class DacNextRegDevice {
   private dac: DacDevice;
@@ -24,16 +24,16 @@ export class DacNextRegDevice {
    */
   writeNextReg(reg: number, value: number): boolean {
     switch (reg) {
-      case 0x2c: // Mono DAC (A + D)
+      case 0x2c: // Left DAC (chB) — FPGA nr_left_we_i
+        this.dac.setDacB(value);
+        return true;
+
+      case 0x2d: // Mono DAC (chA + chD) — FPGA nr_mono_we_i
         this.dac.setDacA(value);
         this.dac.setDacD(value);
         return true;
 
-      case 0x2d: // Left DAC (B)
-        this.dac.setDacB(value);
-        return true;
-
-      case 0x2e: // Right DAC (C)
+      case 0x2e: // Right DAC (chC) — FPGA nr_right_we_i
         this.dac.setDacC(value);
         return true;
 
@@ -49,11 +49,11 @@ export class DacNextRegDevice {
    */
   readNextReg(reg: number): number | undefined {
     switch (reg) {
-      case 0x2c: // Mono DAC (read A - should match D)
-        return this.dac.getDacA();
-
-      case 0x2d: // Left DAC (read B)
+      case 0x2c: // Left DAC (read B)
         return this.dac.getDacB();
+
+      case 0x2d: // Mono DAC (read A — should match D)
+        return this.dac.getDacA();
 
       case 0x2e: // Right DAC (read C)
         return this.dac.getDacC();

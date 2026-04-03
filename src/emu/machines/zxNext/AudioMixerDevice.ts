@@ -262,13 +262,12 @@ export class AudioMixerDevice {
     mixedLeft  += psgLeftScaled  - midpoint;
     mixedRight += psgRightScaled - midpoint;
 
-    // Add DAC output (already signed, centered around 0)
-    // DAC outputs signed 16-bit values: -65536 to +65024 per channel (two channels per side)
-    // Hardware DAC range is 0-2040 (unsigned), so we need to scale down
-    // Scale factor: 65024 / 1020 ≈ 64 (to match hardware proportions)
+    // Add DAC output (unsigned 0-510 per side, matching FPGA soundrive.vhd)
+    // FPGA mixer (audio_mixer.vhd): dac_L <= "00" & dac_L_i & "00"  (×4, 0-2040)
+    // AC coupling: subtract midpoint (center = 0x80+0x80 = 256, ×4 = 1024)
     const dacOutput = this.dac.getStereoOutput();
-    const dacLeftScaled = Math.floor(dacOutput.left / 64);  // -1024 to +1016
-    const dacRightScaled = Math.floor(dacOutput.right / 64);
+    const dacLeftScaled = (dacOutput.left << 2) - 1024;   // -1024 to +1016
+    const dacRightScaled = (dacOutput.right << 2) - 1024;
     mixedLeft += dacLeftScaled;
     mixedRight += dacRightScaled;
 
