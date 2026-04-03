@@ -1041,8 +1041,11 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
         this.mmuRegs[3] = 0x0b;
         this.mmuRegs[4] = 0x04;
         this.mmuRegs[5] = 0x05;
-        this.mmuRegs[6] = 0x00;
-        this.mmuRegs[7] = 0x01;
+        // --- CR1: restore to the bank that was active before allRam was entered
+        // --- FPGA: MMU6 = port_7ffd_bank × 2 = selectedBankMsb × 16 + selectedBankLsb × 2
+        const bank6 = this.selectedBankMsb * 16 + this.selectedBankLsb * 2;
+        this.mmuRegs[6] = bank6;
+        this.mmuRegs[7] = bank6 + 1;
         this._wasInAllRamMode = false;
       }
 

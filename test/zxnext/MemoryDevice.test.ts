@@ -365,6 +365,30 @@ describe("Next - MemoryDevice", async function () {
     });
   });
 
+  // --- CR1: MMU6/7 restored to the bank active before allRam, not hardcoded to 0
+  it("MMU6/7 restored to pre-allRam bank after exiting allRam (7FFD bank)", async () => {
+    io.writePort(0xdffd, 0x00);   // ensure MSB bank = 0
+    io.writePort(0x7ffd, 0x05);   // select bank 5 (8K page 10)
+    io.writePort(0x1ffd, 0x01);   // enter allRam mode
+    io.writePort(0x1ffd, 0x00);   // exit allRam mode
+    expect(isRam(memDevice, 6)).toBe(true);
+    expect(isPagedIn(memDevice, 6, 0x0a)).toBe(true);  // 8K page 10 (bank 5 × 2)
+    expect(isPagedIn(memDevice, 7, 0x0b)).toBe(true);  // 8K page 11
+    io.writePort(0x7ffd, 0x00);   // restore bank 0
+  });
+
+  it("MMU6/7 restored to pre-allRam bank after exiting allRam (7FFD+DFFD bank)", async () => {
+    io.writePort(0x7ffd, 0x03);   // bank lsb = 3
+    io.writePort(0xdffd, 0x02);   // bank msb = 2 → 16K bank = 2×8+3 = 19, 8K page = 2×16+3×2 = 38
+    io.writePort(0x1ffd, 0x01);   // enter allRam mode
+    io.writePort(0x1ffd, 0x00);   // exit allRam mode
+    expect(isRam(memDevice, 6)).toBe(true);
+    expect(isPagedIn(memDevice, 6, 38)).toBe(true);  // 2×16 + 3×2 = 38
+    expect(isPagedIn(memDevice, 7, 39)).toBe(true);
+    io.writePort(0x7ffd, 0x00);   // restore
+    io.writePort(0xdffd, 0x00);
+  });
+
   // --- M3: portDffd write blocked when paging is locked (7FFD bit 5)
   it("0xdffd write is blocked when paging is locked", async () => {
     io.writePort(0x7ffd, 0x00);   // bank 0, paging enabled
