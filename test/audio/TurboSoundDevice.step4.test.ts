@@ -6,6 +6,7 @@ describe("TurboSoundDevice Step 4: PSG Pan Control", () => {
 
   beforeEach(() => {
     device = new TurboSoundDevice();
+    device.enableTurbosound = true;
   });
 
   // ==================== Panning Functionality Tests ====================

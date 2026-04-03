@@ -347,56 +347,56 @@ describe("Phase 11: DC filter uses MAME form y = x - x_prev + α·y_prev", () =>
 });
 
 // ---------------------------------------------------------------------------
-// Phase 14: Register 7 resets to 0x00 (all channels enabled)
+// Phase 14: Register 7 resets to 0xFF (all channels disabled), matching FPGA ym2149.vhd
 // ---------------------------------------------------------------------------
 
-describe("Phase 14: Register 7 resets to 0x00 (MAME-accurate)", () => {
-  it("register 7 should be 0x00 after construction", () => {
+describe("Phase 14: Register 7 resets to 0xFF (FPGA-accurate)", () => {
+  it("register 7 should be 0xFF after construction", () => {
     const psg = new PsgChip();
     const data = psg.getPsgData();
-    expect(data.regValues[7]).toBe(0x00);
+    expect(data.regValues[7]).toBe(0xff);
   });
 
-  it("all tone channels should be enabled after reset", () => {
+  it("all tone channels should be disabled after reset", () => {
     const psg = new PsgChip();
     const data = psg.getPsgData();
-    expect(data.toneAEnabled).toBe(true);
-    expect(data.toneBEnabled).toBe(true);
-    expect(data.toneCEnabled).toBe(true);
+    expect(data.toneAEnabled).toBe(false);
+    expect(data.toneBEnabled).toBe(false);
+    expect(data.toneCEnabled).toBe(false);
   });
 
-  it("all noise channels should be enabled after reset", () => {
+  it("all noise channels should be disabled after reset", () => {
     const psg = new PsgChip();
     const data = psg.getPsgData();
-    expect(data.noiseAEnabled).toBe(true);
-    expect(data.noiseBEnabled).toBe(true);
-    expect(data.noiseCEnabled).toBe(true);
+    expect(data.noiseAEnabled).toBe(false);
+    expect(data.noiseBEnabled).toBe(false);
+    expect(data.noiseCEnabled).toBe(false);
   });
 
-  it("register 7 should be 0x00 after explicit reset", () => {
+  it("register 7 should be 0xFF after explicit reset", () => {
     const psg = new PsgChip();
-    // Disable everything
+    // Enable everything
     psg.setPsgRegisterIndex(7);
-    psg.writePsgRegisterValue(0xff);
-    expect(psg.getPsgData().regValues[7]).toBe(0xff);
+    psg.writePsgRegisterValue(0x00);
+    expect(psg.getPsgData().regValues[7]).toBe(0x00);
 
     // Reset
     psg.reset();
-    expect(psg.getPsgData().regValues[7]).toBe(0x00);
+    expect(psg.getPsgData().regValues[7]).toBe(0xff);
   });
 
-  it("YM chip should also reset R7 to 0x00", () => {
+  it("YM chip should also reset R7 to 0xFF", () => {
     const psg = new PsgChip(0, "YM");
     const data = psg.getPsgData();
-    expect(data.regValues[7]).toBe(0x00);
-    expect(data.toneAEnabled).toBe(true);
-    expect(data.noiseAEnabled).toBe(true);
+    expect(data.regValues[7]).toBe(0xff);
+    expect(data.toneAEnabled).toBe(false);
+    expect(data.noiseAEnabled).toBe(false);
   });
 
-  it("initial output should be zero despite channels enabled (volumes are 0)", () => {
+  it("initial output should be zero despite channels disabled (volumes are 0)", () => {
     const psg = new PsgChip();
     psg.generateOutputValue();
-    // All channels enabled, but volumes are 0 → output is 0
+    // All channels disabled → tone/noise bits are 1 (bypass), but volumes are 0 → output is 0
     expect(psg.currentOutputA).toBe(0);
     expect(psg.currentOutputB).toBe(0);
     expect(psg.currentOutputC).toBe(0);

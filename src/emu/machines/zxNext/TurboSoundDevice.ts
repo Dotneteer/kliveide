@@ -68,6 +68,9 @@ export class TurboSoundDevice {
   // --- Currently selected chip (0, 1, or 2)
   private _selectedChip = 0;
 
+  // --- Turbosound enable (FPGA turbosound_en_i): gates chip selection and per-chip audio output
+  enableTurbosound = false;
+
   // --- Panning for each chip: bits [1:0] = left, [3:2] = right
   // --- Bit layout: [unused, right_enable, unused, left_enable]
   // --- 00 = muted, 01 = right only, 10 = left only, 11 = stereo
@@ -232,22 +235,23 @@ export class TurboSoundDevice {
   setPsgRegisterIndex(value: number): void {
     // Check if this is a chip selection command (bit 7 = 1 AND bits 4:2 = 111)
     if ((value & 0x80) !== 0 && (value & 0x1c) === 0x1c) {
-      // Chip selection and panning control
-      const chipSelect = value & 0x03;
+      // FPGA turbosound.vhd: chip select gated by turbosound_en_i='1'
+      if (this.enableTurbosound) {
+        const chipSelect = value & 0x03;
 
-      // Map chip selection to chip ID: 11=0, 10=1, 01=2
-      if (chipSelect === 0x3) {
-        this._selectedChip = 0;
-      } else if (chipSelect === 0x2) {
-        this._selectedChip = 1;
-      } else if (chipSelect === 0x1) {
-        this._selectedChip = 2;
+        // Map chip selection to chip ID (FPGA): "10"→1, "01"→2, others→0
+        if (chipSelect === 0x2) {
+          this._selectedChip = 1;
+        } else if (chipSelect === 0x1) {
+          this._selectedChip = 2;
+        } else {
+          this._selectedChip = 0; // "11" or "00" → chip 0
+        }
+
+        // Panning control in bits 6:5 (extract and shift to bits 1:0)
+        const panning = (value >> 5) & 0x03;
+        this._chipPanning[this._selectedChip] = panning;
       }
-      // chipSelect === 0 is reserved, ignore
-
-      // Panning control in bits 6:5 (extract and shift to bits 1:0)
-      const panning = (value >> 5) & 0x03;
-      this._chipPanning[this._selectedChip] = panning;
     } else if ((value & 0xe0) === 0) {
       // Register selection (bits 7:5 = 000)
       this._chips[this._selectedChip].setPsgRegisterIndex(value & 0x0f);
@@ -322,26 +326,21 @@ export class TurboSoundDevice {
 
     if (this._chipMonoMode[id]) {
       // Mono mode: all channels to both left and right
-      // Total = A + B + C for both channels (UNSIGNED addition)
-      const mono = Math.min(196605, volA + volB + volC);  // Max: 3 * 65535 = 196605
+      // FPGA: L = R = A + B + C
+      const mono = volA + volB + volC;
       left = mono;
       right = mono;
     } else {
-      // Stereo mode with hardware-accurate MAME center-channel routing.
-      // The center channel (B in ABC, C in ACB) routes at 50% to each side.
-      // MAME: route(A,left,0.50), route(B,left,0.25), route(B,right,0.25), route(C,right,0.50)
-      // Normalised to 100% for outer channels: A→full-left, B(50%)→both, C→full-right.
-      // Max per output: 65535 + 32767 = 98302
+      // Stereo mode matching FPGA turbosound.vhd mixing formulas.
+      // FPGA uses full-addition (no halving of center channel).
       if (this._ayStereoMode) {
-        // ACB mode: A=full-left, C=center(50%/50%), B=full-right
-        const halfC = Math.floor(volC / 2);
-        left  = Math.min(98302, volA + halfC);
-        right = Math.min(98302, halfC + volB);
+        // ACB mode (stereo_mode_i='1'): L = A + C, R = B + C
+        left  = volA + volC;
+        right = volB + volC;
       } else {
-        // ABC mode: A=full-left, B=center(50%/50%), C=full-right
-        const halfB = Math.floor(volB / 2);
-        left  = Math.min(98302, volA + halfB);
-        right = Math.min(98302, halfB + volC);
+        // ABC mode (stereo_mode_i='0'): L = A + B, R = B + C
+        left  = volA + volB;
+        right = volB + volC;
       }
     }
 
@@ -416,7 +415,7 @@ export class TurboSoundDevice {
    * @param registerIndex The register index (0-15 for AY)
    */
   selectRegister(registerIndex: number): void {
-    this._chips[this._selectedChip].setPsgRegisterIndex(registerIndex & 0x0f);
+    this._chips[this._selectedChip].setPsgRegisterIndex(registerIndex & 0x1f); // 5-bit (FPGA)
   }
 
   /**
@@ -594,12 +593,15 @@ export class TurboSoundDevice {
     if (machineTacts <= this._audioNextSampleTact) return;
 
     // Calculate current stereo output from all 3 chips (just read current state)
+    // FPGA turbosound.vhd: each chip outputs only if ay_select matches OR turbosound_en_i='1'
     let totalLeft = 0;
     let totalRight = 0;
     for (let i = 0; i < 3; i++) {
-      const output = this.getChipStereoOutput(i);
-      totalLeft += output.left;
-      totalRight += output.right;
+      if (this.enableTurbosound || i === this._selectedChip) {
+        const output = this.getChipStereoOutput(i);
+        totalLeft += output.left;
+        totalRight += output.right;
+      }
     }
 
     // Store the sample

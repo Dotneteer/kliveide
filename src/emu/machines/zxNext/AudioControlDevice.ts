@@ -156,6 +156,9 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
     this.turboSoundDevice.setChipMonoMode(1, soundConfig.ay1Mono);
     this.turboSoundDevice.setChipMonoMode(2, soundConfig.ay2Mono);
 
+    // --- Propagate turbosound enable to TurboSoundDevice (FPGA turbosound_en_i)
+    this.turboSoundDevice.enableTurbosound = soundConfig.enableTurbosound;
+
     // --- DAC enable flag controls whether DAC output is routed to mixer
     // When disabled, DAC doesn't contribute to audio output
     // This is handled at the mixing level

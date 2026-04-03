@@ -14,13 +14,13 @@ import { TurboSoundDevice } from "@emu/machines/zxNext/TurboSoundDevice";
  *   Both chips produce the same total envelope duration; AY is coarser, YM is finer.
  *
  * Phase 6: Stereo routing with hardware-accurate centre-channel attenuation (MAME)
- *   ABC mode: A = full-left, B = centre (50% each side), C = full-right
+ *   ABC mode: L = A + B, R = B + C (FPGA full-addition)
  *     Left  = volA + ⌊volB/2⌋
  *     Right = ⌊volB/2⌋ + volC
- *   ACB mode: A = full-left, C = centre (50% each side), B = full-right
+ *   ACB mode: L = A + C, R = B + C (FPGA full-addition)
  *     Left  = volA + ⌊volC/2⌋
  *     Right = ⌊volC/2⌋ + volB
- *   Max per output channel: 65535 + 32767 = 98302
+ *   Max per output channel (stereo): 65535 + 65535 = 131070
  */
 
 // ---------------------------------------------------------------------------
@@ -317,21 +317,19 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
 
   // ==================== ABC mode ====================
 
-  describe("ABC mode: A=full-left, B=centre (50%/50%), C=full-right", () => {
-    it("left = volA + floor(volB/2)", () => {
+  describe("ABC mode: L = A + B, R = B + C (FPGA full-addition)", () => {
+    it("left = volA + volB", () => {
       device.setAyStereoMode(false); // ABC
       const chip = setupStereoChip(8, 10, 5);
       const output = device.getChipStereoOutput(0);
-      const halfB = Math.floor(chip.getChannelBVolume() / 2);
-      expect(output.left).toBe(chip.getChannelAVolume() + halfB);
+      expect(output.left).toBe(chip.getChannelAVolume() + chip.getChannelBVolume());
     });
 
-    it("right = floor(volB/2) + volC", () => {
+    it("right = volB + volC", () => {
       device.setAyStereoMode(false);
       const chip = setupStereoChip(8, 10, 5);
       const output = device.getChipStereoOutput(0);
-      const halfB = Math.floor(chip.getChannelBVolume() / 2);
-      expect(output.right).toBe(halfB + chip.getChannelCVolume());
+      expect(output.right).toBe(chip.getChannelBVolume() + chip.getChannelCVolume());
     });
 
     it("left != right when A and C have different volumes", () => {
@@ -348,20 +346,20 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       expect(output.left).toBe(output.right);
     });
 
-    it("ABC left is less than old equal-weight sum (A+B)", () => {
+    it("ABC left is the full sum A+B (not halved centre)", () => {
       device.setAyStereoMode(false);
       const chip = setupStereoChip(10, 12, 6);
       const output = device.getChipStereoOutput(0);
-      const oldLeft = chip.getChannelAVolume() + chip.getChannelBVolume(); // old formula
-      expect(output.left).toBeLessThan(oldLeft); // new = A + B/2 < A + B
+      const expectedLeft = chip.getChannelAVolume() + chip.getChannelBVolume();
+      expect(output.left).toBe(expectedLeft);
     });
 
-    it("maximum left output is capped at 98302", () => {
+    it("maximum left output is capped at 131070", () => {
       device.setAyStereoMode(false);
       setupStereoChip(15, 15, 15); // max all
       const output = device.getChipStereoOutput(0);
-      expect(output.left).toBeLessThanOrEqual(98302);
-      expect(output.right).toBeLessThanOrEqual(98302);
+      expect(output.left).toBeLessThanOrEqual(131070);
+      expect(output.right).toBeLessThanOrEqual(131070);
     });
 
     it("left + right together represent balanced stereo field", () => {
@@ -372,7 +370,7 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       expect(output.left).toBe(output.right);
     });
 
-    it("channel B alone (A=0, C=0) routes equally to both sides", () => {
+    it("channel B alone (A=0, C=0) routes to both sides (full volume)", () => {
       device.setAyStereoMode(false);
       const chip = device.getChip(0);
       chip.setPsgRegisterIndex(2); chip.writePsgRegisterValue(1);
@@ -380,9 +378,9 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       chip.setPsgRegisterIndex(9); chip.writePsgRegisterValue(10);
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
-      const halfB = Math.floor(chip.getChannelBVolume() / 2);
-      expect(output.left).toBe(halfB);
-      expect(output.right).toBe(halfB);
+      const volB = chip.getChannelBVolume();
+      expect(output.left).toBe(volB);   // L = A(0) + B
+      expect(output.right).toBe(volB);  // R = B + C(0)
     });
 
     it("channel A alone (B=0, C=0) routes only to left", () => {
@@ -394,7 +392,7 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       expect(output.left).toBeGreaterThan(0);
-      expect(output.right).toBe(0); // B=0 → halfB=0 → right = 0 + volC = 0
+      expect(output.right).toBe(0); // B=0 → right = 0 + volC = 0
     });
 
     it("channel C alone (A=0, B=0) routes only to right", () => {
@@ -406,27 +404,25 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
       expect(output.right).toBeGreaterThan(0);
-      expect(output.left).toBe(0); // A=0 and halfB=0 → left = 0
+      expect(output.left).toBe(0); // A=0 and B=0 → left = 0
     });
   });
 
   // ==================== ACB mode ====================
 
-  describe("ACB mode: A=full-left, C=centre (50%/50%), B=full-right", () => {
-    it("left = volA + floor(volC/2)", () => {
+  describe("ACB mode: L = A + C, R = B + C (FPGA full-addition)", () => {
+    it("left = volA + volC", () => {
       device.setAyStereoMode(true); // ACB
       const chip = setupStereoChip(8, 5, 10);
       const output = device.getChipStereoOutput(0);
-      const halfC = Math.floor(chip.getChannelCVolume() / 2);
-      expect(output.left).toBe(chip.getChannelAVolume() + halfC);
+      expect(output.left).toBe(chip.getChannelAVolume() + chip.getChannelCVolume());
     });
 
-    it("right = floor(volC/2) + volB", () => {
+    it("right = volB + volC", () => {
       device.setAyStereoMode(true);
       const chip = setupStereoChip(8, 5, 10);
       const output = device.getChipStereoOutput(0);
-      const halfC = Math.floor(chip.getChannelCVolume() / 2);
-      expect(output.right).toBe(halfC + chip.getChannelBVolume());
+      expect(output.right).toBe(chip.getChannelBVolume() + chip.getChannelCVolume());
     });
 
     it("ACB differs from ABC for same channel volumes", () => {
@@ -447,7 +443,8 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       const acbOut = device.getChipStereoOutput(0);
 
       expect(abcOut.left).not.toBe(acbOut.left);
-      expect(abcOut.right).not.toBe(acbOut.right);
+      // FPGA: R = B + C in both ABC and ACB modes, so right is identical
+      expect(abcOut.right).toBe(acbOut.right);
     });
 
     it("channel C alone routes equally to both sides in ACB", () => {
@@ -458,15 +455,15 @@ describe("Step 56: Stereo Routing with Centre-Channel Attenuation (Phase 6)", ()
       chip.setPsgRegisterIndex(10); chip.writePsgRegisterValue(10);
       device.generateAllOutputValues();
       const output = device.getChipStereoOutput(0);
-      expect(output.left).toBe(output.right); // volA=0 + halfC == halfC + volB=0
+      expect(output.left).toBe(output.right); // volA=0 + volC == volB=0 + volC
     });
 
-    it("maximum output in ACB is capped at 98302", () => {
+    it("maximum output in ACB is capped at 131070", () => {
       device.setAyStereoMode(true);
       setupStereoChip(15, 15, 15);
       const output = device.getChipStereoOutput(0);
-      expect(output.left).toBeLessThanOrEqual(98302);
-      expect(output.right).toBeLessThanOrEqual(98302);
+      expect(output.left).toBeLessThanOrEqual(131070);
+      expect(output.right).toBeLessThanOrEqual(131070);
     });
   });
 

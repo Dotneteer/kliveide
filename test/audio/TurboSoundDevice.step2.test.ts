@@ -6,6 +6,7 @@ describe("Step 2: TurboSoundDevice", () => {
 
   beforeEach(() => {
     device = new TurboSoundDevice();
+    device.enableTurbosound = true;
   });
 
   describe("Initialization", () => {
