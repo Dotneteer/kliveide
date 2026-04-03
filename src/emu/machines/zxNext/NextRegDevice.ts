@@ -96,6 +96,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   port0x1fEnabled: boolean;
   port0x37Enabled: boolean;
 
+  // --- Reg $02 state (3-bit reset type shift register, FPGA: nr_02_reset_type)
+  nr02ResetType: number;
+
   // --- Reg $0A state
   sdSwap: boolean;
 
@@ -3235,6 +3238,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.fdcIoTrap = false;
     this.ioTrapCause = 0x00;
 
+    // --- FPGA: nr_02_reset_type <= '0' & nr_02_reset_type(2) & (nr_02_reset_type(1) or nr_02_reset_type(0))
+    // Power-on: 100 → 1st soft: 010 → 2nd: 001 → 3rd+: 000
+    const rt = this.nr02ResetType;
+    this.nr02ResetType = ((rt >> 1) & 0b010) | (((rt & 0b011) !== 0) ? 0b001 : 0);
+
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
 
@@ -3284,6 +3292,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.ps2KeymapAddressMsb = false;
     this.ps2KeymapDataLsb = 0x00;
     this.ps2KeymapDataMsb = false;
+
+    // --- FPGA: nr_02_reset_type <= "100" on power-on/hard reset
+    this.nr02ResetType = 0b100;
 
     // --- We assume fast boot
     this.directSetRegValue(0x02, 0x00); // --- Generate DivMMC interrupt & hard reset

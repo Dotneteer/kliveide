@@ -3217,3 +3217,59 @@ function readNextReg(m: IZxNextMachine, reg: number): number {
   m.nextRegDevice.setNextRegisterIndex(reg);
   return m.nextRegDevice.getNextRegisterValue();
 }
+
+// ===========================================================================
+// D2 — nr02ResetType shift register
+// ===========================================================================
+describe("D2: nr02ResetType shift register", () => {
+  it("hardReset initializes nr02ResetType to 0b100", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b100);
+  });
+
+  it("1st soft reset shifts 0b100 → 0b010", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b100);
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b010);
+  });
+
+  it("2nd soft reset shifts 0b010 → 0b001", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+  });
+
+  it("3rd soft reset stays at 0b001 (bit 0 is sticky)", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+  });
+
+  it("4th+ soft reset stays at 0b001", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+  });
+
+  it("hardReset after soft resets re-initializes to 0b100", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+    m.nextRegDevice.hardReset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b100);
+  });
+});
