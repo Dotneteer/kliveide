@@ -10,6 +10,8 @@
     "strictNullChecks": false,
     "sourceMap": true,
     "outDir": "dist",
+    "rootDir": "..",
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "downlevelIteration": true,
     "resolveJsonModule": true,
@@ -26,6 +28,6 @@
       "@main/*": ["../src/main/*"],
 		},
   },
-  "include": ["../**/*", "/common/state", "/common/abstractions"],
+  "include": ["./**/*", "../src/**/*"],
   "exclude": ["node_modules", "**/build/*", "**/*.d.ts"]
 }
