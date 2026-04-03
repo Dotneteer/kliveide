@@ -16,6 +16,7 @@
     "strict":false,
     "skipLibCheck": true,
     "removeComments": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": "..",
     "types": ["electron-vite/node"],
     "paths": {
