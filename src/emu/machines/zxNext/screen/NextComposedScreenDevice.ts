@@ -227,7 +227,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Initialize tile transformation flags
     this.tilemapTilePriority = false;
+    this.tilemapNextTilePriority = false;
     this.tilemapTilePaletteOffset = 0;
+    this.tilemapPixel1BelowUla = false;
+    this.tilemapPixel2BelowUla = false;
 
     // --- Initialize pixel buffer
     this.tilemapPixelBuffer0 = new Uint8Array(8);
@@ -600,6 +603,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.spritesPixel1Transparent = false;
     this.spritesPixel2Rgb333 = null;
     this.spritesPixel2Transparent = false;
+    this.tilemapPixel1BelowUla = false;
+    this.tilemapPixel2BelowUla = false;
   }
 
   // ================================================================================================
@@ -744,9 +749,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           !this.ulaPixel1Transparent &&
           !this.tilemapPixel1Transparent
         ) {
-          // Both non-transparent: tilemap on top (simplified)
-          this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
-          this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+          // Both non-transparent: check per-tile priority
+          if (!this.tilemapPixel1BelowUla) {
+            // Tilemap on top of ULA (category 2: attr bit0=0 or forceOnTop)
+            this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
+            this.ulaPixel1Transparent = this.tilemapPixel1Transparent;
+          }
+          // else: ULA stays on top (category 1: attr bit0=1 and not forceOnTop)
         } else if (!this.tilemapPixel1Transparent) {
           // Only tilemap non-transparent
           this.ulaPixel1Rgb333 = this.tilemapPixel1Rgb333;
@@ -773,8 +782,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           !this.ulaPixel2Transparent &&
           !this.tilemapPixel2Transparent
         ) {
-          this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
-          this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+          // Both non-transparent: check per-tile priority
+          if (!this.tilemapPixel2BelowUla) {
+            // Tilemap on top of ULA
+            this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
+            this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
+          }
+          // else: ULA stays on top
         } else if (!this.tilemapPixel2Transparent) {
           this.ulaPixel2Rgb333 = this.tilemapPixel2Rgb333;
           this.ulaPixel2Transparent = this.tilemapPixel2Transparent;
@@ -2704,10 +2718,15 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private tilemapTilePaletteOffset: number;
 
   // --- Next tile transformation flags (fetched ahead, applied at tile boundary)
+  private tilemapNextTilePriority: boolean;
   private tilemapNextTileXMirror: boolean;
   private tilemapNextTileYMirror: boolean;
   private tilemapNextTileRotate: boolean;
   private tilemapNextTilePaletteOffset: number;
+
+  // --- Per-pixel tilemap-below-ULA flags (D1 fix: per-tile priority compositing)
+  tilemapPixel1BelowUla: boolean;
+  tilemapPixel2BelowUla: boolean;
 
   // --- Pixel buffers for double-buffering (current tile and next tile)
   private tilemapPixelBuffer0: Uint8Array; // 8 entries, 4-bit indices
@@ -2739,7 +2758,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Address calculation per VHDL tilemap.vhd line 404:
     // tm_mem_addr_o <= (tm_mem_addr_sub(13:8) + tm_mem_addr_offset(5:0)) & tm_mem_addr_sub(7:0)
     // The offset (MSB from reg $6E/$6F bits 5:0) is added to the high byte of the address
-    const highByte = ((offset & 0x3f) + ((address >> 8) & 0x3f)) & 0x3f;
+    // D2 fix: MAME uses 5-bit mask for bank 7, 6-bit mask for bank 5
+    const offsetMask = useBank7 ? 0x1f : 0x3f;
+    const highByte = ((offset & offsetMask) + ((address >> 8) & 0x3f)) & 0x3f;
     const fullAddress = (highByte << 8) | (address & 0xff);
 
     // Bank selection: Bank 5 or Bank 7 (these are 16K RAM banks in ZX Next)
@@ -2947,7 +2968,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3008,6 +3029,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       // Swap buffers: what was "next" is now "current"
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
@@ -3071,6 +3093,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Store same pixel to both outputs (CLK_7 rate)
     this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
     this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+    // D1: per-tile priority — tile is below ULA when attr bit 0 = 1 and forceOnTop is off
+    const belowUla = !this.tilemapForceOnTopOfUla && this.tilemapTilePriority;
+    this.tilemapPixel1BelowUla = this.tilemapPixel2BelowUla = belowUla;
   }
 
   /**
@@ -3137,7 +3162,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3180,6 +3205,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
       // This handles the first tile of each line where attribute hasn't been fetched
@@ -3220,6 +3246,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Store output (no clipping check needed in fast path)
     this.tilemapPixel1Rgb333 = this.tilemapPixel2Rgb333 = rgb333;
     this.tilemapPixel1Transparent = this.tilemapPixel2Transparent = transparent;
+    // D1: per-tile priority — tile is below ULA when attr bit 0 = 1 and forceOnTop is off
+    const belowUla = !this.tilemapForceOnTopOfUla && this.tilemapTilePriority;
+    this.tilemapPixel1BelowUla = this.tilemapPixel2BelowUla = belowUla;
   }
 
   /**
@@ -3287,7 +3316,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3330,6 +3359,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
       if (this.tilemapEliminateAttrSampled) {
@@ -3392,6 +3422,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapPixel1Transparent = transparent1;
     this.tilemapPixel2Rgb333 = rgb333_2;
     this.tilemapPixel2Transparent = transparent2;
+    // D1: per-tile priority — tile is below ULA when attr bit 0 = 1 and forceOnTop is off
+    const belowUla = !this.tilemapForceOnTopOfUla && this.tilemapTilePriority;
+    this.tilemapPixel1BelowUla = this.tilemapPixel2BelowUla = belowUla;
   }
 
   /**
@@ -3468,7 +3501,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapNextTileXMirror = (this.tilemapCurrentAttr & 0x08) !== 0;
       this.tilemapNextTileYMirror = (this.tilemapCurrentAttr & 0x04) !== 0;
       this.tilemapNextTileRotate = (this.tilemapCurrentAttr & 0x02) !== 0;
-      this.tilemapTilePriority = this.tilemap512TileModeSampled
+      this.tilemapNextTilePriority = this.tilemap512TileModeSampled
         ? false
         : (this.tilemapCurrentAttr & 0x01) !== 0;
     }
@@ -3525,6 +3558,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.tilemapBufferPosition = 0;
       this.tilemapTileAttr = this.tilemapNextTileAttr;
       this.tilemapTilePaletteOffset = this.tilemapNextTilePaletteOffset;
+      this.tilemapTilePriority = this.tilemapNextTilePriority;
       // Swap buffers: what was "next" is now "current"
       this.tilemapCurrentBuffer = 1 - this.tilemapCurrentBuffer;
       // When attributes are eliminated, ensure tile attribute uses default value
@@ -3614,6 +3648,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapPixel1Transparent = transparent1;
     this.tilemapPixel2Rgb333 = rgb333_2;
     this.tilemapPixel2Transparent = transparent2;
+    // D1: per-tile priority — tile is below ULA when attr bit 0 = 1 and forceOnTop is off
+    const belowUla = !this.tilemapForceOnTopOfUla && this.tilemapTilePriority;
+    this.tilemapPixel1BelowUla = this.tilemapPixel2BelowUla = belowUla;
   }
 
   // ==============================================================================================
@@ -3667,18 +3704,29 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * Called when NextReg 0x15 bit 1 changes.
    */
   updateSpriteClipBoundaries(): void {
-    if (this.spriteDevice.spritesOverBorderEnabled) {
-      // Full sprite area: 320×256 pixels
-      this.spritesClipXMin = 0;
-      this.spritesClipXMax = 319;
-      this.spritesClipYMin = 0;
-      this.spritesClipYMax = 255;
+    const sd = this.spriteDevice;
+    const OVER_BORDER = 32;
+    if (sd.spritesOverBorderEnabled) {
+      if (!sd.spriteClippingEnabled) {
+        // Mode 1: over-border, no clip → full 320×256 display area
+        this.spritesClipXMin = 0;
+        this.spritesClipXMax = 319;
+        this.spritesClipYMin = 0;
+        this.spritesClipYMax = 255;
+      } else {
+        // Mode 3: over-border with clip → clip regs are direct (X regs in 2-pixel units,
+        // matching MAME: clip_x1<<1 → sprite-pixel = clip_x1*2)
+        this.spritesClipXMin = sd.clipWindowX1 << 1;
+        this.spritesClipXMax = (sd.clipWindowX2 << 1) | 1;
+        this.spritesClipYMin = sd.clipWindowY1;
+        this.spritesClipYMax = sd.clipWindowY2;
+      }
     } else {
-      // Restricted to ULA area: 256×192 pixels (X: 32-287, Y: 32-223)
-      this.spritesClipXMin = 32;
-      this.spritesClipXMax = 287;
-      this.spritesClipYMin = 32;
-      this.spritesClipYMax = 223;
+      // Mode 2: not over-border → clip regs are ULA-relative; add OVER_BORDER offset
+      this.spritesClipXMin = sd.clipWindowX1 + OVER_BORDER;
+      this.spritesClipXMax = sd.clipWindowX2 + OVER_BORDER;
+      this.spritesClipYMin = sd.clipWindowY1 + OVER_BORDER;
+      this.spritesClipYMax = sd.clipWindowY2 + OVER_BORDER;
     }
   }
 
@@ -3709,7 +3757,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         }
 
         // Fetch the sprite attributes for the current sprite
-        const spriteAttrs = this.spriteDevice.attributes[this.spritesIndex];
+        const spriteAttrs = this.spriteDevice.resolvedAttributes[this.spritesIndex];
         
         // Safety check: ensure sprite attributes exist
         if (!spriteAttrs) {
@@ -3726,7 +3774,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         }
 
         // Check if the current scanline intersects with the sprite's vertical position
-        const spriteY = spriteAttrs.y;
+        // D4: Wrap 9-bit Y to signed range (MAME: if desty > 255 then desty -= 512)
+        let spriteY = spriteAttrs.y;
+        if (spriteY > 255) spriteY -= 512;
         const spriteHeight = spriteAttrs.height;
         const spriteBottom = spriteY + spriteHeight;
         
@@ -3743,7 +3793,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         }
 
         // Check if sprite is within horizontal clip boundaries
-        const spriteX = spriteAttrs.x;
+        // D4: Wrap 9-bit X to signed range (MAME: if destx > 319 then destx -= 512)
+        let spriteX = spriteAttrs.x;
+        if (spriteX > 319) spriteX -= 512;
         const spriteWidth = spriteAttrs.width;
         const spriteRight = spriteX + spriteWidth;
         
@@ -3778,7 +3830,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         // 1. Calculate Y index within pattern (accounting for scale only)
         //    This represents which row of the 16×16 pattern we're rendering
         //    Note: Y-mirror is already applied in the pre-transformed pattern variant
-        const yOffset = this.spritesVc - spriteAttrs.y;
+        const yOffset = this.spritesVc - spriteY;  // use wrapped Y (D4)
         this.spritesPatternYIndex = yOffset >> spriteAttrs.scaleY;  // Apply Y-scale (0-15)
 
         // 2. Get pre-transformed pattern variant using cached variant index
@@ -3789,7 +3841,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
         // 3. Initialize counters
         this.spritesCurrentPixel = 0;           // Pixel counter (0 to sprite.width-1)
-        this.spritesCurrentX = spriteAttrs.x;   // Line buffer write position (9-bit)
+        this.spritesCurrentX = spriteX;         // Line buffer write position (wrapped, D4)
 
       } else {
         // PROCESSING phase: Render sprite pixels
@@ -3822,8 +3874,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         const pixelValue = this.spritesPatternData![patternOffset];
 
         // 3. Check transparency FIRST (before any color processing)
-        //    Compare against global transparency index (NextReg 0x4B, default 0xE3)
-        const isTransparent = (pixelValue === this.spriteDevice.transparencyIndex);
+        //    For 4-bit sprites mask transparencyIndex to 4 bits (MAME: transp_colour & 0x0f)
+        const transpMask = sprite.is4BitPattern ? 0x0f : 0xff;
+        const isTransparent = (pixelValue === (this.spriteDevice.transparencyIndex & transpMask));
 
         if (isTransparent) {
           // Skip transparent pixels - advance to next pixel
@@ -3902,6 +3955,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
     if ((cell & SCR_SPRITE_INIT_RENDER) !== 0) {
+      // Resolve relative sprites onto their anchors (once per dirty cycle)
+      this.spriteDevice.resolveRelativeSprites();
       // Initialize sprite rendering for the next scanline (index 0)
       this.spritesBufferPosition = 0;
       this.spritesBuffer.fill(0x00); // Clear sprite buffer

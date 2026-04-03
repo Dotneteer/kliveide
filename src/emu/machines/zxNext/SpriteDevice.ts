@@ -2,7 +2,15 @@ import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
-  spriteIdLockstep: boolean;
+  /** D6: Bidirectional sync flag (MAME mirror_tie / NR $09 bit 4). */
+  mirrorTie: boolean;
+  /** D6: Mirror's selected sprite number (MAME mirror_sprite_q / formerly spriteMirrorIndex). */
+  mirrorSpriteQ: number;
+  /** D6: Which attribute byte (0-4) or sprite-number mode (7) the mirror targets. Reset default: 7. */
+  mirrorIndex: number;
+  /** D6: Auto-increment mirrorSpriteQ after each attribute write. Set by NR $75-$79. */
+  mirrorInc: boolean;
+
   sprite0OnTop: boolean;
   spritesEnabled: boolean;
   spriteClippingEnabled: boolean;
@@ -22,7 +30,6 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   patternSubIndex: number;
   spriteIndex: number;
   spriteSubIndex: number;
-  spriteMirrorIndex: number;
 
   tooManySpritesPerLine: boolean;
   collisionDetected: boolean;
@@ -34,11 +41,14 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   patternMemory8bit: Uint8Array[];   // 512 entries (64 × 8)
   patternMemory4bit: Uint8Array[];   // 1024 entries (128 × 8)
   attributes: SpriteAttributes[];
+  resolvedAttributes: SpriteAttributes[]; // post-relative-compositing snapshot used by renderer
 
   lastVisibileSpriteIndex: number;
 
-  // --- Anchor sprite properties for relative sprite chains
-  // --- These store the transformation state of the last anchor sprite
+  // --- Dirty flag: set whenever sprite attributes change; cleared by resolveRelativeSprites()
+  private _attrsDirty: boolean;
+
+  // --- Anchor sprite properties for relative sprite chains (legacy cached fields)
   private anchorX: number = 0;
   private anchorY: number = 0;
   private anchorRotate: boolean = false;
@@ -60,36 +70,27 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // --- Allocate sprite attribute memory
+    const makeBlankAttr = (): SpriteAttributes => ({
+      x: 0, y: 0, paletteOffset: 0, mirrorX: false, mirrorY: false, rotate: false,
+      attributeFlag1: false, visible: false, has5AttributeBytes: false, patternIndex: 0,
+      colorMode: 0, attributeFlag2: false, scaleX: 0, scaleY: 0, pattern7Bit: 0,
+      is4BitPattern: false, transformVariant: 0, patternVariantIndex: 0,
+      width: 16, height: 16, patternRelative: false
+    });
     this.attributes = new Array(128);
+    this.resolvedAttributes = new Array(128);
     for (let i = 0; i < 128; i++) {
-      this.attributes[i] = {
-        x: 0,
-        y: 0,
-        paletteOffset: 0,
-        mirrorX: false,
-        mirrorY: false,
-        rotate: false,
-        attributeFlag1: false,
-        visible: false,
-        has5AttributeBytes: false,
-        patternIndex: 0,
-        colorMode: 0,
-        attributeFlag2: false,
-        scaleX: 0,
-        scaleY: 0,
-        pattern7Bit: 0,
-        is4BitPattern: false,
-        transformVariant: 0,
-        patternVariantIndex: 0,
-        width: 16,
-        height: 16
-      };
+      this.attributes[i] = makeBlankAttr();
+      this.resolvedAttributes[i] = makeBlankAttr();
     }
+    this._attrsDirty = true;
 
     this.patternIndex = 0;
     this.patternSubIndex = 0;
     this.spriteIndex = 0;
-    this.spriteMirrorIndex = 0;
+    this.mirrorSpriteQ = 0;
+    this.mirrorIndex = 7;
+    this.mirrorInc = false;
     this.spriteSubIndex = 0;
     this.lastVisibileSpriteIndex = -1;
     this.tooManySpritesPerLine = false;
@@ -98,7 +99,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
-    this.spriteIdLockstep = false;
+    this.mirrorTie = false;
+    this.mirrorSpriteQ = 0;
+    this.mirrorIndex = 7; // default: sprite-number mode (MAME reset: mirror_index_w(0b111))
+    this.mirrorInc = false;
     this.sprite0OnTop = false;
     this.spriteClippingEnabled = false;
     this.spritesEnabled = false;
@@ -133,7 +137,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       this.attributes[i].patternVariantIndex = 0;
       this.attributes[i].width = 16;
       this.attributes[i].height = 16;
+      this.attributes[i].patternRelative = false;
+      this.resolvedAttributes[i].visible = false;
     }
+    this._attrsDirty = true;
   }
 
   /**
@@ -240,90 +247,85 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextReg34Value(): number {
-    return this.spriteMirrorIndex;
+    // MAME mirror_num_r(): lower 7 bits of mirror_sprite_q
+    return this.mirrorSpriteQ & 0x7f;
   }
 
   set nextReg34Value(value: number) {
-    if (this.spriteIdLockstep) {
-      this.writePort303bValue(value);
-    } else {
-      this.spriteMirrorIndex = value & 0x7f;
+    // NR $34 write → mirror_data_w with current mirrorIndex
+    this.mirrorDataW(value & 0xff);
+  }
+
+  /**
+   * D6: Full MAME mirror_data_w protocol.
+   *
+   * - mirrorIndex 0-4: write data to sprite attribute [mirrorSpriteQ][mirrorIndex];
+   *   then if mirrorInc, advance mirrorSpriteQ.
+   * - mirrorIndex 7: set mirrorSpriteQ = data (sprite-number mode).
+   * - On mirrorSpriteQ change: if mirrorTie, sync spriteIndex + patternIndex.
+   */
+  mirrorDataW(data: number): void {
+    if (this.mirrorIndex <= 4) {
+      this.writeIndexedSpriteAttribute(this.mirrorSpriteQ, this.mirrorIndex, data);
+    }
+
+    let mirrorNumChange = false;
+    if (this.mirrorIndex === 7) {
+      this.mirrorSpriteQ = data & 0x7f;
+      mirrorNumChange = true;
+    } else if (this.mirrorInc) {
+      this.mirrorSpriteQ = (this.mirrorSpriteQ + 1) & 0x7f;
+      mirrorNumChange = true;
+    }
+
+    if (mirrorNumChange && this.mirrorTie) {
+      // Sync main-port sprite+pattern indices from new mirrorSpriteQ
+      this.spriteIndex = this.mirrorSpriteQ;
+      this.patternIndex = this.mirrorSpriteQ & 0x3f;
+      this.patternSubIndex = 0;
+      this.spriteSubIndex = 0;
     }
   }
 
-  writeSpriteAttribute(port: number, value: number): void {
-    // --- Check if upper byte specifies a direct attribute index
-    // --- Upper nibble must be 0x3, and lower nibble 0x1-0x5 maps to attribute 0-4
-    const upperByte = (port >> 8) & 0xFF;
-    const upperNibble = (upperByte >> 4) & 0x0F;
-    const lowerNibble = upperByte & 0x0F;
-    
-    // --- Determine if this is a direct write (port indicates specific attr that doesn't match current subIndex)
-    const portAttrIndex = lowerNibble - 1;
-    const isDirect = upperNibble === 0x3 && 
-                     lowerNibble >= 0x01 && 
-                     lowerNibble <= 0x05 && 
-                     portAttrIndex !== this.spriteSubIndex;
-    
-    if (isDirect) {
-      // --- Direct attribute write
-      // --- If spriteSubIndex is 0 but we're writing to a non-zero attribute,
-      // --- check if we just completed a sprite (by seeing if we can write attr0 to current sprite)
-      // --- If so, target the previous sprite. Otherwise, target current sprite.
-      let targetSpriteIndex = this.spriteIndex;
-      
-      // --- If subIndex is 0 and we're accessing a later attribute (2, 3, 4),
-      // --- we might be modifying the just-completed sprite
-      if (this.spriteSubIndex === 0 && portAttrIndex >= 2) {
-        // --- Check if the current sprite has already been configured (has non-default values)
-        // --- If X or Y is still 0 and other attrs are default, we're on a fresh sprite
-        const currentAttrs = this.attributes[this.spriteIndex];
-        const prevAttrs = this.attributes[(this.spriteIndex - 1) & 0x7f];
-        
-        // --- If previous sprite has been configured recently (non-zero X or has scaling),
-        // --- assume we want to modify it
-        if (prevAttrs.scaleX !== 0 || prevAttrs.scaleY !== 0 || prevAttrs.x !== 0) {
-          targetSpriteIndex = (this.spriteIndex - 1) & 0x7f;
-        }
-      }
-      
-      this.writeIndexedSpriteAttribute(targetSpriteIndex, portAttrIndex, value);
-    } else {
-      // --- Sequential write using spriteSubIndex
-      this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
-      const attributes = this.attributes[this.spriteIndex];
-      if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
-        this.spriteSubIndex++;
-        attributes.colorMode = 0x00;
-        attributes.attributeFlag2 = false;
-        attributes.scaleX = 0;
-        attributes.scaleY = 0;
-        // --- Update dimensions for 4-byte sprites (no scaling)
-        this.updateSpriteDimensions(attributes);
-      }
-
-      // --- Increment subindex and sprite index
+  writeSpriteAttribute(_port: number, value: number): void {
+    // D7: sequential write only — the upper-byte "direct write" heuristic was dead code
+    // (port 0x57 is matched by lower 8 bits only, upper byte is always 0x00)
+    this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
+    const attributes = this.attributes[this.spriteIndex];
+    if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
       this.spriteSubIndex++;
-      if (this.spriteSubIndex >= 5) {
-        this.spriteSubIndex = 0;
-        this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
+      attributes.colorMode = 0x00;
+      attributes.attributeFlag2 = false;
+      attributes.scaleX = 0;
+      attributes.scaleY = 0;
+      // --- Update dimensions for 4-byte sprites (no scaling)
+      this.updateSpriteDimensions(attributes);
+    }
+
+    // --- Increment subindex and sprite index
+    this.spriteSubIndex++;
+    if (this.spriteSubIndex >= 5) {
+      this.spriteSubIndex = 0;
+      this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
+      // D6: MAME io_w attr_num_change — sync mirrorSpriteQ from spriteIndex when mirrorTie
+      if (this.mirrorTie) {
+        this.mirrorSpriteQ = this.spriteIndex;
       }
     }
   }
 
   writeSpriteAttributeDirect(attrIndex: number, value: number): void {
-    const spriteIndex = this.spriteIdLockstep ? this.spriteIndex : this.spriteMirrorIndex;
-    this.writeIndexedSpriteAttribute(spriteIndex, attrIndex, value);
+    // D6: Set mirrorInc=false, mirrorIndex=attrIndex, call mirrorDataW
+    this.mirrorInc = false;
+    this.mirrorIndex = attrIndex;
+    this.mirrorDataW(value);
   }
 
   writeSpriteAttributeDirectWithAutoInc(attrIndex: number, value: number): void {
-    this.writeSpriteAttributeDirect(attrIndex, value);
-    if (this.spriteIdLockstep) {
-      this.spriteIndex = (this.spriteIndex + 1) & 0x7f;
-      this.spriteSubIndex = 0;
-    } else {
-      this.spriteMirrorIndex = (this.spriteMirrorIndex + 1) & 0x7f;
-    }
+    // D6: Set mirrorInc=true, mirrorIndex=attrIndex, call mirrorDataW
+    this.mirrorInc = true;
+    this.mirrorIndex = attrIndex;
+    this.mirrorDataW(value);
   }
 
   writeSpritePattern(value: number): void {
@@ -443,9 +445,15 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         if (attributes.colorMode !== 0x01) {
           // --- Anchor sprite: set X MSB (bit 0 of attr4)
           attributes.x = (((value & 0x01) << 8) | (attributes.x & 0xff)) & 0x1ff;
+        } else {
+          // --- Relative sprite: bit 0 = pattern-relative flag (add anchor's pattern index)
+          attributes.patternRelative = (value & 0x01) !== 0;
         }
         break;
     }
+
+    // --- Invalidate resolved-sprite cache whenever raw attributes change
+    this._attrsDirty = true;
 
     // --- Select the last visible sprite
     if (attridx === 3 && attributes.visible) {
@@ -477,6 +485,172 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       attributes.patternVariantIndex = (pattern7bit << 3) | attributes.transformVariant;
     } else {
       attributes.patternVariantIndex = (attributes.patternIndex << 3) | attributes.transformVariant;
+    }
+  }
+
+  /**
+   * Resolve all 128 sprites into resolvedAttributes[], compositing relative sprites
+   * onto their anchor's position and transforms (mirrors MAME update_sprites_cache()).
+   * Called once per scanline batch before the sprite render loop begins.
+   * The result is cached until any sprite attribute write marks _attrsDirty.
+   */
+  resolveRelativeSprites(): void {
+    if (!this._attrsDirty) return;
+    this._attrsDirty = false;
+
+    let anchorIdx = -1;
+    let anchorVisible = false;
+
+    for (let i = 0; i < 128; i++) {
+      const src = this.attributes[i];
+      const dst = this.resolvedAttributes[i];
+
+      // A sprite is relative when has5AttributeBytes AND colorMode === 0b01
+      const isRelative = src.has5AttributeBytes && src.colorMode === 0x01;
+
+      let isVisible = src.visible;
+      if (isRelative) {
+        isVisible = isVisible && anchorVisible;
+      } else {
+        anchorVisible = isVisible;
+      }
+
+      if (!isVisible) {
+        dst.visible = false;
+        if (!isRelative) anchorIdx = -1; // anchor lost visibility — no anchor for relatives
+        continue;
+      }
+
+      if (!isRelative) {
+        // ── Anchor sprite: copy as-is ───────────────────────────────────────
+        Object.assign(dst, src);
+        dst.visible = true;
+        anchorIdx = i;
+      } else {
+        // ── Relative sprite: composite onto anchor ─────────────────────────
+        if (anchorIdx < 0) { dst.visible = false; continue; }
+        const anchor = this.attributes[anchorIdx];
+
+        // rel_type: bit 5 of anchor's attr4 AND anchor has 5 bytes
+        const relType = anchor.attributeFlag2 && anchor.has5AttributeBytes;
+
+        // Effective anchor transforms (zeroed when uniform rel_type)
+        const aRotate  = relType ? anchor.rotate   : false;
+        const aMirrorX = relType ? anchor.mirrorX  : false;
+        const aMirrorY = relType ? anchor.mirrorY  : false;
+        const aScaleX  = relType ? anchor.scaleX   : 0;
+        const aScaleY  = relType ? anchor.scaleY   : 0;
+
+        // Raw 8-bit signed offsets from relative sprite attr0 / attr1
+        const rawX = src.x & 0xff;
+        const rawY = src.y & 0xff;
+
+        // Rotate swaps X/Y (MAME: spr_rel_x0/y0)
+        const x0 = aRotate ? rawY : rawX;
+        const y0 = aRotate ? rawX : rawY;
+
+        // Mirror negates (MAME: spr_rel_x1/y1; negate = two's complement)
+        const x1 = (aRotate !== aMirrorX) ? ((~x0 + 1) & 0xff) : x0;
+        const y1 = aMirrorY              ? ((~y0 + 1) & 0xff) : y0;
+
+        // Sign-extend 8→9-bit and scale (MAME: spr_rel_x2/y2)
+        const x1s = x1 | (x1 >= 0x80 ? 0x100 : 0);
+        const y1s = y1 | (y1 >= 0x80 ? 0x100 : 0);
+        const x2 = (x1s << aScaleX) & 0x1ff;
+        const y2 = (y1s << aScaleY) & 0x1ff;
+
+        // Add anchor position (MAME: spr_rel_x3/y3)
+        const x3 = (anchor.x + x2) & 0x1ff;
+        const y3 = (anchor.y + y2) & 0x1ff;
+
+        // Palette offset composition (MAME: spr_rel_paloff)
+        // attributeFlag1 = attr2 bit 0 = "use anchor palette + relative palette"
+        const palOff = src.attributeFlag1
+          ? (anchor.paletteOffset + src.paletteOffset) & 0x0f
+          : src.paletteOffset;
+
+        // Mirror / rotate composition
+        let finalMirrorX: boolean, finalMirrorY: boolean, finalRotate: boolean;
+        if (relType) {
+          // Composite: XOR anchor transforms with relative sprite's pre-rotated mirrors
+          // MAME: spr_rel_xm = anchor_rotate ? (ymirror xor rotate) : xmirror
+          //        spr_rel_ym = anchor_rotate ? (xmirror xor rotate) : ymirror
+          const relXm = aRotate ? (src.mirrorY !== src.rotate) : src.mirrorX;
+          const relYm = aRotate ? (src.mirrorX !== src.rotate) : src.mirrorY;
+          finalMirrorX = aMirrorX !== relXm;
+          finalMirrorY = aMirrorY !== relYm;
+          finalRotate  = aRotate  !== src.rotate;
+        } else {
+          // Uniform: take relative sprite's own transforms unchanged
+          finalMirrorX = src.mirrorX;
+          finalMirrorY = src.mirrorY;
+          finalRotate  = src.rotate;
+        }
+
+        // Scale: inherited from anchor when composite, own when uniform
+        const finalScaleX = relType ? anchor.scaleX : src.scaleX;
+        const finalScaleY = relType ? anchor.scaleY : src.scaleY;
+
+        // 4-bit mode is always inherited from anchor
+        const is4Bit = anchor.is4BitPattern;
+
+        // Pattern 7-bit index (MAME: uses N6 bit; Klive stores bit 5 as attributeFlag2 proxy)
+        //   N6 proxy for relative sprite = src.attributeFlag2 && is4Bit (matches MAME attr4 bit 6
+        //   synthesised from relative-sprite bit 5 when building spr_cur_attr[4])
+        const relN6 = src.attributeFlag2 && is4Bit;
+        let resolvedPat7: number;
+
+        if (src.patternRelative) {
+          // MAME: (relPat + anchorPat) & 0x7f — both in MAME 7-bit encoding
+          // Anchor 7-bit MAME pattern: (patternIndex<<1) | (anchorN6 && is4Bit)
+          const anchorN6 = anchor.attributeFlag2 && anchor.is4BitPattern;
+          const anchorPat7 = (anchor.patternIndex << 1) | (anchorN6 ? 1 : 0);
+          const relPat7    = (src.patternIndex   << 1) | (relN6    ? 1 : 0);
+          resolvedPat7 = (relPat7 + anchorPat7) & 0x7f;
+        } else {
+          resolvedPat7 = (src.patternIndex << 1) | (relN6 ? 1 : 0);
+        }
+
+        // Fill resolved attributes
+        dst.x = x3;
+        dst.y = y3;
+        dst.paletteOffset = palOff;
+        dst.mirrorX = finalMirrorX;
+        dst.mirrorY = finalMirrorY;
+        dst.rotate  = finalRotate;
+        dst.attributeFlag1 = src.attributeFlag1;
+        dst.visible = true;
+        dst.has5AttributeBytes = true;
+        dst.patternIndex = src.patternIndex;
+        dst.colorMode = src.colorMode;
+        dst.attributeFlag2 = src.attributeFlag2;
+        dst.scaleX = finalScaleX;
+        dst.scaleY = finalScaleY;
+        dst.is4BitPattern = is4Bit;
+        dst.patternRelative = src.patternRelative;
+
+        // Derived transform variant
+        dst.transformVariant =
+          (finalRotate ? 4 : 0) | (finalMirrorX ? 2 : 0) | (finalMirrorY ? 1 : 0);
+
+        // Pattern variant index for lookup in patternMemory4bit / patternMemory8bit
+        if (is4Bit) {
+          // resolvedPat7 is a 7-bit index into 128 × 8 = 1024 entries of patternMemory4bit
+          dst.patternVariantIndex = (resolvedPat7 << 3) | dst.transformVariant;
+        } else {
+          // For 8-bit, resolvedPat7 = patternIndex<<1; divide by 2 to get 0-63 index
+          // (consistent with how updatePatternVariantIndex stores 8-bit sprites)
+          dst.patternVariantIndex = ((resolvedPat7 >> 1) << 3) | dst.transformVariant;
+        }
+        dst.pattern7Bit = resolvedPat7;
+
+        // Effective dimensions
+        const baseSize = 16;
+        const scaledW = baseSize << finalScaleX;
+        const scaledH = baseSize << finalScaleY;
+        dst.width  = finalRotate ? scaledH : scaledW;
+        dst.height = finalRotate ? scaledW : scaledH;
+      }
     }
   }
 
@@ -533,6 +707,7 @@ export type SpriteAttributes = {
   patternVariantIndex: number; // Cached pattern variant index for direct lookup in patternMemory arrays
   width: number; // Effective sprite width in pixels after scaling and rotation
   height: number; // Effective sprite height in pixels after scaling and rotation
+  patternRelative: boolean; // (relative sprites only) add anchor's pattern index to own
 };
 
 export type SpriteInfo = {

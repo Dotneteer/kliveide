@@ -117,7 +117,7 @@ describe("SpriteDevice - Sprite Index Management", () => {
       
       // --- Enable lockstep mode via NextReg 0x09 bit 4
       writeNextReg(machine, 0x09, 0x10); // Set sprite ID lockstep bit
-      expect(spriteDevice.spriteIdLockstep).toBe(true);
+      expect(spriteDevice.mirrorTie).toBe(true);
 
       // --- Set sprite index to 127 via NextReg 0x34 (in lockstep, this writes to port 0x303b)
       writeNextReg(machine, 0x34, 127);
