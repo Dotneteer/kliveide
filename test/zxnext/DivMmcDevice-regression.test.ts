@@ -28,11 +28,11 @@ describe("Next - DivMmcDevice: CONMEM Manual Control (Issue #1)", function () {
     // Set conmem=1 via port 0xE3
     machine.writePort(0x0e3, 0x81);
     
-    // Call beforeOpcodeFetch() - should activate automap due to conmem
+    // Call beforeOpcodeFetch() - should track conmem
     divmmc.beforeOpcodeFetch();
     
-    // Assert: autoMapActive should be true
-    expect(divmmc.autoMapActive).toBe(true);
+    // FPGA: conmem is separate from automap. Check conmem flag directly.
+    expect(divmmc.conmem).toBe(true);
   });
 
   it("conmem=1 should persist across multiple beforeOpcodeFetch() calls", async () => {
@@ -44,13 +44,13 @@ describe("Next - DivMmcDevice: CONMEM Manual Control (Issue #1)", function () {
     
     machine.writePort(0x0e3, 0x81);
     divmmc.beforeOpcodeFetch();
-    expect(divmmc.autoMapActive).toBe(true);
+    expect(divmmc.conmem).toBe(true);
     
     // Call again - should stay active
     divmmc.afterOpcodeFetch();
     divmmc.beforeOpcodeFetch();
     
-    expect(divmmc.autoMapActive).toBe(true);
+    expect(divmmc.conmem).toBe(true);
   });
 
   it("conmem=0 should disable DivMMC mapping", async () => {
@@ -63,14 +63,14 @@ describe("Next - DivMmcDevice: CONMEM Manual Control (Issue #1)", function () {
     // First enable with conmem=1
     machine.writePort(0x0e3, 0x81);
     divmmc.beforeOpcodeFetch();
-    expect(divmmc.autoMapActive).toBe(true);
+    expect(divmmc.conmem).toBe(true);
     
     // Now disable with conmem=0
     machine.writePort(0x0e3, 0x01);
     divmmc.beforeOpcodeFetch();
     
     // Should be disabled
-    expect(divmmc.autoMapActive).toBe(false);
+    expect(divmmc.conmem).toBe(false);
   });
 
   it("conmem=1 should work independent of entry points", async () => {
@@ -90,8 +90,8 @@ describe("Next - DivMmcDevice: CONMEM Manual Control (Issue #1)", function () {
     machine.writePort(0x0e3, 0x84);
     divmmc.beforeOpcodeFetch();
     
-    // Should still be active despite no entry points
-    expect(divmmc.autoMapActive).toBe(true);
+    // FPGA: conmem is independent of automap and entry points
+    expect(divmmc.conmem).toBe(true);
   });
 
   it("enableAutomap=false should disable conmem control", async () => {
@@ -119,8 +119,9 @@ describe("Next - DivMmcDevice: CONMEM Manual Control (Issue #1)", function () {
  * When Z80 executes RETN (0xED 0x45), DivMMC should:
  * - Clear automap_held
  * - Clear automap_hold
- * - Clear conmem bit
- * - Return to normal memory mapping
+ * - Clear button_nmi
+ * - NOTE: FPGA does NOT clear conmem (port 0xE3 bit 7) on RETN.
+ * - Return to normal automap mapping
  */
 describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function () {
   let machine: TestZxNextMachine;
@@ -131,16 +132,16 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     machine.nextRegDevice.directSetRegValue(0x83, 0x01); // Enable DivMMC hardware
   });
 
-  it("RETN should clear automap when conmem-activated", async () => {
+  it("RETN should clear automap when activated via entry point", async () => {
     const divmmc = machine.divMmcDevice;
     
-    // Disable all entry points to isolate conmem control
-    for (let i = 0; i < 8; i++) {
-      divmmc.rstTraps[i].enabled = false;
-    }
+    // Enable RST 0x00 entry point (instant mapping)
+    divmmc.rstTraps[0].enabled = true;
+    divmmc.rstTraps[0].instantMapping = true;
+    divmmc.rstTraps[0].onlyWithRom3 = false;
     
-    // Activate DivMMC via conmem
-    machine.writePort(0x0e3, 0x81);
+    // Trigger automap via RST entry point
+    machine.pc = 0x0000;
     divmmc.beforeOpcodeFetch();
     expect(divmmc.autoMapActive).toBe(true);
     
@@ -156,12 +157,11 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     // Execute RETN instruction
     machine.executeOneInstruction();
     
-    // After RETN, conmem should be cleared
-    expect(divmmc.conmem).toBe(false);
+    // After RETN, automap should be cleared
     expect(divmmc.autoMapActive).toBe(false);
   });
 
-  it("RETN should clear conmem flag from port 0xE3", async () => {
+  it("RETN should NOT clear conmem flag (FPGA behavior)", async () => {
     const divmmc = machine.divMmcDevice;
     
     for (let i = 0; i < 8; i++) {
@@ -171,8 +171,6 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     // Set conmem=1
     machine.writePort(0x0e3, 0x81);
     expect(divmmc.conmem).toBe(true);
-    divmmc.beforeOpcodeFetch();
-    expect(divmmc.autoMapActive).toBe(true);
     
     // Prepare RETN execution
     machine.pc = 0x8000;
@@ -181,15 +179,11 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     machine.memoryDevice.writeMemory(0xFFFE, 0x20);
     machine.memoryDevice.writeMemory(0xFFFF, 0x80);
     
-    // Store original conmem state
-    const conmemBefore = divmmc.conmem;
-    expect(conmemBefore).toBe(true);
-    
     // Execute RETN
     machine.executeOneInstruction();
     
-    // conmem should be cleared
-    expect(divmmc.conmem).toBe(false);
+    // FPGA: RETN does NOT clear i_divmmc_reg. conmem persists.
+    expect(divmmc.conmem).toBe(true);
   });
 
   it("RETN should work independent of how automap was activated", async () => {
@@ -219,7 +213,7 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     expect(divmmc.autoMapActive).toBe(false);
   });
 
-  it("RETN should clear conmem even without automap active", async () => {
+  it("RETN should NOT clear conmem even without automap active", async () => {
     const divmmc = machine.divMmcDevice;
     
     for (let i = 0; i < 8; i++) {
@@ -243,19 +237,20 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     // Execute RETN
     machine.executeOneInstruction();
     
-    // conmem should be cleared by RETN execution
-    expect(divmmc.conmem).toBe(false);
+    // FPGA: RETN does NOT modify divmmc_reg — conmem stays
+    expect(divmmc.conmem).toBe(true);
   });
 
   it("RETN should clear automap across multiple consecutive instructions", async () => {
     const divmmc = machine.divMmcDevice;
     
-    for (let i = 0; i < 8; i++) {
-      divmmc.rstTraps[i].enabled = false;
-    }
+    // Enable RST 0x00 (instant) to activate automap
+    divmmc.rstTraps[0].enabled = true;
+    divmmc.rstTraps[0].instantMapping = true;
+    divmmc.rstTraps[0].onlyWithRom3 = false;
     
-    // Activate via conmem
-    machine.writePort(0x0e3, 0x81);
+    // Activate via RST entry point
+    machine.pc = 0x0000;
     divmmc.beforeOpcodeFetch();
     expect(divmmc.autoMapActive).toBe(true);
     
@@ -282,9 +277,8 @@ describe("Next - DivMmcDevice: RETN Instruction Detection (Issue #2)", function 
     // Execute RETN
     machine.executeOneInstruction();
     
-    // After RETN, everything should be cleared
+    // After RETN, automap should be cleared
     expect(divmmc.autoMapActive).toBe(false);
-    expect(divmmc.conmem).toBe(false);
   });
 });
 
@@ -685,13 +679,13 @@ describe("Next - DivMmcDevice: ROM 3 Dependency Logic (Issue #4)", function () {
   it("Auto-unmap at 0x1FF8-0x1FFF should work regardless of ROM3", async () => {
     const divmmc = machine.divMmcDevice;
     
-    // Disable RST traps
-    for (let i = 0; i < 8; i++) {
-      divmmc.rstTraps[i].enabled = false;
-    }
+    // Enable RST 0x00 (instant) to activate automap
+    divmmc.rstTraps[0].enabled = true;
+    divmmc.rstTraps[0].instantMapping = true;
+    divmmc.rstTraps[0].onlyWithRom3 = false;
     
-    // Manually activate via conmem
-    machine.writePort(0x0e3, 0x81);
+    // Trigger automap via RST entry point
+    machine.pc = 0x0000;
     divmmc.beforeOpcodeFetch();
     expect(divmmc.autoMapActive).toBe(true);
     

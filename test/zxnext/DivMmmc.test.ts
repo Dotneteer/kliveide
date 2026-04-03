@@ -2917,14 +2917,14 @@ describe("Next - DivMmcDevice", async function () {
     expect(addr5After).toBe(nextRom0Signature0[5]);
   });
 
-  it("$1ff8 pages out (enabled, delayed)", async () => {
+  it("$1ff8 does NOT page out when automapOff1ff8=false (FPGA: delayed_off=0 means persist)", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
     const d = m.divMmcDevice;
     const memDevice = m.memoryDevice;
     d.enableAutomap = true;
     d.port0xe3Value = 0x00;
-    d.automapOff1ff8 = false;
+    d.automapOff1ff8 = false; // FPGA: delayed_off=0 → automap persists
     d.rstTraps[4].enabled = true;
     d.rstTraps[4].instantMapping = true;
     d.rstTraps[4].onlyWithRom3 = false;
@@ -2941,14 +2941,14 @@ describe("Next - DivMmcDevice", async function () {
     const addr1After = memDevice.readMemory(0x0001);
     const addr5After = memDevice.readMemory(0x0005);
 
-    // --- Assert
+    // --- Assert: DivMMC ROM mapped before
     expect(addr0Before).toBe(divMmcRomSignature[0]);
     expect(addr1Before).toBe(divMmcRomSignature[1]);
     expect(addr5Before).toBe(divMmcRomSignature[5]);
-    expect(m.opCode).toBe(nextRom0_1ff8);
-    expect(addr0After).toBe(nextRom0Signature0[0]);
-    expect(addr1After).toBe(nextRom0Signature0[1]);
-    expect(addr5After).toBe(nextRom0Signature0[5]);
+    // --- Assert: DivMMC ROM still mapped after (automap persists)
+    expect(addr0After).toBe(divMmcRomSignature[0]);
+    expect(addr1After).toBe(divMmcRomSignature[1]);
+    expect(addr5After).toBe(divMmcRomSignature[5]);
   });
 
   // ─────────────────────────────

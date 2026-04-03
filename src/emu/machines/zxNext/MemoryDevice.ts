@@ -756,7 +756,10 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     if (this._divMmcActive) {
       const divMmcDevice = this.machine.divMmcDevice;
       if (divMmcDevice.conmem) {
-        readOffset = page ? OFFS_DIVMMC_RAM + (divMmcDevice.bank << 13) : OFFS_DIVMMC_ROM;
+        // FPGA: conmem page0 with mapram=1 reads RAM bank 3, mapram=0 reads ROM
+        readOffset = page
+          ? OFFS_DIVMMC_RAM + (divMmcDevice.bank << 13)
+          : divMmcDevice.mapram ? OFFS_DIVMMC_RAM_BANK_3 : OFFS_DIVMMC_ROM;
         return this.memory[readOffset + offset];
       } else if (divMmcDevice.autoMapActive) {
         readOffset = divMmcDevice.mapram
@@ -859,7 +862,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     if (this._divMmcActive) {
       const divMmcDevice = this.machine.divMmcDevice;
       if (divMmcDevice.conmem) {
-        if (!page) return; // Page 0 is read-only
+        // FPGA: rdonly = page0 OR (mapram AND ram_bank=3)
+        if (!page || (divMmcDevice.mapram && divMmcDevice.bank === 3)) return;
         writeOffset = OFFS_DIVMMC_RAM + (divMmcDevice.bank << 13);
         this.memory[writeOffset + offset] = data;
         return;
