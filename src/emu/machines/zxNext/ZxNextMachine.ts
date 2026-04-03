@@ -134,6 +134,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /** Set to true when a stackless NMI was processed; cleared after RETN fixes PC. */
   private _stacklessNmiProcessed: boolean = false;
 
+  /** D6: When true, DivMMC should not process the current RETN (MF was active). */
+  _suppressDivMmcRetn: boolean = false;
+
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
@@ -312,6 +315,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._pendingMfNmi = false;
     this._pendingDivMmcNmi = false;
     this._stacklessNmiProcessed = false;
+    this._suppressDivMmcRetn = false;
     this.sigNMI = false;
     // --- Enable NMI buttons by default (emulator convenience; hardware default is 0,
     //     but the emulator wants F9/F10 to work without explicit NR06 configuration)
@@ -1031,11 +1035,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
    */
   protected override onRetnExecuted(): void {
-    if (this.multifaceDevice.nmiHold) {
-      // MF NMI is still in progress — RETN ends it regardless of whether memory is
-      // still mapped (the ROM pages itself out via port read before executing RETN).
-      this.multifaceDevice.handleRetn();
+    // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
+    // D6: Capture mf_is_active BEFORE clearing MF state. When MF was active,
+    // DivMMC should not see RETN.
+    const mfWasActive = this.multifaceDevice.isActive;
+
+    // FPGA: cpu_retn_seen unconditionally clears both nmi_active and mf_enable
+    // (D7: no guard on nmiHold — RETN always clears MF state)
+    this.multifaceDevice.handleRetn();
+
+    // D6: Suppress DivMMC RETN if multiface was active
+    if (mfWasActive) {
+      this._suppressDivMmcRetn = true;
     }
+
     if (this._stacklessNmiProcessed) {
       this._stacklessNmiProcessed = false;
       this.pc = this.interruptDevice.nmiReturnAddress;

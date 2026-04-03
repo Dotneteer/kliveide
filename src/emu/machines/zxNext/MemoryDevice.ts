@@ -372,6 +372,9 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.updateMemoryConfig();
   }
 
+  /** Port 0xEFF7 value — FPGA stores bits 2-3 only (pentagon 1024K control) */
+  portEff7Value: number = 0;
+
   /**
    * Gets the value of the specified MMU register
    * @param index MMU register index

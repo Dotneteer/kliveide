@@ -134,7 +134,7 @@ export class NextIoPortManager {
       port: 0xeff7,
       pmask: 0b1111_0000_1111_1111,
       value: 0b1110_0000_1111_0111,
-      writerFns: () => {}
+      writerFns: (_, v) => { machine.memoryDevice.portEff7Value = v & 0x0c; }
     });
     r({
       description: "NextREG Register Select",
@@ -413,27 +413,6 @@ export class NextIoPortManager {
       readerFns: readKempstonMouseYPort
     });
     r({
-      description: "Kempston joy 1",
-      port: 0x1f,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_0001_1111,
-      readerFns: readKempstonJoy1Port
-    });
-    r({
-      description: "Kempston joy 1 alias",
-      port: 0xdf,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_1101_1111,
-      readerFns: readKempstonJoy1AliasPort
-    });
-    r({
-      description: "Kempston joy 2",
-      port: 0x37,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_0011_0111,
-      readerFns: readKempstonJoy2Port
-    });
-    r({
       description: "Multiface port 0x1F",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
@@ -464,6 +443,27 @@ export class NextIoPortManager {
       value: 0b0000_0000_1011_1111,
       readerFns: (p) => readMultifacePort(p, machine),
       writerFns: (p, v) => writeMultifacePort(p, v, machine)
+    });
+    r({
+      description: "Kempston joy 1",
+      port: 0x1f,
+      pmask: 0b0000_0000_1111_1111,
+      value: 0b0000_0000_0001_1111,
+      readerFns: readKempstonJoy1Port
+    });
+    r({
+      description: "Kempston joy 1 alias",
+      port: 0xdf,
+      pmask: 0b0000_0000_1111_1111,
+      value: 0b0000_0000_1101_1111,
+      readerFns: readKempstonJoy1AliasPort
+    });
+    r({
+      description: "Kempston joy 2",
+      port: 0x37,
+      pmask: 0b0000_0000_1111_1111,
+      value: 0b0000_0000_0011_0111,
+      readerFns: readKempstonJoy2Port
     });
     r({
       description: "Sprite slot, flags",
@@ -549,21 +549,25 @@ export class NextIoPortManager {
         let mapping = this.portMap.get(i);
         if (mapping) {
           mapping = { ...mapping };
-          if (mapping.readerFns) {
-            const readerFnsArray = Array.isArray(readerFns) ? readerFns : [readerFns];
-            mapping.readerFns = Array.isArray(mapping.readerFns)
-              ? [...mapping.readerFns, ...readerFnsArray]
-              : [mapping.readerFns, ...readerFnsArray];
-          } else {
-            mapping.readerFns = readerFns;
+          if (readerFns) {
+            if (mapping.readerFns) {
+              const readerFnsArray = Array.isArray(readerFns) ? readerFns : [readerFns];
+              mapping.readerFns = Array.isArray(mapping.readerFns)
+                ? [...mapping.readerFns, ...readerFnsArray]
+                : [mapping.readerFns, ...readerFnsArray];
+            } else {
+              mapping.readerFns = readerFns;
+            }
           }
-          if (mapping.writerFns) {
-            const writerFnsArray = Array.isArray(writerFns) ? writerFns : [writerFns];
-            mapping.writerFns = Array.isArray(mapping.writerFns)
-              ? [...mapping.writerFns, ...writerFnsArray]
-              : [mapping.writerFns, ...writerFnsArray];
-          } else {
-            mapping.writerFns = writerFns;
+          if (writerFns) {
+            if (mapping.writerFns) {
+              const writerFnsArray = Array.isArray(writerFns) ? writerFns : [writerFns];
+              mapping.writerFns = Array.isArray(mapping.writerFns)
+                ? [...mapping.writerFns, ...writerFnsArray]
+                : [mapping.writerFns, ...writerFnsArray];
+            } else {
+              mapping.writerFns = writerFns;
+            }
           }
           this.portMap.set(i, mapping);
           this.portCollisions.set(i, [...this.portCollisions.get(i)!, description]);

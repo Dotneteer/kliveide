@@ -1827,7 +1827,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x83,
       description: "Internal Port Decoding Enables #2",
-      writeFn: (v) => (
+      writeFn: (v) => {
+        const oldMfEnabled = this.portMultifaceEnabled;
         (this.portDivMmcEnabled = !!(v & 0x01)),
         (this.portMultifaceEnabled = !!(v & 0x02)),
         (this.portI2CEnabled = !!(v & 0x04)),
@@ -1836,8 +1837,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (this.portMouseEnabled = !!(v & 0x20)),
         (this.portSpritesEnabled = !!(v & 0x40)),
         (this.portLayer2Enabled = !!(v & 0x80)),
-        (machine.divMmcDevice.nextReg83Value = v & 0xff)
-      ),
+        (machine.divMmcDevice.nextReg83Value = v & 0xff);
+        // FPGA: reset <= reset_i or not enable_i — when enable goes false, device resets
+        if (oldMfEnabled && !this.portMultifaceEnabled) {
+          machine.multifaceDevice.reset();
+        }
+      },
       slices: [
         {
           mask: 0x80,

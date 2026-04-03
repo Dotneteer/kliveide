@@ -467,6 +467,12 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    */
   private checkAndHandleRetn(): void {
     if (this.machine.retnExecuted) {
+      // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
+      // D6: When multiface was active, DivMMC does not see RETN.
+      if ((this.machine as any)._suppressDivMmcRetn) {
+        (this.machine as any)._suppressDivMmcRetn = false;
+        return;
+      }
       this.handleRetnExecution();
     }
   }
