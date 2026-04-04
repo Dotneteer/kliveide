@@ -19,7 +19,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x03)).toBe(0x03);
     expect(d.directGetRegValue(0x04)).toBe(0x03);
     expect(d.directGetRegValue(0x05)).toBe(0x41);
-    expect(d.directGetRegValue(0x06)).toBe(0x00);
+    expect(d.directGetRegValue(0x06)).toBe(0x80); // --- Hotkey CPU speed enabled on hard reset
     expect(d.directGetRegValue(0x07)).toBe(0x00);
     expect(d.directGetRegValue(0x08)).toBe(0x1a);
     expect(d.directGetRegValue(0x09)).toBe(0x00);

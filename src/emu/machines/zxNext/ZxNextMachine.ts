@@ -579,7 +579,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case "cycleCpuSpeed":
         if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
-          this.cpuSpeedDevice.nextReg07Value = (this.cpuSpeedDevice.nextReg07Value + 1) % 4;
+          this.cpuSpeedDevice.nextReg07Value = (this.cpuSpeedDevice.programmedSpeed + 1) & 0x03;
         }
         break;
 
@@ -1105,11 +1105,59 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
+   * Tests if the specified port address falls in a contended I/O address range.
+   * On ZX Spectrum Next, contention is only enabled at 3.5MHz (CPU speed 0) and when
+   * contention is not disabled via NR $08 bit 6. Address ranges match Spectrum 128:
+   * 0x4000-0x7FFF is always contended, and 0xC000-0xFFFF is contended when an odd-numbered
+   * bank (1,3,5,7) is paged in at bank 3.
+   */
+  protected isContendedIoAddress(address: number): boolean {
+    // Contention only applies at 3.5MHz (CPU speed 0)
+    if (this.cpuSpeedDevice.effectiveSpeed !== 0) {
+      return false;
+    }
+
+    // Contention can be disabled via NR $08 bit 6
+    if (this.nextRegDevice.disableRamPortContention) {
+      return false;
+    }
+
+    // Check address ranges: 0x4000-0x7fff is always contended,
+    // 0xc000-0xffff is contended when odd-numbered bank is paged in at bank 3
+    const page = address & 0xc000;
+    return page === 0x4000 || (page === 0xc000 && (this.selectedBank & 0x01) === 1);
+  }
+
+  /**
    * Delays the I/O access according to address bus contention
    * @param address Port address
    */
-  protected delayContendedIo(_address: number): void {
-    // TODO: Implement this
+  protected delayContendedIo(address: number): void {
+    const lowbit = (address & 0x0001) !== 0;
+
+    // --- Check for contended range using the polymorphic check
+    if (this.isContendedIoAddress(address)) {
+      if (lowbit) {
+        // --- Low bit set, C:1, C:1, C:1, C:1
+        this.tactPlusN(1);
+        this.tactPlusN(1);
+        this.tactPlusN(1);
+        this.tactPlusN(1);
+      } else {
+        // --- Low bit reset, C:1, C:3
+        this.tactPlusN(1);
+        this.tactPlusN(3);
+      }
+    } else {
+      if (lowbit) {
+        // --- Low bit set, N:4
+        this.tactPlusN(4);
+      } else {
+        // --- Low bit reset, C:1, C:3
+        this.tactPlusN(1);
+        this.tactPlusN(3);
+      }
+    }
   }
 
   /**

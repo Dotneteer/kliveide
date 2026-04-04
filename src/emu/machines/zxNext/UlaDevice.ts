@@ -45,18 +45,17 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
         // --- Calculate time ellapsed since last change from 1 to 0
         bit4Sensed = this.machine.tacts - this._portBit4ChangedFrom1Tacts < chargeTime;
       }
-
-      // --- Calculate bit 6 value
-      var bit6Value = this._portBit3LastValue ? 0x40 : bit4Sensed ? 0x40 : 0x00;
-
-      // --- Check for ULA 3
-      if (!bit4Sensed) {
-        bit6Value = 0x00;
-      }
-
-      // --- Merge bit 6 with port value
-      portValue = ((portValue & 0xbf) | bit6Value) & 0xff;
     }
+
+    // --- Calculate bit 6 value (FPGA line 3456):
+    // --- bit 6 = EAR_from_port OR port_ear OR (port_mic AND issue2_enabled)
+    // --- In Klive: bit 6 = bit4Sensed OR (bit3LastValue AND implementIssue2Keyboard)
+    const earBit = bit4Sensed;
+    const micContributes = this._portBit3LastValue && this.machine.nextRegDevice.implementIssue2Keyboard;
+    const bit6Value = (earBit || micContributes) ? 0x40 : 0x00;
+
+    // --- Merge bit 6 with port value
+    portValue = ((portValue & 0xbf) | bit6Value) & 0xff;
     return portValue;
   }
 
