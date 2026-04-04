@@ -55,13 +55,15 @@ describe("Next - MemoryDevice", async function () {
   }
 
   for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 15; j++) {
+    // j < 14: dffd=14 → 8K page 224 which is the system region (not normal RAM)
+    for (let j = 0; j < 14; j++) {
       it(`0x7ffd/0xdffd changes RAM bank to ${8 * j + i}`, async () => {
         io.writePort(0x7ffd, i);
         io.writePort(0xdffd, j);
         expect(isRam(memDevice, 6)).toBe(true);
-        expect(isPagedIn(memDevice, 6, 8 * j + i * 2)).toBe(true);
-        expect(isPagedIn(memDevice, 7, 8 * j + i * 2 + 1)).toBe(true);
+        // 8K page = (dffd * 8 + 7ffd_lsb) * 2 = dffd * 16 + 7ffd_lsb * 2
+        expect(isPagedIn(memDevice, 6, 16 * j + i * 2)).toBe(true);
+        expect(isPagedIn(memDevice, 7, 16 * j + i * 2 + 1)).toBe(true);
       });
     }
   }
@@ -361,6 +363,78 @@ describe("Next - MemoryDevice", async function () {
       expect(romSlotSignatureMatches(memDevice, 1, signatures[1])).toBe(true);
       nrDevice.directSetRegValue(0x8e, 0x00);
     });
+  });
+
+  // --- CR1: MMU6/7 restored to the bank active before allRam, not hardcoded to 0
+  it("MMU6/7 restored to pre-allRam bank after exiting allRam (7FFD bank)", async () => {
+    io.writePort(0xdffd, 0x00);   // ensure MSB bank = 0
+    io.writePort(0x7ffd, 0x05);   // select bank 5 (8K page 10)
+    io.writePort(0x1ffd, 0x01);   // enter allRam mode
+    io.writePort(0x1ffd, 0x00);   // exit allRam mode
+    expect(isRam(memDevice, 6)).toBe(true);
+    expect(isPagedIn(memDevice, 6, 0x0a)).toBe(true);  // 8K page 10 (bank 5 × 2)
+    expect(isPagedIn(memDevice, 7, 0x0b)).toBe(true);  // 8K page 11
+    io.writePort(0x7ffd, 0x00);   // restore bank 0
+  });
+
+  it("MMU6/7 restored to pre-allRam bank after exiting allRam (7FFD+DFFD bank)", async () => {
+    io.writePort(0x7ffd, 0x03);   // bank lsb = 3
+    io.writePort(0xdffd, 0x02);   // bank msb = 2 → 16K bank = 2×8+3 = 19, 8K page = 2×16+3×2 = 38
+    io.writePort(0x1ffd, 0x01);   // enter allRam mode
+    io.writePort(0x1ffd, 0x00);   // exit allRam mode
+    expect(isRam(memDevice, 6)).toBe(true);
+    expect(isPagedIn(memDevice, 6, 38)).toBe(true);  // 2×16 + 3×2 = 38
+    expect(isPagedIn(memDevice, 7, 39)).toBe(true);
+    io.writePort(0x7ffd, 0x00);   // restore
+    io.writePort(0xdffd, 0x00);
+  });
+
+  // --- M3: portDffd write blocked when paging is locked (7FFD bit 5)
+  it("0xdffd write is blocked when paging is locked", async () => {
+    io.writePort(0x7ffd, 0x00);   // bank 0, paging enabled
+    io.writePort(0xdffd, 0x00);   // MSB bank = 0  → MMU6 = 0
+    expect(isPagedIn(memDevice, 6, 0)).toBe(true);
+    io.writePort(0x7ffd, 0x20);   // bit 5 = lock paging
+    io.writePort(0xdffd, 0x01);   // this write should be ignored
+    expect(isPagedIn(memDevice, 6, 0)).toBe(true);  // still 0
+    io.writePort(0x7ffd, 0x00);   // unlock for subsequent tests
+  });
+
+  // --- M4: port1ffd write blocked when paging is locked (7FFD bit 5)
+  it("0x1ffd write is blocked when paging is locked", async () => {
+    io.writePort(0x7ffd, 0x00);   // bank 0, paging enabled
+    io.writePort(0x1ffd, 0x00);   // normal mode
+    expect(isRom(memDevice, 0)).toBe(true);
+    io.writePort(0x7ffd, 0x20);   // lock paging
+    io.writePort(0x1ffd, 0x01);   // try to enter allRam — should be blocked
+    expect(isRom(memDevice, 0)).toBe(true);  // slot 0 is still ROM
+    io.writePort(0x7ffd, 0x00);   // unlock for subsequent tests
+  });
+
+  // --- M5: EFF7 bit 3 maps 16K bank 0 into slot 0/1 (overlaying ROM)
+  it("EFF7 bit 3 = 1 maps 16K bank 0 to slots 0/1", async () => {
+    io.writePort(0x7ffd, 0x00);
+    io.writePort(0x1ffd, 0x00);
+    expect(isRom(memDevice, 0)).toBe(true);  // ROM by default
+    io.writePort(0xeff7, 0x08);  // set EFF7 bit 3
+    expect(isRam(memDevice, 0)).toBe(true);  // slot 0 now RAM
+    expect(isPagedIn(memDevice, 0, 0x00)).toBe(true);  // 8K page 0
+    expect(isRam(memDevice, 1)).toBe(true);  // slot 1 now RAM
+    expect(isPagedIn(memDevice, 1, 0x01)).toBe(true);  // 8K page 1
+    io.writePort(0xeff7, 0x00);  // clear EFF7 bit 3 — restore ROM
+    expect(isRom(memDevice, 0)).toBe(true);
+    expect(isRom(memDevice, 1)).toBe(true);
+  });
+
+  it("EFF7 bit 3 persists through 7ffd writes", async () => {
+    io.writePort(0x7ffd, 0x00);
+    io.writePort(0x1ffd, 0x00);
+    io.writePort(0xeff7, 0x08);  // set EFF7 bit 3
+    io.writePort(0x7ffd, 0x05);  // change RAM bank — EFF7 must still apply
+    expect(isRam(memDevice, 0)).toBe(true);
+    expect(isPagedIn(memDevice, 0, 0x00)).toBe(true);
+    io.writePort(0xeff7, 0x00);  // restore
+    io.writePort(0x7ffd, 0x00);
   });
 });
 

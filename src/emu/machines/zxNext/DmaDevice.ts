@@ -177,6 +177,8 @@ const TSTATES_IO_PORT = 4;          // T-states for I/O port operation
 const TSTATES_MEMORY_READ = 3;      // Base T-states for memory read (no contention)
 const TSTATES_MEMORY_WRITE = 3;     // T-states for memory write (no wait states on writes)
 const TSTATES_WAIT_STATE = 1;       // Additional T-state for bank contention
+const SPI_DATA_PORT = 0xeb;         // Port 0xEB — SPI data register
+const SPI_TRANSFER_WAIT_CYCLES = 16; // FPGA: spi_wait_n low for 16 half-clock cycles per SPI byte
 
 /**
  * Prescalar frequency constants (for audio sampling)
@@ -2107,6 +2109,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     if (this.registers.portAIsIO) {
       // I/O port read: typically 4 T-states
       readTStates = TSTATES_IO_PORT;
+      // FPGA: spi_wait_n stalls DMA for 16 cycles during SPI transfer on port 0xEB
+      if ((this._addressA & 0xff) === SPI_DATA_PORT) {
+        readTStates += SPI_TRANSFER_WAIT_CYCLES;
+      }
     } else {
       // Memory read: base 3 T-states
       readTStates = TSTATES_MEMORY_READ;
@@ -2126,6 +2132,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     if (this.registers.portBIsIO) {
       // I/O port write: typically 4 T-states
       writeTStates = TSTATES_IO_PORT;
+      // FPGA: spi_wait_n stalls DMA for 16 cycles during SPI transfer on port 0xEB
+      if ((this._addressB & 0xff) === SPI_DATA_PORT) {
+        writeTStates += SPI_TRANSFER_WAIT_CYCLES;
+      }
     } else {
       // Memory write: always 3 T-states (no wait states on writes, even at 28MHz)
       writeTStates = TSTATES_MEMORY_WRITE;

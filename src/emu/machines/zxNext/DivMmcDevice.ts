@@ -137,9 +137,10 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (this._enableAutomap === value) return;
     this._enableAutomap = value;
     if (!value) {
-      // --- Automap is disabled
+      // --- Automap is disabled (VHDL: automap_reset clears hold/held/button_nmi)
       this._autoMapActive = false;
       this._conmemActivated = false;
+      this._nmiButtonPressed = false;
       this.machine.memoryDevice.updateFastPathFlags();
     }
   }
@@ -300,13 +301,28 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Checks if ROM 3 is currently paged in (128K +2A/+3 ROM)
+   * Checks if ROM 3 automap is active (mirrors FPGA sram_divmmc_automap_rom3_en).
+   * FPGA conditions:
+   *  - DivMMC + ROM zone active (override bits)
+   *  - Layer 2 not mapped over ROM area
+   *  - No expansion bus ROMCS
+   *  - ROM 3 selected (via standard selection or alt ROM with 128K mode)
    */
-  private isRom3PagedIn(): boolean {
-    return (
-      this.machine.memoryDevice.selectedRomMsb |
-      this.machine.memoryDevice.selectedRomLsb
-    ) === 0x03;
+  private isRom3AutomapActive(): boolean {
+    const mem = this.machine.memoryDevice;
+    // Check that ROM 3 is selected
+    const rom3 = (mem.selectedRomMsb | mem.selectedRomLsb) === 0x03;
+    if (!rom3) return false;
+
+    // Check Layer 2 is not mapped over the ROM area (page 0)
+    const screen = this.machine.composedScreenDevice;
+    if (screen?.layer2EnableMappingForReads) {
+      const mapSegment = screen.layer2Bank;
+      // Layer 2 segment 0 or segment 3 covers 0x0000-0x3FFF
+      if (mapSegment === 0 || mapSegment === 3) return false;
+    }
+
+    return true;
   }
 
   /**
@@ -314,16 +330,13 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    * This works independently of entry points, but still requires enableAutomap
    */
   private checkManualConmem(): void {
-    if (!this.enableAutomap) return;
-
+    // FPGA: conmem is NOT part of the automap signal. It only gates rom_en/ram_en
+    // combinationally. The MemoryDevice already checks divMmc.conmem directly
+    // for paging, so we just need to update fast path flags when conmem changes.
     if (this._conmem && !this._conmemActivated) {
-      // --- conmem=1: activate mapping if not already activated by conmem
-      this._autoMapActive = true;
       this._conmemActivated = true;
       this.machine.memoryDevice.updateFastPathFlags();
     } else if (!this._conmem && this._conmemActivated) {
-      // --- conmem=0: deactivate mapping if it was activated by conmem
-      this._autoMapActive = false;
       this._conmemActivated = false;
       this.machine.memoryDevice.updateFastPathFlags();
     }
@@ -389,11 +402,8 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
         if (this.automapOff1ff8) {
           // Delayed unmap (request for next instruction)
           this._requestAutomapOff = true;
-        } else {
-          // Immediate unmap
-          this._autoMapActive = false;
-          this.machine.memoryDevice.updateFastPathFlags();
         }
+        // When automapOff1ff8=false, no action (FPGA: delayed_off=0 means automap persists)
       } else if (ep.handler === 'activate') {
         if (!ep.flag()) continue;
         this.setAutomapRequest(ep.instant);
@@ -410,7 +420,11 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    */
   private setAutomapRequest(instant: boolean, forceInstant: boolean = false): void {
     if (instant || forceInstant) {
-      this._autoMapActive = true;
+      if (!this._autoMapActive) {
+        this._autoMapActive = true;
+        // VHDL: button_nmi cleared when automap_held becomes 1
+        this._nmiButtonPressed = false;
+      }
       this._requestAutomapOn = false;
     } else {
       this._requestAutomapOn = true;
@@ -442,8 +456,8 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this._nmiButtonPressed = false; // VHDL: button_nmi cleared by retn_seen
     this._autoMapActive = false;
     this._conmemActivated = false;
-    this._conmem = false;
-    this._portLastE3Value = this._portLastE3Value & 0x7f; // Clear bit 7 (conmem)
+    // Note: FPGA does NOT clear conmem or divmmc_reg on retn_seen.
+    // Only automap_hold, automap_held, and button_nmi are reset.
     this.machine.memoryDevice.updateFastPathFlags();
   }
 
@@ -453,6 +467,12 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    */
   private checkAndHandleRetn(): void {
     if (this.machine.retnExecuted) {
+      // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
+      // D6: When multiface was active, DivMMC does not see RETN.
+      if ((this.machine as any)._suppressDivMmcRetn) {
+        (this.machine as any)._suppressDivMmcRetn = false;
+        return;
+      }
       this.handleRetnExecution();
     }
   }
@@ -469,7 +489,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
-    const rom3Present = this.isRom3PagedIn();
+    const rom3Present = this.isRom3AutomapActive();
 
     // --- Check all entry points
     this.checkRstTraps(pc, rom3Present);
@@ -497,6 +517,8 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     if (this._requestAutomapOn) {
       this._autoMapActive = true;
       this._requestAutomapOn = false;
+      // VHDL: button_nmi cleared when automap_held becomes 1
+      this._nmiButtonPressed = false;
       this.machine.memoryDevice.updateFastPathFlags();
     } else if (this._requestAutomapOff) {
       this._autoMapActive = false;

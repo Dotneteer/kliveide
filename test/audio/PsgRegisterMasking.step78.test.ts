@@ -192,11 +192,11 @@ describe("Step 7: PsgChip Register Read Masking (Phase 7)", () => {
       ay = new PsgChip(0, "AY");
     });
 
-    it("should wrap register index to 0-15 and apply correct mask (AY)", () => {
-      // setPsgRegisterIndex already masks to 0x0f, so index 17 = 1 (mask 0x0f)
-      ay.setPsgRegisterIndex(17); // → stored as 1
-      ay.writePsgRegisterValue(0xff);
-      expect(ay.readPsgRegisterValue()).toBe(0x0f); // mask for reg 1
+    it("should store 5-bit register index and gate writes (AY)", () => {
+      // FPGA: 5-bit addr; writes gated by addr(4)='0'; AY reads use addr(3:0)
+      ay.setPsgRegisterIndex(17); // → stored as 17 (bit4=1)
+      ay.writePsgRegisterValue(0xff); // blocked: addr(4)=1
+      expect(ay.readPsgRegisterValue()).toBe(0x00); // reg 1 still 0 (write blocked)
     });
 
     it("should wrap register index to 0-15 and apply correct mask (YM)", () => {

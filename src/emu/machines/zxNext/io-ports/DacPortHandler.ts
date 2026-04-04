@@ -15,29 +15,33 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
  */
 
 export function writeDacAPort(machine: IZxNextMachine, value: number): void {
+  if (!machine.soundDevice.enable8BitDacs) return;
   machine.audioControlDevice.getDacDevice().setDacA(value);
 }
 
 export function writeDacBPort(machine: IZxNextMachine, value: number): void {
+  if (!machine.soundDevice.enable8BitDacs) return;
   machine.audioControlDevice.getDacDevice().setDacB(value);
 }
 
 export function writeDacCPort(machine: IZxNextMachine, value: number): void {
+  if (!machine.soundDevice.enable8BitDacs) return;
   machine.audioControlDevice.getDacDevice().setDacC(value);
 }
 
 export function writeDacDPort(machine: IZxNextMachine, value: number): void {
+  if (!machine.soundDevice.enable8BitDacs) return;
   machine.audioControlDevice.getDacDevice().setDacD(value);
 }
 
 export function writeDacAandDPort(machine: IZxNextMachine, value: number): void {
-  // Write the same value to both DAC A and DAC D (for SpecDrum mono playback)
+  if (!machine.soundDevice.enable8BitDacs) return;
   machine.audioControlDevice.getDacDevice().setDacA(value);
   machine.audioControlDevice.getDacDevice().setDacD(value);
 }
 
 export function writeDacBandCPort(machine: IZxNextMachine, value: number): void {
-  // Write the same value to both DAC B and DAC C (for stereo playback)
+  if (!machine.soundDevice.enable8BitDacs) return;
   machine.audioControlDevice.getDacDevice().setDacB(value);
   machine.audioControlDevice.getDacDevice().setDacC(value);
 }

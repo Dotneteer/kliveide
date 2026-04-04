@@ -134,6 +134,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /** Set to true when a stackless NMI was processed; cleared after RETN fixes PC. */
   private _stacklessNmiProcessed: boolean = false;
 
+  /** D6: When true, DivMMC should not process the current RETN (MF was active). */
+  _suppressDivMmcRetn: boolean = false;
+
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
@@ -312,6 +315,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._pendingMfNmi = false;
     this._pendingDivMmcNmi = false;
     this._stacklessNmiProcessed = false;
+    this._suppressDivMmcRetn = false;
     this.sigNMI = false;
     // --- Enable NMI buttons by default (emulator convenience; hardware default is 0,
     //     but the emulator wants F9/F10 to work without explicit NR06 configuration)
@@ -575,7 +579,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case "cycleCpuSpeed":
         if (this.nextRegDevice.hotkeyCpuSpeedEnabled) {
-          this.cpuSpeedDevice.nextReg07Value = (this.cpuSpeedDevice.nextReg07Value + 1) % 4;
+          this.cpuSpeedDevice.nextReg07Value = (this.cpuSpeedDevice.programmedSpeed + 1) & 0x03;
         }
         break;
 
@@ -809,18 +813,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // Get time-series sample arrays from both devices.
     // PSG chip 0 is always active on real ZX Next hardware (like the ZX 128K AY chip).
+    // PSG chip 0 is always active on real ZX Next hardware (like the ZX 128K AY chip).
     // "Enable TurboSound" (NR 0x08 bit 1) enables the multi-chip selection feature and
-    // stereo routing.  When disabled, chip 0 still runs as a standard mono AY for
-    // backward compatibility with ZX 128K software.
+    // stereo routing.  When disabled, only the selected chip outputs audio (gated inside
+    // TurboSoundDevice.setNextAudioSample per FPGA turbosound.vhd).
     const beeperSamples = this.beeperDevice.getAudioSamples();
-    const rawPsgSamples = turboSound.getAudioSamples();
-    const turboSoundSamples: AudioSample[] = this.soundDevice.enableTurbosound
-      ? rawPsgSamples
-      : rawPsgSamples.map(s => {
-          // Mono mode: combine left + right to get A+B+C on both channels
-          const mono = Math.min(196605, s.left + s.right);
-          return { left: mono, right: mono };
-        });
+    const turboSoundSamples = turboSound.getAudioSamples();
 
     // Both should have the same length, but handle mismatch gracefully
     const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);
@@ -836,11 +834,18 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }> = [];
 
     for (let i = 0; i < sampleCount; i++) {
-      // Get beeper sample (or 0 if out of range)
-      // Phase 4: Gate beeper through internal speaker enable (NR 0x08 bit 4)
-      const rawEarLevel = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
-      const earLevel = this.soundDevice.enableInternalSpeaker ? rawEarLevel : 0.0;
-      mixer.setEarLevel(earLevel);
+      // Get beeper samples (or 0 if out of range).
+      // BeeperDevice: left = EAR time-weighted [0,1], right = MIC time-weighted [0,1].
+      const rawEarSample = i < beeperSamples.length ? beeperSamples[i].left : 0.0;
+      const rawMicSample = i < beeperSamples.length ? beeperSamples[i].right : 0.0;
+      // FPGA: beep_spkr_excl = nr_06_internal_speaker_beep AND nr_08_internal_speaker_en.
+      // When excl=1: EAR and MIC are zeroed from the PCM/headphone mixer.
+      // nr_08_internal_speaker_en=0 only powers off the physical speaker transistor — the
+      // headphone/HDMI PCM output is unaffected.
+      const beepExcl = this.soundDevice.beepOnlyToInternalSpeaker
+                     && this.soundDevice.enableInternalSpeaker;
+      mixer.setEarLevel(beepExcl ? 0.0 : rawEarSample);
+      mixer.setMicLevel(beepExcl ? 0.0 : rawMicSample);
 
       // Get PSG sample (or 0 if out of range or disabled)
       const psgSample = i < turboSoundSamples.length ? turboSoundSamples[i] : { left: 0, right: 0 };
@@ -1031,11 +1036,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
    */
   protected override onRetnExecuted(): void {
-    if (this.multifaceDevice.nmiHold) {
-      // MF NMI is still in progress — RETN ends it regardless of whether memory is
-      // still mapped (the ROM pages itself out via port read before executing RETN).
-      this.multifaceDevice.handleRetn();
+    // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
+    // D6: Capture mf_is_active BEFORE clearing MF state. When MF was active,
+    // DivMMC should not see RETN.
+    const mfWasActive = this.multifaceDevice.isActive;
+
+    // FPGA: cpu_retn_seen unconditionally clears both nmi_active and mf_enable
+    // (D7: no guard on nmiHold — RETN always clears MF state)
+    this.multifaceDevice.handleRetn();
+
+    // D6: Suppress DivMMC RETN if multiface was active
+    if (mfWasActive) {
+      this._suppressDivMmcRetn = true;
     }
+
     if (this._stacklessNmiProcessed) {
       this._stacklessNmiProcessed = false;
       this.pc = this.interruptDevice.nmiReturnAddress;
@@ -1091,11 +1105,59 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
+   * Tests if the specified port address falls in a contended I/O address range.
+   * On ZX Spectrum Next, contention is only enabled at 3.5MHz (CPU speed 0) and when
+   * contention is not disabled via NR $08 bit 6. Address ranges match Spectrum 128:
+   * 0x4000-0x7FFF is always contended, and 0xC000-0xFFFF is contended when an odd-numbered
+   * bank (1,3,5,7) is paged in at bank 3.
+   */
+  protected isContendedIoAddress(address: number): boolean {
+    // Contention only applies at 3.5MHz (CPU speed 0)
+    if (this.cpuSpeedDevice.effectiveSpeed !== 0) {
+      return false;
+    }
+
+    // Contention can be disabled via NR $08 bit 6
+    if (this.nextRegDevice.disableRamPortContention) {
+      return false;
+    }
+
+    // Check address ranges: 0x4000-0x7fff is always contended,
+    // 0xc000-0xffff is contended when odd-numbered bank is paged in at bank 3
+    const page = address & 0xc000;
+    return page === 0x4000 || (page === 0xc000 && (this.selectedBank & 0x01) === 1);
+  }
+
+  /**
    * Delays the I/O access according to address bus contention
    * @param address Port address
    */
-  protected delayContendedIo(_address: number): void {
-    // TODO: Implement this
+  protected delayContendedIo(address: number): void {
+    const lowbit = (address & 0x0001) !== 0;
+
+    // --- Check for contended range using the polymorphic check
+    if (this.isContendedIoAddress(address)) {
+      if (lowbit) {
+        // --- Low bit set, C:1, C:1, C:1, C:1
+        this.tactPlusN(1);
+        this.tactPlusN(1);
+        this.tactPlusN(1);
+        this.tactPlusN(1);
+      } else {
+        // --- Low bit reset, C:1, C:3
+        this.tactPlusN(1);
+        this.tactPlusN(3);
+      }
+    } else {
+      if (lowbit) {
+        // --- Low bit set, N:4
+        this.tactPlusN(4);
+      } else {
+        // --- Low bit reset, C:1, C:3
+        this.tactPlusN(1);
+        this.tactPlusN(3);
+      }
+    }
   }
 
   /**

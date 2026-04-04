@@ -13,11 +13,13 @@ export class SpectrumBeeperDevice
 {
   private _earBit = false;
   private _micBit = false;
-  private _outputLevel = 0.0;
+  private _outputLevel = 0.0;  // Kept for backward-compat outputLevel getter
 
-  // --- Transition tracking for sample-accurate rendering (Phase 2)
+  // --- Separate EAR and MIC transition tracking (FPGA model: independent binary signals)
+  // left channel = EAR (time-weighted), right channel = MIC (time-weighted)
   private _lastLevelChangeTact = 0;
-  private _accumulatedLevel = 0;
+  private _accumulatedEar = 0;
+  private _accumulatedMic = 0;
   private _accumulatedTacts = 0;
 
   constructor(public readonly machine: IZxSpectrumMachine | IZxNextMachine) {
@@ -60,47 +62,44 @@ export class SpectrumBeeperDevice
    * @param micBit MIC output (bit 3 of port 0xFE)
    */
   setOutputLevel(earBit: boolean, micBit: boolean): void {
-    const newLevel = BEEPER_LEVELS[(micBit ? 1 : 0) | (earBit ? 2 : 0)];
-    if (newLevel !== this._outputLevel) {
-      // --- Record transition for weighted averaging (Phase 2)
+    this._outputLevel = BEEPER_LEVELS[(micBit ? 1 : 0) | (earBit ? 2 : 0)]; // backward compat
+    // Track EAR and MIC bits independently for FPGA-accurate 4:1 amplitude ratio
+    if (earBit !== this._earBit || micBit !== this._micBit) {
       const currentTact = this.machine.tacts;
       const duration = currentTact - this._lastLevelChangeTact;
       if (duration > 0) {
-        this._accumulatedLevel += this._outputLevel * duration;
+        this._accumulatedEar += (this._earBit ? 1.0 : 0.0) * duration;
+        this._accumulatedMic += (this._micBit ? 1.0 : 0.0) * duration;
         this._accumulatedTacts += duration;
       }
       this._lastLevelChangeTact = currentTact;
     }
     this._earBit = earBit;
     this._micBit = micBit;
-    this._outputLevel = newLevel;
   }
 
   /**
    * Gets the current sound sample using transition-weighted averaging.
-   * If the level changed multiple times during the current sample period,
-   * the output is the time-weighted average of all levels held during that period.
+   * Returns { left: earTimeWeight, right: micTimeWeight } both in [0,1].
+   * FPGA model: EAR and MIC are independent binary signals (ratio 4:1 in mixer).
+   * ZxNextMachine.getAudioSamples() routes left→EAR input, right→MIC input of the mixer.
    */
   getCurrentSampleValue(): AudioSample {
-    let value: number;
-
+    const currentTact = this.machine.tacts;
     if (this._accumulatedTacts > 0) {
-      // --- Include the final segment up to current tact
-      const currentTact = this.machine.tacts;
       const finalDuration = currentTact - this._lastLevelChangeTact;
-      const totalLevel = this._accumulatedLevel + this._outputLevel * finalDuration;
+      const totalEar = this._accumulatedEar + (this._earBit ? 1.0 : 0.0) * finalDuration;
+      const totalMic = this._accumulatedMic + (this._micBit ? 1.0 : 0.0) * finalDuration;
       const totalTacts = this._accumulatedTacts + finalDuration;
-      value = totalLevel / totalTacts;
-
-      // --- Reset accumulators for the next sample period
-      this._accumulatedLevel = 0;
+      // Reset accumulators for the next sample period
+      this._accumulatedEar = 0;
+      this._accumulatedMic = 0;
       this._accumulatedTacts = 0;
       this._lastLevelChangeTact = currentTact;
+      return { left: totalEar / totalTacts, right: totalMic / totalTacts };
     } else {
-      value = this._outputLevel;
+      return { left: this._earBit ? 1.0 : 0.0, right: this._micBit ? 1.0 : 0.0 };
     }
-
-    return { left: value, right: value };
   }
 
   /**
@@ -108,7 +107,8 @@ export class SpectrumBeeperDevice
    */
   reset(): void {
     super.reset();
-    this._accumulatedLevel = 0;
+    this._accumulatedEar = 0;
+    this._accumulatedMic = 0;
     this._accumulatedTacts = 0;
     this._lastLevelChangeTact = 0;
   }
@@ -118,7 +118,8 @@ export class SpectrumBeeperDevice
    */
   onNewFrame(): void {
     super.onNewFrame();
-    this._accumulatedLevel = 0;
+    this._accumulatedEar = 0;
+    this._accumulatedMic = 0;
     this._accumulatedTacts = 0;
     this._lastLevelChangeTact = this.machine.tacts;
   }

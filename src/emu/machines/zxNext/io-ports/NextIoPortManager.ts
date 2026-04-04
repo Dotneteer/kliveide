@@ -134,7 +134,7 @@ export class NextIoPortManager {
       port: 0xeff7,
       pmask: 0b1111_0000_1111_1111,
       value: 0b1110_0000_1111_0111,
-      writerFns: () => {}
+      writerFns: (_, v) => { machine.memoryDevice.portEff7Value = v & 0x0c; }
     });
     r({
       description: "NextREG Register Select",
@@ -281,81 +281,110 @@ export class NextIoPortManager {
       writerFns: (_, v) => writeAyDatPort(machine, v)
     });
     r({
-      description: "DAC A",
+      description: "DAC A (SD1)",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
-      value: 0b1000_0000_0001_1111,
-      writerFns: (_, v) => writeDacAPort(machine, v)
+      value: 0b0000_0000_0001_1111,
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode1Enabled) writeDacAPort(machine, v);
+      }
     });
     r({
-      description: "DAC A",
+      description: "DAC A (SD2)",
       port: 0xf1,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0001,
-      writerFns: (_, v) => writeDacAPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode2Enabled) writeDacAPort(machine, v);
+      }
     });
     r({
-      description: "DAC A",
+      description: "DAC A+D (Profi Covox)",
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
-      writerFns: (_, v) => writeDacAPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacStereoProfiCovoxEnabled) writeDacAandDPort(machine, v);
+      }
     });
     r({
-      description: "DAC B",
+      description: "DAC B (SD1/Covox)",
       port: 0x0f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0000_1111,
-      writerFns: (_, v) => writeDacBPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode1Enabled || machine.nextRegDevice.portDacStereoCovoxEnabled)
+          writeDacBPort(machine, v);
+      }
     });
     r({
-      description: "DAC B",
+      description: "DAC B (SD2)",
       port: 0xf3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0011,
-      writerFns: (_, v) => writeDacBPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode2Enabled) writeDacBPort(machine, v);
+      }
     });
     r({
-      description: "DAC A,D",
+      description: "DAC A+D (SpecDrum)",
       port: 0xdf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
-      writerFns: (_, v) => writeDacAandDPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMonoSpecdrumEnabled) writeDacAandDPort(machine, v);
+      }
     });
     r({
-      description: "DAC A,D",
+      description: "DAC D/A+D (SD2/Pentagon)",
       port: 0xfb,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1011,
-      writerFns: (_, v) => writeDacAandDPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode2Enabled) {
+          writeDacDPort(machine, v);
+        } else if (machine.nextRegDevice.portDacMonoPentagonEnabled) {
+          writeDacAandDPort(machine, v);
+        }
+      }
     });
     r({
-      description: "DAC B,C",
+      description: "DAC B+C (GS Covox)",
       port: 0xb3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1011_0011,
-      writerFns: (_, v) => writeDacBandCPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMonoGsCovoxEnabled) writeDacBandCPort(machine, v);
+      }
     });
     r({
-      description: "DAC C",
+      description: "DAC C (SD1/Covox)",
       port: 0x4f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0100_1111,
-      writerFns: (_, v) => writeDacCPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode1Enabled || machine.nextRegDevice.portDacStereoCovoxEnabled)
+          writeDacCPort(machine, v);
+      }
     });
     r({
-      description: "DAC C",
+      description: "DAC C (SD2)",
       port: 0xf9,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1001,
-      writerFns: (_, v) => writeDacCPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode2Enabled) writeDacCPort(machine, v);
+      }
     });
     r({
-      description: "DAC D",
+      description: "DAC D (SD1/Profi Covox)",
       port: 0x5f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1111,
-      writerFns: (_, v) => writeDacDPort(machine, v)
+      writerFns: (_, v) => {
+        if (machine.nextRegDevice.portDacMode1Enabled || machine.nextRegDevice.portDacStereoProfiCovoxEnabled)
+          writeDacDPort(machine, v);
+      }
     });
     r({
       description: "SPI CS",
@@ -413,27 +442,6 @@ export class NextIoPortManager {
       readerFns: readKempstonMouseYPort
     });
     r({
-      description: "Kempston joy 1",
-      port: 0x1f,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_0001_1111,
-      readerFns: readKempstonJoy1Port
-    });
-    r({
-      description: "Kempston joy 1 alias",
-      port: 0xdf,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_1101_1111,
-      readerFns: readKempstonJoy1AliasPort
-    });
-    r({
-      description: "Kempston joy 2",
-      port: 0x37,
-      pmask: 0b0000_0000_1111_1111,
-      value: 0b0000_0000_0011_0111,
-      readerFns: readKempstonJoy2Port
-    });
-    r({
       description: "Multiface port 0x1F",
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
@@ -464,6 +472,27 @@ export class NextIoPortManager {
       value: 0b0000_0000_1011_1111,
       readerFns: (p) => readMultifacePort(p, machine),
       writerFns: (p, v) => writeMultifacePort(p, v, machine)
+    });
+    r({
+      description: "Kempston joy 1",
+      port: 0x1f,
+      pmask: 0b0000_0000_1111_1111,
+      value: 0b0000_0000_0001_1111,
+      readerFns: readKempstonJoy1Port
+    });
+    r({
+      description: "Kempston joy 1 alias",
+      port: 0xdf,
+      pmask: 0b0000_0000_1111_1111,
+      value: 0b0000_0000_1101_1111,
+      readerFns: readKempstonJoy1AliasPort
+    });
+    r({
+      description: "Kempston joy 2",
+      port: 0x37,
+      pmask: 0b0000_0000_1111_1111,
+      value: 0b0000_0000_0011_0111,
+      readerFns: readKempstonJoy2Port
     });
     r({
       description: "Sprite slot, flags",
@@ -549,21 +578,25 @@ export class NextIoPortManager {
         let mapping = this.portMap.get(i);
         if (mapping) {
           mapping = { ...mapping };
-          if (mapping.readerFns) {
-            const readerFnsArray = Array.isArray(readerFns) ? readerFns : [readerFns];
-            mapping.readerFns = Array.isArray(mapping.readerFns)
-              ? [...mapping.readerFns, ...readerFnsArray]
-              : [mapping.readerFns, ...readerFnsArray];
-          } else {
-            mapping.readerFns = readerFns;
+          if (readerFns) {
+            if (mapping.readerFns) {
+              const readerFnsArray = Array.isArray(readerFns) ? readerFns : [readerFns];
+              mapping.readerFns = Array.isArray(mapping.readerFns)
+                ? [...mapping.readerFns, ...readerFnsArray]
+                : [mapping.readerFns, ...readerFnsArray];
+            } else {
+              mapping.readerFns = readerFns;
+            }
           }
-          if (mapping.writerFns) {
-            const writerFnsArray = Array.isArray(writerFns) ? writerFns : [writerFns];
-            mapping.writerFns = Array.isArray(mapping.writerFns)
-              ? [...mapping.writerFns, ...writerFnsArray]
-              : [mapping.writerFns, ...writerFnsArray];
-          } else {
-            mapping.writerFns = writerFns;
+          if (writerFns) {
+            if (mapping.writerFns) {
+              const writerFnsArray = Array.isArray(writerFns) ? writerFns : [writerFns];
+              mapping.writerFns = Array.isArray(mapping.writerFns)
+                ? [...mapping.writerFns, ...writerFnsArray]
+                : [mapping.writerFns, ...writerFnsArray];
+            } else {
+              mapping.writerFns = writerFns;
+            }
           }
           this.portMap.set(i, mapping);
           this.portCollisions.set(i, [...this.portCollisions.get(i)!, description]);

@@ -69,16 +69,18 @@ export class PsgChip {
     0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff
   ];
 
-  // --- AY-3-8910 volume table (MAME ay8910.cpp resistor-network model, normalized to 0-65535)
+  // --- AY-3-8910 volume table (FPGA ym2149.vhd hardware-measured from real chip, normalized to 0-65535)
   private static readonly AY_VOLUME_TABLE: readonly number[] = [
-    0, 890, 1158, 1512, 2059, 2856, 3833, 6238,
-    7696, 12607, 17452, 23178, 30968, 39233, 51935, 65535
+    0, 771, 1028, 1542, 2570, 3855, 5397, 8738,
+    10280, 16705, 23387, 29298, 37008, 46517, 55255, 65535
   ];
 
-  // --- YM2149 volume table (MAME ay8910.cpp resistor-network model, normalized to 0-65535)
+  // --- YM2149 volume table (FPGA ym2149.vhd hardware-measured, 32 entries, normalized to 0-65535)
   private static readonly YM_VOLUME_TABLE: readonly number[] = [
-    0, 436, 762, 1099, 1638, 2217, 3221, 4329,
-    6266, 8473, 12221, 16447, 23948, 32562, 47873, 65535
+    0, 257, 257, 514, 514, 771, 771, 1028,
+    1542, 1799, 2313, 2570, 3084, 3598, 4369, 4883,
+    5911, 6939, 8224, 9509, 11308, 13621, 15934, 18247,
+    21588, 26214, 30583, 34952, 41377, 49344, 57568, 65535
   ];
 
   // --- The last register index set
@@ -204,13 +206,13 @@ export class PsgChip {
       this._regValues[i] = 0;
     }
     
-    // --- Initialize mixer register to 0x00 (all channels enabled), matching MAME ay8910_reset_ym()
-    this._regValues[7] = 0x00;
+    // --- Initialize mixer register to 0xFF (all channels disabled), matching FPGA ym2149.vhd reset
+    this._regValues[7] = 0xff;
 
     // --- Channel A setup
     this._toneA = 0;
-    this._toneAEnabled = true;
-    this._noiseAEnabled = true;
+    this._toneAEnabled = false;
+    this._noiseAEnabled = false;
     this._volA = 0;
     this._envA = false;
     this._cntA = 0;
@@ -218,8 +220,8 @@ export class PsgChip {
 
     // --- Channel B setup
     this._toneB = 0;
-    this._toneBEnabled = true;
-    this._noiseBEnabled = true;
+    this._toneBEnabled = false;
+    this._noiseBEnabled = false;
     this._volB = 0;
     this._envB = false;
     this._cntB = 0;
@@ -227,8 +229,8 @@ export class PsgChip {
 
     // --- Channel C setup
     this._toneC = 0;
-    this._toneCEnabled = true;
-    this._noiseCEnabled = true;
+    this._toneCEnabled = false;
+    this._noiseCEnabled = false;
     this._volC = 0;
     this._envC = false;
     this._cntC = 0;
@@ -436,7 +438,7 @@ export class PsgChip {
    * @param index PSG register index (0-15)
    */
   setPsgRegisterIndex (index: number): void {
-    this._psgRegisterIndex = index & 0x0f;
+    this._psgRegisterIndex = index & 0x1f; // 5-bit address (FPGA ym2149.vhd)
   }
 
   /**
@@ -450,9 +452,14 @@ export class PsgChip {
    * Reads the value of the register addressed by the register index last set
    */
   readPsgRegisterValue (): number {
-    const raw = this._regValues[this._psgRegisterIndex & 0x0f];
+    // FPGA ym2149.vhd: addr(4)='1' and YM mode → return 0xFF
+    if ((this._psgRegisterIndex & 0x10) !== 0 && this.chipType === 'YM') {
+      return 0xff;
+    }
+    const regIdx = this._psgRegisterIndex & 0x0f;
+    const raw = this._regValues[regIdx];
     return this.chipType === 'AY'
-      ? raw & PsgChip.AY_READ_MASKS[this._psgRegisterIndex]
+      ? raw & PsgChip.AY_READ_MASKS[regIdx]
       : raw;
   }
 
@@ -461,6 +468,9 @@ export class PsgChip {
    * @param v Parameter value
    */
   writePsgRegisterValue (v: number): void {
+    // FPGA ym2149.vhd: writes gated by addr(4)='0'
+    if ((this._psgRegisterIndex & 0x10) !== 0) return;
+
     // --- Normalize to a byte
     v = v & 0xff;
 
@@ -624,7 +634,7 @@ export class PsgChip {
       }
     }
 
-    // --- Calculate channel volumes using hardware-accurate MAME mixer logic.
+    // --- Calculate channel volumes using hardware-accurate mixer logic.
     // Hardware formula: vol_enabled = (tone_output | tone_disable) & (noise_output | noise_disable)
     // A disabled channel input acts as bypass (always HIGH = 1), enabling DC-level output.
     // Both disabled + non-zero volume = constant DC amplitude (used for digi-drum volume modulation).
@@ -632,18 +642,24 @@ export class PsgChip {
     let volB = 0;
     let volC = 0;
 
-    // AY: envelope table stores values 0-15, index directly with (vol & 0x0f).
-    // YM: envelope table stores values 0-31, map to 16-entry table with (vol & 0x1f) >> 1.
-    // Non-envelope path (_volX * 2 + 1) always maps 0-15 → valid range, so >>1 is used for both.
-    const envOK = this.chipType === 'AY';
+    // FPGA ym2149.vhd volume indexing:
+    // AY mode: 16-entry table, indexed by A(4 downto 1) = upper 4 bits of 5-bit value.
+    // YM mode: 32-entry table, indexed by full 5-bit value.
+    // Fixed volume: FPGA uses "00000" for vol=0, reg(8)(3:0)&"1" (= vol*2+1) for vol=1..15.
+    const isYM = this.chipType === 'YM';
 
     // --- Channel A
     {
-      const tmpVolA = this._envA
-        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
-        : this._volA * 2 + 1;
-      const envIdxA = this._envA ? (envOK ? (tmpVolA & 0x0f) : ((tmpVolA & 0x1f) >> 1)) : ((tmpVolA & 0x1f) >> 1);
-      const amplitudeA = this._psgVolumeTable[envIdxA];
+      let idxA: number;
+      if (this._envA) {
+        const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+        idxA = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
+      } else {
+        idxA = isYM
+          ? (this._volA === 0 ? 0 : this._volA * 2 + 1)
+          : this._volA;
+      }
+      const amplitudeA = this._psgVolumeTable[idxA];
       const toneBitA = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
       const noiseBitA = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
       volA = (toneBitA & noiseBitA) ? amplitudeA : 0;
@@ -652,11 +668,16 @@ export class PsgChip {
 
     // --- Channel B
     {
-      const tmpVolB = this._envB
-        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
-        : this._volB * 2 + 1;
-      const envIdxB = this._envB ? (envOK ? (tmpVolB & 0x0f) : ((tmpVolB & 0x1f) >> 1)) : ((tmpVolB & 0x1f) >> 1);
-      const amplitudeB = this._psgVolumeTable[envIdxB];
+      let idxB: number;
+      if (this._envB) {
+        const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+        idxB = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
+      } else {
+        idxB = isYM
+          ? (this._volB === 0 ? 0 : this._volB * 2 + 1)
+          : this._volB;
+      }
+      const amplitudeB = this._psgVolumeTable[idxB];
       const toneBitB = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
       const noiseBitB = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
       volB = (toneBitB & noiseBitB) ? amplitudeB : 0;
@@ -665,11 +686,16 @@ export class PsgChip {
 
     // --- Channel C
     {
-      const tmpVolC = this._envC
-        ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
-        : this._volC * 2 + 1;
-      const envIdxC = this._envC ? (envOK ? (tmpVolC & 0x0f) : ((tmpVolC & 0x1f) >> 1)) : ((tmpVolC & 0x1f) >> 1);
-      const amplitudeC = this._psgVolumeTable[envIdxC];
+      let idxC: number;
+      if (this._envC) {
+        const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+        idxC = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
+      } else {
+        idxC = isYM
+          ? (this._volC === 0 ? 0 : this._volC * 2 + 1)
+          : this._volC;
+      }
+      const amplitudeC = this._psgVolumeTable[idxC];
       const toneBitC = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
       const noiseBitC = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;
       volC = (toneBitC & noiseBitC) ? amplitudeC : 0;
@@ -694,12 +720,16 @@ export class PsgChip {
    * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelAVolume (): number {
-    const tmpVol = this._envA
-      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
-      : this._volA * 2 + 1;
-    const idx = this._envA
-      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
-      : ((tmpVol & 0x1f) >> 1);
+    const isYM = this.chipType === 'YM';
+    let idx: number;
+    if (this._envA) {
+      const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      idx = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
+    } else {
+      idx = isYM
+        ? (this._volA === 0 ? 0 : this._volA * 2 + 1)
+        : this._volA;
+    }
     const amplitude = this._psgVolumeTable[idx];
     const toneBit = this._toneAEnabled ? (this._bitA ? 1 : 0) : 1;
     const noiseBit = this._noiseAEnabled ? (this._bitNoise ? 1 : 0) : 1;
@@ -711,12 +741,16 @@ export class PsgChip {
    * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelBVolume (): number {
-    const tmpVol = this._envB
-      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
-      : this._volB * 2 + 1;
-    const idx = this._envB
-      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
-      : ((tmpVol & 0x1f) >> 1);
+    const isYM = this.chipType === 'YM';
+    let idx: number;
+    if (this._envB) {
+      const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      idx = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
+    } else {
+      idx = isYM
+        ? (this._volB === 0 ? 0 : this._volB * 2 + 1)
+        : this._volB;
+    }
     const amplitude = this._psgVolumeTable[idx];
     const toneBit = this._toneBEnabled ? (this._bitB ? 1 : 0) : 1;
     const noiseBit = this._noiseBEnabled ? (this._bitNoise ? 1 : 0) : 1;
@@ -728,12 +762,16 @@ export class PsgChip {
    * Uses hardware-accurate MAME mixer logic consistent with generateOutputValue().
    */
   getChannelCVolume (): number {
-    const tmpVol = this._envC
-      ? this._psgEnvelopes[this._envStyle * 128 + this._posEnv]
-      : this._volC * 2 + 1;
-    const idx = this._envC
-      ? (this.chipType === 'AY' ? (tmpVol & 0x0f) : ((tmpVol & 0x1f) >> 1))
-      : ((tmpVol & 0x1f) >> 1);
+    const isYM = this.chipType === 'YM';
+    let idx: number;
+    if (this._envC) {
+      const envVal = this._psgEnvelopes[this._envStyle * 128 + this._posEnv];
+      idx = isYM ? (envVal & 0x1f) : (envVal & 0x0f);
+    } else {
+      idx = isYM
+        ? (this._volC === 0 ? 0 : this._volC * 2 + 1)
+        : this._volC;
+    }
     const amplitude = this._psgVolumeTable[idx];
     const toneBit = this._toneCEnabled ? (this._bitC ? 1 : 0) : 1;
     const noiseBit = this._noiseCEnabled ? (this._bitNoise ? 1 : 0) : 1;

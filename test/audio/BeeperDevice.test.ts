@@ -62,7 +62,8 @@ describe("SpectrumBeeperDevice", () => {
 
       // DC filter means the first sample won't be exactly 1.0, but should be > 0
       expect(beeper.getAudioSamples()[0].left).toBeGreaterThan(0);
-      expect(beeper.getAudioSamples()[0].right).toBeGreaterThan(0);
+      // MIC is off (default micBit=false), so right channel should be silent
+      expect(beeper.getAudioSamples()[0].right).toBe(0.0);
     });
 
     it("should generate 0.0 sample when EAR bit is false", () => {
@@ -285,7 +286,8 @@ describe("SpectrumBeeperDevice", () => {
       expect(beeper.getAudioSamples().length).toBe(10);
       // DC filter: positive but not exactly 1.0
       expect(beeper.getAudioSamples()[0].left).toBeGreaterThan(0);
-      expect(beeper.getAudioSamples()[0].right).toBeGreaterThan(0);
+      // MIC is off — right channel is silent
+      expect(beeper.getAudioSamples()[0].right).toBe(0.0);
     });
 
     it("should work at 22.05kHz", () => {
@@ -419,10 +421,11 @@ describe("SpectrumBeeperDevice", () => {
       }
 
       const samples = beeper.getAudioSamples();
-      // DC filter: all samples should be positive (> 0) for constant HIGH
+      // DC filter: all samples should be positive (> 0) for constant HIGH on EAR
       for (const sample of samples) {
         expect(sample.left).toBeGreaterThan(0);
-        expect(sample.right).toBeGreaterThan(0);
+        // MIC is off (default), so right channel stays silent
+        expect(sample.right).toBe(0.0);
       }
     });
   });
@@ -449,7 +452,8 @@ describe("SpectrumBeeperDevice", () => {
       for (const s of samples) {
         expect(s.left).toBeGreaterThan(0);
       }
-      expect(samples.map(s => s.right.toFixed(4))).toEqual(samples.map(s => s.left.toFixed(4)));
+      // left=EAR channel, right=MIC channel — they differ when only EAR is on
+      expect(samples.every(s => s.right === 0.0)).toBe(true);
     });
 
     it("should support inheritance method chain", () => {

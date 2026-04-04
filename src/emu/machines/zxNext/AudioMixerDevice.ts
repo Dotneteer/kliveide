@@ -131,11 +131,13 @@ export class AudioMixerDevice {
   }
 
   /**
-   * Set MIC input level
-   * @param level 1 for MIC active (128), 0 for inactive
+   * Set MIC input level.
+   * @param level DC-filtered MIC sample in [-1.0, +1.0] (from BeeperDevice right channel).
+   * Converts to internal amplitude: Math.round(level * 128).
+   * Backward-compatible: setMicLevel(0) → 0, setMicLevel(1) → 128.
    */
   setMicLevel(level: number): void {
-    this.micLevel = level ? 128 : 0;
+    this.micLevel = Math.round(level * 128);
   }
 
   /**
@@ -231,21 +233,17 @@ export class AudioMixerDevice {
     let mixedLeft = 0;
     let mixedRight = 0;
 
-    // Add EAR (Beeper): -512 to +512 (AC signal, already DC-filtered by BeeperDevice).
+    // Add EAR (Beeper): DC-filtered, range ±512 (AC signal centered at 0).
     // Scale by 12 to match 48K beeper loudness in the mix.
-    // No additional AC coupling needed — the signal is already centered at zero.
-    const beeperScaled = this.earLevel * 12;  // -6144 to +6144
+    const beeperScaled = this.earLevel * 12;  // ±6144
     mixedLeft += beeperScaled;
     mixedRight += beeperScaled;
 
-    // Add MIC: 0 or 128
-    // Only AC-couple when active (non-zero)
-    if (this.micLevel > 0) {
-      // AC coupling: remove DC bias (midpoint of 0-128 range is 64)
-      const micAC = this.micLevel - 64;  // becomes +64 when ON
-      mixedLeft += micAC;
-      mixedRight += micAC;
-    }
+    // Add MIC: DC-filtered AC signal, range ±128 (from BeeperDevice right channel).
+    // Same ×12 loudness boost preserves FPGA EAR:MIC amplitude ratio of 4:1.
+    const micScaled = this.micLevel * 12;   // ±1536
+    mixedLeft += micScaled;
+    mixedRight += micScaled;
 
     // Add PSG output (unsigned 0-196605 per stereo channel).
     // Scale down from software range to mixer range (÷24 gives ≤ 8192 for mono, ≤ 4095 for Phase-6 stereo).
@@ -262,13 +260,12 @@ export class AudioMixerDevice {
     mixedLeft  += psgLeftScaled  - midpoint;
     mixedRight += psgRightScaled - midpoint;
 
-    // Add DAC output (already signed, centered around 0)
-    // DAC outputs signed 16-bit values: -65536 to +65024 per channel (two channels per side)
-    // Hardware DAC range is 0-2040 (unsigned), so we need to scale down
-    // Scale factor: 65024 / 1020 ≈ 64 (to match hardware proportions)
+    // Add DAC output (unsigned 0-510 per side, matching FPGA soundrive.vhd)
+    // FPGA mixer (audio_mixer.vhd): dac_L <= "00" & dac_L_i & "00"  (×4, 0-2040)
+    // AC coupling: subtract midpoint (center = 0x80+0x80 = 256, ×4 = 1024)
     const dacOutput = this.dac.getStereoOutput();
-    const dacLeftScaled = Math.floor(dacOutput.left / 64);  // -1024 to +1016
-    const dacRightScaled = Math.floor(dacOutput.right / 64);
+    const dacLeftScaled = (dacOutput.left << 2) - 1024;   // -1024 to +1016
+    const dacRightScaled = (dacOutput.right << 2) - 1024;
     mixedLeft += dacLeftScaled;
     mixedRight += dacRightScaled;
 

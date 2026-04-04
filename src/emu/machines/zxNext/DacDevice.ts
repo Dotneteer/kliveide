@@ -151,30 +151,18 @@ export class DacDevice {
    * Left = DAC A + DAC B
    * Right = DAC C + DAC D
    * 
-   * DAC values are converted from 8-bit unsigned (0x00-0xFF)
-   * to 16-bit signed values by treating them as signed bytes (-128 to +127)
-   * and scaling by 256
+   * FPGA-accurate unsigned addition (soundrive.vhd lines 108-115):
+   *   pcm_L_o <= ('0' & chA) + ('0' & chB);  -- 9-bit unsigned: 0 to 510
+   *   pcm_R_o <= ('0' & chC) + ('0' & chD);  -- 9-bit unsigned: 0 to 510
    * 
-   * @returns AudioSample with left/right stereo values
+   * Center value per channel is 0x80 (128), so center output per side is 256.
+   * 
+   * @returns AudioSample with left/right unsigned values (0-510)
    */
   getStereoOutput(): AudioSample {
-    // Convert 8-bit unsigned to signed byte value (-128 to +127)
-    // 0x80 (128) maps to 0 (center/silence)
-    // 0x00 (0) maps to -128 (minimum)
-    // 0xFF (255) maps to +127 (maximum)
-    const toSignedByte = (val: number) => {
-      return val - 128;
-    };
-
-    // Convert to 16-bit by multiplying by 256
-    const dacA = toSignedByte(this._dacChannels[0]) * 256;
-    const dacB = toSignedByte(this._dacChannels[1]) * 256;
-    const dacC = toSignedByte(this._dacChannels[2]) * 256;
-    const dacD = toSignedByte(this._dacChannels[3]) * 256;
-
     return {
-      left: dacA + dacB,
-      right: dacC + dacD,
+      left: this._dacChannels[0] + this._dacChannels[1],   // 0-510 unsigned
+      right: this._dacChannels[2] + this._dacChannels[3],  // 0-510 unsigned
     };
   }
 

@@ -20,24 +20,24 @@ export function writeAyRegPort(machine: IZxNextMachine, value: number): void {
   // Mask: 0b10011100 = 0x9C (bits 7,4,3,2)
   // Value: 0b10011100 = 0x9C (all must be 1)
   if ((value & 0x9c) === 0x9c) {
-    // This is a TurboSound chip selection command
-    const chipSelect = value & 0x03; // Bits 1:0 - chip ID
-    const panControl = (value >> 5) & 0x03; // Bits 6:5 - panning
+    // FPGA turbosound.vhd: chip select gated by turbosound_en_i='1'
+    if (machine.soundDevice.enableTurbosound) {
+      const chipSelect = value & 0x03; // Bits 1:0 - chip ID
+      const panControl = (value >> 5) & 0x03; // Bits 6:5 - panning
 
-    // Convert chip select bits to chip ID:
-    // 00 = reserved
-    // 01 = chip 2
-    // 10 = chip 1
-    // 11 = chip 0
-    if (chipSelect !== 0b00) {
-      const chipId = 2 - (chipSelect - 1); // 01->2, 10->1, 11->0
+      // Convert chip select bits to chip ID (FPGA turbosound.vhd):
+      // "10" → psg1, "01" → psg2, others ("11" or "00") → psg0
+      let chipId: number;
+      if (chipSelect === 0x02) chipId = 1;
+      else if (chipSelect === 0x01) chipId = 2;
+      else chipId = 0; // "11" or "00" → chip 0
       machine.audioControlDevice.getTurboSoundDevice().selectChip(chipId);
       machine.audioControlDevice.getTurboSoundDevice().setChipPanning(chipId, panControl);
     }
-  } else {
-    // This is a standard AY register select command
-    // Extract register index from bits 4:0 (hardware uses I_DA(4 downto 0))
+  } else if ((value & 0xe0) === 0) {
+    // Register selection: FPGA turbosound.vhd only forwards when bits 7:5 = "000"
     const registerIndex = value & 0x1f; // Bits 4:0 - register index
     machine.audioControlDevice.getTurboSoundDevice().selectRegister(registerIndex);
   }
+  // Other bit patterns (e.g. 0x40, 0x60, 0xA0): ignored by FPGA
 }

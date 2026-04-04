@@ -316,9 +316,9 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setPsgOutput({ left: 0, right: 0 });
 
       const output1 = mixer.getMixedOutput();
-      // Beeper(256*12=3072) + MIC(+64) = 3136, * 5.5 = 17248, normalized: 0.526
-      expect(output1.left).toBeCloseTo(0.526, 2);
-      expect(output1.right).toBeCloseTo(0.526, 2);
+      // Beeper(256*12=3072) + MIC(128*12=1536) = 4608, * 5.5 = 25344, normalized: 0.774
+      expect(output1.left).toBeCloseTo(0.774, 2);
+      expect(output1.right).toBeCloseTo(0.774, 2);
 
       // Disable MIC
       mixer.setMicLevel(0);

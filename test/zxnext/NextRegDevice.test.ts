@@ -19,7 +19,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x03)).toBe(0x03);
     expect(d.directGetRegValue(0x04)).toBe(0x03);
     expect(d.directGetRegValue(0x05)).toBe(0x41);
-    expect(d.directGetRegValue(0x06)).toBe(0x00);
+    expect(d.directGetRegValue(0x06)).toBe(0x80); // --- Hotkey CPU speed enabled on hard reset
     expect(d.directGetRegValue(0x07)).toBe(0x00);
     expect(d.directGetRegValue(0x08)).toBe(0x1a);
     expect(d.directGetRegValue(0x09)).toBe(0x00);
@@ -1571,10 +1571,10 @@ describe("Next - NextRegDevice", function () {
   });
 
   it("Reg $28 read returns last stored palette value", async () => {
-    // --- Arrange
+    // --- Arrange: NR 0x44 first-byte write sets storedPaletteValue (NR 0x41 does not)
     const m = await createTestNextMachine();
     writeNextReg(m, 0x40, 0x20);
-    writeNextReg(m, 0x41, 0x5a);
+    writeNextReg(m, 0x44, 0x5a); // first byte of 9-bit write → storedPaletteValue = 0x5a
 
     // --- Assert
     expect(readNextReg(m, 0x28)).toBe(0x5a);
@@ -3217,3 +3217,59 @@ function readNextReg(m: IZxNextMachine, reg: number): number {
   m.nextRegDevice.setNextRegisterIndex(reg);
   return m.nextRegDevice.getNextRegisterValue();
 }
+
+// ===========================================================================
+// D2 — nr02ResetType shift register
+// ===========================================================================
+describe("D2: nr02ResetType shift register", () => {
+  it("hardReset initializes nr02ResetType to 0b100", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b100);
+  });
+
+  it("1st soft reset shifts 0b100 → 0b010", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b100);
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b010);
+  });
+
+  it("2nd soft reset shifts 0b010 → 0b001", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+  });
+
+  it("3rd soft reset stays at 0b001 (bit 0 is sticky)", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+  });
+
+  it("4th+ soft reset stays at 0b001", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+  });
+
+  it("hardReset after soft resets re-initializes to 0b100", async () => {
+    const m = await createTestNextMachine();
+    m.nextRegDevice.hardReset();
+    m.nextRegDevice.reset();
+    m.nextRegDevice.reset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b001);
+    m.nextRegDevice.hardReset();
+    expect(m.nextRegDevice.nr02ResetType).toBe(0b100);
+  });
+});

@@ -1355,3 +1355,63 @@ describe("DmaDevice - Step 4: Register Write Sequencing (WR3-WR5)", () => {
   });
 });
 
+// ===========================================================================
+// D4 — DMA SPI Wait Cycles
+// ===========================================================================
+describe("D4: DMA SPI wait cycles on port 0xEB", () => {
+  let machine: TestZxNextMachine;
+  let dmaDevice: DmaDevice;
+
+  beforeEach(() => {
+    machine = new TestZxNextMachine();
+    dmaDevice = machine.dmaDevice;
+  });
+
+  it("I/O read from port 0xEB adds 16 SPI wait cycles", () => {
+    // Configure port A as I/O
+    dmaDevice.writeWR1(0x08); // D3=1 → Port A is I/O
+    // Set port A address to 0xEB
+    (dmaDevice as any)._addressA = 0xeb;
+    // Port B is memory (default)
+    dmaDevice.transferState.sourceAddress = 0x8000; // for sourceAddr lookup
+
+    const timing = dmaDevice.calculateDmaTransferTiming();
+    // Read: 4 (IO) + 16 (SPI wait) = 20; Write: 3 (memory) = 3; Total: 23
+    expect(timing).toBe(4 + 16 + 3);
+  });
+
+  it("I/O write to port 0xEB adds 16 SPI wait cycles", () => {
+    // Port A is memory (default)
+    dmaDevice.transferState.sourceAddress = 0x8000;
+    // Configure port B as I/O
+    dmaDevice.writeWR2(0x08); // D3=1 → Port B is I/O
+    (dmaDevice as any)._addressB = 0xeb;
+
+    const timing = dmaDevice.calculateDmaTransferTiming();
+    // Read: 3 (memory); Write: 4 (IO) + 16 (SPI wait) = 20; Total: 23
+    expect(timing).toBe(3 + 4 + 16);
+  });
+
+  it("I/O on non-SPI port does NOT add SPI wait cycles", () => {
+    dmaDevice.writeWR1(0x08); // Port A is I/O
+    (dmaDevice as any)._addressA = 0xfe; // not 0xEB
+    dmaDevice.transferState.sourceAddress = 0x8000;
+
+    const timing = dmaDevice.calculateDmaTransferTiming();
+    // Read: 4 (IO, no SPI wait); Write: 3 (memory); Total: 7
+    expect(timing).toBe(4 + 3);
+  });
+
+  it("both ports on 0xEB adds SPI wait to both read and write", () => {
+    dmaDevice.writeWR1(0x08); // Port A is I/O
+    dmaDevice.writeWR2(0x08); // Port B is I/O
+    (dmaDevice as any)._addressA = 0xeb;
+    (dmaDevice as any)._addressB = 0xeb;
+    dmaDevice.transferState.sourceAddress = 0x8000;
+
+    const timing = dmaDevice.calculateDmaTransferTiming();
+    // Read: 4 + 16 = 20; Write: 4 + 16 = 20; Total: 40
+    expect(timing).toBe(4 + 16 + 4 + 16);
+  });
+});
+

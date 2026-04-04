@@ -1,6 +1,5 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 
 /**
  * Implements the Multiface NMI device for ZX Spectrum Next.
@@ -11,11 +10,19 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
   nmiActive: boolean;
 
   /**
+   * FPGA: enable_i => port_multiface_io_en (internal_port_enable bit 9).
+   * When false, the device is held in reset: nmi_active=0, invisible=1, mf_enable=0.
+   */
+  get enabled(): boolean {
+    return this.machine.nextRegDevice?.portMultifaceEnabled ?? true;
+  }
+
+  /**
    * Mirrors VHDL: nmi_disable_o <= nmi_active.
-   * In hardware, mf_nmi_hold IS nmi_active — they are the same signal.
+   * Gated by enabled (FPGA: all outputs are 0 when enable_i=0).
    */
   get nmiHold(): boolean {
-    return this.nmiActive;
+    return this.enabled && this.nmiActive;
   }
 
   /** mf_enable in VHDL — multiface memory paged in */
@@ -50,9 +57,10 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * MF is considered active when memory is paged in or NMI is pending.
    * Mirrors VHDL mf_is_active = mf_mem_en OR mf_nmi_hold.
+   * Gated by enabled (FPGA: all outputs are 0 when enable_i=0).
    */
   get isActive(): boolean {
-    return this.mfEnabled || this.nmiActive;
+    return this.enabled && (this.mfEnabled || this.nmiActive);
   }
 
   /**
@@ -85,8 +93,10 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * Called when the M1 button (simulated multiface NMI button) is pressed.
    * Sets nmi_active and clears invisible (as the physical button does on MF128/+3).
    * Only has effect when nmiActive is not already set — "first come, first served".
+   * Gated by enabled: FPGA NMI button is external, but port_multiface_io_en gates the device.
    */
   pressNmiButton(): void {
+    if (!this.enabled) return;
     if (!this.nmiActive) {
       this.nmiActive = true;
       this.invisible = false; // button press clears invisible flag (MF128/+3)
@@ -110,36 +120,53 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
 
   /**
    * Handles a read of the disable port.
-   * VHDL clock_w: mf_enable is cleared by port_mf_disable_rd.
-   * nmi_active is NOT modified by port reads (MAME port_io_dly prevents it).
-   * Only RETN (handleRetn) clears nmi_active.
+   * VHDL: port_mf_disable_rd clears mf_enable.
+   * VHDL: In P3 mode, port_mf_disable_rd also clears nmi_active (edge-detected).
    */
   readDisablePort(): number {
     this.mfEnabled = false;
+    // FPGA: (port_mf_disable_rd_i = '1' and mode_p3 = '1') and port_io_dly = '0' → nmi_active <= '0'
+    if (this.modeP3) {
+      this.nmiActive = false;
+    }
     this.machine.memoryDevice.updateFastPathFlags();
     return 0xff;
   }
 
   // --- Port write handlers
-  // In MAME, port_io_dly (computed synchronously) effectively prevents
-  // port writes from modifying nmi_active, invisible, or mf_enable.
-  // Only RETN (cpu_retn_seen) and button_pulse affect nmi_active.
-  // Port writes are therefore no-ops for MF state.
+  // FPGA multiface.vhd: port writes clear nmi_active and set invisible
+  // (edge-detected via port_io_dly). MAME has a bug where port_io_dly
+  // is computed synchronously, preventing writes from firing. We follow
+  // the FPGA (truth).
 
   /**
    * Handles a write to the enable port.
-   * No-op: matches MAME behavior where port_io_dly prevents state changes.
+   * FPGA: port_mf_enable_wr clears nmi_active (all modes).
+   * FPGA: In P3 mode, port_mf_enable_wr sets invisible.
    */
   writeEnablePort(_value: number): void {
-    // No state changes — see MAME port_io_dly analysis
+    // FPGA: (port_mf_enable_wr_i = '1' ... ) and port_io_dly = '0' → nmi_active <= '0'
+    this.nmiActive = false;
+    // FPGA: (port_mf_enable_wr_i = '1' and mode_p3 = '1') and port_io_dly = '0' → invisible <= '1'
+    if (this.modeP3) {
+      this.invisible = true;
+    }
+    this.machine.memoryDevice.updateFastPathFlags();
   }
 
   /**
    * Handles a write to the disable port.
-   * No-op: matches MAME behavior where port_io_dly prevents state changes.
+   * FPGA: port_mf_disable_wr clears nmi_active (all modes).
+   * FPGA: In non-P3 modes, port_mf_disable_wr sets invisible.
    */
   writeDisablePort(_value: number): void {
-    // No state changes — see MAME port_io_dly analysis
+    // FPGA: (port_mf_disable_wr_i = '1' ... ) and port_io_dly = '0' → nmi_active <= '0'
+    this.nmiActive = false;
+    // FPGA: (port_mf_disable_wr_i = '1' and mode_p3 = '0') and port_io_dly = '0' → invisible <= '1'
+    if (!this.modeP3) {
+      this.invisible = true;
+    }
+    this.machine.memoryDevice.updateFastPathFlags();
   }
 
   /**
@@ -147,12 +174,10 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * Pages in the multiface memory so the MF ROM can handle the NMI.
    */
   onFetch0066(): void {
+    if (!this.enabled) return;
     if (this.nmiActive) {
       this.mfEnabled = true;
       this.machine.memoryDevice.updateFastPathFlags();
-      const mem = (this.machine.memoryDevice as any).memory as Uint8Array;
-      const b0066 = mem[OFFS_MULTIFACE_MEM + 0x0066];
-      console.log(`[NMI] onFetch0066: mfEnabled=true MF_ROM[0x0066]=0x${b0066.toString(16)} (ROM ${b0066 !== 0 ? 'loaded ✓' : 'EMPTY – no ROM loaded!'})`)
     }
   }
 
@@ -170,20 +195,66 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * Resets the multiface device to its initial state.
    */
   /**
-   * Handles a port read, routing to enable/disable based on current mode.
-   * Mirrors VHDL dynamic port decoding via port_mf_enable_io_a / port_mf_disable_io_a.
+   * FPGA mf_port_en: asserted when reading the enable port, visible, and mode is MF128 or MF+3.
+   * When true, the multiface returns register snapshots instead of letting other devices respond.
    */
-  handlePortRead(portAddress: number): number {
+  get mfPortEn(): boolean {
+    if (!this.enabled) return false;
+    const invisibleEff = this.invisible && !this.mode48;
+    return !invisibleEff && (this.mode128 || this.modeP3);
+  }
+
+  /**
+   * Returns the multiface port read data (register snapshot).
+   * FPGA (zxnext.vhd lines 4287–4299): mf_port_dat depends on mode and cpu_a[15:12].
+   */
+  getMfPortData(portAddress: number): number {
+    const memDevice = this.machine.memoryDevice;
+    if (this.modeP3) {
+      // MF+3: return depends on cpu_a[15:12]
+      const highNibble = (portAddress >>> 12) & 0x0f;
+      switch (highNibble) {
+        case 0b0001: return memDevice.port1ffdValue;
+        case 0b0111: return memDevice.port7ffdValue;
+        case 0b1101: return memDevice.portDffdValue;
+        case 0b1110: return memDevice.portEff7Value & 0x0c; // bits 2-3 only
+        default: return this.machine.composedScreenDevice.borderColor & 0x07;
+      }
+    } else {
+      // MF128/MF48: port_7ffd_reg(3) & "1111111" — shadow bit in bit 7
+      return ((memDevice.port7ffdValue >>> 3) & 1) << 7 | 0x7f;
+    }
+  }
+
+  /**
+   * Handles a port read, routing to enable/disable based on current mode.
+   * Returns { value, handled } to allow fallthrough to other devices (e.g. Kempston)
+   * when the multiface does not claim the read.
+   */
+  handlePortRead(portAddress: number): { value: number; handled: boolean } {
+    if (!this.enabled) return { value: 0xff, handled: false };
     const lowByte = portAddress & 0xff;
-    if (lowByte === this.enablePortAddress) return this.readEnablePort();
-    if (lowByte === this.disablePortAddress) return this.readDisablePort();
-    return 0xff; // Not a multiface port for the current mode
+    if (lowByte === this.enablePortAddress) {
+      // Enable port read: update mf_enable and check mf_port_en
+      const mfPortEn = this.mfPortEn; // Check BEFORE state change (FPGA: combinatorial)
+      this.readEnablePort();
+      if (mfPortEn) {
+        return { value: this.getMfPortData(portAddress), handled: true };
+      }
+      return { value: 0xff, handled: false };
+    }
+    if (lowByte === this.disablePortAddress) {
+      this.readDisablePort();
+      return { value: 0xff, handled: false };
+    }
+    return { value: 0xff, handled: false }; // Not a multiface port
   }
 
   /**
    * Handles a port write, routing to enable/disable based on current mode.
    */
   handlePortWrite(portAddress: number, value: number): void {
+    if (!this.enabled) return;
     const lowByte = portAddress & 0xff;
     if (lowByte === this.enablePortAddress) this.writeEnablePort(value);
     else if (lowByte === this.disablePortAddress) this.writeDisablePort(value);

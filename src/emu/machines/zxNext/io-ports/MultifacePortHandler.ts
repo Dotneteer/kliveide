@@ -10,7 +10,7 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
  * port_mf_disable_io_a address selection logic.
  */
 
-export function readMultifacePort(port: number, machine: IZxNextMachine): number {
+export function readMultifacePort(port: number, machine: IZxNextMachine): { value: number; handled: boolean } {
   return machine.multifaceDevice.handlePortRead(port);
 }
 

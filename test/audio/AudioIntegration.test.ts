@@ -122,9 +122,9 @@ describe("Audio Integration Tests", () => {
       expect(beeperSamples.length).toBeGreaterThan(0);
       expect(psgSamples.length).toBeGreaterThan(0);
 
-      // Beeper should be positive when on (EAR=1, MIC=0 → 0.66 level, DC-filtered)
+      // EAR=1 → left channel positive; MIC=0 → right channel = 0
       expect(beeperSamples[0].left).toBeGreaterThan(0.5);
-      expect(beeperSamples[0].right).toBeGreaterThan(0.5);
+      expect(beeperSamples[0].right).toBe(0);
     });
 
     it("should allow simultaneous output without interference", () => {
@@ -355,8 +355,8 @@ describe("Audio Integration Tests", () => {
 
       const offSamples = beeper.getAudioSamples().slice();
 
-      // Verify difference: on-samples should be positive, off-samples should be 0
-      expect(onSamples.every((s) => s.left > 0 && s.right > 0)).toBe(true);
+      // Verify difference: EAR on → left channel positive; MIC not set → right = 0
+      expect(onSamples.every((s) => s.left > 0 && s.right === 0.0)).toBe(true);
       expect(offSamples.every((s) => s.left === 0.0 && s.right === 0.0)).toBe(true);
     });
 

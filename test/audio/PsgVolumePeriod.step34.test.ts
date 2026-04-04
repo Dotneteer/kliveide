@@ -16,16 +16,17 @@ import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
  *   - With period 0, the tone bit should toggle every single sample tick
  */
 describe("Step 34: PSG chipType and Volume Tables (Phase 3)", () => {
-  // ------- Known table values (MAME ay8910.cpp resistor-network model) -------
-  // AY-3-8910 table
+  // ------- Known table values -------
+  // AY-3-8910 table (FPGA ym2149.vhd hardware-measured from real chip)
   const AY_TABLE = [
-    0, 890, 1158, 1512, 2059, 2856, 3833, 6238,
-    7696, 12607, 17452, 23178, 30968, 39233, 51935, 65535
+    0, 771, 1028, 1542, 2570, 3855, 5397, 8738,
+    10280, 16705, 23387, 29298, 37008, 46517, 55255, 65535
   ];
-  // YM2149 table
+  // YM2149 table - per fixed-volume level (FPGA ym2149.vhd hardware-measured)
+  // Fixed vol N: 32-entry table index = N*2+1 for N>0, 0 for N=0
   const YM_TABLE = [
-    0, 436, 762, 1099, 1638, 2217, 3221, 4329,
-    6266, 8473, 12221, 16447, 23948, 32562, 47873, 65535
+    0, 514, 771, 1028, 1799, 2570, 3598, 4883,
+    6939, 9509, 13621, 18247, 26214, 34952, 49344, 65535
   ];
 
   // Helper: enable only tone A (no noise), then read instantaneous amplitude
@@ -141,12 +142,11 @@ describe("Step 34: PSG chipType and Volume Tables (Phase 3)", () => {
       }
     });
 
-    it("YM vol 1 produces a small non-zero output (MAME table[1]=436)", () => {
-      // MAME YM table: level 0 = 0, level 1 = 436 (distinct from old Unreal table where both were 0)
+    it("YM vol 1 produces a small non-zero output (FPGA table vol1=514)", () => {
       const ym0 = amplitudeAt(new PsgChip(0, "YM"), 0);
       const ym1 = amplitudeAt(new PsgChip(0, "YM"), 1);
       expect(ym0).toBe(0);
-      expect(ym1).toBe(436);
+      expect(ym1).toBe(514);
     });
   });
 

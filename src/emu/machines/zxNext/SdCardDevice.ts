@@ -152,39 +152,41 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set selectedCard(value: number) {
-    this._selectedCard = value === 0xfe ? 0 : 1;
+    this._selectedCard = value;
   }
 
   /**
-   * Implements the port 0xE7 chip-select decode matching MAME's port_e7_reg_w.
+   * Implements the port 0xE7 chip-select decode matching FPGA zxnext.vhd (lines 3307–3320).
    *
-   * Bit layout of the shadow register (m_port_e7_reg):
+   * Bit layout of the shadow register (port_e7_reg):
    *   bit 7 = FPGA flash CS  (active-low)
    *   bit 3 = RPi CS1        (active-low)
    *   bit 2 = RPi CS0        (active-low)
    *   bit 1 = SD card 1 SS   (active-low)
    *   bit 0 = SD card 0 SS   (active-low)
    *
+   * FPGA: Only one slave can be selected at a time. The decode sanitises
+   * whatever esxDOS writes so that exactly one (or zero) SS bits are low.
+   * There is NO sd_swap in the FPGA — NR 0x0A bit 5 is unused in hardware.
+   *
    * A card is selected when its bit in the shadow register is 0.
    */
   spiCsWrite(data: number): void {
-    const swap = this.machine.nextRegDevice.sdSwap;
     const configMode = this.machine.nextRegDevice.configMode;
+    const resetType2 = (this.machine.nextRegDevice.nr02ResetType & 0x04) !== 0;
 
     let reg: number;
     if ((data & 3) === 0b10) {
-      // Select primary SD card: default → SD0 (bit 0 low); if swapped → SD1 (bit 1 low)
-      // MAME: reg = 0b11111100 | (!swap << 1) | swap
-      reg = 0b11111100 | (swap ? 1 : 2);
+      // FPGA: cpu_do(1:0) = "10" → port_e7_reg <= 0xFE (select SD0)
+      reg = 0xfe;
     } else if ((data & 3) === 0b01) {
-      // Select secondary SD card: default → SD1 (bit 1 low); if swapped → SD0 (bit 0 low)
-      // MAME: reg = 0b11111100 | (swap << 1) | !swap
-      reg = 0b11111100 | (swap ? 2 : 1);
+      // FPGA: cpu_do(1:0) = "01" → port_e7_reg <= 0xFD (select SD1)
+      reg = 0xfd;
     } else if (data === 0xfb || data === 0xf7) {
       // RPi chip-select lines; both SD cards deselected
       reg = data;
-    } else if (data === 0x7f && configMode) {
-      // FPGA flash CS; only allowed in config mode
+    } else if (data === 0x7f && (configMode || resetType2)) {
+      // FPGA flash CS; allowed in config mode OR when reset_type(2)=1
       reg = 0x7f;
     } else {
       // Deselect all
@@ -306,11 +308,16 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     // --- Subsequent command bytes (arg[0..3] + CRC)
     switch (this._lastCommand) {
       case 0x40:
-        // CMD0: GO_IDLE_STATE — R1 = 0x01 (idle)
+        // CMD0: GO_IDLE_STATE — R1 = 0x01 (idle) when card present; 0x00 (not idle) when absent
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          this._state = SdState.IDLE;
-          this.setMmcResponse(new Uint8Array([0x01]));
+          if (this._totalSectors === 0) {
+            // No card image mounted — card not present
+            this.setMmcResponse(new Uint8Array([0x00]));
+          } else {
+            this._state = SdState.IDLE;
+            this.setMmcResponse(new Uint8Array([0x01]));
+          }
         } else {
           this._commandIndex++;
         }
@@ -560,15 +567,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
       return byte;
     }
 
-    switch (this._lastCommand) {
-      case 0x51:
-      case 0x52:
-      case 0x77:
-        return 0xff;
-    }
-
-    // No result
-    return 0x00;
+    // FPGA: MISO line is pulled high when no card drives the bus → 0xFF
+    return 0xff;
   }
 
   setMmcResponse(response: Uint8Array): void {
@@ -683,8 +683,13 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         // CMD0: GO_IDLE_STATE
         if (this._commandIndex1 === 5) {
           this._commandIndex1 = 0;
-          this._state1 = SdState.IDLE;
-          this.setCard1Response(new Uint8Array([0x01]));
+          if (this._totalSectors1 === 0) {
+            // No card image mounted — card not present
+            this.setCard1Response(new Uint8Array([0x00]));
+          } else {
+            this._state1 = SdState.IDLE;
+            this.setCard1Response(new Uint8Array([0x01]));
+          }
         } else {
           this._commandIndex1++;
         }
@@ -922,13 +927,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
       return byte;
     }
 
-    switch (this._lastCommand1) {
-      case 0x51:
-      case 0x52:
-      case 0x77:
-        return 0xff;
-    }
-    return 0x00;
+    // FPGA: MISO line is pulled high when no card drives the bus → 0xFF
+    return 0xff;
   }
 
   setCard1ReadResponse(sectorData: Uint8Array): void {

@@ -74,9 +74,9 @@ describe("Port Handlers Step 10: I/O Port Integration", () => {
       expect(turboSound.getChipPanning(0)).toBe(0x03);
     });
 
-    it("should mask register index to 4 bits", () => {
-      turboSound.selectRegister(0xFF); // Should be masked to 0x0F
-      expect(turboSound.getSelectedRegister()).toBe(0x0F);
+    it("should mask register index to 5 bits", () => {
+      turboSound.selectRegister(0xFF); // Should be masked to 0x1F
+      expect(turboSound.getSelectedRegister()).toBe(0x1F);
     });
 
     it("should mask chip ID to 2 bits", () => {
@@ -192,39 +192,33 @@ describe("Port Handlers Step 10: I/O Port Integration", () => {
   // ==================== AY Info Port (0xBFF5) Tests ====================
 
   describe("AY Info Port (0xBFF5) - Info Read", () => {
-    it("should return chip ID and register in info read", () => {
+    it("should return AY_ID and register in FPGA format", () => {
       // Select chip 0, register 5
       turboSound.selectChip(0);
       turboSound.selectRegister(5);
 
-      // Read info: bits 7:4 = chip ID (1=chip0, 2=chip1, 4=chip2), bits 3:0 = register
-      // For chip 0 (chipId=0), encoded as 1: (1 << 0) = 1
-      // Expected: 0x15 (chip 1 + register 5)
-      const info = (1 << 4) | 5; // 0x15
-      expect(info).toBe(0x15);
+      // FPGA: AY_ID & '0' & addr. Chip0 AY_ID="11"(3), addr=5
+      // Expected: (3 << 6) | 5 = 0xC5
+      const ayId = [3, 2, 1][0]; // chip0 → 3
+      const info = (ayId << 6) | 5;
+      expect(info).toBe(0xc5);
     });
 
-    it("should encode all chip IDs correctly", () => {
-      // Chip 0 → 1
-      let chipId = 0;
-      let encoded = 1 << chipId; // 1
-      expect(encoded).toBe(1);
+    it("should encode all chip AY_IDs correctly", () => {
+      // Chip 0 → AY_ID "11" = 3
+      expect([3, 2, 1][0]).toBe(3);
 
-      // Chip 1 → 2
-      chipId = 1;
-      encoded = 1 << chipId; // 2
-      expect(encoded).toBe(2);
+      // Chip 1 → AY_ID "10" = 2
+      expect([3, 2, 1][1]).toBe(2);
 
-      // Chip 2 → 4
-      chipId = 2;
-      encoded = 1 << chipId; // 4
-      expect(encoded).toBe(4);
+      // Chip 2 → AY_ID "01" = 1
+      expect([3, 2, 1][2]).toBe(1);
     });
 
     it("should include register index in info read", () => {
       for (let reg = 0; reg < 16; reg++) {
         turboSound.selectRegister(reg);
-        const registerInfo = turboSound.getSelectedRegister() & 0x0f;
+        const registerInfo = turboSound.getSelectedRegister() & 0x1f;
         expect(registerInfo).toBe(reg);
       }
     });
@@ -405,7 +399,7 @@ describe("Port Handlers Step 10: I/O Port Integration", () => {
   describe("Edge Cases", () => {
     it("should handle register 0xFFFF mask correctly", () => {
       turboSound.selectRegister(0xFFFF);
-      expect(turboSound.getSelectedRegister()).toBe(0x0F); // Masked to 4 bits
+      expect(turboSound.getSelectedRegister()).toBe(0x1F); // Masked to 5 bits
     });
 
     it("should handle chip ID 0xFFFF mask correctly", () => {

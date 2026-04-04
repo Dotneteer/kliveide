@@ -2,6 +2,21 @@ import { describe, it, expect } from "vitest";
 import { SdCardDevice } from "@emu/machines/zxNext/SdCardDevice";
 import { BYTES_PER_SECTOR } from "@main/fat32/Fat32Types";
 
+// Helper: create a mock machine with nextRegDevice for spiCsWrite tests
+function createMockMachineWithNextReg(opts: {
+  configMode?: boolean;
+  nr02ResetType?: number;
+} = {}) {
+  return {
+    tacts: 100,
+    setFrameCommand: () => {},
+    nextRegDevice: {
+      configMode: opts.configMode ?? false,
+      nr02ResetType: opts.nr02ResetType ?? 0b100
+    }
+  } as any;
+}
+
 describe("SdCardDevice", () => {
   it("REGRESSION: setWriteErrorResponse method exists and sets error state", () => {
     // --- This test catches Issue #4: No Error Handling for Failed Writes
@@ -447,21 +462,237 @@ describe("SdCardDevice", () => {
 
 describe("IPC Timeout Protection", () => {
   it("ISSUE #7: Timeout protection placeholder - verify constant is defined", () => {
-    // ISSUE #7: IPC operations need timeout protection
-    // Regression test to track timeout implementation
-    // 
-    // Problem: If main process hangs, renderer hangs forever
-    // Solution: Implement Promise.race with timeout in ZxNextMachine
-    // 
-    // Expected behavior:
-    // - All IPC calls (sd-read, sd-write) wrapped with Promise.race
-    // - Timeout set to 5 seconds (5000ms)
-    // - On timeout: Device receives error response (0x0d)
-    // - Z80 sees failure, not indefinite hang
-    
-    // For now, just verify test structure - actual implementation in progress
     const mockMachine = { tacts: 0 } as any;
     const device = new SdCardDevice(mockMachine);
     expect(device).toBeDefined();
+  });
+});
+
+// ===========================================================================
+// D1 — SD Swap Removal: spiCsWrite uses FPGA decode (no sdSwap)
+// ===========================================================================
+describe("D1: spiCsWrite — no SD swap", () => {
+  it("data & 3 === 0b10 selects SD0 (selectedCard = 0xFE bit pattern)", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0b10); // bit 1:0 = "10"
+    // selectedCard should represent SD0 selected (bit 0 low in shadow reg 0xFE)
+    expect((device as any)._selectedCard).toBe(0);
+  });
+
+  it("data & 3 === 0b01 selects SD1 (selectedCard = 0xFD bit pattern)", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0b01); // bit 1:0 = "01"
+    expect((device as any)._selectedCard).toBe(1);
+  });
+
+  it("data & 3 === 0b11 deselects all cards", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0b11);
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+
+  it("data & 3 === 0b00 deselects all cards", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0b00);
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+
+  it("sdSwap flag on nextRegDevice does NOT affect card selection", () => {
+    // Even if sdSwap were set, the decode must ignore it (FPGA has no swap)
+    const machine = createMockMachineWithNextReg();
+    (machine as any).nextRegDevice.sdSwap = true;
+    const device = new SdCardDevice(machine);
+
+    device.spiCsWrite(0b10);
+    expect((device as any)._selectedCard).toBe(0); // still SD0
+
+    device.spiCsWrite(0b01);
+    expect((device as any)._selectedCard).toBe(1); // still SD1
+  });
+
+  it("RPi CS 0xFB deselects both SD cards", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0xfb);
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+
+  it("RPi CS 0xF7 deselects both SD cards", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0xf7);
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+});
+
+// ===========================================================================
+// D2 — Flash CS + reset_type(2)
+// ===========================================================================
+describe("D2: spiCsWrite — flash CS gate with configMode / reset_type(2)", () => {
+  it("flash CS (0x7F) allowed when configMode=true, reset_type(2)=0", () => {
+    const machine = createMockMachineWithNextReg({ configMode: true, nr02ResetType: 0b000 });
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0x7f);
+    // Flash CS accepted — no SD card selected (0x7F has bits 0,1 both set)
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+
+  it("flash CS (0x7F) allowed when configMode=false, reset_type(2)=1", () => {
+    const machine = createMockMachineWithNextReg({ configMode: false, nr02ResetType: 0b100 });
+    const device = new SdCardDevice(machine);
+    device.spiCsWrite(0x7f);
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+
+  it("flash CS (0x7F) rejected when configMode=false, reset_type(2)=0", () => {
+    const machine = createMockMachineWithNextReg({ configMode: false, nr02ResetType: 0b010 });
+    const device = new SdCardDevice(machine);
+    // First select a card so we can verify the deselect
+    device.spiCsWrite(0b10);
+    expect((device as any)._selectedCard).toBe(0);
+
+    // Now try flash CS — should deselect all (falls through to 0xFF)
+    device.spiCsWrite(0x7f);
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+});
+
+// ===========================================================================
+// D2 — nr02ResetType shift register (tested on NextRegDevice via TestZxNextMachine)
+// ===========================================================================
+describe("D2: nr02ResetType shift register", () => {
+  it("power-on hard reset initializes nr02ResetType to 0b100", () => {
+    const machine = createMockMachineWithNextReg({ nr02ResetType: 0b100 });
+    const device = new SdCardDevice(machine);
+    expect(machine.nextRegDevice.nr02ResetType).toBe(0b100);
+    // Flash CS should be allowed
+    device.spiCsWrite(0x7f);
+    expect((device as any)._selectedCard).toBe(0xff); // accepted (no SD selected via 0x7F)
+  });
+});
+
+// ===========================================================================
+// D5 — Read Fallback 0xFF
+// ===========================================================================
+describe("D5: readMmcData returns 0xFF when response exhausted", () => {
+  it("card 0: returns 0xFF after response is fully consumed", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    // Set card 0 selected and give a 1-byte response
+    (device as any)._selectedCard = 0;
+    device.setMmcResponse(new Uint8Array([0x01]));
+    expect(device.readMmcData()).toBe(0x01);
+    // Now response is exhausted
+    expect(device.readMmcData()).toBe(0xff);
+  });
+
+  it("card 0: returns 0xFF when no card is selected", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    (device as any)._selectedCard = 0xff;
+    expect(device.readMmcData()).toBe(0xff);
+  });
+
+  it("card 1: returns 0xFF after response is fully consumed", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    (device as any)._selectedCard = 1;
+    (device as any)._totalSectors1 = 1024;
+    // Give card 1 a 1-byte response
+    (device as any).setCard1Response(new Uint8Array([0x00]));
+    expect(device.readMmcData()).toBe(0x00);
+    // Now exhausted
+    expect(device.readMmcData()).toBe(0xff);
+  });
+});
+
+// ===========================================================================
+// D6 — selectedCard setter
+// ===========================================================================
+describe("D6: selectedCard stores value directly", () => {
+  it("setter stores 0 directly", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.selectedCard = 0;
+    expect((device as any)._selectedCard).toBe(0);
+  });
+
+  it("setter stores 1 directly", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.selectedCard = 1;
+    expect((device as any)._selectedCard).toBe(1);
+  });
+
+  it("setter stores 0xFF directly (no card)", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.selectedCard = 0xff;
+    expect((device as any)._selectedCard).toBe(0xff);
+  });
+});
+
+// ===========================================================================
+// D7 — Card-not-present detection
+// ===========================================================================
+describe("D7: CMD0 card-not-present detection", () => {
+  it("card 0: CMD0 returns 0x01 (idle) when card image is mounted", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.setCardInfo(2048); // Card has sectors
+    // Send CMD0 (0x40) with 4 param bytes + CRC
+    device.writeMmcData(0x40);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x95);
+    // Read R1 response
+    expect(device.readMmcData()).toBe(0x01);
+  });
+
+  it("card 0: CMD0 returns 0x00 (not idle) when no card image mounted", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    // _totalSectors defaults to 0 (no card)
+    device.writeMmcData(0x40);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x95);
+    expect(device.readMmcData()).toBe(0x00); // no idle bit
+  });
+
+  it("card 1: CMD0 returns 0x01 when card1 image is mounted", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.setCard1Info(2048);
+    (device as any)._selectedCard = 1;
+    device.writeMmcData(0x40);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x95);
+    expect(device.readMmcData()).toBe(0x01);
+  });
+
+  it("card 1: CMD0 returns 0x00 when no card1 image mounted", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    // _totalSectors1 defaults to 0
+    (device as any)._selectedCard = 1;
+    device.writeMmcData(0x40);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x95);
+    expect(device.readMmcData()).toBe(0x00);
   });
 });

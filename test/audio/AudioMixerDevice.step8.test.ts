@@ -66,10 +66,10 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       dac.setChannelValues([0x80, 0x80, 0x80, 0x80]); // Set to all center
 
       const output = mixer.getMixedOutput();
-      // AC-coupled MIC (+64), DAC center (0) = +64
-      // Scaled by 5.5: +352, normalized: +0.0107
-      expect(output.left).toBeCloseTo(0.011, 2);
-      expect(output.right).toBeCloseTo(0.011, 2);
+      // MIC level=1 → micLevel=128, micScaled=128×12=1536
+      // mixedLeft = 1536, left = floor(1536×5.5) = 8448, normalized = 8448/32768 = 0.25781
+      expect(output.left).toBeCloseTo(0.258, 2);
+      expect(output.right).toBeCloseTo(0.258, 2);
     });
 
     it("should combine with EAR", () => {
@@ -445,8 +445,8 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
 
       mixer.setEarLevel(0);
       const output2 = mixer.getMixedOutput();
-      // MIC(+64) only, * 5.5 = 352, normalized: +0.0107
-      expect(output2.left).toBeCloseTo(0.0107, 2);
+      // MIC level=1 → micScaled=1536, left=8448, normalized=0.25781
+      expect(output2.left).toBeCloseTo(0.258, 2);
 
       mixer.setMicLevel(0);
       const output3 = mixer.getMixedOutput();
@@ -568,7 +568,9 @@ describe("AudioMixerDevice Step 8: Create Audio Mixer", () => {
       // Should have contributions from all sources and volume applied
       expect(output.left).toBeDefined();
       expect(output.right).toBeDefined();
-      expect(Math.abs(output.left - output.right)).toBeGreaterThan(0);
+      // With EAR+MIC at full scale and volume=0.8, output saturates but is positive
+      expect(output.left).toBeGreaterThan(0);
+      expect(output.right).toBeGreaterThan(0);
     });
   });
 });

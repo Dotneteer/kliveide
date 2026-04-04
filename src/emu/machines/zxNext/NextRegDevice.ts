@@ -96,6 +96,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   port0x1fEnabled: boolean;
   port0x37Enabled: boolean;
 
+  // --- Reg $02 state (3-bit reset type shift register, FPGA: nr_02_reset_type)
+  nr02ResetType: number;
+
   // --- Reg $0A state
   sdSwap: boolean;
 
@@ -1069,20 +1072,26 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x2c,
       description: "DAC B Mirror (left)",
+      isWriteOnly: true,
       readFn: () => 0x00,
-      writeFn: () => {}
+      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacB(v)
     });
     r({
       id: 0x2d,
       description: "DAC A+D Mirror (mono)",
+      isWriteOnly: true,
       readFn: () => 0x00,
-      writeFn: () => {}
+      writeFn: (v) => {
+        machine.audioControlDevice.getDacDevice().setDacA(v);
+        machine.audioControlDevice.getDacDevice().setDacD(v);
+      }
     });
     r({
       id: 0x2e,
       description: "DAC C Mirror (right)",
+      isWriteOnly: true,
       readFn: () => 0x00,
-      writeFn: () => {}
+      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacC(v)
     });
     r({
       id: 0x2f,
@@ -1827,7 +1836,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x83,
       description: "Internal Port Decoding Enables #2",
-      writeFn: (v) => (
+      writeFn: (v) => {
+        const oldMfEnabled = this.portMultifaceEnabled;
         (this.portDivMmcEnabled = !!(v & 0x01)),
         (this.portMultifaceEnabled = !!(v & 0x02)),
         (this.portI2CEnabled = !!(v & 0x04)),
@@ -1836,8 +1846,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (this.portMouseEnabled = !!(v & 0x20)),
         (this.portSpritesEnabled = !!(v & 0x40)),
         (this.portLayer2Enabled = !!(v & 0x80)),
-        (machine.divMmcDevice.nextReg83Value = v & 0xff)
-      ),
+        (machine.divMmcDevice.nextReg83Value = v & 0xff);
+        // FPGA: reset <= reset_i or not enable_i — when enable goes false, device resets
+        if (oldMfEnabled && !this.portMultifaceEnabled) {
+          machine.multifaceDevice.reset();
+        }
+      },
       slices: [
         {
           mask: 0x80,
@@ -3230,6 +3244,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.fdcIoTrap = false;
     this.ioTrapCause = 0x00;
 
+    // --- FPGA: nr_02_reset_type <= '0' & nr_02_reset_type(2) & (nr_02_reset_type(1) or nr_02_reset_type(0))
+    // Power-on: 100 → 1st soft: 010 → 2nd: 001 → 3rd+: 000
+    const rt = this.nr02ResetType;
+    this.nr02ResetType = ((rt >> 1) & 0b010) | (((rt & 0b011) !== 0) ? 0b001 : 0);
+
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
 
@@ -3280,6 +3299,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.ps2KeymapDataLsb = 0x00;
     this.ps2KeymapDataMsb = false;
 
+    // --- FPGA: nr_02_reset_type <= "100" on power-on/hard reset
+    this.nr02ResetType = 0b100;
+
     // --- We assume fast boot
     this.directSetRegValue(0x02, 0x00); // --- Generate DivMMC interrupt & hard reset
 
@@ -3291,7 +3313,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
     this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
-    this.directSetRegValue(0x06, 0x00); // --- All Peripheral settings #2 are 0
+    this.directSetRegValue(0x06, 0x80); // --- Enable hotkey CPU speed (bit 7)
     this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
     this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound
     this.directSetRegValue(0x09, 0x00); // --- All Peripheral settings #4 are 0
