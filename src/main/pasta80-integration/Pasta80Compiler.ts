@@ -87,6 +87,7 @@ export class Pasta80Compiler implements IKliveCompiler {
       if (dep) args.push("--dep");
       if (ovr || target === "zx128") args.push("--ovr");
       if (release) args.push("--release");
+      if (!release) args.push("--klive");
       args.push(filename);
 
       const runner = new CliRunner();
@@ -99,6 +100,7 @@ export class Pasta80Compiler implements IKliveCompiler {
       const outFilename = stem + ".bin";
       const brkFilename = stem + ".brk";
       const z80Filename = stem + ".z80";
+      const sldFilename = stem + ".sld";
 
       if (result.failed || result.errors?.length > 0) {
         removeTempFiles();
@@ -160,16 +162,38 @@ export class Pasta80Compiler implements IKliveCompiler {
         startAddress
       };
 
-      removeTempFiles();
+      // --- Parse the .sld file produced by --klive for a proper source map,
+      // --- falling back to a minimal entry when the file is absent or unparseable.
+      let sourceFileList: { filename: string; includes: any[] }[];
+      let sourceMap: Record<number, { fileIndex: number; line: number }>;
+      let listFileItems: { address: number; fileIndex: number; lineNumber: number }[];
 
-      // --- Provide a minimal debug entry so the IDE starts in debug mode.  
-      // --- pasta80 does not emit a source map, so we point the entry address
-      // --- back to line 1 of the Pascal source file.
-      const sourceFileList = [{ filename, includes: [] }];
-      const sourceMap: Record<number, { fileIndex: number; line: number }> = {
-        [startAddress]: { fileIndex: 0, line: 1 }
-      };
-      const listFileItems = [{ address: startAddress, fileIndex: 0, lineNumber: 1 }];
+      if (fs.existsSync(sldFilename)) {
+        try {
+          const sldContent = fs.readFileSync(sldFilename, "utf-8");
+          const sld = JSON.parse(sldContent) as {
+            files: string[];
+            statements: { address: number; file: number; line: number; column: number }[];
+          };
+          sourceFileList = sld.files.map((f) => ({ filename: f, includes: [] }));
+          sourceMap = {};
+          listFileItems = [];
+          for (const stmt of sld.statements) {
+            sourceMap[stmt.address] = { fileIndex: stmt.file, line: stmt.line };
+            listFileItems.push({ address: stmt.address, fileIndex: stmt.file, lineNumber: stmt.line });
+          }
+        } catch {
+          sourceFileList = [{ filename, includes: [] }];
+          sourceMap = { [startAddress]: { fileIndex: 0, line: 1 } };
+          listFileItems = [{ address: startAddress, fileIndex: 0, lineNumber: 1 }];
+        }
+      } else {
+        sourceFileList = [{ filename, includes: [] }];
+        sourceMap = { [startAddress]: { fileIndex: 0, line: 1 } };
+        listFileItems = [{ address: startAddress, fileIndex: 0, lineNumber: 1 }];
+      }
+
+      removeTempFiles();
 
       return {
         traceOutput: result.traceOutput,
@@ -189,6 +213,7 @@ export class Pasta80Compiler implements IKliveCompiler {
             fs.unlinkSync(outFilename);
             fs.unlinkSync(brkFilename);
             fs.unlinkSync(z80Filename);
+            // if (fs.existsSync(sldFilename)) fs.unlinkSync(sldFilename);
           }
         } catch {
           // intentionally ignored
