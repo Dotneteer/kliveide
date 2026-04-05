@@ -1990,7 +1990,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x86,
       description: "Expansion Bus Decoding Enables #1 (LSB)",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(0),
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(0, v),
       slices: [
         {
           mask: 0x80,
@@ -2036,7 +2037,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x87,
       description: "Expansion Bus Decoding Enables #2",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(1),
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(1, v),
       slices: [
         {
           mask: 0x80,
@@ -2082,7 +2084,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x88,
       description: "Expansion Bus Decoding Enables #3",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(2),
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(2, v),
       slices: [
         {
           mask: 0x80,
@@ -2128,8 +2131,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x89,
       description: "Expansion Bus Decoding Enables #4 (MSB)",
-      readFn: () => (this.regValues[0x89] ?? 0x00) & 0x8f,
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(3) & 0x8f,
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(3, v & 0x8f),
       slices: [
         {
           mask: 0x80,
@@ -2160,7 +2163,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x8a,
       description: "Expansion Bus IO Propagate",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.ioPropagate,
+      writeFn: (v) => { machine.expansionBusDevice.ioPropagate = v; },
       slices: [
         {
           mask: 0x20,
