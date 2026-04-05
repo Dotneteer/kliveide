@@ -1,30 +1,26 @@
-export function readKempstonMouseXPort(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
+export function readKempstonMouseXPort(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.mouseDevice.readPortFbdf();
 }
 
-export function readKempstonMouseYPort(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+export function readKempstonMouseYPort(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.mouseDevice.readPortFfdf();
 }
 
-export function readKempstonMouseWheelPort(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+export function readKempstonMouseWheelPort(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.mouseDevice.readPortFadf();
 }
 
-export function readKempstonJoy1Port(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+export function readKempstonJoy1Port(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.joystickDevice.readPort1f();
 }
 
-export function readKempstonJoy1AliasPort(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+export function readKempstonJoy1AliasPort(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.joystickDevice.readPort1f();
 }
 
-export function readKempstonJoy2Port(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+export function readKempstonJoy2Port(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.joystickDevice.readPort37();
 }
 

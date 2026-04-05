@@ -2,6 +2,7 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
+import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
@@ -21,6 +22,9 @@ import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
+import { CtcDevice } from "./CtcDevice";
+import { I2cDevice } from "./I2cDevice";
+import { UartDevice } from "./UartDevice";
 import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
@@ -41,6 +45,7 @@ import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
+import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 import { AudioControlDevice } from "./AudioControlDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
@@ -84,6 +89,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   copperDevice: CopperDevice;
 
+  ctcDevice: CtcDevice;
+
+  i2cDevice: I2cDevice;
+
+  uartDevice: UartDevice;
+
   /**
    * Represents the keyboard device of ZX Spectrum 48K
    */
@@ -121,6 +132,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   expansionBusDevice: ExpansionBusDevice;
 
+  floppyDevice: IFloppyControllerDevice;
+
   // ─── NMI state machine ───────────────────────────────────────────────────
 
   private _nmiState: 'IDLE' | 'FETCH' | 'HOLD' | 'END' = 'IDLE';
@@ -154,6 +167,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.delayedAddressBus = true;
 
     this.expansionBusDevice = new ExpansionBusDevice(this);
+    this.floppyDevice = new FloppyControllerDevice(this);
     this.cpuSpeedDevice = new CpuSpeedDevice(this);
 
     // --- Create and initialize the I/O port manager
@@ -173,6 +187,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.spriteDevice = new SpriteDevice(this);
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
+    this.ctcDevice = new CtcDevice(this);
+    this.i2cDevice = new I2cDevice(this);
+    this.uartDevice = new UartDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
     this.composedScreenDevice = new NextComposedScreenDevice(this);
     this.beeperDevice = new SpectrumBeeperDevice(this);
@@ -236,12 +253,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.spriteDevice.reset();
     this.dmaDevice.reset();
     this.copperDevice.reset();
+    this.ctcDevice.reset();
+    this.i2cDevice.reset();
+    this.uartDevice.reset();
     this.keyboardDevice.reset();
     this.composedScreenDevice.reset();
     this.mouseDevice.reset();
     this.joystickDevice.reset();
     this.soundDevice.reset();
     this.audioControlDevice.reset();
+    this.floppyDevice.reset();
     this.ulaDevice.reset();
     this.beeperDevice.reset();
 
@@ -519,44 +540,31 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   protected override getInterruptVector(): number {
     const id = this.interruptDevice;
     if (!id.hwIm2Mode) return 0xff;
+    // --- D4: Daisy chain determines the vector in HW IM2 mode.
+    // The actual acknowledge (Requesting → InService) happens in onInterruptAcknowledged().
+    // Here we only peek at the winning device to return its vector.
     const base = id.im2TopBits;
-    if (id.lineInterruptStatus) return base | 0x00;
-    if (id.uart0RxNearFullStatus || id.uart0RxAvailableStatus) return base | 0x02;
-    if (id.uart1RxNearFullStatus || id.uart1RxAvailableStatus) return base | 0x04;
-    for (let i = 0; i < 8; i++) {
-      if (id.ctcIntStatus[i]) return base | ((3 + i) << 1);
+    for (let i = 0; i < 14; i++) {
+      if (id.daisyInService[i]) {
+        // --- InService device blocks all lower-priority devices
+        break;
+      }
+      if (id.isDeviceRequesting(i)) {
+        return base | (i << 1);
+      }
     }
-    if (id.ulaInterruptStatus) return base | 0x16;
-    if (id.uart0TxEmptyStatus) return base | 0x18;
-    if (id.uart1TxEmptyStatus) return base | 0x1a;
     return 0xff;
   }
 
   /**
-   * D4: When the CPU acknowledges an interrupt in hardware IM2 mode, clear the
-   * status flag of the winning (highest-priority) source so that the same event
-   * is not re-triggered on the next cycle.
+   * D4: When the CPU acknowledges an interrupt in hardware IM2 mode,
+   * transition the winning device from Requesting to InService via the
+   * daisy chain, clearing its pending request flag.
    */
   override onInterruptAcknowledged(): void {
     const id = this.interruptDevice;
     if (!id.hwIm2Mode) return;
-    if (id.lineInterruptStatus) { id.lineInterruptStatus = false; return; }
-    if (id.uart0RxNearFullStatus || id.uart0RxAvailableStatus) {
-      id.uart0RxNearFullStatus = false;
-      id.uart0RxAvailableStatus = false;
-      return;
-    }
-    if (id.uart1RxNearFullStatus || id.uart1RxAvailableStatus) {
-      id.uart1RxNearFullStatus = false;
-      id.uart1RxAvailableStatus = false;
-      return;
-    }
-    for (let i = 0; i < 8; i++) {
-      if (id.ctcIntStatus[i]) { id.ctcIntStatus[i] = false; return; }
-    }
-    if (id.ulaInterruptStatus) { id.ulaInterruptStatus = false; return; }
-    if (id.uart0TxEmptyStatus) { id.uart0TxEmptyStatus = false; return; }
-    if (id.uart1TxEmptyStatus) { id.uart1TxEmptyStatus = false; return; }
+    id.daisyAcknowledge();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1036,6 +1044,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
    */
   protected override onRetnExecuted(): void {
+    // --- D4: RETI (ED 4D) in HW IM2 mode clears the first InService device
+    // in the daisy chain. This must happen before any other RETN processing
+    // because the FPGA's reti_seen signal propagates through the daisy chain
+    // independently of the stackless NMI / MF / DivMMC handling.
+    if (this.opCode === 0x4d && this.interruptDevice.hwIm2Mode) {
+      this.interruptDevice.daisyReti();
+    }
+
     // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
     // D6: Capture mf_is_active BEFORE clearing MF state. When MF was active,
     // DivMMC should not see RETN.
@@ -1449,6 +1465,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.audioControlDevice.getTurboSoundDevice().onNewFrame();
     this.audioControlDevice.getDacDevice().onNewFrame();
     this.audioControlDevice.getAudioMixerDevice().onNewFrame();
+
+    // --- Advance DS1307 RTC clock (1 Hz tick via frame counting)
+    this.i2cDevice.onNewFrame();
+
+    // --- Auto-drain UART TX FIFOs
+    this.uartDevice.onNewFrame();
+
+    // --- Advance floppy disk motor timing
+    this.floppyDevice.onFrameCompleted();
   }
 
   /**

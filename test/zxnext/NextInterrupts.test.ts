@@ -93,6 +93,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
     setupIm2(m, im2TopBits);
 
     m.interruptDevice.lineInterruptStatus = true;
+    m.interruptDevice.lineInterruptEnabled = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -105,6 +106,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
     setupIm2(m, im2TopBits);
 
     m.interruptDevice.uart0RxNearFullStatus = true;
+    m.interruptDevice.uart0RxNearFull = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -117,6 +119,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
     setupIm2(m, im2TopBits);
 
     m.interruptDevice.uart0RxAvailableStatus = true;
+    m.interruptDevice.uart0RxAvailable = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -129,6 +132,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
     setupIm2(m, im2TopBits);
 
     m.interruptDevice.uart1RxNearFullStatus = true;
+    m.interruptDevice.uart1RxNearFull = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -141,6 +145,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
     setupIm2(m, im2TopBits);
 
     m.interruptDevice.ctcIntStatus[0] = true;
+    m.interruptDevice.ctcIntEnabled[0] = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -154,6 +159,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
 
     // Isolate ctc[2]
     m.interruptDevice.ctcIntStatus[2] = true;
+    m.interruptDevice.ctcIntEnabled[2] = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -179,6 +185,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
     setupIm2(m, im2TopBits);
 
     m.interruptDevice.uart0TxEmptyStatus = true;
+    m.interruptDevice.uart0TxEmpty = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -191,6 +198,7 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
     setupIm2(m, im2TopBits);
 
     m.interruptDevice.uart1TxEmptyStatus = true;
+    m.interruptDevice.uart1TxEmpty = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -204,7 +212,9 @@ describe("Next IM2 – D1 (getInterruptVector)", () => {
 
     // Both active — line (priority 0) should win
     m.interruptDevice.lineInterruptStatus = true;
+    m.interruptDevice.lineInterruptEnabled = true;
     m.interruptDevice.uart0RxAvailableStatus = true;
+    m.interruptDevice.uart0RxAvailable = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -226,6 +236,7 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     setupIm2(m, 0x60);
 
     m.interruptDevice.lineInterruptStatus = true;
+    m.interruptDevice.lineInterruptEnabled = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -237,6 +248,7 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     setupIm2(m, 0x60);
 
     m.interruptDevice.uart0RxNearFullStatus = true;
+    m.interruptDevice.uart0RxNearFull = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -248,6 +260,7 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     setupIm2(m, 0x60);
 
     m.interruptDevice.uart0RxAvailableStatus = true;
+    m.interruptDevice.uart0RxAvailable = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -259,6 +272,7 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     setupIm2(m, 0x60);
 
     m.interruptDevice.uart1RxNearFullStatus = true;
+    m.interruptDevice.uart1RxNearFull = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -270,6 +284,7 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     setupIm2(m, 0x60);
 
     m.interruptDevice.ctcIntStatus[3] = true;
+    m.interruptDevice.ctcIntEnabled[3] = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -292,6 +307,7 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     setupIm2(m, 0x60);
 
     m.interruptDevice.uart0TxEmptyStatus = true;
+    m.interruptDevice.uart0TxEmpty = true;
     m.sigINT = true;
     m.executeCpuCycle();
 
@@ -303,6 +319,7 @@ describe("Next IM2 – D4 (onInterruptAcknowledged clears winning source)", () =
     setupIm2(m, 0x60);
 
     m.interruptDevice.uart1TxEmptyStatus = true;
+    m.interruptDevice.uart1TxEmpty = true;
     m.sigINT = true;
     m.executeCpuCycle();
 

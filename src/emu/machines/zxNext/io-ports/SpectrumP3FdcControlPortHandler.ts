@@ -1,8 +1,9 @@
-export function readSpectrumP3FdcControlPort(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
+export function readSpectrumP3FdcControlPort(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.floppyDevice.readDataRegister();
 }
 
-export function writeSpectrumP3FdcControlPort(value: number): void {
-  // TODO: Implement this
+export function writeSpectrumP3FdcControlPort(machine: IZxNextMachine): (port: number, value: number) => void {
+  return (_, value) => machine.floppyDevice.writeDataRegister(value);
 }

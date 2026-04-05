@@ -1,4 +1,7 @@
 import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
+import { CtcDevice } from "@emu/machines/zxNext/CtcDevice";
+import { I2cDevice } from "@emu/machines/zxNext/I2cDevice";
+import { UartDevice } from "@emu/machines/zxNext/UartDevice";
 import { DivMmcDevice } from "@emu/machines/zxNext/DivMmcDevice";
 import { MultifaceDevice } from "@emu/machines/zxNext/MultifaceDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
@@ -21,6 +24,7 @@ import { ExpansionBusDevice } from "@emu/machines/zxNext/ExpansionBusDevice";
 import { NextComposedScreenDevice } from "@emu/machines/zxNext/screen/NextComposedScreenDevice";
 import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { AudioControlDevice } from "@emu/machines/zxNext/AudioControlDevice";
+import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 
 /**
  * This interface defines the behavior of a ZX Spectrum 48K virtual machine that integrates the emulator built from
@@ -58,6 +62,12 @@ export interface IZxNextMachine extends IZ80Machine {
 
   copperDevice: CopperDevice;
 
+  ctcDevice: CtcDevice;
+
+  i2cDevice: I2cDevice;
+
+  uartDevice: UartDevice;
+
   composedScreenDevice: NextComposedScreenDevice;
 
   keyboardDevice: NextKeyboardDevice
@@ -75,6 +85,8 @@ export interface IZxNextMachine extends IZ80Machine {
   audioControlDevice: AudioControlDevice;
 
   expansionBusDevice: ExpansionBusDevice;
+
+  floppyDevice: IFloppyControllerDevice;
 
   /**
    * Reads the screen memory byte

@@ -45,6 +45,23 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x20)).toBe(0x00);
     expect(d.directGetRegValue(0x22)).toBe(0x00);
     expect(d.directGetRegValue(0x23)).toBe(0x00);
+    expect(d.directGetRegValue(0x11)).toBe(0x00);
+    expect(d.directGetRegValue(0x12)).toBe(0x08);
+    expect(d.directGetRegValue(0x13)).toBe(0x0b);
+    expect(d.directGetRegValue(0x14)).toBe(0xe3);
+    expect(d.directGetRegValue(0x15)).toBe(0x00);
+    expect(d.directGetRegValue(0x16)).toBe(0x00);
+    expect(d.directGetRegValue(0x17)).toBe(0x00);
+    expect(d.directGetRegValue(0x18)).toBe(0x00);
+    expect(d.directGetRegValue(0x19)).toBe(0x00);
+    expect(d.directGetRegValue(0x1a)).toBe(0x00);
+    expect(d.directGetRegValue(0x1b)).toBe(0x00);
+    expect(d.directGetRegValue(0x1c)).toBe(0x00);
+    expect(d.directGetRegValue(0x1e)).toBe(0x00);
+    expect(d.directGetRegValue(0x1f)).toBe(0x00);
+    expect(d.directGetRegValue(0x20)).toBe(0x00);
+    expect(d.directGetRegValue(0x22)).toBe(0x00);
+    expect(d.directGetRegValue(0x23)).toBe(0x00);
     expect(d.directGetRegValue(0x24)).toBe(0x00);
     expect(d.directGetRegValue(0x26)).toBe(0x00);
     expect(d.directGetRegValue(0x27)).toBe(0x00);
@@ -107,12 +124,12 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
     expect(d.directGetRegValue(0x84)).toBe(0xff);
-    expect(d.directGetRegValue(0x85)).toBe(0xff);
+    expect(d.directGetRegValue(0x85)).toBe(0x0f);
     expect(d.directGetRegValue(0x86)).toBe(0xff);
     expect(d.directGetRegValue(0x87)).toBe(0xff);
     expect(d.directGetRegValue(0x88)).toBe(0xff);
-    expect(d.directGetRegValue(0x89)).toBe(0x00);
-    expect(d.directGetRegValue(0x8a)).toBe(0xff);
+    expect(d.directGetRegValue(0x89)).toBe(0x8f);
+    expect(d.directGetRegValue(0x8a)).toBe(0x00);
     expect(d.directGetRegValue(0x8c)).toBe(0x00);
     expect(d.directGetRegValue(0x8e)).toBe(0x08);
     expect(d.directGetRegValue(0x8f)).toBe(0x00);
@@ -259,12 +276,12 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
     expect(d.directGetRegValue(0x84)).toBe(0xff);
-    expect(d.directGetRegValue(0x85)).toBe(0xff);
+    expect(d.directGetRegValue(0x85)).toBe(0x0f);
     expect(d.directGetRegValue(0x86)).toBe(0xff);
     expect(d.directGetRegValue(0x87)).toBe(0xff);
     expect(d.directGetRegValue(0x88)).toBe(0xff);
-    expect(d.directGetRegValue(0x89)).toBe(0x00);
-    expect(d.directGetRegValue(0x8a)).toBe(0xff);
+    expect(d.directGetRegValue(0x89)).toBe(0x8f);
+    expect(d.directGetRegValue(0x8a)).toBe(0x00);
     expect(d.directGetRegValue(0x8c)).toBe(0x00);
     expect(d.directGetRegValue(0x8e)).toBe(0x08);
     expect(d.directGetRegValue(0x8f)).toBe(0x00);
@@ -2156,7 +2173,8 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x81, 0xa3);
 
     // --- Assert
-    expect(readNextReg(m, 0x81)).toBe(0xa3);
+    // NR $81 bit 7 is read-only (ROMCS status), bits 3:0 are fixed
+    expect(readNextReg(m, 0x81)).toBe(0x20);
   });
 
   it("Reg $81 write #2", async () => {
@@ -2167,7 +2185,8 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x81, 0xff);
 
     // --- Assert
-    expect(readNextReg(m, 0x81)).toBe(0xff);
+    // NR $81 bit 7 is read-only (ROMCS status), bits 3:0 are fixed
+    expect(readNextReg(m, 0x81)).toBe(0x70);
   });
 
   it("Reg $82 write", async () => {
@@ -2882,7 +2901,8 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x8a, 0xa3);
 
     // --- Assert
-    expect(readNextReg(m, 0x8a)).toBe(0xa3);
+    // NR $8A masks to 6 bits (bits 5:0)
+    expect(readNextReg(m, 0x8a)).toBe(0x23);
   });
 
   it("Reg $8f write", async () => {

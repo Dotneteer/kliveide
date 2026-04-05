@@ -1,6 +1,22 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
+/**
+ * Number of IM2 daisy-chain peripherals (FPGA peripherals.vhd).
+ */
+const DAISY_DEVICE_COUNT = 14;
+
+/**
+ * IM2 daisy-chain priority indices matching the FPGA zxnext.vhd wiring.
+ */
+export const DAISY_PRIORITY_LINE = 0;
+export const DAISY_PRIORITY_UART0_RX = 1;
+export const DAISY_PRIORITY_UART1_RX = 2;
+export const DAISY_PRIORITY_CTC_BASE = 3; // 3-10 for CTC channels 0-7
+export const DAISY_PRIORITY_ULA = 11;
+export const DAISY_PRIORITY_UART0_TX = 12;
+export const DAISY_PRIORITY_UART1_TX = 13;
+
 export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   intSignalActive: boolean;
   ulaInterruptDisabled: boolean;
@@ -39,6 +55,9 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   readonly ctcIntStatus: boolean[] = []; // --- im2_int_status(3-10)
   readonly enableCtcToIntDma: boolean[] = [];
 
+  // --- Daisy chain InService state per device (FPGA im2_device S_ISR equivalent)
+  readonly daisyInService: boolean[] = [];
+
   busResetRequested: boolean;
   mfNmiByIoTrap: boolean;
   mfNmiByNextReg: boolean;
@@ -64,12 +83,40 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
       this.ctcIntStatus[i] = false;
       this.enableCtcToIntDma[i] = false;
     }
+    for (let i = 0; i < DAISY_DEVICE_COUNT; i++) {
+      this.daisyInService[i] = false;
+    }
     this.busResetRequested = false;
     this.mfNmiByIoTrap = false;
     this.mfNmiByNextReg = false;
     this.divMccNmiBtNextReg = false;
     this.lastWasHardReset = false;
     this.lastWasSoftReset = false;
+
+    // --- UART interrupt enable/status/DMA flags
+    this.uart0TxEmpty = false;
+    this.uart0RxNearFull = false;
+    this.uart0RxAvailable = false;
+    this.uart1TxEmpty = false;
+    this.uart1RxNearFull = false;
+    this.uart1RxAvailable = false;
+    this.lineInterruptStatus = false;
+    this.ulaInterruptStatus = false;
+    this.uart0TxEmptyStatus = false;
+    this.uart0RxNearFullStatus = false;
+    this.uart0RxAvailableStatus = false;
+    this.uart1TxEmptyStatus = false;
+    this.uart1RxNearFullStatus = false;
+    this.uart1RxAvailableStatus = false;
+    this.enableNmiToIntDma = false;
+    this.enableLineIntToIntDma = false;
+    this.enableUlaIntToIntDma = false;
+    this.enableUart0TxEmptyToIntDma = false;
+    this.enableUart0RxNearFullToIntDma = false;
+    this.enableUart0RxAvailableToIntDma = false;
+    this.enableUart1TxEmptyToIntDma = false;
+    this.enableUart1RxNearFullToIntDma = false;
+    this.enableUart1RxAvailableToIntDma = false;
   }
 
   get nextReg02Value(): number {
@@ -198,6 +245,13 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextRegC8Value(): number {
+    if (this.hwIm2Mode) {
+      // --- In HW IM2 mode, status reflects daisy chain InService state
+      return (
+        (this.daisyInService[DAISY_PRIORITY_LINE] ? 0x02 : 0x00) |
+        (this.daisyInService[DAISY_PRIORITY_ULA] ? 0x01 : 0x00)
+      );
+    }
     return (this.lineInterruptStatus ? 0x02 : 0x00) | (this.ulaInterruptStatus ? 0x01 : 0x00);
   }
 
@@ -211,6 +265,14 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextRegC9Value(): number {
+    if (this.hwIm2Mode) {
+      // --- In HW IM2 mode, status reflects daisy chain InService state
+      let val = 0;
+      for (let i = 0; i < 8; i++) {
+        if (this.daisyInService[DAISY_PRIORITY_CTC_BASE + i]) val |= (1 << i);
+      }
+      return val;
+    }
     return (
       (this.ctcIntStatus[0] ? 0x01 : 0x00) |
       (this.ctcIntStatus[1] ? 0x02 : 0x00) |
@@ -251,13 +313,22 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   get nextRegCAValue(): number {
+    if (this.hwIm2Mode) {
+      // --- In HW IM2 mode, status reflects daisy chain InService state
+      return (
+        (this.daisyInService[DAISY_PRIORITY_UART1_TX] ? 0x40 : 0x00) |
+        (this.daisyInService[DAISY_PRIORITY_UART1_RX] ? 0x30 : 0x00) |
+        (this.daisyInService[DAISY_PRIORITY_UART0_TX] ? 0x04 : 0x00) |
+        (this.daisyInService[DAISY_PRIORITY_UART0_RX] ? 0x03 : 0x00)
+      );
+    }
     return (
       (this.uart1TxEmptyStatus ? 0x40 : 0x00) |
-      (this.uart1TxEmptyStatus ? 0x20 : 0x00) |
+      (this.uart1RxNearFullStatus ? 0x20 : 0x00) |
       (this.uart1RxAvailableStatus ? 0x10 : 0x00) |
       (this.uart0TxEmptyStatus ? 0x04 : 0x00) |
       (this.uart0RxNearFullStatus ? 0x02 : 0x00) |
-      (this.uart0RxNearFullStatus ? 0x01 : 0x00)
+      (this.uart0RxAvailableStatus ? 0x01 : 0x00)
     );
   }
 
@@ -346,5 +417,134 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
 
   setCtcChannelInterruptStatus(channel: number, value: boolean) {
     this.ctcIntStatus[channel] = value;
+  }
+
+  /**
+   * Returns true if the device at the given priority has a pending interrupt
+   * request (status flag set) AND its interrupt source is enabled.
+   */
+  isDeviceRequesting(priority: number): boolean {
+    switch (priority) {
+      case DAISY_PRIORITY_LINE:
+        return this.lineInterruptStatus && this.lineInterruptEnabled;
+      case DAISY_PRIORITY_UART0_RX:
+        return (this.uart0RxNearFullStatus || this.uart0RxAvailableStatus) &&
+               (this.uart0RxNearFull || this.uart0RxAvailable);
+      case DAISY_PRIORITY_UART1_RX:
+        return (this.uart1RxNearFullStatus || this.uart1RxAvailableStatus) &&
+               (this.uart1RxNearFull || this.uart1RxAvailable);
+      case DAISY_PRIORITY_ULA:
+        return this.ulaInterruptStatus && !this.ulaInterruptDisabled;
+      case DAISY_PRIORITY_UART0_TX:
+        return this.uart0TxEmptyStatus && this.uart0TxEmpty;
+      case DAISY_PRIORITY_UART1_TX:
+        return this.uart1TxEmptyStatus && this.uart1TxEmpty;
+      default:
+        // CTC channels 0-7 (priorities 3-10)
+        if (priority >= DAISY_PRIORITY_CTC_BASE && priority < DAISY_PRIORITY_ULA) {
+          const ch = priority - DAISY_PRIORITY_CTC_BASE;
+          return this.ctcIntStatus[ch] && this.ctcIntEnabled[ch];
+        }
+        return false;
+    }
+  }
+
+  /**
+   * Clears the pending request status flag for the device at the given priority.
+   */
+  clearDeviceRequest(priority: number): void {
+    switch (priority) {
+      case DAISY_PRIORITY_LINE:
+        this.lineInterruptStatus = false;
+        break;
+      case DAISY_PRIORITY_UART0_RX:
+        this.uart0RxNearFullStatus = false;
+        this.uart0RxAvailableStatus = false;
+        break;
+      case DAISY_PRIORITY_UART1_RX:
+        this.uart1RxNearFullStatus = false;
+        this.uart1RxAvailableStatus = false;
+        break;
+      case DAISY_PRIORITY_ULA:
+        this.ulaInterruptStatus = false;
+        break;
+      case DAISY_PRIORITY_UART0_TX:
+        this.uart0TxEmptyStatus = false;
+        break;
+      case DAISY_PRIORITY_UART1_TX:
+        this.uart1TxEmptyStatus = false;
+        break;
+      default:
+        if (priority >= DAISY_PRIORITY_CTC_BASE && priority < DAISY_PRIORITY_ULA) {
+          this.ctcIntStatus[priority - DAISY_PRIORITY_CTC_BASE] = false;
+        }
+        break;
+    }
+  }
+
+  /**
+   * Walks the daisy chain from highest to lowest priority and determines
+   * whether any device should assert INT to the CPU.
+   *
+   * MAME equivalent: daisy_update_irq_state().
+   * FPGA equivalent: peripherals.vhd INT_n AND chain + IEO chain.
+   *
+   * Returns true if an interrupt should be asserted.
+   */
+  daisyUpdateIrqState(): boolean {
+    for (let i = 0; i < DAISY_DEVICE_COUNT; i++) {
+      if (this.daisyInService[i]) {
+        // --- InService device blocks all lower-priority devices (IEO = 0)
+        return false;
+      }
+      if (this.isDeviceRequesting(i)) {
+        // --- First Requesting device with IEI = 1 asserts INT
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Acknowledges the highest-priority interrupt request in the daisy chain.
+   * Transitions the device from Requesting to InService, clears its request
+   * status flag, and returns the IM2 vector.
+   *
+   * MAME equivalent: daisy_get_irq_device() + z80daisy_irq_ack().
+   * FPGA equivalent: im2_device S_REQ → S_ACK → S_ISR transition.
+   *
+   * Returns the IM2 vector, or 0xFF if no device claims the interrupt.
+   */
+  daisyAcknowledge(): number {
+    const base = this.im2TopBits;
+    for (let i = 0; i < DAISY_DEVICE_COUNT; i++) {
+      if (this.daisyInService[i]) {
+        // --- An InService device blocks all below — no lower device can be acknowledged
+        break;
+      }
+      if (this.isDeviceRequesting(i)) {
+        // --- Transition: Requesting → InService
+        this.daisyInService[i] = true;
+        this.clearDeviceRequest(i);
+        return base | (i << 1);
+      }
+    }
+    return 0xff;
+  }
+
+  /**
+   * Handles a RETI instruction by clearing the InService state of the
+   * highest-priority device currently being serviced.
+   *
+   * MAME equivalent: daisy_call_reti_device() → z80daisy_irq_reti().
+   * FPGA equivalent: im2_device S_ISR → S_0 transition on reti_seen with IEI = 1.
+   */
+  daisyReti(): void {
+    for (let i = 0; i < DAISY_DEVICE_COUNT; i++) {
+      if (this.daisyInService[i]) {
+        this.daisyInService[i] = false;
+        return;
+      }
+    }
   }
 }

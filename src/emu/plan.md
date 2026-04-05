@@ -11,7 +11,7 @@ and outlines a plan to implement the missing devices.
 | 2 | Spectrum ULA contention | UlaDevice / MemoryDevice | ✅ Complete |
 | 3 | IM2 Line Interrupt | InterruptDevice | ✅ Complete |
 | 4 | IM2 ULA Interrupt | InterruptDevice | ✅ Complete |
-| 5 | Z80 CTC (specnext_ctc) | CtcPortHandler (stub) | ❌ Missing |
+| 5 | Z80 CTC (specnext_ctc) | CtcPortHandler (stub) | ✅ Complete |
 | 6 | Z80 DMA (specnext_dma) | DmaDevice | ✅ Complete |
 | 7 | Screen ULA / ULA+ / ULANext | NextComposedScreenDevice | ✅ Complete |
 | 8 | Copper (specnext_copper) | CopperDevice | ✅ Complete |
@@ -26,14 +26,14 @@ and outlines a plan to implement the missing devices.
 | 17 | DAC 8-bit R2R ×4 | DacDevice / DacPortDevice / DacNextRegDevice | ✅ Complete |
 | 18 | Speaker | AudioMixerDevice (beeper) | ✅ Complete |
 | 19 | Palette (512×4 + 1) | PaletteDevice | ✅ Complete |
-| 20 | DS1307 I2C RTC | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ❌ Missing |
-| 21 | I2C Bus | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ❌ Missing |
-| 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ❌ Missing |
-| 23 | ZX Bus / Expansion Slot | ExpansionBusDevice (framework only) | ⚠️ Partial |
-| 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |
-| 25 | Kempston Joystick ports | KempstonHandler (stubs) | ❌ Missing |
-| 26 | Z80 Daisy Chain | InterruptDevice (priority, no daisy chain) | ⚠️ Partial |
-| 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ❌ Missing |
+| 20 | DS1307 I2C RTC | I2cDevice (integrated DS1307 with clock advancement) | ✅ Complete |
+| 21 | I2C Bus | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ✅ Complete |
+| 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ✅ Complete |
+| 23 | ZX Bus / Expansion Slot | ExpansionBusDevice + port enable gating (NR $82-$89, $8A) | ✅ Complete |
+| 24 | Kempston Mouse | MouseDevice, KempstonHandler, NextIoPortManager | ✅ Complete |
+| 25 | Kempston Joystick ports | JoystickDevice, KempstonHandler, NextIoPortManager | ✅ Complete |
+| 26 | Z80 Daisy Chain | InterruptDevice (full daisy chain with IEI/IEO, RETI) | ✅ Complete |
+| 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ✅ Complete |
 | 28 | NextReg bank device | NextRegDevice | ✅ Complete |
 | 29 | Memory paging | MemoryDevice | ✅ Complete |
 | 30 | CPU speed control | CpuSpeedDevice | ✅ Complete |
@@ -223,7 +223,7 @@ MAME implements ZXBUS with expansion slot capability.
 | 🟡 Medium | I2C Bus + DS1307 RTC | Medium | Date/time and NVRAM support |
 | 🟡 Medium | UART (dual) | Medium-High | Serial communication, Wi-Fi |
 | 🟡 Medium | Kempston Mouse/Joystick | Low-Medium | Game input support |
-| 🟢 Low | Z80 Daisy Chain | Low | Interrupt accuracy refinement |
+| 🟢 Low | Z80 Daisy Chain | Low | ✅ Done — full IEI/IEO chain, RETI handling, 66 tests |
 | 🟢 Low | +3 FDC | High | Legacy floppy support |
 | 🟢 Low | ZX Bus Expansion | Medium | Future extensibility |
 

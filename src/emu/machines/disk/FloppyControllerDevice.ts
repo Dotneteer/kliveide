@@ -1,5 +1,5 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { IFloppyDiskDrive } from "@emu/abstractions/IFloppyDiskDrive";
 import type { IFloppyControllerDeviceTest } from "./IFloppyContorllerDeviceTest";
@@ -164,7 +164,7 @@ export class FloppyControllerDevice
 
   // --- Initializes the controller
   constructor(
-    public readonly machine: IZxSpectrumMachine,
+    public readonly machine: IZ80Machine,
     private readonly hasDriveB = false
   ) {
     machine.machinePropertyChanged.on((args) => this.onMachinePropertiesChanged(args));

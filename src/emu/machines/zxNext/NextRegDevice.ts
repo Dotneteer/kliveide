@@ -1990,7 +1990,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x86,
       description: "Expansion Bus Decoding Enables #1 (LSB)",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(0),
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(0, v),
       slices: [
         {
           mask: 0x80,
@@ -2036,7 +2037,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x87,
       description: "Expansion Bus Decoding Enables #2",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(1),
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(1, v),
       slices: [
         {
           mask: 0x80,
@@ -2082,7 +2084,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x88,
       description: "Expansion Bus Decoding Enables #3",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(2),
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(2, v),
       slices: [
         {
           mask: 0x80,
@@ -2128,8 +2131,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x89,
       description: "Expansion Bus Decoding Enables #4 (MSB)",
-      readFn: () => (this.regValues[0x89] ?? 0x00) & 0x8f,
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.getBusPortEnable(3) & 0x8f,
+      writeFn: (v) => machine.expansionBusDevice.setBusPortEnable(3, v & 0x8f),
       slices: [
         {
           mask: 0x80,
@@ -2160,7 +2163,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x8a,
       description: "Expansion Bus IO Propagate",
-      writeFn: () => {},
+      readFn: () => machine.expansionBusDevice.ioPropagate,
+      writeFn: (v) => { machine.expansionBusDevice.ioPropagate = v; },
       slices: [
         {
           mask: 0x20,
@@ -3325,6 +3329,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
     machine.expansionBusDevice.hardReset(); // --- Reg 0x80 and 0x81
 
+    // --- FPGA: all internal port enables default to 1 on hard reset
+    this.directSetRegValue(0x82, 0xff); // --- Internal Port Decoding Enables #1
+    this.directSetRegValue(0x83, 0xff); // --- Internal Port Decoding Enables #2
+    this.directSetRegValue(0x84, 0xff); // --- Internal Port Decoding Enables #3
+    this.directSetRegValue(0x85, 0x0f); // --- Internal Port Decoding Enables #4 (bit 7=reset mode=0)
+
     this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
 
     // --- Apply soft reset
@@ -3384,6 +3394,60 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.regValues[reg] = value;
     const regInfo = this.regs[reg];
     regInfo?.writeFn?.(value);
+  }
+
+  /**
+   * Check if a port group is effectively enabled.
+   * Combines internal port enable (NR $82–$85 boolean flags) with expansion bus
+   * AND-masking (NR $86–$89).
+   *
+   * FPGA: When expbus OFF, effective = internal_enables.
+   *       When expbus ON,  effective = internal_enables AND bus_enables.
+   *
+   * @param regIndex Register index: 0=$82, 1=$83, 2=$84, 3=$85
+   * @param bit Bit position (0–7) within the register
+   * @returns true if the port group is enabled
+   */
+  isPortGroupEnabled(regIndex: number, bit: number): boolean {
+    const internal = this.getInternalPortEnable(regIndex, bit);
+    if (!internal) return false;
+    if (!this.machine.expansionBusDevice.enabled) return true;
+    return (this.machine.expansionBusDevice.getBusPortEnable(regIndex) & (1 << bit)) !== 0;
+  }
+
+  /**
+   * Get the internal port enable flag for a given register/bit.
+   * Returns the boolean flag value set by NR $82–$85 writeFn.
+   */
+  private getInternalPortEnable(regIndex: number, bit: number): boolean {
+    switch (regIndex) {
+      case 0: // NR $82
+        return [
+          this.port0xffEnabled, this.port0x7ffdEnabled, this.port0xdffdEnabled,
+          this.port0x1ffdEnabled, this.plus3FloatingBusEnabled, this.port0x6bEnabled,
+          this.port0x1fEnabled, this.port0x37Enabled
+        ][bit] ?? true;
+      case 1: // NR $83
+        return [
+          this.portDivMmcEnabled, this.portMultifaceEnabled, this.portI2CEnabled,
+          this.portSpiEnabled, this.portUartEnabled, this.portMouseEnabled,
+          this.portSpritesEnabled, this.portLayer2Enabled
+        ][bit] ?? true;
+      case 2: // NR $84
+        return [
+          this.portAyEnabled, this.portDacMode1Enabled, this.portDacMode2Enabled,
+          this.portDacStereoProfiCovoxEnabled, this.portDacStereoCovoxEnabled,
+          this.portDacMonoPentagonEnabled, this.portDacMonoGsCovoxEnabled,
+          this.portDacMonoSpecdrumEnabled
+        ][bit] ?? true;
+      case 3: // NR $85
+        return [
+          this.portUlaPlusEnabled, this.portZ80DmaEnabled,
+          this.portPentagon1024MemoryEnabled, this.portZ80CtcEnabled
+        ][bit] ?? true;
+      default:
+        return true;
+    }
   }
 
   getDescriptors(): NextRegDescriptor[] {

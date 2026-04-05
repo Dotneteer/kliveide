@@ -1,0 +1,553 @@
+// license:BSD-3-Clause
+// copyright-holders:Aaron Giles
+/*********************************************************************
+
+    debugvw.cpp
+
+    Debugger view engine.
+
+***************************************************************************/
+
+#include "emu.h"
+#include "debugvw.h"
+
+#include "debugcpu.h"
+#include "dvbpoints.h"
+#include "dvdisasm.h"
+#include "dvepoints.h"
+#include "dvmemory.h"
+#include "dvrpoints.h"
+#include "dvstate.h"
+#include "dvtext.h"
+#include "dvwpoints.h"
+#include "express.h"
+
+#include "debugger.h"
+
+#include <cctype>
+
+
+
+//**************************************************************************
+//  DEBUG VIEW SOURCE
+//**************************************************************************
+
+//-------------------------------------------------
+//  debug_view_source - constructor
+//-------------------------------------------------
+
+debug_view_source::debug_view_source(std::string &&name, device_t *device)
+	: m_name(std::move(name)),
+		m_device(device)
+{
+}
+
+
+//-------------------------------------------------
+//  ~debug_view_source - destructor
+//-------------------------------------------------
+
+debug_view_source::~debug_view_source()
+{
+}
+
+
+
+//**************************************************************************
+//  DEBUG VIEW SOURCE LIST
+//**************************************************************************
+
+
+//**************************************************************************
+//  DEBUG VIEW
+//**************************************************************************
+
+//-------------------------------------------------
+//  debug_view - constructor
+//-------------------------------------------------
+
+debug_view::debug_view(running_machine &machine, debug_view_type type, debug_view_osd_update_func osdupdate, void *osdprivate)
+	: m_next(nullptr),
+		m_type(type),
+		m_source(nullptr),
+		m_osdupdate(osdupdate),
+		m_osdprivate(osdprivate),
+		m_visible(80,10),
+		m_total(80,10),
+		m_topleft(0,0),
+		m_cursor(0,0),
+		m_supports_cursor(false),
+		m_cursor_visible(false),
+		m_recompute(true),
+		m_update_level(0),
+		m_update_pending(true),
+		m_osd_update_pending(true),
+		m_viewdata(m_visible.y * m_visible.x),
+		m_machine(machine)
+{
+}
+
+
+//-------------------------------------------------
+//  ~debug_view - destructor
+//-------------------------------------------------
+
+debug_view::~debug_view()
+{
+}
+
+
+//-------------------------------------------------
+//  end_update - bracket a sequence of changes so
+//  that only one update occurs
+//-------------------------------------------------
+
+void debug_view::end_update()
+{
+	/* if we hit zero, call the update function */
+	if (m_update_level == 1)
+	{
+		while (m_update_pending)
+		{
+			// no longer pending, but flag for the OSD
+			m_update_pending = false;
+			m_osd_update_pending = true;
+
+			// resize the viewdata if needed
+			m_viewdata.resize(m_visible.x * m_visible.y);
+
+			// update the view
+			view_update();
+		}
+	}
+
+	// decrement the level
+	m_update_level--;
+}
+
+
+//-------------------------------------------------
+//  flush_osd_updates - notify the OSD of any
+//  pending updates
+//-------------------------------------------------
+
+void debug_view::flush_osd_updates()
+{
+	if (m_osd_update_pending && m_osdupdate != nullptr)
+		(*m_osdupdate)(*this, m_osdprivate);
+	m_osd_update_pending = false;
+}
+
+
+//-------------------------------------------------
+//  set_visible_size - set the visible size in
+//  rows and columns
+//-------------------------------------------------*/
+
+void debug_view::set_visible_size(debug_view_xy size)
+{
+	if (size.x != m_visible.x || size.y != m_visible.y)
+	{
+		begin_update();
+		m_visible = size;
+		m_update_pending = true;
+		view_notify(VIEW_NOTIFY_VISIBLE_CHANGED);
+		end_update();
+	}
+}
+
+
+//-------------------------------------------------
+//  set_visible_position - set the top left
+//  position of the visible area in rows and
+//  columns
+//-------------------------------------------------
+
+void debug_view::set_visible_position(debug_view_xy pos)
+{
+	if (pos.x != m_topleft.x || pos.y != m_topleft.y)
+	{
+		begin_update();
+		m_topleft = pos;
+		m_update_pending = true;
+		view_notify(VIEW_NOTIFY_VISIBLE_CHANGED);
+		end_update();
+	}
+}
+
+
+//-------------------------------------------------
+//  set_cursor_position - set the current cursor
+//  position as a row and column
+//-------------------------------------------------
+
+void debug_view::set_cursor_position(debug_view_xy pos)
+{
+	if (pos.x != m_cursor.x || pos.y != m_cursor.y)
+	{
+		begin_update();
+		m_cursor = pos;
+		m_update_pending = true;
+		view_notify(VIEW_NOTIFY_CURSOR_CHANGED);
+		end_update();
+	}
+}
+
+
+//-------------------------------------------------
+//  set_cursor_visible - set the visible state of
+//  the cursor
+//-------------------------------------------------
+
+void debug_view::set_cursor_visible(bool visible)
+{
+	if (visible != m_cursor_visible)
+	{
+		begin_update();
+		m_cursor_visible = visible;
+		m_update_pending = true;
+		view_notify(VIEW_NOTIFY_CURSOR_CHANGED);
+		end_update();
+	}
+}
+
+
+//-------------------------------------------------
+//  set_subview - set the current subview
+//-------------------------------------------------
+
+void debug_view::set_source(const debug_view_source &source)
+{
+	if (&source != m_source)
+	{
+		begin_update();
+		m_source = &source;
+		m_update_pending = true;
+		view_notify(VIEW_NOTIFY_SOURCE_CHANGED);
+		end_update();
+	}
+}
+
+
+//-------------------------------------------------
+//  source_for_device - find the first source that
+//  matches the given device
+//-------------------------------------------------
+
+const debug_view_source *debug_view::source_for_device(device_t *device) const
+{
+	for (auto &source : m_source_list)
+		if (device == source->device())
+			return source.get();
+	return first_source();
+}
+
+
+//-------------------------------------------------
+//  adjust_visible_x_for_cursor - adjust a view's
+//  visible X position to ensure the cursor is
+//  visible
+//-------------------------------------------------
+
+void debug_view::adjust_visible_x_for_cursor()
+{
+	if (m_cursor.x < m_topleft.x)
+		m_topleft.x = m_cursor.x;
+	else if (m_cursor.x >= m_topleft.x + m_visible.x - 1)
+		m_topleft.x = m_cursor.x - m_visible.x + 2;
+	m_topleft.x = (std::max)((std::min)(m_topleft.x, m_total.x - m_visible.x), 0);
+}
+
+
+//-------------------------------------------------
+//  adjust_visible_y_for_cursor - adjust a view's
+//  visible Y position to ensure the cursor is
+//  visible
+//-------------------------------------------------
+
+void debug_view::adjust_visible_y_for_cursor()
+{
+	if (m_cursor.y < m_topleft.y)
+		m_topleft.y = m_cursor.y;
+	else if (m_cursor.y >= m_topleft.y + m_visible.y - 1)
+		m_topleft.y = m_cursor.y - m_visible.y + 2;
+	m_topleft.y = (std::max)((std::min)(m_topleft.y, m_total.y - m_visible.y), 0);
+}
+
+
+//-------------------------------------------------
+//  view_notify - handle notification of updates
+//-------------------------------------------------
+
+void debug_view::view_notify(debug_view_notification type)
+{
+	// default does nothing
+}
+
+
+//-------------------------------------------------
+//  view_char - handle a character typed within
+//  the current view
+//-------------------------------------------------
+
+void debug_view::view_char(int chval)
+{
+	// default does nothing
+}
+
+
+//-------------------------------------------------
+//  view_click - handle a mouse click within the
+//  current view
+//-------------------------------------------------
+
+void debug_view::view_click(const int button, const debug_view_xy& pos)
+{
+	// default does nothing
+}
+
+
+
+//**************************************************************************
+//  DEBUG VIEW MANAGER
+//**************************************************************************
+
+//-------------------------------------------------
+//  debug_view_manager - constructor
+//-------------------------------------------------
+
+debug_view_manager::debug_view_manager(running_machine &machine)
+	: m_machine(machine),
+		m_viewlist(nullptr)
+{
+}
+
+
+//-------------------------------------------------
+//  ~debug_view_manager - destructor
+//-------------------------------------------------
+
+debug_view_manager::~debug_view_manager()
+{
+	while (m_viewlist != nullptr)
+	{
+		debug_view *oldhead = m_viewlist;
+		m_viewlist = oldhead->m_next;
+		delete oldhead;
+	}
+}
+
+
+//-------------------------------------------------
+//  alloc_view - create a new view
+//-------------------------------------------------
+
+debug_view *debug_view_manager::alloc_view(debug_view_type type, debug_view_osd_update_func osdupdate, void *osdprivate)
+{
+	switch (type)
+	{
+		case DVT_CONSOLE:
+			return append(new debug_view_console(machine(), osdupdate, osdprivate));
+
+		case DVT_STATE:
+			return append(new debug_view_state(machine(), osdupdate, osdprivate));
+
+		case DVT_DISASSEMBLY:
+			return append(new debug_view_disasm(machine(), osdupdate, osdprivate));
+
+		case DVT_MEMORY:
+			return append(new debug_view_memory(machine(), osdupdate, osdprivate));
+
+		case DVT_LOG:
+			return append(new debug_view_log(machine(), osdupdate, osdprivate));
+
+		case DVT_BREAK_POINTS:
+			return append(new debug_view_breakpoints(machine(), osdupdate, osdprivate));
+
+		case DVT_WATCH_POINTS:
+			return append(new debug_view_watchpoints(machine(), osdupdate, osdprivate));
+
+		case DVT_REGISTER_POINTS:
+			return append(new debug_view_registerpoints(machine(), osdupdate, osdprivate));
+
+		case DVT_EXCEPTION_POINTS:
+			return append(new debug_view_exceptionpoints(machine(), osdupdate, osdprivate));
+
+		default:
+			fatalerror("Attempt to create invalid debug view type %d\n", type);
+	}
+	return nullptr;
+}
+
+
+//-------------------------------------------------
+//  free_view - free a view
+//-------------------------------------------------
+
+void debug_view_manager::free_view(debug_view &view)
+{
+	// free us but only if we're in the list
+	for (debug_view **viewptr = &m_viewlist; *viewptr != nullptr; viewptr = &(*viewptr)->m_next)
+		if (*viewptr == &view)
+		{
+			*viewptr = view.m_next;
+			delete &view;
+			break;
+		}
+}
+
+
+//-------------------------------------------------
+//  update_all_except - force all views to refresh
+//  except one
+//-------------------------------------------------
+
+void debug_view_manager::update_all_except(debug_view_type type)
+{
+	// loop over each view and force an update
+	for (debug_view *view = m_viewlist; view != nullptr; view = view->next())
+		if (type == DVT_NONE || type != view->type())
+			view->force_update();
+}
+
+
+//-------------------------------------------------
+//  update_all - force all views to refresh
+//-------------------------------------------------
+
+void debug_view_manager::update_all(debug_view_type type)
+{
+	// loop over each view and force an update
+	for (debug_view *view = m_viewlist; view != nullptr; view = view->next())
+		if (type == DVT_NONE || type == view->type())
+			view->force_update();
+}
+
+
+//-------------------------------------------------
+//  flush_osd_updates - flush all pending OSD
+//  updates
+//-------------------------------------------------
+
+void debug_view_manager::flush_osd_updates()
+{
+	for (debug_view *view = m_viewlist; view != nullptr; view = view->m_next)
+		view->flush_osd_updates();
+}
+
+
+//-------------------------------------------------
+//  append - append a view to the end of our list
+//-------------------------------------------------
+
+debug_view *debug_view_manager::append(debug_view *view)
+{
+	debug_view **viewptr;
+	for (viewptr = &m_viewlist; *viewptr != nullptr; viewptr = &(*viewptr)->m_next) { }
+	*viewptr = view;
+	return view;
+}
+
+
+
+//**************************************************************************
+//  DEBUG VIEW EXPRESSION
+//**************************************************************************
+
+//-------------------------------------------------
+//  debug_view_expression - constructor
+//-------------------------------------------------
+
+debug_view_expression::debug_view_expression(running_machine &machine)
+	: m_machine(machine)
+	, m_dirty(true)
+	, m_result(0)
+	, m_parsed(machine.debugger().cpu().global_symtable())
+	, m_string("0")
+{
+}
+
+
+//-------------------------------------------------
+//  ~debug_view_expression - destructor
+//-------------------------------------------------
+
+debug_view_expression::~debug_view_expression()
+{
+}
+
+
+//-------------------------------------------------
+//  set_context - set the context for the
+//  expression
+//-------------------------------------------------
+
+void debug_view_expression::set_context(symbol_table *context)
+{
+	if (context != nullptr)
+		m_parsed.set_symbols(*context);
+	else
+		m_parsed.set_symbols(m_machine.debugger().cpu().global_symtable());
+	m_dirty = true;
+}
+
+
+//-------------------------------------------------
+//  recompute - recompute the value of an
+//  expression
+//-------------------------------------------------
+
+bool debug_view_expression::recompute()
+{
+	bool changed = m_dirty;
+	bool failed = false;
+
+	// if dirty, re-evaluate
+	if (m_dirty)
+	{
+		std::string const oldstring(m_parsed.original_string());
+		try
+		{
+			m_parsed.parse(m_string);
+		}
+		catch (expression_error const &)
+		{
+			failed = true;
+		}
+		if (failed && (oldstring != m_string))
+		{
+			// parsing failed on changing the expression input
+			try
+			{
+				// try falling back to the previous string
+				m_parsed.parse(oldstring);
+				failed = false;
+			}
+			catch (expression_error const &)
+			{
+			}
+		}
+	}
+
+	// if we have a parsed expression, evaluate it
+	if (!failed && !m_parsed.is_empty())
+	{
+		// recompute the value of the expression
+		try
+		{
+			u64 newresult = m_parsed.execute();
+			if (newresult != m_result)
+			{
+				m_result = newresult;
+				changed = true;
+			}
+		}
+		catch (expression_error const &)
+		{
+		}
+	}
+
+	// expression no longer dirty by definition
+	m_dirty = false;
+	return changed;
+}
