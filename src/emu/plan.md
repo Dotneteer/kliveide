@@ -31,7 +31,7 @@ and outlines a plan to implement the missing devices.
 | 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ✅ Complete |
 | 23 | ZX Bus / Expansion Slot | ExpansionBusDevice (framework only) | ⚠️ Mostly complete |
 | 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |
-| 25 | Kempston Joystick ports | KempstonHandler (stubs) | ❌ Missing |
+| 25 | Kempston Joystick ports | JoystickDevice, KempstonHandler, NextIoPortManager | ✅ Complete |
 | 26 | Z80 Daisy Chain | InterruptDevice (full daisy chain with IEI/IEO, RETI) | ✅ Complete |
 | 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ✅ Complete |
 | 28 | NextReg bank device | NextRegDevice | ✅ Complete |
