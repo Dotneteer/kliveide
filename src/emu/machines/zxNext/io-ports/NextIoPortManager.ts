@@ -215,8 +215,8 @@ export class NextIoPortManager {
       port: 0x173b,
       pmask: 0b1111_1000_1111_1111,
       value: 0b0001_1000_0011_1011,
-      readerFns: readCtcPort,
-      writerFns: writeCtcPort
+      readerFns: readCtcPort(machine),
+      writerFns: writeCtcPort(machine)
     });
     r({
       description: "ULA+ Register",

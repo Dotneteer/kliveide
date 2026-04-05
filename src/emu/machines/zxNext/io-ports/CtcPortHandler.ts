@@ -1,8 +1,9 @@
-export function readCtcPort(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
+export function readCtcPort(machine: IZxNextMachine): (port: number) => number {
+  return (port: number) => machine.ctcDevice.readPort(port);
 }
 
-export function writeCtcPort(value: number): void {
-  // TODO: Implement this
+export function writeCtcPort(machine: IZxNextMachine): (port: number, value: number) => void {
+  return (port: number, value: number) => machine.ctcDevice.writePort(port, value);
 }

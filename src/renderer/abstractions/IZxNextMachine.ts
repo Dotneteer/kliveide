@@ -1,4 +1,5 @@
 import { CopperDevice } from "@emu/machines/zxNext/CopperDevice";
+import { CtcDevice } from "@emu/machines/zxNext/CtcDevice";
 import { DivMmcDevice } from "@emu/machines/zxNext/DivMmcDevice";
 import { MultifaceDevice } from "@emu/machines/zxNext/MultifaceDevice";
 import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
@@ -57,6 +58,8 @@ export interface IZxNextMachine extends IZ80Machine {
   dmaDevice: DmaDevice;
 
   copperDevice: CopperDevice;
+
+  ctcDevice: CtcDevice;
 
   composedScreenDevice: NextComposedScreenDevice;
 

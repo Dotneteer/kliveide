@@ -21,6 +21,7 @@ import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
+import { CtcDevice } from "./CtcDevice";
 import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
@@ -83,6 +84,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   dmaDevice: DmaDevice;
 
   copperDevice: CopperDevice;
+
+  ctcDevice: CtcDevice;
 
   /**
    * Represents the keyboard device of ZX Spectrum 48K
@@ -173,6 +176,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.spriteDevice = new SpriteDevice(this);
     this.dmaDevice = new DmaDevice(this);
     this.copperDevice = new CopperDevice(this);
+    this.ctcDevice = new CtcDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
     this.composedScreenDevice = new NextComposedScreenDevice(this);
     this.beeperDevice = new SpectrumBeeperDevice(this);
@@ -236,6 +240,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.spriteDevice.reset();
     this.dmaDevice.reset();
     this.copperDevice.reset();
+    this.ctcDevice.reset();
     this.keyboardDevice.reset();
     this.composedScreenDevice.reset();
     this.mouseDevice.reset();
