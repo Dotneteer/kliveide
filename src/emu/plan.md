@@ -11,7 +11,7 @@ and outlines a plan to implement the missing devices.
 | 2 | Spectrum ULA contention | UlaDevice / MemoryDevice | ✅ Complete |
 | 3 | IM2 Line Interrupt | InterruptDevice | ✅ Complete |
 | 4 | IM2 ULA Interrupt | InterruptDevice | ✅ Complete |
-| 5 | Z80 CTC (specnext_ctc) | CtcPortHandler (stub) | ❌ Missing |
+| 5 | Z80 CTC (specnext_ctc) | CtcPortHandler (stub) | ✅ Complete |
 | 6 | Z80 DMA (specnext_dma) | DmaDevice | ✅ Complete |
 | 7 | Screen ULA / ULA+ / ULANext | NextComposedScreenDevice | ✅ Complete |
 | 8 | Copper (specnext_copper) | CopperDevice | ✅ Complete |
@@ -26,8 +26,8 @@ and outlines a plan to implement the missing devices.
 | 17 | DAC 8-bit R2R ×4 | DacDevice / DacPortDevice / DacNextRegDevice | ✅ Complete |
 | 18 | Speaker | AudioMixerDevice (beeper) | ✅ Complete |
 | 19 | Palette (512×4 + 1) | PaletteDevice | ✅ Complete |
-| 20 | DS1307 I2C RTC | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ❌ Missing |
-| 21 | I2C Bus | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ❌ Missing |
+| 20 | DS1307 I2C RTC | I2cDevice (integrated DS1307 with clock advancement) | ✅ Complete |
+| 21 | I2C Bus | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ✅ Complete |
 | 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ❌ Missing |
 | 23 | ZX Bus / Expansion Slot | ExpansionBusDevice (framework only) | ⚠️ Partial |
 | 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |

@@ -157,16 +157,16 @@ export class NextIoPortManager {
       port: 0x103b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0000_0011_1011,
-      readerFns: readI2cSclPort,
-      writerFns: writeI2cSclPort
+      readerFns: readI2cSclPort(machine),
+      writerFns: writeI2cSclPort(machine)
     });
     r({
       description: "i2c SDA",
       port: 0x113b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0001_0011_1011,
-      readerFns: readI2cSdaPort,
-      writerFns: writeI2cSdaPort
+      readerFns: readI2cSdaPort(machine),
+      writerFns: writeI2cSdaPort(machine)
     });
     r({
       description: "Layer 2",

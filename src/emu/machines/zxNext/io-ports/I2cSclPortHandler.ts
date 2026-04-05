@@ -1,8 +1,9 @@
-export function readI2cSclPort(ulaPort: number): number {
-  // TODO: Implement this
-  return 0xff;
+import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+
+export function readI2cSclPort(machine: IZxNextMachine): (port: number) => number {
+  return () => machine.i2cDevice.readSclPort();
 }
 
-export function writeI2cSclPort(value: number): void {
-  // TODO: Implement this
+export function writeI2cSclPort(machine: IZxNextMachine): (port: number, value: number) => void {
+  return (_, value) => machine.i2cDevice.writeSclPort(value);
 }
