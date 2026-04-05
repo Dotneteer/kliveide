@@ -32,7 +32,7 @@ and outlines a plan to implement the missing devices.
 | 23 | ZX Bus / Expansion Slot | ExpansionBusDevice (framework only) | ⚠️ Mostly complete |
 | 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |
 | 25 | Kempston Joystick ports | KempstonHandler (stubs) | ❌ Missing |
-| 26 | Z80 Daisy Chain | InterruptDevice (priority, no daisy chain) | ⚠️ Partial |
+| 26 | Z80 Daisy Chain | InterruptDevice (full daisy chain with IEI/IEO, RETI) | ✅ Complete |
 | 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ❌ Missing |
 | 28 | NextReg bank device | NextRegDevice | ✅ Complete |
 | 29 | Memory paging | MemoryDevice | ✅ Complete |
@@ -223,7 +223,7 @@ MAME implements ZXBUS with expansion slot capability.
 | 🟡 Medium | I2C Bus + DS1307 RTC | Medium | Date/time and NVRAM support |
 | 🟡 Medium | UART (dual) | Medium-High | Serial communication, Wi-Fi |
 | 🟡 Medium | Kempston Mouse/Joystick | Low-Medium | Game input support |
-| 🟢 Low | Z80 Daisy Chain | Low | Interrupt accuracy refinement |
+| 🟢 Low | Z80 Daisy Chain | Low | ✅ Done — full IEI/IEO chain, RETI handling, 66 tests |
 | 🟢 Low | +3 FDC | High | Legacy floppy support |
 | 🟢 Low | ZX Bus Expansion | Medium | Future extensibility |
 

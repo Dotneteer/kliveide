@@ -534,44 +534,31 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   protected override getInterruptVector(): number {
     const id = this.interruptDevice;
     if (!id.hwIm2Mode) return 0xff;
+    // --- D4: Daisy chain determines the vector in HW IM2 mode.
+    // The actual acknowledge (Requesting → InService) happens in onInterruptAcknowledged().
+    // Here we only peek at the winning device to return its vector.
     const base = id.im2TopBits;
-    if (id.lineInterruptStatus) return base | 0x00;
-    if (id.uart0RxNearFullStatus || id.uart0RxAvailableStatus) return base | 0x02;
-    if (id.uart1RxNearFullStatus || id.uart1RxAvailableStatus) return base | 0x04;
-    for (let i = 0; i < 8; i++) {
-      if (id.ctcIntStatus[i]) return base | ((3 + i) << 1);
+    for (let i = 0; i < 14; i++) {
+      if (id.daisyInService[i]) {
+        // --- InService device blocks all lower-priority devices
+        break;
+      }
+      if (id.isDeviceRequesting(i)) {
+        return base | (i << 1);
+      }
     }
-    if (id.ulaInterruptStatus) return base | 0x16;
-    if (id.uart0TxEmptyStatus) return base | 0x18;
-    if (id.uart1TxEmptyStatus) return base | 0x1a;
     return 0xff;
   }
 
   /**
-   * D4: When the CPU acknowledges an interrupt in hardware IM2 mode, clear the
-   * status flag of the winning (highest-priority) source so that the same event
-   * is not re-triggered on the next cycle.
+   * D4: When the CPU acknowledges an interrupt in hardware IM2 mode,
+   * transition the winning device from Requesting to InService via the
+   * daisy chain, clearing its pending request flag.
    */
   override onInterruptAcknowledged(): void {
     const id = this.interruptDevice;
     if (!id.hwIm2Mode) return;
-    if (id.lineInterruptStatus) { id.lineInterruptStatus = false; return; }
-    if (id.uart0RxNearFullStatus || id.uart0RxAvailableStatus) {
-      id.uart0RxNearFullStatus = false;
-      id.uart0RxAvailableStatus = false;
-      return;
-    }
-    if (id.uart1RxNearFullStatus || id.uart1RxAvailableStatus) {
-      id.uart1RxNearFullStatus = false;
-      id.uart1RxAvailableStatus = false;
-      return;
-    }
-    for (let i = 0; i < 8; i++) {
-      if (id.ctcIntStatus[i]) { id.ctcIntStatus[i] = false; return; }
-    }
-    if (id.ulaInterruptStatus) { id.ulaInterruptStatus = false; return; }
-    if (id.uart0TxEmptyStatus) { id.uart0TxEmptyStatus = false; return; }
-    if (id.uart1TxEmptyStatus) { id.uart1TxEmptyStatus = false; return; }
+    id.daisyAcknowledge();
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -1051,6 +1038,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
    */
   protected override onRetnExecuted(): void {
+    // --- D4: RETI (ED 4D) in HW IM2 mode clears the first InService device
+    // in the daisy chain. This must happen before any other RETN processing
+    // because the FPGA's reti_seen signal propagates through the daisy chain
+    // independently of the stackless NMI / MF / DivMMC handling.
+    if (this.opCode === 0x4d && this.interruptDevice.hwIm2Mode) {
+      this.interruptDevice.daisyReti();
+    }
+
     // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
     // D6: Capture mf_is_active BEFORE clearing MF state. When MF was active,
     // DivMMC should not see RETN.
