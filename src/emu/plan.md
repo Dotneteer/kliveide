@@ -33,7 +33,7 @@ and outlines a plan to implement the missing devices.
 | 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |
 | 25 | Kempston Joystick ports | KempstonHandler (stubs) | ❌ Missing |
 | 26 | Z80 Daisy Chain | InterruptDevice (full daisy chain with IEI/IEO, RETI) | ✅ Complete |
-| 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ❌ Missing |
+| 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ✅ Complete |
 | 28 | NextReg bank device | NextRegDevice | ✅ Complete |
 | 29 | Memory paging | MemoryDevice | ✅ Complete |
 | 30 | CPU speed control | CpuSpeedDevice | ✅ Complete |

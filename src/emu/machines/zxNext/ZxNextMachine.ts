@@ -2,6 +2,7 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
+import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
@@ -44,6 +45,7 @@ import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
+import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 import { AudioControlDevice } from "./AudioControlDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
@@ -130,6 +132,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   expansionBusDevice: ExpansionBusDevice;
 
+  floppyDevice: IFloppyControllerDevice;
+
   // ─── NMI state machine ───────────────────────────────────────────────────
 
   private _nmiState: 'IDLE' | 'FETCH' | 'HOLD' | 'END' = 'IDLE';
@@ -163,6 +167,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.delayedAddressBus = true;
 
     this.expansionBusDevice = new ExpansionBusDevice(this);
+    this.floppyDevice = new FloppyControllerDevice(this);
     this.cpuSpeedDevice = new CpuSpeedDevice(this);
 
     // --- Create and initialize the I/O port manager
@@ -257,6 +262,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice.reset();
     this.soundDevice.reset();
     this.audioControlDevice.reset();
+    this.floppyDevice.reset();
     this.ulaDevice.reset();
     this.beeperDevice.reset();
 
@@ -1465,6 +1471,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Auto-drain UART TX FIFOs
     this.uartDevice.onNewFrame();
+
+    // --- Advance floppy disk motor timing
+    this.floppyDevice.onFrameCompleted();
   }
 
   /**

@@ -1,12 +1,12 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
-import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import type { IZ80Machine } from "@renderer/abstractions/IZ80Machine";
 import type { IGenericDevice } from "./IGenericDevice";
 import type { IFloppyDiskDrive } from "./IFloppyDiskDrive";
 
 /**
  * This interface represents an abstract floppy controller device
  */
-export interface IFloppyControllerDevice extends IGenericDevice<IZxSpectrumMachine> {
+export interface IFloppyControllerDevice extends IGenericDevice<IZ80Machine> {
   // --- Drive A (if present)
   driveA?: IFloppyDiskDrive;
 

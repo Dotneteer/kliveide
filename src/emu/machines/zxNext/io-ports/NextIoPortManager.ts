@@ -112,6 +112,11 @@ export class NextIoPortManager {
       value: 0b0001_0000_0000_0001,
       writerFns: (_, v) => {
         machine.memoryDevice.port1ffdValue = v;
+        if (v & 0x08) {
+          machine.floppyDevice.turnOnMotor();
+        } else {
+          machine.floppyDevice.turnOffMotor();
+        }
       }
     });
     r({
@@ -119,15 +124,15 @@ export class NextIoPortManager {
       port: 0x2ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0010_0000_0000_0001,
-      readerFns: readSpectrumP3FdcStatusPort
+      readerFns: readSpectrumP3FdcStatusPort(machine)
     });
     r({
       description: "ZX Spectrum +3 FDC control",
       port: 0x3ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0011_0000_0000_0001,
-      readerFns: readSpectrumP3FdcControlPort,
-      writerFns: writeSpectrumP3FdcControlPort
+      readerFns: readSpectrumP3FdcControlPort(machine),
+      writerFns: writeSpectrumP3FdcControlPort(machine)
     });
     r({
       description: "Pentagon 1024K memory",
