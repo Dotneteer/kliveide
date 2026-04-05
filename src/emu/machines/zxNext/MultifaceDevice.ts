@@ -14,7 +14,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
    * When false, the device is held in reset: nmi_active=0, invisible=1, mf_enable=0.
    */
   get enabled(): boolean {
-    return this.machine.nextRegDevice?.portMultifaceEnabled ?? true;
+    return this.machine.nextRegDevice?.isPortGroupEnabled(1, 1) ?? true;
   }
 
   /**

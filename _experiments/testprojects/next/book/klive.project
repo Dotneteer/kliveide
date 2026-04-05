@@ -72,12 +72,12 @@
       "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
-      "topAddress": 34211,
+      "topAddress": 57349,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,
       "bankLabel": true,
-      "autoRefresh": false,
+      "autoRefresh": true,
       "ram": true,
       "screen": false,
       "disassOffset": 0

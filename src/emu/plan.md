@@ -29,8 +29,8 @@ and outlines a plan to implement the missing devices.
 | 20 | DS1307 I2C RTC | I2cDevice (integrated DS1307 with clock advancement) | ✅ Complete |
 | 21 | I2C Bus | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ✅ Complete |
 | 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ✅ Complete |
-| 23 | ZX Bus / Expansion Slot | ExpansionBusDevice (framework only) | ⚠️ Mostly complete |
-| 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |
+| 23 | ZX Bus / Expansion Slot | ExpansionBusDevice + port enable gating (NR $82-$89, $8A) | ✅ Complete |
+| 24 | Kempston Mouse | MouseDevice, KempstonHandler, NextIoPortManager | ✅ Complete |
 | 25 | Kempston Joystick ports | JoystickDevice, KempstonHandler, NextIoPortManager | ✅ Complete |
 | 26 | Z80 Daisy Chain | InterruptDevice (full daisy chain with IEI/IEO, RETI) | ✅ Complete |
 | 27 | +3 FDC | SpectrumP3Fdc*PortHandler (stubs) | ✅ Complete |

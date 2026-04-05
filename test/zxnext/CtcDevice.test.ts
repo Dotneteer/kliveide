@@ -541,13 +541,19 @@ describe("Next - CtcDevice", () => {
       const m = await createTestNextMachine();
       const ctc = m.ctcDevice;
 
-      // CTC ports disabled by default (NR $85 bit 3 = 0)
+      // Disable CTC ports (NR $85 bit 3 = 0)
+      m.nextRegDevice.setNextRegisterIndex(0x85);
+      m.nextRegDevice.setNextRegisterValue(0x07); // clear bit 3
       expect(ctc.readPort(0x183b)).toBe(0xff);
     });
 
     it("ignores writes when CTC ports are disabled", async () => {
       const m = await createTestNextMachine();
       const ctc = m.ctcDevice;
+
+      // Disable CTC ports (NR $85 bit 3 = 0)
+      m.nextRegDevice.setNextRegisterIndex(0x85);
+      m.nextRegDevice.setNextRegisterValue(0x07); // clear bit 3
 
       // Write with ports disabled → should be ignored
       ctc.writePort(0x183b, 0x05);

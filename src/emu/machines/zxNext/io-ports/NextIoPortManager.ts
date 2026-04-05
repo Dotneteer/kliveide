@@ -30,7 +30,8 @@ import {
   readKempstonJoy1Port,
   readKempstonJoy2Port,
   readKempstonMouseXPort,
-  readKempstonMouseYPort
+  readKempstonMouseYPort,
+  readKempstonMouseWheelPort
 } from "./KempstonHandler";
 import {
   readMultifacePort,
@@ -58,6 +59,13 @@ export class NextIoPortManager {
   constructor(public readonly machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
 
+    // --- Port enable gate helpers: combine internal (NR $82–$85) with bus (NR $86–$89)
+    const pe = (ri: number, bit: number) => machine.nextRegDevice.isPortGroupEnabled(ri, bit);
+    const gR = (ri: number, bit: number, fn: (port: number) => number): IoPortReaderFn =>
+      (p) => pe(ri, bit) ? fn(p) : { value: 0xff, handled: false };
+    const gW = (ri: number, bit: number, fn: (port: number, value: number) => void | boolean): IoPortWriterFn =>
+      (p, v) => { if (pe(ri, bit)) return fn(p, v); };
+
     r({
       description: "ULA",
       port: 0xfe,
@@ -72,14 +80,14 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
       readerFns: () => {
-        if (this.machine.nextRegDevice.port0xffEnabled) {
+        if (pe(0, 0)) {
           // Timex port is enabled
           return this._portTimexValue;
         }
         return 0xff;
       },
       writerFns: (_, v) => {
-        if (this.machine.nextRegDevice.port0xffEnabled) {
+        if (pe(0, 0)) {
           // Timex port is enabled
           this._portTimexValue = v & 0xff;
           this.machine.interruptDevice.ulaInterruptDisabled = (v & 0x40) !== 0;
@@ -92,54 +100,54 @@ export class NextIoPortManager {
       port: 0x7ffd,
       pmask: 0b1100_0000_0000_0011,
       value: 0b0100_0000_0000_0001,
-      writerFns: (_, v) => {
+      writerFns: gW(0, 1, (_, v) => {
         machine.memoryDevice.port7ffdValue = v;
-      }
+      })
     });
     r({
       description: "Spectrum Next bank extension",
       port: 0xdffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b1101_0000_0000_0001,
-      writerFns: (_, v) => {
+      writerFns: gW(0, 2, (_, v) => {
         machine.memoryDevice.portDffdValue = v;
-      }
+      })
     });
     r({
       description: "ZX Spectrum +3 memory",
       port: 0x1ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0001_0000_0000_0001,
-      writerFns: (_, v) => {
+      writerFns: gW(0, 3, (_, v) => {
         machine.memoryDevice.port1ffdValue = v;
         if (v & 0x08) {
           machine.floppyDevice.turnOnMotor();
         } else {
           machine.floppyDevice.turnOffMotor();
         }
-      }
+      })
     });
     r({
       description: "ZX Spectrum +3 FDC status",
       port: 0x2ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0010_0000_0000_0001,
-      readerFns: readSpectrumP3FdcStatusPort(machine)
+      readerFns: gR(0, 4, readSpectrumP3FdcStatusPort(machine))
     });
     r({
       description: "ZX Spectrum +3 FDC control",
       port: 0x3ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0011_0000_0000_0001,
-      readerFns: readSpectrumP3FdcControlPort(machine),
-      writerFns: writeSpectrumP3FdcControlPort(machine)
+      readerFns: gR(0, 4, readSpectrumP3FdcControlPort(machine)),
+      writerFns: gW(0, 4, writeSpectrumP3FdcControlPort(machine))
     });
     r({
       description: "Pentagon 1024K memory",
       port: 0xeff7,
       pmask: 0b1111_0000_1111_1111,
       value: 0b1110_0000_1111_0111,
-      writerFns: (_, v) => { machine.memoryDevice.portEff7Value = v & 0x0c; }
+      writerFns: gW(3, 2, (_, v) => { machine.memoryDevice.portEff7Value = v & 0x0c; })
     });
     r({
       description: "NextREG Register Select",
@@ -162,25 +170,25 @@ export class NextIoPortManager {
       port: 0x103b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0000_0011_1011,
-      readerFns: readI2cSclPort(machine),
-      writerFns: writeI2cSclPort(machine)
+      readerFns: gR(1, 2, readI2cSclPort(machine)),
+      writerFns: gW(1, 2, writeI2cSclPort(machine))
     });
     r({
       description: "i2c SDA",
       port: 0x113b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0001_0011_1011,
-      readerFns: readI2cSdaPort(machine),
-      writerFns: writeI2cSdaPort(machine)
+      readerFns: gR(1, 2, readI2cSdaPort(machine)),
+      writerFns: gW(1, 2, writeI2cSdaPort(machine))
     });
     r({
       description: "Layer 2",
       port: 0x123b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0010_0011_1011,
-      readerFns: () => machine.composedScreenDevice.port0x123bValue,
+      readerFns: () => pe(1, 7) ? machine.composedScreenDevice.port0x123bValue : 0xff,
       writerFns: (_, v) => {
-        machine.composedScreenDevice.port0x123bValue = v;
+        if (pe(1, 7)) machine.composedScreenDevice.port0x123bValue = v;
       }
     });
     r({
@@ -188,40 +196,40 @@ export class NextIoPortManager {
       port: 0x133b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0011_0011_1011,
-      readerFns: readUartTxPort(machine),
-      writerFns: writeUartTxPort(machine)
+      readerFns: gR(1, 4, readUartTxPort(machine)),
+      writerFns: gW(1, 4, writeUartTxPort(machine))
     });
     r({
       description: "UART Rx",
       port: 0x143b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0100_0011_1011,
-      readerFns: readUartRxPort(machine),
-      writerFns: writeUartRxPort(machine)
+      readerFns: gR(1, 4, readUartRxPort(machine)),
+      writerFns: gW(1, 4, writeUartRxPort(machine))
     });
     r({
       description: "UART Select",
       port: 0x153b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0101_0011_1011,
-      readerFns: readUartSelectPort(machine),
-      writerFns: writeUartSelectPort(machine)
+      readerFns: gR(1, 4, readUartSelectPort(machine)),
+      writerFns: gW(1, 4, writeUartSelectPort(machine))
     });
     r({
       description: "UART Frame",
       port: 0x163b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0110_0011_1011,
-      readerFns: readUartFramePort(machine),
-      writerFns: writeUartFramePort(machine)
+      readerFns: gR(1, 4, readUartFramePort(machine)),
+      writerFns: gW(1, 4, writeUartFramePort(machine))
     });
     r({
       description: "CTC 8 channels",
       port: 0x173b,
       pmask: 0b1111_1000_1111_1111,
       value: 0b0001_1000_0011_1011,
-      readerFns: readCtcPort(machine),
-      writerFns: writeCtcPort(machine)
+      readerFns: gR(3, 3, readCtcPort(machine)),
+      writerFns: gW(3, 3, writeCtcPort(machine))
     });
     r({
       description: "ULA+ Register",
@@ -230,6 +238,7 @@ export class NextIoPortManager {
       value: 0b1011_1111_0011_1011,
       readerFns: () => 0xff,
       writerFns: (_, v) => {
+        if (!pe(3, 0)) return;
         machine.composedScreenDevice.ulaPlusMode = (v >> 6) & 0x03;
         if ((v >> 6) === 0x00) {
           // Only update palette index when mode is 00 (palette access)
@@ -242,48 +251,48 @@ export class NextIoPortManager {
       port: 0xff3b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b1111_1111_0011_1011,
-      readerFns: () => readUlaPlusDataPort(machine),
-      writerFns: (_, v) => writeUlaPlusDataPort(machine, v)
+      readerFns: () => pe(3, 0) ? readUlaPlusDataPort(machine) : 0xff,
+      writerFns: (_, v) => { if (pe(3, 0)) writeUlaPlusDataPort(machine, v); }
     });
     r({
       description: "Z80Dma",
       port: 0x0b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0000_1011,
-      readerFns: () => readZ80DmaPort(machine),
-      writerFns: (_, v) => writeZ80DmaPort(machine, v)
+      readerFns: () => pe(3, 1) ? readZ80DmaPort(machine) : 0xff,
+      writerFns: (_, v) => { if (pe(3, 1)) writeZ80DmaPort(machine, v); }
     });
     r({
       description: "ZxnDma",
       port: 0x6b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0110_1011,
-      readerFns: () => readZxnDmaPort(machine),
-      writerFns: (_, v) => writeZxnDmaPort(machine, v)
+      readerFns: () => pe(0, 5) ? readZxnDmaPort(machine) : 0xff,
+      writerFns: (_, v) => { if (pe(0, 5)) writeZxnDmaPort(machine, v); }
     });
     r({
       description: "AY reg",
       port: 0xfffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1100_0000_0000_0101,
-      readerFns: (p) => readAyRegPort(machine, p),
-      writerFns: (_, v) => writeAyRegPort(machine, v)
+      readerFns: (p) => pe(2, 0) ? readAyRegPort(machine, p) : 0xff,
+      writerFns: (_, v) => { if (pe(2, 0)) writeAyRegPort(machine, v); }
     });
     r({
       description: "AY data",
       port: 0xbffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1000_0000_0000_0101,
-      readerFns: (p) => readAyDatPort(machine, p),
-      writerFns: (_, v) => writeAyDatPort(machine, v)
+      readerFns: (p) => pe(2, 0) ? readAyDatPort(machine, p) : 0xff,
+      writerFns: (_, v) => { if (pe(2, 0)) writeAyDatPort(machine, v); }
     });
     r({
       description: "AY info",
       port: 0xbff5,
       pmask: 0b1100_0000_0000_1111,
       value: 0b1000_0000_0000_0101,
-      readerFns: (p) => readAyDatPort(machine, p),
-      writerFns: (_, v) => writeAyDatPort(machine, v)
+      readerFns: (p) => pe(2, 0) ? readAyDatPort(machine, p) : 0xff,
+      writerFns: (_, v) => { if (pe(2, 0)) writeAyDatPort(machine, v); }
     });
     r({
       description: "DAC A (SD1)",
@@ -291,7 +300,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0001_1111,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode1Enabled) writeDacAPort(machine, v);
+        if (pe(2, 1)) writeDacAPort(machine, v);
       }
     });
     r({
@@ -300,7 +309,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0001,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode2Enabled) writeDacAPort(machine, v);
+        if (pe(2, 2)) writeDacAPort(machine, v);
       }
     });
     r({
@@ -309,7 +318,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacStereoProfiCovoxEnabled) writeDacAandDPort(machine, v);
+        if (pe(2, 3)) writeDacAandDPort(machine, v);
       }
     });
     r({
@@ -318,7 +327,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0000_1111,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode1Enabled || machine.nextRegDevice.portDacStereoCovoxEnabled)
+        if (pe(2, 1) || pe(2, 4))
           writeDacBPort(machine, v);
       }
     });
@@ -328,7 +337,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_0011,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode2Enabled) writeDacBPort(machine, v);
+        if (pe(2, 2)) writeDacBPort(machine, v);
       }
     });
     r({
@@ -337,7 +346,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMonoSpecdrumEnabled) writeDacAandDPort(machine, v);
+        if (pe(2, 7)) writeDacAandDPort(machine, v);
       }
     });
     r({
@@ -346,9 +355,9 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1011,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode2Enabled) {
+        if (pe(2, 2)) {
           writeDacDPort(machine, v);
-        } else if (machine.nextRegDevice.portDacMonoPentagonEnabled) {
+        } else if (pe(2, 5)) {
           writeDacAandDPort(machine, v);
         }
       }
@@ -359,7 +368,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1011_0011,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMonoGsCovoxEnabled) writeDacBandCPort(machine, v);
+        if (pe(2, 6)) writeDacBandCPort(machine, v);
       }
     });
     r({
@@ -368,7 +377,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0100_1111,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode1Enabled || machine.nextRegDevice.portDacStereoCovoxEnabled)
+        if (pe(2, 1) || pe(2, 4))
           writeDacCPort(machine, v);
       }
     });
@@ -378,7 +387,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1001,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode2Enabled) writeDacCPort(machine, v);
+        if (pe(2, 2)) writeDacCPort(machine, v);
       }
     });
     r({
@@ -387,7 +396,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1111,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portDacMode1Enabled || machine.nextRegDevice.portDacStereoProfiCovoxEnabled)
+        if (pe(2, 1) || pe(2, 3))
           writeDacDPort(machine, v);
       }
     });
@@ -397,7 +406,7 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0111,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portSpiEnabled) {
+        if (pe(1, 3)) {
           machine.sdCardDevice.spiCsWrite(v);
         }
       },
@@ -408,9 +417,9 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_1011,
       readerFns: () =>
-        machine.nextRegDevice.portSpiEnabled ? machine.sdCardDevice.readMmcData() : 0xff,
+        pe(1, 3) ? machine.sdCardDevice.readMmcData() : 0xff,
       writerFns: (_, v) => {
-        if (machine.nextRegDevice.portSpiEnabled) {
+        if (pe(1, 3)) {
           machine.sdCardDevice.writeMmcData(v);
         }
       }
@@ -420,9 +429,9 @@ export class NextIoPortManager {
       port: 0xe3,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1110_0011,
-      readerFns: () => machine.divMmcDevice.port0xe3Value,
+      readerFns: () => pe(1, 0) ? machine.divMmcDevice.port0xe3Value : 0xff,
       writerFns: (_, v) => {
-        machine.divMmcDevice.port0xe3Value = v;
+        if (pe(1, 0)) machine.divMmcDevice.port0xe3Value = v;
       }
     });
     r({
@@ -430,21 +439,21 @@ export class NextIoPortManager {
       port: 0xfbdf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1011_1101_1111,
-      readerFns: readKempstonMouseXPort
+      readerFns: gR(1, 5, readKempstonMouseXPort(machine))
     });
     r({
       description: "Kempston mouse y",
       port: 0xffdf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1111_1101_1111,
-      readerFns: readKempstonMouseYPort
+      readerFns: gR(1, 5, readKempstonMouseYPort(machine))
     });
     r({
       description: "Kempston mouse wheel, buttons",
       port: 0xfadf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1010_1101_1111,
-      readerFns: readKempstonMouseYPort
+      readerFns: gR(1, 5, readKempstonMouseWheelPort(machine))
     });
     r({
       description: "Multiface port 0x1F",
@@ -483,43 +492,46 @@ export class NextIoPortManager {
       port: 0x1f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0001_1111,
-      readerFns: readKempstonJoy1Port(machine)
+      readerFns: gR(0, 6, readKempstonJoy1Port(machine))
     });
     r({
       description: "Kempston joy 1 alias",
       port: 0xdf,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
-      readerFns: readKempstonJoy1AliasPort(machine)
+      readerFns: ((fn) =>
+        (p: number): number | { value: number; handled: boolean } =>
+          pe(0, 6) && !pe(1, 5) ? fn(p) : { value: 0xff, handled: false }
+      )(readKempstonJoy1AliasPort(machine))
     });
     r({
       description: "Kempston joy 2",
       port: 0x37,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_0111,
-      readerFns: readKempstonJoy2Port(machine)
+      readerFns: gR(0, 7, readKempstonJoy2Port(machine))
     });
     r({
       description: "Sprite slot, flags",
       port: 0x303b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0011_0000_0011_1011,
-      readerFns: () => machine.spriteDevice.readPort303bValue(),
-      writerFns: (_, v) => machine.spriteDevice.writePort303bValue(v)
+      readerFns: () => pe(1, 6) ? machine.spriteDevice.readPort303bValue() : 0xff,
+      writerFns: (_, v) => { if (pe(1, 6)) machine.spriteDevice.writePort303bValue(v); }
     });
     r({
       description: "Sprite attributes",
       port: 0x57,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_0111,
-      writerFns: (port, v) => machine.spriteDevice.writeSpriteAttribute(port, v)
+      writerFns: (port, v) => { if (pe(1, 6)) machine.spriteDevice.writeSpriteAttribute(port, v); }
     });
     r({
       description: "Sprite pattern",
       port: 0x5b,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0101_1011,
-      writerFns: (_, v) => machine.spriteDevice.writeSpritePattern(v)
+      writerFns: (_, v) => { if (pe(1, 6)) machine.spriteDevice.writeSpritePattern(v); }
     });
   }
 

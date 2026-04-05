@@ -154,6 +154,10 @@ describe("Kempston Joystick Ports", () => {
 
   describe("Port 0xDF - Joy 1 alias", () => {
     it("returns same value as port 0x1F", () => {
+      // Disable mouse (NR $83 bit 5) so DF alias is active
+      machine.nextRegDevice.setNextRegisterIndex(0x83);
+      machine.nextRegDevice.setNextRegisterValue(0xdf);
+
       machine.joystickDevice.joystick1Mode = JoystickMode.Kempston1;
       machine.joystickDevice.setLeftState(JOY_UP | JOY_FIRE1);
       const port1f = machine.portManager.readPort(PORT_1F);
@@ -519,6 +523,10 @@ describe("Kempston Joystick Ports", () => {
     });
 
     it("port 0xDF alias returns same as 0x1F", () => {
+      // Disable mouse (NR $83 bit 5) so DF alias is active
+      machine.nextRegDevice.setNextRegisterIndex(0x83);
+      machine.nextRegDevice.setNextRegisterValue(0xdf);
+
       machine.nextRegDevice.setNextRegisterIndex(0x05);
       machine.nextRegDevice.setNextRegisterValue(0x40); // Kempston1 for joy1
 
