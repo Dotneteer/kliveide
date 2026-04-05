@@ -23,6 +23,7 @@ import { DmaDevice } from "./DmaDevice";
 import { CopperDevice } from "./CopperDevice";
 import { CtcDevice } from "./CtcDevice";
 import { I2cDevice } from "./I2cDevice";
+import { UartDevice } from "./UartDevice";
 import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./MemoryDevice";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
@@ -89,6 +90,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   ctcDevice: CtcDevice;
 
   i2cDevice: I2cDevice;
+
+  uartDevice: UartDevice;
 
   /**
    * Represents the keyboard device of ZX Spectrum 48K
@@ -181,6 +184,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.copperDevice = new CopperDevice(this);
     this.ctcDevice = new CtcDevice(this);
     this.i2cDevice = new I2cDevice(this);
+    this.uartDevice = new UartDevice(this);
     this.keyboardDevice = new NextKeyboardDevice(this);
     this.composedScreenDevice = new NextComposedScreenDevice(this);
     this.beeperDevice = new SpectrumBeeperDevice(this);
@@ -246,6 +250,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.copperDevice.reset();
     this.ctcDevice.reset();
     this.i2cDevice.reset();
+    this.uartDevice.reset();
     this.keyboardDevice.reset();
     this.composedScreenDevice.reset();
     this.mouseDevice.reset();
@@ -1462,6 +1467,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Advance DS1307 RTC clock (1 Hz tick via frame counting)
     this.i2cDevice.onNewFrame();
+
+    // --- Auto-drain UART TX FIFOs
+    this.uartDevice.onNewFrame();
   }
 
   /**

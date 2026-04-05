@@ -183,32 +183,32 @@ export class NextIoPortManager {
       port: 0x133b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0011_0011_1011,
-      readerFns: readUartTxPort,
-      writerFns: writeUartTxPort
+      readerFns: readUartTxPort(machine),
+      writerFns: writeUartTxPort(machine)
     });
     r({
       description: "UART Rx",
       port: 0x143b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0100_0011_1011,
-      readerFns: readUartRxPort,
-      writerFns: writeUartRxPort
+      readerFns: readUartRxPort(machine),
+      writerFns: writeUartRxPort(machine)
     });
     r({
       description: "UART Select",
       port: 0x153b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0101_0011_1011,
-      readerFns: readUartSelectPort,
-      writerFns: writeUartSelectPort
+      readerFns: readUartSelectPort(machine),
+      writerFns: writeUartSelectPort(machine)
     });
     r({
       description: "UART Frame",
       port: 0x163b,
       pmask: 0b1111_1111_1111_1111,
       value: 0b0001_0110_0011_1011,
-      readerFns: readUartFramePort,
-      writerFns: writeUartFramePort
+      readerFns: readUartFramePort(machine),
+      writerFns: writeUartFramePort(machine)
     });
     r({
       description: "CTC 8 channels",

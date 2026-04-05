@@ -70,6 +70,31 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     this.divMccNmiBtNextReg = false;
     this.lastWasHardReset = false;
     this.lastWasSoftReset = false;
+
+    // --- UART interrupt enable/status/DMA flags
+    this.uart0TxEmpty = false;
+    this.uart0RxNearFull = false;
+    this.uart0RxAvailable = false;
+    this.uart1TxEmpty = false;
+    this.uart1RxNearFull = false;
+    this.uart1RxAvailable = false;
+    this.lineInterruptStatus = false;
+    this.ulaInterruptStatus = false;
+    this.uart0TxEmptyStatus = false;
+    this.uart0RxNearFullStatus = false;
+    this.uart0RxAvailableStatus = false;
+    this.uart1TxEmptyStatus = false;
+    this.uart1RxNearFullStatus = false;
+    this.uart1RxAvailableStatus = false;
+    this.enableNmiToIntDma = false;
+    this.enableLineIntToIntDma = false;
+    this.enableUlaIntToIntDma = false;
+    this.enableUart0TxEmptyToIntDma = false;
+    this.enableUart0RxNearFullToIntDma = false;
+    this.enableUart0RxAvailableToIntDma = false;
+    this.enableUart1TxEmptyToIntDma = false;
+    this.enableUart1RxNearFullToIntDma = false;
+    this.enableUart1RxAvailableToIntDma = false;
   }
 
   get nextReg02Value(): number {
@@ -253,11 +278,11 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   get nextRegCAValue(): number {
     return (
       (this.uart1TxEmptyStatus ? 0x40 : 0x00) |
-      (this.uart1TxEmptyStatus ? 0x20 : 0x00) |
+      (this.uart1RxNearFullStatus ? 0x20 : 0x00) |
       (this.uart1RxAvailableStatus ? 0x10 : 0x00) |
       (this.uart0TxEmptyStatus ? 0x04 : 0x00) |
       (this.uart0RxNearFullStatus ? 0x02 : 0x00) |
-      (this.uart0RxNearFullStatus ? 0x01 : 0x00)
+      (this.uart0RxAvailableStatus ? 0x01 : 0x00)
     );
   }
 

@@ -28,7 +28,7 @@ and outlines a plan to implement the missing devices.
 | 19 | Palette (512×4 + 1) | PaletteDevice | ✅ Complete |
 | 20 | DS1307 I2C RTC | I2cDevice (integrated DS1307 with clock advancement) | ✅ Complete |
 | 21 | I2C Bus | I2cSclPortHandler / I2cSdaPortHandler (stubs) | ✅ Complete |
-| 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ❌ Missing |
+| 22 | UART (dual) | UartTxPortHandler / UartRxPortHandler / etc. (stubs) | ✅ Complete |
 | 23 | ZX Bus / Expansion Slot | ExpansionBusDevice (framework only) | ⚠️ Partial |
 | 24 | Kempston Mouse | KempstonHandler (stubs) | ❌ Missing |
 | 25 | Kempston Joystick ports | KempstonHandler (stubs) | ❌ Missing |
