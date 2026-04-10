@@ -877,10 +877,14 @@ export function computeSemanticTokenData(
 
   for (let li = 0; li < lines.length; li++) {
     const raw  = lines[li];
-    // Strip comment tail (rough — doesn't handle ';' inside strings, but
-    // symbol lookups for comment contents always return null anyway).
+    // Strip comment tail — handles both ';' and '//' starters.
     const semi = raw.indexOf(";");
-    const lineText = semi >= 0 ? raw.slice(0, semi) : raw;
+    const dslash = raw.indexOf("//");
+    let commentStart = -1;
+    if (semi >= 0 && dslash >= 0) commentStart = Math.min(semi, dslash);
+    else if (semi >= 0) commentStart = semi;
+    else commentStart = dslash;
+    const lineText = commentStart >= 0 ? raw.slice(0, commentStart) : raw;
 
     SEMANTIC_IDENT_RE.lastIndex = 0;
     let m: RegExpExecArray | null;

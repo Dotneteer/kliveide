@@ -575,6 +575,10 @@ export const asm6510LanguageProvider: MonacoAwareCustomLanguageInfo = {
 
     tokenizer: {
       root: [
+        // --- End-of-line comments (must be first so // is never split by @symbols)
+        [/\/\/[^\n]*/, "comment"],
+        [/;[^\n]*/, "comment"],
+
         // --- Character literal
         [/'.'/, "string"],
 
@@ -602,6 +606,7 @@ export const asm6510LanguageProvider: MonacoAwareCustomLanguageInfo = {
             }
           }
         ],
+
 
         // --- Keyword-like tokens
         [

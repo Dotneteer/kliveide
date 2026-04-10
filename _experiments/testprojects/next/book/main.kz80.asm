@@ -33,7 +33,21 @@ Main
     // call PrintValues
     // call SwapnibDemo
     // call MirrorDemo
-    call TestDemo
+    // call TestDemo
+    // call BslaDemo
+    // call BsraDemo
+    // call BsrlDemo
+    // call BsrfDemo
+    // call BrlcDemo
+    // call LdixDemo
+    // call LddxDemo
+    // call LdirxDemo
+    // call LddrxDemo
+    // call LdwsDemo
+    // call LdpirxDemo
+    // call PixeladDemo
+    // call PixeldnDemo
+    call SetaeDemo
     // call WiteNextReg1
 
 ; When the example ends, we keep in infinite loop.
