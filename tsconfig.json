@@ -19,6 +19,7 @@
     "strict": false,
     "noEmit": true,
     "incremental": true,
+    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "node",
