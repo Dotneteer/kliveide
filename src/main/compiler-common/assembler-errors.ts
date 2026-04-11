@@ -71,6 +71,7 @@ export type ErrorCodes =
   
   // --- SaveNex pragma errors
   | "Z0340"
+  // intentional gap: Z0353-Z0359 reserved
   | "Z0341"
   | "Z0342"
   | "Z0343"
@@ -83,6 +84,17 @@ export type ErrorCodes =
   | "Z0350"
   | "Z0351"
   | "Z0352"
+
+  // --- DMA pragma errors
+  | "Z0360"
+  | "Z0361"
+  | "Z0362"
+  | "Z0363"
+  | "Z0364"
+  | "Z0365"
+  | "Z0366"
+  | "Z0367"
+  | "Z0368"
 
   // --- Next model warnings
   | "Z0902"
@@ -263,6 +275,17 @@ export const errorMessages: Record<string, string> = {
   Z0350: "The .savenex preserve pragma requires 'on' or 'off'.",
   Z0351: "Invalid color value {0} for loading bar (must be 0-255).",
   Z0352: "Invalid delay value {0} (must be 0-255).",
+
+  // --- DMA pragma errors
+  Z0360: "Unknown .dma sub-command: '{0}'.",
+  Z0361: "Expected direction: 'a_to_b' or 'b_to_a'.",
+  Z0362: "Expected transfer type: 'transfer', 'search', or 'search_transfer'.",
+  Z0363: "Expected port type: 'memory' or 'io'.",
+  Z0364: "Expected address mode: 'increment', 'decrement', or 'fixed'.",
+  Z0365: "Expected cycle length: '2t', '3t', or '4t'.",
+  Z0366: "Expected operating mode: 'byte', 'continuous', or 'burst'.",
+  Z0367: "Prescaler requires cycle length to be specified.",
+  Z0368: "The .dma pragma requires the Next model (.model next).",
   Z0902: "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",
 
   // --- Instructions

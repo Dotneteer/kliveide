@@ -215,6 +215,7 @@ const pragmas: StaticCompletionItem[] = [
   { label: ".onsuccess",  kind: "pragma", detail: "Run on successful compilation" },
   { label: ".onerror",    kind: "pragma", detail: "Run on compilation error" },
   { label: ".savenex",    kind: "pragma", detail: "Save .nex output file" },
+  { label: ".dma",        kind: "pragma", detail: "DMA register group or command (ZX Spectrum Next only)", insertText: ".dma ${1|reset,load,enable,disable,continue,wr0,wr1,wr2,wr3,wr4,wr5,readmask,cmd|}", next: true },
 ];
 
 // ---------------------------------------------------------------------------
