@@ -612,6 +612,199 @@ export type ListFileItem = {
 };
 
 /**
+ * Identifies the kind of a source-level statement.
+ * Language-agnostic: covers common constructs in procedural and
+ * object-oriented languages (Pascal, C, C++, BASIC, etc.).
+ * Compilers may use "other" for language constructs not listed here.
+ */
+export type StatementKind =
+  | "assignment"   // variable = expr  /  x := expr  /  LET x = expr
+  | "call"         // standalone subroutine / procedure call
+  | "if"           // conditional branch
+  | "loop"         // while, for, repeat-until, do-while, NEXT, WEND, …
+  | "switch"       // case-of, switch-case, ON-GOTO, …
+  | "return"       // return, exit, function-result assignment
+  | "jump"         // goto, break, continue
+  | "compound"     // begin..end, { }, block
+  | "declaration"  // variable / constant declaration with an initialiser
+  | "asm"          // inline assembly block
+  | "other";
+
+/**
+ * Identifies the kind of a callable unit.
+ * Language-agnostic: covers common callable constructs across languages.
+ */
+export type CallableKind =
+  | "entrypoint"   // main program body / module initialisation
+  | "subroutine"   // procedure, void function, SUB — no return value
+  | "function"     // function returning a value
+  | "method"       // OOP instance or class method
+  | "constructor"  // OOP constructor
+  | "destructor"   // OOP destructor
+  | "lambda";      // anonymous function / closure
+
+/**
+ * A source file entry within a SourceLevelDebugInfo structure.
+ */
+export type SourceFileEntry = {
+  /** Position in the files array — used as a fileIndex key everywhere else. */
+  readonly index: number;
+  /** Absolute path to the source file. */
+  readonly filename: string;
+};
+
+/**
+ * Describes a single source-level statement — the atomic unit of
+ * source-level stepping. One debugger "step" moves from one statement
+ * to the next.
+ *
+ * A statement may span multiple source lines or share a source line
+ * with other statements. The precise column range is always recorded
+ * so the IDE can highlight exactly the active statement.
+ */
+export type StatementDebugInfo = {
+  /** Unique index (position in the SourceLevelDebugInfo.statements array). */
+  readonly index: number;
+  /** Source file index. */
+  readonly fileIndex: number;
+  /** 1-based line number where the statement starts. */
+  readonly startLine: number;
+  /** 0-based column where the statement starts (inclusive). */
+  readonly startColumn: number;
+  /** 1-based line number where the statement ends. */
+  readonly endLine: number;
+  /** 0-based column where the statement ends (exclusive). */
+  readonly endColumn: number;
+  /** Z80 address of the first machine-code byte emitted for this statement. */
+  readonly startAddress: number;
+  /** Z80 address one past the last machine-code byte for this statement. */
+  readonly endAddress: number;
+  /**
+   * Memory partition (bank) in which this statement's code resides.
+   * Uses the same partition numbering as the Klive emulator's getPartition():
+   * negative values are ROM pages, non-negative values are RAM banks.
+   * Absent (undefined) means the code is in the flat / unbanked address space.
+   */
+  readonly partition?: number;
+  /**
+   * Indices (into SourceLevelDebugInfo.callables) of any user-defined
+   * callables invoked by this statement. Absent or empty means no calls
+   * to user-defined callables; built-in / runtime calls are not tracked here.
+   */
+  readonly callTargets?: readonly number[];
+  /** Semantic kind of the statement. */
+  readonly kind: StatementKind;
+  /** Index of the callable that contains this statement. */
+  readonly callableIndex: number;
+};
+
+/**
+ * Describes a callable unit: a subroutine, function, method, or the
+ * program entry point. Used for source-level Step-Over and Step-Out.
+ */
+export type CallableDebugInfo = {
+  /** Unique index (position in the SourceLevelDebugInfo.callables array). */
+  readonly index: number;
+  /** Display name shown in the call stack (e.g. "main", "Factorial"). */
+  readonly name: string;
+  /** Kind of callable. */
+  readonly kind: CallableKind;
+  /** Source file index where this callable is defined. */
+  readonly fileIndex: number;
+  /** 1-based line of the callable's declaration / header. */
+  readonly startLine: number;
+  /** 1-based line of the callable's closing delimiter. */
+  readonly endLine: number;
+  /**
+   * Z80 address of the callable's entry point (first instruction of the
+   * body, after any prologue / stack-frame setup).
+   */
+  readonly entryAddress: number;
+  /**
+   * Z80 addresses of every instruction that exits this callable
+   * (RET, JP to a shared epilogue, etc.). Used by source-level Step-Out.
+   */
+  readonly exitAddresses: readonly number[];
+  /**
+   * Memory partition (bank) in which this callable's code resides.
+   * Uses the same partition numbering as the Klive emulator's getPartition().
+   * Absent (undefined) means the code is in the flat / unbanked address space.
+   */
+  readonly partition?: number;
+  /** Index of the first statement in this callable's body. */
+  readonly firstStatementIndex: number;
+  /** Index of the last statement in this callable's body (inclusive). */
+  readonly lastStatementIndex: number;
+  /**
+   * Index of the enclosing callable for nested routines.
+   * Absent for top-level callables and the entry point.
+   */
+  readonly parentCallableIndex?: number;
+};
+
+/**
+ * Complete source-level debug information produced by a high-level
+ * language compiler. This is an optional extension to DebuggableOutput.
+ * When present, the IDE offers source-level stepping (one statement at a
+ * time) in addition to Z80-instruction-level stepping.
+ *
+ * Designed to be language-agnostic: covers Pascal, C, C++, BASIC, and
+ * other procedural / object-oriented languages compiled to Z80.
+ *
+ * The entire structure must be JSON-serialisable (no Maps, Sets, or class
+ * instances) so it can be stored alongside the binary and sent over IPC.
+ */
+export type SourceLevelDebugInfo = {
+  /**
+   * Optional source-language identifier (e.g. "pascal", "c", "basic").
+   * Used for language-specific UI hints; not required for core debugging.
+   */
+  readonly language?: string;
+  /**
+   * Ordered list of source files. Each entry's index is its fileIndex
+   * used throughout the rest of this structure.
+   */
+  readonly files: SourceFileEntry[];
+  /**
+   * All statements in the compiled program, in ascending startAddress order.
+   */
+  readonly statements: StatementDebugInfo[];
+  /**
+   * All callable units (subroutines, functions, the entry point, etc.).
+   */
+  readonly callables: CallableDebugInfo[];
+  /**
+   * When false or absent, the compiled code lives entirely in the flat 64 KB
+   * Z80 address space and addressToStatement is the authoritative lookup.
+   * When true, the code spans multiple memory banks / pages; use
+   * partitionedAddressMap for lookups instead.
+   */
+  readonly usesBanking?: boolean;
+  /**
+   * Flat address-range → statement-index map (non-banked code).
+   * An array of [address, statementIndex] pairs, in ascending address order.
+   * Each pair covers the range [address, nextPair.address).
+   * statementIndex = -1 denotes compiler-generated runtime / glue code
+   * with no corresponding source statement; the debugger skips these ranges.
+   * Ignored when usesBanking is true — use partitionedAddressMap instead.
+   */
+  readonly addressToStatement: ReadonlyArray<[number, number]>;
+  /**
+   * Partition-qualified address-range → statement-index map (banked code).
+   * Present and authoritative when usesBanking is true.
+   * Each entry covers one memory partition (bank). The partition value uses
+   * the same numbering as the Klive emulator's getPartition(): negative
+   * values are ROM pages, non-negative values are RAM banks.
+   * Within each entry, addressToStatement is sorted in ascending address
+   * order and follows the same sentinel convention (-1 = glue code).
+   */
+  readonly partitionedAddressMap?: ReadonlyArray<{
+    readonly partition: number;
+    readonly addressToStatement: ReadonlyArray<[number, number]>;
+  }>;
+};
+
+/**
  * Any compiler should be able to retrieve simple error information
  */
 export type SimpleAssemblerOutput = {
@@ -647,6 +840,13 @@ export type DebuggableOutput = InjectableOutput & {
    * Items of the list file
    */
   readonly listFileItems: ListFileItem[];
+
+  /**
+   * Optional source-level debug information. When present the IDE can
+   * offer source-code-level stepping (one statement at a time) in addition
+   * to Z80-instruction-level stepping.
+   */
+  readonly sourceLevelDebug?: SourceLevelDebugInfo;
 };
 
 /**
