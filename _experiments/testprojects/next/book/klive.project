@@ -56,15 +56,15 @@
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
             "line": 52,
-            "column": 23
+            "column": 21
           }
         },
         {
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_zxndma/memcpy.asm",
           "position": {
-            "line": 34,
-            "column": 30
+            "line": 42,
+            "column": 29
           }
         },
         {
@@ -76,7 +76,7 @@
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_zxndma/memcpy.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 1386,
