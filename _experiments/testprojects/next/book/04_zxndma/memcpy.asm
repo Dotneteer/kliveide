@@ -15,6 +15,14 @@ DmaSimpleMemCopyDemo
     ld (hl),$aa
     ldir
 
+    ;
+    ; Set attributes for the copied line
+    ld hl,$58a0
+    ld de,$58a1
+    ld bc,$1f
+    ld (hl),attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ldir
+    
     ; Create the code to copy
     ld hl,DmaSimpleMemCopy_Code
     ld b,DmaSimpleMemCopy_Code_End - DmaSimpleMemCopy_Code
@@ -31,7 +39,7 @@ DmaSimpleMemCopy_Code:
     .dma wr0 a_to_b, transfer, $4080, 32
     .dma wr1 memory, increment
     .dma wr2 memory, increment
-    .dma wr4 continuous, $40a0
+    .dma wr4 continuous, $43a0
     .dma wr5
     .dma load
     .dma enable
