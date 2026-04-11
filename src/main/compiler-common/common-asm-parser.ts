@@ -81,6 +81,19 @@ import {
   SaveNexRamPragma,
   SaveNexScreenPragma,
   SaveNexStackAddrPragma,
+  DmaResetPragma,
+  DmaLoadPragma,
+  DmaEnablePragma,
+  DmaDisablePragma,
+  DmaContinuePragma,
+  DmaCmdPragma,
+  DmaReadMaskPragma,
+  DmaWr0Pragma,
+  DmaWr1Pragma,
+  DmaWr2Pragma,
+  DmaWr3Pragma,
+  DmaWr4Pragma,
+  DmaWr5Pragma,
   PartialAssemblyLine,
   ProcEndStatement,
   ProcStatement,
@@ -763,6 +776,9 @@ export abstract class CommonAsmParser<
 
       case CommonTokens.SaveNexPragma:
         return this.parseSaveNexPragma();
+
+      case CommonTokens.DmaPragma:
+        return this.parseDmaPragma();
     }
     return null;
   }
@@ -2411,6 +2427,279 @@ export abstract class CommonAsmParser<
       delay,
       startDelay
     } as SaveNexBarPragma<TInstruction, TToken>;
+  }
+
+  // ---------------------------------------------------------------------------
+  // .dma pragma sub-parsers
+
+  private parseDmaPragma(): PartialAssemblyLine<TInstruction> | null {
+    const subcommand = this.tokens.peek();
+    if (subcommand.type !== CommonTokens.Identifier) {
+      this.reportError("Z0360");
+      return null;
+    }
+    const subcmdText = subcommand.text?.toLowerCase();
+    this.tokens.get(); // consume sub-command identifier
+
+    switch (subcmdText) {
+      case "reset":    return { type: "DmaResetPragma" } as DmaResetPragma<TInstruction>;
+      case "load":     return { type: "DmaLoadPragma" } as DmaLoadPragma<TInstruction>;
+      case "enable":   return { type: "DmaEnablePragma" } as DmaEnablePragma<TInstruction>;
+      case "disable":  return { type: "DmaDisablePragma" } as DmaDisablePragma<TInstruction>;
+      case "continue": return { type: "DmaContinuePragma" } as DmaContinuePragma<TInstruction>;
+      case "cmd":      return this.parseDmaCmd();
+      case "readmask": return this.parseDmaReadMask();
+      case "wr0":      return this.parseDmaWr0();
+      case "wr1":      return this.parseDmaWr1();
+      case "wr2":      return this.parseDmaWr2();
+      case "wr3":      return this.parseDmaWr3();
+      case "wr4":      return this.parseDmaWr4();
+      case "wr5":      return this.parseDmaWr5();
+      default:
+        this.reportError("Z0360");
+        return null;
+    }
+  }
+
+  private parseDmaCmd(): DmaCmdPragma<TInstruction, TToken> | null {
+    const value = this.getExpression();
+    if (!value) return null;
+    return { type: "DmaCmdPragma", value } as DmaCmdPragma<TInstruction, TToken>;
+  }
+
+  private parseDmaReadMask(): DmaReadMaskPragma<TInstruction, TToken> | null {
+    const mask = this.getExpression();
+    if (!mask) return null;
+    return { type: "DmaReadMaskPragma", mask } as DmaReadMaskPragma<TInstruction, TToken>;
+  }
+
+  private parseDmaWr0(): DmaWr0Pragma<TInstruction, TToken> | null {
+    // direction keyword (required)
+    const dirToken = this.tokens.peek();
+    const dirText = dirToken.text?.toLowerCase();
+    if (dirToken.type !== CommonTokens.Identifier || (dirText !== "a_to_b" && dirText !== "b_to_a")) {
+      this.reportError("Z0361");
+      return null;
+    }
+    this.tokens.get();
+    const direction = dirText as "a_to_b" | "b_to_a";
+
+    // comma (required)
+    if (!this.skipToken(CommonTokens.Comma)) {
+      this.reportError("Z0003");
+      return null;
+    }
+
+    // transfer type keyword (required)
+    const ttToken = this.tokens.peek();
+    const ttText = ttToken.text?.toLowerCase();
+    if (
+      ttToken.type !== CommonTokens.Identifier ||
+      (ttText !== "transfer" && ttText !== "search" && ttText !== "search_transfer")
+    ) {
+      this.reportError("Z0362");
+      return null;
+    }
+    this.tokens.get();
+    const transferType = ttText as "transfer" | "search" | "search_transfer";
+
+    // optional portAAddr (with leading comma)
+    let portAAddr: Expression<TInstruction, TToken> | undefined;
+    let blockLength: Expression<TInstruction, TToken> | undefined;
+    if (this.skipToken(CommonTokens.Comma)) {
+      portAAddr = this.getExpression() ?? undefined;
+      if (this.skipToken(CommonTokens.Comma)) {
+        blockLength = this.getExpression() ?? undefined;
+      }
+    }
+
+    return { type: "DmaWr0Pragma", direction, transferType, portAAddr, blockLength } as DmaWr0Pragma<TInstruction, TToken>;
+  }
+
+  private parseDmaWr1(): DmaWr1Pragma<TInstruction, TToken> | null {
+    // port type keyword (required)
+    const ptToken = this.tokens.peek();
+    const ptText = ptToken.text?.toLowerCase();
+    if (ptToken.type !== CommonTokens.Identifier || (ptText !== "memory" && ptText !== "io")) {
+      this.reportError("Z0363");
+      return null;
+    }
+    this.tokens.get();
+    const portType = ptText as "memory" | "io";
+
+    // comma + address mode (required)
+    if (!this.skipToken(CommonTokens.Comma)) {
+      this.reportError("Z0003");
+      return null;
+    }
+    const amToken = this.tokens.peek();
+    const amText = amToken.text?.toLowerCase();
+    if (
+      amToken.type !== CommonTokens.Identifier ||
+      (amText !== "increment" && amText !== "decrement" && amText !== "fixed")
+    ) {
+      this.reportError("Z0364");
+      return null;
+    }
+    this.tokens.get();
+    const addrMode = amText as "increment" | "decrement" | "fixed";
+
+    // optional cycle length (with leading comma)
+    let cycleLength: "2t" | "3t" | "4t" | undefined;
+    if (this.skipToken(CommonTokens.Comma)) {
+      cycleLength = this.parseDmaCycleLength();
+      if (!cycleLength) return null;
+    }
+
+    return { type: "DmaWr1Pragma", portType, addrMode, cycleLength } as DmaWr1Pragma<TInstruction, TToken>;
+  }
+
+  private parseDmaWr2(): DmaWr2Pragma<TInstruction, TToken> | null {
+    // port type keyword (required)
+    const ptToken = this.tokens.peek();
+    const ptText = ptToken.text?.toLowerCase();
+    if (ptToken.type !== CommonTokens.Identifier || (ptText !== "memory" && ptText !== "io")) {
+      this.reportError("Z0363");
+      return null;
+    }
+    this.tokens.get();
+    const portType = ptText as "memory" | "io";
+
+    // comma + address mode (required)
+    if (!this.skipToken(CommonTokens.Comma)) {
+      this.reportError("Z0003");
+      return null;
+    }
+    const amToken = this.tokens.peek();
+    const amText = amToken.text?.toLowerCase();
+    if (
+      amToken.type !== CommonTokens.Identifier ||
+      (amText !== "increment" && amText !== "decrement" && amText !== "fixed")
+    ) {
+      this.reportError("Z0364");
+      return null;
+    }
+    this.tokens.get();
+    const addrMode = amText as "increment" | "decrement" | "fixed";
+
+    // optional cycle length (with leading comma)
+    let cycleLength: "2t" | "3t" | "4t" | undefined;
+    let prescaler: Expression<TInstruction, TToken> | undefined;
+    if (this.skipToken(CommonTokens.Comma)) {
+      cycleLength = this.parseDmaCycleLength();
+      if (!cycleLength) return null;
+
+      // optional prescaler (with leading comma)
+      if (this.skipToken(CommonTokens.Comma)) {
+        prescaler = this.getExpression() ?? undefined;
+      }
+    }
+
+    return { type: "DmaWr2Pragma", portType, addrMode, cycleLength, prescaler } as DmaWr2Pragma<TInstruction, TToken>;
+  }
+
+  private parseDmaWr3(): DmaWr3Pragma<TInstruction, TToken> {
+    const node: DmaWr3Pragma<TInstruction, TToken> = { type: "DmaWr3Pragma" };
+
+    // Parse optional comma-separated flags and optional mask/match expressions
+    while (true) {
+      const t = this.tokens.peek();
+      if (t.type === CommonTokens.Identifier) {
+        const text = t.text?.toLowerCase();
+        if (text === "dma_enable") {
+          this.tokens.get();
+          node.dmaEnable = true;
+        } else if (text === "stop_on_match") {
+          this.tokens.get();
+          node.stopOnMatch = true;
+        } else if (text === "int_enable") {
+          this.tokens.get();
+          node.intEnable = true;
+        } else {
+          // Unknown identifier — treat as mask expression
+          node.mask = this.getExpression() ?? undefined;
+          if (this.skipToken(CommonTokens.Comma)) {
+            node.match = this.getExpression() ?? undefined;
+          }
+          break;
+        }
+      } else if (t.type > 0) {
+        // Non-identifier expression token (number, etc.) — treat as mask
+        node.mask = this.getExpression() ?? undefined;
+        if (this.skipToken(CommonTokens.Comma)) {
+          node.match = this.getExpression() ?? undefined;
+        }
+        break;
+      } else {
+        // End of line / EOF
+        break;
+      }
+
+      // Check for comma to continue flag list
+      if (!this.skipToken(CommonTokens.Comma)) {
+        break;
+      }
+    }
+
+    return node;
+  }
+
+  private parseDmaWr4(): DmaWr4Pragma<TInstruction, TToken> | null {
+    // operating mode keyword (required)
+    const modeToken = this.tokens.peek();
+    const modeText = modeToken.text?.toLowerCase();
+    if (
+      modeToken.type !== CommonTokens.Identifier ||
+      (modeText !== "byte" && modeText !== "continuous" && modeText !== "burst")
+    ) {
+      this.reportError("Z0366");
+      return null;
+    }
+    this.tokens.get();
+    const mode = modeText as "byte" | "continuous" | "burst";
+
+    // optional portBAddr (with leading comma)
+    let portBAddr: Expression<TInstruction, TToken> | undefined;
+    if (this.skipToken(CommonTokens.Comma)) {
+      portBAddr = this.getExpression() ?? undefined;
+    }
+
+    return { type: "DmaWr4Pragma", mode, portBAddr } as DmaWr4Pragma<TInstruction, TToken>;
+  }
+
+  /**
+   * Parses a DMA cycle length token: 2t, 3t, or 4t.
+   * These are tokenized as a DecimalLiteral (2/3/4) followed by Identifier 't'.
+   */
+  private parseDmaCycleLength(): "2t" | "3t" | "4t" | null {
+    const numToken = this.tokens.peek();
+    if (numToken.type !== CommonTokens.DecimalLiteral) {
+      this.reportError("Z0365");
+      return null;
+    }
+    const numText = numToken.text;
+    if (numText !== "2" && numText !== "3" && numText !== "4") {
+      this.reportError("Z0365");
+      return null;
+    }
+    this.tokens.get(); // consume digit
+    const tToken = this.tokens.peek();
+    if (tToken.type !== CommonTokens.Identifier || tToken.text?.toLowerCase() !== "t") {
+      this.reportError("Z0365");
+      return null;
+    }
+    this.tokens.get(); // consume 't'
+    return `${numText}t` as "2t" | "3t" | "4t";
+  }
+
+  private parseDmaWr5(): DmaWr5Pragma<TInstruction, TToken> {
+    let autoRestart: boolean | undefined;
+    const t = this.tokens.peek();
+    if (t.type === CommonTokens.Identifier && t.text?.toLowerCase() === "auto_restart") {
+      this.tokens.get();
+      autoRestart = true;
+    }
+    return { type: "DmaWr5Pragma", autoRestart } as DmaWr5Pragma<TInstruction, TToken>;
   }
 }
 

@@ -642,6 +642,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   renderTact(tact: number): boolean {
     this.pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntEndTact;
 
+    // --- Get pre-calculated VC position (needed for activeVideoLine before the blanking check)
+    const vc = activeTactToVC[tact];
+
+    // --- Update active video line counter (NextRegs 0x1E/0x1F) for every tact, including
+    // blanking, so the value is always current when the CPU reads it.
+    // Formula mirrors MAME's vpos_to_cvc:
+    //   CVC = (vc - displayYStart + copperOffset + totalVC) % totalVC
+    // At vc=displayYStart with no offset, CVC=0 (first ULA pixel row = line 0).
+    this.activeVideoLine =
+      (vc - this.confDisplayYStart + this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
+      this.confTotalVC;
+
     // === BLANKING CHECK ===
     // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.
     // We can use active ULA rendering flags as the blanking mask for all layers.
@@ -651,9 +663,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       return false; // Skip blanking tact - no visible content in any layer
     }
 
-    // --- Get pre-calculated (HC, VC) position from lookup tables
+    // --- Get pre-calculated HC position from lookup table (vc already computed above)
     const hc = activeTactToHC[tact];
-    const vc = activeTactToVC[tact];
 
     // === ULA rendering
     if (this.loResEnabledSampled) {

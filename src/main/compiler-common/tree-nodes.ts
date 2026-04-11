@@ -65,7 +65,8 @@ export type Pragma<TInstruction extends TypedObject, TToken extends CommonTokenT
   | CompareBinPragma<TInstruction, TToken>
   | InjectOptPragma<TInstruction>
   | OnSuccessPragma<TInstruction>
-  | SaveNexPragma<TInstruction, TToken>;
+  | SaveNexPragma<TInstruction, TToken>
+  | DmaPragma<TInstruction, TToken>;
 
 export type IfLikeStatement<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | IfStatement<TInstruction, TToken>
@@ -1075,7 +1076,106 @@ export interface SaveNexBarPragma<TNode extends TypedObject, TToken extends Comm
 }
 
 // ============================================================================
-// Statement syntax nodes
+// DMA pragma nodes
+
+/**
+ * Union of all .dma sub-command pragma node types
+ */
+export type DmaPragma<TNode extends TypedObject, TToken extends CommonTokenType> =
+  | DmaResetPragma<TNode>
+  | DmaLoadPragma<TNode>
+  | DmaEnablePragma<TNode>
+  | DmaDisablePragma<TNode>
+  | DmaContinuePragma<TNode>
+  | DmaCmdPragma<TNode, TToken>
+  | DmaReadMaskPragma<TNode, TToken>
+  | DmaWr0Pragma<TNode, TToken>
+  | DmaWr1Pragma<TNode>
+  | DmaWr2Pragma<TNode, TToken>
+  | DmaWr3Pragma<TNode, TToken>
+  | DmaWr4Pragma<TNode, TToken>
+  | DmaWr5Pragma<TNode>;
+
+export interface DmaResetPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "DmaResetPragma";
+}
+
+export interface DmaLoadPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "DmaLoadPragma";
+}
+
+export interface DmaEnablePragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "DmaEnablePragma";
+}
+
+export interface DmaDisablePragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "DmaDisablePragma";
+}
+
+export interface DmaContinuePragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "DmaContinuePragma";
+}
+
+export interface DmaCmdPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "DmaCmdPragma";
+  value: Expression<TNode, TToken>;
+}
+
+export interface DmaReadMaskPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "DmaReadMaskPragma";
+  mask: Expression<TNode, TToken>;
+}
+
+export interface DmaWr0Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "DmaWr0Pragma";
+  direction: "a_to_b" | "b_to_a";
+  transferType: "transfer" | "search" | "search_transfer";
+  portAAddr?: Expression<TNode, TToken>;
+  blockLength?: Expression<TNode, TToken>;
+}
+
+export interface DmaWr1Pragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "DmaWr1Pragma";
+  portType: "memory" | "io";
+  addrMode: "increment" | "decrement" | "fixed";
+  cycleLength?: "2t" | "3t" | "4t";
+}
+
+export interface DmaWr2Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "DmaWr2Pragma";
+  portType: "memory" | "io";
+  addrMode: "increment" | "decrement" | "fixed";
+  cycleLength?: "2t" | "3t" | "4t";
+  prescaler?: Expression<TNode, TToken>;
+}
+
+export interface DmaWr3Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "DmaWr3Pragma";
+  dmaEnable?: boolean;
+  stopOnMatch?: boolean;
+  intEnable?: boolean;
+  mask?: Expression<TNode, TToken>;
+  match?: Expression<TNode, TToken>;
+}
+
+export interface DmaWr4Pragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "DmaWr4Pragma";
+  mode: "byte" | "continuous" | "burst";
+  portBAddr?: Expression<TNode, TToken>;
+}
+
+export interface DmaWr5Pragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "DmaWr5Pragma";
+  autoRestart?: boolean;
+}
+
+
 
 export interface StatementBase<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
   isBlock?: boolean;

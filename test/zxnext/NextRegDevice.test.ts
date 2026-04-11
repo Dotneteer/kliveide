@@ -3293,3 +3293,132 @@ describe("D2: nr02ResetType shift register", () => {
     expect(m.nextRegDevice.nr02ResetType).toBe(0b100);
   });
 });
+
+describe("Next - NextReg 0x1E/0x1F active video line", () => {
+  // Helper: read the 9-bit CVC from NextRegs 0x1E (MSB) and 0x1F (LSB)
+  function readCVC(m: Awaited<ReturnType<typeof createTestNextMachine>>): number {
+    m.nextRegDevice.setNextRegisterIndex(0x1e);
+    const msb = m.nextRegDevice.getNextRegisterValue() & 0x01;
+    m.nextRegDevice.setNextRegisterIndex(0x1f);
+    const lsb = m.nextRegDevice.getNextRegisterValue();
+    return (msb << 8) | lsb;
+  }
+
+  it("50Hz: at tact 0 (blanking before display) CVC reflects vc=0 offset", async () => {
+    // vc=0, displayYStart=64, totalVC=311 → CVC = (0 - 64 + 311) % 311 = 247
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+
+    scrDevice.renderTact(0);
+
+    expect(readCVC(m)).toBe(247);
+  });
+
+  it("50Hz: first tact of display line 0 yields CVC=0", async () => {
+    // vc=displayYStart=64, totalHC=456 → tact = 64 * 456 = 29184
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact(config.displayYStart * config.totalHC);
+
+    expect(readCVC(m)).toBe(0);
+  });
+
+  it("50Hz: display line 1 yields CVC=1", async () => {
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact((config.displayYStart + 1) * config.totalHC);
+
+    expect(readCVC(m)).toBe(1);
+  });
+
+  it("50Hz: last ULA display line (191) yields CVC=191", async () => {
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact((config.displayYStart + 191) * config.totalHC);
+
+    expect(readCVC(m)).toBe(191);
+  });
+
+  it("50Hz: 0x1E MSB is 0 for CVC < 256, 0x1F LSB matches low byte", async () => {
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact((config.displayYStart + 100) * config.totalHC);
+
+    m.nextRegDevice.setNextRegisterIndex(0x1e);
+    expect(m.nextRegDevice.getNextRegisterValue()).toBe(0); // MSB bit for CVC=100
+    m.nextRegDevice.setNextRegisterIndex(0x1f);
+    expect(m.nextRegDevice.getNextRegisterValue()).toBe(100);
+  });
+
+  it("60Hz: first tact of display line 0 yields CVC=0", async () => {
+    // 60Hz: displayYStart=40, totalHC=456 → tact = 40 * 456 = 18240
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x04); // 60Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact(config.displayYStart * config.totalHC);
+
+    expect(readCVC(m)).toBe(0);
+  });
+
+  it("60Hz: display line 50 yields CVC=50", async () => {
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x04); // 60Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact((config.displayYStart + 50) * config.totalHC);
+
+    expect(readCVC(m)).toBe(50);
+  });
+
+  it("50Hz: copper offset (NextReg 0x64) shifts CVC", async () => {
+    // With offset=10: CVC at display line 0 = (64 - 64 + 10 + 311) % 311 = 10
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    m.nextRegDevice.setNextRegisterIndex(0x64);
+    m.nextRegDevice.setNextRegisterValue(10);   // verticalLineOffset = 10
+    const config = scrDevice.config;
+
+    scrDevice.renderTact(config.displayYStart * config.totalHC);
+
+    expect(readCVC(m)).toBe(10);
+  });
+
+  it("50Hz: copper offset wraps CVC correctly at frame boundary", async () => {
+    // With offset=5: vc=0 → CVC = (0 - 64 + 5 + 311) % 311 = 252
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    m.nextRegDevice.setNextRegisterIndex(0x64);
+    m.nextRegDevice.setNextRegisterValue(5);    // verticalLineOffset = 5
+
+    scrDevice.renderTact(0); // vc=0
+
+    expect(readCVC(m)).toBe(252);
+  });
+});
