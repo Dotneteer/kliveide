@@ -23,6 +23,12 @@ export const pageMap = [{
       "sidebarTitle": "App B Nextreg Reference"
     }
   }, {
+    name: "app-C-io-ports-reference",
+    route: "/book/app-C-io-ports-reference",
+    frontMatter: {
+      "sidebarTitle": "App C Io Ports Reference"
+    }
+  }, {
     name: "book-writing-guidelines",
     route: "/book/book-writing-guidelines",
     frontMatter: {
@@ -47,16 +53,16 @@ export const pageMap = [{
       "sidebarTitle": "Preface"
     }
   }, {
-    name: "z80-z80n-overview",
-    route: "/book/z80-z80n-overview",
-    frontMatter: {
-      "sidebarTitle": "Z80 Z80n Overview"
-    }
-  }, {
     name: "z80n",
     route: "/book/z80n",
     frontMatter: {
       "sidebarTitle": "Z80n"
+    }
+  }, {
+    name: "zxndma",
+    route: "/book/zxndma",
+    frontMatter: {
+      "sidebarTitle": "Zxndma"
     }
   }]
 }, {
