@@ -836,20 +836,21 @@ if (pragmaLine.type.startsWith("Dma") && this._output.modelType !== SpectrumMode
 
 ### Step 6: Error Codes
 
-**File:** Add new error codes to the error definitions (search for `Z03xx` / `Z04xx` series):
+**File:** Add new error codes to `src/main/compiler-common/assembler-errors.ts` (in the Z03xx pragma section, after Z0352 SaveNex errors):
 
 | Code | Message |
 |---|---|
-| `Z0401` | "Unknown .dma sub-command" |
-| `Z0402` | "Expected direction: 'a_to_b' or 'b_to_a'" |
-| `Z0403` | "Expected comma separator" |
-| `Z0404` | "Expected transfer type: 'transfer', 'search', or 'search_transfer'" |
-| `Z0405` | "Expected port type: 'memory' or 'io'" |
-| `Z0406` | "Expected address mode: 'increment', 'decrement', or 'fixed'" |
-| `Z0407` | "Expected cycle length: '2t', '3t', or '4t'" |
-| `Z0408` | "Expected operating mode: 'byte', 'continuous', or 'burst'" |
-| `Z0409` | "Prescaler requires cycle length to be specified" |
-| `Z0410` | "The .dma pragma requires the Next model (.model next)" |
+| `Z0360` | "Unknown .dma sub-command: '{0}'" |
+| `Z0361` | "Expected direction: 'a_to_b' or 'b_to_a'" |
+| `Z0362` | "Expected transfer type: 'transfer', 'search', or 'search_transfer'" |
+| `Z0363` | "Expected port type: 'memory' or 'io'" |
+| `Z0364` | "Expected address mode: 'increment', 'decrement', or 'fixed'" |
+| `Z0365` | "Expected cycle length: '2t', '3t', or '4t'" |
+| `Z0366` | "Expected operating mode: 'byte', 'continuous', or 'burst'" |
+| `Z0367` | "Prescaler requires cycle length to be specified" |
+| `Z0368` | "The .dma pragma requires the Next model (.model next)" |
+
+> **Note:** Codes Z0401–Z0410 were already taken by instruction-level errors. DMA errors use the Z036x range.
 
 ### Step 7: Documentation
 

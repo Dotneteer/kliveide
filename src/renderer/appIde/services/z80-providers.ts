@@ -320,18 +320,166 @@ function outlineEntryToSymbol(entry: DocumentOutlineEntry): DocumentSymbolResult
 const INSTRUCTION_LABELS = new Set(Z80_INSTRUCTION_ITEMS.map((i) => i.label));
 const REGISTER_LABELS     = new Set(Z80_REGISTER_ITEMS.map((r) => r.label));
 
+// ---------------------------------------------------------------------------
+// DMA context-aware completion helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Describes where the cursor is within a `.dma` pragma line.
+ * Used to drive parameter-level auto-complete.
+ */
+export type DmaCompletionContext = {
+  phase:
+    | "subcommand"
+    | "wr0-direction" | "wr0-transfer" | "wr0-portaaddr" | "wr0-blocklen"
+    | "porttype" | "addrmode" | "cyclelen" | "prescaler"
+    | "wr4-mode" | "wr4-portbaddr"
+    | "wr3-flags"
+    | "wr5-flags";
+};
+
+/**
+ * Detects the DMA completion context from the current line text.
+ *
+ * Returns null when the line is not a `.dma` pragma.
+ * Strips a leading `label:` prefix before matching.
+ */
+export function getDmaCompletionContext(lineContent: string): DmaCompletionContext | null {
+  // Strip optional `label:` prefix
+  const stripped = lineContent.replace(/^[^:;]+:\s*/, "").trimStart().toLowerCase();
+
+  const dmaMatch = /^\.?dma\s+/.exec(stripped);
+  if (!dmaMatch) return null;
+  const rest = stripped.slice(dmaMatch[0].length).trimStart();
+
+  if (rest === "") return { phase: "subcommand" };
+
+  // Split on commas to identify positional parameters
+  const parts = rest.split(/\s*,\s*/);
+  // The sub-command is the first word in parts[0]
+  const subcmd = parts[0].trim().split(/\s+/)[0];
+
+  switch (subcmd) {
+    case "wr0":
+      if (parts.length === 1) return { phase: "wr0-direction" };
+      if (parts.length === 2) return { phase: "wr0-transfer" };
+      if (parts.length === 3) return { phase: "wr0-portaaddr" };
+      if (parts.length >= 4)  return { phase: "wr0-blocklen" };
+      break;
+    case "wr1":
+    case "wr2":
+      if (parts.length === 1) return { phase: "porttype" };
+      if (parts.length === 2) return { phase: "addrmode" };
+      if (parts.length === 3) return { phase: "cyclelen" };
+      if (subcmd === "wr2" && parts.length >= 4) return { phase: "prescaler" };
+      break;
+    case "wr4":
+      if (parts.length === 1) return { phase: "wr4-mode" };
+      if (parts.length >= 2)  return { phase: "wr4-portbaddr" };
+      break;
+    case "wr3":
+      return { phase: "wr3-flags" };
+    case "wr5":
+      return { phase: "wr5-flags" };
+  }
+
+  return null;
+}
+
+/** Build a keyword-style CompletionResult for DMA parameter suggestions. */
+function dmaKeyword(label: string, detail: string, insertText?: string): CompletionResult {
+  const text = insertText ?? label;
+  return { label, kind: CIK.Keyword, detail, insertText: text, isSnippet: text.includes("$") };
+}
+
+/** All DMA parameter completion tables keyed by phase. */
+const DMA_ITEMS: Record<DmaCompletionContext["phase"], CompletionResult[]> = {
+  subcommand: [
+    dmaKeyword("reset",    "WR6: full DMA reset"),
+    dmaKeyword("load",     "WR6: load addresses into transfer engine"),
+    dmaKeyword("enable",   "WR6: enable / start DMA transfer"),
+    dmaKeyword("disable",  "WR6: stop DMA transfer"),
+    dmaKeyword("continue", "WR6: continue transfer (keep addresses)"),
+    dmaKeyword("wr0",      "WR0: direction, port A address, block length",  "wr0 ${1|a_to_b,b_to_a|}, ${2|transfer,search,search_transfer|}"),
+    dmaKeyword("wr1",      "WR1: port A type and address mode",             "wr1 ${1|memory,io|}, ${2|increment,decrement,fixed|}"),
+    dmaKeyword("wr2",      "WR2: port B type and address mode",             "wr2 ${1|memory,io|}, ${2|increment,decrement,fixed|}"),
+    dmaKeyword("wr3",      "WR3: interrupt and match control",              "wr3"),
+    dmaKeyword("wr4",      "WR4: operating mode and port B address",        "wr4 ${1|byte,continuous,burst|}"),
+    dmaKeyword("wr5",      "WR5: auto-restart flag"),
+    dmaKeyword("readmask", "WR6: set read mask (1 follow byte)",            "readmask ${1:mask}"),
+    dmaKeyword("cmd",      "WR6: raw command byte (escape hatch)",          "cmd ${1:value}"),
+  ],
+  "wr0-direction": [
+    dmaKeyword("a_to_b", "Transfer from port A to port B"),
+    dmaKeyword("b_to_a", "Transfer from port B to port A"),
+  ],
+  "wr0-transfer": [
+    dmaKeyword("transfer",        "Byte transfer mode"),
+    dmaKeyword("search",          "Search mode"),
+    dmaKeyword("search_transfer", "Search and transfer mode"),
+  ],
+  "wr0-portaaddr": [],  // numeric expression — no keyword suggestions
+  "wr0-blocklen":  [],  // numeric expression
+  porttype: [
+    dmaKeyword("memory", "Port is a memory address"),
+    dmaKeyword("io",     "Port is an I/O port address"),
+  ],
+  addrmode: [
+    dmaKeyword("increment", "Increment address after each transfer"),
+    dmaKeyword("decrement", "Decrement address after each transfer"),
+    dmaKeyword("fixed",     "Keep address fixed (I/O port)"),
+  ],
+  cyclelen: [
+    dmaKeyword("2t", "2 T-state cycle"),
+    dmaKeyword("3t", "3 T-state cycle"),
+    dmaKeyword("4t", "4 T-state cycle"),
+  ],
+  prescaler: [],  // numeric expression
+  "wr4-mode": [
+    dmaKeyword("byte",       "Single-byte transfer per request"),
+    dmaKeyword("continuous", "Continuous burst to end of block"),
+    dmaKeyword("burst",      "Burst mode (holds /BUSREQ)"),
+  ],
+  "wr4-portbaddr": [],  // numeric expression
+  "wr3-flags": [
+    dmaKeyword("dma_enable",    "Enable DMA immediately (D6)"),
+    dmaKeyword("stop_on_match", "Stop on pattern match (D2)"),
+    dmaKeyword("int_enable",    "Enable interrupt on completion (D5)"),
+  ],
+  "wr5-flags": [
+    dmaKeyword("auto_restart", "Reload and restart on block completion (D5)"),
+  ],
+};
+
+/**
+ * Returns context-aware completion items for the given DMA completion phase.
+ */
+export function getDmaCompletionItems(ctx: DmaCompletionContext): CompletionResult[] {
+  return DMA_ITEMS[ctx.phase] ?? [];
+}
+
 /**
  * Compute completion items for the given word prefix and optional trigger character.
  *
  * @param word         The word (prefix) at the cursor.  Empty string for all.
  * @param triggerChar  The character that triggered the completion ('.' '#' or undefined).
  * @param service      Language intelligence service instance.
+ * @param lineContent  Full text of the current line (used for DMA context-aware completions).
  */
 export function computeCompletionItems(
   word: string,
   triggerChar: string | undefined,
-  service: ILanguageIntelService
+  service: ILanguageIntelService,
+  lineContent?: string
 ): CompletionResult[] {
+  // --- DMA context-aware completions take priority when cursor is inside a .dma line
+  if (lineContent) {
+    const dmaCtx = getDmaCompletionContext(lineContent);
+    if (dmaCtx) {
+      return getDmaCompletionItems(dmaCtx);
+    }
+  }
+
   const lc = word.toLowerCase();
   const results: CompletionResult[] = [];
 
@@ -998,7 +1146,8 @@ export function registerZ80Providers(
     provideCompletionItems(model: any, position: any, context: any) {
       const word = model.getWordAtPosition(position);
       const prefix = word ? word.word : "";
-      const items = computeCompletionItems(prefix, context.triggerCharacter, getService());
+      const lineContent: string = model.getLineContent(position.lineNumber) ?? "";
+      const items = computeCompletionItems(prefix, context.triggerCharacter, getService(), lineContent);
       // Always supply an explicit range so Monaco knows what text to replace.
       // When a word was found (wordPattern includes '.', '#') use its span;
       // when the trigger character was just typed and no word was matched yet,

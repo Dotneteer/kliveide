@@ -307,6 +307,10 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".SAVENEX",
       "savenex",
       "SAVENEX",
+      ".dma",
+      ".DMA",
+      "dma",
+      "DMA",
       ".xorg",
       ".XORG",
       "xorg",
@@ -768,6 +772,10 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
           }
         ],
 
+        // --- DMA pragma: push dmaSubcmd state so the sub-command keyword
+        //     gets "statement" colour instead of falling through to identifier
+        [/\.[Dd][Mm][Aa]\b|(?<![.\w])[Dd][Mm][Aa]\b/, { token: "pragma", next: "@dmaSubcmd" }],
+
         // --- Keyword-like tokens
         [
           /[\._@`A-Za-z][_@!?\.0-9A-Za-z]*/,
@@ -841,7 +849,19 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         [/}/, "macroparam"]
       ],
 
-      specialReg: [[/af'|AF'/, "register"]]
+      specialReg: [[/af'|AF'/, "register"]],
+
+      // --- DMA sub-command state: colours the first identifier after .dma as "statement",
+      //     then immediately pops back to root so no state leaks to subsequent lines.
+      dmaSubcmd: [
+        [/[ \t]+/, "white"],
+        [
+          /wr[0-5]|reset|load|enable|disable|continue|readmask|cmd/i,
+          { token: "statement", next: "@pop" }
+        ],
+        [/[\._@`A-Za-z][_@!?\.0-9A-Za-z]*/, { token: "identifier", next: "@pop" }],
+        [/$/, { token: "", next: "@pop" }]
+      ]
     }
   },
   darkTheme: {

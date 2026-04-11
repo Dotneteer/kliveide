@@ -18,6 +18,7 @@
 #include "01_intro/print.asm"
 #include "02_z80n/extinstr.asm"
 #include "03_nextreg/write.asm"
+#include "04_zxndma/memcpy.asm"
 
 ; We keep 256 bytes for the stack
 STACK
@@ -47,7 +48,8 @@ Main
     // call LdpirxDemo
     // call PixeladDemo
     // call PixeldnDemo
-    call SetaeDemo
+    // call SetaeDemo
+    call DmaSimpleMemCopyDemo
     // call WiteNextReg1
 
 ; When the example ends, we keep in infinite loop.

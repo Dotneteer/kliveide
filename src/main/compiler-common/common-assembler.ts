@@ -101,6 +101,19 @@ import {
   SaveNexRamPragma,
   SaveNexScreenPragma,
   SaveNexStackAddrPragma,
+  DmaResetPragma,
+  DmaLoadPragma,
+  DmaEnablePragma,
+  DmaDisablePragma,
+  DmaContinuePragma,
+  DmaCmdPragma,
+  DmaReadMaskPragma,
+  DmaWr0Pragma,
+  DmaWr1Pragma,
+  DmaWr2Pragma,
+  DmaWr3Pragma,
+  DmaWr4Pragma,
+  DmaWr5Pragma,
   SkipPragma,
   Statement,
   StructStatement,
@@ -1686,6 +1699,47 @@ export abstract class CommonAssembler<
       case "SaveNexBarPragma":
         this.processSaveNexBar(pragmaLine);
         break;
+
+      // --- DMA pragma cases
+      case "DmaResetPragma":
+        this.processDmaSimpleCommand(pragmaLine, 0xc3);
+        break;
+      case "DmaLoadPragma":
+        this.processDmaSimpleCommand(pragmaLine, 0xcf);
+        break;
+      case "DmaEnablePragma":
+        this.processDmaSimpleCommand(pragmaLine, 0x87);
+        break;
+      case "DmaDisablePragma":
+        this.processDmaSimpleCommand(pragmaLine, 0x83);
+        break;
+      case "DmaContinuePragma":
+        this.processDmaSimpleCommand(pragmaLine, 0xd3);
+        break;
+      case "DmaCmdPragma":
+        this.processDmaCmdPragma(pragmaLine);
+        break;
+      case "DmaReadMaskPragma":
+        this.processDmaReadMaskPragma(pragmaLine);
+        break;
+      case "DmaWr0Pragma":
+        this.processDmaWr0Pragma(pragmaLine);
+        break;
+      case "DmaWr1Pragma":
+        this.processDmaWr1Pragma(pragmaLine);
+        break;
+      case "DmaWr2Pragma":
+        this.processDmaWr2Pragma(pragmaLine);
+        break;
+      case "DmaWr3Pragma":
+        this.processDmaWr3Pragma(pragmaLine);
+        break;
+      case "DmaWr4Pragma":
+        this.processDmaWr4Pragma(pragmaLine);
+        break;
+      case "DmaWr5Pragma":
+        this.processDmaWr5Pragma(pragmaLine);
+        break;
     }
   }
 
@@ -2906,6 +2960,212 @@ export abstract class CommonAssembler<
       }
       this._output.nexConfig.loadingBar.startDelay = startDelayValue.asLong();
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // DMA pragma emission helpers
+
+  private isDmaNextModel(pragma: PartialAssemblyLine<TInstruction>): boolean {
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) {
+      this.reportAssemblyError("Z0368", pragma as unknown as AssemblyLine<TInstruction>);
+      return false;
+    }
+    return true;
+  }
+
+  private processDmaSimpleCommand(
+    pragma: DmaResetPragma<TInstruction> | DmaLoadPragma<TInstruction> | DmaEnablePragma<TInstruction> | DmaDisablePragma<TInstruction> | DmaContinuePragma<TInstruction>,
+    cmdByte: number
+  ): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    this.emitByte(cmdByte);
+  }
+
+  private processDmaCmdPragma(pragma: DmaCmdPragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    const value = this.evaluateExpr(pragma.value);
+    if (value.isValid) {
+      this.emitByte(value.value & 0xff);
+    } else if (value.isNonEvaluated) {
+      this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.value);
+      this.emitByte(0x00);
+    }
+  }
+
+  private processDmaReadMaskPragma(pragma: DmaReadMaskPragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    this.emitByte(0xbb);
+    const value = this.evaluateExpr(pragma.mask);
+    if (value.isValid) {
+      this.emitByte(value.value & 0x7f);
+    } else if (value.isNonEvaluated) {
+      this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.mask);
+      this.emitByte(0x00);
+    }
+  }
+
+  private processDmaWr0Pragma(pragma: DmaWr0Pragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    // Base byte: 0111_1DTT where D=direction, TT=transfer type
+    // D6:D3 always 1111 — all follow bytes exist in the stream
+    const dirBit = pragma.direction === "a_to_b" ? 0x04 : 0x00;
+    let ttBits: number;
+    switch (pragma.transferType) {
+      case "transfer":        ttBits = 0x01; break;
+      case "search":          ttBits = 0x02; break;
+      case "search_transfer": ttBits = 0x03; break;
+      default:                ttBits = 0x01; break;
+    }
+    const baseByte = 0x78 | dirBit | ttBits;
+    this.emitByte(baseByte);
+
+    if (pragma.portAAddr !== undefined) {
+      const addr = this.evaluateExpr(pragma.portAAddr);
+      if (addr.isValid) {
+        this.emitByte(addr.value & 0xff);
+        this.emitByte((addr.value >> 8) & 0xff);
+      } else if (addr.isNonEvaluated) {
+        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit16, pragma.portAAddr);
+        this.emitByte(0x00);
+        this.emitByte(0x00);
+      }
+
+      if (pragma.blockLength !== undefined) {
+        const len = this.evaluateExpr(pragma.blockLength);
+        if (len.isValid) {
+          this.emitByte(len.value & 0xff);
+          this.emitByte((len.value >> 8) & 0xff);
+        } else if (len.isNonEvaluated) {
+          this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit16, pragma.blockLength);
+          this.emitByte(0x00);
+          this.emitByte(0x00);
+        }
+      }
+    }
+  }
+
+  private processDmaWr1Pragma(pragma: DmaWr1Pragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    // Base byte: 0TAA_M100
+    let baseByte = 0x04; // D2:D0 = 100 (WR1 identifier)
+    if (pragma.portType === "io") baseByte |= 0x08;         // D3
+    switch (pragma.addrMode) {
+      case "increment": baseByte |= 0x10; break;            // D4
+      case "fixed":     baseByte |= 0x20; break;            // D5
+      // decrement: 0x00
+    }
+    if (pragma.cycleLength) baseByte |= 0x40;               // D6: timing byte follows
+    this.emitByte(baseByte);
+
+    if (pragma.cycleLength) {
+      let timingByte = 0x00;
+      switch (pragma.cycleLength) {
+        case "4t": timingByte = 0x00; break;
+        case "3t": timingByte = 0x01; break;
+        case "2t": timingByte = 0x02; break;
+      }
+      this.emitByte(timingByte);
+    }
+  }
+
+  private processDmaWr2Pragma(pragma: DmaWr2Pragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    // Base byte: 0TAA_M000
+    let baseByte = 0x00; // D2:D0 = 000 (WR2 identifier)
+    if (pragma.portType === "io") baseByte |= 0x08;
+    switch (pragma.addrMode) {
+      case "increment": baseByte |= 0x10; break;
+      case "fixed":     baseByte |= 0x20; break;
+    }
+    if (pragma.cycleLength || pragma.prescaler) baseByte |= 0x40;
+    this.emitByte(baseByte);
+
+    if (pragma.cycleLength || pragma.prescaler) {
+      let timingByte = 0x00;
+      if (pragma.cycleLength) {
+        switch (pragma.cycleLength) {
+          case "4t": timingByte = 0x00; break;
+          case "3t": timingByte = 0x01; break;
+          case "2t": timingByte = 0x02; break;
+        }
+      }
+      if (pragma.prescaler) timingByte |= 0x20; // D5: prescaler byte follows
+      this.emitByte(timingByte);
+
+      if (pragma.prescaler) {
+        const ps = this.evaluateExpr(pragma.prescaler);
+        if (ps.isValid) {
+          this.emitByte(ps.value & 0xff);
+        } else if (ps.isNonEvaluated) {
+          this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.prescaler);
+          this.emitByte(0x00);
+        }
+      }
+    }
+  }
+
+  private processDmaWr3Pragma(pragma: DmaWr3Pragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    // Base byte: 1EIS_MK00
+    let baseByte = 0x80; // D7=1, D1:D0=00 (WR3 identifier)
+    if (pragma.dmaEnable)   baseByte |= 0x40; // D6
+    if (pragma.intEnable)   baseByte |= 0x20; // D5
+    if (pragma.match)       baseByte |= 0x10; // D4: match byte follows
+    if (pragma.mask)        baseByte |= 0x08; // D3: mask byte follows
+    if (pragma.stopOnMatch) baseByte |= 0x04; // D2
+    this.emitByte(baseByte);
+
+    if (pragma.mask) {
+      const m = this.evaluateExpr(pragma.mask);
+      if (m.isValid) {
+        this.emitByte(m.value & 0xff);
+      } else if (m.isNonEvaluated) {
+        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.mask);
+        this.emitByte(0x00);
+      }
+    }
+    if (pragma.match) {
+      const m = this.evaluateExpr(pragma.match);
+      if (m.isValid) {
+        this.emitByte(m.value & 0xff);
+      } else if (m.isNonEvaluated) {
+        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit8, pragma.match);
+        this.emitByte(0x00);
+      }
+    }
+  }
+
+  private processDmaWr4Pragma(pragma: DmaWr4Pragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    // Base byte: 1MM_IBA01 where D2=D3=1 (address follow bytes always present in stream)
+    let baseByte = 0x81; // D7=1, D1:D0=01 (WR4 identifier), D2=D3=1
+    switch (pragma.mode) {
+      case "continuous": baseByte |= 0x20; break; // MM=01
+      case "burst":      baseByte |= 0x40; break; // MM=10
+      // byte: MM=00
+    }
+    baseByte |= 0x0c; // D3=1, D2=1: address follow bytes in stream
+    this.emitByte(baseByte);
+
+    if (pragma.portBAddr !== undefined) {
+      const addr = this.evaluateExpr(pragma.portBAddr);
+      if (addr.isValid) {
+        this.emitByte(addr.value & 0xff);
+        this.emitByte((addr.value >> 8) & 0xff);
+      } else if (addr.isNonEvaluated) {
+        this.recordFixup(pragma as unknown as AssemblyLine<TInstruction>, FixupType.Bit16, pragma.portBAddr);
+        this.emitByte(0x00);
+        this.emitByte(0x00);
+      }
+    }
+  }
+
+  private processDmaWr5Pragma(pragma: DmaWr5Pragma<TInstruction, TToken>): void {
+    if (!this.isDmaNextModel(pragma)) return;
+    // Base byte: 10R0_R010
+    let baseByte = 0x82; // D7:D6=10, D2:D0=010 (WR5 identifier)
+    if (pragma.autoRestart) baseByte |= 0x20; // D5
+    this.emitByte(baseByte);
   }
 
   /**
