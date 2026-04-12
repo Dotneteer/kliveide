@@ -45,6 +45,117 @@ This flexibility means you can set up Port A as a memory pointer (incrementing t
 
 The separation of "port identity" from "transfer direction" is a Zilog design choice rooted in the Z80 DMA's history as a multi-purpose peripheral. It feels a little over-engineered for most Next use cases, but once you internalize the mental model, the programming sequence flows naturally.
 
+## Three Ways to Write a DMA Program
+
+All DMA configuration amounts to bytes arriving at the DMA port. The hardware doesn't care how those bytes were produced — from individual `OUT (C), A` instructions, from an `OTIR` loop reading a byte table, or from a Klive assembler `.dma` pragma. All three approaches produce identical binary output. What changes is readability, maintainability, and which assembler you're using.
+
+### Style 1: Direct OUT Instructions
+
+The most explicit approach writes each configuration byte with a `LD A, value : OUT (C), A` pair. The register-documentation sections later in this chapter use this style because it maps one-to-one onto the bit-field diagrams:
+
+```z80klive
+    ld bc, $6B
+    ld a, $C3               ; WR6: Reset
+    out (c), a
+    ld a, $7D               ; WR0: A→B, transfer, all follow-bytes set
+    out (c), a
+    ld a, $00               ; Port A low byte (0x8000)
+    out (c), a
+    ; ...
+```
+
+**When to use it:** Fully runtime-dynamic values — addresses in registers, lengths computed on the fly. Every byte can be a live register value; each `OUT` carries whatever `A` happens to hold.
+
+**Constraints:** Verbose — a complete sequence is 15–20 paired `LD / OUT` instructions. The raw hex values (`$7D`, `$2D`, `$28`…) carry no self-documentation; you need the register bit-field diagrams beside you to read the code.
+
+### Style 2: The OTIR Table Pattern
+
+Store the entire DMA program as a contiguous byte table in RAM. Label any fields that need runtime patching, patch those fields before the upload, then stream the whole table to the DMA port with a single `OTIR`:
+
+```z80klive
+    ; Patch the two dynamic fields
+    ld (dmaSrc), hl             ; source address (computed at runtime)
+    ld (dmaLen), bc             ; byte count     (computed at runtime)
+
+    ; Upload — five instructions, regardless of program length
+    ld hl, dmaProgram
+    ld b,  dmaProgram_end - dmaProgram
+    ld c,  $6B
+    otir
+    ret
+
+dmaProgram:
+    .db $C3                     ; WR6: Reset
+    .db $7D                     ; WR0: all params, A→B, transfer
+dmaSrc:
+    .dw 0                       ; Port A address — patched at runtime
+dmaLen:
+    .dw 0                       ; Block length   — patched at runtime
+    .db $14                     ; WR1: memory, increment
+    .db $10                     ; WR2: memory, increment
+    .db $2D                     ; WR4: continuous, Port B address follows
+    .dw $C000                   ; Port B address — constant
+    .db $CF                     ; WR6: Load
+    .db $87                     ; WR6: Enable
+dmaProgram_end:
+```
+
+**When to use it:** Semi-static programs where most configuration is fixed at assembly time and only a small number of fields (typically source address and block length) need runtime patching. This pattern is widely used in community examples and references for the ZX Spectrum Next.
+
+**Constraints:** The table must live in **RAM**, not ROM — `LD (label), HL` patching requires writable memory. The raw hex bytes in the table body are just as opaque as Style 1: `$7D` still doesn't tell you it means "A→B, transfer, all follow-bytes set."
+
+**A note on OTIR and the port address:** `OTIR` outputs to port `(C)` and decrements `B` after each byte, so by the time the last byte is sent, `B` has counted down to zero. Because the Z80's `OUT (C), A` instruction puts the full 16-bit `BC` register on the address bus, the upper byte of the port address changes with every iteration. This sounds alarming, but it is harmless here: the zxnDMA port decoder looks only at the lower 8 bits of the address bus (`$6B`), and ignores the upper 8 bits entirely. Every byte in the table therefore lands at the correct port regardless of what `B` holds at that moment.
+
+**Compatibility:** Works with any Z80 assembler — sjasmplus, Pasmo, or any other tool that supports `DB`/`DW` directives. No assembler extensions required.
+
+### Style 3: The `.dma` Pragma (Klive Assembler)
+
+The Klive Z80 Assembler's `.dma` pragma emits exactly the same byte sequences as a hand-crafted `DB`/`DW` table, but replaces raw hex encodings with named sub-commands and parameter keywords:
+
+```z80klive
+dmaProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer       ; base byte only — address and length follow
+dmaSrc:
+    .dw 0                           ; Port A address — patched at runtime
+dmaLen:
+    .dw 0                           ; Block length   — patched at runtime
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous             ; base byte only — Port B address follows
+    .dw $C000                       ; Port B address — constant
+    .dma wr5
+    .dma load
+    .dma enable
+dmaProgram_end:
+```
+
+The upload is identical to Style 2 — a five-instruction `OTIR` sequence:
+
+```z80klive
+    ld (dmaSrc), hl
+    ld (dmaLen), bc
+    ld hl, dmaProgram
+    ld b,  dmaProgram_end - dmaProgram
+    ld c,  $6B
+    otir
+```
+
+**When to use it:** Any time you're using the Klive assembler and want readable, self-documenting DMA code — which is almost always. The emitted bytes are bit-for-bit identical to the hand-crafted `DB` table, so there is zero runtime overhead.
+
+**Constraints:**
+- **Klive assembler only.** Not compatible with sjasmplus, Pasmo, or other tools.
+- **Compile-time constants only.** Sub-command parameters (e.g. `wr0 a_to_b, transfer, $8000, 256`) must be resolvable at assembly time. For runtime addresses, omit the optional parameter and patch a `.dw 0` label as shown above.
+- **Follow-byte indicator bits are always set.** `WR0` and `WR4` base bytes always have all address/length follow-byte indicator bits set regardless of whether you supply the optional parameters. This is correct — it means the `.dw` patch labels that follow are consumed as the expected follow bytes.
+
+### Which Style This Chapter Uses
+
+The register-documentation sections (WR0 through WR6) use **Style 1** — direct `OUT` instructions — because the byte-at-a-time structure maps naturally onto the bit-field diagrams.
+
+All practical patterns and complete examples use **Style 3** — the `.dma` pragma combined with the OTIR upload sequence. The labels over `.dw 0` patch points are self-documenting, and the pragma sub-command names make register configuration immediately readable.
+
+If you're working with a different assembler, translate any `.dma` pragma block to an equivalent `DB`/`DW` table and upload with `OTIR` — the byte sequences are identical.
+
 ## Programming the DMA: Register Groups
 
 All DMA configuration happens by writing sequences of bytes to either port `0x6B` or `0x0B`. There's no separate register select mechanism — the DMA determines which register you're programming based on bit patterns in the first byte (the "base byte") of each write sequence.
@@ -448,242 +559,262 @@ Every DMA transfer follows the same pattern. Once you've seen it a few times, it
 6. **Load** addresses into the transfer engine
 7. **Enable** the DMA
 
-Let's build a complete example: copying 256 bytes from address `0x8000` to `0xC000`.
+Let's build a complete example: copying 256 bytes from address `0x8000` to `0xC000`, using the `.dma` pragma with the OTIR upload pattern:
 
 ```z80klive
+dmaCopyProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer, $8000, 256   ; Step 2: direction, Port A, block length
+    .dma wr1 memory, increment              ; Step 3: Port A — memory, incrementing
+    .dma wr2 memory, increment              ; Step 4: Port B — memory, incrementing
+    .dma wr4 continuous, $C000              ; Step 5: continuous mode, Port B = 0xC000
+    .dma wr5                                ; Step 5 cont.: control flags (defaults)
+    .dma load                               ; Step 6: load addresses into transfer engine
+    .dma enable                             ; Step 7: start the transfer
+dmaCopyProgram_end:
+
 DmaCopy:
-    ld bc, $6B              ; zxnDMA port
-
-    ; Step 1: Reset
-    ld a, $C3               ; RESET command
-    out (c), a
-
-    ; Step 2: WR0 — A→B, Port A address = 0x8000, block length = 256
-    ld a, $7D               ; D6:D3 all set (all params follow), D2=1 (A→B), D0=1 (Transfer)
-    out (c), a
-    ld a, $00               ; Port A low byte
-    out (c), a
-    ld a, $80               ; Port A high byte
-    out (c), a
-    ld a, $00               ; Block length low (256 & 0xFF = 0)
-    out (c), a
-    ld a, $01               ; Block length high (256 >> 8 = 1)
-    out (c), a
-
-    ; Step 3: WR1 — Port A = memory, incrementing
-    ld a, $14               ; D5:D4=01 (increment), D3=0 (memory), D2:D0=100 (WR1)
-    out (c), a
-
-    ; Step 4: WR2 — Port B = memory, incrementing (no timing)
-    ld a, $10               ; D5:D4=01 (increment), D3=0 (memory), D2:D0=000 (WR2)
-    out (c), a
-
-    ; Step 5: WR4 — Continuous mode, Port B address = 0xC000
-    ld a, $2D               ; D6:D5=01 (continuous), D3=1 D2=1 (addr follows), D1:D0=01 (WR4)
-    out (c), a
-    ld a, $00               ; Port B low byte
-    out (c), a
-    ld a, $C0               ; Port B high byte
-    out (c), a
-
-    ; Step 6: LOAD
-    ld a, $CF               ; Load addresses into transfer engine
-    out (c), a
-
-    ; Step 7: ENABLE
-    ld a, $87               ; Enable DMA — transfer starts immediately
-    out (c), a
-
+    ld hl, dmaCopyProgram
+    ld b,  dmaCopyProgram_end - dmaCopyProgram
+    ld c,  $6B
+    otir
     ret
 ```
 
-That's seventeen `OUT` instructions. Not the most elegant sequence, but each byte has a clear purpose. The DMA will execute the 256-byte copy in about 1,536 T-states — during which the CPU is halted — and then release the bus. By the time the `RET` executes, the copy is already done.
+The OTIR upload is five instructions regardless of how many configuration bytes the program contains. The `.dma` pragma sub-command names annotate each step inline — `a_to_b, transfer, $8000, 256` is self-explanatory where the equivalent raw bytes (`$7D $00 $80 $00 $01`) are not. The DMA will execute the 256-byte copy in about 1,536 T-states — during which the CPU is halted — and then release the bus.
 
 ## Practical Pattern: Memory Fill
 
 Filling a block of memory with a constant value is a classic DMA trick. The technique uses Port A in fixed address mode, pointing at a single byte containing the fill value:
 
 ```z80klive
-; Fill 6144 bytes at 0x4000 with the value at FillByte
-DmaFill:
-    ld bc, $6B
-
-    ld a, $C3               ; Reset
-    out (c), a
-
-    ; WR0: A→B, Port A = FillByte address, block length = 6144
-    ld a, $7D
-    out (c), a
-    ld a, low FillByte      ; Port A = address of the fill value
-    out (c), a
-    ld a, high FillByte
-    out (c), a
-    ld a, $00               ; Block length low (6144 & 0xFF = 0)
-    out (c), a
-    ld a, $18               ; Block length high (6144 >> 8 = 24 = 0x18)
-    out (c), a
-
-    ; WR1: Port A = memory, FIXED address (reads same byte every time)
-    ld a, $24               ; D5:D4=10 (fixed), D3=0 (memory), D2:D0=100 (WR1)
-    out (c), a
-
-    ; WR2: Port B = memory, incrementing
-    ld a, $10
-    out (c), a
-
-    ; WR4: Continuous, Port B = 0x4000
-    ld a, $2D
-    out (c), a
-    ld a, $00
-    out (c), a
-    ld a, $40
-    out (c), a
-
-    ld a, $CF               ; Load
-    out (c), a
-    ld a, $87               ; Enable
-    out (c), a
-    ret
-
+; Fill 6144 bytes at 0x4000 with the value stored at FillByte
 FillByte:
-    .db $00                  ; The fill value
+    .db $00                                 ; fill value — modify before calling DmaFill
+
+dmaFillProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer, FillByte, 6144   ; Port A = FillByte label, length = 6144
+    .dma wr1 memory, fixed                  ; Port A fixed — reads the same byte every time
+    .dma wr2 memory, increment              ; Port B increments through destination
+    .dma wr4 continuous, $4000              ; continuous mode, Port B = start of ULA pixels
+    .dma wr5
+    .dma load
+    .dma enable
+dmaFillProgram_end:
+
+DmaFill:
+    ld hl, dmaFillProgram
+    ld b,  dmaFillProgram_end - dmaFillProgram
+    ld c,  $6B
+    otir
+    ret
 ```
 
-The key insight is WR1's address mode: `D5:D4 = 10` means fixed. Port A reads the same address — `FillByte` — for all 6,144 bytes. Port B increments through the destination. The result: the entire screen pixel area is cleared in one DMA operation.
+The key insight is `wr1 memory, fixed`: Port A holds the address of `FillByte` and never advances — the same byte is read 6,144 times while Port B increments through the destination. To change the fill value, write to `FillByte` before calling `DmaFill`. The result: the entire screen pixel area is cleared in one DMA operation.
 
 ## Practical Pattern: Loading Sprites via DMA
 
 Sprite pattern data needs to get from main memory into the Next's sprite pattern RAM. The sprite hardware is accessed through I/O ports — you select a pattern slot via port `0x303B`, then write pixel data to port `0x5B`. Each sprite pattern is 256 bytes (16×16 pixels, 8 bits per pixel).
 
 ```z80klive
-; Load 4 sprite patterns (1024 bytes) from SpriteData to sprite pattern RAM
+; DMA program table — source address and length patched per call
+spriteDMAProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer           ; base byte only: all follow-bits set
+spriteDMASrc:
+    .dw 0                               ; Port A address — patched to sprite sheet source
+spriteDMALength:
+    .dw 0                               ; Block length   — patched to byte count
+    .dma wr1 memory, increment
+    .dma wr2 io, fixed                  ; Port B = I/O port, fixed address
+    .dma wr4 continuous                 ; base byte only: Port B address follows
+    .dw $005B                           ; Port B = sprite pattern data port
+    .dma wr5
+    .dma load
+    .dma enable
+spriteDMAProgram_end:
+
+; Load sprites: HL = source address, BC = byte count
+; Precondition: select the target pattern slot via port 0x303B before calling
 LoadSprites:
     ld bc, $303B
-    ld a, 0                 ; Start at pattern slot 0
-    out (c), a              ; Select first pattern
-
-    ld bc, $6B              ; zxnDMA port
-
-    ld a, $C3               ; Reset
+    ld a, 0                             ; Start at pattern slot 0
     out (c), a
 
-    ; WR0: A→B, source = SpriteData, length = 1024
-    ld a, $7D
-    out (c), a
-    ld a, low SpriteData
-    out (c), a
-    ld a, high SpriteData
-    out (c), a
-    ld a, $00               ; 1024 & 0xFF
-    out (c), a
-    ld a, $04               ; 1024 >> 8
-    out (c), a
-
-    ; WR1: Port A = memory, incrementing
-    ld a, $14
-    out (c), a
-
-    ; WR2: Port B = I/O port, FIXED address
-    ld a, $28               ; D5:D4=10 (fixed), D3=1 (I/O), D2:D0=000 (WR2)
-    out (c), a
-
-    ; WR4: Continuous, Port B = 0x5B (sprite data port)
-    ld a, $2D
-    out (c), a
-    ld a, $5B               ; Port B = 0x5B (sprite pattern data)
-    out (c), a
-    ld a, $00               ; High byte (I/O, but DMA uses 16-bit addresses)
-    out (c), a
-
-    ld a, $CF               ; Load
-    out (c), a
-    ld a, $87               ; Enable — DMA streams 1024 bytes to port 0x5B
-    out (c), a
+    ld (spriteDMASrc),    hl            ; patch source address
+    ld (spriteDMALength), bc            ; patch byte count
+    ld hl, spriteDMAProgram
+    ld b,  spriteDMAProgram_end - spriteDMAProgram
+    ld c,  $6B
+    otir
     ret
 ```
 
-Notice Port B's configuration:
-- **WR2** sets it as I/O port with fixed address — the port address stays at `0x5B` for every byte
-- **WR4** provides the port address as 16-bit (the DMA always uses 16-bit addresses, even for I/O)
+`.dma wr0 a_to_b, transfer` without address/length arguments emits only the WR0 base byte with all follow-byte indicator bits set; the two `.dw 0` patch labels that follow serve as those follow bytes. Similarly, `.dma wr4 continuous` without an address argument emits only the WR4 base byte with address follow-bits set; the `.dw $005B` provides the constant port address.
 
-The sprite hardware auto-increments its internal write pointer each time you write to port `0x5B`, so the DMA merrily streams bytes to the same port address while the sprite RAM pointer advances internally.
+The sprite hardware auto-increments its internal write pointer each time you write to port `0x5B`, so the DMA streams bytes to the same fixed port address while the sprite RAM pointer advances internally.
 
 ## Practical Pattern: Audio Streaming with Burst Mode
 
 For audio playback, you need to output sample bytes at a precise rate. This is where burst mode and the prescaler shine:
 
 ```z80klive
-; Stream 8000 bytes of 8-bit audio to DAC port 0xDF at ~10.9 kHz
+; DMA program table — source address and sample count patched per call
+audioDMAProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer           ; base byte only: all follow-bits set
+audioDMABuffer:
+    .dw 0                               ; Port A address — patched to audio buffer
+audioDMALength:
+    .dw 0                               ; Block length   — patched to sample count
+    .dma wr1 memory, increment
+    .dma wr2 io, fixed, 2t, 80          ; I/O, fixed address, 2T cycles, prescaler=80 → ~10.9 kHz
+    .dma wr4 burst                      ; burst mode — Port B address follows
+    .dw $00DF                           ; Port B = DAC port 0xDF
+    .dma wr5
+    .dma load
+    .dma enable
+audioDMAProgram_end:
+
+; Stream audio from AudioBuffer (8000 samples)
 StreamAudio:
-    ld bc, $6B
-
-    ld a, $C3               ; Reset
-    out (c), a
-
-    ; WR0: A→B, source = AudioBuffer, length = 8000
-    ld a, $7D
-    out (c), a
-    ld a, low AudioBuffer
-    out (c), a
-    ld a, high AudioBuffer
-    out (c), a
-    ld a, $40               ; 8000 & 0xFF = 0x40
-    out (c), a
-    ld a, $1F               ; 8000 >> 8 = 0x1F
-    out (c), a
-
-    ; WR1: Port A = memory, incrementing
-    ld a, $14
-    out (c), a
-
-    ; WR2: Port B = I/O, fixed, with prescaler
-    ld a, $68               ; D6=1 (timing follows), D5:D4=10 (fixed), D3=1 (I/O), D2:D0=000
-    out (c), a
-    ld a, $22               ; Timing: D5=1 (prescaler follows), D1:D0=10 (2 T-state cycles)
-    out (c), a
-    ld a, 80                ; Prescaler = 80 → 320 T-states delay → ~10.9 kHz sample rate
-    out (c), a
-
-    ; WR4: Burst mode, Port B = 0xDF (DAC port)
-    ld a, $4D               ; D6:D5=10 (burst), D3=1, D2=1, D1:D0=01
-    out (c), a
-    ld a, $DF               ; DAC port low byte
-    out (c), a
-    ld a, $00               ; DAC port high byte
-    out (c), a
-
-    ld a, $CF               ; Load
-    out (c), a
-    ld a, $87               ; Enable
-    out (c), a
-
-    ; CPU is now free to run while DMA streams audio
-    ; DMA will output one sample every 320 T-states
-    ; and release the bus between samples for CPU execution
+    ld hl, AudioBuffer
+    ld (audioDMABuffer), hl             ; patch source address
+    ld hl, 8000
+    ld (audioDMALength), hl             ; patch sample count
+    ld hl, audioDMAProgram
+    ld b,  audioDMAProgram_end - audioDMAProgram
+    ld c,  $6B
+    otir
+    ; CPU is now free — DMA releases the bus between samples (burst mode)
     ret
 ```
+
+`wr2 io, fixed, 2t, 80` encodes the three-byte WR2 sequence in one pragma line: the base byte (`$68`), the timing byte (`$22`), and the prescaler byte (`80`). With raw `.db` directives those three magic numbers carry no hint of their meaning.
 
 Burst mode is critical here. In continuous mode, the DMA would hold the bus for the entire transfer — with 8,000 bytes at 320 T-states per byte, that's 2.56 million T-states (over 700 milliseconds at 3.5 MHz) of dead CPU time. Burst mode releases the bus between samples, giving the CPU those 320-T-state windows to do real work.
 
 ### Auto-Restart for Continuous Audio
 
-If you want to loop audio (play a buffer repeatedly), add WR5 with auto-restart before the Load command:
+If you want to loop audio (play a buffer repeatedly), change `.dma wr5` to `.dma wr5 auto_restart` in `audioDMAProgram`:
 
 ```z80klive
-    ld a, $A2           ; WR5: auto-restart on (D5=1)
-    out (c), a
+    .dma wr5 auto_restart       ; D5=1 — reload addresses and restart on completion
 ```
 
 With auto-restart enabled, the DMA reloads the starting addresses and block length when the transfer completes, then immediately starts over. The audio plays in an infinite loop until you disable the DMA.
 
-## Building a Reusable DMA Helper
+## Practical Pattern: CTC-Triggered Periodic DMA
 
-After the third time you write the same seventeen-`OUT` sequence, you'll want a helper routine. Here's a table-driven approach that reads the DMA configuration from a parameter block:
+The DMA's built-in prescaler (the `prescaler` parameter in WR2) is convenient, but it has a subtle dependency: its counting rate scales with CPU speed. The FPGA adjusts the prescaler increment so that the same prescaler value produces the same real-time delay at 3.5 MHz and at 28 MHz, but this scaling happens in discrete steps — and the CTC clock, as covered in the CTC chapter, runs at a fixed 28 MHz regardless of CPU speed with no such adjustment needed.
+
+There's a cleaner alternative: let the CTC generate the timing, and connect its ZC/TO output directly to the DMA trigger. The Next hardware does exactly this. **NextReg `$CD`** controls which CTC channels (0–7, one bit each, bit 0 = channel 0) can trigger a DMA burst cycle. When NR `$CD` bit N is set and CTC channel N fires its ZC/TO pulse, the DMA executes one burst step — transferring one byte (or releasing and re-requesting the bus once, depending on mode) — even if the DMA's own prescaler hasn't expired.
+
+The result: the CTC owns the timing, the DMA owns the data movement. You get sample-rate precision from the CTC's 28 MHz-derived clock without relying on the DMA prescaler at all.
+
+### How It Works
+
+1. Configure the DMA in **burst mode** with no prescaler (omit prescaler from WR2)
+2. Configure a CTC channel as a timer at the desired rate (e.g. `28 MHz ÷ 16 ÷ time_constant`)
+3. Write `1 << channel` to NextReg `$CD` to arm the CTC → DMA trigger
+4. Enable the DMA — it sits idle in burst mode, waiting for a trigger
+5. Each CTC ZC/TO event fires one DMA burst: one byte is transferred, then the bus is released until the next ZC/TO
+
+The DMA trigger and the CTC interrupt are independent. You can use the same CTC channel to both trigger DMA transfers *and* generate a CPU interrupt, or you can use only one of those paths. NR `$CD` only controls the DMA trigger; the CTC channel's own interrupt setting (control word D7) and NR `$C5` control whether a CPU interrupt also fires.
+
+### Audio Streaming with CTC Timing
+
+Compare this with the earlier prescaler-based audio example. The DMA program is almost identical, but the prescaler byte is gone from WR2, and the timing comes from an external CTC channel instead:
 
 ```z80klive
-; Execute a DMA transfer described by a parameter table
-; HL = pointer to parameter table (sequence of bytes to write to DMA port)
-; B = number of bytes in the table
+CTC_CH3     equ $1B3B        ; Use channel 3 for audio timing
+NR_REG      equ $243B
+NR_DAT      equ $253B
+
+; === Configure CTC Channel 3 as a timer at ~22 kHz ===
+; 28 MHz / 16 (prescaler ÷16) / 80 (time constant) = 21,875 Hz
+    ld bc, CTC_CH3
+    ld a, %00000101          ; Timer, prescaler ÷16, start immediately, TC follows
+    out (c), a
+    ld a, 80                 ; Time constant = 80 → ~21,875 Hz
+    out (c), a
+
+; === Arm the CTC → DMA trigger (NR $CD bit 3 = CTC channel 3) ===
+    ld a, $CD
+    ld bc, NR_REG
+    out (c), a
+    ld a, %00001000          ; Enable channel 3 as DMA trigger
+    ld bc, NR_DAT
+    out (c), a
+
+; === DMA program — burst mode, no prescaler; CTC controls the rate ===
+audioCTCDMAProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer
+audioCTCSrc:  .dw 0                     ; patch: source buffer address
+audioCTCLen:  .dw 0                     ; patch: sample count
+    .dma wr1 memory, increment
+    .dma wr2 io, fixed                  ; no prescaler — CTC handles timing
+    .dma wr4 burst                      ; burst: release bus between CTC-triggered bytes
+    .dw $00DF                           ; Port B = DAC port $DF
+    .dma wr5                            ; default flags (or use auto_restart for looping)
+    .dma load
+    .dma enable
+audioCTCDMAProgram_end:
+
+; Kick off streaming: HL = buffer address, BC = sample count
+    ld (audioCTCSrc), hl
+    ld (audioCTCLen), bc
+    ld hl, audioCTCDMAProgram
+    ld b,  audioCTCDMAProgram_end - audioCTCDMAProgram
+    ld c,  $6B
+    otir
+    ; CPU is now free; each CTC tick at ~21,875 Hz delivers one sample to the DAC
+```
+
+### Prescaler WR2 vs. CTC Trigger: Which to Use?
+
+| | DMA Internal Prescaler | CTC Trigger |
+|---|---|---|
+| **Timing source** | DMA-internal counter, scaled by CPU speed | CTC, always 28 MHz base |
+| **Rate formula** | prescaler value × 4 T-states (at 3.5 MHz) | 28 MHz ÷ CTC prescaler ÷ time constant |
+| **Precision** | Good — FPGA scales with CPU mode | Excellent — CTC is CPU-speed independent |
+| **Flexibility** | Fixed rate per DMA program | CTC can be reprogrammed live |
+| **Interrupt capability** | None | CTC channel can simultaneously interrupt CPU |
+| **Configuration** | One extra WR2 byte | Separate CTC setup + NR `$CD` write |
+| **Complexity** | Lower | Slightly higher |
+
+For simple one-off audio playback, the internal prescaler is perfectly adequate and easier to set up. Reach for the CTC trigger when you need:
+- The same sample rate to hold precisely across CPU speed changes
+- One CTC channel simultaneously timing the DMA *and* counting frames for the CPU
+- Very low sample rates where WR2 prescaler values would be awkward to compute
+- Dynamic rate changes at runtime (reprogram the CTC time constant without touching the DMA)
+
+### Disarming the Trigger
+
+When you're done with CTC-triggered DMA, clear NR `$CD` to prevent stray CTC pulses from waking the DMA unexpectedly:
+
+```z80klive
+    ; Disable DMA first, then clear the trigger source
+    ld bc, $6B
+    ld a, $83                ; WR6: Disable DMA
+    out (c), a
+    ld a, $CD
+    ld bc, NR_REG
+    out (c), a
+    xor a                    ; Clear all CTC → DMA trigger enables
+    ld bc, NR_DAT
+    out (c), a
+```
+
+## Building a Reusable DMA Helper
+
+The upload sequence — patch any runtime fields, then run `OTIR` to stream the program table to the DMA port — is just a handful of instructions, but wrapping it as a subroutine keeps call sites clean:
+
+```z80klive
+; Upload a DMA program table to the zxnDMA port
+; HL = pointer to table, B = length in bytes
 ExecuteDma:
     ld c, $6B               ; zxnDMA port
 .loop:
@@ -692,19 +823,21 @@ ExecuteDma:
     inc hl
     djnz .loop
     ret
+```
 
-; Example parameter table for a 256-byte memory copy from 0x8000 to 0xC000
+With `.dma` pragmas, each program table is self-documenting:
+
+```z80klive
+; 256-byte memory copy from 0x8000 to 0xC000 — all values static
 DmaCopyParams:
-    .db $C3                  ; Reset
-    .db $7D                  ; WR0: all params, A→B, transfer
-    .db $00, $80             ; Port A address = 0x8000
-    .db $00, $01             ; Block length = 256
-    .db $14                  ; WR1: memory, increment
-    .db $10                  ; WR2: memory, increment
-    .db $2D                  ; WR4: continuous, addr follows
-    .db $00, $C0             ; Port B address = 0xC000
-    .db $CF                  ; Load
-    .db $87                  ; Enable
+    .dma reset
+    .dma wr0 a_to_b, transfer, $8000, 256
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous, $C000
+    .dma wr5
+    .dma load
+    .dma enable
 DmaCopyParamsLen = $ - DmaCopyParams
 ```
 
@@ -712,11 +845,41 @@ Call it with:
 
 ```z80klive
     ld hl, DmaCopyParams
-    ld b, DmaCopyParamsLen
+    ld b,  DmaCopyParamsLen
     call ExecuteDma
 ```
 
-The parameter table makes it easy to define multiple DMA operations at assembly time, and the `ExecuteDma` routine is just five instructions. You can even build parameter tables dynamically at runtime if the source or destination addresses change.
+For tables with runtime-patchable fields, label the `.dw 0` patch points and write the runtime values before calling:
+
+```z80klive
+DmaDynParams:
+    .dma reset
+    .dma wr0 a_to_b, transfer           ; base byte only — address and length follow
+DmaDynSrc:  .dw 0                       ; patched at runtime
+DmaDynLen:  .dw 0                       ; patched at runtime
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous                 ; base byte only — Port B address follows
+DmaDynDst:  .dw 0                       ; patched at runtime
+    .dma wr5
+    .dma load
+    .dma enable
+DmaDynParamsLen = $ - DmaDynParams
+```
+
+Call with:
+
+```z80klive
+    ; HL = source, DE = destination, BC = byte count
+    ld (DmaDynSrc), hl
+    ld (DmaDynDst), de
+    ld (DmaDynLen), bc
+    ld hl, DmaDynParams
+    ld b,  DmaDynParamsLen
+    call ExecuteDma
+```
+
+You can define as many program tables as you need and dispatch them all through the same five-instruction `ExecuteDma` routine.
 
 ## Timing and Performance Notes
 
@@ -801,38 +964,59 @@ The `FINISH_DMA` state checks the auto-restart flag. If set, it reloads the star
 ### Minimal Memory Copy (A→B, Continuous)
 
 ```z80klive
-    ; Assumes: HL = source address, DE = dest address, IX = byte count
-    ld bc, $6B
-    ld a, $C3 : out (c), a              ; Reset
-    ld a, $7D : out (c), a              ; WR0: all params, A→B
-    ld a, l   : out (c), a              ; Port A lo
-    ld a, h   : out (c), a              ; Port A hi
-    push ix
-    pop hl
-    ld a, l   : out (c), a              ; Block length lo
-    ld a, h   : out (c), a              ; Block length hi
-    ld a, $14 : out (c), a              ; WR1: memory, increment
-    ld a, $10 : out (c), a              ; WR2: memory, increment
-    ld a, $2D : out (c), a              ; WR4: continuous, addr follows
-    ld a, e   : out (c), a              ; Port B lo
-    ld a, d   : out (c), a              ; Port B hi
-    ld a, $CF : out (c), a              ; Load
-    ld a, $87 : out (c), a              ; Enable
+; HL = source address, DE = destination address, BC = byte count
+MemCopyDMA:
+    ld (memCopySrc), hl
+    ld (memCopyDst), de
+    ld (memCopyLen), bc
+    ld hl, memCopyProgram
+    ld b,  memCopyProgram_end - memCopyProgram
+    ld c,  $6B
+    otir
+    ret
+
+memCopyProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer
+memCopySrc: .dw 0
+memCopyLen: .dw 0
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous
+memCopyDst: .dw 0
+    .dma wr5
+    .dma load
+    .dma enable
+memCopyProgram_end:
 ```
 
 ### Memory to I/O Port (A→B, Continuous)
 
 ```z80klive
-    ld bc, $6B
-    ld a, $C3 : out (c), a              ; Reset
-    ld a, $7D : out (c), a              ; WR0: all params, A→B
-    ; ... Port A address and block length ...
-    ld a, $14 : out (c), a              ; WR1: memory, increment
-    ld a, $28 : out (c), a              ; WR2: I/O, fixed
-    ld a, $2D : out (c), a              ; WR4: continuous, addr follows
-    ; ... Port B = I/O port address ...
-    ld a, $CF : out (c), a              ; Load
-    ld a, $87 : out (c), a              ; Enable
+; HL = source address, BC = byte count, DE = 16-bit I/O port address
+MemToIODMA:
+    ld (ioSrc), hl
+    ld (ioLen), bc
+    ld (ioDst), de
+    ld hl, ioProgram
+    ld b,  ioProgram_end - ioProgram
+    ld c,  $6B
+    otir
+    ret
+
+ioProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer
+ioSrc:  .dw 0
+ioLen:  .dw 0
+    .dma wr1 memory, increment
+    .dma wr2 io, fixed
+    .dma wr4 continuous
+ioDst:  .dw 0
+    .dma wr5
+    .dma load
+    .dma enable
+ioProgram_end:
 ```
 
-The zxnDMA may look intimidating at first — seven register groups, follow bytes, direction bits, operating modes. But once you've built a couple of transfers by hand, the pattern becomes automatic: Reset, configure the two ports, set the mode, Load, Enable. The CPU steps aside, the data flows, and everyone's happy.
+The zxnDMA may look intimidating at first — seven register groups, follow bytes, direction bits, operating modes. But once you've built a couple of transfers, the pattern becomes automatic: build a `.dma` program table, patch any runtime fields, and stream it with `OTIR`. The CPU steps aside, the data flows, and everyone's happy.

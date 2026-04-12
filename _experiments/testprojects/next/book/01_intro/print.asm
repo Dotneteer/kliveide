@@ -1,7 +1,7 @@
 ;==========================================================
 ; Example: Print welcome text to the screen
 ;==========================================================
-PrintWelcome
+PrintWelcomeDemo
     ld hl,Title_Intro_1
     call _printTitle
     ld hl,Welcome_Str
@@ -22,7 +22,7 @@ Welcome_Str
 ; Example: Print decimal and hexadecimal numbers to the
 ; screen
 ;==========================================================
-PrintValues
+PrintValuesDemo
     ld hl,Title_Intro_2
     call _printTitle
     ;

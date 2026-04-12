@@ -6,6 +6,7 @@ export default {
   "z80-instructions": "Z80 Instructions",
   pragmas: "Pragmas",
   "zx-next": "ZX Spectrum Next",
+  "zx-next-dma": ".dma Pragma Reference",
   statements: "Assembler Statements",
   macros: "Macros",
   structs: "Structs"

@@ -1,20 +1,22 @@
 ;==========================================================
 ; Write the value of a NextReg #1
 ;==========================================================
-WiteNextReg1
-    ld hl,Title_WNextReg_1
+WiteNextRegDemo
+    ld hl,Title_WNextReg
     call _printTitle
     ld hl,PrintStep1_Str
     call _printText
     ;
     ; Write Nextreg value (User storage)
     ;
-    ld bc,$243b    ; point to the register select port
-    ld a,$7f       ; register number (User storage)
-    out (c),a
-    inc b          ; point to the value port
-    ld a,162       ; value to write
-    out (c),a
+    nextreg $7f,162  ; Simpler way to write the NextReg
+    ; ld bc,$243b    ; point to the register select port
+    ; ld a,$7f       ; register number (User storage)
+    ; out (c),a
+    ; inc b          ; point to the value port
+    ; ld a,162       ; value to write
+    ; out (c),a
+    
     ;
     ; Prepare displaying the result
     ;
@@ -45,7 +47,7 @@ WiteNextReg1
     jp $10
     
     
-Title_WNextReg_1
+Title_WNextReg
     .defn "NextReg #1: Write/Read (#1)"
 PrintStep1_Str
     .defn "Write 162 to NextReg $7F (#1)"

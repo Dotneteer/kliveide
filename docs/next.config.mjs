@@ -8,6 +8,7 @@ const z80Language = {
   "patterns": [
     { "include": "#comment" },
     { "include": "#string" },
+    { "include": "#dma" },
     { "include": "#pragma" },
     { "include": "#directive" },
     { "include": "#number" },
@@ -114,6 +115,29 @@ const z80Language = {
       "begin": "{{",
       "end": "}}",
       "patterns": [{ "match": "[\\._@`a-zA-Z][_@!?\\.0-9A-Za-z]*" }]
+    },
+    "dma": {
+      "begin": "(?i)(\\.dma|(?<![.\\w])dma)(?=\\s|$)",
+      "end": "$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.pragma.z80klive" }
+      },
+      "patterns": [
+        { "include": "#comment" },
+        { "include": "#dmasubcmd" },
+        { "include": "#dmaparams" },
+        { "include": "#number" },
+        { "include": "#operator" },
+        { "include": "#identifier" }
+      ]
+    },
+    "dmasubcmd": {
+      "name": "keyword.control.statement.z80klive",
+      "match": "(?i)\\b(wr[0-5]|reset|load|enable|disable|continue|readmask|cmd)\\b"
+    },
+    "dmaparams": {
+      "name": "keyword.control.z80klive",
+      "match": "(?i)\\b(a_to_b|b_to_a|search_transfer|transfer|search|memory|io|increment|decrement|fixed|4t|3t|2t|continuous|burst|byte|auto_restart|dma_enable|int_enable|stop_on_match)\\b"
     },
     "identifier": {
       "name": "variable.other.identifier.z80klive",
