@@ -65,7 +65,7 @@ const ScrollViewer: React.FC<Props> = ({
       };
       apiLoaded?.(api);
     }
-  }, [parentElement.current, osRef.current?.osInstance?.()]);
+  }, []);
 
   const handleScroll = () => {
     const element = osRef.current?.osInstance().elements();

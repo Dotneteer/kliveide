@@ -192,7 +192,7 @@ export function useDispatch() {
 
 ## Phase 3: Hook Pattern Fixes
 
-### Step 3.1 — Add dependency arrays to `useInitializeAsync` / `useInitialize`
+### ✅ Step 3.1 — Add dependency arrays to `useInitializeAsync` / `useInitialize`
 
 **File**: `src/renderer/core/useInitializeAsync.ts`  
 **Issue**: Both hooks have `useEffect` with no dependency array, running on every render (guarded by a ref).
@@ -201,7 +201,7 @@ export function useDispatch() {
 
 **Test**: Render a component using `useInitializeAsync`, verify the callback runs exactly once.
 
-### Step 3.2 — Fix `useEffect` dependency arrays in `useMachineController`
+### ✅ Step 3.2 — Fix `useEffect` dependency arrays in `useMachineController`
 
 **File**: `src/renderer/core/useMachineController.ts`  
 **Issue**: First `useEffect` has no dependency array. Also, cleanup sets `mounted.current = false` on every render.
@@ -210,7 +210,7 @@ export function useDispatch() {
 
 **Test**: Mount a component using `useMachineController`, trigger re-renders, verify the setup code runs once and cleanup runs once on unmount.
 
-### Step 3.3 — Fix `useResizeObserver` to accept stable callbacks
+### ✅ Step 3.3 — Fix `useResizeObserver` to accept stable callbacks
 
 **File**: `src/renderer/core/useResizeObserver.ts`  
 **Issue**: The dependency array includes `callback`, so if the caller passes an inline function, the observer is destroyed and recreated every render.
@@ -234,7 +234,7 @@ export function useResizeObserver(ref, callback) {
 
 **Test**: Render a component passing an inline callback to `useResizeObserver`, verify the observer is NOT recreated on re-render.
 
-### Step 3.4 — Fix ref.current in useEffect dependency arrays
+### ✅ Step 3.4 — Fix ref.current in useEffect dependency arrays
 
 **Files**: `src/renderer/controls/VirtualizedList.tsx`, `ScrollViewer.tsx`, `Button.tsx`, `TextInput.tsx`, `IconButton.tsx`, `TabButton.tsx`, `src/renderer/appIde/SideBar/SideBar.tsx`, `SideBarPanel.tsx`  
 **Issue**: `useEffect` depending on `ref.current` — ref mutations don't trigger re-renders, so these effects may not fire when expected.
@@ -243,7 +243,7 @@ export function useResizeObserver(ref, callback) {
 
 **Test**: For each affected component, render it and verify the effect's logic executes (e.g., tooltip registration, scroll behavior).
 
-### Step 3.5 — Fix `ScriptingHistoryPanel` polling anti-pattern
+### ✅ Step 3.5 — Fix `ScriptingHistoryPanel` polling anti-pattern
 
 **File**: `src/renderer/appIde/SiteBarPanels/ScriptingHistoryPanel.tsx`  
 **Issue**: `useEffect` with no dependency array creates a manual polling loop via `setTimeout` and `setVersion(version + 1)`.
@@ -252,7 +252,7 @@ export function useResizeObserver(ref, callback) {
 
 **Test**: Mount the panel, verify it polls at the correct interval without runaway re-renders.
 
-### Step 3.6 — Fix `ThemeProvider` setState inside useMemo
+### ✅ Step 3.6 — Fix `ThemeProvider` setState inside useMemo
 
 **File**: `src/renderer/theming/ThemeProvider.tsx`  
 **Issue**: `setStyleProps(...)` is called inside `useMemo`, which is a state update during render — an anti-pattern.

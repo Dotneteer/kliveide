@@ -32,7 +32,7 @@ export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLo
         ref.current?.scrollToIndex(startIndex, { align: "start" });
       }
     }
-  }, [ref.current, startIndex]);
+  }, [startIndex]);
 
   useEffect(() => {
     setItemsCount(items?.length ?? 0);

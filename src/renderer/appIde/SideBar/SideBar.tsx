@@ -65,7 +65,7 @@ export const SiteBar = ({ order }: Props) => {
   useEffect(() => {
     sbHeight.current = sideBarRef.current.offsetHeight;
     sbHeaderHeight.current = sideBarHeaderRef.current.offsetHeight;
-  }, [sideBarRef.current, sideBarHeaderRef.current]);
+  }, []);
 
   // --- When the side bar panels height changes (window resizing) we update the stored height
   useResizeObserver(sideBarRef, () => {

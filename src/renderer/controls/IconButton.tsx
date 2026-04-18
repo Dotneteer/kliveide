@@ -39,7 +39,7 @@ export const IconButton = ({
 
   useEffect(() => {
     setKeyDown(false);
-  }, [ref.current]);
+  }, []);
 
   return (
     <div

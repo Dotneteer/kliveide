@@ -8,7 +8,7 @@ export function useInitializeAsync (initializer: () => Promise<void>) {
     (async () => {
       await initializer();
     })();
-  });
+  }, []);
 }
 
 export function useInitialize (initializer: () => void) {
@@ -17,5 +17,5 @@ export function useInitialize (initializer: () => void) {
     if (initialized.current) return;
     initialized.current = true;
     initializer();
-  });
+  }, []);
 }

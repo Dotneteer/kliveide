@@ -33,7 +33,7 @@ export const Button = ({
         ref.current?.focus();
       });
     }
-  }, [ref.current]);
+  }, []);
 
   return visible ? (
     <button

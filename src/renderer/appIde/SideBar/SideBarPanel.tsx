@@ -45,8 +45,8 @@ export const SideBarPanel = ({
   // --- We need to measure the size of the header
   const headerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    headingSized?.(headerRef.current.clientHeight);
-  }, [headerRef.current]);
+    headingSized?.(headerRef.current?.clientHeight ?? 0);
+  }, []);
 
   // --- Functions used while moving
   const _move = (e: MouseEvent) => move(e);

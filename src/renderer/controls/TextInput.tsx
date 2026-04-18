@@ -39,10 +39,10 @@ export const TextInput = ({
     if (ref.current && focusOnInit && !focusSet.current) {
       setTimeout(() => {
         focusSet.current = true;
-        ref.current.focus();
+        ref.current?.focus();
       });
     }
-  }, [ref.current]);
+  }, []);
 
   return (
     <div className={styles.inputContainer}>

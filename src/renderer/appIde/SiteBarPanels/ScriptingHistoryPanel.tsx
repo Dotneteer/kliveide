@@ -1,7 +1,7 @@
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 import styles from "./ScriptingHistoryPanel.module.scss";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { LabelSeparator } from "@renderer/controls/Labels";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "classnames";
@@ -21,7 +21,6 @@ const ScriptingHistoryPanel = () => {
   const [selectedScript, setSelectedScript] = useState<ScriptRunInfo>();
   const [version, setVersion] = useState(1);
   const [showBuildScripts, setShowBuildScripts] = useState(true);
-  const refreshing = useRef(false);
 
   useEffect(() => {
     setScripts(
@@ -35,14 +34,11 @@ const ScriptingHistoryPanel = () => {
 
   // --- Refresh script information regularly
   useEffect(() => {
-    (async () => {
-      if (refreshing.current) return;
-      refreshing.current = true;
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      setVersion(version + 1);
-      refreshing.current = false;
-    })();
-  });
+    const id = setInterval(() => {
+      setVersion(v => v + 1);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className={styles.panel}>
