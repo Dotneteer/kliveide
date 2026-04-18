@@ -47,6 +47,12 @@ export const pageMap = [{
       "sidebarTitle": "Introduction"
     }
   }, {
+    name: "next-hardware",
+    route: "/book/next-hardware",
+    frontMatter: {
+      "sidebarTitle": "Next Hardware"
+    }
+  }, {
     name: "preface",
     route: "/book/preface",
     frontMatter: {
@@ -417,6 +423,12 @@ export const pageMap = [{
     route: "/z80-assembly/z80-instructions",
     frontMatter: {
       "sidebarTitle": "Z80 Instructions"
+    }
+  }, {
+    name: "zx-next-dma",
+    route: "/z80-assembly/zx-next-dma",
+    frontMatter: {
+      "sidebarTitle": "Zx Next Dma"
     }
   }, {
     name: "zx-next",
