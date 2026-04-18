@@ -1,0 +1,944 @@
+import { Callout } from 'nextra/components'
+
+# Talking to the Hardware: I/O Ports, NextRegs, and the CTC
+
+Before you can write a single line of useful Z80 code on the ZX Spectrum Next, you need to understand how Z80 programs talk to hardware. It's not magic — it's two I/O instructions (`IN` and `OUT`), one pair of 16-bit port addresses, and a register map. Master these three things and every hardware chapter that follows opens up naturally.
+
+This chapter covers the fundamentals. First, how the Z80's I/O bus actually works and why the Next's port addresses look the way they do. Then, NextRegs — the FPGA's control panel, accessible through two dedicated ports, that gives you access to everything the Next adds beyond the original Spectrum. And finally, the CTC (Counter/Timer Circuit): a classic Zilog peripheral that lets you time code execution to the nanosecond, schedule periodic events, and hand off timing responsibility to hardware so your CPU can do something more interesting.
+
+By the time you reach the end of this chapter you'll have the vocabulary and tools to read any hardware reference, decode any port address, and measure exactly how fast your code runs.
+
+## How Z80 I/O Addressing Works
+
+Before diving in, a quick note on how the Z80's I/O instructions work — because it's immediately relevant to how several Next ports decode.
+
+When the Z80 executes `IN A,(n)`, it puts the 16-bit address `(A << 8) | n` on the address bus. When it executes `IN r,(C)`, it puts the full 16-bit contents of `BC` on the address bus. The point: all sixteen address lines are visible during I/O, and the Next hardware checks various combinations of them to decide which port is responding.
+
+Most ports only care about a few bits of the address, which is why the port table in the official documentation uses `X` to mark "don't care" bits:
+
+```
+|R|W||AAAA AAAA AAAA AAAA|Port(hex)|Description       |
+      A                 A
+      1                 0
+      5                
+|*|*||XXXX XXXX XXXX XXX0| 0xfe    |ULA               |
+| |*||0XXX XXXX XXXX XX01| 0x7ffd  |ZX Spectrum 128K  |
+```
+
+Port `0xFE` responds whenever address bit 0 is 0, regardless of what the rest of the address lines are doing. Port `0x7FFD` requires specific patterns in both the high and low bytes. This partial decoding is inherited from the original Spectrum hardware and means some ports alias — the same physical port responds at many different addresses.
+
+> **Why partial decoding?** In the original Spectrum, full address decoding would have required more logic chips. By only checking a few bits, Sinclair saved on both chip count and cost. The side effect is that `OUT (0xFE),A` and `OUT (0x7EFE),A` hit the same ULA port. The Next preserves this behaviour for compatibility.
+
+The most direct way to interact with hardware is reading and writing port addresses. The keyboard is accessed through port `$FE`, where the address lines act as row selectors. Write a value with a specific bit cleared to select that keyboard row, then read the port again — the input bits tell you which keys in that row are currently pressed (0 = pressed, 1 = released).
+
+This example reads the QWERT row (`$FB` selects row 2), scans each bit to determine the key state, and displays the result on screen with color-coded attributes: green for pressed keys, white for released ones. The loop continues until you press Space, which is detected by switching to row 7 and testing bit 0 of the returned value.
+
+```z80klive
+ReadIoDemo
+    ld hl,Title_ReadIo
+    call _printTitle
+    ld hl,Instr_ReadIo
+    call _printText
+`loop
+    ; Select row 2 (Q, W, E, R, T)
+    ld a,$FB        ; 11111011 - bit 2 = 0 selects row 2
+    in a,($FE)      ; Read keyboard state
+    
+    ld hl,$58a0
+    ld d,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld e,attr(COLOR_BLACK, COLOR_WHITE, 0)
+    ld b,5          ; Five keys to test
+`bitscan
+    ; Change attribute according to key state
+    sra a
+    jr c,`up
+    ld (hl),d       ; The key is up
+    jr `next
+`up
+    ld (hl),e       ; The key id down
+`next
+    inc hl
+    djnz `bitscan
+    
+    ; Now check if Space is pressed
+    ld a,$7F        ; 01111111 - bit 7 = 0 selects row 7 (Space row)
+    in a,($FE)
+    bit 0,a         ; Test bit 0 (Space key)
+    jr nz,`loop     ; If Space not pressed (bit 0), loop again
+    ret    
+    
+Title_ReadIo
+    .defn "I/O #1: Read keyboard line"
+Instr_ReadIo
+    .defm "Press keys Q, W, E, R, or T\x0D"
+    .defm "Press Space to complete\x0D\x0D"
+    .defn "QWERT"
+```
+
+Writing to I/O ports is just as straightforward as reading from them. The same port `$FE` — the ULA port — accepts writes that control the display border color (bits 0–2), speaker (bit 4), and more. This example writes color values in a loop, alternating between green and blue, with a delay between each color change to make the flashing visible. The delay is a simple busy-loop that decrements a 16-bit counter (`BC`) until it reaches zero. The Space key check is identical to the previous example: switch to row 7, read the port, and test bit 0 for the Space key.
+
+```z80klive
+WriteIoDemo
+    ld hl,Title_WriteIo
+    call _printTitle
+    ld hl,Instr_WriteIo
+    call _printText
+`kbloop
+    ld a,COLOR_GREEN     ; Load GREEN border color
+    out ($fe),a          ; Write to ULA port
+    ld bc,$400           ; Load delay counter
+    call _delayWithBc    ; Pause
+    ld a,COLOR_BLUE      ; Load BLUE border color
+    out ($fe),a          ; Write to ULA port
+    ld bc,$488           ; Load delay counter (different duration)
+    call _delayWithBc    ; Pause
+
+    ; Now check if Space is pressed
+    ld a,$7F             ; 01111111 - bit 7 = 0 selects row 7 (Space row)
+    in a,($FE)
+    bit 0,a              ; Test bit 0 (Space key)
+    jr nz,`kbloop        ; If Space not pressed (bit 0), loop again
+    ret    
+
+Title_WriteIo
+    .defn "I/O #2: Write border color"
+Instr_WriteIo
+    .defn "Press Space to complete"
+```
+
+<Callout type="info" emoji="💡">
+Try the `ReadIoDemo` and `WriteIoDemo` examples.
+</Callout>
+
+The full I/O port listing and port enable/disable controls are covered in [Appendix C: I/O Ports Reference](./app-C-io-ports-reference.md).
+
+## NextRegs: The Hardware Control Panel
+
+If I/O ports are the Z80's way of talking to hardware peripherals, NextRegs are where the ZX Spectrum Next keeps all of its own configuration. Think of them as the FPGA's internal control registers — there are up to 256 of them (indexed by register number 0x00–0xFF), and between them they govern nearly everything that makes the Next more than a Spectrum: CPU speed, memory mapping, display layers, palettes, sprites, audio, interrupts, and more.
+
+The whole system is accessed through just two I/O ports. Write the register number to one port, read or write the value through the other. Simple to use, despite controlling a very complex machine.
+
+### How to Access NextRegs
+
+Two I/O ports form the gateway:
+
+- **Port `0x243B`** — write the register number here to select it
+- **Port `0x253B`** — read or write the register value here
+
+#### Writing a Register
+
+The port method works everywhere—including in 48K mode or on any hardware where the Z80N extended instructions aren't available:
+
+```z80klive
+ld bc,$243b    ; point to the register select port
+ld a,$07       ; register number (CPU speed)
+out (c),a
+inc b          ; point to the value port
+ld a,$02       ; value: 14 MHz
+out (c),a
+```
+
+The Z80N instruction set adds two faster alternatives that fold the select and write into a single instruction:
+
+```z80klive
+nextreg $07,$02   ; select register 0x07 and write 0x02 in one shot
+nextreg $07,a     ; write whatever is in A to register 0x07
+```
+
+`nextreg` is the idiomatic way to configure hardware in Next-specific code—cleaner, faster, and easier to read than the port sequence.
+
+#### Reading a Register
+
+There is no `nextreg` form for reads—the Z80N instruction set only covers writes. To read a register value back, you always use the ports:
+
+```z80klive
+ld bc,$243b    ; point to the register select port
+ld a,$07       ; register number (CPU speed)
+out (c),a
+inc b          ; point to the value port
+in a,(c)       ; read the current value into A
+```
+
+The select port (`0x243B`) remembers the last written register number, so if you've just written to a register via the port method, you can skip the select step and read straight from `0x253B`. Don't rely on this across interrupt boundaries though—an ISR that touches NextRegs will clobber the selection.
+
+> **Reset behavior**: Every register has a defined reset state. Hard reset (power-on, F1, or writing `0x02` with bit 1) restores everything to factory defaults. Soft reset (F4 key or writing `0x02` with bit 0) restores a slightly different subset—some hardware settings survive a soft reset, others don't. Register descriptions note which applies.
+
+The complete NextReg reference, organized by functional area, is in [Appendix B: NextReg Reference](./app-B-nextreg-reference.md).
+
+#### NextReg Example: Write and Read Back
+
+The `WriteNextRegDemo` example demonstrates these concepts.
+
+```z80klive
+WiteNextRegDemo
+    ld hl,Title_WNextReg
+    call _printTitle
+    ld hl,PrintStep1_Str
+    call _printText
+    ;
+    ; Write Nextreg value (User storage)
+    ;
+    nextreg $7f,162  ; Simpler way to write the NextReg
+    ; ld bc,$243b    ; point to the register select port
+    ; ld a,$7f       ; register number (User storage)
+    ; out (c),a
+    ; inc b          ; point to the value port
+    ; ld a,162       ; value to write
+    ; out (c),a
+    
+    ;
+    ; Prepare displaying the result
+    ;
+    NewLine()
+    ld hl,PrintStep2_Str
+    call _printText
+    Ink(COLOR_BLUE)
+    ;
+    ; Read NextReg value (User storage)
+    ;
+    ld bc,$243b    ; point to the register select port
+    ld a,$7f       ; register number (User storage)
+    out (c),a
+    inc b          ; point to the value port
+    in a,(c)       ; read the current value into A
+    ;
+    ; Display read value
+    ;
+    push af
+    call _printAHexadecimal
+    ld a,' '
+    rst $10
+    ld a,'('
+    rst $10
+    pop af
+    call _printADecimal
+    ld a,')'
+    jp $10
+    
+    
+Title_WNextReg
+    .defn "NextReg #1: Write/Read (#1)"
+PrintStep1_Str
+    .defn "Write 162 to NextReg $7F (#1)"
+PrintStep2_Str
+    .defn "Value of NextReg $7F: "
+```
+
+<Callout type="info" emoji="💡">
+Try the `WriteNextRegDemo` example.
+</Callout>
+
+## The CTC: Counting, Timing, and Measuring Code Speed
+
+You just wrote a carefully optimized inner loop — maybe a software sprite renderer, maybe a decompression routine — and now you want to know exactly how fast it runs. Not approximately, not "it feels smooth," but a precise measurement in microseconds. You could count T-states by hand, walking through each instruction with a pencil and the Z80 timing tables. That works for ten instructions. It does not work for a hundred, and it definitely doesn't work for code with conditional branches, memory contention, and wait states.
+
+The ZX Spectrum Next has a better answer: the **CTC** (Counter/Timer Circuit). It's a free-running hardware timer that ticks at a fixed 28 MHz regardless of what the CPU is doing or what speed it's running at. Set up a channel, read the counter before your code, read it after, subtract — and you have a precise elapsed time. No T-state counting. No guesswork.
+
+But the CTC isn't just a stopwatch. It's a full Zilog Z80 CTC with four independently programmable channels, each operating as either a timer or a counter. Channels can cascade through their ZC/TO (Zero Count / Time Out) outputs, extending timing range from microseconds to tens of milliseconds. And each channel can fire interrupts, which means you can build periodic tick systems, audio sample clocks, or timeout watchdogs — all in hardware.
+
+The following sections start with the fundamentals, build up to practical timing code, and finish with interrupt-driven patterns. If you only care about measuring code speed, "Measuring Execution Time" is where you want to be, but understanding the underlying mechanics will help you troubleshoot the inevitable "why is my counter reading wrong?" moments.
+
+### What the CTC Is (and Isn't)
+
+The CTC on the Next is a standard Zilog Z80 CTC — the same chip design that appeared alongside the Z80 CPU in 1976. If you've ever programmed a CTC on a CP/M machine, an MSX, or an Amstrad CPC, the programming model is identical. The classic Zilog datasheet ([Z8430 CTC Technical Manual](http://www.zilog.com/docs/z80/ps0181.pdf)) applies directly, with a few Next-specific wrinkles we'll cover.
+
+The Next currently implements **4 CTC channels** (numbered 0 through 3). The FPGA design allocates port space for 8 channels, but channels 4–7 are hardwired to return zero on reads and ignore writes. Don't waste time trying to configure them.
+
+Here's what each channel can do:
+
+- **Timer mode**: Divide the 28 MHz system clock by a programmable prescaler (÷16 or ÷256), then count down from a loaded value. When the count hits zero, it fires a ZC/TO pulse and reloads.
+- **Counter mode**: An external signal (from another channel's ZC/TO output) directly decrements the counter. No prescaler involved.
+- **Interrupt generation**: Each channel can trigger an interrupt on ZC/TO. The Next's hardware IM2 system routes these to specific vector addresses.
+
+What the CTC is *not*: it's not a high-resolution cycle counter like the x86 `RDTSC` instruction. You can't read a 64-bit timestamp. Each channel has an 8-bit down-counter, readable via a port read. That's 256 distinct values. For longer measurements, you cascade channels or count ZC/TO interrupts. It takes a little more setup than a modern performance counter, but it's entirely adequate for profiling Z80 code.
+
+### Enabling the CTC
+
+The CTC ports are enabled by default at reset — NextReg `$85` bit 3 controls the gate, and the reset value (`$0F`) has it set. Unless something in your code has cleared that bit, you don't need to do anything:
+
+```z80klive
+    ; Check/ensure CTC ports are enabled (usually unnecessary)
+    ld a, $85
+    ld bc, $243B 
+    out (c), a               ; Select NextReg $85
+    ld bc, $253B
+    in a, (c)                ; Read current value
+    or $08                   ; Set bit 3 (CTC port enable)
+    out (c), a               ; Write back
+```
+
+In practice, you'll almost never need this. But if your CTC reads are returning `$FF` when you expect counter values, this is the first thing to check.
+
+### Channel Port Addresses
+
+Each channel has its own I/O port. The channel number is encoded in address bits A10:A8:
+
+| Channel | Port Address | Bits A10:A8 |
+|---------|-------------|-------------|
+| 0 | `$183B` | `000` |
+| 1 | `$193B` | `001` |
+| 2 | `$1A3B` | `010` |
+| 3 | `$1B3B` | `011` |
+| 4–7 | `$1C3B`–`$1F3B` | `100`–`111` (reserved) |
+
+Writing to a channel port sends a control word or time constant. Reading from a channel port returns the current value of the 8-bit down-counter.
+
+### The Control Word
+
+Every CTC channel is configured by writing a single control byte followed (optionally) by a time constant byte. The control byte is identified by D0=1:
+
+| Bit | Name | Value = 0 | Value = 1 |
+|-----|------|-----------|-----------|
+| D7 | Interrupt | Disabled | Enabled |
+| D6 | Mode | Timer | Counter |
+| D5 | Prescaler | ÷16 | ÷256 (timer mode only) |
+| D4 | Trigger edge | Falling | Rising |
+| D3 | Trigger start | Start immediately | Wait for trigger (timer mode) |
+| D2 | Time constant | Not following | Time constant byte follows |
+| D1 | Software reset | — | Reset channel |
+| D0 | Control word | (this is a vector byte) | Control word |
+
+A few things to notice:
+
+- **D2 must be set** on the first write after a hard reset (power-on). The channel sits in a reset state waiting specifically for a control word with D2=1, which tells it "a time constant byte is coming next." Without D2=1, the channel never leaves the reset state.
+- **D1 (soft reset)** forces the channel back to its initial state. If the channel is in an unknown state — maybe you inherited it from someone else's code — write the control word twice with D1=1 and D2=0 to guarantee a clean reset. The first write might be interpreted as a time constant if the channel was expecting one; the second write is guaranteed to be read as a control word.
+- **D5 (prescaler)** is only relevant in timer mode. In counter mode, the external trigger directly decrements the count — the prescaler is bypassed.
+- **D4 (trigger edge)** has a subtle hardware side-effect: changing D4 counts as a clock edge internally. Keep this in mind if you're reconfiguring a running channel.
+
+#### Writing a Control Word and Time Constant
+
+Here's the typical two-write sequence to configure a channel:
+
+```z80klive
+    ; Configure Channel 0 as a timer, prescaler ÷16, start immediately
+    ld bc, $183B             ; Channel 0 port
+    ld a, %00000101          ; D2=1 (time constant follows)
+                             ; D1=0 (no reset), D0=1 (control word)
+                             ; D6=0 (timer mode), D5=0 (prescaler ÷16)
+                             ; D3=0 (start immediately)
+    out (c), a               ; Send control word
+
+    ld a, 200                ; Time constant: count down from 200
+    out (c), a               ; Send time constant — channel starts running
+```
+
+After the time constant byte is written, the channel transitions to the RUNNING state and begins counting down. In timer mode with D3=0 (start immediately), this happens on the next clock cycle. With D3=1, the channel waits for a trigger edge before starting.
+
+### Timer Mode: How the Countdown Works
+
+In timer mode, the channel divides the 28 MHz system clock using the prescaler, then decrements the counter once per prescaler output pulse:
+
+1. **Prescaler input**: 28 MHz system clock (not the CPU clock — this is important!)
+2. **Prescaler divides** by 16 (D5=0) or 256 (D5=1)
+3. **Each prescaler output** decrements the 8-bit counter by 1
+4. **When the counter reaches zero**: ZC/TO fires (one-cycle pulse), the counter reloads from the time constant register, and counting continues
+
+#### Timing Math
+
+The prescaler and time constant together determine the tick rate and period:
+
+**Prescaler ÷16 (D5=0):**
+- One counter tick = 16 / 28 MHz = **~571.4 ns**
+- Maximum period (time constant = 256): 256 × 571.4 ns ≈ **146.3 μs**
+- Minimum period (time constant = 1): 571.4 ns
+
+**Prescaler ÷256 (D5=1):**
+- One counter tick = 256 / 28 MHz = **~9.143 μs**
+- Maximum period (time constant = 256): 256 × 9.143 μs ≈ **2.34 ms**
+- Minimum period (time constant = 1): 9.143 μs
+
+A time constant of 0 is treated as 256 — the full 8-bit range.
+
+> **Critical note:** The CTC clock input is always the 28 MHz base system clock. It is **not** affected by NextReg `$07` (CPU speed). Whether you're running at 3.5 MHz, 7 MHz, 14 MHz, or 28 MHz, the CTC ticks at the same rate. This is actually what makes it perfect for measuring code speed — the timer runs at a fixed rate while the CPU speed varies, so you're measuring *wall-clock time*, not T-states.
+
+### Counter Mode: External Triggers
+
+In counter mode (D6=1), the prescaler is bypassed entirely. Instead, an external signal decrements the counter directly. On the Next, that "external signal" is the ZC/TO output of the preceding channel in the daisy chain:
+
+| Channel | Trigger Source |
+|---------|---------------|
+| 0 | Channel 3's ZC/TO |
+| 1 | Channel 0's ZC/TO |
+| 2 | Channel 1's ZC/TO |
+| 3 | Channel 2's ZC/TO |
+
+Each ZC/TO pulse from the upstream channel decrements the downstream channel's counter by one. This is how you cascade channels for wider timing ranges — more on this in the measurement section.
+
+### Reading the Counter
+
+Reading a channel's port returns the current value of the 8-bit down-counter:
+
+```z80klive
+    ld bc, $183B             ; Channel 0 port
+    in a, (c)                ; A = current counter value (0–255)
+```
+
+The value counts *down* from the loaded time constant. If you loaded 200 and read back 180, that means 20 ticks have elapsed since the counter was loaded.
+
+This is the core primitive for timing: read before, read after, subtract.
+
+### Measuring Execution Time
+
+This is the section you came here for. Let's build a practical code-timing setup, step by step.
+
+#### The Basic Idea
+
+1. Configure a CTC channel as a timer with a known prescaler
+2. Load a time constant (typically 0 = 256 for maximum headroom)
+3. Read the counter: this is your "start" value
+4. Run the code you want to measure
+5. Read the counter again: this is your "end" value
+6. Subtract: elapsed ticks = start − end (the counter counts *down*)
+7. Multiply by the tick duration to get elapsed time
+
+#### Single-Channel Timing (Short Code Blocks)
+
+For code blocks that complete within a single counter period, one channel is enough. Using prescaler ÷16 with time constant 0 (= 256) gives you a measurement window of ~146 μs — that's about 512 T-states at 3.5 MHz, enough for most inner loops.
+
+```z80klive
+CTC_CH0     equ $183B
+
+; === Set up Channel 0: timer, prescaler ÷16, start immediately ===
+    ld bc, CTC_CH0
+    ld a, %00000101          ; Timer mode, prescaler ÷16, time const follows
+    out (c), a
+    ld a, 0                  ; Time constant = 256 (0 means 256)
+    out (c), a
+
+; === Measure ===
+    in a, (c)                ; Read counter BEFORE
+    ld (startCount), a       ; Save start value
+    ; ---- The code under test begins here ----
+    
+    ; ... your code block here ...
+    
+    ; ---- The code under test ends here ----
+    in a, (c)                ; Read counter AFTER
+    ld b, a                  ; B = end value
+    ld a, (startCount)       ; A = start value
+    sub b                    ; A = elapsed ticks (start − end, since it counts down)
+    ld (elapsedTicks), a     ; Save result
+
+; === Convert to time ===
+; Each tick = 16 / 28 MHz ≈ 571.4 ns
+; Multiply by 571 for nanoseconds (approximately)
+; Or just interpret in ticks and do the conversion off-machine
+    
+    ; ...
+    ret
+
+startCount:  .db 0
+elapsedTicks: .db 0
+```
+
+**Watch out for wraparound!** If the counter wraps past zero during your measurement, the subtraction still works correctly — as long as the code doesn't take longer than one full period (256 ticks). The 8-bit unsigned subtraction handles a single wraparound naturally. If the code takes longer than 256 ticks, you'll get an incorrect result. Use the cascaded setup below for longer blocks.
+
+#### Overhead Accounting
+
+The `IN` instruction itself takes time — 12 T-states at 3.5 MHz. But remember, the CTC doesn't tick in T-states; it ticks in 28 MHz clocks (÷ prescaler). At prescaler ÷16:
+- 12 T-states × 8 clocks/T-state (at 3.5 MHz) = 96 system clocks = 6 CTC ticks
+- The `LD (nn), A` after the first `IN` adds another ~4 ticks
+
+So your measurement has a fixed overhead of roughly **10 ticks** (about 5.7 μs). If you need to subtract this, measure an empty block (no code between the two `IN` instructions) and use that as your baseline.
+
+> At 28 MHz CPU speed, 12 T-states = 12 system clocks = 0.75 CTC ticks at ÷16 prescaler. The overhead is much smaller at higher CPU speeds.
+
+#### Resolution Floor: The Minimum Measurable Interval
+
+You might be wondering: is ~571.4 ns truly the smallest time interval the CTC can detect? Yes — and it comes with an important implication.
+
+The counter only decrements once every 16 system clock cycles (at prescaler ÷16). That 16-clock window is a blind spot. If the code under test completes **within a single 16-clock window** — faster than ~571 ns — the counter will not have moved between the two `IN` reads, and you will read **0 elapsed ticks** even though real time passed. There is no way around this with the CTC alone: the prescaler is internal and not directly readable.
+
+At 28 MHz, 16 system clocks is 16 instructions if every instruction takes 1 clock (like `NOP`). So measuring a tight 10-instruction loop at full CPU speed may return 0. At 3.5 MHz, 16 system clocks is only 2 T-states worth of execution — so at slow CPU speeds, sub-tick blindness rarely matters.
+
+In practice, the measurement overhead itself (~10 ticks at 3.5 MHz, as computed above) means the smallest *useful* measurement window is already several microseconds wide. Code that completes in under ~571 ns is genuinely difficult to profile with a CTC; counting T-states by hand is the right tool for those cases.
+
+**Summary:**
+- CTC tick resolution: **~571.4 ns** (prescaler ÷16), **~9.14 μs** (prescaler ÷256)
+- Code that runs faster than one tick: returns 0 elapsed ticks (not detectable)
+- Practical minimum useful measurement: ~5.7 μs (the overhead of the bracketing instructions at 3.5 MHz)
+- For sub-microsecond profiling at 28 MHz: count T-states manually from the instruction timing tables
+
+#### Cascaded Timing (Longer Code Blocks)
+
+For code that runs longer than ~146 μs (at prescaler ÷16), you need more than 8 bits of timing resolution. The solution is to cascade two channels: Channel 0 runs as a timer and its ZC/TO output triggers Channel 1 in counter mode. This effectively creates a 16-bit counter.
+
+```z80klive
+CTC_CH0     equ $183B
+CTC_CH1     equ $193B
+
+; === Set up Channel 0: timer, prescaler ÷16, time constant = 256 ===
+; ZC/TO fires every 256 × 16 / 28 MHz ≈ 146.3 μs
+    ld bc, CTC_CH0
+    ld a, %00000101          ; Timer mode, prescaler ÷16, time const follows
+    out (c), a
+    ld a, 0                  ; Time constant = 256
+    out (c), a
+
+; === Set up Channel 1: counter mode, triggered by Ch0's ZC/TO ===
+; Each Ch0 ZC/TO decrements Ch1 by 1
+    ld bc, CTC_CH1
+    ld a, %01000101          ; Counter mode (D6=1), time const follows
+    out (c), a
+    ld a, 0                  ; Time constant = 256
+    out (c), a
+
+; === Measure ===
+; Read both channels: Ch1 (coarse) then Ch0 (fine)
+    ld bc, CTC_CH1
+    in a, (c)
+    ld d, a                  ; D = coarse count (Ch1)
+    ld bc, CTC_CH0
+    in a, (c)
+    ld e, a                  ; E = fine count (Ch0)
+    ld (startCoarse), de     ; Save 16-bit start value
+
+    ; ---- Code under test ----
+    
+    ; ... your code block here ...
+    
+    ; ---- End of code under test ----
+
+    ld bc, CTC_CH1
+    in a, (c)
+    ld d, a                  ; D = coarse count (Ch1)
+    ld bc, CTC_CH0
+    in a, (c)
+    ld e, a                  ; E = fine count (Ch0)
+
+; === Calculate elapsed ===
+; Elapsed = startDE − endDE (both channels count down)
+    ld hl, (startCoarse)     ; H = start coarse, L = start fine
+    ; Now: elapsed coarse = H - D, elapsed fine = L - E
+    ld a, l
+    sub e
+    ld e, a                  ; E = fine elapsed
+    ld a, h
+    sbc a, d
+    ld d, a                  ; D = coarse elapsed
+
+; DE now holds the 16-bit elapsed count:
+;   Total system clocks ≈ ((D × 256) + (256 − E)) × 16
+;   But more precisely: elapsed fine ticks in E, elapsed coarse periods in D
+;   Time ≈ (D × 256 + (start_fine − end_fine)) × 571.4 ns
+
+    ld (elapsedCoarse), de
+    ret
+
+startCoarse: .dw 0
+elapsedCoarse: .dw 0
+```
+
+The cascaded setup gives you a 16-bit timing window: 256 × 256 = 65,536 ticks at prescaler ÷16, which is about **37.4 milliseconds** — more than two full frames at 50 Hz. That's enough to time essentially any subroutine.
+
+#### Three and Four Channel Chains
+
+The same principle keeps going. Because the ZC/TO connections run Ch0→Ch1→Ch2→Ch3 in sequence, you can stack three or all four channels to get timing ranges that grow by 256× with every channel you add — while keeping the ~571 ns tick resolution of the ÷16 prescaler on Channel 0.
+
+**Three channels (Ch0 timer ÷16 → Ch1 counter → Ch2 counter):**
+256³ × 571.4 ns ≈ **9.6 seconds** at ~571 ns per fine tick.
+
+**Four channels (Ch0 timer ÷16 → Ch1 counter → Ch2 counter → Ch3 counter):**
+256⁴ × 571.4 ns ≈ **40.9 minutes** — practically unlimited for any code timing purpose.
+
+Adding Channel 2 to the two-channel setup from above requires only two additional `OUT` instructions at initialization:
+
+```z80klive
+CTC_CH2     equ $1A3B
+; (Channels 0 and 1 already configured as shown above)
+
+; === Add Channel 2: counter mode, triggered by Channel 1's ZC/TO ===
+    ld bc, CTC_CH2
+    ld a, %01000101          ; Counter mode (D6=1), time constant follows
+    out (c), a
+    ld a, 0                  ; Time constant = 256
+    out (c), a
+```
+
+For a four-channel chain, configure Channel 3 the same way (port `$1B3B`, same control byte).
+
+The snapshot and elapsed calculation extend the 2-channel pattern by reading one extra channel per level. Read from the coarsest channel down to the finest, store three (or four) bytes, then subtract using `SUB` for the fine byte and `SBC` for each subsequent byte to propagate the borrow:
+
+```z80klive
+; === Three-channel snapshot ===
+    ld bc, CTC_CH2
+    in a, (c)
+    ld (ctcStart+2), a       ; Coarsest byte
+    ld bc, CTC_CH1
+    in a, (c)
+    ld (ctcStart+1), a       ; Medium byte
+    ld bc, CTC_CH0
+    in a, (c)
+    ld (ctcStart+0), a       ; Fine byte
+
+    ; ---- Code under test ----
+
+    ld bc, CTC_CH2
+    in a, (c)
+    ld (ctcEnd+2), a
+    ld bc, CTC_CH1
+    in a, (c)
+    ld (ctcEnd+1), a
+    ld bc, CTC_CH0
+    in a, (c)
+    ld (ctcEnd+0), a
+
+; === elapsed = start − end (correct, 24-bit) ===
+    ld a, (ctcEnd+0)         ; end fine → temp
+    ld b, a
+    ld a, (ctcStart+0)       ; start fine
+    sub b                    ; A = start_fine − end_fine, carry = borrow
+    ld (ctcElapsed+0), a
+
+    ld a, (ctcEnd+1)
+    ld b, a
+    ld a, (ctcStart+1)
+    sbc a, b                 ; start_medium − end_medium − borrow
+    ld (ctcElapsed+1), a
+
+    ld a, (ctcEnd+2)
+    ld b, a
+    ld a, (ctcStart+2)
+    sbc a, b                 ; start_coarse − end_coarse − borrow
+    ld (ctcElapsed+2), a
+
+; ctcElapsed is now a 24-bit down-count in little-endian order:
+;   elapsed ticks = ctcElapsed[2] × 65536 + ctcElapsed[1] × 256 + ctcElapsed[0]
+;   wall-clock time ≈ elapsed_ticks × 571.4 ns
+
+ctcStart:   .db 0, 0, 0
+ctcEnd:     .db 0, 0, 0
+ctcElapsed: .db 0, 0, 0
+```
+
+**Why prefer 3-channel ÷16 over 2-channel ÷256?**
+
+Both approaches target longer measurement windows, but they make very different trade-offs:
+
+| Approach | Max range | Resolution |
+|----------|-----------|------------|
+| 2 channels, prescaler ÷256 | ~599 ms | ~9.14 μs per tick |
+| 3 channels, prescaler ÷16 | ~9.6 s | ~571 ns per tick |
+
+The 3-channel ÷16 chain is both longer *and* more precise. The resolution advantage is 16× — you can see a single 28 MHz instruction cycle's contribution where ÷256 would round it away entirely. The only cost is one extra channel. If you have a spare channel and need both range and resolution, 3-channel ÷16 is the better choice.
+
+#### Using Prescaler ÷256 for Even Longer Periods
+
+If you need to time something truly long (say, a full-screen rendering pass), switch Channel 0 to prescaler ÷256. This changes the numbers:
+
+- Single channel: 256 × 9.143 μs ≈ **2.34 ms** per period
+- Cascaded: 256 × 256 × 9.143 μs ≈ **599 ms** — half a second!
+
+The trade-off is resolution: each tick is now ~9.1 μs instead of ~571 ns. For a 28 MHz CPU, that's about 256 system clocks per tick — you can't distinguish individual instructions anymore, but you can easily time subroutines and rendering passes.
+
+```z80klive
+; Channel 0: timer, prescaler ÷256 (D5=1), time constant = 256
+    ld bc, $183B
+    ld a, %00100101          ; Timer, prescaler ÷256, time const follows
+    out (c), a
+    ld a, 0                  ; Time constant = 256
+    out (c), a
+```
+
+#### Quick Reference: Measurement Ranges
+
+| Setup | Tick Duration | 1 channel | 2 channels | 3 channels | 4 channels |
+|-------|--------------|-----------|------------|------------|------------|
+| Prescaler ÷16  | ~571 ns   | ~146 μs   | ~37.4 ms   | ~9.6 s     | ~40.9 min  |
+| Prescaler ÷256 | ~9.14 μs  | ~2.34 ms  | ~599 ms    | ~2.56 min  | ~656 min   |
+
+#### CPU Speed and Timing: A Practical Example
+
+Let's say you have a tight loop that runs in exactly 100 T-states at 3.5 MHz. How many CTC ticks will it consume at each CPU speed?
+
+At **3.5 MHz** (1 T-state = 8 system clocks = 285.7 ns):
+- 100 T-states = 800 system clocks = 28.57 μs
+- At prescaler ÷16: 800 / 16 = **50 CTC ticks**
+
+At **7 MHz** (1 T-state = 4 system clocks):
+- 100 T-states = 400 system clocks = 14.29 μs
+- At prescaler ÷16: 400 / 16 = **25 CTC ticks**
+
+At **14 MHz** (1 T-state = 2 system clocks):
+- 100 T-states = 200 system clocks = 7.14 μs
+- At prescaler ÷16: 200 / 16 = **12.5 CTC ticks** (≈ 12 or 13 depending on alignment)
+
+At **28 MHz** (1 T-state = 1 system clock):
+- 100 T-states = 100 system clocks = 3.57 μs
+- At prescaler ÷16: 100 / 16 = **6.25 CTC ticks** (≈ 6 or 7)
+
+The CTC always measures wall-clock time, not instruction time. The same code takes fewer CTC ticks at a higher CPU speed because it actually runs faster. This is exactly what you want for profiling — you're measuring how long the user waits, not how many instructions the CPU executes.
+
+### CTC Interrupts
+
+Each CTC channel can generate an interrupt on its ZC/TO event. The Next's interrupt system routes CTC interrupts through the hardware IM2 mechanism, which is more flexible (and more convenient) than the classic Z80 IM2 daisy-chain.
+
+#### The Next's Hardware IM2 Mode
+
+Unlike classic Z80 IM2 where the interrupting device places a vector byte on the data bus, the Next computes IM2 vectors internally based on interrupt priority. You configure this with several NextRegs:
+
+**NextReg `$C0` — IM2 Vector Configuration:**
+- Bits [7:5]: Programmable top bits of the interrupt vector
+- Bit 0: Hardware IM2 mode enable (1 = enabled)
+
+**NextReg `$C5` — CTC Interrupt Enable:**
+- Bits [3:0]: Enable interrupt for CTC channels 0–3 (bit 0 = channel 0)
+
+**NextReg `$C9` — CTC Interrupt Status:**
+- Bits [3:0]: Interrupt status for CTC channels 0–3 (write 1 to clear)
+
+#### Vector Calculation
+
+In hardware IM2 mode, each interrupt source has a fixed priority number. The CTC channels are assigned priorities 3 through 6:
+
+| Channel | Priority | Vector Offset |
+|---------|----------|---------------|
+| 0 | 3 | `$06` |
+| 1 | 4 | `$08` |
+| 2 | 5 | `$0A` |
+| 3 | 6 | `$0C` |
+
+The vector address is: `im2TopBits | (priority << 1)`
+
+For example, if NR `$C0` bits [7:5] = `110` (top bits = `$C0`):
+- CTC Channel 0 vector = `$C0 | $06` = **`$C6`**
+- CTC Channel 1 vector = `$C0 | $08` = **`$C8`**
+- CTC Channel 2 vector = `$C0 | $0A` = **`$CA`**
+- CTC Channel 3 vector = `$C0 | $0C` = **`$CC`**
+
+The CPU reads the ISR address from the vector table at `(I × 256 + vector)`.
+
+#### Setting Up a Periodic CTC Interrupt
+
+Here's a complete example: Channel 2 generates an interrupt every ~146 μs (prescaler ÷16, time constant 256), which an Interrupt Service Routine (ISR) uses to increment a frame sub-counter:
+
+```z80klive
+CTC_CH2     equ $1A3B
+NR_REG      equ $243B
+NR_DAT      equ $253B
+
+    ; === Enable hardware IM2 mode ===
+    ld a, $C0
+    ld bc, NR_REG
+    out (c), a               ; Select NR $C0
+    ld a, %11000001          ; Top bits = $C0, HW IM2 enable
+    ld bc, NR_DAT
+    out (c), a
+
+    ; === Enable CTC channel 2 interrupts ===
+    ld a, $C5
+    ld bc, NR_REG
+    out (c), a               ; Select NR $C5
+    ld a, %00000100          ; Enable channel 2 (bit 2)
+    ld bc, NR_DAT
+    out (c), a
+
+    ; === Set up the IM2 vector table ===
+    ; CTC Ch2 vector = $C0 | $0A = $CA
+    ; With I = $FE, the ISR address is at ($FE00 + $CA) = $FECA
+    ld hl, ctcIsr
+    ld ($FECA), hl           ; Store ISR address at vector location
+
+    ld a, $FE
+    ld i, a
+    im 2
+    ei
+
+    ; === Configure CTC Channel 2 ===
+    ld bc, CTC_CH2
+    ld a, %10000101          ; D7=1 (interrupt enable), timer, prescaler ÷16,
+                             ; start immediately, time const follows
+    out (c), a
+    ld a, 0                  ; Time constant = 256
+    out (c), a
+    ; Channel 2 is now running and will interrupt every ~146 μs
+
+    ; ... main program continues ...
+
+; === CTC Channel 2 ISR ===
+ctcIsr:
+    push af
+    push bc
+    
+    ld a, (subCounter)
+    inc a
+    ld (subCounter), a
+    
+    ; Clear the interrupt status (write 1 to bit 2 of NR $C9)
+    ld a, $C9
+    ld bc, NR_REG
+    out (c), a
+    ld a, %00000100
+    ld bc, NR_DAT
+    out (c), a
+    
+    pop bc
+    pop af
+    ei
+    reti
+
+subCounter: .db 0
+```
+
+#### Combining CTC Interrupts with DMA
+
+The Next can trigger DMA transfers directly from CTC ZC/TO events — no CPU involvement required. NextReg `$CD` controls which CTC channels can wake the DMA:
+
+- Bits [3:0]: CTC channels 0–3 enable DMA trigger (bit 0 = channel 0)
+
+This is powerful for audio streaming: set a CTC channel to fire at your sample rate, connect it to DMA, and the DMA automatically transfers the next sample to the DAC on every CTC tick. The CPU never touches the audio path.
+
+```z80klive
+    ; Enable CTC Channel 0 as DMA trigger
+    ld a, $CD
+    ld bc, NR_REG
+    out (c), a
+    ld a, %00000001          ; Channel 0 triggers DMA
+    ld bc, NR_DAT
+    out (c), a
+```
+
+The DMA must be configured separately with the transfer parameters — the CTC just provides the trigger signal. The DMA chapter covers the full CTC-triggered DMA pattern, including the "CTC-Triggered Periodic DMA" section.
+
+### ZC/TO Chaining in Detail
+
+The four channels form a circular chain of ZC/TO connections:
+
+```
+    Ch0 ←── ZC/TO ── Ch3
+     │                 ↑
+     ZC/TO             ZC/TO
+     ↓                 │
+    Ch1 ──── ZC/TO ──→ Ch2
+```
+
+Each channel's ZC/TO output feeds the next channel's external trigger input:
+- Channel 3 → Channel 0
+- Channel 0 → Channel 1
+- Channel 1 → Channel 2
+- Channel 2 → Channel 3
+
+This creates interesting possibilities:
+
+- **16-bit timer**: Channel 0 in timer mode with Channel 1 in counter mode (as shown in the cascaded timing example)
+- **24-bit timer**: Chain three channels (timer → counter → counter)
+- **Frequency divider**: Each channel divides its input by its time constant
+- **Complex periodic signals**: Chain channels with different time constants to generate intricate timing patterns
+
+One thing to keep in mind: the ZC/TO pulse lasts exactly one system clock cycle (35.7 ns). The downstream channel in counter mode sees this as a single decrement event.
+
+> **Joystick clock:** Channel 3's ZC/TO output, divided by 2, also drives the joystick serial clock when configured for I/O mode. If you're using Channel 3 for timing, check that you haven't accidentally changed your joystick behavior.
+
+### Soft Reset: Recovering from Unknown State
+
+If you're writing initialization code that might need to deal with CTC channels left in an unpredictable state by previous software (e.g., a game returning to BASIC, or a dot command), the safe reset procedure is:
+
+```z80klive
+    ; Safely reset Channel 0 regardless of current state
+    ld bc, $183B
+    ld a, %00000011          ; D1=1 (soft reset), D0=1 (control word), D2=0
+    out (c), a               ; First write: might be eaten as time constant
+    out (c), a               ; Second write: guaranteed to be read as control word
+    ; Channel is now in CONTROL_WORD state, ready for fresh configuration
+```
+
+Why twice? If the channel was in the TIME_CONSTANT state (waiting for a time constant byte), the first write is consumed as a time constant, not as a control word — even if D0=1. The second write hits the channel when it's definitely expecting a control word. Writing twice with D2=0 (no time constant follows) guarantees the channel ends up in the CONTROL_WORD state.
+
+### Gotchas and Tips
+
+**The CTC isn't affected by CPU speed.** We've said it before, but it bears repeating. NextReg `$07` changes the CPU clock, not the system clock. The CTC always runs at 28 MHz. This means CTC-based timing measures *real time*, not *instruction time*.
+
+**Reading the counter is a snapshot.** The counter continues running between the `IN` instruction and the time your code uses the value. For best accuracy, keep the code between the two `IN` reads as short as possible.
+
+**Time constant 0 = 256.** This is standard Zilog behavior. Loading 0 gives you the maximum count range (256 ticks before ZC/TO). Loading 1 gives the minimum (1 tick before ZC/TO, i.e., ZC/TO fires on the very next prescaler pulse).
+
+**Prescaler phase matters.** The prescaler is a free-running 8-bit counter that is never explicitly reset in normal operation. When your time constant loads after a control word write, the first tick might arrive slightly earlier or later than expected, depending on where the prescaler happens to be. For single-shot measurements, this adds up to ±1 tick of jitter. Over multiple ZC/TO periods, it averages out.
+
+**Don't change D4 while running.** Writing a control word that changes the trigger edge (D4) counts as a clock edge internally. If the channel is running, this can cause an unexpected decrement. Configure D4 before starting the channel.
+
+**Interrupt status must be cleared manually.** After servicing a CTC interrupt, write a 1 to the corresponding bit in NextReg `$C9` to clear the status. If you forget, the interrupt will not fire again (the status bit stays set and blocks new triggers).
+
+### Putting It All Together: A Timing Utility
+
+Here's a reusable timing utility that sets up the cascaded Channel 0 + Channel 1 pair for measuring arbitrary code blocks. Call `ctcTimerInit` once, then bracket your code with `ctcTimerStart` and `ctcTimerStop`. The 16-bit result in `DE` is the elapsed count in prescaler-÷16 ticks (~571 ns each).
+
+```z80klive
+CTC_CH0     equ $183B
+CTC_CH1     equ $193B
+
+; ============================================================
+; ctcTimerInit — Set up channels 0 and 1 for cascaded timing
+; Destroys: A, BC
+; ============================================================
+ctcTimerInit:
+    ; Channel 0: timer, prescaler ÷16, time constant = 256
+    ld bc, CTC_CH0
+    ld a, %00000101          ; Timer, ÷16, time constant follows, start immediately
+    out (c), a
+    ld a, 0                  ; TC = 256
+    out (c), a
+
+    ; Channel 1: counter mode, time constant = 256
+    ; Triggered by Channel 0's ZC/TO
+    ld bc, CTC_CH1
+    ld a, %01000101          ; Counter mode, time constant follows
+    out (c), a
+    ld a, 0                  ; TC = 256
+    out (c), a
+    ret
+
+; ============================================================
+; ctcTimerStart — Snapshot the current counter pair into (ctc_start)
+; Destroys: A, BC, DE
+; ============================================================
+ctcTimerStart:
+    ld bc, CTC_CH1
+    in a, (c)
+    ld d, a                  ; D = coarse (Ch1)
+    ld bc, CTC_CH0
+    in a, (c)
+    ld e, a                  ; E = fine (Ch0)
+    ld (ctc_start), de
+    ret
+
+; ============================================================
+; ctcTimerStop — Read counters and compute elapsed ticks in DE
+; Destroys: A, BC, HL
+; Returns: DE = elapsed ticks (16-bit, units of ~571 ns each)
+; ============================================================
+ctcTimerStop:
+    ld bc, CTC_CH1
+    in a, (c)
+    ld d, a                  ; D = coarse (Ch1)
+    ld bc, CTC_CH0
+    in a, (c)
+    ld e, a                  ; E = fine (Ch0)
+    ; elapsed = start − end (counters count down)
+    ld hl, (ctc_start)       ; H = start coarse, L = start fine
+    ld a, l
+    sub e
+    ld e, a
+    ld a, h
+    sbc a, d
+    ld d, a
+    ret
+
+ctc_start: .dw 0
+```
+
+Usage:
+
+```z80klive
+    call ctcTimerInit        ; One-time setup
+
+    ; ... later, when you want to measure something:
+    call ctcTimerStart       ; Snapshot start counters
+    
+    call myExpensiveRoutine  ; The code you're profiling
+    
+    call ctcTimerStop        ; DE = elapsed ticks
+    ; DE × 571 ≈ elapsed nanoseconds
+    ; DE × 571 / 1000 ≈ elapsed microseconds
+```
+
+And there you have it: a hardware stopwatch for your Z80 code, accurate to about half a microsecond, with no T-state counting required. The CTC doesn't care what the CPU is doing — it just counts, and when you ask, it tells you where it's at. Sometimes the simplest tools are the most useful.

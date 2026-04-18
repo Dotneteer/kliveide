@@ -6,28 +6,7 @@ The ZX Spectrum Next has somewhere north of fifty distinct port addresses. Not c
 
 This reference organizes them by what they *do*, not by address order. The address table at the top of each section tells you what to `IN`/`OUT`, and the explanation tells you why.
 
-## How Z80 I/O Addressing Works
-
-Before diving in, a quick note on how the Z80's I/O instructions work — because it's immediately relevant to how several Next ports decode.
-
-When the Z80 executes `IN A,(n)`, it puts the 16-bit address `(A << 8) | n` on the address bus. When it executes `IN r,(C)`, it puts the full 16-bit contents of `BC` on the address bus. The point: all sixteen address lines are visible during I/O, and the Next hardware checks various combinations of them to decide which port is responding.
-
-Most ports only care about a few bits of the address, which is why the port table in the official documentation uses `X` to mark "don't care" bits:
-
-```
-|R|W||AAAA AAAA AAAA AAAA|Port(hex)|Description       |
-      A                 A
-      1                 0
-      5                
-|*|*||XXXX XXXX XXXX XXX0| 0xfe    |ULA               |
-| |*||0XXX XXXX XXXX XX01| 0x7ffd  |ZX Spectrum 128K  |
-```
-
-Port `0xFE` responds whenever address bit 0 is 0, regardless of what the rest of the address lines are doing. Port `0x7FFD` requires specific patterns in both the high and low bytes. This partial decoding is inherited from the original Spectrum hardware and means some ports alias — the same physical port responds at many different addresses.
-
-> **Why partial decoding?** In the original Spectrum, full address decoding would have required more logic chips. By only checking a few bits, Sinclair saved on both chip count and cost. The side effect is that `OUT (0xFE),A` and `OUT (0x7EFE),A` hit the same ULA port. The Next preserves this behaviour for compatibility.
-
----
+> The fundamentals of how Z80 I/O addressing works — partial decoding, the `X` notation, and port aliasing — are covered in the [Talking to the Hardware](./next-hardware.md) chapter.
 
 ## Port Enable/Disable: The Master Switch Panel
 

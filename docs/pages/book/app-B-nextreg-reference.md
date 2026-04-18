@@ -6,50 +6,7 @@ Think of NextRegs as the control panel for the FPGA. Want full-color graphics? T
 
 This reference organizes registers by what you can *do* with them, not just what number they are. Flipping through a register list sorted by address is about as useful as reading a dictionary to find a recipe. Instead, each section here covers a specific capability and explains which registers you need to achieve it.
 
-## How to Access NextRegs
-
-Two I/O ports form the gateway:
-
-- **Port `0x243B`** — write the register number here to select it
-- **Port `0x253B`** — read or write the register value here
-
-### Writing a Register
-
-The port method works everywhere—including in 48K mode or on any hardware where the Z80N extended instructions aren't available:
-
-```z80klive
-ld bc,$243b    ; point to the register select port
-ld a,$07       ; register number (CPU speed)
-out (c),a
-inc b          ; point to the value port
-ld a,$02       ; value: 14 MHz
-out (c),a
-```
-
-The Z80N instruction set adds two faster alternatives that fold the select and write into a single instruction:
-
-```z80klive
-nextreg $07,$02   ; select register 0x07 and write 0x02 in one shot
-nextreg $07,a     ; write whatever is in A to register 0x07
-```
-
-`nextreg` is the idiomatic way to configure hardware in Next-specific code—cleaner, faster, and easier to read than the port sequence.
-
-### Reading a Register
-
-There is no `nextreg` form for reads—the Z80N instruction set only covers writes. To read a register value back, you always use the ports:
-
-```z80klive
-ld bc,$243b    ; point to the register select port
-ld a,$07       ; register number (CPU speed)
-out (c),a
-inc b          ; point to the value port
-in a,(c)       ; read the current value into A
-```
-
-The select port (`0x243B`) remembers the last written register number, so if you've just written to a register via the port method, you can skip the select step and read straight from `0x253B`. Don't rely on this across interrupt boundaries though—an ISR that touches NextRegs will clobber the selection.
-
-> **Reset behavior**: Every register has a defined reset state. Hard reset (power-on, F1, or writing `0x02` with bit 1) restores everything to factory defaults. Soft reset (F4 key or writing `0x02` with bit 0) restores a slightly different subset—some hardware settings survive a soft reset, others don't. Register descriptions below note which applies.
+> How to access NextRegs via ports `0x243B`/`0x253B` and the `nextreg` instruction is covered in the [Talking to the Hardware](./next-hardware.md) chapter.
 
 ## What's in Here
 

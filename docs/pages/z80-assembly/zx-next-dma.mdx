@@ -1,0 +1,436 @@
+# `.dma` Pragma Reference
+
+The `.dma` pragma provides a structured, human-readable way to build zxnDMA programs directly in your assembly source. Instead of writing raw bit-field bytes, you write named sub-commands that compile to the exact same byte sequences. The pragma is only available when targeting the ZX Spectrum Next (`.model next`).
+
+## Overview
+
+The zxnDMA chip is programmed by uploading a stream of configuration bytes to I/O port `$6B`. Each byte belongs to one of six **write registers** (WR0–WR5) that configure the transfer, plus a **WR6 command register** for control commands. The `.dma` pragma gives each register group and command its own sub-command:
+
+```z80klive
+.dma <subcommand> [parameters]
+```
+
+Each `.dma` line emits one or more bytes into the output stream. A complete DMA program typically looks like this:
+
+```z80klive
+dmaProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer, sourceAddr, blockLen
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous, destAddr
+    .dma wr5
+    .dma load
+    .dma enable
+dmaProgram_end:
+```
+
+To run the program, upload it to the zxnDMA port:
+
+```z80klive
+    ld hl, dmaProgram
+    ld b, dmaProgram_end - dmaProgram
+    ld c, $6B
+    otir
+```
+
+## WR6 — Control Commands
+
+These sub-commands each emit a single WR6 command byte.
+
+| Sub-command | Byte | Description |
+|---|---|---|
+| `reset` | `$C3` | Full DMA reset |
+| `load` | `$CF` | Load port A address and block length into transfer engine |
+| `enable` | `$87` | Enable (start) the DMA transfer |
+| `disable` | `$83` | Disable (stop) the DMA transfer |
+| `continue` | `$D3` | Continue transfer (reset byte counter, keep addresses) |
+
+**Syntax:**
+
+```z80klive
+.dma reset
+.dma load
+.dma enable
+.dma disable
+.dma continue
+```
+
+### READMASK — Set Read Mask
+
+Emits `$BB` followed by a mask byte that selects which WR registers are echoed back when read.
+
+```z80klive
+.dma readmask <mask_expr>
+```
+
+**Example:**
+
+```z80klive
+.dma readmask $7E    ; emits $BB, $7E
+```
+
+### CMD — Raw WR6 Command (Escape Hatch)
+
+Emits any arbitrary WR6 command byte. Use this for vendor-specific or future commands not covered by the named sub-commands.
+
+```z80klive
+.dma cmd <expr>
+```
+
+**Example:**
+
+```z80klive
+.dma cmd $CF         ; same as .dma load
+```
+
+---
+
+## WR0 — Port A Configuration (Direction, Address, Block Length)
+
+Configures the transfer direction, type, and optionally the source address and block length.
+
+**Syntax:**
+
+```z80klive
+.dma wr0 <direction>, <transfer_type> [, <portA_addr> [, <block_length>]]
+```
+
+**Parameters:**
+
+| Parameter | Values | Description |
+|---|---|---|
+| `direction` | `a_to_b` \| `b_to_a` | Transfer direction |
+| `transfer_type` | `transfer` \| `search` \| `search_transfer` | Operation type |
+| `portA_addr` | expression | 16-bit port A start address *(optional)* |
+| `block_length` | expression | 16-bit block length *(optional, requires portA_addr)* |
+
+The assembler **always** sets all four follow-byte indicator bits (D3–D6) in the WR0 base byte, regardless of how many optional parameters are supplied. Any omitted values must be provided as subsequent `.dw` directives (see [Runtime Patching Pattern](#runtime-patching-pattern)).
+
+**Examples:**
+
+```z80klive
+; Full inline — base byte + port A address + block length
+.dma wr0 a_to_b, transfer, $8000, 256
+; Emits: $7D, $00, $80, $00, $01
+
+; Address inline, length patched at runtime
+.dma wr0 a_to_b, transfer, $8000
+; Emits: $7D, $00, $80
+
+; Both address and length patched at runtime
+.dma wr0 a_to_b, transfer
+; Emits: $7D  (all follow-byte indicator bits still set)
+```
+
+**WR0 Base Byte Encoding:**
+
+| Bit | Field | Meaning |
+|---|---|---|
+| D6–D3 | Follow-byte indicators | Always `1111` (all present in stream) |
+| D2 | Direction | `1` = A→B, `0` = B→A |
+| D1–D0 | Transfer type | `01`=transfer, `10`=search, `11`=search+transfer |
+
+---
+
+## WR1 — Port A Timing and Address Mode
+
+Configures port A (source) addressing and optional cycle timing.
+
+**Syntax:**
+
+```z80klive
+.dma wr1 <port_type>, <addr_mode> [, <cycle_length>]
+```
+
+**Parameters:**
+
+| Parameter | Values | Description |
+|---|---|---|
+| `port_type` | `memory` \| `io` | Whether port A is a memory address or I/O port |
+| `addr_mode` | `increment` \| `decrement` \| `fixed` | How the address changes after each byte |
+| `cycle_length` | `2t` \| `3t` \| `4t` | Bus cycle length *(optional; omit for default)* |
+
+When `cycle_length` is specified, an additional timing byte is emitted after the base byte.
+
+**Examples:**
+
+```z80klive
+.dma wr1 memory, increment        ; emits $14
+.dma wr1 memory, increment, 4t    ; emits $54, $00
+.dma wr1 io, fixed, 2t            ; emits $6C, $02
+```
+
+---
+
+## WR2 — Port B Timing, Address Mode, and Prescaler
+
+Configures port B (destination) addressing, optional cycle timing, and the ZX Next prescaler extension.
+
+**Syntax:**
+
+```z80klive
+.dma wr2 <port_type>, <addr_mode> [, <cycle_length> [, <prescaler>]]
+```
+
+**Parameters:**
+
+| Parameter | Values | Description |
+|---|---|---|
+| `port_type` | `memory` \| `io` | Whether port B is a memory address or I/O port |
+| `addr_mode` | `increment` \| `decrement` \| `fixed` | How the address changes after each byte |
+| `cycle_length` | `2t` \| `3t` \| `4t` | Bus cycle length *(optional)* |
+| `prescaler` | expression | 8-bit prescaler value — ZX Next extension *(optional; requires cycle_length)* |
+
+When `cycle_length` is specified, a timing byte is emitted. When `prescaler` is also specified, an additional prescaler byte follows (D5 of the timing byte is set to indicate its presence).
+
+**Examples:**
+
+```z80klive
+.dma wr2 memory, increment        ; emits $10
+.dma wr2 io, fixed                ; emits $28
+.dma wr2 io, fixed, 3t            ; emits $68, $01
+.dma wr2 io, fixed, 3t, 50        ; emits $68, $21, $32
+```
+
+---
+
+## WR3 — Interrupt and Match Control
+
+Configures interrupt generation and pattern-match stop conditions.
+
+**Syntax:**
+
+```z80klive
+.dma wr3 [<flags...>] [, <mask_expr>, <match_expr>]
+```
+
+**Flags (all optional, any order):**
+
+| Flag | Bit | Description |
+|---|---|---|
+| `dma_enable` | D6 | Enable DMA transfer immediately on `load` |
+| `int_enable` | D5 | Generate interrupt on transfer completion |
+| `stop_on_match` | D2 | Stop when pattern match is found |
+
+When both `mask_expr` and `match_expr` are provided, D3 and D4 are set and the two follow bytes are emitted (mask first, then match).
+
+> **Note:** Most WR3 features are stubs in the current ZX Next FPGA. Only `dma_enable` is fully functional.
+
+**Examples:**
+
+```z80klive
+.dma wr3 dma_enable                     ; emits $C0
+.dma wr3 stop_on_match, $FF, $00        ; emits $9C, $FF, $00
+.dma wr3 dma_enable, int_enable         ; emits $E0
+```
+
+---
+
+## WR4 — Operating Mode and Port B Address
+
+Configures the DMA operating mode and optionally the port B (destination) address.
+
+**Syntax:**
+
+```z80klive
+.dma wr4 <mode> [, <portB_addr>]
+```
+
+**Parameters:**
+
+| Parameter | Values | Description |
+|---|---|---|
+| `mode` | `byte` \| `continuous` \| `burst` | Transfer operating mode |
+| `portB_addr` | expression | 16-bit port B start address *(optional)* |
+
+The assembler **always** sets D2 and D3 (the address follow-byte indicator bits) in the WR4 base byte. If `portB_addr` is omitted, the two address bytes must follow as a `.dw` directive.
+
+**Operating Modes:**
+
+| Mode | Description |
+|---|---|
+| `byte` | Single byte per /BUSREQ assertion |
+| `continuous` | Transfer the entire block in one burst |
+| `burst` | Transfer bytes until /WAIT is de-asserted |
+
+**Examples:**
+
+```z80klive
+.dma wr4 continuous, $005B    ; emits $AD, $5B, $00
+.dma wr4 burst, $C000         ; emits $CD, $00, $C0
+.dma wr4 continuous           ; emits $AD only; address via .dw
+```
+
+---
+
+## WR5 — Restart and /CE//WAIT Behaviour
+
+Configures whether the DMA restarts automatically and the /CE//WAIT signal polarity.
+
+**Syntax:**
+
+```z80klive
+.dma wr5 [auto_restart]
+```
+
+**Parameters:**
+
+| Parameter | Description |
+|---|---|
+| `auto_restart` | *(optional)* Reload addresses and restart automatically when block completes (D5) |
+
+**Examples:**
+
+```z80klive
+.dma wr5                  ; emits $82  (no auto-restart)
+.dma wr5 auto_restart     ; emits $A2
+```
+
+---
+
+## Runtime Patching Pattern
+
+Real DMA programs are stored in memory as a fixed byte table. Before activating the transfer, calling code patches specific fields — typically the source address and block length — with runtime values. Omitting the optional address/length parameters from `wr0` (and the address from `wr4`) is designed for exactly this use case.
+
+Instead of raw `DB`/`DW` bytes, write:
+
+```z80klive
+dmaProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer       ; base byte only ($7D); follow-byte indicators set
+PORT_A:
+    .dw 0                           ; port A address — patched at runtime
+BLOCK_LEN:
+    .dw 0                           ; block length   — patched at runtime
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous             ; base byte only ($AD); address follow-bits set
+PORT_B:
+    .dw $4800                       ; port B address — constant, but labelled for clarity
+    .dma wr5
+    .dma load
+    .dma enable
+dmaProgram_end:
+```
+
+Activation code:
+
+```z80klive
+RunDma:
+    ld hl, sourceBuffer
+    ld (PORT_A), hl          ; patch source address
+    ld hl, byteCount
+    ld (BLOCK_LEN), hl       ; patch block length
+    ld hl, dmaProgram
+    ld b, dmaProgram_end - dmaProgram
+    ld c, $6B
+    otir
+```
+
+This is identical to what the `api_sprite.asm` pattern does with raw `DB`/`DW` bytes — except the labels now have self-documenting names and the byte encoding is verified by the assembler.
+
+---
+
+## Before and After Comparison
+
+The following two programs produce **identical byte sequences**.
+
+### Before — raw bytes
+
+```z80klive
+spriteDMAProgram:
+    DB %0'11111'01          ; WR0: A→B, transfer, all follow bytes
+    DW 0                    ; Port A start address (patched)
+    DW 0                    ; Block length (patched)
+    DB %0'0010'100          ; WR1: memory, increment
+    DB %0'0101'000          ; WR2: I/O, fixed
+    DB %1'01011'01          ; WR4: continuous, Port B address follows
+    DW $005B                ; Port B address
+    DB %1'00000'10          ; WR5: no auto-restart
+    DB %1'10011'11          ; WR6: LOAD
+    DB %1'00001'11          ; WR6: ENABLE
+```
+
+### After — `.dma` pragma
+
+```z80klive
+spriteDMAProgram:
+    .dma wr0 a_to_b, transfer       ; $7D
+spriteDMAPortA:
+    .dw 0                           ; patched with source address
+spriteDMALength:
+    .dw 0                           ; patched with block length
+    .dma wr1 memory, increment      ; $14
+    .dma wr2 io, fixed              ; $28
+    .dma wr4 continuous             ; $AD
+    .dw $005B                       ; port B address
+    .dma wr5                        ; $82
+    .dma load                       ; $CF
+    .dma enable                     ; $87
+```
+
+Both emit: `$7D $00 $00 $00 $00 $14 $28 $AD $5B $00 $82 $CF $87`
+
+---
+
+## Complete Example — Copy 32 Bytes from `$4000` to `$4800`
+
+```z80klive
+.model next
+
+CopyData:
+    ld hl, dmaProgram
+    ld b, dmaProgram_end - dmaProgram
+    ld c, $6B                       ; zxnDMA port
+    otir                            ; upload and run the DMA program
+    ret
+
+dmaProgram:
+    .dma reset
+    .dma wr0 a_to_b, transfer, $4000, 32
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous, $4800
+    .dma wr5
+    .dma load
+    .dma enable
+dmaProgram_end:
+```
+
+This emits 14 bytes in total:
+
+| Pragma | Bytes |
+|---|---|
+| `.dma reset` | `$C3` |
+| `.dma wr0 a_to_b, transfer, $4000, 32` | `$7D $00 $40 $20 $00` |
+| `.dma wr1 memory, increment` | `$14` |
+| `.dma wr2 memory, increment` | `$10` |
+| `.dma wr4 continuous, $4800` | `$AD $00 $48` |
+| `.dma wr5` | `$82` |
+| `.dma load` | `$CF` |
+| `.dma enable` | `$87` |
+
+---
+
+## Error Reference
+
+| Code | Message | Cause |
+|---|---|---|
+| `Z0360` | Unknown .dma sub-command: `'{0}'` | Unrecognised sub-command identifier |
+| `Z0361` | Expected direction: `'a_to_b'` or `'b_to_a'` | Missing or invalid WR0 direction |
+| `Z0362` | Expected transfer type: `'transfer'`, `'search'`, or `'search_transfer'` | Invalid WR0 transfer type |
+| `Z0363` | Expected port type: `'memory'` or `'io'` | Invalid port type for WR1/WR2 |
+| `Z0364` | Expected address mode: `'increment'`, `'decrement'`, or `'fixed'` | Invalid address mode |
+| `Z0365` | Expected cycle length: `'2t'`, `'3t'`, or `'4t'` | Invalid cycle length token |
+| `Z0366` | Expected operating mode: `'byte'`, `'continuous'`, or `'burst'` | Invalid WR4 mode |
+| `Z0367` | Prescaler requires cycle length to be specified | WR2 prescaler given without cycle length |
+| `Z0368` | The `.dma` pragma requires the Next model (`.model next`) | Used outside `.model next` |
+
+---
+
+## See Also
+
+- [ZX Spectrum Next](./zx-next) - Next-specific assembler features and `.savenex` pragma
+- [Pragmas](./pragmas) - Complete pragma reference
+- [Klive Z80 Assembler Overview](./z80-assembler) - General assembler documentation

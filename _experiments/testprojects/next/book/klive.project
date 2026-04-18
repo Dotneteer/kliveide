@@ -55,28 +55,28 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 52,
-            "column": 21
+            "line": 61,
+            "column": 25
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_zxndma/memcpy.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/io.asm",
           "position": {
-            "line": 42,
-            "column": 29
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_z80n/extinstr.asm",
-          "position": {
-            "line": 644,
+            "line": 69,
             "column": 1
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/nr.asm",
+          "position": {
+            "line": 0,
+            "column": 0
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/nr.asm"
     },
     "Disassembly": {
       "topAddress": 1386,
