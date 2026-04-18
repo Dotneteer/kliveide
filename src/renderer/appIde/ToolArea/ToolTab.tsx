@@ -1,6 +1,5 @@
 import styles from "./ToolTab.module.scss";
 import classnames from "classnames";
-import { useState } from "react";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
 import { useMainApi } from "@renderer/core/MainApi";
 import { SETTING_IDE_ACTIVE_TOOL } from "@common/settings/setting-const";
@@ -10,12 +9,9 @@ export type Props = ToolInfo & {
 };
 export const ToolTab = ({ id, name, isActive = false }: Props) => {
   const mainApi = useMainApi();
-  const [pointed, setPointed] = useState(false);
   return (
     <div
       className={styles.toolTab}
-      onMouseEnter={() => setPointed(true)}
-      onMouseLeave={() => setPointed(false)}
       onClick={async () => {
         await mainApi.setGlobalSettingsValue(SETTING_IDE_ACTIVE_TOOL, id);
       }}
@@ -27,7 +23,7 @@ export const ToolTab = ({ id, name, isActive = false }: Props) => {
       >
         <span
           className={classnames(styles.titleText, {
-            [styles.activeTitle]: isActive || pointed
+            [styles.activeTitle]: isActive
           })}
         >
           {name}

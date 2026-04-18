@@ -1,6 +1,6 @@
 import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useMemo } from "react";
 import { Icon } from "@controls/Icon";
 import { SpaceFiller } from "@controls/SpaceFiller";
 import classnames from "classnames";
@@ -21,58 +21,30 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const compilation = useSelector((s) => s.compilation);
   const cursorLine = useSelector((s) => s.ideView?.cursorLine);
   const cursorColumn = useSelector((s) => s.ideView?.cursorColumn);
-  const [machineState, setMachineState] = useState("");
-  const [compileStatus, setCompileStatus] = useState("");
-  const [compileSuccess, setCompileSuccess] = useState(true);
+
+  const machineState = useMemo(() => {
+    switch (execState) {
+      case MachineControllerState.None: return "Turned off";
+      case MachineControllerState.Running: return "Running";
+      case MachineControllerState.Pausing: return "Pausing";
+      case MachineControllerState.Paused: return "Paused";
+      case MachineControllerState.Stopping: return "Stopping";
+      case MachineControllerState.Stopped: return "Stopped";
+      default: return "";
+    }
+  }, [execState]);
+
+  const { compileStatus, compileSuccess } = useMemo(() => {
+    if (compilation.inProgress) return { compileStatus: "Compilation in progress...", compileSuccess: true };
+    if (!compilation.result) return { compileStatus: "Not compiled yet", compileSuccess: true };
+    if (compilation.failed || compilation.result?.errors?.length > 0)
+      return { compileStatus: "Compilation failed", compileSuccess: false };
+    return { compileStatus: "Compilation successful", compileSuccess: true };
+  }, [compilation]);
 
   // --- Get active document to check if it's a Monaco editor
   const activeDocument = projectService?.getActiveDocumentHubService()?.getActiveDocument();
   const isMonacoEditor = activeDocument?.type === CODE_EDITOR;
-
-  // --- Reflect machine execution state changes
-  useEffect(() => {
-    switch (execState) {
-      case MachineControllerState.None:
-        setMachineState("Turned off");
-        break;
-      case MachineControllerState.Running:
-        setMachineState("Running");
-        break;
-      case MachineControllerState.Pausing:
-        setMachineState("Pausing");
-        break;
-      case MachineControllerState.Paused:
-        setMachineState("Paused");
-        break;
-      case MachineControllerState.Stopping:
-        setMachineState("Stopping");
-        break;
-      case MachineControllerState.Stopped:
-        setMachineState("Stopped");
-        break;
-    }
-  }, [execState]);
-
-  useEffect(() => {
-    let compilationLabel = "";
-    let success = true;
-    if (compilation.inProgress) {
-      compilationLabel = "Compilation in progress...";
-    } else {
-      if (!compilation.result) {
-        compilationLabel = "Not compiled yet";
-      } else {
-        if (compilation.failed || compilation.result?.errors?.length > 0) {
-          compilationLabel = "Compilation failed";
-          success = false;
-        } else {
-          compilationLabel = "Compilation successful";
-        }
-      }
-    }
-    setCompileStatus(compilationLabel);
-    setCompileSuccess(success);
-  }, [compilation]);
 
   if (!show) return null;
 

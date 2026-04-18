@@ -5,7 +5,7 @@ import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/Rende
 import { muteSoundAction } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
-import { MutableRefObject, useCallback, useEffect, useState } from "react";
+import { MutableRefObject, useCallback, useEffect, useMemo, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
@@ -100,8 +100,9 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
   const mode = "start";
   const startOptions = ide ? ideStartOptions : emuStartOptions;
   const [startMode, setStartMode] = useState(mode);
-  const [currentStartOption, setCurrentStartOption] = useState(
-    startOptions.find((v) => v.value === mode)
+  const currentStartOption = useMemo(
+    () => startOptions.find((v) => v.value === startMode),
+    [startOptions, startMode]
   );
 
   // --- Use shortcut according to the current platform
@@ -160,7 +161,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
   useEffect(() => {
     const mode = isDebugging ? "debug" : "start";
     setStartMode(mode);
-    setCurrentStartOption(startOptions.find((v) => v.value === mode));
   }, [isDebugging]);
 
   useEffect(() => {
@@ -200,7 +200,6 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           width={184}
           onChanged={(option) => {
             setStartMode(option);
-            setCurrentStartOption(startOptions.find((v) => v.value === option));
           }}
         />
       </div>

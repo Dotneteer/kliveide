@@ -319,7 +319,7 @@ export function useResizeObserver(ref, callback) {
 
 ## Phase 5: Eliminate Unnecessary State
 
-### Step 5.1 — Convert derived state to useMemo/inline computation
+### Step 5.1 — Convert derived state to useMemo/inline computation ✅
 
 Replace `useState` + `useEffect` sync patterns with direct computation in these files:
 
@@ -335,7 +335,7 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 **Test**: For each change, verify the component renders the same output before and after. Write a unit test for `VirtualizedList` with varying `items` arrays.
 
-### Step 5.2 — Consolidate `MemMappingPanel` state
+### Step 5.2 — Consolidate `MemMappingPanel` state ✅
 
 **File**: `src/renderer/appIde/SiteBarPanels/MemMappingPanel.tsx`  
 **Issue**: 11 separate `useState` calls for values from a single API response.
@@ -344,7 +344,7 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 **Test**: Render the panel, verify all mapping values display correctly.
 
-### Step 5.3 — Replace hover useState with CSS :hover
+### Step 5.3 — Replace hover useState with CSS :hover ✅ (ToolTab done; ActivityButton and keyboard keys deferred — icon fill is JS-driven via theme API, CSS-only not feasible)
 
 **Files**: `src/renderer/appIde/ActivityBar/ActivityButton.tsx`, `ToolArea/ToolTab.tsx`, `src/renderer/appEmu/Keyboard/Sp48Key.tsx` (and similar)  
 **Issue**: `[pointed, setPointed] = useState(false)` with `onMouseEnter`/`onMouseLeave` can be replaced with CSS.

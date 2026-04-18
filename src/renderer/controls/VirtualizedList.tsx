@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Virtualizer, VListHandle } from "virtua";
 import ScrollViewer from "./ScrollViewer";
 
@@ -13,11 +13,9 @@ type Props = {
 
 export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLoaded, onScroll }: Props) => {
   const ref = useRef<VListHandle>(null);
-  const [itemsCount, setItemsCount] = useState(items?.length ?? 0);
   const hasScrolledToStart = useRef(false);
   const hasNotifiedApi = useRef(false);
 
-  // --- Notify the parent that the API is ready and scroll to start position
   useEffect(() => {
     if (ref.current) {
       // Only call apiLoaded once per component instance
@@ -34,17 +32,13 @@ export const VirtualizedList = ({ items, overscan, startIndex, renderItem, apiLo
     }
   }, [startIndex]);
 
-  useEffect(() => {
-    setItemsCount(items?.length ?? 0);
-  }, [items]);
-
   return (
     <ScrollViewer>
       <Virtualizer
         ref={ref}
         overscan={overscan}
         onScroll={(offset) => onScroll?.(offset)}
-        count={itemsCount}
+        count={items?.length ?? 0}
       >
         {(i) => {
           const rendered = renderItem?.(i) as any

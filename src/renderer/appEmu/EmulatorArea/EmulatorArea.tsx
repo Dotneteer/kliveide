@@ -3,7 +3,7 @@ import { EmulatorPanel } from "./EmulatorPanel";
 import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { KeyboardApi, KeyboardPanel } from "../Keyboard/KeyboardPanel";
 import styles from "./EmulatorArea.module.scss";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import {
   SETTING_EMU_KEYBOARD_HEIGHT,
   SETTING_EMU_SHOW_KEYBOARD
@@ -17,21 +17,16 @@ export const EmulatorArea = () => {
 
   const keyboardVisible = useGlobalSetting(SETTING_EMU_SHOW_KEYBOARD);
   const keyboardPanelHeight = useGlobalSetting(SETTING_EMU_KEYBOARD_HEIGHT);
-  const [currentKeyboardPanelHeight, setCurrentKeyboardPanelHeight] = useState(keyboardPanelHeight);
 
   let api = useRef<KeyboardApi>();
 
   const machineType = useSelector((s) => s.emulatorState?.machineId);
 
-  useLayoutEffect(() => {
-    setCurrentKeyboardPanelHeight(keyboardPanelHeight);
-  }, [keyboardPanelHeight]);
-
   return (
     <div className={styles.emulatorArea}>
       <SplitPanel
         primaryLocation="bottom"
-        initialPrimarySize={currentKeyboardPanelHeight}
+        initialPrimarySize={keyboardPanelHeight}
         primaryVisible={keyboardVisible}
         secondaryVisible={true}
         minSize={120}

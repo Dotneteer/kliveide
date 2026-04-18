@@ -29,26 +29,16 @@ export default function Dropdown({
   onOpenChange,
 }: Props) {
   const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
-  const [selectedValue, setSelectedValue] = useState(initialValue);
   const theme = useTheme();
-  const handleSelectChange = (value: string) => {
-    setSelectedValue(value);
-    onChanged?.(value);
-  };
 
   useEffect(() => {
-    setSelectedValue(initialValue);
-  }, [initialValue]);
-
-  // --- Use a root element that is the theme root
-  useEffect(() => {
-    if (theme ) {
+    if (theme) {
       setRootElement(document.getElementById("themeRoot") as HTMLDivElement);
     }
   }, [theme]);
 
   return (
-    <Select.Root value={selectedValue} onValueChange={handleSelectChange} onOpenChange={onOpenChange}>
+    <Select.Root value={initialValue} onValueChange={(v) => onChanged?.(v)} onOpenChange={onOpenChange}>
       <Select.Trigger className={styles.SelectTrigger} style={{ width }}>
         <Select.Value placeholder={placeholder ?? "Select..."} />
         <div style={{ width: "100%" }} />
