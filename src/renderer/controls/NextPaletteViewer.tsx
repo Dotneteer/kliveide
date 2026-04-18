@@ -6,7 +6,7 @@ import {
   getRgbPartsForPaletteCode
 } from "@emu/machines/zxNext/palette";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo } from "react";
 import { useInitialize } from "@renderer/core/useInitializeAsync";
 import { Row } from "./generic/Row";
 import { Column } from "./generic/Column";
@@ -44,6 +44,26 @@ export const NextPaletteViewer = ({
   useEffect(() => {
     setSelected(selectedIndex);
   }, [selectedIndex]);
+
+  const handleRowSelection = useCallback((idx: number) => {
+    if (allowSelection) {
+      setSelected(idx);
+      onSelection?.(idx);
+    }
+  }, [allowSelection, onSelection]);
+
+  const handleRowRightClick = useCallback((idx: number) => {
+    if (allowSelection) {
+      onRightClick?.(idx);
+    }
+  }, [allowSelection, onRightClick]);
+
+  const handleRowPriority = useCallback((idx: number) => {
+    if (allowSelection) {
+      setSelected(idx);
+      onPriority?.(idx);
+    }
+  }, [allowSelection, onPriority]);
 
   return (
     <KeyHandler
@@ -109,23 +129,9 @@ export const NextPaletteViewer = ({
             usePriority={usePriority}
             transparencyIndex={transparencyIndex}
             allowSelection={allowSelection}
-            onSelection={idx => {
-              if (allowSelection) {
-                setSelected(idx);
-                onSelection?.(idx);
-              }
-            }}
-            onRightClick={idx => {
-              if (allowSelection) {
-                onRightClick?.(idx);
-              }
-            }}
-            onPriority={(idx: number) => {
-              if (allowSelection) {
-                setSelected(idx);
-                onPriority?.(idx);
-              }
-            }}
+            onSelection={handleRowSelection}
+            onRightClick={handleRowRightClick}
+            onPriority={handleRowPriority}
             selectedIndex={selected}
           />
         ))}
@@ -147,7 +153,7 @@ type PaletteRowProps = {
   selectedIndex?: number;
 };
 
-const PaletteRow = ({
+const PaletteRow = memo(({
   firstIndex,
   palette,
   smallDisplay,
@@ -190,7 +196,7 @@ const PaletteRow = ({
       ))}
     </Row>
   );
-};
+});
 
 type PaletteItemProps = {
   index: number;
@@ -205,7 +211,7 @@ type PaletteItemProps = {
   selectedIndex?: number;
 };
 
-const PaletteItem = ({
+const PaletteItem = memo(({
   index,
   value,
   smallDisplay,
@@ -314,4 +320,4 @@ const PaletteItem = ({
       </div>
     </>
   );
-};
+});

@@ -1,5 +1,5 @@
 import { useTheme } from "@renderer/theming/ThemeProvider";
-import { CSSProperties } from "react";
+import { CSSProperties, memo } from "react";
 
 type Props = {
   iconName: string;
@@ -15,7 +15,7 @@ type Props = {
 /**
  * Represents an SVG icon from the stock
  */
-export const Icon = ({
+export const Icon = memo(({
   iconName,
   xclass,
   width = 24,
@@ -74,4 +74,4 @@ export const Icon = ({
     );
   }
   return null;
-};
+});

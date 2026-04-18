@@ -265,7 +265,7 @@ export function useResizeObserver(ref, callback) {
 
 ## Phase 4: Memoization for High-Impact Components
 
-### Step 4.1 — Memoize `Icon` component
+### Step 4.1 — Memoize `Icon` component ✅
 
 **File**: `src/renderer/controls/Icon.tsx`  
 **Issue**: Used hundreds of times, is a pure function of props, but not wrapped in `React.memo`.
@@ -274,7 +274,7 @@ export function useResizeObserver(ref, callback) {
 
 **Test**: Render an `Icon`, re-render the parent with unchanged props, verify `Icon` does not re-render (use React Profiler or render count ref).
 
-### Step 4.2 — Memoize `IconButton` component
+### Step 4.2 — Memoize `IconButton` component ✅
 
 **File**: `src/renderer/controls/IconButton.tsx`  
 **Issue**: Used dozens of times in `Toolbar` alone, not memoized.
@@ -283,7 +283,7 @@ export function useResizeObserver(ref, callback) {
 
 **Test**: Render `IconButton` inside a parent that re-renders, verify `IconButton` only re-renders when its props change.
 
-### Step 4.3 — Memoize keyboard key components
+### Step 4.3 — Memoize keyboard key components ✅
 
 **Files**: `src/renderer/appEmu/Keyboard/Sp48Key.tsx`, `Sp128Key.tsx`, `Z88Key.tsx`  
 **Issue**: 40-60 keys re-render on every keystroke (~960 new function allocations per render in Sp48Key alone).
@@ -295,7 +295,7 @@ export function useResizeObserver(ref, callback) {
 
 **Test**: Render a keyboard, simulate pressing one key, verify only that key re-renders (not all 40+).
 
-### Step 4.4 — Memoize `NextPaletteViewer` items
+### Step 4.4 — Memoize `NextPaletteViewer` items ✅
 
 **File**: `src/renderer/controls/NextPaletteViewer.tsx`  
 **Issue**: 256 `PaletteItem` components all re-render when `selected` state changes.
@@ -306,7 +306,7 @@ export function useResizeObserver(ref, callback) {
 
 **Test**: Render the palette viewer, change selection, verify only the previously-selected and newly-selected items re-render.
 
-### Step 4.5 — Add useCallback to Toolbar handlers
+### Step 4.5 — Add useCallback to Toolbar handlers ✅
 
 **File**: `src/renderer/controls/Toolbar.tsx`  
 **Issue**: ~20 `IconButton` instances receive new `clicked` arrow functions every render.

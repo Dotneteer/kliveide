@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { KeyboardButtonClickArgs } from "./keyboard-common";
 
@@ -32,7 +32,7 @@ type Props = {
 /**
  * Represents a key of the ZX Spectrum 48 keyboard
  */
-export const Sp128Key = ({
+export const Sp128Key = memo(({
   zoom,
   code,
   secondaryCode,
@@ -398,4 +398,4 @@ export const Sp128Key = ({
       down
     });
   }
-};
+});

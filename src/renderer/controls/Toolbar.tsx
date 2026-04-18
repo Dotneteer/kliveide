@@ -5,7 +5,7 @@ import { useDispatch, useGlobalSetting, useSelector } from "@renderer/core/Rende
 import { muteSoundAction } from "@state/actions";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
-import { MutableRefObject, useEffect, useState } from "react";
+import { MutableRefObject, useCallback, useEffect, useState } from "react";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_TAPE_SUPPORT } from "@common/machines/constants";
@@ -110,11 +110,52 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
   const [stepOutKey, setStepOutKey] = useState<string>(null);
 
   const { outputPaneService, ideCommandsService } = useAppServices();
-  const saveProject = async () => {
+  const saveProject = useCallback(async () => {
     await mainApi.saveProject();
-  };
+  }, [mainApi]);
 
   const tapeSupport = machineInfo?.features?.[MF_TAPE_SUPPORT] ?? false;
+
+  const handleStart = useCallback(async () => {
+    if (mayInjectCode && !!currentStartOption.cmd) {
+      const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
+      buildPane.clear();
+      await ideCommandsService.executeCommand(currentStartOption.cmd, buildPane);
+      await ideCommandsService.executeCommand("outp build");
+    } else {
+      await emuApi.issueMachineCommand(currentStartOption.value as any);
+    }
+  }, [mayInjectCode, currentStartOption, outputPaneService, ideCommandsService, emuApi]);
+
+  const handlePauseResume = useCallback(async () => {
+    const cmd = state !== MachineControllerState.Running ? currentStartOption.value : "pause";
+    await emuApi.issueMachineCommand(cmd as any);
+  }, [state, currentStartOption, emuApi]);
+
+  const handleStop = useCallback(async () => {
+    await emuApi.issueMachineCommand("stop");
+  }, [emuApi]);
+
+  const handleRestart = useCallback(async () => {
+    if (ide && kliveProjectLoaded) {
+      ideApi.executeCommand("outp build");
+      ideApi.executeCommand(isDebugging ? "debug" : "run");
+    } else {
+      await emuApi.issueMachineCommand("restart");
+    }
+  }, [ide, kliveProjectLoaded, ideApi, isDebugging, emuApi]);
+
+  const handleStepInto = useCallback(async () => {
+    await emuApi.issueMachineCommand("stepInto");
+  }, [emuApi]);
+
+  const handleStepOver = useCallback(async () => {
+    await emuApi.issueMachineCommand("stepOver");
+  }, [emuApi]);
+
+  const handleStepOut = useCallback(async () => {
+    await emuApi.issueMachineCommand("stepOut");
+  }, [emuApi]);
 
   useEffect(() => {
     const mode = isDebugging ? "debug" : "start";
@@ -146,16 +187,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
         fill="--color-toolbarbutton-green"
         title={currentStartOption.label}
         enable={canStart}
-        clicked={async () => {
-          if (mayInjectCode && !!currentStartOption.cmd) {
-            const buildPane = outputPaneService.getOutputPaneBuffer(PANE_ID_BUILD);
-            buildPane.clear();
-            await ideCommandsService.executeCommand(currentStartOption.cmd, buildPane);
-            await ideCommandsService.executeCommand("outp build");
-          } else {
-            await emuApi.issueMachineCommand(currentStartOption.value as any);
-          }
-        }}
+        clicked={handleStart}
       />
       <div
         className={styles.toolbarDropdownContainer}
@@ -186,10 +218,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             state === MachineControllerState.Pausing ||
             state === MachineControllerState.Paused)
         }
-        clicked={async () => {
-          const cmd = state !== MachineControllerState.Running ? currentStartOption.value : "pause";
-          await emuApi.issueMachineCommand(cmd as any);
-        }}
+        clicked={handlePauseResume}
       />
       <IconButton
         iconName="stop"
@@ -201,9 +230,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             state === MachineControllerState.Pausing ||
             state === MachineControllerState.Paused)
         }
-        clicked={async () => {
-          await emuApi.issueMachineCommand("stop");
-        }}
+        clicked={handleStop}
       />
       <IconButton
         iconName="restart"
@@ -215,14 +242,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
             state === MachineControllerState.Pausing ||
             state === MachineControllerState.Paused)
         }
-        clicked={async () => {
-          if (ide && kliveProjectLoaded) {
-            ideApi.executeCommand("outp build");
-            ideApi.executeCommand(isDebugging ? "debug" : "run");
-          } else {
-            await emuApi.issueMachineCommand("restart");
-          }
-        }}
+        clicked={handleRestart}
       />
       <ToolbarSeparator />
       <IconButton
@@ -233,7 +253,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)
         }
-        clicked={async () => await emuApi.issueMachineCommand("stepInto")}
+        clicked={handleStepInto}
       />
       <IconButton
         iconName="step-over"
@@ -243,7 +263,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)
         }
-        clicked={async () => await emuApi.issueMachineCommand("stepOver")}
+        clicked={handleStepOver}
       />
       <IconButton
         iconName="step-out"
@@ -253,7 +273,7 @@ export const Toolbar = ({ ide, kliveProjectLoaded, recordingManagerRef }: Props)
           !isCompiling &&
           (state === MachineControllerState.Pausing || state === MachineControllerState.Paused)
         }
-        clicked={async () => await emuApi.issueMachineCommand("stepOut")}
+        clicked={handleStepOut}
       />
       {!ide && (
         <>
