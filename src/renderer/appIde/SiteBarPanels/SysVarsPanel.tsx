@@ -1,8 +1,7 @@
 import type { SysVar } from "@abstractions/SysVar";
 
-import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
-import { useSelector } from "@renderer/core/RendererProvider";
-import { useEffect, useState } from "react";
+import { FlagRow, Label, LabelSeparator, Secondary, Value } from "@controls/generic";
+import { useState } from "react";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./SysVarsPanel.module.scss";
@@ -21,10 +20,9 @@ type SysVarData = {
   valueList?: Uint8Array;
 };
 
-const SysVarsPanel = () => {
+export const SysVarsPanel = () => {
   const emuApi = useEmuApi();
   const [sysVars, setSysVars] = useState<SysVarData[]>([]);
-  const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
   const refreshSysVars = async () => {
@@ -64,13 +62,6 @@ const SysVarsPanel = () => {
     });
     setSysVars(vars);
   };
-
-  // --- Whenever machine state changes or breakpoints change, refresh the list
-  useEffect(() => {
-    (async function () {
-      await refreshSysVars();
-    })();
-  }, [machineState]);
 
   // --- Take care of refreshing the screen
   useEmuStateListener(emuApi, async () => {
@@ -187,4 +178,3 @@ const ByteValue = ({ address, value, tooltip }: ByteValueProps) => {
   );
 };
 
-export const sysVarsPanelRenderer = () => <SysVarsPanel />;

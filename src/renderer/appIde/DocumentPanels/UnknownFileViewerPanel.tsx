@@ -1,6 +1,6 @@
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./UnknownFileViewerPanel.module.scss";
-import { Label } from "@renderer/controls/Labels";
+import { Label } from "@controls/generic";
 
 const UnknownFileViewerPanel = ({}: DocumentProps) => {
   return (

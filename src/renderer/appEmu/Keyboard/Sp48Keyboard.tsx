@@ -1,10 +1,10 @@
 import { Sp48Key as Key } from "./Sp48Key";
 import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { KeyboardApi } from "./KeyboardPanel";
-import { KeyPressMapper } from "./KeyPressMapper";
+import { useKeyboard } from "./useKeyboard";
 
 const DEFAULT_WIDTH = 10 * 104 + 130;
 const DEFAULT_HEIGHT = 4 * (128 + 16);
@@ -20,29 +20,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
   const zoom = calculateZoom(width, height);
   const row1Shift = 80 * zoom;
   const row2Shift = 110 * zoom;
-  const mounted = useRef(false);
-  const keystatus = useRef(new KeyPressMapper());
-  const [version, setVersion] = useState(1);
-
-  const api: KeyboardApi = {
-    signKeyStatus: (code, down) => {
-      keystatus.current.setKeyStatus(code, down);
-      setVersion(v => v + 1);
-    }
-  };
-
-  const isPressed = (code: number) =>
-    keystatus.current.isPressed(code);
-
-  useEffect(() => {
-    if (mounted.current) return null;
-    mounted.current = true;
-    apiLoaded?.(api);
-
-    return () => {
-      mounted.current = false;
-    };
-  });
+  const { api, isPressed } = useKeyboard(apiLoaded);
 
   return (
     <Column width='auto' style={rootStyle}>

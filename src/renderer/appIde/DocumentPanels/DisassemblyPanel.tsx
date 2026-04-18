@@ -14,7 +14,7 @@ import {
 import { machineRegistry } from "@common/machines/machine-registry";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { AddressInput } from "@renderer/controls/AddressInput";
-import { Label, LabelSeparator, Secondary, Value } from "@renderer/controls/Labels";
+import { Label, LabelSeparator, Secondary, Value } from "@controls/generic";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import {
   incProjectFileVersionAction,
@@ -36,7 +36,6 @@ import { FullPanel } from "@renderer/controls/new/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";
 import { Text } from "@renderer/controls/generic/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
-import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
 import { DISASSEMBLY_EDITOR } from "@common/state/common-ids";
 import { useMainApi } from "@renderer/core/MainApi";
 import { DisassemblyItem, MemorySection } from "../disassemblers/common-types";
@@ -506,8 +505,9 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                 />
               )}
               {displayBankMatrix && machineId === MI_ZXNEXT && (
-                <NextBankDropdown
+                <BankDropdown
                   banks={224}
+                  showNextItems
                   initialValue={currentSegment ?? 0}
                   width={80}
                   decimalView={decimalView}

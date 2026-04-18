@@ -9,7 +9,7 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { LabeledText } from "@renderer/controls/generic/LabeledText";
 import { createElement, useEffect, useRef, useState } from "react";
 import classnames from "classnames";
-import { LabelSeparator } from "@renderer/controls/Labels";
+import { LabelSeparator } from "@controls/generic";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 import { DumpSection } from "./DumpSection";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";

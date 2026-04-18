@@ -7,8 +7,8 @@ import {
 import { HeaderRow } from "../generic/Row";
 import { SmallIconButton } from "../IconButton";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { Label, LabelSeparator } from "../Labels";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
+import { Label, LabelSeparator } from "../generic";
 
 type Props = {
   documentSource: string;

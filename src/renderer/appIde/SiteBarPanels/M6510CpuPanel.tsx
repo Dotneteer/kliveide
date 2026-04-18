@@ -1,4 +1,4 @@
-import { Separator } from "@controls/Labels";
+import { Separator } from "@controls/generic";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -16,7 +16,7 @@ import { CenteredRow, Col, SidePanel } from "@renderer/controls/valuedisplay/Lay
 const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
 const REG8_TOOLTIP = "{r8N}: {r8v}";
 
-const CpuPanel = () => {
+export const M6510CpuPanel = () => {
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<M6510CpuState>(null);
 
@@ -95,4 +95,3 @@ const CpuPanel = () => {
   );
 };
 
-export const m6510CpuPanelRenderer = () => <CpuPanel />;

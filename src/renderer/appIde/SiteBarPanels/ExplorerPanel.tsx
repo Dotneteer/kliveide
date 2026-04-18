@@ -9,7 +9,7 @@ import {
   getNodeDir
 } from "../project/project-node";
 import { Icon } from "@controls/Icon";
-import { LabelSeparator } from "@controls/Labels";
+import { LabelSeparator } from "@controls/generic";
 import classnames from "classnames";
 import { useAppServices } from "../services/AppServicesProvider";
 import { Button } from "@controls/Button";
@@ -44,7 +44,7 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 const folderCache = new Map<string, ITreeView<ProjectNode>>();
 let lastExplorerPath = "";
 
-const ExplorerPanel = () => {
+export const ExplorerPanel = () => {
   // --- Services used in this component
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
@@ -615,4 +615,3 @@ function getExpandedItems(root: ITreeNode<ProjectNode>): string[] {
   }
 }
 
-export const explorerPanelRenderer = () => <ExplorerPanel />;

@@ -1,4 +1,4 @@
-import { Label, Separator } from "@controls/Labels";
+import { Label, Separator } from "@controls/generic";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
@@ -9,7 +9,7 @@ import { Col, SidePanel } from "@renderer/controls/valuedisplay/Layout";
 
 const LAB_WIDTH = 48;
 
-const UlaPanel = () => {
+export const UlaPanel = () => {
   const emuApi = useEmuApi();
   const [ulaState, setUlaState] = useState<UlaState>(null);
   const machineId = useSelector((s) => s.emulatorState?.machineId);
@@ -163,4 +163,3 @@ const KeyboardLine = ({ value, titles, lineNo, clicked }: FlagLineProps) => {
   );
 };
 
-export const ulaPanelRenderer = () => <UlaPanel />;

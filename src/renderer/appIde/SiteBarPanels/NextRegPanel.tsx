@@ -1,5 +1,4 @@
-import { Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { Label, LabelSeparator, Secondary, Value } from "@controls/generic";
 import { useEffect, useState } from "react";
 import { toHexa2 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
@@ -15,11 +14,10 @@ const VALUE_WIDTH = 32;
 
 let nextRegDescriptors: Record<number, NextRegDescriptor>;
 
-const NextRegPanel = () => {
+export const NextRegPanel = () => {
   const emuApi = useEmuApi();
   const [lastRegIndex, setLastRegIndex] = useState<number>();
   const [regVals, setRegVals] = useState<RegValueState[]>();
-  const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   useEffect(() => {
     if (emuApi && !nextRegDescriptors) {
@@ -40,13 +38,6 @@ const NextRegPanel = () => {
     setLastRegIndex(response.lastRegisterIndex);
     setRegVals(response.regs);
   };
-
-  // --- Whenever machine state changes or breakpoints change, refresh the list
-  useEffect(() => {
-    (async function () {
-      await refreshNextDeviceState();
-    })();
-  }, [machineState]);
 
   // --- Take care of refreshing the screen
   useEmuStateListener(emuApi, async () => {
@@ -90,4 +81,3 @@ const NextRegPanel = () => {
   );
 };
 
-export const nextRegPanelRenderer = () => <NextRegPanel />;

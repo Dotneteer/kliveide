@@ -8,7 +8,7 @@ import {
 } from "@emu/machines/zxNext/palette";
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import { LabelSeparator, Value } from "@renderer/controls/Labels";
+import { LabelSeparator, Value } from "@controls/generic";
 import { NextPaletteViewer } from "@renderer/controls/NextPaletteViewer";
 import { Text } from "@renderer/controls/generic/Text";
 import { ToolbarSeparator } from "@renderer/controls/ToolbarSeparator";

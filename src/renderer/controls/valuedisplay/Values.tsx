@@ -5,7 +5,8 @@ import styles from "./Values.module.scss";
 import { useMemo, memo } from "react";
 import classnames from "classnames";
 import { Col } from "./Layout";
-import { FlagRow, Label } from "../Labels";
+import { FlagRow } from "../generic/FlagRow";
+import { Label } from "../generic/Label";
 
 type Props = {
   label: string;

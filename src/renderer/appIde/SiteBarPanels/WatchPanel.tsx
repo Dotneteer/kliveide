@@ -1,12 +1,11 @@
 import type { WatchInfo } from "@common/state/AppState";
 
-import { LabelSeparator, Label } from "@controls/Labels";
+import { LabelSeparator, Label, Value } from "@controls/generic";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useState, useEffect, useCallback, memo } from "react";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { Icon } from "@renderer/controls/Icon";
 import styles from "./WatchPanel.module.scss";
-import { Value } from "@renderer/controls/generic/Value";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
@@ -23,7 +22,7 @@ type WatchEntry = {
   typeName: string;
 };
 
-const WatchPanel = () => {
+export const WatchPanel = () => {
   const emuApi = useEmuApi();
   // (no machine charset usage)
   const [displayedWatches, setDisplayedWatches] = useState<WatchEntry[]>([]);
@@ -129,7 +128,6 @@ const WatchPanel = () => {
   );
 };
 
-export const watchPanelRenderer = () => <WatchPanel />;
 
 // --- Helpers
 type WatchItemProps = { watch: WatchEntry };

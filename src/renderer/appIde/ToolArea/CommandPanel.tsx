@@ -10,7 +10,7 @@ import {
 import { TabButton, TabButtonSpace } from "@controls/TabButton";
 import { ConsoleOutput } from "../DocumentPanels/helpers/ConsoleOutput";
 
-const CommandPanel = () => {
+export const CommandPanel = () => {
   const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
   const inputRef = useRef<HTMLInputElement>();
@@ -109,9 +109,7 @@ const CommandPanel = () => {
   }
 };
 
-export const commandPanelRenderer = () => <CommandPanel />;
-
-export const commandPanelHeaderRenderer = () => {
+export const CommandPanelHeader = () => {
   const dispatch = useDispatch();
   const { ideCommandsService: interactiveCommandsService } = useAppServices();
   return (

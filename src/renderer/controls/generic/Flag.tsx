@@ -1,5 +1,4 @@
 import styles from "./GeneralControls.module.scss";
-import { useRef } from "react";
 import { TooltipFactory, useTooltipRef } from "../Tooltip";
 import { Icon } from "../Icon";
 
@@ -9,6 +8,7 @@ type Props = {
   adjustLeft?: boolean;
   center?: boolean;
   tooltip?: string;
+  clicked?: () => void;
 };
 
 export const Flag = ({
@@ -16,7 +16,8 @@ export const Flag = ({
   width,
   adjustLeft = true,
   center = true,
-  tooltip
+  tooltip,
+  clicked
 }: Props) => {
   const ref = useTooltipRef();
 
@@ -28,8 +29,10 @@ export const Flag = ({
         width,
         display: "flex",
         justifyContent: center ? "center" : undefined,
-        marginLeft: adjustLeft ? "-0.2em" : undefined
+        marginLeft: adjustLeft ? "-0.2em" : undefined,
+        cursor: clicked ? "pointer" : undefined
       }}
+      onClick={() => clicked?.()}
     >
       <Icon
         iconName={

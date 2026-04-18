@@ -1,4 +1,4 @@
-import { Label, LabelSeparator, Secondary, Value } from "@controls/Labels";
+import { Label, LabelSeparator, Secondary, Value } from "@controls/generic";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useEffect, useState } from "react";
 import { toHexa4 } from "../services/ide-commands";
@@ -9,7 +9,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
-const CallStackPanel = () => {
+export const CallStackPanel = () => {
   const emuApi = useEmuApi();
   const [refreshed, setRefreshed] = useState(false);
   const [spValue, setSpValue] = useState<number>();
@@ -65,4 +65,3 @@ const CallStackPanel = () => {
   );
 };
 
-export const callStackPanelRenderer = () => <CallStackPanel />;

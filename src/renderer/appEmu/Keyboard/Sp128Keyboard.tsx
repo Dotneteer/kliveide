@@ -1,12 +1,12 @@
 import { Sp128Key as Key } from "./Sp128Key";
 import { Column, Row, KeyboardButtonClickArgs } from "./keyboard-common";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties, useState } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ZxSpectrumBase } from "@emu/machines/ZxSpectrumBase";
 import { Sp128EnterKeyTop } from "./Sp128EnterKeyTop";
 import { Sp128EnterKeyBottom } from "./Sp128EnterKeyBottom";
 import { KeyboardApi } from "./KeyboardPanel";
-import { KeyPressMapper } from "./KeyPressMapper";
+import { useKeyboard } from "./useKeyboard";
 
 const DEFAULT_WIDTH = 14 * 75 + 20;
 const DEFAULT_HEIGHT = 5 * 77 + 32;
@@ -21,29 +21,7 @@ export const Sp128Keyboard = ({ width, height, apiLoaded }: Props) => {
   const { machineService } = useAppServices();
   const [hilited, setHilited] = useState(false);
   const zoom = calculateZoom(width, height);
-  const mounted = useRef(false);
-  const keystatus = useRef(new KeyPressMapper());
-  const [version, setVersion] = useState(1);
-
-  const api: KeyboardApi = {
-    signKeyStatus: (code, down) => {
-      keystatus.current.setKeyStatus(code, down);
-      setVersion(v => v + 1);
-    }
-  };
-
-  const isPressed = (code: number, secondary?: number) =>
-    keystatus.current.isPressed(code, secondary);
-
-  useEffect(() => {
-    if (mounted.current) return null;
-    mounted.current = true;
-    apiLoaded?.(api);
-
-    return () => {
-      mounted.current = false;
-    };
-  });
+  const { api, isPressed } = useKeyboard(apiLoaded);
 
   return (
     <Column width='auto' style={rootStyle}>

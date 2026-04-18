@@ -1,6 +1,5 @@
-import { Flag, Label, LabelSeparator, Value } from "@controls/Labels";
-import { useSelector } from "@renderer/core/RendererProvider";
-import { useEffect, useState } from "react";
+import { Flag, Label, LabelSeparator, Value } from "@controls/generic";
+import { useState } from "react";
 import { toHexa2, toHexa6 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./MemMappingPanel.module.scss";
@@ -9,23 +8,15 @@ import { NextMemoryMapping } from "@common/messaging/EmuApi";
 
 const VAR_WIDTH = 108;
 
-const MemMappingPanel = () => {
+export const MemMappingPanel = () => {
   const emuApi = useEmuApi();
   const [mappingState, setMappingState] = useState<NextMemoryMapping | null>(null);
-  const machineState = useSelector((s) => s.emulatorState?.machineState);
 
   // --- This function queries the breakpoints from the emulator
   const refreshMemoryMappingState = async () => {
     const response = await emuApi.getNextMemoryMapping();
     setMappingState(response);
   };
-
-  // --- Whenever machine state changes or breakpoints change, refresh the list
-  useEffect(() => {
-    (async function () {
-      await refreshMemoryMappingState();
-    })();
-  }, [machineState]);
 
   // --- Take care of refreshing the screen
   useEmuStateListener(emuApi, async () => {
@@ -147,4 +138,3 @@ const MemMappingPanel = () => {
   );
 };
 
-export const nextMemMappingPanelRenderer = () => <MemMappingPanel />;

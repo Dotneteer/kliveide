@@ -76,6 +76,27 @@
   padding: 0 0.4em 0 0.2em;
 }
 
+.secondary {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  color: var(--color-secondary-label);
+}
+
+.separator {
+  height: 1px;
+  background-color: var(--color-toolbar-separator);
+  border: none;
+  padding: 0;
+}
+
+.dumpSection {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
 .expandableRow {
   display: flex;
   flex-direction: column;

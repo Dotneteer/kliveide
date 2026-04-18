@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import * as Select from "@radix-ui/react-select";
 
 import styles from "./NextBankDropdown.module.scss";
@@ -6,7 +6,7 @@ import styles from "./NextBankDropdown.module.scss";
 import classnames from "classnames";
 import { Icon } from "../Icon";
 import { HStack } from "./Panels";
-import { useTheme } from "@renderer/theming/ThemeProvider";
+import { useThemeRoot } from "@renderer/core/useThemeRoot";
 import { toDecimal3, toHexa2 } from "@renderer/appIde/services/ide-commands";
 
 type Props = {
@@ -34,8 +34,7 @@ export default function NextBankDropdown({
   decimalView,
   onChanged
 }: Props) {
-  const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
-  const theme = useTheme();
+  const rootElement = useThemeRoot();
 
   // Create an array of bank values
   const bankValues = Array.from({ length: banks }, (_, i) => i);
@@ -47,13 +46,6 @@ export default function NextBankDropdown({
 
   // Create an array of DIV RAM values
   const divRamValues = Array.from({ length: 16 }, (_, i) => `M${i.toString(16).toUpperCase()}`);
-
-  // --- Use a root element that is the theme root
-  useEffect(() => {
-    if (theme) {
-      setRootElement(document.getElementById("themeRoot") as HTMLDivElement);
-    }
-  }, [theme]);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedValue, setSelectedValue] = useState<string>(

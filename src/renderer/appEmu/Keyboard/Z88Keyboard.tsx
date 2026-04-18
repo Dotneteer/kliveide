@@ -1,8 +1,8 @@
 import { Column, Row } from "./keyboard-common";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties } from "react";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { KeyboardApi } from "./KeyboardPanel";
-import { KeyPressMapper } from "./KeyPressMapper";
+import { useKeyboard } from "./useKeyboard";
 import {
   Z88KeyboardLayout,
   esZ88KeyboardLayout,
@@ -34,9 +34,7 @@ type Props = {
 export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
   const { machineService } = useAppServices();
   const zoom = calculateZoom(width, height);
-  const mounted = useRef(false);
-  const keystatus = useRef(new KeyPressMapper());
-  const [version, setVersion] = useState(1);
+  const { api, isPressed } = useKeyboard(apiLoaded);
 
   // --- Prepare keyboard layout information
   let l: Z88KeyboardLayout;
@@ -63,26 +61,6 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
       l = defaultZ88KeyboardLayout;
       break;
   }
-
-  const api: KeyboardApi = {
-    signKeyStatus: (code, down) => {
-      keystatus.current.setKeyStatus(code, down);
-      setVersion(v => v + 1);
-    }
-  };
-
-  const isPressed = (code: number) => keystatus.current.isPressed(code);
-
-  // --- Mount the kayboard API
-  useEffect(() => {
-    if (mounted.current) return null;
-    mounted.current = true;
-    apiLoaded?.(api);
-
-    return () => {
-      mounted.current = false;
-    };
-  });
 
   return (
     <Column width='auto' style={rootStyle}>

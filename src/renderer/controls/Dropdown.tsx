@@ -1,8 +1,7 @@
 import styles from "./Dropdown.module.scss";
 import * as Select from "@radix-ui/react-select";
 import { Icon } from "./Icon";
-import { useEffect, useState } from "react";
-import { useTheme } from "@renderer/theming/ThemeProvider";
+import { useThemeRoot } from "@renderer/core/useThemeRoot";
 
 export type DropdownOption = {
   value: string;
@@ -28,14 +27,7 @@ export default function Dropdown({
   onChanged,
   onOpenChange,
 }: Props) {
-  const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
-  const theme = useTheme();
-
-  useEffect(() => {
-    if (theme) {
-      setRootElement(document.getElementById("themeRoot") as HTMLDivElement);
-    }
-  }, [theme]);
+  const rootElement = useThemeRoot();
 
   return (
     <Select.Root value={initialValue} onValueChange={(v) => onChanged?.(v)} onOpenChange={onOpenChange}>

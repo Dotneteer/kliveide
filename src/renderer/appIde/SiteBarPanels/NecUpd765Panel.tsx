@@ -1,6 +1,6 @@
 import type { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
 
-import { LabelSeparator, Label, Secondary, Value } from "@controls/Labels";
+import { LabelSeparator, Label, Secondary, Value } from "@controls/generic";
 import { useRendererContext } from "@renderer/core/RendererProvider";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
@@ -12,7 +12,7 @@ import { createEmuApi } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { useEmuApi } from "@renderer/core/EmuApi";
 
-const NecUpd765Panel = () => {
+export const NecUpd765Panel = () => {
   const { messenger } = useRendererContext();
   const emuApi = useEmuApi();
   const [log, setLog] = useState<FloppyLogEntry[]>([]);
@@ -79,4 +79,3 @@ const NecUpd765Panel = () => {
   );
 };
 
-export const necUpd765PanelRenderer = () => <NecUpd765Panel />;

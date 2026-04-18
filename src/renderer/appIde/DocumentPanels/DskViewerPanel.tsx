@@ -1,4 +1,4 @@
-import { Flag, Label, LabelSeparator, Secondary } from "@controls/Labels";
+import { Flag, Label, LabelSeparator, Secondary } from "@controls/generic";
 import { DocumentProps } from "../DocumentArea/DocumentsContainer";
 import styles from "./DskViewerPanel.module.scss";
 import classnames from "classnames";

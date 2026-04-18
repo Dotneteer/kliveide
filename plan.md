@@ -355,9 +355,9 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 ---
 
-## Phase 6: Deduplicate Patterns
+## Phase 6: Deduplicate Patterns ✅
 
-### Step 6.1 — Consolidate `Labels.tsx` and `generic/` component sets
+### Step 6.1 — Consolidate `Labels.tsx` and `generic/` component sets ✅
 
 **Files**: `src/renderer/controls/Labels.tsx` vs `src/renderer/controls/generic/Label.tsx`, `Value.tsx`, `Text.tsx`, `Flag.tsx`, `LabeledFlag.tsx`, `LabeledText.tsx`  
 **Issue**: Two parallel sets of the same components with slightly different APIs.
@@ -371,7 +371,7 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 **Test**: Run full test suite after migration. Write smoke tests for the canonical components.
 
-### Step 6.2 — Merge `BankDropdown` and `NextBankDropdown`
+### Step 6.2 — Merge `BankDropdown` and `NextBankDropdown` ✅
 
 **Files**: `src/renderer/controls/new/BankDropdown.tsx`, `NextBankDropdown.tsx`  
 **Issue**: ~80% identical code.
@@ -380,7 +380,7 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 **Test**: Render both configurations and verify the dropdown shows the correct items.
 
-### Step 6.3 — Extract `useThemeRoot` hook
+### Step 6.3 — Extract `useThemeRoot` hook ✅
 
 **Files**: `src/renderer/controls/Dropdown.tsx`, `new/BankDropdown.tsx`, `new/NextBankDropdown.tsx`  
 **Issue**: Identical `useEffect` to get `document.getElementById("themeRoot")` is duplicated 3 times.
@@ -389,7 +389,7 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 **Test**: Use the hook in a test, verify it returns the theme root element.
 
-### Step 6.4 — Extract keyboard boilerplate into a shared hook
+### Step 6.4 — Extract keyboard boilerplate into a shared hook ✅
 
 **Files**: `Sp48Keyboard.tsx`, `Sp128Keyboard.tsx`, `NextKeyboard.tsx`, `Z88Keyboard.tsx`  
 **Issue**: All four share identical mount/keystatus/version logic.
@@ -398,7 +398,7 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 **Test**: Write unit tests for the hook using `renderHook()` from React Testing Library.
 
-### Step 6.5 — Remove redundant `useEmuStateListener` + `useEffect` dual pattern
+### Step 6.5 — Remove redundant `useEmuStateListener` + `useEffect` dual pattern ✅
 
 **Files**: 6+ sidebar panels (BreakpointsPanel, CallStackPanel, SysVarsPanel, NextRegPanel, MemMappingPanel, NecUpd765Panel)  
 **Issue**: `useEffect` on `[machineState]` is redundant when `useEmuStateListener` already fires on state changes.
@@ -407,7 +407,7 @@ Replace `useState` + `useEffect` sync patterns with direct computation in these 
 
 **Test**: For each panel, verify data refreshes on machine state change with only `useEmuStateListener`.
 
-### Step 6.6 — Replace renderer wrapper functions with component references
+### Step 6.6 — Replace renderer wrapper functions with component references ✅
 
 **Files**: All `*Panel.tsx` sidebar and tool panels  
 **Issue**: Each exports a trivial `() => <Panel />` renderer function, creating a new component instance per call.

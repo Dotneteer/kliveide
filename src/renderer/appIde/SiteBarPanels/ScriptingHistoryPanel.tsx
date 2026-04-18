@@ -2,7 +2,7 @@ import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 import styles from "./ScriptingHistoryPanel.module.scss";
 import { useEffect, useState } from "react";
-import { LabelSeparator } from "@renderer/controls/Labels";
+import { LabelSeparator } from "@controls/generic";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "classnames";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -13,7 +13,7 @@ import { Text } from "@renderer/controls/generic/Text";
 import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
-const ScriptingHistoryPanel = () => {
+export const ScriptingHistoryPanel = () => {
   const { ideCommandsService, projectService } = useAppServices();
   const mainApi = useMainApi();
   const scriptsInState = useSelector((state) => state.scripts);
@@ -170,4 +170,3 @@ const ScriptItem = ({ script, itemKey, isSelected, onSelect }: ScriptItemProps) 
   );
 };
 
-export const scriptingHistoryPanelRenderer = () => <ScriptingHistoryPanel />;

@@ -4,7 +4,7 @@ import { useDocumentHubService } from "@renderer/appIde/services/DocumentService
 import { FullPanel } from "@renderer/controls/new/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
-import { LabelSeparator } from "@renderer/controls/Labels";
+import { LabelSeparator } from "@controls/generic";
 import { IconButton } from "@renderer/controls/IconButton";
 import ScrollViewer, { ScrollViewerApi } from "@renderer/controls/ScrollViewer";
 import styles from "./ImageViewerPanel.module.scss";

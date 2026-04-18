@@ -1,6 +1,6 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
-import { LabelSeparator, Label, Value, Secondary } from "@controls/Labels";
+import { LabelSeparator, Label, Value, Secondary } from "@controls/generic";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect } from "react";
@@ -19,7 +19,7 @@ import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySectionType } from "@abstractions/MemorySection";
 
-const BreakpointsPanel = () => {
+export const BreakpointsPanel = () => {
   const emuApi = useEmuApi();
   const [bps, setBps] = useState<BreakpointInfo[]>([]);
   const [partitionLabels, setPartitionLabels] = useState<Record<number, string>>({});
@@ -231,4 +231,3 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
   );
 };
 
-export const breakpointsPanelRenderer = () => <BreakpointsPanel />;
