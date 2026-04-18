@@ -39,6 +39,9 @@ export const EmuStatusBar = ({show}:EmuStatusBarProps) => {
       setFreq(controller.machine.baseClockFrequency * clockMultiplier);
       controller.frameCompleted.on(onFrameCompleted);
     }
+    return () => {
+      controller?.frameCompleted.off(onFrameCompleted);
+    };
   }, [controller]);
 
   // --- Reflect clock multiplier changes

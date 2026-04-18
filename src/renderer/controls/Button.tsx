@@ -30,7 +30,7 @@ export const Button = ({
     if (ref.current && focusOnInit && !focusSet.current) {
       setTimeout(() => {
         focusSet.current = true;
-        ref.current.focus();
+        ref.current?.focus();
       });
     }
   }, [ref.current]);

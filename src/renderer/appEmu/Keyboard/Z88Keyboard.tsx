@@ -67,7 +67,7 @@ export const Z88Keyboard = ({ width, height, layout, apiLoaded }: Props) => {
   const api: KeyboardApi = {
     signKeyStatus: (code, down) => {
       keystatus.current.setKeyStatus(code, down);
-      setVersion(version + 1);
+      setVersion(v => v + 1);
     }
   };
 

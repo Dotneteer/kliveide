@@ -27,7 +27,7 @@ export const Sp48Keyboard = ({ width, height, apiLoaded }: Props) => {
   const api: KeyboardApi = {
     signKeyStatus: (code, down) => {
       keystatus.current.setKeyStatus(code, down);
-      setVersion(version + 1);
+      setVersion(v => v + 1);
     }
   };
 

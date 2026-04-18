@@ -30,6 +30,9 @@ export const AttachedShadow = ({ parentElement, visible }: Props) => {
     if (parentElement && observer.current) {
       observer.current.observe(parentElement);
     }
+    return () => {
+      observer.current?.disconnect();
+    };
   }, [parentElement]);
 
   return (

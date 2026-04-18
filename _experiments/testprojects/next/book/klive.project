@@ -1,6 +1,7 @@
 {
   "kliveVersion": "0.57.0",
   "machineType": "zxnext",
+  "modelId": "pal",
   "clockMultiplier": 1,
   "soundLevel": 0.8,
   "soundMuted": false,
@@ -76,7 +77,7 @@
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/nr.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 1386,
