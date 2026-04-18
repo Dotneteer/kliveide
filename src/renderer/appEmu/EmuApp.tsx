@@ -14,7 +14,7 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import { displayDialogAction, emuLoadedAction, setAudioSampleRateAction } from "@state/actions";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, ReactElement } from "react";
 import { EmulatorArea } from "./EmulatorArea/EmulatorArea";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { EmuStatusBar } from "./StatusBar/EmuStatusBar";
@@ -52,6 +52,15 @@ import {
 } from "@common/settings/setting-const";
 
 const ipcRenderer = (window as any).electron.ipcRenderer;
+
+const dialogRegistry: Record<number, (data: any, onClose: () => void) => ReactElement> = {
+  [FIRST_STARTUP_DIALOG_EMU]: (_, onClose) => <FirstStartDialog onClose={onClose} />,
+  [Z88_REMOVE_CARD_DIALOG]: (data, onClose) => <Z88RemoveCardDialog slot={data} onClose={onClose} />,
+  [Z88_INSERT_CARD_DIALOG]: (data, onClose) => <Z88InsertCardDialog slot={data} onClose={onClose} />,
+  [Z88_EXPORT_CARD_DIALOG]: (data, onClose) => <Z88ExportCardDialog slot={data} onClose={onClose} />,
+  [Z88_CHANGE_RAM_DIALOG]: (_, onClose) => <Z88ChangeRamDialog onClose={onClose} />,
+  [CREATE_DISK_DIALOG]: (_, onClose) => <CreateDiskDialog onClose={onClose} />
+};
 
 const EmuApp = () => {
   // --- Used services
@@ -120,51 +129,7 @@ const EmuApp = () => {
       <EmuStatusBar show={showStatusBar} />
       <BackDrop visible={dimmed} />
 
-      {dialogId === FIRST_STARTUP_DIALOG_EMU && (
-        <FirstStartDialog
-          onClose={() => {
-            store.dispatch(displayDialogAction());
-          }}
-        />
-      )}
-      {dialogId === Z88_REMOVE_CARD_DIALOG && (
-        <Z88RemoveCardDialog
-          slot={dialogData}
-          onClose={() => {
-            store.dispatch(displayDialogAction());
-          }}
-        />
-      )}
-      {dialogId === Z88_INSERT_CARD_DIALOG && (
-        <Z88InsertCardDialog
-          slot={dialogData}
-          onClose={() => {
-            store.dispatch(displayDialogAction());
-          }}
-        />
-      )}
-      {dialogId === Z88_EXPORT_CARD_DIALOG && (
-        <Z88ExportCardDialog
-          slot={dialogData}
-          onClose={() => {
-            store.dispatch(displayDialogAction());
-          }}
-        />
-      )}
-      {dialogId === Z88_CHANGE_RAM_DIALOG && (
-        <Z88ChangeRamDialog
-          onClose={() => {
-            store.dispatch(displayDialogAction());
-          }}
-        />
-      )}
-      {dialogId === CREATE_DISK_DIALOG && (
-        <CreateDiskDialog
-          onClose={() => {
-            store.dispatch(displayDialogAction());
-          }}
-        />
-      )}
+      {dialogRegistry[dialogId]?.(dialogData, () => store.dispatch(displayDialogAction()))}
     </FullPanel>
     </RecordingContext.Provider>
   );
