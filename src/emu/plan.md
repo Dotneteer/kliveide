@@ -489,7 +489,7 @@ The plan is organized so each step produces a testable, non-breaking checkpoint.
 Steps 1–3 are internal refactoring that doesn't change behavior. Steps 4–6 switch
 the clock domain. Steps 7–8 update the UI layer.
 
-### Step 1: Add `cpuTactScale` alongside existing fields (no behavior change)
+### ~~Step 1: Add `cpuTactScale` alongside existing fields (no behavior change)~~ ✅ DONE
 
 **Goal:** Introduce the new field without removing anything. All existing tests pass.
 
@@ -500,7 +500,7 @@ the clock domain. Steps 7–8 update the UI layer.
 
 **Test:** Run existing test suite. All tests pass because nothing uses `cpuTactScale` yet.
 
-### Step 2: Refactor `tactPlusN` in Z80NCpu (behavior-preserving)
+### ~~Step 2: Refactor `tactPlusN` in Z80NCpu (behavior-preserving)~~ ✅ DONE
 
 **Goal:** Rewrite `tactPlusN` to use `cpuTactScale` but produce **identical** results
 by keeping `tacts` in the old CPU-speed domain (for now).

@@ -7,14 +7,6 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   // --- Number of tacts in the current frame with 28MHz clock
   protected tactsInFrame28 = 0;
 
-  // --- Cached multiplier for frameTacts calculation (2 / clockMultiplier)
-  // --- Pre-computing this eliminates division in the hot path
-  // --- Values: 2 (mult=1), 1 (mult=2), 0.5 (mult=4), 0.25 (mult=8)
-  protected frameTactsMultiplier = 2;
-  
-  // --- Last known clockMultiplier value (to detect changes)
-  protected lastClockMultiplier = 1;
-
   // --- Scale factor converting one Z80 T-state to 28 MHz ticks.
   // --- Values: 8 (3.5 MHz), 4 (7 MHz), 2 (14 MHz), 1 (28 MHz).
   // --- Updated by ZxNextMachine.beforeInstructionExecuted via CpuSpeedDevice.
@@ -50,21 +42,14 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   /**
    * This method increments the current CPU tacts by N.
    * @param n Number of tact increments
-   * 
-   * Optimized for clockMultiplier values of 1, 2, 4, 8 (powers of 2).
-   * Pre-computes 2/clockMultiplier to avoid division in hot path.
+   *
+   * Uses cpuTactScale to derive the screen-tact ratio without division.
+   * cpuTactScale/4 equals the former frameTactsMultiplier (2/clockMultiplier):
+   *   3.5 MHz: 8/4 = 2,  7 MHz: 4/4 = 1,  14 MHz: 2/4 = 0.5,  28 MHz: 1/4 = 0.25
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    
-    // Update cached multiplier only if clockMultiplier changed
-    const mult = this.clockMultiplier;
-    if (mult !== this.lastClockMultiplier) {
-      this.lastClockMultiplier = mult;
-      this.frameTactsMultiplier = 2 / mult;
-    }
-    
-    this.frameTacts += n * this.frameTactsMultiplier;
+    this.frameTacts += n * this.cpuTactScale / 4;
     if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInFrame;
