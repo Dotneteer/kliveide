@@ -20,6 +20,7 @@
 #include "02_z80n/extinstr.asm"
 #include "03_talktohw/nr.asm"
 #include "03_talktohw/io.asm"
+#include "03_talktohw/ctc.asm"
 #include "04_zxndma/memcpy.asm"
 
 ; We keep 256 bytes for the stack
@@ -58,7 +59,10 @@ Main
     // --- Talk to HW Demos
     // call ReadIoDemo
     // call WriteIoDemo
-    call WiteNextRegDemo
+    // call WiteNextRegDemo
+    // call Measure1Demo
+    // call Measure2Demo
+    call Measure3Demo
     // call DmaSimpleMemCopyDemo
 
 ; When the example ends, we keep in infinite loop.
