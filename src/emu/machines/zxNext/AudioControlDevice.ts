@@ -103,10 +103,8 @@ export class AudioControlDevice implements IGenericDevice<IZxNextMachine> {
   constructor(public readonly machine: IZxNextMachine) {
     // --- Create the audio devices
     this.dacDevice = new DacDevice();
-    // TurboSoundDevice needs base clock frequency and audio sample rate
-    // Defaults: 3.5MHz clock, 48kHz audio (will be updated in reset())
+    // TurboSoundDevice uses 28 MHz sample length; default 48kHz (updated in reset())
     this.turboSoundDevice = new TurboSoundDevice(
-      machine.baseClockFrequency,
       48_000 // Default, will be updated by machine's reset()
     );
     this.audioMixerDevice = new AudioMixerDevice(this.dacDevice);

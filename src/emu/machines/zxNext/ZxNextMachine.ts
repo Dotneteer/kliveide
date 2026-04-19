@@ -91,11 +91,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   ctcDevice: CtcDevice;
 
-  /** Current CTC system clock counter (28 MHz ticks) */
-  ctcSystemClock = 0;
 
-  /** CPU tacts at last CTC system clock update */
-  private _lastCtcTacts = 0;
 
   i2cDevice: I2cDevice;
 
@@ -260,8 +256,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.dmaDevice.reset();
     this.copperDevice.reset();
     this.ctcDevice.reset();
-    this.ctcSystemClock = 0;
-    this._lastCtcTacts = 0;
     this.i2cDevice.reset();
     this.uartDevice.reset();
     this.keyboardDevice.reset();
@@ -282,7 +276,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       // --- Also configure TurboSoundDevice with the same sample rate
       this.audioControlDevice
         .getTurboSoundDevice()
-        .setAudioSampleRate(this.baseClockFrequency, audioRate);
+        .setAudioSampleRate(audioRate);
     }
 
     this.expansionBusDevice.reset();
@@ -1521,21 +1515,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     }
     this.beeperDevice.setNextAudioSample();
 
-    // --- Advance CTC system clock (CTC runs at fixed 28 MHz regardless of CPU speed)
-    const tactsDelta = this.tacts - this._lastCtcTacts;
-    if (tactsDelta > 0) {
-      this._lastCtcTacts = this.tacts;
-      // system clocks per CPU tact = 8 / clockMultiplier
-      // (clockMultiplier: 1=3.5MHz, 2=7MHz, 4=14MHz, 8=28MHz)
-      this.ctcSystemClock += tactsDelta * (8 / this.clockMultiplier);
-      this.ctcDevice.advanceToSysClock(this.ctcSystemClock);
-    }
+    // --- CTC: frameTacts is already in 28 MHz domain
+    this.ctcDevice.advanceToSysClock(this.frameTacts);
 
     // --- Generate audio samples for all audio devices
-    // Pass machine tacts and clock multiplier for proper sample timing
     this.audioControlDevice
       .getTurboSoundDevice()
-      .setNextAudioSample(this.tacts, this.clockMultiplier);
+      .setNextAudioSample(this.frameTacts);
     this.audioControlDevice.getDacDevice().setNextAudioSample();
     this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
   }

@@ -546,6 +546,6 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * Called internally before port reads/writes.
    */
   private _syncFromMachine(): void {
-    this.advanceToSysClock(this.machine.ctcSystemClock);
+    this.advanceToSysClock(this.machine.frameTacts);
   }
 }

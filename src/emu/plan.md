@@ -569,7 +569,7 @@ This is the core change. All existing tests pass because they check `tacts`, not
 Write a focused test: verify `frameTacts` = expected × `cpuTactScale` after a known
 instruction sequence.
 
-### Step 4: Simplify `onTactIncremented` and remove CTC conversion
+### Step 4: Simplify `onTactIncremented` and remove CTC conversion ✅
 
 **Goal:** Eliminate `ctcSystemClock`, `_lastCtcTacts`, and all per-tact conversions.
 
@@ -594,8 +594,9 @@ instruction sequence.
 4. Update `reset()` to remove `ctcSystemClock`/`_lastCtcTacts` resets.
 
 **Test:** Run CTC tests. Verify CTC channel advancement matches expected 28 MHz behavior.
+All 18,221 tests pass.
 
-### Step 5: Simplify audio devices
+### Step 5: Simplify audio devices ✅
 
 **Goal:** Audio sample intervals become fixed (28 MHz based), no `clockMultiplier` compensation.
 
@@ -612,8 +613,18 @@ instruction sequence.
    to pass `this.frameTacts` instead of `this.tacts` + `this.clockMultiplier`.
 
 **Test:** Run audio tests. Verify sample generation rate matches expected 48 kHz output.
+All 18,221 tests pass.
 
-### Step 6: Simplify MachineFrameRunner and MachineController
+**Implementation notes (Steps 4+5):**
+- `ctcSystemClock` and `_lastCtcTacts` removed from `ZxNextMachine` and `IZxNextMachine`.
+- `CtcDevice._syncFromMachine()` now uses `this.machine.frameTacts` (28 MHz) directly.
+- `TurboSoundDevice` constructor takes single `audioSampleRate` param (removed `baseClockFrequency`).
+- `TurboSoundDevice.setAudioSampleRate()` uses `28_000_000 / sampleRate`.
+- `TurboSoundDevice.setNextAudioSample(frameTacts28)` — single param, 28 MHz domain.
+- `AudioDeviceBase` left unchanged (shared by non-Next machines, still works via `tacts`+`clockMultiplier`).
+- `AudioControlDevice` constructor updated for single-arg `TurboSoundDevice(48_000)`.
+
+### Step 6: Simplify MachineFrameRunner and MachineController ✅ (deferred renames)
 
 **Goal:** Remove `tactsInCurrentFrame` recalculation, replace `clockMultiplier` flow.
 
@@ -631,6 +642,14 @@ instruction sequence.
 5. `IMachineController.ts` — Rename `clockMultiplier` in `FrameCompletedArgs`.
 
 **Test:** Run full machine frame tests. Verify frame timing, speed changes work correctly.
+
+**Implementation notes (Step 6):**
+- No functional changes needed. `Z80NCpu.tactPlusN` already handles frame boundary
+  using `tactsInFrame` (28 MHz), making MachineFrameRunner's `tactsInCurrentFrame`
+  recalculation harmless but unused for the Next path.
+- Frame gap formula already works: `tactsInFrame / frameTactMultiplier / baseClockFrequency * 1000`.
+- `targetClockMultiplier` → `targetCpuTactScale` rename deferred to Step 7
+  (crosses `IAnyMachine` interface shared by all machines).
 
 ### Step 7: Update Redux state and renderer components
 
@@ -693,9 +712,9 @@ needed beyond Steps 3–6.
 Step 1 (add cpuTactScale) ✅
   └── Step 2 (refactor tactPlusN, behavior-preserving) ✅
         └── Step 3 (switch frameTacts/tactsInFrame to 28 MHz) ◄── core change
-              ├── Step 4 (simplify onTactIncremented, CTC)
-              ├── Step 5 (simplify audio devices)
-              └── Step 6 (simplify frame runner, controller)
+              ├── Step 4 (simplify onTactIncremented, CTC) ✅
+              ├── Step 5 (simplify audio devices) ✅
+              └── Step 6 (simplify frame runner, controller) ✅ (deferred renames)
                     └── Step 7 (Redux + renderer updates)
                           └── Step 8 (final cleanup)
 ```
