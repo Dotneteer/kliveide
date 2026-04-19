@@ -1,8 +1,7 @@
 import styles from "./Dropdown.module.scss";
 import * as Select from "@radix-ui/react-select";
 import { Icon } from "./Icon";
-import { useEffect, useState } from "react";
-import { useTheme } from "@renderer/theming/ThemeProvider";
+import { useThemeRoot } from "@renderer/core/useThemeRoot";
 
 export type DropdownOption = {
   value: string;
@@ -28,27 +27,10 @@ export default function Dropdown({
   onChanged,
   onOpenChange,
 }: Props) {
-  const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
-  const [selectedValue, setSelectedValue] = useState(initialValue);
-  const theme = useTheme();
-  const handleSelectChange = (value: string) => {
-    setSelectedValue(value);
-    onChanged?.(value);
-  };
-
-  useEffect(() => {
-    setSelectedValue(initialValue);
-  }, [initialValue]);
-
-  // --- Use a root element that is the theme root
-  useEffect(() => {
-    if (theme ) {
-      setRootElement(document.getElementById("themeRoot") as HTMLDivElement);
-    }
-  }, [theme]);
+  const rootElement = useThemeRoot();
 
   return (
-    <Select.Root value={selectedValue} onValueChange={handleSelectChange} onOpenChange={onOpenChange}>
+    <Select.Root value={initialValue} onValueChange={(v) => onChanged?.(v)} onOpenChange={onOpenChange}>
       <Select.Trigger className={styles.SelectTrigger} style={{ width }}>
         <Select.Value placeholder={placeholder ?? "Select..."} />
         <div style={{ width: "100%" }} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, memo, useState } from "react";
 import { Icon } from "./Icon";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import classnames from "classnames";
@@ -20,7 +20,7 @@ type Props = {
 /**
  * Represents the statusbar of the emulator
  */
-export const IconButton = ({
+export const IconButton = memo(({
   iconName,
   iconSize: size = 24,
   buttonWidth = 36,
@@ -39,7 +39,15 @@ export const IconButton = ({
 
   useEffect(() => {
     setKeyDown(false);
-  }, [ref.current]);
+  }, []);
+
+  const handleMouseEnter = useCallback(() => setHover(true), []);
+  const handleMouseDown = useCallback(() => setKeyDown(true), []);
+  const handleMouseLeave = useCallback(() => { setKeyDown(false); setHover(false); }, []);
+  const handleClick = useCallback(() => {
+    if (isActive) clicked?.();
+    setKeyDown(false);
+  }, [isActive, clicked]);
 
   return (
     <div
@@ -53,16 +61,10 @@ export const IconButton = ({
         height: buttonHeight,
         backgroundColor: hover && enable ? "var(--bgcolor-toolbarbutton-hover)" : "transparent"
       }}
-      onMouseEnter={() => setHover(true)}
-      onMouseDown={() => setKeyDown(true)}
-      onMouseLeave={() => {
-        setKeyDown(false);
-        setHover(false);
-      }}
-      onClick={() => {
-        if (isActive) clicked?.();
-        setKeyDown(false);
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseDown={handleMouseDown}
+      onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
     >
       <div
         className={classnames(styles.iconWrapper, {
@@ -87,7 +89,7 @@ export const IconButton = ({
       </div>
     </div>
   );
-};
+});
 
 type SmallProps = {
   iconName: string;

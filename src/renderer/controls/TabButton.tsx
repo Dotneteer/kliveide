@@ -30,7 +30,7 @@ export function TabButton ({
   
   useEffect(() => {
     setKeyDown(false);
-  }, [ref.current]);
+  }, []);
   return (
     <>
       <div

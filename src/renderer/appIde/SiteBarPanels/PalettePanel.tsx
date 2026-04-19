@@ -9,7 +9,7 @@ import classnames from "classnames";
 
 const noInfo: number[] = Array.from({ length: 0x100 }, () => 0);
 
-const PalettePanel = () => {
+export const PalettePanel = () => {
   const emuApi = useEmuApi();
   const [paletteState, setPaletteState] = useState<PaletteDeviceInfo>(null);
 
@@ -89,4 +89,3 @@ const Palette = ({ title, palette, intiallyVisible, active }: Props) => {
   );
 };
 
-export const nextPalettePanelRenderer = () => <PalettePanel />;

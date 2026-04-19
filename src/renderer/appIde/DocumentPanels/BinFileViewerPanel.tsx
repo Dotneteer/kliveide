@@ -5,7 +5,7 @@ import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { FullPanel, HStack } from "@renderer/controls/new/Panels";
 import { PanelHeader } from "./helpers/PanelHeader";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
-import { LabelSeparator } from "@renderer/controls/Labels";
+import { LabelSeparator } from "@controls/generic";
 import { VListHandle } from "virtua";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";

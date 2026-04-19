@@ -38,7 +38,7 @@ export const useMachineController = (
       mounted.current = false;
       unsubscribe();
     };
-  });
+  }, []);
 
   // --- Manage controller changes
   useEffect(() => {

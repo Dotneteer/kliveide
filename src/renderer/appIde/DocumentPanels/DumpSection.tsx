@@ -1,4 +1,4 @@
-import { LabelSeparator, Label } from "@controls/Labels";
+import { LabelSeparator, Label } from "@controls/generic";
 import { TooltipFactory } from "@controls/Tooltip";
 import classnames from "classnames";
 import { toHexa4, toHexa6Dash, toHexa2, toDecimal5, toDecimal7, toDecimal3, toBin8 } from "../services/ide-commands";

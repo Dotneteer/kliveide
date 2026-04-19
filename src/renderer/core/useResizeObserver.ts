@@ -5,23 +5,21 @@ import { useEffect, useRef } from "react";
  * @param element A DOM element to watch for size changes
  * @param callback The callback function to invoke on size changes
  */
- export const useResizeObserver = (
-    element: React.MutableRefObject<Element | undefined | null>,
-    callback: ResizeObserverCallback
-  ) => {
-    const current = element?.current;
-    const observer = useRef<ResizeObserver>();
-  
-    useEffect(() => {
-      // --- We are already observing old element
-      if (observer?.current && current) {
-        observer.current.unobserve(current);
-      }
-      observer.current = new ResizeObserver(callback);
-      if (element && element.current && observer.current) {
-        observer.current.observe(element.current);
-      }
-    }, [callback, current, element]);
-  };
-  
+export const useResizeObserver = (
+  element: React.MutableRefObject<Element | undefined | null>,
+  callback: ResizeObserverCallback
+) => {
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
+  useEffect(() => {
+    const el = element?.current;
+    if (!el) return;
+    const observer = new ResizeObserver((...args) => callbackRef.current(...args));
+    observer.observe(el);
+    return () => observer.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [element?.current]);
+};
+
   

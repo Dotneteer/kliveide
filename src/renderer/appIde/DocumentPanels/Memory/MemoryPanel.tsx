@@ -8,7 +8,7 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { AddressInput } from "@renderer/controls/AddressInput";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { DumpSection } from "../DumpSection";
-import { LabelSeparator } from "@renderer/controls/Labels";
+import { LabelSeparator } from "@controls/generic";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { VListHandle } from "virtua";
@@ -17,7 +17,6 @@ import { PanelHeader } from "../helpers/PanelHeader";
 import Dropdown, { DropdownOption } from "@renderer/controls/Dropdown";
 import { Text } from "@renderer/controls/generic/Text";
 import BankDropdown from "@renderer/controls/new/BankDropdown";
-import NextBankDropdown from "@renderer/controls/new/NextBankDropdown";
 import {
   incProjectFileVersionAction /*, setWorkspaceSettingsAction */
 } from "@common/state/actions";
@@ -610,8 +609,9 @@ const BankedMemoryPanel = ({ document: _document }: DocumentProps) => {
                 />
               )}
               {displayBankMatrix && machineId === MI_ZXNEXT && (
-                <NextBankDropdown
+                <BankDropdown
                   banks={224}
+                  showNextItems
                   initialValue={currentSegment ?? 0}
                   width={80}
                   decimalView={decimalView}

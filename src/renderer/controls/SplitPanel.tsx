@@ -238,25 +238,27 @@ const Splitter = ({
     setIsMoving(true);
     gripPosition.current = horizontal ? e.clientX : e.clientY;
     document.body.style.cursor = horizontal ? "col-resize" : "row-resize";
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", endMove);
-  };
 
-  const move = (e: MouseEvent) => {
-    const delta = (horizontal ? e.clientX : e.clientY) - gripPosition.current;
-    const moveDir = location === "left" || location === "top" ? 1 : -1;
-    let newPrimarySize = moveDir * (gripPosition.current + delta - anchorPos);
-    newPrimarySize = resize(newPrimarySize, minRange, maxRange);
-    onSplitterMoved?.(newPrimarySize);
-    lastPrimarySize.current = newPrimarySize;
-  };
+    // Create listener instances once per drag so add/remove use the same reference
+    const handleMove = (ev: MouseEvent) => {
+      const delta = (horizontal ? ev.clientX : ev.clientY) - gripPosition.current;
+      const moveDir = location === "left" || location === "top" ? 1 : -1;
+      let newPrimarySize = moveDir * (gripPosition.current + delta - anchorPos);
+      newPrimarySize = resize(newPrimarySize, minRange, maxRange);
+      onSplitterMoved?.(newPrimarySize);
+      lastPrimarySize.current = newPrimarySize;
+    };
 
-  const endMove = () => {
-    setIsMoving(false);
-    document.body.style.cursor = "default";
-    window.removeEventListener("mousemove", move);
-    window.removeEventListener("mouseup", endMove);
-    onMoveCompleted?.(lastPrimarySize.current);
+    const handleEndMove = () => {
+      setIsMoving(false);
+      document.body.style.cursor = "default";
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleEndMove);
+      onMoveCompleted?.(lastPrimarySize.current);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleEndMove);
   };
 
   return (

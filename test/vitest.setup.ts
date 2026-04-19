@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 // Mock window object for browser-specific code that runs in Node.js environment
 if (typeof window === "undefined") {

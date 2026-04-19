@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { Z88KeyView } from "@emu/machines/z88/Z88KeyLayout";
@@ -28,7 +28,7 @@ type Props = {
 /**
  * Represents a key of the Cambridge Z88 keyboard
  */
-export const Z88Key = ({
+export const Z88Key = memo(({
   zoom,
   code,
   layoutInfo,
@@ -363,7 +363,7 @@ export const Z88Key = ({
       down
     );
   }
-};
+});
 
 /**
  * Event arguments when pressing a key on the Cambridge Z88 virtual keyboard

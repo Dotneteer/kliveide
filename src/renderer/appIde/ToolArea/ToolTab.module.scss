@@ -30,6 +30,10 @@
   text-transform: uppercase;
 }
 
+.toolTab:hover .titleText {
+  color: var(--color-doc-activeText);
+}
+
 .activeTitle {
   color: var(--color-doc-activeText);
 }

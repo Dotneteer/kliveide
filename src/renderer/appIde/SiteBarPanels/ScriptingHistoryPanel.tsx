@@ -1,8 +1,8 @@
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 
 import styles from "./ScriptingHistoryPanel.module.scss";
-import { useEffect, useRef, useState } from "react";
-import { LabelSeparator } from "@renderer/controls/Labels";
+import { useEffect, useState } from "react";
+import { LabelSeparator } from "@controls/generic";
 import { Icon } from "@renderer/controls/Icon";
 import classnames from "classnames";
 import { useSelector } from "@renderer/core/RendererProvider";
@@ -13,7 +13,7 @@ import { Text } from "@renderer/controls/generic/Text";
 import { useMainApi } from "@renderer/core/MainApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 
-const ScriptingHistoryPanel = () => {
+export const ScriptingHistoryPanel = () => {
   const { ideCommandsService, projectService } = useAppServices();
   const mainApi = useMainApi();
   const scriptsInState = useSelector((state) => state.scripts);
@@ -21,7 +21,6 @@ const ScriptingHistoryPanel = () => {
   const [selectedScript, setSelectedScript] = useState<ScriptRunInfo>();
   const [version, setVersion] = useState(1);
   const [showBuildScripts, setShowBuildScripts] = useState(true);
-  const refreshing = useRef(false);
 
   useEffect(() => {
     setScripts(
@@ -35,14 +34,11 @@ const ScriptingHistoryPanel = () => {
 
   // --- Refresh script information regularly
   useEffect(() => {
-    (async () => {
-      if (refreshing.current) return;
-      refreshing.current = true;
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      setVersion(version + 1);
-      refreshing.current = false;
-    })();
-  });
+    const id = setInterval(() => {
+      setVersion(v => v + 1);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className={styles.panel}>
@@ -174,4 +170,3 @@ const ScriptItem = ({ script, itemKey, isSelected, onSelect }: ScriptItemProps) 
   );
 };
 
-export const scriptingHistoryPanelRenderer = () => <ScriptingHistoryPanel />;

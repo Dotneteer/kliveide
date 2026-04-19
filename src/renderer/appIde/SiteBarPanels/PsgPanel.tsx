@@ -1,4 +1,4 @@
-import { Separator } from "@controls/Labels";
+import { Separator } from "@controls/generic";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { LabeledValue } from "@renderer/controls/LabeledValue";
@@ -7,7 +7,7 @@ import styles from "./PsgPanel.module.scss";
 import { PsgChipState } from "@emu/abstractions/PsgChipState";
 import { useEmuApi } from "@renderer/core/EmuApi";
 
-const PsgPanel = () => {
+export const PsgPanel = () => {
   const emuApi = useEmuApi();
   const [psgState, setPsgState] = useState<PsgChipState>(null);
 
@@ -67,4 +67,3 @@ const PsgPanel = () => {
   );
 };
 
-export const psgPanelRenderer = () => <PsgPanel />;

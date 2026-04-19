@@ -18,7 +18,7 @@ import Dropdown from "@renderer/controls/Dropdown";
 import { SETTING_IDE_ACTIVE_OUTPUT_PANE } from "@common/settings/setting-const";
 import { useMainApi } from "@renderer/core/MainApi";
 
-const OutputPanel = () => {
+export const OutputPanel = () => {
   const { outputPaneService } = useAppServices();
   const store = useStore();
   const tool = useRef<ToolInfo>();
@@ -37,9 +37,7 @@ const OutputPanel = () => {
   );
 };
 
-export const outputPanelRenderer = () => <OutputPanel />;
-
-export const outputPanelHeaderRenderer = () => {
+export const OutputPanelHeader = () => {
   const dispatch = useDispatch();
   const mainApi = useMainApi();
   const { outputPaneService } = useAppServices();

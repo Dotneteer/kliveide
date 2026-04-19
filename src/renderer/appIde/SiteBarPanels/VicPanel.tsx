@@ -1,4 +1,4 @@
-import { Label, LabelSeparator, Separator } from "@controls/Labels";
+import { Label, LabelSeparator, Separator } from "@controls/generic";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -36,7 +36,7 @@ const colorNames: string[] = [
   "Light Grey" // 15
 ];
 
-const VicPanel = () => {
+export const VicPanel = () => {
   const emuApi = useEmuApi();
   const [vicState, setVicState] = useState<VicState>(null);
 
@@ -537,4 +537,3 @@ const spriteDataCollisions = [
   "Sprite 7 collision with data" // bit 7
 ];
 
-export const vicPanelRenderer = () => <VicPanel />;

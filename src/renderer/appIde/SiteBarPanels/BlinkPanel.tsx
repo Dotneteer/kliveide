@@ -4,7 +4,7 @@ import {
   Secondary,
   Separator,
   Value
-} from "@controls/Labels";
+} from "@controls/generic";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
@@ -17,7 +17,7 @@ const LAB_WIDTH = 48;
 const VALUE_WIDTH = 40;
 const KEY_LAB_WIDTH = 46;
 
-const BlinkPanel = () => {
+export const BlinkPanel = () => {
   const emuApi = useEmuApi();
   const [blinkState, setBlinkState] = useState<BlinkState>(null);
 
@@ -246,7 +246,6 @@ const ValueFieldRow = ({ label, tooltip, value, word }: ValueFieldProps) => {
   );
 };
 
-export const blinkPanelRenderer = () => <BlinkPanel />;
 
 const COMDescription = [
   "LCDON - Set to turn LCD ON, clear to turn LCD OFF", // bit 0

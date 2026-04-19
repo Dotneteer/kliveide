@@ -1,4 +1,4 @@
-import { Separator } from "@controls/Labels";
+import { Separator } from "@controls/generic";
 import { useState } from "react";
 import { useEmuStateListener } from "../useStateRefresh";
 import { useEmuApi } from "@renderer/core/EmuApi";
@@ -17,7 +17,7 @@ const REG16_TOOLTIP = "{r16N}: {r16v}\n{r8HN}: {r8Hv}\n{r8LN}: {r8Lv}";
 const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
 const REG8_TOOLTIP = "{r8N}: {r8v}";
 
-const CpuPanel = () => {
+export const Z80CpuPanel = () => {
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<Z80CpuState>(null);
 
@@ -204,4 +204,3 @@ const CpuPanel = () => {
   );
 };
 
-export const z80CpuPanelRenderer = () => <CpuPanel />;

@@ -5,7 +5,22 @@ import { Action } from "@state/Action";
 import { AppState } from "@state/AppState";
 import { Dispatch, Store } from "@state/redux-light";
 import { get } from "lodash";
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
+
+// ---------------------------------------------------------------------------
+// Shallow equality helper — avoids spurious re-renders in useSelector
+// ---------------------------------------------------------------------------
+function shallowEqual (a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== "object" || a === null || typeof b !== "object" || b === null) return false;
+  const keysA = Object.keys(a as object);
+  const keysB = Object.keys(b as object);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.is((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) return false;
+  }
+  return true;
+}
 
 // The renderer app's context
 type RendererAppContext = {
@@ -51,11 +66,10 @@ export function useMessageSource(): MessageSource {
  */
 export function useDispatch(): Dispatch<Action> {
   const { store, messageSource } = useRendererContext();
-
-  const dispatcher = ((action: Action, _: MessageSource) => {
-    return store.dispatch(action, messageSource);
-  }) as Dispatch<Action>;
-  return useMemo(() => dispatcher, [store, messageSource]);
+  return useMemo(
+    () => ((action: Action) => store.dispatch(action, messageSource)) as Dispatch<Action>,
+    [store, messageSource]
+  );
 }
 
 /**
@@ -63,27 +77,24 @@ export function useDispatch(): Dispatch<Action> {
  */
 export function useSelector<Selected>(stateMapper: (state: AppState) => Selected): Selected {
   const store = useStore();
-  const storeState = store.getState();
-  const [state, setState] = useState(storeState ? stateMapper(store.getState()) : undefined);
+  const [state, setState] = useState<Selected>(() => {
+    const s = store.getState();
+    return s ? stateMapper(s) : undefined;
+  });
+  const prevRef = useRef(state);
 
   useEffect(() => {
     const unsubscribe = store.subscribe(() => {
       const storeState = store.getState();
       if (!storeState) return;
-      const mappedState = stateMapper(storeState);
-      if (typeof mappedState === "object" && mappedState != undefined) {
-        if (Array.isArray(mappedState)) {
-          setState(mappedState.slice(0) as any);
-        } else {
-          setState({ ...mappedState });
-        }
-      } else {
-        setState(mappedState);
+      const nextState = stateMapper(storeState);
+      if (!shallowEqual(prevRef.current, nextState)) {
+        prevRef.current = nextState;
+        setState(nextState);
       }
     });
-
     return () => unsubscribe();
-  }, [store, storeState]);
+  }, [store]);
 
   return state;
 }
@@ -113,26 +124,22 @@ export function useGlobalSetting(settingId: string): any {
   );
   const [state, setState] = useState(storeState);
 
+  const prevSettingRef = useRef(storeState);
+
   useEffect(() => {
     const unsubscribe = store.subscribe(() => {
-      const mappedState = get(
+      const nextState = get(
         store.getState()?.globalSettings ?? {},
         settingId,
         settingsDef.defaultValue
       );
-      if (typeof mappedState === "object" && mappedState != undefined) {
-        if (Array.isArray(mappedState)) {
-          setState(mappedState.slice(0) as any);
-        } else {
-          setState({ ...mappedState });
-        }
-      } else {
-        setState(mappedState);
+      if (!shallowEqual(prevSettingRef.current, nextState)) {
+        prevSettingRef.current = nextState;
+        setState(nextState);
       }
     });
-
     return () => unsubscribe();
-  }, [store, storeState]);
+  }, [store]);
 
   return state;
 }

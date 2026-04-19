@@ -1,12 +1,12 @@
 {
   "kliveVersion": "0.57.0",
   "machineType": "zxnext",
+  "modelId": "pal",
   "clockMultiplier": 1,
   "soundLevel": 0.8,
   "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
-    "tape": "/Users/dotneteer/KliveExports/test123.tzx",
     "sdCard": "/Users/dotneteer/Klive/ks2.cim"
   },
   "machineSpecific": {},
@@ -76,7 +76,7 @@
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/nr.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 1386,

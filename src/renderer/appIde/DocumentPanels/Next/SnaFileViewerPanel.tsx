@@ -1,5 +1,5 @@
 import styles from "./SnaFileViewerPanel.module.scss";
-import { Label } from "@renderer/controls/Labels";
+import { Label } from "@controls/generic";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
 const SnaFileViewerPanel = ({}: DocumentProps) => {

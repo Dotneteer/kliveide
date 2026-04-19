@@ -121,9 +121,9 @@ export const Modal = ({
   useEffect(() => {
     setButton1Enabled(primaryEnabled);
     setButton2Enabled(secondaryEnabled);
-    setCancelButtonEnabled(cancelButtonEnabled);
+    setCancelButtonEnabled(cancelEnabled);
   },
-  [primaryEnabled, secondaryEnabled, cancelButtonEnabled]);
+  [primaryEnabled, secondaryEnabled, cancelEnabled]);
 
   useEffect(() => {
     onApiLoaded?.({
@@ -132,15 +132,15 @@ export const Modal = ({
       enableCancel: (flag: boolean) => setCancelButtonEnabled(flag),
       setDialogResult: (result?: any) => setDialogResult(result),
       triggerPrimary: (result?: any) => primaryClickHandler(result),
-      triggerSecondary: (result?: any) => primaryClickHandler(result),
-      triggerCancel: (result?: any) => primaryClickHandler(result),
+      triggerSecondary: (result?: any) => secondaryClickHandler(result),
+      triggerCancel: (result?: any) => cancelClickHandler(result),
       triggerClose: (result?: any) => onClose(result)
     });
   }, [modalRef.current]);
 
   useEffect(() => {
     store.dispatch(dimMenuAction(isOpen), messageSource);
-  });
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {

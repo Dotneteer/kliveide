@@ -1,5 +1,5 @@
 import styles from "./SlrFileViewerPanel.module.scss";
-import { Label } from "@renderer/controls/Labels";
+import { Label } from "@controls/generic";
 import { DocumentProps } from "../../DocumentArea/DocumentsContainer";
 
 const SlrFileViewerPanel = ({}: DocumentProps) => {

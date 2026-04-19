@@ -1,5 +1,5 @@
 import styles from "./ScrollViewer.module.scss";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { OverlayScrollbarsComponent, OverlayScrollbarsComponentRef } from "overlayscrollbars-react";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { AttachedShadow } from "./AttachedShadow";
@@ -34,23 +34,22 @@ const ScrollViewer: React.FC<Props> = ({
   onScrolled
 }) => {
   const [pointed, setPointed] = useState(false);
-  const [customTheme, setCustomTheme] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const themeService = useTheme();
   const osRef = useRef<OverlayScrollbarsComponentRef>(null);
   const parentElement = useRef(null);
 
-  useEffect(() => {
-    setCustomTheme(
+  const customTheme = useMemo(
+    () =>
       themeService.theme.tone === "dark"
         ? thinScrollBar
           ? "os-theme-dark-small"
           : "os-theme-dark"
         : thinScrollBar
           ? "os-theme-light-small"
-          : "os-theme-light"
-    );
-  }, [themeService.theme]);
+          : "os-theme-light",
+    [themeService.theme, thinScrollBar]
+  );
 
   useEffect(() => {
     if (osRef.current?.osInstance?.()) {
@@ -65,7 +64,7 @@ const ScrollViewer: React.FC<Props> = ({
       };
       apiLoaded?.(api);
     }
-  }, [parentElement.current, osRef.current?.osInstance?.()]);
+  }, []);
 
   const handleScroll = () => {
     const element = osRef.current?.osInstance().elements();

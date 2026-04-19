@@ -1,6 +1,6 @@
 import { useSelector } from "@renderer/core/RendererProvider";
 import { EMPTY_OBJECT } from "@renderer/utils/stablerefs";
-import React, { useCallback, useContext, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import classnames from "classnames";
 import { darkTheme } from "./dark-theme";
 import { iconLibrary } from "./icon-defs";
@@ -68,27 +68,28 @@ function ThemeProvider({ children }: Props) {
     setRoot(rootElement);
   }, []);
 
-  const themeValue = useMemo(() => {
-    // --- Collect theme variables from the current themes
+  // --- Compute CSS variables separately so setStyleProps stays out of useMemo
+  const themeVariables = useMemo(() => {
     const activeThemeInfo = availableThemes[selectedTheme];
-
-    // --- Set the main font and monospace font
     const mainFont =
       activeThemeInfo.properties[isWindows ? "--shell-windows-font-family" : "--shell-font-family"];
     const monospaceFont =
       activeThemeInfo.properties[
         isWindows ? "--shell-windows-monospace-font-family" : "--shell-monospace-font-family"
       ];
-
-    // --- Set the initial theme variables
-    const themeVariables: Record<string, any> = {
+    return {
       ...activeThemeInfo.properties,
       "--main-font-family": mainFont,
       "--monospace-font": monospaceFont
     };
+  }, [selectedTheme, isWindows]);
 
+  useEffect(() => {
     setStyleProps({ ...themeVariables, ...generateBaseSpacings(themeVariables) });
+  }, [themeVariables]);
 
+  const themeValue = useMemo(() => {
+    const activeThemeInfo = availableThemes[selectedTheme];
     return {
       theme: activeThemeInfo,
       root,

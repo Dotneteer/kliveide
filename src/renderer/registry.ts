@@ -41,22 +41,22 @@ import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult"
 import { asmKz80LanguageProvider } from "./appIde/project/asmKz80LangaugeProvider";
 import { asmZxbLanguageProvider } from "./appIde/project/asmZxbLanguageProvider";
 import { zxBasLanguageProvider } from "./appIde/project/zxBasLanguageProvider";
-import { breakpointsPanelRenderer } from "./appIde/SiteBarPanels/BreakpointsPanel";
-import { z80CpuPanelRenderer } from "./appIde/SiteBarPanels/Z80CpuPanel";
-import { explorerPanelRenderer } from "./appIde/SiteBarPanels/ExplorerPanel";
-import { sysVarsPanelRenderer } from "./appIde/SiteBarPanels/SysVarsPanel";
-import { ulaPanelRenderer } from "./appIde/SiteBarPanels/UlaPanel";
+import { BreakpointsPanel } from "./appIde/SiteBarPanels/BreakpointsPanel";
+import { Z80CpuPanel } from "./appIde/SiteBarPanels/Z80CpuPanel";
+import { ExplorerPanel } from "./appIde/SiteBarPanels/ExplorerPanel";
+import { SysVarsPanel } from "./appIde/SiteBarPanels/SysVarsPanel";
+import { UlaPanel } from "./appIde/SiteBarPanels/UlaPanel";
 import {
-  commandPanelRenderer,
-  commandPanelHeaderRenderer
+  CommandPanel,
+  CommandPanelHeader
 } from "./appIde/ToolArea/CommandPanel";
 import {
-  outputPanelRenderer,
-  outputPanelHeaderRenderer
+  OutputPanel,
+  OutputPanelHeader
 } from "./appIde/ToolArea/OutputPanel";
 import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
-import { psgPanelRenderer } from "./appIde/SiteBarPanels/PsgPanel";
-import { necUpd765PanelRenderer } from "./appIde/SiteBarPanels/NecUpd765Panel";
+import { PsgPanel } from "./appIde/SiteBarPanels/PsgPanel";
+import { NecUpd765Panel } from "./appIde/SiteBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
 import {
   MC_DISK_SUPPORT,
@@ -68,7 +68,7 @@ import {
   MF_Z80,
   MI_ZXNEXT
 } from "@common/machines/constants";
-import { blinkPanelRenderer } from "./appIde/SiteBarPanels/BlinkPanel";
+import { BlinkPanel } from "./appIde/SiteBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
 import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Next/Z80FileViewerPanel";
 import { createSnaFileViewerPanel } from "./appIde/DocumentPanels/Next/SnaFileViewerPanel";
@@ -90,21 +90,21 @@ import {
   PANE_ID_EMU,
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
-import { scriptingHistoryPanelRenderer } from "./appIde/SiteBarPanels/ScriptingHistoryPanel";
+import { ScriptingHistoryPanel } from "./appIde/SiteBarPanels/ScriptingHistoryPanel";
 import { getScriptingContextMenuIfo, scriptingCommandBarRenderer } from "./appIde/DocumentArea/ScriptingCommandBar";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "./appIde/DocumentPanels/Memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
-import { nextRegPanelRenderer } from "./appIde/SiteBarPanels/NextRegPanel";
-import { nextMemMappingPanelRenderer } from "./appIde/SiteBarPanels/MemMappingPanel";
-import { callStackPanelRenderer } from "./appIde/SiteBarPanels/CallStackPanel";
-import { nextPalettePanelRenderer } from "./appIde/SiteBarPanels/PalettePanel";
+import { NextRegPanel } from "./appIde/SiteBarPanels/NextRegPanel";
+import { MemMappingPanel } from "./appIde/SiteBarPanels/MemMappingPanel";
+import { CallStackPanel } from "./appIde/SiteBarPanels/CallStackPanel";
+import { PalettePanel } from "./appIde/SiteBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
-import { m6510CpuPanelRenderer } from "./appIde/SiteBarPanels/M6510CpuPanel";
+import { M6510CpuPanel } from "./appIde/SiteBarPanels/M6510CpuPanel";
 import { asm6510LanguageProvider } from "./appIde/project/asm6510LangaugeProvider";
-import { vicPanelRenderer } from "./appIde/SiteBarPanels/VicPanel";
-import { watchPanelRenderer } from "./appIde/SiteBarPanels/WatchPanel";
+import { VicPanel } from "./appIde/SiteBarPanels/VicPanel";
+import { WatchPanel } from "./appIde/SiteBarPanels/WatchPanel";
 import { turboPascalLanguageProvider } from "./appIde/project/turboPascalLanguageProvider";
 
 const ACTIVITY_FILE_ID = "file-view";
@@ -148,14 +148,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "explorerPanel",
     title: "Klive Project",
     hostActivity: ACTIVITY_FILE_ID,
-    renderer: explorerPanelRenderer,
+    renderer: ExplorerPanel,
     expandedOnInit: true
   },
   {
     id: "z80CpuPanel",
     title: "Z80 CPU",
     hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: z80CpuPanelRenderer,
+    renderer: Z80CpuPanel,
     expandedOnInit: true,
     requireFeature: [MF_Z80]
   },
@@ -163,7 +163,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "m6510CpuPanel",
     title: "6510 CPU",
     hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: m6510CpuPanelRenderer,
+    renderer: M6510CpuPanel,
     expandedOnInit: true,
     requireFeature: [MF_M6510]
   },
@@ -172,13 +172,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "Call Stack",
     hostActivity: ACTIVITY_DEBUG_ID,
     noScrollViewer: false,
-    renderer: callStackPanelRenderer,
+    renderer: CallStackPanel,
   },
   {
     id: "nextMemoryMappingPanel",
     title: "Next Memory Mapping",
     hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: nextMemMappingPanelRenderer,
+    renderer: MemMappingPanel,
     restrictTo: [MI_ZXNEXT]
   },
   {
@@ -186,14 +186,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "Next Registers",
     hostActivity: ACTIVITY_DEBUG_ID,
     noScrollViewer: false,
-    renderer: nextRegPanelRenderer,
+    renderer: NextRegPanel,
     restrictTo: [MI_ZXNEXT]
   },
   {
     id: "ulaPanel",
     title: "ULA & I/O",
     hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: ulaPanelRenderer,
+    renderer: UlaPanel,
     initialSize: 500,
     requireFeature: [MF_ULA]
   },
@@ -201,7 +201,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "vicPanel",
     title: "VIC",
     hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: vicPanelRenderer,
+    renderer: VicPanel,
     initialSize: 500,
     requireFeature: [MF_VIC]
   },
@@ -209,7 +209,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "blinkPanel",
     title: "BLINK",
     hostActivity: ACTIVITY_DEBUG_ID,
-    renderer: blinkPanelRenderer,
+    renderer: BlinkPanel,
     initialSize: 500,
     requireFeature: [MF_BLINK]
   },
@@ -218,7 +218,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "Watch",
     hostActivity: ACTIVITY_DEBUG_ID,
     noScrollViewer: false,
-    renderer: watchPanelRenderer,
+    renderer: WatchPanel,
     expandedOnInit: true
   },
   {
@@ -226,7 +226,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "Breakpoints",
     hostActivity: ACTIVITY_DEBUG_ID,
     noScrollViewer: false,
-    renderer: breakpointsPanelRenderer,
+    renderer: BreakpointsPanel,
     expandedOnInit: true
   },
   {
@@ -234,13 +234,13 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     title: "System Variables",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
     noScrollViewer: false,
-    renderer: sysVarsPanelRenderer
+    renderer: SysVarsPanel
   },
   {
     id: "psgPanel",
     title: "PSG (AY-3-8912)",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
-    renderer: psgPanelRenderer,
+    renderer: PsgPanel,
     initialSize: 500,
     requireFeature: [MF_PSG]
   },
@@ -248,7 +248,7 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "necUpd765Panel",
     title: "NEC UPD 765 Log",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
-    renderer: necUpd765PanelRenderer,
+    renderer: NecUpd765Panel,
     initialSize: 500,
     requireConfig: [MC_DISK_SUPPORT]
   },
@@ -256,14 +256,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     id: "nextPalettePanel",
     title: "Next Palettes",
     hostActivity: ACTIVITY_MACHINE_INFO_ID,
-    renderer: nextPalettePanelRenderer,
+    renderer: PalettePanel,
     restrictTo: [MI_ZXNEXT]
   },
   {
     id: "scriptingHistory",
     title: "Scripting History",
     hostActivity: ACTIVITY_SCRIPTING_ID,
-    renderer: scriptingHistoryPanelRenderer,
+    renderer: ScriptingHistoryPanel,
     initialSize: 500
   },
 ];
@@ -273,14 +273,14 @@ export const toolPanelRegistry: ToolRendererInfo[] = [
   {
     id: "commands",
     name: "Commands",
-    renderer: commandPanelRenderer,
-    headerRenderer: commandPanelHeaderRenderer
+    renderer: CommandPanel,
+    headerRenderer: CommandPanelHeader
   },
   {
     id: "output",
     name: "Output",
-    renderer: outputPanelRenderer,
-    headerRenderer: outputPanelHeaderRenderer
+    renderer: OutputPanel,
+    headerRenderer: OutputPanelHeader
   }
 ];
 

@@ -1,5 +1,5 @@
 import styles from "./LabeledValue.module.scss";
-import { Label, Value } from "./Labels";
+import { Label, Value } from "./generic";
 
 const LAB_WIDTH = 48;
 const VAL_WIDTH = 48;
