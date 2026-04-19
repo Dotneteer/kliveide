@@ -10,8 +10,12 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
  * port_mf_disable_io_a address selection logic.
  */
 
-export function readMultifacePort(port: number, machine: IZxNextMachine): { value: number; handled: boolean } {
-  return machine.multifaceDevice.handlePortRead(port);
+/** Sentinel for "not handled" - bit 8 set means the port was not handled by this reader. */
+const NOT_HANDLED = 0x1ff;
+
+export function readMultifacePort(port: number, machine: IZxNextMachine): number {
+  const result = machine.multifaceDevice.handlePortRead(port);
+  return result.handled ? result.value : NOT_HANDLED;
 }
 
 export function writeMultifacePort(port: number, value: number, machine: IZxNextMachine): void {

@@ -15,6 +15,7 @@
     "../src/types/**/*.d.ts"
   ],
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "composite": true,
     "strictNullChecks": false,
     "strict":false,

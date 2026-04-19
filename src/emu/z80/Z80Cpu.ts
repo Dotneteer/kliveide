@@ -1607,9 +1607,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   readMemory(address: number): number {
     this.delayMemoryRead(address);
-    if (this.lastMemoryReadsCount < 8) {
-      this.lastMemoryReads[this.lastMemoryReadsCount++] = address;
-    }
+    this.lastMemoryReads[this.lastMemoryReadsCount++] = address;
     return (this.lastMemoryReadValue = this.doReadMemory(address));
   }
 
@@ -1621,9 +1619,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   writeMemory(address: number, data: number): void {
     this.delayMemoryWrite(address);
-    if (this.lastMemoryWritesCount < 8) {
-      this.lastMemoryWrites[this.lastMemoryWritesCount++] = address;
-    }
+    this.lastMemoryWrites[this.lastMemoryWritesCount++] = address;
     this.lastMemoryWriteValue = data;
     this.doWriteMemory(address, data);
   }

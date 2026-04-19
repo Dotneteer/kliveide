@@ -5,6 +5,15 @@ import { zxNextBgra } from "../PaletteDevice";
 import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../MemoryDevice";
 import { SpriteDevice, type SpriteAttributes } from "../SpriteDevice";
 
+// Lookup table for fast 8-bit MSB-first unpacking: TILEMAP_BIT_UNPACK[byte * 8 + i] = (byte >> (7 - i)) & 1
+const TILEMAP_BIT_UNPACK: Uint8Array = (() => {
+  const t = new Uint8Array(256 * 8);
+  for (let b = 0; b < 256; b++) {
+    for (let i = 0; i < 8; i++) t[b * 8 + i] = (b >> (7 - i)) & 1;
+  }
+  return t;
+})();
+
 /**
  * ZX Spectrum Next Rendering Device
  *
@@ -242,9 +251,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemapCanUseFastPath = false;
 
     // --- Initialize palette lookup cache
-    this.tilemapLastPaletteIndex = -1;
-    this.tilemapCachedRgb333 = null;
-    this.tilemapCachedPaletteEntry = 0;
+    this._tilemapPalCacheKey.fill(-1);
 
     // --- Initialize sprites state machine
     this.spritesBufferPosition = 0;
@@ -2753,10 +2760,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // --- Fast path optimization flags
   private tilemapCanUseFastPath: boolean;
 
-  // --- Palette lookup cache (reduces redundant lookups)
-  private tilemapLastPaletteIndex: number;
-  private tilemapCachedRgb333: number | null;
-  private tilemapCachedPaletteEntry: number;
+  // 16-entry direct-mapped palette lookup cache (slot = paletteIndex & 0x0f)
+  private readonly _tilemapPalCacheKey = new Int32Array(16).fill(-1);
+  private readonly _tilemapPalCacheRgb333 = new Int32Array(16); // null stored as -1
+  private readonly _tilemapPalCacheEntry = new Int32Array(16);
 
   /**
    * Get tilemap data byte from VRAM (bank 5 or 7).
@@ -2800,7 +2807,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     xMirror: boolean,
     yMirror: boolean,
     rotate: boolean
-  ): { transformedX: number; transformedY: number } {
+  ): number {
     // Apply transformations per hardware specification
     let effectiveX = xInTile;
     let effectiveY = yInTile;
@@ -2822,7 +2829,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const transformedX = rotate ? effectiveY : effectiveX;
     const transformedY = rotate ? effectiveX : effectiveY;
 
-    return { transformedX, transformedY };
+    // Pack both values into a single integer: high 16 bits = transformedX, low 16 bits = transformedY
+    return (transformedX << 16) | transformedY;
   }
 
   /**
@@ -2869,25 +2877,20 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         patternAddr
       );
 
-      nextBuffer[0] = (patternByte >> 7) & 0x01;
-      nextBuffer[1] = (patternByte >> 6) & 0x01;
-      nextBuffer[2] = (patternByte >> 5) & 0x01;
-      nextBuffer[3] = (patternByte >> 4) & 0x01;
-      nextBuffer[4] = (patternByte >> 3) & 0x01;
-      nextBuffer[5] = (patternByte >> 2) & 0x01;
-      nextBuffer[6] = (patternByte >> 1) & 0x01;
-      nextBuffer[7] = patternByte & 0x01;
+      nextBuffer.set(TILEMAP_BIT_UNPACK.subarray(patternByte << 3, (patternByte << 3) + 8));
     } else {
       // Graphics mode: fetch 8 pixels with transformations
       for (let xInTile = 0; xInTile < 8; xInTile++) {
         // Apply transformation to get which row, byte, and nibble to read from pattern
-        const { transformedX, transformedY } = this.applyTileTransformation(
+        const packed = this.applyTileTransformation(
           xInTile,
           yInTile,
           this.tilemapNextTileXMirror,
           this.tilemapNextTileYMirror,
           this.tilemapNextTileRotate
         );
+        const transformedX = packed >>> 16;
+        const transformedY = packed & 0xffff;
 
         // Address: tile_base + transformedY * 4 + (transformedX >> 1)
         const byteAddr = this.tilemapCurrentTileIndex * 32 + transformedY * 4 + (transformedX >> 1);
@@ -3070,17 +3073,19 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Palette lookup (use Tilemap palette, first or second bank based on Reg $6B bit 4)
     let rgb333: number | null;
     let paletteEntry: number;
-    if (paletteIndex === this.tilemapLastPaletteIndex) {
+    const _pc0 = paletteIndex & 0x0f;
+    if (this._tilemapPalCacheKey[_pc0] === paletteIndex) {
       // Cache hit
-      rgb333 = this.tilemapCachedRgb333;
-      paletteEntry = this.tilemapCachedPaletteEntry;
+      const _r0 = this._tilemapPalCacheRgb333[_pc0];
+      rgb333 = _r0 < 0 ? null : _r0;
+      paletteEntry = this._tilemapPalCacheEntry[_pc0];
     } else {
       // Cache miss - lookup and cache
       rgb333 = this.paletteDevice.getTilemapRgb333(paletteIndex & 0xff);
       paletteEntry = this.paletteDevice.getTilemapPaletteEntry(paletteIndex & 0xff);
-      this.tilemapLastPaletteIndex = paletteIndex;
-      this.tilemapCachedRgb333 = rgb333;
-      this.tilemapCachedPaletteEntry = paletteEntry;
+      this._tilemapPalCacheKey[_pc0] = paletteIndex;
+      this._tilemapPalCacheRgb333[_pc0] = rgb333 ?? -1;
+      this._tilemapPalCacheEntry[_pc0] = paletteEntry;
     }
 
     // Check transparency
@@ -3190,14 +3195,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           patternAddr
         );
         // Extract all 8 bits (MSB first)
-        nextBuffer[0] = (patternByte >> 7) & 0x01;
-        nextBuffer[1] = (patternByte >> 6) & 0x01;
-        nextBuffer[2] = (patternByte >> 5) & 0x01;
-        nextBuffer[3] = (patternByte >> 4) & 0x01;
-        nextBuffer[4] = (patternByte >> 3) & 0x01;
-        nextBuffer[5] = (patternByte >> 2) & 0x01;
-        nextBuffer[6] = (patternByte >> 1) & 0x01;
-        nextBuffer[7] = patternByte & 0x01;
+        nextBuffer.set(TILEMAP_BIT_UNPACK.subarray(patternByte << 3, (patternByte << 3) + 8));
       } else {
         // Graphics mode: call function (has complex transformations)
         this.fetchTilemapPattern(displayY, this.tilemapTextModeSampled);
@@ -3238,15 +3236,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Palette lookup with caching
     let rgb333: number | null;
     let paletteEntry: number;
-    if (paletteIndex === this.tilemapLastPaletteIndex) {
-      rgb333 = this.tilemapCachedRgb333;
-      paletteEntry = this.tilemapCachedPaletteEntry;
+    const _pc1 = paletteIndex & 0x0f;
+    if (this._tilemapPalCacheKey[_pc1] === paletteIndex) {
+      const _r1 = this._tilemapPalCacheRgb333[_pc1];
+      rgb333 = _r1 < 0 ? null : _r1;
+      paletteEntry = this._tilemapPalCacheEntry[_pc1];
     } else {
       rgb333 = this.paletteDevice.getTilemapRgb333(paletteIndex);
       paletteEntry = this.paletteDevice.getTilemapPaletteEntry(paletteIndex);
-      this.tilemapLastPaletteIndex = paletteIndex;
-      this.tilemapCachedRgb333 = rgb333;
-      this.tilemapCachedPaletteEntry = paletteEntry;
+      this._tilemapPalCacheKey[_pc1] = paletteIndex;
+      this._tilemapPalCacheRgb333[_pc1] = rgb333 ?? -1;
+      this._tilemapPalCacheEntry[_pc1] = paletteEntry;
     }
 
     // Check transparency
@@ -3344,14 +3344,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
           patternAddr
         );
         // Extract all 8 bits (MSB first)
-        nextBuffer[0] = (patternByte >> 7) & 0x01;
-        nextBuffer[1] = (patternByte >> 6) & 0x01;
-        nextBuffer[2] = (patternByte >> 5) & 0x01;
-        nextBuffer[3] = (patternByte >> 4) & 0x01;
-        nextBuffer[4] = (patternByte >> 3) & 0x01;
-        nextBuffer[5] = (patternByte >> 2) & 0x01;
-        nextBuffer[6] = (patternByte >> 1) & 0x01;
-        nextBuffer[7] = patternByte & 0x01;
+        nextBuffer.set(TILEMAP_BIT_UNPACK.subarray(patternByte << 3, (patternByte << 3) + 8));
       } else {
         // Graphics mode: call function (has complex transformations)
         this.fetchTilemapPattern(displayY, this.tilemapTextModeSampled);
@@ -3390,15 +3383,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     let rgb333_1: number | null;
     let paletteEntry1: number;
-    if (paletteIndex1 === this.tilemapLastPaletteIndex) {
-      rgb333_1 = this.tilemapCachedRgb333;
-      paletteEntry1 = this.tilemapCachedPaletteEntry;
+    const _pc2 = paletteIndex1 & 0x0f;
+    if (this._tilemapPalCacheKey[_pc2] === paletteIndex1) {
+      const _r2 = this._tilemapPalCacheRgb333[_pc2];
+      rgb333_1 = _r2 < 0 ? null : _r2;
+      paletteEntry1 = this._tilemapPalCacheEntry[_pc2];
     } else {
       rgb333_1 = this.paletteDevice.getTilemapRgb333(paletteIndex1);
       paletteEntry1 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex1);
-      this.tilemapLastPaletteIndex = paletteIndex1;
-      this.tilemapCachedRgb333 = rgb333_1;
-      this.tilemapCachedPaletteEntry = paletteEntry1;
+      this._tilemapPalCacheKey[_pc2] = paletteIndex1;
+      this._tilemapPalCacheRgb333[_pc2] = rgb333_1 ?? -1;
+      this._tilemapPalCacheEntry[_pc2] = paletteEntry1;
     }
 
     const transparent1 = this.tilemapTextModeSampled
@@ -3413,15 +3408,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     let rgb333_2: number | null;
     let paletteEntry2: number;
-    if (paletteIndex2 === this.tilemapLastPaletteIndex) {
-      rgb333_2 = this.tilemapCachedRgb333;
-      paletteEntry2 = this.tilemapCachedPaletteEntry;
+    const _pc3 = paletteIndex2 & 0x0f;
+    if (this._tilemapPalCacheKey[_pc3] === paletteIndex2) {
+      const _r3 = this._tilemapPalCacheRgb333[_pc3];
+      rgb333_2 = _r3 < 0 ? null : _r3;
+      paletteEntry2 = this._tilemapPalCacheEntry[_pc3];
     } else {
       rgb333_2 = this.paletteDevice.getTilemapRgb333(paletteIndex2);
       paletteEntry2 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex2);
-      this.tilemapLastPaletteIndex = paletteIndex2;
-      this.tilemapCachedRgb333 = rgb333_2;
-      this.tilemapCachedPaletteEntry = paletteEntry2;
+      this._tilemapPalCacheKey[_pc3] = paletteIndex2;
+      this._tilemapPalCacheRgb333[_pc3] = rgb333_2 ?? -1;
+      this._tilemapPalCacheEntry[_pc3] = paletteEntry2;
     }
 
     const transparent2 = this.tilemapTextModeSampled
@@ -3599,15 +3596,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     let rgb333_1: number | null;
     let paletteEntry1: number;
-    if (paletteIndex1 === this.tilemapLastPaletteIndex) {
-      rgb333_1 = this.tilemapCachedRgb333;
-      paletteEntry1 = this.tilemapCachedPaletteEntry;
+    const _pc4 = paletteIndex1 & 0x0f;
+    if (this._tilemapPalCacheKey[_pc4] === paletteIndex1) {
+      const _r4 = this._tilemapPalCacheRgb333[_pc4];
+      rgb333_1 = _r4 < 0 ? null : _r4;
+      paletteEntry1 = this._tilemapPalCacheEntry[_pc4];
     } else {
       rgb333_1 = this.paletteDevice.getTilemapRgb333(paletteIndex1 & 0xff);
       paletteEntry1 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex1 & 0xff);
-      this.tilemapLastPaletteIndex = paletteIndex1;
-      this.tilemapCachedRgb333 = rgb333_1;
-      this.tilemapCachedPaletteEntry = paletteEntry1;
+      this._tilemapPalCacheKey[_pc4] = paletteIndex1;
+      this._tilemapPalCacheRgb333[_pc4] = rgb333_1 ?? -1;
+      this._tilemapPalCacheEntry[_pc4] = paletteEntry1;
     }
 
     let transparent1: boolean;
@@ -3634,15 +3633,17 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     let rgb333_2: number | null;
     let paletteEntry2: number;
-    if (paletteIndex2 === this.tilemapLastPaletteIndex) {
-      rgb333_2 = this.tilemapCachedRgb333;
-      paletteEntry2 = this.tilemapCachedPaletteEntry;
+    const _pc5 = paletteIndex2 & 0x0f;
+    if (this._tilemapPalCacheKey[_pc5] === paletteIndex2) {
+      const _r5 = this._tilemapPalCacheRgb333[_pc5];
+      rgb333_2 = _r5 < 0 ? null : _r5;
+      paletteEntry2 = this._tilemapPalCacheEntry[_pc5];
     } else {
       rgb333_2 = this.paletteDevice.getTilemapRgb333(paletteIndex2 & 0xff);
       paletteEntry2 = this.paletteDevice.getTilemapPaletteEntry(paletteIndex2 & 0xff);
-      this.tilemapLastPaletteIndex = paletteIndex2;
-      this.tilemapCachedRgb333 = rgb333_2;
-      this.tilemapCachedPaletteEntry = paletteEntry2;
+      this._tilemapPalCacheKey[_pc5] = paletteIndex2;
+      this._tilemapPalCacheRgb333[_pc5] = rgb333_2 ?? -1;
+      this._tilemapPalCacheEntry[_pc5] = paletteEntry2;
     }
 
     let transparent2: boolean;

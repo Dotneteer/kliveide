@@ -19,7 +19,8 @@ export class LiteEvent<T> implements ILiteEvent<T> {
    * @param handler Handler method
    */
   off (handler: { (data?: T): void }): void {
-    this._handlers = this._handlers.filter(h => h !== handler);
+    const idx = this._handlers.indexOf(handler);
+    if (idx >= 0) this._handlers.splice(idx, 1);
   }
 
   /**
@@ -27,7 +28,10 @@ export class LiteEvent<T> implements ILiteEvent<T> {
    * @param data Event data
    */
   fire (data?: T) {
-    this._handlers.slice(0).forEach(h => h(data));
+    // Iterate in reverse so that handlers removed during iteration don't shift indices
+    for (let i = this._handlers.length - 1; i >= 0; i--) {
+      this._handlers[i](data);
+    }
   }
 
   /**

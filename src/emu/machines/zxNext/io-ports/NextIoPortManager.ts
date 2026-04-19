@@ -38,8 +38,11 @@ import {
   writeMultifacePort
 } from "./MultifacePortHandler";
 
-type IoPortReaderFn = (port: number) => number | { value: number; handled: boolean };
+type IoPortReaderFn = (port: number) => number;
 type IoPortWriterFn = (port: number, value: number) => void | boolean;
+
+/** Sentinel returned by a reader when the port group is disabled (value = 0xff, not handled). */
+const NOT_HANDLED = 0x1ff;
 
 type PortDescriptor = {
   pmask: number;
@@ -62,7 +65,7 @@ export class NextIoPortManager {
     // --- Port enable gate helpers: combine internal (NR $82–$85) with bus (NR $86–$89)
     const pe = (ri: number, bit: number) => machine.nextRegDevice.isPortGroupEnabled(ri, bit);
     const gR = (ri: number, bit: number, fn: (port: number) => number): IoPortReaderFn =>
-      (p) => pe(ri, bit) ? fn(p) : { value: 0xff, handled: false };
+      (p) => pe(ri, bit) ? fn(p) : NOT_HANDLED;
     const gW = (ri: number, bit: number, fn: (port: number, value: number) => void | boolean): IoPortWriterFn =>
       (p, v) => { if (pe(ri, bit)) return fn(p, v); };
 
@@ -500,8 +503,8 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1101_1111,
       readerFns: ((fn) =>
-        (p: number): number | { value: number; handled: boolean } =>
-          pe(0, 6) && !pe(1, 5) ? fn(p) : { value: 0xff, handled: false }
+        (p: number): number =>
+          pe(0, 6) && !pe(1, 5) ? fn(p) : NOT_HANDLED
       )(readKempstonJoy1AliasPort(machine))
     });
     r({
@@ -554,16 +557,14 @@ export class NextIoPortManager {
       let lastValue = 0xff;
       for (const readerFn of descriptor.readerFns) {
         const value = readerFn(port);
-        if (typeof value === "number") return value;
-        lastValue = value.value ?? 0xff;
-        if (value.handled) return lastValue;
+        if (!(value & 0x100)) return value; // bit 8 clear = handled
+        lastValue = value & 0xff;           // bit 8 set = not handled
       }
       return lastValue;
     }
     // --- Single reader function
     const value = descriptor.readerFns(port);
-    if (typeof value === "number") return value;
-    return value.value ?? 0xff;
+    return (value & 0x100) ? (value & 0xff) : value;
   }
 
   writePort(port: number, value: number): void {
@@ -590,39 +591,43 @@ export class NextIoPortManager {
     writerFns
   }: PortDescriptor): void {
     this.ports.push({ pmask: mask, value, description, readerFns, writerFns });
-    for (let i = 0; i < 0x1_0000; i++) {
-      if ((i & mask) === value) {
-        let mapping = this.portMap.get(i);
-        if (mapping) {
-          mapping = { ...mapping };
-          if (readerFns) {
-            if (mapping.readerFns) {
-              const readerFnsArray = Array.isArray(readerFns) ? readerFns : [readerFns];
-              mapping.readerFns = Array.isArray(mapping.readerFns)
-                ? [...mapping.readerFns, ...readerFnsArray]
-                : [mapping.readerFns, ...readerFnsArray];
-            } else {
-              mapping.readerFns = readerFns;
-            }
+    // Analytically enumerate all ports matching (port & mask) === value.
+    // Uses submask enumeration: iterates exactly 2^popcount(~mask & 0xffff) times
+    // instead of always 65536 times, reducing ~5.2M iterations to ~20K at startup.
+    const free = 0xffff & ~mask;
+    let sub = free;
+    do {
+      const i = value | sub;
+      const mapping = this.portMap.get(i);
+      if (mapping) {
+        // Mutate in-place instead of creating a spread copy
+        if (readerFns) {
+          if (mapping.readerFns) {
+            const readerFnsArray = Array.isArray(readerFns) ? readerFns : [readerFns];
+            mapping.readerFns = Array.isArray(mapping.readerFns)
+              ? [...mapping.readerFns, ...readerFnsArray]
+              : [mapping.readerFns, ...readerFnsArray];
+          } else {
+            mapping.readerFns = readerFns;
           }
-          if (writerFns) {
-            if (mapping.writerFns) {
-              const writerFnsArray = Array.isArray(writerFns) ? writerFns : [writerFns];
-              mapping.writerFns = Array.isArray(mapping.writerFns)
-                ? [...mapping.writerFns, ...writerFnsArray]
-                : [mapping.writerFns, ...writerFnsArray];
-            } else {
-              mapping.writerFns = writerFns;
-            }
-          }
-          this.portMap.set(i, mapping);
-          this.portCollisions.set(i, [...this.portCollisions.get(i)!, description]);
-        } else {
-          this.portMap.set(i, { pmask: mask, value, description, readerFns, writerFns });
-          this.portCollisions.set(i, [description]);
         }
+        if (writerFns) {
+          if (mapping.writerFns) {
+            const writerFnsArray = Array.isArray(writerFns) ? writerFns : [writerFns];
+            mapping.writerFns = Array.isArray(mapping.writerFns)
+              ? [...mapping.writerFns, ...writerFnsArray]
+              : [mapping.writerFns, ...writerFnsArray];
+          } else {
+            mapping.writerFns = writerFns;
+          }
+        }
+        this.portCollisions.set(i, [...this.portCollisions.get(i)!, description]);
+      } else {
+        this.portMap.set(i, { pmask: mask, value, description, readerFns, writerFns });
+        this.portCollisions.set(i, [description]);
       }
-    }
+      sub = (sub - 1) & free;
+    } while (sub !== free);
   }
 }
 

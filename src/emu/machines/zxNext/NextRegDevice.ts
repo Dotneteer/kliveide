@@ -3420,33 +3420,36 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
    * Returns the boolean flag value set by NR $82–$85 writeFn.
    */
   private getInternalPortEnable(regIndex: number, bit: number): boolean {
-    switch (regIndex) {
-      case 0: // NR $82
-        return [
-          this.port0xffEnabled, this.port0x7ffdEnabled, this.port0xdffdEnabled,
-          this.port0x1ffdEnabled, this.plus3FloatingBusEnabled, this.port0x6bEnabled,
-          this.port0x1fEnabled, this.port0x37Enabled
-        ][bit] ?? true;
-      case 1: // NR $83
-        return [
-          this.portDivMmcEnabled, this.portMultifaceEnabled, this.portI2CEnabled,
-          this.portSpiEnabled, this.portUartEnabled, this.portMouseEnabled,
-          this.portSpritesEnabled, this.portLayer2Enabled
-        ][bit] ?? true;
-      case 2: // NR $84
-        return [
-          this.portAyEnabled, this.portDacMode1Enabled, this.portDacMode2Enabled,
-          this.portDacStereoProfiCovoxEnabled, this.portDacStereoCovoxEnabled,
-          this.portDacMonoPentagonEnabled, this.portDacMonoGsCovoxEnabled,
-          this.portDacMonoSpecdrumEnabled
-        ][bit] ?? true;
-      case 3: // NR $85
-        return [
-          this.portUlaPlusEnabled, this.portZ80DmaEnabled,
-          this.portPentagon1024MemoryEnabled, this.portZ80CtcEnabled
-        ][bit] ?? true;
-      default:
-        return true;
+    switch (regIndex * 8 + bit) {
+      case  0: return this.port0xffEnabled;
+      case  1: return this.port0x7ffdEnabled;
+      case  2: return this.port0xdffdEnabled;
+      case  3: return this.port0x1ffdEnabled;
+      case  4: return this.plus3FloatingBusEnabled;
+      case  5: return this.port0x6bEnabled;
+      case  6: return this.port0x1fEnabled;
+      case  7: return this.port0x37Enabled;
+      case  8: return this.portDivMmcEnabled;
+      case  9: return this.portMultifaceEnabled;
+      case 10: return this.portI2CEnabled;
+      case 11: return this.portSpiEnabled;
+      case 12: return this.portUartEnabled;
+      case 13: return this.portMouseEnabled;
+      case 14: return this.portSpritesEnabled;
+      case 15: return this.portLayer2Enabled;
+      case 16: return this.portAyEnabled;
+      case 17: return this.portDacMode1Enabled;
+      case 18: return this.portDacMode2Enabled;
+      case 19: return this.portDacStereoProfiCovoxEnabled;
+      case 20: return this.portDacStereoCovoxEnabled;
+      case 21: return this.portDacMonoPentagonEnabled;
+      case 22: return this.portDacMonoGsCovoxEnabled;
+      case 23: return this.portDacMonoSpecdrumEnabled;
+      case 24: return this.portUlaPlusEnabled;
+      case 25: return this.portZ80DmaEnabled;
+      case 26: return this.portPentagon1024MemoryEnabled;
+      case 27: return this.portZ80CtcEnabled;
+      default: return true;
     }
   }
 

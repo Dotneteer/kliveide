@@ -140,19 +140,20 @@ function swapnib(cpu: Z80NCpu) {
   cpu.a = (nLow << 4) | (nHigh >>> 4);
 }
 
+// Lookup table for MIRROR A: bit-reversal of all 256 byte values
+const MIRROR_A_TABLE: Uint8Array = (() => {
+  const t = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) {
+    let v = i, r = 0;
+    for (let j = 0; j < 8; j++, v >>= 1) r = (r << 1) | (v & 1);
+    t[i] = r;
+  }
+  return t;
+})();
+
 // 0x24: MIRROR A
 function mirrorA(cpu: Z80NCpu) {
-  let oldA = cpu.a;
-  let newA = 0x00;
-  cpu: Z80NCpu;
-  for (let i = 0; i < 8; i++) {
-    newA = newA >> 1;
-    if (oldA & 0x80) {
-      newA = newA | 0x80;
-    }
-    oldA = oldA << 1;
-  }
-  cpu.a = newA;
+  cpu.a = MIRROR_A_TABLE[cpu.a];
 }
 
 // 0x27: TEST A

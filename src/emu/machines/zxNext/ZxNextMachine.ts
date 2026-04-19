@@ -48,6 +48,9 @@ import { ExpansionBusDevice } from "./ExpansionBusDevice";
 import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 import { AudioControlDevice } from "./AudioControlDevice";
+import { TurboSoundDevice } from "./TurboSoundDevice";
+import { DacDevice } from "./DacDevice";
+import { AudioMixerDevice } from "./AudioMixerDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
 const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
@@ -152,6 +155,18 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /** D6: When true, DivMMC should not process the current RETN (MF was active). */
   _suppressDivMmcRetn: boolean = false;
 
+  // ─── Hot-path audio/screen caches ────────────────────────────────────────
+
+  private _turboSoundDevice!: TurboSoundDevice;
+  private _dacDevice!: DacDevice;
+  private _audioMixerDevice!: AudioMixerDevice;
+  /** Cached from composedScreenDevice.config.totalHC; refreshed on each new frame. */
+  private _totalHC = 0;
+  /** Current copper raster column (0-based); incremented per tact in onTactIncremented. */
+  private _copperCurrentColumn = 0;
+  /** Current copper raster line (0-based); incremented per tact in onTactIncremented. */
+  private _copperCurrentLine = 0;
+
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
@@ -199,9 +214,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice = new JoystickDevice(this);
     this.soundDevice = new NextSoundDevice(this);
     this.audioControlDevice = new AudioControlDevice(this);
+    // --- Cache audio device references for hot-path performance (avoids getter chains per tact)
+    this._turboSoundDevice = this.audioControlDevice.getTurboSoundDevice();
+    this._dacDevice = this.audioControlDevice.getDacDevice();
+    this._audioMixerDevice = this.audioControlDevice.getAudioMixerDevice();
 
     this.ulaDevice = new UlaDevice(this);
     this.hardReset();
+    // --- Initialize totalHC cache now that composedScreenDevice is fully set up
+    this._totalHC = this.composedScreenDevice.config.totalHC;
   }
 
   /**
@@ -274,9 +295,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       this.beeperDevice.setAudioSampleRate(audioRate);
 
       // --- Also configure TurboSoundDevice with the same sample rate
-      this.audioControlDevice
-        .getTurboSoundDevice()
-        .setAudioSampleRate(audioRate);
+      this._turboSoundDevice.setAudioSampleRate(audioRate);
     }
 
     this.expansionBusDevice.reset();
@@ -1474,10 +1493,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- (frameTacts wraps to ~0 each frame; readPort/writePort sync lazily)
     this.ctcDevice.onNewFrame(this.tactsInFrame);
 
+    // --- Cache screen timing for hot-path use in onTactIncremented
+    this._totalHC = this.composedScreenDevice.config.totalHC;
+    this._copperCurrentLine = 0;
+    this._copperCurrentColumn = 0;
+
     // --- Prepare audio devices for the new frame
-    this.audioControlDevice.getTurboSoundDevice().onNewFrame();
-    this.audioControlDevice.getDacDevice().onNewFrame();
-    this.audioControlDevice.getAudioMixerDevice().onNewFrame();
+    this._turboSoundDevice.onNewFrame();
+    this._dacDevice.onNewFrame();
+    this._audioMixerDevice.onNewFrame();
 
     // --- Advance DS1307 RTC clock (1 Hz tick via frame counting)
     this.i2cDevice.onNewFrame();
@@ -1494,9 +1518,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   afterInstructionExecuted(): void {
     super.afterInstructionExecuted();
-    this.audioControlDevice.getTurboSoundDevice().calculateCurrentAudioValue(this.tacts);
-    this.audioControlDevice.getDacDevice().calculateCurrentAudioValue();
-    this.audioControlDevice.getAudioMixerDevice().calculateCurrentAudioValue();
+    this._turboSoundDevice.calculateCurrentAudioValue(this.tacts);
+    this._dacDevice.calculateCurrentAudioValue();
+    this._audioMixerDevice.calculateCurrentAudioValue();
   }
 
   /**
@@ -1517,20 +1541,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   onTactIncremented(): void {
     if (this.frameCompleted) return;
-    const totalHC = this.composedScreenDevice.config.totalHC;
     while (this.lastRenderedFrameTact < this.currentFrameTact) {
-      const tact = this.lastRenderedFrameTact;
-      this.copperDevice.executeTick((tact / totalHC) | 0, tact % totalHC);
+      this.copperDevice.executeTick(this._copperCurrentLine, this._copperCurrentColumn);
+      this._copperCurrentColumn++;
+      if (this._copperCurrentColumn >= this._totalHC) {
+        this._copperCurrentColumn = 0;
+        this._copperCurrentLine++;
+      }
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();
-
     // --- Generate audio samples for all audio devices
-    this.audioControlDevice
-      .getTurboSoundDevice()
-      .setNextAudioSample(this.frameTacts);
-    this.audioControlDevice.getDacDevice().setNextAudioSample();
-    this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
+    this._turboSoundDevice.setNextAudioSample(this.frameTacts);
+    this._dacDevice.setNextAudioSample();
+    this._audioMixerDevice.setNextAudioSample();
   }
 
   /**
