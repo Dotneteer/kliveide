@@ -396,6 +396,20 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
+   * Called at the start of each new machine frame.
+   * Advances the CTC to the end of the completed frame (tactsInFrame = total 28 MHz
+   * ticks per frame), then resets _lastSyncClock to 0 so the next frame's
+   * frameTacts (which wraps back near 0) is tracked correctly.
+   * readPort/writePort sync lazily before each Z80 port access, so no per-tact
+   * CTC advancement in onTactIncremented is needed.
+   * @param tactsInFrame Total 28 MHz ticks in the just-completed frame.
+   */
+  onNewFrame(tactsInFrame: number): void {
+    this.advanceToSysClock(tactsInFrame);
+    this._lastSyncClock = 0;
+  }
+
+  /**
    * Reset all channels
    */
   reset(): void {
@@ -546,6 +560,6 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * Called internally before port reads/writes.
    */
   private _syncFromMachine(): void {
-    this.advanceToSysClock(this.machine.ctcSystemClock);
+    this.advanceToSysClock(this.machine.frameTacts);
   }
 }

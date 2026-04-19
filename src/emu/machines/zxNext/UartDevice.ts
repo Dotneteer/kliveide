@@ -13,9 +13,11 @@ export class UartFifo {
   private writePtr = 0;
   private _count = 0;
   readonly capacity: number;
+  private readonly _mask: number;
 
   constructor(capacity: number) {
     this.capacity = capacity;
+    this._mask = capacity - 1;
     this.buffer = new Array(capacity);
   }
 
@@ -36,7 +38,7 @@ export class UartFifo {
   push(value: number): boolean {
     if (this.isFull) return false;
     this.buffer[this.writePtr] = value;
-    this.writePtr = (this.writePtr + 1) % this.capacity;
+    this.writePtr = (this.writePtr + 1) & this._mask;
     this._count++;
     return true;
   }
@@ -44,7 +46,7 @@ export class UartFifo {
   pop(): number {
     if (this.isEmpty) return 0;
     const value = this.buffer[this.readPtr];
-    this.readPtr = (this.readPtr + 1) % this.capacity;
+    this.readPtr = (this.readPtr + 1) & this._mask;
     this._count--;
     return value;
   }

@@ -4,16 +4,10 @@ import { Z80Cpu, Z80Operation, incFlags, sz53pvTable } from "./Z80Cpu";
 import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
-  // --- Number of tacts in the current frame with 28MHz clock
-  protected tactsInFrame28 = 0;
-
-  // --- Cached multiplier for frameTacts calculation (2 / clockMultiplier)
-  // --- Pre-computing this eliminates division in the hot path
-  // --- Values: 2 (mult=1), 1 (mult=2), 0.5 (mult=4), 0.25 (mult=8)
-  protected frameTactsMultiplier = 2;
-  
-  // --- Last known clockMultiplier value (to detect changes)
-  protected lastClockMultiplier = 1;
+  // --- Scale factor converting one Z80 T-state to 28 MHz ticks.
+  // --- Values: 8 (3.5 MHz), 4 (7 MHz), 2 (14 MHz), 1 (28 MHz).
+  // --- Updated by ZxNextMachine.beforeInstructionExecuted via CpuSpeedDevice.
+  cpuTactScale = 8;
 
   readonly mergedOps: Z80Operation[];
 
@@ -45,27 +39,21 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   /**
    * This method increments the current CPU tacts by N.
    * @param n Number of tact increments
-   * 
-   * Optimized for clockMultiplier values of 1, 2, 4, 8 (powers of 2).
-   * Pre-computes 2/clockMultiplier to avoid division in hot path.
+   *
+   * tacts counts Z80 T-states (unchanged, used by unit tests).
+   * frameTacts counts 28 MHz ticks: n * cpuTactScale (8/4/2/1 for 3.5/7/14/28 MHz).
+   * currentFrameTact is converted back to CLK_7 for screen rendering: frameTacts >>> 2.
+   * tactsInFrame is now in the 28 MHz domain (set by Z80NMachineBase.setTactsInFrame × 4).
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    
-    // Update cached multiplier only if clockMultiplier changed
-    const mult = this.clockMultiplier;
-    if (mult !== this.lastClockMultiplier) {
-      this.lastClockMultiplier = mult;
-      this.frameTactsMultiplier = 2 / mult;
-    }
-    
-    this.frameTacts += n * this.frameTactsMultiplier;
+    this.frameTacts += n * this.cpuTactScale;   // 28 MHz ticks
     if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInFrame;
       this.frameCompleted = true;
     }
-    this.currentFrameTact = this.frameTacts | 0;
+    this.currentFrameTact = (this.frameTacts >>> 2) | 0;  // 28 MHz → CLK_7
     this.onTactIncremented();
   }
 
@@ -152,19 +140,20 @@ function swapnib(cpu: Z80NCpu) {
   cpu.a = (nLow << 4) | (nHigh >>> 4);
 }
 
+// Lookup table for MIRROR A: bit-reversal of all 256 byte values
+const MIRROR_A_TABLE: Uint8Array = (() => {
+  const t = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) {
+    let v = i, r = 0;
+    for (let j = 0; j < 8; j++, v >>= 1) r = (r << 1) | (v & 1);
+    t[i] = r;
+  }
+  return t;
+})();
+
 // 0x24: MIRROR A
 function mirrorA(cpu: Z80NCpu) {
-  let oldA = cpu.a;
-  let newA = 0x00;
-  cpu: Z80NCpu;
-  for (let i = 0; i < 8; i++) {
-    newA = newA >> 1;
-    if (oldA & 0x80) {
-      newA = newA | 0x80;
-    }
-    oldA = oldA << 1;
-  }
-  cpu.a = newA;
+  cpu.a = MIRROR_A_TABLE[cpu.a];
 }
 
 // 0x27: TEST A

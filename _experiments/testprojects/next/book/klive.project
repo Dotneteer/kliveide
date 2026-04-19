@@ -56,7 +56,7 @@
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
             "line": 65,
-            "column": 14
+            "column": 13
           }
         },
         {
@@ -71,8 +71,8 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/ctc.asm",
           "position": {
-            "line": 39,
-            "column": 25
+            "line": 65,
+            "column": 16
           }
         },
         {

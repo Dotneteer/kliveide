@@ -65,8 +65,8 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   // --- Layer 2 lookup tables (Priority 2 optimization)
   // 64KB lookup tables: Z80 address → SRAM offset (or -1 if not mapped)
-  private _layer2ReadMap = new Int32Array(0x10000);
-  private _layer2WriteMap = new Int32Array(0x10000);
+  private _layer2ReadMap: Int32Array | null = null;
+  private _layer2WriteMap: Int32Array | null = null;
 
   // --- Specialized slot readers/writers (Priority 4 optimization)
   // Function pointers for optimized memory access per slot
@@ -124,9 +124,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       this.memory[i] = 0x7e;
     }
 
-    // --- Initialize Layer 2 lookup tables with "not mapped" sentinel
-    this._layer2ReadMap.fill(-1);
-    this._layer2WriteMap.fill(-1);
+    // --- Layer 2 lookup tables are allocated lazily when first needed
 
     // --- Initialize slot function pointers to simple versions
     this._readSlot0 = this._readSlot0Simple.bind(this);
@@ -646,12 +644,20 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     const startAddr = mapSegment === 3 ? 0x0000 : mapSegment << 14;
     const endAddr = mapSegment === 3 ? 0xc000 : (mapSegment + 1) << 14;
 
+    // Allocate lazily on first use (saves 512 KB of startup allocation)
+    if (enableReads && !this._layer2ReadMap) {
+      this._layer2ReadMap = new Int32Array(0x10000).fill(-1);
+    }
+    if (enableWrites && !this._layer2WriteMap) {
+      this._layer2WriteMap = new Int32Array(0x10000).fill(-1);
+    }
+
     // Only fill the range that will be affected (optimization: avoid filling full 64K)
     if (enableReads) {
-      this._layer2ReadMap.fill(-1, startAddr, endAddr);
+      this._layer2ReadMap!.fill(-1, startAddr, endAddr);
     }
     if (enableWrites) {
-      this._layer2WriteMap.fill(-1, startAddr, endAddr);
+      this._layer2WriteMap!.fill(-1, startAddr, endAddr);
     }
 
     // Process in 8KB chunks (calculations only change at 8KB boundaries)
@@ -694,16 +700,16 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
           if (enableReads && enableWrites) {
             for (let addr = regionStart; addr < regionEnd; addr++) {
               const offset = baseOffset + (addr - regionStart);
-              this._layer2ReadMap[addr] = offset;
-              this._layer2WriteMap[addr] = offset;
+              this._layer2ReadMap![addr] = offset;
+              this._layer2WriteMap![addr] = offset;
             }
           } else if (enableReads) {
             for (let addr = regionStart; addr < regionEnd; addr++) {
-              this._layer2ReadMap[addr] = baseOffset + (addr - regionStart);
+              this._layer2ReadMap![addr] = baseOffset + (addr - regionStart);
             }
           } else {
             for (let addr = regionStart; addr < regionEnd; addr++) {
-              this._layer2WriteMap[addr] = baseOffset + (addr - regionStart);
+              this._layer2WriteMap![addr] = baseOffset + (addr - regionStart);
             }
           }
         }
@@ -790,7 +796,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Layer 2 (if DivMMC not active)
     if (this._layer2ReadActive) {
-      const layer2Offset = this._layer2ReadMap[address];
+      const layer2Offset = this._layer2ReadMap![address];
       if (layer2Offset >= 0) {
         return this.memory[layer2Offset];
       }
@@ -807,7 +813,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   private _readSlot1Complex(address: number): number {
     // --- Check Layer 2 first
-    const layer2Offset = this._layer2ReadMap[address];
+    const layer2Offset = this._layer2ReadMap![address];
     if (layer2Offset >= 0) {
       return this.memory[layer2Offset];
     }
@@ -824,7 +830,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
   private _readSlot2Complex(address: number): number {
     // --- Check Layer 2 first
-    const layer2Offset = this._layer2ReadMap[address];
+    const layer2Offset = this._layer2ReadMap![address];
     if (layer2Offset >= 0) {
       return this.memory[layer2Offset];
     }
@@ -844,16 +850,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   private _writeSlot0Simple(address: number, data: number): void {
     const pageInfo = this.pageInfo[address >>> 13];
     if (pageInfo.writeOffset !== null) {
-      // Check if writing to Layer 2 banks when Layer 2 display is enabled
-      const bank8k = pageInfo.bank8k;
-      if (bank8k !== undefined) {
-        const screen = this.machine.composedScreenDevice;
-        if (screen.layer2Enabled) {
-          const activeBank = screen.layer2UseShadowBank
-            ? screen.layer2ShadowRamBank
-            : screen.layer2ActiveRamBank;
-        }
-      }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
     }
   }
@@ -892,7 +888,7 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Layer 2 (if DivMMC not active)
     if (this._layer2WriteActive) {
-      const layer2Offset = this._layer2WriteMap[address];
+      const layer2Offset = this._layer2WriteMap![address];
       if (layer2Offset >= 0) {
         this.memory[layer2Offset] = data;
         return;
@@ -910,23 +906,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   private _writeSlot1Simple(address: number, data: number): void {
     const pageInfo = this.pageInfo[address >>> 13];
     if (pageInfo.writeOffset !== null) {
-      // Check if writing to Layer 2 banks when Layer 2 display is enabled
-      const bank8k = pageInfo.bank8k;
-      if (bank8k !== undefined) {
-        const screen = this.machine.composedScreenDevice;
-        if (screen.layer2Enabled) {
-          const activeBank = screen.layer2UseShadowBank
-            ? screen.layer2ShadowRamBank
-            : screen.layer2ActiveRamBank;
-        }
-      }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
     }
   }
 
   private _writeSlot1Complex(address: number, data: number): void {
     // --- Check Layer 2 first
-    const layer2Offset = this._layer2WriteMap[address];
+    const layer2Offset = this._layer2WriteMap![address];
     if (layer2Offset >= 0) {
       this.memory[layer2Offset] = data;
       return;
@@ -944,23 +930,13 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   private _writeSlot2Simple(address: number, data: number): void {
     const pageInfo = this.pageInfo[address >>> 13];
     if (pageInfo.writeOffset !== null) {
-      // Check if writing to Layer 2 banks when Layer 2 display is enabled
-      const bank8k = pageInfo.bank8k;
-      if (bank8k !== undefined) {
-        const screen = this.machine.composedScreenDevice;
-        if (screen.layer2Enabled) {
-          const activeBank = screen.layer2UseShadowBank
-            ? screen.layer2ShadowRamBank
-            : screen.layer2ActiveRamBank;
-        }
-      }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
     }
   }
 
   private _writeSlot2Complex(address: number, data: number): void {
     // --- Check Layer 2 first
-    const layer2Offset = this._layer2WriteMap[address];
+    const layer2Offset = this._layer2WriteMap![address];
     if (layer2Offset >= 0) {
       this.memory[layer2Offset] = data;
       return;
@@ -978,16 +954,6 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   private _writeSlot3Simple(address: number, data: number): void {
     const pageInfo = this.pageInfo[address >>> 13];
     if (pageInfo.writeOffset !== null) {
-      // Check if writing to Layer 2 banks when Layer 2 display is enabled
-      const bank8k = pageInfo.bank8k;
-      if (bank8k !== undefined) {
-        const screen = this.machine.composedScreenDevice;
-        if (screen.layer2Enabled) {
-          const activeBank = screen.layer2UseShadowBank
-            ? screen.layer2ShadowRamBank
-            : screen.layer2ActiveRamBank;
-        }
-      }
       this.memory[pageInfo.writeOffset + (address & 0x1fff)] = data;
     }
   }

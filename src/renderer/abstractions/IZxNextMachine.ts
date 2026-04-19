@@ -64,9 +64,6 @@ export interface IZxNextMachine extends IZ80Machine {
 
   ctcDevice: CtcDevice;
 
-  /** Current CTC system clock counter (28 MHz ticks), tracked by the machine */
-  ctcSystemClock: number;
-
   i2cDevice: I2cDevice;
 
   uartDevice: UartDevice;

@@ -35,7 +35,9 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   private _frameCommand: any;
 
   // --- Events queued for execution
-  protected _queuedEvents?: QueuedEvent[];
+  protected _queuedEvents: QueuedEvent[] = [];
+  /** Index of the first unconsumed event in _queuedEvents (avoids O(n) shift). */
+  private _queuedEventsHead = 0;
 
   /**
    * Initialize the machine using the specified configuration
@@ -196,7 +198,8 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   reset(): void {
     super.reset();
     this._machineFrameRunner.reset();
-    this._queuedEvents = null;
+    this._queuedEvents = [];
+    this._queuedEventsHead = 0;
   }
 
   /**
@@ -240,8 +243,8 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @param tacts Tacts to set
    */
   setTactsInFrame(tacts: number): void {
-    super.setTactsInFrame(tacts);
-    this.tactsInFrame28 = tacts * 8;
+    // tacts arrives in CLK_7 from the screen device; multiply by 4 to get 28 MHz ticks
+    super.setTactsInFrame(tacts * 4);
   }
 
   /**
@@ -285,10 +288,10 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   readonly uiFrameFrequency: number = 1;
 
   /**
-   * The frame tact multiplier CPU is bases on 3.5MHz clock,
-   * but the Next's video timing is based on 7MHz clock.
+   * frameTactMultiplier = 8: tactsInFrame is in 28 MHz ticks, baseClockFrequency is 3.5 MHz.
+   * Frame gap = tactsInFrame / 8 / 3_500_000 = 28M ticks / 28M = correct wall-clock duration.
    */
-  readonly frameTactMultiplier = 2;
+  readonly frameTactMultiplier = 8;
 
   /**
    * Clean up machine resources on stop
@@ -431,19 +434,18 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
       eventFn,
       data
     };
-    if (!this._queuedEvents) {
-      this._queuedEvents = [newEvent];
-    } else {
-      let idx = 0;
-      while (idx < this._queuedEvents.length && this._queuedEvents[idx].eventTact <= eventTact) {
-        idx++;
-      }
-      if (idx >= this._queuedEvents.length) {
-        this._queuedEvents.push(newEvent);
+    // Binary search for sorted insertion position (events are tact-ordered)
+    let lo = this._queuedEventsHead;
+    let hi = this._queuedEvents.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (this._queuedEvents[mid].eventTact <= eventTact) {
+        lo = mid + 1;
       } else {
-        this._queuedEvents.splice(idx, 0, newEvent);
+        hi = mid;
       }
     }
+    this._queuedEvents.splice(lo, 0, newEvent);
   }
 
   /**
@@ -451,28 +453,30 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @param eventFn Event function to remove
    */
   removeEvent(eventFn: (data: any) => void): void {
-    if (!this._queuedEvents) return;
-    const idx = this._queuedEvents.findIndex((item) => item.eventFn === eventFn);
-    if (idx < 0) return;
-
-    // --- Event found, remove it
-    this._queuedEvents.splice(idx, 1);
+    const events = this._queuedEvents;
+    for (let i = this._queuedEventsHead; i < events.length; i++) {
+      if (events[i].eventFn === eventFn) {
+        events.splice(i, 1);
+        return;
+      }
+    }
   }
 
   consumeEvents(): void {
-    if (!this._queuedEvents) return;
+    const events = this._queuedEvents;
+    if (this._queuedEventsHead >= events.length) return;
     const currentTact = this.tacts;
     while (
-      this._queuedEvents &&
-      this._queuedEvents.length > 0 &&
-      this._queuedEvents[0].eventTact <= currentTact
+      this._queuedEventsHead < events.length &&
+      events[this._queuedEventsHead].eventTact <= currentTact
     ) {
-      const currentEvent = this._queuedEvents[0];
+      const currentEvent = events[this._queuedEventsHead++];
       currentEvent.eventFn(currentEvent.data);
-      this._queuedEvents.shift();
     }
-    if (this._queuedEvents.length === 0) {
-      this._queuedEvents = null;
+    // Compact the array once the head has advanced past half to avoid unbounded growth
+    if (this._queuedEventsHead > 0 && this._queuedEventsHead >= (events.length >> 1)) {
+      this._queuedEvents = events.slice(this._queuedEventsHead);
+      this._queuedEventsHead = 0;
     }
   }
 

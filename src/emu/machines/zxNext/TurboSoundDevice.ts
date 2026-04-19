@@ -82,8 +82,8 @@ export class TurboSoundDevice {
   // --- Mono mode per chip
   private readonly _chipMonoMode = [false, false, false];
 
-  // --- Audio sampling controls (following BeeperDevice pattern)
-  // Uses fixed audio sample rate and adjusts for clock multiplier changes automatically
+  // --- Audio sampling controls
+  // Sample length and comparison are in the 28 MHz frameTacts domain
   private _audioSampleRate = 0;
   private _audioSampleLength = 0;
   private _audioNextSampleTact = 0;
@@ -97,11 +97,10 @@ export class TurboSoundDevice {
 
   /**
    * Initialize the Turbo Sound device
-   * @param baseClockFrequency Base CPU clock frequency (default 3,500,000 Hz)
    * @param audioSampleRate Audio sample rate (default 48,000 Hz)
    */
-  constructor(baseClockFrequency: number = 3_500_000, audioSampleRate: number = 48_000) {
-    this.setAudioSampleRate(baseClockFrequency, audioSampleRate);
+  constructor(audioSampleRate: number = 48_000) {
+    this.setAudioSampleRate(audioSampleRate);
     this.reset();
   }
 
@@ -109,13 +108,13 @@ export class TurboSoundDevice {
    * Set the mixer device reference for diagnostic capture
    */
   /**
-   * Sets up the sample rate to use with this device
-   * @param baseClockFrequency Base CPU clock frequency
+   * Sets up the sample rate to use with this device.
+   * Sample length is in 28 MHz ticks (frameTacts domain).
    * @param sampleRate Audio sample rate
    */
-  setAudioSampleRate(baseClockFrequency: number, sampleRate: number): void {
+  setAudioSampleRate(sampleRate: number): void {
     this._audioSampleRate = sampleRate;
-    this._audioSampleLength = baseClockFrequency / sampleRate;
+    this._audioSampleLength = 28_000_000 / sampleRate;
     this._audioNextSampleTact = 0;
   }
 
@@ -588,9 +587,9 @@ export class TurboSoundDevice {
    * accounting for clock multiplier changes
    * Just reads current PSG state - PSG already advanced in calculateCurrentAudioValue()
    */
-  setNextAudioSample(machineTacts: number, clockMultiplier: number): void {
-    // Check if it's time to generate a sample
-    if (machineTacts <= this._audioNextSampleTact) return;
+  setNextAudioSample(frameTacts28: number): void {
+    // Check if it's time to generate a sample (frameTacts28 is in 28 MHz domain)
+    if (frameTacts28 <= this._audioNextSampleTact) return;
 
     // Calculate current stereo output from all 3 chips (just read current state)
     // FPGA turbosound.vhd: each chip outputs only if ay_select matches OR turbosound_en_i='1'
@@ -608,8 +607,8 @@ export class TurboSoundDevice {
     const sample = { left: totalLeft, right: totalRight };
     this._audioSamples.push(sample);
 
-    // Advance to next sample time, accounting for clock multiplier
-    this._audioNextSampleTact += this._audioSampleLength * clockMultiplier;
+    // Advance to next sample time (sample length already in 28 MHz ticks)
+    this._audioNextSampleTact += this._audioSampleLength;
   }
 
   /**
