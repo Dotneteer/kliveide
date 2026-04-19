@@ -1102,6 +1102,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Set the interrupt signal, if required so
     super.beforeInstructionExecuted();
     this.clockMultiplier = this.cpuSpeedDevice.effectiveClockMultiplier;
+    this.cpuTactScale = this.cpuSpeedDevice.effectiveCpuTactScale;
 
     // --- Check if DMA is requesting the bus and acknowledge it FIRST
     // This must happen before calling stepDma() so the bus is available

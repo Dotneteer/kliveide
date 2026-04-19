@@ -15,6 +15,11 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   // --- Last known clockMultiplier value (to detect changes)
   protected lastClockMultiplier = 1;
 
+  // --- Scale factor converting one Z80 T-state to 28 MHz ticks.
+  // --- Values: 8 (3.5 MHz), 4 (7 MHz), 2 (14 MHz), 1 (28 MHz).
+  // --- Updated by ZxNextMachine.beforeInstructionExecuted via CpuSpeedDevice.
+  cpuTactScale = 8;
+
   readonly mergedOps: Z80Operation[];
 
   constructor() {

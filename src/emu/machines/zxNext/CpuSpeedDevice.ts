@@ -43,6 +43,14 @@ export class CpuSpeedDevice implements IGenericDevice<IZxNextMachine> {
     return this._effectiveClockMultiplier;
   }
 
+  /**
+   * Returns the 28 MHz tick count per Z80 T-state for the effective speed.
+   * speed 0 (3.5 MHz) → 8, speed 1 (7 MHz) → 4, speed 2 (14 MHz) → 2, speed 3 (28 MHz) → 1.
+   */
+  get effectiveCpuTactScale(): number {
+    return 8 >>> this._effectiveSpeed;
+  }
+
   reset(): void {
     // --- CPU speed is preserved
   }
