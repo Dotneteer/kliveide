@@ -234,6 +234,129 @@ export class CtcChannel {
   }
 
   /**
+   * Whether this channel is in counter mode (external trigger)
+   */
+  get isCounterMode(): boolean {
+    return !!(this._controlReg & 0x10); // D6 = bit4 of controlReg (after >>2)
+  }
+
+  /**
+   * Advance a timer-mode channel by N system clocks (mathematical batch).
+   * Only valid for timer-mode, RUNNING-state channels.
+   * Returns the number of ZC/TO events that occurred.
+   */
+  advanceBySysClocks(n: number): number {
+    if (this._state !== CtcState.RUNNING || n <= 0) return 0;
+
+    const prescalerDiv = (this._controlReg & 0x08) ? 256 : 16; // D5
+    const fires = this._computePrescalerFires(prescalerDiv, n);
+    this._prescalerCount = (this._prescalerCount + n) & 0xff;
+
+    return this._advanceCounterByFires(fires);
+  }
+
+  /**
+   * Advance a counter-mode channel by the given number of trigger events.
+   * Returns the number of ZC/TO events that occurred.
+   */
+  advanceByTriggers(triggers: number): number {
+    if (this._state !== CtcState.RUNNING || triggers <= 0) return 0;
+    return this._advanceCounterByFires(triggers);
+  }
+
+  /**
+   * Compute how many prescaler output pulses occur over n system clocks,
+   * starting from the current prescaler position.
+   */
+  private _computePrescalerFires(div: number, n: number): number {
+    if (div === 16) {
+      const firstFire = (0x0f - (this._prescalerCount & 0x0f)) & 0x0f;
+      if (firstFire >= n) return 0;
+      return 1 + ((n - 1 - firstFire) / 16 | 0);
+    } else {
+      const firstFire = (0xff - this._prescalerCount) & 0xff;
+      if (firstFire >= n) return 0;
+      return 1 + ((n - 1 - firstFire) / 256 | 0);
+    }
+  }
+
+  /**
+   * Advance the counter by the given number of decrement events (prescaler fires
+   * for timer mode, or trigger edges for counter mode). Handles ZC/TO generation,
+   * reload from time constant, and TC=0 (effective 256) wrapping.
+   * Returns the number of ZC/TO events.
+   */
+  private _advanceCounterByFires(fires: number): number {
+    if (fires <= 0) return 0;
+
+    let zcToCount = 0;
+    let count = this._count;
+    const tc = this._timeConstantReg;
+    const effectiveTc = tc === 0 ? 256 : tc;
+
+    // --- Handle the special case where count is already 0
+    if (count === 0) {
+      if (!this._countZeroD) {
+        // Pending ZC/TO (count just reached 0, edge not yet seen)
+        zcToCount++;
+        count = tc; // reload
+        if (tc === 0) {
+          // Reloaded to 0; first fire decrements 0→255
+          if (fires > 0) { count = 255; fires--; }
+          else { this._count = 0; this._countZeroD = true; return zcToCount; }
+        }
+      } else {
+        // count=0 with countZeroD=true (post-ZC/TO for TC=0): next fire → 255
+        count = 255;
+        fires--;
+      }
+    }
+
+    if (fires <= 0) {
+      this._count = count;
+      this._countZeroD = false;
+      return zcToCount;
+    }
+
+    // --- Normal countdown: count > 0, fires > 0
+    if (fires < count) {
+      // Not enough fires to reach zero
+      this._count = count - fires;
+      this._countZeroD = false;
+      return zcToCount;
+    }
+
+    // Fires >= count: counter reaches 0
+    fires -= count;
+    zcToCount++; // ZC/TO for reaching 0
+
+    // Full reload periods
+    if (fires > 0) {
+      const fullPeriods = (fires / effectiveTc) | 0;
+      zcToCount += fullPeriods;
+      fires -= fullPeriods * effectiveTc;
+    }
+
+    // After the last ZC/TO, counter reloads to tc
+    if (fires === 0) {
+      this._count = tc;
+      // For TC=0, count=0 with countZeroD=true (ZC/TO already fired)
+      this._countZeroD = (tc === 0);
+      return zcToCount;
+    }
+
+    // Remaining fires after last reload
+    if (tc === 0) {
+      // Reloaded to 0, first fire→255, then count down
+      this._count = 256 - fires; // = 255 - (fires-1)
+    } else {
+      this._count = tc - fires;
+    }
+    this._countZeroD = false;
+    return zcToCount;
+  }
+
+  /**
    * Read the current counter value (port read)
    */
   readPort(): number {
@@ -263,6 +386,9 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
   // --- IM2 vector write flag (set for one cycle when vector byte is written)
   im2VectorWrite = false;
 
+  // --- System clock tracking for lazy CTC advancement
+  private _lastSyncClock = 0;
+
   constructor(public readonly machine: IZxNextMachine) {
     for (let i = 0; i < 4; i++) {
       this.channels.push(new CtcChannel());
@@ -277,6 +403,49 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
       ch.hardReset();
     }
     this.im2VectorWrite = false;
+    this._lastSyncClock = 0;
+  }
+
+  /**
+   * Advance all CTC channels to the specified system clock using mathematical
+   * batch computation. Handles ZC/TO chaining between channels.
+   * Called from the machine on every tact increment and before port access.
+   */
+  advanceToSysClock(currentSysClock: number): void {
+    const elapsed = currentSysClock - this._lastSyncClock;
+    if (elapsed <= 0) return;
+    this._lastSyncClock = currentSysClock;
+
+    // --- Advance channels in chain order: 0 → 1 → 2 → 3
+    // Timer-mode channels advance by system clocks; counter-mode channels
+    // advance by the upstream ZC/TO count.
+    // Chaining: Ch0←Ch3, Ch1←Ch0, Ch2←Ch1, Ch3←Ch2
+    const zcToCounts = [0, 0, 0, 0];
+    const triggerSrc = [3, 0, 1, 2]; // upstream channel index for each
+
+    // First pass: advance timer-mode channels by system clocks
+    for (let i = 0; i < 4; i++) {
+      const ch = this.channels[i];
+      if (ch.state === 3 /* RUNNING */ && !ch.isCounterMode) {
+        zcToCounts[i] = ch.advanceBySysClocks(elapsed);
+      }
+    }
+
+    // Second pass: advance counter-mode channels by upstream ZC/TO counts
+    for (let i = 0; i < 4; i++) {
+      const ch = this.channels[i];
+      if (ch.state === 3 /* RUNNING */ && ch.isCounterMode) {
+        zcToCounts[i] = ch.advanceByTriggers(zcToCounts[triggerSrc[i]]);
+      }
+    }
+
+    // Set interrupt status for channels that generated ZC/TO events
+    const intDev = this.machine.interruptDevice;
+    for (let i = 0; i < 4; i++) {
+      if (zcToCounts[i] > 0 && this.channels[i].intEnabled) {
+        intDev.ctcIntStatus[i] = true;
+      }
+    }
   }
 
   /**
@@ -334,9 +503,15 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
+    // Sync CTC to current time before the write
+    this._syncFromMachine();
+
     // Clock the channel with this write asserted for one cycle, then deasserted
     channel.clock(true, value, false, false, false);
     channel.clock(false, value, false, false, false);
+
+    // Account for the 2 extra clock() calls so they aren't double-counted
+    this._lastSyncClock += 2;
   }
 
   /**
@@ -350,6 +525,9 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
     const ch = (port >> 8) & 0x07;
     if (ch >= 4) return 0x00; // channels 4-7 hardwired to zero
 
+    // Sync CTC to current time before reading
+    this._syncFromMachine();
+
     return this.channels[ch].readPort();
   }
 
@@ -361,5 +539,13 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
     for (let i = 0; i < 4; i++) {
       this.channels[i].clock(false, 0, false, true, enables[i]);
     }
+  }
+
+  /**
+   * Sync the CTC to the machine's current system clock.
+   * Called internally before port reads/writes.
+   */
+  private _syncFromMachine(): void {
+    this.advanceToSysClock(this.machine.ctcSystemClock);
   }
 }

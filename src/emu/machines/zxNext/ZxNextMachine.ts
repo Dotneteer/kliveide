@@ -91,6 +91,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   ctcDevice: CtcDevice;
 
+  /** Current CTC system clock counter (28 MHz ticks) */
+  ctcSystemClock = 0;
+
+  /** CPU tacts at last CTC system clock update */
+  private _lastCtcTacts = 0;
+
   i2cDevice: I2cDevice;
 
   uartDevice: UartDevice;
@@ -254,6 +260,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.dmaDevice.reset();
     this.copperDevice.reset();
     this.ctcDevice.reset();
+    this.ctcSystemClock = 0;
+    this._lastCtcTacts = 0;
     this.i2cDevice.reset();
     this.uartDevice.reset();
     this.keyboardDevice.reset();
@@ -866,7 +874,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       // Track details for logging
       if (shouldLogDetail && i < 100) {
         sampleDetails.push({
-          ear: earLevel,
+          ear: rawEarSample,
           psgL: psgSample.left,
           psgR: psgSample.right,
           mixL: mixed.left,
@@ -1043,7 +1051,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Called by Z80Cpu after RETN has executed (stack pop already set PC to garbage for stackless NMI).
    * Restores the correct return address for stackless NMI, and unmaps MF memory if still active.
    */
-  protected override onRetnExecuted(): void {
+  public override onRetnExecuted(): void {
     // --- D4: RETI (ED 4D) in HW IM2 mode clears the first InService device
     // in the daisy chain. This must happen before any other RETN processing
     // because the FPGA's reti_seen signal propagates through the daisy chain
@@ -1141,7 +1149,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // Check address ranges: 0x4000-0x7fff is always contended,
     // 0xc000-0xffff is contended when odd-numbered bank is paged in at bank 3
     const page = address & 0xc000;
-    return page === 0x4000 || (page === 0xc000 && (this.selectedBank & 0x01) === 1);
+    return page === 0x4000 || (page === 0xc000 && (this.getSelectedRamBank() & 0x01) === 1);
   }
 
   /**
@@ -1511,6 +1519,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();
+
+    // --- Advance CTC system clock (CTC runs at fixed 28 MHz regardless of CPU speed)
+    const tactsDelta = this.tacts - this._lastCtcTacts;
+    if (tactsDelta > 0) {
+      this._lastCtcTacts = this.tacts;
+      // system clocks per CPU tact = 8 / clockMultiplier
+      // (clockMultiplier: 1=3.5MHz, 2=7MHz, 4=14MHz, 8=28MHz)
+      this.ctcSystemClock += tactsDelta * (8 / this.clockMultiplier);
+      this.ctcDevice.advanceToSysClock(this.ctcSystemClock);
+    }
 
     // --- Generate audio samples for all audio devices
     // Pass machine tacts and clock multiplier for proper sample timing

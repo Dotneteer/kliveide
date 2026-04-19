@@ -509,13 +509,9 @@ CTC_CH1     equ $193B
 ; === Calculate elapsed ===
 ; Elapsed = startDE − endDE (both channels count down)
     ld hl, (startCoarse)     ; H = start coarse, L = start fine
-    ; Now: elapsed coarse = H - D, elapsed fine = L - E
-    ld a, l
-    sub e
-    ld e, a                  ; E = fine elapsed
-    ld a, h
-    sbc a, d
-    ld d, a                  ; D = coarse elapsed
+    or a                     ; clear carry flag
+    sbc hl, de               ; HL = start − end (elapsed ticks, since counters count down)
+    ex de, hl                ; DE = elapsed ticks
 
 ; DE now holds the 16-bit elapsed count:
 ;   Total system clocks ≈ ((D × 256) + (256 − E)) × 16
@@ -915,12 +911,9 @@ ctcTimerStop:
     ld e, a                  ; E = fine (Ch0)
     ; elapsed = start − end (counters count down)
     ld hl, (ctc_start)       ; H = start coarse, L = start fine
-    ld a, l
-    sub e
-    ld e, a
-    ld a, h
-    sbc a, d
-    ld d, a
+    or a                     ; clear carry flag
+    sbc hl, de               ; HL = start − end = elapsed ticks
+    ex de, hl                ; DE = elapsed ticks
     ret
 
 ctc_start: .dw 0
