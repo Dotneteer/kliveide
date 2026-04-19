@@ -90,18 +90,24 @@ Every device that cares about real time must convert from CPU tacts:
 
 ---
 
-## Chosen Approach: 28 MHz Single Master Counter
+## Chosen Approach: 28 MHz Internal Frame Counter (tacts unchanged)
 
-**Core idea:** Make `tacts` always count at 28 MHz. Introduce a `cpuTactScale` factor (8, 4, 2, or 1) that converts Z80 T-states to 28 MHz ticks.
+**Core idea:** Keep `tacts` as Z80 T-states (speed-independent, all existing tests pass).
+Move `frameTacts` and `tactsInFrame` to the 28 MHz domain so that the frame-completion
+check, screen rendering, CTC, and audio all share a single clock base. Introduce
+`cpuTactScale` (8/4/2/1) to convert T-states → 28 MHz ticks inside `tactPlusN`.
+
+**Key invariant:** `tacts` always equals the sum of Z80 T-states consumed, regardless of
+CPU speed. A NOP always costs 4 T-states whether the CPU runs at 3.5 MHz or 28 MHz.
 
 #### Changes
 
 **`tactPlusN` becomes:**
 ```ts
 tactPlusN(n: number): void {
-  const ticks = n * this.cpuTactScale;   // Z80 T-states → 28 MHz ticks
-  this.tacts += ticks;
-  this.frameTacts += ticks;
+  this.tacts += n;                              // Z80 T-states (unchanged)
+  const ticks28 = n * this.cpuTactScale;        // 28 MHz ticks for frame tracking
+  this.frameTacts += ticks28;
   if (this.frameTacts >= this.tactsInFrame) {
     this.frames++;
     this.frameTacts -= this.tactsInFrame;
@@ -125,32 +131,38 @@ onTactIncremented(): void {
   }
   this.beeperDevice.setNextAudioSample();
 
-  // CTC — direct, no conversion needed!
-  this.ctcDevice.advanceToSysClock(this.tacts);
+  // CTC — use frameTacts as the 28 MHz system clock directly
+  this.ctcDevice.advanceToSysClock(this.frameTacts);
 
-  // Audio — fixed sample interval, no clockMultiplier adjustment
-  this.audioControlDevice.getTurboSoundDevice().setNextAudioSample(this.tacts);
+  // Audio — fixed sample interval in 28 MHz ticks, no clockMultiplier adjustment
+  this.audioControlDevice.getTurboSoundDevice().setNextAudioSample(this.frameTacts);
   this.audioControlDevice.getDacDevice().setNextAudioSample();
   this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
 }
 ```
 
 **Fields eliminated or simplified:**
-- `ctcSystemClock` → eliminated (use `tacts` directly)
+- `ctcSystemClock` → eliminated (use `frameTacts` directly)
 - `_lastCtcTacts` → eliminated
 - `tactsInCurrentFrame` → eliminated (frame boundary is fixed `tactsInFrame`)
-- `frameTactsMultiplier` → eliminated
-- `lastClockMultiplier` → eliminated
+- `frameTactsMultiplier` → eliminated (Step 2)
+- `lastClockMultiplier` → eliminated (Step 2)
+- `tactsInFrame28` → eliminated (now `tactsInFrame` IS 28 MHz)
 - Audio `* clockMultiplier` adjustments → eliminated
 
 **New/changed fields:**
-- `baseClockFrequency` = 28,000,000
 - `cpuTactScale`: 8 (3.5 MHz), 4 (7 MHz), 2 (14 MHz), 1 (28 MHz)
 - `tactsInFrame` = totalHC × totalVC × 4 (28 MHz ticks per frame, e.g. 567,264)
+- `baseClockFrequency` = 28,000,000
+- `frameTactMultiplier` = 1
+
+**`tacts` is NOT changed:**
+- All existing test expectations on `cpu.tacts` remain valid
+- `tacts` still counts Z80 T-states: NOP = 4, LD A,n = 7, etc.
+- Debugger/UI shows T-states directly (no conversion needed)
 
 **`CpuSpeedDevice`:**
 ```ts
-// Instead of clockMultiplier 1/2/4/8, emit cpuTactScale 8/4/2/1
 get effectiveCpuTactScale(): number {
   return 8 >>> this._effectiveSpeed;  // speed 0→8, 1→4, 2→2, 3→1
 }
@@ -162,8 +174,8 @@ get effectiveCpuTactScale(): number {
 setAudioSampleRate(sampleRate: number): void {
   this._audioSampleLength = 28_000_000 / sampleRate;  // fixed, ~583 ticks at 48kHz
 }
-setNextAudioSample(machineTacts: number): void {
-  if (machineTacts <= this._audioNextSampleTact) return;
+setNextAudioSample(frameTacts28: number): void {
+  if (frameTacts28 <= this._audioNextSampleTact) return;
   // ... generate sample ...
   this._audioNextSampleTact += this._audioSampleLength;  // no multiplier needed
 }
@@ -176,28 +188,32 @@ setNextAudioSample(machineTacts: number): void {
 
 #### Impact Summary
 
-| Aspect                      | Before                                    | After                        |
-|-----------------------------|-------------------------------------------|------------------------------|
-| `tacts` meaning             | Variable-rate CPU T-states                | Fixed 28 MHz ticks           |
-| Frame boundary check        | `frameTacts >= tactsInFrame * mult`        | `frameTacts >= tactsInFrame`  |
-| CTC clock derivation        | `delta * (8 / clockMultiplier)`            | `tacts` directly             |
-| Screen tact derivation      | `frameTacts * (2 / clockMultiplier)`       | `frameTacts >>> 2`           |
-| Audio sample interval       | `length * clockMultiplier`                 | `length` (fixed)             |
-| Speed change at frame start | Recalculate `tactsInCurrentFrame`          | Just update `cpuTactScale`   |
+| Aspect                      | Before                                    | After                         |
+|-----------------------------|-------------------------------------------|-------------------------------|
+| `tacts` meaning             | Z80 T-states                              | Z80 T-states (unchanged!)     |
+| `frameTacts` meaning        | CLK_7 screen tacts                        | 28 MHz ticks                  |
+| Frame boundary check        | `frameTacts >= tactsInFrame * mult`        | `frameTacts >= tactsInFrame`   |
+| CTC clock derivation        | `delta * (8 / clockMultiplier)`            | `frameTacts` directly         |
+| Screen tact derivation      | `frameTacts * (2 / clockMultiplier)`       | `frameTacts >>> 2`            |
+| Audio sample interval       | `length * clockMultiplier`                 | `length` (fixed)              |
+| Speed change at frame start | Recalculate `tactsInCurrentFrame`          | Just update `cpuTactScale`    |
 | Fields to track             | 7+ clock-related fields                   | 3 (`tacts`, `frameTacts`, `cpuTactScale`) |
+| Existing test changes       | Many (tacts values multiplied by 8)       | **None** — only new tests     |
 
 #### Tradeoffs
 
 **Pros:**
-- One clock domain for everything — 28 MHz
-- CTC becomes trivial (direct `tacts` usage)
+- One clock domain for frame tracking, CTC, and audio — 28 MHz
+- CTC becomes trivial (direct `frameTacts` usage)
 - Audio sample timing is constant regardless of speed
 - No per-speed recalculations at frame boundaries
 - `tactPlusN` is a simple multiply-and-add with a right-shift for screen tacts
 - Frame boundary is a single fixed comparison
+- **All existing unit tests pass unchanged**
 
 **Cons:**
-- `tacts` no longer represents traditional Z80 T-states — debugger/UI must adapt (`cpuTStates = tacts / cpuTactScale` for display)
+- Two counters in `tactPlusN`: `tacts` (T-states) and `frameTacts` (28 MHz)
+- Code that needs wall-clock time must use `frameTacts` or `tacts * cpuTactScale`, not `tacts` alone
 - The Z80Cpu base class shared with Spectrum 48K/128K machines needs care — either the base class becomes speed-aware, or Z80NCpu fully owns its `tactPlusN` (it already overrides it)
 - DMA T-state return values need scaling (but `tactPlusN` does this automatically)
 - Slight semantic adjustment: a "NOP at 3.5 MHz" costs 32 ticks, not 4
@@ -401,20 +417,15 @@ type Z80CpuState = { tacts: number; tactsAtLastStart: number; ... };
 type CpuStateChunk = { tacts: number; ... };
 ```
 
-**Option A change:** `tacts` becomes 28 MHz ticks. Options:
-- **(a)** Keep `tacts` as 28 MHz ticks. UI shows raw system clock.
-- **(b)** Add `cpuTStates` field for Z80 T-states: `cpuTStates = tacts / cpuTactScale`.
-- **(c)** Convert back to Z80 T-states in `getCpuState()` so the type stays familiar.
-
-**Recommendation:** Option (a) is simplest. The Z80CpuPanel can show the label "CLK (28 MHz)"
-and keep it. If users need Z80 T-states, add `cpuTStates` later.
+**Revised approach:** `tacts` stays as Z80 T-states. No change needed to `Z80CpuState` types.
+The `tacts` field in CpuState/CpuStateChunk already represents T-states and remains valid.
 
 ### Summary: What Can Be Changed
 
 | Component | Change Needed? | Difficulty | Notes |
 |-----------|---------------|------------|-------|
 | EmuStatusBar | Yes — frequency calc | Easy | `28M / cpuTactScale` instead of `baseClockFreq * clockMultiplier` |
-| Z80CpuPanel | Maybe — label/tooltip | Trivial | `tacts` now means 28 MHz ticks; update tooltip |
+| Z80CpuPanel | No | — | `tacts` still means T-states; no change |
 | M6510CpuPanel | No | — | Not affected (C64 machine) |
 | UlaPanel / MainToEmuProcessor | No | — | `currentFrameTact` stays CLK_7 |
 | EmulatorPanel (audio init) | No | — | Formula still correct |
@@ -430,9 +441,10 @@ and keep it. If users need Z80 T-states, add `cpuTStates` later.
 | Disassembly T-states | No | — | Static per-instruction data |
 | MachineController | Yes — rename + simplify | Easy | Frame gap formula, target speed |
 
-**Conclusion:** All renderer components can be adapted to Option A. No blockers found.
-Most changes are mechanical renames. The only semantic change users see is that
-"CLK" in Z80CpuPanel shows 28 MHz ticks instead of Z80 T-states.
+**Conclusion:** All renderer components can be adapted. No blockers found.
+Most changes are mechanical renames. `tacts` stays as Z80 T-states — no UI conversion
+needed. The only visible change is the FPS formula simplification and speed display
+using `cpuTactScale`.
 
 ---
 
@@ -442,18 +454,18 @@ Most changes are mechanical renames. The only semantic change users see is that
 
 | File | Change |
 |------|--------|
-| `z80/Z80NCpu.ts` | Rewrite `tactPlusN`, add `cpuTactScale`, remove `frameTactsMultiplier`/`lastClockMultiplier` |
-| `machines/zxNext/Z80NMachineBase.ts` | Update `setTactsInFrame` (now 28 MHz), remove `tactsInFrame28`, set `frameTactMultiplier=1` |
+| `z80/Z80NCpu.ts` | Rewrite `tactPlusN` (`frameTacts` in 28 MHz, `tacts` stays T-states), add `cpuTactScale`, remove `frameTactsMultiplier`/`lastClockMultiplier` |
+| `machines/zxNext/Z80NMachineBase.ts` | Update `setTactsInFrame` (×4 for 28 MHz), remove `tactsInFrame28`, set `frameTactMultiplier=1` |
 | `machines/zxNext/ZxNextMachine.ts` | Set `baseClockFrequency=28M`, simplify `onTactIncremented`, remove `ctcSystemClock`/`_lastCtcTacts`, update `beforeInstructionExecuted` |
-| `machines/zxNext/CpuSpeedDevice.ts` | Emit `cpuTactScale` (8/4/2/1) instead of `effectiveClockMultiplier` (1/2/4/8) |
+| `machines/zxNext/CpuSpeedDevice.ts` | Emit `cpuTactScale` (8/4/2/1) alongside `effectiveClockMultiplier` |
 | `machines/MachineFrameRunner.ts` | Replace `tactsInCurrentFrame` recalculation with `cpuTactScale` update |
 | `machines/MachineController.ts` | Replace `targetClockMultiplier`/`clockMultiplier` with `cpuTactScale`, simplify frame gap |
-| `machines/zxNext/CtcDevice.ts` | No change (called with `tacts` directly) |
-| `machines/AudioDeviceBase.ts` (Beeper) | Use 28 MHz base for sample length, remove `* clockMultiplier` |
-| `machines/zxNext/TurboSoundDevice.ts` | Use 28 MHz base for sample length, remove `clockMultiplier` param from `setNextAudioSample` |
-| `machines/zxNext/screen/NextComposedScreenDevice.ts` | `tactsInFrame` = `totalHC * totalVC * 4` (28 MHz) |
+| `machines/zxNext/CtcDevice.ts` | No change (called with `frameTacts` directly) |
+| `machines/AudioDeviceBase.ts` (Beeper) | Use 28 MHz base for sample length, compare against `frameTacts` |
+| `machines/zxNext/TurboSoundDevice.ts` | Use 28 MHz base for sample length, accept `frameTacts` param instead of `tacts`+`clockMultiplier` |
+| `machines/zxNext/screen/NextComposedScreenDevice.ts` | No change (still passes CLK_7 to `setTactsInFrame`; conversion happens in Z80NMachineBase) |
 | `machines/zxNext/DmaDevice.ts` | No internal change (T-states from `stepDma` flow through `tactPlusN` which scales them) |
-| `machines/zxNext/UlaDevice.ts` | Use `tacts` directly (now consistent 28 MHz); may need adjustment for EAR timing |
+| `machines/zxNext/UlaDevice.ts` | May need adjustment for EAR timing if it uses `tacts` |
 
 ### Renderer (src/renderer/)
 
@@ -461,7 +473,7 @@ Most changes are mechanical renames. The only semantic change users see is that
 |------|--------|
 | `appEmu/StatusBar/EmuStatusBar.tsx` | Use `cpuTactScale` to derive display frequency |
 | `appEmu/EmulatorArea/EmulatorPanel.tsx` | Replace `clockMultiplier` dispatch with `cpuTactScale`; simplify FPS calc |
-| `appIde/SiteBarPanels/Z80CpuPanel.tsx` | Update CLK/TSP tooltips to reflect 28 MHz domain |
+| `appIde/SiteBarPanels/Z80CpuPanel.tsx` | `tacts` already shows T-states (no conversion needed) |
 | `appEmu/MainToEmuProcessor.ts` | Replace `clockMultiplier` in `getCpuStateChunk` (if exposed there) |
 
 ### Common (src/common/)
@@ -471,7 +483,7 @@ Most changes are mechanical renames. The only semantic change users see is that
 | `state/AppState.ts` | Rename `clockMultiplier` → `cpuTactScale`, default `8` |
 | `state/actions.ts` | Rename `setClockMultiplierAction` → `setCpuTactScaleAction` |
 | `state/emulator-state-reducer.ts` | Handle new action name |
-| `messaging/EmuApi.ts` | Optional: add `cpuTStates` to `Z80CpuState` |
+| `messaging/EmuApi.ts` | No change — `tacts` in `CpuState` already means T-states |
 
 ### Abstractions (src/renderer/abstractions/)
 
@@ -486,8 +498,9 @@ Most changes are mechanical renames. The only semantic change users see is that
 ## Step-by-Step Implementation Plan
 
 The plan is organized so each step produces a testable, non-breaking checkpoint.
-Steps 1–3 are internal refactoring that doesn't change behavior. Steps 4–6 switch
-the clock domain. Steps 7–8 update the UI layer.
+Steps 1–2 introduce `cpuTactScale` without changing behavior. Step 3 switches
+`frameTacts`/`tactsInFrame` to 28 MHz. Steps 4–6 simplify dependent subsystems.
+Steps 7–8 update the UI layer. **`tacts` stays as Z80 T-states throughout.**
 
 ### ~~Step 1: Add `cpuTactScale` alongside existing fields (no behavior change)~~ ✅ DONE
 
@@ -521,36 +534,40 @@ by keeping `tacts` in the old CPU-speed domain (for now).
 
 **Test:** Run full test suite. Verify all Z80/ZxNext tests pass with identical results.
 
-### Step 3: Switch `tacts` to 28 MHz domain in Z80NCpu
+### ~~Step 3: Switch `frameTacts`/`tactsInFrame` to 28 MHz domain~~ ✅ DONE
 
-**Goal:** The core change — `tacts` now counts at 28 MHz.
+**Goal:** `frameTacts` counts in 28 MHz ticks; `tacts` stays as Z80 T-states.
+This is the core change. All existing tests pass because they check `tacts`, not `frameTacts`.
 
 **Changes:**
 1. `Z80NCpu.ts` — Rewrite `tactPlusN`:
    ```ts
    tactPlusN(n: number): void {
-     const ticks28 = n * this.cpuTactScale;
-     this.tacts += ticks28;
+     this.tacts += n;                          // Z80 T-states (unchanged)
+     const ticks28 = n * this.cpuTactScale;    // 28 MHz ticks
      this.frameTacts += ticks28;
      if (this.frameTacts >= this.tactsInFrame) { ... }
-     this.currentFrameTact = (this.frameTacts >>> 2) | 0;
+     this.currentFrameTact = (this.frameTacts >>> 2) | 0;  // back to CLK_7
      this.onTactIncremented();
    }
    ```
-2. `ZxNextMachine.ts` constructor — Set `this.baseClockFrequency = 28_000_000`.
-3. `Z80NMachineBase.ts` — `setTactsInFrame(tacts)`:
+   Remove `tactsInFrame28` field (now redundant — `tactsInFrame` IS 28 MHz ticks).
+2. `Z80NMachineBase.ts` — `setTactsInFrame(tacts)`:
    ```ts
    setTactsInFrame(tacts: number): void {
-     // tacts arrives in CLK_7 (screen tacts) from the screen device
-     this._tactsInFrame = tacts * 4;  // convert to 28 MHz
+     // tacts arrives in CLK_7 from the screen device; multiply by 4 for 28 MHz
+     super.setTactsInFrame(tacts * 4);
    }
    ```
-   Remove `tactsInFrame28` field (now redundant — `tactsInFrame` IS 28 MHz ticks).
-4. `ZxNextMachine.ts` — Remove `frameTactMultiplier` override (set to `1` or remove).
+3. `Z80NMachineBase.ts` — Set `frameTactMultiplier = 1`.
+4. `ZxNextMachine.ts` constructor — Set `this.baseClockFrequency = 28_000_000`.
+5. `CpuSpeedDevice.ts` — In `requestSpeedUpdate`, also sync `cpuTactScale` on the
+   machine so that callers that set speed and immediately call timing methods see
+   correct values without waiting for `beforeInstructionExecuted`.
 
-**Test:** Run Z80 core tests (these use the base Z80Cpu, not Z80NCpu — unaffected).
-ZxNext-specific tests will need adjustment because `tacts` values change.
-Write a focused test: run a known instruction sequence, verify `tacts` = expected × `cpuTactScale`.
+**Test:** Run full test suite. All existing tests pass because `tacts` is unchanged.
+Write a focused test: verify `frameTacts` = expected × `cpuTactScale` after a known
+instruction sequence.
 
 ### Step 4: Simplify `onTactIncremented` and remove CTC conversion
 
@@ -564,10 +581,10 @@ Write a focused test: run a known instruction sequence, verify `tacts` = expecte
      // Screen & copper (currentFrameTact already in CLK_7)
      while (this.lastRenderedFrameTact < this.currentFrameTact) { ... }
      this.beeperDevice.setNextAudioSample();
-     // CTC — direct!
-     this.ctcDevice.advanceToSysClock(this.tacts);
-     // Audio — no clockMultiplier param
-     this.audioControlDevice.getTurboSoundDevice().setNextAudioSample(this.tacts);
+     // CTC — use frameTacts directly as 28 MHz system clock
+     this.ctcDevice.advanceToSysClock(this.frameTacts);
+     // Audio — fixed 28 MHz sample interval, no clockMultiplier param
+     this.audioControlDevice.getTurboSoundDevice().setNextAudioSample(this.frameTacts);
      this.audioControlDevice.getDacDevice().setNextAudioSample();
      this.audioControlDevice.getAudioMixerDevice().setNextAudioSample();
    }
@@ -587,17 +604,12 @@ Write a focused test: run a known instruction sequence, verify `tacts` = expecte
    ```ts
    this._audioSampleLength = 28_000_000 / sampleRate;
    ```
-   `setNextAudioSample()` — remove `* this.machine.clockMultiplier`:
-   ```ts
-   this._audioNextSampleTact += this._audioSampleLength;
-   ```
-   Use `this.machine.tacts` (now 28 MHz) for comparison.
-2. `TurboSoundDevice.ts` — Same pattern. `setNextAudioSample(machineTacts)` — remove
+   `setNextAudioSample()` — compare against `this.machine.frameTacts` (28 MHz).
+2. `TurboSoundDevice.ts` — Same pattern. `setNextAudioSample(frameTacts28)` — remove
    `clockMultiplier` parameter. Sample length = `28_000_000 / sampleRate`.
-   PSG clock divisor update: PSG runs at 1.75 MHz = 28 MHz / 16, so `_psgClockDivisor = 16`
-   stays correct.
+   PSG clock divisor: PSG runs at 1.75 MHz = 28 MHz / 16, `_psgClockDivisor = 16` stays.
 3. `ZxNextMachine.ts` — Update `afterInstructionExecuted` and `onTactIncremented` calls
-   to not pass `clockMultiplier`.
+   to pass `this.frameTacts` instead of `this.tacts` + `this.clockMultiplier`.
 
 **Test:** Run audio tests. Verify sample generation rate matches expected 48 kHz output.
 
@@ -612,10 +624,9 @@ Write a focused test: run a known instruction sequence, verify `tacts` = expecte
 2. `MachineController.ts` — Replace:
    - `targetClockMultiplier` → `targetCpuTactScale`
    - `clockMultiplier` in `FrameCompletedArgs` → `cpuTactScale`
-   - Frame gap calculation uses `tactsInFrame / baseClockFrequency` directly
+   - Frame gap calculation: `tactsInFrame / baseClockFrequency * 1000` directly
      (no `frameTactMultiplier` division needed since both are 28 MHz).
-3. `Z80Cpu.ts` — Remove `tactsInCurrentFrame` field (no longer used by Z80NCpu path;
-   keep for Z80Cpu base if other machines still need it, or mark deprecated).
+3. `Z80Cpu.ts` — Mark `tactsInCurrentFrame` deprecated (keep for non-Next machines).
 4. `IAnyMachine.ts` — Rename `targetClockMultiplier` → `targetCpuTactScale`.
 5. `IMachineController.ts` — Rename `clockMultiplier` in `FrameCompletedArgs`.
 
@@ -634,70 +645,60 @@ Write a focused test: run a known instruction sequence, verify `tacts` = expecte
 5. `src/renderer/appEmu/EmulatorArea/EmulatorPanel.tsx` — Dispatch `setCpuTactScaleAction`.
    Simplify FPS calc to `28_000_000 / tactsInFrame / uiFrameFrequency`.
 
-**Automated test:** TypeScript compiler must report zero errors after the rename (`npm run build` or `tsc --noEmit`).
+**Automated test:** TypeScript compiler must report zero errors (`tsc --noEmit`).
 
 **Manual test — Status bar frequency display:**
 1. Start the ZX Next emulator (F5).
-2. Observe the status bar at the bottom right — it should read `(3.500 MHz)`.
-3. Open the Next Register panel and write `0x03` to NextReg `0x07` (CPU Speed = 28 MHz).
-   - In the assembler: `NEXTREG 7, 3` then run it, or use the NextReg write tool.
-4. Status bar must update to `(28.000 MHz)` within one frame.
-5. Write `0x02` to NextReg `0x07` → status bar must show `(14.000 MHz)`.
-6. Write `0x01` → `(7.000 MHz)`. Write `0x00` → `(3.500 MHz)`.
-7. Stop the emulator and start again — status bar must return to `(3.500 MHz)` on hard reset.
+2. Status bar should read `(3.500 MHz)`.
+3. Write `0x03` to NextReg `0x07` → `(28.000 MHz)`.
+4. Write `0x02` → `(14.000 MHz)`. `0x01` → `(7.000 MHz)`. `0x00` → `(3.500 MHz)`.
+5. Hard reset → `(3.500 MHz)`.
 
 **Manual test — Speed change persists across pause/resume:**
 1. Set speed to 14 MHz (NextReg 0x07 = 0x02).
-2. Pause the emulator (F6). Status bar should still show `(14.000 MHz)`.
-3. Resume (F5). Speed should remain at 14 MHz.
+2. Pause (F6). Status bar still shows `(14.000 MHz)`.
+3. Resume (F5). Speed remains at 14 MHz.
 
-### Step 8: Update CPU state display and types
+### Step 8: Final cleanup
 
-**Goal:** Final cleanup of types and debug panel display.
+**Goal:** Remove remaining `clockMultiplier` references and update debug panel.
 
 **Changes:**
-1. `src/common/messaging/EmuApi.ts` — Optionally add `cpuTStates` field to `Z80CpuState`.
-2. `ZxNextMachine.ts` `getCpuState()` — Add `cpuTStates: this.tacts / this.cpuTactScale`.
-3. `Z80CpuPanel.tsx` — Update tooltips: "CLK" → "System clock (28 MHz ticks)" or
-   display `cpuTStates` as "CPU T-States" if added.
-4. Remove any remaining references to `clockMultiplier` in comments/docs.
+1. `ZxNextMachine.ts` `getCpuState()` — `tacts` already shows Z80 T-states (no change).
+2. `Z80CpuPanel.tsx` — Tooltip: "T-States" (it already is T-states, no conversion needed).
+3. Remove any remaining references to `clockMultiplier` in comments/docs.
+4. Remove `clockMultiplier` field from `Z80Cpu` if no other machine uses it, or mark
+   deprecated for non-Next machines.
 
-**Automated test:** Run `npm run test`. All existing tests must pass.
+**Automated test:** Run `npm run test`. All existing tests pass. No new test expectations
+needed beyond Steps 3–6.
 
-**Manual test — Z80 CPU panel CLK counter:**
-1. Start the ZX Next emulator and open the Z80 CPU panel (side bar).
-2. At 3.5 MHz (default speed), run for exactly 1 second (frame count ≈ 50).
-   - `CLK` should read approximately `28,000,000` (28 M ticks per second).
-   - A single `NOP` instruction at 3.5 MHz costs 4 Z80 T-states = 4 × 8 = 32 ticks.
-3. Set CPU speed to 28 MHz (NextReg 0x07 = 0x03) and run for 1 second.
-   - `CLK` advances at the same 28 MHz wall-clock rate (same real-time ticks per second).
-   - A `NOP` at 28 MHz costs 4 Z80 T-states × 1 = 4 ticks (8× fewer ticks per instruction than at 3.5 MHz).
-4. The `TSP` (ticks since pause) field resets to `0` each time the machine is paused and
-   resumed, then climbs from zero.
-
-**Manual test — Tooltip accuracy:**
-1. Hover over the `CLK` label in the Z80 CPU panel.
-   - Tooltip should read `"System clock (28 MHz ticks)"`.
-2. Hover over `TSP` — tooltip should read `"28 MHz ticks since last start after pause"`.
+**Manual test — Z80 CPU panel:**
+1. Start the ZX Next emulator and open the Z80 CPU panel.
+2. At 3.5 MHz, run a NOP; `tacts` increases by 4.
+3. At 28 MHz, run a NOP; `tacts` still increases by 4.
+4. Verify frame counter advances correctly at all four speeds.
 
 **Manual test — CTC-driven audio (beeper timing):**
-1. Load and run a ZX Next demo or game that plays beeper sound.
+1. Load a ZX Next demo that plays beeper sound.
 2. Verify audio sounds correct at 3.5 MHz.
-3. Switch to 28 MHz — audio pitch and rhythm must remain identical (same real-time timing).
-4. Switch back to 3.5 MHz — audio must continue without glitches or pitch shift.
+3. Switch to 28 MHz — audio pitch and rhythm must remain identical.
+4. Switch back to 3.5 MHz — no glitches or pitch shift.
 
 ---
 
 ### Step Dependency Graph
 
 ```
-Step 1 (add cpuTactScale)
-  └── Step 2 (refactor tactPlusN, behavior-preserving)
-        └── Step 3 (switch tacts to 28 MHz) ◄── core change
+Step 1 (add cpuTactScale) ✅
+  └── Step 2 (refactor tactPlusN, behavior-preserving) ✅
+        └── Step 3 (switch frameTacts/tactsInFrame to 28 MHz) ◄── core change
               ├── Step 4 (simplify onTactIncremented, CTC)
               ├── Step 5 (simplify audio devices)
               └── Step 6 (simplify frame runner, controller)
                     └── Step 7 (Redux + renderer updates)
+                          └── Step 8 (final cleanup)
+```
                           └── Step 8 (CPU state types, final cleanup)
 ```
 

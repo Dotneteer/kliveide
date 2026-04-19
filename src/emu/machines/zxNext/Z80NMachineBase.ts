@@ -240,8 +240,8 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @param tacts Tacts to set
    */
   setTactsInFrame(tacts: number): void {
-    super.setTactsInFrame(tacts);
-    this.tactsInFrame28 = tacts * 8;
+    // tacts arrives in CLK_7 from the screen device; multiply by 4 to get 28 MHz ticks
+    super.setTactsInFrame(tacts * 4);
   }
 
   /**
@@ -285,10 +285,10 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   readonly uiFrameFrequency: number = 1;
 
   /**
-   * The frame tact multiplier CPU is bases on 3.5MHz clock,
-   * but the Next's video timing is based on 7MHz clock.
+   * frameTactMultiplier = 8: tactsInFrame is in 28 MHz ticks, baseClockFrequency is 3.5 MHz.
+   * Frame gap = tactsInFrame / 8 / 3_500_000 = 28M ticks / 28M = correct wall-clock duration.
    */
-  readonly frameTactMultiplier = 2;
+  readonly frameTactMultiplier = 8;
 
   /**
    * Clean up machine resources on stop

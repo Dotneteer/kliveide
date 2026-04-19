@@ -4,9 +4,6 @@ import { Z80Cpu, Z80Operation, incFlags, sz53pvTable } from "./Z80Cpu";
 import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 
 export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
-  // --- Number of tacts in the current frame with 28MHz clock
-  protected tactsInFrame28 = 0;
-
   // --- Scale factor converting one Z80 T-state to 28 MHz ticks.
   // --- Values: 8 (3.5 MHz), 4 (7 MHz), 2 (14 MHz), 1 (28 MHz).
   // --- Updated by ZxNextMachine.beforeInstructionExecuted via CpuSpeedDevice.
@@ -43,19 +40,20 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
    * This method increments the current CPU tacts by N.
    * @param n Number of tact increments
    *
-   * Uses cpuTactScale to derive the screen-tact ratio without division.
-   * cpuTactScale/4 equals the former frameTactsMultiplier (2/clockMultiplier):
-   *   3.5 MHz: 8/4 = 2,  7 MHz: 4/4 = 1,  14 MHz: 2/4 = 0.5,  28 MHz: 1/4 = 0.25
+   * tacts counts Z80 T-states (unchanged, used by unit tests).
+   * frameTacts counts 28 MHz ticks: n * cpuTactScale (8/4/2/1 for 3.5/7/14/28 MHz).
+   * currentFrameTact is converted back to CLK_7 for screen rendering: frameTacts >>> 2.
+   * tactsInFrame is now in the 28 MHz domain (set by Z80NMachineBase.setTactsInFrame × 4).
    */
   tactPlusN(n: number): void {
     this.tacts += n;
-    this.frameTacts += n * this.cpuTactScale / 4;
+    this.frameTacts += n * this.cpuTactScale;   // 28 MHz ticks
     if (this.frameTacts >= this.tactsInFrame) {
       this.frames++;
       this.frameTacts -= this.tactsInFrame;
       this.frameCompleted = true;
     }
-    this.currentFrameTact = this.frameTacts | 0;
+    this.currentFrameTact = (this.frameTacts >>> 2) | 0;  // 28 MHz → CLK_7
     this.onTactIncremented();
   }
 
