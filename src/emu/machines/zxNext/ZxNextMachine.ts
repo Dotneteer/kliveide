@@ -1095,6 +1095,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   beforeInstructionExecuted(): void {
     // --- Set the interrupt signal, if required so
     super.beforeInstructionExecuted();
+
+    // --- clockMultiplier is kept for UI reporting (status bar frequency display)
+    // --- via FrameCompletedArgs → Redux. Actual timing uses cpuTactScale in tactPlusN.
     this.clockMultiplier = this.cpuSpeedDevice.effectiveClockMultiplier;
     this.cpuTactScale = this.cpuSpeedDevice.effectiveCpuTactScale;
 
@@ -1289,8 +1292,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * The keyboard provider can play back emulated key strokes
    */
   queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
-    const startTact = this.tacts + frameOffset * this.tactsInFrame;
-    const endTact = startTact + frames * this.tactsInFrame;
+    // tactsInFrame is in 28 MHz domain; emulateKeystroke compares against this.tacts (T-states),
+    // so divide by frameTactMultiplier (8) to get T-states per frame.
+    const tactsPerFrame = (this.tactsInFrame / this.frameTactMultiplier) | 0;
+    const startTact = this.tacts + frameOffset * tactsPerFrame;
+    const endTact = startTact + frames * tactsPerFrame;
     const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
     this.emulatedKeyStrokes.push(keypress);
   }
@@ -1464,6 +1470,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
 
+    // --- Sync CTC to end of frame, then reset sync clock for next frame
+    // --- (frameTacts wraps to ~0 each frame; readPort/writePort sync lazily)
+    this.ctcDevice.onNewFrame(this.tactsInFrame);
+
     // --- Prepare audio devices for the new frame
     this.audioControlDevice.getTurboSoundDevice().onNewFrame();
     this.audioControlDevice.getDacDevice().onNewFrame();
@@ -1514,9 +1524,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
     }
     this.beeperDevice.setNextAudioSample();
-
-    // --- CTC: frameTacts is already in 28 MHz domain
-    this.ctcDevice.advanceToSysClock(this.frameTacts);
 
     // --- Generate audio samples for all audio devices
     this.audioControlDevice

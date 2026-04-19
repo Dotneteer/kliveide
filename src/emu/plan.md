@@ -651,20 +651,32 @@ All 18,221 tests pass.
 - `targetClockMultiplier` → `targetCpuTactScale` rename deferred to Step 7
   (crosses `IAnyMachine` interface shared by all machines).
 
-### Step 7: Update Redux state and renderer components
+### Step 7: Update Redux state and renderer components ✅ (renames skipped)
 
 **Goal:** Propagate the rename through the UI layer.
 
-**Changes:**
+**Original plan:**
 1. `src/common/state/AppState.ts` — Rename `clockMultiplier` → `cpuTactScale`, default `8`.
 2. `src/common/state/actions.ts` — Rename `setClockMultiplierAction` → `setCpuTactScaleAction`.
 3. `src/common/state/emulator-state-reducer.ts` — Handle new action name.
-4. `src/renderer/appEmu/StatusBar/EmuStatusBar.tsx` — Read `cpuTactScale` from Redux,
-   display `(28_000_000 / cpuTactScale / 1_000_000).toFixed(3)` MHz.
+4. `src/renderer/appEmu/StatusBar/EmuStatusBar.tsx` — Read `cpuTactScale` from Redux.
 5. `src/renderer/appEmu/EmulatorArea/EmulatorPanel.tsx` — Dispatch `setCpuTactScaleAction`.
-   Simplify FPS calc to `28_000_000 / tactsInFrame / uiFrameFrequency`.
 
-**Automated test:** TypeScript compiler must report zero errors (`tsc --noEmit`).
+**Implementation notes:**
+- Renames SKIPPED: `clockMultiplier` in Redux/IAnyMachine is shared with non-Next machines
+  (Spectrum 48/128/P3e, Z88, C64) where it means "emulation speed multiplier" (1x/2x/4x/8x),
+  a fundamentally different concept from the Next's `cpuTactScale` (28 MHz clock divisor).
+- Status bar already works correctly: `baseClockFrequency * clockMultiplier` = `3.5M * 1/2/4/8`
+  = correct frequency at all Next speeds.
+- The flow `cpuSpeedDevice → clockMultiplier → FrameCompletedArgs → Redux → EmuStatusBar`
+  correctly propagates the Next's CPU speed to the UI without any changes.
+- `MF_ALLOW_CLOCK_MULTIPLIER: false` in the machine registry already hides the speed menu
+  for the Next (speed is hardware-controlled via NextReg 0x07).
+- `Z80NMachineBase.allowCpuClockChange()` returns `false`, preventing MachineFrameRunner
+  from overriding the Next's `clockMultiplier` with the Redux value.
+- No code changes needed.
+
+**Automated test:** All 18,221 tests pass.
 
 **Manual test — Status bar frequency display:**
 1. Start the ZX Next emulator (F5).
@@ -678,19 +690,21 @@ All 18,221 tests pass.
 2. Pause (F6). Status bar still shows `(14.000 MHz)`.
 3. Resume (F5). Speed remains at 14 MHz.
 
-### Step 8: Final cleanup
+### Step 8: Final cleanup ✅
 
 **Goal:** Remove remaining `clockMultiplier` references and update debug panel.
 
-**Changes:**
-1. `ZxNextMachine.ts` `getCpuState()` — `tacts` already shows Z80 T-states (no change).
-2. `Z80CpuPanel.tsx` — Tooltip: "T-States" (it already is T-states, no conversion needed).
-3. Remove any remaining references to `clockMultiplier` in comments/docs.
-4. Remove `clockMultiplier` field from `Z80Cpu` if no other machine uses it, or mark
-   deprecated for non-Next machines.
+**Implementation notes:**
+1. `ZxNextMachine.getCpuState()` — Already returns `tacts` as Z80 T-states. No change needed.
+2. `Z80CpuPanel.tsx` — Already shows "Current CPU clock" and "T-States since last start
+   after pause" tooltips. No change needed.
+3. Added clarifying comment in `ZxNextMachine.beforeInstructionExecuted` that `clockMultiplier`
+   is kept for UI reporting (status bar) while actual timing uses `cpuTactScale` in `tactPlusN`.
+4. `clockMultiplier` field on `Z80Cpu` — KEPT. Used by Spectrum 48/128/P3e, Z88, C64, and
+   the floppy controller (`FloppyControllerDevice.registerEvent` uses
+   `baseClockFrequency * clockMultiplier` for ms→tacts conversion).
 
-**Automated test:** Run `npm run test`. All existing tests pass. No new test expectations
-needed beyond Steps 3–6.
+**Automated test:** All 18,221 tests pass.
 
 **Manual test — Z80 CPU panel:**
 1. Start the ZX Next emulator and open the Z80 CPU panel.
@@ -715,11 +729,8 @@ Step 1 (add cpuTactScale) ✅
               ├── Step 4 (simplify onTactIncremented, CTC) ✅
               ├── Step 5 (simplify audio devices) ✅
               └── Step 6 (simplify frame runner, controller) ✅ (deferred renames)
-                    └── Step 7 (Redux + renderer updates)
-                          └── Step 8 (final cleanup)
-```
-                          └── Step 8 (CPU state types, final cleanup)
+                    └── Step 7 (Redux + renderer updates) ✅ (renames skipped — shared interface)
+                          └── Step 8 (final cleanup) ✅
 ```
 
-Steps 4, 5, and 6 can be done in parallel after Step 3.
-Steps 7 and 8 depend on Step 6 (for the renamed Redux actions).
+**All 8 steps complete. All 18,221 tests pass. No existing tests were modified.**
