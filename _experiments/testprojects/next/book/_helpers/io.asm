@@ -11,5 +11,5 @@ GetReg .macro(idx)
     ld bc,$243b             ; Next register select port
     out (c),a               ; Select the register
     inc b                   ; BC = $253B (Next register read port)
-    in (c),a                ; Read the register value into A
+    in a,(c)                ; Read the register value into A
 .endm

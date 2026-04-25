@@ -23,6 +23,13 @@
         "line": 24,
         "exec": true,
         "ioMask": 65535
+      },
+      {
+        "resource": "03_memory/mmu.asm",
+        "line": 36,
+        "exec": true,
+        "ioMask": 65535,
+        "resolvedAddress": 36636
       }
     ]
   },
@@ -55,28 +62,28 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 65,
-            "column": 16
+            "line": 13,
+            "column": 1
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/ctc.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
           "position": {
-            "line": 44,
-            "column": 15
+            "line": 12,
+            "column": 12
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/timing.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/io.asm",
           "position": {
-            "line": 66,
-            "column": 27
+            "line": 14,
+            "column": 13
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/ctc.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 1386,

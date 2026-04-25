@@ -14,14 +14,16 @@
 ; Use the utility methods
 #include "_helpers/display.asm"
 #include "_helpers/timing.asm"
+#include "_helpers/io.asm"
 
 ; Include the examples
-#include "01_intro/print.asm"
-#include "02_z80n/extinstr.asm"
-#include "03_talktohw/nr.asm"
-#include "03_talktohw/io.asm"
-#include "03_talktohw/ctc.asm"
-#include "04_zxndma/memcpy.asm"
+#include "00_intro/print.asm"
+#include "01_z80n/extinstr.asm"
+#include "02_talktohw/nr.asm"
+#include "02_talktohw/io.asm"
+#include "03_memory/mmu.asm"
+#include "05_ctc/ctc.asm"
+#include "06_zxndma/memcpy.asm"
 
 ; We keep 256 bytes for the stack
 STACK
@@ -33,11 +35,11 @@ Main
     call _clearScreen
 ;
 ; Here are the examples. Uncomment the one you want to run
-    // --- Flying Start Demos
+    // --- 00: Flying Start Demos
     // call PrintWelcomeDemo
     // call PrintValuesDemo
 
-    // --- Z80N Demos
+    // --- 01: Z80N Demos
     // call SwapnibDemo
     // call MirrorDemo
     // call TestDemo
@@ -56,13 +58,20 @@ Main
     // call PixeldnDemo
     // call SetaeDemo
     
-    // --- Talk to HW Demos
+    // --- 02: Talk to HW Demos
     // call ReadIoDemo
     // call WriteIoDemo
     // call WiteNextRegDemo
+
+    // --- 03: Memory
+    call MmuRoundTripDemo
+
+    // --- 05: CTC Demos
     // call Measure1Demo
     // call Measure2Demo
-    call Measure3Demo
+    // call Measure3Demo
+
+    // --- 06: ZXNDMA Demos
     // call DmaSimpleMemCopyDemo
 
 ; When the example ends, we keep in infinite loop.

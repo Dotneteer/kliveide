@@ -14,6 +14,47 @@ Concretely: when the CPU executes `ld a,(hl)` with `HL = $5000`, the Z80 places 
 
 That's the whole story. Everything else in this chapter is detail.
 
+## RAM All the Way Down
+
+Here's something that might surprise you: **the Next has no ROM chips.** None. The FPGA uses SRAM — regular read/write memory — for everything, including the area you access when slots 0 and 1 hold `$FF`.
+
+What we call "ROM" is SRAM that the FPGA pre-loads at power-on from data baked into its configuration bitstream. Once loaded, those addresses behave like ROM only because **the FPGA's access logic refuses write operations to that region** — not because the memory itself is physically read-only. The "ROM lock" is a rule enforced in FPGA fabric, not a hardware property of the chip.
+
+Why does this matter?
+
+- The **alt-ROM mechanism** makes immediate sense: swapping in an alt-ROM is just telling the FPGA to use a different SRAM region when slot 0/1 is accessed. Same chip, same bus, different address range.
+- The **divMMC trick** works the same way: when a trap address is hit, divMMC re-routes slots 0/1 to yet another SRAM region — the divMMC firmware area — without touching a single MMU register.
+- **Everything shares one bus.** The Z80, the ULA, the DMA engine, the Copper — they all read and write the same physical SRAM. There is no separate ROM bus, no FLASH chip. Understanding the FPGA physical address layout explains how all subsystems co-exist on the same hardware.
+
+## The System Region: The First 256 KB
+
+The FPGA's physical address space runs from `$00'0000` to `$1F'FFFF` — 21 address bits, 2 MB total. The first 256 KB (`$00'0000`–`$03'FFFF`) is reserved for ROMs and system firmware. No MMU page number ever maps here; **page 0 starts at `$04'0000`**.
+
+```
+Physical address      Size    Contents
+──────────────────    ──────  ──────────────────────────────────────
+$00'0000–$00'3FFF     16 KB   ROM 0  (128K editor / NextBASIC)
+$00'4000–$00'7FFF     16 KB   ROM 1  (128K BASIC)
+$00'8000–$00'BFFF     16 KB   ROM 2  (+3 DOS)
+$00'C000–$00'FFFF     16 KB   ROM 3  (48K BASIC)
+$01'0000–$01'1FFF      8 KB   divMMC ROM
+$01'2000–$01'3FFF      8 KB   Reserved
+$01'4000–$01'7FFF     16 KB   Multiface ROM/RAM
+$01'8000–$01'BFFF     16 KB   Alt ROM 0  (128K-style, used by NextZXOS)
+$01'C000–$01'FFFF     16 KB   Alt ROM 1  (48K-style, used by NextZXOS)
+$02'0000–$03'FFFF    128 KB   divMMC RAM  (SD card firmware workspace)
+──────────────────    ──────  ──────────────────────────────────────
+Total system region  256 KB
+```
+
+The four "standard" ROM images in the first 64 KB are the ones you're probably familiar with. ROM 0 is the 128K editor (also used by NextBASIC); ROM 1 is 128K BASIC; ROM 2 is the +3 DOS; ROM 3 is the original 48K BASIC. The two-bit selector formed by bit 4 of `$7FFD` and bit 2 of `$1FFD` decides which one the Z80 sees through slots 0/1.
+
+The alt-ROMs just below that are where NextZXOS lives. At boot, before any user code runs, the FPGA loads NextZXOS into alt-ROM 0 (128K-style) and alt-ROM 1 (48K-style). When NextZXOS is active, the standard ROM images are still present — they're just not selected. Swap the selector, and the original 48K ROM re-appears at `$0000`.
+
+> **The unexpanded vs. expanded Next.** A base Next has 1 MB of total SRAM: 256 KB system region + 768 KB of user RAM = 96 user pages. A fully expanded 2 MB Next adds two more 512 KB IC chips, bringing user RAM to 1792 KB = 224 pages (numbered `$00`–`$DF`). Page numbers `$E0`–`$FE` are undefined on any hardware; `$FF` is the ROM sentinel and not a real page.
+
+Everything from `$04'0000` upwards is the user-accessible RAM that the MMU's page numbers actually refer to.
+
 ## The Vocabulary: Region, Bank, Page, Slot
 
 These four words come up constantly, often in the same paragraph. Pin them down once and you can read any Next reference without confusion.
@@ -30,25 +71,27 @@ These four words come up constantly, often in the same paragraph. Pin them down 
 
 ## The Physical Map
 
-Before we look at the MMU itself, here's what's actually out there in physical memory on a stock 2 MB Next:
+The system region takes care of itself. Here's the user-accessible RAM — the memory the MMU's page numbers actually point to — on a fully expanded 2 MB Next:
 
 ```
 Page    Bank    Address (physical)   Contents
 ─────   ────    ──────────────────   ────────────────────────────────
-0–1     Bank 0  $00'0000 – $00'3FFF  RAM (was Bank 0 on 128K)
-2–3     Bank 1  $00'4000 – $00'7FFF  RAM (was Bank 1 on 128K)
-4–5     Bank 2  $00'8000 – $00'BFFF  RAM (was Bank 2 on 128K)
-6–7     Bank 3  $00'C000 – $00'FFFF  RAM (was Bank 3 on 128K)
-8–9     Bank 4  $01'0000 – $01'3FFF  RAM (was Bank 4 on 128K)
-10–11   Bank 5  $01'4000 – $01'7FFF  ULA screen 0 (Bank 5)
-12–13   Bank 6  $01'8000 – $01'BFFF  RAM
-14–15   Bank 7  $01'C000 – $01'FFFF  ULA shadow screen (Bank 7)
-16–223  Bank 8+ $02'0000 – $1B'FFFF  RAM (Next-only banks)
+0–1     Bank 0  $04'0000 – $04'3FFF  RAM (was Bank 0 on 128K)
+2–3     Bank 1  $04'4000 – $04'7FFF  RAM (was Bank 1 on 128K)
+4–5     Bank 2  $04'8000 – $04'BFFF  RAM (was Bank 2 on 128K)
+6–7     Bank 3  $04'C000 – $04'FFFF  RAM (was Bank 3 on 128K)
+8–9     Bank 4  $05'0000 – $05'3FFF  RAM (was Bank 4 on 128K)
+10–11   Bank 5  $05'4000 – $05'7FFF  ULA screen 0 (Bank 5)
+12–13   Bank 6  $05'8000 – $05'BFFF  RAM
+14–15   Bank 7  $05'C000 – $05'FFFF  ULA shadow screen (Bank 7)
+16–223  Bank 8+ $06'0000 – $1B'FFFF  RAM (Next-only banks)
 ─────────────────────────────────────────────────────────────────────
                                      (page numbers $E0–$FF reserved)
 ```
 
 The two pages worth memorising are **10 and 11** (Bank 5) — that's where the classic ULA bitmap and attributes live, and you'll see those page numbers turn up as if they were folklore. Pages 14 and 15 (Bank 7) are the shadow screen, used for double-buffered ULA rendering.
+
+Banks 5 and 7 are physically special: unlike every other user page, which lives in external SRAM, these two banks are stored in **FPGA Block RAM (BRAM)** — fast internal memory built into the FPGA chip itself. BRAM is dual-ported: the CPU and the ULA/tilemap renderer each get their own independent port and can access the same memory simultaneously without blocking each other. This is how the ULA reads screen data for every scanline without pausing the CPU at all. One caveat: only 8 KB of Bank 7 is backed by BRAM (page 14, the shadow screen itself); page 15 falls back to external SRAM, which is why the Timex hi-res video modes cannot be located in Bank 7.
 
 The ROMs (the original 48K ROM, the 128K editor and BASIC ROMs, the +3 ROMs, plus the divMMC and alt-ROMs) live separately. They aren't pages — they're swapped *over the top* of slots 0 and 1 by a separate mechanism. We'll come back to them.
 
@@ -69,10 +112,11 @@ The MMU itself is just eight bytes, exposed as NextRegs `$50` through `$57`:
 
 Each register holds a single byte: the page number that's mapped into that slot right now. Writing a new value re-maps the slot instantly — the next memory access from the CPU sees the new page.
 
-Two values are special:
+The 256 possible values fall into three ranges:
 
-- `$FF` means **"map the ROM here"**. When slot 0 or slot 1 contains `$FF`, the slot reads from whichever ROM is currently selected (more on that in a moment) instead of from RAM. The default at boot is `$50 = $FF`, `$51 = $FF`, so slots 0 and 1 see the 16 KB ROM as if you were on a stock Spectrum.
-- Anything else is interpreted as a literal page number, with the obvious caveat that page numbers above the installed RAM (224 on a 2 MB Next) read as `$FF` and writes go nowhere.
+- **`$00`–`$DF`** (0–223) on a fully expanded 2 MB Next — valid user RAM pages. On a less-than-fully-expanded Next the ceiling is lower: 96 pages (`$00`–`$5F`) on a base unexpanded machine, 160 pages (`$00`–`$9F`) with one expansion IC fitted. The formula is: available pages = installed user RAM in KB ÷ 8.
+
+- **`$E0`–`$FF`** — out-of-range; all 32 values behave identically. In **slots 0–1** the hardware falls back to the currently selected ROM image — `$FF` is just the conventional spelling of "give me ROM here". In **slots 2–7** no memory is selected; the CPU reads `$FF` from idle bus pull-ups on real hardware, or `$7E` (a `LD A,(HL)` opcode) as a diagnostic marker in Klive. The default at boot is `$50 = $FF`, `$51 = $FF`, giving the ROM view across `$0000–$3FFF` that 48K software expects.
 
 > **NextReg or `nextreg`?** You can poke `$50`–`$57` either through ports `$243B`/`$253B` (the universal NextReg path covered in [I/O Ports and NextRegs](./02-io-and-nextregs.mdx)) or with the Z80N `nextreg` instruction. The Z80N form is shorter and faster — `nextreg $52,a` is two bytes and a handful of T-states — so it's what you'll see in most Next code.
 
@@ -80,34 +124,56 @@ Two values are special:
 
 Here's how the MMU turns a Z80 address into a physical one. Say slot 2 (`$52`) contains `$0A`, meaning page 10, and the CPU reads from `$5234`:
 
-```
-Z80 address:       0101 0010 0011 0100   ($5234)
-                   ─────                  ← top 3 bits select the slot (slot 2)
-                          ── ─── ────     ← bottom 13 bits are the offset
-                                            within the page
+1. **Slot selection.** Z80 address bits [15:13] = `010` = 2 → look up MMU register 2 (`$52`).
+2. **Page base.** `$52` = `$0A` = page 10 → FPGA physical base = `$04'0000` + 10 × `$2000` = **`$05'4000`**.
+3. **Offset.** Z80 address bits [12:0] = `$1234` (the position within the 8 KB page).
+4. **Result.** `$05'4000` + `$1234` = **`$05'5234`**.
 
-Slot 2 → MMU2 = $0A → page 10 → physical bits 20:13 are 0000'1010
-
-Physical address:  0 0000 1010 010 0011 0100
-                   ─────────────  ─────────── 
-                   page 10        offset $1234 within the page
-                   = $01'4000     into the page
-
-                   = $01'4000 + $1234 = $01'5234
-```
-
-Page 10 is the first half of Bank 5, so the CPU just read from the byte at offset `$1234` of the ULA screen bitmap. (The pixel byte for column 8 of row 18, if you want to be exact.) Make a note of how the math worked — it's the same for every memory access the CPU ever does.
+Page 10 is the first half of Bank 5, so the CPU just read from the byte at offset `$1234` of the ULA screen bitmap. (The pixel byte for column 8 of row 18, if you want to be exact.)
 
 The formal version, for completeness:
 
 ```
 slot      = (Z80_addr >> 13) & 0x07
 offset    = Z80_addr & 0x1FFF
-page      = MMU[slot]                ; one of NextRegs $50..$57
-physical  = (page << 13) | offset    ; 21-bit physical address
+page      = MMU[slot]                 ; one of NextRegs $50–$57
+physical  = 0x040000 + (page << 13) + offset   ; FPGA physical address
 ```
 
-That's the entire MMU. Eight registers, three lines of pseudocode.
+That's the entire MMU. Eight registers, four lines of pseudocode.
+
+## Memory Decoding Priority
+
+The MMU is not the only mechanism that can intercept a Z80 memory access. Layer 2 mapping, divMMC trapping, the Multiface, and the boot ROM can all claim an address *before* the MMU gets a say. When more than one is active simultaneously, a fixed priority chain decides the winner.
+
+The Next divides the Z80 address space into three zones with different priority rules:
+
+### Slots 0–1 (`$0000–$3FFF`) — the busiest zone
+
+This is where the most overriding happens. From highest priority to lowest:
+
+1. **Boot ROM.** At cold power-on the FPGA maps its own initialisation code here. It disappears before any user code runs.
+2. **Multiface.** The Multiface peripheral (snapshot/trainer device) overrides these slots when activated.
+3. **divMMC.** When the CPU executes from a trap address — `$0000`, `$0008`, `$0038`, `$0066`, `$04C6`, `$0562`, and a handful of others — divMMC hijacks slots 0/1 for the duration of the call and restores them on return.
+4. **Layer 2 mapping.** Since core 3.0, Layer 2's read and/or write mapping can be enabled for the `$0000–$BFFF` region, redirecting accesses to the Layer 2 bank in SRAM. Read and write are controlled independently.
+5. **MMU** (NextRegs `$50`/`$51`). The page numbers you put here, unless any of the above fired first.
+6. **Config mode / ROMCS.** Expansion bus signals that external peripherals can assert (uncommon in practice).
+7. **ROM** (when MMU = `$FF`). The final fallback: if the MMU register holds `$FF` and nothing higher in the chain fired, the selected ROM image from the system region is returned.
+
+### Slots 2–3 (`$4000–$7FFF`)
+
+Only two mechanisms compete:
+
+1. **Layer 2 mapping** — read and/or write can be redirected to the Layer 2 SRAM bank.
+2. **MMU** (NextRegs `$52`/`$53`).
+
+Layer 2 write mapping to this region is the key technique for building the Layer 2 framebuffer: you enable it, write pixels directly at `$4000`–`$7FFF`, the FPGA silently redirects every write to the Layer 2 bank, and the MMU page in those slots is left untouched. Full details are in [Layer 2](./11-layer2.mdx).
+
+### Slots 4–7 (`$8000–$FFFF`)
+
+The MMU is the only authority. Whatever page number you put in NextRegs `$54`–`$57` is what the CPU sees — no Layer 2 mapping, no divMMC, no Multiface. This is why slots 4/5 are the safe scratch window for user code: you get the whole 16 KB to yourself with no surprises.
+
+> **What this means in practice.** You rarely have to think about this priority chain. The two cases that bite programmers are: (a) don't rely on the contents of slots 0/1 while divMMC might be active — an unexpected trap will briefly re-map them; and (b) if Layer 2 write mapping is enabled, writes to slots 0–3 hit the Layer 2 buffer rather than whatever RAM page the MMU says is there. Useful when intentional, mysterious when not.
 
 ## Mapping a Page Yourself
 
@@ -117,7 +183,7 @@ Reading and writing the MMU is identical to reading and writing any other NextRe
     nextreg $54,$0A   ; slot 4 ($8000-$9FFF) now sees page 10
 ```
 
-After that, `ld (hl),a` with `HL = $8000` writes to the same byte that `ld (hl),a` with `HL = $4000` and the default mapping would have hit, because both end up at physical `$01'4000`.
+After that, `ld (hl),a` with `HL = $8000` writes to the same byte that `ld (hl),a` with `HL = $4000` and the default mapping would have hit, because both end up at physical `$05'4000`.
 
 Here's a small Klive demo that does the round trip: it picks an arbitrary page, maps it into slot 4, writes a marker, then maps it back out and confirms the marker is still there when we map it back in.
 
