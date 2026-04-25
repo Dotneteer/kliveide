@@ -1,0 +1,34 @@
+import { Callout } from 'nextra/components'
+
+# The Copper: Graphics Co-Processor
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+The Copper is a tiny, two-instruction co-processor that does one thing: it writes NextRegs at exact raster positions, perfectly synchronised to the video beam, with no CPU involvement. That sounds modest until you realise what it unlocks — per-scanline palette swaps, mid-frame layer reconfiguration, gradient skies, parallax via per-line scroll, and effects that are simply impossible to do reliably from the Z80 because the line interrupt's jitter is too coarse.
+
+Why this chapter sits where it does in the book: the Copper has nothing interesting to do until you already know which NextRegs are worth retiming. We placed it after every "single-layer" video chapter so each example can demonstrate something visually striking instead of an abstract toggle.
+
+Topics:
+
+- **The Copper instruction set.** Two instructions, both 16 bits.
+  - `MOVE`: write `value` to NextReg `nr` immediately.
+  - `WAIT`: pause the Copper until raster reaches `(line, h-position)`.
+- **Copper memory.** 2 KB (1024 instructions max), accessed via NextReg `$60` (data) with auto-incrementing index in `$61`/`$62`.
+- **Run modes.** `$62` bits 7-6: stopped, run-once-then-stop, run-once-and-restart-at-V-blank, run-and-restart-at-(0,0).
+- **Synchronisation.** How the Copper relates to the line interrupt (and why the Copper is more precise: the Copper waits for an *exact* H-position, the line interrupt fires at the start of the line ± Z80 latency).
+- **Limits.** No conditionals, no jumps, no arithmetic. It's a list of timed register writes. Anything more complex needs cooperation with a Z80 ISR.
+
+## What you should know first
+
+- [Interrupts](./04-interrupts.mdx) — for the comparison.
+- [Palettes](./09-palettes.mdx), [Layer 2](./11-layer2.mdx), [Tilemap](./12-tilemap.mdx), [Sprites](./13-sprites.mdx) — to know what's worth retiming.
+
+## Planned exercises
+
+- **Sky gradient.** A 192-instruction Copper program that writes a different palette colour to entry 0 on every Layer 2 scanline — instant gradient sky.
+- **Mid-screen mode swap.** Top half of the screen uses ULA, bottom half uses LoRes, switched by a Copper `MOVE` at line 96.
+- **Parallax floor.** Per-scanline X-scroll values for the tilemap, producing a perspective floor effect that no Z80 routine could keep up with.

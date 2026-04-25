@@ -1,0 +1,30 @@
+import { Callout } from 'nextra/components'
+
+# Input Devices: Keyboard, Joysticks, Mouse
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+A game without input is a screensaver. This chapter consolidates everything a typical Next program needs to read from the user: the original Spectrum keyboard matrix, the Kempston and Sinclair joystick conventions, and the Kempston mouse.
+
+Topics:
+
+- **The keyboard matrix.** Port `$FE`, the eight half-rows, how to read them with `IN A,(C)` and the address-line trick (already introduced in [I/O and NextRegs](./02-io-and-nextregs.mdx)). Building a "is this key down right now?" helper, plus a debounced "was this key just pressed?" pattern.
+- **Modifier handling.** CAPS SHIFT, SYMBOL SHIFT, and how the Spectrum's two-shift system maps to modern keyboard chords in Klive.
+- **Joysticks.** Joystick mode selection via NextReg `$05`. Kempston (port `$1F` and `$37`), Sinclair 1 (mapped onto keys 6-7-8-9-0), Sinclair 2 (1-2-3-4-5), Cursor, MD1/MD2, and the Next's preferred Kempston-extended protocol with extra buttons.
+- **Kempston mouse.** Ports `$FBDF`, `$FFDF`, `$FADF`. Reading X, Y, buttons, and the wheel; the "raw counter" model and how to convert it to screen-relative pixels.
+- **Reading input from an interrupt.** The clean way: latch state in the frame ISR, let the main loop consume it. Avoids race conditions and gives every game a consistent "polled state" frame model.
+
+## What you should know first
+
+- [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx).
+- [Interrupts](./04-interrupts.mdx) — recommended for the latched-state pattern.
+
+## Planned exercises
+
+- **Input monitor overlay.** A little debug screen that shows, every frame: the state of every keyboard half-row, the joystick byte (in whatever mode is configured), and the mouse position and buttons.
+- **Cursor tile.** Move a tile under the mouse cursor — uses [Tilemap](./12-tilemap.mdx) once you've read that chapter.
+- **Two-player demo.** Read both Kempston-extended joysticks and move two sprites around the screen.

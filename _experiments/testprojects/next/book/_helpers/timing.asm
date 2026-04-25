@@ -17,19 +17,19 @@ Counter_Start
 SetupCtc16
 ; === Set up Channel 0: timer, prescaler ÷16, time constant = 256 ===
 ; ZC/TO fires every 256 × 16 / 28 MHz ≈ 146.3 μs
-    ld bc, CTC_CH0
-    ld a, %00000101          ; Timer mode, prescaler ÷16, time const follows
-    out (c), a
-    ld a, 0                  ; Time constant = 256
-    out (c), a
+    ld bc,CTC_CH0
+    ld a,%00000101          ; Timer mode, prescaler ÷16, time const follows
+    out (c),a
+    ld a,0                  ; Time constant = 256
+    out (c),a
  
 ; === Set up Channel 1: counter mode, triggered by Ch0's ZC/TO ===
 ; Each Ch0 ZC/TO decrements Ch1 by 1
-    ld bc, CTC_CH1
-    ld a, %01000101          ; Counter mode (D6=1), time const follows
-    out (c), a
-    ld a, 0                  ; Time constant = 256
-    out (c), a
+    ld b,high(CTC_CH1)
+    ld a,%01000101          ; Counter mode (D6=1), time const follows
+    out (c),a
+    ld a,0                  ; Time constant = 256
+    out (c),a
     ret 
 
 ; ------------------------------------------------------------------------------
@@ -39,13 +39,13 @@ SetupCtc16
 ;   AFBCDE../.. different
 ; ------------------------------------------------------------------------------
 StartMeasure
-    ld bc, CTC_CH1
-    in a, (c)
-    ld d, a                  ; D = coarse count (Ch1)
-    ld bc, CTC_CH0
-    in a, (c)
-    ld e, a                  ; E = fine count (Ch0)
-    ld (Counter_Start), de   ; Save 16-bit start value
+    ld bc,CTC_CH1
+    in a,(c)
+    ld d,a                  ; D = coarse count (Ch1)
+    ld b,high(CTC_CH0)
+    in a,(c)
+    ld e,a                  ; E = fine count (Ch0)
+    ld (Counter_Start),de   ; Save 16-bit start value
 
 ; ------------------------------------------------------------------------------
 ; Gets the measure value since the last start
@@ -54,17 +54,17 @@ StartMeasure
 ;   .FBCDEHL/.. different
 ; ------------------------------------------------------------------------------
 GetMeasuredCounter
-    ld bc, CTC_CH1
-    in d, (c)
-    ld bc, CTC_CH0
-    in e, (c)
+    ld bc,CTC_CH1
+    in d,(c)
+    ld b,high(CTC_CH0)
+    in e,(c)
  
 ; Elapsed = start − end (both channels count down)
-    ld hl, (Counter_Start)   ; H = start coarse, L = start fine
-    ld (Counter_Start),de    ; Next time use this start value
-    or a                     ; clear carry flag
-    sbc hl, de               ; HL = start − end (elapsed ticks, since counters count down)
-    ex de, hl                ; DE = elapsed ticks
+    ld hl,(Counter_Start)   ; H = start coarse, L = start fine
+    ld (Counter_Start),de   ; Next time use this start value
+    or a                    ; clear carry flag
+    sbc hl,de               ; HL = start − end (elapsed ticks, since counters count down)
+    ex de,hl                ; DE = elapsed ticks
     ret
 
 ; ------------------------------------------------------------------------------

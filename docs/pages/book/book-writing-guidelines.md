@@ -110,6 +110,7 @@ See [glossary.md](glossary.md) for the complete reference.
 - File names and paths: Use links when referencing project files, plain text for examples
 - **Hexadecimal notation**: For addresses longer than 4 digits, use single quote (') as a grouping character in groups of 4 from the right (e.g., `0x04'0000`, `0x1F'FFFF`, `0x23'E000`). This improves readability for long addresses.
 - **Side notes**: Use block quotes (>) for side notes, explanatory asides, or contextual information that supports but isn't critical to the main flow
+- **Z80 assembly operand spacing**: No space after the comma between instruction operands. Write `ld bc,CTC_CH0` and `in a,(c)`, not `ld bc, CTC_CH0` or `in a, (c)`. This applies to instruction operands only; spaces inside macro or data-directive argument lists (e.g., `attr(COLOR_BLACK, COLOR_GREEN, 1)` or `.db 0, 0, 0`) are acceptable.
 
 ### Voice and Tense
 

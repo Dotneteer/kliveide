@@ -1,0 +1,32 @@
+import { Callout } from 'nextra/components'
+
+# The Tilemap
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+The tilemap layer is the Next's cheap, fast way to draw text and tiled backgrounds. You define a small library of 8×8 (or 16×16) tile patterns once, then build the screen by writing tile *indices* into a map. Hardware does the rest — every frame, on the fly, with no CPU cost. Want to scroll? Change one register. Want to swap themes? Change one palette.
+
+Topics:
+
+- **What the tilemap is.** Two layouts — 40×32 tiles (matches the ULA character grid) and 80×32 tiles (denser). 8×8 or 16×16 pixel tiles. Each map cell is two bytes: tile index and attribute (palette offset, X-flip, Y-flip, ULA-over-tilemap bit).
+- **Memory layout.** Tile patterns and the map both live in Bank 5 by default — NextReg `$6E` controls the tilemap base, `$6F` the patterns base.
+- **Enabling and configuring.** NextReg `$6B` (control: enable, layout, tile size), `$6C` (default attribute), `$4C` (transparency colour for tilemap pixels).
+- **Scrolling.** NextRegs `$2F`/`$30` (X-scroll, including the 9th bit for 80-column mode) and `$31` (Y-scroll). Pixel-perfect, hardware-driven.
+- **The clipping window.** NextRegs `$1C`–`$1F`.
+- **ULA-over-tilemap and tilemap-over-ULA.** Per-cell priority bit and the global priority mode in NextReg `$68`.
+- **The tilemap palette.** Eight 4-bit sub-palettes selected per cell, plus the full 256-entry mode.
+
+## What you should know first
+
+- [Memory Architecture](./03-memory.mdx) — tile patterns live in mapped pages.
+- [Palettes](./09-palettes.mdx) — the tilemap palette is one of the eight banks.
+
+## Planned exercises
+
+- **Text console.** Define a 96-character font as 8×8 tiles, then use the tilemap as a fast text terminal — no ULA involved.
+- **Side-scroller backdrop.** A 80×32 map of pre-painted scenery tiles that scrolls horizontally by writing one register per frame.
+- **Animated water.** Cycle the colours of a few palette entries to make tile-based water animate without redrawing the map.

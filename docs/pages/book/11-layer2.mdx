@@ -1,0 +1,35 @@
+import { Callout } from 'nextra/components'
+
+# Layer 2: True-Colour Bitmap
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Layer 2 is what the original Spectrum should have been. A linear bitmap, one byte per pixel, every pixel independently coloured from a 256-entry palette. Photographic-quality images. Hardware scrolling. And it sits *next to* the ULA screen, not on top of it — they cohabit, with priority decided by the compositor.
+
+Topics:
+
+- **Three resolutions.**
+  - 256×192, 256 colours per pixel (the default — 48 KB).
+  - 320×256, 256 colours per pixel (80 KB).
+  - 640×256, 16 colours per pixel (80 KB, packed nibbles).
+- **The Layer 2 memory window.** How the page lives in the 2 MB pool but only becomes visible to the Z80 when you map it via NextRegs `$12` (active page) and `$13` (shadow page). The "draw on shadow, swap to active" pattern.
+- **Enabling Layer 2.** NextReg `$15` (priority bits) and `$69` (display enable plus paging shortcut for the 16 KB write window at `$0000`–`$3FFF`).
+- **Scrolling.** NextRegs `$16` (X-scroll low), `$17` (Y-scroll), and `$71` (X-scroll high bit for 320/640 modes).
+- **The clipping window.** NextRegs `$18`–`$1B` — Layer 2 only renders inside this rectangle, which is also what makes split-screen and HUD overlays cheap.
+- **Priority over ULA.** The seven priority modes from NextReg `$15`, the per-pixel priority bit (from [Palettes](./09-palettes.mdx)), and the transparency colour (NextReg `$14`).
+
+## What you should know first
+
+- [Memory Architecture](./03-memory.mdx) — Layer 2 lives in pageable RAM.
+- [Interrupts](./04-interrupts.mdx) — needed for the line-interrupt split-screen exercise.
+- [Palettes](./09-palettes.mdx).
+
+## Planned exercises
+
+- **Image viewer.** Load a 256×192 Layer 2 image from the example pack and display it.
+- **Smooth scroller.** A pre-drawn 512-pixel-wide Layer 2 image that scrolls horizontally using NextReg `$16`.
+- **Top/bottom split.** Use the line interrupt to swap palettes mid-screen — sky on top, ground below — without changing pixel data.

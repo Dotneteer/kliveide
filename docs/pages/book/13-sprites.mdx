@@ -1,0 +1,33 @@
+import { Callout } from 'nextra/components'
+
+# Hardware Sprites
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+128 hardware sprites, 16×16 pixels each, each independently positioned, scaled, mirrored, rotated, and palette-mapped. Sprites are not a layer in the same sense as ULA, LoRes, Layer 2, or the Tilemap — they're a separate compositing element that floats above (or below) any of those, including over the border. This chapter teaches the full pipeline: pattern upload, attribute setup, anchor + relative composition, and the sprite collision register.
+
+Topics:
+
+- **The sprite memory model.** 64 patterns of 16×16×8-bit (4 KB each) in dedicated sprite memory, accessed through I/O ports `$303B` (pattern slot) and `$5B` (data byte stream — auto-incrementing).
+- **The attribute table.** Up to 128 sprites, each described by 4 (or 5, in extended mode) bytes: X, Y, attribute (palette offset + flip + rotate), and pattern + visible/anchor bits. Accessed via ports `$303B` (sprite slot) and `$57`/`$5B`.
+- **4-bit and 8-bit modes.** Trade pattern density for colour depth — 64 4-bit-mode patterns fit in the same memory as 32 8-bit-mode patterns.
+- **Scaling.** 1×, 2×, 4×, 8× per axis, set per sprite.
+- **Anchor and relative sprites.** A way to glue several sprites together to build large multi-pattern characters with one X/Y update.
+- **"Over border" mode.** NextReg `$15` bit 1 — let sprites display in the border area for full-screen action games.
+- **Sprite collision register.** Port `$303B` reads — bit 0 set means at least one pixel-perfect collision happened this frame.
+- **Per-sprite palette offset and the sprite palette banks.**
+
+## What you should know first
+
+- [Memory Architecture](./03-memory.mdx).
+- [Palettes](./09-palettes.mdx).
+
+## Planned exercises
+
+- **Bouncing sprite.** Upload a single 16×16 pattern, animate one sprite around the screen, bouncing at the edges.
+- **Multi-pattern boss.** A 32×48 enemy built from six anchor-grouped sprites, moving as one.
+- **Collision demo.** A "ball + paddle" mini-test that uses the hardware collision register instead of bounding-box arithmetic.

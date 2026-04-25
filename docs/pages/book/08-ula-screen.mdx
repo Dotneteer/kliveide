@@ -1,0 +1,31 @@
+import { Callout } from 'nextra/components'
+
+# The ULA Screen and Border
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Before exploring all the modern video layers the Next adds, we spend a chapter on the original ULA screen — partly because every Next still boots into it, partly because it's the foundation that LoRes, Layer 2 priority, and the Tilemap-vs-ULA discussions all build on, and partly because its quirks (attribute clash, FLASH, BRIGHT, the famously interleaved bitmap) shaped a generation of programmers and are *still* the right tool for plenty of jobs.
+
+Topics:
+
+- **The bitmap.** 256×192 pixels, 1 bit per pixel, organised in three thirds with the legendary interleaved address scheme. The address-from-(x,y) formula and a fast `getScreenAddress` routine.
+- **The attribute area.** 32×24 bytes at `$5800`, two colours per 8×8 block, INK and PAPER plus BRIGHT and FLASH.
+- **The colour palette.** The eight base colours, what BRIGHT actually does electrically, and how the FLASH bit is implemented as a 16-frame XOR.
+- **The border.** Bits 0–2 of port `$FE`, plus a teaser for the kind of border tricks the line interrupt makes possible.
+- **Drawing primitives.** Plotting a pixel, drawing a horizontal line (fast), drawing a vertical line (slow — and why), and printing a character using the ROM font.
+- **Cooperating with the Next.** When you should use the ULA layer (text, retro look, low memory budget) versus when to switch to LoRes, Tilemap, or Layer 2.
+
+## What you should know first
+
+- [Memory Architecture](./03-memory.mdx) — the ULA screen lives in Bank 5 (page 10/11).
+- [Interrupts](./04-interrupts.mdx) — needed for the border-bar exercise.
+
+## Planned exercises
+
+- **Hello, ULA.** Print a centred message using the ROM font, with a coloured border.
+- **Bouncing ball.** A 4×4 pixel ball that bounces inside the screen rectangle, using XOR drawing for clean erase.
+- **Border bars.** Eight horizontal border colour bars driven by the line interrupt — the classic "look ma, no CPU" demo.

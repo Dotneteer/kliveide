@@ -1,0 +1,346 @@
+import { Callout } from 'nextra/components'
+
+# Memory Architecture: ROM, RAM, Banks, and the MMU
+
+The Z80 has sixteen address lines and can see exactly 64 KB at a time. The ZX Spectrum Next has 2 MB of RAM. Bridging that 32× gap is the job of the **MMU** — the Memory Management Unit baked into the FPGA — and getting comfortable with it is the foundation for nearly every later chapter. Layer 2 bitmaps, sprite patterns, AY tracker data, sample buffers for the DACs, even the dot-command loader that brings an app in from the SD card: all of them live in pages that you have to consciously map in.
+
+The good news: the Next's memory model is regular, and once you internalise four small words — **region**, **bank**, **page**, **slot** — the rest is bookkeeping. The bad news: those four words are used interchangeably (and incorrectly) in a lot of online material. We'll fix that here, and stick to one definition for each throughout the rest of the book.
+
+## The Problem, in One Sentence
+
+The Z80 puts a 16-bit address on the bus. The Next stores 21 bits' worth of memory. Something has to translate one to the other every single time the CPU reads or writes — and that "something" is the MMU.
+
+Concretely: when the CPU executes `ld a,(hl)` with `HL = $5000`, the Z80 places `$5000` on the address bus. The MMU sees that address, looks up "what page is currently mapped at $4000–$5FFF?", and replaces the top three bits of the address with the page number. The result is a 21-bit physical address into the 2 MB pool, and *that's* the address that actually goes to RAM.
+
+That's the whole story. Everything else in this chapter is detail.
+
+## The Vocabulary: Region, Bank, Page, Slot
+
+These four words come up constantly, often in the same paragraph. Pin them down once and you can read any Next reference without confusion.
+
+- **Slot** — a chunk of the **Z80 address space** the MMU treats as a unit. The Next divides the 64 KB Z80 view into **eight 8 KB slots**, numbered 0–7. Slot 0 is `$0000–$1FFF`, slot 1 is `$2000–$3FFF`, and so on up to slot 7 at `$E000–$FFFF`. Each slot is mapped independently.
+
+- **Page** — a chunk of the **physical RAM**. A page is also 8 KB, and the Next has up to 256 of them on a 2 MB machine. Page numbers fit in a single byte (`$00`–`$FF`). The MMU's job, ultimately, is to decide which page sits in which slot.
+
+- **Bank** — a 16 KB chunk of physical memory, named for historical reasons. The 128K Spectrum had eight banks (Bank 0 through Bank 7); the Next has more, but the *word* "bank" still refers to a 16 KB chunk. **A bank is two consecutive pages.** Bank `N` lives in pages `2N` and `2N+1`. So Bank 5 is pages 10 and 11, Bank 2 is pages 4 and 5, Bank 7 is pages 14 and 15. You'll see "bank" used most often when an old port (like `$7FFD`) is involved, because those legacy ports think in 16 KB chunks.
+
+- **Region** — a 64 KB chunk of physical memory, selected by the top bits of the 21-bit physical address. There are 32 regions in 2 MB. You'll meet them once when we look at the address translation formula, and then almost never again — the MMU presents the page-number abstraction so you don't have to think in regions.
+
+> **The cheat sheet.** Slots are in *Z80 space*. Pages, banks, and regions are in *physical space*. A slot holds one page. A bank is two pages. A region is eight pages.
+
+## The Physical Map
+
+Before we look at the MMU itself, here's what's actually out there in physical memory on a stock 2 MB Next:
+
+```
+Page    Bank    Address (physical)   Contents
+─────   ────    ──────────────────   ────────────────────────────────
+0–1     Bank 0  $00'0000 – $00'3FFF  RAM (was Bank 0 on 128K)
+2–3     Bank 1  $00'4000 – $00'7FFF  RAM (was Bank 1 on 128K)
+4–5     Bank 2  $00'8000 – $00'BFFF  RAM (was Bank 2 on 128K)
+6–7     Bank 3  $00'C000 – $00'FFFF  RAM (was Bank 3 on 128K)
+8–9     Bank 4  $01'0000 – $01'3FFF  RAM (was Bank 4 on 128K)
+10–11   Bank 5  $01'4000 – $01'7FFF  ULA screen 0 (Bank 5)
+12–13   Bank 6  $01'8000 – $01'BFFF  RAM
+14–15   Bank 7  $01'C000 – $01'FFFF  ULA shadow screen (Bank 7)
+16–223  Bank 8+ $02'0000 – $1B'FFFF  RAM (Next-only banks)
+─────────────────────────────────────────────────────────────────────
+                                     (page numbers $E0–$FF reserved)
+```
+
+The two pages worth memorising are **10 and 11** (Bank 5) — that's where the classic ULA bitmap and attributes live, and you'll see those page numbers turn up as if they were folklore. Pages 14 and 15 (Bank 7) are the shadow screen, used for double-buffered ULA rendering.
+
+The ROMs (the original 48K ROM, the 128K editor and BASIC ROMs, the +3 ROMs, plus the divMMC and alt-ROMs) live separately. They aren't pages — they're swapped *over the top* of slots 0 and 1 by a separate mechanism. We'll come back to them.
+
+## The MMU Registers
+
+The MMU itself is just eight bytes, exposed as NextRegs `$50` through `$57`:
+
+| NextReg | Slot | Z80 address range | What it holds        |
+|---------|:----:|-------------------|----------------------|
+| `$50`   | 0    | `$0000–$1FFF`     | page number for slot 0 |
+| `$51`   | 1    | `$2000–$3FFF`     | page number for slot 1 |
+| `$52`   | 2    | `$4000–$5FFF`     | page number for slot 2 |
+| `$53`   | 3    | `$6000–$7FFF`     | page number for slot 3 |
+| `$54`   | 4    | `$8000–$9FFF`     | page number for slot 4 |
+| `$55`   | 5    | `$A000–$BFFF`     | page number for slot 5 |
+| `$56`   | 6    | `$C000–$DFFF`     | page number for slot 6 |
+| `$57`   | 7    | `$E000–$FFFF`     | page number for slot 7 |
+
+Each register holds a single byte: the page number that's mapped into that slot right now. Writing a new value re-maps the slot instantly — the next memory access from the CPU sees the new page.
+
+Two values are special:
+
+- `$FF` means **"map the ROM here"**. When slot 0 or slot 1 contains `$FF`, the slot reads from whichever ROM is currently selected (more on that in a moment) instead of from RAM. The default at boot is `$50 = $FF`, `$51 = $FF`, so slots 0 and 1 see the 16 KB ROM as if you were on a stock Spectrum.
+- Anything else is interpreted as a literal page number, with the obvious caveat that page numbers above the installed RAM (224 on a 2 MB Next) read as `$FF` and writes go nowhere.
+
+> **NextReg or `nextreg`?** You can poke `$50`–`$57` either through ports `$243B`/`$253B` (the universal NextReg path covered in [I/O Ports and NextRegs](./02-io-and-nextregs.mdx)) or with the Z80N `nextreg` instruction. The Z80N form is shorter and faster — `nextreg $52,a` is two bytes and a handful of T-states — so it's what you'll see in most Next code.
+
+## Address Translation by Example
+
+Here's how the MMU turns a Z80 address into a physical one. Say slot 2 (`$52`) contains `$0A`, meaning page 10, and the CPU reads from `$5234`:
+
+```
+Z80 address:       0101 0010 0011 0100   ($5234)
+                   ─────                  ← top 3 bits select the slot (slot 2)
+                          ── ─── ────     ← bottom 13 bits are the offset
+                                            within the page
+
+Slot 2 → MMU2 = $0A → page 10 → physical bits 20:13 are 0000'1010
+
+Physical address:  0 0000 1010 010 0011 0100
+                   ─────────────  ─────────── 
+                   page 10        offset $1234 within the page
+                   = $01'4000     into the page
+
+                   = $01'4000 + $1234 = $01'5234
+```
+
+Page 10 is the first half of Bank 5, so the CPU just read from the byte at offset `$1234` of the ULA screen bitmap. (The pixel byte for column 8 of row 18, if you want to be exact.) Make a note of how the math worked — it's the same for every memory access the CPU ever does.
+
+The formal version, for completeness:
+
+```
+slot      = (Z80_addr >> 13) & 0x07
+offset    = Z80_addr & 0x1FFF
+page      = MMU[slot]                ; one of NextRegs $50..$57
+physical  = (page << 13) | offset    ; 21-bit physical address
+```
+
+That's the entire MMU. Eight registers, three lines of pseudocode.
+
+## Mapping a Page Yourself
+
+Reading and writing the MMU is identical to reading and writing any other NextReg. The simplest case — map page `$0A` (Bank 5, low half) into slot 4 — is one Z80N instruction:
+
+```z80klive
+    nextreg $54,$0A   ; slot 4 ($8000-$9FFF) now sees page 10
+```
+
+After that, `ld (hl),a` with `HL = $8000` writes to the same byte that `ld (hl),a` with `HL = $4000` and the default mapping would have hit, because both end up at physical `$01'4000`.
+
+Here's a small Klive demo that does the round trip: it picks an arbitrary page, maps it into slot 4, writes a marker, then maps it back out and confirms the marker is still there when we map it back in.
+
+```z80klive
+MmuRoundTripDemo
+    ld hl,Title_MmuRoundTrip
+    call _printTitle
+    ld hl,Instr_MmuRoundTrip
+    call _printText
+
+    ; --- Save current MMU4 so we can restore it
+    ld a,$54
+    call _readNextReg          ; A := current value of MMU4
+    ld (savedMmu4),a
+
+    ; --- Map page $20 into slot 4 ($8000-$9FFF)
+    nextreg $54,$20
+
+    ; --- Write a marker pattern at the start of the page
+    ld hl,$8000
+    ld (hl),$DE
+    inc hl
+    ld (hl),$AD
+    inc hl
+    ld (hl),$BE
+    inc hl
+    ld (hl),$EF
+
+    ; --- Map something else there (page 10, Bank 5 low) so we can prove
+    ;     the marker isn't just sitting in slot 4 by accident
+    nextreg $54,$0A
+
+    ; --- Now map page $20 back in...
+    nextreg $54,$20
+    ld hl,$8000
+    call _printHexByteAtHl     ; should print DE
+    inc hl
+    call _printHexByteAtHl     ; should print AD
+    inc hl
+    call _printHexByteAtHl     ; should print BE
+    inc hl
+    call _printHexByteAtHl     ; should print EF
+
+    ; --- Restore MMU4
+    ld a,(savedMmu4)
+    ld bc,$243B
+    out (c),$54                ; select MMU4
+    ld bc,$253B
+    out (c),a                  ; write back saved value
+    ret
+
+savedMmu4
+    .defb 0
+
+Title_MmuRoundTrip
+    .defn "MMU #1: Map, write, re-map, read"
+Instr_MmuRoundTrip
+    .defm "Page $20 mapped into slot 4 at $8000.\x0D"
+    .defn "Should read back: DE AD BE EF"
+```
+
+<Callout type="info" emoji="💡">
+A real program almost always **saves and restores the MMU registers it touches**. Other code — the ROM, NextZXOS, an interrupt handler — may rely on a particular slot being mapped a specific way. The pattern in the example above (read the current value, do your work, write it back) is the standard idiom.
+</Callout>
+
+## What Slot 4 Buys You
+
+You may wonder why we picked slot 4 and not, say, slot 3. The reason is **pragmatic**: most user programs run from RAM that's mapped into slots 2 and 3 (`$4000–$7FFF`), with the stack and variables typically in slot 4 or 5 (`$8000–$BFFF`). Slots 0 and 1 hold ROM most of the time. So:
+
+- **Slots 0/1** (`$0000–$3FFF`): leave alone unless you're swapping ROMs deliberately. The Z80 starts execution here at boot, and IM 1 vectors land at `$0038`.
+- **Slots 2/3** (`$4000–$7FFF`): the classic Spectrum 32 KB user area. Pages 10/11 (Bank 5) sit here by default on a freshly booted Next so the ULA screen works.
+- **Slots 4/5** (`$8000–$BFFF`): a 16 KB scratch window — perfect for paging in graphics data, sample buffers, or the page you're currently working on.
+- **Slots 6/7** (`$C000–$FFFF`): on a 128K Spectrum, this is where banks were swapped via `$7FFD`. On the Next, it's still where `$7FFD` writes land (we'll see why in a moment), but the MMU lets you put any pair of pages there independently of the legacy port.
+
+Once you start writing graphics-heavy code, you'll often dedicate a single slot — slot 4 is a popular choice — to "the page I'm working on right now", and rotate page numbers through it as you process each tile, sprite, or sample buffer.
+
+## Legacy Paging: `$7FFD`, `$1FFD`, `$DFFD`
+
+If the MMU is so clean, why are there *also* three legacy paging ports?
+
+Compatibility. A 128K Spectrum game that writes to `$7FFD` to swap a bank into the top 16 KB has to keep working on the Next, even though the Next's hardware speaks MMU page numbers internally. The Next solves this the only sensible way: it intercepts writes to the legacy paging ports and **translates them into MMU updates**.
+
+Here's the cheat sheet for the three legacy ports:
+
+| Port    | Origin             | What a write does                           |
+|:-------:|--------------------|---------------------------------------------|
+| `$7FFD` | 128K Spectrum      | bits 0–2: bank in slot 6/7; bit 3: shadow screen; bit 4: ROM select; bit 5: lock paging |
+| `$1FFD` | +3 / +2A           | bit 0: AllRAM mode; bits 1–2: special config and ROM-MSB |
+| `$DFFD` | Next               | extends the bank selector with bit 3 (and more), giving a 7-bit bank number to slot 6/7 |
+
+The mapping for the most common case — a `$7FFD` write — is exactly what you'd expect:
+
+```
+OUT ($7FFD),A    with A = ...001 0101  (bank 5, bit 4 = 1, ROM 1 selected)
+                                ^^^^^
+                                bank LSBs = 5
+
+→ MMU6 := 2 × 5     = 10        ; low half of bank 5  → slot 6
+→ MMU7 := 2 × 5 + 1 = 11        ; high half of bank 5 → slot 7
+```
+
+(Plus updates to the ROM selector and the shadow-screen flag — but the *MMU effect* is just those two slot writes.)
+
+The `$DFFD` port is the Next's extension. It carries the upper bits of the bank number, so `$7FFD | $DFFD` together can address any of the Next's banks, not just the original eight. Writing both ports gives you a 7-bit (or wider) bank index that the MMU then expands into a pair of page numbers in slots 6 and 7.
+
+> **Sidebar: don't mix-and-match.** If you've taken control of slots 6 and 7 by writing MMU6/MMU7 directly, a stray `$7FFD` write will *clobber* your mapping — because the FPGA will faithfully translate the legacy write into MMU writes that overwrite yours. Either commit to MMU-only, or commit to legacy-port-only, in any given chunk of code. (The Next manual calls this "the golden rule of paging".)
+
+There's a small Klive exercise at the end of this chapter where you watch this translation happen with your own eyes: you'll write to `$7FFD` and then read MMU6/MMU7 back to confirm they changed.
+
+## ROMs and the Alt-ROM Mechanism
+
+When MMU0 or MMU1 contains `$FF`, the slot reads from ROM rather than RAM. But *which* ROM?
+
+The Next ships with the original 16 KB Spectrum 48K ROM, the two 128K ROMs (editor + BASIC), and the two +3 ROMs (DOS + BASIC). One of these is selected at any moment by a combination of:
+
+- `$7FFD` bit 4: low bit of the ROM selector (the 128K original)
+- `$1FFD` bits 1–2: high bits and special-config (the +3 extension)
+
+Plus, the Next adds an **alt-ROM mechanism** — two extra 16 KB ROM slots (alt-ROM 0 and alt-ROM 1) that can be substituted for the official ROMs under software control. This is what NextZXOS uses to slip its loader and dot-command machinery in at boot, transparently to anything that's about to read from the ROM area.
+
+The alt-ROM is configured through NextReg `$8C`:
+
+```
+NextReg $8C — Alt ROM control
+  bit 7   : enable alt-ROM
+  bit 6   : alt-ROM visible only for writes (i.e. RAM reads, ROM writes)
+  bit 5   : lock ROM 1
+  bit 4   : lock ROM 0
+  bits 3-0: alt-ROM bank selector (chooses among the two alt-ROMs)
+```
+
+We'll come back to alt-ROM in detail in the Storage chapter, where it's the foundation of the dot-command system. For now, the takeaway is just: **slots 0/1 holding `$FF` doesn't always mean "the original 48K ROM"** — it means "whatever ROM the current selector says". On a freshly booted NextZXOS machine, it's an alt-ROM, and the original 48K ROM is one selector value away.
+
+## DivMMC, in One Page
+
+DivMMC is the SD-card interface, and it has its own little memory trick.
+
+When the CPU executes from certain "trap" addresses in the lower 16 KB (the most famous is `$0000` — the reset vector — but there are several), the divMMC hardware **swaps in its own ROM and RAM** over slots 0 and 1, runs whatever firmware needs to run (typically the esxDOS shim that handles `RST $08` file-system calls), then swaps back out when the CPU jumps away. This all happens without you writing a single MMU register.
+
+You don't have to *understand* divMMC to use the SD card — NextZXOS gives you a clean API on top — but it's useful to know it's the same machinery you've just learned: an entry on top of slots 0/1 that replaces what the MMU would have shown. The Storage chapter is where we lift the hood and look inside.
+
+## Practical Patterns
+
+A few patterns come up over and over once you start writing real code.
+
+### 1. The "scratch page" pattern
+
+Pick a slot (slot 4 is conventional) and treat it as your "currently being worked on" window. Map the page you need, do the work, map the next page. The rest of your code lives elsewhere and is undisturbed.
+
+```z80klive
+    ; Sweep through every page from $20 to $2F, clearing it
+    ld b,$10                    ; 16 pages
+    ld a,$20                    ; starting page number
+`pageLoop
+    nextreg $54,a               ; map page A into slot 4
+    push af
+    push bc
+    ld hl,$8000                 ; start of slot 4
+    ld de,$8001
+    ld (hl),0
+    ld bc,$1FFF                 ; 8 KB - 1
+    ldir                        ; clear it
+    pop bc
+    pop af
+    inc a
+    djnz `pageLoop
+```
+
+### 2. Save-and-restore the MMU you touched
+
+Before you change a slot, read the current value back. After your work is done, write it back. Interrupt handlers in particular need this — if your ISR maps a page in to do its work and forgets to restore the original mapping, the interrupted code will continue running with random memory under it.
+
+```z80klive
+    ; Save MMU5
+    ld a,$55
+    call _readNextReg
+    push af
+
+    ; ... do work that needs slot 5 ...
+
+    pop af
+    ld bc,$243B
+    out (c),$55
+    ld bc,$253B
+    out (c),a                   ; restore MMU5
+```
+
+The Z80N `nextreg` instruction can't take its value from a register at runtime in a single opcode (it's `nextreg n,n` or `nextreg n,a`), so the restore path uses the port-pair form. We cover this corner of the Z80N in detail in [Z80N: The Next's Z80 CPU](./01-z80n.mdx).
+
+### 3. Keep code where the MMU isn't
+
+If your program lives entirely in slots 2 and 3 (`$4000–$7FFF`), and your data window is slot 4, you can do whatever you like to slot 4 without worrying about pulling the rug out from under the executing CPU. The disaster — paging out the page that contains the very next instruction — only happens when you try to be clever in the same slot you're running from.
+
+> **Bonus pitfall.** If you `nextreg $52,...` (slot 2) while your code is *in slot 2*, the very next instruction fetch comes from a different page. Sometimes that's exactly what you want (overlay-style code switching). More often it's a crash. Save it for when you mean it.
+
+## Exercises
+
+The exercise project for this chapter is the `03_memory` folder in `next-examples.zip`.
+
+### 1. Bank signature
+
+Map each user RAM page (page numbers `$00`–`$DF` on a 2 MB Next) into slot 4 in turn. Write the *page number itself* as a single byte at offset 0 of the page. Then walk back through them and verify that nothing was clobbered — every page should still hold its own number.
+
+This is a fast end-to-end check that the MMU is doing what you think it is. If two pages share a marker, your loop has a bug or your understanding has a gap.
+
+### 2. Memory probe
+
+Build a small TUI: scroll up/down with the cursor keys to step through page numbers, and dump the first 64 bytes of the currently selected page in hex. Add **q** to quit. You should be able to find the ULA bitmap (page 10 — you'll recognise the boot screen pattern), Bank 7 (page 14), and various NextZXOS pages just by browsing.
+
+### 3. Legacy mirror
+
+Write `$15` to port `$7FFD` (bank 5, ROM 1, no shadow screen). Then read back NextRegs `$56` and `$57`. Confirm they hold `$0A` and `$0B` — exactly the page numbers of Bank 5. Then do the inverse: write `$0E` and `$0F` to MMU6/MMU7 directly, read back `$7FFD`, and observe that it still reads as the *last value the program wrote* even though the slot mapping is now different. (This is the asymmetry that makes the "golden rule of paging" matter.)
+
+### 4. Slot 4 sweep, with a twist
+
+Modify exercise 1 so that the byte at offset 0 of each page is *also* the byte at offset `$1FFF` of the page. Then read the byte at offset `$1FFF` of each page and confirm. This proves to yourself that an 8 KB page really is contiguous 8 KB — the MMU isn't doing some sneaky rebanking inside the page.
+
+## Where Next
+
+You now own a complete model of how the Z80 sees the Next's RAM, how the MMU translates between 16-bit Z80 addresses and 21-bit physical addresses, and how the legacy paging ports fit on top of that machinery without breaking anything. From here, three chapters build directly on what you've just learned:
+
+- **[Interrupts](./04-interrupts.mdx)** — the next-most-fundamental mechanism, and the one chapter you really do want to read before any of the video chapters. Interrupt handlers usually have to manage MMU state too, so this chapter sets up the rules.
+- **[The CTC](./05-ctc.mdx)** and **[zxnDMA](./06-zxndma.mdx)** — once interrupts are in place, these two chapters give you precise timing and zero-CPU bulk data movement.
+- **[ULA Screen and Border](./08-ula-screen.mdx)** through **[Compositing](./15-compositing.mdx)** — every video chapter assumes you're comfortable mapping pages of pattern data into a slot. Now you are.
+
+If memory still feels slippery, that's fine — by the time you've finished the first video chapter, the page-map-write-unmap dance will be muscle memory.

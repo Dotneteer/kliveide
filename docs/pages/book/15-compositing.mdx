@@ -1,0 +1,29 @@
+import { Callout } from 'nextra/components'
+
+# Compositing, Priorities, and Layer Combinations
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+By this point we have ULA, LoRes, Layer 2, the Tilemap, and 128 sprites. Each chapter taught its layer in isolation. Now we ask the question that matters for any real program: **when all of them are on at once, who wins each pixel?**
+
+Topics:
+
+- **The priority register.** NextReg `$15` and its seven priority modes: SLU, LSU, SUL, LUS, USL, ULS, and the special "tilemap-over-everything" mode in conjunction with NextReg `$68`. We walk every mode with a diagram.
+- **Per-pixel priority.** The priority bit in palette entries (introduced in [Palettes](./09-palettes.mdx)) lets a single palette colour push itself to the top of the stack per pixel — invaluable for foreground objects on a Layer 2 background.
+- **Transparency.** Two transparency colours: the global one in NextReg `$14`, and the per-layer ones (`$4A` for sprite/tilemap-specific). The pixel value that gets treated as "see through" — usually `$E3` for sprites, configurable everywhere.
+- **ULA disable.** NextReg `$68` — turn the ULA off entirely so Tilemap can take its place at the bottom of the stack.
+- **Sprite-vs-everything.** The sprite layer is a single composite that then plugs into the priority chain — sprites have an internal "lower number wins" rule.
+- **A unified mental model.** A single decision-tree picture that takes the eight bits of NextReg `$15`, the per-pixel priority, the transparency colours, and the layer enables, and tells you exactly what gets drawn.
+
+## What you should know first
+
+- Every chapter in Part V (ULA, LoRes, Layer 2, Tilemap, Sprites, Copper).
+
+## Planned exercises
+
+- **All-layers scene.** A single demo with: ULA text, LoRes background colour wash, Layer 2 photo, tilemap HUD overlay, four sprites moving — all on at once. The reader learns by toggling priority modes interactively.
+- **HUD over game.** A status bar drawn in the tilemap, with the game world in Layer 2, with sprites on top, with ULA disabled. The classic arcade layout.

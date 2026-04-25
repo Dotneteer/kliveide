@@ -1,0 +1,35 @@
+import { Callout } from 'nextra/components'
+
+# DACs and Sample Playback
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Square waves are fine for chip music. But the Next can also play actual sampled sound — speech, drums, wave-tables, anything you can put in memory as 8-bit PCM. The trick is the four built-in 8-bit DACs (left A, left B, right A, right B), each controlled by one I/O port. Write a byte → that byte becomes a voltage. Do it 8000 times a second and you have a wavetable synthesiser.
+
+This chapter is where two earlier chapters pay off in a single application: we use the [CTC](./05-ctc.mdx) to keep accurate sample-rate timing, and the [zxnDMA](./06-zxndma.mdx) to do the actual byte transfer with zero CPU overhead. We use both, side by side, and compare them.
+
+Topics:
+
+- **The four DAC ports.** `$FB` (left A), `$B3` (left B), `$0F` (right A), `$DF` (right B), and the eight-bit unsigned PCM convention.
+- **Routing.** NextReg `$08` bits — which DAC goes to which output, including "all four to both speakers" for max volume.
+- **Sample formats.** Raw 8-bit signed/unsigned, the 11025 Hz / 22050 Hz / 44100 Hz convention, and how to convert WAV in advance.
+- **CPU-driven playback.** A CTC channel ticks at the sample rate; its ISR does an `OUT (DAC),A` and advances a pointer. Costs ~150 T-states per sample at 11 kHz.
+- **DMA-driven playback.** A CTC channel is wired to the DMA via NextReg `$CD`. The DMA copies one byte from a sample buffer to the DAC port on every CTC tick. **The CPU does literally nothing during playback.** This is how the Next does professional-quality audio.
+- **Looping, ping-pong, and end-of-buffer.** DMA modes that automatically restart, and the DMA-end interrupt that lets you queue the next buffer.
+- **Mixing AY and DAC.** Both go to the same output stage; the chip music continues underneath the samples.
+
+## What you should know first
+
+- [Interrupts](./04-interrupts.mdx).
+- [The CTC](./05-ctc.mdx).
+- [zxnDMA](./06-zxndma.mdx).
+
+## Planned exercises
+
+- **CPU-paced sample.** Play an 8 kHz speech sample using a CTC ISR.
+- **DMA-paced sample.** Replay the same sample using DMA. Compare CPU load (use the CTC profiling utility from chapter 5 to measure how much main-loop time you actually win back).
+- **Drum + chip music.** AY tracker tune playing in the background, DMA-driven drum hits triggered on key press.

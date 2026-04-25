@@ -1,0 +1,237 @@
+import { Callout } from 'nextra/components'
+
+# Talking to the Hardware: I/O Ports and NextRegs
+
+Before you can write a single line of useful Z80 code on the ZX Spectrum Next, you need to understand how Z80 programs talk to hardware. It's not magic — it's two I/O instructions (`IN` and `OUT`), one pair of 16-bit port addresses, and a register map. Master these three things and every hardware chapter that follows opens up naturally.
+
+This chapter covers the fundamentals. First, how the Z80's I/O bus actually works and why the Next's port addresses look the way they do. Then, NextRegs — the FPGA's control panel, accessible through two dedicated ports, that gives you access to everything the Next adds beyond the original Spectrum.
+
+By the time you reach the end of this chapter you'll have the vocabulary to read any hardware reference and decode any port address. The next chapter ([Memory Architecture: ROM, RAM, Banks, and the MMU](./03-memory.mdx)) builds directly on the NextRegs you'll meet here.
+
+## How Z80 I/O Addressing Works
+
+Before diving in, a quick note on how the Z80's I/O instructions work — because it's immediately relevant to how several Next ports decode.
+
+When the Z80 executes `IN A,(n)`, it puts the 16-bit address `(A << 8) | n` on the address bus. When it executes `IN r,(C)`, it puts the full 16-bit contents of `BC` on the address bus. The point: all sixteen address lines are visible during I/O, and the Next hardware checks various combinations of them to decide which port is responding.
+
+Most ports only care about a few bits of the address, which is why the port table in the official documentation uses `X` to mark "don't care" bits:
+
+```
+|R|W||AAAA AAAA AAAA AAAA|Port(hex)|Description       |
+      A                 A
+      1                 0
+      5                
+|*|*||XXXX XXXX XXXX XXX0| 0xfe    |ULA               |
+| |*||0XXX XXXX XXXX XX01| 0x7ffd  |ZX Spectrum 128K  |
+```
+
+Port `0xFE` responds whenever address bit 0 is 0, regardless of what the rest of the address lines are doing. Port `0x7FFD` requires specific patterns in both the high and low bytes. This partial decoding is inherited from the original Spectrum hardware and means some ports alias — the same physical port responds at many different addresses.
+
+> **Why partial decoding?** In the original Spectrum, full address decoding would have required more logic chips. By only checking a few bits, Sinclair saved on both chip count and cost. The side effect is that `OUT (0xFE),A` and `OUT (0x7EFE),A` hit the same ULA port. The Next preserves this behaviour for compatibility.
+
+The most direct way to interact with hardware is reading and writing port addresses. The keyboard is accessed through port `$FE`, where the address lines act as row selectors. Write a value with a specific bit cleared to select that keyboard row, then read the port again — the input bits tell you which keys in that row are currently pressed (0 = pressed, 1 = released).
+
+This example reads the QWERT row (`$FB` selects row 2), scans each bit to determine the key state, and displays the result on screen with color-coded attributes: green for pressed keys, white for released ones. The loop continues until you press Space, which is detected by switching to row 7 and testing bit 0 of the returned value.
+
+```z80klive
+ReadIoDemo
+    ld hl,Title_ReadIo
+    call _printTitle
+    ld hl,Instr_ReadIo
+    call _printText
+`loop
+    ; Select row 2 (Q, W, E, R, T)
+    ld a,$FB        ; 11111011 - bit 2 = 0 selects row 2
+    in a,($FE)      ; Read keyboard state
+    
+    ld hl,$58a0
+    ld d,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld e,attr(COLOR_BLACK, COLOR_WHITE, 0)
+    ld b,5          ; Five keys to test
+`bitscan
+    ; Change attribute according to key state
+    sra a
+    jr c,`up
+    ld (hl),d       ; The key is up
+    jr `next
+`up
+    ld (hl),e       ; The key id down
+`next
+    inc hl
+    djnz `bitscan
+    
+    ; Now check if Space is pressed
+    ld a,$7F        ; 01111111 - bit 7 = 0 selects row 7 (Space row)
+    in a,($FE)
+    bit 0,a         ; Test bit 0 (Space key)
+    jr nz,`loop     ; If Space not pressed (bit 0), loop again
+    ret    
+    
+Title_ReadIo
+    .defn "I/O #1: Read keyboard line"
+Instr_ReadIo
+    .defm "Press keys Q, W, E, R, or T\x0D"
+    .defm "Press Space to complete\x0D\x0D"
+    .defn "QWERT"
+```
+
+Writing to I/O ports is just as straightforward as reading from them. The same port `$FE` — the ULA port — accepts writes that control the display border color (bits 0–2), speaker (bit 4), and more. This example writes color values in a loop, alternating between green and blue, with a delay between each color change to make the flashing visible. The delay is a simple busy-loop that decrements a 16-bit counter (`BC`) until it reaches zero. The Space key check is identical to the previous example: switch to row 7, read the port, and test bit 0 for the Space key.
+
+```z80klive
+WriteIoDemo
+    ld hl,Title_WriteIo
+    call _printTitle
+    ld hl,Instr_WriteIo
+    call _printText
+`kbloop
+    ld a,COLOR_GREEN     ; Load GREEN border color
+    out ($fe),a          ; Write to ULA port
+    ld bc,$400           ; Load delay counter
+    call _delayWithBc    ; Pause
+    ld a,COLOR_BLUE      ; Load BLUE border color
+    out ($fe),a          ; Write to ULA port
+    ld bc,$488           ; Load delay counter (different duration)
+    call _delayWithBc    ; Pause
+
+    ; Now check if Space is pressed
+    ld a,$7F             ; 01111111 - bit 7 = 0 selects row 7 (Space row)
+    in a,($FE)
+    bit 0,a              ; Test bit 0 (Space key)
+    jr nz,`kbloop        ; If Space not pressed (bit 0), loop again
+    ret    
+
+Title_WriteIo
+    .defn "I/O #2: Write border color"
+Instr_WriteIo
+    .defn "Press Space to complete"
+```
+
+<Callout type="info" emoji="💡">
+Try the `ReadIoDemo` and `WriteIoDemo` examples.
+</Callout>
+
+The full I/O port listing and port enable/disable controls are covered in [Appendix C: I/O Ports Reference](./app-C-io-ports-reference.md).
+
+## NextRegs: The Hardware Control Panel
+
+If I/O ports are the Z80's way of talking to hardware peripherals, NextRegs are where the ZX Spectrum Next keeps all of its own configuration. Think of them as the FPGA's internal control registers — there are up to 256 of them (indexed by register number 0x00–0xFF), and between them they govern nearly everything that makes the Next more than a Spectrum: CPU speed, memory mapping, display layers, palettes, sprites, audio, interrupts, and more.
+
+The whole system is accessed through just two I/O ports. Write the register number to one port, read or write the value through the other. Simple to use, despite controlling a very complex machine.
+
+### How to Access NextRegs
+
+Two I/O ports form the gateway:
+
+- **Port `0x243B`** — write the register number here to select it
+- **Port `0x253B`** — read or write the register value here
+
+#### Writing a Register
+
+The port method works everywhere—including in 48K mode or on any hardware where the Z80N extended instructions aren't available:
+
+```z80klive
+ld bc,$243b    ; point to the register select port
+ld a,$07       ; register number (CPU speed)
+out (c),a
+inc b          ; point to the value port
+ld a,$02       ; value: 14 MHz
+out (c),a
+```
+
+The Z80N instruction set adds two faster alternatives that fold the select and write into a single instruction:
+
+```z80klive
+nextreg $07,$02   ; select register 0x07 and write 0x02 in one shot
+nextreg $07,a     ; write whatever is in A to register 0x07
+```
+
+`nextreg` is the idiomatic way to configure hardware in Next-specific code—cleaner, faster, and easier to read than the port sequence.
+
+#### Reading a Register
+
+There is no `nextreg` form for reads—the Z80N instruction set only covers writes. To read a register value back, you always use the ports:
+
+```z80klive
+ld bc,$243b    ; point to the register select port
+ld a,$07       ; register number (CPU speed)
+out (c),a
+inc b          ; point to the value port
+in a,(c)       ; read the current value into A
+```
+
+The select port (`0x243B`) remembers the last written register number, so if you've just written to a register via the port method, you can skip the select step and read straight from `0x253B`. Don't rely on this across interrupt boundaries though—an ISR that touches NextRegs will clobber the selection.
+
+> **Reset behavior**: Every register has a defined reset state. Hard reset (power-on, F1, or writing `0x02` with bit 1) restores everything to factory defaults. Soft reset (F4 key or writing `0x02` with bit 0) restores a slightly different subset—some hardware settings survive a soft reset, others don't. Register descriptions note which applies.
+
+The complete NextReg reference, organized by functional area, is in [Appendix B: NextReg Reference](./app-B-nextreg-reference.md).
+
+#### NextReg Example: Write and Read Back
+
+The `WriteNextRegDemo` example demonstrates these concepts.
+
+```z80klive
+WiteNextRegDemo
+    ld hl,Title_WNextReg
+    call _printTitle
+    ld hl,PrintStep1_Str
+    call _printText
+    ;
+    ; Write Nextreg value (User storage)
+    ;
+    nextreg $7f,162  ; Simpler way to write the NextReg
+    ; ld bc,$243b    ; point to the register select port
+    ; ld a,$7f       ; register number (User storage)
+    ; out (c),a
+    ; inc b          ; point to the value port
+    ; ld a,162       ; value to write
+    ; out (c),a
+    
+    ;
+    ; Prepare displaying the result
+    ;
+    NewLine()
+    ld hl,PrintStep2_Str
+    call _printText
+    Ink(COLOR_BLUE)
+    ;
+    ; Read NextReg value (User storage)
+    ;
+    ld bc,$243b    ; point to the register select port
+    ld a,$7f       ; register number (User storage)
+    out (c),a
+    inc b          ; point to the value port
+    in a,(c)       ; read the current value into A
+    ;
+    ; Display read value
+    ;
+    push af
+    call _printAHexadecimal
+    ld a,' '
+    rst $10
+    ld a,'('
+    rst $10
+    pop af
+    call _printADecimal
+    ld a,')'
+    jp $10
+    
+    
+Title_WNextReg
+    .defn "NextReg #1: Write/Read (#1)"
+PrintStep1_Str
+    .defn "Write 162 to NextReg $7F (#1)"
+PrintStep2_Str
+    .defn "Value of NextReg $7F: "
+```
+
+<Callout type="info" emoji="💡">
+Try the `WriteNextRegDemo` example.
+</Callout>
+
+## Where Next
+
+You now have the two primitives every later chapter relies on: I/O ports and NextRegs. From here, the natural progression is:
+
+- **[Memory Architecture: ROM, RAM, Banks, and the MMU](./03-memory.mdx)** — the MMU is configured entirely through NextRegs `$50`–`$57`, so this is the immediate next step.
+- **[Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](./04-interrupts.mdx)** — the Next's hardware IM2 controller lives in NextRegs `$C0`–`$C8`.
+- **[The CTC: Counter/Timer Circuit](./05-ctc.mdx)** — uses plain I/O ports `$183B`–`$1B3B` and (optionally) the IM2 mechanism from the Interrupts chapter.

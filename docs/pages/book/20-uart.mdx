@@ -1,0 +1,31 @@
+import { Callout } from 'nextra/components'
+
+# The UART and the ESP WiFi Module
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+The Next has a UART wired to an on-board socket where, on real hardware, an ESP-01 WiFi module lives. The same UART is also exposed as a generic serial port — perfect for talking to a host PC, a sensor, or any 3.3 V serial device. Klive emulates the UART surface (with a configurable virtual peer) so you can develop and test serial code without a real Next on your desk.
+
+Topics:
+
+- **The UART ports.** `$133B` (data), `$143B` (control / status). 8N1 framing only — no parity options.
+- **Baud rate.** Set via NextReg `$0A`/`$0B` and `$0E`/`$0F` — full divider chain explained, with a table of common baud rates.
+- **Polled I/O.** The simplest possible TX and RX loops. Status bits: TX-empty, RX-ready.
+- **Interrupt-driven I/O.** UART RX and TX interrupts via NextRegs `$C2` (enables) and `$C6` (status). Building a small ring-buffer driver around them.
+- **Talking to the ESP.** AT command basics — set network, connect to access point, open TCP, send/receive. Just enough to get "fetch a JSON file from the internet" working.
+- **Klive specifics.** What kind of virtual peer Klive offers and how to wire it up for the exercises.
+
+## What you should know first
+
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+- [Interrupts](./04-interrupts.mdx) — for the ring-buffer driver.
+
+## Planned exercises
+
+- **Polled echo.** Read a byte from the UART, write it back. Test with the Klive virtual peer.
+- **Interrupt-driven terminal.** A scrolling text window that displays everything that arrives over the UART, while the main loop animates a sprite to prove it's not blocking.
+- **AT hello (real hardware).** Aimed at users who do have a Next with ESP — open a TCP connection and send a one-line HTTP request. Klive users can run the same code against the virtual peer to see the AT command sequence.

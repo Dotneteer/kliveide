@@ -1,0 +1,31 @@
+import { Callout } from 'nextra/components'
+
+# NextZXOS, esxDOS, and the SD Card
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Everything in the book up to now lived entirely in memory. To make a real program — one that loads its own assets, saves its own settings, and plays nicely with NextZXOS — you need to talk to the SD card. The good news is you don't have to write a FAT32 driver: NextZXOS exposes a clean, MS-DOS-flavoured file API that is callable from a few-line Z80 wrapper.
+
+Topics:
+
+- **NextZXOS, esxDOS, and the +3DOS lineage.** What they are, how they're related, and which lives where on a stock Next SD card.
+- **The DivMMC mechanism.** How NextZXOS swaps in its handler ROM transparently when the Z80 hits certain entry points — the alt-ROM concept introduced in [Memory Architecture](./03-memory.mdx) is the same machinery.
+- **The file API.** `M_GETSETDRV`, `F_OPEN`, `F_READ`, `F_WRITE`, `F_CLOSE`, `F_SEEK`, plus the ESX error codes. Calling convention via `RST $08` + handle byte.
+- **The current drive and current path.** How NextZXOS tracks them, and what `M_GETSETDRV` lets you change.
+- **Reading a file into a paged-in bank.** The natural fit: open file, set MMU slot to the destination page, read directly into it.
+- **Dot commands.** What they are (executable files in `/dot/`), their entry-point convention, the command-line argument they receive in `HL`, and how to write one.
+
+## What you should know first
+
+- [Memory Architecture](./03-memory.mdx) — files load into pages.
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+
+## Planned exercises
+
+- **First read.** Open a text file from the example pack's `/data` folder and print its first line on the ULA screen.
+- **Asset loader.** Read a binary blob (a Layer 2 image) directly into the Layer 2 page and display it.
+- **Mini dot command.** Write a `.hello` dot command that prints its first command-line argument back to the user.

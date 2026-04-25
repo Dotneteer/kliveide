@@ -56,43 +56,27 @@
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
             "line": 65,
-            "column": 13
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/timing.asm",
-          "position": {
-            "line": 78,
-            "column": 13
+            "column": 16
           }
         },
         {
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/ctc.asm",
           "position": {
-            "line": 65,
-            "column": 16
+            "line": 44,
+            "column": 15
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_intro/print.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/timing.asm",
           "position": {
-            "line": 52,
-            "column": 1
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
-          "position": {
-            "line": 32,
-            "column": 1
+            "line": 66,
+            "column": 27
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/ctc.asm"
     },
     "Disassembly": {
       "topAddress": 1386,

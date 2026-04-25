@@ -1,0 +1,36 @@
+import { Callout } from 'nextra/components'
+
+# Palettes and Colour on the Next
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Every video layer that comes after this chapter — LoRes, Layer 2, Tilemap, Sprites — uses the same palette mechanism. The Next has **eight 256-entry palettes** (ULA "first" and "second", Layer 2 "first" and "second", Sprites "first" and "second", Tilemap "first" and "second"), each entry is 9 bits wide (RRRGGGBBB plus an optional priority bit), and they all funnel through the same two NextRegs. We cover it once, here, and every later chapter just says *"set up its palette as in [Palettes](./09-palettes.mdx)"*.
+
+Topics:
+
+- **The 9-bit colour space.** RRR-GGG-BBB layout, the "extra blue bit" trick (NextReg `$44`), and why 9 bits gives you 512 colours instead of 8.
+- **The palette banks.** All eight, what each one feeds, and why "first" vs "second" exists (live-swap without redrawing).
+- **Selecting a palette to edit.** NextReg `$43` — bits selecting which of the eight palettes is the current target for the index/value registers.
+- **Writing palette entries.** NextReg `$40` (palette index, auto-increment), `$41` (8-bit colour value), and `$44` (the 9th bit + priority bit). The auto-increment lets you upload a whole 256-entry palette in one tight loop.
+- **Per-pixel priority.** The priority bit on a per-entry basis, and how it interacts with the layer compositing rules covered later in [Compositing](./15-compositing.mdx).
+- **The transparency colour.** NextReg `$14` (global) and `$4A` (sprite/tilemap-specific) — pixel values that get treated as see-through.
+- **ULA palette mode.** Switching the ULA from its hardwired colours to a programmable palette via NextReg `$43`.
+
+## What you should know first
+
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+- [The ULA Screen and Border](./08-ula-screen.mdx) — gives you a "before" picture so the palette swap exercise is visually striking.
+
+## What this chapter unlocks
+
+- Every chapter in Part V from here on.
+
+## Planned exercises
+
+- **Palette shift.** Take a ULA screen and rotate its 16 palette entries every frame — animated colour without touching screen memory.
+- **512-colour gradient.** Fill the entire palette with a smooth gradient and display it on Layer 2 (uses [Layer 2](./11-layer2.mdx)).
+- **Palette swap.** Build the same scene twice — once in palette "first", once in palette "second" — and toggle between them on key press to demonstrate instant theme switching.

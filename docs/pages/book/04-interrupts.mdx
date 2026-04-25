@@ -1,0 +1,38 @@
+import { Callout } from 'nextra/components'
+
+# Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Almost every chapter from here onward uses interrupts in some form: the CTC tick, the line interrupt that drives mid-frame palette tricks, the DMA-end signal, the UART receive interrupt, even the Copper. Rather than re-explaining the mechanics each time, we pay the conceptual cost once — right here — and let later chapters say *"enable the line interrupt as in [Interrupts](./04-interrupts.mdx)"* in a single sentence.
+
+This chapter covers:
+
+- **The Z80 interrupt modes.** IM0 (legacy CP/M), IM1 (the Spectrum default — `RST $38`), and **IM2** (vectored, the one that matters on the Next).
+- **The I and R registers.** What they do, why `LD I,A` plus `IM 2` is the standard incantation, and the alignment trick that lets you use a single all-`$FF`-byte vector table.
+- **Maskable vs. non-maskable.** When the NMI fires (the Multiface/divMMC button on real hardware; Klive can simulate the press), and why most code never touches it.
+- **The Next's hardware IM2 controller.** NextRegs `$C0`–`$C8`: configurable vector top bits, per-source enables, per-source status. One IM2 vector per source, computed automatically from a fixed priority number — no daisy chain, no hand-rolled vector dispatch.
+- **The interrupt sources.** ULA frame, line interrupt, all four CTC channels, UART RX, UART TX, DMA-end, joystick I/O, mouse, divMMC, expansion bus.
+- **Writing a clean ISR.** Register save/restore, when to `EI` before `RETI`, latency budgeting, and the "store everything in shadow registers" pattern.
+
+## What you should know first
+
+- [Z80N: The Next's Z80 CPU](./01-z80n.mdx) — flags, shadow registers, `EX AF,AF'`, `EXX`.
+- [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx) — `$C0`–`$C8` are NextRegs.
+
+## What this chapter unlocks
+
+- [The CTC](./05-ctc.mdx) — the interrupt-generation half of the chapter.
+- [Layer 2](./11-layer2.mdx) and the rest of Part V — the line interrupt enables every mid-frame trick.
+- [zxnDMA](./06-zxndma.mdx) — the DMA-end interrupt for completion notification.
+- [The Real-Time Clock and I²C](./21-rtc-i2c.mdx), [The UART and the ESP](./20-uart.mdx) — both are interrupt-driven in any non-toy use.
+
+## Planned exercises
+
+- **50 Hz frame counter.** Install an ULA frame ISR that increments a 32-bit counter, and display it as wall-clock seconds.
+- **Border bars.** Use the line interrupt to change the border colour at four different raster positions per frame, producing four horizontal bars.
+- **Two-source dispatcher.** A single IM2 handler that distinguishes between the frame interrupt and a CTC channel 2 tick, dispatching to two different routines.
