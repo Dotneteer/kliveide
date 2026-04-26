@@ -7,25 +7,24 @@ After_Str:
 ; Example: SWAPNIB
 ;==========================================================
 SwapnibDemo
-    ld hl,Title_Swapnib
-    call _printTitle
-    ld hl,Before_Str
-    call _printText
+    Display.PrintTitle(Title_Swapnib)
+    Display.PrintText(Before_Str)
 
     ld a,$3e
     push af
-    Ink(COLOR_BLUE)
-    call _printAHexadecimal
-    NewLine()
-    Ink(COLOR_BLACK)
-    ld hl,After_Str
-    call _printText
-    Ink(COLOR_BLUE)
+    Display.Ink(Color.Blue)
+    Display.PrintAHexadecimal()
+    Display.NewLine()
+    Display.Ink(Color.Black)
+    Display.PrintText(After_Str)
+    Display.Ink(Color.Blue)
     pop af
+
     ; *** Swaps the high and low nibbles of A
     swapnib
     
-    jp _printAHexadecimal
+    Display.PrintAHexadecimal()
+    ret
 
 Title_Swapnib
     .defn "Z80N #1: SWAPNIB"
@@ -34,25 +33,23 @@ Title_Swapnib
 ; Example: MIRROR A
 ;==========================================================
 MirrorDemo
-    ld hl,Title_Mirror
-    call _printTitle
-    ld hl,Before_Str
-    call _printText
+    Display.PrintTitle(Title_Mirror)
+    Display.PrintText(Before_Str)
 
     ld a,%1011_0010
     push af
-    Ink(COLOR_BLUE)
-    call _printABinary
-    NewLine()
-    Ink(COLOR_BLACK)
-    ld hl,After_Str
-    call _printText
-    Ink(COLOR_BLUE)
+    Display.Ink(Color.Blue)
+    Display.PrintABinary()
+    Display.NewLine()
+    Display.Ink(Color.Black)
+    Display.PrintText(After_Str)
+    Display.Ink(Color.Blue)
     pop af
     ; *** Reverses the bit order of A
     mirror a
     
-    jp _printABinary
+    Display.PrintABinary()
+    ret
 
 Title_Mirror
     .defn "Z80N #2: MIRROR A"
@@ -62,35 +59,33 @@ Title_Mirror
 ; Example: TEST n
 ;==========================================================
 TestDemo
-    ld hl,Title_Test
-    call _printTitle
-    ld hl,Test_Value_Str
-    call _printText
+    Display.PrintTitle(Title_Test)
+    Display.PrintText(Test_Value_Str)
 
     ld a,%1000_0100
     push af
-    Ink(COLOR_BLUE)
-    call _printABinary
-    NewLine()
-    Ink(COLOR_BLACK)
+    Display.Ink(Color.Blue)
+    Display.PrintABinary()
+    Display.NewLine()
+    Display.Ink(Color.Black)
     ld hl,Test_With_1_Str
-    call _printText
-    Ink(COLOR_BLUE)
+    Display.PrintText(Test_With_1_Str)
+    Display.Ink(Color.Blue)
     pop af
     ; *** Reverses the bit order of A
     push af
     
     test %1000_0000
-    call _printZFlag
-    Ink(COLOR_BLACK)
-    NewLine()
-    ld hl,Test_With_2_Str
-    call _printText
-    Ink(COLOR_BLUE)
+    Display.PrintZFlag()
+    Display.Ink(Color.Black)
+    Display.NewLine()
+    Display.PrintText(Test_With_2_Str)
+    Display.Ink(Color.Blue)
     pop af
 
     test %0000_0010
-    jp _printZFlag
+    Display.PrintZFlag()
+    ret
 
 Title_Test
     .defn "Z80N #3: TEST n"
@@ -107,11 +102,11 @@ Test_With_2_Str
 BslaDemo
     ld hl,Title_Bsla
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Bsla
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Bsla_2
     call _printText
 
@@ -146,11 +141,11 @@ Instr_Bsla_2
 BsraDemo
     ld hl,Title_Bsra
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Bsra
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Bsra_2
     call _printText
 
@@ -200,11 +195,11 @@ Instr_Bsra_2
 BsrlDemo
     ld hl,Title_Bsrl
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Bsrl
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Bsrl_2
     call _printText
 
@@ -254,11 +249,11 @@ Instr_Bsrl_2
 BsrfDemo
     ld hl,Title_Bsrf
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Bsrf
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Bsrf_2
     call _printText
 
@@ -308,11 +303,11 @@ Instr_Bsrf_2
 BrlcDemo
     ld hl,Title_Brlc
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Brlc
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Brlc_2
     call _printText
 
@@ -346,11 +341,11 @@ Instr_Brlc_2
 LdixDemo
     ld hl,Title_Ldix
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Ldix
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Ldix_2
     call _printText
 
@@ -392,11 +387,11 @@ Data_Ldix:
 LddxDemo
     ld hl,Title_Lddx
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Lddx
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Lddx_2
     call _printText
 
@@ -438,11 +433,11 @@ Data_Lddx:
 LdirxDemo
     ld hl,Title_Ldirx
     call _printTitle
-    Ink(Color.Black)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Ldirx
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Ldirx_2
     call _printText
 
@@ -477,11 +472,11 @@ Data_Ldirx:
 LddrxDemo
     ld hl,Title_Lddrx
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Lddrx
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Lddrx_2
     call _printText
 
@@ -516,8 +511,8 @@ Data_Lddrx:
 LdwsDemo
     ld hl,Title_Ldws
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Ldws
     call _printText
 
@@ -551,11 +546,11 @@ Data_Ldws
 LdpirxDemo
     ld hl,Title_Ldpirx
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Ldpirx
     call _printText
-    NewLine()
+    Display.NewLine()
     ld hl,Instr_Ldpirx_2
     call _printText
 
@@ -589,8 +584,8 @@ Data_Ldpirx
 PixeladDemo
     ld hl,Title_Pixelad
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Pixelad
     call _printText
     ld d,70
@@ -610,8 +605,8 @@ Instr_Pixelad
 PixeldnDemo
     ld hl,Title_Pixeldn
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Pixeldn
     call _printText
     ld d,70
@@ -637,8 +632,8 @@ Instr_Pixeldn
 SetaeDemo
     ld hl,Title_Setae
     call _printTitle
-    Ink(COLOR_BLACK)
-    NewLine()
+    Display.Ink(Color.Black)
+    Display.NewLine()
     ld hl,Instr_Setae
     call _printText
     ld d,70

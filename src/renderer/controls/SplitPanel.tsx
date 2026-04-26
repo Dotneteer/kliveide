@@ -50,14 +50,19 @@ export const SplitPanel = ({
   const [primarySize, setPrimarySize] = useState<string | number>(
     secondaryVisible ? resolveSize(initialPrimarySize) : "100%"
   );
-  const [lastPrimarySize, setLastPrimarySize] = useState<string | number>(primarySize);
-  const [lastPrimaryVisible, setLastPrimaryVisible] = useState(primaryVisible);
-  const [lastSecondaryVisible, setLastSecondaryVisible] = useState(secondaryVisible);
+
+  // --- Refs for values needed across effects without triggering re-renders
+  const primarySizeRef = useRef(primarySize);
+  primarySizeRef.current = primarySize;
+  const savedPrimarySize = useRef<string | number>(primarySize);
+  const prevPrimaryVisible = useRef(primaryVisible);
+  const prevSecondaryVisible = useRef(secondaryVisible);
+  const initialLayout = useRef(true);
+
   const [splitterPosition, setSplitterPosition] = useState(0);
   const [anchorPosition, setAnchorPosition] = useState(0);
   const [splitterSize, setSplitterSize] = useState(0);
   const [splitterRange, setSplitterRange] = useState(0);
-  const initialLayout = useRef(true);
 
   // --- Calculate properties used for rendering the component
   const horizontal = isHorizontal(primaryLocation);
@@ -74,7 +79,7 @@ export const SplitPanel = ({
   // --- Respond to panel visibility changes
   useLayoutEffect(() => {
     if (initialLayout.current) {
-      // --- Calculate the last primary size
+      // --- Calculate the saved primary size from the initial props
       const containerSize = horizontal
         ? mainContainer.current.clientWidth
         : mainContainer.current.clientHeight;
@@ -85,17 +90,20 @@ export const SplitPanel = ({
       } else if (initialSecondarySize) {
         mainSize = containerSize - calculateDim(containerSize, initialSecondarySize);
       }
-      setLastPrimarySize(mainSize);
+      savedPrimarySize.current = mainSize;
       initialLayout.current = false;
     }
-    if ((!primaryVisible && lastPrimaryVisible) || (!secondaryVisible && lastSecondaryVisible)) {
-      // --- We're hiding the primary panel, store its previous size
-      setLastPrimarySize(primarySize);
-    }
 
-    if ((primaryVisible && !lastPrimaryVisible) || (secondaryVisible && !lastSecondaryVisible)) {
-      // --- We're displaying the primary panel, restore its size
-      setPrimarySize(lastPrimarySize);
+    const wasPrimaryVisible = prevPrimaryVisible.current;
+    const wasSecondaryVisible = prevSecondaryVisible.current;
+
+    if ((!primaryVisible && wasPrimaryVisible) || (!secondaryVisible && wasSecondaryVisible)) {
+      // --- We're hiding a panel — save its current size for later restore
+      savedPrimarySize.current = primarySizeRef.current;
+    }
+    if ((primaryVisible && !wasPrimaryVisible) || (secondaryVisible && !wasSecondaryVisible)) {
+      // --- We're showing a panel — restore the saved size
+      setPrimarySize(savedPrimarySize.current);
     }
 
     if (!primaryVisible) {
@@ -104,8 +112,8 @@ export const SplitPanel = ({
       setPrimarySize("100%");
     }
 
-    setLastPrimaryVisible(primaryVisible);
-    setLastSecondaryVisible(secondaryVisible);
+    prevPrimaryVisible.current = primaryVisible;
+    prevSecondaryVisible.current = secondaryVisible;
   }, [primaryVisible, secondaryVisible]);
 
   // --- Respond to container size changes
@@ -192,7 +200,7 @@ export const SplitPanel = ({
       }[primaryLocation] -
       splitterThickness / 2;
     setSplitterPosition(splitterPosValue);
-  }, [primarySize, primaryVisible]);
+  }, [primarySize, primaryVisible, primaryLocation, splitterThickness]);
 
   // --- Save the primary size
   useEffect(() => {

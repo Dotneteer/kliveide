@@ -191,6 +191,13 @@ export abstract class CommonAssembler<
   // --- The stack of macro invocations
   protected _macroInvocations: MacroOrStructInvocation<TInstruction, TToken>[] = [];
 
+  // --- Stack of modules that *define* the currently expanding macro(s).
+  // --- Maintained in parallel with _macroInvocations (one entry per
+  // --- cross-module invocation level). Used so that @-prefixed module-local
+  // --- symbols inside a macro body are resolved against the defining module
+  // --- even when _currentModule is the calling module.
+  protected _macroDefiningModuleStack: AssemblyModule<TInstruction, TToken>[] = [];
+
   // --- Counter for async batches
   protected _batchCounter = 0;
 
@@ -957,6 +964,17 @@ export abstract class CommonAssembler<
     } else {
       resolved = this._currentModule.resolveSimpleSymbol(symbol);
     }
+    // --- For @-prefixed module-local symbols that were not found in the
+    // --- current module chain, also try the module that defines the
+    // --- currently expanding macro (if any). This allows cross-module macro
+    // --- invocations to find @-symbols that live in the defining module while
+    // --- all other symbol lookups remain anchored to the calling module.
+    if (!resolved && symbol.startsWith("@") && this._macroDefiningModuleStack.length > 0) {
+      const defModule = this._macroDefiningModuleStack[this._macroDefiningModuleStack.length - 1];
+      if (defModule !== this._currentModule) {
+        resolved = defModule.resolveSimpleSymbol(symbol);
+      }
+    }
     return resolved;
   }
 
@@ -1178,7 +1196,7 @@ export abstract class CommonAssembler<
       }
 
       // --- Special case: .struct invocation without arguments
-      const structDef = this._currentModule.getStruct(asmLine.label.name);
+      const structDef = this._currentModule.resolveCompoundStruct(asmLine.label.name);
       if (structDef) {
         // --- We have found a structure definition
         this.reportAssemblyError("Z1013", asmLine, null, asmLine.label.name);
@@ -1186,7 +1204,7 @@ export abstract class CommonAssembler<
       }
 
       // // --- Let's handle macro invocation
-      const macroDef = this._currentModule.getMacro(asmLine.label.name);
+      const macroDef = this._currentModule.resolveCompoundMacro(asmLine.label.name);
       if (macroDef) {
         // Warn about missing parentheses
         this.reportAssemblyError("Z1014", asmLine, null, asmLine.label.name);
@@ -3294,22 +3312,24 @@ export abstract class CommonAssembler<
     macroOrStructStmt: MacroOrStructInvocation<TInstruction, TToken>,
     allLines: AssemblyLine<TInstruction>[]
   ): Promise<void> {
-    const structDef = this._currentModule.getStruct(macroOrStructStmt.identifier.name);
+    const invocationName = macroOrStructStmt.identifier.name;
+    const structDef = this._currentModule.resolveCompoundStruct(invocationName);
     if (structDef) {
       // --- We have found a structure definition
-      this.recordSymbolReference(macroOrStructStmt.identifier.name, macroOrStructStmt.identifier);
+      this.recordSymbolReference(invocationName, macroOrStructStmt.identifier);
       await this.processStructInvocation(macroOrStructStmt, structDef, allLines);
       return;
     }
 
     // --- Let's handle macro invocation
     // --- Check if macro definition exists
-    const macroName = macroOrStructStmt.identifier.name;
-    const macroDef = this._currentModule.getMacro(macroName);
-    if (!macroDef) {
+    const macroName = invocationName;
+    const macroEntry = this._currentModule.resolveCompoundMacroEntry(macroName);
+    if (!macroEntry) {
       this.reportAssemblyError("Z1007", macroOrStructStmt, null, macroName);
       return;
     }
+    const macroDef = macroEntry.macro;
 
     // --- Record the macro invocation as a symbol reference
     this.recordSymbolReference(macroName, macroOrStructStmt.identifier);
@@ -3330,6 +3350,16 @@ export abstract class CommonAssembler<
     // --- Save the current state of macro error stack
     const macroStackDepth = this._macroInvocations.length;
     const assembler = this;
+
+    // --- If the defining module differs from the calling module, push it
+    // --- onto the defining-module stack so that @-prefixed symbols inside
+    // --- the macro body resolve against the defining module while all other
+    // --- symbol lookups (including macro arguments) remain in the caller's
+    // --- context. This is symmetric with the pop in restoreMacroStack().
+    const definerPushed = macroEntry.owner !== this._currentModule;
+    if (definerPushed) {
+      this._macroDefiningModuleStack.push(macroEntry.owner);
+    }
 
     // --- Push the invocation line to the stack
     this._macroInvocations.push(macroOrStructStmt);
@@ -3576,10 +3606,14 @@ export abstract class CommonAssembler<
     restoreMacroStack();
 
     /**
-     * Restores the original depth of the macro stack
+     * Restores the original depth of the macro stack and pops the
+     * defining-module stack if we pushed an entry for this invocation.
      */
     function restoreMacroStack() {
       assembler._macroInvocations.length = macroStackDepth;
+      if (definerPushed) {
+        assembler._macroDefiningModuleStack.pop();
+      }
     }
   }
 

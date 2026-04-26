@@ -5,13 +5,10 @@ SLOT5_START .equ $a000
 ; Use the MMU
 ;==========================================================
 MmuRoundTripDemo
-    ld hl,Title_MmuRoundTrip
-    call _printTitle
-    ld hl,Instr_MmuRoundTrip
-    call _printText
-    ld hl,Result_MmuRoundTrip
-    call _printText
-    Ink(Color.Blue)
+    Display.PrintTitle(Title_MmuRoundTrip)
+    Display.PrintText(Instr_MmuRoundTrip)
+    Display.PrintText(Result_MmuRoundTrip)
+    Display.Ink(Color.Blue)
  
     ; --- Save current MMU5 so we can restore it
     ld a,MMU5_reg
@@ -54,7 +51,7 @@ MmuRoundTripDemo
 _printHLContentHexadecimal
     push hl
     ld a,(hl)
-    call _printAHexadecimal
+    Display.PrintAHexadecimal()
     ld a,' '
     rst $10
     pop hl
@@ -76,12 +73,10 @@ Result_MmuRoundTrip
 ; Use the Shadow screen
 ;==========================================================
 ShadowScreenDemo
-    ld hl,Title_ShadowScreen
-    call _printTitle
-    ld hl,Instr_ShadowScreen
-    call _printText
+    Display.PrintTitle(Title_ShadowScreen)
+    Display.PrintText(Instr_ShadowScreen)
 
-    Ink(Color.Blue)
+    Display.Ink(Color.Blue)
     GetReg($9f)         ; Get $7ffd status
     ld (last7ffd),a     ; Save it
     call _printABinary  ; Display it

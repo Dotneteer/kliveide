@@ -10,78 +10,91 @@ Yellow  .equ 6
 White   .equ 7
 .endmodule
 
-;------------------------------------------------------------------------------
-; ZX Spectrum Next system variables
-;------------------------------------------------------------------------------
-LAST_K                    .equ $5c08
+.module Display
 
 ; 256 byte buffer for conversions
-TMP_BUFF .defs $100
+TMP_BUFF .defs $20
 
 ; Store the last border color here
-_lastBorder
-    .db 0
+@lastBorder .db 0
 
+@Border
+    ld (@lastBorder),a
+    out ($fe),a
+    ret
 
 Border .macro(color)
-    push af
     ld a,{{color}}
-    ld (LastBorder),a
-    out ($fe),a
-    pop af
+    call @Border
 .endm
 
-Ink .macro(color)
+@Ink
     push af
     ld a,$10
     rst $10
     pop af
-    push af
-    ld a,{{color}}
     rst $10
-    pop af
+    ret
+
+Ink .macro(color)
+    ld a,{{color}}
+    jp @Ink
 .endm
 
-Paper .macro(color)
+@Paper
     push af
     ld a,$11
     rst $10
     pop af
-    push af
-    ld a,{{color}}
     rst $10
-    pop af
+    ret
+
+
+Paper .macro(color)
+    ld a,{{color}}
+    call @Paper
 .endm
 
-Flash .macro(value)
+@Flash
     push af
     ld a,$12
     rst $10
     pop af
-    push af
-    ld a,{{value}}
     rst $10
-    pop af
+    ret
+
+Flash .macro(value)
+    ld a,{{value}}
+    call @Flash
 .endm
 
-Bright .macro(value)
+@Bright
     push af
     ld a,$13
     rst $10
     pop af
-    push af
-    ld a,{{value}}
     rst $10
-    pop af
+    ret
+
+Bright .macro(value)
+    ld a,{{value}}
+    call @Bright
 .endm
 
-PrintAt .macro(row, col)
+@PrintAt
+    push bc
     ld a,$16
     rst $10
-    ld a,{{row}}
+    pop bc
+    ld a,b
     rst $10
-    ld a,{{col}}
+    ld a,c
     rst $10
+
+PrintAt .macro(row, col)
+    ld b,{{row}}
+    ld c,{{col}}
+    call @PrintAt
 .endm
 
 NewLine .macro()
@@ -95,12 +108,16 @@ NewLine .macro()
 ;   AF....../IX same
 ;   ..BCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_resetScreenAttributes
+@resetScreenAttributes
     Flash(0)
     Bright(0)
     Paper(7)
-    Ink(0)
+    Display.Ink(0)
     ret
+
+ResetAttributes .macro()
+    call @resetScreenAttributes
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Prints the specified text to the screen. The text should be
@@ -112,7 +129,7 @@ _resetScreenAttributes
 ;   ..BCDE../IX same
 ;   AF....HL/.. different
 ; ------------------------------------------------------------------------------
-_printText
+@printText
     ld a,(hl)                   ; Read the current character
     and a                       ; Check for terminating zero
     ret z                       ; Terminator found, done.
@@ -134,7 +151,12 @@ _printText
 `singleChar
     rst $10                     ; Print the character
     inc hl
-    jr _printText               ; Continue the printing loop
+    jr @printText               ; Continue the printing loop
+
+PrintText .macro(addr)
+    ld hl,{{addr}}
+    call @printText
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Prints text as a title (bright blue ink, followed by two newlines)
@@ -144,18 +166,23 @@ _printText
 ;   ..BCDE../IX same
 ;   AF....HL/.. different
 ; ------------------------------------------------------------------------------
-_printTitle
+@printTitle
     push hl
     Bright(1)
-    Ink(COLOR_BLUE)
+    Display.Ink(Color.Blue)
     pop hl
-    call _printText
+    call @printText
 
     Bright(0)
-    Ink(COLOR_BLACK)
+    Display.Ink(Color.Black)
     NewLine()
     NewLine()
     ret
+
+PrintTitle .macro(addr)
+    ld hl,{{addr}}
+    call @printTitle
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Converts HL to a five-digit decimal string
@@ -166,18 +193,18 @@ _printTitle
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_convHlToDecimal
+@convHlToDecimal
     ld bc,10000
-    call _convDecimalDigit
+    call @convDecimalDigit
     ld bc,1000
-    call _convDecimalDigit
+    call @convDecimalDigit
     ld bc,100
-    call _convDecimalDigit
+    call @convDecimalDigit
     ld bc,10
-    call _convDecimalDigit
+    call @convDecimalDigit
     ld a,l
-    jr _convLastDigit
-_convDecimalDigit
+    jr @convLastDigit
+@convDecimalDigit
     xor a
 `conv1
     sbc hl,bc
@@ -186,7 +213,7 @@ _convDecimalDigit
     jr `conv1
 `conv2
     add hl,bc
-_convLastDigit
+@convLastDigit
     add a,'0'
     ld (de),a
     inc de
@@ -201,15 +228,15 @@ _convLastDigit
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_convAToDecimal
+@convAToDecimal
     ld h,0
     ld l,a
     ld bc,100
-    call _convDecimalDigit
+    call @convDecimalDigit
     ld bc,10
-    call _convDecimalDigit
+    call @convDecimalDigit
     ld a,l
-    jr _convLastDigit
+    jr @convLastDigit
 
 ; ------------------------------------------------------------------------------
 ; Converts HL to a four-digit hexadecimal string
@@ -220,23 +247,23 @@ _convAToDecimal
 ;   ..BC..HL/IX same
 ;   AF..DE../.. different
 ; ------------------------------------------------------------------------------
-_convHlToHexadecimal
+@convHlToHexadecimal
     ld a,h
     rra
     rra
     rra
     rra
-    call _convHexaDigit
+    call @convHexaDigit
     ld a,h
-    call _convHexaDigit
+    call @convHexaDigit
     ld a,l
     rra
     rra
     rra
     rra
-    call _convHexaDigit
+    call @convHexaDigit
     ld a,l
-_convHexaDigit
+@convHexaDigit
     and $0f
     cp 10
     jr c,`conv1
@@ -256,15 +283,15 @@ _convHexaDigit
 ;   ..BC..HL/IX same
 ;   AF..DE../.. different
 ; ------------------------------------------------------------------------------
-_convAToHexadecimal
+@convAToHexadecimal
     push af
     rra
     rra
     rra
     rra
-    call _convHexaDigit
+    call @convHexaDigit
     pop af
-    jr _convHexaDigit
+    jr @convHexaDigit
 
 ; ------------------------------------------------------------------------------
 ; Prints HL as a decimal number, showing A least-significant digits
@@ -275,9 +302,9 @@ _convAToHexadecimal
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_printHLDecimal
+@printHLDecimal
     ld a,5
-_printHLDecimal2
+@printHLDecimal2
     cp 0
     jr z,`print1
     cp 5
@@ -287,21 +314,25 @@ _printHLDecimal2
 `print2
     push af
     ld de,TMP_BUFF
-    call _convHlToDecimal
+    call @convHlToDecimal
     pop af
     ld hl,TMP_BUFF + 5
-_printFromEnd
+@printFromEnd
     ld b,0
     ld c,a
     and a
     sbc hl,bc
     ld b,a
-_printBufferByB
+@printBufferByB
     ld a,(hl)
     rst $10
     inc hl
-    djnz _printBufferByB
+    djnz @printBufferByB
     ret
+
+PrintHlDecimal .macro()
+    call @PrintHLDecimal
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Prints HL as a hexadecimal number, showing A least-significant digits
@@ -312,9 +343,9 @@ _printBufferByB
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_printHLHexadecimal
+@printHLHexadecimal
     ld a,4
-_printHLHexadecimal2
+@printHLHexadecimal2
     cp 0
     jr z,`print1
     cp 4
@@ -324,10 +355,14 @@ _printHLHexadecimal2
 `print2
     push af
     ld de,TMP_BUFF
-    call _convHlToHexadecimal
+    call @convHlToHexadecimal
     pop af
     ld hl,TMP_BUFF + 4
-    jr _printFromEnd
+    jr @printFromEnd
+
+PrintHlHexadecimal .macro()
+    call @PrintHLHexadecimal
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Prints A as a three-digit decimal number
@@ -337,13 +372,17 @@ _printHLHexadecimal2
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_printADecimal
+@PrintADecimal
     ld de,TMP_BUFF
     push de
-    call _convAToDecimal
+    call @convAToDecimal
     pop hl
     ld b,3
-    jr _printBufferByB
+    jr @printBufferByB
+
+PrintADecimal .macro()
+    call @PrintADecimal
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Prints A as a two-digit hexadecimal number
@@ -353,13 +392,17 @@ _printADecimal
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_printAHexadecimal
+@printAHexadecimal
     ld de,TMP_BUFF
     push de
-    call _convAToHexadecimal
+    call @convAToHexadecimal
     pop hl
     ld b,2
-    jr _printBufferByB
+    jr @printBufferByB
+
+PrintAHexadecimal .macro()
+    call @printAHexadecimal
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Prints A as an eight-digit binary number
@@ -369,7 +412,7 @@ _printAHexadecimal
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_printABinary
+@printABinary
     ld b,8
 `printDigit
     rla
@@ -389,6 +432,10 @@ _printABinary
     djnz `printDigit
     ret
 
+PrintABinary .macro()
+    call @printAHexadecimal
+.endm
+
 ; ------------------------------------------------------------------------------
 ; Prints the value of the Z flag
 ; IN:
@@ -397,7 +444,7 @@ _printABinary
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_printZFlag
+@PrintZFlag
     ld a,'0'
     jr nz,`printIt
     ld a,'1'
@@ -405,13 +452,17 @@ _printZFlag
     rst $10
     ret
 
+PrintZFlag .macro()
+    call @PrintZFlag
+.endm
+
 ; ------------------------------------------------------------------------------
 ; Clears the ULA screen (white paper, black ink) and resets the cursor to (0,0)
 ; OUT:
 ;   ......../IX same
 ;   AFBCDEHL/.. different
 ; ------------------------------------------------------------------------------
-_clearScreen
+@clearScreen
     push hl
     push de
     push bc
@@ -429,7 +480,11 @@ _clearScreen
     pop bc
     pop de
     pop hl
-    jp _resetScreenAttributes
+    jp @ResetScreenAttributes
+
+ClearScreen .macro()
+    call @clearScreen
+.endm
 
 ; ------------------------------------------------------------------------------
 ; Waits for a keypress (interrupt must be enabled)
@@ -438,11 +493,11 @@ _clearScreen
 ;   ..BCDEHL/IX same
 ;   AF....../.. different
 ; ------------------------------------------------------------------------------
-_waitForKey
+@waitForKey
     xor a
-    ld (LAST_K),a
+    ld (SysVars.LAST_K),a
 `wait
-    ld a,(LAST_K)
+    ld a,(SysVars.LAST_K)
     or a
     jr z,`wait
     ret
@@ -453,11 +508,15 @@ _waitForKey
 ;   ..BCDE../IX same
 ;   AF....HL/.. different
 ; ------------------------------------------------------------------------------
-_waitForExit
+@waitForExit
     ld a,7
     out ($fe),a
     ld hl,Completed_Str
-    jp _printText
+    jp @printText
+
+WaitForExit .macro()
+    call @waitForExit
+.endm
 
     
 Completed_Str
@@ -469,3 +528,5 @@ Completed_Str
     .dm "\a\x0f\x06" ; AT 15, 6
     .dm "\i\x06"     ; INK 6
     .defn "  Stop or restart!  "
+
+.endmodule

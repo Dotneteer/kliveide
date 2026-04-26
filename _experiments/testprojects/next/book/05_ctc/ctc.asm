@@ -51,7 +51,7 @@ Measure3Demo
     ; Measure ends here
     call GetMeasuredCounter
     ex de,hl
-    Ink(Color.Blue)
+    Display.Ink(Color.Blue)
     jp _printHLDecimal
 
 Title_Measure3
@@ -74,5 +74,5 @@ _measureDjnz
     ; Measure ends here
     call GetMeasuredCounter
     ex de,hl
-    Ink(Color.Blue)
+    Display.Ink(Color.Blue)
     jp _printHLDecimal

@@ -26,7 +26,7 @@
       },
       {
         "resource": "03_memory/mmu.asm",
-        "line": 41,
+        "line": 38,
         "exec": true,
         "ioMask": 65535
       }
@@ -61,24 +61,72 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 8,
-            "column": 22
+            "line": 17,
+            "column": 27
           }
         },
         {
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/memcpy.asm",
           "position": {
-            "line": 47,
-            "column": 1
+            "line": 10,
+            "column": 7
           }
         },
         {
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 466,
+            "column": 1
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/05_ctc/ctc.asm",
+          "position": {
+            "line": 54,
+            "column": 13
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/00_intro/print.asm",
+          "position": {
+            "line": 51,
+            "column": 33
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_z80n/extinstr.asm",
+          "position": {
+            "line": 89,
+            "column": 1
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/02_talktohw/nr.asm",
+          "position": {
+            "line": 25,
+            "column": 12
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
+          "position": {
+            "line": 54,
+            "column": 11
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/sysvars.asm",
+          "position": {
+            "line": 6,
+            "column": 11
           }
         }
       ],

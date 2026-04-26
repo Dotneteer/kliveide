@@ -4,7 +4,7 @@
 DmaSimpleMemCopyDemo
     ld hl,Title_DmaSimpleMemCopy
     call _printTitle
-    Ink(Color.Black)
+    Display.Ink(Color.Black)
     ld hl,Instr_DmaSimpleMemCopy
     call _printText
     ; 

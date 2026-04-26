@@ -12,6 +12,7 @@
     jp Main
 
 ; Use the utility methods
+#include "_helpers/sysvars.asm"
 #include "_helpers/display.asm"
 #include "_helpers/timing.asm"
 #include "_helpers/io.asm"
@@ -32,12 +33,12 @@ STACK_TOP
 
 ; The start of the example
 Main
-    call _clearScreen
+    Display.ClearScreen()
 ;
 ; Here are the examples. Uncomment the one you want to run
     // --- 00: Flying Start Demos
-    // call PrintWelcomeDemo
-    // call PrintValuesDemo
+    call PrintDemo.Welcome
+    // call PrintDemo.Values
 
     // --- 01: Z80N Demos
     // call SwapnibDemo
@@ -65,7 +66,7 @@ Main
 
     // --- 03: Memory
     // call MmuRoundTripDemo
-    call ShadowScreenDemo
+    // call ShadowScreenDemo
 
     // --- 05: CTC Demos
     // call Measure1Demo
@@ -79,6 +80,6 @@ Main
 ; You can reset or restart the machine.
 trap
     ei
-    call _waitForExit
+    Display.WaitForExit()
     jp $
 

@@ -20,10 +20,10 @@ WiteNextRegDemo
     ;
     ; Prepare displaying the result
     ;
-    NewLine()
+    Display.NewLine()
     ld hl,PrintStep2_Str
     call _printText
-    Ink(Color.Blue)
+    Display.Ink(Color.Blue)
     ;
     ; Read NextReg value (User storage)
     ;

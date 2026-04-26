@@ -34,7 +34,7 @@ import {
   startCompileAction
 } from "@common/state/actions";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
-import { outputNavigateAction } from "@common/utils/output-utils";
+import { outputNavigateAction, writeErrorMessageWithLinks } from "@common/utils/output-utils";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "../utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
@@ -1117,7 +1117,12 @@ async function compileCode(
       const err = result.errors[i];
       out.color(err.isWarning ? "yellow" : "bright-red");
       out.bold(true);
-      out.write(`${err.errorCode}: ${err.message}`);
+      out.write(`${err.errorCode}: `);
+      writeErrorMessageWithLinks(
+        context.output,
+        err.message,
+        err.isWarning ? "yellow" : "bright-red"
+      );
       out.write(" - ");
       out.bold(false);
       out.color("bright-cyan");
