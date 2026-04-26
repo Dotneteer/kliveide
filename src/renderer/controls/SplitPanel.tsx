@@ -169,6 +169,31 @@ export const SplitPanel = ({
     setSplitterPosition(splitterPosValue);
   });
 
+  // --- Recalculate splitter position whenever primarySize changes (covers startup
+  // --- and cases where the main container doesn't change size, e.g. store sync).
+  useLayoutEffect(() => {
+    if (!primaryVisible || !mainContainer.current || !primaryContainer.current) return;
+    const mainEl = mainContainer.current;
+    const primaryEl = primaryContainer.current;
+    const splitterPosValue =
+      {
+        left: mainEl.offsetLeft + primaryEl.clientWidth,
+        right:
+          primaryEl.clientWidth +
+          window.innerWidth -
+          mainEl.offsetLeft -
+          mainEl.clientWidth,
+        top: mainEl.offsetTop + primaryEl.clientHeight,
+        bottom:
+          primaryEl.clientHeight +
+          window.innerHeight -
+          mainEl.offsetTop -
+          mainEl.clientHeight
+      }[primaryLocation] -
+      splitterThickness / 2;
+    setSplitterPosition(splitterPosValue);
+  }, [primarySize, primaryVisible]);
+
   // --- Save the primary size
   useEffect(() => {
     onUpdatePrimarySize?.(typeof primarySize === "number" ? `${primarySize}px` : primarySize);
@@ -235,6 +260,7 @@ const Splitter = ({
 
   const startMove = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    e.preventDefault();
     setIsMoving(true);
     gripPosition.current = horizontal ? e.clientX : e.clientY;
     document.body.style.cursor = horizontal ? "col-resize" : "row-resize";
@@ -251,6 +277,7 @@ const Splitter = ({
 
     const handleEndMove = () => {
       setIsMoving(false);
+      setPointed(false);
       document.body.style.cursor = "default";
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleEndMove);
