@@ -32,28 +32,28 @@ PrintValuesDemo
     call _printText
     ld a,210
     push af
-    Ink(COLOR_BLUE)
+    Ink(Color.Blue)
     call _printADecimal
     NewLine()
-    Ink(COLOR_BLACK)
+    Ink(Color.Black)
     ld hl,Hexadecimal8_Str
     call _printText
-    Ink(COLOR_BLUE)
+    Ink(Color.Blue)
     pop af
     call _printAHexadecimal
-    Ink(COLOR_BLACK)
+    Ink(Color.Black)
     NewLine()
     ld hl,Decimal16_Str
     call _printText
-    Ink(COLOR_BLUE)
+    Ink(Color.Blue)
     ld hl,23456
     push hl
     call _printHLDecimal
     NewLine()
-    Ink(COLOR_BLACK)
+    Ink(Color.Black)
     ld hl,Hexadecimal16_Str
     call _printText
-    Ink(COLOR_BLUE)
+    Ink(Color.Blue)
     pop hl
     jp _printHLHexadecimal
 

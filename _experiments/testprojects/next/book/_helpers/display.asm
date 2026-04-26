@@ -1,17 +1,19 @@
+// --- COLOR Codes
+.module Color
+Black   .equ 0
+Blue    .equ 1
+Red     .equ 2
+Magenta .equ 3
+Green   .equ 4
+Cyan    .equ 5
+Yellow  .equ 6
+White   .equ 7
+.endmodule
+
 ;------------------------------------------------------------------------------
 ; ZX Spectrum Next system variables
 ;------------------------------------------------------------------------------
 LAST_K                    .equ $5c08
-
-// --- COLOR Codes
-COLOR_BLACK         .equ 0
-COLOR_BLUE          .equ 1
-COLOR_RED           .equ 2
-COLOR_MAGENTA       .equ 3
-COLOR_GREEN         .equ 4
-COLOR_CYAN          .equ 5
-COLOR_YELLOW        .equ 6
-COLOR_WHITE         .equ 7
 
 ; 256 byte buffer for conversions
 TMP_BUFF .defs $100
@@ -238,7 +240,7 @@ _convHexaDigit
     and $0f
     cp 10
     jr c,`conv1
-    add a,8
+    add a,7
 `conv1
     add a,'0'
     ld (de),a

@@ -12,8 +12,8 @@ ReadIoDemo
     in a,($FE)      ; Read keyboard state
     
     ld hl,$58a0
-    ld d,attr(COLOR_BLACK, COLOR_GREEN, 1)
-    ld e,attr(COLOR_BLACK, COLOR_WHITE, 0)
+    ld d,attr(Color.Black, Color.Green, 1)
+    ld e,attr(Color.Black, Color.Green, 0)
     ld b,5          ; Five keys to test
 `bitscan
     ; Change attribute according to key state
@@ -50,11 +50,11 @@ WriteIoDemo
     ld hl,Instr_WriteIo
     call _printText
 `kbloop
-    ld a,COLOR_GREEN
+    ld a,Color.Green
     out ($fe),a
     ld bc,$400
     call _delayWithBc
-    ld a,COLOR_BLUE
+    ld a,Color.Blue
     out ($fe),a
     ld bc,$488
     call _delayWithBc

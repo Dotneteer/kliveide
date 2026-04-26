@@ -1056,6 +1056,45 @@ export abstract class CommonAssembler<
     this.reportAssemblyError(code, context.getSourceLine(), node, ...parameters);
   }
 
+  /**
+   * When true, `reportAssemblyError` and `reportAssemblyWarning` skip pushing
+   * `Z1012` invocation markers. Used while reporting deferred (fixup-time)
+   * errors so we don't synthesize new invocation-marker errors at a phase
+   * where the macro stack has been re-applied artificially.
+   */
+  private _suppressMacroInvocationMarkers = false;
+
+  /**
+   * Captures a snapshot of the current macro invocation stack so it can be
+   * re-applied later when reporting deferred (fixup-time) errors.
+   */
+  captureMacroInvocationContext(): unknown {
+    return this._macroInvocations.slice();
+  }
+
+  /**
+   * Temporarily restores a previously captured macro invocation stack while
+   * `fn` runs, then restores the previous one. Marker emission is suppressed
+   * for the duration so that only the descriptive prefix is added to the
+   * error message — the deferred error itself is the only entry produced.
+   */
+  withMacroInvocationContext<T>(snapshot: unknown, fn: () => T): T {
+    const stack = snapshot as MacroOrStructInvocation<TInstruction, TToken>[] | undefined;
+    if (!stack || stack.length === 0) {
+      return fn();
+    }
+    const previousStack = this._macroInvocations;
+    const previousSuppress = this._suppressMacroInvocationMarkers;
+    this._macroInvocations = stack;
+    this._suppressMacroInvocationMarkers = true;
+    try {
+      return fn();
+    } finally {
+      this._macroInvocations = previousStack;
+      this._suppressMacroInvocationMarkers = previousSuppress;
+    }
+  }
+
   // ==========================================================================
   // Code emission methods
 
@@ -3446,13 +3485,7 @@ export abstract class CommonAssembler<
       for (const error of macroParser.errors) {
         // --- Translate the syntax error location
         const origLine = allLines[sourceInfo[error.line - 1]];
-        let errorPrefix = "";
-        if (this._macroInvocations.length > 0) {
-          const lines = this._macroInvocations
-            .map((mi) => (mi as unknown as AssemblyLine<TInstruction>).line)
-            .join(" -> ");
-          errorPrefix = `(from macro invocation through line ${lines}) `;
-        }
+        const errorPrefix = this.buildMacroInvocationPrefix();
         const errorInfo = new AssemblerErrorInfo(
           error.code,
           this._output.sourceFileList[origLine.fileIndex].filename,
@@ -5359,9 +5392,13 @@ export abstract class CommonAssembler<
    */
   private reportMacroInvocationErrors(): void {
     // --- Report macro invocation errors
-    for (let i = this._macroInvocations.length - 1; i >= 0; i--) {
-      const errorLine = this._macroInvocations[i] as unknown as AssemblyLine<TInstruction>;
+    const depth = this._macroInvocations.length;
+    for (let i = depth - 1; i >= 0; i--) {
+      const invocation = this._macroInvocations[i];
+      const errorLine = invocation as unknown as AssemblyLine<TInstruction>;
       const sourceItem = this._output.sourceFileList[errorLine.fileIndex];
+      const macroName = invocation.identifier?.name ?? "<anonymous>";
+      const levelText = depth > 1 ? ` (level ${i + 1} of ${depth})` : "";
       const errorInfo = new AssemblerErrorInfo(
         "Z1012",
         sourceItem.filename,
@@ -5370,10 +5407,32 @@ export abstract class CommonAssembler<
         errorLine.endPosition,
         errorLine.startColumn,
         errorLine.endColumn,
-        `Error in macro invocation${i > 0 ? " (level" + i + ")" : ""}`
+        `Error in invocation of macro '${macroName}'${levelText} at ${sourceItem.filename}:${errorLine.line}:${errorLine.startColumn}`
       );
       this._output.errors.push(errorInfo);
     }
+  }
+
+  /**
+   * Builds a human-readable prefix that describes the chain of pending macro
+   * invocations. The chain runs from the outermost invocation (the one the
+   * user wrote) to the innermost one whose body is currently being expanded.
+   * Returns an empty string when no macro invocation is active.
+   */
+  private buildMacroInvocationPrefix(): string {
+    if (this._macroInvocations.length === 0) {
+      return "";
+    }
+    const parts: string[] = [];
+    for (let i = 0; i < this._macroInvocations.length; i++) {
+      const invocation = this._macroInvocations[i];
+      const invLine = invocation as unknown as AssemblyLine<TInstruction>;
+      const macroName = invocation.identifier?.name ?? "<anonymous>";
+      const sourceItem = this._output.sourceFileList[invLine.fileIndex];
+      const file = sourceItem ? sourceItem.filename : "<unknown>";
+      parts.push(`'${macroName}' at ${file}:${invLine.line}:${invLine.startColumn}`);
+    }
+    return `(in macro invocation ${parts.join(" -> ")}) `;
   }
 
   /**
@@ -5392,7 +5451,9 @@ export abstract class CommonAssembler<
       return;
     }
 
-    this.reportMacroInvocationErrors();
+    if (!this._suppressMacroInvocationMarkers) {
+      this.reportMacroInvocationErrors();
+    }
 
     const line = { ...(sourceLine as AssemblyLine<TInstruction>) };
 
@@ -5409,12 +5470,7 @@ export abstract class CommonAssembler<
       );
     }
 
-    if (this._macroInvocations.length > 0) {
-      const lines = this._macroInvocations
-        .map((mi) => (mi as unknown as AssemblyLine<TInstruction>).line)
-        .join(", ");
-      errorText = `(from macro invocation through ${lines}) ` + errorText;
-    }
+    errorText = this.buildMacroInvocationPrefix() + errorText;
 
     const errorInfo = new AssemblerErrorInfo(
       code,
@@ -5453,7 +5509,9 @@ export abstract class CommonAssembler<
       return;
     }
 
-    this.reportMacroInvocationErrors();
+    if (!this._suppressMacroInvocationMarkers) {
+      this.reportMacroInvocationErrors();
+    }
 
     const line = { ...(sourceLine as AssemblyLine<TInstruction>) };
 
@@ -5470,12 +5528,7 @@ export abstract class CommonAssembler<
       );
     }
 
-    if (this._macroInvocations.length > 0) {
-      const lines = this._macroInvocations
-        .map((mi) => (mi as unknown as AssemblyLine<TInstruction>).line)
-        .join(", ");
-      errorText = `(from macro invocation through ${lines}) ` + errorText;
-    }
+    errorText = this.buildMacroInvocationPrefix() + errorText;
 
     const errorInfo = new AssemblerErrorInfo(
       code,

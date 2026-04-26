@@ -1,4 +1,5 @@
 import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
 
 # Memory Architecture: ROM, RAM, Banks, and the MMU
 
@@ -177,33 +178,51 @@ The MMU is the only authority. Whatever page number you put in NextRegs `$54`–
 
 ## Mapping a Page Yourself
 
-Reading and writing the MMU is identical to reading and writing any other NextReg. The simplest case — map page `$0A` (Bank 5, low half) into slot 4 — is one Z80N instruction:
+Reading and writing the MMU is identical to reading and writing any other NextReg. The simplest case — map page `$0A` (Bank 5, low half) into slot 5 — is one Z80N instruction:
 
 ```z80klive
-    nextreg $54,$0A   ; slot 4 ($8000-$9FFF) now sees page 10
+    nextreg $55,$0A   ; slot 5 ($A000-$BFFF) now sees page 10
 ```
 
-After that, `ld (hl),a` with `HL = $8000` writes to the same byte that `ld (hl),a` with `HL = $4000` and the default mapping would have hit, because both end up at physical `$05'4000`.
+After that, `ld (hl),a` with `HL = $A000` writes to the same byte that `ld (hl),a` with `HL = $4000` and the default mapping would have hit, because both end up at physical `$06'4000`.
 
-Here's a small Klive demo that does the round trip: it picks an arbitrary page, maps it into slot 4, writes a marker, then maps it back out and confirms the marker is still there when we map it back in.
+You might wonder why the demo uses slot 5 and not some other slot. All chapter examples run as NEX files, and the NEX loader places unbanked code into Bank 2, which starts at `$8000`. Slot 4 (MMU4, `$8000–$9FFF`) holds the lower half of Bank 2 — the entry jump, helper routines, example code, and 256-byte stack all live there. Slot 5 (MMU5, `$A000–$BFFF`) is the upper half of that same bank and contains no live code or stack, so it is free to use. Every other slot is also occupied, but the pages mapped there each serve an important role that you had better not disrupt:
+
+- **Slots 0/1** (MMU0/1, `$0000–$3FFF`) hold the ROM. Every helper uses `RST $10` for character output; paging out either slot kills all screen I/O.
+- **Slot 2** (MMU2, `$4000–$5FFF`) maps page 10 — the lower half of Bank 5 and the home of the ULA pixel and attribute data. Replacing it disconnects writes from the visible screen.
+- **Slot 3** (MMU3, `$6000–$7FFF`) maps page 11 — the upper half of Bank 5, which is the shadow screen. The ROM treats pages 10 and 11 as a contiguous 16 KB bank; swapping either half out can confuse ROM routines that work across the full bank.
+- **Slots 6/7** (MMU6/7, `$C000–$FFFF`) map Bank 0, the area the ROM uses for the BASIC workspace, channel descriptors, and the system stack. Replacing either slot while a ROM call is in progress corrupts those structures.
+
+Slot 5 is the only window with no strings attached.
+
+Here's a small Klive demo that does the round trip: it picks an arbitrary page, maps it into slot 5, writes a marker, then maps it back out and confirms the marker is still there when we map it back in.
 
 ```z80klive
+MMU5_REG    .equ $55
+SLOT5_START .equ $a000
+
+;==========================================================
+; Use the MMU
+;==========================================================
 MmuRoundTripDemo
     ld hl,Title_MmuRoundTrip
     call _printTitle
     ld hl,Instr_MmuRoundTrip
     call _printText
-
-    ; --- Save current MMU4 so we can restore it
-    ld a,$54
-    call _readNextReg          ; A := current value of MMU4
-    ld (savedMmu4),a
-
-    ; --- Map page $20 into slot 4 ($8000-$9FFF)
-    nextreg $54,$20
-
+    ld hl,Result_MmuRoundTrip
+    call _printText
+    Ink(COLOR_BLUE)
+ 
+    ; --- Save current MMU5 so we can restore it
+    ld a,MMU5_reg
+    GetReg(MMU5_REG)          ; A := current value of MMU5
+    ld (savedMmu5),a
+ 
+    ; --- Map page $20 into slot 5 ($A000-$BFFF)
+    nextreg MMU5_REG,$20
+ 
     ; --- Write a marker pattern at the start of the page
-    ld hl,$8000
+    ld hl,SLOT5_START
     ld (hl),$DE
     inc hl
     ld (hl),$AD
@@ -211,54 +230,53 @@ MmuRoundTripDemo
     ld (hl),$BE
     inc hl
     ld (hl),$EF
-
+ 
     ; --- Map something else there (page 10, Bank 5 low) so we can prove
-    ;     the marker isn't just sitting in slot 4 by accident
-    nextreg $54,$0A
-
+    ;     the marker isn't just sitting in slot 5 by accident
+    nextreg MMU5_REG,$0A
+ 
     ; --- Now map page $20 back in...
-    nextreg $54,$20
-    ld hl,$8000
-    call _printHexByteAtHl     ; should print DE
+    nextreg MMU5_REG,$20
+    ld hl,SLOT5_START
+    call _printHLContentHexadecimal  ; should print DE
     inc hl
-    call _printHexByteAtHl     ; should print AD
+    call _printHLContentHexadecimal  ; should print AD
     inc hl
-    call _printHexByteAtHl     ; should print BE
+    call _printHLContentHexadecimal  ; should print BE
     inc hl
-    call _printHexByteAtHl     ; should print EF
-
-    ; --- Restore MMU4
-    ld a,(savedMmu4)
-    ld bc,$243B
-    out (c),$54                ; select MMU4
-    ld bc,$253B
-    out (c),a                  ; write back saved value
+    call _printHLContentHexadecimal  ; should print EF
+ 
+    ; --- Restore MMU5
+    ld a,(savedMmu5)
+    nextreg MMU5_REG,a                ; select MMU5
     ret
-
-savedMmu4
+ 
+_printHLContentHexadecimal
+    push hl
+    ld a,(hl)
+    call _printAHexadecimal
+    ld a,' '
+    rst $10
+    pop hl
+    ret
+    
+savedMmu5
     .defb 0
-
+ 
 Title_MmuRoundTrip
     .defn "MMU #1: Map, write, re-map, read"
 Instr_MmuRoundTrip
-    .defm "Page $20 mapped into slot 4 at $8000.\x0D"
-    .defn "Should read back: DE AD BE EF"
+    .defm "Page $20 mapped into slot 5 at $A000.\x0D"
+    .defn "Should read back: DE AD BE EF\x0D"
+Result_MmuRoundTrip
+    .defn "Now, read back  : "
 ```
 
 <Callout type="info" emoji="💡">
 A real program almost always **saves and restores the MMU registers it touches**. Other code — the ROM, NextZXOS, an interrupt handler — may rely on a particular slot being mapped a specific way. The pattern in the example above (read the current value, do your work, write it back) is the standard idiom.
 </Callout>
 
-## What Slot 4 Buys You
-
-You may wonder why we picked slot 4 and not, say, slot 3. The reason is **pragmatic**: most user programs run from RAM that's mapped into slots 2 and 3 (`$4000–$7FFF`), with the stack and variables typically in slot 4 or 5 (`$8000–$BFFF`). Slots 0 and 1 hold ROM most of the time. So:
-
-- **Slots 0/1** (`$0000–$3FFF`): leave alone unless you're swapping ROMs deliberately. The Z80 starts execution here at boot, and IM 1 vectors land at `$0038`.
-- **Slots 2/3** (`$4000–$7FFF`): the classic Spectrum 32 KB user area. Pages 10/11 (Bank 5) sit here by default on a freshly booted Next so the ULA screen works.
-- **Slots 4/5** (`$8000–$BFFF`): a 16 KB scratch window — perfect for paging in graphics data, sample buffers, or the page you're currently working on.
-- **Slots 6/7** (`$C000–$FFFF`): on a 128K Spectrum, this is where banks were swapped via `$7FFD`. On the Next, it's still where `$7FFD` writes land (we'll see why in a moment), but the MMU lets you put any pair of pages there independently of the legacy port.
-
-Once you start writing graphics-heavy code, you'll often dedicate a single slot — slot 4 is a popular choice — to "the page I'm working on right now", and rotate page numbers through it as you process each tile, sprite, or sample buffer.
+<ClickableImage src="/images/book/03-memory/mmu5-roundtrip-demo.png" width="720" />
 
 ## Legacy Paging: `$7FFD`, `$1FFD`, `$DFFD`
 
@@ -289,9 +307,112 @@ OUT ($7FFD),A    with A = ...001 0101  (bank 5, bit 4 = 1, ROM 1 selected)
 
 The `$DFFD` port is the Next's extension. It carries the upper bits of the bank number, so `$7FFD | $DFFD` together can address any of the Next's banks, not just the original eight. Writing both ports gives you a 7-bit (or wider) bank index that the MMU then expands into a pair of page numbers in slots 6 and 7.
 
+### Reading Back Legacy Paging State
+
+The legacy paging ports are **write-only** — there is no way to read them back from I/O space. On original hardware, reading from `$7FFD` returns whatever was last on the data bus; on the Next it's similarly meaningless. But you can't leave that hanging if you need to know the current bank and ROM selector: other code (interrupt handlers, a loader) may have changed them, and you need to restore the state later.
+
+On original Spectrum 128/2/3 hardware, the last value written to `$7FFD` is also stored in the system variable **BANKM** at address **`$5B5C`**. This isn't directly readable on the Next (there's no I/O read from `$7FFD`), but it was how the original hardware let code recover the paging state. The NextReg mirrors make this concern moot on the Next, but it's worth knowing if you're studying or porting code from classic 128K Spectrum systems.
+
+The Next solves this with **NextRegs that mirror the legacy port state**. When you write to `$7FFD`, the FPGA also updates the corresponding NextRegs so the values are queryable:
+
+- **NextReg `$9F`** (Bank register for `$7FFD`) — bits 0–2 hold the bank number, bit 3 holds the shadow-screen flag, and bit 4 holds the ROM selector.
+- **NextReg `$A2`** (`$1FFD` mirror) — reflects the AllRAM and ROM extension bits.
+
+You can read these NextRegs at any time to discover the last value written to the legacy ports, even if intervening code has modified them. The pattern is: read the NextReg, save it, do your work, write it back.
+
 > **Sidebar: don't mix-and-match.** If you've taken control of slots 6 and 7 by writing MMU6/MMU7 directly, a stray `$7FFD` write will *clobber* your mapping — because the FPGA will faithfully translate the legacy write into MMU writes that overwrite yours. Either commit to MMU-only, or commit to legacy-port-only, in any given chunk of code. (The Next manual calls this "the golden rule of paging".)
 
-There's a small Klive exercise at the end of this chapter where you watch this translation happen with your own eyes: you'll write to `$7FFD` and then read MMU6/MMU7 back to confirm they changed.
+### Demo: Toggling the Shadow Screen with `$7FFD`
+
+The following demo puts all this together. After displaying the instructions, it copies the current screen 
+to the shadow screen bank, creates a green attribute stripe in the shadow screen, then toggles the shadow 
+screen on and off with `$7FFD` writes (once per `halt`). This behavior results in a flashing green stripe, proving that the shadow screen is indeed being toggled. The demo also reads NextReg `$9F` at the start to display the current paging state, and saves/restores MMU5 to ensure it doesn't mess with the rest of the demo's memory.
+
+The demo never reads from `$7FFD` itself; it only reads from NextReg `$9F` to discover the current paging state, proving that the legacy port is write-only and that the NextReg mirror is how you find out what's going on.
+
+```z80klive
+ShadowScreenDemo
+    ld hl,Title_ShadowScreen
+    call _printTitle
+    ld hl,Instr_ShadowScreen
+    call _printText
+
+    Ink(COLOR_BLUE)
+    GetReg($9f)         ; Get $7ffd status
+    ld (last7ffd),a     ; Save it
+    call _printABinary  ; Display it
+
+    ; --- Save current MMU5 so we can restore it
+    ld a,MMU5_reg
+    GetReg(MMU5_REG)    ; A := current value of MMU5
+    ld (savedMmu5),a
+
+    ; --- Copy the screen to the shadow screen bank
+    nextreg MMU5_REG,$0e
+    ld hl,$4000         ; Start of the screen in bank 5
+    ld de,$a000         ; Start of bank 7 (paged into slot 5)
+    ld bc,$1b00         ; Lenght of screen (pixels + attrs)
+    ldir
+
+    ; --- Create an attribute stripe in the shadow screen
+    ld hl,$b900
+    ld de,$b901
+    ld bc,$1f
+    ld (hl),attr(COLOR_GREEN, COLOR_GREEN)
+    ldir
+
+    ; --- Restore slot 5 content
+    ld a,(savedMmu5)
+    nextreg MMU5_REG,a
+
+    ; --- Turn on shadow screen
+    ld bc,$7ffd
+    ei
+`swap
+    ld a,(last7ffd)
+    xor $08
+    out (c),a
+    ld (last7ffd),a
+    halt
+    ld a,$7F        ; 01111111 - bit 7 = 0 selects row 7 (Space row)
+    in a,($FE)
+    bit 0,a         ; Test bit 0 (Space key)
+    jr nz,`swap
+
+    ; Turn off shadow screen
+    ld a,(last7ffd)
+    res 3,a
+    out (c),a
+    ret
+
+last7ffd
+    .db 0
+
+Title_ShadowScreen
+    .defn "Memory #2: Shadow screen"
+Instr_ShadowScreen
+    .defm "Swaps normal and shadow screens\x0d"
+    .defm "Press space to stop\x0d"
+    .defn "Last $7ffd value: "
+```
+
+The demo showcases the entire lifecycle of the `$7FFD` legacy paging port:
+
+1. **Reading the state.** The first operation is `GetReg($9f)`, which reads NextReg `$9F` — the mirror of the last value written to `$7FFD`. This is stored and displayed, proving you can always recover the paging state without I/O reads.
+
+2. **Toggling the shadow-screen flag.** The core loop repeatedly reads `last7ffd`, XORs it with `$08`, and writes it back to port `$7FFD` via `OUT (c),a`. Bit 3 of `$7FFD` controls whether the shadow screen is visible (banks 14–15) or the normal screen (banks 10–11). By toggling this bit, the demo swaps between them every time the CPU hits a `halt` instruction (which waits for the next interrupt).
+
+3. **I/O write, not I/O read.** Notice that the code writes to `$7FFD` with `out (c),a` but never reads from it. This is the key asymmetry: you *cannot* read from `$7FFD` to discover its state. The NextReg mirror (`$9F`) is the only way to ask the FPGA "what was the last value I wrote?" The demo proves this by never reading the port itself, only the mirror.
+
+4. **Save-restore pattern.** At the end, the code clears bit 3 with `res 3,a` and writes it back to `$7FFD`, restoring the shadow screen to off. This is the standard pattern: read the state, modify it, write it back — ensuring you don't accidentally clobber values that other code (ROM, interrupts) might rely on.
+
+In essence, this demo is a live tutorial in why the NextReg mirrors exist: to bridge the gap between legacy port write-only hardware and the need to preserve and restore paging state.
+
+<ClickableImage src="/images/book/03-memory/shadow-screen-demo.png" width="720" />
+
+<Callout type="info" emoji="💡">
+For the sake of experimenting, change this demo code so it does not use the `last7ffd` variable at all. Instead, it should read the current paging state from NextReg `$9F` each time before toggling the shadow screen. You will find that this works just as well, proving that the legacy port is indeed write-only and that NextReg `$9F` is how you discover the current state.
+</Callout>
 
 ## ROMs and the Alt-ROM Mechanism
 

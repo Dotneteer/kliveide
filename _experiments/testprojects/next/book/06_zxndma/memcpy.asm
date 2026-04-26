@@ -4,7 +4,7 @@
 DmaSimpleMemCopyDemo
     ld hl,Title_DmaSimpleMemCopy
     call _printTitle
-    Ink(COLOR_BLACK)
+    Ink(Color.Black)
     ld hl,Instr_DmaSimpleMemCopy
     call _printText
     ; 
@@ -20,7 +20,7 @@ DmaSimpleMemCopyDemo
     ld hl,$58a0
     ld de,$58a1
     ld bc,$1f
-    ld (hl),attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld (hl),attr(Color.Black, Color.Green, 1)
     ldir
     
     ; Create the code to copy
@@ -44,6 +44,3 @@ DmaSimpleMemCopy_Code:
     .dma load
     .dma enable
 DmaSimpleMemCopy_Code_End
-
-
-

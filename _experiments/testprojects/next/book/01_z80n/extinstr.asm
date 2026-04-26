@@ -116,9 +116,9 @@ BslaDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_WHITE, 1)
+    ld a,attr(Color.Black, Color.White, 1)
     ld ($5900),a
-    ld a,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld a,attr(Color.Black, Color.Green, 1)
     ld ($5901),a
     ld de,$003f
     ld ix,$4900
@@ -155,9 +155,9 @@ BsraDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_WHITE, 1)
+    ld a,attr(Color.Black, Color.White, 1)
     ld ($5900),a
-    ld a,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld a,attr(Color.Black, Color.Green, 1)
     ld ($5901),a
     ;
     ; BSRA with sign bit set
@@ -209,9 +209,9 @@ BsrlDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_WHITE, 1)
+    ld a,attr(Color.Black, Color.White, 1)
     ld ($5900),a
-    ld a,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld a,attr(Color.Black, Color.Green, 1)
     ld ($5901),a
     ;
     ; BSRL with sign bit set
@@ -263,9 +263,9 @@ BsrfDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_WHITE, 1)
+    ld a,attr(Color.Black, Color.White, 1)
     ld ($5900),a
-    ld a,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld a,attr(Color.Black, Color.Green, 1)
     ld ($5901),a
     ;
     ; BSRF with sign bit set
@@ -317,9 +317,9 @@ BrlcDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_WHITE, 1)
+    ld a,attr(Color.Black, Color.White, 1)
     ld ($5900),a
-    ld a,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld a,attr(Color.Black, Color.Green, 1)
     ld ($5901),a
     ld de,$03fe
     ld ix,$4900
@@ -355,7 +355,7 @@ LdixDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_CYAN, 1)
+    ld a,attr(Color.Black, Color.Cyan, 1)
 
     ld hl,Data_Ldix
     ld de,$5900
@@ -377,14 +377,14 @@ Instr_Ldix
 Instr_Ldix_2
     .defn "LDIX keeps the 6th attribute"
 Data_Ldix:
-    .defb attr(COLOR_BLACK, COLOR_BLACK, 1)
-    .defb attr(COLOR_BLACK, COLOR_BLUE, 1)
-    .defb attr(COLOR_BLACK, COLOR_RED, 1)
-    .defb attr(COLOR_BLACK, COLOR_MAGENTA, 1)
-    .defb attr(COLOR_BLACK, COLOR_GREEN, 1)
-    .defb attr(COLOR_BLACK, COLOR_CYAN, 1)
-    .defb attr(COLOR_BLACK, COLOR_YELLOW, 1)
-    .defb attr(COLOR_BLACK, COLOR_WHITE, 1)
+    .defb attr(Color.Black, Color.Black, 1)
+    .defb attr(Color.Black, Color.Blue, 1)
+    .defb attr(Color.Black, Color.Red, 1)
+    .defb attr(Color.Black, Color.Magenta, 1)
+    .defb attr(Color.Black, Color.Green, 1)
+    .defb attr(Color.Black, Color.Cyan, 1)
+    .defb attr(Color.Black, Color.Yellow, 1)
+    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: LDDX
@@ -401,7 +401,7 @@ LddxDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_CYAN, 1)
+    ld a,attr(Color.Black, Color.Cyan, 1)
 
     ld hl,Data_Lddx + 7
     ld de,$5900
@@ -423,14 +423,14 @@ Instr_Lddx
 Instr_Lddx_2
     .defn "LDDX keeps the 6th attribute"
 Data_Lddx:
-    .defb attr(COLOR_BLACK, COLOR_BLACK, 1)
-    .defb attr(COLOR_BLACK, COLOR_BLUE, 1)
-    .defb attr(COLOR_BLACK, COLOR_RED, 1)
-    .defb attr(COLOR_BLACK, COLOR_MAGENTA, 1)
-    .defb attr(COLOR_BLACK, COLOR_GREEN, 1)
-    .defb attr(COLOR_BLACK, COLOR_CYAN, 1)
-    .defb attr(COLOR_BLACK, COLOR_YELLOW, 1)
-    .defb attr(COLOR_BLACK, COLOR_WHITE, 1)
+    .defb attr(Color.Black, Color.Black, 1)
+    .defb attr(Color.Black, Color.Blue, 1)
+    .defb attr(Color.Black, Color.Red, 1)
+    .defb attr(Color.Black, Color.Magenta, 1)
+    .defb attr(Color.Black, Color.Green, 1)
+    .defb attr(Color.Black, Color.Cyan, 1)
+    .defb attr(Color.Black, Color.Yellow, 1)
+    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: LDIRX
@@ -438,7 +438,7 @@ Data_Lddx:
 LdirxDemo
     ld hl,Title_Ldirx
     call _printTitle
-    Ink(COLOR_BLACK)
+    Ink(Color.Black)
     NewLine()
     ld hl,Instr_Ldirx
     call _printText
@@ -447,7 +447,7 @@ LdirxDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_CYAN, 1)
+    ld a,attr(Color.Black, Color.Cyan, 1)
 
     ld hl,Data_Ldirx
     ld de,$5900
@@ -462,14 +462,14 @@ Instr_Ldirx
 Instr_Ldirx_2
     .defn "LDIRX keeps the 6th attribute"
 Data_Ldirx:
-    .defb attr(COLOR_BLACK, COLOR_BLACK, 1)
-    .defb attr(COLOR_BLACK, COLOR_BLUE, 1)
-    .defb attr(COLOR_BLACK, COLOR_RED, 1)
-    .defb attr(COLOR_BLACK, COLOR_MAGENTA, 1)
-    .defb attr(COLOR_BLACK, COLOR_GREEN, 1)
-    .defb attr(COLOR_BLACK, COLOR_CYAN, 1)
-    .defb attr(COLOR_BLACK, COLOR_YELLOW, 1)
-    .defb attr(COLOR_BLACK, COLOR_WHITE, 1)
+    .defb attr(Color.Black, Color.Black, 1)
+    .defb attr(Color.Black, Color.Blue, 1)
+    .defb attr(Color.Black, Color.Red, 1)
+    .defb attr(Color.Black, Color.Magenta, 1)
+    .defb attr(Color.Black, Color.Green, 1)
+    .defb attr(Color.Black, Color.Cyan, 1)
+    .defb attr(Color.Black, Color.Yellow, 1)
+    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: LDDRX
@@ -486,7 +486,7 @@ LddrxDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_CYAN, 1)
+    ld a,attr(Color.Black, Color.Cyan, 1)
 
     ld hl,Data_Lddrx + 7
     ld de,$5900
@@ -501,14 +501,14 @@ Instr_Lddrx
 Instr_Lddrx_2
     .defn "LDDRX keeps the 6th attribute"
 Data_Lddrx:
-    .defb attr(COLOR_BLACK, COLOR_BLACK, 1)
-    .defb attr(COLOR_BLACK, COLOR_BLUE, 1)
-    .defb attr(COLOR_BLACK, COLOR_RED, 1)
-    .defb attr(COLOR_BLACK, COLOR_MAGENTA, 1)
-    .defb attr(COLOR_BLACK, COLOR_GREEN, 1)
-    .defb attr(COLOR_BLACK, COLOR_CYAN, 1)
-    .defb attr(COLOR_BLACK, COLOR_YELLOW, 1)
-    .defb attr(COLOR_BLACK, COLOR_WHITE, 1)
+    .defb attr(Color.Black, Color.Black, 1)
+    .defb attr(Color.Black, Color.Blue, 1)
+    .defb attr(Color.Black, Color.Red, 1)
+    .defb attr(Color.Black, Color.Magenta, 1)
+    .defb attr(Color.Black, Color.Green, 1)
+    .defb attr(Color.Black, Color.Cyan, 1)
+    .defb attr(Color.Black, Color.Yellow, 1)
+    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: LDWS
@@ -522,7 +522,7 @@ LdwsDemo
     call _printText
 
     ; Set the background attribute to represent the shift
-    ld a,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld a,attr(Color.Black, Color.Green, 1)
     ld ($5900),a
 
     ld hl,Data_Ldws
@@ -559,7 +559,7 @@ LdpirxDemo
     ld hl,Instr_Ldpirx_2
     call _printText
 
-    ld a,attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld a,attr(Color.Black, Color.Green, 1)
     ld hl,Data_Ldpirx
     ld de,$5900
     ld bc,$20
@@ -574,14 +574,14 @@ Instr_Ldpirx_2
     .defn "Green attributes are skipped"
 .align 8
 Data_Ldpirx
-    .defb attr(COLOR_BLACK, COLOR_BLACK, 1)
-    .defb attr(COLOR_BLACK, COLOR_BLUE, 1)
-    .defb attr(COLOR_BLACK, COLOR_RED, 1)
-    .defb attr(COLOR_BLACK, COLOR_MAGENTA, 1)
-    .defb attr(COLOR_BLACK, COLOR_GREEN, 1)
-    .defb attr(COLOR_BLACK, COLOR_CYAN, 1)
-    .defb attr(COLOR_BLACK, COLOR_YELLOW, 1)
-    .defb attr(COLOR_BLACK, COLOR_WHITE, 1)
+    .defb attr(Color.Black, Color.Black, 1)
+    .defb attr(Color.Black, Color.Blue, 1)
+    .defb attr(Color.Black, Color.Red, 1)
+    .defb attr(Color.Black, Color.Magenta, 1)
+    .defb attr(Color.Black, Color.Green, 1)
+    .defb attr(Color.Black, Color.Cyan, 1)
+    .defb attr(Color.Black, Color.Yellow, 1)
+    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: PIXELAD

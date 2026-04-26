@@ -23,7 +23,7 @@ WiteNextRegDemo
     NewLine()
     ld hl,PrintStep2_Str
     call _printText
-    Ink(COLOR_BLUE)
+    Ink(Color.Blue)
     ;
     ; Read NextReg value (User storage)
     ;
@@ -53,4 +53,3 @@ PrintStep1_Str
     .defn "Write 162 to NextReg $7F (#1)"
 PrintStep2_Str
     .defn "Value of NextReg $7F: "
-

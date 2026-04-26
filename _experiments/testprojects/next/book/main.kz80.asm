@@ -64,7 +64,8 @@ Main
     // call WiteNextRegDemo
 
     // --- 03: Memory
-    call MmuRoundTripDemo
+    // call MmuRoundTripDemo
+    call ShadowScreenDemo
 
     // --- 05: CTC Demos
     // call Measure1Demo

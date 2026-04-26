@@ -234,6 +234,21 @@ export interface IEvaluationContext<TNode extends TypedObject, TToken extends Co
     node: NodePosition,
     ...parameters: any[]
   ): void;
+
+  /**
+   * Optional: takes a snapshot of the current macro invocation stack so it can
+   * be re-applied later when reporting deferred (fixup-time) errors. Returns
+   * an opaque handle that callers can pass to `restoreMacroInvocationContext`.
+   */
+  captureMacroInvocationContext?(): unknown;
+
+  /**
+   * Optional: temporarily restores a previously captured macro invocation
+   * stack while `fn` runs, then restores the previous one. Used to attribute
+   * errors raised during deferred fixup resolution back to the macro
+   * invocation chain that originally produced the expression.
+   */
+  withMacroInvocationContext?<T>(snapshot: unknown, fn: () => T): T;
 }
 
 /**
