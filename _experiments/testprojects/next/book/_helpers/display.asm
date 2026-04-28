@@ -38,7 +38,7 @@ Border .macro(color)
 
 Ink .macro(color)
     ld a,{{color}}
-    jp @Ink
+    call @Ink
 .endm
 
 @Paper

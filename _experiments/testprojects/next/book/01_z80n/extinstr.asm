@@ -1,22 +1,24 @@
-Before_Str:
+.module Z80NDemo
+
+@Before_Str:
     .defn "Before: "
-After_Str:
+@After_Str:
     .defn "After:  "
 
 ;==========================================================
 ; Example: SWAPNIB
 ;==========================================================
-SwapnibDemo
-    Display.PrintTitle(Title_Swapnib)
-    Display.PrintText(Before_Str)
+DoSwapnib
+    Display.PrintTitle(@Title_Swapnib)
+    Display.PrintText(@Before_Str)
+    Display.Ink(Color.Blue)
 
     ld a,$3e
     push af
-    Display.Ink(Color.Blue)
     Display.PrintAHexadecimal()
     Display.NewLine()
     Display.Ink(Color.Black)
-    Display.PrintText(After_Str)
+    Display.PrintText(@After_Str)
     Display.Ink(Color.Blue)
     pop af
 
@@ -26,15 +28,15 @@ SwapnibDemo
     Display.PrintAHexadecimal()
     ret
 
-Title_Swapnib
+@Title_Swapnib
     .defn "Z80N #1: SWAPNIB"
 
 ;==========================================================
 ; Example: MIRROR A
 ;==========================================================
-MirrorDemo
-    Display.PrintTitle(Title_Mirror)
-    Display.PrintText(Before_Str)
+DoMirror
+    Display.PrintTitle(@Title_Mirror)
+    Display.PrintText(@Before_Str)
 
     ld a,%1011_0010
     push af
@@ -42,7 +44,7 @@ MirrorDemo
     Display.PrintABinary()
     Display.NewLine()
     Display.Ink(Color.Black)
-    Display.PrintText(After_Str)
+    Display.PrintText(@After_Str)
     Display.Ink(Color.Blue)
     pop af
     ; *** Reverses the bit order of A
@@ -51,16 +53,16 @@ MirrorDemo
     Display.PrintABinary()
     ret
 
-Title_Mirror
+@Title_Mirror
     .defn "Z80N #2: MIRROR A"
 
 
 ;==========================================================
 ; Example: TEST n
 ;==========================================================
-TestDemo
-    Display.PrintTitle(Title_Test)
-    Display.PrintText(Test_Value_Str)
+DoTest
+    Display.PrintTitle(@Title_Test)
+    Display.PrintText(@Test_Value_Str)
 
     ld a,%1000_0100
     push af
@@ -68,18 +70,16 @@ TestDemo
     Display.PrintABinary()
     Display.NewLine()
     Display.Ink(Color.Black)
-    ld hl,Test_With_1_Str
-    Display.PrintText(Test_With_1_Str)
+    Display.PrintText(@Test_With_1_Str)
     Display.Ink(Color.Blue)
     pop af
-    ; *** Reverses the bit order of A
     push af
     
     test %1000_0000
     Display.PrintZFlag()
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Test_With_2_Str)
+    Display.PrintText(@Test_With_2_Str)
     Display.Ink(Color.Blue)
     pop af
 
@@ -87,28 +87,25 @@ TestDemo
     Display.PrintZFlag()
     ret
 
-Title_Test
+@Title_Test
     .defn "Z80N #3: TEST n"
-Test_Value_Str
+@Test_Value_Str
     .defn "Value of A: "
-Test_With_1_Str
+@Test_With_1_Str
     .defn "Z flag after TEST %1000_0000: "
-Test_With_2_Str
+@Test_With_2_Str
     .defn "Z flag after TEST %0000_0010: "
 
 ;==========================================================
 ; Example: BSLA DE,B
 ;==========================================================
-BslaDemo
-    ld hl,Title_Bsla
-    call _printTitle
+DoBsla
+    Display.PrintTitle(@Title_Bsla)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Bsla
-    call _printText
+    Display.PrintText(@Instr_Bsla)
     Display.NewLine()
-    ld hl,Instr_Bsla_2
-    call _printText
+    Display.PrintText(@Instr_Bsla_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -128,26 +125,23 @@ BslaDemo
 
     ret
 
-Title_Bsla
+@Title_Bsla
     .defn "Z80N #4: BSLA DE,B"
-Instr_Bsla
+@Instr_Bsla
     .defn "Check the highlighted pattern"
-Instr_Bsla_2
+@Instr_Bsla_2
     .defn "DE=$003f, B=5 --> BSLA DE,B"
 
 ;==========================================================
 ; Example: BSRA DE,B
 ;==========================================================
-BsraDemo
-    ld hl,Title_Bsra
-    call _printTitle
+DoBsra
+    Display.PrintTitle(@Title_Bsra)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Bsra
-    call _printText
+    Display.PrintText(@Instr_Bsra)
     Display.NewLine()
-    ld hl,Instr_Bsra_2
-    call _printText
+    Display.PrintText(@Instr_Bsra_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -181,11 +175,11 @@ BsraDemo
     ld (ix+1),e
     ret
 
-Title_Bsra
+@Title_Bsra
     .defn "Z80N #5: BSRA DE,B"
-Instr_Bsra
+@Instr_Bsra
     .defn "Check the highlighted pattern"
-Instr_Bsra_2
+@Instr_Bsra_2
     .defm "DE=$fc00, B=5 --> BSRA DE,B\x0d"
     .defn "DE=$7c00, B=5 --> BSRA DE,B"
 
@@ -193,15 +187,12 @@ Instr_Bsra_2
 ; Example: BSRL DE,B
 ;==========================================================
 BsrlDemo
-    ld hl,Title_Bsrl
-    call _printTitle
+    Display.PrintTitle(Title_Bsrl)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Bsrl
-    call _printText
+    Display.PrintText(Instr_Bsrl)
     Display.NewLine()
-    ld hl,Instr_Bsrl_2
-    call _printText
+    Display.PrintText(Instr_Bsrl_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -247,15 +238,12 @@ Instr_Bsrl_2
 ; Example: BSRF DE,B
 ;==========================================================
 BsrfDemo
-    ld hl,Title_Bsrf
-    call _printTitle
+    Display.PrintTitle(Title_Bsrf)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Bsrf
-    call _printText
+    Display.PrintText(Instr_Bsrf)
     Display.NewLine()
-    ld hl,Instr_Bsrf_2
-    call _printText
+    Display.PrintText(Instr_Bsrf_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -301,15 +289,12 @@ Instr_Bsrf_2
 ; Example: BSLC DE,B
 ;==========================================================
 BrlcDemo
-    ld hl,Title_Brlc
-    call _printTitle
+    Display.PrintTitle(Title_Brlc)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Brlc
-    call _printText
+    Display.PrintText(Instr_Brlc)
     Display.NewLine()
-    ld hl,Instr_Brlc_2
-    call _printText
+    Display.PrintText(Instr_Brlc_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -339,15 +324,12 @@ Instr_Brlc_2
 ; Example: LDIX
 ;==========================================================
 LdixDemo
-    ld hl,Title_Ldix
-    call _printTitle
+    Display.PrintTitle(Title_Ldix)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Ldix
-    call _printText
+    Display.PrintText(Instr_Ldix)
     Display.NewLine()
-    ld hl,Instr_Ldix_2
-    call _printText
+    Display.PrintText(Instr_Ldix_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
@@ -385,15 +367,12 @@ Data_Ldix:
 ; Example: LDDX
 ;==========================================================
 LddxDemo
-    ld hl,Title_Lddx
-    call _printTitle
+    Display.PrintTitle(Title_Lddx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Lddx
-    call _printText
+    Display.PrintText(Instr_Lddx)
     Display.NewLine()
-    ld hl,Instr_Lddx_2
-    call _printText
+    Display.PrintText(Instr_Lddx_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
@@ -431,15 +410,12 @@ Data_Lddx:
 ; Example: LDIRX
 ;==========================================================
 LdirxDemo
-    ld hl,Title_Ldirx
-    call _printTitle
+    Display.PrintTitle(Title_Ldirx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Ldirx
-    call _printText
+    Display.PrintText(Instr_Ldirx)
     Display.NewLine()
-    ld hl,Instr_Ldirx_2
-    call _printText
+    Display.PrintText(Instr_Ldirx_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
@@ -470,15 +446,12 @@ Data_Ldirx:
 ; Example: LDDRX
 ;==========================================================
 LddrxDemo
-    ld hl,Title_Lddrx
-    call _printTitle
+    Display.PrintTitle(Title_Lddrx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Lddrx
-    call _printText
+    Display.PrintText(Instr_Lddrx)
     Display.NewLine()
-    ld hl,Instr_Lddrx_2
-    call _printText
+    Display.PrintText(Instr_Lddrx_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
@@ -509,12 +482,10 @@ Data_Lddrx:
 ; Example: LDWS
 ;==========================================================
 LdwsDemo
-    ld hl,Title_Ldws
-    call _printTitle
+    Display.PrintTitle(Title_Ldws)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Ldws
-    call _printText
+    Display.PrintText(Instr_Ldws)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Green, 1)
@@ -544,15 +515,12 @@ Data_Ldws
 ; Example: LDPIRX
 ;==========================================================
 LdpirxDemo
-    ld hl,Title_Ldpirx
-    call _printTitle
+    Display.PrintTitle(Title_Ldpirx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Ldpirx
-    call _printText
+    Display.PrintText(Instr_Ldpirx)
     Display.NewLine()
-    ld hl,Instr_Ldpirx_2
-    call _printText
+    Display.PrintText(Instr_Ldpirx_2)
 
     ld a,attr(Color.Black, Color.Green, 1)
     ld hl,Data_Ldpirx
@@ -582,12 +550,10 @@ Data_Ldpirx
 ; Example: PIXELAD
 ;==========================================================
 PixeladDemo
-    ld hl,Title_Pixelad
-    call _printTitle
+    Display.PrintTitle(Title_Pixelad)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Pixelad
-    call _printText
+    Display.PrintText(Instr_Pixelad)
     ld d,70
     ld e,130
     pixelad
@@ -603,12 +569,10 @@ Instr_Pixelad
 ; Example: PIXELDN
 ;==========================================================
 PixeldnDemo
-    ld hl,Title_Pixeldn
-    call _printTitle
+    Display.PrintTitle(Title_Pixeldn)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Pixeldn
-    call _printText
+    Display.PrintText(Instr_Pixeldn)
     ld d,70
     ld e,130
     pixelad
@@ -630,12 +594,11 @@ Instr_Pixeldn
 ; Example: SETAE
 ;==========================================================
 SetaeDemo
-    ld hl,Title_Setae
-    call _printTitle
+    Display.PrintTitle(Title_Setae)
     Display.Ink(Color.Black)
     Display.NewLine()
     ld hl,Instr_Setae
-    call _printText
+    Display.PrintText(Instr_Setae)
     ld d,70
     ld e,130
     pixelad
@@ -653,3 +616,5 @@ Title_Setae
     .defn "Z80N #17: SETAE"
 Instr_Setae
     .defn "Set 8 bytes below with SETAE"
+
+.endmodule

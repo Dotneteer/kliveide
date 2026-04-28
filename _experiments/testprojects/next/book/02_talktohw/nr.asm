@@ -2,10 +2,8 @@
 ; Write the value of a NextReg #1
 ;==========================================================
 WiteNextRegDemo
-    ld hl,Title_WNextReg
-    call _printTitle
-    ld hl,PrintStep1_Str
-    call _printText
+    Display.PrintTitle(Title_WNextReg)
+    Display.PrintText(PrintStep1_Str)
     ;
     ; Write Nextreg value (User storage)
     ;
@@ -21,8 +19,7 @@ WiteNextRegDemo
     ; Prepare displaying the result
     ;
     Display.NewLine()
-    ld hl,PrintStep2_Str
-    call _printText
+    Display.PrintText(PrintStep2_Str)
     Display.Ink(Color.Blue)
     ;
     ; Read NextReg value (User storage)
@@ -36,13 +33,13 @@ WiteNextRegDemo
     ; Display read value
     ;
     push af
-    call _printAHexadecimal
+    Display.PrintAHexadecimal()
     ld a,' '
     rst $10
     ld a,'('
     rst $10
     pop af
-    call _printADecimal
+    Display.PrintADecimal()
     ld a,')'
     jp $10
     

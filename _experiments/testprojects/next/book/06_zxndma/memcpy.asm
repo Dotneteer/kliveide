@@ -3,10 +3,9 @@
 ;==========================================================
 DmaSimpleMemCopyDemo
     ld hl,Title_DmaSimpleMemCopy
-    call _printTitle
+    Display.PrintTitle(Title_DmaSimpleMemCopy)
     Display.Ink(Color.Black)
-    ld hl,Instr_DmaSimpleMemCopy
-    call _printText
+    Display.PrintText(Instr_DmaSimpleMemCopy)
     ; 
     ; Display a dotted line
     ld hl,$4080

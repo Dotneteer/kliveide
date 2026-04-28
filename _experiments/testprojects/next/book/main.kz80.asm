@@ -37,11 +37,11 @@ Main
 ;
 ; Here are the examples. Uncomment the one you want to run
     // --- 00: Flying Start Demos
-    call PrintDemo.Welcome
+    // call PrintDemo.Welcome
     // call PrintDemo.Values
 
     // --- 01: Z80N Demos
-    // call SwapnibDemo
+    call SwapnibDemo
     // call MirrorDemo
     // call TestDemo
     // call BslaDemo

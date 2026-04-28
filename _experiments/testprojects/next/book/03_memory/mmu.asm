@@ -79,7 +79,7 @@ ShadowScreenDemo
     Display.Ink(Color.Blue)
     GetReg($9f)         ; Get $7ffd status
     ld (last7ffd),a     ; Save it
-    call _printABinary  ; Display it
+    Display.PrintABinary()  ; Display it
 
     ; --- Save current MMU5 so we can restore it
     ld a,MMU5_reg

@@ -2,10 +2,8 @@
 ; Read the $FE I/O port
 ;==========================================================
 ReadIoDemo
-    ld hl,Title_ReadIo
-    call _printTitle
-    ld hl,Instr_ReadIo
-    call _printText
+    Display.PrintTitle(Title_ReadIo)
+    Display.PrintText(Instr_ReadIo)
 `loop
     ; Select row 2 (Q, W, E, R, T)
     ld a,$FB        ; 11111011 - bit 2 = 0 selects row 2
@@ -45,10 +43,9 @@ Instr_ReadIo
 ; Write the $FE I/O port
 ;==========================================================
 WriteIoDemo
-    ld hl,Title_WriteIo
-    call _printTitle
+    Display.PrintTitle(Title_WriteIo)
     ld hl,Instr_WriteIo
-    call _printText
+    Display.PrintText(Instr_WriteIo)
 `kbloop
     ld a,Color.Green
     out ($fe),a

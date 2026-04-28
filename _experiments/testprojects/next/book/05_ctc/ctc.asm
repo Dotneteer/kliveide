@@ -2,10 +2,8 @@
 ; Measure a DJNZ loop (B=$C0)
 ;==========================================================
 Measure1Demo
-    ld hl,Title_Measure1
-    call _printTitle
-    ld hl,Instr_Measure
-    call _printText
+    Display.PrintTitle(Title_Measure1)
+    Display.PrintText(Instr_Measure)
 
     ; Measure
     ld b,$00
@@ -20,10 +18,8 @@ Instr_Measure
 ; Measure a DJNZ loop (B=$80)
 ;==========================================================
 Measure2Demo
-    ld hl,Title_Measure2
-    call _printTitle
-    ld hl,Instr_Measure
-    call _printText
+    Display.PrintTitle(Title_Measure2)
+    Display.PrintText(Instr_Measure)
 
     ; Measure
     ld b,$80
@@ -36,10 +32,8 @@ Title_Measure2
 ; Measure BC loop (BC=$1800)
 ;==========================================================
 Measure3Demo
-    ld hl,Title_Measure3
-    call _printTitle
-    ld hl,Instr_Measure
-    call _printText
+    Display.PrintTitle(Title_Measure3)
+    Display.PrintText(Instr_Measure)
 
     call SetupCtc16
     call StartMeasure
@@ -52,7 +46,8 @@ Measure3Demo
     call GetMeasuredCounter
     ex de,hl
     Display.Ink(Color.Blue)
-    jp _printHLDecimal
+    Display.PrintHLDecimal()
+    ret
 
 Title_Measure3
     .defn "CTC #3: BC Loop (BC=$1800)"
@@ -75,4 +70,5 @@ _measureDjnz
     call GetMeasuredCounter
     ex de,hl
     Display.Ink(Color.Blue)
-    jp _printHLDecimal
+    Display.PrintHLDecimal()
+    ret

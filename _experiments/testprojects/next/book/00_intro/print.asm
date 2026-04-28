@@ -32,20 +32,20 @@ Values
     Display.PrintADecimal()
     Display.NewLine()
     Display.Ink(Color.Black)
-    Display.PrintText(Hexadecimal8_Str)
+    Display.PrintText(@Hexadecimal8_Str)
     Display.Ink(Color.Blue)
     pop af
     Display.PrintAHexadecimal()
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Decimal16_Str)
+    Display.PrintText(@Decimal16_Str)
     Display.Ink(Color.Blue)
     ld hl,23456
     push hl
     Display.PrintHLDecimal()
     Display.NewLine()
     Display.Ink(Color.Black)
-    Display.PrintText(Hexadecimal16_Str)
+    Display.PrintText(@Hexadecimal16_Str)
     Display.Ink(Color.Blue)
     pop hl
     Display.PrintHLHexadecimal()
@@ -55,11 +55,11 @@ Values
     .defn "Intro #2: Printing values"
 @Decimal8_Str
     .defn "Decimal (8-bit):      "
-Hexadecimal8_Str
+@Hexadecimal8_Str
     .defn "Hexadecimal (8-bit):  "
-Decimal16_Str
+@Decimal16_Str
     .defn "Decimal (16-bit):     "
-Hexadecimal16_Str
+@Hexadecimal16_Str
     .defn "Hexadecimal (16-bit): "
 
 .endmodule
