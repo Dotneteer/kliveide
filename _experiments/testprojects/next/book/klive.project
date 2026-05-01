@@ -20,7 +20,7 @@
     "breakpoints": [
       {
         "resource": "main.kz80.asm",
-        "line": 40,
+        "line": 41,
         "exec": true,
         "ioMask": 65535
       },
@@ -31,11 +31,11 @@
         "ioMask": 65535
       },
       {
-        "resource": "03_memory/mmu.asm",
-        "line": 38,
+        "resource": "03_memory/legacy.asm",
+        "line": 142,
         "exec": true,
         "ioMask": 65535,
-        "resolvedAddress": 36272
+        "resolvedAddress": 36746
       }
     ]
   },
@@ -68,28 +68,36 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 44,
-            "column": 17
+            "line": 71,
+            "column": 5
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_z80n/extinstr.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/legacy.asm",
           "position": {
-            "line": 13,
+            "line": 122,
+            "column": 22
+          }
+        },
+        {
+          "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
+          "position": {
+            "line": 157,
             "column": 1
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/00_intro/print.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
           "position": {
-            "line": 2,
-            "column": 1
+            "line": 60,
+            "column": 8
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_z80n/extinstr.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/legacy.asm"
     },
     "Disassembly": {
       "topAddress": 37546,

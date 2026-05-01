@@ -278,7 +278,7 @@ SWAPNIB        ; A = 0b1111_0011  (= 0xF3)
 One instruction instead of four rotations. Useful for BCD operations, palette color swaps, or reordering any packed pair of 4-bit values.
 
 <Callout type="info" emoji="💡">
-Try the `SwapnibDemo` example.
+Try the `Z80NDemo.DoSwapnib` example.
 </Callout>
 
 **`MIRROR A`** / `MIRR` (opcode: `ED 24`)
@@ -293,7 +293,7 @@ MIRROR A           ; A = 0b10001101  (= 0x8D)
 The classic use case is horizontal sprite flipping in 1-bit-per-pixel graphics. Without `MIRROR`, you'd need eight shift-and-OR operations per byte. With it, one instruction.
 
 <Callout type="info" emoji="💡">
-Try the `MirrorDemo` example.
+Try the `Z80NDemo.DoMirror` example.
 </Callout>
 
 **`TEST n`** / `TEST` (opcode: `ED 27`)
@@ -308,7 +308,7 @@ JP NZ, bit_set
 Think of it as `AND n` minus the side effect. The flag behavior is identical to `AND`: `H` is always set, `N` and `C` are cleared, `S`, `Z`, and `PV` reflect the result.
 
 <Callout type="info" emoji="💡">
-Try the `TestDemo` example.
+Try the `Z80NDemo.DoTest` example.
 </Callout>
 
 ### Barrel Shifts
@@ -324,7 +324,7 @@ BSLA DE,B     ; DE = 0x0120 (shifted left 4 bits)
 ```
 
 <Callout type="info" emoji="💡">
-Try the `BslaDemo` example.
+Try the `Z80NDemo.DoBsla` example.
 </Callout>
 
 **`BSRA DE,B`** / `BSRA` (opcode: `ED 29`) — Barrel Shift Right Arithmetic (sign-preserving):
@@ -336,7 +336,7 @@ BSRA DE,B     ; DE = 0xFFF8 (sign bit preserved, fills from top)
 ```
 
 <Callout type="info" emoji="💡">
-Try the `BsraDemo` example. This example also demonstrates the sign-preserving behavior by 
+Try the `Z80NDemo.DoBsra` example. This example also demonstrates the sign-preserving behavior by 
 showing how the top bits fill with 1s for negative values.
 </Callout>
 
@@ -349,7 +349,7 @@ BSRL DE,B     ; DE = 0x3FF8 (zeros fill from the top)
 ```
 
 <Callout type="info" emoji="💡">
-Try the `BsrlDemo` example. This example also demonstrates the zero-filling behavior by 
+Try the `Z80NDemo.DoBsrl` example. This example also demonstrates the zero-filling behavior by 
 showing how the top bits fill with 0s for positive values.
 </Callout>
 
@@ -362,7 +362,7 @@ BSRF DE,B     ; DE = 0xC018 (ones fill from the top)
 ```
 
 <Callout type="info" emoji="💡">
-Try the `BsrfDemo` example. This example also demonstrates the ones-filling behavior by 
+Try the `Z80NDemo.DoBsrf` example. This example also demonstrates the ones-filling behavior by 
 showing how the top bits fill with 1s.
 </Callout>
 
@@ -375,7 +375,7 @@ BRLC DE,B     ; DE = 0x0003 (rotated left, top bit wraps to bottom)
 ```
 
 <Callout type="info" emoji="💡">
-Try the `BrlcDemo` example.
+Try the `Z80NDemo.DoBrlc` example.
 </Callout>
 
 All five operate on `DE` as a 16-bit value. The shift count in `B` is masked to 5 bits for `BSLA`/`BSRA`/`BSRL`/`BSRF` (so 0–31 are meaningful), and to 4 bits for `BRLC` (0–15). A count of 0 leaves `DE` unchanged. None of these update flags.
@@ -455,7 +455,7 @@ LDIX    ; if (HL) != A: (DE) = (HL); always: HL++, DE++, BC--
 ```
 
 <Callout type="info" emoji="💡">
-Try the `LdixDemo` example.
+Try the `Z80NDemo.DoLdix` example.
 </Callout>
 
 **`LDDX`** / `LDDX` (opcode: `ED AC`) — LDD with exclusion (HL decrements):
@@ -465,7 +465,7 @@ LDDX    ; if (HL) != A: (DE) = (HL); always: HL--, DE++, BC--
 ```
 
 <Callout type="info" emoji="💡">
-Try the `LddxDemo` example.
+Try the `Z80NDemo.DoLddx` example.
 </Callout>
 
 **`LDIRX`** / `LIRX` (opcode: `ED B4`) — Repeating LDIX:
@@ -475,7 +475,7 @@ LDIRX   ; Repeat LDIX until BC = 0
 ```
 
 <Callout type="info" emoji="💡">
-Try the `LdirxDemo` example.
+Try the `Z80NDemo.DoLdirx` example.
 </Callout>
 
 **`LDDRX`** / `LDRX` (opcode: `ED BC`) — Repeating LDDX:
@@ -485,7 +485,7 @@ LDDRX   ; Repeat LDDX until BC = 0
 ```
 
 <Callout type="info" emoji="💡">
-Try the `LddrxDemo` example.
+Try the `Z80NDemo.DoLddrx` example.
 </Callout>
 
 **`LDWS`** / `LDWS` (opcode: `ED A5`) — Load Word and Swap:
@@ -497,7 +497,7 @@ LDWS    ; (DE) = (HL), L++, D++
 ```
 
 <Callout type="info" emoji="💡">
-Try the `LdwsDemo` example.
+Try the `Z80NDemo.DoLdws` example.
 </Callout>
 
 This keeps both pointers within the same 256-byte pages. Designed for operations where you want to step through two memory areas that share their high-address byte — useful in certain screen and buffer manipulation patterns.
@@ -525,7 +525,7 @@ Per iteration, the instruction reads the source byte from `(HL & ~0x07) | (E & 7
 This is designed specifically for rendering 8-pixel-wide sprites: `HL` is your sprite data (8-aligned), `DE` is your screen destination. For each of `BC` iterations, the instruction reads from successive bytes of the sprite pattern, skipping any that match the transparent color.
 
 <Callout type="info" emoji="💡">
-Try the `LdpirxDemo` example.
+Try the `Z80NDemo.DoLdpirx` example.
 </Callout>
 
 ### Screen Navigation
@@ -550,7 +550,7 @@ HL = 0x4000 | (D & 0xC0) << 5 | (D & 0x07) << 8 | (D & 0x38) << 2 | (E >> 3)
 Without `PIXELAD`, computing a screen address from (row, column) coordinates requires 8–10 instructions. With it, two loads and one instruction.
 
 <Callout type="info" emoji="💡">
-Try the `PixelAdDemo` example.
+Try the `Z80NDemo.DoPixelad` example.
 </Callout>
 
 **`PIXELDN`** / `PXDN` (opcode: `ED 93`) — Pixel Down:
@@ -569,7 +569,7 @@ Because of the interleaved layout, "one row down" is not `HL + 32`. The instruct
 The equivalent in original Z80 assembly is eight instructions plus a conditional branch. `PIXELDN` handles all three cases in one.
 
 <Callout type="info" emoji="💡">
-Try the `PixelDnDemo` example.
+Try the `Z80NDemo.DoPixeldn` example.
 </Callout>
 
 **`SETAE`** / `STAE` (opcode: `ED 95`) — Set A from E:
@@ -585,7 +585,7 @@ SETAE       ; A = 0b00000100 (0x04)
 ```
 
 <Callout type="info" emoji="💡">
-Try the `SetAeDemo` example.
+Try the `Z80NDemo.DoSetae` example.
 </Callout>
 
 `PIXELAD` gives you the byte in screen memory; `SETAE` gives you the bit mask within that byte. Together, they replace what would otherwise be a lookup table or a several-instruction calculation.

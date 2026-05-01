@@ -178,51 +178,50 @@ The MMU is the only authority. Whatever page number you put in NextRegs `$54`–
 
 ## Mapping a Page Yourself
 
-Reading and writing the MMU is identical to reading and writing any other NextReg. The simplest case — map page `$0A` (Bank 5, low half) into slot 5 — is one Z80N instruction:
+Reading and writing the MMU is identical to reading and writing any other NextReg. The simplest case — map 
+page `$0A` (Bank 5, low half) into slot 6 — is one Z80N instruction:
 
 ```z80klive
-    nextreg $55,$0A   ; slot 5 ($A000-$BFFF) now sees page 10
+    nextreg $56,$0A   ; slot 6 ($C000-$DFFF) now sees page 10
 ```
 
-After that, `ld (hl),a` with `HL = $A000` writes to the same byte that `ld (hl),a` with `HL = $4000` and the default mapping would have hit, because both end up at physical `$06'4000`.
+After that, writing to `$C000` with slot 6 mapped to page `$0A` hits the same physical address as writing to `$4000` with the default mapping — both end up at physical `$05'4000`.
 
-You might wonder why the demo uses slot 5 and not some other slot. All chapter examples run as NEX files, and the NEX loader places unbanked code into Bank 2, which starts at `$8000`. Slot 4 (MMU4, `$8000–$9FFF`) holds the lower half of Bank 2 — the entry jump, helper routines, example code, and 256-byte stack all live there. Slot 5 (MMU5, `$A000–$BFFF`) is the upper half of that same bank and contains no live code or stack, so it is free to use. Every other slot is also occupied, but the pages mapped there each serve an important role that you had better not disrupt:
+Why does the demo use slot 6? All chapter examples run as NEX files, which place unbanked code into Bank 2 starting at `$8000`. Slots 4 and 5 hold this Bank 2 code (entry point, helpers, examples, and stack), so they're off-limits. This is what the remaining slots look like when the demo runs:
 
-- **Slots 0/1** (MMU0/1, `$0000–$3FFF`) hold the ROM. Every helper uses `RST $10` for character output; paging out either slot kills all screen I/O.
-- **Slot 2** (MMU2, `$4000–$5FFF`) maps page 10 — the lower half of Bank 5 and the home of the ULA pixel and attribute data. Replacing it disconnects writes from the visible screen.
-- **Slot 3** (MMU3, `$6000–$7FFF`) maps page 11 — the upper half of Bank 5, which is the shadow screen. The ROM treats pages 10 and 11 as a contiguous 16 KB bank; swapping either half out can confuse ROM routines that work across the full bank.
-- **Slots 6/7** (MMU6/7, `$C000–$FFFF`) map Bank 0, the area the ROM uses for the BASIC workspace, channel descriptors, and the system stack. Replacing either slot while a ROM call is in progress corrupts those structures.
+- **Slots 0/1** (MMU0/1, `$0000–$3FFF`) hold the ROM. Every helper uses `RST $10` for character output; paging out either slot kills screen I/O.
+- **Slot 2** (MMU2, `$4000–$5FFF`) maps page 10 — the ULA pixel and attribute data. Replacing it disconnects writes from the visible screen.
+- **Slot 3** (MMU3, `$6000–$7FFF`) maps page 11. The ROM treats pages 10 and 11 as a contiguous bank; swapping either half can confuse routines that work across both.
+- **Slots 6/7** (MMU6/7, `$C000–$FFFF`) map Bank 0, used by the ROM for BASIC workspace, channel descriptors, and system stack. Replacing either while a ROM call is in progress corrupts those structures.
 
-Slot 5 is the only window with no strings attached.
+Slot 6 is the safest choice: it's less likely to interfere with the ROM or running code. You can map any page into any slot, but picking one in active use risks crashes or unexpected behavior.
 
-Here's a small Klive demo that does the round trip: it picks an arbitrary page, maps it into slot 5, writes a marker, then maps it back out and confirms the marker is still there when we map it back in.
+Here's a small Klive demo that does the round trip: it picks an arbitrary page, maps it into slot 6, 
+writes a marker, then maps it back out and confirms the marker is still there when we map it back in.
 
 ```z80klive
-MMU5_REG    .equ $55
-SLOT5_START .equ $a000
+MMU6_REG    .equ $56
+SLOT6_START .equ $c000
 
 ;==========================================================
 ; Use the MMU
 ;==========================================================
-MmuRoundTripDemo
-    ld hl,Title_MmuRoundTrip
-    call _printTitle
-    ld hl,Instr_MmuRoundTrip
-    call _printText
-    ld hl,Result_MmuRoundTrip
-    call _printText
-    Ink(COLOR_BLUE)
+MmuRoundTrip
+    Display.PrintTitle(@Title_MmuRoundTrip)
+    Display.PrintText(@Instr_MmuRoundTrip)
+    Display.PrintText(@Result_MmuRoundTrip)
+    Display.Ink(Color.Blue)
  
-    ; --- Save current MMU5 so we can restore it
-    ld a,MMU5_reg
-    GetReg(MMU5_REG)          ; A := current value of MMU5
-    ld (savedMmu5),a
+    ; --- Save current MMU6 so we can restore it
+    ld a,MMU6_reg
+    GetNextReg(MMU6_REG)          ; A := current value of MMU6
+    ld (@SavedMmu6),a
  
-    ; --- Map page $20 into slot 5 ($A000-$BFFF)
-    nextreg MMU5_REG,$20
+    ; --- Map page $20 into slot 6 ($C000-$DFFF)
+    nextreg MMU6_REG,$20
  
     ; --- Write a marker pattern at the start of the page
-    ld hl,SLOT5_START
+    ld hl,SLOT6_START
     ld (hl),$DE
     inc hl
     ld (hl),$AD
@@ -232,43 +231,43 @@ MmuRoundTripDemo
     ld (hl),$EF
  
     ; --- Map something else there (page 10, Bank 5 low) so we can prove
-    ;     the marker isn't just sitting in slot 5 by accident
-    nextreg MMU5_REG,$0A
+    ;     the marker isn't just sitting in slot 6 by accident
+    nextreg MMU6_REG,$0A
  
     ; --- Now map page $20 back in...
-    nextreg MMU5_REG,$20
-    ld hl,SLOT5_START
-    call _printHLContentHexadecimal  ; should print DE
+    nextreg MMU6_REG,$20
+    ld hl,SLOT6_START
+    call PrintHLContentHexadecimal  ; should print DE
     inc hl
-    call _printHLContentHexadecimal  ; should print AD
+    call PrintHLContentHexadecimal  ; should print AD
     inc hl
-    call _printHLContentHexadecimal  ; should print BE
+    call PrintHLContentHexadecimal  ; should print BE
     inc hl
-    call _printHLContentHexadecimal  ; should print EF
+    call PrintHLContentHexadecimal  ; should print EF
  
-    ; --- Restore MMU5
-    ld a,(savedMmu5)
-    nextreg MMU5_REG,a                ; select MMU5
+    ; --- Restore MMU6
+    ld a,(@SavedMmu6)
+    nextreg MMU6_REG,a                ; select MMU6
     ret
  
-_printHLContentHexadecimal
+PrintHLContentHexadecimal
     push hl
     ld a,(hl)
-    call _printAHexadecimal
+    Display.PrintAHexadecimal()
     ld a,' '
     rst $10
     pop hl
     ret
     
-savedMmu5
+@SavedMmu6
     .defb 0
  
-Title_MmuRoundTrip
+@Title_MmuRoundTrip
     .defn "MMU #1: Map, write, re-map, read"
-Instr_MmuRoundTrip
-    .defm "Page $20 mapped into slot 5 at $A000.\x0D"
+@Instr_MmuRoundTrip
+    .defm "Page $20 mapped into slot 6 at\x0D$C000.\x0D"
     .defn "Should read back: DE AD BE EF\x0D"
-Result_MmuRoundTrip
+@Result_MmuRoundTrip
     .defn "Now, read back  : "
 ```
 
@@ -276,7 +275,11 @@ Result_MmuRoundTrip
 A real program almost always **saves and restores the MMU registers it touches**. Other code — the ROM, NextZXOS, an interrupt handler — may rely on a particular slot being mapped a specific way. The pattern in the example above (read the current value, do your work, write it back) is the standard idiom.
 </Callout>
 
-<ClickableImage src="/images/book/03-memory/mmu5-roundtrip-demo.png" width="720" />
+<Callout type="info" emoji="💡">
+Try the `MmuDemo.` example.
+</Callout>
+
+<ClickableImage src="/images/book/03-memory/mmu6-roundtrip-demo.png" width="720" />
 
 ## Legacy Paging: `$7FFD`, `$1FFD`, `$DFFD`
 
@@ -313,106 +316,259 @@ The legacy paging ports are **write-only** — there is no way to read them back
 
 On original Spectrum 128/2/3 hardware, the last value written to `$7FFD` is also stored in the system variable **BANKM** at address **`$5B5C`**. This isn't directly readable on the Next (there's no I/O read from `$7FFD`), but it was how the original hardware let code recover the paging state. The NextReg mirrors make this concern moot on the Next, but it's worth knowing if you're studying or porting code from classic 128K Spectrum systems.
 
-The Next solves this with **NextRegs that mirror the legacy port state**. When you write to `$7FFD`, the FPGA also updates the corresponding NextRegs so the values are queryable:
+The Next solves this with **NextReg $8E (Spectrum 128K Memory Mapping)**, which mirrors the legacy port state. When you write to `$7FFD` or `$1FFD`, the FPGA updates this register so the values are queryable:
 
-- **NextReg `$9F`** (Bank register for `$7FFD`) — bits 0–2 hold the bank number, bit 3 holds the shadow-screen flag, and bit 4 holds the ROM selector.
-- **NextReg `$A2`** (`$1FFD` mirror) — reflects the AllRAM and ROM extension bits.
+- **bits 6:4** — reflect port `$7FFD` bits 2:0 (bank number)
+- **bit 3** — read-only in the register
+- **bit 2** — reflects port `$1FFD` bit 0 (paging mode)
+- **bit 0** — reflects port `$7FFD` bit 4 (ROM selector) or port `$1FFD` bit 1 (RAM selector) depending on paging mode
 
-You can read these NextRegs at any time to discover the last value written to the legacy ports, even if intervening code has modified them. The pattern is: read the NextReg, save it, do your work, write it back.
+Additionally, **NextReg $69 bit 6** (Display Control 1) mirrors the shadow screen bit of `$7FFD` bit 3, giving you another way to read or write the shadow screen state.
+
+You can read these NextRegs at any time to discover the last value written to the legacy ports, even if intervening code has modified them. The pattern is: read the register, save it, do your work, write it back.
 
 > **Sidebar: don't mix-and-match.** If you've taken control of slots 6 and 7 by writing MMU6/MMU7 directly, a stray `$7FFD` write will *clobber* your mapping — because the FPGA will faithfully translate the legacy write into MMU writes that overwrite yours. Either commit to MMU-only, or commit to legacy-port-only, in any given chunk of code. (The Next manual calls this "the golden rule of paging".)
 
 ### Demo: Toggling the Shadow Screen with `$7FFD`
 
-The following demo puts all this together. After displaying the instructions, it copies the current screen 
-to the shadow screen bank, creates a green attribute stripe in the shadow screen, then toggles the shadow 
-screen on and off with `$7FFD` writes (once per `halt`). This behavior results in a flashing green stripe, proving that the shadow screen is indeed being toggled. The demo also reads NextReg `$9F` at the start to display the current paging state, and saves/restores MMU5 to ensure it doesn't mess with the rest of the demo's memory.
+This demo illustrates the complete lifecycle of the `$7FFD` legacy paging port. It copies the current screen to the shadow screen bank, creates a green attribute stripe there, then toggles between normal and shadow screens with `$7FFD` writes (once per `halt`), creating a visible flashing stripe. The demo also reads NextReg `$8E` to discover the current paging state, and saves/restores MMU6 to avoid interfering with other memory mappings.
 
-The demo never reads from `$7FFD` itself; it only reads from NextReg `$9F` to discover the current paging state, proving that the legacy port is write-only and that the NextReg mirror is how you find out what's going on.
+The key point: the demo never reads from `$7FFD` itself — it only reads from NextRegs `$8E` and `$69` to discover the current paging state. This demonstrates that the legacy port is write-only and that NextReg mirrors are how you query its state.
 
 ```z80klive
-ShadowScreenDemo
-    ld hl,Title_ShadowScreen
-    call _printTitle
-    ld hl,Instr_ShadowScreen
-    call _printText
+MMU6_REG    .equ $56
 
-    Ink(COLOR_BLUE)
-    GetReg($9f)         ; Get $7ffd status
-    ld (last7ffd),a     ; Save it
-    call _printABinary  ; Display it
+;==========================================================
+; Toggle the shadow screen using $7FFD
+;==========================================================
+ShadowScreen
+    Display.PrintTitle(@Title_ShadowScreen)
+    Display.PrintText(@Instr_ShadowScreen)
 
-    ; --- Save current MMU5 so we can restore it
-    ld a,MMU5_reg
-    GetReg(MMU5_REG)    ; A := current value of MMU5
-    ld (savedMmu5),a
+    Display.Ink(Color.Blue)
+    call @Get7ffdStatus         ; Read current $7ffd state via NextRegs
+    ld (@Last7ffd),a            ; Save it
+    Display.PrintABinary()      ; Display it
 
-    ; --- Copy the screen to the shadow screen bank
-    nextreg MMU5_REG,$0e
-    ld hl,$4000         ; Start of the screen in bank 5
-    ld de,$a000         ; Start of bank 7 (paged into slot 5)
-    ld bc,$1b00         ; Lenght of screen (pixels + attrs)
+    ; --- Save current MMU6 so we can restore it later
+    ld a,MMU6_reg
+    GetNextReg(MMU6_REG)        ; A := current value of MMU6
+    ld (@SavedMmu6),a
+
+    ; --- Copy the current screen to the shadow screen bank
+    nextreg MMU6_REG,$0e
+    ld hl,$4000                 ; Start of visible screen (bank 5 low)
+    ld de,$c000                 ; Shadow screen paged into slot 6
+    ld bc,$1b00                 ; Screen size (pixels + attributes)
     ldir
 
-    ; --- Create an attribute stripe in the shadow screen
-    ld hl,$b900
-    ld de,$b901
+    ; --- Create a green attribute stripe in the shadow screen
+    ld hl,$d900
+    ld de,$d901
     ld bc,$1f
-    ld (hl),attr(COLOR_GREEN, COLOR_GREEN)
+    ld (hl),attr(Color.Green, Color.Green)
     ldir
 
-    ; --- Restore slot 5 content
-    ld a,(savedMmu5)
-    nextreg MMU5_REG,a
+    ; --- Restore original MMU6 content
+    ld a,(@SavedMmu6)
+    nextreg MMU6_REG,a
 
-    ; --- Turn on shadow screen
+    ; --- Toggle shadow screen on and off each time we halt
     ld bc,$7ffd
     ei
 `swap
-    ld a,(last7ffd)
-    xor $08
+    ld a,(@Last7ffd)
+    xor $08                     ; Toggle shadow screen bit
     out (c),a
-    ld (last7ffd),a
-    halt
-    ld a,$7F        ; 01111111 - bit 7 = 0 selects row 7 (Space row)
+    ld (@Last7ffd),a
+    halt                        ; Wait for interrupt
+    ld a,$7F                    ; Check Space key
     in a,($FE)
-    bit 0,a         ; Test bit 0 (Space key)
+    bit 0,a
     jr nz,`swap
 
-    ; Turn off shadow screen
-    ld a,(last7ffd)
+    ; Turn off shadow screen and exit
+    ld a,(@Last7ffd)
     res 3,a
     out (c),a
     ret
 
-last7ffd
+@Get7ffdStatus
+    GetNextReg($8e)             ; Read NextReg $8E (Spectrum 128K Memory Mapping)
+    and $75                     ; Mask out irrelevant bits
+    ld d,0                      ; Start with bit 4 of $7ffd = 0
+    bit 2,a                     ; AllRAM mode active?
+    jr nz,`bit4Done             ; If so, bit 4 stays 0
+    bit 0,a                     ; ROM selector bit set?
+    jr z,`bit4Done              ; If not, bit 4 stays 0
+    ld c,$10                    ; Set bit 4 = 1
+`bit4Done
+    sla a                       ; Shift $8E bits 6:4 → bits 2:0
+    sla a
+    sla a
+    sla a
+    or d                        ; Insert bit 4 of $7ffd
+    ld d,a                      ; Save reconstructed $7ffd value
+    GetNextReg($69)             ; Read NextReg $69 (Display Control 1)
+    bit 6,a                     ; Shadow display enabled?
+    ld a,d                      ; Restore $7ffd value
+    ret z                       ; If shadow off, return
+    set 3,a                     ; If shadow on, set bit 3
+    ret
+
+@Last7ffd
     .db 0
 
-Title_ShadowScreen
+@SavedMmu6
+    .defb 0
+
+@Title_ShadowScreen
     .defn "Memory #2: Shadow screen"
-Instr_ShadowScreen
+@Instr_ShadowScreen
     .defm "Swaps normal and shadow screens\x0d"
     .defm "Press space to stop\x0d"
     .defn "Last $7ffd value: "
 ```
 
-The demo showcases the entire lifecycle of the `$7FFD` legacy paging port:
+The demo showcases the `$7FFD` lifecycle:
 
-1. **Reading the state.** The first operation is `GetReg($9f)`, which reads NextReg `$9F` — the mirror of the last value written to `$7FFD`. This is stored and displayed, proving you can always recover the paging state without I/O reads.
+1. **Reading the state.** `call @Get7ffdStatus` reconstructs the last `$7FFD` value by reading NextRegs `$8E` and `$69`. This proves you can always recover paging state without I/O reads.
 
-2. **Toggling the shadow-screen flag.** The core loop repeatedly reads `last7ffd`, XORs it with `$08`, and writes it back to port `$7FFD` via `OUT (c),a`. Bit 3 of `$7FFD` controls whether the shadow screen is visible (banks 14–15) or the normal screen (banks 10–11). By toggling this bit, the demo swaps between them every time the CPU hits a `halt` instruction (which waits for the next interrupt).
+2. **Toggling shadow-screen bit.** The core loop reads `last7ffd`, XORs with `$08` to flip bit 3, and writes back to `$7FFD`. Bit 3 controls whether the shadow screen (banks 14–15) or normal screen (banks 10–11) is visible. Toggling it on each `halt` produces the flashing stripe.
 
-3. **I/O write, not I/O read.** Notice that the code writes to `$7FFD` with `out (c),a` but never reads from it. This is the key asymmetry: you *cannot* read from `$7FFD` to discover its state. The NextReg mirror (`$9F`) is the only way to ask the FPGA "what was the last value I wrote?" The demo proves this by never reading the port itself, only the mirror.
+3. **Write-only I/O.** The code writes to `$7FFD` but never reads from it — you cannot read a legacy paging port. The NextReg mirrors (`$8E` and `$69`) are the only way to query the current state.
 
-4. **Save-restore pattern.** At the end, the code clears bit 3 with `res 3,a` and writes it back to `$7FFD`, restoring the shadow screen to off. This is the standard pattern: read the state, modify it, write it back — ensuring you don't accidentally clobber values that other code (ROM, interrupts) might rely on.
+4. **Save-restore pattern.** At the end, the code clears bit 3 and writes back to `$7FFD`, restoring the normal screen. This is the standard pattern: read, modify, restore — ensuring you don't clobber state that other code relies on.
 
-In essence, this demo is a live tutorial in why the NextReg mirrors exist: to bridge the gap between legacy port write-only hardware and the need to preserve and restore paging state.
+In essence, this demo illustrates why NextReg mirrors exist: to bridge the gap between legacy write-only ports and the need to preserve and restore paging state.
 
 <ClickableImage src="/images/book/03-memory/shadow-screen-demo.png" width="720" />
 
 <Callout type="info" emoji="💡">
-For the sake of experimenting, change this demo code so it does not use the `last7ffd` variable at all. Instead, it should read the current paging state from NextReg `$9F` each time before toggling the shadow screen. You will find that this works just as well, proving that the legacy port is indeed write-only and that NextReg `$9F` is how you discover the current state.
+For the sake of experimenting, change this demo code so it does not use the `last7ffd` variable at all. Instead, it should read the current paging state from NextReg `$8E` each time before toggling the shadow screen. You will find that this works just as well, proving that the legacy port is indeed write-only and that NextReg `$8E` is how you discover the current state.
 </Callout>
+
+### Demo: AllRAM Mode with `$1FFD`
+
+Setting Bit 0 of `$1FFD` to 1 puts the Next into "AllRAM mode", where the ROM is disabled and the entire 
+`$0000–$3FFF` range is available for RAM. This is a common mode for loading a custom OS or game engine, 
+because it gives you the full 64 KB of RAM to work with — but it also means you have to provide your own 
+reset vector and interrupt handlers, since the ROM is no longer there to catch those.
+
+In AllRAM mode, Bit 1 and Bit 2 of `$1FFD` determine the configuration of the four 16 KB banks that would 
+normally be occupied by the ROM. The exact mapping depends on the combination of these bits:
+
+| Bit 2/1 | $0000–$3FFF | $4000–$7FFF | $8000–$BFFF | $C000–$FFFF |
+|:-------:|:-----------:|:-----------:|:-----------:|:-----------:|
+| 00      | Bank 0      | Bank 1      | Bank 2      | Bank 3      |
+| 01      | Bank 4      | Bank 5      | Bank 6      | Bank 7      |
+| 10      | Bank 4      | Bank 5      | Bank 6      | Bank 3      |
+| 11      | Bank 4      | Bank 7      | Bank 6      | Bank 3      |
+
+Our demo examples run as NEX files with code in Bank 2, so the AllRAM configuration that keeps Bank 2 in the upper half of the address space (bits 2/1 = `00`) is the one that works with our setup. The other configurations are useful in other contexts but require adjusting where code and data are placed.
+
+This demo makes the effect of AllRAM mode tangible. It reads the first four bytes at `$0000–$0003` in normal mode (where the ROM is mapped), then switches to AllRAM mode (Bank 0 mapped at `$0000`), reads the same four bytes again, and restores the original paging state. The two sets of bytes will differ — proving that a different physical page is now visible at the same address. The `@Get1ffdStatus` helper reconstructs the current `$1FFD` state from NextReg `$8E`, since the port itself is write-only.
+
+```z80klive
+;==========================================================
+; Demonstrate AllRAM configuration
+;==========================================================
+AllRam
+    Display.PrintTitle(@Title_AllRam)
+    Display.PrintText(@Instr_AllRam)
+    
+    Display.Ink(Color.Blue)
+    call @Get1ffdStatus     ; Get $1ffd status
+    ld (@Last1ffd),a        ; Save it
+    Display.PrintABinary()  ; Display it
+    Display.NewLine()
+    Display.Ink(Color.Black)
+
+    ; Display current bytes $0000-0003
+    Display.PrintText(@Instr_AllRam2)
+    Display.Ink(Color.Blue)
+    ld hl,$0000
+    call MmuDemo.PrintHLContentHexadecimal
+    inc hl
+    call MmuDemo.PrintHLContentHexadecimal
+    inc hl
+    call MmuDemo.PrintHLContentHexadecimal
+    inc hl
+    call MmuDemo.PrintHLContentHexadecimal
+    Display.Ink(Color.Black)
+    Display.NewLine()
+
+    ; Set AllRAM using Bank 0/1/2/3
+    di
+    ld a,$01
+    ld bc,$1ffd
+    out (c),a
+
+    ; Save AllRAM bytes $0000-$0003
+    ld hl,$0000
+    ld de,@AllRamBytes
+    ld bc,4
+    ldir
+
+    ; Restore the original configuration
+    ld a,(@Last1ffd)
+    ld bc,$1ffd
+    out (c),a
+
+    ; Display current AllRAM bytes $0000-$0003
+    Display.PrintText(@Instr_AllRam3)
+    Display.Ink(Color.Blue)
+    ld hl,@AllRamBytes
+    call MmuDemo.PrintHLContentHexadecimal
+    inc hl
+    call MmuDemo.PrintHLContentHexadecimal
+    inc hl
+    call MmuDemo.PrintHLContentHexadecimal
+    inc hl
+    call MmuDemo.PrintHLContentHexadecimal
+    ret
+
+@Get1ffdStatus
+    GetNextReg($8e)         ; Get $1ffd status
+    and $07                 ; Drop non-$1ffd-relate bits
+    bit 2,a                 ; Check for AllRAM mode
+    jr z,`allRam            
+    and $01                 ; Keep only Bit 1
+    add a,a                 ; Shift bits to left
+    ret
+`allRam                     
+    scf
+    add a,a                 ; Shift bits to left and set bit 0
+    ret
+
+@Last1ffd
+    .db 0
+@AllRamBytes
+    .defs 4
+
+@Title_AllRam
+    .defn "Memory #3: AllRAM mode"
+@Instr_AllRam
+    .defn "Last $1ffd value: "
+@Instr_AllRam2
+    .defn "Current bytes: "
+@Instr_AllRam3
+    .defn "AllRAM bytes:  "
+```
+
+The demo highlights three aspects of AllRAM mode:
+
+1. **Reading `$1FFD` state.** `call @Get1ffdStatus` reconstructs the last `$1FFD` value from NextReg `$8E`, extracting the paging-mode bit and the AllRAM bank-select bits. The port itself is write-only — this is the only way to discover the current state.
+
+2. **Switching to AllRAM.** `OUT ($1FFD), 1` sets bit 0, disabling the ROM and mapping banks 0–3 across the full 64 KB. The bytes at `$0000–$0003` now come from Bank 0, not the ROM image. The two printed sequences will differ, confirming the switch happened.
+
+3. **Save-restore pattern.** The original `$1FFD` value is saved before the switch and written back immediately after reading the AllRAM bytes. Leaving AllRAM mode active would break everything — there would be no ROM to handle `RST` calls, interrupts, or the return path.
+
+In essence, this demo is a concrete demonstration of why AllRAM mode is powerful and why you must be deliberate about entering and leaving it: from the moment you write bit 0 of `$1FFD`, the ROM disappears and you are on your own.
+
+### Demo: Using `$DFFD` to Access More Banks
+
+_TBD_
 
 ## ROMs and the Alt-ROM Mechanism
 

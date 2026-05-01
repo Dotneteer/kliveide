@@ -1,3 +1,5 @@
+.module Timing
+
 CTC_CH0     .equ $183b
 CTC_CH1     .equ $193b
 CTC_CH2     .equ $1a3b
@@ -75,10 +77,19 @@ GetMeasuredCounter
 ;   ....DEHL/IX same
 ;   AFBC..../.. different
 ; ------------------------------------------------------------------------------
-_delayWithBc
+@DelayWithBc
     dec bc
     ld a,b
     or c
     ret z
-    jr _delayWithBc
+    jr @DelayWithBc
+
+Delay .macro(value)
+    push bc
+    ld bc,{{value}}
+`loop
+    call @DelayWithBc
+    pop bc
+.endm
     
+.endmodule

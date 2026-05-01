@@ -6,7 +6,7 @@
 ; IN:
 ;   idx=Register index
 ; CHANGES: A, BC ($253B on return)
-GetReg .macro(idx)
+GetNextReg .macro(idx)
     ld a,{{idx}}
     ld bc,$243b             ; Next register select port
     out (c),a               ; Select the register

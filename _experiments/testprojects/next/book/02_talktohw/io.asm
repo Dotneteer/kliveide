@@ -1,9 +1,11 @@
+.module IoDemo
+
 ;==========================================================
 ; Read the $FE I/O port
 ;==========================================================
-ReadIoDemo
-    Display.PrintTitle(Title_ReadIo)
-    Display.PrintText(Instr_ReadIo)
+Read
+    Display.PrintTitle(@Title_ReadIo)
+    Display.PrintText(@Instr_ReadIo)
 `loop
     ; Select row 2 (Q, W, E, R, T)
     ld a,$FB        ; 11111011 - bit 2 = 0 selects row 2
@@ -32,9 +34,9 @@ ReadIoDemo
     jr nz,`loop     ; If Space not pressed (bit 1), loop again
     ret    
     
-Title_ReadIo
+@Title_ReadIo
     .defn "I/O #1: Read keyboard line"
-Instr_ReadIo
+@Instr_ReadIo
     .defm "Press keys Q, W, E, R, or T\x0D"
     .defm "Press Space to complete\x0D\x0D"
     .defn "QWERT"
@@ -42,29 +44,28 @@ Instr_ReadIo
 ;==========================================================
 ; Write the $FE I/O port
 ;==========================================================
-WriteIoDemo
-    Display.PrintTitle(Title_WriteIo)
-    ld hl,Instr_WriteIo
-    Display.PrintText(Instr_WriteIo)
+Write
+    Display.PrintTitle(@Title_WriteIo)
+    Display.PrintText(@Instr_WriteIo)
 `kbloop
     ld a,Color.Green
     out ($fe),a
     ld bc,$400
-    call _delayWithBc
+    Timing.Delay($400)
     ld a,Color.Blue
     out ($fe),a
-    ld bc,$488
-    call _delayWithBc
+    Timing.Delay($488)
 
     ; Now check if Space is pressed
     ld a,$7F        ; 01111111 - bit 7 = 0 selects row 7 (Space row)
     in a,($FE)
     bit 0,a         ; Test bit 0 (Space key)
-    jr nz,`kbloop     ; If Space not pressed (bit 1), loop again
+    jr nz,`kbloop   ; If Space not pressed (bit 1), loop again
     ret    
 
-Title_WriteIo
+@Title_WriteIo
     .defn "I/O #2: Write border color"
-Instr_WriteIo
+@Instr_WriteIo
     .defn "Press Space to complete"
 
+.endmodule

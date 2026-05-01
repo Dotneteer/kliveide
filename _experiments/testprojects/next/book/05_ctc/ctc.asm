@@ -35,15 +35,14 @@ Measure3Demo
     Display.PrintTitle(Title_Measure3)
     Display.PrintText(Instr_Measure)
 
-    call SetupCtc16
-    call StartMeasure
+    call Timing.SetupCtc16
+    call Timing.StartMeasure
 
     ; Start of code to measure
-    ld bc,$1800
-    call _delayWithBc
+    Timing.Delay($1800)
     
     ; Measure ends here
-    call GetMeasuredCounter
+    call Timing.GetMeasuredCounter
     ex de,hl
     Display.Ink(Color.Blue)
     Display.PrintHLDecimal()
@@ -57,8 +56,8 @@ Title_Measure3
 ;----------------------------------------------------------
 _measureDjnz
     push bc
-    call SetupCtc16
-    call StartMeasure
+    call Timing.SetupCtc16
+    call Timing.StartMeasure
     pop bc
 
     ; Start of code to measure
@@ -67,7 +66,7 @@ _measureDjnz
     djnz `loop
     
     ; Measure ends here
-    call GetMeasuredCounter
+    call Timing.GetMeasuredCounter
     ex de,hl
     Display.Ink(Color.Blue)
     Display.PrintHLDecimal()

@@ -129,7 +129,7 @@ ResetAttributes .macro()
 ;   ..BCDE../IX same
 ;   AF....HL/.. different
 ; ------------------------------------------------------------------------------
-@printText
+@PrintText
     ld a,(hl)                   ; Read the current character
     and a                       ; Check for terminating zero
     ret z                       ; Terminator found, done.
@@ -151,7 +151,7 @@ ResetAttributes .macro()
 `singleChar
     rst $10                     ; Print the character
     inc hl
-    jr @printText               ; Continue the printing loop
+    jr @PrintText               ; Continue the printing loop
 
 PrintText .macro(addr)
     ld hl,{{addr}}
@@ -433,7 +433,7 @@ PrintAHexadecimal .macro()
     ret
 
 PrintABinary .macro()
-    call @printAHexadecimal
+    call @printABinary
 .endm
 
 ; ------------------------------------------------------------------------------

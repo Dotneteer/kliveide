@@ -63,10 +63,10 @@ DoMirror
 DoTest
     Display.PrintTitle(@Title_Test)
     Display.PrintText(@Test_Value_Str)
+    Display.Ink(Color.Blue)
 
     ld a,%1000_0100
     push af
-    Display.Ink(Color.Blue)
     Display.PrintABinary()
     Display.NewLine()
     Display.Ink(Color.Black)
@@ -90,7 +90,7 @@ DoTest
 @Title_Test
     .defn "Z80N #3: TEST n"
 @Test_Value_Str
-    .defn "Value of A: "
+    .defn "Value of A:        "
 @Test_With_1_Str
     .defn "Z flag after TEST %1000_0000: "
 @Test_With_2_Str
@@ -186,13 +186,13 @@ DoBsra
 ;==========================================================
 ; Example: BSRL DE,B
 ;==========================================================
-BsrlDemo
-    Display.PrintTitle(Title_Bsrl)
+DoBsrl
+    Display.PrintTitle(@Title_Bsrl)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Bsrl)
+    Display.PrintText(@Instr_Bsrl)
     Display.NewLine()
-    Display.PrintText(Instr_Bsrl_2)
+    Display.PrintText(@Instr_Bsrl_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -226,24 +226,24 @@ BsrlDemo
     ld (ix+1),e
     ret
 
-Title_Bsrl
+@Title_Bsrl
     .defn "Z80N #6: BSRL DE,B"
-Instr_Bsrl
+@Instr_Bsrl
     .defn "Check the highlighted pattern"
-Instr_Bsrl_2
+@Instr_Bsrl_2
     .defm "DE=$fc00, B=5 --> BSRL DE,B\x0d"
     .defn "DE=$7c00, B=5 --> BSRL DE,B"
 
 ;==========================================================
 ; Example: BSRF DE,B
 ;==========================================================
-BsrfDemo
-    Display.PrintTitle(Title_Bsrf)
+DoBsrf
+    Display.PrintTitle(@Title_Bsrf)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Bsrf)
+    Display.PrintText(@Instr_Bsrf)
     Display.NewLine()
-    Display.PrintText(Instr_Bsrf_2)
+    Display.PrintText(@Instr_Bsrf_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -277,24 +277,24 @@ BsrfDemo
     ld (ix+1),e
     ret
 
-Title_Bsrf
+@Title_Bsrf
     .defn "Z80N #7: BSRF DE,B"
-Instr_Bsrf
+@Instr_Bsrf
     .defn "Check the highlighted pattern"
-Instr_Bsrf_2
+@Instr_Bsrf_2
     .defm "DE=$fc00, B=5 --> BSRF DE,B\x0d"
     .defn "DE=$7c00, B=5 --> BSRF DE,B"
 
 ;==========================================================
 ; Example: BSLC DE,B
 ;==========================================================
-BrlcDemo
-    Display.PrintTitle(Title_Brlc)
+DoBrlc
+    Display.PrintTitle(@Title_Brlc)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Brlc)
+    Display.PrintText(@Instr_Brlc)
     Display.NewLine()
-    Display.PrintText(Instr_Brlc_2)
+    Display.PrintText(@Instr_Brlc_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.White, 1)
@@ -313,28 +313,28 @@ BrlcDemo
     ld (ix+1),e
     ret
 
-Title_Brlc
+@Title_Brlc
     .defn "Z80N #8: BRLC DE,B"
-Instr_Brlc
+@Instr_Brlc
     .defn "Check the highlighted pattern"
-Instr_Brlc_2
+@Instr_Brlc_2
     .defn "DE=$03fe, B=5 --> BRLC DE,B"
 
 ;==========================================================
 ; Example: LDIX
 ;==========================================================
-LdixDemo
-    Display.PrintTitle(Title_Ldix)
+DoLdix
+    Display.PrintTitle(@Title_Ldix)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Ldix)
+    Display.PrintText(@Instr_Ldix)
     Display.NewLine()
-    Display.PrintText(Instr_Ldix_2)
+    Display.PrintText(@Instr_Ldix_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
 
-    ld hl,Data_Ldix
+    ld hl,@Data_Attrs
     ld de,$5900
     ld bc,$00
     ldix
@@ -347,13 +347,13 @@ LdixDemo
     ldix
     ret
 
-Title_Ldix
+@Title_Ldix
     .defn "Z80N #9: LDIX"
-Instr_Ldix
+@Instr_Ldix
     .defn "A=$68 (Bright, cyan paper)"
-Instr_Ldix_2
+@Instr_Ldix_2
     .defn "LDIX keeps the 6th attribute"
-Data_Ldix:
+@Data_Attrs:
     .defb attr(Color.Black, Color.Black, 1)
     .defb attr(Color.Black, Color.Blue, 1)
     .defb attr(Color.Black, Color.Red, 1)
@@ -366,18 +366,18 @@ Data_Ldix:
 ;==========================================================
 ; Example: LDDX
 ;==========================================================
-LddxDemo
-    Display.PrintTitle(Title_Lddx)
+DoLddx
+    Display.PrintTitle(@Title_Lddx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Lddx)
+    Display.PrintText(@Instr_Lddx)
     Display.NewLine()
-    Display.PrintText(Instr_Lddx_2)
+    Display.PrintText(@Instr_Lddx_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
 
-    ld hl,Data_Lddx + 7
+    ld hl,@Data_Attrs + 7
     ld de,$5900
     ld bc,$00
     lddx
@@ -390,108 +390,81 @@ LddxDemo
     lddx
     ret
 
-Title_Lddx
+@Title_Lddx
     .defn "Z80N #10: LDDX"
-Instr_Lddx
+@Instr_Lddx
     .defn "A=$68 (Bright, cyan paper)"
-Instr_Lddx_2
+@Instr_Lddx_2
     .defn "LDDX keeps the 6th attribute"
-Data_Lddx:
-    .defb attr(Color.Black, Color.Black, 1)
-    .defb attr(Color.Black, Color.Blue, 1)
-    .defb attr(Color.Black, Color.Red, 1)
-    .defb attr(Color.Black, Color.Magenta, 1)
-    .defb attr(Color.Black, Color.Green, 1)
-    .defb attr(Color.Black, Color.Cyan, 1)
-    .defb attr(Color.Black, Color.Yellow, 1)
-    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: LDIRX
 ;==========================================================
-LdirxDemo
-    Display.PrintTitle(Title_Ldirx)
+DoLdirx
+    Display.PrintTitle(@Title_Ldirx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Ldirx)
+    Display.PrintText(@Instr_Ldirx)
     Display.NewLine()
-    Display.PrintText(Instr_Ldirx_2)
+    Display.PrintText(@Instr_Ldirx_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
 
-    ld hl,Data_Ldirx
+    ld hl,@Data_Attrs
     ld de,$5900
     ld bc,$08
     ldirx
     ret
 
-Title_Ldirx
+@Title_Ldirx
     .defn "Z80N #11: LDIRX"
-Instr_Ldirx
+@Instr_Ldirx
     .defn "A=$68 (Bright, cyan paper)"
-Instr_Ldirx_2
+@Instr_Ldirx_2
     .defn "LDIRX keeps the 6th attribute"
-Data_Ldirx:
-    .defb attr(Color.Black, Color.Black, 1)
-    .defb attr(Color.Black, Color.Blue, 1)
-    .defb attr(Color.Black, Color.Red, 1)
-    .defb attr(Color.Black, Color.Magenta, 1)
-    .defb attr(Color.Black, Color.Green, 1)
-    .defb attr(Color.Black, Color.Cyan, 1)
-    .defb attr(Color.Black, Color.Yellow, 1)
-    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: LDDRX
 ;==========================================================
-LddrxDemo
-    Display.PrintTitle(Title_Lddrx)
+DoLddrx
+    Display.PrintTitle(@Title_Lddrx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Lddrx)
+    Display.PrintText(@Instr_Lddrx)
     Display.NewLine()
-    Display.PrintText(Instr_Lddrx_2)
+    Display.PrintText(@Instr_Lddrx_2)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Cyan, 1)
 
-    ld hl,Data_Lddrx + 7
+    ld hl,@Data_Attrs + 7
     ld de,$5900
     ld bc,$08
     lddrx
     ret
 
-Title_Lddrx
+@Title_Lddrx
     .defn "Z80N #12: LDDRX"
-Instr_Lddrx
+@Instr_Lddrx
     .defn "A=$68 (Bright, cyan paper)"
-Instr_Lddrx_2
+@Instr_Lddrx_2
     .defn "LDDRX keeps the 6th attribute"
-Data_Lddrx:
-    .defb attr(Color.Black, Color.Black, 1)
-    .defb attr(Color.Black, Color.Blue, 1)
-    .defb attr(Color.Black, Color.Red, 1)
-    .defb attr(Color.Black, Color.Magenta, 1)
-    .defb attr(Color.Black, Color.Green, 1)
-    .defb attr(Color.Black, Color.Cyan, 1)
-    .defb attr(Color.Black, Color.Yellow, 1)
-    .defb attr(Color.Black, Color.White, 1)
 
 ;==========================================================
 ; Example: LDWS
 ;==========================================================
-LdwsDemo
-    Display.PrintTitle(Title_Ldws)
+DoLdws
+    Display.PrintTitle(@Title_Ldws)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Ldws)
+    Display.PrintText(@Instr_Ldws)
 
     ; Set the background attribute to represent the shift
     ld a,attr(Color.Black, Color.Green, 1)
     ld ($5900),a
 
-    ld hl,Data_Ldws
+    ld hl,@Data_Ldws
     ld de,$4800
     ldws
     ldws
@@ -503,40 +476,40 @@ LdwsDemo
     ldws
     ret
 
-Title_Ldws
+@Title_Ldws
     .defn "Z80N #13: LDWS"
-Instr_Ldws
+@Instr_Ldws
     .defn "8 LDWS copy a diamond"
-Data_Ldws
+@Data_Ldws
     .defb $18, $3c, $7e, $ff
     .defb $ff, $7e, $3c, $18
 
 ;==========================================================
 ; Example: LDPIRX
 ;==========================================================
-LdpirxDemo
-    Display.PrintTitle(Title_Ldpirx)
+DoLdpirx
+    Display.PrintTitle(@Title_Ldpirx)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Ldpirx)
+    Display.PrintText(@Instr_Ldpirx)
     Display.NewLine()
-    Display.PrintText(Instr_Ldpirx_2)
+    Display.PrintText(@Instr_Ldpirx_2)
 
     ld a,attr(Color.Black, Color.Green, 1)
-    ld hl,Data_Ldpirx
+    ld hl,@Data_Ldpirx
     ld de,$5900
     ld bc,$20
     ldpirx
     ret
 
-Title_Ldpirx
+@Title_Ldpirx
     .defn "Z80N #14: LDPIRX"
-Instr_Ldpirx
+@Instr_Ldpirx
     .defn "LDPIRX copies 32 attr bytes"
-Instr_Ldpirx_2
+@Instr_Ldpirx_2
     .defn "Green attributes are skipped"
 .align 8
-Data_Ldpirx
+@Data_Ldpirx
     .defb attr(Color.Black, Color.Black, 1)
     .defb attr(Color.Black, Color.Blue, 1)
     .defb attr(Color.Black, Color.Red, 1)
@@ -549,30 +522,30 @@ Data_Ldpirx
 ;==========================================================
 ; Example: PIXELAD
 ;==========================================================
-PixeladDemo
-    Display.PrintTitle(Title_Pixelad)
+DoPixelad
+    Display.PrintTitle(@Title_Pixelad)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Pixelad)
+    Display.PrintText(@Instr_Pixelad)
     ld d,70
     ld e,130
     pixelad
     ld (hl),$ff
     ret
 
-Title_Pixelad
+@Title_Pixelad
     .defn "Z80N #15: PIXELAD"
-Instr_Pixelad
+@Instr_Pixelad
     .defn "Set the byte of (70, 130) to $ff"
 
 ;==========================================================
 ; Example: PIXELDN
 ;==========================================================
-PixeldnDemo
-    Display.PrintTitle(Title_Pixeldn)
+DoPixeldn
+    Display.PrintTitle(@Title_Pixeldn)
     Display.Ink(Color.Black)
     Display.NewLine()
-    Display.PrintText(Instr_Pixeldn)
+    Display.PrintText(@Instr_Pixeldn)
     ld d,70
     ld e,130
     pixelad
@@ -585,20 +558,19 @@ PixeldnDemo
     djnz `loop
     ret
 
-Title_Pixeldn
+@Title_Pixeldn
     .defn "Z80N #16: PIXELDN"
-Instr_Pixeldn
+@Instr_Pixeldn
     .defn "Set 8 bytes below with PIXELDN"
 
 ;==========================================================
 ; Example: SETAE
 ;==========================================================
-SetaeDemo
-    Display.PrintTitle(Title_Setae)
+DoSetae
+    Display.PrintTitle(@Title_Setae)
     Display.Ink(Color.Black)
     Display.NewLine()
-    ld hl,Instr_Setae
-    Display.PrintText(Instr_Setae)
+    Display.PrintText(@Instr_Setae)
     ld d,70
     ld e,130
     pixelad
@@ -612,9 +584,9 @@ SetaeDemo
     jp p,`loop
     ret
 
-Title_Setae
+@Title_Setae
     .defn "Z80N #17: SETAE"
-Instr_Setae
+@Instr_Setae
     .defn "Set 8 bytes below with SETAE"
 
 .endmodule

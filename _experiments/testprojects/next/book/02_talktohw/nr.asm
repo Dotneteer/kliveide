@@ -1,9 +1,11 @@
+.module NextRegDemo
+
 ;==========================================================
 ; Write the value of a NextReg #1
 ;==========================================================
-WiteNextRegDemo
-    Display.PrintTitle(Title_WNextReg)
-    Display.PrintText(PrintStep1_Str)
+Write
+    Display.PrintTitle(@Title_WNextReg)
+    Display.PrintText(@PrintStep1_Str)
     ;
     ; Write Nextreg value (User storage)
     ;
@@ -19,7 +21,7 @@ WiteNextRegDemo
     ; Prepare displaying the result
     ;
     Display.NewLine()
-    Display.PrintText(PrintStep2_Str)
+    Display.PrintText(@PrintStep2_Str)
     Display.Ink(Color.Blue)
     ;
     ; Read NextReg value (User storage)
@@ -44,9 +46,11 @@ WiteNextRegDemo
     jp $10
     
     
-Title_WNextReg
-    .defn "NextReg #1: Write/Read (#1)"
-PrintStep1_Str
-    .defn "Write 162 to NextReg $7F (#1)"
-PrintStep2_Str
+@Title_WNextReg
+    .defn "NextReg #1: Write/Read"
+@PrintStep1_Str
+    .defn "Write 162 to NextReg $7F"
+@PrintStep2_Str
     .defn "Value of NextReg $7F: "
+
+.endmodule

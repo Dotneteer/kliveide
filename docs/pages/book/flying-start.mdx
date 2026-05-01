@@ -97,60 +97,67 @@ This file sets up the entire infrastructure for running the examples as a NEX fi
 #include "02_z80n/extinstr.asm"
 // ... other examples
 
-; We keep 256 bytes for the stack
+; We keep 64 bytes for the stack
 STACK
-    .defs $100
+    .defs $40
 STACK_TOP
 
 ; The start of the example
 Main
-    call _clearScreen
-    ; ...
-
+    Display.ClearScreen()
 ;
 ; Here are the examples. Uncomment the one you want to run
-    call PrintWelcome
-    // call PrintValues
-    // call WiteNextReg1
+    // --- 00: Flying Start Demos
+    // call PrintDemo.Welcome
+    // call PrintDemo.Values
+
+    // --- 01: Z80N Demos
+    // call Z80NDemo.DoSwapnib
+    // call Z80NDemo.DoMirror
     // ... other examples
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.
 trap
     ei
-    call _waitForExit
-    // ... Other cleanup code
+    Display.WaitForExit()
     jp $
 ```
 
 The `.model` and `.savenex` pragmas configure the project for the IDE. They export a NEX file named `nbook.nex`, targeting the ZX Spectrum Next machine with the 3.1.0 core. The stack is set to start at `STACK_TOP`, which is defined later in the file.
 
-The main code starts at bank 2, address `$8000`, with a jump to the `Main` label. The `Main` procedure is where the example code runs. Between the initial jump and the `Main` procedure, we include some helper files that contain utility functions (like `_clearScreen`) that the examples can call. We also include the source files for each example, but they are not called by default — you need to uncomment the one you want to run.
+The main code starts at bank 2, address `$8000`, with a jump to the `Main` label. The `Main` procedure is where the example code runs. Between the initial jump and the `Main` procedure, we include some helper files that contain utility functions (like `Display.ClearScreen`) that the examples can call. We also include the source files for each example, but they are not called by default — you need to uncomment the one you want to run.
 
 The app starts by clearing the screen, then calls the example procedures (you can uncomment the one you want to run). When the example finishes, it enters an infinite loop, effectively halting the machine until you reset or restart it.
 
-The helper routines start with an underscore (`_`) to distinguish them from the example code. You can look at their source in the `_helpers` folder to see how they work, and you can call them from your own code as well. The code uses macros and example routines with names starting with an uppercase letter, so you can easily tell them apart from the helpers. When you browse the code, you can easily recognize macro invocations: they are displayed with italic.
+The code is organized into modules, which function as namespaces. For example, the `PrintDemo` module contains the `PrintWelcome` and `PrintValues` procedures, which you can call using their fully qualified names (e.g., `call PrintDemo.Welcome`).
+Identifiers starting with the at sign (`@`) are local labels within a procedure — visible only within that procedure's scope. This allows you to use simple names for internal jumps without worrying about name collisions.
+
+The helper routines are also organized into modules, and you can examine their source in the `_helpers` folder to understand how they work. The code also uses macros, which are easy to distinguish from regular procedures. When you browse the code, you'll recognize macro invocations by their italic formatting and parentheses.
+
+You can learn more about Klive modules in the [Modules](/z80-assembly/modules/) chapter of the documentation.
 
 ## Printing to the Screen
 
-The `PrintWelcome` subroutine is the first example you see when you run the project. It demonstrates how to print text to the screen using a helper routine. It's a good starting point for understanding how to output text on the Next.
+The `PrintDemo.Welcome` subroutine is the first example you see when you run the project. It demonstrates how to print text to the screen using a helper routine. It's a good starting point for understanding how to output text on the Next.
 
-Click and move the caret to the `PrintWelcome` token in the `call PrintWelcome` line in the `Main` procedure, and press `F12` (or `Ctrl+Click` on Windows, `Cmd+Click` on macOS) to jump to its definition. 
-This will take you to the `print.asm` file in the `01_intro` folder, where you can see how the `PrintWelcome` routine is implemented:
+Click and move the caret to the `PrintDemo.Welcome` token in the `call PrintDemo.Welcome` line in the `Main` procedure, and press `F12` (or `Ctrl+Click` on Windows, `Cmd+Click` on macOS) to jump to its definition. 
+This will take you to the `print.asm` file in the `00_intro` folder, where you can see how the `PrintDemo.Welcome` routine is implemented:
 
 ```z80klive
+.module PrintDemo
+
 ;==========================================================
 ; Example: Print welcome text to the screen
 ;==========================================================
-PrintWelcome
-    ld hl,Title_Intro_1
-    call _printTitle
-    ld hl,Welcome_Str
-    jp _printText
+Welcome
+    Display.PrintTitle(@Title_Intro_1)
+    Display.PrintText(@Welcome_Str)
+    ret
     
-Title_Intro_1
+@Title_Intro_1
     .defn "Intro #1: Welcome message"
-Welcome_Str
+@Welcome_Str
     .dm "\a\x06\x06" ; AT 6, 6
     .dm "\p\x04"     ; PAPER 4
     .dm "Welcome to Klive IDE"
@@ -158,17 +165,26 @@ Welcome_Str
     .dm "\p\x04"     ; PAPER 4
     .dm "\b\x01"     ; BRIGH 1
     .defn "(ZX Spectrum Next)"
+
+// ...
+
+.endmodule
 ```
 
-The two helper routines, `_printTitle` and `_printText`, use zero-terminated strings as their input. The `PrintWelcome` routine loads the address of the title string into `HL` and calls `_printTitle`, then loads the address of the welcome message string and jumps to `_printText`. The title and welcome message strings are defined as zero-terminated data blocks using `.dm` directives. The `.defn` directive emits an additional 0x00 byte to terminate the string.
+The two helper macros, `Display.PrintTitle` and `Display.PrintText`, use zero-terminated string addresses as their arguments. 
+The title and welcome message strings are defined as zero-terminated data blocks using `.dm` directives. The `.defn` directive emits an additional 0x00 byte to terminate the string.
 
 <Callout type="info" emoji="💡">
 You can see some escape characters in the string definitions, like `\a`, `\p`, and `\b`. These are custom escape sequences defined by Klive's assembler to represent ZX Spectrum Next-specific commands. For example, `\a` is used for the `AT` command to position the cursor, `\p` is for the `PAPER` command to set the background color, and `\b` is for the `BRIGH` command to set brightness. You can find a full list of these custom escapes in the [Characters and Strings](/z80-assembly/language-structure/#characters-and-strings) section of the documentation.
 </Callout>
 
-### The `_printText` Helper
+### The `Display.PrintText` Macro
 
-This routine is a simple text printer that takes a zero-terminated string and prints it to the screen. This routine uses the RST $10 instruction to call the Next's built-in ROM routine for printing characters. The string can include custom escape sequences (like `\a`, `\p`, etc.) that the printer recognizes and executes as commands. Because several escape sequences may use the binary zero value as a parameter (e.g., `\p\x00` to set PAPER 0), the `_printText` routine recognizes these and handles them correctly — it never treats a zero argument byte as the string terminator:
+This macro is a simple text printer that takes a zero-terminated string and prints it to the screen. 
+This macro uses the `@PrintText` routine, which internally leverages the RST $10 instruction to call the Next's built-in ROM routine for printing characters. 
+The string can include custom escape sequences (like `\a`, `\p`, etc.) that the printer recognizes and 
+executes as commands. Because several escape sequences may use the binary zero value as a parameter 
+(e.g., `\p\x00` to set PAPER 0), the `@PrintText` routine recognizes these and handles them correctly — it never treats a zero argument byte as the string terminator:
 
 ```z80klive
 ; ------------------------------------------------------------------------------
@@ -181,7 +197,7 @@ This routine is a simple text printer that takes a zero-terminated string and pr
 ;   ..BCDE../IX same
 ;   AF....HL/.. different
 ; ------------------------------------------------------------------------------
-_printText
+@PrintText
     ld a,(hl)                   ; Read the current character
     and a                       ; Check for terminating zero
     ret z                       ; Terminator found, done.
@@ -203,7 +219,12 @@ _printText
 `singleChar
     rst $10                     ; Print the character
     inc hl
-    jr _printText               ; Continue the printing loop
+    jr @PrintText               ; Continue the printing loop
+
+PrintText .macro(addr)
+    ld hl,{{addr}}
+    call @printText
+.endm
 ```
 
 <Callout type="info" emoji="💡">
@@ -212,7 +233,9 @@ Labels starting with the backtick character (`) are local labels in Klive's asse
 
 ### Printing Decimal and Hexadecimal Values
 
-The second example, `PrintValues`, demonstrates how to print numeric values in both decimal and hexadecimal formats. You can try it: comment out the `call PrintWelcome` line in the `Main` procedure, and uncomment the `call PrintValues` line. Then, run the project again to see the output.
+The second example, `PrintDemo.Values`, demonstrates how to print numeric values in both decimal and 
+hexadecimal formats. You can try it: comment out the `call PrintDemo.Welcome` line in the `Main` procedure, 
+and uncomment the `call PrintDemo.Values` line. Then, run the project again to see the output.
 
 This example uses several helper routines to convert binary values into their string representations and print them to the screen.
 
@@ -223,57 +246,50 @@ This example uses several helper routines to convert binary values into their st
 ; Example: Print decimal and hexadecimal numbers to the
 ; screen
 ;==========================================================
-PrintValues
-    ld hl,Title_Intro_2
-    call _printTitle
-    ;
-    ; Print decimal and hexadecimal values
-    ;
-    ld hl,Decimal8_Str
-    call _printText
+Values
+    Display.PrintTitle(@Title_Intro_2)
+    Display.PrintText(@Decimal8_Str)
     ld a,210
     push af
-    Ink(COLOR_BLUE)
-    call _printADecimal
-    NewLine()
-    Ink(COLOR_BLACK)
-    ld hl,Hexadecimal8_Str
-    call _printText
-    Ink(COLOR_BLUE)
+    Display.Ink(Color.Blue)
+    Display.PrintADecimal()
+    Display.NewLine()
+    Display.Ink(Color.Black)
+    Display.PrintText(@Hexadecimal8_Str)
+    Display.Ink(Color.Blue)
     pop af
-    call _printAHexadecimal
-    Ink(COLOR_BLACK)
-    NewLine()
-    ld hl,Decimal16_Str
-    call _printText
-    Ink(COLOR_BLUE)
+    Display.PrintAHexadecimal()
+    Display.Ink(Color.Black)
+    Display.NewLine()
+    Display.PrintText(@Decimal16_Str)
+    Display.Ink(Color.Blue)
     ld hl,23456
     push hl
-    call _printHLDecimal
-    NewLine()
-    Ink(COLOR_BLACK)
-    ld hl,Hexadecimal16_Str
-    call _printText
-    Ink(COLOR_BLUE)
+    Display.PrintHLDecimal()
+    Display.NewLine()
+    Display.Ink(Color.Black)
+    Display.PrintText(@Hexadecimal16_Str)
+    Display.Ink(Color.Blue)
     pop hl
-    jp _printHLHexadecimal
+    Display.PrintHLHexadecimal()
+    ret
 
-Title_Intro_2
+@Title_Intro_2
     .defn "Intro #2: Printing values"
-Decimal8_Str
+@Decimal8_Str
     .defn "Decimal (8-bit):      "
-Hexadecimal8_Str
+@Hexadecimal8_Str
     .defn "Hexadecimal (8-bit):  "
-Decimal16_Str
+@Decimal16_Str
     .defn "Decimal (16-bit):     "
-Hexadecimal16_Str
+@Hexadecimal16_Str
     .defn "Hexadecimal (16-bit): "
-```
+    ```
 
-Visit the declaration of helper routines like `_printADecimal`, `_printAHexadecimal`, `_printHLDecimal`, and `_printHLHexadecimal` to see how they convert binary values into their string representations and print them using the `_printText` routine.
+Visit the declaration of helper routines like `Display.PrintADecimal`, `Display.PrintAHexadecimal`, `Display.PrintHLDecimal`, and `Display.PrintHLHexadecimal` to see how they convert binary values into their string representations and print them using the `Display.PrintText` routine.
 
 <Callout type="info" emoji="💡">
-In the source code, you may see some macro invocations like `Ink(COLOR_BLUE)` and `NewLine()`. These are defined in the helper files and expand into sequences of assembly instructions. For example, `Ink(COLOR_BLUE)` might expand to a sequence that sets the INK color to blue using the appropriate escape sequence. You can look at the macro definitions in the helper files to see exactly what code they generate.
+In the source code, you may see some macro invocations like `Display.Ink(Color.Blue)` and `Display.NewLine()`. These are defined in the helper files and expand into sequences of assembly instructions. For example, `Display.Ink(Color.Blue)` might expand to a sequence that sets the INK color to blue using the appropriate escape sequence. You can look at the macro definitions in the helper files to see exactly what code they generate.
 
 When you hover the mouse over a macro invocation in the IDE, a tooltip appears showing the macro's body with parameter placeholders. This allows you to understand what code the macro will emit without needing to navigate to its definition.
 </Callout>

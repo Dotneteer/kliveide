@@ -23,12 +23,13 @@
 #include "02_talktohw/nr.asm"
 #include "02_talktohw/io.asm"
 #include "03_memory/mmu.asm"
+#include "03_memory/legacy.asm"
 #include "05_ctc/ctc.asm"
 #include "06_zxndma/memcpy.asm"
 
-; We keep 256 bytes for the stack
+; We keep 64 bytes for the stack
 STACK
-    .defs $100
+    .defs $40
 STACK_TOP
 
 ; The start of the example
@@ -41,32 +42,33 @@ Main
     // call PrintDemo.Values
 
     // --- 01: Z80N Demos
-    call SwapnibDemo
-    // call MirrorDemo
-    // call TestDemo
-    // call BslaDemo
-    // call BsraDemo
-    // call BsrlDemo
-    // call BsrfDemo
-    // call BrlcDemo
-    // call LdixDemo
-    // call LddxDemo
-    // call LdirxDemo
-    // call LddrxDemo
-    // call LdwsDemo
-    // call LdpirxDemo
-    // call PixeladDemo
-    // call PixeldnDemo
-    // call SetaeDemo
+    // call Z80NDemo.DoSwapnib
+    // call Z80NDemo.DoMirror
+    // call Z80NDemo.DoTest
+    // call Z80NDemo.DoBsla
+    // call Z80NDemo.DoBsra
+    // call Z80NDemo.DoBsrf
+    // call Z80NDemo.DoBsrl
+    // call Z80NDemo.DoBrlc
+    // call Z80NDemo.DoLdix
+    // call Z80NDemo.DoLddx
+    // call Z80NDemo.DoLdirx
+    // call Z80NDemo.DoLddrx
+    // call Z80NDemo.DoLdws
+    // call Z80NDemo.DoLdpirx
+    // call Z80NDemo.DoPixelad
+    // call Z80NDemo.DoPixeldn
+    // call Z80NDemo.DoSetae
     
     // --- 02: Talk to HW Demos
-    // call ReadIoDemo
-    // call WriteIoDemo
-    // call WiteNextRegDemo
+    // call IoDemo.Read
+    // call IoDemo.Write
+    // call NextRegDemo.Write
 
     // --- 03: Memory
-    // call MmuRoundTripDemo
-    // call ShadowScreenDemo
+    // call MmuDemo.MmuRoundTrip
+    // call LegacyMemDemo.ShadowScreen
+    call LegacyMemDemo.AllRam
 
     // --- 05: CTC Demos
     // call Measure1Demo
