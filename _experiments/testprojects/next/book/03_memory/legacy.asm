@@ -111,13 +111,7 @@ AllRam
     Display.PrintText(@Instr_AllRam2)
     Display.Ink(Color.Blue)
     ld hl,$0000
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
+    call MmuDemo.PrintSignature
     Display.Ink(Color.Black)
     Display.NewLine()
 
@@ -142,13 +136,7 @@ AllRam
     Display.PrintText(@Instr_AllRam3)
     Display.Ink(Color.Blue)
     ld hl,@AllRamBytes
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
+    call MmuDemo.PrintSignature
     ret
 
 @Get1ffdStatus

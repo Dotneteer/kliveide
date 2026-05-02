@@ -37,20 +37,23 @@ MmuRoundTrip
     ; --- Now map page $20 back in...
     nextreg MMU6_REG,$20
     ld hl,SLOT6_START
-    call PrintHLContentHexadecimal  ; should print DE
-    inc hl
-    call PrintHLContentHexadecimal  ; should print AD
-    inc hl
-    call PrintHLContentHexadecimal  ; should print BE
-    inc hl
-    call PrintHLContentHexadecimal  ; should print EF
+    call PrintSignature
  
     ; --- Restore MMU6
     ld a,(@SavedMmu6)
     nextreg MMU6_REG,a                ; select MMU6
     ret
  
-PrintHLContentHexadecimal
+PrintSignature
+    call @PrintHLContent
+    inc hl
+    call @PrintHLContent
+    inc hl
+    call @PrintHLContent
+    inc hl
+    jp @PrintHLContent
+
+@PrintHLContent
     push hl
     ld a,(hl)
     Display.PrintAHexadecimal()

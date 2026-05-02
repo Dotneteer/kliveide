@@ -214,7 +214,7 @@ MmuRoundTrip
  
     ; --- Save current MMU6 so we can restore it
     ld a,MMU6_reg
-    GetNextReg(MMU6_REG)          ; A := current value of MMU6
+    GetNextReg(MMU6_REG)      ; A := current value of MMU6
     ld (@SavedMmu6),a
  
     ; --- Map page $20 into slot 6 ($C000-$DFFF)
@@ -237,20 +237,23 @@ MmuRoundTrip
     ; --- Now map page $20 back in...
     nextreg MMU6_REG,$20
     ld hl,SLOT6_START
-    call PrintHLContentHexadecimal  ; should print DE
-    inc hl
-    call PrintHLContentHexadecimal  ; should print AD
-    inc hl
-    call PrintHLContentHexadecimal  ; should print BE
-    inc hl
-    call PrintHLContentHexadecimal  ; should print EF
+    call PrintSignature
  
     ; --- Restore MMU6
     ld a,(@SavedMmu6)
     nextreg MMU6_REG,a                ; select MMU6
     ret
  
-PrintHLContentHexadecimal
+PrintSignature
+    call @PrintHLContent
+    inc hl
+    call @PrintHLContent
+    inc hl
+    call @PrintHLContent
+    inc hl
+    jp @PrintHLContent
+
+@PrintHLContent
     push hl
     ld a,(hl)
     Display.PrintAHexadecimal()
@@ -312,12 +315,13 @@ The `$DFFD` port is the Next's extension. It carries the upper bits of the bank 
 
 ### Reading Back Legacy Paging State
 
-The legacy paging ports are **write-only** — there is no way to read them back from I/O space. On original hardware, reading from `$7FFD` returns whatever was last on the data bus; on the Next it's similarly meaningless. But you can't leave that hanging if you need to know the current bank and ROM selector: other code (interrupt handlers, a loader) may have changed them, and you need to restore the state later.
+The legacy paging ports are **write-only** — there is no way to read them back from I/O space. On original hardware, reading from `$7FFD` returns whatever was last on the data bus; on the Next it's similarly meaningless. But if you need to know the current bank and ROM selector, you face a problem: other code (interrupt handlers, a loader) may have changed them, and you need to restore the state later.
 
-On original Spectrum 128/2/3 hardware, the last value written to `$7FFD` is also stored in the system variable **BANKM** at address **`$5B5C`**. This isn't directly readable on the Next (there's no I/O read from `$7FFD`), but it was how the original hardware let code recover the paging state. The NextReg mirrors make this concern moot on the Next, but it's worth knowing if you're studying or porting code from classic 128K Spectrum systems.
+On original Spectrum 128/2/3 hardware, the last value written to `$7FFD` was also stored in the system variable **BANKM** at address **`$5B5C`**, letting code recover the paging state. The NextReg mirrors solve this on the Next, but it's worth knowing if you're studying or porting code from classic 128K systems.
 
 The Next solves this with **NextReg $8E (Spectrum 128K Memory Mapping)**, which mirrors the legacy port state. When you write to `$7FFD` or `$1FFD`, the FPGA updates this register so the values are queryable:
 
+- **bit 7** — reflects port `$DFFD` bit 0
 - **bits 6:4** — reflect port `$7FFD` bits 2:0 (bank number)
 - **bit 3** — read-only in the register
 - **bit 2** — reflects port `$1FFD` bit 0 (paging mode)
@@ -326,6 +330,8 @@ The Next solves this with **NextReg $8E (Spectrum 128K Memory Mapping)**, which 
 Additionally, **NextReg $69 bit 6** (Display Control 1) mirrors the shadow screen bit of `$7FFD` bit 3, giving you another way to read or write the shadow screen state.
 
 You can read these NextRegs at any time to discover the last value written to the legacy ports, even if intervening code has modified them. The pattern is: read the register, save it, do your work, write it back.
+
+The `$DFFD` bits 1–3 (upper RAM bank extension) are write-only with no NextReg read path. However, you can recover the effective bank by reading MMU slot NextRegs `$56` and `$57`, which always reflect the actual 8 KB pages visible at `$C000–$FFFF`. The 16 KB bank number is simply `MMU6_page >> 1` (pages are paired as 2N / 2N+1 per bank).
 
 > **Sidebar: don't mix-and-match.** If you've taken control of slots 6 and 7 by writing MMU6/MMU7 directly, a stray `$7FFD` write will *clobber* your mapping — because the FPGA will faithfully translate the legacy write into MMU writes that overwrite yours. Either commit to MMU-only, or commit to legacy-port-only, in any given chunk of code. (The Next manual calls this "the golden rule of paging".)
 
@@ -488,13 +494,7 @@ AllRam
     Display.PrintText(@Instr_AllRam2)
     Display.Ink(Color.Blue)
     ld hl,$0000
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
+    call MmuDemo.PrintSignature
     Display.Ink(Color.Black)
     Display.NewLine()
 
@@ -519,13 +519,7 @@ AllRam
     Display.PrintText(@Instr_AllRam3)
     Display.Ink(Color.Blue)
     ld hl,@AllRamBytes
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
-    inc hl
-    call MmuDemo.PrintHLContentHexadecimal
+    call MmuDemo.PrintSignature
     ret
 
 @Get1ffdStatus
@@ -579,20 +573,38 @@ The Next ships with the original 16 KB Spectrum 48K ROM, the two 128K ROMs (edit
 - `$7FFD` bit 4: low bit of the ROM selector (the 128K original)
 - `$1FFD` bits 1–2: high bits and special-config (the +3 extension)
 
-Plus, the Next adds an **alt-ROM mechanism** — two extra 16 KB ROM slots (alt-ROM 0 and alt-ROM 1) that can be substituted for the official ROMs under software control. This is what NextZXOS uses to slip its loader and dot-command machinery in at boot, transparently to anything that's about to read from the ROM area.
+In addition, the Next reserves two 16 KB SRAM regions for **alt-ROMs** — alt-ROM 0 (128K-style, physical `$01'8000`–`$01'BFFF`) and alt-ROM 1 (48K-style, physical `$01'C000`–`$01'FFFF`). These are regular SRAM, not baked-in firmware: their contents can be written by user code at runtime and then presented to the CPU as if they were ROM.
 
-The alt-ROM is configured through NextReg `$8C`:
+### The two alt-ROM modes
 
-```
-NextReg $8C — Alt ROM control
-  bit 7   : enable alt-ROM
-  bit 6   : alt-ROM visible only for writes (i.e. RAM reads, ROM writes)
-  bit 5   : lock ROM 1
-  bit 4   : lock ROM 0
-  bits 3-0: alt-ROM bank selector (chooses among the two alt-ROMs)
-```
+NextReg `$8C` controls the alt-ROM mechanism. It has an unusual split structure: bits 7:4 take effect **immediately**, while bits 3:0 are a **pending configuration** that is copied into bits 7:4 on the next soft reset. This lets code pre-program the post-reset alt-ROM state before triggering the reboot.
 
-We'll come back to alt-ROM in detail in the Storage chapter, where it's the foundation of the dot-command system. For now, the takeaway is just: **slots 0/1 holding `$FF` doesn't always mean "the original 48K ROM"** — it means "whatever ROM the current selector says". On a freshly booted NextZXOS machine, it's an alt-ROM, and the original 48K ROM is one selector value away.
+Both halves have identical bit meanings:
+
+| Bit (immediate / pending) | Meaning |
+|:---:|---|
+| 7 / 3 | Enable alt-ROM. When set, the alt-ROM SRAM is wired into the ROM decode path. |
+| 6 / 2 | **Write mode.** 0 = alt-ROM replaces the standard ROM for reads (writes are blocked); 1 = writes to `$0000`–`$3FFF` go to the alt-ROM SRAM, reads still come from the standard ROM. |
+| 5 / 1 | Lock ROM1 (48K ROM). Forces the ROM selector to hold ROM1 regardless of `$7FFD`/`$1FFD`. |
+| 4 / 0 | Lock ROM0 (128K ROM). Forces the ROM selector to hold ROM0 regardless of `$7FFD`/`$1FFD`. |
+
+The **which alt-ROM** question (0 or 1) is answered by the current ROM selector: when the selector points at a 128K-style ROM (ROM0 or ROM1), alt-ROM 0 is used; when it points at the 48K ROM (ROM3), alt-ROM 1 is used. The lock bits can pin the selector in place, which also pins the alt-ROM choice.
+
+### Updating alt-ROM contents
+
+The two-mode design makes in-place alt-ROM updates possible without patching any SRAM directly:
+
+1. Write `$C0` to NextReg `$8C` — enable alt-ROM, write mode on. Reads from `$0000`–`$3FFF` still come from the standard ROM; writes now target the alt-ROM SRAM area.
+2. Write the desired 16 KB of code or data to `$0000`–`$3FFF` as normal `ld (hl),...` / `ldir` operations.
+3. Write `$80` to NextReg `$8C` — enable alt-ROM, write mode off. Now reads from `$0000`–`$3FFF` return the freshly written alt-ROM contents.
+
+This is how NextZXOS installs itself at boot: it writes its loader into alt-ROM 0, then switches to read mode so every subsequent ROM call lands in NextZXOS code rather than the original Sinclair firmware.
+
+### ROM locking
+
+The lock bits (bits 5:4 / 1:0) are independent of alt-ROM enable. Even with the alt-ROM disabled, they override the `$7FFD`/`$1FFD` ROM selector and freeze the active ROM image. On a +3/Next machine, locking only ROM0 selects ROM0; locking only ROM1 selects ROM1; locking both selects ROM3. This is useful when you need a specific ROM permanently visible — for example, holding ROM3 (48K BASIC) in place while loading a 48K game.
+
+> **The takeaway.** `$FF` in slots 0/1 does not always mean "the original 48K ROM" — it means "whatever the current selector says, possibly filtered through an alt-ROM". On a freshly booted NextZXOS machine the selector points at an alt-ROM, and the original 48K firmware is one selector value away. We revisit alt-ROM in detail in the Storage chapter, where it underpins the dot-command system.
 
 ## DivMMC, in One Page
 
