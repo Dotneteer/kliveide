@@ -59,6 +59,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   is60HzMode: boolean;
   // INT signal (active: true, inactive: false)
   pulseIntActive: boolean;
+  // Line interrupt pulse: true for one tact (HC=0) when the raster enters the target line
+  lineIntActive: boolean;
   // Reg $1E/$1F - The active video line being rendered
   activeVideoLine: number;
   // Flash counter (0-31, cycles ~16 frames per state)
@@ -300,6 +302,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Rendering state
     this.pulseIntActive = false;
+    this.lineIntActive = false;
     this.flashCounter = 0;
   }
 
@@ -649,8 +652,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   renderTact(tact: number): boolean {
     this.pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntEndTact;
 
-    // --- Get pre-calculated VC position (needed for activeVideoLine before the blanking check)
+    // --- Get pre-calculated VC and HC positions
     const vc = activeTactToVC[tact];
+    const hc = activeTactToHC[tact];
 
     // --- Update active video line counter (NextRegs 0x1E/0x1F) for every tact, including
     // blanking, so the value is always current when the CPU reads it.
@@ -661,6 +665,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       (vc - this.confDisplayYStart + this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
       this.confTotalVC;
 
+    // --- Line interrupt pulse: true for the single tact at HC=0 of the target line
+    this.lineIntActive = hc === 0 && this.activeVideoLine === this.machine.interruptDevice.lineInterrupt;
+
     // === BLANKING CHECK ===
     // All rendering flags have identical blanking regions (cell value 0) for a given frequency mode.
     // We can use active ULA rendering flags as the blanking mask for all layers.
@@ -670,8 +677,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       return false; // Skip blanking tact - no visible content in any layer
     }
 
-    // --- Get pre-calculated HC position from lookup table (vc already computed above)
-    const hc = activeTactToHC[tact];
+    // --- HC is already computed above
 
     // === ULA rendering
     if (this.loResEnabledSampled) {

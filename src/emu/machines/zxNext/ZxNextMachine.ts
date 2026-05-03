@@ -30,7 +30,7 @@ import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { MultifaceDevice } from "./MultifaceDevice";
 import { MouseDevice } from "./MouseDevice";
-import { InterruptDevice } from "./InterruptDevice";
+import { InterruptDevice, DAISY_PRIORITY_LINE, DAISY_PRIORITY_ULA } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
@@ -566,10 +566,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // Here we only peek at the winning device to return its vector.
     const base = id.im2TopBits;
     for (let i = 0; i < 14; i++) {
-      if (id.daisyInService[i]) {
-        // --- InService device blocks all lower-priority devices
-        break;
-      }
+      if (id.daisyInService[i]) break;
       if (id.isDeviceRequesting(i)) {
         return base | (i << 1);
       }
@@ -1528,11 +1525,21 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt(): boolean {
-    // Step 25: OR in DMA interrupt-pending flag so a DMA end-of-block interrupt
-    // (triggered by triggerInterrupt()) drives the Z80 INT line, mirroring MAME's
-    // interrupt_check() which asserts the physical INT output pin.
-    return this.composedScreenDevice.pulseIntActive
-        || (this.dmaDevice.getIp() === 1);
+    const ulaActive = this.composedScreenDevice.pulseIntActive;
+    const lineActive = this.composedScreenDevice.lineIntActive;
+    const id = this.interruptDevice;
+
+    if (id.hwIm2Mode) {
+      if (ulaActive && !id.daisyInService[DAISY_PRIORITY_ULA]) {
+        id.ulaInterruptStatus = true;
+      }
+      if (lineActive && id.lineInterruptEnabled && !id.daisyInService[DAISY_PRIORITY_LINE]) {
+        id.lineInterruptStatus = true;
+      }
+      return id.daisyUpdateIrqState();
+    }
+
+    return ulaActive || (this.dmaDevice.getIp() === 1);
   }
 
   /**

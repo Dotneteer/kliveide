@@ -166,4 +166,101 @@ AllRam
 @Instr_AllRam3
     .defn "AllRAM bytes:  "
 
+;==========================================================
+; Use $DFFD to access RAM banks above bank 7
+;==========================================================
+DffdBanks
+    Display.PrintTitle(@Title_DffdBanks)
+    Display.PrintText(@Instr_DffdBanks)
+
+    ; --- Save $7FFD/$DFFD state via NextReg $8E
+    GetNextReg($8e)
+    ld (@Saved8e),a
+
+    ; --- Save MMU6/MMU7 — legacy port writes will overwrite them
+    GetNextReg($56)
+    ld (@SavedMmu6),a
+    GetNextReg($57)
+    ld (@SavedMmu7),a
+
+    ; --- Write a marker into banks 8..15 at offset 0 of slot 6
+    ld e,$08
+`writeLoop
+    ld a,e
+    call @SelectBank          ; Map 7-bit bank A via $7FFD + $DFFD
+    ld a,e
+    ld ($c000),a              ; Marker = bank number
+    inc e
+    ld a,e
+    cp $10
+    jr nz,`writeLoop
+
+    ; --- Restore MMU6/7 so the ROM's $C000+ workspace is back
+    ld a,(@SavedMmu6)
+    nextreg $56,a
+    ld a,(@SavedMmu7)
+    nextreg $57,a
+    
+    ; --- Read each bank's marker, restore Bank 0, then print it
+    Display.Ink(Color.Blue)
+    ld e,$08
+`readLoop
+    push de
+    ld a,e
+    call @SelectBank
+    ld a,($c000)              ; A := marker
+    ld d,a                    ; Stash before re-mapping
+    ld a,(@SavedMmu6)
+    nextreg $56,a
+    ld a,(@SavedMmu7)
+    nextreg $57,a
+    ld a,d
+    Display.PrintAHexadecimal()
+    ld a,' '
+    rst $10
+    pop de
+    inc e
+    ld a,e
+    cp $10
+    jr nz,`readLoop
+    
+    ; --- Commit the saved $7FFD/$DFFD state back through $8E.
+    ;     bit 3 = 1 tells the FPGA to apply the bank fields.
+    ld a,(@Saved8e)
+    or $08
+    nextreg $8e,a
+    ret
+
+;----------------------------------------------------------
+; Map 7-bit bank A into slots 6/7 via $7FFD + $DFFD.
+;   bits 2:0 of A  → $7FFD  (low bank bits)
+;   bits 6:3 of A  → $DFFD  (high bank bits)
+;----------------------------------------------------------
+@SelectBank
+    and $07
+    ld h,a
+    call @Get7ffdStatus
+    and $f8
+    or h
+    ld bc,$7ffd
+    out (c),a
+    rrca
+    rrca
+    rrca
+    and $0f
+    ld bc,$dffd
+    out (c),a
+    ret
+
+@Saved8e
+    .db 0
+@SavedMmu7
+    .db 0
+
+@Title_DffdBanks
+    .defn "Memory #4: $DFFD bank extension"
+@Instr_DffdBanks
+    .defm "Markers in banks 8..F\x0d"
+    .defn "Read back:\x0d"
+
 .endmodule

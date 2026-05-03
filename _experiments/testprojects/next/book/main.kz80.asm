@@ -24,6 +24,7 @@
 #include "02_talktohw/io.asm"
 #include "03_memory/mmu.asm"
 #include "03_memory/legacy.asm"
+#include "04_interrupts/int.asm"
 #include "05_ctc/ctc.asm"
 #include "06_zxndma/memcpy.asm"
 
@@ -68,7 +69,12 @@ Main
     // --- 03: Memory
     // call MmuDemo.MmuRoundTrip
     // call LegacyMemDemo.ShadowScreen
-    call LegacyMemDemo.AllRam
+    // call LegacyMemDemo.AllRam
+    // call LegacyMemDemo.DffdBanks
+
+    // --- 04: Interrupts
+    // call InterruptsDemo.FrameCounter
+    call InterruptsDemo.TwoSources
 
     // --- 05: CTC Demos
     // call Measure1Demo

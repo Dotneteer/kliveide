@@ -19,12 +19,6 @@
   "debugger": {
     "breakpoints": [
       {
-        "resource": "main.kz80.asm",
-        "line": 41,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
         "resource": "code/code.kz80.asm",
         "line": 24,
         "exec": true,
@@ -36,6 +30,13 @@
         "exec": true,
         "ioMask": 65535,
         "resolvedAddress": 36737
+      },
+      {
+        "resource": "03_memory/legacy.asm",
+        "line": 209,
+        "exec": true,
+        "ioMask": 65535,
+        "resolvedAddress": 36944
       }
     ]
   },
@@ -66,46 +67,30 @@
       "documents": [
         {
           "type": "CodeEditor",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm",
+          "position": {
+            "line": 166,
+            "column": 1
+          }
+        },
+        {
+          "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 71,
-            "column": 5
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/legacy.asm",
-          "position": {
-            "line": 140,
-            "column": 1
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
-          "position": {
-            "line": 157,
-            "column": 1
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/mmu.asm",
-          "position": {
-            "line": 75,
-            "column": 1
+            "line": 77,
+            "column": 28
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_memory/legacy.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm"
     },
     "Disassembly": {
-      "topAddress": 37546,
+      "topAddress": 37459,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,
       "bankLabel": true,
-      "autoRefresh": false,
+      "autoRefresh": true,
       "ram": true,
       "screen": false,
       "disassOffset": 0

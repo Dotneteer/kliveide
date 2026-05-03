@@ -562,7 +562,122 @@ In essence, this demo is a concrete demonstration of why AllRAM mode is powerful
 
 ### Demo: Using `$DFFD` to Access More Banks
 
-_TBD_
+A 128K Spectrum can only address eight 16 KB banks because `$7FFD` only has three bank bits. The Next is much bigger than that — up to 1.75 MB of user RAM, organised as 112 banks. `$DFFD` carries the extra four bits that let legacy code reach all of them.
+
+This demo writes a marker into eight Next-only banks (`$08`–`$0F`) and reads them back. Each bank is selected by splitting its 7-bit number across the two ports: bits 2:0 go to `$7FFD`, bits 6:3 go to `$DFFD`. The pair together selects a single 16 KB bank into slot 6/7 (`$C000`–`$FFFF`).
+
+```z80klive
+;==========================================================
+; Use $DFFD to access RAM banks above bank 7
+;==========================================================
+DffdBanks
+    Display.PrintTitle(@Title_DffdBanks)
+    Display.PrintText(@Instr_DffdBanks)
+
+    ; --- Save $7FFD/$DFFD state via NextReg $8E
+    GetNextReg($8e)
+    ld (@Saved8e),a
+
+    ; --- Save MMU6/MMU7 — legacy port writes will overwrite them
+    GetNextReg($56)
+    ld (@SavedMmu6),a
+    GetNextReg($57)
+    ld (@SavedMmu7),a
+
+    ; --- Write a marker into banks 8..15 at offset 0 of slot 6
+    ld e,$08
+`writeLoop
+    ld a,e
+    call @SelectBank          ; Map 7-bit bank A via $7FFD + $DFFD
+    ld a,e
+    ld ($c000),a              ; Marker = bank number
+    inc e
+    ld a,e
+    cp $10
+    jr nz,`writeLoop
+
+    ; --- Restore MMU6/7 so the ROM's $C000+ workspace is back
+    ld a,(@SavedMmu6)
+    nextreg $56,a
+    ld a,(@SavedMmu7)
+    nextreg $57,a
+    
+    ; --- Read each bank's marker, restore Bank 0, then print it
+    Display.Ink(Color.Blue)
+    ld e,$08
+`readLoop
+    push de
+    ld a,e
+    call @SelectBank
+    ld a,($c000)              ; A := marker
+    ld d,a                    ; Stash before re-mapping
+    ld a,(@SavedMmu6)
+    nextreg $56,a
+    ld a,(@SavedMmu7)
+    nextreg $57,a
+    ld a,d
+    Display.PrintAHexadecimal()
+    ld a,' '
+    rst $10
+    pop de
+    inc e
+    ld a,e
+    cp $10
+    jr nz,`readLoop
+    
+    ; --- Commit the saved $7FFD/$DFFD state back through $8E.
+    ;     bit 3 = 1 tells the FPGA to apply the bank fields.
+    ld a,(@Saved8e)
+    or $08
+    nextreg $8e,a
+    ret
+
+;----------------------------------------------------------
+; Map 7-bit bank A into slots 6/7 via $7FFD + $DFFD.
+;   bits 2:0 of A  → $7FFD  (low bank bits)
+;   bits 6:3 of A  → $DFFD  (high bank bits)
+;----------------------------------------------------------
+@SelectBank
+    and $07
+    ld h,a
+    call @Get7ffdStatus
+    and $f8
+    or h
+    ld bc,$7ffd
+    out (c),a
+    rrca
+    rrca
+    rrca
+    and $0f
+    ld bc,$dffd
+    out (c),a
+    ret
+
+@Saved8e
+    .db 0
+@SavedMmu7
+    .db 0
+
+@Title_DffdBanks
+    .defn "Memory #4: $DFFD bank extension"
+@Instr_DffdBanks
+    .defm "Markers in banks 8..F\x0d"
+    .defn "Read back:\x0d"
+```
+
+Four things are worth noticing:
+
+1. **Splitting the bank number.** The 7-bit bank index is split across two ports because `$DFFD` was bolted on top of `$7FFD` to extend the original 3-bit bank field rather than replace it. Code that already wrote `$7FFD` keeps working unchanged; new code adds a single extra `out` to `$DFFD` to reach the upper banks.
+
+2. **Preserving the non-bank bits of `$7FFD`.** `$7FFD` holds more than the bank number — bits 7:3 carry the ROM selector, the shadow-screen flag, and the paging lock. A naïve implementation that writes only the three bank bits would silently clobber all of them, switching the visible ROM and resetting the shadow-screen state. `@SelectBank` avoids this by calling `@Get7ffdStatus` first to read the current `$7FFD` value, masking out bits 2:0 (`and $f8`), then ORing in the new bank bits before writing back. This is the correct, safe pattern whenever you use `$7FFD` to update just the bank.
+
+3. **Restoring MMU6/7 before any ROM call.** Once we map bank 8+ into slot 6/7, the ROM's BASIC workspace and channel area at `$C000`–`$FFFF` are gone. `RST $10` will dereference garbage and crash. The pattern is to read the marker into a register, restore Bank 0 to slots 6/7, *then* call the print routine.
+
+4. **Closing through `$8E`, not the ports.** Bit 3 of `$8E` says "apply the bank fields on this write". Setting it lets us push the saved bank state back in a single `nextreg` instruction, restoring `$7FFD`, `$DFFD`, MMU6 and MMU7 all at once. This is much tidier than reissuing `out` instructions to both ports.
+
+<Callout type="info" emoji="💡">
+On a base 1 MB Next some of the higher banks ($08–$0F here are still within the safe range) won't exist. If you walk past the installed RAM ceiling, writes silently disappear and reads return undefined data — exactly the same behaviour as out-of-range MMU page numbers.
+</Callout>
 
 ## ROMs and the Alt-ROM Mechanism
 
@@ -606,89 +721,312 @@ The lock bits (bits 5:4 / 1:0) are independent of alt-ROM enable. Even with the 
 
 > **The takeaway.** `$FF` in slots 0/1 does not always mean "the original 48K ROM" — it means "whatever the current selector says, possibly filtered through an alt-ROM". On a freshly booted NextZXOS machine the selector points at an alt-ROM, and the original 48K firmware is one selector value away. We revisit alt-ROM in detail in the Storage chapter, where it underpins the dot-command system.
 
-## DivMMC, in One Page
+## Paging Through NextReg `$8E`
 
-DivMMC is the SD-card interface, and it has its own little memory trick.
+`$8E` is more than a read-back mirror of the legacy ports. It is a fully-fledged **paging register**: a single byte that gathers the most useful fields from `$7FFD`, `$DFFD`, and `$1FFD` into one place, and applies them with a single write. The Next ROM uses `$8E` exactly this way internally, and on new code you should prefer it to the legacy ports.
+
+Here is the byte once more, this time from the perspective of code that wants to *write* it:
+
+| Bit  | Meaning                                                                  |
+|:----:|--------------------------------------------------------------------------|
+| 7    | high bit of the 4-bit RAM bank (mirrors `$DFFD` bit 0)                   |
+| 6:4  | low three bits of the RAM bank (mirrors `$7FFD` bits 2:0)                |
+| 3    | **commit bit**: 1 = update MMU6/MMU7 from bits 7:4; 0 = leave RAM bank alone |
+| 2    | paging mode: 0 = normal, 1 = AllRAM (mirrors `$1FFD` bit 0)              |
+| 1, 0 | ROM selector in normal mode; AllRAM selector in special mode             |
+
+A few things make this register pleasant to work with.
+
+### One register, the full picture
+
+A single `GetNextReg($8E)` tells you the active RAM bank, the ROM selector, and whether you're in AllRAM mode. There is no equivalent on the legacy ports — `$7FFD`, `$1FFD`, and `$DFFD` are write-only, and recovering their state would otherwise require reading three separate NextRegs and stitching them together. (The shadow-screen and AllRAM demos earlier in the chapter do exactly this, with custom helpers, and the code is fiddly.)
+
+### Atomic updates
+
+Writing `$8E` updates the legacy port mirrors **and** the MMU registers in one transaction. The classic two-port dance — `out ($7FFD),...` then `out ($DFFD),...` — has a brief window in between where the bank number is partially updated. With `$8E` the change is single-step: either both halves apply or neither does. This matters in interrupt handlers and DMA-adjacent code.
+
+### Selective updates with bit 3
+
+Bit 3 is the trick that makes `$8E` general-purpose. When written as `1`, the FPGA copies bits 7:4 into the RAM-bank state and re-maps slots 6/7. When written as `0`, the bank fields are *ignored* and only the ROM selector / paging mode bits take effect. This lets you toggle the ROM in or out without having to know what bank is currently mapped at the top:
+
+```z80klive
+    ; Switch to ROM 3 (48K BASIC) without touching the RAM bank
+    nextreg $8e,%00000011
+```
+
+Compare that to the legacy approach, where you would have to read back `$8E` (or your own saved copy), preserve the bank bits, and then write to two separate ports.
+
+### When to keep using the ports
+
+The legacy ports remain useful in three situations:
+
+1. **Compatibility shims** — porting 128K or +3 software that already issues `out ($7FFD),...` directly. Don't fight the existing code; let the FPGA translate.
+2. **`$DFFD` bits 1–3** — the upper bank-extension bits beyond `$8E`'s reach. If you need banks above 15 with the legacy port mechanism, you must touch `$DFFD` directly. (Or, of course, just use the MMU.)
+3. **`$EFF7`** — the Pentagon-mode paging port, which has no `$8E` mirror at all.
+
+For everything else — and especially for "save state, change one thing, restore state" patterns inside ROM calls or interrupt handlers — `$8E` is the cleaner tool.
+
+## DivMMC: Trap-Driven ROM/RAM Swapping
+
+In day-to-day Next programming you almost never touch divMMC directly. NextZXOS and esxDOS sit in front of it and handle everything — file I/O, tape-image streaming, dot-command loading, the DRIVE button snapshot menu. From where your code sits, you call `RST $08` and the SD card works. That's by design.
+
+But knowing how divMMC does its job explains a lot of behaviour that otherwise looks like magic (or a bug). It's one more entry in the slot-0/1 priority chain, and it uses the same machinery you've just learned.
 
 When the CPU executes from certain "trap" addresses in the lower 16 KB (the most famous is `$0000` — the reset vector — but there are several), the divMMC hardware **swaps in its own ROM and RAM** over slots 0 and 1, runs whatever firmware needs to run (typically the esxDOS shim that handles `RST $08` file-system calls), then swaps back out when the CPU jumps away. This all happens without you writing a single MMU register.
 
-You don't have to *understand* divMMC to use the SD card — NextZXOS gives you a clean API on top — but it's useful to know it's the same machinery you've just learned: an entry on top of slots 0/1 that replaces what the MMU would have shown. The Storage chapter is where we lift the hood and look inside.
+### What gets paged in
 
-## Practical Patterns
+DivMMC's swap is a tightly defined override of slots 0 and 1, split exactly down the middle:
 
-A few patterns come up over and over once you start writing real code.
+- **`$0000`–`$1FFF`** (slot 0) shows the **divMMC ROM** — typically the 8 KB esxDOS ROM that lives in the system region at physical `$01'0000`. If the *MAPRAM* feature has been enabled, this 8 KB instead shows divMMC RAM bank 3 (a copy of the ROM that user code can patch).
+- **`$2000`–`$3FFF`** (slot 1) shows one of **sixteen 8 KB divMMC RAM banks**, numbered 0–15. These banks live in the divMMC RAM area at physical `$02'0000`–`$03'FFFF` (128 KB total — exactly 16 × 8 KB).
 
-### 1. The "scratch page" pattern
+While divMMC is mapped, the MMU values for slots 0 and 1 are *ignored*. The override sits higher in the priority chain than the MMU (see the priority table earlier in the chapter), so whatever NextRegs `$50` and `$51` hold is irrelevant for as long as the trap is active.
 
-Pick a slot (slot 4 is conventional) and treat it as your "currently being worked on" window. Map the page you need, do the work, map the next page. The rest of your code lives elsewhere and is undisturbed.
+### Port `$E3` — manual control
+
+Port `$E3` is the divMMC control register. It lets software both inspect and override the automatic mechanism:
+
+| Bit  | Meaning                                                                                  |
+|:----:|------------------------------------------------------------------------------------------|
+| 7    | **CONMEM** — force divMMC to map in regardless of trap state. Stays mapped until cleared. |
+| 6    | **MAPRAM** — replace the divMMC ROM in `$0000`–`$1FFF` with divMMC RAM bank 3 (for patched copies of the ROM). On the original divMMC card this bit is a one-way switch — a power cycle is the only way to clear it. On the Next, NextReg `$09` bit 3 also resets it. |
+| 3:0  | RAM bank — selects which of the 16 divMMC RAM banks (0–15) is visible at `$2000`–`$3FFF`. |
+
+Setting CONMEM is the equivalent of saying "I want divMMC mapped *now* and I'll un-map it myself later". Useful when you're writing your own divMMC-aware loader; otherwise leave automap to do the work.
+
+### NextReg `$0A` bit 4 — the master switch
+
+Auto-mapping on trap addresses is gated by **NextReg `$0A` bit 4** (Peripheral 5 Setting). Hard reset clears it, so out of the box the trap mechanism is off. NextZXOS sets the bit early in boot, which is why everything "just works" by the time user code runs.
+
+If you need divMMC's automap behaviour out of the way — for example, when running 48K software that has its own RST handlers — clearing this bit disables every trap address in one stroke. The MMU mappings reappear and divMMC stops listening.
+
+### NextRegs `$B8`–`$BB` — programmable trap addresses
+
+The original divMMC hard-wired its trap addresses; the Next exposes them as configurable bitmasks across four NextRegs.
+
+- **`$B8`** — enables trap on each of the eight `RST` addresses (`$0000`, `$0008`, `$0010`, `$0018`, `$0020`, `$0028`, `$0030`, `$0038`).
+- **`$B9`** — *valid* mask: which traps from `$B8` are armed at all (rather than ignored).
+- **`$BA`** — *timing* mask: per-trap, **instant** or **delayed** mapping (see below).
+- **`$BB`** — extra entry points: `$0066` (NMI button), `$04C6` and `$0562` (esxDOS / original divMMC tape traps), `$04D7` and `$056A` (NextZXOS tape traps), and `$3DXX` (TR-DOS catalog access). Bit 6 disables traps on `$1FF8`–`$1FFF` to reclaim a chunk of the divMMC ROM tail.
+
+#### Instant vs. delayed mapping
+
+The timing bit in `$BA` controls *when* exactly the divMMC swap becomes active relative to the opcode fetch at the trap address.
+
+**Instant mapping (bit = 1):** The swap is already active by the time the opcode byte is read. The CPU fetches from divMMC ROM at the trap address, not from the normal Spectrum ROM. The Spectrum ROM's content at that address is irrelevant — the CPU never sees it.
+
+The classic example is `RST $08`. The CPU pushes `PC+1` onto the stack and jumps to `$0008`. Because the mapping is instant, the opcode byte at `$0008` comes from divMMC ROM. The esxDOS handler there runs immediately, reads its arguments from the bytes following the `RST $08` instruction (via the return address on the stack), then `ret`s back to the caller. Returning to non-trap address space unmaps divMMC.
+
+**Delayed mapping (bit = 0):** The swap becomes active *after* the opcode at the trap address has been fetched. So the opcode byte the CPU reads comes from the **normal ROM**, not divMMC ROM. The mapping goes live on the next clock, meaning any subsequent memory access — the next opcode fetch, the next operand read — comes from divMMC.
+
+The tape traps at `$04C6` and `$0562` use this mode. Both addresses are inside the 48K ROM's tape-loading routines. With delayed mapping, the instruction sitting at `$04C6` in the 48K ROM is fetched and executes normally. Then divMMC maps in. Everything that follows — the next fetch, any operand bytes, all subsequent instruction reads — comes from divMMC ROM. The esxDOS tape-streaming code is waiting there to take over execution.
+
+The rule of thumb: **instant** for RST-style entry points where the divMMC ROM itself *is* the handler from address zero; **delayed** for mid-ROM intercepts where the trap address instruction executes from the normal ROM and esxDOS code takes over from the next memory access onwards.
+
+These knobs are how the Next supports several incompatible filesystems on the same physical SD interface. Selecting different combinations of trap addresses effectively lets the Next emulate esxDOS, NextZXOS, +3DOS, or TR-DOS, all sharing the same divMMC hardware underneath.
+
+### What consumes divMMC
+
+Most of what divMMC does, it does on behalf of something else:
+
+- **`RST $08` / esxDOS** — the instant trap at `$0008`. NextZXOS calls esxDOS for file I/O; esxDOS lands in divMMC ROM through this trap. You call `RST $08`; divMMC handles the plumbing.
+- **Tape image streaming** — the delayed traps at `$04C6`/`$0562` (esxDOS) or `$04D7`/`$056A` (NextZXOS) intercept the 48K ROM's tape routines and redirect them to `.TAP` files on the SD card.
+- **TR-DOS emulation** — the instant trap on `$3DXX` fetches intercepts Beta Disk catalogue calls for Russian software compatibility.
+- **Dot commands** — NextZXOS loads dot-command binaries into divMMC RAM bank 0 and executes them at `$2000`–`$3FFF`.
+- **DRIVE button / NMI** — the `$0066` trap fires when the DRIVE button is pressed, handing control to the snapshot/menu tool.
+
+For all of these you're a *consumer*, not a driver. You only reach for `$E3`, `$0A`, or `$B8`–`$BB` when writing a custom OS, snapshot tool, or replacement filesystem — the kind of work the Storage chapter walks through end-to-end.
+
+## Layer 2 Memory Mapping
+
+The core problem with rendering into a 48 KB framebuffer on a machine with a 64 KB address space is that mapping the framebuffer into the Z80 window normally displaces something else — ROM, stack, code. The Layer 2 mapping mechanism solves this without a trade-off: it overlays the framebuffer on top of the existing memory map for **writes only**, leaving reads untouched. Your ROM calls keep working, your stack stays put, your MMU registers are never touched. One port write opens a 48 KB write window into the framebuffer; one more closes it. That's the entire cost.
+
+The Layer 2 framebuffer is regular RAM — in the standard 256×192×8 bpp mode, three consecutive 16 KB banks (48 KB total, starting at the bank pointed to by NextReg `$12`, default bank 8). The video subsystem reads those banks autonomously every scanline. To render pixels into them, you need the CPU to be able to write there, which means those banks need to appear somewhere in the Z80's 64 KB window.
+
+You could use the MMU for that — map each 8 KB page of the framebuffer into a slot and write. Or you can use **Layer 2's dedicated mapping mechanism**, controlled by Port `$123B`. The two are completely independent, and the Layer 2 mapping sits higher in the priority chain, overriding whatever the MMU says for the affected range.
+
+### The registers
+
+- **NextReg `$12`** — starting 16 KB bank of the *active* (visible) framebuffer. Soft reset default: bank 8.
+- **NextReg `$13`** — starting 16 KB bank of the *shadow* (off-screen) framebuffer. Soft reset default: bank 11.
+- **Port `$123B`** (bit 4 = 0 write):
+
+| Bits | Meaning |
+|:----:|---------|
+| 7:6  | Which Layer 2 chunk to map into the bottom of Z80 space: `00` = first 16 KB, `01` = second 16 KB, `10` = third 16 KB, `11` = all 48 KB |
+| 3    | 0 = active framebuffer (`$12`), 1 = shadow framebuffer (`$13`) |
+| 2    | 1 = enable Layer 2 **read** mapping |
+| 1    | 1 = enable Layer 2 display (separate from mapping) |
+| 0    | 1 = enable Layer 2 **write** mapping |
+
+### Where the mapping lands
+
+The mapping always covers the **bottom of the Z80 address space**. The exact range depends on bits 7:6:
+
+- **`00`, `01`, `10`** — only the **bottom 16 KB** (`$0000`–`$3FFF`, slots 0 and 1) is affected. The selected chunk of the framebuffer (first, second, or third 16 KB) is overlaid there. Everything above `$3FFF` is unaffected — MMU rules apply as normal.
+- **`11`** — the **bottom 48 KB** (`$0000`–`$BFFF`, slots 0–5) is affected. All three 16 KB chunks of the framebuffer appear consecutively: first 16 KB at `$0000`–`$3FFF`, second at `$4000`–`$7FFF`, third at `$8000`–`$BFFF`. Everything above `$BFFF` is still MMU territory.
+
+### Read and write are independent
+
+Bit 0 (write enable) and bit 2 (read enable) can be set separately. This is the key feature:
+
+**Write enable only (bit 0 = 1, bit 2 = 0):** Writes to the mapped range hit Layer 2 RAM. Reads from the same addresses still come from wherever the MMU (or ROM) says — typically the 48K ROM at `$0000`–`$3FFF`. This is the standard rendering pattern: you can call `RST $10` to print text while simultaneously writing pixels at `$0000`, because the ROM is still readable there.
+
+**Read enable only (bit 0 = 0, bit 2 = 1):** Reads from the mapped range come from Layer 2 RAM. Writes still go to normal RAM (or are blocked, if the destination is ROM). Useful for blitting from the framebuffer into another buffer.
+
+**Both (bit 0 = 1, bit 2 = 1):** Reads and writes both hit Layer 2 RAM. The ROM and the MMU mappings for slots 0–5 are completely bypassed for accesses in the affected range. Use this when you need to read-modify-write pixels in place (e.g., applying a mask or blending two layers).
+
+### Practical examples
+
+**Blit into the first 16 KB of the framebuffer, keep ROM readable:**
 
 ```z80klive
-    ; Sweep through every page from $20 to $2F, clearing it
-    ld b,$10                    ; 16 pages
-    ld a,$20                    ; starting page number
-`pageLoop
-    nextreg $54,a               ; map page A into slot 4
-    push af
-    push bc
-    ld hl,$8000                 ; start of slot 4
-    ld de,$8001
+    ld bc,$123b
+    ld a,%00000001          ; bits 7:6=00 (first 16KB), bit 0=1 (write)
+    out (c),a
+
+    ; Writes to $0000-$3FFF go to Layer 2 bank 8.
+    ; Reads from $0000-$3FFF still come from ROM (or MMU slot 0/1).
+    ; Anything written to $4000-$FFFF is unaffected — MMU as normal.
+
+    ld hl,$0000
+    ld de,$0001
+    ld (hl),$e3             ; first pixel: colour $e3
+    ld bc,$bff
+    ldir                    ; flood fill the first 16KB strip
+
+    xor a
+    out (c),a               ; disable mapping when done
+```
+
+**Blit into all three 16 KB strips in one pass:**
+
+```z80klive
+    ld bc,$123b
+    ld a,%11000001          ; bits 7:6=11 (all 48KB), bit 0=1 (write)
+    out (c),a
+
+    ; $0000-$3FFF → Layer 2 bank 8  (first third of framebuffer)
+    ; $4000-$7FFF → Layer 2 bank 9  (second third)
+    ; $8000-$BFFF → Layer 2 bank 10 (third third)
+    ; $C000-$FFFF → MMU as normal (untouched)
+
+    ; Clear the entire 48 KB framebuffer in one ldir:
+    ld hl,$0000
+    ld de,$0001
     ld (hl),0
-    ld bc,$1FFF                 ; 8 KB - 1
-    ldir                        ; clear it
-    pop bc
-    pop af
-    inc a
-    djnz `pageLoop
+    ld bc,$bffe
+    ldir
+
+    xor a
+    out (c),a
 ```
 
-### 2. Save-and-restore the MMU you touched
-
-Before you change a slot, read the current value back. After your work is done, write it back. Interrupt handlers in particular need this — if your ISR maps a page in to do its work and forgets to restore the original mapping, the interrupted code will continue running with random memory under it.
+**Read-modify-write a pixel at $(100, 80)** (= byte offset $5064 in the 256×192 framebuffer, which lands in the second 16 KB strip at $4000+$1064=$5064):
 
 ```z80klive
-    ; Save MMU5
-    ld a,$55
-    call _readNextReg
-    push af
+    ld bc,$123b
+    ld a,%11000101          ; all 48KB, bit 2=1 (read) + bit 0=1 (write)
+    out (c),a
 
-    ; ... do work that needs slot 5 ...
+    ld hl,$5064             ; address of pixel (100,80) with full 48KB mapping
+    ld a,(hl)               ; read current colour from Layer 2
+    xor $ff                 ; invert it
+    ld (hl),a               ; write back to same Layer 2 address
 
-    pop af
-    ld bc,$243B
-    out (c),$55
-    ld bc,$253B
-    out (c),a                   ; restore MMU5
+    xor a
+    out (c),a
 ```
 
-The Z80N `nextreg` instruction can't take its value from a register at runtime in a single opcode (it's `nextreg n,n` or `nextreg n,a`), so the restore path uses the port-pair form. We cover this corner of the Z80N in detail in [Z80N: The Next's Z80 CPU](./01-z80n.mdx).
+### Why not just use the MMU?
 
-### 3. Keep code where the MMU isn't
+You can, but Layer 2 mapping has two advantages in practice:
 
-If your program lives entirely in slots 2 and 3 (`$4000–$7FFF`), and your data window is slot 4, you can do whatever you like to slot 4 without worrying about pulling the rug out from under the executing CPU. The disaster — paging out the page that contains the very next instruction — only happens when you try to be clever in the same slot you're running from.
+1. **Slots 0/1 remain readable as ROM** when only write mapping is on. You can call ROM routines (`RST $10`, `RST $28`, etc.) in the middle of a pixel-writing loop without disabling the mapping first.
+2. **All 48 KB maps in one port write** with bits 7:6 = `11`. To do the same with the MMU you'd need six `nextreg` writes (one per 8 KB slot, six slots to cover 48 KB).
 
-> **Bonus pitfall.** If you `nextreg $52,...` (slot 2) while your code is *in slot 2*, the very next instruction fetch comes from a different page. Sometimes that's exactly what you want (overlay-style code switching). More often it's a crash. Save it for when you mean it.
+Full Layer 2 details — video modes, scrolling, palettes, double-buffering — are in the [Layer 2](./11-layer2.mdx) chapter. Here the point is the *mechanism*: an independent mapping overlay that targets the bottom of Z80 space, with read and write controlled separately, that coexists with everything the MMU is doing above `$BFFF`.
 
-## Exercises
+## Memory Mapping Modes (NextReg `$8F`)
 
-The exercise project for this chapter is the `03_memory` folder in `next-examples.zip`.
+Russian-clone Spectrums (Pentagon, Scorpion, ATM-Turbo and friends) extended 128K paging in different directions to reach 512 KB and 1 MB without needing a `$DFFD`. The Next supports the most common of these so legacy software written for those machines still pages correctly. **NextReg `$8F`** picks which mapping rules apply to the legacy ports.
 
-### 1. Bank signature
+| `$8F` value | Mode                  | Affected ports                       |
+|:-----------:|-----------------------|--------------------------------------|
+| `00`        | Standard ZX 128K / +3 | `$7FFD`, `$DFFD`, `$1FFD`            |
+| `01`        | Reserved              | —                                    |
+| `10`        | Pentagon 512K         | `$7FFD` (extended)                   |
+| `11`        | Pentagon 1024K        | `$7FFD` (extended), `$EFF7`          |
 
-Map each user RAM page (page numbers `$00`–`$DF` on a 2 MB Next) into slot 4 in turn. Write the *page number itself* as a single byte at offset 0 of the page. Then walk back through them and verify that nothing was clobbered — every page should still hold its own number.
+The Next normally runs in mode `00`. The other modes change *only the meaning of the legacy ports* — the MMU registers (`$50`–`$57`) work identically in every mode.
 
-This is a fast end-to-end check that the MMU is doing what you think it is. If two pages share a marker, your loop has a bug or your understanding has a gap.
+### Standard ZX 128K / +3 (default)
 
-### 2. Memory probe
+This is the mode every demo in this chapter has assumed. `$7FFD` carries a 3-bit bank in bits 2:0; `$DFFD` adds bits 3:0 on top to reach a 7-bit bank index; `$1FFD` selects ROM and AllRAM. Bit 5 of `$7FFD` locks the port until soft reset (or until NextReg `$08` bit 7 unlocks it).
 
-Build a small TUI: scroll up/down with the cursor keys to step through page numbers, and dump the first 64 bytes of the currently selected page in hex. Add **q** to quit. You should be able to find the ULA bitmap (page 10 — you'll recognise the boot screen pattern), Bank 7 (page 14), and various NextZXOS pages just by browsing.
+### Pentagon 512K
 
-### 3. Legacy mirror
+The Pentagon mode reuses two bits that `$7FFD` originally ignored. Now the 16 KB bank for slot 6/7 is built from `$7FFD` bits **{7,6,2,1,0}** — five bits, so 32 banks (= 512 KB). Port `$DFFD` is taken out of the path; the lock bit (`$7FFD` bit 5) keeps its original meaning.
 
-Write `$15` to port `$7FFD` (bank 5, ROM 1, no shadow screen). Then read back NextRegs `$56` and `$57`. Confirm they hold `$0A` and `$0B` — exactly the page numbers of Bank 5. Then do the inverse: write `$0E` and `$0F` to MMU6/MMU7 directly, read back `$7FFD`, and observe that it still reads as the *last value the program wrote* even though the slot mapping is now different. (This is the asymmetry that makes the "golden rule of paging" matter.)
+If you've ever tried to load a Russian Pentagon-style demo on the Next and watched it crash with garbage in upper memory, an `$8F = $02` write at the start fixes it: the demo's `out ($7FFD),...` writes now produce the bank numbers it expects.
 
-### 4. Slot 4 sweep, with a twist
+### Pentagon 1024K
 
-Modify exercise 1 so that the byte at offset 0 of each page is *also* the byte at offset `$1FFF` of the page. Then read the byte at offset `$1FFF` of each page and confirm. This proves to yourself that an 8 KB page really is contiguous 8 KB — the MMU isn't doing some sneaky rebanking inside the page.
+This is Pentagon 512 with even more bit-stretching. `$7FFD` bit 5 (the lock bit) is repurposed as another bank bit, the bank field becomes **{5,7,6,2,1,0}** (six bits, 64 × 16 KB = 1024 KB), and `$EFF7` joins the conversation:
+
+- `$EFF7` bit 2 = 0: enable Pentagon 1024 mapping. `$7FFD` is unlocked permanently in this state.
+- `$EFF7` bit 2 = 1: reverts to standard mapping.
+- `$EFF7` bit 3 = 1: overlay 16 KB bank 0 at `$0000`–`$3FFF`, hiding the ROM. (This works in standard and Pentagon modes too.)
+
+On a 1 MB Next, Pentagon 1024 mode caps at 768 KB of usable banks because 256 KB of the address space is already eaten by the system region.
+
+### When to touch `$8F`
+
+If you are writing native Next code, **leave `$8F` at zero**. The mode only matters when you're running software that was written specifically for a Pentagon-style machine and that issues bank writes whose bit layout assumes the Russian mapping. The standard library and NextZXOS expect mode 0; touching it without a reason will break paging in unexpected places.
+
+`$8F` is fundamentally a compatibility lever, not a feature you build with.
+
+## Memory Contention
+
+On the original 48K Spectrum the ULA and the Z80 had to share a single memory bus to read screen data. Whenever the ULA was reading from screen RAM (which was most of every visible scanline), CPU accesses to that same RAM were *delayed* until the ULA finished its slot. This is **contention**, and it is the reason raw timing tables for 48K instructions are so much messier than the Z80 datasheet would suggest — every instruction that reads contended memory pays a variable extra cost depending on where in the frame it lands.
+
+The Next reproduces the contention behaviour precisely, because dropping it would break the timing of countless 128K games. But it gives you several knobs to turn it off when you don't need 1980s authenticity.
+
+### When contention applies
+
+Three things have to be true for an access to be contended:
+
+1. **The CPU is running at 3.5 MHz.** Turbo modes (7, 14, 28 MHz) bypass contention entirely — the CPU just runs at full speed. Set NextReg `$07` to anything but `00` and the issue goes away.
+2. **The display timing emulates a contended machine.** NextReg `$03` bits 6:4 select 48K, 128K/+2, +2A/+2B/+3, or Pentagon timing. Pentagon timing has no contention by design; the others do.
+3. **The address falls in a contended bank.** Slot 2/3 (`$4000`–`$7FFF`, normally bank 5) is always contended. Banks 4, 5, 6, and 7 are contended when paged to slot 6/7 in 128K/+2 timing; banks 1, 3, 5, and 7 are contended in +2A/+2B/+3 timing. Pages 10–15 (the screen banks) are the most-frequently-hit because that's where the ULA reads pixels.
+
+If any of those three is false, contention does not apply.
+
+### NextReg `$08` bit 6 — the master off-switch
+
+The simplest way to avoid contention is to disable it. **NextReg `$08`** (Peripheral 3 Setting) bit 6 is "Disable RAM and port contention". Set it and contention goes away regardless of CPU speed, display timing, or bank — every memory and I/O access takes its base Z80 cost, full stop.
+
+```z80klive
+    ; Read-modify-write to set bit 6 of NextReg $08
+    GetNextReg($08)
+    or $40
+    nextreg $08,a
+```
+
+This is what most native Next code does. Contention exists for software-compatibility reasons; if you're writing new code that doesn't need to look like a 1986 game, switch it off and never think about it again.
+
+### When you do want contention
+
+There are three reasons to leave it on:
+
+1. **Compatibility with timing-sensitive 48K/128K software.** Some demos and games rely on the exact T-state pattern that contention produces, especially border-effect routines and engine-noise generators. Disable contention and they desync.
+2. **You're writing code that *targets* contention** — a multicolour effect that uses the predictable per-line contention pattern as a timing reference, for instance. (Rare on the Next, but it does happen.)
+3. **You're emulating the feel of an original Spectrum** for nostalgia or authenticity reasons.
+
+For everything else, NextReg `$08` bit 6 is the answer.
+
+> **The takeaway.** Contention is a backwards-compatible quirk, not a feature. The Next preserves it for legacy software and lets you turn it off the moment you don't need it. Combine "contention off" with a turbo CPU mode and you get a Z80 that delivers exactly its datasheet timing — predictable, fast, and uncomplicated.
 
 ## Where Next
 
