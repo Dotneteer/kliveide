@@ -433,7 +433,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
             dispatch(setIdeStatusMessageAction("Disassembly refreshed", true));
           }}
         />
-        <LabeledSwitch value={ram} label="RAM:" title="Disasseble RAM?" clicked={setRam} />
+        <LabeledSwitch value={ram} label="RAM:" title="Disassemble RAM?" clicked={setRam} />
         <LabeledSwitch
           value={screen}
           label="Screen:"
