@@ -19,6 +19,11 @@
   "debugger": {
     "breakpoints": [
       {
+        "address": 1,
+        "exec": true,
+        "ioMask": 65535
+      },
+      {
         "resource": "code/code.kz80.asm",
         "line": 24,
         "exec": true,
@@ -28,15 +33,13 @@
         "resource": "03_memory/legacy.asm",
         "line": 136,
         "exec": true,
-        "ioMask": 65535,
-        "resolvedAddress": 36737
+        "ioMask": 65535
       },
       {
         "resource": "03_memory/legacy.asm",
         "line": 209,
         "exec": true,
-        "ioMask": 65535,
-        "resolvedAddress": 36944
+        "ioMask": 65535
       }
     ]
   },
@@ -77,12 +80,12 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 77,
-            "column": 28
+            "line": 0,
+            "column": 0
           }
         }
       ],
-      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm"
+      "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
       "topAddress": 37459,

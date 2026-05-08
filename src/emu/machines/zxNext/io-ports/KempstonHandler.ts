@@ -1,15 +1,15 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 export function readKempstonMouseXPort(machine: IZxNextMachine): (port: number) => number {
-  return () => machine.mouseDevice.readPortFbdf();
+  return () => machine.nextRegDevice.isMouseEnabled() ? machine.mouseDevice.readPortFbdf() : 0xff;
 }
 
 export function readKempstonMouseYPort(machine: IZxNextMachine): (port: number) => number {
-  return () => machine.mouseDevice.readPortFfdf();
+  return () => machine.nextRegDevice.isMouseEnabled() ? machine.mouseDevice.readPortFfdf() : 0xff;
 }
 
 export function readKempstonMouseWheelPort(machine: IZxNextMachine): (port: number) => number {
-  return () => machine.mouseDevice.readPortFadf();
+  return () => machine.nextRegDevice.isMouseEnabled() ? machine.mouseDevice.readPortFadf() : 0xff;
 }
 
 export function readKempstonJoy1Port(machine: IZxNextMachine): (port: number) => number {

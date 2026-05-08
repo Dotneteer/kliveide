@@ -2,9 +2,9 @@ import { Callout } from 'nextra/components'
 
 # Talking to the Hardware: I/O Ports and NextRegs
 
-Before you can write a single line of useful Z80 code on the ZX Spectrum Next, you need to understand how Z80 programs talk to hardware. It's not magic — it's two I/O instructions (`IN` and `OUT`), one pair of 16-bit port addresses, and a register map. Master these three things and every hardware chapter that follows opens up naturally.
+Before you can write a single line of useful Z80 code on the ZX Spectrum Next, you need to understand how Z80 programs talk to hardware. It's not magic — it's two I/O instructions (`IN` and `OUT`), one pair of 16-bit port addresses, and a register map. Master these three things and every system chapter that follows opens up naturally.
 
-This chapter covers the fundamentals. First, how the Z80's I/O bus actually works and why the Next's port addresses look the way they do. Then, NextRegs — the FPGA's control panel, accessible through two dedicated ports, that gives you access to everything the Next adds beyond the original Spectrum.
+This chapter covers the fundamentals. First, how the Z80's I/O bus actually works and why the Next's port addresses look the way they do. Then, NextRegs — the FPGA's control panel, accessible through two dedicated ports, that gives you access to everything the Next adds beyond the original Spectrum. If you want the CPU-side background first, see [Z80N: The Next's Z80 CPU](./01-z80n.mdx).
 
 By the time you reach the end of this chapter you'll have the vocabulary to read any hardware reference and decode any port address. The next chapter ([Memory Architecture: ROM, RAM, Banks, and the MMU](./03-memory.mdx)) builds directly on the NextRegs you'll meet here.
 
@@ -29,7 +29,7 @@ The most direct way to interact with hardware is reading and writing port addres
 
 ### Example: Reading the Keyboard with I/O Ports
 
-This example reads the QWERT row (`$FB` selects row 2), scans each bit to determine the key state, and displays the result on screen with color-coded attributes: green for pressed keys, white for released ones. The loop continues until you press Space, which is detected by switching to row 7 and testing bit 0 of the returned value.
+This example reads the QWERT row (`$FB` selects row 2), scans each bit to determine the key state, and displays the result on screen with color-coded attributes: bright green for pressed keys, normal green for released ones. The loop continues until you press Space, which is detected by switching to row 7 and testing bit 0 of the returned value.
 
 ```z80klive
 ;==========================================================
@@ -75,7 +75,7 @@ Read
 ```
 
 <Callout type="info" emoji="💡">
-Try the `IoDemo.read` example.
+Try the `IoDemo.Read` example.
 </Callout>
 
 ### Example: Writing to I/O Ports
@@ -143,7 +143,7 @@ ld a,$02       ; value: 14 MHz
 out (c),a
 ```
 
-The Z80N instruction set adds two faster alternatives that fold the select and write into a single instruction:
+The [Z80N instruction set](./01-z80n.mdx) adds two faster alternatives that fold the select and write into a single instruction:
 
 ```z80klive
 nextreg $07,$02   ; select register 0x07 and write 0x02 in one shot
@@ -164,7 +164,7 @@ inc b          ; point to the value port
 in a,(c)       ; read the current value into A
 ```
 
-The select port (`0x243B`) remembers the last written register number, so if you've just written to a register via the port method, you can skip the select step and read straight from `0x253B`. Don't rely on this across interrupt boundaries though—an ISR that touches NextRegs will clobber the selection.
+The select port (`0x243B`) remembers the last written register number, so if you've just written to a register via the port method, you can skip the select step and read straight from `0x253B`. Don't rely on this across [interrupt](./04-interrupts.mdx) boundaries though—an ISR that touches NextRegs will clobber the selection.
 
 > **Reset behavior**: Every register has a defined reset state. Hard reset (power-on, F1, or writing `0x02` with bit 1) restores everything to factory defaults. Soft reset (F4 key or writing `0x02` with bit 0) restores a slightly different subset—some hardware settings survive a soft reset, others don't. Register descriptions note which applies.
 
@@ -172,7 +172,7 @@ The complete NextReg reference, organized by functional area, is in [Appendix B:
 
 #### NextReg Example: Write and Read Back
 
-The `WriteNextRegDemo` example demonstrates these concepts.
+The `WriteNextRegDemo` example demonstrates these concepts using NextReg `$7F`, the **User Register 0** scratch register. It does not control any visible hardware feature; it exists as a safe byte of storage for programs, demos, and diagnostics that need somewhere harmless to write and read back a value.
 
 ```z80klive
 WiteNextRegDemo
@@ -239,4 +239,4 @@ You now have the two primitives every later chapter relies on: I/O ports and Nex
 
 - **[Memory Architecture: ROM, RAM, Banks, and the MMU](./03-memory.mdx)** — the MMU is configured entirely through NextRegs `$50`–`$57`, so this is the immediate next step.
 - **[Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System](./04-interrupts.mdx)** — the Next's hardware IM2 controller lives in NextRegs `$C0`–`$C8`.
-- **[The CTC: Counter/Timer Circuit](./05-ctc.mdx)** — uses plain I/O ports `$183B`–`$1B3B` and (optionally) the IM2 mechanism from the Interrupts chapter.
+- **[The CTC: Counter/Timer Circuit](./05-ctc.mdx)** — uses plain I/O ports `$183B`–`$1B3B` and, optionally, the IM2 mechanism from the [Interrupts](./04-interrupts.mdx) chapter.

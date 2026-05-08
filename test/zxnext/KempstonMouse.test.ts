@@ -515,4 +515,32 @@ describe("Kempston Mouse", () => {
       expect(fadf & 0x02).toBe(0x00); // left position empty
     });
   });
+
+  describe("NR $83 mouse port gating", () => {
+    it("disabling mouse via NR $83 makes $FBDF/$FFDF/$FADF return 0xFF", () => {
+      machine.mouseDevice.addDelta(5, 5);
+      machine.nextRegDevice.setNextRegisterIndex(0x83);
+      machine.nextRegDevice.setNextRegisterValue(0x00); // clear bit 5 → disabled
+
+      expect(machine.portManager.readPort(PORT_FBDF) & 0xff).toBe(0xff);
+      expect(machine.portManager.readPort(PORT_FFDF) & 0xff).toBe(0xff);
+      expect(machine.portManager.readPort(PORT_FADF) & 0xff).toBe(0xff);
+    });
+
+    it("mouse position is preserved across disable/enable toggle", () => {
+      machine.mouseDevice.addDelta(10, 10);
+      const xBefore = machine.portManager.readPort(PORT_FBDF) & 0xff;
+      const yBefore = machine.portManager.readPort(PORT_FFDF) & 0xff;
+
+      // disable
+      machine.nextRegDevice.setNextRegisterIndex(0x83);
+      machine.nextRegDevice.setNextRegisterValue(0x00);
+      expect(machine.portManager.readPort(PORT_FBDF) & 0xff).toBe(0xff);
+
+      // re-enable
+      machine.nextRegDevice.setNextRegisterValue(0x20);
+      expect(machine.portManager.readPort(PORT_FBDF) & 0xff).toBe(xBefore);
+      expect(machine.portManager.readPort(PORT_FFDF) & 0xff).toBe(yBefore);
+    });
+  });
 });

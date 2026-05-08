@@ -2,9 +2,9 @@ import { Callout } from 'nextra/components'
 
 # Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System
 
-So far in this book the CPU has been firmly in charge. It executes one instruction, then the next, and decides for itself when to read a port or rewrite an MMU register. From this chapter onward, that picture changes. The ULA wants to tell you a frame finished. A CTC channel wants to tell you a microsecond budget elapsed. A UART has a byte ready. The DMA controller has finished a transfer. Each of these is an *interrupt* — a hardware signal that yanks the CPU away from whatever it was doing and runs your handler instead.
+So far in this book the CPU has been firmly in charge. It executes one instruction, then the next, and decides for itself when to read a port or rewrite an MMU register. From this chapter onward, that picture changes. The ULA wants to tell you a frame finished. A [CTC](./05-ctc.mdx) channel wants to tell you a microsecond budget elapsed. A [UART](./20-uart.mdx) has a byte ready. The [DMA controller](./06-zxndma.mdx) has finished a transfer. Each of these is an *interrupt* — a hardware signal that yanks the CPU away from whatever it was doing and runs your handler instead.
 
-This chapter pays the conceptual cost once, so every later chapter — CTC, line-interrupt palette tricks, DMA completion, UART receive, even the Copper — can lean on the same vocabulary. We'll cover the three Z80 interrupt modes, the role of the `I` and `R` registers, and the Next's hardware-driven IM2 controller that turns the classic vector table into a deterministic, multi-source dispatch system.
+This chapter pays the conceptual cost once, so every later chapter — [CTC](./05-ctc.mdx), line-interrupt palette tricks, [DMA](./06-zxndma.mdx) completion, [UART](./20-uart.mdx) receive, even the [Copper](./14-copper.mdx) — can lean on the same vocabulary. We'll cover the three Z80 interrupt modes, the role of the `I` and `R` registers introduced in [Z80N: The Next's Z80 CPU](./01-z80n.mdx), and the Next's hardware-driven IM2 controller that turns the classic vector table into a deterministic, multi-source dispatch system.
 
 Once you understand the dispatch model, the same machinery serves every interrupt source on the machine.
 
@@ -27,7 +27,7 @@ Unlike `/NMI`, **`/INT` is level-sensitive**. The CPU doesn't latch a pulse; it 
 1. **The signal must still be low at the sample point.** A very short pulse (shorter than one instruction) can go unnoticed. Hardware designers therefore keep `/INT` asserted until the CPU acknowledges.
 2. **If the signal stays low after the handler finishes, the interrupt fires again immediately.** As soon as `EI` re-enables interrupts, the CPU samples `/INT`, finds it still low, and dives back into the ISR — over and over, until the stack overflows. This is why clearing the interrupt source *before* executing `EI` is not a style preference; it is a hard requirement.
 
-On the Next, the FPGA's interrupt controller keeps `/INT` asserted as long as any pending bit in NR `$C8`/`$C9`/`$CA` is set *and* its matching enable bit is on. Clearing the pending bit (writing a `1` to it) is what finally releases the line.
+On the Next, the FPGA's interrupt controller keeps `/INT` asserted as long as any pending bit in [NextReg](./02-io-and-nextregs.mdx) `$C8`/`$C9`/`$CA` is set *and* its matching enable bit is on. Clearing the pending bit (writing a `1` to it) is what finally releases the line.
 
 The two flags that govern maskable interrupts are:
 
@@ -212,7 +212,7 @@ A quick tour of what can interrupt you. Each gets its own chapter later; here we
 
 - **ULA frame** — the classic 50 Hz (or 60 Hz, depending on display timing) end-of-frame pulse. Fires at the start of vertical retrace. The Spectrum's heartbeat: keyboard scanning, time-of-day counters, AY tracker ticks, anything that wants "once per frame" behaviour.
 
-- **Line interrupt** — a programmable scanline trigger. Set the target line in NR `$22`/`$23`, enable the source, and the FPGA fires `/INT` at the start of that line. This is the foundation of mid-frame palette swaps, raster bars, and split-screen effects (see [Layer 2](./11-layer2.mdx) and the palette chapters).
+- **Line interrupt** — a programmable scanline trigger. Set the target line in NR `$22`/`$23`, enable the source, and the FPGA fires `/INT` at the start of that line. This is the foundation of mid-frame palette swaps, raster bars, and split-screen effects (see [Layer 2](./11-layer2.mdx) and [Palettes](./09-palettes.mdx)).
 
 - **CTC channels 0–3** — the four counter/timer channels covered in detail in [The CTC](./05-ctc.mdx). Each can fire when its 8-bit countdown hits zero. Common uses: fixed-rate timers, audio sample clocks, timeout watchdogs.
 
@@ -561,23 +561,3 @@ Interrupts are the connecting tissue for nearly every later chapter. With the IM
 - **[The UART and the ESP](./20-uart.mdx)** and **[The Real-Time Clock and I²C](./21-rtc-i2c.mdx)** — both are interrupt-driven in any non-trivial use.
 
 If the priority table feels abstract right now, that's expected: we've only enabled two sources so far. By the end of the CTC chapter you'll have wired in four, and the dispatch model will feel like second nature.
-
-## Exercises
-
-The exercise project for this chapter is the `04_interrupts` folder in `next-examples.zip`.
-
-### 1. Wall-clock seconds
-
-Extend the frame counter demo to keep a 32-bit count and display it as `MM:SS` after dividing by 50 (or 60, depending on the configured display timing). Confirm the displayed time matches a real stopwatch over a minute.
-
-### 2. Four border bars
-
-Use the line interrupt and four different scanline targets (e.g., 32, 64, 96, 128) to paint four horizontal bars in the border, each a different colour. The trick: there is only one line-interrupt enable, but the ISR can reprogram NR `$22`/`$23` to point at the next target before exiting. After the fourth bar, point back at the first.
-
-### 3. Two-source dispatch with shared work
-
-Enable both the ULA frame interrupt and CTC channel 0 (configured as in the [CTC chapter](./05-ctc.mdx)). Have the frame ISR increment a frame counter and the CTC ISR increment a sub-frame counter. From the main loop, print both. Verify that the two counters tick independently — frames at 50 Hz, sub-frames at whatever rate you set the CTC to.
-
-### 4. Stale-status hunt
-
-Deliberately configure two interrupt sources, then disable one of them via NR `$C5` *without* clearing its pending bit in NR `$C9`. Show that the disabled source no longer fires the ISR but its bit in NR `$C9` continues to read as set. Now write `1` to that bit; confirm it clears. This is the diagnostic pattern you'll use whenever an interrupt "won't go away" turns out to be a left-over status flag.

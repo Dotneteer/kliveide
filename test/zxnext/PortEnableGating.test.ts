@@ -241,20 +241,19 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
   // NR $83 — Mouse ports (bit 5)
   // ==========================================================================
 
-  it("Mouse ports return Kempston alias instead of mouse data when NR $83 bit 5 is cleared", async () => {
+  it("Mouse ports return 0xFF when NR $83 bit 5 is cleared", async () => {
     const m = await createTestNextMachine();
-    // Set mouse position so we can distinguish mouse data from other handlers
+    // Set mouse position so we can distinguish mouse data from 0xFF
     m.mouseDevice.xPos = 0x42;
     m.mouseDevice.yPos = 0x55;
     // With mouse enabled, read mouse X port
     expect(m.portManager.readPort(0xfbdf)).toBe(0x42);
     // Disable mouse (NR $83 bit 5)
     writeNextReg(m, 0x83, 0xdf);
-    // Mouse ports overlap with Kempston joy alias (mask 0x00FF) at low byte 0xDF
-    // When mouse disabled, alias responds with joystick data (0x00 = no buttons)
-    expect(m.portManager.readPort(0xfbdf)).toBe(0x00);
-    // Verify mouse Y port also does not return mouse data
-    expect(m.portManager.readPort(0xffdf)).not.toBe(0x55);
+    // Mouse ports return 0xFF when disabled; they do not fall through to joy alias
+    expect(m.portManager.readPort(0xfbdf)).toBe(0xff);
+    // Verify mouse Y port also returns 0xFF, not mouse data
+    expect(m.portManager.readPort(0xffdf)).toBe(0xff);
   });
 
   // ==========================================================================

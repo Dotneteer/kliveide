@@ -3,11 +3,11 @@ import { ClickableImage } from '../../page-components'
 
 # Memory Architecture: ROM, RAM, Banks, and the MMU
 
-The Z80 has sixteen address lines and can see exactly 64 KB at a time. The ZX Spectrum Next has 2 MB of RAM. Bridging that 32× gap is the job of the **MMU** — the Memory Management Unit baked into the FPGA — and getting comfortable with it is the foundation for nearly every later chapter. Layer 2 bitmaps, sprite patterns, AY tracker data, sample buffers for the DACs, even the dot-command loader that brings an app in from the SD card: all of them live in pages that you have to consciously map in.
+The Z80 has sixteen address lines and can see exactly 64 KB at a time. The ZX Spectrum Next has 2 MB of RAM. Bridging that 32× gap is the job of the **MMU** — the Memory Management Unit baked into the FPGA — and getting comfortable with it is the foundation for nearly every later chapter. [Layer 2](./11-layer2.mdx) bitmaps, sprite patterns, AY tracker data, sample buffers for the DACs, even the dot-command loader from the [storage](./19-storage.mdx) world: all of them live in pages that you have to consciously map in.
 
 The good news: the Next's memory model is regular, and once you internalise four small words — **region**, **bank**, **page**, **slot** — the rest is bookkeeping. The bad news: those four words are used interchangeably (and incorrectly) in a lot of online material. We'll fix that here, and stick to one definition for each throughout the rest of the book.
 
-## The Problem, in One Sentence
+## The Address-Space Problem
 
 The Z80 puts a 16-bit address on the bus. The Next stores 21 bits' worth of memory. Something has to translate one to the other every single time the CPU reads or writes — and that "something" is the MMU.
 
@@ -25,7 +25,7 @@ Why does this matter?
 
 - The **alt-ROM mechanism** makes immediate sense: swapping in an alt-ROM is just telling the FPGA to use a different SRAM region when slot 0/1 is accessed. Same chip, same bus, different address range.
 - The **divMMC trick** works the same way: when a trap address is hit, divMMC re-routes slots 0/1 to yet another SRAM region — the divMMC firmware area — without touching a single MMU register.
-- **Everything shares one bus.** The Z80, the ULA, the DMA engine, the Copper — they all read and write the same physical SRAM. There is no separate ROM bus, no FLASH chip. Understanding the FPGA physical address layout explains how all subsystems co-exist on the same hardware.
+- **Everything shares one bus.** The Z80, the ULA, the [DMA engine](./06-zxndma.mdx), and the [Copper](./14-copper.mdx) all read and write the same physical SRAM. There is no separate ROM bus, no FLASH chip. Understanding the FPGA physical address layout explains how all subsystems co-exist on the same machine.
 
 ## The System Region: The First 256 KB
 
@@ -275,11 +275,11 @@ PrintSignature
 ```
 
 <Callout type="info" emoji="💡">
-A real program almost always **saves and restores the MMU registers it touches**. Other code — the ROM, NextZXOS, an interrupt handler — may rely on a particular slot being mapped a specific way. The pattern in the example above (read the current value, do your work, write it back) is the standard idiom.
+A real program almost always **saves and restores the MMU registers it touches**. Other code — the ROM, NextZXOS, an [interrupt handler](./04-interrupts.mdx) — may rely on a particular slot being mapped a specific way. The pattern in the example above (read the current value, do your work, write it back) is the standard idiom.
 </Callout>
 
 <Callout type="info" emoji="💡">
-Try the `MmuDemo.` example.
+Try the `MmuDemo.MmuRoundTrip` example.
 </Callout>
 
 <ClickableImage src="/images/book/03-memory/mmu6-roundtrip-demo.png" width="720" />
@@ -449,10 +449,6 @@ The demo showcases the `$7FFD` lifecycle:
 In essence, this demo illustrates why NextReg mirrors exist: to bridge the gap between legacy write-only ports and the need to preserve and restore paging state.
 
 <ClickableImage src="/images/book/03-memory/shadow-screen-demo.png" width="720" />
-
-<Callout type="info" emoji="💡">
-For the sake of experimenting, change this demo code so it does not use the `last7ffd` variable at all. Instead, it should read the current paging state from NextReg `$8E` each time before toggling the shadow screen. You will find that this works just as well, proving that the legacy port is indeed write-only and that NextReg `$8E` is how you discover the current state.
-</Callout>
 
 ### Demo: AllRAM Mode with `$1FFD`
 
@@ -719,7 +715,7 @@ This is how NextZXOS installs itself at boot: it writes its loader into alt-ROM 
 
 The lock bits (bits 5:4 / 1:0) are independent of alt-ROM enable. Even with the alt-ROM disabled, they override the `$7FFD`/`$1FFD` ROM selector and freeze the active ROM image. On a +3/Next machine, locking only ROM0 selects ROM0; locking only ROM1 selects ROM1; locking both selects ROM3. This is useful when you need a specific ROM permanently visible — for example, holding ROM3 (48K BASIC) in place while loading a 48K game.
 
-> **The takeaway.** `$FF` in slots 0/1 does not always mean "the original 48K ROM" — it means "whatever the current selector says, possibly filtered through an alt-ROM". On a freshly booted NextZXOS machine the selector points at an alt-ROM, and the original 48K firmware is one selector value away. We revisit alt-ROM in detail in the Storage chapter, where it underpins the dot-command system.
+> **The takeaway.** `$FF` in slots 0/1 does not always mean "the original 48K ROM" — it means "whatever the current selector says, possibly filtered through an alt-ROM". On a freshly booted NextZXOS machine the selector points at an alt-ROM, and the original 48K firmware is one selector value away. We revisit alt-ROM in detail in the [Storage](./19-storage.mdx) chapter, where it underpins the dot-command system.
 
 ## Paging Through NextReg `$8E`
 
@@ -836,7 +832,7 @@ Most of what divMMC does, it does on behalf of something else:
 - **Dot commands** — NextZXOS loads dot-command binaries into divMMC RAM bank 0 and executes them at `$2000`–`$3FFF`.
 - **DRIVE button / NMI** — the `$0066` trap fires when the DRIVE button is pressed, handing control to the snapshot/menu tool.
 
-For all of these you're a *consumer*, not a driver. You only reach for `$E3`, `$0A`, or `$B8`–`$BB` when writing a custom OS, snapshot tool, or replacement filesystem — the kind of work the Storage chapter walks through end-to-end.
+For all of these you're a *consumer*, not a driver. You only reach for `$E3`, `$0A`, or `$B8`–`$BB` when writing a custom OS, snapshot tool, or replacement filesystem — the kind of work the [Storage](./19-storage.mdx) chapter walks through end-to-end.
 
 ## Layer 2 Memory Mapping
 
