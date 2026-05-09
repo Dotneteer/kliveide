@@ -95,7 +95,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ulaInterruptDisabled).toBe(true);
       expect(intDevice.lineInterruptEnabled).toBe(false);
       expect(intDevice.lineInterrupt).toBe(0x00);
-      expect(readNextReg(m, 0xc4) & 0x01).toBe(0x01);
+      expect(readNextReg(m, 0xc4) & 0x01).toBe(0x00);
     });
 
     it("lineInteeruptEnabled", async () => {
@@ -147,7 +147,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.lineInterrupt).toBe(0x100);
     });
 
-    it("ulaDisableInterrupt alias in $c4 #1", async () => {
+    it("ula interrupt enable alias in $c4 #1", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -157,10 +157,10 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0x22, 0x04);
 
       // --- Assert
-      expect(readNextReg(m, 0xc4)).toBe(0x01);
+      expect(readNextReg(m, 0xc4)).toBe(0x00);
     });
 
-    it("ulaDisableInterrupt alias in $c4 #2", async () => {
+    it("ula interrupt enable alias in $c4 #2", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -170,7 +170,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0x22, 0x00);
 
       // --- Assert
-      expect(readNextReg(m, 0xc4)).toBe(0x00);
+      expect(readNextReg(m, 0xc4)).toBe(0x01);
     });
 
     it("lineEnableInterrupt alias in $c4 #1", async () => {
@@ -183,7 +183,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0x22, 0x06);
 
       // --- Assert
-      expect(readNextReg(m, 0xc4)).toBe(0x03);
+      expect(readNextReg(m, 0xc4)).toBe(0x02);
     });
 
     it("lineEnableInterrupt alias in $c4 #2", async () => {
@@ -196,7 +196,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0x22, 0x02);
 
       // --- Assert
-      expect(readNextReg(m, 0xc4)).toBe(0x02);
+      expect(readNextReg(m, 0xc4)).toBe(0x03);
     });
   });
 
@@ -324,9 +324,9 @@ describe("Next - InterrputDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0xc4)).toBe(0x80);
-      expect(intDevice.ulaInterruptDisabled).toBe(false);
+      expect(intDevice.ulaInterruptDisabled).toBe(true);
       expect(intDevice.lineInterruptEnabled).toBe(false);
-      expect(readNextReg(m, 0x22) & 0x04).toBe(0x00);
+      expect(readNextReg(m, 0x22) & 0x04).toBe(0x04);
       expect(readNextReg(m, 0x22) & 0x02).toBe(0x00);
     });
 
@@ -340,9 +340,9 @@ describe("Next - InterrputDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0xc4)).toBe(0x81);
-      expect(intDevice.ulaInterruptDisabled).toBe(true);
+      expect(intDevice.ulaInterruptDisabled).toBe(false);
       expect(intDevice.lineInterruptEnabled).toBe(false);
-      expect(readNextReg(m, 0x22) & 0x04).toBe(0x04);
+      expect(readNextReg(m, 0x22) & 0x04).toBe(0x00);
       expect(readNextReg(m, 0x22) & 0x02).toBe(0x00);
     });
 
@@ -356,9 +356,9 @@ describe("Next - InterrputDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0xc4)).toBe(0x02);
-      expect(intDevice.ulaInterruptDisabled).toBe(false);
+      expect(intDevice.ulaInterruptDisabled).toBe(true);
       expect(intDevice.lineInterruptEnabled).toBe(true);
-      expect(readNextReg(m, 0x22) & 0x04).toBe(0x00);
+      expect(readNextReg(m, 0x22) & 0x04).toBe(0x04);
       expect(readNextReg(m, 0x22) & 0x02).toBe(0x02);
     });
 
@@ -372,9 +372,9 @@ describe("Next - InterrputDevice", function () {
 
       // --- Assert
       expect(readNextReg(m, 0xc4)).toBe(0x03);
-      expect(intDevice.ulaInterruptDisabled).toBe(true);
+      expect(intDevice.ulaInterruptDisabled).toBe(false);
       expect(intDevice.lineInterruptEnabled).toBe(true);
-      expect(readNextReg(m, 0x22) & 0x04).toBe(0x04);
+      expect(readNextReg(m, 0x22) & 0x04).toBe(0x00);
       expect(readNextReg(m, 0x22) & 0x02).toBe(0x02);
     });
   });

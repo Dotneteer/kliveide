@@ -155,7 +155,7 @@ This is where the most overriding happens. From highest priority to lowest:
 
 1. **Boot ROM.** At cold power-on the FPGA maps its own initialisation code here. It disappears before any user code runs.
 2. **Multiface.** The Multiface peripheral (snapshot/trainer device) overrides these slots when activated.
-3. **divMMC.** When the CPU executes from a trap address — `$0000`, `$0008`, `$0038`, `$0066`, `$04C6`, `$0562`, and a handful of others — divMMC hijacks slots 0/1 for the duration of the call and restores them on return.
+3. **divMMC.** When the CPU fetches an instruction from a trap address — `$0000`, `$0008`, `$0038`, `$0066`, `$04C6`, `$0562`, and a handful of others — divMMC can hijack slots 0/1. It stays mapped until the firmware explicitly leaves automap, usually through `RETN` or the `$1FF8`–`$1FFF` exit window.
 4. **Layer 2 mapping.** Since core 3.0, Layer 2's read and/or write mapping can be enabled for the `$0000–$BFFF` region, redirecting accesses to the Layer 2 bank in SRAM. Read and write are controlled independently.
 5. **MMU** (NextRegs `$50`/`$51`). The page numbers you put here, unless any of the above fired first.
 6. **Config mode / ROMCS.** Expansion bus signals that external peripherals can assert (uncommon in practice).
@@ -436,6 +436,10 @@ ShadowScreen
     .defn "Last $7ffd value: "
 ```
 
+<Callout type="info" emoji="💡">
+Try the `LegacyMemDemo.ShadowScreen` example.
+</Callout>
+
 The demo showcases the `$7FFD` lifecycle:
 
 1. **Reading the state.** `call @Get7ffdStatus` reconstructs the last `$7FFD` value by reading NextRegs `$8E` and `$69`. This proves you can always recover paging state without I/O reads.
@@ -546,6 +550,10 @@ AllRam
     .defn "AllRAM bytes:  "
 ```
 
+<Callout type="info" emoji="💡">
+Try the `LegacyMemDemo.AllRam` example.
+</Callout>
+
 The demo highlights three aspects of AllRAM mode:
 
 1. **Reading `$1FFD` state.** `call @Get1ffdStatus` reconstructs the last `$1FFD` value from NextReg `$8E`, extracting the paging-mode bit and the AllRAM bank-select bits. The port itself is write-only — this is the only way to discover the current state.
@@ -555,6 +563,8 @@ The demo highlights three aspects of AllRAM mode:
 3. **Save-restore pattern.** The original `$1FFD` value is saved before the switch and written back immediately after reading the AllRAM bytes. Leaving AllRAM mode active would break everything — there would be no ROM to handle `RST` calls, interrupts, or the return path.
 
 In essence, this demo is a concrete demonstration of why AllRAM mode is powerful and why you must be deliberate about entering and leaving it: from the moment you write bit 0 of `$1FFD`, the ROM disappears and you are on your own.
+
+<ClickableImage src="/images/book/03-memory/allram-demo.png" width="720" />
 
 ### Demo: Using `$DFFD` to Access More Banks
 
@@ -661,6 +671,10 @@ DffdBanks
     .defn "Read back:\x0d"
 ```
 
+<Callout type="info" emoji="💡">
+Try the `LegacyMemDemo.DffdBanks` example.
+</Callout>
+
 Four things are worth noticing:
 
 1. **Splitting the bank number.** The 7-bit bank index is split across two ports because `$DFFD` was bolted on top of `$7FFD` to extend the original 3-bit bank field rather than replace it. Code that already wrote `$7FFD` keeps working unchanged; new code adds a single extra `out` to `$DFFD` to reach the upper banks.
@@ -670,6 +684,8 @@ Four things are worth noticing:
 3. **Restoring MMU6/7 before any ROM call.** Once we map bank 8+ into slot 6/7, the ROM's BASIC workspace and channel area at `$C000`–`$FFFF` are gone. `RST $10` will dereference garbage and crash. The pattern is to read the marker into a register, restore Bank 0 to slots 6/7, *then* call the print routine.
 
 4. **Closing through `$8E`, not the ports.** Bit 3 of `$8E` says "apply the bank fields on this write". Setting it lets us push the saved bank state back in a single `nextreg` instruction, restoring `$7FFD`, `$DFFD`, MMU6 and MMU7 all at once. This is much tidier than reissuing `out` instructions to both ports.
+
+<ClickableImage src="/images/book/03-memory/dffd-banks-demo.png" width="720" />
 
 <Callout type="info" emoji="💡">
 On a base 1 MB Next some of the higher banks ($08–$0F here are still within the safe range) won't exist. If you walk past the installed RAM ceiling, writes silently disappear and reads return undefined data — exactly the same behaviour as out-of-range MMU page numbers.
@@ -768,7 +784,7 @@ In day-to-day Next programming you almost never touch divMMC directly. NextZXOS 
 
 But knowing how divMMC does its job explains a lot of behaviour that otherwise looks like magic (or a bug). It's one more entry in the slot-0/1 priority chain, and it uses the same machinery you've just learned.
 
-When the CPU executes from certain "trap" addresses in the lower 16 KB (the most famous is `$0000` — the reset vector — but there are several), the divMMC hardware **swaps in its own ROM and RAM** over slots 0 and 1, runs whatever firmware needs to run (typically the esxDOS shim that handles `RST $08` file-system calls), then swaps back out when the CPU jumps away. This all happens without you writing a single MMU register.
+When the CPU fetches an instruction from certain "trap" addresses in the lower 16 KB (the most famous is `$0000` — the reset vector — but there are several), the divMMC hardware **swaps in its own ROM and RAM** over slots 0 and 1. The firmware then runs from that temporary view, does the storage work, and exits automap deliberately. This all happens without you writing a single MMU register, but the exit is not magic: it is triggered by specific hardware-visible events.
 
 ### What gets paged in
 
@@ -802,9 +818,9 @@ If you need divMMC's automap behaviour out of the way — for example, when runn
 The original divMMC hard-wired its trap addresses; the Next exposes them as configurable bitmasks across four NextRegs.
 
 - **`$B8`** — enables trap on each of the eight `RST` addresses (`$0000`, `$0008`, `$0010`, `$0018`, `$0020`, `$0028`, `$0030`, `$0038`).
-- **`$B9`** — *valid* mask: which traps from `$B8` are armed at all (rather than ignored).
+- **`$B9`** — validity mode for the `$B8` traps: bit set means the trap is always valid; bit clear means it only triggers when ROM3 (the 48K BASIC ROM) is currently present.
 - **`$BA`** — *timing* mask: per-trap, **instant** or **delayed** mapping (see below).
-- **`$BB`** — extra entry points: `$0066` (NMI button), `$04C6` and `$0562` (esxDOS / original divMMC tape traps), `$04D7` and `$056A` (NextZXOS tape traps), and `$3DXX` (TR-DOS catalog access). Bit 6 disables traps on `$1FF8`–`$1FFF` to reclaim a chunk of the divMMC ROM tail.
+- **`$BB`** — extra entry points: `$0066` (NMI button), `$04C6` and `$0562` (esxDOS / original divMMC tape traps), `$04D7` and `$056A` (NextZXOS tape traps), and `$3DXX` (TR-DOS catalog access). Bit 6 enables the delayed "disable automap" fetch window at `$1FF8`–`$1FFF`.
 
 #### Instant vs. delayed mapping
 
@@ -812,13 +828,23 @@ The timing bit in `$BA` controls *when* exactly the divMMC swap becomes active r
 
 **Instant mapping (bit = 1):** The swap is already active by the time the opcode byte is read. The CPU fetches from divMMC ROM at the trap address, not from the normal Spectrum ROM. The Spectrum ROM's content at that address is irrelevant — the CPU never sees it.
 
-The classic example is `RST $08`. The CPU pushes `PC+1` onto the stack and jumps to `$0008`. Because the mapping is instant, the opcode byte at `$0008` comes from divMMC ROM. The esxDOS handler there runs immediately, reads its arguments from the bytes following the `RST $08` instruction (via the return address on the stack), then `ret`s back to the caller. Returning to non-trap address space unmaps divMMC.
+The classic example is `RST $08`. The CPU pushes the return address onto the stack and jumps to `$0008`. Because the mapping is instant, the opcode byte at `$0008` comes from divMMC ROM. The esxDOS handler there runs immediately, reads its arguments from the bytes following the `RST $08` instruction (via the return address on the stack), then leaves through the firmware's automap exit path. In practice that means `RETN` or an exit stub that fetches from `$1FF8`–`$1FFF`; an ordinary `RET` to some non-trap address is not what unmaps divMMC.
 
-**Delayed mapping (bit = 0):** The swap becomes active *after* the opcode at the trap address has been fetched. So the opcode byte the CPU reads comes from the **normal ROM**, not divMMC ROM. The mapping goes live on the next clock, meaning any subsequent memory access — the next opcode fetch, the next operand read — comes from divMMC.
+**Delayed mapping (bit = 0):** The swap becomes active *after* the opcode at the trap address has been fetched. So the opcode byte the CPU reads comes from the **normal ROM**, not divMMC ROM. The mapping goes live for the following memory cycles, so operand reads and later opcode fetches come from the divMMC view.
 
 The tape traps at `$04C6` and `$0562` use this mode. Both addresses are inside the 48K ROM's tape-loading routines. With delayed mapping, the instruction sitting at `$04C6` in the 48K ROM is fetched and executes normally. Then divMMC maps in. Everything that follows — the next fetch, any operand bytes, all subsequent instruction reads — comes from divMMC ROM. The esxDOS tape-streaming code is waiting there to take over execution.
 
 The rule of thumb: **instant** for RST-style entry points where the divMMC ROM itself *is* the handler from address zero; **delayed** for mid-ROM intercepts where the trap address instruction executes from the normal ROM and esxDOS code takes over from the next memory access onwards.
+
+### How automap exits
+
+Once automap is active, divMMC remains mapped until one of the hardware exit conditions occurs:
+
+- **`RETN` executes.** The Next watches for the Z80 `RETN` instruction and clears the automap state when it sees it. This is why divMMC firmware often returns with `RETN` even when it is semantically returning from a DOS call rather than from a normal NMI handler.
+- **The CPU fetches from `$1FF8`–`$1FFF`.** When the exit window is enabled, this range requests a delayed unmap. Firmware can jump through a small stub there to leave divMMC cleanly.
+- **Automap is disabled or reset.** Clearing the DivMMC automap enable in NextReg `$0A` bit 4, disabling DivMMC, or resetting the machine clears the automap state.
+
+The important point is that automap is not tied to the caller's address. Returning to code outside the trap range only works because the divMMC firmware first performs one of these exit actions.
 
 These knobs are how the Next supports several incompatible filesystems on the same physical SD interface. Selecting different combinations of trap addresses effectively lets the Next emulate esxDOS, NextZXOS, +3DOS, or TR-DOS, all sharing the same divMMC hardware underneath.
 

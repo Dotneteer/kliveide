@@ -1,10 +1,12 @@
 # The zxnDMA: Moving Data Without the CPU
 
-Somewhere around the third time you write a `LDIR` loop to fill screen memory, you start wondering: isn't there a better way? The Z80's block transfer instructions are fine for small jobs, but when you need to move kilobytes of data at full speed — loading sprite patterns, filling Layer 2 banks, streaming audio samples — those 21 T-states per byte add up fast. At 3.5 MHz, copying a single 16KB memory bank with `LDIR` takes over 96 milliseconds. That's nearly six frames of dead CPU time.
+Somewhere around the third time you write a `LDIR` loop to fill screen memory, you start wondering: isn't there a better way? The Z80's block transfer instructions are fine for small jobs, but when you need to move kilobytes of data at full speed — loading [sprite](./13-sprites.mdx) patterns, filling [Layer 2](./11-layer2.mdx) banks, streaming samples to the [DAC](./18-dac.mdx) — those 21 T-states per byte add up fast. At 3.5 MHz, copying a single 16KB memory bank with `LDIR` takes over 96 milliseconds. That's nearly six frames of dead CPU time.
 
-The ZX Spectrum Next has a built-in DMA controller that solves this problem. The **zxnDMA** — loosely based on the Zilog Z80 DMA chip but simplified and extended for the Next — can transfer data between any combination of memory and I/O ports, completely independently of the CPU. While the DMA moves your data, the CPU is free to do something useful. Or nothing at all, if the transfer is fast enough that you don't notice.
+The ZX Spectrum Next has a built-in DMA controller that solves this problem. The **zxnDMA** — loosely based on the Zilog Z80 DMA chip but simplified and extended for the Next — can transfer data between any combination of memory and I/O ports, completely independently of the CPU. Think of it as a small moving company inside the FPGA: you give it the addresses, tell it how many boxes to shift, and it hauls bytes while the Z80 stops carrying furniture one byte at a time.
 
-This chapter teaches you how to program the zxnDMA from the ground up. We'll start with the concepts, work through the register structure, build up to practical transfer sequences, and finish with real-world patterns for sprite loading, memory filling, and audio streaming. By the end, you'll be able to set up a DMA transfer as naturally as you'd write a `LDIR` — and you'll never want to go back.
+We'll start with the concepts, work through the register structure, build up to practical transfer sequences, and finish with real-world patterns for sprite loading, memory filling, and audio streaming. Once the pattern clicks, a DMA transfer stops feeling like a ritual and starts looking like a compact little shipping order.
+
+> **What this chapter assumes.** You should already be comfortable with `OUT`, `OTIR`, and port-based hardware from [I/O Ports and NextRegs](./02-io-and-nextregs.mdx). The timed-transfer sections also lean on the [CTC](./05-ctc.mdx), and the sprite/audio examples make more sense once you've skimmed [Sprites](./13-sprites.mdx) and [DAC Audio](./18-dac.mdx).
 
 ## What the DMA Actually Does
 
@@ -322,7 +324,10 @@ To set a prescaler:
 
 The delay formula is:
 
-$$\text{T-states per byte} = \frac{\text{prescaler} \times 3{,}500{,}000}{875{,}000} = \text{prescaler} \times 4$$
+```text
+T-states per byte = (prescaler * 3,500,000) / 875,000
+                  = prescaler * 4
+```
 
 So a prescaler value of 80 gives 320 T-states between transfers — about 91 microseconds at 3.5 MHz, which corresponds to a sample rate of roughly 10.9 kHz. A prescaler of 20 gives 80 T-states (approximately 43.75 kHz, close to CD quality at 44.1 kHz).
 
@@ -707,9 +712,9 @@ With auto-restart enabled, the DMA reloads the starting addresses and block leng
 
 ## Practical Pattern: CTC-Triggered Periodic DMA
 
-The DMA's built-in prescaler (the `prescaler` parameter in WR2) is convenient, but it has a subtle dependency: its counting rate scales with CPU speed. The FPGA adjusts the prescaler increment so that the same prescaler value produces the same real-time delay at 3.5 MHz and at 28 MHz, but this scaling happens in discrete steps — and the CTC clock, as covered in the CTC chapter, runs at a fixed 28 MHz regardless of CPU speed with no such adjustment needed.
+The DMA's built-in prescaler (the `prescaler` parameter in WR2) is convenient, but it has a subtle dependency: its counting rate scales with CPU speed. The FPGA adjusts the prescaler increment so that the same prescaler value produces the same real-time delay at 3.5 MHz and at 28 MHz, but this scaling happens in discrete steps — and the [CTC](./05-ctc.mdx) clock runs at a fixed 28 MHz regardless of CPU speed with no such adjustment needed.
 
-There's a cleaner alternative: let the CTC generate the timing, and connect its ZC/TO output directly to the DMA trigger. The Next hardware does exactly this. **NextReg `$CD`** controls which CTC channels (0–7, one bit each, bit 0 = channel 0) can trigger a DMA burst cycle. When NR `$CD` bit N is set and CTC channel N fires its ZC/TO pulse, the DMA executes one burst step — transferring one byte (or releasing and re-requesting the bus once, depending on mode) — even if the DMA's own prescaler hasn't expired.
+There's a cleaner alternative: let the CTC generate the timing, and connect its ZC/TO output directly to the DMA trigger. The Next hardware does exactly this. **NextReg `$CD`** controls which CTC channels (0–7, one bit each, bit 0 = channel 0) can trigger a DMA burst cycle. When NR `$CD` bit N is set and CTC channel N fires its ZC/TO pulse, the DMA executes one burst step — transferring one byte (or releasing and re-requesting the bus once, depending on mode) — even if the DMA's own prescaler hasn't expired. The moving company now has a metronome.
 
 The result: the CTC owns the timing, the DMA owns the data movement. You get sample-rate precision from the CTC's 28 MHz-derived clock without relying on the DMA prescaler at all.
 
@@ -910,7 +915,7 @@ The DMA's advantage is consistent: roughly 3.5× faster for memory-to-memory cop
 
 ### CPU Interaction
 
-During a continuous transfer, the CPU is completely halted. It doesn't execute any instructions, doesn't respond to interrupts, and doesn't refresh DRAM. For very long transfers atthe  default 3.5 MHz speed, this is rarely a problem — but at 28 MHz with a large block, be aware that the DMA could hold the bus for a noticeable fraction of a frame.
+During a continuous transfer, the CPU is completely halted. It doesn't execute any instructions, doesn't respond to interrupts, and doesn't refresh DRAM. For very long transfers at the default 3.5 MHz speed, this is rarely a problem — but at 28 MHz with a large block, be aware that the DMA could hold the bus for a noticeable fraction of a frame.
 
 Burst mode solves this by releasing the bus periodically. The CPU gets small windows of execution time between DMA bytes, which is enough to service interrupts and keep background tasks alive.
 
@@ -1020,3 +1025,9 @@ ioProgram_end:
 ```
 
 The zxnDMA may look intimidating at first — seven register groups, follow bytes, direction bits, operating modes. But once you've built a couple of transfers, the pattern becomes automatic: build a `.dma` program table, patch any runtime fields, and stream it with `OTIR`. The CPU steps aside, the data flows, and everyone's happy.
+
+## Where Next
+
+- [The CTC: Counter/Timer Circuit](./05-ctc.mdx) gives you the timing side of CTC-triggered DMA, including the counter modes used for precise pacing.
+- [Sprites](./13-sprites.mdx), [Layer 2](./11-layer2.mdx), and [DAC Audio](./18-dac.mdx) are natural places to use DMA once the byte-shuffling machinery feels familiar.
+- [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) and [Appendix C: I/O Ports Reference](./app-C-io-ports-reference.md) are the maps to keep open when a transfer targets hardware ports instead of memory.

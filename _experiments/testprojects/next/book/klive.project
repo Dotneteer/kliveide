@@ -30,6 +30,12 @@
         "ioMask": 65535
       },
       {
+        "resource": "04_interrupts/int.asm",
+        "line": 170,
+        "exec": true,
+        "ioMask": 65535
+      },
+      {
         "resource": "03_memory/legacy.asm",
         "line": 136,
         "exec": true,
@@ -70,18 +76,18 @@
       "documents": [
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 166,
-            "column": 1
+            "line": 76,
+            "column": 5
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/04_interrupts/int.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 103,
+            "column": 1
           }
         }
       ],

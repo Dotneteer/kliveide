@@ -28,12 +28,11 @@ FrameCounter
     nextreg NR_INT_CONTROL,VECTOR_TOP_BITS | $01
 
     ; --- NR $C4 — Interrupt Enable 0:
-    ;       bit 0 = ULA *disable* (1 = disabled, 0 = enabled — note inverted sense)
+    ;       bit 0 = ULA frame interrupt enable
     ;       bit 1 = Line interrupt enable
     ;       bit 7 = Expansion bus /INT enable
-    ;     Writing 0 keeps the ULA frame interrupt enabled (its default after reset)
-    ;     and leaves the Line and ExpBus interrupts disabled.
-    nextreg NR_INT_EN_0,%00000000
+    ;     Enable ULA only; leave Line and ExpBus disabled.
+    nextreg NR_INT_EN_0,%00000001
 
     ; --- Clear any ULA / Line status latched from before we set up IM2
     nextreg NR_INT_STATUS_0,%00000011
@@ -54,7 +53,7 @@ FrameCounter
     jr nz,`waitLoop
  
     di
-    nextreg NR_INT_EN_0,0    ; Clear Line/ExpBus enables (ULA stays on — bit 0 is "disable")
+    nextreg NR_INT_EN_0,1    ; Keep ULA enabled; clear Line/ExpBus enables
     nextreg NR_INT_CONTROL,0 ; Leave HW IM2 mode → back to legacy pulse mode
     im 1                     ; Restore IM1 for the ROM's $0038 handler
     ei
@@ -134,7 +133,7 @@ TwoSources
     ; --- NR $C4: bit 0 is ULA *disable* (inverted sense), bit 1 is Line enable.
     ;     We want both sources active, so set bit 1 (Line on) and leave
     ;     bit 0 = 0 (ULA stays at its default-enabled state).
-    nextreg NR_INT_EN_0,%00000010
+    nextreg NR_INT_EN_0,%00000011
 
     ; --- Clear any stale status
     nextreg NR_INT_STATUS_0,%00000011
@@ -157,6 +156,11 @@ TwoSources
     push af
     ld a,$02                  ; Red border
     out ($FE),a
+
+    ; Disable Line, keep ULA enabled.
+    ; This prevents the higher-priority Line source from blocking ULA.
+    nextreg NR_INT_EN_0,%00000001
+
     nextreg NR_INT_STATUS_0,%00000010
     pop af
     ei
@@ -164,8 +168,12 @@ TwoSources
 
 @UlaIsr2
     push af
-    xor a                     ; Black border at end of frame
+    xor a                     ; Black border at start/end of frame
     out ($FE),a
+
+    ; Re-arm Line for this new frame, keep ULA enabled.
+    nextreg NR_INT_EN_0,%00000011
+
     nextreg NR_INT_STATUS_0,%00000001
     pop af
     ei

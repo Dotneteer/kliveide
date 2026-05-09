@@ -30,7 +30,7 @@ import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { MultifaceDevice } from "./MultifaceDevice";
 import { MouseDevice } from "./MouseDevice";
-import { InterruptDevice, DAISY_PRIORITY_LINE, DAISY_PRIORITY_ULA } from "./InterruptDevice";
+import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
@@ -166,6 +166,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   private _copperCurrentColumn = 0;
   /** Current copper raster line (0-based); incremented per tact in onTactIncremented. */
   private _copperCurrentLine = 0;
+  /** Previous video ULA interrupt pulse level; used for FPGA-style edge capture. */
+  private _prevUlaIntPulse = false;
+  /** Previous video line interrupt pulse level; used for FPGA-style edge capture. */
+  private _prevLineIntPulse = false;
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -307,6 +311,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Set default machine type
     this.nextRegDevice.configMode = false;
     this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
+    this._prevUlaIntPulse = false;
+    this._prevLineIntPulse = false;
   }
 
   /**
@@ -1525,21 +1531,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt(): boolean {
-    const ulaActive = this.composedScreenDevice.pulseIntActive;
-    const lineActive = this.composedScreenDevice.lineIntActive;
     const id = this.interruptDevice;
 
     if (id.hwIm2Mode) {
-      if (ulaActive && !id.daisyInService[DAISY_PRIORITY_ULA]) {
-        id.ulaInterruptStatus = true;
-      }
-      if (lineActive && id.lineInterruptEnabled && !id.daisyInService[DAISY_PRIORITY_LINE]) {
-        id.lineInterruptStatus = true;
-      }
       return id.daisyUpdateIrqState();
     }
 
-    return ulaActive || (this.dmaDevice.getIp() === 1);
+    return this.composedScreenDevice.pulseIntActive || (this.dmaDevice.getIp() === 1);
   }
 
   /**
@@ -1556,6 +1554,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         this._copperCurrentLine++;
       }
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
+      const ulaIntPulse = this.composedScreenDevice.pulseIntActive;
+      const lineIntPulse = this.composedScreenDevice.lineIntActive;
+      if (ulaIntPulse && !this._prevUlaIntPulse) {
+        this.interruptDevice.captureUlaInterruptPulse();
+      }
+      if (lineIntPulse && !this._prevLineIntPulse) {
+        this.interruptDevice.captureLineInterruptPulse();
+      }
+      this._prevUlaIntPulse = ulaIntPulse;
+      this._prevLineIntPulse = lineIntPulse;
     }
     this.beeperDevice.setNextAudioSample();
     // --- Generate audio samples for all audio devices

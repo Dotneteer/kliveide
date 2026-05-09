@@ -1,30 +1,555 @@
-import { Callout } from 'nextra/components'
-
 # Input Devices: Keyboard, Joysticks, Mouse
 
-<Callout type="warning" emoji="🚧">
-This chapter is a placeholder. The full text is being written.
-</Callout>
+A game without input is a screensaver with opinions. The ZX Spectrum Next gives you several ways to hear from the person holding the keyboard, joystick, or mouse, but they all have one thing in common: from Z80 code, input is mostly **port reads**.
 
-## Synopsis
+This chapter covers the input paths you will use most often:
 
-A game without input is a screensaver. This chapter consolidates everything a typical Next program needs to read from the user: the original Spectrum keyboard matrix, the Kempston and Sinclair joystick conventions, and the Kempston mouse.
+- The original Spectrum **keyboard matrix** on port `$FE`
+- Spectrum-style keyboard joystick layouts
+- Kempston and Mega Drive style joystick ports
+- The Kempston mouse ports
+- A practical "read once per frame, consume everywhere" input pattern
 
-Topics:
+The goal is not to turn input into a grand theory. It is to make it boring in the best possible way: read the hardware, store a clean state, and let the rest of your program ask simple questions like "is fire down?" or "did Space go down this frame?"
 
-- **The keyboard matrix.** Port `$FE`, the eight half-rows, how to read them with `IN A,(C)` and the address-line trick (already introduced in [I/O and NextRegs](./02-io-and-nextregs.mdx)). Building a "is this key down right now?" helper, plus a debounced "was this key just pressed?" pattern.
-- **Modifier handling.** CAPS SHIFT, SYMBOL SHIFT, and how the Spectrum's two-shift system maps to modern keyboard chords in Klive.
-- **Joysticks.** Joystick mode selection via NextReg `$05`. Kempston (port `$1F` and `$37`), Sinclair 1 (mapped onto keys 6-7-8-9-0), Sinclair 2 (1-2-3-4-5), Cursor, MD1/MD2, and the Next's preferred Kempston-extended protocol with extra buttons.
-- **Kempston mouse.** Ports `$FBDF`, `$FFDF`, `$FADF`. Reading X, Y, buttons, and the wheel; the "raw counter" model and how to convert it to screen-relative pixels.
-- **Reading input from an interrupt.** The clean way: latch state in the frame ISR, let the main loop consume it. Avoids race conditions and gives every game a consistent "polled state" frame model.
+> **What this chapter assumes.** You should already be comfortable with Z80 I/O instructions from [I/O Ports and NextRegs](./02-io-and-nextregs.mdx). The frame-latched input pattern builds naturally on [Interrupts](./04-interrupts.mdx), but you can still use it from a regular main loop.
 
-## What you should know first
+## The Input Model
 
-- [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx).
-- [Interrupts](./04-interrupts.mdx) — recommended for the latched-state pattern.
+There are two broad families of input on the Next.
 
-## Planned exercises
+The first is **matrix-style input**. The keyboard is not a list of individual keys waiting politely in a queue. It is an 8-by-5 grid. You select one or more half-rows through the high byte of the I/O address, read port `$FE`, and inspect five active-low bits. It is wonderfully cheap hardware and slightly odd software. Very Spectrum.
 
-- **Input monitor overlay.** A little debug screen that shows, every frame: the state of every keyboard half-row, the joystick byte (in whatever mode is configured), and the mouse position and buttons.
-- **Cursor tile.** Move a tile under the mouse cursor — uses [Tilemap](./12-tilemap.mdx) once you've read that chapter.
-- **Two-player demo.** Read both Kempston-extended joysticks and move two sprites around the screen.
+The second is **byte-style input**. Kempston joysticks, Mega Drive pads, and the Kempston mouse expose their state through dedicated ports. You read a byte, test bits, and move on with your life.
+
+For games and interactive tools, the best habit is:
+
+1. Read all input once per frame.
+2. Store the result in RAM.
+3. Derive edge flags such as "pressed this frame" from the old and new state.
+4. Let gameplay code use the stored state, not the hardware ports directly.
+
+That gives every subsystem the same view of the user's hands. Without this, one routine may read "jump pressed" before another routine sees it, and then you are debugging a ghost with a keyboard.
+
+## The Spectrum Keyboard Matrix
+
+The original Spectrum keyboard has 40 keys arranged as eight half-rows of five keys. The Next preserves this model, even though it can be driven by a PS/2 keyboard behind the scenes.
+
+Port `$FE` is the keyhole. The low byte selects the ULA port, while the **high byte** selects which half-row you want to read. Any high-byte bit that is `0` selects the matching row.
+
+| Row | High-Byte Bit | Selector | Keys, Bits D0-D4 |
+|-----|---------------|----------|------------------|
+| 0 | A8  | `$FE` | CAPS SHIFT, Z, X, C, V |
+| 1 | A9  | `$FD` | A, S, D, F, G |
+| 2 | A10 | `$FB` | Q, W, E, R, T |
+| 3 | A11 | `$F7` | 1, 2, 3, 4, 5 |
+| 4 | A12 | `$EF` | 0, 9, 8, 7, 6 |
+| 5 | A13 | `$DF` | P, O, I, U, Y |
+| 6 | A14 | `$BF` | ENTER, L, K, J, H |
+| 7 | A15 | `$7F` | SPACE, SYMBOL SHIFT, M, N, B |
+
+The data bits are **active low**:
+
+- Bit = `0`: key is pressed
+- Bit = `1`: key is released
+
+This is the first small trap. Most modern APIs say "1 means pressed." The Spectrum says "0 means pressed," because the matrix lines are pulled high and keys pull them low. Old hardware does not care about your expectations. It has a soldering iron and a deadline.
+
+### Reading One Half-Row
+
+To read the QWERT row, put `$FBFE` on the I/O address bus and read:
+
+```z80klive
+KEY_PORT    equ $FE
+
+ReadQwertRow:
+    ld bc,$FBFE             ; A10 low selects Q W E R T
+    in a,(c)                ; D0-D4: Q W E R T, active low
+    cpl                     ; Now 1 = pressed for the low five bits
+    and %00011111
+    ret
+```
+
+After the `CPL`, bit 0 is Q, bit 1 is W, and so on. That little inversion is worth doing early. Your game logic probably wants "1 means down," and it is better to make the hardware weirdness pay rent in one helper than everywhere in your code.
+
+### Reading a Specific Key
+
+A simple key helper needs two pieces of information: which selector reads the half-row, and which bit represents the key. Here is Space:
+
+```z80klive
+KEY_PORT    equ $FE
+
+KEY_SPACE_SELECTOR equ $7F
+KEY_SPACE_MASK     equ %00000001
+
+IsSpaceDown:
+    ld bc,$7FFE             ; $7F in high byte, $FE in low byte
+    in a,(c)
+    and KEY_SPACE_MASK      ; Active low
+    jr z,.down
+    xor a                   ; A = 0, not pressed
+    ret
+.down:
+    ld a,1                  ; A = 1, pressed
+    ret
+```
+
+For a real program, you probably do not want forty separate routines. Use a small table of selector/mask pairs, or scan all rows into an 8-byte buffer once per frame.
+
+### Scanning All Rows
+
+Scanning every row is cheap and gives you a tidy snapshot of the whole keyboard:
+
+There is a small Z80 foot-gun here: `IN A,(C)` uses the full `BC` register as the port address, so `B` must hold the selector byte. That means `B` cannot also be your `DJNZ` loop counter. Use another counter, or save and restore `B`. Here is the plain version:
+
+```z80klive
+KEY_PORT    equ $FE
+
+ScanKeyboardSafe:
+    ld hl,KeyboardRows
+    ld de,KeyState
+    ld a,8
+    ld (RowsLeft),a
+.nextRow:
+    ld a,(hl)
+    inc hl
+    ld b,a                  ; B = high byte selector
+    ld c,KEY_PORT
+    in a,(c)
+    cpl
+    and %00011111
+    ld (de),a
+    inc de
+    ld a,(RowsLeft)
+    dec a
+    ld (RowsLeft),a
+    jr nz,.nextRow
+    ret
+
+KeyboardRows:
+    .db $FE,$FD,$FB,$F7,$EF,$DF,$BF,$7F
+
+RowsLeft: .db 0
+KeyState:
+    .defs 8
+```
+
+This is the sort of trade-off you make constantly in Z80 code. The compact version is tempting; the obvious version keeps you from inventing a bug-shaped puzzle box.
+
+## Multiple Rows at Once
+
+Because each zero bit in the high byte selects a row, you can select more than one row at the same time. The hardware combines the selected rows, so a pressed key in any selected row pulls the corresponding column bit low.
+
+That is useful for broad tests:
+
+```z80klive
+AnyKeyDown:
+    ld bc,$00FE             ; Select all eight rows
+    in a,(c)
+    cpl
+    and %00011111
+    ret                     ; A != 0 means at least one key is down
+```
+
+It is less useful if you need to know *which* key is pressed, because rows get merged. If Q and A are both in column 0, selecting both rows tells you "something in column 0 is down," not which one.
+
+Use multi-row reads as a quick detector, not as your main input map.
+
+## Shift Keys and Chords
+
+The Spectrum has two shift keys:
+
+- **CAPS SHIFT**: row 0, bit 0
+- **SYMBOL SHIFT**: row 7, bit 1
+
+These are ordinary matrix keys. They are not special CPU state, and the keyboard port does not return characters. It returns physical-ish key positions.
+
+That means "typed character" and "keys currently held" are different problems:
+
+- For action input, read keys directly: `Q`, `A`, `O`, `P`, Space, and so on.
+- For text entry, you need a translation layer that combines a primary key with CAPS SHIFT or SYMBOL SHIFT.
+
+For example, a Spectrum-style `:` is SYMBOL SHIFT + Z. A modern host keyboard may send that chord for you through the Next's PS/2 mapping, but your program still sees the matrix state. The butler has changed uniforms; the pantry layout is the same.
+
+If you are writing a game, avoid requiring awkward shift chords during play. If you are writing a tool or editor, build a small key translation table and keep it separate from low-level scanning.
+
+## Pressed, Held, Released
+
+Most programs need more than "is this key down right now?" Menus want to know when a key was newly pressed. Games often want held movement but edge-triggered actions.
+
+The standard pattern is to keep two snapshots:
+
+- `InputNow`: current frame
+- `InputPrev`: previous frame
+
+Then derive:
+
+```text
+pressed  =  now & ~prev
+released = ~now &  prev
+held     =  now
+```
+
+For an 8-byte keyboard snapshot, you do this byte by byte:
+
+```z80klive
+UpdateKeyEdges:
+    ld ix,InputNow
+    ld iy,InputPrev
+    ld hl,InputPressed
+    ld de,InputReleased
+    ld b,8
+.loop:
+    ld a,(ix+0)             ; A = now
+    ld c,a                  ; C = now
+    ld a,(iy+0)             ; A = prev
+    push af                 ; Save prev while we compute pressed
+
+    cpl                     ; pressed = now & ~prev
+    and c
+    ld (hl),a
+
+    pop af                  ; A = prev
+    ld c,a                  ; C = prev
+    ld a,(ix+0)             ; released = ~now & prev
+    cpl
+    and c
+    ld (de),a
+
+    ld a,(ix+0)             ; prev = now for next frame
+    ld (iy+0),a
+
+    inc ix
+    inc iy
+    inc hl
+    inc de
+    djnz .loop
+    ret
+
+InputNow:      .defs 8
+InputPrev:     .defs 8
+InputPressed:  .defs 8
+InputReleased: .defs 8
+```
+
+That code is intentionally straightforward rather than tiny. For production code, you may prefer regular `HL`/`DE` pointer pairs and self-contained helpers, but the idea is the important part: edge detection belongs next to the scan, not scattered around your game.
+
+## Debouncing
+
+Mechanical keys bounce. For a few milliseconds, a physical contact may chatter between on and off before settling. On the Spectrum keyboard matrix, that can show up as extra presses if you read at high speed.
+
+For most games, a once-per-frame scan is already a decent debounce filter. At 50 Hz, you sample every 20 ms, and ordinary key bounce is usually gone by then. For menus and editors, edge detection on a frame-latched state is usually enough.
+
+If you need stronger debouncing, use a small counter per key:
+
+- Increment the counter while the raw key is down, up to a maximum.
+- Decrement it while the raw key is up, down to zero.
+- Treat the key as down only after the counter reaches a threshold.
+
+This is less romantic than a clever one-byte trick, but it behaves well. Input code should be a reliable doorman, not a stage magician.
+
+## Keyboard Joystick Layouts
+
+Before Kempston interfaces became common, many Spectrum games treated keyboard keys as joystick directions. The Next can map joystick ports into several classic keyboard layouts through NextReg `$05`, but it is useful to understand the layouts directly.
+
+| Layout | Keys |
+|--------|------|
+| Sinclair 1 | `6` left, `7` right, `8` down, `9` up, `0` fire |
+| Sinclair 2 | `1` left, `2` right, `3` down, `4` up, `5` fire |
+| Cursor | `5` left, `8` right, `6` down, `7` up, `0` fire |
+
+If you support keyboard controls yourself, you can simply read these keys from the matrix. That has a nice side effect: it works even when no joystick is plugged in.
+
+If you are reading joystick ports, NextReg `$05` controls which physical joystick mode the Next presents. The register packs both joystick modes into slightly non-obvious bit positions:
+
+| Field | Bits |
+|-------|------|
+| Joystick 1 mode low bits | `$05` bits 7:6 |
+| Joystick 1 mode high bit | `$05` bit 3 |
+| Joystick 2 mode low bits | `$05` bits 5:4 |
+| Joystick 2 mode high bit | `$05` bit 1 |
+
+The mode values are:
+
+| Code | Mode |
+|------|------|
+| `000` | Sinclair 2 keys |
+| `001` | Kempston 1, port `$1F` |
+| `010` | Cursor keys |
+| `011` | Sinclair 1 keys |
+| `100` | Kempston 2, port `$37` |
+| `101` | Mega Drive pad 1, port `$1F` |
+| `110` | Mega Drive pad 2, port `$37` |
+| `111` | User-defined key joystick |
+
+Be careful when writing `$05`: bit 2 also controls 50/60 Hz display mode, and bit 0 controls the scandoubler. Preserve bits you do not mean to change. Hardware registers love nothing more than accepting your innocent joystick write and quietly changing the monitor mode as a bonus.
+
+## Kempston Joysticks
+
+The classic Kempston joystick is the easiest input device in the chapter. Read a byte from a port; each bit is a direction or button.
+
+| Port | Device |
+|------|--------|
+| `$1F` | Kempston joystick 1 |
+| `$DF` | Kempston joystick 1 alias, unavailable when mouse ports are enabled |
+| `$37` | Kempston joystick 2 |
+
+The standard bit layout is:
+
+| Bit | Meaning |
+|-----|---------|
+| 0 | Right |
+| 1 | Left |
+| 2 | Down |
+| 3 | Up |
+| 4 | Fire 1 |
+| 5 | Fire 2 / Mega Drive C |
+| 6 | Mega Drive A |
+| 7 | Mega Drive Start |
+
+Kempston bits are active high: `1` means the direction or button is pressed.
+
+```z80klive
+JOY1_PORT equ $1F
+
+ReadJoy1:
+    in a,(JOY1_PORT)
+    ret
+
+Joy1Right:
+    in a,(JOY1_PORT)
+    and %00000001
+    ret                     ; A != 0 means right is down
+```
+
+For gameplay, turn the raw byte into a neutral input byte that your code owns:
+
+```z80klive
+INPUT_RIGHT equ %00000001
+INPUT_LEFT  equ %00000010
+INPUT_DOWN  equ %00000100
+INPUT_UP    equ %00001000
+INPUT_FIRE  equ %00010000
+
+ReadPlayerFromKempston:
+    in a,($1F)
+    and %00011111           ; Keep directions + fire 1
+    ret
+```
+
+That byte can share the same format as your keyboard controls. Whether "up" came from Q, Sinclair keys, or a real joystick should not matter to the player movement routine.
+
+### Mega Drive Pads
+
+Mega Drive / Genesis pads are supported through the same joystick ports when the relevant NextReg `$05` mode is selected. The basic directions and the common buttons appear in the joystick byte; extra 6-button pad buttons are exposed through NextReg `$B2`.
+
+For many games, using the lower five bits gives you a perfectly good one-button joystick. If you need more buttons, read `$B2` and fold the extra bits into your input state.
+
+## The Kempston Mouse
+
+The Next presents a PS/2 mouse as a Kempston mouse. It uses three read-only ports:
+
+| Port | Meaning |
+|------|---------|
+| `$FBDF` | X counter |
+| `$FFDF` | Y counter |
+| `$FADF` | Buttons and wheel |
+
+The X and Y values are not absolute screen coordinates. They are 8-bit counters that wrap around:
+
+- X increments when the mouse moves right, wraps from 255 to 0.
+- X decrements when the mouse moves left, wraps from 0 to 255.
+- Y decrements when the mouse moves down, wraps from 0 to 255.
+- Y increments when the mouse moves up, wraps from 255 to 0.
+
+So the mouse is not saying "I am at pixel 143." It is saying "since the last time you looked, my counter moved." You turn that into screen coordinates by comparing the new counter with the previous counter.
+
+### Reading Mouse Deltas
+
+The neat trick is signed subtraction. If you subtract the previous 8-bit counter from the new one, the result behaves like a signed delta as long as movement between reads stays within -128..+127.
+
+```z80klive
+MOUSE_X_PORT equ $FBDF
+MOUSE_Y_PORT equ $FFDF
+
+ReadMouseDelta:
+    ld bc,MOUSE_X_PORT
+    in a,(c)
+    ld b,a                  ; B = new X
+    ld a,(MousePrevX)
+    ld c,a                  ; C = old X
+    ld a,b
+    sub c                   ; A = signed-ish X delta
+    ld (MouseDeltaX),a
+    ld a,b
+    ld (MousePrevX),a
+
+    ld bc,MOUSE_Y_PORT
+    in a,(c)
+    ld b,a                  ; B = new Y
+    ld a,(MousePrevY)
+    ld c,a
+    ld a,b
+    sub c                   ; Kempston Y: positive means upward movement
+    neg                     ; Convert to screen-style positive-down delta
+    ld (MouseDeltaY),a
+    ld a,b
+    ld (MousePrevY),a
+    ret
+
+MousePrevX:  .db 0
+MousePrevY:  .db 0
+MouseDeltaX: .db 0
+MouseDeltaY: .db 0
+```
+
+That gives you deltas in two's-complement form. A value of `$01` is +1, `$FF` is -1, `$FE` is -2, and so on.
+
+For a pointer, add these deltas to a 16-bit coordinate and clamp to the visible area:
+
+```z80klive
+; A = signed delta, HL = coordinate
+AddSignedDeltaToHL:
+    bit 7,a
+    jr nz,.negative
+    ld e,a
+    ld d,0
+    add hl,de
+    ret
+.negative:
+    neg
+    ld e,a
+    ld d,0
+    or a
+    sbc hl,de
+    ret
+```
+
+You can use the same idea for a mouse cursor over [Layer 2](./11-layer2.mdx), [sprites](./13-sprites.mdx), or the [tilemap](./12-tilemap.mdx). The mouse provides motion; your display system decides what that motion means.
+
+### Buttons and Wheel
+
+Port `$FADF` returns buttons and wheel state:
+
+| Bits | Meaning |
+|------|---------|
+| 7-4 | Wheel counter, 0-15, wraps |
+| 2 | Middle button |
+| 1 | Left button |
+| 0 | Right button |
+
+Buttons are active high. The wheel is a small wrapping counter, so treat it like X and Y: keep the previous value and subtract to get a delta.
+
+```z80klive
+MOUSE_BUTTON_PORT equ $FADF
+
+ReadMouseButtons:
+    ld bc,MOUSE_BUTTON_PORT
+    in a,(c)
+    ld (MouseButtons),a
+    and %00000111           ; A = right, left, middle button bits
+    ret
+
+MouseButtons: .db 0
+```
+
+Mouse DPI and left/right button reversal live in NextReg `$0A`; see [Appendix B](./app-B-nextreg-reference.md) for the bit table.
+
+## Latching Input Once per Frame
+
+For small programs, you can poll input in the main loop and be happy. For games, demos, and anything with interrupts, a frame-latched input state is cleaner.
+
+The pattern is:
+
+1. At the start of a frame, scan keyboard, joysticks, and mouse.
+2. Copy previous state to `InputPrev`.
+3. Store current state in `InputNow`.
+4. Compute `InputPressed` and `InputReleased`.
+5. During the frame, all game code reads those RAM bytes.
+
+If you already have a ULA frame interrupt from [Chapter 4](./04-interrupts.mdx), the ISR can set a flag and optionally perform the scan. Keep the ISR short; input scanning is cheap, but not free. A nice compromise is:
+
+- ISR: increment frame counter, set `FrameReady = 1`
+- Main loop: wait for `FrameReady`, clear it, scan input, update game
+
+That way the interrupt stays crisp, and your input still updates exactly once per frame.
+
+```z80klive
+MainLoop:
+    ld a,(FrameReady)
+    or a
+    jr z,MainLoop
+    xor a
+    ld (FrameReady),a
+
+    call ScanInputFrame
+    call UpdateGame
+    call DrawFrame
+    jr MainLoop
+
+FrameReady: .db 0
+```
+
+The input scan becomes your program's front desk. Everyone asks it what happened; nobody wanders off to bother the hardware directly.
+
+## Building a Unified Player Input Byte
+
+Once you can read keyboard and joystick state, combine them into one byte per player:
+
+| Bit | Meaning |
+|-----|---------|
+| 0 | Right |
+| 1 | Left |
+| 2 | Down |
+| 3 | Up |
+| 4 | Fire 1 |
+| 5 | Fire 2 |
+| 6 | Start / Pause |
+| 7 | Reserved |
+
+Keyboard and joystick can both contribute:
+
+```z80klive
+BuildPlayerInput:
+    xor a
+    ld (PlayerInput),a
+
+    ; Joystick contributes lower five bits directly
+    in a,($1F)
+    and %00011111
+    ld (PlayerInput),a
+
+    ; Space also means fire
+    ld bc,$7FFE             ; Row 7: SPACE, SYMBOL SHIFT, M, N, B
+    in a,(c)
+    bit 0,a                 ; Space active low
+    jr nz,.noSpace
+    ld a,(PlayerInput)
+    or %00010000
+    ld (PlayerInput),a
+.noSpace:
+    ret
+
+PlayerInput: .db 0
+```
+
+This is the most useful abstraction in the chapter. The rest of the game should not care whether the user prefers a Kempston joystick, Sinclair keys, WASD-style controls, or a slightly heroic arrangement involving `Q`, `A`, `O`, `P`, and Space.
+
+## Common Input Mistakes
+
+**Forgetting active-low keyboard bits.** Keyboard matrix bits are `0` when pressed. Kempston joystick and mouse button bits are `1` when pressed. Yes, that is annoying. Invert keyboard bits as soon as you store them.
+
+**Using `B` twice.** `IN A,(C)` uses the full `BC` register as the port address. If you use `B` as a loop counter, then load `B` with a keyboard selector, your loop counter is gone. The Z80 will not leave a note.
+
+**Reading mouse counters as coordinates.** Kempston mouse X/Y ports are wrapping counters, not screen positions. Store the previous values and compute deltas.
+
+**Writing all of NextReg `$05` casually.** Joystick mode bits share the register with display mode and scandoubler settings. Read-modify-write unless you truly mean to replace the whole byte.
+
+**Polling input in five different places.** If the menu, player, and pause logic all read ports independently, they can disagree about what happened in a frame. Scan once; share the result.
+
+## Where Next
+
+- [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) explains the port-address mechanics behind keyboard row selection and joystick reads.
+- [Interrupts](./04-interrupts.mdx) shows how to build the frame tick that makes latched input feel tidy and predictable.
+- [Sprites](./13-sprites.mdx), [Tilemap](./12-tilemap.mdx), and [Layer 2](./11-layer2.mdx) are natural places to use this input code for movement, cursors, and game controls.
+- [Appendix B: NextReg Reference](./app-B-nextreg-reference.md) and [Appendix C: I/O Ports Reference](./app-C-io-ports-reference.md) list the exact register and port details when you need the raw tables.

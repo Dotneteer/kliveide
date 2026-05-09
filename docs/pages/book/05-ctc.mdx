@@ -783,3 +783,9 @@ Usage:
 ```
 
 And there you have it: a hardware stopwatch for your Z80 code, accurate to about half a microsecond, with no T-state counting required. The CTC doesn't care what the CPU is doing — it just counts, and when you ask, it tells you where it's at. Sometimes the simplest tools are the most useful.
+
+## Where Next
+
+- [The zxnDMA: Moving Data Without the CPU](./06-zxndma.mdx) uses the CTC as an external pacing source, which is especially handy for audio-style transfers where "roughly now" is not good enough.
+- [Interrupts](./04-interrupts.mdx) explains the IM2 machinery behind CTC interrupt handlers, vector tables, and the Next's hardware interrupt controller.
+- [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) is worth keeping nearby whenever you configure CTC-related NextRegs or port-based peripherals.

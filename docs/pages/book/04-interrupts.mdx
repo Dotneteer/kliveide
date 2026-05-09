@@ -1,4 +1,5 @@
 import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
 
 # Interrupts: IM1, IM2, and the Next's Multi-Source Interrupt System
 
@@ -27,14 +28,14 @@ Unlike `/NMI`, **`/INT` is level-sensitive**. The CPU doesn't latch a pulse; it 
 1. **The signal must still be low at the sample point.** A very short pulse (shorter than one instruction) can go unnoticed. Hardware designers therefore keep `/INT` asserted until the CPU acknowledges.
 2. **If the signal stays low after the handler finishes, the interrupt fires again immediately.** As soon as `EI` re-enables interrupts, the CPU samples `/INT`, finds it still low, and dives back into the ISR — over and over, until the stack overflows. This is why clearing the interrupt source *before* executing `EI` is not a style preference; it is a hard requirement.
 
-On the Next, the FPGA's interrupt controller keeps `/INT` asserted as long as any pending bit in [NextReg](./02-io-and-nextregs.mdx) `$C8`/`$C9`/`$CA` is set *and* its matching enable bit is on. Clearing the pending bit (writing a `1` to it) is what finally releases the line.
+On the Next, the exact latch depends on the interrupt mode. In legacy pulse mode, the readable pending bits in [NextReg](./02-io-and-nextregs.mdx) `$C8`/`$C9`/`$CA` are the things you clear by writing `1`s. In hardware IM2 mode, each source also has a daisy-chain request/in-service state: acknowledge moves the winning source into service, and `RETI` releases it. Clearing the readable status bit is still useful, but `RETI` is what tells the hardware IM2 chain that the current ISR has finished.
 
 The two flags that govern maskable interrupts are:
 
 - **IFF1** — the "interrupts enabled" flag. `EI` sets it; `DI` clears it. When `IFF1 = 0`, `/INT` is ignored.
 - **IFF2** — a backup copy of IFF1 that NMI uses to remember the pre-NMI state.
 
-After `EI`, interrupts are not actually enabled until *one more instruction* has executed. This protects an `EI; RET` sequence at the end of an ISR: the `RET` runs before the next interrupt can fire, so you don't recursively re-enter the handler before unwinding the stack.
+After `EI`, interrupts are not actually enabled until *one more instruction* has executed. This protects the standard interrupt epilogue: `EI; RETI` for maskable interrupts, or `EI; RETN` when an NMI handler deliberately restores the previous interrupt state. The return instruction runs before the next maskable interrupt can fire, so you don't recursively re-enter the handler before unwinding the stack. We'll come back to why `RETI` and `RETN` matter later in this chapter.
 
 ## The Three Z80 Interrupt Modes
 
@@ -62,6 +63,8 @@ In IM1, the CPU ignores the data bus and unconditionally calls `$0038`. That's i
 
 This is the mode the original Spectrum 48K ROM uses. The handler at `$0038` services the 50 Hz ULA frame interrupt: it scans the keyboard, increments the system frame counter at `FRAMES` (`$5C78`), and returns. Any code that runs under the ROM's interrupt model is using IM1.
 
+On the Next, the firmware's regular interrupt path has more plates spinning than the old 48K ROM. NextZXOS still has to keep the classic heartbeat alive, but it may also run operating-system housekeeping and installed driver work: keyboard/editor state, mouse or joystick integration, DivMMC/NextZXOS service hooks, UART/ESP-related work, and other firmware callbacks depending on the machine state. The practical lesson is simple: if you replace the firmware's IM1 handler, you are not just stealing a frame counter. You may be cutting the butler's bell wire while dinner is still being served.
+
 For new Next code, IM1 is fine when you only need *one* interrupt source — typically the ULA frame interrupt for a "do something every 1/50 second" pattern. It's the smallest commitment: no vector table, no `LD I,A`, no NextReg setup. The catch is that `$0038` lives in slot 0 (ROM), so to install your own IM1 handler you'd need to swap in a RAM page there or hook through NextZXOS's API — either of which is more work than just switching to IM2.
 
 ### IM 2 — the vectored mode
@@ -75,7 +78,7 @@ This is where the Next gets interesting. In IM2, when `/INT` fires:
 
 So IM2 dispatches through a table of pointers in memory, indexed by which device fired. Different sources can land in different ISRs without any test or branch in your code.
 
-The vector byte's bit 0 is forced to 0 by the Z80 hardware (the data bus value is masked), so handler entries live on **even addresses** within the page selected by `I`.
+The vector byte is the low byte of the table lookup. In a tidy Z80 system, interrupting peripherals normally supply **even** vectors, because each table entry is a two-byte pointer and you do not want neighbouring entries to overlap like badly parked cars. On the Spectrum and the Next, the important rule is more practical: know who is driving that vector byte. If nothing deterministic is driving it, treat all 256 possible values as suspect.
 
 ## The `I` and `R` Registers
 
@@ -106,18 +109,20 @@ After this, every time `/INT` fires the CPU forms an address `$80vv` (where `vv`
 
 ## The Classic IM2 Trick: the All-`$FF` Table
 
-Here's the puzzle. The vector byte from the data bus has bit 0 = 0, but on the original Spectrum hardware **the rest of the byte is undefined** — there is no peripheral asserting it cleanly. In practice the CPU reads `$FF` (the bus floats high). So the dispatch address is `(I << 8) | $FE` — *almost*, because there's no guarantee the device couldn't briefly drive a different value.
+Here's the puzzle. In IM2, the Z80 uses the byte on the data bus as the low byte of the table address. Classic Z80 peripherals are expected to provide sane, even vector values, but the original Spectrum has no interrupting peripheral politely handing over a clean vector. In practice the floating bus is commonly read as `$FF`; on expanded machines, some other hardware can accidentally leave a different value on the bus. The bus byte is not a butler with a tray. It is more like a note shoved under the door in the dark.
 
 The classic safe IM2 setup goes like this:
 
-1. Fill 256 bytes of a page with the same byte value, say `$81` — that is, addresses `(I << 8) + $00` through `(I << 8) + $FF`.
+1. Fill **257 consecutive bytes** with the same byte value, say `$81` — that is, addresses `(I << 8) + $00` through `(I << 8) + $100`.
 2. Place your real ISR at address `$8181` (low byte = high byte = `$81`).
 
-When the interrupt fires, no matter what value the data bus delivers, bit 0 is forced to 0, so the CPU forms an address whose low byte is one of `$00`, `$02`, `$04`, ..., `$FE`. It reads two bytes starting there: byte 0 is `$81`, byte 1 is `$81`. Result: jump to `$8181`. Always. Regardless of bus value.
+When the interrupt fires, no matter what byte the data bus delivers, the CPU forms a table address somewhere from `(I << 8) + $00` to `(I << 8) + $FF`. It reads two bytes starting there. Because every possible adjacent pair contains `$81,$81`, the fetched pointer is always `$8181`.
 
-The highest possible vector byte after masking is `$FE`, so the last dispatch reads bytes at offsets `$FE` and `$FF` within the page — both covered by a 256-byte fill. No extra byte is needed; exactly 256 bytes is sufficient.
+The awkward extra byte is there for the `$FF` case. If the vector byte is `$FF`, the CPU reads the low byte at `(I << 8) + $FF` and the high byte at `(I << 8) + $100`, just over the page boundary. That makes 257 bytes the fully defensive table size.
 
-Hence the name "all-`$FF` table" — except you usually fill it with `$81` (for handler `$8181`) or `$80` (for handler `$8080`), or whatever pair gives you a convenient address.
+This also explains why the table is filled with the same value in every slot. If your interrupt source guarantees even vector bytes, you can use a normal table of two-byte entries: offset `$00/$01` for one handler pointer, `$02/$03` for another, and so on. You do **not** need the odd and even bytes to be identical in that case. The repeated-byte trick is for the untidy "who knows what the bus will say?" case.
+
+Hence the name "all-`$FF` table" — although the phrase is a little muddy. The unpredictable Spectrum bus often supplies `$FF`, but the bytes you fill into RAM are usually `$81` (for handler `$8181`), `$80` (for handler `$8080`), or whatever repeated byte points at a convenient safe address.
 
 This trick gives you a single ISR for *all* IM2 interrupts — perfect when there's only one source, less useful when you actually want different handlers for different devices. The Next's hardware IM2 mode (covered next) sidesteps the trick entirely by guaranteeing the vector byte.
 
@@ -202,7 +207,7 @@ The full set of interrupt-related NextRegs:
 
 A few things worth noticing:
 
-- **`$22` and `$C4` overlap.** NR `$22` bit 1 (line enable) aliases NR `$C4` bit 1, and NR `$22` bit 2 (ULA *disable*) aliases NR `$C4` bit 0 — note that the ULA bit is a *disable* in both registers (1 = disabled), not an enable. Either NextReg works; pick one and stick to it for clarity.
+- **`$22` and `$C4` overlap, but the ULA bit changes sense.** NR `$22` bit 1 (line enable) aliases NR `$C4` bit 1. NR `$22` bit 2 is ULA *disable* (1 = disabled), while NR `$C4` bit 0 is ULA *enable* (1 = enabled). Either NextReg can control the same underlying state, but `$C4` is clearer when you are enabling interrupt sources.
 - **The status registers are write-1-to-clear.** Reading returns the pending bits; writing a `1` to a bit clears that bit's pending state. Writing a `0` has no effect. This is a common pattern in interrupt controllers — it lets multiple writers race-free reset only the bits they care about.
 - **The DMA enables (`$CC`–`$CE`) are independent of the CPU enables.** They control which interrupts can yank the DMA controller out of a transfer (more in [zxnDMA](./06-zxndma.mdx)).
 
@@ -257,12 +262,11 @@ FrameCounter
     nextreg NR_INT_CONTROL,VECTOR_TOP_BITS | $01
 
     ; --- NR $C4 — Interrupt Enable 0:
-    ;       bit 0 = ULA *disable* (1 = disabled, 0 = enabled — note inverted sense)
+    ;       bit 0 = ULA frame interrupt enable
     ;       bit 1 = Line interrupt enable
     ;       bit 7 = Expansion bus /INT enable
-    ;     Writing 0 keeps the ULA frame interrupt enabled (its default after reset)
-    ;     and leaves the Line and ExpBus interrupts disabled.
-    nextreg NR_INT_EN_0,%00000000
+    ;     Enable ULA only; leave Line and ExpBus disabled.
+    nextreg NR_INT_EN_0,%00000001
 
     ; --- Clear any ULA / Line status latched from before we set up IM2
     nextreg NR_INT_STATUS_0,%00000011
@@ -283,7 +287,7 @@ FrameCounter
     jr nz,`waitLoop
  
     di
-    nextreg NR_INT_EN_0,0    ; Clear Line/ExpBus enables (ULA stays on — bit 0 is "disable")
+    nextreg NR_INT_EN_0,1    ; Keep ULA enabled; clear Line/ExpBus enables
     nextreg NR_INT_CONTROL,0 ; Leave HW IM2 mode → back to legacy pulse mode
     im 1                     ; Restore IM1 for the ROM's $0038 handler
     ei
@@ -297,10 +301,9 @@ FrameCounter
     ld a,(@FrameCount)
     inc a
     ld (@FrameCount),a
-    ; --- In hardware IM2 mode the ULA status latch is cleared automatically
-    ;     by the daisy-chain acknowledge, and RETI clears the InService flag.
-    ;     Writing NR $C8 here is therefore redundant but harmless; we keep it
-    ;     as a belt-and-braces clear that also works in legacy pulse mode.
+    ; --- In hardware IM2 mode RETI releases the daisy-chain InService state.
+    ;     Writing NR $C8 clears the readable ULA status bit and is also the
+    ;     required acknowledge in legacy pulse mode.
     nextreg NR_INT_STATUS_0,%00000001
     pop af
     ei
@@ -332,23 +335,25 @@ FrameCounter
     .defn "Press Space to stop.\x0d\x0d"
 ```
 
+<Callout type="info" emoji="💡">
+Try the `InterruptsDemo.FrameCounter` example to see the 50 Hz tick in action and confirm it stops cleanly when you press Space.
+</Callout>
+
 What this demo establishes:
 
 1. **`I` set, `IM 2` selected.** `I` is loaded with the high byte of `@VectorTable` (whatever address the loader picks for it — the `.align 256` directive guarantees the low byte is zero). The ULA frame interrupt has priority 11; with top bits = `$60`, its vector low byte is `$60 | (11 << 1) = $76`. So if the table sits at, say, `$9200`, the dispatch address is `$9276`.
 
 2. **Hardware IM2 mode on.** Writing `%01100001` to NR `$C0` does two things: it sets the top bits to `$60`, and bit 0 = 1 enables the hardware-driven vector. Without bit 0, we'd be in pulse mode and the vector would be undefined.
 
-3. **ULA stays enabled, everything else off.** NR `$C4` bit 0 is the ULA *disable* (1 = disabled). The ULA frame interrupt is enabled by default after reset; writing `%00000000` here keeps it that way and explicitly turns the line and expansion-bus sources off. This is the key advantage of hardware IM2 over the all-`$FF` trick — you really do get one handler per source.
+3. **ULA enabled, everything else off.** NR `$C4` bit 0 is the ULA frame interrupt enable (1 = enabled). Writing `%00000001` turns on the ULA source and explicitly keeps the line and expansion-bus sources off. This is the key advantage of hardware IM2 over the all-`$FF` trick — you really do get one handler per source.
 
-4. **Status acknowledged inside the ISR.** In legacy pulse mode the ULA's `/INT` line stays asserted as long as bit 0 of NR `$C8` is set, and writing a `1` to that bit is what clears it — forget it and the ISR fires forever. In hardware IM2 mode the daisy-chain acknowledge clears the status latch automatically and `RETI` releases the in-service flag; the explicit `nextreg NR_INT_STATUS_0` write becomes redundant but harmless. We keep it in the demo so the same code works in both modes.
+4. **Status acknowledged inside the ISR.** In legacy pulse mode the ULA's `/INT` line stays asserted as long as bit 0 of NR `$C8` is set, and writing a `1` to that bit is what clears it — forget it and the ISR fires forever. In hardware IM2 mode the controller also tracks which source is in service; `RETI` releases that daisy-chain state. The explicit `nextreg NR_INT_STATUS_0` write clears the readable status bit and keeps the handler compatible with legacy pulse-mode habits.
 
 5. **`EI; RETI` at the end.** `EI` re-enables interrupts (they were auto-disabled when the ISR was entered); `RETI` returns from the interrupt and signals "interrupt complete" to any daisy-chained peripherals.
 
 > **Why a 256-byte aligned vector table?** Because `I` provides only the high byte of the dispatch address; the controller supplies the low byte. The CPU then reads the ISR pointer from `(I << 8) | vector_byte`. If `@VectorTable` is page-aligned, that formula equals `@VectorTable + vector_byte` — exactly where you placed the `.defw`. If the table started at, say, `$80E0`, the CPU would still compute `$8076` for the ULA vector, but your `.defw @UlaIsr` actually lives at `$80E0 + $76 = $8156`. The CPU would read whatever happens to sit at `$8076` instead — almost certainly garbage. `.align 256` is what makes the trick work.
 
-<Callout type="info" emoji="💡">
-Try the `FrameCounter.example` example to see the 50 Hz tick in action and confirm it stops cleanly when you press Space.
-</Callout>
+<ClickableImage src="/images/book/04-interrupts/frame-counter.png" width="720" />
 
 ## Demo: Two Sources — ULA Plus Line Interrupt
 
@@ -384,10 +389,9 @@ TwoSources
     ; --- Enable hardware IM2 mode
     nextreg NR_INT_CONTROL,VECTOR_TOP_BITS | $01
 
-    ; --- NR $C4: bit 0 is ULA *disable* (inverted sense), bit 1 is Line enable.
-    ;     We want both sources active, so set bit 1 (Line on) and leave
-    ;     bit 0 = 0 (ULA stays at its default-enabled state).
-    nextreg NR_INT_EN_0,%00000010
+    ; --- NR $C4: bit 0 is ULA enable, bit 1 is Line enable.
+    ;     We want both sources active, so set bits 0 and 1.
+    nextreg NR_INT_EN_0,%00000011
 
     ; --- Clear any stale status
     nextreg NR_INT_STATUS_0,%00000011
@@ -400,7 +404,7 @@ TwoSources
     jr nz,`waitLoop
 
     di
-    nextreg NR_INT_EN_0,0
+    nextreg NR_INT_EN_0,1
     nextreg NR_INT_CONTROL,0
     im 1
     ei
@@ -410,6 +414,11 @@ TwoSources
     push af
     ld a,$02                  ; Red border
     out ($FE),a
+
+    ; Disable Line for the rest of this frame, keep ULA enabled.
+    ; The ULA ISR below re-arms Line once per frame.
+    nextreg NR_INT_EN_0,%00000001
+
     nextreg NR_INT_STATUS_0,%00000010
     pop af
     ei
@@ -417,8 +426,12 @@ TwoSources
 
 @UlaIsr2
     push af
-    xor a                     ; Black border at end of frame
+    xor a                     ; Black border at start/end of frame
     out ($FE),a
+
+    ; Re-arm Line for this new frame, keep ULA enabled.
+    nextreg NR_INT_EN_0,%00000011
+
     nextreg NR_INT_STATUS_0,%00000001
     pop af
     ei
@@ -439,7 +452,13 @@ TwoSources
     .defn "Press Space to stop.\x0d\x0d"
 ```
 
+<Callout type="info" emoji="💡">
+Try the `InterruptsDemo.TwoSources` example.
+</Callout>
+
 The two ISRs run independently. The line ISR fires when the raster reaches scanline 96 and paints the border red. The ULA ISR fires at the end of the frame and resets the border to black. The visible result: a red band across the lower half of the border. No polling, no shared state, no test in either handler — the priority controller did the dispatch.
+
+<ClickableImage src="/images/book/04-interrupts/two-sources.png" width="720" />
 
 ## Writing a Clean ISR
 
@@ -479,7 +498,7 @@ The shadow registers are not used by most code, so this is safe — but it's *no
 
 ### Acknowledge before you `EI`
 
-Because `/INT` is level-sensitive (see above), if the pending bit in NR `$C8`–`$CA` is still set when `EI` executes, the FPGA immediately re-asserts `/INT`. The CPU sees the line low at the very next sample point — which is one instruction after `EI`, namely `RETI` — and instead of returning to the interrupted code it dives straight back into the ISR. Stack overflow follows within milliseconds.
+Because `/INT` is level-sensitive (see above), you must make the source non-requesting before normal interrupts resume. In legacy pulse mode, that usually means clearing the pending bit in NR `$C8`–`$CA` before `EI`. In hardware IM2 mode, `RETI` releases the daisy-chain in-service state; clearing the matching status bit is still good practice and keeps the same ISR shape useful in both modes.
 
 The order is always: **do the work, clear the status, `EI`, `RETI`**.
 
@@ -499,17 +518,17 @@ At the machine-code level, `RETI` (Return from Interrupt) and `RET` do almost th
 
 The answer is the **interrupt daisy chain**. The Z80 family was designed to work with companion chips — the Z80 CTC, Z80 PIO, Z80 SIO — chained together so that only the highest-priority device asserting `/INT` actually gets serviced. Each chip in the chain has an **IEI** (Interrupt Enable In) and **IEO** (Interrupt Enable Out) pin. When a chip takes control of the bus for its interrupt acknowledge cycle, it blocks its IEO, preventing any lower-priority chip further down the chain from asserting. The chain stays blocked for the entire duration of the ISR.
 
-`RETI` exists to release that lock. During the opcode fetch of `RETI`, the Z80 places a specific combination of signals on the bus (`/M1` low, `/IORQ` low) that the Z80 peripheral chips recognise as "interrupt service routine complete". Each chip in the chain monitors this signal and resets its IEO-blocking logic, re-opening the chain for lower-priority interrupts.
+`RETI` exists to release that lock. Classic Z80 peripheral chips watch the instruction stream and recognise the two-byte opcode `ED 4D` as "interrupt service routine complete". The Next does the same kind of decode in FPGA fabric: when it sees `RETI`, the currently serviced hardware-IM2 source is allowed to leave the in-service state, re-opening the chain for lower-priority interrupts.
 
 A plain `RET` returns the CPU to the interrupted code correctly, but it never generates the daisy-chain release signal. On a system with chained Z80 peripherals, using `RET` instead of `RETI` means the chain stays permanently blocked after the first ISR — lower-priority peripherals can never assert their interrupt again.
 
 On the ZX Spectrum Next the hardware IM2 controller emulates this daisy-chain protocol in FPGA fabric, so `RETI` is equally important: it tells the controller the current ISR is done and allows lower-priority pending interrupts to be dispatched.
 
-**`RETN`** (Return from NMI) has an additional job beyond just the daisy-chain signal. When an NMI fires, the Z80 saves the current IFF1 into IFF2 and then clears IFF1 — interrupts are disabled for the NMI handler. `RETN` copies IFF2 back into IFF1, restoring the interrupt-enabled state that existed before the NMI. A plain `RET` would leave IFF1 cleared, so maskable interrupts would stay permanently disabled after any NMI. `RETN` is therefore mandatory at the end of every NMI handler.
+**`RETN`** (Return from NMI) has a different job. When an NMI fires, the Z80 saves the current IFF1 into IFF2 and then clears IFF1 — interrupts are disabled for the NMI handler. `RETN` copies IFF2 back into IFF1, restoring the interrupt-enabled state that existed before the NMI. A plain `RET` would leave IFF1 cleared, so maskable interrupts would stay permanently disabled after any NMI. `RETN` is therefore mandatory at the end of every NMI handler.
 
-### `EI` then `RETI` — never `RETI` alone
+### Usually `EI`, Then `RETI`
 
-`RETI` does not re-enable interrupts on the Z80 (it just informs the daisy chain). You always need `EI` immediately before `RETI`. The one-instruction `EI` delay protects the `RETI` from re-entering the handler.
+`RETI` does not re-enable interrupts on the Z80; it informs the daisy chain that the current ISR is complete. If you want normal interrupt processing to resume after the handler, use `EI` immediately before `RETI`. The one-instruction `EI` delay protects the `RETI` from re-entering the handler. If a handler deliberately wants to return with maskable interrupts disabled, it may omit `EI` — but that should be an explicit design choice.
 
 ### Keep it short
 
@@ -525,7 +544,7 @@ The ROM expects IM1 with its handler at `$0038`. If your program is going to ret
 
 ```z80klive
     di
-    nextreg NR_INT_EN_0,0
+    nextreg NR_INT_EN_0,1
     nextreg NR_INT_CONTROL,0
     im 1
     ei

@@ -67,13 +67,13 @@ Main
     // call NextRegDemo.Write
 
     // --- 03: Memory
-    call MmuDemo.MmuRoundTrip
+    // call MmuDemo.MmuRoundTrip
     // call LegacyMemDemo.ShadowScreen
     // call LegacyMemDemo.AllRam
     // call LegacyMemDemo.DffdBanks
 
     // --- 04: Interrupts
-    // call InterruptsDemo.FrameCounter
+    call InterruptsDemo.FrameCounter
     // call InterruptsDemo.TwoSources
 
     // --- 05: CTC Demos
