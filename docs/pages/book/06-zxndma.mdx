@@ -1,3 +1,6 @@
+import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
+
 # The zxnDMA: Moving Data Without the CPU
 
 Somewhere around the third time you write a `LDIR` loop to fill screen memory, you start wondering: isn't there a better way? The Z80's block transfer instructions are fine for small jobs, but when you need to move kilobytes of data at full speed — loading [sprite](./13-sprites.mdx) patterns, filling [Layer 2](./11-layer2.mdx) banks, streaming samples to the [DAC](./18-dac.mdx) — those 21 T-states per byte add up fast. At 3.5 MHz, copying a single 16KB memory bank with `LDIR` takes over 96 milliseconds. That's nearly six frames of dead CPU time.
@@ -19,7 +22,9 @@ The process follows a simple cycle for each byte:
 3. **Update** source and destination addresses (increment, decrement, or keep fixed)
 4. **Count** the byte and check if the transfer is complete
 
-The DMA repeats this cycle for every byte in the block. A memory-to-memory transfer of 256 bytes takes roughly 256 × 6 T-states = 1,536 T-states at 3.5 MHz — about 440 microseconds. Compare that to `LDIR`'s 256 × 21 = 5,376 T-states. The DMA is roughly 3.5× faster for pure block copies, and the CPU is completely free during the transfer.
+The DMA repeats this cycle for every byte in the block. A memory-to-memory transfer of 256 bytes takes roughly 256 × 6 T-states = 1,536 T-states at 3.5 MHz — about 440 microseconds. Compare that to `LDIR`'s 256 × 21 = 5,376 T-states. The DMA is roughly 3.5× faster for pure block copies, and the CPU no longer spends instructions moving the bytes itself.
+
+There is a trade-off hiding in that last sentence. In **continuous mode**, the DMA owns the bus until the block finishes, so the CPU is paused during the transfer. In **burst mode**, the DMA gives the bus back between bytes or timed bursts, which lets the CPU keep doing useful work.
 
 ### Two Ports, Two Personalities
 
@@ -49,20 +54,20 @@ The separation of "port identity" from "transfer direction" is a Zilog design ch
 
 ## Three Ways to Write a DMA Program
 
-All DMA configuration amounts to bytes arriving at the DMA port. The hardware doesn't care how those bytes were produced — from individual `OUT (C), A` instructions, from an `OTIR` loop reading a byte table, or from a Klive assembler `.dma` pragma. All three approaches produce identical binary output. What changes is readability, maintainability, and which assembler you're using.
+All DMA configuration amounts to bytes arriving at the DMA port. The hardware doesn't care how those bytes were produced — from individual `OUT (C),A` instructions, from an `OTIR` loop reading a byte table, or from a Klive assembler `.dma` pragma. All three approaches produce identical binary output. What changes is readability, maintainability, and which assembler you're using.
 
 ### Style 1: Direct OUT Instructions
 
-The most explicit approach writes each configuration byte with a `LD A, value : OUT (C), A` pair. The register-documentation sections later in this chapter use this style because it maps one-to-one onto the bit-field diagrams:
+The most explicit approach writes each configuration byte with a `LD A,value : OUT (C),A` pair. The register-documentation sections later in this chapter use this style because it maps one-to-one onto the bit-field diagrams:
 
 ```z80klive
-    ld bc, $6B
-    ld a, $C3               ; WR6: Reset
-    out (c), a
-    ld a, $7D               ; WR0: A→B, transfer, all follow-bytes set
-    out (c), a
-    ld a, $00               ; Port A low byte (0x8000)
-    out (c), a
+    ld bc,$6B
+    ld a,$C3               ; WR6: Reset
+    out (c),a
+    ld a,$7D               ; WR0: A→B, transfer, all follow-bytes set
+    out (c),a
+    ld a,$00               ; Port A low byte (0x8000)
+    out (c),a
     ; ...
 ```
 
@@ -76,13 +81,13 @@ Store the entire DMA program as a contiguous byte table in RAM. Label any fields
 
 ```z80klive
     ; Patch the two dynamic fields
-    ld (dmaSrc), hl             ; source address (computed at runtime)
-    ld (dmaLen), bc             ; byte count     (computed at runtime)
+    ld (dmaSrc),hl             ; source address (computed at runtime)
+    ld (dmaLen),bc             ; byte count     (computed at runtime)
 
     ; Upload — five instructions, regardless of program length
-    ld hl, dmaProgram
-    ld b,  dmaProgram_end - dmaProgram
-    ld c,  $6B
+    ld hl,dmaProgram
+    ld b,dmaProgram_end - dmaProgram
+    ld c,$6B
     otir
     ret
 
@@ -104,9 +109,9 @@ dmaProgram_end:
 
 **When to use it:** Semi-static programs where most configuration is fixed at assembly time and only a small number of fields (typically source address and block length) need runtime patching. This pattern is widely used in community examples and references for the ZX Spectrum Next.
 
-**Constraints:** The table must live in **RAM**, not ROM — `LD (label), HL` patching requires writable memory. The raw hex bytes in the table body are just as opaque as Style 1: `$7D` still doesn't tell you it means "A→B, transfer, all follow-bytes set."
+**Constraints:** The table must live in **RAM**, not ROM — `LD (label),HL` patching requires writable memory. The raw hex bytes in the table body are just as opaque as Style 1: `$7D` still doesn't tell you it means "A→B, transfer, all follow-bytes set."
 
-**A note on OTIR and the port address:** `OTIR` outputs to port `(C)` and decrements `B` after each byte, so by the time the last byte is sent, `B` has counted down to zero. Because the Z80's `OUT (C), A` instruction puts the full 16-bit `BC` register on the address bus, the upper byte of the port address changes with every iteration. This sounds alarming, but it is harmless here: the zxnDMA port decoder looks only at the lower 8 bits of the address bus (`$6B`), and ignores the upper 8 bits entirely. Every byte in the table therefore lands at the correct port regardless of what `B` holds at that moment.
+**A note on OTIR and the port address:** `OTIR` outputs to port `(C)` and decrements `B` after each byte, so by the time the last byte is sent, `B` has counted down to zero. Because the Z80's `OUT (C),A` instruction puts the full 16-bit `BC` register on the address bus, the upper byte of the port address changes with every iteration. This sounds alarming, but it is harmless here: the zxnDMA port decoder looks only at the lower 8 bits of the address bus (`$6B`) and ignores the upper 8 bits entirely. Every byte in the table therefore lands at the correct port regardless of what `B` holds at that moment.
 
 **Compatibility:** Works with any Z80 assembler — sjasmplus, Pasmo, or any other tool that supports `DB`/`DW` directives. No assembler extensions required.
 
@@ -135,11 +140,11 @@ dmaProgram_end:
 The upload is identical to Style 2 — a five-instruction `OTIR` sequence:
 
 ```z80klive
-    ld (dmaSrc), hl
-    ld (dmaLen), bc
-    ld hl, dmaProgram
-    ld b,  dmaProgram_end - dmaProgram
-    ld c,  $6B
+    ld (dmaSrc),hl
+    ld (dmaLen),bc
+    ld hl,dmaProgram
+    ld b,dmaProgram_end - dmaProgram
+    ld c,$6B
     otir
 ```
 
@@ -188,7 +193,7 @@ D7:D6=10, D2:D0=010 → WR5 (Control flags)
 else                → WR6  (Commands)
 ```
 
-This means you can't just write arbitrary bytes — each configuration byte must have the correct bit pattern for the register you're targeting. The diagrams in the next sections show the exact encoding for each register.
+This means you cannot write arbitrary bytes and hope the DMA guesses your intent. Each configuration byte must have the correct bit pattern for the register you're targeting. The diagrams in the next sections show the exact encoding for each register.
 
 ### Follow Bytes
 
@@ -229,17 +234,17 @@ When you want a standard memory-to-memory or memory-to-I/O transfer with all par
 Here's a complete WR0 write that sets up a 256-byte transfer from address `0x8000`, direction A→B:
 
 ```z80klive
-    ld bc, $6B          ; DMA port (zxnDMA mode)
-    ld a, $7D           ; WR0: all params follow, A→B, Transfer mode
-    out (c), a
-    ld a, $00           ; Port A address low = 0x00
-    out (c), a
-    ld a, $80           ; Port A address high = 0x80
-    out (c), a
-    ld a, $00           ; Block length low = 0x00 (256 & 0xFF)
-    out (c), a
-    ld a, $01           ; Block length high = 0x01 (256 >> 8)
-    out (c), a
+    ld bc,$6B          ; DMA port (zxnDMA mode)
+    ld a,$7D           ; WR0: all params follow, A→B, Transfer mode
+    out (c),a
+    ld a,$00           ; Port A address low = 0x00
+    out (c),a
+    ld a,$80           ; Port A address high = 0x80
+    out (c),a
+    ld a,$00           ; Block length low = 0x00 (256 & 0xFF)
+    out (c),a
+    ld a,$01           ; Block length high = 0x01 (256 >> 8)
+    out (c),a
 ```
 
 > **Block length encoding**: The block length is a 16-bit value. A length of 256 is written as `0x0100` (low byte `0x00`, high byte `0x01`). In zxnDMA mode, this transfers exactly 256 bytes. Be careful not to confuse a block length of 0 with "nothing to transfer" — depending on the mode and DMA state, it can behave unexpectedly.
@@ -266,8 +271,8 @@ For a typical memory source with incrementing addresses, the base byte is `0x14`
 - D2:D0=100 (WR1 identifier)
 
 ```z80klive
-    ld a, $14           ; WR1: memory, increment, no timing byte
-    out (c), a
+    ld a,$14           ; WR1: memory, increment, no timing byte
+    out (c),a
 ```
 
 ### Address Modes Explained
@@ -299,7 +304,7 @@ Most transfers work fine with the default 3-T-state timing. You'd only change th
 
 ## WR2: Port B Configuration
 
-WR2 is the mirror of WR1 but for Port B, with one important addition: it can configure a **prescaler** for timed transfers (used primarily for audio streaming).
+WR2 is the mirror of WR1 but for Port B, with one important addition: it can configure a **prescaler** for paced burst transfers (used primarily for audio streaming).
 
 **Base byte format:**
 
@@ -315,7 +320,7 @@ For a memory destination with incrementing addresses: `0x10` (same structure as 
 
 ### The Prescaler
 
-The prescaler is a ZXN DMA extension that doesn't exist in the original Zilog Z80 DMA. When configured, it inserts a precise delay between bytes, which lets you stream data at a controlled rate — perfect for digital audio playback.
+The prescaler is a ZXN DMA extension that doesn't exist in the original Zilog Z80 DMA. In burst-style transfers, it inserts a precise delay between bytes, which lets you stream data at a controlled rate — perfect for digital audio playback. Do not use it as a way to slow down an ordinary continuous memory copy; on current hardware, continuous memory transfers use their normal DMA cycle timing.
 
 To set a prescaler:
 1. Set bit 6 in WR2's base byte (timing byte follows)
@@ -344,12 +349,12 @@ The DMA compares the prescaler value against `DMA_timer[13:5]` — the upper 9 b
 
 ```z80klive
     ; WR2 with prescaler for audio streaming
-    ld a, $60           ; WR2: timing follows, increment, memory
-    out (c), a
-    ld a, $22           ; Timing: prescaler follows (D5=1), 2 T-state cycles (D1:D0=10)
-    out (c), a
-    ld a, 80            ; Prescaler value = 80 (→ 320 T-states between transfers)
-    out (c), a
+    ld a,$60           ; WR2: timing follows, increment, memory
+    out (c),a
+    ld a,$22           ; Timing: prescaler follows (D5=1), 2 T-state cycles (D1:D0=10)
+    out (c),a
+    ld a,80            ; Prescaler value = 80 (→ 320 T-states between transfers)
+    out (c),a
 ```
 
 ## WR3: Interrupt and Match Control
@@ -422,12 +427,12 @@ For most transfers, you'll use continuous mode. Audio streaming uses burst mode 
 
 ```z80klive
     ; WR4: Continuous mode, Port B address follows
-    ld a, $2D           ; D6:D5=01 (continuous), D3=1 (addr hi), D2=1 (addr lo), D1:D0=01
-    out (c), a
-    ld a, $00           ; Port B address low
-    out (c), a
-    ld a, $C0           ; Port B address high (i.e., 0xC000)
-    out (c), a
+    ld a,$2D           ; D6:D5=01 (continuous), D3=1 (addr hi), D2=1 (addr lo), D1:D0=01
+    out (c),a
+    ld a,$00           ; Port B address low
+    out (c),a
+    ld a,$C0           ; Port B address high (i.e., 0xC000)
+    out (c),a
 ```
 
 ## WR5: Control Flags
@@ -451,8 +456,8 @@ When auto-restart is enabled, the DMA automatically reloads Port A and Port B st
 The FPGA implements auto-restart in the `FINISH_DMA` state: it copies the registered start addresses back into the working source and destination pointers, resets the byte counter, and jumps back to the start of the transfer sequence.
 
 ```z80klive
-    ld a, $A2           ; WR5: auto-restart enabled (D5=1)
-    out (c), a
+    ld a,$A2           ; WR5: auto-restart enabled (D5=1)
+    out (c),a
 ```
 
 ## WR6: Command Register
@@ -512,15 +517,15 @@ Bit 0: At least one byte transferred (1 = yes)
 Format: 00E11010 or 00E11011
 ```
 
-To read just the status byte, write the Read Status Byte command (`0xBF`) and then read from the port:
+To read the status byte alone, write the Read Status Byte command (`0xBF`) and then read from the port:
 
 ```z80klive
-    ld bc, $6B
-    ld a, $BF           ; Read Status Byte command
-    out (c), a
-    in a, (c)           ; Read status
-    bit 5, a            ; Test end-of-block flag
-    jr z, .transferDone ; If bit 5 = 0, transfer is complete
+    ld bc,$6B
+    ld a,$BF           ; Read Status Byte command
+    out (c),a
+    in a,(c)           ; Read status
+    bit 5,a            ; Test end-of-block flag
+    jr z,.transferDone ; If bit 5 = 0, transfer is complete
 ```
 
 ### Extended Read Sequence
@@ -540,16 +545,16 @@ For more detailed monitoring, the DMA supports reading multiple internal registe
 After setting the mask and issuing the Initialize Read Sequence command (`0xA7`), each read from the port returns the next enabled register in order, cycling through the enabled set.
 
 ```z80klive
-    ld bc, $6B
-    ld a, $BB           ; Read mask follows
-    out (c), a
-    ld a, $07           ; Mask: status + counter lo + counter hi
-    out (c), a
-    ld a, $A7           ; Initialize read sequence
-    out (c), a
-    in a, (c)           ; → status byte
-    in a, (c)           ; → byte counter low
-    in a, (c)           ; → byte counter high
+    ld bc,$6B
+    ld a,$BB           ; Read mask follows
+    out (c),a
+    ld a,$07           ; Mask: status + counter lo + counter hi
+    out (c),a
+    ld a,$A7           ; Initialize read sequence
+    out (c),a
+    in a,(c)           ; → status byte
+    in a,(c)           ; → byte counter low
+    in a,(c)           ; → byte counter high
 ```
 
 ## Putting It All Together: The Standard Transfer Sequence
@@ -579,14 +584,436 @@ dmaCopyProgram:
 dmaCopyProgram_end:
 
 DmaCopy:
-    ld hl, dmaCopyProgram
-    ld b,  dmaCopyProgram_end - dmaCopyProgram
-    ld c,  $6B
+    ld hl,dmaCopyProgram
+    ld b,dmaCopyProgram_end - dmaCopyProgram
+    ld c,$6B
     otir
     ret
 ```
 
 The OTIR upload is five instructions regardless of how many configuration bytes the program contains. The `.dma` pragma sub-command names annotate each step inline — `a_to_b, transfer, $8000, 256` is self-explanatory where the equivalent raw bytes (`$7D $00 $80 $00 $01`) are not. The DMA will execute the 256-byte copy in about 1,536 T-states — during which the CPU is halted — and then release the bus.
+
+<Callout type="info" emoji="💡">
+You can find a demonstration of using the DMA for copying in the `DmaDemo.SimpleMemCopy` example.
+</Callout>
+
+## Demo: Comparing LDIR and zxnDMA
+
+Let's put numbers on the feeling. This demo copies the same 2 KB screen-memory block twice: first with `LDIR`, then with zxnDMA. Both measurements use the CTC timing helper from [Chapter 5](./05-ctc.mdx): `Timing.SetupCtc16`, `Timing.StartMeasure`, and `Timing.GetMeasuredCounter`.
+
+The block lives in the ULA pixel area, so the demo does not reserve a large private source and two large destination buffers. It uses `$4000..$47FF` as the source, `$4800..$4FFF` as the `LDIR` destination, and `$5000..$57FF` as the DMA destination. Because those addresses are visible screen memory, the demo measures first, clears the pixel area, and only then prints the results.
+
+```z80klive
+.module DmaCompareDemo
+ 
+DMA_PORT  .equ $6b
+COPY_SIZE .equ $0800       ; 2048 bytes
+SRC_ADDR  .equ $4000
+LDIR_DEST .equ $4800
+DMA_DEST  .equ $5000
+ 
+;==========================================================
+; Compare LDIR and zxnDMA for the same 2 KB memory copy
+;==========================================================
+LdirAndDma
+    ; Fill the source screen area with a visible pattern.
+    ld hl,SRC_ADDR
+    ld bc,COPY_SIZE
+`fillSource
+    ld (hl),$aa
+    inc hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,`fillSource
+
+    ; --- Measure the LDIR version
+    call Timing.SetupCtc16
+    call Timing.StartMeasure
+
+    ld hl,SRC_ADDR
+    ld de,LDIR_DEST
+    ld bc,COPY_SIZE
+    ldir
+
+    call Timing.GetMeasuredCounter
+    ld (@LdirTicks),de
+
+    ; Prepare the DMA transfer before starting the stopwatch.
+    ; The program ends with LOAD, but not ENABLE.
+    ld hl,@DmaCopyProgram
+    ld b,@DmaCopyProgramEnd - @DmaCopyProgram
+    ld c,DMA_PORT
+    otir
+
+    ; --- Measure the DMA version
+    call Timing.SetupCtc16
+    call Timing.StartMeasure
+
+    ld bc,DMA_PORT
+    ld a,$87                ; WR6: Enable DMA
+    out (c),a
+
+`waitDma
+    ld bc,DMA_PORT
+    ld a,$bf                ; WR6: Read Status Byte
+    out (c),a
+    in a,(c)
+    bit 5,a                 ; 0 = end of block reached
+    jr nz,`waitDma
+
+    call Timing.GetMeasuredCounter
+    ld (@DmaTicks),de
+
+    ; The benchmark used visible screen memory as scratch space.
+    ; Clear it before printing the result.
+    call @ClearPixels
+    Display.PrintTitle(@Title)
+    Display.PrintText(@Instr)
+
+    ; --- Show both tick counts
+    Display.PrintAt(8,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextLdir)
+    ld hl,(@LdirTicks)
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+
+    Display.PrintAt(9,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextDma)
+    ld hl,(@DmaTicks)
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+    ret
+
+;----------------------------------------------------------
+; Clear the 6144-byte ULA pixel area without using DMA.
+; We want the screen tidy before displaying the measured values.
+;----------------------------------------------------------
+@ClearPixels
+    ld hl,$4000
+    ld de,$4001
+    ld bc,6143
+    xor a
+    ld (hl),a
+    ldir
+    ret
+
+@DmaCopyProgram
+    .dma reset
+    .dma wr0 a_to_b, transfer, SRC_ADDR, COPY_SIZE
+    .dma wr1 memory, increment
+    .dma wr2 memory, increment
+    .dma wr4 continuous, DMA_DEST
+    .dma wr5
+    .dma load
+@DmaCopyProgramEnd
+
+@LdirTicks
+    .defw 0
+
+@DmaTicks
+    .defw 0
+
+@Title
+    .defn "DMA #2: LDIR vs zxnDMA"
+
+@Instr
+    .defm "Copies the same 2 KB screen\x0d"
+    .defm "block twice: LDIR, then DMA.\x0d"
+    .defm "The values are CTC ticks from\x0d"
+    .defn "Chapter 5's timing helper.\x0d\x0d"
+
+@TextLdir
+    .defn "LDIR ticks: "
+
+@TextDma
+    .defn "DMA ticks:  "
+
+.endmodule
+```
+
+<Callout type="info" emoji="💡">
+Try the `DmaCompareDemo.LdirAndDma` example.
+</Callout>
+
+The DMA program is uploaded before the stopwatch starts and deliberately ends with `.dma load`, not `.dma enable`. The timed block sends the `Enable DMA` command and then polls the DMA status byte until the end-of-block flag says the transfer has finished. That status wait is the timing boundary: without it, you mostly measure the command that starts DMA, not the copy.
+
+This keeps the `OTIR` program upload out of the measurement while still waiting for the actual transfer to complete. In real code you still pay the setup cost somewhere, but you can often reuse a prepared DMA table and only patch the fields that change.
+
+<ClickableImage src="/images/book/06-zxndma/ldir-dma.png" width="720" />
+
+The raw values are CTC ticks, not microseconds. As the figure indicates, the DMA transfer is significantly faster (~ four times) than the `LDIR` copy. With the nominal Chapter 5 timing setup, one tick is about 571 ns, so you can convert a result with:
+
+```text
+microseconds ≈ ticks × 0.571
+```
+
+The timing helper counts 28 MHz clock time in groups of 16 clocks. That makes the DMA result easy to predict. With the default `.dma wr1 memory, increment` and `.dma wr2 memory, increment` settings, the Next's DMA engine uses a 3-clock memory read followed by a 3-clock memory write. A 2 KB copy therefore needs:
+
+```text
+2048 bytes × 6 clocks/byte = 12288 clocks
+12288 clocks / 16 clocks per CTC tick = 768 ticks
+```
+
+The value printed by the demo is usually a little higher than 768 ticks, because the measured block also includes the `Enable DMA` port write and the final status polling loop. A result around 780-790 ticks is exactly the kind of number you should expect at 28 MHz.
+
+`LDIR` is different. Each repeated byte copy takes 21 CPU T-states before any Next-specific memory effects are considered:
+
+```text
+2048 bytes × 21 T-states/byte = 43008 T-states
+43008 / 16 = 2688 CTC ticks
+```
+
+The visible result is higher than that simple 2688-tick baseline because this benchmark reads from and writes to the ULA pixel area. Screen memory is not just ordinary scratch RAM: display contention and the 28 MHz memory schedule can stretch CPU memory accesses. So a value around 3000 ticks for `LDIR` is plausible for this particular screen-memory copy.
+
+Do not expect this visible-screen benchmark to show a clean abstract speedup from the instruction tables alone. The source and both destinations live in the ULA pixel area, so video contention and 28 MHz memory timing are part of the measurement. That is intentional: this demo keeps the scratch space out of your program body while still showing why DMA is the better tool for block movement.
+
+## Demo: Letting Interrupts Break Into a Long DMA Transfer
+
+Continuous DMA is fast, but it normally owns the bus until the block finishes. That means the CPU cannot run ordinary interrupt handlers while the transfer is in progress. The Next gives you a second set of interrupt-enable registers, `$CC`–`$CE`, that control which interrupt sources may ask the DMA to pause and give the bus back temporarily.
+
+This demo runs the same continuous DMA fill twice. A ULA frame ISR toggles the border and increments a counter. In the first pass, DMA runs as one uninterrupted block; interrupts remain disabled while the stopwatch is running so the timing does not accidentally include a ULA frame ISR that was latched during the transfer. In the second pass, NR `$CC` bit 0 is set, so the ULA frame interrupt is allowed to interrupt the DMA. The demo synchronizes both measurements just after a ULA frame status event before starting the CTC stopwatch. The fill is much shorter than a frame, so this avoids measuring an unrelated frame ISR that happens to arrive just after DMA releases the bus. The fill destination is `$5000`, in the lower third of the ULA bitmap, so the title and instruction text at the top of the screen stay readable.
+
+```z80klive
+.module DmaInterruptDemo
+
+DMA_PORT        .equ $6b
+
+NR_INT_CONTROL  .equ $c0
+NR_INT_EN_0     .equ $c4
+NR_INT_STATUS_0 .equ $c8
+NR_DMA_INT_EN_0 .equ $cc
+
+VECTOR_TOP_BITS .equ %01100000
+ULA_PRIORITY    .equ 11
+ULA_VECTOR      .equ VECTOR_TOP_BITS | (ULA_PRIORITY << 1)
+
+DMA_DEST        .equ $5000
+DMA_FILL_SIZE   .equ $0800       ; 2048 bytes
+ISR_CTC_COST    .equ 12          ; Approximate ULA ISR cost in CTC ticks
+
+;==========================================================
+; DMA interrupt break-in demo
+;==========================================================
+DmaInterruptBreakIn
+    Display.PrintTitle(@Title)
+    Display.PrintText(@Instr)
+
+    di
+    call Timing.SetupCtc16
+
+    ; --- Set up hardware IM2 for the ULA frame interrupt.
+    ld a,high(@VectorTable)
+    ld i,a
+    im 2
+    nextreg NR_INT_CONTROL,VECTOR_TOP_BITS | $01
+    nextreg NR_INT_EN_0,%00000001        ; CPU may receive ULA frame INTs
+    nextreg NR_INT_STATUS_0,%00000001
+
+    ; --- Pass 1: DMA runs as one uninterrupted block.
+    ;     Keep IFF disabled so the CTC measurement does not include
+    ;     a frame ISR that was latched while DMA owned the bus.
+    xor a
+    ld (@FrameTicks),a
+    ld (@BorderColour),a
+    nextreg NR_DMA_INT_EN_0,%00000000    ; ULA may not interrupt DMA
+    nextreg NR_INT_STATUS_0,%00000001
+    call Timing.StartMeasure
+
+    call @RunDmaFill
+
+    ld a,(@FrameTicks)
+    ld (@BlockedTicks),a
+    call Timing.GetMeasuredCounter
+    ld (@BlockedDmaTicks),de
+
+    ; --- Pass 2: allow the ULA frame interrupt to break into DMA.
+    xor a
+    ld (@FrameTicks),a
+    ld (@BorderColour),a
+    nextreg NR_INT_STATUS_0,%00000001
+    nextreg NR_DMA_INT_EN_0,%00000001    ; bit 0 mirrors ULA for DMA
+    call Timing.StartMeasure
+    ei
+
+    call @RunDmaFill
+
+    ld a,(@FrameTicks)
+    ld (@BreakInTicks),a
+    call Timing.GetMeasuredCounter
+    ld a,(@BreakInTicks)
+    call @SubtractIsrCost
+    ld (@BreakInDmaTicks),de
+
+    ; --- Restore the normal interrupt setup.
+    nextreg NR_DMA_INT_EN_0,0
+    nextreg NR_INT_STATUS_0,%00000001
+    nextreg NR_INT_CONTROL,0
+    im 1
+    ei
+
+    ; --- Show the two counters.
+    Display.PrintAt(8,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextBlocked)
+    ld a,(@BlockedTicks)
+    Display.Ink(Color.Blue)
+    Display.PrintAHexadecimal()
+
+    Display.PrintAt(9,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextBreakIn)
+    ld a,(@BreakInTicks)
+    Display.Ink(Color.Blue)
+    Display.PrintAHexadecimal()
+
+    Display.PrintAt(10,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextBlockedTicks)
+    ld hl,(@BlockedDmaTicks)
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+
+    Display.PrintAt(11,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextBreakInTicks)
+    ld hl,(@BreakInDmaTicks)
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+    ret
+
+;----------------------------------------------------------
+; Start the prepared DMA fill and wait until the end-of-block
+; status bit says it is finished.
+;----------------------------------------------------------
+@RunDmaFill
+    ld hl,@DmaProgram
+    ld b,@DmaProgramEnd - @DmaProgram
+    ld c,DMA_PORT
+    otir
+
+@EnableDma
+    ld bc,DMA_PORT
+    ld a,$87                ; WR6: Enable DMA
+    out (c),a
+
+@WaitDmaStatus
+    ld bc,DMA_PORT
+    ld a,$bf                ; WR6: Read Status Byte
+    out (c),a
+    in a,(c)
+    bit 5,a                 ; 0 = end of block reached
+    jr nz,@WaitDmaStatus
+    di
+    ret
+
+;----------------------------------------------------------
+; The break-in pass intentionally lets frame ISRs run while
+; DMA is active. Remove their handler cost from the displayed
+; CTC value so the two CTC rows compare DMA time.
+; A = number of serviced frame ISRs
+; DE = measured CTC ticks
+;----------------------------------------------------------
+@SubtractIsrCost
+    or a
+    ret z
+    ld b,a
+`loop
+    ld hl,-ISR_CTC_COST
+    add hl,de
+    ex de,hl
+    djnz `loop
+    ret
+
+;----------------------------------------------------------
+; ULA frame ISR: toggle the border and count frames.
+;----------------------------------------------------------
+@UlaIsr
+    push af
+
+    ld a,(@BorderColour)
+    xor %00000010
+    ld (@BorderColour),a
+    out ($fe),a
+
+    ld a,(@FrameTicks)
+    inc a
+    ld (@FrameTicks),a
+
+    nextreg NR_INT_STATUS_0,%00000001
+    pop af
+    ei
+    reti
+
+@DmaProgram
+    .dma reset
+    .dma wr0 a_to_b, transfer, @FillByte, DMA_FILL_SIZE
+    .dma wr1 memory, fixed
+    .dma wr2 memory, increment
+    .dma wr4 continuous, DMA_DEST
+    .dma wr5
+    .dma load
+@DmaProgramEnd
+
+@FillByte
+    .db $00
+
+@FrameTicks
+    .db 0
+
+@BlockedTicks
+    .db 0
+
+@BreakInTicks
+    .db 0
+
+@BlockedDmaTicks
+    .defw 0
+
+@BreakInDmaTicks
+    .defw 0
+
+@BorderColour
+    .db 0
+
+    .align 256
+@VectorTable
+    .defs ULA_VECTOR
+    .defw @UlaIsr
+    .defs $100 - ULA_VECTOR - 2
+
+@Title
+    .defn "DMA #3: Interrupt break-in"
+
+@Instr
+    .defm "The same 2 KB DMA fill runs\x0d"
+    .defm "twice. First DMA blocks ULA\x0d"
+    .defm "frame interrupts; then NR $CC\x0d"
+    .defm "allows ULA to break in.\x0d"
+    .defn "\x0d"
+
+@TextBlocked
+    .defn "Blocked frames: "
+
+@TextBreakIn
+    .defn "Break-in frames: "
+
+@TextBlockedTicks
+    .defn "Blocked CTC ticks: "
+
+@TextBreakInTicks
+    .defn "Break-in CTC ticks: "
+
+.endmodule
+```
+
+The key detail is that `$C4` and `$CC` are not redundant. NR `$C4` bit 0 says the ULA frame interrupt is enabled in the interrupt controller. NR `$CC` bit 0 says the same ULA source is allowed to interrupt DMA. The first pass leaves `$CC` clear, so DMA owns the bus until the transfer ends. The second pass sets `$CC` bit 0 and enables maskable interrupts, so the interrupt controller can pause DMA, let the CPU acknowledge the ULA interrupt, run the ISR, and then let DMA continue.
+
+The DMA program deliberately stays in continuous mode and does not use the WR2 prescaler. On current hardware, the prescaler is useful for paced burst-style transfers, especially audio, but it is not a reliable way to stretch a continuous memory fill. The CTC values include the DMA enable write and the final status polling loop, just like the earlier `LDIR` vs DMA measurement demo.
+
+The break-in pass has one extra wrinkle: if a frame ISR runs during the measurement, the raw CTC value includes the ISR's own instructions. The demo subtracts a small per-frame handler cost before displaying the break-in CTC value. That keeps the frame counters and CTC counters telling two different stories: the frame rows show whether interrupts broke in, while the CTC rows compare the DMA transfer time itself.
 
 ## Practical Pattern: Memory Fill
 
@@ -609,9 +1036,9 @@ dmaFillProgram:
 dmaFillProgram_end:
 
 DmaFill:
-    ld hl, dmaFillProgram
-    ld b,  dmaFillProgram_end - dmaFillProgram
-    ld c,  $6B
+    ld hl,dmaFillProgram
+    ld b,dmaFillProgram_end - dmaFillProgram
+    ld c,$6B
     otir
     ret
 ```
@@ -643,15 +1070,15 @@ spriteDMAProgram_end:
 ; Load sprites: HL = source address, BC = byte count
 ; Precondition: select the target pattern slot via port 0x303B before calling
 LoadSprites:
-    ld bc, $303B
-    ld a, 0                             ; Start at pattern slot 0
-    out (c), a
+    ld bc,$303B
+    ld a,0                             ; Start at pattern slot 0
+    out (c),a
 
-    ld (spriteDMASrc),    hl            ; patch source address
-    ld (spriteDMALength), bc            ; patch byte count
-    ld hl, spriteDMAProgram
-    ld b,  spriteDMAProgram_end - spriteDMAProgram
-    ld c,  $6B
+    ld (spriteDMASrc),hl               ; patch source address
+    ld (spriteDMALength),bc            ; patch byte count
+    ld hl,spriteDMAProgram
+    ld b,spriteDMAProgram_end - spriteDMAProgram
+    ld c,$6B
     otir
     ret
 ```
@@ -684,13 +1111,13 @@ audioDMAProgram_end:
 
 ; Stream audio from AudioBuffer (8000 samples)
 StreamAudio:
-    ld hl, AudioBuffer
-    ld (audioDMABuffer), hl             ; patch source address
-    ld hl, 8000
-    ld (audioDMALength), hl             ; patch sample count
-    ld hl, audioDMAProgram
-    ld b,  audioDMAProgram_end - audioDMAProgram
-    ld c,  $6B
+    ld hl,AudioBuffer
+    ld (audioDMABuffer),hl             ; patch source address
+    ld hl,8000
+    ld (audioDMALength),hl             ; patch sample count
+    ld hl,audioDMAProgram
+    ld b,audioDMAProgram_end - audioDMAProgram
+    ld c,$6B
     otir
     ; CPU is now free — DMA releases the bus between samples (burst mode)
     ret
@@ -712,16 +1139,16 @@ With auto-restart enabled, the DMA reloads the starting addresses and block leng
 
 ## Practical Pattern: CTC-Triggered Periodic DMA
 
-The DMA's built-in prescaler (the `prescaler` parameter in WR2) is convenient, but it has a subtle dependency: its counting rate scales with CPU speed. The FPGA adjusts the prescaler increment so that the same prescaler value produces the same real-time delay at 3.5 MHz and at 28 MHz, but this scaling happens in discrete steps — and the [CTC](./05-ctc.mdx) clock runs at a fixed 28 MHz regardless of CPU speed with no such adjustment needed.
+The DMA's built-in prescaler (the `prescaler` parameter in WR2) is convenient, but it has a subtle dependency: its counting rate scales with CPU speed. The FPGA adjusts the prescaler increment so that the same prescaler value produces the same real-time delay at 3.5 MHz and at 28 MHz, but this scaling happens in discrete steps. The [CTC](./05-ctc.mdx) gives you another timing source because its timer is independent of the selected CPU speed.
 
-There's a cleaner alternative: let the CTC generate the timing, and connect its ZC/TO output directly to the DMA trigger. The Next hardware does exactly this. **NextReg `$CD`** controls which CTC channels (0–7, one bit each, bit 0 = channel 0) can trigger a DMA burst cycle. When NR `$CD` bit N is set and CTC channel N fires its ZC/TO pulse, the DMA executes one burst step — transferring one byte (or releasing and re-requesting the bus once, depending on mode) — even if the DMA's own prescaler hasn't expired. The moving company now has a metronome.
+The alternative is to let the CTC generate the timing and connect its ZC/TO output directly to the DMA trigger. The Next hardware does exactly this. **NextReg `$CD`** controls which CTC channels (0–7, one bit each, bit 0 = channel 0) can trigger a DMA burst cycle. When NR `$CD` bit N is set and CTC channel N fires its ZC/TO pulse, the DMA executes one burst step — transferring one byte (or releasing and re-requesting the bus once, depending on mode) — even if the DMA's own prescaler hasn't expired. The moving company now has a metronome.
 
-The result: the CTC owns the timing, the DMA owns the data movement. You get sample-rate precision from the CTC's 28 MHz-derived clock without relying on the DMA prescaler at all.
+The result: the CTC owns the timing, the DMA owns the data movement. You get sample-rate precision from the CTC's system-clock-derived timer without relying on the DMA prescaler at all.
 
 ### How It Works
 
 1. Configure the DMA in **burst mode** with no prescaler (omit prescaler from WR2)
-2. Configure a CTC channel as a timer at the desired rate (e.g. `28 MHz ÷ 16 ÷ time_constant`)
+2. Configure a CTC channel as a timer at the desired rate (nominally `28 MHz ÷ 16 ÷ time_constant`)
 3. Write `1 << channel` to NextReg `$CD` to arm the CTC → DMA trigger
 4. Enable the DMA — it sits idle in burst mode, waiting for a trigger
 5. Each CTC ZC/TO event fires one DMA burst: one byte is transferred, then the bus is released until the next ZC/TO
@@ -739,19 +1166,19 @@ NR_DAT      equ $253B
 
 ; === Configure CTC Channel 3 as a timer at ~22 kHz ===
 ; 28 MHz / 16 (prescaler ÷16) / 80 (time constant) = 21,875 Hz
-    ld bc, CTC_CH3
-    ld a, %00000101          ; Timer, prescaler ÷16, start immediately, TC follows
-    out (c), a
-    ld a, 80                 ; Time constant = 80 → ~21,875 Hz
-    out (c), a
+    ld bc,CTC_CH3
+    ld a,%00000101          ; Timer, prescaler ÷16, start immediately, TC follows
+    out (c),a
+    ld a,80                 ; Time constant = 80 → ~21,875 Hz
+    out (c),a
 
 ; === Arm the CTC → DMA trigger (NR $CD bit 3 = CTC channel 3) ===
-    ld a, $CD
-    ld bc, NR_REG
-    out (c), a
-    ld a, %00001000          ; Enable channel 3 as DMA trigger
-    ld bc, NR_DAT
-    out (c), a
+    ld a,$CD
+    ld bc,NR_REG
+    out (c),a
+    ld a,%00001000          ; Enable channel 3 as DMA trigger
+    ld bc,NR_DAT
+    out (c),a
 
 ; === DMA program — burst mode, no prescaler; CTC controls the rate ===
 audioCTCDMAProgram:
@@ -769,21 +1196,21 @@ audioCTCLen:  .dw 0                     ; patch: sample count
 audioCTCDMAProgram_end:
 
 ; Kick off streaming: HL = buffer address, BC = sample count
-    ld (audioCTCSrc), hl
-    ld (audioCTCLen), bc
-    ld hl, audioCTCDMAProgram
-    ld b,  audioCTCDMAProgram_end - audioCTCDMAProgram
-    ld c,  $6B
+    ld (audioCTCSrc),hl
+    ld (audioCTCLen),bc
+    ld hl,audioCTCDMAProgram
+    ld b,audioCTCDMAProgram_end - audioCTCDMAProgram
+    ld c,$6B
     otir
-    ; CPU is now free; each CTC tick at ~21,875 Hz delivers one sample to the DAC
+    ; CPU runs between bursts; each CTC tick delivers one sample to the DAC
 ```
 
 ### Prescaler WR2 vs. CTC Trigger: Which to Use?
 
 | | DMA Internal Prescaler | CTC Trigger |
 |---|---|---|
-| **Timing source** | DMA-internal counter, scaled by CPU speed | CTC, always 28 MHz base |
-| **Rate formula** | prescaler value × 4 T-states (at 3.5 MHz) | 28 MHz ÷ CTC prescaler ÷ time constant |
+| **Timing source** | DMA-internal counter, scaled by CPU speed | CTC system-clock timer |
+| **Rate formula** | prescaler value × 4 T-states (at 3.5 MHz) | nominal system clock ÷ CTC prescaler ÷ time constant |
 | **Precision** | Good — FPGA scales with CPU mode | Excellent — CTC is CPU-speed independent |
 | **Flexibility** | Fixed rate per DMA program | CTC can be reprogrammed live |
 | **Interrupt capability** | None | CTC channel can simultaneously interrupt CPU |
@@ -802,29 +1229,29 @@ When you're done with CTC-triggered DMA, clear NR `$CD` to prevent stray CTC pul
 
 ```z80klive
     ; Disable DMA first, then clear the trigger source
-    ld bc, $6B
-    ld a, $83                ; WR6: Disable DMA
-    out (c), a
-    ld a, $CD
-    ld bc, NR_REG
-    out (c), a
+    ld bc,$6B
+    ld a,$83                ; WR6: Disable DMA
+    out (c),a
+    ld a,$CD
+    ld bc,NR_REG
+    out (c),a
     xor a                    ; Clear all CTC → DMA trigger enables
-    ld bc, NR_DAT
-    out (c), a
+    ld bc,NR_DAT
+    out (c),a
 ```
 
 ## Building a Reusable DMA Helper
 
-The upload sequence — patch any runtime fields, then run `OTIR` to stream the program table to the DMA port — is just a handful of instructions, but wrapping it as a subroutine keeps call sites clean:
+The upload sequence — patch any runtime fields, then run `OTIR` to stream the program table to the DMA port — is short, but wrapping it as a subroutine keeps call sites clean:
 
 ```z80klive
 ; Upload a DMA program table to the zxnDMA port
 ; HL = pointer to table, B = length in bytes
 ExecuteDma:
-    ld c, $6B               ; zxnDMA port
+    ld c,$6B               ; zxnDMA port
 .loop:
-    ld a, (hl)
-    out (c), a
+    ld a,(hl)
+    out (c),a
     inc hl
     djnz .loop
     ret
@@ -849,8 +1276,8 @@ DmaCopyParamsLen = $ - DmaCopyParams
 Call it with:
 
 ```z80klive
-    ld hl, DmaCopyParams
-    ld b,  DmaCopyParamsLen
+    ld hl,DmaCopyParams
+    ld b,DmaCopyParamsLen
     call ExecuteDma
 ```
 
@@ -876,11 +1303,11 @@ Call with:
 
 ```z80klive
     ; HL = source, DE = destination, BC = byte count
-    ld (DmaDynSrc), hl
-    ld (DmaDynDst), de
-    ld (DmaDynLen), bc
-    ld hl, DmaDynParams
-    ld b,  DmaDynParamsLen
+    ld (DmaDynSrc),hl
+    ld (DmaDynDst),de
+    ld (DmaDynLen),bc
+    ld hl,DmaDynParams
+    ld b,DmaDynParamsLen
     call ExecuteDma
 ```
 
@@ -911,11 +1338,11 @@ A typical memory-to-memory byte costs 6 T-states (3 read + 3 write). Memory-to-I
 | 6,144 bytes (ULA screen) | 129,024 T | ~36,864 T | 3.5× |
 | 16,384 bytes (memory bank) | 344,064 T | ~98,304 T | 3.5× |
 
-The DMA's advantage is consistent: roughly 3.5× faster for memory-to-memory copies. But the real win is for I/O transfers — loading sprite data through a port, streaming audio to a DAC — where the DMA can do things that `LDIR` simply can't.
+The DMA's advantage is consistent: roughly 3.5× faster for memory-to-memory copies. But the real win is for I/O transfers — loading sprite data through a port, streaming audio to a DAC — where `LDIR` is the wrong tool altogether.
 
 ### CPU Interaction
 
-During a continuous transfer, the CPU is completely halted. It doesn't execute any instructions, doesn't respond to interrupts, and doesn't refresh DRAM. For very long transfers at the default 3.5 MHz speed, this is rarely a problem — but at 28 MHz with a large block, be aware that the DMA could hold the bus for a noticeable fraction of a frame.
+During a continuous transfer, the CPU is completely halted. It doesn't execute instructions and it cannot respond to maskable interrupts while the DMA owns the bus. For very long transfers at the default 3.5 MHz speed, this is rarely a problem — but at 28 MHz with a large block, be aware that the DMA could hold the bus for a noticeable fraction of a frame.
 
 Burst mode solves this by releasing the bus periodically. The CPU gets small windows of execution time between DMA bytes, which is enough to service interrupts and keep background tasks alive.
 
@@ -959,11 +1386,11 @@ The `FINISH_DMA` state checks the auto-restart flag. If set, it reloads the star
 ### Reset and Disable
 
 ```z80klive
-    ld bc, $6B
-    ld a, $C3           ; Reset
-    out (c), a
-    ld a, $83           ; Disable DMA
-    out (c), a
+    ld bc,$6B
+    ld a,$C3           ; Reset
+    out (c),a
+    ld a,$83           ; Disable DMA
+    out (c),a
 ```
 
 ### Minimal Memory Copy (A→B, Continuous)
@@ -971,12 +1398,12 @@ The `FINISH_DMA` state checks the auto-restart flag. If set, it reloads the star
 ```z80klive
 ; HL = source address, DE = destination address, BC = byte count
 MemCopyDMA:
-    ld (memCopySrc), hl
-    ld (memCopyDst), de
-    ld (memCopyLen), bc
-    ld hl, memCopyProgram
-    ld b,  memCopyProgram_end - memCopyProgram
-    ld c,  $6B
+    ld (memCopySrc),hl
+    ld (memCopyDst),de
+    ld (memCopyLen),bc
+    ld hl,memCopyProgram
+    ld b,memCopyProgram_end - memCopyProgram
+    ld c,$6B
     otir
     ret
 
@@ -1000,12 +1427,12 @@ memCopyProgram_end:
 ```z80klive
 ; HL = source address, BC = byte count, DE = 16-bit I/O port address
 MemToIODMA:
-    ld (ioSrc), hl
-    ld (ioLen), bc
-    ld (ioDst), de
-    ld hl, ioProgram
-    ld b,  ioProgram_end - ioProgram
-    ld c,  $6B
+    ld (ioSrc),hl
+    ld (ioLen),bc
+    ld (ioDst),de
+    ld hl,ioProgram
+    ld b,ioProgram_end - ioProgram
+    ld c,$6B
     otir
     ret
 

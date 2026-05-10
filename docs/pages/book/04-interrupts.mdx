@@ -253,8 +253,7 @@ FrameCounter
     ; --- Point I at the high byte of the vector table.
     ;     The table is .align 256 (low byte = 0), so the CPU will fetch
     ;     the ISR address from (I:vector_byte) on every IM2 acknowledge.
-    ld hl,@VectorTable
-    ld a,h
+    ld a,high(@VectorTable)
     ld i,a
     im 2
 
@@ -375,8 +374,7 @@ TwoSources
     Display.PrintText(@Instr_TwoSources)
 
     di
-    ld hl,@VectorTable2
-    ld a,h
+    ld a,high(@VectorTable2)
     ld i,a
     im 2
 
@@ -404,7 +402,7 @@ TwoSources
     jr nz,`waitLoop
 
     di
-    nextreg NR_INT_EN_0,1
+    nextreg NR_INT_EN_0,1     ; Keep ULA enabled; clear Line/ExpBus enables
     nextreg NR_INT_CONTROL,0
     im 1
     ei
@@ -415,10 +413,7 @@ TwoSources
     ld a,$02                  ; Red border
     out ($FE),a
 
-    ; Disable Line for the rest of this frame, keep ULA enabled.
-    ; The ULA ISR below re-arms Line once per frame.
-    nextreg NR_INT_EN_0,%00000001
-
+    ; Clear the readable Line status bit; RETI releases the IM2 in-service state.
     nextreg NR_INT_STATUS_0,%00000010
     pop af
     ei
@@ -429,9 +424,7 @@ TwoSources
     xor a                     ; Black border at start/end of frame
     out ($FE),a
 
-    ; Re-arm Line for this new frame, keep ULA enabled.
-    nextreg NR_INT_EN_0,%00000011
-
+    ; Clear the readable ULA status bit; RETI releases the IM2 in-service state.
     nextreg NR_INT_STATUS_0,%00000001
     pop af
     ei
@@ -456,7 +449,7 @@ TwoSources
 Try the `InterruptsDemo.TwoSources` example.
 </Callout>
 
-The two ISRs run independently. The line ISR fires when the raster reaches scanline 96 and paints the border red. The ULA ISR fires at the end of the frame and resets the border to black. The visible result: a red band across the lower half of the border. No polling, no shared state, no test in either handler — the priority controller did the dispatch.
+The two ISRs run independently. The line ISR fires when the raster reaches scanline 96 and paints the border red. The ULA ISR fires at the frame interrupt and resets the border to black. Each handler clears its own readable status bit and returns with `EI; RETI`; the `RETI` is what releases that source from the hardware IM2 in-service state. The visible result is a red band across the lower half of the border. No polling, no shared dispatch code, no test in either handler — the priority controller selected the ISR from the vector byte.
 
 <ClickableImage src="/images/book/04-interrupts/two-sources.png" width="720" />
 

@@ -1,7 +1,9 @@
+.module CtcDemos
+
 ;==========================================================
 ; Measure a DJNZ loop (B=$C0)
 ;==========================================================
-Measure1Demo
+Measure1
     Display.PrintTitle(Title_Measure1)
     Display.PrintText(Instr_Measure)
 
@@ -17,7 +19,7 @@ Instr_Measure
 ;==========================================================
 ; Measure a DJNZ loop (B=$80)
 ;==========================================================
-Measure2Demo
+Measure2
     Display.PrintTitle(Title_Measure2)
     Display.PrintText(Instr_Measure)
 
@@ -31,7 +33,7 @@ Title_Measure2
 ;==========================================================
 ; Measure BC loop (BC=$1800)
 ;==========================================================
-Measure3Demo
+Measure3
     Display.PrintTitle(Title_Measure3)
     Display.PrintText(Instr_Measure)
 
@@ -71,3 +73,11 @@ _measureDjnz
     Display.Ink(Color.Blue)
     Display.PrintHLDecimal()
     ret
+
+;==========================================================
+; Implement a timer
+;==========================================================
+TimerWithInterrupt
+
+
+.endmodule

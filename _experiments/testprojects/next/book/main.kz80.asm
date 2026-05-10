@@ -26,7 +26,10 @@
 #include "03_memory/legacy.asm"
 #include "04_interrupts/int.asm"
 #include "05_ctc/ctc.asm"
+#include "05_ctc/ctcint.asm"
 #include "06_zxndma/memcpy.asm"
+#include "06_zxndma/compare.asm"
+#include "06_zxndma/interrupt.asm"
 
 ; We keep 64 bytes for the stack
 STACK
@@ -73,16 +76,19 @@ Main
     // call LegacyMemDemo.DffdBanks
 
     // --- 04: Interrupts
-    call InterruptsDemo.FrameCounter
+    // call InterruptsDemo.FrameCounter
     // call InterruptsDemo.TwoSources
 
     // --- 05: CTC Demos
-    // call Measure1Demo
-    // call Measure2Demo
-    // call Measure3Demo
+    // call CtcDemos.Measure1
+    // call CtcDemos.Measure2
+    // call CtcDemos.Measure3
+    // call CtcInterruptDemo.Every100MsCounter
 
     // --- 06: ZXNDMA Demos
-    // call DmaSimpleMemCopyDemo
+    // call DmaDemo.SimpleMemCopy
+    // call DmaCompareDemo.LdirAndDma
+    call DmaInterruptDemo.DmaInterruptBreakIn
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.
@@ -90,4 +96,3 @@ trap
     ei
     Display.WaitForExit()
     jp $
-

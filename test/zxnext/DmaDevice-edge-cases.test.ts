@@ -56,6 +56,14 @@ describe("DMA Edge Cases and Error Handling", () => {
     dma.writeWR6(0x87);
   }
 
+  function transferBytesDirectly(byteCount: number): void {
+    dma.stepDma();
+    dma.acknowledgeBus();
+    for (let i = 0; i < byteCount; i++) {
+      dma.stepDma();
+    }
+  }
+
   describe("Zero-Length Transfers", () => {
     it("should handle zero-length transfer without crashing", () => {
       // --- Arrange
@@ -163,10 +171,8 @@ describe("DMA Edge Cases and Error Handling", () => {
       dma.writeWR6(0x87); // ENABLE_DMA
 
       // --- Act & Assert
-      // Should not crash - transfer may take many iterations
-      for (let i = 0; i < 100; i++) {
-        machine.beforeInstructionExecuted();
-      }
+      // Should not crash - transfer a small part of the block directly.
+      transferBytesDirectly(100);
       
       // DMA should still be active (huge transfer)
       expect(dma.getDmaState()).not.toBe(DmaState.IDLE);
@@ -375,10 +381,8 @@ describe("DMA Edge Cases and Error Handling", () => {
       }
       configureTransfer(0x8000, 0x9000, 10);
 
-      // Start transfer
-      machine.beforeInstructionExecuted(); // Request
-      machine.beforeInstructionExecuted(); // Transfer byte 1
-      machine.beforeInstructionExecuted(); // Transfer byte 2
+      // Start a partial transfer directly, without the machine draining the bus-held block.
+      transferBytesDirectly(2);
 
       // --- Act
       // Disable DMA mid-transfer
@@ -406,8 +410,9 @@ describe("DMA Edge Cases and Error Handling", () => {
     it("should release bus when disabled mid-transfer", () => {
       // --- Arrange
       configureTransfer(0x8000, 0x9000, 10);
-      machine.beforeInstructionExecuted(); // Request bus
-      machine.beforeInstructionExecuted(); // Start transfer
+      dma.stepDma(); // Request bus
+      dma.acknowledgeBus();
+      dma.stepDma(); // Start transfer
 
       // Verify bus is active
       let busControl = dma.getBusControl();
@@ -434,9 +439,7 @@ describe("DMA Edge Cases and Error Handling", () => {
       configureTransfer(0x8000, 0x9000, 5);
 
       // Partial transfer
-      machine.beforeInstructionExecuted();
-      machine.beforeInstructionExecuted();
-      machine.beforeInstructionExecuted();
+      transferBytesDirectly(3);
 
       // Disable
       dma.writeWR6(0x83);
@@ -474,9 +477,7 @@ describe("DMA Edge Cases and Error Handling", () => {
       configureTransfer(0x8000, 0x9000, 10);
 
       // Transfer a few bytes
-      machine.beforeInstructionExecuted();
-      machine.beforeInstructionExecuted();
-      machine.beforeInstructionExecuted();
+      transferBytesDirectly(3);
 
       // --- Act
       dma.writeWR6(0x83); // DISABLE_DMA
@@ -628,10 +629,8 @@ describe("DMA Edge Cases and Error Handling", () => {
       configureTransfer(0x8000, 0x9000, 0xFFFF);
 
       // --- Act
-      // Transfer a few bytes of the large block
-      for (let i = 0; i < 100; i++) {
-        machine.beforeInstructionExecuted();
-      }
+      // Transfer a few bytes of the large block directly.
+      transferBytesDirectly(100);
 
       // --- Assert
       // Should still be transferring

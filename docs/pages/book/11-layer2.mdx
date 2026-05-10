@@ -31,5 +31,6 @@ Topics:
 ## Planned exercises
 
 - **Image viewer.** Load a 256×192 Layer 2 image from the example pack and display it.
+- **DMA back-buffer update.** Copy a rectangular or page-sized block from regular RAM into a Layer 2 memory page using zxnDMA. Start with a coarse transfer, such as copying an 8 KB chunk, before later evolving into rectangle-oriented updates. The visible result should be an immediate change in the Layer 2 image after enabling DMA, and the explanation should make clear which memory page is mapped for the destination.
 - **Smooth scroller.** A pre-drawn 512-pixel-wide Layer 2 image that scrolls horizontally using NextReg `$16`.
 - **Top/bottom split.** Use the line interrupt to swap palettes mid-screen — sky on top, ground below — without changing pixel data.

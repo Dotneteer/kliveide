@@ -29,5 +29,6 @@ Topics:
 ## Planned exercises
 
 - **Bouncing sprite.** Upload a single 16×16 pattern, animate one sprite around the screen, bouncing at the edges.
+- **DMA sprite pattern upload.** Load one or more 16×16 sprite patterns from memory into sprite pattern RAM using zxnDMA. The source is an incrementing memory address, while the destination is the fixed sprite pattern data port. The sprite hardware auto-increments its internal pattern pointer, so the DMA keeps writing to the same I/O port while the hardware stores each byte in the next sprite RAM location. The visible result should be a sprite whose pattern changes after the upload; a useful extension is to upload several consecutive patterns in one DMA block.
 - **Multi-pattern boss.** A 32×48 enemy built from six anchor-grouped sprites, moving as one.
 - **Collision demo.** A "ball + paddle" mini-test that uses the hardware collision register instead of bounding-box arithmetic.

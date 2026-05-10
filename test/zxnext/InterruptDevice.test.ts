@@ -994,6 +994,32 @@ describe("Next - InterrputDevice", function () {
     });
   });
 
+  describe("DMA interrupt break-in request", () => {
+    it("reports a ULA DMA break-in request only when NR $CC enables it", async () => {
+      const m = await createTestNextMachine();
+      const intDevice = m.interruptDevice;
+
+      intDevice.ulaInterruptStatus = true;
+      intDevice.enableUlaIntToIntDma = false;
+      expect(intDevice.dmaInterruptRequestActive).toBe(false);
+
+      intDevice.enableUlaIntToIntDma = true;
+      expect(intDevice.dmaInterruptRequestActive).toBe(true);
+    });
+
+    it("reports CTC DMA break-in requests from NR $CD enables", async () => {
+      const m = await createTestNextMachine();
+      const intDevice = m.interruptDevice;
+
+      intDevice.ctcIntStatus[2] = true;
+      intDevice.enableCtcToIntDma[1] = true;
+      expect(intDevice.dmaInterruptRequestActive).toBe(false);
+
+      intDevice.enableCtcToIntDma[2] = true;
+      expect(intDevice.dmaInterruptRequestActive).toBe(true);
+    });
+  });
+
   describe("Reg $cd - DMA interrupt enable 1", () => {
     it("enableCtcToIntDma 0", async () => {
       // --- Arrange

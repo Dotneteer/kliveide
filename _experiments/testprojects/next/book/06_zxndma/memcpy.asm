@@ -1,7 +1,9 @@
+.module DmaDemo
+
 ;==========================================================
 ; Example: Simple memcopy
 ;==========================================================
-DmaSimpleMemCopyDemo
+SimpleMemCopy
     ld hl,Title_DmaSimpleMemCopy
     Display.PrintTitle(Title_DmaSimpleMemCopy)
     Display.Ink(Color.Black)
@@ -43,3 +45,5 @@ DmaSimpleMemCopy_Code:
     .dma load
     .dma enable
 DmaSimpleMemCopy_Code_End
+
+.endmodule

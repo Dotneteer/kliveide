@@ -2,8 +2,9 @@
  * Unit tests for DMA Timing and Contention
  * Step 19: Memory Contention and Timing
  * 
- * These tests verify that DMA properly accounts for memory wait states
- * and contention at different CPU speeds and memory regions.
+ * These tests verify that DMA timing follows the FPGA DMA state machine.
+ * CPU memory wait states are tested separately; zxnDMA memory cycles use the
+ * DMA cycle lengths programmed through WR1/WR2.
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -111,7 +112,7 @@ describe("DMA Timing and Contention", () => {
       expect(machine.memoryDevice.readMemory(0x9000)).toBe(0xCC);
     });
 
-    it("should consume 7 T-states at 28 MHz for SRAM-to-SRAM (4 read + 3 write)", () => {
+    it("should consume 6 DMA clocks at 28 MHz for SRAM-to-SRAM (3 read + 3 write)", () => {
       // --- Arrange
       machine.cpuSpeedDevice.nextReg07Value = 0x03; // 28 MHz
       machine.memoryDevice.writeMemory(0x8000, 0xDD);
@@ -125,9 +126,8 @@ describe("DMA Timing and Contention", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      // At 28 MHz, SRAM reads get +1 wait state (3 + 1 = 4)
-      // Writes always 3 T-states
-      expect(tStates).toBe(7); // 4 T-states read + 3 T-states write
+      // DMA memory cycles do not use the CPU-only 28 MHz read wait state.
+      expect(tStates).toBe(6); // 3 DMA clocks read + 3 DMA clocks write
       expect(machine.memoryDevice.readMemory(0x9000)).toBe(0xDD);
     });
   });
@@ -158,7 +158,7 @@ describe("DMA Timing and Contention", () => {
       expect(machine.memoryDevice.readMemory(0xA000)).toBe(0xEE);
     });
 
-    it("should consume 7 T-states reading from Bank 5 (with wait state)", () => {
+    it("should consume 6 T-states reading from Bank 5", () => {
       // --- Arrange
       // Bank 5 is at pages 0x0A and 0x0B - default mapped to 0x4000-0x7FFF
       machine.memoryDevice.writeMemory(0x4000, 0xFF);
@@ -172,12 +172,11 @@ describe("DMA Timing and Contention", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      // Bank 5 has wait state at 28 MHz: 4 T-states read + 3 T-states write = 7
-      expect(tStates).toBe(7);
+      expect(tStates).toBe(6);
       expect(machine.memoryDevice.readMemory(0x9000)).toBe(0xFF);
     });
 
-    it("should consume 7 T-states for SRAM read regions", () => {
+    it("should consume 6 T-states for SRAM read regions", () => {
       // --- Arrange
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       configureMemoryTransfer(0x8000, 0xA000, 1);
@@ -190,8 +189,7 @@ describe("DMA Timing and Contention", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      // SRAM regions get wait state: 4 T-states read + 3 T-states write = 7
-      expect(tStates).toBe(7);
+      expect(tStates).toBe(6);
       expect(machine.memoryDevice.readMemory(0xA000)).toBe(0x11);
     });
   });
@@ -207,25 +205,13 @@ describe("DMA Timing and Contention", () => {
       const initialTacts = machine.tacts;
 
       // --- Act
-      // Transfer byte 1: Request bus (0 T-states)
+      // The machine drains bus-held continuous DMA before the CPU resumes.
       machine.beforeInstructionExecuted();
-      
-      // Transfer byte 1: Acknowledge + transfer (7 T-states)
-      machine.beforeInstructionExecuted();
-      
-      const tactsAfterByte1 = machine.tacts - initialTacts;
-      
-      // Transfer byte 2: Request bus (0 T-states)
-      machine.beforeInstructionExecuted();
-      
-      // Transfer byte 2: Acknowledge + transfer (7 T-states)
-      machine.beforeInstructionExecuted();
-      
+
       const totalTacts = machine.tacts - initialTacts;
 
       // --- Assert
-      expect(tactsAfterByte1).toBe(7); // First byte: 7 T-states
-      expect(totalTacts).toBe(14); // Two bytes: 7 + 7 = 14 T-states
+      expect(totalTacts).toBe(12); // Two bytes: 6 + 6 DMA clocks
       expect(machine.memoryDevice.readMemory(0xA000)).toBe(0x22);
       expect(machine.memoryDevice.readMemory(0xA001)).toBe(0x33);
     });
@@ -244,12 +230,7 @@ describe("DMA Timing and Contention", () => {
       const initialTacts = machine.tacts;
 
       // --- Act
-      // Byte 1
-      machine.beforeInstructionExecuted();
-      machine.beforeInstructionExecuted();
-      
-      // Byte 2
-      machine.beforeInstructionExecuted();
+      // The machine drains bus-held continuous DMA before the CPU resumes.
       machine.beforeInstructionExecuted();
       
       const totalTacts = machine.tacts - initialTacts;
@@ -309,10 +290,10 @@ describe("DMA Timing and Contention", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Step 28: Prescaler timing applies to all operating modes
+// Step 28: Prescaler timing applies to paced burst transfers
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("DmaDevice - Step 28: Prescaler timing for all modes", () => {
+describe("DmaDevice - Step 28: Prescaler timing for burst mode", () => {
   let machine: TestZxNextMachine;
   let dma: DmaDevice;
 
@@ -380,7 +361,7 @@ describe("DmaDevice - Step 28: Prescaler timing for all modes", () => {
     expect(tStates).toBe(expectedTStates);
   });
 
-  it("Continuous mode with non-zero prescaler uses prescaler T-states (Step 28)", () => {
+  it("Continuous mode with non-zero prescaler still uses standard memory timing", () => {
     // Configure continuous mode with prescaler=2
     dma.writeWR6(0xc7); dma.writeWR6(0xcb);
     dma.writeWR0(0x7d);
@@ -394,8 +375,6 @@ describe("DmaDevice - Step 28: Prescaler timing for all modes", () => {
     dma.writePort(0x00); dma.writePort(0x90);
     machine.memoryDevice.writeMemory(0x8000, 0x42);
     dma.writeWR6(0xcf); dma.writeWR6(0x87);
-    // prescaler=2 → floor((2 * 3_500_000) / 875_000) = 8 T-states per byte
-    const expectedTStates = Math.floor((2 * 3500000) / 875000);
     let tStates = 0;
     machine.dmaDevice.requestBus();
     machine.dmaDevice.acknowledgeBus();
@@ -405,7 +384,7 @@ describe("DmaDevice - Step 28: Prescaler timing for all modes", () => {
       const t = machine.dmaDevice.stepDma();
       if (t > 0) { tStates = t; break; }
     }
-    expect(tStates).toBe(expectedTStates);
+    expect(tStates).toBe(6); // 3 (mem read) + 3 (mem write)
   });
 
   it("Continuous mode with zero prescaler uses standard memory timing", () => {
@@ -430,5 +409,5 @@ describe("DmaDevice - Step 28: Prescaler timing for all modes", () => {
     }
     expect(tStates).toBe(6); // 3 (mem read) + 3 (mem write) = 6
   });
-});
 
+});

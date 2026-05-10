@@ -32,4 +32,5 @@ Topics:
 
 - **CPU-paced sample.** Play an 8 kHz speech sample using a CTC ISR.
 - **DMA-paced sample.** Replay the same sample using DMA. Compare CPU load (use the CTC profiling utility from chapter 5 to measure how much main-loop time you actually win back).
+- **CTC-paced DMA streaming.** Stream a small unsigned 8-bit sample buffer to a DAC port using burst-mode DMA paced by a CTC channel. The DMA transfers one byte per CTC trigger, releases the bus between samples, and lets the CPU continue running a small animation or counter in the foreground. The foreground activity proves the CPU is not trapped in the sample-output loop.
 - **Drum + chip music.** AY tracker tune playing in the background, DMA-driven drum hits triggered on key press.

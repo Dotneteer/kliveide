@@ -19,8 +19,7 @@ FrameCounter
     ; --- Point I at the high byte of the vector table.
     ;     The table is .align 256 (low byte = 0), so the CPU will fetch
     ;     the ISR address from (I:vector_byte) on every IM2 acknowledge.
-    ld hl,@VectorTable
-    ld a,h
+    ld a,high(@VectorTable)
     ld i,a
     im 2
 
@@ -116,8 +115,7 @@ TwoSources
     Display.PrintText(@Instr_TwoSources)
 
     di
-    ld hl,@VectorTable2
-    ld a,h
+    ld a,high(@VectorTable2)
     ld i,a
     im 2
 
@@ -156,24 +154,19 @@ TwoSources
     push af
     ld a,$02                  ; Red border
     out ($FE),a
-
-    ; Disable Line, keep ULA enabled.
-    ; This prevents the higher-priority Line source from blocking ULA.
-    nextreg NR_INT_EN_0,%00000001
-
+ 
+    ; Clear the readable Line status bit; RETI releases the IM2 in-service state.
     nextreg NR_INT_STATUS_0,%00000010
     pop af
     ei
     reti
-
+ 
 @UlaIsr2
     push af
     xor a                     ; Black border at start/end of frame
     out ($FE),a
-
-    ; Re-arm Line for this new frame, keep ULA enabled.
-    nextreg NR_INT_EN_0,%00000011
-
+ 
+    ; Clear the readable ULA status bit; RETI releases the IM2 in-service state.
     nextreg NR_INT_STATUS_0,%00000001
     pop af
     ei

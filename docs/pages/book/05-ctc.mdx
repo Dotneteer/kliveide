@@ -1,4 +1,5 @@
 import { Callout } from 'nextra/components'
+import { ClickableImage } from '../../page-components'
 
 # The CTC: Counter/Timer Circuit
 
@@ -10,7 +11,7 @@ But the CTC isn't just a stopwatch. It's a full Zilog Z80 CTC with four independ
 
 > **What this chapter assumes.** You should already be comfortable with `IN`/`OUT` and NextRegs ([I/O Ports and NextRegs](./02-io-and-nextregs.mdx)). The interrupt sections at the end build on the Z80's IM2 mode and the Next's hardware IM2 controller, both covered in [Interrupts](./04-interrupts.mdx).
 
-The following sections start with the fundamentals, build up to practical timing code, and finish with interrupt-driven patterns. If you only care about measuring code speed, "Measuring Execution Time" is where you want to be, but understanding the underlying mechanics will help you troubleshoot the inevitable "why is my counter reading wrong?" moments.
+The following sections start with the fundamentals, build up to practical timing code, and finish with interrupt-driven patterns. If you only care about measuring code speed, start at "Measuring Execution Time"; the two sections after it cover longer timing windows and accuracy trade-offs. Understanding the underlying mechanics will help you troubleshoot the inevitable "why is my counter reading wrong?" moments.
 
 ## What the CTC Is (and Isn't)
 
@@ -86,10 +87,14 @@ Here's the typical two-write sequence to configure a channel:
 ```z80klive
     ; Configure Channel 0 as a timer, prescaler ÷16, start immediately
     ld bc,$183B             ; Channel 0 port
-    ld a,%00000101          ; D2=1 (time constant follows)
-                             ; D1=0 (no reset), D0=1 (control word)
-                             ; D6=0 (timer mode), D5=0 (prescaler ÷16)
-                             ; D3=0 (start immediately)
+    ld a,%00000101          ; D0=1 (control word)
+                            ; D1=0 (no reset), D0=1 (control word)
+                            ; D2=1 (time constant follows)
+                            ; D3=0 (start immediately)
+                            ; D4=0 (trigger on falling edge)
+                            ; D5=0 (prescaler ÷16)
+                            ; D6=0 (timer mode)
+                            ; D7=0 (no interrupt)
     out (c),a               ; Send control word
 
     ld a,200                ; Time constant: count down from 200
@@ -97,6 +102,8 @@ Here's the typical two-write sequence to configure a channel:
 ```
 
 After the time constant byte is written, the channel transitions to the RUNNING state and begins counting down. In timer mode with D3=0 (start immediately), this happens on the next clock cycle. With D3=1, the channel waits for a trigger edge before starting.
+
+The time constant is not a one-use starting value. The CTC stores it internally. Whenever the counter reaches zero and emits its ZC/TO pulse, the channel automatically reloads the counter from that saved value and continues.
 
 ## Timer Mode: How the Countdown Works
 
@@ -153,7 +160,7 @@ This is the core primitive for timing: read before, read after, subtract.
 
 ## Measuring Execution Time
 
-This is the section you came here for. Let's build a practical code-timing setup, step by step.
+This is the section you came here for. Let's build the smallest practical code-timing setup: one CTC channel used as a stopwatch for short code blocks.
 
 ### The Basic Idea
 
@@ -190,7 +197,7 @@ CTC_CH0     equ $183B
     in a,(c)                ; Read counter AFTER
     ld b,a                  ; B = end value
     ld a,(startCount)       ; A = start value
-    sub b                    ; A = elapsed ticks (start − end, since it counts down)
+    sub b                   ; A = elapsed ticks (start − end, since it counts down)
     ld (elapsedTicks),a     ; Save result
 
 ; === Convert to time ===
@@ -232,6 +239,10 @@ In practice, the measurement overhead itself (~10 ticks at 3.5 MHz, as computed 
 - Code that runs faster than one tick: returns 0 elapsed ticks (not detectable)
 - Practical minimum useful measurement: ~5.7 μs (the overhead of the bracketing instructions at 3.5 MHz)
 - For sub-microsecond profiling at 28 MHz: count T-states manually from the instruction timing tables
+
+## Extending the Measurement Range
+
+One CTC channel gives excellent resolution, but only an 8-bit timing window. For longer routines, keep Channel 0 as the fine timer and cascade additional channels as coarse counters.
 
 ### Cascaded Timing (Longer Code Blocks)
 
@@ -284,7 +295,7 @@ CTC_CH1     equ $193B
 
 ; Elapsed = startDE − endDE (both channels count down)
     ld hl,(startCoarse)     ; H = start coarse, L = start fine
-    or a                     ; clear carry flag
+    or a                    ; clear carry flag
     sbc hl,de               ; HL = start − end (elapsed ticks, since counters count down)
     ex de,hl                ; DE = elapsed ticks
 
@@ -309,11 +320,11 @@ The two-channel snapshot requires four `IN` instructions instead of two — one 
 At 3.5 MHz with prescaler ÷16, here's what accumulates on each side of the code under test:
 
 **Before the code** (after the Ch1 start read):
-- `LD D, A` + `LD B, high(CTC_CH0)` + `IN A,(C)` + `LD E, A` + `LD (startCoarse), DE`
+- `LD D,A` + `LD B,high(CTC_CH0)` + `IN A,(C)` + `LD E,A` + `LD (startCoarse),DE`
 - 4 + 7 + 12 + 4 + 20 = 47 T-states × 8 clocks/T-state ÷ 16 = **~24 CTC ticks**
 
 **After the code** (before the Ch0 end read):
-- `LD BC, CTC_CH1` + `IN A,(C)` + `LD D, A` + `LD B, high(CTC_CH0)`
+- `LD BC,CTC_CH1` + `IN A,(C)` + `LD D,A` + `LD B,high(CTC_CH0)`
 - 10 + 12 + 4 + 7 = 33 T-states = **~17 CTC ticks**
 
 Plus the two boundary `IN` instructions themselves: 12 + 12 T-states = **12 CTC ticks**
@@ -451,6 +462,153 @@ The trade-off is resolution: each tick is now ~9.1 μs instead of ~571 ns. For a
     out (c),a
 ```
 
+### Demo: Measuring Time
+
+This demo packages the two-channel cascaded setup from the previous section into a small reusable timing helper. Channel 0 supplies the fine ÷16 timer ticks, and Channel 1 counts Channel 0 wraparounds. Each tick is still about 571 ns, so you can convert the printed value to wall-clock time with the same math used in the earlier cascaded-timing snippets.
+
+The helper returns the elapsed 16-bit count in `DE`. The demo exchanges it into `HL` only because the display helper prints `HL`.
+
+Each measured block follows the same shape:
+
+```z80klive
+    ; Prepare the 16-bit CTC stopwatch
+    call Timing.SetupCtc16
+    call Timing.StartMeasure
+
+    ; ---- Code under test ----
+
+    ; Read the elapsed 16-bit tick count in DE
+    call Timing.GetMeasuredCounter
+    ex de,hl
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+```
+
+`SetupCtc16` is the setup code from "Cascaded Timing (Longer Code Blocks)" packaged as a subroutine. `StartMeasure` snapshots the current coarse/fine counter pair. `GetMeasuredCounter` snapshots it again, subtracts the two down-counting values, and returns the elapsed tick count in `DE`. The routine also stores the new snapshot as the next start value, which is handy if you later want lap-style measurements.
+
+```z80klive
+.module Timing
+
+CTC_CH0     .equ $183b
+CTC_CH1     .equ $193b
+CTC_CH2     .equ $1a3b
+CTC_CH3     .equ $1b3b
+
+; The counter value when measuring starts
+Counter_Start
+    .defw 0
+
+; Sets up the CTC (CH0 and CH1) for 16-bit counting.
+; The counter starts the countdown immediately.
+SetupCtc16
+; === Set up Channel 0: timer, prescaler ÷16, time constant = 256 ===
+; ZC/TO fires every 256 × 16 / 28 MHz ≈ 146.3 μs
+    ld bc,CTC_CH0
+    ld a,%00000101          ; Timer mode, prescaler ÷16, time const follows
+    out (c),a
+    ld a,0                  ; Time constant = 256
+    out (c),a
+
+; === Set up Channel 1: counter mode, triggered by Ch0's ZC/TO ===
+; Each Ch0 ZC/TO decrements Ch1 by 1
+    ld b,high(CTC_CH1)
+    ld a,%01000101          ; Counter mode (D6=1), time const follows
+    out (c),a
+    ld a,0                  ; Time constant = 256
+    out (c),a
+    ret
+
+; Saves the current counter value (start counter).
+StartMeasure
+    ld bc,CTC_CH1
+    in a,(c)
+    ld d,a                  ; D = coarse count (Ch1)
+    ld b,high(CTC_CH0)
+    in a,(c)
+    ld e,a                  ; E = fine count (Ch0)
+    ld (Counter_Start),de   ; Save 16-bit start value
+    ret
+
+; Gets the measured value since the last start.
+GetMeasuredCounter
+    ld bc,CTC_CH1
+    in d,(c)
+    ld b,high(CTC_CH0)
+    in e,(c)
+
+; Elapsed = start − end (both channels count down)
+    ld hl,(Counter_Start)   ; H = start coarse, L = start fine
+    ld (Counter_Start),de   ; Next time use this start value
+    or a                    ; clear carry flag
+    sbc hl,de               ; HL = start − end (elapsed ticks, since counters count down)
+    ex de,hl                ; DE = elapsed ticks
+    ret
+
+; Decrements BC in a loop until it reaches 0
+@DelayWithBc
+    dec bc
+    ld a,b
+    or c
+    ret z
+    jr @DelayWithBc
+
+Delay .macro(value)
+    push bc
+    ld bc,{{value}}
+`loop
+    call @DelayWithBc
+    pop bc
+    .endm
+
+.endmodule
+```
+
+The demo reuses the same measurement wrapper around three different code blocks:
+
+`CtcDemos.Measure1` measures a full `DJNZ` loop. Loading `B` with zero gives 256 iterations, because `DJNZ` decrements first and stops only when the result becomes zero.
+
+```z80klive
+    ld b,$00
+`loop
+    djnz `loop
+```
+
+<Callout type="info" emoji="💡">
+Try the `CtcDemos.Measure1` example.
+</Callout>
+
+<ClickableImage src="/images/book/05-ctc/measure-1.png" width="720" />
+
+`CtcDemos.Measure2` measures the same loop body with fewer iterations:
+
+```z80klive
+    ld b,$80
+`loop
+    djnz `loop
+```
+
+<Callout type="info" emoji="💡">
+Try the `CtcDemos.Measure2` example.
+</Callout>
+
+<ClickableImage src="/images/book/05-ctc/measure-2.png" width="720" />
+
+`CtcDemos.Measure3` measures a longer `BC` countdown. The `Timing.Delay` macro is only a thin wrapper around the helper loop shown above, so the measured block stays readable:
+
+```z80klive
+    Timing.Delay($1800)
+```
+
+<Callout type="info" emoji="💡">
+Try the `CtcDemos.Measure3` example.
+</Callout>
+
+<ClickableImage src="/images/book/05-ctc/measure-3.png" width="720" />
+
+## Choosing and Interpreting Measurements
+
+Once you have the basic and cascaded setups, the remaining work is choosing the right range and understanding the small errors that come from reading live counters.
+
 ### Quick Reference: Measurement Ranges
 
 | Setup | Tick Duration | 1 channel | 2 channels | 3 channels | 4 channels |
@@ -552,77 +710,240 @@ For example, if NR `$C0` bits [7:5] = `110` (top bits = `$C0`):
 
 The CPU reads the ISR address from the vector table at `(I × 256 + vector)`.
 
-### Setting Up a Periodic CTC Interrupt
+### Demo: Setting Up a Periodic CTC Interrupt
 
-Here's a complete example: Channel 2 generates an interrupt every ~146 μs (prescaler ÷16, time constant 256), which an Interrupt Service Routine (ISR) uses to increment a frame sub-counter:
+This demo uses the CTC as a background metronome. Channels 0, 1, and 2 form a cascade; only Channel 2 is allowed to interrupt the CPU. The ISR increments a 16-bit counter, while the main loop keeps moving one attribute byte along screen row 8 and exits when you press Space.
+
+That split is the important pattern: the interrupt does the tiny, time-sensitive job, and the main loop does the visible work. If the ISR starts printing text or painting the screen, it stops being a timer tick and becomes a surprise scheduling problem. Keep it boring. Boring ISRs are good ISRs.
 
 ```z80klive
-CTC_CH2     equ $1A3B
-NR_REG      equ $243B
-NR_DAT      equ $253B
+.module CtcInterruptDemo
 
-    ; === Enable hardware IM2 mode ===
-    ld a,$C0
-    ld bc,NR_REG
-    out (c),a               ; Select NR $C0
-    ld a,%11000001          ; Top bits = $C0, HW IM2 enable
-    ld bc,NR_DAT
-    out (c),a
+NR_INT_CONTROL  .equ $c0
+NR_INT_EN_0     .equ $c4
+NR_INT_EN_1     .equ $c5
+NR_INT_STATUS_0 .equ $c8
+NR_INT_STATUS_1 .equ $c9
 
-    ; === Enable CTC channel 2 interrupts ===
-    ld a,$C5
-    ld bc,NR_REG
-    out (c),a               ; Select NR $C5
-    ld a,%00000100          ; Enable channel 2 (bit 2)
-    ld bc,NR_DAT
-    out (c),a
+CTC_CH0         .equ $183b
+CTC_CH1         .equ $193b
+CTC_CH2         .equ $1a3b
 
-    ; === Set up the IM2 vector table ===
-    ; CTC Ch2 vector = $C0 | $0A = $CA
-    ; With I = $FE, the ISR address is at ($FE00 + $CA) = $FECA
-    ld hl,ctcIsr
-    ld ($FECA),hl           ; Store ISR address at vector location
+VECTOR_TOP_BITS .equ %01100000   ; $60
+CTC2_PRIORITY   .equ 5
+CTC2_VECTOR     .equ VECTOR_TOP_BITS | (CTC2_PRIORITY << 1) ; $6A
 
-    ld a,$FE
+;==========================================================
+; CTC interrupt demo: increment a 16-bit counter every 100 ms
+;==========================================================
+Every100MsCounter
+    Display.PrintTitle(@Title)
+    Display.PrintText(@Instr)
+
+    di
+
+    ; Keep unrelated interrupt sources quiet for this demo.
+    nextreg NR_INT_EN_0,0
+    nextreg NR_INT_EN_1,0
+    nextreg NR_INT_STATUS_0,$ff
+    nextreg NR_INT_STATUS_1,$ff
+
+    call @ResetCtcChannels
+
+    xor a
+    ld (@Ticks100ms),a
+    ld (@Ticks100ms+1),a
+
+    ; Set up hardware IM2.
+    ld a,high(@VectorTable)
     ld i,a
     im 2
+    nextreg NR_INT_CONTROL,VECTOR_TOP_BITS | $01
+
+    ; Enable CTC channel 2 in the Next interrupt controller.
+    nextreg NR_INT_EN_1,%00000100
+    nextreg NR_INT_STATUS_1,%00000100
+
+    ; Downstream channels first, then start Channel 0.
+    ;
+    ; Nominal 28 MHz math:
+    ; Ch0: 28 MHz / 16 / 250 = 7000 Hz       -> ~142.857 us
+    ; Ch1: 7000 Hz / 28      = 250 Hz        -> 4 ms
+    ; Ch2: 250 Hz / 25       = 10 Hz         -> 100 ms
+    ;
+    ; Only Channel 2 has its interrupt-enable bit set.
+
+    ld bc,CTC_CH2
+    ld a,%11000101          ; Interrupt on, counter mode, time constant follows
+    out (c),a
+    ld a,25
+    out (c),a
+
+    ld bc,CTC_CH1
+    ld a,%01000101          ; Counter mode, time constant follows
+    out (c),a
+    ld a,28
+    out (c),a
+
+    ld bc,CTC_CH0
+    ld a,%00000101          ; Timer mode, prescaler ÷16, time constant follows
+    out (c),a
+    ld a,250
+    out (c),a
+
     ei
 
-    ; === Configure CTC Channel 2 ===
-    ld bc,CTC_CH2
-    ld a,%10000101          ; D7=1 (interrupt enable), timer, prescaler ÷16,
-                             ; start immediately, time const follows
-    out (c),a
-    ld a,0                  ; Time constant = 256
-    out (c),a
-    ; Channel 2 is now running and will interrupt every ~146 μs
+`mainLoop
+    ; Show the 16-bit counter. Read it atomically because the ISR
+    ; can update it between the low-byte and high-byte loads.
+    di
+    ld hl,(@Ticks100ms)
+    ei
 
-    ; ... main program continues ...
+    Display.PrintAt(10,0)
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
 
-; === CTC Channel 2 ISR ===
-ctcIsr:
+    ; Do something visible while the interrupt-driven counter runs.
+    call @AnimateAttributes
+
+    ld a,$7f                ; Read keyboard row 7: Space
+    in a,($fe)
+    bit 0,a
+    jr nz,`mainLoop
+
+    di
+    nextreg NR_INT_EN_1,0
+    nextreg NR_INT_STATUS_1,%00000100
+    call @ResetCtcChannels
+
+    nextreg NR_INT_EN_0,1   ; Leave ULA enabled for normal IM1/pulse-mode code
+    nextreg NR_INT_CONTROL,0
+    im 1
+    ei
+    ret
+
+;----------------------------------------------------------
+; CTC Channel 2 ISR: nominally once every 100 ms
+;----------------------------------------------------------
+@Ctc2Isr
     push af
-    push bc
-    
-    ld a,(subCounter)
-    inc a
-    ld (subCounter),a
-    
-    ; Clear the interrupt status (write 1 to bit 2 of NR $C9)
-    ld a,$C9
-    ld bc,NR_REG
-    out (c),a
-    ld a,%00000100
-    ld bc,NR_DAT
-    out (c),a
-    
-    pop bc
+    push hl
+
+    ld hl,(@Ticks100ms)
+    inc hl
+    ld (@Ticks100ms),hl
+
+    ; Clear CTC channel 2 readable status.
+    ; RETI releases the hardware IM2 in-service state.
+    nextreg NR_INT_STATUS_1,%00000100
+
+    pop hl
     pop af
     ei
     reti
 
-subCounter: .db 0
+;----------------------------------------------------------
+; Main-loop screen activity: move one attribute along row 8
+;----------------------------------------------------------
+@AnimateAttributes
+    ; Slow the animation down so it is visible.
+    ld hl,(@AnimDelay)
+    dec hl
+    ld (@AnimDelay),hl
+    ld a,h
+    or l
+    ret nz
+
+    ld hl,900
+    ld (@AnimDelay),hl
+
+    ; Clear the previous attribute cell.
+    ld a,(@AttrCol)
+    ld e,a
+    ld d,0
+    ld hl,$5800 + 8 * 32
+    add hl,de
+    ld (hl),%00111000       ; White paper, black ink
+
+    ; Advance to the next column, wrapping after column 31.
+    ld a,(@AttrCol)
+    inc a
+    and $1f
+    ld (@AttrCol),a
+
+    ; Paint the new cell.
+    ld e,a
+    ld d,0
+    ld hl,$5800 + 8 * 32
+    add hl,de
+    ld (hl),%01000111       ; Bright black paper, white ink
+    ret
+
+@AnimDelay
+    .defw 1
+
+@AttrCol
+    .db 31
+
+;----------------------------------------------------------
+; Put channels 0-2 into a known stopped/control-word state
+;----------------------------------------------------------
+@ResetCtcChannels
+    ld a,%00000011          ; D1=1 soft reset, D0=1 control word
+
+    ld bc,CTC_CH0
+    out (c),a
+    out (c),a
+
+    ld b,high(CTC_CH1)
+    out (c),a
+    out (c),a
+
+    ld b,high(CTC_CH2)
+    out (c),a
+    out (c),a
+    ret
+
+@Ticks100ms
+    .defw 0
+
+    .align 256
+@VectorTable
+    .defs CTC2_VECTOR
+    .defw @Ctc2Isr
+    .defs $100 - CTC2_VECTOR - 2
+
+@Title
+    .defn "CTC #4: Interrupt (100ms tick)"
+
+@Instr
+    .defm "A CTC interrupt increments\x0d"
+    .defm "the counter every 100 ms. The\x0d"
+    .defm "main loop keeps touching screen\x0d"
+    .defm "attributes.\x0d"
+    .defn "Press Space to stop."
+
+.endmodule
 ```
+
+There are four moving parts here:
+
+- **Hardware IM2 setup.** The vector table is aligned to a 256-byte page, `I` points at that page, and NR `$C0` enables hardware IM2 with top bits `$60`. CTC Channel 2 has priority 5, so its vector byte is `$60 | (5 << 1) = $6A`.
+- **Separate CTC interrupt enable.** The CTC control word enables Channel 2's own interrupt output, and NR `$C5` bit 2 lets that source into the Next interrupt controller. Both sides matter.
+- **Cascade order.** Channels 2 and 1 are configured before Channel 0 starts. That way the downstream counters are ready before the first upstream ZC/TO pulse arrives.
+- **Automatic reload.** The `250`, `28`, and `25` values are saved inside the three CTC channels as time constants. After each channel reaches zero, it emits ZC/TO and reloads itself from that saved value. The ISR only acknowledges Channel 2's interrupt; it does not restart the cascade.
+- **Short ISR, busy main loop.** The ISR increments `@Ticks100ms`, clears NR `$C9` bit 2, and returns with `EI; RETI`. The main loop reads the counter with interrupts briefly disabled and does the screen animation outside the ISR.
+
+The timing comments use the nominal 28 MHz system clock, which gives clean arithmetic:
+
+```text
+28,000,000 / 16 / 250 / 28 / 25 = 10 Hz
+```
+
+<ClickableImage src="/images/book/05-ctc/interrupt-timer.png" width="720" />
+
+On real hardware, treat that as the starting point rather than a calibrated stopwatch. The CTC runs from the active system clock domain, and its exact wall-clock rate depends on the active timing configuration and the CTC's divider behavior. If a 60-second stopwatch run produces 545 ticks instead of 600, the ISR logic is not losing ticks; the real divider chain is simply not matching the clean nominal calculation. For wall-clock-accurate ticks, measure the active rate on your target mode and adjust the three time constants accordingly.
 
 ### Combining CTC Interrupts with DMA
 
@@ -696,93 +1017,13 @@ Why twice? If the channel was in the TIME_CONSTANT state (waiting for a time con
 
 **Time constant 0 = 256.** This is standard Zilog behavior. Loading 0 gives you the maximum count range (256 ticks before ZC/TO). Loading 1 gives the minimum (1 tick before ZC/TO, i.e., ZC/TO fires on the very next prescaler pulse).
 
+**The time constant reloads automatically.** Once a channel is running, reaching zero does not stop it. The CTC emits ZC/TO, reloads the counter from the stored time constant, and carries on. This is why periodic interrupt handlers usually clear the interrupt status and return; they do not rewrite the CTC time constant on every tick.
+
 **Prescaler phase matters.** The prescaler is a free-running 8-bit counter that is never explicitly reset in normal operation. When your time constant loads after a control word write, the first tick might arrive slightly earlier or later than expected, depending on where the prescaler happens to be. For single-shot measurements, this adds up to ±1 tick of jitter. Over multiple ZC/TO periods, it averages out.
 
 **Don't change D4 while running.** Writing a control word that changes the trigger edge (D4) counts as a clock edge internally. If the channel is running, this can cause an unexpected decrement. Configure D4 before starting the channel.
 
 **Interrupt status must be cleared manually.** After servicing a CTC interrupt, write a 1 to the corresponding bit in NextReg `$C9` to clear the status. If you forget, the interrupt will not fire again (the status bit stays set and blocks new triggers).
-
-## Putting It All Together: A Timing Utility
-
-Here's a reusable timing utility that sets up the cascaded Channel 0 + Channel 1 pair for measuring arbitrary code blocks. Call `ctcTimerInit` once, then bracket your code with `ctcTimerStart` and `ctcTimerStop`. The 16-bit result in `DE` is the elapsed count in prescaler-÷16 ticks (~571 ns each).
-
-```z80klive
-CTC_CH0     equ $183B
-CTC_CH1     equ $193B
-
-; ============================================================
-; ctcTimerInit — Set up channels 0 and 1 for cascaded timing
-; Destroys: A, BC
-; ============================================================
-ctcTimerInit:
-    ; Channel 0: timer, prescaler ÷16, time constant = 256
-    ld bc,CTC_CH0
-    ld a,%00000101          ; Timer, ÷16, time constant follows, start immediately
-    out (c),a
-    ld a,0                  ; TC = 256
-    out (c),a
-
-    ; Channel 1: counter mode, time constant = 256
-    ; Triggered by Channel 0's ZC/TO
-    ld bc,CTC_CH1
-    ld a,%01000101          ; Counter mode, time constant follows
-    out (c),a
-    ld a,0                  ; TC = 256
-    out (c),a
-    ret
-
-; ============================================================
-; ctcTimerStart — Snapshot the current counter pair into (ctc_start)
-; Destroys: A, BC, DE
-; ============================================================
-ctcTimerStart:
-    ld bc,CTC_CH1
-    in a,(c)
-    ld d,a                  ; D = coarse (Ch1)
-    ld b,high(CTC_CH0)      ; C is still $3B — only B needs to change
-    in a,(c)
-    ld e,a                  ; E = fine (Ch0)
-    ld (ctc_start),de
-    ret
-
-; ============================================================
-; ctcTimerStop — Read counters and compute elapsed ticks in DE
-; Destroys: A, BC, HL
-; Returns: DE = elapsed ticks (16-bit, units of ~571 ns each)
-; ============================================================
-ctcTimerStop:
-    ld bc,CTC_CH1
-    in a,(c)
-    ld d,a                  ; D = coarse (Ch1)
-    ld b,high(CTC_CH0)      ; C is still $3B — only B needs to change
-    in a,(c)
-    ld e,a                  ; E = fine (Ch0)
-    ; elapsed = start − end (counters count down)
-    ld hl,(ctc_start)       ; H = start coarse, L = start fine
-    or a                     ; clear carry flag
-    sbc hl,de               ; HL = start − end = elapsed ticks
-    ex de,hl                ; DE = elapsed ticks
-    ret
-
-ctc_start: .dw 0
-```
-
-Usage:
-
-```z80klive
-    call ctcTimerInit        ; One-time setup
-
-    ; ... later, when you want to measure something:
-    call ctcTimerStart       ; Snapshot start counters
-    
-    call myExpensiveRoutine  ; The code you're profiling
-    
-    call ctcTimerStop        ; DE = elapsed ticks
-    ; DE × 571 ≈ elapsed nanoseconds
-    ; DE × 571 / 1000 ≈ elapsed microseconds
-```
-
-And there you have it: a hardware stopwatch for your Z80 code, accurate to about half a microsecond, with no T-state counting required. The CTC doesn't care what the CPU is doing — it just counts, and when you ask, it tells you where it's at. Sometimes the simplest tools are the most useful.
 
 ## Where Next
 

@@ -530,6 +530,31 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
+   * Returns true when a currently pending interrupt source is also enabled as
+   * a DMA break-in source through NR $CC-$CE.
+   *
+   * FPGA equivalent: peripherals.vhd o_dma_int, driven from the interrupt
+   * request vector and the separate im2_dma_int_en mask.
+   */
+  get dmaInterruptRequestActive(): boolean {
+    if (this.enableLineIntToIntDma && this.lineInterruptStatus) return true;
+    if (this.enableUlaIntToIntDma && this.ulaInterruptStatus) return true;
+
+    for (let i = 0; i < 8; i++) {
+      if (this.enableCtcToIntDma[i] && this.ctcIntStatus[i]) return true;
+    }
+
+    if (this.enableUart0RxNearFullToIntDma && this.uart0RxNearFullStatus) return true;
+    if (this.enableUart0RxAvailableToIntDma && this.uart0RxAvailableStatus) return true;
+    if (this.enableUart0TxEmptyToIntDma && this.uart0TxEmptyStatus) return true;
+    if (this.enableUart1RxNearFullToIntDma && this.uart1RxNearFullStatus) return true;
+    if (this.enableUart1RxAvailableToIntDma && this.uart1RxAvailableStatus) return true;
+    if (this.enableUart1TxEmptyToIntDma && this.uart1TxEmptyStatus) return true;
+
+    return false;
+  }
+
+  /**
    * Acknowledges the highest-priority interrupt request in the daisy chain.
    * Transitions the device from Requesting to InService, clears its request
    * status flag, and returns the IM2 vector.
