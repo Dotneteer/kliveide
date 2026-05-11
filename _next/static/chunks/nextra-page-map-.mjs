@@ -11,6 +11,138 @@ export const pageMap = [{
   name: "book",
   route: "/book",
   children: [{
+    name: "01-z80n",
+    route: "/book/01-z80n",
+    frontMatter: {
+      "sidebarTitle": "01 Z80n"
+    }
+  }, {
+    name: "02-io-and-nextregs",
+    route: "/book/02-io-and-nextregs",
+    frontMatter: {
+      "sidebarTitle": "02 Io and Nextregs"
+    }
+  }, {
+    name: "03-memory",
+    route: "/book/03-memory",
+    frontMatter: {
+      "sidebarTitle": "03 Memory"
+    }
+  }, {
+    name: "04-interrupts",
+    route: "/book/04-interrupts",
+    frontMatter: {
+      "sidebarTitle": "04 Interrupts"
+    }
+  }, {
+    name: "05-ctc",
+    route: "/book/05-ctc",
+    frontMatter: {
+      "sidebarTitle": "05 Ctc"
+    }
+  }, {
+    name: "06-zxndma",
+    route: "/book/06-zxndma",
+    frontMatter: {
+      "sidebarTitle": "06 Zxndma"
+    }
+  }, {
+    name: "07-input",
+    route: "/book/07-input",
+    frontMatter: {
+      "sidebarTitle": "07 Input"
+    }
+  }, {
+    name: "08-ula-screen",
+    route: "/book/08-ula-screen",
+    frontMatter: {
+      "sidebarTitle": "08 Ula Screen"
+    }
+  }, {
+    name: "09-palettes",
+    route: "/book/09-palettes",
+    frontMatter: {
+      "sidebarTitle": "09 Palettes"
+    }
+  }, {
+    name: "10-lores",
+    route: "/book/10-lores",
+    frontMatter: {
+      "sidebarTitle": "10 Lores"
+    }
+  }, {
+    name: "11-layer2",
+    route: "/book/11-layer2",
+    frontMatter: {
+      "sidebarTitle": "11 Layer2"
+    }
+  }, {
+    name: "12-tilemap",
+    route: "/book/12-tilemap",
+    frontMatter: {
+      "sidebarTitle": "12 Tilemap"
+    }
+  }, {
+    name: "13-sprites",
+    route: "/book/13-sprites",
+    frontMatter: {
+      "sidebarTitle": "13 Sprites"
+    }
+  }, {
+    name: "14-copper",
+    route: "/book/14-copper",
+    frontMatter: {
+      "sidebarTitle": "14 Copper"
+    }
+  }, {
+    name: "15-compositing",
+    route: "/book/15-compositing",
+    frontMatter: {
+      "sidebarTitle": "15 Compositing"
+    }
+  }, {
+    name: "16-beeper",
+    route: "/book/16-beeper",
+    frontMatter: {
+      "sidebarTitle": "16 Beeper"
+    }
+  }, {
+    name: "17-ay",
+    route: "/book/17-ay",
+    frontMatter: {
+      "sidebarTitle": "17 Ay"
+    }
+  }, {
+    name: "18-dac",
+    route: "/book/18-dac",
+    frontMatter: {
+      "sidebarTitle": "18 Dac"
+    }
+  }, {
+    name: "19-storage",
+    route: "/book/19-storage",
+    frontMatter: {
+      "sidebarTitle": "19 Storage"
+    }
+  }, {
+    name: "20-uart",
+    route: "/book/20-uart",
+    frontMatter: {
+      "sidebarTitle": "20 Uart"
+    }
+  }, {
+    name: "21-rtc-i2c",
+    route: "/book/21-rtc-i2c",
+    frontMatter: {
+      "sidebarTitle": "21 Rtc I2c"
+    }
+  }, {
+    name: "22-game",
+    route: "/book/22-game",
+    frontMatter: {
+      "sidebarTitle": "22 Game"
+    }
+  }, {
     name: "app-A-nex-file-format",
     route: "/book/app-A-nex-file-format",
     frontMatter: {
@@ -27,6 +159,18 @@ export const pageMap = [{
     route: "/book/app-C-io-ports-reference",
     frontMatter: {
       "sidebarTitle": "App C Io Ports Reference"
+    }
+  }, {
+    name: "app-D-klive-asm-reference",
+    route: "/book/app-D-klive-asm-reference",
+    frontMatter: {
+      "sidebarTitle": "App D Klive Asm Reference"
+    }
+  }, {
+    name: "app-E-glossary",
+    route: "/book/app-E-glossary",
+    frontMatter: {
+      "sidebarTitle": "App E Glossary"
     }
   }, {
     name: "book-writing-guidelines",
@@ -47,28 +191,16 @@ export const pageMap = [{
       "sidebarTitle": "Introduction"
     }
   }, {
-    name: "next-hardware",
-    route: "/book/next-hardware",
-    frontMatter: {
-      "sidebarTitle": "Next Hardware"
-    }
-  }, {
     name: "preface",
     route: "/book/preface",
     frontMatter: {
       "sidebarTitle": "Preface"
     }
   }, {
-    name: "z80n",
-    route: "/book/z80n",
+    name: "toc",
+    route: "/book/toc",
     frontMatter: {
-      "sidebarTitle": "Z80n"
-    }
-  }, {
-    name: "zxndma",
-    route: "/book/zxndma",
-    frontMatter: {
-      "sidebarTitle": "Zxndma"
+      "sidebarTitle": "Toc"
     }
   }]
 }, {
@@ -393,6 +525,12 @@ export const pageMap = [{
     route: "/z80-assembly/macros",
     frontMatter: {
       "sidebarTitle": "Macros"
+    }
+  }, {
+    name: "modules",
+    route: "/z80-assembly/modules",
+    frontMatter: {
+      "sidebarTitle": "Modules"
     }
   }, {
     name: "pragmas",
