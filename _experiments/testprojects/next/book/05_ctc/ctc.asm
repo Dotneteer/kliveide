@@ -1,11 +1,11 @@
+.module CtcDemos
+
 ;==========================================================
 ; Measure a DJNZ loop (B=$C0)
 ;==========================================================
-Measure1Demo
-    ld hl,Title_Measure1
-    call _printTitle
-    ld hl,Instr_Measure
-    call _printText
+Measure1
+    Display.PrintTitle(Title_Measure1)
+    Display.PrintText(Instr_Measure)
 
     ; Measure
     ld b,$00
@@ -19,11 +19,9 @@ Instr_Measure
 ;==========================================================
 ; Measure a DJNZ loop (B=$80)
 ;==========================================================
-Measure2Demo
-    ld hl,Title_Measure2
-    call _printTitle
-    ld hl,Instr_Measure
-    call _printText
+Measure2
+    Display.PrintTitle(Title_Measure2)
+    Display.PrintText(Instr_Measure)
 
     ; Measure
     ld b,$80
@@ -35,24 +33,22 @@ Title_Measure2
 ;==========================================================
 ; Measure BC loop (BC=$1800)
 ;==========================================================
-Measure3Demo
-    ld hl,Title_Measure3
-    call _printTitle
-    ld hl,Instr_Measure
-    call _printText
+Measure3
+    Display.PrintTitle(Title_Measure3)
+    Display.PrintText(Instr_Measure)
 
-    call SetupCtc16
-    call StartMeasure
+    call Timing.SetupCtc16
+    call Timing.StartMeasure
 
     ; Start of code to measure
-    ld bc,$1800
-    call _delayWithBc
+    Timing.Delay($1800)
     
     ; Measure ends here
-    call GetMeasuredCounter
+    call Timing.GetMeasuredCounter
     ex de,hl
-    Ink(COLOR_BLUE)
-    jp _printHLDecimal
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+    ret
 
 Title_Measure3
     .defn "CTC #3: BC Loop (BC=$1800)"
@@ -62,8 +58,8 @@ Title_Measure3
 ;----------------------------------------------------------
 _measureDjnz
     push bc
-    call SetupCtc16
-    call StartMeasure
+    call Timing.SetupCtc16
+    call Timing.StartMeasure
     pop bc
 
     ; Start of code to measure
@@ -72,7 +68,16 @@ _measureDjnz
     djnz `loop
     
     ; Measure ends here
-    call GetMeasuredCounter
+    call Timing.GetMeasuredCounter
     ex de,hl
-    Ink(COLOR_BLUE)
-    jp _printHLDecimal
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+    ret
+
+;==========================================================
+; Implement a timer
+;==========================================================
+TimerWithInterrupt
+
+
+.endmodule

@@ -1,0 +1,29 @@
+import { Callout } from 'nextra/components'
+
+# LoRes Mode
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+LoRes is the cheapest way to get more colours per square inch than the ULA can give you. It rearranges the same screen memory into a 128×96 buffer where every pixel carries its own 8-bit palette index — no attributes, no clash, no compromises. The trade-off is half the resolution in each dimension and the loss of the regular ULA bitmap (it's one or the other; LoRes shares the ULA's memory).
+
+Topics:
+
+- **Enabling LoRes.** NextReg `$15` bit 7. What changes the moment you flip it.
+- **The 128×96 buffer.** Memory layout, which Bank 5 bytes correspond to which pixels, and the address-from-(x,y) formula.
+- **Colour.** Each pixel is an 8-bit index into the ULA "second" palette (configurable). 256 simultaneous on-screen colours, no attribute clash.
+- **Scrolling.** NextReg `$32` (X-scroll) and `$33` (Y-scroll) — hardware-smooth scrolling with no copy.
+- **Compatibility.** What happens to ULA print routines while LoRes is active (spoiler: chaos), and how to coexist with the border.
+
+## What you should know first
+
+- [The ULA Screen and Border](./08-ula-screen.mdx) — for the contrast.
+- [Palettes](./09-palettes.mdx) — LoRes uses the ULA "second" palette.
+
+## Planned exercises
+
+- **LoRes plasma.** A small classic plasma effect — convincing in 256 colours, impossible in stock ULA.
+- **Smooth scroll.** A pre-drawn LoRes landscape that scrolls horizontally just by changing NextReg `$32` once per frame.

@@ -163,6 +163,103 @@ export class AssemblyModule<TInstruction extends TypedObject, TToken extends Com
   }
 
   /**
+   * Like `getMacro` but also returns the module in which the macro was found.
+   */
+  getMacroEntry(
+    name: string
+  ): { macro: IMacroDefinition<TInstruction>; owner: AssemblyModule<TInstruction, TToken> } | undefined {
+    if (!this.caseSensitive) {
+      name = name.toLowerCase();
+    }
+    if (this.macros[name]) {
+      return { macro: this.macros[name], owner: this };
+    }
+    return this.parentModule?.getMacroEntry(name);
+  }
+
+  /**
+   * Resolves a possibly compound macro name (e.g. `module.subModule.MacroName`).
+   * Also returns the module that owns the macro so the caller can switch context
+   * to the defining module during expansion.
+   * @param name Possibly compound macro name
+   * @param startFromGlobal When true, begin walking from the root module
+   */
+  resolveCompoundMacroEntry(
+    name: string,
+    startFromGlobal = false
+  ): { macro: IMacroDefinition<TInstruction>; owner: AssemblyModule<TInstruction, TToken> } | undefined {
+    const resolveRoot = (firstSegment: string): AssemblyModule<TInstruction, TToken> | undefined => {
+      if (startFromGlobal) return this.rootModule.getNestedModule(firstSegment);
+      let candidate: AssemblyModule<TInstruction, TToken> | null = this;
+      while (candidate) {
+        const found = candidate.getNestedModule(firstSegment);
+        if (found) return found;
+        candidate = candidate.parentModule;
+      }
+      return undefined;
+    };
+
+    if (!name.includes(".")) {
+      return startFromGlobal ? this.rootModule.getMacroEntry(name) : this.getMacroEntry(name);
+    }
+    const segments = name.split(".");
+    let module: AssemblyModule<TInstruction, TToken> | undefined = resolveRoot(segments[0]);
+    for (let i = 1; i < segments.length - 1; i++) {
+      if (!module) return undefined;
+      module = module.getNestedModule(segments[i]);
+    }
+    const last = segments[segments.length - 1];
+    const macro = module?.getMacro(last);
+    return macro !== undefined ? { macro, owner: module! } : undefined;
+  }
+
+  /**
+   * Resolves a possibly compound macro name (e.g. `module.subModule.MacroName`).
+   * Walks nested modules for every segment except the last, then looks up the
+   * final segment as a macro in the resolved module. Falls back to a simple
+   * lookup when the name has no dots.
+   * @param name Possibly compound macro name
+   * @param startFromGlobal When true, begin walking from the root module
+   */
+  resolveCompoundMacro(
+    name: string,
+    startFromGlobal = false
+  ): IMacroDefinition<TInstruction> | undefined {
+    return this.resolveCompoundMacroEntry(name, startFromGlobal)?.macro;
+  }
+
+  /**
+   * Resolves a possibly compound struct name (e.g. `module.StructName`).
+   * @param name Possibly compound struct name
+   * @param startFromGlobal When true, begin walking from the root module
+   */
+  resolveCompoundStruct(
+    name: string,
+    startFromGlobal = false
+  ): IStructDefinition | undefined {
+    if (!name.includes(".")) {
+      return startFromGlobal ? this.rootModule.getStruct(name) : this.getStruct(name);
+    }
+    const segments = name.split(".");
+    const resolveRoot = (firstSegment: string): AssemblyModule<TInstruction, TToken> | undefined => {
+      if (startFromGlobal) return this.rootModule.getNestedModule(firstSegment);
+      let candidate: AssemblyModule<TInstruction, TToken> | null = this;
+      while (candidate) {
+        const found = candidate.getNestedModule(firstSegment);
+        if (found) return found;
+        candidate = candidate.parentModule;
+      }
+      return undefined;
+    };
+    let module: AssemblyModule<TInstruction, TToken> | undefined = resolveRoot(segments[0]);
+    for (let i = 1; i < segments.length - 1; i++) {
+      if (!module) return undefined;
+      module = module.getNestedModule(segments[i]);
+    }
+    return module?.getStruct(segments[segments.length - 1]);
+  }
+
+  /**
    * Adds a nested module
    * @param name Module name
    * @param module Module data

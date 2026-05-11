@@ -166,6 +166,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   private _copperCurrentColumn = 0;
   /** Current copper raster line (0-based); incremented per tact in onTactIncremented. */
   private _copperCurrentLine = 0;
+  /** Previous video ULA interrupt pulse level; used for FPGA-style edge capture. */
+  private _prevUlaIntPulse = false;
+  /** Previous video line interrupt pulse level; used for FPGA-style edge capture. */
+  private _prevLineIntPulse = false;
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -307,6 +311,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Set default machine type
     this.nextRegDevice.configMode = false;
     this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
+    this._prevUlaIntPulse = false;
+    this._prevLineIntPulse = false;
   }
 
   /**
@@ -566,10 +572,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // Here we only peek at the winning device to return its vector.
     const base = id.im2TopBits;
     for (let i = 0; i < 14; i++) {
-      if (id.daisyInService[i]) {
-        // --- InService device blocks all lower-priority devices
-        break;
-      }
+      if (id.daisyInService[i]) break;
       if (id.isDeviceRequesting(i)) {
         return base | (i << 1);
       }
@@ -1071,6 +1074,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // independently of the stackless NMI / MF / DivMMC handling.
     if (this.opCode === 0x4d && this.interruptDevice.hwIm2Mode) {
       this.interruptDevice.daisyReti();
+      this.dmaDevice.setDmaDelay(false);
     }
 
     // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
@@ -1120,22 +1124,56 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.clockMultiplier = this.cpuSpeedDevice.effectiveClockMultiplier;
     this.cpuTactScale = this.cpuSpeedDevice.effectiveCpuTactScale;
 
-    // --- Check if DMA is requesting the bus and acknowledge it FIRST
-    // This must happen before calling stepDma() so the bus is available
-    let busControl = this.dmaDevice.getBusControl();
-    if (busControl.busRequested && !busControl.busAcknowledged) {
-      // --- DMA requested bus - acknowledge it
-      this.dmaDevice.acknowledgeBus();
-    }
+    this.runDmaUntilCpuCanRun();
+  }
 
-    // --- Step DMA state machine if active
-    // This allows DMA to perform one operation per CPU instruction cycle
-    // After acknowledgment above, DMA can now proceed with transfer
-    const dmaTStates = this.dmaDevice.stepDma();
-    if (dmaTStates > 0) {
-      // --- DMA performed an operation - consume T-states
-      this.tactPlusN(dmaTStates);
+  /**
+   * Runs any DMA work that owns, or is about to request, the CPU bus.
+   *
+   * The FPGA zxnDMA is clocked from the 28 MHz system clock. In continuous mode
+   * it keeps BUSREQ asserted until the block finishes, so the CPU does not run a
+   * status-polling loop in parallel with the transfer. Account these clocks in
+   * the 28 MHz frame domain directly instead of scaling them as CPU T-states.
+   */
+  private runDmaUntilCpuCanRun(): void {
+    const maxDmaSteps = 0x20000;
+
+    for (let step = 0; step < maxDmaSteps; step++) {
+      const busBefore = this.dmaDevice.getBusControl();
+      if (busBefore.busRequested && !busBefore.busAcknowledged) {
+        this.dmaDevice.acknowledgeBus();
+      }
+
+      const dmaTicks = this.dmaDevice.stepDma();
+      if (dmaTicks > 0) {
+        this.tactPlusDmaTicks(dmaTicks);
+        if (this.interruptDevice.dmaInterruptRequestActive) {
+          this.dmaDevice.setDmaDelay(true);
+        }
+      }
+
+      const busAfter = this.dmaDevice.getBusControl();
+      if (!busAfter.busRequested) {
+        break;
+      }
     }
+  }
+
+  /**
+   * Advance by raw 28 MHz DMA clocks. Unlike tactPlusN(), this does not multiply
+   * by the current CPU speed because the DMA engine is already in the system-clock
+   * domain.
+   */
+  private tactPlusDmaTicks(ticks: number): void {
+    this.tacts += Math.max(1, Math.ceil(ticks / this.cpuTactScale));
+    this.frameTacts += ticks;
+    if (this.frameTacts >= this.tactsInFrame) {
+      this.frames++;
+      this.frameTacts -= this.tactsInFrame;
+      this.frameCompleted = true;
+    }
+    this.currentFrameTact = (this.frameTacts >>> 2) | 0;
+    this.onTactIncremented();
   }
 
   /**
@@ -1528,11 +1566,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns True, if the INT signal should be active; otherwise, false.
    */
   shouldRaiseInterrupt(): boolean {
-    // Step 25: OR in DMA interrupt-pending flag so a DMA end-of-block interrupt
-    // (triggered by triggerInterrupt()) drives the Z80 INT line, mirroring MAME's
-    // interrupt_check() which asserts the physical INT output pin.
-    return this.composedScreenDevice.pulseIntActive
-        || (this.dmaDevice.getIp() === 1);
+    const id = this.interruptDevice;
+
+    if (id.hwIm2Mode) {
+      return id.daisyUpdateIrqState();
+    }
+
+    return this.composedScreenDevice.pulseIntActive || (this.dmaDevice.getIp() === 1);
   }
 
   /**
@@ -1549,6 +1589,16 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         this._copperCurrentLine++;
       }
       this.composedScreenDevice.renderTact(this.lastRenderedFrameTact++);
+      const ulaIntPulse = this.composedScreenDevice.pulseIntActive;
+      const lineIntPulse = this.composedScreenDevice.lineIntActive;
+      if (ulaIntPulse && !this._prevUlaIntPulse) {
+        this.interruptDevice.captureUlaInterruptPulse();
+      }
+      if (lineIntPulse && !this._prevLineIntPulse) {
+        this.interruptDevice.captureLineInterruptPulse();
+      }
+      this._prevUlaIntPulse = ulaIntPulse;
+      this._prevLineIntPulse = lineIntPulse;
     }
     this.beeperDevice.setNextAudioSample();
     // --- Generate audio samples for all audio devices

@@ -31,6 +31,13 @@ export class FixupEntry<
    */
   private readonly _instructionStartAddress: number;
 
+  /**
+   * Snapshot of the macro invocation stack at the moment this fixup was
+   * recorded. Re-applied when reporting errors so that deferred fixup errors
+   * still mention the macro invocation chain that originally produced them.
+   */
+  private readonly _macroInvocationContext: unknown;
+
   constructor(
     public readonly parentContext: IEvaluationContext<TInstruction, TToken>,
     public readonly module: AssemblyModule<TInstruction, TToken>,
@@ -46,6 +53,9 @@ export class FixupEntry<
     // Capture the start address of the current instruction so that "$" in the
     // fixup expression always resolves to the instruction's first byte address.
     this._instructionStartAddress = parentContext.getCurrentAddress();
+    this._macroInvocationContext = parentContext.captureMacroInvocationContext
+      ? parentContext.captureMacroInvocationContext()
+      : undefined;
     if (expression) this._symbols = FixupEntry.snapshotVars(module);
   }
 
@@ -122,6 +132,12 @@ export class FixupEntry<
     node: NodePosition,
     ...parameters: any[]
   ): void {
+    if (this.parentContext.withMacroInvocationContext && this._macroInvocationContext) {
+      this.parentContext.withMacroInvocationContext(this._macroInvocationContext, () => {
+        this.parentContext.reportEvaluationError(context, code, node, ...parameters);
+      });
+      return;
+    }
     this.parentContext.reportEvaluationError(context, code, node, ...parameters);
   }
 

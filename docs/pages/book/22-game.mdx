@@ -1,0 +1,39 @@
+import { Callout } from 'nextra/components'
+
+# Building a Small Game
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+The capstone. We don't introduce a single new piece of hardware in this chapter — every register, every port, every interrupt was covered earlier. What we *do* is wire them all together into a complete, playable mini-game so the reader can see how the parts cooperate in a real program.
+
+What the game looks like (subject to revision once we agree on a genre):
+
+- **Background:** an 80×32 tilemap, scrolling horizontally.
+- **Foreground:** sprites — a player character, a handful of enemies, projectiles.
+- **HUD:** a status bar drawn with tilemap-over-Layer-2 priority.
+- **Music:** an AY tracker tune playing from the frame interrupt.
+- **Sound effects:** DMA-driven sample playback for fire/hit/explosion sounds.
+- **Input:** keyboard *or* Kempston joystick, latched in the frame ISR.
+- **Storage:** high-score table loaded and saved from the SD card via NextZXOS.
+
+Topics:
+
+- **The frame loop.** A clean main loop that does logic during the frame, draws into a shadow Layer 2 page, and swaps at V-blank.
+- **Game-state architecture.** Splitting code into "input read", "logic", "render", "audio update" — the order matters for jitter.
+- **Keeping interrupts cheap.** What goes in the ISR (latch input, advance music, kick the next sample buffer) and what stays out (game logic).
+- **Putting all the layer chapters to work.** Tilemap as background, Layer 2 as the parallax middle ground, sprites for actors, ULA disabled, Copper for the sky gradient.
+- **Where to go next.** Pointers to the official Next development resources, NextBuild, sjasmplus interop, and the Klive build system tricks that help you iterate fast.
+
+## What you should know first
+
+- All earlier chapters. This one assumes everything.
+
+## Planned exercises
+
+- **The game itself.** Provided as a complete Klive project in the example pack — read, modify, extend.
+- **Add an enemy type.** Drop in a new sprite + behaviour and confirm it composites correctly.
+- **Add a sound effect.** Record (or generate) a short sample, put it in the project, trigger it on a game event.

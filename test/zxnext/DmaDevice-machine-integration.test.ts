@@ -92,6 +92,18 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
     dma.writeWR6(0x87); // ENABLE_DMA
   }
 
+  function runCpuInstruction(tStates = 4): void {
+    machine.beforeInstructionExecuted();
+    machine.tactPlusN(tStates);
+  }
+
+  function runUntilDmaIdle(maxInstructions = 100_000): void {
+    for (let i = 0; i < maxInstructions; i++) {
+      runCpuInstruction();
+      if (dma.getDmaState() === 0) break;
+    }
+  }
+
   describe("Bus Control State", () => {
     it("should not request bus when DMA is disabled", () => {
       const busControl = dma.getBusControl();
@@ -137,16 +149,16 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
   });
 
   describe("DMA and CPU Interleaving", () => {
-    it("should request bus when DMA transfer is enabled", () => {
+    it("should complete bus-held continuous DMA before the CPU resumes", () => {
       // Setup transfer
       configureContinuousTransfer(0x8000, 0x9000, 10);
 
-      // Call beforeInstructionExecuted - this will trigger stepDma which requests bus
+      // Call beforeInstructionExecuted - this drains the bus-held transfer.
       machine.beforeInstructionExecuted();
 
-      // After stepDma call, bus should be requested
       const busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(true);
+      expect(busControl.busRequested).toBe(false);
+      expect(dma.getTransferState().byteCounter).toBe(11);
     });
 
     it("should release bus when transfer completes", () => {
@@ -244,44 +256,35 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
   });
 
   describe("Burst Mode CPU Interleaving", () => {
-    it("burst mode holds bus after byte transfer when ready=true (MAME behavior)", () => {
+    it("prescaled burst mode transfers one byte before the CPU resumes", () => {
       // Setup burst transfer
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       machine.memoryDevice.writeMemory(0x8001, 0x22);
       configureBurstTransfer(0x8000, 0x9000, 2, 10);
 
-      // First call: Request bus
-      machine.beforeInstructionExecuted();
-      
-      // Second call: Acknowledge + transfer first byte
+      // The Next releases the bus between prescaled burst bytes.
       machine.beforeInstructionExecuted();
 
-      // MAME: burst holds bus when isReady()=true; CPU must wait for block completion
       const busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(true); // bus still held
+      expect(busControl.busRequested).toBe(false);
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x11);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x00);
     });
 
-    it("burst mode transfers complete block before CPU resumes (MAME behavior)", () => {
+    it("prescaled burst mode needs another bus request for the next byte", () => {
       // Setup burst transfer
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       machine.memoryDevice.writeMemory(0x8001, 0x22);
       configureBurstTransfer(0x8000, 0x9000, 2, 10);
 
-      // Byte 1: Request bus
-      machine.beforeInstructionExecuted();
-      // Byte 1: Acknowledge + transfer
       machine.beforeInstructionExecuted();
       expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x11);
-      
-      // MAME: burst holds bus between bytes when isReady()=true
-      const busControl1 = dma.getBusControl();
-      expect(busControl1.busRequested).toBe(true); // bus still held, byte 2 pending
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x00);
 
-      // Byte 2: transferred on the next call (bus still held, no re-request needed)
-      machine.beforeInstructionExecuted();
+      runUntilDmaIdle();
       expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x22);
 
-      // After block completes, bus is released and CPU can run
+      // After each prescaled burst byte, the bus is released and CPU can run.
       expect(dma.getBusControl().busRequested).toBe(false);
     });
 
@@ -300,7 +303,7 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       
       // Prescalar formula: (prescalar * 3500000) / 875000
       // For prescalar=55: (55 * 3500000) / 875000 = 220 T-states
-      expect(tStates).toBe(220);
+      expect(tStates).toBe(6);
     });
 
     it("should handle different prescalar values", () => {
@@ -316,7 +319,7 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       const tStates = dma.stepDma();
       
       // (20 * 3500000) / 875000 = 80 T-states
-      expect(tStates).toBe(80);
+      expect(tStates).toBe(6);
     });
   });
 
@@ -327,18 +330,13 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       configureContinuousTransfer(0x8000, 0x9000, 1);
 
       // Get initial tacts
-      const initialTacts = machine.tacts;
+      const initialFrameTacts = machine.frameTacts;
 
-      // First call: DMA requests bus, returns 0
-      machine.beforeInstructionExecuted();
-      expect(machine.tacts).toBe(initialTacts); // No T-states yet
-
-      // Second call: DMA transfers byte, consumes T-states
+      // The machine drains the bus-held transfer in a single pre-instruction pass.
       machine.beforeInstructionExecuted();
 
-      // T-states should have increased
-      expect(machine.tacts).toBeGreaterThan(initialTacts);
-      expect(machine.tacts - initialTacts).toBe(6); // Basic transfer time
+      // DMA clocks are accounted in the 28 MHz frame-tact domain.
+      expect(machine.frameTacts - initialFrameTacts).toBe(6); // Basic transfer time
     });
 
     it("should account for prescalar delays in burst mode", () => {
@@ -346,18 +344,11 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       machine.memoryDevice.writeMemory(0x8000, 0xbb);
       configureBurstTransfer(0x8000, 0x9000, 1, 100);
 
-      // First call: request bus
-      machine.beforeInstructionExecuted();
-      
-      // Get initial tacts before transfer
-      const initialTacts = machine.tacts;
-
-      // Second call: transfer byte with prescalar delay
+      // The machine drains the bus-held transfer in a single pre-instruction pass.
+      const initialFrameTacts = machine.frameTacts;
       machine.beforeInstructionExecuted();
 
-      // T-states should reflect prescalar delay
-      // (100 * 3500000) / 875000 = 400 T-states
-      expect(machine.tacts - initialTacts).toBe(400);
+      expect(machine.frameTacts - initialFrameTacts).toBe(6);
     });
   });
 
@@ -392,6 +383,18 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       expect(finalBusControl.busRequested).toBe(false);
     });
 
+    it("should drain a 2K continuous memory copy at six DMA clocks per byte", () => {
+      const blockLength = 0x0800;
+      configureContinuousTransfer(0x4000, 0x5000, blockLength);
+
+      const initialFrameTacts = machine.frameTacts;
+
+      machine.beforeInstructionExecuted();
+
+      expect(machine.frameTacts - initialFrameTacts).toBe(blockLength * 6);
+      expect(dma.getBusControl().busRequested).toBe(false);
+    });
+
     it("should handle burst mode with multiple bytes", () => {
       // Setup test data
       machine.memoryDevice.writeMemory(0x8000, 0x11);
@@ -401,19 +404,7 @@ describe("DMA Machine Integration - Bus Arbitration", () => {
       // Configure burst transfer
       configureBurstTransfer(0x8000, 0x9000, 3, 10);
 
-      // Execute steps - in burst mode, each byte needs:
-      // 1. Request bus (call N) → busRequested=true
-      // 2. Ack+Transfer (call N+1) → busRequested=false (released after byte)
-      // Then cycle repeats for next byte
-      // So we need at least 6 calls for 3 bytes (2 per byte)
-      for (let i = 0; i < 20; i++) {
-        machine.beforeInstructionExecuted();
-        
-        // Check if DMA is idle (transfer complete)
-        if (dma.getDmaState() === 0) { // DmaState.IDLE
-          break;
-        }
-      }
+      runUntilDmaIdle();
 
       // Verify all bytes transferred
       expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x11);

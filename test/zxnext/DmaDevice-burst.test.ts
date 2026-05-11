@@ -112,7 +112,7 @@ describe("DMA Burst Transfer Mode", () => {
 
       // At 3.5MHz, prescalar=55 requires ~220 T-states per byte
       // 8 bytes * 220 = 1760 T-states minimum
-      const transferred = dma.executeBurstTransfer(2000);
+      const transferred = dma.executeBurstTransfer(3000);
 
       expect(transferred).toBe(8);
       for (let i = 0; i < 8; i++) {
@@ -263,7 +263,7 @@ describe("DMA Burst Transfer Mode", () => {
 
       configureBurstTransfer("AtoB", 0x8000, 0x9000, 256, 1);
 
-      const transferred = dma.executeBurstTransfer(2000);
+      const transferred = dma.executeBurstTransfer(3000);
 
       expect(transferred).toBe(256);
       // Verify sample bytes

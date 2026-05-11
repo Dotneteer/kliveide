@@ -1,13 +1,13 @@
-# Writing Guidelines for "Building a ZX Spectrum Next Emulator"
+# Writing Guidelines for "Inside the ZX Spectrum Next: Z80 Assembly, System Concepts, and Practical Programming"
 
 ## Purpose
 
-This document defines the writing style, tone, and conventions for the book about building a ZX Spectrum Next emulator. The goal is to create an engaging, readable technical guide that teaches complex concepts without putting readers to sleep.
+This document defines the writing style, tone, and conventions for the book about programming the ZX Spectrum Next with Z80 Assembly. The goal is to create an engaging, readable technical guide that teaches the system concepts behind practical Next programming without putting readers to sleep.
 
 ## Target Audience
 
 - Developers with intermediate programming knowledge (comfortable with TypeScript/JavaScript)
-- Retro computing enthusiasts who want to understand emulation
+- Retro computing enthusiasts who want to understand how the machine works
 - Anyone curious about how computers work at a low level
 - Readers who appreciate clear explanations without academic stuffiness
 
@@ -45,7 +45,34 @@ But never sacrifice clarity for a joke.
 
 > "The ULA does memory contention like a bouncer at an exclusive club: 'Sorry CPU, the screen refresh is using that memory right now. You'll have to wait.'"
 
-### 4. Explain the "Why" Not Just the "What"
+### 4. Sound Human, Not Hermetically Sealed
+
+The prose should feel like it was written by someone who has actually wrestled with this hardware, blinked at the datasheet, muttered "oh, of course," and then found a way to explain it. A clean technical voice is good; a voice with no fingerprints is not.
+
+Use:
+- Small human asides when they help the reader breathe: "this is where the Z80 shows its age," "slightly rude, but useful," "the hardware is doing us a favor here."
+- Occasional rhetorical questions, especially before explaining motivation.
+- Short sentences after dense ones. Let the reader land.
+- Mildly opinionated phrasing when the opinion teaches something: "elegant," "awkward," "clever," "a bit of a trap."
+
+Avoid:
+- Over-smoothed AI cadence: "It is important to understand that...", "This section explores...", "By leveraging..."
+- Fake enthusiasm pasted onto neutral facts.
+- Jokes that interrupt the explanation or make the hardware sound sillier than it is.
+
+### 5. Use Metaphors as Teaching Tools
+
+Metaphors are welcome when they carry real explanatory weight. Pick concrete metaphors and reuse them consistently within a chapter instead of inventing a new image every paragraph.
+
+Good recurring metaphors:
+- **MMU as a switchboard or stage crew**: the Z80 asks for an address, the MMU quietly connects that slot to the current page.
+- **DivMMC as a butler**: it appears when the program calls for storage, handles the SD card business discreetly, then leaves the room before anyone has to think about paging.
+- **Copper as a stage manager**: waits for the exact cue line, changes the lighting, and lets the main actor keep talking.
+- **DMA as a moving company**: shifts boxes of bytes while the CPU gets on with other work.
+
+Keep the metaphor technically honest. If it starts requiring caveats every sentence, retire it and explain the mechanism directly.
+
+### 6. Explain the "Why" Not Just the "What"
 
 Readers want to understand the reasoning behind design decisions.
 
@@ -55,7 +82,7 @@ Readers want to understand the reasoning behind design decisions.
 **Not this:**
 > The formula uses a "+1" offset for the region selector.
 
-### 5. Structure for Clarity
+### 7. Structure for Clarity
 
 - **Short paragraphs**: 2-4 sentences is ideal
 - **Bullet points**: Use them liberally for lists and key points
@@ -63,8 +90,20 @@ Readers want to understand the reasoning behind design decisions.
 - **Headings**: Clear hierarchy, descriptive titles
 - **Tables**: When comparing multiple items with properties
 - **Diagrams**: Use ASCII art or describe visual concepts clearly
+- **Where Next**: Every chapter should end with a `## Where Next` section that points readers to the most relevant follow-up chapters or appendices.
 
-### 6. Technical Accuracy First
+Do not add standalone `Exercises` sections. The book can invite experimentation in the prose when it is natural, but it should not assign homework or contain exercise blocks.
+
+### 8. Cross-Reference Generously
+
+When a chapter mentions a topic that has its own chapter or appendix, link it the first time the reference appears in that local section. Examples:
+- A Z80N discussion of interrupt modes should link to [Interrupts](./04-interrupts.mdx).
+- A memory discussion that mentions NextRegs should link to [I/O Ports and NextRegs](./02-io-and-nextregs.mdx) or [Appendix B](./app-B-nextreg-reference.md), depending on whether the reader needs the concept or the register table.
+- A storage discussion that mentions divMMC or dot commands should link to [NextZXOS, esxDOS, and the SD Card](./19-storage.mdx).
+
+Keep links useful rather than noisy. Repeated mentions in the same paragraph do not all need links; one clear path is enough.
+
+### 9. Technical Accuracy First
 
 Humor and accessibility never justify incorrect information. When in doubt:
 1. Check the VHDL source
@@ -72,7 +111,7 @@ Humor and accessibility never justify incorrect information. When in doubt:
 3. Verify against real hardware behavior
 4. Note any assumptions or simplifications made for clarity
 
-### 7. Progressive Disclosure
+### 10. Progressive Disclosure
 
 Introduce concepts in layers:
 1. **High-level overview**: What it does and why
@@ -110,6 +149,7 @@ See [glossary.md](glossary.md) for the complete reference.
 - File names and paths: Use links when referencing project files, plain text for examples
 - **Hexadecimal notation**: For addresses longer than 4 digits, use single quote (') as a grouping character in groups of 4 from the right (e.g., `0x04'0000`, `0x1F'FFFF`, `0x23'E000`). This improves readability for long addresses.
 - **Side notes**: Use block quotes (>) for side notes, explanatory asides, or contextual information that supports but isn't critical to the main flow
+- **Z80 assembly operand spacing**: No space after the comma between instruction operands. Write `ld bc,CTC_CH0` and `in a,(c)`, not `ld bc, CTC_CH0` or `in a, (c)`. This applies to instruction operands only; spaces inside macro or data-directive argument lists (e.g., `attr(COLOR_BLACK, COLOR_GREEN, 1)` or `.db 0, 0, 0`) are acceptable.
 
 ### Voice and Tense
 
@@ -193,7 +233,12 @@ Practical details for coding
 
 ### [Subtopic 1]
 ### [Subtopic 2]
-...Glossary Management
+
+## Where Next
+Links to the next few chapters that build on this one, with one sentence explaining why each link matters.
+```
+
+## Glossary Management
 
 The book includes a **glossary.md** file that defines all technical terminology using the same conversational style as the rest of the book.
 

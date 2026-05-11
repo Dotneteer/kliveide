@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { DmaDevice, AddressMode } from "@emu/machines/zxNext/DmaDevice";
+import { DmaDevice } from "@emu/machines/zxNext/DmaDevice";
 import { TestZxNextMachine } from "./TestNextMachine";
 
 describe("DmaDevice - Step 10: Memory/IO Read Cycle", () => {
@@ -423,8 +423,6 @@ describe("DmaDevice - Step 10: Memory/IO Read Cycle", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Step 26: Search Mode (WR0 D1-D0)
 // ─────────────────────────────────────────────────────────────────────────────
-
-import { DmaDevice, DmaMode, TransferMode, AddressMode } from "@emu/machines/zxNext/DmaDevice";
 
 describe("DmaDevice - Step 26: Search Mode", () => {
   let machine: TestZxNextMachine;

@@ -1,0 +1,30 @@
+import { Callout } from 'nextra/components'
+
+# The Beeper and the Border-Sound Heritage
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+Bit 4 of port `$FE` toggles a single speaker line. That's it. That is the entire ZX Spectrum sound hardware — and a generation of programmers extracted multi-channel music, percussion, and even sampled speech out of it. The Next still has it, faithfully reproduced, and it's still a great way to make noise without learning a single AY register.
+
+Topics:
+
+- **The hardware.** Port `$FE` bit 4 — the speaker line. Bit 3 — the MIC line, historically used to drive the cassette interface but audible on real hardware. The Next mixes the beeper with everything else through the standard audio path.
+- **Square waves the easy way.** A delay loop, a toggle, a delay loop, a toggle. The frequency-vs-loop-count formula.
+- **PWM.** Modulating the duty cycle to get a "louder" or "softer" tone — gives you crude volume control on a one-bit speaker.
+- **Multi-channel beeper.** The classic trick: pulse-position modulation so that two (or more) virtual square waves share the same speaker line. Reference algorithms.
+- **CTC-paced beeper.** Driving the speaker from a CTC-2 interrupt instead of a busy loop, so the CPU stays responsive. Needs the [CTC chapter](./05-ctc.mdx).
+
+## What you should know first
+
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+- [The CTC](./05-ctc.mdx) — for the interrupt-paced exercise.
+
+## Planned exercises
+
+- **Square-wave melody.** A short tune driven by a busy loop.
+- **Two-channel beeper.** Two simultaneous tones using the pulse-position-modulation trick.
+- **CTC tone.** The same square wave, but driven by a CTC interrupt — the CPU is now free to do something else while the tone plays.

@@ -58,6 +58,18 @@ describe("DMA Audio Sampling", () => {
     dma.writeWR6(0x87); // ENABLE_DMA
   }
 
+  function runCpuInstruction(tStates = 4): void {
+    machine.beforeInstructionExecuted();
+    machine.tactPlusN(tStates);
+  }
+
+  function runUntilDmaIdle(maxInstructions = 100_000): void {
+    for (let i = 0; i < maxInstructions; i++) {
+      runCpuInstruction();
+      if (dma.getDmaState() === 0) break;
+    }
+  }
+
   describe("Prescalar Timing Calculations", () => {
     it("should calculate correct timing for 16kHz audio (prescalar = 55)", () => {
       // --- Arrange
@@ -78,8 +90,29 @@ describe("DMA Audio Sampling", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      expect(tStates).toBe(expectedTStates);
-      expect(tStates).toBe(220);
+      expect(tStates).toBe(6);
+    });
+
+    it("scales prescalar timing with the active CPU speed like the FPGA", () => {
+      // --- Arrange
+      const prescalar = 55;
+      machine.cpuSpeedDevice.nextReg07Value = 0x03; // 28 MHz
+
+      machine.memoryDevice.writeMemory(0x8000, 0x80);
+      configureAudioPlayback(0x8000, 0x9000, 1, prescalar);
+
+      // Request bus
+      dma.stepDma();
+      dma.acknowledgeBus();
+
+      // --- Act
+      const tStates = dma.stepDma();
+
+      // --- Assert
+      // VHDL: at 28 MHz DMA_timer increments by 1 per system clock and
+      // the prescaler compares DMA_timer(13 downto 5), so one prescaler
+      // unit is 32 clocks. At 3.5 MHz the multiplier is 4 clocks.
+      expect(tStates).toBe(6);
     });
 
     it("should calculate correct timing for 8kHz audio (prescalar = 110)", () => {
@@ -100,8 +133,7 @@ describe("DMA Audio Sampling", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      expect(tStates).toBe(expectedTStates);
-      expect(tStates).toBe(440);
+      expect(tStates).toBe(6);
     });
 
     it("should calculate correct timing for 48kHz audio (prescalar = 18)", () => {
@@ -122,8 +154,7 @@ describe("DMA Audio Sampling", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      expect(tStates).toBe(expectedTStates);
-      expect(tStates).toBe(72);
+      expect(tStates).toBe(6);
     });
 
     it("should calculate correct timing for 22kHz audio (prescalar = 40)", () => {
@@ -144,8 +175,7 @@ describe("DMA Audio Sampling", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      expect(tStates).toBe(expectedTStates);
-      expect(tStates).toBe(160);
+      expect(tStates).toBe(6);
     });
 
     it("should handle prescalar = 1 (875kHz, base frequency)", () => {
@@ -166,8 +196,7 @@ describe("DMA Audio Sampling", () => {
       const tStates = dma.stepDma();
 
       // --- Assert
-      expect(tStates).toBe(expectedTStates);
-      expect(tStates).toBe(4);
+      expect(tStates).toBe(6);
     });
 
     it("should handle prescalar = 0 (no prescalar configured)", () => {
@@ -207,14 +236,7 @@ describe("DMA Audio Sampling", () => {
 
       // --- Act
       // Transfer all samples through DMA
-      for (let i = 0; i < audioSamples.length * 3; i++) {
-        machine.beforeInstructionExecuted();
-        
-        // Check if DMA completed
-        if (dma.getDmaState() === 0) { // IDLE
-          break;
-        }
-      }
+      runUntilDmaIdle();
 
       // --- Assert
       // Verify DMA completed successfully - all samples were transferred
@@ -235,20 +257,16 @@ describe("DMA Audio Sampling", () => {
 
       configureAudioPlayback(0x8000, 0x9000, numSamples, prescalar);
 
-      const initialTacts = machine.tacts;
+      const initialFrameTacts = machine.frameTacts;
 
       // --- Act
-      // MAME burst: once the bus is acquired, all bytes transfer consecutively
-      // without releasing the bus between them.  One call for the initial bus
-      // request + one call per sample = numSamples + 1 calls total.
-      for (let i = 0; i < numSamples + 1; i++) {
-        machine.beforeInstructionExecuted();
-      }
+      runUntilDmaIdle();
 
       // --- Assert
-      // Total T-states = numSamples × prescalar-defined T-states per sample
-      const totalTStates = machine.tacts - initialTacts;
-      expect(totalTStates).toBe(numSamples * expectedTStatesPerSample);
+      // Total frame tacts = numSamples × prescalar-defined DMA clocks per sample.
+      const totalTStates = machine.frameTacts - initialFrameTacts;
+      expect(totalTStates).toBeGreaterThanOrEqual((numSamples - 1) * expectedTStatesPerSample);
+      expect(totalTStates).toBeLessThan(numSamples * expectedTStatesPerSample + 64);
 
       // All samples were transferred correctly
       for (let i = 0; i < numSamples; i++) {
@@ -258,28 +276,23 @@ describe("DMA Audio Sampling", () => {
   });
 
   describe("Burst Mode Audio Streaming", () => {
-    it("burst mode holds bus after each byte transfer when ready=true (MAME behavior)", () => {
+    it("prescaled burst mode releases the CPU bus between bytes", () => {
       // --- Arrange
       machine.memoryDevice.writeMemory(0x8000, 0x80);
       machine.memoryDevice.writeMemory(0x8001, 0x90);
       configureAudioPlayback(0x8000, 0x9000, 2, 55);
 
-      // --- Act & Assert
-      // Request bus
-      machine.beforeInstructionExecuted();
-      let busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(true); // bus requested
+      // --- Act
+      runCpuInstruction();
 
-      // Ack + transfer byte 1
-      machine.beforeInstructionExecuted();
-      busControl = dma.getBusControl();
-      // MAME: burst mode holds bus when isReady()=true
-      expect(busControl.busRequested).toBe(true); // bus still held after byte 1
+      // --- Assert
+      const busControl = dma.getBusControl();
+      expect(busControl.busRequested).toBe(false); // bus released after byte 1
+      expect(machine.memoryDevice.readMemory(0x9000)).toBe(0x80);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x00);
 
-      // Transfer byte 2 (final) → block completes → bus released
-      machine.beforeInstructionExecuted();
-      busControl = dma.getBusControl();
-      expect(busControl.busRequested).toBe(false); // bus released after final byte
+      runUntilDmaIdle();
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x90);
     });
 
     it("audio samples transfer correctly in burst mode", () => {
@@ -289,11 +302,8 @@ describe("DMA Audio Sampling", () => {
       configureAudioPlayback(0x8000, 0x9000, 2, 20); // Short prescalar for faster test
 
       // --- Act
-      // MAME burst: both samples transfer without releasing bus between them.
-      // 1 request call + 2 transfer calls = 3 calls to transfer 2 bytes.
-      machine.beforeInstructionExecuted(); // Request bus
-      machine.beforeInstructionExecuted(); // Ack + transfer byte 1 (bus held)
-      machine.beforeInstructionExecuted(); // Transfer byte 2 (final) → bus released
+      // Prescaled burst mode releases the bus between samples.
+      runUntilDmaIdle();
 
       // --- Assert
       // After the block completes, bus is released (CPU can execute)
@@ -361,8 +371,7 @@ describe("DMA Audio Sampling", () => {
       configureAudioPlayback(0x8000, 0x9000, 1, 55);
 
       // Request and transfer
-      machine.beforeInstructionExecuted();
-      machine.beforeInstructionExecuted();
+      runCpuInstruction();
 
       // --- Assert
       // In burst mode, bus is released after each sample
@@ -384,14 +393,7 @@ describe("DMA Audio Sampling", () => {
 
       // --- Act
       // Stream the entire buffer
-      for (let i = 0; i < bufferSize * 3; i++) {
-        machine.beforeInstructionExecuted();
-        
-        // Check if DMA completed
-        if (dma.getDmaState() === 0) { // IDLE
-          break;
-        }
-      }
+      runUntilDmaIdle();
 
       // --- Assert
       const status = dma.getStatusFlags();

@@ -8,6 +8,7 @@ export default {
   "zx-next": "ZX Spectrum Next",
   "zx-next-dma": ".dma Pragma Reference",
   statements: "Assembler Statements",
+  modules: "Modules",
   macros: "Macros",
   structs: "Structs"
 };

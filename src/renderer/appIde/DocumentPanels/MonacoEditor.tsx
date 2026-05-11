@@ -629,7 +629,30 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     // Filter errors for the current file
     const fileErrors = backgroundResult.errors.filter((err) => err.filename.endsWith(currentFile));
-    if (fileErrors.length === 0) return;
+
+    // Also collect invocation-site references embedded in messages of errors whose primary
+    // filename is a different file (e.g. the macro body). The macro invocation prefix
+    // written by buildMacroInvocationPrefix contains `at <file>:<line>:<col>` entries.
+    type InvocationRef = { line: number; col: number; message: string; isWarning: boolean };
+    const invocationRefs: InvocationRef[] = [];
+    const atRef = /\bat\s+(\S+?):(\d+):(\d+)/g;
+    backgroundResult.errors.forEach((err) => {
+      if (err.filename.endsWith(currentFile)) return; // already handled by fileErrors
+      atRef.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = atRef.exec(err.message)) !== null) {
+        if (m[1].endsWith(currentFile)) {
+          invocationRefs.push({
+            line: parseInt(m[2], 10),
+            col: parseInt(m[3], 10) + 1, // startColumn is 0-based; Monaco is 1-based
+            message: err.message,
+            isWarning: !!err.isWarning
+          });
+        }
+      }
+    });
+
+    if (fileErrors.length === 0 && invocationRefs.length === 0) return;
 
     const model = editor.current.getModel();
     if (!model) return;
@@ -637,26 +660,26 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     const markers: monacoEditor.editor.IMarkerData[] = [];
     const afterDecorations: Decoration[] = [];
 
-    fileErrors.forEach((err) => {
-      const lineNo = err.line || 1;
-      const isWarning = err.isWarning;
-
-      // Determine startCol — first non-whitespace character on the line
+    // Helper that computes start/end column for a marker on a given line
+    const getLineCols = (lineNo: number): { startCol: number; endCol: number } => {
       let startCol = 1;
       if (lineNo <= model.getLineCount()) {
         const lineContent = model.getLineContent(lineNo);
         const match = lineContent.match(/\S/);
         startCol = match ? (match.index ?? 0) + 1 : 1;
       }
-
-      // endCol — end of the line (ensure minimum width of 1 for empty lines)
       let endCol = startCol + 1;
       if (lineNo <= model.getLineCount()) {
         endCol = model.getLineLength(lineNo) + 1;
       }
-      if (endCol <= startCol) {
-        endCol = startCol + 1;
-      }
+      if (endCol <= startCol) endCol = startCol + 1;
+      return { startCol, endCol };
+    };
+
+    fileErrors.forEach((err) => {
+      const lineNo = err.line || 1;
+      const isWarning = err.isWarning;
+      const { startCol, endCol } = getLineCols(lineNo);
 
       // Standard Monaco marker: squiggles + scrollbar overview ruler + minimap + hover tooltip
       markers.push({
@@ -676,6 +699,33 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         options: {
           after: {
             content: err.message || "Issue detected",
+            inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
+          },
+          isWholeLine: false
+        }
+      });
+    });
+
+    // Add markers for invocation sites found in macro error message prefixes
+    invocationRefs.forEach(({ line: lineNo, col: startColHint, message, isWarning }) => {
+      const { startCol, endCol } = getLineCols(lineNo);
+      // Use the startCol from the message if it's more precise than the line's first non-ws
+      const col = Math.max(startColHint, startCol);
+      markers.push({
+        severity: isWarning
+          ? monacoEditor.MarkerSeverity.Warning
+          : monacoEditor.MarkerSeverity.Error,
+        message,
+        startLineNumber: lineNo,
+        startColumn: col,
+        endLineNumber: lineNo,
+        endColumn: endCol
+      });
+      afterDecorations.push({
+        range: new monacoEditor.Range(lineNo, col, lineNo, endCol),
+        options: {
+          after: {
+            content: message,
             inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
           },
           isWholeLine: false

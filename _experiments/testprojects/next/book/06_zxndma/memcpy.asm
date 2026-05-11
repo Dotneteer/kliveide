@@ -1,12 +1,13 @@
+.module DmaDemo
+
 ;==========================================================
 ; Example: Simple memcopy
 ;==========================================================
-DmaSimpleMemCopyDemo
+SimpleMemCopy
     ld hl,Title_DmaSimpleMemCopy
-    call _printTitle
-    Ink(COLOR_BLACK)
-    ld hl,Instr_DmaSimpleMemCopy
-    call _printText
+    Display.PrintTitle(Title_DmaSimpleMemCopy)
+    Display.Ink(Color.Black)
+    Display.PrintText(Instr_DmaSimpleMemCopy)
     ; 
     ; Display a dotted line
     ld hl,$4080
@@ -20,7 +21,7 @@ DmaSimpleMemCopyDemo
     ld hl,$58a0
     ld de,$58a1
     ld bc,$1f
-    ld (hl),attr(COLOR_BLACK, COLOR_GREEN, 1)
+    ld (hl),attr(Color.Black, Color.Green, 1)
     ldir
     
     ; Create the code to copy
@@ -45,5 +46,4 @@ DmaSimpleMemCopy_Code:
     .dma enable
 DmaSimpleMemCopy_Code_End
 
-
-
+.endmodule

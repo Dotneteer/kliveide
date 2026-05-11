@@ -3234,6 +3234,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- Palette offset = 0
   }
 
+  // --- NR $83 bit 5 enables mouse port decoding (0xfadf/0xfbdf/0xffdf).
+  // --- When the bit is cleared the mouse ports go silent and port $DF
+  // --- becomes a Kempston joy1 alias.
+  isMouseEnabled(): boolean {
+    return this.portMouseEnabled;
+  }
+
+  isPortDfKempstonAlias(): boolean {
+    return !this.portMouseEnabled;
+  }
+
   // --- Soft reset
   reset(): void {
     // --- Turn off config mode

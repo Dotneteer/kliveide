@@ -3,8 +3,9 @@
  * Tests for Step 12: DMA Delay Mechanism (specnext_dma m_dma_delay)
  *
  * Step 11:
- *   After WRITE_DEST, if prescaler != 0, return prescaler × 4 T-states.
- *   In burst mode the bus is released during the prescaler wait (CPU interleaving).
+ *   After WRITE_DEST, if prescaler != 0, schedule the next byte for
+ *   prescaler × 4 system clocks later at 3.5 MHz. In burst mode the bus is
+ *   released during that prescaler wait (CPU interleaving).
  *   Formula: Math.floor((prescaler * 3_500_000) / 875_000) = prescaler * 4 T-states.
  *
  * Step 12:
@@ -52,6 +53,18 @@ function configureBurst(
 
   dma.writeWR6(0xcf);  // LOAD
   dma.writeWR6(0x87);  // ENABLE_DMA
+}
+
+function transferBurstByte(dma: DmaDevice): number {
+  dma.stepDma(); // WAIT_READY -> request bus
+  expect(dma.getBusControl().busRequested).toBe(true);
+  dma.acknowledgeBus();
+  return dma.stepDma();
+}
+
+function advancePastPrescaler(machine: TestZxNextMachine, prescalar: number): void {
+  const delay = prescalar * 4 * machine.cpuSpeedDevice.effectiveClockMultiplier;
+  machine.tactPlusN(Math.ceil(delay / machine.cpuSpeedDevice.effectiveCpuTactScale));
 }
 
 /** Configure a continuous-mode transfer (no prescaler). */
@@ -106,7 +119,7 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       dma.acknowledgeBus();
       const t = dma.stepDma(); // transfer byte
 
-      expect(t).toBe(220); // 55 * 4
+      expect(t).toBe(6);
     });
 
     it("prescaler=18 → 72 T-states per byte (48kHz audio)", () => {
@@ -117,7 +130,7 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       dma.acknowledgeBus();
       const t = dma.stepDma();
 
-      expect(t).toBe(72); // 18 * 4
+      expect(t).toBe(6);
     });
 
     it("prescaler=1 → 4 T-states per byte (minimum prescaler)", () => {
@@ -128,7 +141,7 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       dma.acknowledgeBus();
       const t = dma.stepDma();
 
-      expect(t).toBe(4); // 1 * 4
+      expect(t).toBe(6);
     });
 
     it("prescaler=0 means no prescaler → uses calculateDmaTransferTiming() (Step 28)", () => {
@@ -152,12 +165,12 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       dma.acknowledgeBus();
       const t = dma.stepDma();
 
-      expect(t).toBe(440); // 110 * 4
+      expect(t).toBe(6);
     });
   });
 
-  describe("Burst mode bus behavior (MAME: keep bus while ready)", () => {
-    it("burst mode holds bus between bytes when ready=true (MAME behavior)", () => {
+  describe("Burst mode bus behavior", () => {
+    it("prescaled burst mode releases bus between bytes", () => {
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       machine.memoryDevice.writeMemory(0x8001, 0x22);
       configureBurst(dma, machine, 0x8000, 0x9000, 2, 55);
@@ -167,23 +180,31 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       dma.acknowledgeBus();
       dma.stepDma(); // transfer byte 1
 
-      // MAME burst: isReady()=true → keeps bus held, advances to SEQ_TRANS1_INC_DEC_SOURCE
-      expect(dma.getBusControl().busRequested).toBe(true);  // bus held
-      expect(dma.getDmaSeq()).toBe(DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE);
+      expect(dma.getBusControl().busRequested).toBe(false);
+      expect(dma.getDmaSeq()).toBe(DmaSeq.SEQ_WAIT_READY);
     });
 
-    it("burst mode transfers consecutive bytes without releasing bus (MAME behavior)", () => {
+    it("prescaled burst mode re-requests the bus for the next byte", () => {
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       machine.memoryDevice.writeMemory(0x8001, 0x22);
       configureBurst(dma, machine, 0x8000, 0x9000, 2, 55);
 
-      // Transfer first byte (requests bus, acks, transfers)
+      // Transfer first byte (requests bus, acks, transfers, releases bus)
       dma.stepDma(); // request bus
       dma.acknowledgeBus();
-      dma.stepDma(); // transfer byte 1 → MAME: keeps bus (SEQ_TRANS1_INC_DEC_SOURCE)
+      dma.stepDma();
 
-      // Next stepDma immediately transfers byte 2 without releasing bus or re-requesting
-      dma.stepDma(); // transfer byte 2 (final) → FINISH → bus released → SEQ_IDLE
+      expect(dma.getDmaSeq()).toBe(DmaSeq.SEQ_WAIT_READY);
+
+      // The next byte waits for the prescaler, then needs a fresh bus
+      // request/acknowledge cycle.
+      dma.stepDma();
+      expect(dma.getBusControl().busRequested).toBe(false);
+      advancePastPrescaler(machine, 55);
+      dma.stepDma();
+      expect(dma.getBusControl().busRequested).toBe(true);
+      dma.acknowledgeBus();
+      dma.stepDma();
       expect(dma.getBusControl().busRequested).toBe(false); // bus released at transfer end
       expect(dma.getDmaSeq()).toBe(DmaSeq.SEQ_IDLE); // transfer complete
     });
@@ -194,20 +215,18 @@ describe("DmaDevice - Step 11: Prescaler Timing (specnext_dma clock_w)", () => {
       }
       configureBurst(dma, machine, 0x8000, 0x9000, 4, 40);
 
-      // MAME burst: after byte 1, bus is held (SEQ_TRANS1_INC_DEC_SOURCE); bytes 2-4
-      // transfer without releasing bus or re-requesting.
-      dma.stepDma(); // WAIT_READY → request bus
-      dma.acknowledgeBus();
-      const t1 = dma.stepDma(); // transfer byte 1 → SEQ_TRANS1_INC_DEC_SOURCE
-      const t2 = dma.stepDma(); // transfer byte 2 directly (bus still held)
-      const t3 = dma.stepDma(); // transfer byte 3
-      const t4 = dma.stepDma(); // transfer byte 4 (final)
+      const t1 = transferBurstByte(dma);
+      advancePastPrescaler(machine, 40);
+      const t2 = transferBurstByte(dma);
+      advancePastPrescaler(machine, 40);
+      const t3 = transferBurstByte(dma);
+      advancePastPrescaler(machine, 40);
+      const t4 = transferBurstByte(dma);
 
-      // All bytes should take 40 * 4 = 160 T-states
-      expect(t1).toBe(160);
-      expect(t2).toBe(160);
-      expect(t3).toBe(160);
-      expect(t4).toBe(160);
+      expect(t1).toBe(6);
+      expect(t2).toBe(6);
+      expect(t3).toBe(6);
+      expect(t4).toBe(6);
     });
 
     it("data is correctly copied even with prescaler timing", () => {
@@ -395,29 +414,24 @@ describe("DmaDevice - Step 12: DMA Delay Mechanism (specnext_dma m_dma_delay)", 
   // ─────────────────────────────────────────────────────────────────────────
 
   describe("dmaDelay with burst mode", () => {
-    it("dmaDelay intercepts burst continuation and stalls at WAIT_READY", () => {
+    it("dmaDelay stalls a prescaled burst before the next byte", () => {
       machine.memoryDevice.writeMemory(0x8000, 0x11);
       machine.memoryDevice.writeMemory(0x8001, 0x22);
       machine.memoryDevice.writeMemory(0x8002, 0x33);
-      // Use 3 bytes so byte 2 is non-final (dmaDelay intercept fires after non-final dispatch)
       configureBurst(dma, machine, 0x8000, 0x9000, 3, 1);
 
-      // Transfer first byte (before setting dmaDelay)
-      dma.stepDma(); // request bus
-      dma.acknowledgeBus();
-      dma.stepDma(); // transfer byte 1 → MAME burst: keeps bus (SEQ_TRANS1_INC_DEC_SOURCE)
+      transferBurstByte(dma);
+      expect(dma.getBusControl().busRequested).toBe(false);
+      expect(dma.getDmaSeq()).toBe(DmaSeq.SEQ_WAIT_READY);
 
       dma.setDmaDelay(true);
 
-      // stepDma at SEQ_TRANS1_INC_DEC_SOURCE with dmaDelay:
-      // transfers byte 2 (non-final) → burst dispatch keeps bus → dmaDelay intercept fires
-      // → releaseBus() + dmaSeq = SEQ_WAIT_READY
       const t = dma.stepDma();
-      expect(t).toBe(4); // T-states for byte 2 (prescaler=1 → 1*4=4)
-      expect(dma.getBusControl().busRequested).toBe(false); // bus released by dmaDelay
+      expect(t).toBe(0);
+      expect(machine.memoryDevice.readMemory(0x9001)).toBe(0x00);
+      expect(dma.getBusControl().busRequested).toBe(false);
       expect(dma.getDmaSeq()).toBe(DmaSeq.SEQ_WAIT_READY);
 
-      // Now at WAIT_READY with dmaDelay=true → stall (no bus re-request)
       const t2 = dma.stepDma();
       expect(t2).toBe(0);
       expect(dma.getBusControl().busRequested).toBe(false);
@@ -439,6 +453,7 @@ describe("DmaDevice - Step 12: DMA Delay Mechanism (specnext_dma m_dma_delay)", 
 
       // Resume
       dma.setDmaDelay(false);
+      advancePastPrescaler(machine, 1);
       dma.stepDma(); // re-requests bus
       dma.acknowledgeBus();
       dma.stepDma(); // byte 2

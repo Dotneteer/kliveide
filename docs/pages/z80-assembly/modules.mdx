@@ -1,0 +1,225 @@
+# Modules
+
+The Klive Assembler allows you to organize your code into *modules*. A module introduces a named scope that groups labels, symbols, variables, structures, macros, and even other (nested) modules together. Modules help you avoid naming collisions in larger projects, control the visibility of symbols, and structure your code into self-contained logical units.
+
+> **Note**: Modules are pure compile-time constructs. They do not emit any extra bytes; they only affect how the assembler resolves names while compiling your source.
+
+## Defining a Module
+
+You can define a module with a `.module` (`.scope`) statement and close it with `.endmodule` (`.endscope`, `.moduleend`, or `.scopeend`). The compiler accepts every flavor of these keywords, with or without a leading dot, and with both lowercase and uppercase letters. For example, all of these forms are valid: `.module`, `module`, `.MODULE`, `MODULE`, `.scope`, `scope`.
+
+A module must have a unique name. You can specify the name in any of the following equivalent ways:
+
+```z80klive
+; Version #1: name as a label
+MyModule: .module
+  ; ...
+.endmodule
+
+; Version #2: name as a label without colon
+MyModule .module
+  ; ...
+.endmodule
+
+; Version #3: name as the .module argument
+.module MyModule
+  ; ...
+.endmodule
+
+; Version #4: hanging label
+MyModule:
+  .module
+  ; ...
+.endmodule
+```
+
+If you provide both a label and a name argument, the argument wins. In this snippet the module's effective name is `moduleID`, not `myModule`:
+
+```z80klive
+myModule: .module moduleID
+  ld a,b
+.endmodule
+```
+
+The compiler reports an error if you do not name the module:
+
+```z80klive
+.module ; ERROR Z0901: You cannot define a module without a name.
+  ; ...
+.endmodule
+```
+
+You also cannot use a temporary name (a name starting with the backtick character) for a module:
+
+```z80klive
+.module `MyModule ; ERROR: temporary name is not allowed
+  ; ...
+.endmodule
+```
+
+A module name must be unique within its parent scope. Trying to declare two modules with the same name in the same scope raises an error:
+
+```z80klive
+.module MyModule
+  ; ...
+.endmodule
+
+.module MyModule ; ERROR Z0903: Module with name 'MyModule' already exists.
+  ; ...
+.endmodule
+```
+
+Likewise, every `.module` must be closed by an `.endmodule`. A missing closing statement, or an `.endmodule` with no matching `.module`, results in a compile-time error.
+
+## Module Scopes
+
+A module defines its own *symbol scope*. Labels and symbols declared inside a module belong to the module and are independent of identical names declared in other modules. As a consequence, you can reuse the same label names in different modules without producing conflicts:
+
+```z80klive
+.org #6000
+.module MyModule
+  ld a,b
+  ld bc,t1
+t1:
+  ld a,b
+.endmodule
+
+.module MyModule2
+  ld a,b
+  ld bc,t1   ; resolves to t1 inside MyModule2
+t1:
+  ld a,b
+.endmodule
+```
+
+Temporary labels (those starting with a backtick) follow the same rule — each module has its own pool of temporary labels:
+
+```z80klive
+.module MyModule
+  ld bc,`t1
+`t1:
+  ld a,b
+.endmodule
+
+.module MyModule2
+  ld bc,`t1   ; refers to the `t1 declared inside MyModule2
+`t1:
+  ld a,b
+.endmodule
+```
+
+### Visibility from Inside a Module
+
+While a module's symbols are private to the module, the module itself can *see* every symbol declared in its enclosing scopes. Symbol resolution works from the innermost scope outwards: the assembler first looks for the symbol in the current module, then in its parent module, and so on, finally checking the global scope.
+
+```z80klive
+.org #6000
+Start:
+  ld a,b
+  .module MyModule
+    nop
+    ld bc,Start    ; resolves to the outer Start label
+  .endmodule
+```
+
+If a label declared inside a module shadows a label with the same name in an outer scope, the inner one wins:
+
+```z80klive
+.org #6000
+Outside:
+  ld a,b
+  .module MyModule
+    nop
+Outside:           ; shadows the outer Outside inside MyModule
+    nop
+    ld bc,Outside  ; refers to the inner Outside
+  .endmodule
+```
+
+### Module-Local Symbols (`@`)
+
+Prefix a label with `@` to mark it as *module-local*. Module-local symbols can only be referenced from the same module; the compiler does not export them to outer scopes or other modules:
+
+```z80klive
+.module MyModule
+@LocalSym:
+  nop
+  ld bc,@LocalSym  ; OK — visible inside MyModule
+.endmodule
+
+ld bc,@LocalSym    ; ERROR: @LocalSym is not visible outside MyModule
+```
+
+## Nested Modules
+
+Modules can be nested to any depth. Each nested module introduces its own scope, and the enclosing module acts as the parent scope. Symbol resolution walks through every parent module, all the way out to the global scope:
+
+```z80klive
+.org #6000
+Start:
+  .module MyModule
+    ld a,b
+    ld bc,t1
+  t1:
+    ld a,b
+    .module Nested
+  t1:                 ; independent from MyModule.t1
+      ld a,b
+      ld bc,t1        ; refers to Nested.t1
+    .endmodule
+    ld hl,t1          ; refers to MyModule.t1
+  .endmodule
+```
+
+## Referencing Symbols Across Modules
+
+Although a module's symbols are not visible by their simple name from the outside, you can reference them explicitly using *qualified names*. A qualified name lists the module path separated by dots, ending with the symbol name.
+
+For example, given this code:
+
+```z80klive
+.org #6000
+Start:
+  ld a,b
+  .module MyModule
+    ld a,b
+    ld bc,MyId
+MyId:
+    ld bc,::MyId       ; refers to the global MyId
+  .endmodule
+MyId:
+  ld hl,MyModule.MyId  ; refers to MyId inside MyModule
+```
+
+You can address `MyId` inside `MyModule` from the outer scope as `MyModule.MyId`. Qualified names work for nested modules, too. For instance, `Outer.Inner.Symbol` references `Symbol` declared inside the `Inner` module that is itself nested in `Outer`.
+
+### Global Resolution with `::`
+
+Prefix a symbol (or a qualified name) with `::` to start the resolution from the *global* (root) scope, regardless of how deeply you are nested in modules. This is helpful when an inner symbol shadows an outer one and you need to refer to the outer one explicitly:
+
+```z80klive
+.org #6000
+MyStart:
+  ld a,b
+  .module MyModule
+MyStart:
+    ld a,b
+    ld bc,MyStart      ; resolves to MyModule.MyStart (the inner one)
+    ld bc,::MyStart    ; resolves to the global MyStart
+  .endmodule
+```
+
+You can combine `::` with a qualified name to address any module from the global scope:
+
+```z80klive
+ld hl,::MyModule.MyId
+```
+
+## Modules and Other Constructs
+
+Modules cooperate with other Klive features in a natural way:
+
+- Each module has its own table of structures and macros. A struct or macro defined inside a module is referenced from the outside through the module's qualified name.
+- Variables (those declared with `.var`) follow the same scoping rules as other symbols.
+- Local scopes created by control-flow statements such as `.loop`, `.while`, `.repeat`, `.for`, and `.proc` live *inside* the current module. When symbol resolution leaves the innermost local scope, it continues with the enclosing module before stepping out to the parent module.
+- A module may contain any number of nested modules, structs, macros, and statements. There is no fixed nesting limit.

@@ -12,63 +12,88 @@
     jp Main
 
 ; Use the utility methods
+#include "_helpers/sysvars.asm"
 #include "_helpers/display.asm"
 #include "_helpers/timing.asm"
+#include "_helpers/io.asm"
 
 ; Include the examples
-#include "01_intro/print.asm"
-#include "02_z80n/extinstr.asm"
-#include "03_talktohw/nr.asm"
-#include "03_talktohw/io.asm"
-#include "03_talktohw/ctc.asm"
-#include "04_zxndma/memcpy.asm"
+#include "00_intro/print.asm"
+#include "01_z80n/extinstr.asm"
+#include "02_talktohw/nr.asm"
+#include "02_talktohw/io.asm"
+#include "03_memory/mmu.asm"
+#include "03_memory/legacy.asm"
+#include "04_interrupts/int.asm"
+#include "05_ctc/ctc.asm"
+#include "05_ctc/ctcint.asm"
+#include "06_zxndma/memcpy.asm"
+#include "06_zxndma/compare.asm"
+#include "06_zxndma/interrupt.asm"
 
-; We keep 256 bytes for the stack
+; We keep 64 bytes for the stack
 STACK
-    .defs $100
+    .defs $40
 STACK_TOP
 
 ; The start of the example
 Main
-    call _clearScreen
+    Display.ClearScreen()
 ;
 ; Here are the examples. Uncomment the one you want to run
-    // --- Flying Start Demos
-    // call PrintWelcomeDemo
-    // call PrintValuesDemo
+    // --- 00: Flying Start Demos
+    // call PrintDemo.Welcome
+    // call PrintDemo.Values
 
-    // --- Z80N Demos
-    // call SwapnibDemo
-    // call MirrorDemo
-    // call TestDemo
-    // call BslaDemo
-    // call BsraDemo
-    // call BsrlDemo
-    // call BsrfDemo
-    // call BrlcDemo
-    // call LdixDemo
-    // call LddxDemo
-    // call LdirxDemo
-    // call LddrxDemo
-    // call LdwsDemo
-    // call LdpirxDemo
-    // call PixeladDemo
-    // call PixeldnDemo
-    // call SetaeDemo
+    // --- 01: Z80N Demos
+    // call Z80NDemo.DoSwapnib
+    // call Z80NDemo.DoMirror
+    // call Z80NDemo.DoTest
+    // call Z80NDemo.DoBsla
+    // call Z80NDemo.DoBsra
+    // call Z80NDemo.DoBsrf
+    // call Z80NDemo.DoBsrl
+    // call Z80NDemo.DoBrlc
+    // call Z80NDemo.DoLdix
+    // call Z80NDemo.DoLddx
+    // call Z80NDemo.DoLdirx
+    // call Z80NDemo.DoLddrx
+    // call Z80NDemo.DoLdws
+    // call Z80NDemo.DoLdpirx
+    // call Z80NDemo.DoPixelad
+    // call Z80NDemo.DoPixeldn
+    // call Z80NDemo.DoSetae
     
-    // --- Talk to HW Demos
-    // call ReadIoDemo
-    // call WriteIoDemo
-    // call WiteNextRegDemo
-    // call Measure1Demo
-    // call Measure2Demo
-    call Measure3Demo
-    // call DmaSimpleMemCopyDemo
+    // --- 02: Talk to HW Demos
+    // call IoDemo.Read
+    // call IoDemo.Write
+    // call NextRegDemo.Write
+
+    // --- 03: Memory
+    // call MmuDemo.MmuRoundTrip
+    // call LegacyMemDemo.ShadowScreen
+    // call LegacyMemDemo.AllRam
+    // call LegacyMemDemo.DffdBanks
+
+    // --- 04: Interrupts
+    // call InterruptsDemo.FrameCounter
+    // call InterruptsDemo.TwoSources
+
+    // --- 05: CTC Demos
+    // call CtcDemos.Measure1
+    // call CtcDemos.Measure2
+    // call CtcDemos.Measure3
+    // call CtcInterruptDemo.Every100MsCounter
+
+    // --- 06: ZXNDMA Demos
+    // call DmaDemo.SimpleMemCopy
+    // call DmaCompareDemo.LdirAndDma
+    // call DmaInterruptDemo.DmaInterruptBreakIn
+    call DmaInterruptDemo.DmaWithCtcHeartbeat
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.
 trap
     ei
-    call _waitForExit
+    Display.WaitForExit()
     jp $
-

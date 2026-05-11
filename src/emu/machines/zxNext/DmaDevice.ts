@@ -160,31 +160,13 @@ const BYTE_SHIFT = 8;               // Shift for byte assembly
 const MASK_16BIT = 0xFFFF;          // 16-bit wraparound mask
 
 /**
- * CPU speed constants (from CpuSpeedDevice)
- */
-const CPU_SPEED_28MHZ = 3;          // CPU speed value for 28 MHz
-
-/**
- * Bank lookup constants
- */
-const BANK_7_ID = 0x0E;             // Bank 7 identifier in memory device
-const BANK_SHIFT = 13;              // Bits to shift address for bank lookup (13k window)
-
-/**
  * T-state timing constants
  */
 const TSTATES_IO_PORT = 4;          // T-states for I/O port operation
 const TSTATES_MEMORY_READ = 3;      // Base T-states for memory read (no contention)
 const TSTATES_MEMORY_WRITE = 3;     // T-states for memory write (no wait states on writes)
-const TSTATES_WAIT_STATE = 1;       // Additional T-state for bank contention
 const SPI_DATA_PORT = 0xeb;         // Port 0xEB — SPI data register
 const SPI_TRANSFER_WAIT_CYCLES = 16; // FPGA: spi_wait_n low for 16 half-clock cycles per SPI byte
-
-/**
- * Prescalar frequency constants (for audio sampling)
- */
-const PRESCALAR_REFERENCE_FREQ = 3500000;  // Reference frequency in Hz
-const PRESCALAR_AUDIO_FREQ = 875000;       // Audio sample frequency in Hz
 
 // ============================================================================
 // Step 1: MAME-style raw register index constants
@@ -304,6 +286,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   private dmaMode: DmaMode = DmaMode.ZXNDMA;
   private prescalarTimer: number = 0;  // Timer for fixed-rate transfers
+  private burstReadyAtSysTact: number = 0;
   // Monotonically-increasing counter incremented each time handleTransferFinish() runs.
   // Used by executeContinuousTransfer() to detect block completions without relying on
   // SEQ_FINISH being a stable observable state (it is immediately overwritten inline).
@@ -422,6 +405,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.registerReadSeq = RegisterReadSequence.RD_STATUS;
     this._tempRegisterByte = 0;
     this.prescalarTimer = 0;
+    this.burstReadyAtSysTact = 0;
     this.dmaMode = DmaMode.ZXNDMA;
 
     // Step 1+2: Clear raw registers and follow state
@@ -1639,6 +1623,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private disableDma(): void {
     this.dmaSeq = DmaSeq.SEQ_IDLE;
     this.dmaState = DmaState.IDLE;       // keep legacy field in sync
+    this.burstReadyAtSysTact = 0;
     this.releaseBus();
   }
 
@@ -1648,6 +1633,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * considered ready (unless forceReady is the only gate – which still passes).
    */
   private isReady(): boolean {
+    if (
+      this.registers.transferMode === TransferMode.BURST &&
+      this.registers.portBPrescalar !== 0 &&
+      this.getCurrentSysTact() < this.burstReadyAtSysTact
+    ) {
+      return false;
+    }
     return true;  // No external RDY signal in this emulator
   }
 
@@ -2019,6 +2011,19 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         break;
     }
 
+    // ZX Next paced burst mode gives the CPU the bus back between prescaled
+    // bytes. Without a prescaler, burst continues like the base Z80 DMA ready
+    // path and keeps the bus while ready remains active.
+    if (
+      this.registers.transferMode === TransferMode.BURST &&
+      this.registers.portBPrescalar !== 0 &&
+      this.dmaSeq === DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE
+    ) {
+      this.burstReadyAtSysTact = this.getCurrentSysTact() + this.calculatePrescalerDelay();
+      this.releaseBus();
+      this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+    }
+
     // Step 12: dma_delay override — mirrors specnext_dma clock_w logic:
     //   if (dma_delay && next-state == SEQ_TRANS1_INC_DEC_SOURCE_ADDRESS) {
     //     set_busrq(CLEAR_LINE); dma_seq = SEQ_WAIT_READY; return; }
@@ -2031,15 +2036,35 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     }
 
     // Return T-states based on the CONFIGURED mode (not the effective/overridden mode).
-    // Step 28: When ZXN_PRESCALER is non-zero, apply prescaler timing for ALL operating
-    // modes, not just Burst — mirroring MAME specnext_dma_device::clock_w() which gates
-    // the prescaler delay on `m_r2_portB_preescaler_s != 0` regardless of mode.
-    // The bus is only released (forcing WAIT_READY) for Burst mode.
-    if (this.registers.portBPrescalar !== 0) {
-      const prescalar = this.registers.portBPrescalar;
-      return Math.floor((prescalar * PRESCALAR_REFERENCE_FREQ) / PRESCALAR_AUDIO_FREQ);
+    // Hardware-observed ZX Next behaviour: the WR2 prescaler is the paced-transfer
+    // timer used by burst-style DMA. Continuous memory transfers are not stretched
+    // by the prescaler byte; they use the normal read/write DMA cycle timing.
+    if (
+      this.registers.portBPrescalar !== 0 &&
+      this.registers.transferMode === TransferMode.BURST
+    ) {
+      return this.calculateDmaTransferTiming();
     }
     return this.calculateDmaTransferTiming();
+  }
+
+  /**
+   * Calculates the zxnDMA WR2 prescaler delay in 28 MHz system clocks.
+   *
+   * FPGA reference:
+   *   DMA_timer increments by 8, 4, 2, or 1 per 28 MHz clock at
+   *   3.5, 7, 14, or 28 MHz CPU speed respectively. The prescaler
+   *   comparison uses DMA_timer(13 downto 5), so one prescaler unit
+   *   corresponds to 32 / increment system clocks.
+   */
+  private calculatePrescalerDelay(): number {
+    const prescalar = this.registers.portBPrescalar;
+    const multiplier = this.machine.cpuSpeedDevice?.effectiveClockMultiplier ?? 1;
+    return prescalar * 4 * multiplier;
+  }
+
+  private getCurrentSysTact(): number {
+    return this.machine.frames * this.machine.tactsInFrame + this.machine.frameTacts;
   }
 
   /**
@@ -2089,19 +2114,12 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   /**
    * Calculate accurate T-state timing for DMA transfer
    * Takes into account:
-   * - CPU speed (3.5MHz, 7MHz, 14MHz, 28MHz)
-   * - SRAM wait states at 28MHz
-   * - Bank 7 direct access (no wait state)
+   * - DMA cycle timing programmed through WR1/WR2
    * - Memory vs I/O port timing
    * 
    * @returns T-states consumed for one byte transfer (read + write)
    */
   calculateDmaTransferTiming(): number {
-    const sourceAddr = this.transferState.sourceAddress;
-    
-    // Get current CPU speed from machine
-    const cpuSpeed = this.machine.cpuSpeedDevice.effectiveSpeed;
-    
     let readTStates = 0;
     let writeTStates = 0;
     
@@ -2114,18 +2132,11 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         readTStates += SPI_TRANSFER_WAIT_CYCLES;
       }
     } else {
-      // Memory read: base 3 T-states
+      // Memory read: default 3 DMA clocks. CPU-only 28 MHz memory wait states
+      // are not applied here; the FPGA DMA state machine runs from the 28 MHz
+      // clock and the default memory-to-memory path is 3 clocks read + 3 clocks
+      // write.
       readTStates = TSTATES_MEMORY_READ;
-      
-      // At 28 MHz, add 1 wait state unless it's Bank 7
-      if (cpuSpeed === CPU_SPEED_28MHZ) {
-        const pageIndex = (sourceAddr >>> BANK_SHIFT) & 0x07;
-        const isBank7 = this.machine.memoryDevice.bank8kLookup[pageIndex] === BANK_7_ID;
-        
-        if (!isBank7) {
-          readTStates += TSTATES_WAIT_STATE; // Wait state for SRAM or Bank 5
-        }
-      }
     }
     
     // Calculate write timing  
@@ -2140,7 +2151,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       // Memory write: always 3 T-states (no wait states on writes, even at 28MHz)
       writeTStates = TSTATES_MEMORY_WRITE;
     }
-    
+
     return readTStates + writeTStates;
   }
 
@@ -2356,6 +2367,17 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     while (bytesTransferred < targetBytes &&
            tStatesUsed < tStatesToExecute &&
            this.dmaSeq !== DmaSeq.SEQ_IDLE) {
+      const readyWait = this.getBurstReadyWaitTicks();
+      if (
+        readyWait > 0 &&
+        this.busControl.state === BusState.IDLE &&
+        this.dmaSeq === DmaSeq.SEQ_WAIT_READY
+      ) {
+        if (tStatesUsed + readyWait > tStatesToExecute) break;
+        tStatesUsed += readyWait;
+        this.burstReadyAtSysTact = this.getCurrentSysTact();
+      }
+
       if (this.busControl.state === BusState.REQUESTED) {
         this.acknowledgeBus();
       }
@@ -2363,6 +2385,12 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       if (tStates > 0) {
         bytesTransferred++;
         tStatesUsed += tStates;
+      } else if (
+        this.busControl.state === BusState.IDLE &&
+        this.dmaSeq === DmaSeq.SEQ_WAIT_READY &&
+        this.getBurstReadyWaitTicks() > 0
+      ) {
+        continue;
       }
       // Stop after the block completes (FINISH handler may have called enable() for auto-restart)
       if (bytesTransferred >= targetBytes) break;
@@ -2377,5 +2405,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   isTransferComplete(): boolean {
     return this.transferState.byteCounter >= this.registers.blockLength;
+  }
+
+  private getBurstReadyWaitTicks(): number {
+    if (
+      this.registers.transferMode !== TransferMode.BURST ||
+      this.registers.portBPrescalar === 0
+    ) {
+      return 0;
+    }
+    return Math.max(0, this.burstReadyAtSysTact - this.getCurrentSysTact());
   }
 }

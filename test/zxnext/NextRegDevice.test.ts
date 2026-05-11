@@ -151,7 +151,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0x00);
+    expect(d.directGetRegValue(0xc4)).toBe(0x01);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
@@ -303,7 +303,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0x00);
+    expect(d.directGetRegValue(0xc4)).toBe(0x01);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
@@ -3420,5 +3420,40 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     scrDevice.renderTact(0); // vc=0
 
     expect(readCVC(m)).toBe(252);
+  });
+
+  it("NR $83 bit 5 = 0: isMouseEnabled() false, isPortDfKempstonAlias() true", async () => {
+    const m = await createTestNextMachine();
+    const d = m.nextRegDevice;
+
+    d.setNextRegisterIndex(0x83);
+    d.setNextRegisterValue(0x00);
+
+    expect(d.isMouseEnabled()).toBe(false);
+    expect(d.isPortDfKempstonAlias()).toBe(true);
+  });
+
+  it("NR $83 bit 5 = 1: isMouseEnabled() true, isPortDfKempstonAlias() false", async () => {
+    const m = await createTestNextMachine();
+    const d = m.nextRegDevice;
+
+    d.setNextRegisterIndex(0x83);
+    d.setNextRegisterValue(0x20);
+
+    expect(d.isMouseEnabled()).toBe(true);
+    expect(d.isPortDfKempstonAlias()).toBe(false);
+  });
+
+  it("Hard reset sets NR $83 = 0xff: isMouseEnabled() true, isPortDfKempstonAlias() false", async () => {
+    const m = await createTestNextMachine();
+    const d = m.nextRegDevice;
+
+    // Disable mouse first, then hard-reset should re-enable it
+    d.setNextRegisterIndex(0x83);
+    d.setNextRegisterValue(0x00);
+    d.hardReset();
+
+    expect(d.isMouseEnabled()).toBe(true);
+    expect(d.isPortDfKempstonAlias()).toBe(false);
   });
 });

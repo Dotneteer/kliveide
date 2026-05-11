@@ -442,21 +442,21 @@ export class NextIoPortManager {
       port: 0xfbdf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1011_1101_1111,
-      readerFns: gR(1, 5, readKempstonMouseXPort(machine))
+      readerFns: readKempstonMouseXPort(machine)
     });
     r({
       description: "Kempston mouse y",
       port: 0xffdf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1111_1101_1111,
-      readerFns: gR(1, 5, readKempstonMouseYPort(machine))
+      readerFns: readKempstonMouseYPort(machine)
     });
     r({
       description: "Kempston mouse wheel, buttons",
       port: 0xfadf,
       pmask: 0b0000_1111_1111_1111,
       value: 0b0000_1010_1101_1111,
-      readerFns: gR(1, 5, readKempstonMouseWheelPort(machine))
+      readerFns: readKempstonMouseWheelPort(machine)
     });
     r({
       description: "Multiface port 0x1F",

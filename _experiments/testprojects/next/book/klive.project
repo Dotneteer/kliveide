@@ -3,8 +3,8 @@
   "machineType": "zxnext",
   "modelId": "pal",
   "clockMultiplier": 1,
-  "soundLevel": 0.8,
-  "soundMuted": false,
+  "soundLevel": 0,
+  "soundMuted": true,
   "savedSoundLevel": 0.8,
   "media": {
     "sdCard": "/Users/dotneteer/Klive/ks2.cim"
@@ -19,10 +19,29 @@
   "debugger": {
     "breakpoints": [
       {
+        "address": 1,
+        "exec": true,
+        "ioMask": 65535
+      },
+      {
         "resource": "code/code.kz80.asm",
         "line": 24,
         "exec": true,
         "ioMask": 65535
+      },
+      {
+        "resource": "03_memory/legacy.asm",
+        "line": 136,
+        "exec": true,
+        "ioMask": 65535,
+        "resolvedAddress": 36737
+      },
+      {
+        "resource": "03_memory/legacy.asm",
+        "line": 209,
+        "exec": true,
+        "ioMask": 65535,
+        "resolvedAddress": 36944
       }
     ]
   },
@@ -55,47 +74,23 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 65,
-            "column": 13
+            "line": 92,
+            "column": 42
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/timing.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/interrupt.asm",
           "position": {
-            "line": 78,
-            "column": 13
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/03_talktohw/ctc.asm",
-          "position": {
-            "line": 65,
-            "column": 16
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/01_intro/print.asm",
-          "position": {
-            "line": 52,
-            "column": 1
-          }
-        },
-        {
-          "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/_helpers/display.asm",
-          "position": {
-            "line": 32,
-            "column": 1
+            "line": 0,
+            "column": 0
           }
         }
       ],
       "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm"
     },
     "Disassembly": {
-      "topAddress": 1386,
+      "topAddress": 39807,
       "isFullView": true,
       "currentSegment": 0,
       "decimalView": false,

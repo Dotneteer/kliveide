@@ -1,0 +1,31 @@
+import { Callout } from 'nextra/components'
+
+# The Real-Time Clock and I²C
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+There's a battery-backed RTC chip on the Next, accessible over an I²C bus that the FPGA exposes through two NextRegs. We use it to read the current date and time, set it, and — more interestingly — learn the I²C protocol on a real (well, real-emulated) bus, since the same two NextRegs will let you talk to *any* I²C device you wire to the expansion connector.
+
+Topics:
+
+- **The I²C bus, in 200 words.** Two wires (SDA, SCL), open-collector signalling, addressed devices, START/STOP/ACK conventions. Just enough to know what we're poking.
+- **The Next's I²C interface.** NextReg `$103B` (SCL line) and `$113B` (SDA line). Bit-banging — the FPGA does not provide a hardware I²C controller, you toggle the lines yourself.
+- **A bit-banged I²C driver.** A small, reusable driver: `i2cStart`, `i2cStop`, `i2cWriteByte`, `i2cReadByte`. About 40 lines of Z80.
+- **The RTC chip.** Address `$D0` (the DS1307-style PCF85063 on the Next). The register layout: seconds, minutes, hours (12/24h), day, date, month, year. BCD encoding throughout.
+- **Reading the time.** Open the device, set the register pointer to 0, do a sequential read of seven bytes, decode BCD.
+- **Setting the time.** The reverse, plus the "stop the clock while you write, restart it when you're done" courtesy.
+
+## What you should know first
+
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+- [The CTC](./05-ctc.mdx) — handy for the bit-bang timing.
+
+## Planned exercises
+
+- **Print the time.** Read the RTC and display the current date and time on the ULA screen, updating once per second.
+- **Set the time.** A small input form that lets the user enter a new time and writes it to the RTC.
+- **Talk to a fake I²C device.** Use the Klive I²C surface (configurable virtual peer at a chosen address) to verify the START/STOP framing of the driver.

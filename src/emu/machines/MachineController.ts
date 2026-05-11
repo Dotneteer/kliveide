@@ -329,11 +329,12 @@ export class MachineController implements IMachineController {
           break;
 
         case "Start":
-          if (debug) {
-            await this.startDebug();
-          } else {
-            await this.start();
-          }
+          // --- Always start in normal (non-debug) mode during the injection flow.
+          // --- Debug mode is activated after the full flow completes. Starting
+          // --- in StopAtBreakpoint mode here would stop the machine at any user
+          // --- breakpoint mid-flow, causing all queued keystrokes to share the
+          // --- same startTact and expire before the machine can process them.
+          await this.start();
           break;
 
         case "Wait":
@@ -383,7 +384,22 @@ export class MachineController implements IMachineController {
 
     // --- Start the machine
     if (debug) {
-      await this.startDebug();
+      if (this.state === MachineControllerState.Running) {
+        // --- The injection flow left the machine running (e.g. ZX Spectrum Next
+        // --- after typing the .nexload command). Switch to debug mode in-place
+        // --- so the ongoing execution is not interrupted while the machine
+        // --- still processes in-flight keystrokes.
+        this.isDebugging = true;
+        this.context.debugStepMode = DebugStepMode.StopAtBreakpoint;
+        this.context.frameTerminationMode = FrameTerminationMode.DebugEvent;
+        this.context.terminationPartition = undefined;
+        this.context.terminationPoint = undefined;
+        this.context.debugSupport = this.debugSupport;
+        this.machine?.awakeCpu();
+        this.store.dispatch(setDebuggingAction(true), "emu");
+      } else {
+        await this.startDebug();
+      }
     } else {
       await this.start();
     }

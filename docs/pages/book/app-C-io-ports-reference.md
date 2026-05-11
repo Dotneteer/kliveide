@@ -6,7 +6,7 @@ The ZX Spectrum Next has somewhere north of fifty distinct port addresses. Not c
 
 This reference organizes them by what they *do*, not by address order. The address table at the top of each section tells you what to `IN`/`OUT`, and the explanation tells you why.
 
-> The fundamentals of how Z80 I/O addressing works — partial decoding, the `X` notation, and port aliasing — are covered in the [Talking to the Hardware](./next-hardware.md) chapter.
+> The fundamentals of how Z80 I/O addressing works — partial decoding, the `X` notation, and port aliasing — are covered in the [Talking to the Hardware: I/O Ports and NextRegs](./02-io-and-nextregs.mdx) chapter.
 
 ## Port Enable/Disable: The Master Switch Panel
 

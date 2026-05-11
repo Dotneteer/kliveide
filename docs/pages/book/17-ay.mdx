@@ -1,0 +1,31 @@
+import { Callout } from 'nextra/components'
+
+# The AY-3-8912 Family: Three Chips, Nine Channels
+
+<Callout type="warning" emoji="🚧">
+This chapter is a placeholder. The full text is being written.
+</Callout>
+
+## Synopsis
+
+The AY-3-8912 is the chip that gave the 128K Spectrum (and the Amstrad CPC, and the MSX, and a small army of arcade machines) their distinctive sound. The Next has **three** of them, addressable through the same legacy ports — pick which chip you're talking to via NextReg `$06`. Three channels per chip, nine channels total, plus envelopes, plus a noise generator per chip, plus stereo positioning.
+
+Topics:
+
+- **The classic AY register file.** Tone period, mixer, amplitude, envelope shape, envelope period, I/O ports — all 16 registers, what each does.
+- **The two ports.** `$FFFD` (register select), `$BFFD` (register data). Identical to the original 128K Spectrum; legacy AY tracker code runs unchanged.
+- **The three-chip selector.** NextReg `$06` bits — pick which AY responds to the next port write. Combined with the standard ports, this gives you all nine channels.
+- **Stereo modes.** ABC, ACB, mono — NextReg `$08` bits 4-3.
+- **Envelopes.** The eight envelope shapes, the period registers, and how to create vibrato/tremolo by writing fresh envelopes mid-note.
+- **Tracker formats.** A tour of the common AY music formats (PT3, AY, STC, ASC) and how their players unpack into the same register writes.
+
+## What you should know first
+
+- [I/O and NextRegs](./02-io-and-nextregs.mdx).
+- [Interrupts](./04-interrupts.mdx) — most music players run from the frame ISR.
+
+## Planned exercises
+
+- **Three-chip chord.** Play the same note on all three AY chips simultaneously — hear the difference between mono, ABC, and ACB modes.
+- **Envelope showcase.** Step through all eight envelope shapes on a single channel, displayed as a label on screen.
+- **Tracker player.** Load a small PT3 tune from the example pack and play it back from the frame interrupt.
