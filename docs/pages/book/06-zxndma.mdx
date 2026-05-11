@@ -774,7 +774,7 @@ Do not expect this visible-screen benchmark to show a clean abstract speedup fro
 
 Continuous DMA is fast, but it normally owns the bus until the block finishes. That means the CPU cannot run ordinary interrupt handlers while the transfer is in progress. The Next gives you a second set of interrupt-enable registers, `$CC`–`$CE`, that control which interrupt sources may ask the DMA to pause and give the bus back temporarily.
 
-This demo runs the same continuous DMA fill twice. A ULA frame ISR toggles the border and increments a counter. In the first pass, DMA runs as one uninterrupted block; interrupts remain disabled while the stopwatch is running so the timing does not accidentally include a ULA frame ISR that was latched during the transfer. In the second pass, NR `$CC` bit 0 is set, so the ULA frame interrupt is allowed to interrupt the DMA. The demo synchronizes both measurements just after a ULA frame status event before starting the CTC stopwatch. The fill is much shorter than a frame, so this avoids measuring an unrelated frame ISR that happens to arrive just after DMA releases the bus. The fill destination is `$5000`, in the lower third of the ULA bitmap, so the title and instruction text at the top of the screen stay readable.
+This demo runs the same continuous DMA fill twice. A ULA frame ISR toggles the border and increments a counter. In the first pass, DMA runs as one uninterrupted block; interrupts remain disabled while the stopwatch is running so the timing does not accidentally include a ULA frame ISR that was latched during the transfer. In the second pass, NR `$CC` bit 0 is set, so the ULA frame interrupt is allowed to interrupt the DMA. The fill destination is `$5000`, in the lower third of the ULA bitmap, so the title and instruction text at the top of the screen stay readable.
 
 ```z80klive
 .module DmaInterruptDemo
@@ -1009,13 +1009,355 @@ DmaInterruptBreakIn
 .endmodule
 ```
 
+<Callout type="info" emoji="💡">
+Try the `DmaInterruptDemo.DmaInterruptBreakIn` example.
+</Callout>
+
 The key detail is that `$C4` and `$CC` are not redundant. NR `$C4` bit 0 says the ULA frame interrupt is enabled in the interrupt controller. NR `$CC` bit 0 says the same ULA source is allowed to interrupt DMA. The first pass leaves `$CC` clear, so DMA owns the bus until the transfer ends. The second pass sets `$CC` bit 0 and enables maskable interrupts, so the interrupt controller can pause DMA, let the CPU acknowledge the ULA interrupt, run the ISR, and then let DMA continue.
 
 The DMA program deliberately stays in continuous mode and does not use the WR2 prescaler. On current hardware, the prescaler is useful for paced burst-style transfers, especially audio, but it is not a reliable way to stretch a continuous memory fill. The CTC values include the DMA enable write and the final status polling loop, just like the earlier `LDIR` vs DMA measurement demo.
 
 The break-in pass has one extra wrinkle: if a frame ISR runs during the measurement, the raw CTC value includes the ISR's own instructions. The demo subtracts a small per-frame handler cost before displaying the break-in CTC value. That keeps the frame counters and CTC counters telling two different stories: the frame rows show whether interrupts broke in, while the CTC rows compare the DMA transfer time itself.
 
-## Practical Pattern: Memory Fill
+<ClickableImage src="/images/book/06-zxndma/interrupt-break-into.png" width="720" />
+
+## Practical Pattern: CTC-Triggered Periodic DMA
+
+The DMA's built-in WR2 prescaler is convenient when you want a paced burst transfer, but the CTC can also drive DMA directly. This matters when the timing source is already a CTC channel, or when you want one timer to coordinate several things in the program.
+
+NextReg `$CD` selects which CTC channels can trigger DMA. Its bits correspond to CTC channels 0-7. When bit N is set and CTC channel N emits a ZC/TO pulse, the DMA is allowed to perform one burst step. The DMA still owns the data movement; the CTC owns the rhythm.
+
+The setup pattern is:
+
+1. Configure the DMA in **burst mode** with no WR2 prescaler.
+2. Configure a CTC channel at the desired rate.
+3. Set `1 << channel` in NextReg `$CD`.
+4. Enable DMA.
+5. Each CTC ZC/TO pulse advances the burst transfer and then lets the CPU continue.
+
+The CTC-to-DMA trigger and the CTC interrupt path are independent. You can use the same CTC channel only as a DMA trigger, only as a CPU interrupt source, or both. NR `$CD` controls only the DMA trigger; the CTC channel control word and NR `$C5` decide whether the CPU also sees an interrupt.
+
+When the transfer is finished, disable DMA first, then clear NR `$CD` so later CTC pulses do not wake the DMA unexpectedly:
+
+```z80klive
+    ld bc,$6B
+    ld a,$83                ; WR6: Disable DMA
+    out (c),a
+
+    ld a,$CD
+    ld bc,$243B             ; NextReg select
+    out (c),a
+    xor a
+    ld bc,$253B             ; NextReg data
+    out (c),a
+```
+
+This pattern is especially useful for sample playback, where each CTC tick can deliver one byte to a DAC port. The DAC chapter uses this idea in its own audio context; here, the important zxnDMA idea is that burst transfers do not have to be paced only by the DMA's internal prescaler.
+
+## Demo: Keeping the CPU Alive During Burst DMA
+
+The previous demo lets an existing interrupt source break into a continuous DMA transfer. This next one uses the other side of the same idea: the DMA transfer itself is paced as a burst transfer, so the CPU gets the bus back between bytes. While DMA is still active, the main loop updates an attribute cell and a CTC interrupt keeps incrementing a heartbeat counter.
+
+The ZX Spectrum Next FPGA does not expose a zxnDMA “finished” interrupt to normal Z80 code. So this demo deliberately separates the two ideas: CTC proves that interrupts can still run while DMA is active, and the DMA status byte is used to detect completion.
+
+```z80klive
+; Extra constants used by the heartbeat demo.
+NR_INT_EN_1     .equ $c5
+NR_INT_STATUS_1 .equ $c9
+
+CTC_CH0         .equ $183b
+CTC_CH1         .equ $193b
+CTC_CH2         .equ $1a3b
+
+CTC2_PRIORITY   .equ 5
+CTC2_VECTOR     .equ VECTOR_TOP_BITS | (CTC2_PRIORITY << 1)
+HEARTBEAT_DMA_DEST .equ $57ff    ; Safe single-byte screen target
+HEARTBEAT_DMA_SIZE .equ $8000    ; Long enough to watch the animation
+BURST_PRESCALER .equ 255         ; Slowest paced burst transfer
+ATTR_ROW7       .equ $5800 + 7 * 32
+
+;==========================================================
+; Burst DMA with CTC heartbeat demo
+;==========================================================
+DmaWithCtcHeartbeat
+    Display.PrintTitle(@Title_Heartbeat)
+    Display.PrintText(@Instr_Heartbeat)
+
+    di
+
+    ; Keep unrelated interrupt sources quiet for this demo.
+    nextreg NR_INT_EN_0,0
+    nextreg NR_INT_EN_1,0
+    nextreg NR_INT_STATUS_0,$ff
+    nextreg NR_INT_STATUS_1,$ff
+    nextreg NR_DMA_INT_EN_0,0
+
+    call @ResetCtcChannels
+
+    xor a
+    ld (@HeartbeatTicks),a
+    ld (@HeartbeatTicks+1),a
+    ld (@MainLoops),a
+    ld (@MainLoops+1),a
+    ld (@AttrCol2),a
+    ld (@DmaDoneFlag),a
+
+    ; --- Set up hardware IM2 for CTC channel 2.
+    ld a,high(@VectorTable2)
+    ld i,a
+    im 2
+    nextreg NR_INT_CONTROL,VECTOR_TOP_BITS | $01
+
+    ; Enable CTC channel 2 in the Next interrupt controller.
+    nextreg NR_INT_EN_1,%00000100
+    nextreg NR_INT_STATUS_1,%00000100
+
+    ; CTC cascade for a visible heartbeat:
+    ; Ch0: 28 MHz / 16 / 250 = 7000 Hz
+    ; Ch1: 7000 Hz / 28      = 250 Hz
+    ; Ch2: 250 Hz / 5        = 50 Hz -> 20 ms
+    ld bc,CTC_CH2
+    ld a,%11000101          ; Interrupt on, counter mode, TC follows
+    out (c),a
+    ld a,5
+    out (c),a
+
+    ld bc,CTC_CH1
+    ld a,%01000101          ; Counter mode, TC follows
+    out (c),a
+    ld a,28
+    out (c),a
+
+    ld bc,CTC_CH0
+    ld a,%00000101          ; Timer mode, prescaler /16, TC follows
+    out (c),a
+    ld a,250
+    out (c),a
+
+    ; Upload and start a long paced burst DMA stream.
+    ld hl,@BurstDmaProgram
+    ld b,@BurstDmaProgramEnd - @BurstDmaProgram
+    ld c,DMA_PORT
+    otir
+
+    ld bc,DMA_PORT
+    ld a,$87                ; WR6: Enable DMA
+    out (c),a
+
+    ei
+
+`mainLoop
+    call @AnimateHeartbeat
+    call @ShowHeartbeatCounters
+
+    ld bc,DMA_PORT
+    ld a,$bf                ; WR6: Read Status Byte
+    out (c),a
+    in a,(c)
+    bit 5,a                 ; 0 = end of block reached
+    jr nz,`mainLoop
+
+    di
+    ld a,1
+    ld (@DmaDoneFlag),a
+    call @ShowHeartbeatCounters
+
+    ; --- Restore the normal interrupt setup.
+    nextreg NR_INT_EN_1,0
+    nextreg NR_INT_STATUS_1,%00000100
+    call @ResetCtcChannels
+
+    ld bc,DMA_PORT
+    ld a,$83                ; WR6: Disable DMA
+    out (c),a
+
+    nextreg NR_INT_EN_0,1
+    nextreg NR_INT_CONTROL,0
+    im 1
+    ei
+    ret
+
+;----------------------------------------------------------
+; CTC Channel 2 ISR: heartbeat while burst DMA is active
+;----------------------------------------------------------
+@Ctc2Isr
+    push af
+    push hl
+
+    ld hl,(@HeartbeatTicks)
+    inc hl
+    ld (@HeartbeatTicks),hl
+
+    nextreg NR_INT_STATUS_1,%00000100
+
+    pop hl
+    pop af
+    ei
+    reti
+
+;----------------------------------------------------------
+; Main-loop activity while DMA is active
+;----------------------------------------------------------
+@AnimateHeartbeat
+    ld hl,(@MainLoops)
+    inc hl
+    ld (@MainLoops),hl
+
+    ld a,l
+    and $0f
+    ret nz
+
+    ld a,(@AttrCol2)
+    ld e,a
+    ld d,0
+    ld hl,ATTR_ROW7
+    add hl,de
+    ld (hl),%00111000       ; White paper, black ink
+
+    ld a,(@AttrCol2)
+    inc a
+    and $1f
+    ld (@AttrCol2),a
+
+    ld e,a
+    ld d,0
+    ld hl,ATTR_ROW7
+    add hl,de
+    ld (hl),%01000111       ; Bright black paper, white ink
+    ret
+
+@ShowHeartbeatCounters
+    Display.PrintAt(8,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextHeartbeat)
+    ld hl,(@HeartbeatTicks)
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+
+    Display.PrintAt(9,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextMainLoops)
+    ld hl,(@MainLoops)
+    Display.Ink(Color.Blue)
+    Display.PrintHLDecimal()
+
+    Display.PrintAt(10,0)
+    Display.Ink(Color.Black)
+    Display.PrintText(@TextDmaState)
+    ld a,(@DmaDoneFlag)
+    or a
+    jr z,`active
+    Display.Ink(Color.Blue)
+    Display.PrintText(@TextDone)
+    ret
+`active
+    Display.Ink(Color.Blue)
+    Display.PrintText(@TextActive)
+    ret
+
+@BurstDmaProgram
+    .dma reset
+    .dma wr0 a_to_b, transfer, @FillByte2, HEARTBEAT_DMA_SIZE
+    .dma wr1 memory, fixed
+    .dma wr2 memory, fixed, 3t, BURST_PRESCALER
+    .dma wr4 burst, HEARTBEAT_DMA_DEST
+    .dma wr5
+    .dma load
+@BurstDmaProgramEnd
+
+;----------------------------------------------------------
+; Put CTC channels 0-2 into a known stopped state.
+;----------------------------------------------------------
+@ResetCtcChannels
+    ld a,%00000011          ; D1=1 soft reset, D0=1 control word
+
+    ld bc,CTC_CH0
+    out (c),a
+    out (c),a
+
+    ld b,high(CTC_CH1)
+    out (c),a
+    out (c),a
+
+    ld b,high(CTC_CH2)
+    out (c),a
+    out (c),a
+    ret
+
+@FillByte2
+    .db $00
+
+@HeartbeatTicks
+    .defw 0
+
+@MainLoops
+    .defw 0
+
+@AttrCol2
+    .db 0
+
+@DmaDoneFlag
+    .db 0
+
+    .align 256
+@VectorTable2
+    .defs CTC2_VECTOR
+    .defw @Ctc2Isr
+    .defs $100 - CTC2_VECTOR - 2
+
+@Title_Heartbeat
+    .defn "DMA #4: Burst + CTC heartbeat"
+
+@Instr_Heartbeat
+    .defm "A slow burst DMA stream runs.\x0d"
+    .defm "A CTC interrupt and the main\x0d"
+    .defm "loop keep running meanwhile;\x0d"
+    .defn "completion uses DMA status.\x0d\x0d"
+
+@TextHeartbeat
+    .defn "CTC ticks: "
+
+@TextMainLoops
+    .defn "Main loops: "
+
+@TextDmaState
+    .defn "DMA state:  "
+
+@TextActive
+    .defn "active"
+
+@TextDone
+    .defn "done  "
+```
+
+<Callout type="info" emoji="💡">
+Try the `DmaInterruptDemo.DmaWithCtcHeartbeat` example.
+</Callout>
+
+The `.dma wr4 burst` mode is the important part. With a non-zero Port B prescaler, the DMA engine transfers a byte, waits for the programmed pace, and gives the CPU opportunities to run between paced bytes. This sample uses the slowest prescaler and a long block length so the effect is visible instead of ending immediately.
+
+Both DMA ports are fixed in this demo. Port A repeatedly reads the same fill byte, and Port B repeatedly writes `$57FF`, a harmless single byte near the end of the ULA bitmap. That avoids clearing the title or trampling over code while still keeping the DMA engine genuinely active for thousands of paced transfers. That is why the main-loop counter and the moving attribute cell keep changing while DMA is still active.
+
+The CTC cascade is the same pattern used in Chapter 5. Channel 0 produces a 7000 Hz pulse stream, Channel 1 divides that to 250 Hz, and Channel 2 divides by 5 and raises an interrupt every 20 ms. If the CTC counter increases before the DMA state changes to `done`, the CPU has serviced real interrupts during the DMA transfer.
+
+Completion still uses polling:
+
+```z80klive
+ld a,$bf                ; WR6: Read Status Byte
+out (c),a
+in a,(c)
+bit 5,a                 ; 0 = end of block reached
+```
+
+That polling is not a weakness of the example; it matches the hardware interface. Use DMA interrupt break-in when another interrupt source must stay responsive during a long transfer, and use status polling when your code needs to know that the DMA block has actually finished.
+
+<ClickableImage src="/images/book/06-zxndma/heartbeat.png" width="720" />
+
+## Practical DMA Patterns and Reference
+
+The demos above show the moving parts in isolation: copying, measuring, interrupt break-in, and paced burst transfers. The rest of the chapter collects the reusable habits you will reach for when building real code: small DMA tables, fixed-source fills, runtime patch points, timing expectations, and a few common traps.
+
+### Memory Fill
 
 Filling a block of memory with a constant value is a classic DMA trick. The technique uses Port A in fixed address mode, pointing at a single byte containing the fill value:
 
@@ -1045,9 +1387,9 @@ DmaFill:
 
 The key insight is `wr1 memory, fixed`: Port A holds the address of `FillByte` and never advances — the same byte is read 6,144 times while Port B increments through the destination. To change the fill value, write to `FillByte` before calling `DmaFill`. The result: the entire screen pixel area is cleared in one DMA operation.
 
-## Practical Pattern: Loading Sprites via DMA
+### Loading Sprites via DMA
 
-Sprite pattern data needs to get from main memory into the Next's sprite pattern RAM. The sprite hardware is accessed through I/O ports — you select a pattern slot via port `0x303B`, then write pixel data to port `0x5B`. Each sprite pattern is 256 bytes (16×16 pixels, 8 bits per pixel).
+Sprite pattern data needs to get from main memory into the Next's sprite pattern RAM. The sprite hardware is accessed through I/O ports — you select a pattern slot via port `0x303B`, then write pixel data to port `0x5B`. Each sprite pattern is 256 bytes (16×16 pixels, 8 bits per pixel). The full sprite memory model and pattern-slot workflow are covered in the [Sprites](./13-sprites.mdx) chapter.
 
 ```z80klive
 ; DMA program table — source address and length patched per call
@@ -1087,160 +1429,18 @@ LoadSprites:
 
 The sprite hardware auto-increments its internal write pointer each time you write to port `0x5B`, so the DMA streams bytes to the same fixed port address while the sprite RAM pointer advances internally.
 
-## Practical Pattern: Audio Streaming with Burst Mode
+### Audio Transfers
 
-For audio playback, you need to output sample bytes at a precise rate. This is where burst mode and the prescaler shine:
+Audio is one of the most important uses for burst DMA, but the full discussion belongs with DAC setup, sample formats, routing, and buffer management. This chapter gives you the DMA building blocks; the [DAC and Sample Playback](./18-dac.mdx) chapter applies them to real sample playback.
 
-```z80klive
-; DMA program table — source address and sample count patched per call
-audioDMAProgram:
-    .dma reset
-    .dma wr0 a_to_b, transfer           ; base byte only: all follow-bits set
-audioDMABuffer:
-    .dw 0                               ; Port A address — patched to audio buffer
-audioDMALength:
-    .dw 0                               ; Block length   — patched to sample count
-    .dma wr1 memory, increment
-    .dma wr2 io, fixed, 2t, 80          ; I/O, fixed address, 2T cycles, prescaler=80 → ~10.9 kHz
-    .dma wr4 burst                      ; burst mode — Port B address follows
-    .dw $00DF                           ; Port B = DAC port 0xDF
-    .dma wr5
-    .dma load
-    .dma enable
-audioDMAProgram_end:
+For orientation, the two audio-shaped DMA choices are:
 
-; Stream audio from AudioBuffer (8000 samples)
-StreamAudio:
-    ld hl,AudioBuffer
-    ld (audioDMABuffer),hl             ; patch source address
-    ld hl,8000
-    ld (audioDMALength),hl             ; patch sample count
-    ld hl,audioDMAProgram
-    ld b,audioDMAProgram_end - audioDMAProgram
-    ld c,$6B
-    otir
-    ; CPU is now free — DMA releases the bus between samples (burst mode)
-    ret
-```
+| Use case | DMA pacing |
+|---|---|
+| Simple sample playback | Burst mode with WR2 prescaler |
+| Accurate sample clock shared with other timing logic | Burst mode triggered by CTC via NR `$CD` |
 
-`wr2 io, fixed, 2t, 80` encodes the three-byte WR2 sequence in one pragma line: the base byte (`$68`), the timing byte (`$22`), and the prescaler byte (`80`). With raw `.db` directives those three magic numbers carry no hint of their meaning.
-
-Burst mode is critical here. In continuous mode, the DMA would hold the bus for the entire transfer — with 8,000 bytes at 320 T-states per byte, that's 2.56 million T-states (over 700 milliseconds at 3.5 MHz) of dead CPU time. Burst mode releases the bus between samples, giving the CPU those 320-T-state windows to do real work.
-
-### Auto-Restart for Continuous Audio
-
-If you want to loop audio (play a buffer repeatedly), change `.dma wr5` to `.dma wr5 auto_restart` in `audioDMAProgram`:
-
-```z80klive
-    .dma wr5 auto_restart       ; D5=1 — reload addresses and restart on completion
-```
-
-With auto-restart enabled, the DMA reloads the starting addresses and block length when the transfer completes, then immediately starts over. The audio plays in an infinite loop until you disable the DMA.
-
-## Practical Pattern: CTC-Triggered Periodic DMA
-
-The DMA's built-in prescaler (the `prescaler` parameter in WR2) is convenient, but it has a subtle dependency: its counting rate scales with CPU speed. The FPGA adjusts the prescaler increment so that the same prescaler value produces the same real-time delay at 3.5 MHz and at 28 MHz, but this scaling happens in discrete steps. The [CTC](./05-ctc.mdx) gives you another timing source because its timer is independent of the selected CPU speed.
-
-The alternative is to let the CTC generate the timing and connect its ZC/TO output directly to the DMA trigger. The Next hardware does exactly this. **NextReg `$CD`** controls which CTC channels (0–7, one bit each, bit 0 = channel 0) can trigger a DMA burst cycle. When NR `$CD` bit N is set and CTC channel N fires its ZC/TO pulse, the DMA executes one burst step — transferring one byte (or releasing and re-requesting the bus once, depending on mode) — even if the DMA's own prescaler hasn't expired. The moving company now has a metronome.
-
-The result: the CTC owns the timing, the DMA owns the data movement. You get sample-rate precision from the CTC's system-clock-derived timer without relying on the DMA prescaler at all.
-
-### How It Works
-
-1. Configure the DMA in **burst mode** with no prescaler (omit prescaler from WR2)
-2. Configure a CTC channel as a timer at the desired rate (nominally `28 MHz ÷ 16 ÷ time_constant`)
-3. Write `1 << channel` to NextReg `$CD` to arm the CTC → DMA trigger
-4. Enable the DMA — it sits idle in burst mode, waiting for a trigger
-5. Each CTC ZC/TO event fires one DMA burst: one byte is transferred, then the bus is released until the next ZC/TO
-
-The DMA trigger and the CTC interrupt are independent. You can use the same CTC channel to both trigger DMA transfers *and* generate a CPU interrupt, or you can use only one of those paths. NR `$CD` only controls the DMA trigger; the CTC channel's own interrupt setting (control word D7) and NR `$C5` control whether a CPU interrupt also fires.
-
-### Audio Streaming with CTC Timing
-
-Compare this with the earlier prescaler-based audio example. The DMA program is almost identical, but the prescaler byte is gone from WR2, and the timing comes from an external CTC channel instead:
-
-```z80klive
-CTC_CH3     equ $1B3B        ; Use channel 3 for audio timing
-NR_REG      equ $243B
-NR_DAT      equ $253B
-
-; === Configure CTC Channel 3 as a timer at ~22 kHz ===
-; 28 MHz / 16 (prescaler ÷16) / 80 (time constant) = 21,875 Hz
-    ld bc,CTC_CH3
-    ld a,%00000101          ; Timer, prescaler ÷16, start immediately, TC follows
-    out (c),a
-    ld a,80                 ; Time constant = 80 → ~21,875 Hz
-    out (c),a
-
-; === Arm the CTC → DMA trigger (NR $CD bit 3 = CTC channel 3) ===
-    ld a,$CD
-    ld bc,NR_REG
-    out (c),a
-    ld a,%00001000          ; Enable channel 3 as DMA trigger
-    ld bc,NR_DAT
-    out (c),a
-
-; === DMA program — burst mode, no prescaler; CTC controls the rate ===
-audioCTCDMAProgram:
-    .dma reset
-    .dma wr0 a_to_b, transfer
-audioCTCSrc:  .dw 0                     ; patch: source buffer address
-audioCTCLen:  .dw 0                     ; patch: sample count
-    .dma wr1 memory, increment
-    .dma wr2 io, fixed                  ; no prescaler — CTC handles timing
-    .dma wr4 burst                      ; burst: release bus between CTC-triggered bytes
-    .dw $00DF                           ; Port B = DAC port $DF
-    .dma wr5                            ; default flags (or use auto_restart for looping)
-    .dma load
-    .dma enable
-audioCTCDMAProgram_end:
-
-; Kick off streaming: HL = buffer address, BC = sample count
-    ld (audioCTCSrc),hl
-    ld (audioCTCLen),bc
-    ld hl,audioCTCDMAProgram
-    ld b,audioCTCDMAProgram_end - audioCTCDMAProgram
-    ld c,$6B
-    otir
-    ; CPU runs between bursts; each CTC tick delivers one sample to the DAC
-```
-
-### Prescaler WR2 vs. CTC Trigger: Which to Use?
-
-| | DMA Internal Prescaler | CTC Trigger |
-|---|---|---|
-| **Timing source** | DMA-internal counter, scaled by CPU speed | CTC system-clock timer |
-| **Rate formula** | prescaler value × 4 T-states (at 3.5 MHz) | nominal system clock ÷ CTC prescaler ÷ time constant |
-| **Precision** | Good — FPGA scales with CPU mode | Excellent — CTC is CPU-speed independent |
-| **Flexibility** | Fixed rate per DMA program | CTC can be reprogrammed live |
-| **Interrupt capability** | None | CTC channel can simultaneously interrupt CPU |
-| **Configuration** | One extra WR2 byte | Separate CTC setup + NR `$CD` write |
-| **Complexity** | Lower | Slightly higher |
-
-For simple one-off audio playback, the internal prescaler is perfectly adequate and easier to set up. Reach for the CTC trigger when you need:
-- The same sample rate to hold precisely across CPU speed changes
-- One CTC channel simultaneously timing the DMA *and* counting frames for the CPU
-- Very low sample rates where WR2 prescaler values would be awkward to compute
-- Dynamic rate changes at runtime (reprogram the CTC time constant without touching the DMA)
-
-### Disarming the Trigger
-
-When you're done with CTC-triggered DMA, clear NR `$CD` to prevent stray CTC pulses from waking the DMA unexpectedly:
-
-```z80klive
-    ; Disable DMA first, then clear the trigger source
-    ld bc,$6B
-    ld a,$83                ; WR6: Disable DMA
-    out (c),a
-    ld a,$CD
-    ld bc,NR_REG
-    out (c),a
-    xor a                    ; Clear all CTC → DMA trigger enables
-    ld bc,NR_DAT
-    out (c),a
-```
-
-## Building a Reusable DMA Helper
+### Building a Reusable DMA Helper
 
 The upload sequence — patch any runtime fields, then run `OTIR` to stream the program table to the DMA port — is short, but wrapping it as a subroutine keeps call sites clean:
 
@@ -1313,9 +1513,9 @@ Call with:
 
 You can define as many program tables as you need and dispatch them all through the same five-instruction `ExecuteDma` routine.
 
-## Timing and Performance Notes
+### Timing and Performance Notes
 
-### T-State Costs
+#### T-State Costs
 
 Each byte transfer costs a read cycle plus a write cycle. The exact timing depends on the source and destination types and the CPU speed:
 
@@ -1330,7 +1530,7 @@ Each byte transfer costs a read cycle plus a write cycle. The exact timing depen
 
 A typical memory-to-memory byte costs 6 T-states (3 read + 3 write). Memory-to-I/O costs 7 (3 + 4). The SPI port is slow because the FPGA needs time to shift data through the serial interface.
 
-### DMA vs LDIR
+#### DMA vs LDIR
 
 | Transfer | LDIR | DMA (Continuous) | Speedup |
 |----------|------|-------------------|---------|
@@ -1340,34 +1540,13 @@ A typical memory-to-memory byte costs 6 T-states (3 read + 3 write). Memory-to-I
 
 The DMA's advantage is consistent: roughly 3.5× faster for memory-to-memory copies. But the real win is for I/O transfers — loading sprite data through a port, streaming audio to a DAC — where `LDIR` is the wrong tool altogether.
 
-### CPU Interaction
+#### CPU Interaction
 
 During a continuous transfer, the CPU is completely halted. It doesn't execute instructions and it cannot respond to maskable interrupts while the DMA owns the bus. For very long transfers at the default 3.5 MHz speed, this is rarely a problem — but at 28 MHz with a large block, be aware that the DMA could hold the bus for a noticeable fraction of a frame.
 
 Burst mode solves this by releasing the bus periodically. The CPU gets small windows of execution time between DMA bytes, which is enough to service interrupts and keep background tasks alive.
 
-## The DMA and the FPGA: What's Really Happening
-
-If you're curious about the hardware implementation, the FPGA source (`dma.vhd`) reveals a straightforward state machine with 13 states:
-
-```
-IDLE → START_DMA → WAITING_ACK → TRANSFERING_READ_1..4 → TRANSFERING_WRITE_1..4 → WAITING_CYCLES → FINISH_DMA
-```
-
-The read/write phases use variable numbers of clock cycles based on the timing configuration:
-- 4-cycle timing: goes through all four `TRANSFERING_READ_1` through `TRANSFERING_READ_4` states
-- 3-cycle timing (default): skips `TRANSFERING_READ_1`, enters at `TRANSFERING_READ_2`
-- 2-cycle timing: skips to `TRANSFERING_READ_3`
-
-The write phase mirrors this structure. Between the read and write phases, the DMA swaps the address bus from the source address to the destination address, switches from read to write mode, and sets the memory/IO request signals appropriately.
-
-The `WAITING_CYCLES` state handles prescaler timing. In burst mode, it also releases the bus (`cpu_busreq_n_s <= '1'`) to let the CPU run during the wait period. When the prescaler timer expires, the DMA either re-requests the bus (if it was released) or jumps directly to the next read cycle.
-
-The `FINISH_DMA` state checks the auto-restart flag. If set, it reloads the starting addresses and counter, then goes back to `START_DMA` (or `WAITING_ACK` if the bus is still held). If not, it transitions to `IDLE` and the CPU resumes full control.
-
-> The FPGA source contains a comment: "ATTENTION: Loosely based on Zilog Z80C10. There are differences!" — a polite way of saying that the Next's DMA isn't a perfect clone. The most significant differences are the burst mode with prescaler (a Next innovation), the simplified interrupt handling (most interrupt features are commented out), and the absence of search-mode hardware support.
-
-## Common Mistakes and Debugging Tips
+### Common Mistakes and Debugging Tips
 
 **Forgetting the Load command.** The most common DMA bug. If your transfer goes to the wrong place, or nothing happens at all, check that you issued `0xCF` after configuring registers and before enabling.
 
@@ -1381,9 +1560,9 @@ The `FINISH_DMA` state checks the auto-restart flag. If set, it reloads the star
 
 **Continuous mode during audio.** Using continuous mode for audio streaming freezes the CPU for the entire playback. Use burst mode with a prescaler instead — the CPU gets breathing room between samples.
 
-## Quick Reference: Common DMA Sequences
+### Quick Reference: Common DMA Sequences
 
-### Reset and Disable
+#### Reset and Disable
 
 ```z80klive
     ld bc,$6B
@@ -1393,7 +1572,7 @@ The `FINISH_DMA` state checks the auto-restart flag. If set, it reloads the star
     out (c),a
 ```
 
-### Minimal Memory Copy (A→B, Continuous)
+#### Minimal Memory Copy (A to B, Continuous)
 
 ```z80klive
 ; HL = source address, DE = destination address, BC = byte count
@@ -1422,7 +1601,7 @@ memCopyDst: .dw 0
 memCopyProgram_end:
 ```
 
-### Memory to I/O Port (A→B, Continuous)
+#### Memory to I/O Port (A to B, Continuous)
 
 ```z80klive
 ; HL = source address, BC = byte count, DE = 16-bit I/O port address

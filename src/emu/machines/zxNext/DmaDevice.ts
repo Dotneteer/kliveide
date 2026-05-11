@@ -286,6 +286,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
 
   private dmaMode: DmaMode = DmaMode.ZXNDMA;
   private prescalarTimer: number = 0;  // Timer for fixed-rate transfers
+  private burstReadyAtSysTact: number = 0;
   // Monotonically-increasing counter incremented each time handleTransferFinish() runs.
   // Used by executeContinuousTransfer() to detect block completions without relying on
   // SEQ_FINISH being a stable observable state (it is immediately overwritten inline).
@@ -404,6 +405,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     this.registerReadSeq = RegisterReadSequence.RD_STATUS;
     this._tempRegisterByte = 0;
     this.prescalarTimer = 0;
+    this.burstReadyAtSysTact = 0;
     this.dmaMode = DmaMode.ZXNDMA;
 
     // Step 1+2: Clear raw registers and follow state
@@ -1621,6 +1623,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
   private disableDma(): void {
     this.dmaSeq = DmaSeq.SEQ_IDLE;
     this.dmaState = DmaState.IDLE;       // keep legacy field in sync
+    this.burstReadyAtSysTact = 0;
     this.releaseBus();
   }
 
@@ -1630,6 +1633,13 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    * considered ready (unless forceReady is the only gate – which still passes).
    */
   private isReady(): boolean {
+    if (
+      this.registers.transferMode === TransferMode.BURST &&
+      this.registers.portBPrescalar !== 0 &&
+      this.getCurrentSysTact() < this.burstReadyAtSysTact
+    ) {
+      return false;
+    }
     return true;  // No external RDY signal in this emulator
   }
 
@@ -2001,6 +2011,19 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
         break;
     }
 
+    // ZX Next paced burst mode gives the CPU the bus back between prescaled
+    // bytes. Without a prescaler, burst continues like the base Z80 DMA ready
+    // path and keeps the bus while ready remains active.
+    if (
+      this.registers.transferMode === TransferMode.BURST &&
+      this.registers.portBPrescalar !== 0 &&
+      this.dmaSeq === DmaSeq.SEQ_TRANS1_INC_DEC_SOURCE
+    ) {
+      this.burstReadyAtSysTact = this.getCurrentSysTact() + this.calculatePrescalerDelay();
+      this.releaseBus();
+      this.dmaSeq = DmaSeq.SEQ_WAIT_READY;
+    }
+
     // Step 12: dma_delay override — mirrors specnext_dma clock_w logic:
     //   if (dma_delay && next-state == SEQ_TRANS1_INC_DEC_SOURCE_ADDRESS) {
     //     set_busrq(CLEAR_LINE); dma_seq = SEQ_WAIT_READY; return; }
@@ -2020,7 +2043,7 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       this.registers.portBPrescalar !== 0 &&
       this.registers.transferMode === TransferMode.BURST
     ) {
-      return this.calculatePrescalerDelay();
+      return this.calculateDmaTransferTiming();
     }
     return this.calculateDmaTransferTiming();
   }
@@ -2038,6 +2061,10 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     const prescalar = this.registers.portBPrescalar;
     const multiplier = this.machine.cpuSpeedDevice?.effectiveClockMultiplier ?? 1;
     return prescalar * 4 * multiplier;
+  }
+
+  private getCurrentSysTact(): number {
+    return this.machine.frames * this.machine.tactsInFrame + this.machine.frameTacts;
   }
 
   /**
@@ -2340,6 +2367,17 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
     while (bytesTransferred < targetBytes &&
            tStatesUsed < tStatesToExecute &&
            this.dmaSeq !== DmaSeq.SEQ_IDLE) {
+      const readyWait = this.getBurstReadyWaitTicks();
+      if (
+        readyWait > 0 &&
+        this.busControl.state === BusState.IDLE &&
+        this.dmaSeq === DmaSeq.SEQ_WAIT_READY
+      ) {
+        if (tStatesUsed + readyWait > tStatesToExecute) break;
+        tStatesUsed += readyWait;
+        this.burstReadyAtSysTact = this.getCurrentSysTact();
+      }
+
       if (this.busControl.state === BusState.REQUESTED) {
         this.acknowledgeBus();
       }
@@ -2347,6 +2385,12 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
       if (tStates > 0) {
         bytesTransferred++;
         tStatesUsed += tStates;
+      } else if (
+        this.busControl.state === BusState.IDLE &&
+        this.dmaSeq === DmaSeq.SEQ_WAIT_READY &&
+        this.getBurstReadyWaitTicks() > 0
+      ) {
+        continue;
       }
       // Stop after the block completes (FINISH handler may have called enable() for auto-restart)
       if (bytesTransferred >= targetBytes) break;
@@ -2361,5 +2405,15 @@ export class DmaDevice implements IGenericDevice<IZxNextMachine> {
    */
   isTransferComplete(): boolean {
     return this.transferState.byteCounter >= this.registers.blockLength;
+  }
+
+  private getBurstReadyWaitTicks(): number {
+    if (
+      this.registers.transferMode !== TransferMode.BURST ||
+      this.registers.portBPrescalar === 0
+    ) {
+      return 0;
+    }
+    return Math.max(0, this.burstReadyAtSysTact - this.getCurrentSysTact());
   }
 }

@@ -88,7 +88,8 @@ Main
     // --- 06: ZXNDMA Demos
     // call DmaDemo.SimpleMemCopy
     // call DmaCompareDemo.LdirAndDma
-    call DmaInterruptDemo.DmaInterruptBreakIn
+    // call DmaInterruptDemo.DmaInterruptBreakIn
+    call DmaInterruptDemo.DmaWithCtcHeartbeat
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.

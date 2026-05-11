@@ -327,7 +327,7 @@ describe("DmaDevice - Step 28: Prescaler timing for burst mode", () => {
     dma.writeWR6(0x87);
   }
 
-  it("Burst mode with prescaler returns prescaler-based T-states", () => {
+  it("Burst mode with prescaler uses transfer timing and releases the bus", () => {
     // Independent unit test: directly set portBPrescalar and call executeTransferByte
     dma.writeWR6(0xc7); dma.writeWR6(0xcb);
     dma.writeWR0(0x7d);
@@ -342,8 +342,7 @@ describe("DmaDevice - Step 28: Prescaler timing for burst mode", () => {
     [0x11, 0x22, 0x33, 0x44].forEach((v, i) => machine.memoryDevice.writeMemory(0x8000 + i, v));
     dma.writeWR6(0xcf);
     dma.writeWR6(0x87);
-    // prescaler=4 → floor((4 * 3_500_000) / 875_000) = floor(16) = 16 T-states per byte
-    const expectedTStates = Math.floor((4 * 3500000) / 875000);
+    const expectedTStates = 6;
     // executeTransferByte is called by stepDma; we track by running manually
     const machine2 = machine;
     machine2.dmaDevice.acknowledgeBus();
@@ -359,6 +358,7 @@ describe("DmaDevice - Step 28: Prescaler timing for burst mode", () => {
       if (t > 0) { tStates = t; break; }
     }
     expect(tStates).toBe(expectedTStates);
+    expect(machine2.dmaDevice.getBusControl().busRequested).toBe(false);
   });
 
   it("Continuous mode with non-zero prescaler still uses standard memory timing", () => {
