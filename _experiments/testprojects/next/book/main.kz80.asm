@@ -30,6 +30,7 @@
 #include "06_zxndma/memcpy.asm"
 #include "06_zxndma/compare.asm"
 #include "06_zxndma/interrupt.asm"
+#include "08_ula/ula.asm"
 
 ; We keep 64 bytes for the stack
 STACK
@@ -89,7 +90,12 @@ Main
     // call DmaDemo.SimpleMemCopy
     // call DmaCompareDemo.LdirAndDma
     // call DmaInterruptDemo.DmaInterruptBreakIn
-    call DmaInterruptDemo.DmaWithCtcHeartbeat
+    // call DmaInterruptDemo.DmaWithCtcHeartbeat
+
+    // --- 08: ULA Screen and Border
+    call UlaDemo.StandardScreen
+    // call UlaDemo.HiColor
+    // call UlaDemo.HiRes
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.

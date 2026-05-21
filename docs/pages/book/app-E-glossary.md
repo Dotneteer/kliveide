@@ -54,6 +54,12 @@ The Next's character-grid background layer. A 40×32 (or 80×32) array of tile i
 ### ULA (Uncommitted Logic Array)
 The original ZX Spectrum's video and I/O chip. On the Next it's recreated in the FPGA, complete with attribute clash and contended memory timing. The "ULA layer" is the classic 256×192 bitmap with 32×24 attributes, still drawn from Bank 5. See [The ULA Screen and Border](./08-ula-screen.mdx).
 
+### ULA+
+A community-designed colour extension for the classic ULA display. It keeps the 1-bit bitmap and 8×8 attribute cells, but interprets the attribute byte through a programmable 64-entry palette. On the Next, ULA+ entries live in ULA palette indices 192–255 and are controlled through ports `$BF3B`/`$FF3B` or NextReg `$68` bit 3. See [The ULA Screen and Border](./08-ula-screen.mdx).
+
+### ULANext
+The Next-specific extended ULA colour mode. It keeps the standard ULA bitmap and attribute grid, but uses NextReg `$42` to decide how many low bits of each attribute byte select INK and how many high bits select PAPER. Enabled with NextReg `$43` bit 0. See [The ULA Screen and Border](./08-ula-screen.mdx) and [Palettes](./09-palettes.mdx).
+
 ### Z80N
 The Next's Z80 implementation. Fully compatible with the original Zilog Z80 (same instructions, same flags, same timing in 3.5 MHz mode), but with an extension instruction set that adds hardware multiply, fast NextReg writes, barrel shifts, block-copy variants, and more. See [Z80N: The Next's Z80 CPU](./01-z80n.mdx).
 

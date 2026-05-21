@@ -2,30 +2,975 @@ import { Callout } from 'nextra/components'
 
 # The ULA Screen and Border
 
-<Callout type="warning" emoji="🚧">
-This chapter is a placeholder. The full text is being written.
+Before the Next gives you Layer 2, Tilemap, Sprites, LoRes, the Copper, and a very tempting pile of palette registers, it gives you the original Spectrum screen.
+
+That screen is not elegant in the modern sense. Its bitmap is interleaved. Its colours live somewhere else. Every 8×8 block gets only two colours, which is how you get the famous **attribute clash**. And yet it is still one of the most useful video surfaces on the machine: tiny memory footprint, instant text, a strong retro look, and perfect compatibility with the enormous library of Spectrum techniques that came before the Next.
+
+The Next keeps the ULA alive as a real layer in the video system. It can be scrolled in hardware, clipped, mixed with the Tilemap and Layer 2, and upgraded through ULANext or ULA+. So this chapter starts with the 1982 rules, then shows how the Next lets you bend them without forgetting where the screen came from.
+
+> **What this chapter assumes.** You should already know the basics of ports and NextRegs from [I/O Ports and NextRegs](./02-io-and-nextregs.mdx), and you should be comfortable with Bank 5 and the MMU mapping from [Memory Architecture](./03-memory.mdx). The line-timed border discussion will make more sense after [Interrupts](./04-interrupts.mdx), but the ordinary border port is simple enough to use right away.
+
+## The Shape of the ULA Screen
+
+The standard ULA display is a 256×192 pixel bitmap with a separate 32×24 attribute grid:
+
+| Area | Address Range | Size | Purpose |
+|------|---------------|------|---------|
+| Bitmap | `$4000`–`$57FF` | 6144 bytes | 1 bit per pixel, 256×192 |
+| Attributes | `$5800`–`$5AFF` | 768 bytes | One colour byte per 8×8 cell |
+| Unused by standard screen | `$5B00`–`$7FFF` | 9472 bytes | Free RAM in Bank 5 |
+
+Each byte in the bitmap describes eight horizontal pixels. A set bit means **INK**; a clear bit means **PAPER**. The actual colours come from the matching attribute byte, not from the bitmap byte itself.
+
+That separation is the whole personality of the Spectrum screen:
+
+- The bitmap says "foreground pixel or background pixel?"
+- The attribute byte says "what are foreground and background in this 8×8 block?"
+- The ULA combines them while generating the video signal.
+
+This is why drawing a white player over a blue wall can suddenly make the wall white too. The pixels and colours are not married one-to-one. They are sharing a small flat and occasionally arguing about the furniture.
+
+## Bank 5, Shadow Screen, and Where the ULA Reads
+
+In the normal 48K/128K screen, the ULA reads its display from **Bank 5**, visible to the Z80 at `$4000`–`$7FFF` after reset. In MMU language, that is pages 10 and 11 mapped into slots 2 and 3.
+
+The 128K machines added a second display file in **Bank 7**. The Next preserves that too. Port `$7FFD` bit 3 selects which screen the ULA displays. [Memory Architecture](./03-memory.mdx) covers the legacy paging ports in detail, including why `$7FFD` is write-only and how the Next mirrors its state through NextRegs.
+
+| `$7FFD` bit 3 | Displayed Screen |
+|---------------|------------------|
+| `0` | Bank 5, the normal screen |
+| `1` | Bank 7, the shadow screen |
+
+NextReg `$69` bit 6 is an alias for the same shadow-screen display selection. The nice trick is that you can draw into one screen while displaying the other, then flip bit 3 during vertical blank. That gives you a classic double-buffer pattern without needing Layer 2.
+
+The catch is visibility. Bank 5 is conveniently mapped at `$4000` after reset. Bank 7 usually is not. To draw into the shadow screen, you either page Bank 7 into the top 16 KB with the old 128K paging port or use the Next's MMU registers directly. The ULA does not care how the CPU sees the memory; it reads the physical bank selected for display.
+
+## The Bitmap Layout
+
+If the ULA bitmap were linear, row 0 would be followed by row 1, then row 2, and everyone would go home early. The Spectrum does something stranger:
+
+```text
+Address bits inside $4000-$57FF:
+
+  010  y7 y6  y2 y1 y0  y5 y4 y3  x7 x6 x5 x4 x3
+       \___/  \______/  \______/  \____________/
+       third   line     char row   byte column
+```
+
+The screen is split into three 64-line thirds. Inside each third, the ULA stores scanline 0 of each 8-line character row first, then scanline 1 of each character row, and so on.
+
+For a pixel coordinate `(x,y)`, where `x` is 0–255 and `y` is 0–191, the bitmap byte address is:
+
+```text
+address = $4000
+        | ((y & $C0) << 5)
+        | ((y & $07) << 8)
+        | ((y & $38) << 2)
+        | (x >> 3)
+```
+
+If you are using Klive Z80 Assembler and the coordinates are known at assembly time, the built-in `scraddr(y,x)` expression function performs this calculation for you. It pairs nicely with `attr()` from the attribute section: `scraddr()` finds the pixel byte, `attr()` builds the colour byte.
+
+```z80klive
+TitlePixelByte equ scraddr(40, 96)
+```
+
+The bit within that byte is:
+
+```text
+bit = 7 - (x & 7)
+```
+
+So pixel `(0,0)` lives at `$4000`, bit 7. Pixel `(7,0)` is the same byte, bit 0. Pixel `(8,0)` moves to `$4001`, bit 7.
+
+Pixel `(0,1)` does **not** live at `$4020`; it lives at `$4100`. That is the first moment the layout looks rude. It makes more sense when you remember the ULA fetches one scanline from each character row in a regular pattern. The memory map serves the video circuit first and your drawing routine second.
+
+### A Screen Address Routine
+
+Here is a practical helper that returns the bitmap byte address for `(D=y, E=x)` in `HL`, and the pixel mask in `A`.
+
+```z80klive
+; Input:
+;   D = y coordinate, 0..191
+;   E = x coordinate, 0..255
+; Output:
+;   HL = bitmap byte address
+;   A  = pixel mask, bit 7..0
+; Destroys:
+;   BC
+
+GetScreenAddress:
+    ld a,e
+    and %00000111
+    ld c,a
+    ld b,0
+    ld hl,PixelMasks
+    add hl,bc
+    ld a,(hl)
+    push af
+
+    ld a,d
+    and %00000111
+    ld h,a                  ; H = y2..y0
+    ld l,e
+    srl l
+    srl l
+    srl l                   ; L = x / 8
+
+    ld a,d
+    and %00111000
+    add a,a
+    add a,a
+    or l
+    ld l,a                  ; L = y5..y3 and x7..x3
+
+    ld a,d
+    and %11000000
+    rrca
+    rrca
+    rrca                    ; move y7..y6 into bits 4..3
+    or h
+    or $40
+    ld h,a
+
+    pop af
+    ret
+
+PixelMasks:
+    .db %10000000,%01000000,%00100000,%00010000
+    .db %00001000,%00000100,%00000010,%00000001
+```
+
+This routine is written for clarity. In hot drawing code, you often avoid recalculating the whole address for every pixel. Horizontal drawing can increment `HL`. Vertical drawing can use a small "next scanline" routine. Tables are also common: 192 precomputed row addresses cost 384 bytes and save a lot of bit-twiddling.
+
+On the Next, you have a much better option: the Z80N adds screen-navigation instructions specifically for this layout. `PIXELAD` computes the screen address from `D=row, E=column`, and `SETAE` builds the matching pixel mask from `E`.
+
+```z80klive
+; Input:
+;   D = y coordinate, 0..191
+;   E = x coordinate, 0..255
+; Output:
+;   HL = bitmap byte address
+;   A  = pixel mask, bit 7..0
+; Destroys:
+;   none
+
+GetScreenAddressZ80N:
+    pixelad                 ; HL = byte address in the ULA bitmap
+    setae                   ; A = mask for E[2:0]
+    ret
+```
+
+That is the version you should reach for in new Next-specific code. The longer routine is still worth understanding because it explains what the hardware instruction is doing for you, and because old Spectrum code had to do it the hard way.
+
+## The Attribute Area
+
+The attribute grid starts at `$5800`. It is refreshingly linear:
+
+```text
+attribute_address = $5800 + (char_y * 32) + char_x
+
+char_x = x >> 3
+char_y = y >> 3
+```
+
+Or, directly from pixel coordinates:
+
+```text
+attribute_address = $5800 + ((y & $F8) << 2) + (x >> 3)
+```
+
+Each byte controls one 8×8 cell:
+
+```text
+Bit 7    FLASH
+Bit 6    BRIGHT
+Bits 5-3 PAPER colour
+Bits 2-0 INK colour
+```
+
+The eight base colours are:
+
+| Value | Colour |
+|-------|--------|
+| `0` | Black |
+| `1` | Blue |
+| `2` | Red |
+| `3` | Magenta |
+| `4` | Green |
+| `5` | Cyan |
+| `6` | Yellow |
+| `7` | White |
+
+The `BRIGHT` bit selects the brighter version of the chosen INK and PAPER colours. Black stays black; there is no brighter black, which is either a limitation or a philosophical position.
+
+The `FLASH` bit swaps INK and PAPER every 16 frames. More precisely, the ULA uses a frame counter bit to XOR the pixel selection when FLASH is set. Your bitmap does not change. The hardware changes which side of the attribute byte it chooses.
+
+### Building Attribute Bytes
+
+A tiny macro or function saves mistakes:
+
+```z80klive
+; attr(ink, paper, bright, flash)
+; ink/paper:    0..7
+; bright/flash: 0 or 1, or false/true
+
+ATTR_BLACK   equ 0
+ATTR_BLUE    equ 1
+ATTR_RED     equ 2
+ATTR_MAGENTA equ 3
+ATTR_GREEN   equ 4
+ATTR_CYAN    equ 5
+ATTR_YELLOW  equ 6
+ATTR_WHITE   equ 7
+
+; White ink on blue paper, bright, not flashing.
+; Klive's attr() arguments are: ink, paper, bright, flash.
+TITLE_ATTR equ attr(ATTR_WHITE, ATTR_BLUE, true, false)
+```
+
+The explicit bit expression is still useful when you are reading other people's code, but in Klive Z80 Assembler the built-in `attr()` function is clearer and harder to get backward. It also matches the assembler documentation in [Expressions](/z80-assembly/expressions/#functions).
+
+Filling the entire attribute area with a single colour is only 768 bytes:
+
+```z80klive
+ClearAttributes:
+    ld hl,$5800
+    ld de,$5801
+    ld bc,767
+    ld (hl),TITLE_ATTR
+    ldir
+    ret
+```
+
+This does not clear the bitmap. It only changes the colours. That can be exactly what you want: palette-like effects on a classic ULA screen without touching the 6144 pixel bytes.
+
+## Attribute Clash
+
+Attribute clash happens when more than two colours need to occupy the same 8×8 attribute cell. The bitmap can draw the shapes, but the attribute byte can only provide one INK colour and one PAPER colour for the whole block.
+
+Imagine a cell with:
+
+- A blue background
+- A yellow wall
+- A red player sprite entering from the side
+
+The ULA has no way to say "these foreground pixels are yellow, but those foreground pixels are red." It only sees foreground and background. One of those objects must borrow the cell's current INK/PAPER pair, and the result is the familiar Spectrum shimmer.
+
+There are several classic ways to cope:
+
+- Design graphics around 8×8 cells.
+- Keep moving objects monochrome over colourful backgrounds.
+- Use masks that deliberately repaint the attribute cell.
+- Use the border and empty space generously.
+- On the Next, use ULANext, ULA+, LoRes, Tilemap, Sprites, or Layer 2 when you need more colour freedom.
+
+Attribute clash is not a bug. It is the contract. The art is deciding when to lean into the contract and when to switch tools.
+
+## Demo: Drawing on the Standard ULA Screen
+
+Let's put the pieces together in a small demo that uses the standard 256×192 ULA screen, paints a rectangular attribute panel, and draws a simple pixel pattern inside it. The interesting part is not the picture itself; it is the division of work:
+
+- The attribute bytes create the coloured panel.
+- The bitmap routines plot pixels, horizontal lines, vertical lines, and a diagonal.
+- `PIXELAD`, `SETAE`, and `PIXELDN` hide the awkward ULA bitmap address layout where that helps most.
+
+The demo is deliberately small, but it shows the standard pattern for ULA drawing. Plotting one pixel is a read-modify-write operation: compute the byte address and bit mask, OR the mask into the screen byte, and write it back. A horizontal line repeats that while incrementing `E`, the `x` coordinate. A vertical line computes the first byte once and then uses `PIXELDN` to move to the same byte column on the next pixel row.
+
+The example lives in the `UlaDemo` module:
+
+```z80klive
+.module UlaDemo
+
+ULA_PORT        .equ $fe
+TIMEX_PORT      .equ $00ff
+
+SCREEN_PIXELS   .equ $4000
+SCREEN_ATTRS    .equ $5800
+
+ATTR_BLACK_ON_WHITE .equ attr(Color.Black, Color.White)
+ATTR_WHITE_ON_BLUE  .equ attr(Color.White, Color.Blue, true)
+```
+
+`SCREEN_PIXELS` and `SCREEN_ATTRS` name the two standard ULA areas. The two attribute constants use Klive's `attr()` function, so the code does not need to hand-pack INK, PAPER, and BRIGHT bits.
+
+### The StandardScreen Method
+
+`StandardScreen` resets the display to the ordinary ULA interpretation, clears the screen, prints a short heading, paints the attribute panel, draws the bitmap pattern, and waits for Space.
+
+```z80klive
+;==========================================================
+; ULA standard screen demo: pixels + attributes with Z80N
+;==========================================================
+StandardScreen
+    call @ResetUlaMode
+    call @ClearScreenMemory
+
+    Display.PrintTitle(@Title_Standard)
+    Display.PrintText(@Instr_Standard)
+
+    call @PaintStandardAttributes
+    call @DrawBox
+    call @DrawDiagonal
+    call @DrawBarsWithPixelDn
+
+    call @WaitSpace
+    ret
+```
+
+`@ResetUlaMode` is defensive: other demos in the chapter switch Timex HiColor and HiRes modes through port `$FF`, so this method first returns to standard Screen 0. `@ClearScreenMemory` then clears both bitmap and attributes so the demo does not depend on whatever was on screen before.
+
+```z80klive
+@ResetUlaMode
+    xor a
+    ld (@TimexShadow),a
+    ld bc,TIMEX_PORT
+    out (c),a
+    ret
+
+@TimexShadow
+    .db 0
+```
+
+`@TimexShadow` stores the value last written to port `$FF`. Port output state is not something you can reliably read back, so keeping a shadow byte is the same habit used for the ULA border port.
+
+```z80klive
+@ClearScreenMemory
+    ld hl,SCREEN_PIXELS
+    ld de,SCREEN_PIXELS + 1
+    ld bc,6143
+    xor a
+    ld (hl),a
+    ldir
+
+    ld hl,SCREEN_ATTRS
+    ld de,SCREEN_ATTRS + 1
+    ld bc,767
+    ld a,ATTR_BLACK_ON_WHITE
+    ld (hl),a
+    ldir
+    ret
+```
+
+`@ClearScreenMemory` uses the usual one-byte seed plus `LDIR` idiom twice. The first pass clears 6144 bitmap bytes. The second pass fills all 768 attributes with black ink on white paper.
+
+### Painting the Attribute Panel
+
+The drawing area is an attribute rectangle: 24 character columns wide and 12 character rows tall. That is why the blue panel has crisp 8×8-cell edges even though the white lines inside are plotted as pixels.
+
+```z80klive
+@PaintStandardAttributes
+    ld hl,SCREEN_ATTRS + 10 * 32 + 4
+    ld b,12
+`row
+    ld c,24
+`col
+    ld (hl),ATTR_WHITE_ON_BLUE
+    inc hl
+    dec c
+    jr nz,`col
+    add hl,8
+    djnz `row
+    ret
+```
+
+`@PaintStandardAttributes` starts at character row 10, column 4. `B` counts the 12 rows, while `C` counts the 24 attributes written across each row. After the inner loop, `HL` already points just past the painted part of the row, so the Z80N `ADD HL,NN` instruction only needs to add 8 to skip the unpainted attributes on the right and land at the next row's left edge.
+
+### Drawing the Box
+
+The box is made from two horizontal and two vertical lines. The coordinates are pixel coordinates, not character-cell coordinates, so the frame sits inside the blue attribute panel instead of exactly on its cell boundary. The drawing helpers use the `PIXELAD` convention: `D=y`, `E=x`, and `B=length` or `height`.
+
+```z80klive
+@DrawBox
+    ; Top and bottom horizontal edges.
+    ld d,88
+    ld e,48
+    ld b,160
+    call @DrawHorizontalLineZ80N
+
+    ld d,168
+    ld e,48
+    ld b,160
+    call @DrawHorizontalLineZ80N
+
+    ; Left and right vertical edges.
+    ld d,88
+    ld e,48
+    ld b,81
+    call @DrawVerticalLineZ80N
+
+    ld d,88
+    ld e,208
+    ld b,81
+    call @DrawVerticalLineZ80N
+    ret
+```
+
+`@DrawHorizontalLineZ80N` is the smallest useful horizontal-line routine: plot a pixel, increment `E`, and repeat. This is simple rather than optimal; for long horizontal spans you would usually draw whole bytes after the first partial byte.
+
+```z80klive
+@DrawHorizontalLineZ80N
+    ; IN: D=y, E=x, B=length in pixels
+`loop
+    call @PlotPixelZ80N
+    inc e
+    djnz `loop
+    ret
+```
+
+`@DrawVerticalLineZ80N` computes the first pixel address once, stores the mask in `C`, and then uses `PIXELDN` to step to the next pixel row. Without `PIXELDN`, classic code has to handle the ULA's row-7-to-row-0 and screen-third address jumps itself, usually with a helper routine or a row-address table.
+
+```z80klive
+@DrawVerticalLineZ80N
+    ; IN: D=y, E=x, B=height in pixels
+    call @PixelAddressAndMask
+    ld c,a
+`loop
+    ld a,c
+    or (hl)
+    ld (hl),a
+    dec b
+    ret z
+    pixeldn
+    jr `loop
+```
+
+### Drawing the Pattern
+
+The diagonal is a tidy 45-degree line: one pixel right and one pixel down per step. The vertical bars deliberately use the same `PIXELDN` helper as the frame, so the demo shows both direct plotting and screen-address stepping.
+
+```z80klive
+@DrawDiagonal
+    ld d,96
+    ld e,72
+    ld b,64
+`loop
+    call @PlotPixelZ80N
+    inc d
+    inc e
+    djnz `loop
+    ret
+```
+
+`@DrawDiagonal` calls the plot helper for each pixel because both coordinates change every time. That makes the code easy to read and keeps the diagonal symmetrical.
+
+```z80klive
+@DrawBarsWithPixelDn
+    ld d,96
+    ld e,72
+    ld b,64
+    call @DrawVerticalLineZ80N
+
+    ld d,96
+    ld e,96
+    ld b,64
+    call @DrawVerticalLineZ80N
+
+    ld d,96
+    ld e,120
+    ld b,64
+    call @DrawVerticalLineZ80N
+
+    ld d,96
+    ld e,144
+    ld b,64
+    call @DrawVerticalLineZ80N
+
+    ld d,96
+    ld e,168
+    ld b,64
+    call @DrawVerticalLineZ80N
+    ret
+```
+
+`@DrawBarsWithPixelDn` is intentionally repetitive. Each bar loads a fixed starting coordinate and the same height in `B`, making the setup for each call easy to compare.
+
+### The Pixel Address Helper
+
+Both plotting and vertical stepping share a tiny Z80N helper:
+
+```z80klive
+@PlotPixelZ80N
+    ; IN: D=y, E=x
+    call @PixelAddressAndMask
+    or (hl)
+    ld (hl),a
+    ret
+
+@PixelAddressAndMask
+    ; IN: D=y, E=x
+    ; OUT: HL=ULA pixel byte address, A=pixel mask
+    pixelad
+    setae
+    ret
+```
+
+`@PixelAddressAndMask` is the bridge between pixel coordinates and the Spectrum's folded bitmap layout. `PIXELAD` calculates the byte address in `HL`; `SETAE` calculates the bit mask in `A` from the low three bits of `E`. `@PlotPixelZ80N` then ORs the mask into the screen byte, setting the pixel to INK without disturbing the other seven pixels in the byte.
+
+### Text and Waiting for Space
+
+The demo uses the book's display helper for text instead of copying character glyphs from ROM directly. That keeps it compatible with the Next memory layout used by these examples.
+
+```z80klive
+@WaitSpace
+    ld b,$7f
+    ld d,%00000001
+    jr @WaitKey
+
+@WaitKey
+    ; IN: B=keyboard row selector, D=bit mask
+    ld c,ULA_PORT
+`release
+    in a,(c)
+    and d
+    jr z,`release
+`press
+    in a,(c)
+    and d
+    jr nz,`press
+`release2
+    in a,(c)
+    and d
+    jr z,`release2
+    ret
+```
+
+`@WaitSpace` selects the keyboard half-row that contains Space and passes the bit mask to `@WaitKey`. `@WaitKey` waits for release, press, and release again, so a held key from the previous screen does not immediately exit the demo.
+
+```z80klive
+@Title_Standard
+    .defn "ULA #1: Standard screen"
+
+@Instr_Standard
+    .defm "Standard ULA pixels plus\x0d"
+    .defm "attribute cells. Uses Z80N:\x0d"
+    .defm "PIXELAD, SETAE, PIXELDN.\x0d\x0d"
+    .defn "Press Space to return.\x0d\x0d"
+
+.endmodule
+```
+
+<Callout type="info" emoji="💡">
+Try the `UlaDemo.StandardScreen` example.
 </Callout>
 
-## Synopsis
+## ULA HiColor and HiRes Modes
 
-Before exploring all the modern video layers the Next adds, we spend a chapter on the original ULA screen — partly because every Next still boots into it, partly because it's the foundation that LoRes, Layer 2 priority, and the Tilemap-vs-ULA discussions all build on, and partly because its quirks (attribute clash, FLASH, BRIGHT, the famously interleaved bitmap) shaped a generation of programmers and are *still* the right tool for plenty of jobs.
+The Next also implements the Timex/SCLD display modes through port `$FF`. These modes are not the same as ULANext or ULA+. They are alternate ULA display-file interpretations inherited from the Timex machines and integrated into the Next.
 
-Topics:
+Port `$FF` bits 2–0 select the mode:
 
-- **The bitmap.** 256×192 pixels, 1 bit per pixel, organised in three thirds with the legendary interleaved address scheme. The address-from-(x,y) formula and a fast `getScreenAddress` routine.
-- **The attribute area.** 32×24 bytes at `$5800`, two colours per 8×8 block, INK and PAPER plus BRIGHT and FLASH.
-- **The colour palette.** The eight base colours, what BRIGHT actually does electrically, and how the FLASH bit is implemented as a 16-frame XOR.
-- **The border.** Bits 0–2 of port `$FE`, plus a teaser for the kind of border tricks the line interrupt makes possible.
-- **Drawing primitives.** Plotting a pixel, drawing a horizontal line (fast), drawing a vertical line (slow — and why), and printing a character using the ROM font.
-- **Cooperating with the Next.** When you should use the ULA layer (text, retro look, low memory budget) versus when to switch to LoRes, Tilemap, or Layer 2.
+| Bits 2–0 | Mode |
+|----------|------|
+| `000` | Screen 0: standard ULA screen at `$4000` |
+| `001` | Screen 1: standard ULA screen at `$6000` |
+| `010` | HiColor: 256×192 pixels at `$4000`, attributes at `$6000` |
+| `110` | HiRes: 512×192 monochrome, even columns at `$4000`, odd columns at `$6000` |
 
-## What you should know first
+In **HiColor** mode, the bitmap remains 256×192 and 1 bit per pixel, but the attributes are no longer one byte per 8×8 block. Attribute data at `$6000` is fetched per pixel row, giving you colour changes every 8×1 pixels. That reduces colour clash dramatically while keeping the familiar bitmap idea.
 
-- [Memory Architecture](./03-memory.mdx) — the ULA screen lives in Bank 5 (page 10/11).
-- [Interrupts](./04-interrupts.mdx) — needed for the border-bar exercise.
+In **HiRes** mode, the display becomes 512×192 monochrome. Two 6 KB display files are interleaved horizontally: one supplies even columns, the other supplies odd columns. The ink colour comes from port `$FF` bits 5–3, with the paper colour using the contrasting colour chosen by the hardware.
 
-## Planned exercises
+Because port `$FF` also contains other control bits, keep a shadow byte just as you do for `$FE`:
 
-- **Hello, ULA.** Print a centred message using the ROM font, with a coloured border.
-- **Bouncing ball.** A 4×4 pixel ball that bounces inside the screen rectangle, using XOR drawing for clean erase.
-- **Border bars.** Eight horizontal border colour bars driven by the line interrupt — the classic "look ma, no CPU" demo.
+```z80klive
+TimexPortShadow: .db 0
+
+SetUlaHiColor:
+    ld a,(TimexPortShadow)
+    and %11111000
+    or %00000010            ; bits 2..0 = HiColor
+    ld (TimexPortShadow),a
+    out ($FF),a
+    ret
+
+SetUlaStandardScreen0:
+    ld a,(TimexPortShadow)
+    and %11111000           ; bits 2..0 = Screen 0
+    ld (TimexPortShadow),a
+    out ($FF),a
+    ret
+```
+
+These modes are useful when you want to stay close to ULA-era memory and rendering techniques but need a different trade-off: HiColor spends the second display file on denser attributes, while HiRes spends it on horizontal resolution. They are not general replacements for LoRes, Tilemap, or Layer 2; they are specialized ULA-family modes with very Spectrum-shaped strengths.
+
+> If you use HiColor or HiRes, remember that `$6000` is no longer casual free RAM. The display hardware is reading it.
+
+## Printing Characters with the ROM Font
+
+The Spectrum ROM contains an 8×8 character font, and many classic examples copy glyph bytes directly from that ROM. The usual font base for printable ASCII is `$3D00`, with character 32 (space) first.
+
+There is a big Next caveat: this only works when the expected Spectrum ROM is paged into the bottom 16 KB. In a NEX program, or after NextZXOS has arranged memory for your application, that is often not true. Treat direct ROM-font access as a legacy technique, not as your default text system.
+
+For this book's examples, the safer route is the helper pattern introduced in [Flying Start](./flying-start.mdx): use a small printer such as `Display.PrintText`, which sends characters through the Next's ROM printing path with `RST $10` and supports Klive's string escape sequences for `AT`, `INK`, `PAPER`, and friends.
+
+```z80klive
+Display.PrintText(Message)
+ret
+
+Message:
+    .dm "\a\x06\x06"        ; AT 6,6
+    .dm "\p\x01"            ; PAPER 1
+    .dm "\i\x07"            ; INK 7
+    .defn "Hello, ULA"
+```
+
+Still, direct glyph copying is useful when you provide your own font data in RAM. Here is the shape of the routine, assuming `Font8x8` points to a 96-character font bundled with your program:
+
+The screen location is character-based: 32 columns by 24 rows. The bitmap address for character cell `(col,row)` is the same as pixel `(col*8,row*8)`.
+
+```z80klive
+; Input:
+;   A = ASCII character, 32..127
+;   B = character row, 0..23
+;   C = character column, 0..31
+; Uses a program-supplied font at Font8x8.
+
+PrintChar:
+    push bc
+    sub 32
+    ld h,0
+    ld l,a
+    add hl,hl
+    add hl,hl
+    add hl,hl
+    ld de,Font8x8
+    add hl,de               ; HL = font bytes
+    ex de,hl                ; DE = font bytes
+    pop bc
+
+    push de                 ; keep font pointer while DE becomes coordinates
+    ld a,b
+    add a,a
+    add a,a
+    add a,a
+    ld d,a                  ; D = pixel y
+    ld a,c
+    add a,a
+    add a,a
+    add a,a
+    ld e,a                  ; E = pixel x
+    call GetScreenAddress   ; HL = destination
+    pop de
+
+    ld b,8
+.nextRow:
+    ld a,(de)
+    ld (hl),a
+    inc de
+    inc h                   ; next scanline within same character row
+    djnz .nextRow
+    ret
+```
+
+That `INC H` trick works inside an 8-line character cell because of the interleaved layout: the scanlines of a character cell are `$0100` apart. At the cell boundary you need a more careful next-line calculation, but a character glyph never crosses that boundary.
+
+## The Border
+
+The border is controlled by the original ULA port, `$FE`. Writing to port `$FE` uses these low bits:
+
+| Bit | Meaning |
+|-----|---------|
+| 4 | EAR output / internal speaker |
+| 3 | MIC output |
+| 2–0 | Border colour |
+
+So the smallest possible border write is:
+
+```z80klive
+    ld a,ATTR_BLUE
+    out ($FE),a
+```
+
+That changes the border to blue, but it also clears bits 3 and 4. There is an extra trap here: you cannot read the last written output value back from port `$FE`. Reading `$FE` reads the keyboard matrix and EAR input, not the border/speaker latch. If your program uses the beeper or tape output, keep a shadow copy of the last value and only change the bottom three bits:
+
+```z80klive
+UlaPortShadow: .db 0
+
+SetBorder:
+    ; Input: A = border colour 0..7
+    and %00000111
+    ld b,a
+    ld a,(UlaPortShadow)
+    and %11111000
+    or b
+    ld (UlaPortShadow),a
+    out ($FE),a
+    ret
+```
+
+The border is not part of the 256×192 bitmap. It is the area around it, generated directly by the ULA. That makes it extremely cheap to change and extremely sensitive to timing. A classic loading screen or demo effect changes the border colour at precise moments while the beam is drawing the frame.
+
+On the original Spectrum, that meant cycle-counted loops. On the Next, you also have line interrupts and the [Copper](./14-copper.mdx), so border bars do not have to consume the whole CPU. The aesthetic is old; the tooling is much kinder.
+
+## Hardware Scrolling the ULA
+
+The original ULA cannot scroll the screen in hardware. If you want the bitmap to move, you copy memory. The Next adds ULA scroll registers:
+
+| NextReg | Purpose |
+|---------|---------|
+| `$26` | ULA X scroll |
+| `$27` | ULA Y scroll |
+
+The pixel data stays where it is. The compositor changes which source coordinate it samples for each visible pixel. X wraps at 256 pixels, and Y wraps at 192 pixels.
+
+```z80klive
+; Scroll the ULA layer right by one pixel each frame.
+
+ScrollX: .db 0
+
+UpdateUlaScroll:
+    ld a,(ScrollX)
+    inc a
+    ld (ScrollX),a
+    nextreg $26,a
+    ret
+```
+
+This is a very Next-ish upgrade: the memory layout remains the old layout, but the display path gains a modern convenience. You can keep using `$4000` bitmap routines while the hardware handles smooth motion.
+
+The ULA and LoRes layer also has a clip window, controlled through NextReg `$1A` with the clip index reset in `$1C`. We will revisit clipping properly in [Compositing](./15-compositing.mdx), where it matters for mixing layers. For now, know that the ULA can be windowed like the newer layers.
+
+## Standard ULA Colours and the Next Palette System
+
+In standard mode, the ULA behaves like a Spectrum: 8 base colours, `BRIGHT`, `FLASH`, and a 3-bit border colour. Internally on the Next, those colours still pass through the palette hardware described in [Palettes and Colour on the Next](./09-palettes.mdx). That means you can redefine what "blue" or "bright yellow" looks like without changing the attribute bytes.
+
+For ordinary ULA palette use, the important palette indices are:
+
+| Palette Indices | Meaning |
+|-----------------|---------|
+| 0–7 | Normal INK colours |
+| 8–15 | Bright INK colours |
+| 16–23 | Normal PAPER colours |
+| 24–31 | Bright PAPER colours |
+
+The old attribute byte still selects from this small set. Palette changes remap the colours behind those selections. If you want the attribute byte itself to address more colours, that is where ULANext and ULA+ enter.
+
+## ULANext: Reinterpreting the Attribute Byte
+
+**ULANext** is the Next-specific way to make the ULA attribute byte more flexible. The bitmap remains 1 bit per pixel. The attribute grid remains 32×24. What changes is how the eight bits of each attribute byte are split between INK and PAPER palette indices.
+
+Enable ULANext with NextReg `$43` bit 0:
+
+```z80klive
+    ; Select ULA first palette for editing/display and enable ULANext.
+    ; In a real program, preserve the other palette-control bits you use.
+    nextreg $43,%00000001
+```
+
+NextReg `$42` holds the **attribute mask**. Bits set in the mask belong to INK; the remaining high bits belong to PAPER. Valid masks are solid runs of low bits:
+
+| Mask | INK Bits | PAPER Bits | INK Colours | PAPER Colours |
+|------|----------|------------|-------------|---------------|
+| `$01` | 1 | 7 | 2 | 128 |
+| `$03` | 2 | 6 | 4 | 64 |
+| `$07` | 3 | 5 | 8 | 32 |
+| `$0F` | 4 | 4 | 16 | 16 |
+| `$1F` | 5 | 3 | 32 | 8 |
+| `$3F` | 6 | 2 | 64 | 4 |
+| `$7F` | 7 | 1 | 128 | 2 |
+| `$FF` | 8 | 0 | 256 | fallback |
+
+With mask `$0F`, for example:
+
+```text
+attribute = pppp iiii
+            \__/ \__/
+           PAPER  INK
+```
+
+An INK pixel uses palette index `attribute & $0F`, giving 16 possible ink colours. A PAPER pixel uses palette index `128 + (attribute >> 4)`, giving 16 paper colours in the upper half of the ULA palette.
+
+With mask `$3F`:
+
+```text
+attribute = pp iiiiii
+```
+
+Now you get 64 INK colours but only 4 PAPER colours. That is often a good game mode: moving objects want colourful foreground pixels, while backgrounds can live with fewer paper choices.
+
+Mask `$FF` is special. All eight attribute bits become the INK palette index, so the bitmap's set pixels can choose from 256 colours. There are no PAPER bits left. PAPER pixels and the border use the fallback colour from NextReg `$4A`.
+
+ULANext disables the old meaning of `FLASH` and `BRIGHT`. Those bits are no longer effects; they are colour-index bits. This is exactly the point, but it is also the first compatibility trap. A classic game that expects bit 7 to flash will not flash in ULANext mode. Your own ULANext program can use all eight bits deliberately.
+
+### A 16-INK, 16-PAPER ULANext Setup
+
+This example enables ULANext with a balanced 4-bit INK / 4-bit PAPER split:
+
+```z80klive
+SetupUlaNext16x16:
+    nextreg $42,$0F         ; low 4 bits = INK, high 4 bits = PAPER
+    nextreg $43,%00000001   ; ULA first palette selected, ULANext enabled
+    ret
+```
+
+An attribute byte of `$A3` then means:
+
+```text
+INK   = $A3 & $0F = $03       ; ULA palette entry 3
+PAPER = $A3 >> 4  = $0A       ; ULA palette entry 128 + 10
+```
+
+That is still one INK and one PAPER colour per 8×8 block. ULANext does not remove the bitmap/attribute split. It gives the attribute byte a larger vocabulary.
+
+Use ULANext when:
+
+- You like the classic 1-bit bitmap workflow.
+- You can still design around 8×8 attribute cells.
+- You want many more colours without paying for Layer 2 memory.
+- You are writing Next-specific software and do not need strict old-game compatibility while the mode is active.
+
+## ULA+: The Community Palette Extension
+
+**ULA+** is a different extension with a different history. It was designed as a community standard for enhanced Spectrum colour before the Next existed, and the Next supports it for compatibility.
+
+ULA+ keeps the standard Spectrum attribute layout:
+
+```text
+Bit 7    formerly FLASH
+Bit 6    formerly BRIGHT
+Bits 5-3 PAPER colour
+Bits 2-0 INK colour
+```
+
+But instead of treating `FLASH` and `BRIGHT` as effects, ULA+ uses bits 7 and 6 as palette group bits. Together with the INK/PAPER selection and the 3-bit colour number, they choose one of 64 programmable colours.
+
+The palette index is built like this:
+
+```text
+ULA+ index = (attr[7:6] << 4)
+           | (ink_or_paper << 3)
+           | colour
+
+ink_or_paper = 0 for INK pixels, 1 for PAPER pixels
+colour       = attr[2:0] for INK, attr[5:3] for PAPER
+```
+
+On the Next, those 64 ULA+ entries live in ULA palette indices 192–255. There is a ULA+ set in both the first and second ULA palettes, so palette banking still works.
+
+ULA+ has two legacy ports:
+
+| Port | Purpose |
+|------|---------|
+| `$BF3B` | Register select: palette index or mode group |
+| `$FF3B` | Data: palette colour or enable bit |
+
+The colour format used by the ports is `GGGRRRBB`. That is not the same byte order as the Next palette registers (`RRRGGGBB`), so do not casually reuse constants between them. Hardware expands the two blue bits into the internal 9-bit colour.
+
+### Enabling ULA+ Through the Legacy Ports
+
+```z80klive
+ULAPLUS_REG  equ $BF3B
+ULAPLUS_DATA equ $FF3B
+
+EnableUlaPlus:
+    ld bc,ULAPLUS_REG
+    ld a,%01000000          ; mode group
+    out (c),a
+
+    ld bc,ULAPLUS_DATA
+    ld a,1                  ; bit 0 = enable ULA+
+    out (c),a
+    ret
+```
+
+To write one ULA+ palette entry:
+
+```z80klive
+; Input:
+;   A = ULA+ palette index, 0..63
+;   E = colour in GGGRRRBB format
+
+SetUlaPlusColour:
+    and %00111111
+    ld bc,ULAPLUS_REG
+    out (c),a               ; palette group, selected index
+    ld a,e
+    ld bc,ULAPLUS_DATA
+    out (c),a
+    ret
+```
+
+You can also enable ULA+ with NextReg `$68` bit 3, but the ports matter because existing ULA+ software uses them. The Next's port-enable registers can disable the ULA+ ports for compatibility; see [Appendix C](./app-C-io-ports-reference.md) if you are running software that expects those ports not to exist.
+
+### ULANext vs ULA+
+
+They sound like cousins, and they are, but they are not interchangeable:
+
+| Feature | Standard ULA | ULA+ | ULANext |
+|---------|--------------|------|---------|
+| Bitmap | 1 bpp | 1 bpp | 1 bpp |
+| Attribute cells | 8×8 | 8×8 | 8×8 |
+| Colour source | Fixed-style ULA palette | 64-entry ULA+ palette | Configurable ULA palette indices |
+| Control | Attributes + port `$FE` | Ports `$BF3B`/`$FF3B`, NextReg `$68` bit 3 | NextRegs `$42`/`$43` |
+| `FLASH` | Flashes INK/PAPER | Palette group bit | Colour index bit |
+| `BRIGHT` | Bright variant | Palette group bit | Colour index bit |
+| Best for | Compatibility | ULA+ software and 64-colour upgrades | New Next-specific ULA work |
+
+If you are writing a new Next game, ULANext is usually the more flexible choice. If you are supporting ULA+ artwork or existing ULA+ code, use ULA+. If you want maximum classic compatibility, stay with standard ULA and maybe only remap the ULA palette entries.
+
+## Cooperating with the Other Layers
+
+The ULA is one participant in the Next's compositor. Later chapters go deep on this, but the practical version is:
+
+- Use ULA for cheap text, retro screens, menus, debug overlays, and compatibility.
+- Use LoRes when you want ULA memory cost but 8-bit colour-per-pixel at 128×96.
+- Use Tilemap for scrolling tile worlds and fast text consoles.
+- Use Layer 2 for full-colour bitmaps and image-heavy screens.
+- Use Sprites for moving objects that should not damage the background.
+
+You can also mix them. A very reasonable Next screen might use Layer 2 for a background image, ULA for a text panel, and sprites for the cursor. The ULA is old, not obsolete.
+
+The main thing to remember is that ULA, LoRes, and some Timex modes share the same display-file heritage. You cannot display standard ULA and LoRes at the same time because LoRes is an alternate interpretation of the ULA memory. Layer 2 and Tilemap are separate systems, so they can be composited with the ULA.
+
+## A Tiny "Hello, ULA"
+
+Putting the pieces together, here is a small setup pattern: clear the bitmap, set a blue border, fill attributes with bright white-on-blue, and leave the screen ready for character printing.
+
+```z80klive
+ATTR_BLUE    equ 1
+ATTR_WHITE   equ 7
+HELLO_ATTR   equ (1 << 6) | (ATTR_BLUE << 3) | ATTR_WHITE
+
+UlaPortShadow: .db 0
+
+HelloUlaSetup:
+    ; Border: blue, preserving speaker/MIC bits from our shadow byte.
+    ld a,ATTR_BLUE
+    call SetBorder
+
+    ; Clear bitmap to PAPER.
+    ld hl,$4000
+    ld de,$4001
+    ld bc,6143
+    ld (hl),0
+    ldir
+
+    ; Fill attributes: bright white on blue.
+    ld hl,$5800
+    ld de,$5801
+    ld bc,767
+    ld (hl),HELLO_ATTR
+    ldir
+    ret
+
+SetBorder:
+    and %00000111
+    ld b,a
+    ld a,(UlaPortShadow)
+    and %11111000
+    or b
+    ld (UlaPortShadow),a
+    out ($FE),a
+    ret
+```
+
+It is only a few dozen bytes of code, and it gives you a screen that every Spectrum programmer from 1982 would recognize. Then, one chapter later, you can start changing what those colours mean.
+
+## Where Next
+
+The natural next stop is [Palettes and Colour on the Next](./09-palettes.mdx), because ULANext, ULA+, LoRes, Layer 2, Tilemap, and Sprites all rely on the same palette machinery once you look under the surface.
+
+After that, [LoRes Mode](./10-lores.mdx) shows the closest alternative to the standard ULA screen: same memory neighborhood, much richer per-pixel colour, lower resolution. [Layer 2](./11-layer2.mdx), [The Tilemap](./12-tilemap.mdx), and [Hardware Sprites](./13-sprites.mdx) then build outward into the Next's modern video system.
+
+For timing tricks, keep [Interrupts](./04-interrupts.mdx) and [The Copper](./14-copper.mdx) nearby. The border still loves precise timing; the Next simply gives you better ways to provide it.
