@@ -1,0 +1,18 @@
+{
+  "name": "xu-docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "xmlui start",
+    "build": "xmlui build",
+    "preview": "xmlui preview",
+    "build-prod": "npm run build -- --prod",
+    "release-ci": "npm run build-prod && xmlui zip-dist",
+    "check": "xmlui check src --format gnu"
+  },
+  "dependencies": {
+    "xmlui": "0.12.27",
+    "xmlui-search": "0.1.12",
+    "xmlui-docs-blocks": "file:./packages/xmlui-docs-blocks-0.0.9.tgz"
+  }
+}
