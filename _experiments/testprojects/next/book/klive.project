@@ -74,16 +74,16 @@
           "type": "CodeEditor",
           "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/main.kz80.asm",
           "position": {
-            "line": 92,
-            "column": 42
+            "line": 96,
+            "column": 32
           }
         },
         {
           "type": "CodeEditor",
-          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/06_zxndma/interrupt.asm",
+          "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/next/book/08_ula/ula.asm",
           "position": {
-            "line": 0,
-            "column": 0
+            "line": 136,
+            "column": 1
           }
         }
       ],
