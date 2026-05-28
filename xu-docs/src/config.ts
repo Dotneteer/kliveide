@@ -16,13 +16,13 @@ function getLocalIcons() {
 }
 
 const App: StandaloneAppDescription = {
-  name: "My Docs",
+  name: "Klive IDE",
   version: "0.1.0",
   defaultTheme: "xmlui-docs",
   icons: getLocalIcons(),
   resources: {
-    logo: "/resources/xmlui-logo.svg",
-    "logo-dark": "/resources/xmlui-logo-dark.svg",
+    logo: "/resources/klive-logo.svg",
+    "logo-dark": "/resources/klive-logo-dark.svg",
     favicon: "/resources/favicon.ico",
   },
   appGlobals: {

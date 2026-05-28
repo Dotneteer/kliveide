@@ -1,0 +1,239 @@
+# Customizing Syntax Highlighting Colors
+
+Klive IDE allows you to customize the syntax highlighting colors for each programming language. You can modify token colors by creating simple JSON configuration files in your Klive settings folder.
+
+## Token Color Files Location
+
+Create your custom token files in the Klive settings folder:
+
+- **macOS/Linux**: `~/Klive/`
+- **Windows**: `C:\Users\<YourUsername>\Klive\`
+
+> [!INFO]
+> The Klive settings folder is created automatically when you first run Klive. It's the same folder where application settings are stored.
+
+## Supported Languages
+
+You can customize token colors for these languages:
+
+| Language | File Name |
+|----------|-----------|
+| Klive Z80 Assembly | `kz80-asm.tokens.json` |
+| 6510 Assembly (C64) | `6510-asm.tokens.json` |
+| ZX Basic Assembly | `zxbasm.tokens.json` |
+| ZX Basic | `zxbas.tokens.json` |
+| Klive Script | `ksx.tokens.json` |
+| SjASM Plus | `sjasmp.tokens.json` |
+| pasta80 Pascal | `pasta80.tokens.json` |
+
+## Token File Format
+
+Each token file uses a simple JSON structure with two main sections:
+
+```json
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "identifier": "dcdcaa"
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "keyword": {
+      "foreground": "0070c0",
+      "fontStyle": "bold"
+    },
+    "identifier": "795e26"
+  }
+}
+```
+
+### Token Values
+
+You can specify each token in two ways:
+
+1. **Simple string** (foreground color only):
+   ```json
+   "comment": "6a9955"
+   ```
+
+2. **Object** (with font style):
+   ```json
+   "keyword": {
+     "foreground": "569cd6",
+     "fontStyle": "bold"
+   }
+   ```
+
+### Color Format
+
+Colors are specified as 6-digit hexadecimal values **without** the `#` prefix:
+
+- `"6a9955"` - greenish gray
+- `"569cd6"` - blue
+- `"af00db"` - purple
+
+### Font Styles
+
+Available font styles:
+
+- `"bold"`
+- `"italic"`
+- `"underline"`
+- Or combinations: `"bold italic"`
+
+## Example: Customizing Z80 Assembly Colors
+
+Let's customize the syntax highlighting for Klive Z80 Assembly:
+
+1. Create a new file called `kz80-asm.tokens.json` in your Klive settings folder (`~/Klive/` on macOS/Linux).
+
+2. Add the following content:
+
+```json
+{
+  "darkTheme": {
+    "comment": "6a9955",
+    "keyword": {
+      "foreground": "569cd6",
+      "fontStyle": "bold"
+    },
+    "identifier": "dcdcaa",
+    "register": "9cdcfe",
+    "variable": "dcdcaa",
+    "namespace": "86c691",
+    "struct": "4ec9b0",
+    "equ": "4fcfff",
+    "macro": {
+      "foreground": "4ec9b0",
+      "fontStyle": "bold italic"
+    }
+  },
+  "lightTheme": {
+    "comment": "237122",
+    "keyword": {
+      "foreground": "0070c0",
+      "fontStyle": "bold"
+    },
+    "identifier": "795e26",
+    "register": "0089ba",
+    "variable": "795e26",
+    "namespace": "267f99",
+    "struct": "267f99",
+    "equ": "0070c1",
+    "macro": {
+      "foreground": "267f99",
+      "fontStyle": "bold italic"
+    }
+  }
+}
+```
+
+3. Save the file and restart Klive IDE.
+
+> [!INFO]
+> You must restart Klive IDE for token color changes to take effect.
+
+## Common Token Names
+
+### Assembly Languages (Z80, 6510, ZXB Assembly, SjASM)
+
+**Syntax tokens:**
+- `comment` - Comments
+- `keyword` - CPU instructions (LD, ADD, SUB, etc.)
+- `statement` - Assembler directives and statements
+- `pragma` - Pragma directives
+- `identifier` - Labels and identifiers
+- `register` - CPU registers (A, B, C, HL, etc.)
+- `condition` - Condition flags (Z, NZ, C, NC, etc.)
+- `function` - Built-in functions
+- `macroparam` - Macro parameters
+- `escape` - Escape sequences in strings
+
+**Semantic tokens (compiler-resolved):**
+- `variable` - Resolved labels and variables
+- `namespace` - Module scopes
+- `struct` - Struct type definitions
+- `equ` - .equ constant definitions
+- `macro` - Macro and procedure definitions
+
+### ZX Basic
+
+- `comment` - Comments
+- `statement` - BASIC keywords (PRINT, LET, etc.)
+- `identifier` - Variable names
+- `function` - Built-in functions
+- `escape` - Escape sequences
+- `asmdel` - ASM block delimiters
+- `directive` - Preprocessor directives
+
+### pasta80 Pascal
+
+- `comment` - Comments (`{ }`, `(* *)`)
+- `keyword` - Language keywords (`program`, `begin`, `end`, `var`, etc.) — **bold**
+- `type` - Built-in types (`integer`, `string`, `boolean`, etc.)
+- `constant` - Built-in constants (`true`, `false`, `maxint`)
+- `support.function` - Built-in functions (`writeln`, `readln`, `chr`, etc.)
+- `identifier` - User-defined identifiers
+- `string` - String and character literals (`'...'`, `#65`)
+- `string.escape` - Escaped quote inside string (`''`)
+- `number` - Decimal number literals
+- `number.hex` - Hexadecimal literals (`$FF`)
+- `annotation` - Compiler directives (`{$...}`)
+- `delimiter` - Operators and punctuation
+
+### Klive Script
+
+- `comment` - Comments
+- `keyword` - Language keywords
+- `statement` - Statement keywords
+- `identifier` - Identifiers
+- `regexp` - Regular expressions
+- `regexp.escape` - Regex escapes
+- `string.escape` - String escapes
+
+## Partial Customization
+
+You don't need to specify all tokens. You can override only the tokens you want to customize:
+
+```json
+{
+  "lightTheme": {
+    "comment": "008000",
+    "keyword": "0000ff"
+  }
+}
+```
+
+Unspecified tokens will use their default colors.
+
+## Tips for Choosing Colors
+
+1. **Ensure Contrast**: Make sure there's sufficient contrast between foreground and background colors
+2. **Test Both Themes**: Define colors for both dark and light themes
+3. **Stay Consistent**: Use a consistent color scheme across related token types
+4. **Start Simple**: Begin by customizing just a few key tokens (comments, keywords, identifiers)
+
+## Troubleshooting
+
+### Colors Not Applied
+
+- Verify the file is in the correct folder with the correct name
+- Check that the JSON syntax is valid (no missing commas, brackets, etc.)
+- Ensure you've restarted Klive IDE
+
+### Invalid JSON
+
+Use a JSON validator or editor with JSON support to check for syntax errors.
+
+### Wrong Colors Displayed
+
+- Verify you're using 6-digit hex values without the `#` prefix
+- Check that you're editing the right theme section (dark vs light)
+- Ensure file permissions allow Klive to read the file
+
+> [!WARNING]
+> If a token file cannot be read or parsed, Klive will silently skip it and use default colors. Check your JSON syntax if your customizations don't appear.

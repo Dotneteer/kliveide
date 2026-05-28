@@ -1,53 +1,76 @@
-# Introduction
+# Introduction to Klive IDE
 
-Welcome to **My Docs** — the documentation site for your project.
+**Klive IDE is a retro computer emulator and Integrated Development Environment running on Mac and Windows.**
 
-This template was built with [XMLUI](https://xmlui.org) and gives you a fully functional
-documentation site out of the box. Edit the Markdown files in `content/docs/` to add your
-own content.
+Klive offers not only the emulators but also debugging views, a multi-pane code editor, interactive commands, and other tools to create your Z80 Assembly and ZX BASIC (Boriel's Basic) programs.
 
-## What You Get
+Klive IDE supports dual monitor mode to place the Emulator and IDE on different monitors while working with code.
 
-This docs template includes:
+![](/images/intro/klive-ide-intro.png)
 
-- **Sidebar navigation** with collapsible groups and icons
-- **Full-text search** across all your documentation pages
-- **Table of contents** that auto-builds from headings on each page
-- **Previous / next** navigation between pages, derived from the sidebar order
-- **Dark / light mode** toggle in the header
-- **Responsive layout** that works on mobile and desktop
+## Supported Emulators
 
-## How It's Structured
+Klive IDE intends to support retro computers with the Z80 family of CPUs. Klive supports these emulators:
 
-```
-my-docs/
-├── content/
-│   └── docs/
-│       ├── introduction.md
-│       ├── quick-start.md
-│       ├── installation.md
-│       ├── configuration.md
-│       ├── core-concepts.md
-│       ├── advanced.md
-│       ├── api-overview.md
-│       ├── api-endpoints.md
-│       └── changelog.md
-└── src/
-    ├── Main.xmlui          ← app shell, navigation, routing
-    ├── config.ts           ← app globals (docsContent, search index)
-    └── content.ts          ← loads markdown files at build time
-```
+- **ZX Spectrum 48K**
+- **ZX Spectrum 128K**
+- **ZX Spectrum +2E/+3E**
+- **Cambridge Z88**
+- ZX Spectrum Next (*in progress*)
+- ZX 80/81 (*in the future*)
 
-Each page is rendered by the built-in `DocumentPage` component (from the
-`xmlui-docs-blocks` package). It picks up the Markdown content from
-`appGlobals.docsContent` and renders it alongside a `TableOfContents` sidebar
-and prev/next links.
+## Emulator Features
 
-## Getting Started
+The emulator can run the selected machine with or without debugging. These modes can be changed without restarting the running machine:
 
-1. Edit the `<NavPanel>` in `src/Main.xmlui` to update the sidebar links.
-2. Add or remove `<Page>` entries in the `<Pages>` block.
-3. Drop a corresponding `.md` file into `content/docs/` for each new page.
-4. Reference it from a `<Page>` as `appGlobals.docsContent['<filename>']`.
+- Starting, pausing, continuing to run
+- Start or continue in debug mode
+- Setting up breakpoints, step-in, step-over, step-out modes
 
-Head over to the [Quick Start](/quick-start) guide to see the next steps.
+To examine the state of the emulator, Klive offers several views:
+
+- Full CPU view
+- Full ULA view
+- Memory view with live refresh
+- Disassembly view with execution point tracking
+- Monitoring system variable values
+- Displaying (and exporting) the current BASIC listing
+
+You can quickly load and play programs (games) from files:
+
+- Loading tape files (`.tap` and `.tzx`)
+- Fast load
+- Loading from disk files (`.dsk`) with ZX Spectrum +3E
+- Writing and formatting disk (`.dsk`) files (*in progress*)
+
+Other emulator features:
+
+- Visual keyboard (ZX Spectrum 48K and ZX Spectrum 128K styles)
+- Multiplying CPU clock speed (1-24 multiplier)
+- Setting up the sound level, muting and unmuting sound
+
+Planned features (*in the future*):
+
+- Using custom machine ROMs
+- Memory read/write breakpoints
+- I/O read/write breakpoints
+- Breakpoints with hit count conditions
+
+## IDE Features
+
+The IDE allows you to open project folders that keep the files belonging to a particular (development) project together. You can use Z80 Assembly language (with the built-in Klive Z80 Assembler) and ZX BASIC (Boriel's Basic) as your programming language.
+
+- Syntax highlighting
+- Source code debugging (works with the Klive Z80 Assembler)
+- Exporting the compiled code to tape files (`.tap` and `.tzx`) with BASIC loaders
+
+Klive's unique feature is the one-click start and debugging: With a click of one button, your code is compiled and injected into the selected emulator and immediately starts up. You can start your code with debugging (or pause it and continue with debugging).
+
+Commands: The IDE has an interactive command panel to issue CLI commands executed within the IDE.
+
+Planned features (*in the future*):
+
+- Watch Panel: display runtime information about memory variables (expressions)
+- Conditional breakpoints
+- Integration with other assemblers, including compilation and optional source code debugging (if the particular compiler supports debug symbol information).
+

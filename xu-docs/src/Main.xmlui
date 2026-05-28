@@ -1,10 +1,11 @@
-<App layout="vertical-full-header">
+<App layout="vertical-full-header" autoDetectTone>
   <AppHeader>
     <property name="logoTemplate">
       <Link to="/" height="100%">
         <Logo height="$space-8" />
       </Link>
     </property>
+    <H1>Klive IDE</H1>
     <SpaceFiller />
     <Search
       data="{appGlobals.staticSearchData}"
@@ -15,24 +16,65 @@
       mode="inline"
       collapsible="true"
     />
-    <ToneChangerButton />
+    <ToneSwitch />
   </AppHeader>
   <NavPanel scrollStyle="whenScrolling" showScrollerFade="true">
     <NavLink label="Introduction" to="/introduction" icon="home" />
     <NavGroup label="Getting Started" initiallyExpanded="true" icon="school">
-      <NavLink label="Quick Start" to="/quick-start" icon="bolt" />
-      <NavLink label="Installation" to="/installation" icon="deploy" />
-      <NavLink label="Configuration" to="/configuration" icon="settings" />
+      <NavLink label="Installing Klive" to="/getting-started/installing-klive" icon="deploy" />
+      <NavLink label="Running Klive" to="/getting-started/running-klive" icon="bolt" />
+      <NavLink label="Using the Keyboard" to="/getting-started/keyboard" icon="article" />
+      <NavLink label="Loading from Tape" to="/getting-started/tape" icon="article" />
+      <NavLink label="Saving Files" to="/getting-started/save" icon="article" />
+      <NavLink label="Creating a Klive Project" to="/getting-started/create-project" icon="article" />
     </NavGroup>
-    <NavGroup label="Guides" icon="article">
-      <NavLink label="Core Concepts" to="/guides/core-concepts" icon="markup" />
-      <NavLink label="Advanced Usage" to="/guides/advanced" icon="refactor" />
+    <NavGroup label="Working with the IDE" initiallyExpanded="true" icon="school">
+      <NavLink label="The Project Explorer" to="/ide/project-explorer" icon="article" />
+      <NavLink label="Editing Code" to="/ide/edit-code" icon="article" />
+      <NavLink label="Running & Debugging Code" to="/ide/run-code" icon="article" />
+      <NavLink label="Exporting Code" to="/ide/export-code" icon="article" />
+      <NavLink label="ZXBASIC Integration" to="/ide/zxbasic" icon="article" />
+      <NavLink label="SJASMPLUS Integration" to="/ide/sjasmplus" icon="article" />
+      <NavLink label="PASTA/80 Integration" to="/ide/pasta80" icon="article" />
+      <NavLink label="IDE Settings" to="/ide/settings" icon="settings" />
+      <NavLink label="The CPU View" to="/ide/cpu-view" icon="article" />
+      <NavLink label="The ULA View" to="/ide/ula-view" icon="article" />
+      <NavLink label="The Memory View" to="/ide/memory-view" icon="article" />
+      <NavLink label="The Disassembly View" to="/ide/disassembly-view" icon="article" />
+      <NavLink label="Watch Expressions" to="/ide/watch-view" icon="article" />
+      <NavLink label="The Breakpoints View" to="/ide/breakpoints-view" icon="article" />
+      <NavLink label="The System Variables View" to="/ide/system-variables" icon="article" />
+      <NavLink label="The BASIC Listing" to="/ide/basic-listing" icon="article" />
+      <NavLink label="Interactive Commands" to="/ide/int-commands" icon="article" />
+      <NavLink label="The Build System" to="/ide/build-system" icon="article" />
     </NavGroup>
-    <NavGroup label="API Reference" icon="braces">
-      <NavLink label="Overview" to="/api/overview" icon="eye" />
-      <NavLink label="Endpoints" to="/api/endpoints" icon="file-code" />
+    <NavGroup label="How To" initiallyExpanded="true" icon="school">
+      <NavLink label="IDE Startup Options" to="/howto/ide-startup" icon="settings" />
+      <NavLink label="Diagnostics" to="/howto/diagnostics" icon="article" />
+      <NavLink label="Changing Keyboard Shortcuts" to="/howto/keyboard-shortcuts" icon="article" />
+      <NavLink label="Changing Default File Extensions" to="/howto/file-extensions" icon="article" />
+      <NavLink label="Customizing Syntax Highlighting Colors" to="/howto/syntax-colors" icon="article" />
+      <NavLink label="Using Background Compilation" to="/howto/background-compile" icon="article" />
+      <NavLink label="Using the Instant Screen" to="/howto/instant-screen" icon="article" />
     </NavGroup>
-    <NavLink label="Changelog" to="/changelog" icon="list" />
+    <NavGroup label="Klive Z80 Assembler" initiallyExpanded="true" icon="school">
+      <NavLink label="The Project Explorer" to="/getting-started/installing-klive" icon="deploy" />
+    </NavGroup>
+    <NavGroup label="Contribute" initiallyExpanded="true" icon="school">
+      <NavLink label="The Project Explorer" to="/getting-started/installing-klive" icon="deploy" />
+    </NavGroup>
+    <NavGroup label="Scripting" initiallyExpanded="true" icon="school">
+      <NavLink label="The Project Explorer" to="/getting-started/installing-klive" icon="deploy" />
+    </NavGroup>
+    <NavGroup label="Commands Reference" initiallyExpanded="true" icon="school">
+      <NavLink label="The Project Explorer" to="/getting-started/installing-klive" icon="deploy" />
+    </NavGroup>
+    <NavGroup label="Machine Types" initiallyExpanded="true" icon="school">
+      <NavLink label="The Project Explorer" to="/getting-started/installing-klive" icon="deploy" />
+    </NavGroup>
+    <NavGroup label="ZX Spectrum Next Book" initiallyExpanded="true" icon="school">
+      <NavLink label="The Project Explorer" to="/getting-started/installing-klive" icon="deploy" />
+    </NavGroup>
   </NavPanel>
   <Pages fallbackPath="/introduction">
     <Page url="/">
@@ -41,30 +83,102 @@
     <Page url="/introduction">
       <DocumentPage content="{appGlobals.docsContent['introduction']}" />
     </Page>
-    <Page url="/quick-start">
-      <DocumentPage content="{appGlobals.docsContent['quick-start']}" />
+    <Page url="/getting-started/installing-klive">
+      <DocumentPage content="{appGlobals.docsContent['getting-started/installation']}" />
     </Page>
-    <Page url="/installation">
-      <DocumentPage content="{appGlobals.docsContent['installation']}" />
+    <Page url="/getting-started/running-klive">
+      <DocumentPage content="{appGlobals.docsContent['getting-started/running-klive']}" />
     </Page>
-    <Page url="/configuration">
-      <DocumentPage content="{appGlobals.docsContent['configuration']}" />
+    <Page url="/getting-started/keyboard">
+      <DocumentPage content="{appGlobals.docsContent['getting-started/keyboard']}" />
     </Page>
-    <Page url="/guides/core-concepts">
-      <DocumentPage content="{appGlobals.docsContent['guides/core-concepts']}" />
+    <Page url="/getting-started/tape">
+      <DocumentPage content="{appGlobals.docsContent['getting-started/tape']}" />
     </Page>
-    <Page url="/guides/advanced">
-      <DocumentPage content="{appGlobals.docsContent['guides/advanced']}" />
+    <Page url="/getting-started/save">
+      <DocumentPage content="{appGlobals.docsContent['getting-started/save']}" />
     </Page>
-    <Page url="/api/overview">
-      <DocumentPage content="{appGlobals.docsContent['api/overview']}" />
+    <Page url="/getting-started/create-project">
+      <DocumentPage content="{appGlobals.docsContent['getting-started/create-project']}" />
     </Page>
-    <Page url="/api/endpoints">
-      <DocumentPage content="{appGlobals.docsContent['api/endpoints']}" />
+
+    <Page url="/ide/project-explorer">
+      <DocumentPage content="{appGlobals.docsContent['ide/project-explorer']}" />
     </Page>
-    <Page url="/changelog">
-      <DocumentPage content="{appGlobals.docsContent['changelog']}" />
+    <Page url="/ide/edit-code">
+      <DocumentPage content="{appGlobals.docsContent['ide/edit-code']}" />
     </Page>
+    <Page url="/ide/run-code">
+      <DocumentPage content="{appGlobals.docsContent['ide/run-code']}" />
+    </Page>
+    <Page url="/ide/export-code">
+      <DocumentPage content="{appGlobals.docsContent['ide/export-code']}" />
+    </Page>
+    <Page url="/ide/zxbasic">
+      <DocumentPage content="{appGlobals.docsContent['ide/zxbasic']}" />
+    </Page>
+    <Page url="/ide/sjasmplus">
+      <DocumentPage content="{appGlobals.docsContent['ide/sjasmplus']}" />
+    </Page>
+    <Page url="/ide/pasta80">
+      <DocumentPage content="{appGlobals.docsContent['ide/pasta80']}" />
+    </Page>
+    <Page url="/ide/settings">
+      <DocumentPage content="{appGlobals.docsContent['ide/settings']}" />
+    </Page>
+    <Page url="/ide/cpu-view">
+      <DocumentPage content="{appGlobals.docsContent['ide/cpu-view']}" />
+    </Page>
+    <Page url="/ide/ula-view">
+      <DocumentPage content="{appGlobals.docsContent['ide/ula-view']}" />
+    </Page>
+    <Page url="/ide/memory-view">
+      <DocumentPage content="{appGlobals.docsContent['ide/memory-view']}" />
+    </Page>
+    <Page url="/ide/disassembly-view">
+      <DocumentPage content="{appGlobals.docsContent['ide/disassembly-view']}" />
+    </Page>
+    <Page url="/ide/watch-view">
+      <DocumentPage content="{appGlobals.docsContent['ide/watch-view']}" />
+    </Page>
+    <Page url="/ide/breakpoints-view">
+      <DocumentPage content="{appGlobals.docsContent['ide/breakpoints-view']}" />
+    </Page>
+    <Page url="/ide/system-variables">
+      <DocumentPage content="{appGlobals.docsContent['ide/system-variables']}" />
+    </Page>
+    <Page url="/ide/basic-listing">
+      <DocumentPage content="{appGlobals.docsContent['ide/basic-listing']}" />
+    </Page>
+    <Page url="/ide/int-commands">
+      <DocumentPage content="{appGlobals.docsContent['ide/int-commands']}" />
+    </Page>
+    <Page url="/ide/build-system">
+      <DocumentPage content="{appGlobals.docsContent['ide/build-system']}" />
+    </Page>
+
+    <Page url="/howto/ide-startup">
+      <DocumentPage content="{appGlobals.docsContent['howto/ide-startup']}" />
+    </Page>
+    <Page url="/howto/diagnostics">
+      <DocumentPage content="{appGlobals.docsContent['howto/diagnostics']}" />
+    </Page>
+    <Page url="/howto/keyboard-shortcuts">
+      <DocumentPage content="{appGlobals.docsContent['howto/keyboard-shortcuts']}" />
+    </Page>
+    <Page url="/howto/file-extensions">
+      <DocumentPage content="{appGlobals.docsContent['howto/file-extensions']}" />
+    </Page>
+    <Page url="/howto/syntax-colors">
+      <DocumentPage content="{appGlobals.docsContent['howto/syntax-colors']}" />
+    </Page>
+    <Page url="/howto/background-compile">
+      <DocumentPage content="{appGlobals.docsContent['howto/background-compile']}" />
+    </Page>
+    <Page url="/howto/instant-screen">
+      <DocumentPage content="{appGlobals.docsContent['howto/instant-screen']}" />
+    </Page>
+
   </Pages>
   <Footer>
     Powered by XMLUI

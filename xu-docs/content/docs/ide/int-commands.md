@@ -1,0 +1,7 @@
+# Using IDE Commands
+
+The IDE provides you access to several command functions. To reach them, press `F1` (or `Command+Shift+P` on Mac) and type "ide" to list all IDE commands. For example, this command lists all break points you set in your code files:
+
+<img src="/images/working-with-ide/ide-commands.png" width="640" />
+
+In many cases, you can access these commands with menu items, toolbar buttons, or keyboard shortcuts.

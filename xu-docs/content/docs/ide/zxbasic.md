@@ -1,0 +1,54 @@
+# Using ZX BASIC
+
+The ZX Spectrum was famous for its BASIC interpreter, which was significantly faster than other home computers' BASIC variants in 1982. However, the compiled variants that emerged later were much faster, making BASIC a viable alternative to writing games and applications in assembly language.
+
+With the ZX BASIC extensions, including graphics utilities, user-defined functions, and a powerful array handling facility, developers could create useful programs, including animation and sound effects.
+
+However, BASIC still ran as an interpreted language, which means the computer had to process the source code line by line, limiting the execution speed of BASIC programs. This issue, and the emergence of BASIC compilers including HiSoft BASIC, gave birth to new possibilities.
+
+Boriel's ZX BASIC (you can find it [here](https://zxbasic.readthedocs.io/en/docs/)) is a BASIC dialect similar to the original Sinclair BASIC. It fixes many issues found in the original language, such as proper subroutine handling and local variables. It compiles BASIC source code to Z80 binary code, which runs much faster than interpreted BASIC.
+
+Klive supports Boriel's ZX BASIC with an extension that allows you to write BASIC source code and create ZX Spectrum executables.
+
+## ZX BASIC Files
+
+Files with the `.bas` extension are automatically recognized as ZX BASIC files. You can open a Klive project and create a new ZX BASIC source file:
+
+<img src="/images/working-with-ide/zxb-reset.png" width="770" />
+
+You can use the `zxb-reset` command to set up ZXBASIC integration. This command has the following format:
+
+```
+zxb-reset <Full ZXBC executable path> [<python3 path>]
+```
+
+Provide the full executable path of the ZXBC compiler. Optionally, you can provide the path to the Python3 executable.
+
+### Windows
+
+Specify only the first argument and use the `zxbc.exe` executable. For example, if your username is "djohn" and you installed the compiler into the `zxbasic` folder, use this command:
+
+```
+zxb-reset "C:\Users\djohn\zxbasic\zxbc.exe"
+```
+
+## Using ZX BASIC
+
+When you create a ZX BASIC file, you can write your source code using ZX BASIC syntax. When you open a `.bas` file, you can see four build-related icons in the document tab bar:
+
+<img src="/images/working-with-ide/zxb-actions.png" width="725" />
+
+Click the rightmost icon (with the "play" sign) to compile and run the code:
+
+<img src="/images/working-with-ide/zxb-running.png" width="480" />
+
+> [!INFO]
+> You can also try keyboard shortcuts to trigger these actions: `F7` to compile, `Ctrl+F7` to inject code into memory, `Shift+F7` to run the code, and `Ctrl+Shift+F7` to run it in debug mode.
+
+## Handling Errors
+
+When you run the code, the compiler checks the syntax. If there are any errors, the IDE displays them in a list in the Output panel. You can click on an error to navigate to its location in the source code.
+
+## Debugging
+
+You can run your code in debug mode by clicking the last icon in the document tab bar or pressing `Ctrl+Shift+F7`. In debug mode, the IDE will stop at any breakpoints you set in your code.
