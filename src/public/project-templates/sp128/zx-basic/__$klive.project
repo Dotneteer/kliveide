@@ -1,7 +1,0 @@
-{
-  "builder": {
-    "roots": [
-      "code/program.zxbas"
-    ]
-  }
-}

@@ -1,8 +1,0 @@
-<Component name="ToolbarSeparator">
-  <ContentSeparator
-    orientation="vertical"
-    size="2px"
-    backgroundColor="$color-ToolbarSeparator"
-    paddingVertical="$space-1_5"
-    marginHorizontal="$space-1_5" />
-</Component>

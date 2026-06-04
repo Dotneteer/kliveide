@@ -1,4 +1,0 @@
-<Fragment var.isEmu="{window.location.search.startsWith('?emu')}">
-  <EmuApp when="{isEmu}" />
-  <IdeApp when="{!isEmu}" />
-</Fragment>

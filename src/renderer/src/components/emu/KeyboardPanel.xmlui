@@ -1,3 +1,0 @@
-<Component name="KeyboardPanel">
-  <CVStack height="100%" backgroundColor="$color-surface-300">Keyboard Panel</CVStack>
-</Component>

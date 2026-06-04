@@ -1,5 +1,0 @@
-*.local
-dist
-dist-ssr
-out
-node_modules

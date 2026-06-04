@@ -1,3 +1,0 @@
-﻿ld a, 3
-ld z, q
-ld a, (hl)
