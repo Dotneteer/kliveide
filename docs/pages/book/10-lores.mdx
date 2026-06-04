@@ -2,28 +2,397 @@ import { Callout } from 'nextra/components'
 
 # LoRes Mode
 
-<Callout type="warning" emoji="🚧">
-This chapter is a placeholder. The full text is being written.
+LoRes is what happens when the Next looks at the ULA display memory and says: what if we spent those bytes on colour instead of sharpness?
+
+Standard ULA gives you a 256×192 one-bit bitmap plus attributes. LoRes gives you a 128×96 display where every LoRes pixel is an 8-bit palette index. No 8×8 attribute clash. No foreground/background argument. One byte, one colour.
+
+The trade-off is obvious and honest: each LoRes pixel is drawn as a 2×2 block on the normal 256×192 ULA area. You get chunky pixels, but you get them in 256 colours, using memory you already understand.
+
+> **What this chapter assumes.** You should already know the standard ULA screen memory from [The ULA Screen and Border](./08-ula-screen.mdx), and the palette upload pattern from [Palettes and Colour on the Next](./09-palettes.mdx). LoRes shares the ULA display path, so it sits naturally between those chapters and the later full-colour layers.
+
+## What LoRes Is
+
+The Next has two related low-resolution modes:
+
+| Mode | Resolution | Colour Data | Memory |
+|------|------------|-------------|--------|
+| Standard LoRes | 128×96 | 8-bit palette index per pixel | 12 KB |
+| Radastan LoRes | 128×96 | 4-bit palette index per pixel | 6 KB |
+
+This chapter focuses on **standard LoRes**. It is the easier mental model: one byte is one pixel. That byte indexes the ULA palette, so the palette work from the previous chapter carries over directly.
+
+Radastan mode is useful too, especially when you want 16-colour chunky graphics in only 6 KB, but it has a different packed-nibble layout. We will keep it in the margins for now rather than mixing two memory maps in one breath.
+
+## Enabling LoRes
+
+Standard LoRes is enabled with NextReg `$15` bit 7:
+
+```z80klive
+    nextreg $15,%10000000   ; enable LoRes, leave priority bits at 0
+```
+
+NextReg `$15` is also the layer priority register, so a real program should preserve any priority bits it already uses. The demos write the whole register because they own the whole screen while they run.
+
+LoRes has its own control register, NextReg `$6A`:
+
+| `$6A` Bits | Purpose |
+|------------|---------|
+| 5 | Enable Radastan mode |
+| 4 | Radastan Timex display-file XOR |
+| 3–0 | LoRes palette offset |
+
+For standard LoRes, leave bit 5 clear:
+
+```z80klive
+    nextreg $6A,0           ; standard LoRes, palette offset 0
+```
+
+To return to standard ULA output:
+
+```z80klive
+    nextreg $15,0           ; disable LoRes in these simple demos
+    nextreg $32,0           ; reset LoRes X scroll
+    nextreg $33,0           ; reset LoRes Y scroll
+    nextreg $6A,0           ; reset LoRes control
+```
+
+That does not erase the memory you drew into. It only changes how the video hardware interprets the ULA-family display path.
+
+## The Memory Layout
+
+Standard LoRes uses 12 KB in Bank 5:
+
+| LoRes Rows | Address Range | Size |
+|------------|---------------|------|
+| `0`–`47` | `$4000`–`$57FF` | 6144 bytes |
+| `48`–`95` | `$6000`–`$77FF` | 6144 bytes |
+
+That split may look odd at first. The top half uses the old ULA bitmap area. The bottom half uses the second display-file area that Timex-family modes also use. The normal ULA attribute area at `$5800` is not part of the standard LoRes pixel stream.
+
+For LoRes coordinate `(x,y)`, where `x` is `0`–`127` and `y` is `0`–`95`:
+
+```text
+if y < 48:
+    address = $4000 + y * 128 + x
+else:
+    address = $6000 + (y - 48) * 128 + x
+```
+
+Each byte is an 8-bit palette index. The visible pixel is doubled horizontally and vertically, so byte `(10,20)` appears as a 2×2 block in the 256×192 display area.
+
+This is much friendlier than the classic ULA bitmap address layout. It is linear inside each half. The price is that you have two halves to remember.
+
+## Colour and Palettes
+
+Standard LoRes pixels use the ULA palette. More precisely, the byte in LoRes memory becomes a palette index, optionally adjusted by the palette offset in NextReg `$6A`.
+
+In standard mode, `$6A` bits 3–0 add to the high nibble of the pixel value:
+
+```text
+pixel byte      = hhhh llll
+palette offset  = oooo
+palette index   = ((hhhh + oooo) & $0F) << 4 | llll
+```
+
+With offset `0`, the byte is used directly. With offset `1`, values `$00`–`$0F` display as palette entries `$10`–`$1F`, values `$10`–`$1F` display as `$20`–`$2F`, and so on.
+
+That makes `$6A` a cheap palette-animation tool: you can slide a whole LoRes image through 16-colour bands without touching the 12 KB pixel buffer. It is not a replacement for ordinary palette writes, but it is a nice hardware lever.
+
+## Demo: A LoRes Colour Field
+
+The first demo fills all 128×96 LoRes pixels with a simple gradient and loads a linear ULA palette. It is deliberately direct: draw bytes, enable LoRes, wait for Space, restore standard ULA mode.
+
+```z80klive
+.module LoResDemo
+
+ULA_PORT        .equ $fe
+
+LORES_TOP      .equ $4000
+LORES_BOTTOM   .equ $6000
+
+NR_TRANSPARENT  .equ $14
+NR_PRIORITY     .equ $15
+NR_LORES_X      .equ $32
+NR_LORES_Y      .equ $33
+NR_PALETTE_INDEX .equ $40
+NR_PALETTE_VALUE .equ $41
+NR_PALETTE_CTRL  .equ $43
+NR_LORES_CTRL    .equ $6a
+
+PAL_ULA_FIRST   .equ %00000000
+LORES_ENABLE    .equ %10000000
+```
+
+The names mirror the hardware: `$15` enables LoRes, `$32` and `$33` scroll it, `$6A` controls its submode and palette offset, and `$40`/`$41`/`$43` load the palette.
+
+### The ColourField Method
+
+```z80klive
+;==========================================================
+; Draw a 128x96 8-bit LoRes colour field
+;==========================================================
+ColourField
+    call @ResetVideoState
+    call @LoadLinearPalette
+    call @DrawColourField
+    call @EnableLoRes
+    call @WaitSpace
+    call @RestoreAfterLoRes
+    ret
+```
+
+The order matters. The demo prepares palette and pixel memory while still in normal ULA mode, then flips LoRes on once the image is ready. That avoids showing half-drawn junk.
+
+```z80klive
+@EnableLoRes
+    nextreg NR_LORES_CTRL,0
+    nextreg NR_LORES_X,0
+    nextreg NR_LORES_Y,0
+    nextreg NR_PRIORITY,LORES_ENABLE
+    ret
+
+@DisableLoRes
+    nextreg NR_PRIORITY,0
+    nextreg NR_LORES_X,0
+    nextreg NR_LORES_Y,0
+    nextreg NR_LORES_CTRL,0
+    ret
+```
+
+`@EnableLoRes` leaves Radastan mode off and scrolls at zero. `@DisableLoRes` returns the display path to standard ULA interpretation.
+
+### Loading a Palette
+
+The demo uses a simple linear palette: entry `0` gets colour byte `0`, entry `1` gets colour byte `1`, and so on. It is not fine art, but it is perfect for showing that LoRes pixels are palette indices.
+
+```z80klive
+@LoadLinearPalette
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
+    nextreg NR_PALETTE_INDEX,0
+    ld b,0
+    xor a
+`loop
+    nextreg NR_PALETTE_VALUE,a
+    inc a
+    djnz `loop
+    ret
+```
+
+Loading `B` with zero gives a 256-iteration `DJNZ` loop. NextReg `$41` auto-increments the palette index after each write, so the loop streams all 256 entries without touching `$40` again.
+
+### Drawing the Pixel Buffer
+
+The screen is drawn in two halves:
+
+```z80klive
+@DrawColourField
+    ld hl,LORES_TOP
+    ld d,0
+    ld b,48
+    call @DrawGradientHalf
+
+    ld hl,LORES_BOTTOM
+    ld d,48
+    ld b,48
+    jp @DrawGradientHalf
+```
+
+`D` is the starting LoRes row number. The top half starts at row `0`, the bottom half starts at row `48`.
+
+```z80klive
+@DrawGradientHalf
+    ; IN: HL=destination, D=first LoRes row, B=row count
+`row
+    push bc
+    ld e,0
+    ld b,128
+`col
+    ld a,e
+    add a,d
+    ld (hl),a
+    inc hl
+    inc e
+    djnz `col
+    inc d
+    pop bc
+    djnz `row
+    ret
+```
+
+The inner loop writes one byte per LoRes pixel. `E` is the `x` coordinate, `D` is the `y` coordinate, and `A = x + y` gives a diagonal colour field. There are no attribute bytes to update and no bit masks to calculate. This is why LoRes feels pleasantly blunt.
+
+<Callout type="info" emoji="💡">
+Try the `LoResDemo.ColourField` example.
 </Callout>
 
-## Synopsis
+## Demo: Hardware Scrolling
 
-LoRes is the cheapest way to get more colours per square inch than the ULA can give you. It rearranges the same screen memory into a 128×96 buffer where every pixel carries its own 8-bit palette index — no attributes, no clash, no compromises. The trade-off is half the resolution in each dimension and the loss of the regular ULA bitmap (it's one or the other; LoRes shares the ULA's memory).
+LoRes has separate scroll registers:
 
-Topics:
+| NextReg | Purpose |
+|---------|---------|
+| `$32` | LoRes X scroll |
+| `$33` | LoRes Y scroll |
 
-- **Enabling LoRes.** NextReg `$15` bit 7. What changes the moment you flip it.
-- **The 128×96 buffer.** Memory layout, which Bank 5 bytes correspond to which pixels, and the address-from-(x,y) formula.
-- **Colour.** Each pixel is an 8-bit index into the ULA "second" palette (configurable). 256 simultaneous on-screen colours, no attribute clash.
-- **Scrolling.** NextReg `$32` (X-scroll) and `$33` (Y-scroll) — hardware-smooth scrolling with no copy.
-- **Compatibility.** What happens to ULA print routines while LoRes is active (spoiler: chaos), and how to coexist with the border.
+The scroll values are applied in the 256×192 ULA coordinate space before the hardware chooses the LoRes source byte. That means changing X by one shifts the displayed image by one output pixel, even though each LoRes source pixel is doubled. The chunky pixels can move smoothly by half a source pixel. Tiny luxury.
 
-## What you should know first
+The second demo draws a patterned buffer once, enables LoRes, then changes only `$32` each frame.
 
-- [The ULA Screen and Border](./08-ula-screen.mdx) — for the contrast.
-- [Palettes](./09-palettes.mdx) — LoRes uses the ULA "second" palette.
+```z80klive
+;==========================================================
+; Draw a LoRes pattern and scroll it in hardware
+;==========================================================
+HardwareScroll
+    call @ResetVideoState
+    call @LoadLinearPalette
+    call @DrawScrollPattern
+    call @EnableLoRes
 
-## Planned exercises
+    xor a
+    ld (@ScrollX),a
+    ei
+`loop
+    halt
+    ld a,(@ScrollX)
+    inc a
+    ld (@ScrollX),a
+    nextreg NR_LORES_X,a
+    ld a,$7f                    ; Space exits
+    in a,(ULA_PORT)
+    bit 0,a
+    jr nz,`loop
 
-- **LoRes plasma.** A small classic plasma effect — convincing in 256 colours, impossible in stock ULA.
-- **Smooth scroll.** A pre-drawn LoRes landscape that scrolls horizontally just by changing NextReg `$32` once per frame.
+    call @RestoreAfterLoRes
+    ret
+```
+
+`HALT` paces the animation at the frame interrupt. The loop does not copy the image. It only increments the scroll register.
+
+The pattern generator is similar to the gradient generator, but it makes vertical and diagonal bands so the scrolling is easy to see:
+
+```z80klive
+@DrawScrollPattern
+    ld hl,LORES_TOP
+    ld d,0
+    ld b,48
+    call @DrawPatternHalf
+
+    ld hl,LORES_BOTTOM
+    ld d,48
+    ld b,48
+    jp @DrawPatternHalf
+```
+
+```z80klive
+@DrawPatternHalf
+    ; IN: HL=destination, D=first LoRes row, B=row count
+`row
+    push bc
+    ld e,0
+    ld b,128
+`col
+    ld a,e
+    rrca
+    rrca
+    and %00111100
+    ld c,a
+    ld a,d
+    rrca
+    and %00001111
+    add a,c
+    add a,64
+    ld (hl),a
+    inc hl
+    inc e
+    djnz `col
+    inc d
+    pop bc
+    djnz `row
+    ret
+```
+
+The exact formula is not precious. It mixes bits from `x` and `y` to produce a repeating pattern, then biases it into palette entries starting around `64`. The useful lesson is that the buffer remains untouched while the hardware scrolls it.
+
+<Callout type="info" emoji="💡">
+Try the `LoResDemo.HardwareScroll` example.
+</Callout>
+
+## Restoring State
+
+LoRes changes shared video state: palette entries, scroll registers, `$15`, and `$6A`. A self-contained demo should clean up after itself.
+
+```z80klive
+@RestoreAfterLoRes
+    call @DisableLoRes
+    call @RestoreDefaultUlaPalette
+    Display.ClearScreen()
+    Display.PrintTitle(@Title_Done)
+    Display.PrintText(@Text_Done)
+    ret
+```
+
+The palette restore repeats the standard ULA 16-colour set across all 256 ULA palette entries:
+
+```z80klive
+@RestoreDefaultUlaPalette
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
+    nextreg NR_PALETTE_INDEX,0
+    ld d,16
+`group
+    ld hl,@DefaultUla16
+    ld b,16
+`entry
+    ld a,(hl)
+    nextreg NR_PALETTE_VALUE,a
+    inc hl
+    djnz `entry
+    dec d
+    jr nz,`group
+    ret
+```
+
+That is more than standard ULA text strictly needs, but it leaves the ULA palette in a predictable state for the next example.
+
+```z80klive
+@DefaultUla16
+    .db $00,$02,$a0,$a2,$14,$16,$b4,$b6
+    .db $00,$03,$e0,$e3,$1c,$1f,$fc,$ff
+
+@Title_Done
+    .defn "LoRes mode restored"
+
+@Text_Done
+    .defn "Back in standard ULA mode.\x0d"
+
+.endmodule
+```
+
+## Standard LoRes vs Radastan
+
+The names are easy to blur, so here is the practical difference:
+
+**Standard LoRes** uses 12 KB and gives every 128×96 pixel an 8-bit palette index. It is straightforward and colourful.
+
+**Radastan mode** uses 6 KB and packs two 4-bit pixels into each byte. It still displays at 128×96, but each pixel chooses from 16 colours plus the palette-offset rules in `$6A`. You enable it with `$6A` bit 5 while LoRes itself is enabled through `$15` bit 7.
+
+If you are drawing a full-screen colour wash, plasma, or chunky image and can spare 12 KB, standard LoRes is simpler. If memory matters more than colour count, Radastan is the smaller tool.
+
+## Compatibility Notes
+
+**LoRes replaces the standard ULA image.** You cannot display the ordinary ULA bitmap and standard LoRes at the same time. They share the ULA-family display path and Bank 5 memory.
+
+**ROM printing becomes the wrong tool while LoRes is visible.** The ROM print routines write standard ULA bitmap and attribute data. In LoRes mode, those same bytes are colour pixels. Print instructions before enabling LoRes, or disable LoRes before returning to text.
+
+**Bank 5 still matters.** LoRes reads from Bank 5, not whatever MMU page happens to be mapped at `$4000`. If you draw through the normal `$4000` mapping after reset, that is fine. If your program remaps slots 2 and 3, make sure you are still writing the physical memory LoRes displays.
+
+**The border is still the border.** LoRes fills the 256×192 display area. Port `$FE` still controls the surrounding border, and the border still needs the same shadow-byte care discussed in [The ULA Screen and Border](./08-ula-screen.mdx).
+
+**The ULA/LoRes clip window applies.** The ULA and LoRes share the clip window controlled by NextReg `$1A` and reset by `$1C`. Most demos can ignore it, but composited screens should treat it as part of the layer setup.
+
+## Where Next
+
+[Layer 2](./11-layer2.mdx) is the natural comparison point: it keeps the 256-colour-per-pixel idea but gives you higher resolution and its own memory system.
+
+[The Tilemap](./12-tilemap.mdx) shows a different way to get colourful screens cheaply: reusable tiles rather than a full pixel buffer.
+
+[Compositing](./15-compositing.mdx) brings LoRes back into the bigger picture, because LoRes participates in the same priority and transparency pipeline as the other layers.

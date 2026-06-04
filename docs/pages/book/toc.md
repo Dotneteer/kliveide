@@ -131,7 +131,7 @@ outward, because every later layer composes on top of earlier concepts.
      animate by rotating palette entries.
 
 10. **LoRes Mode**
-    - 128×96, two colours per 4×8 block, NextReg `0x15` bit 7.
+    - 128×96, 8-bit palette pixels, NextReg `0x15` bit 7.
     - Trade-offs vs. ULA, scrolling LoRes (NextRegs `0x32`/`0x33`).
     - **Exercises**: draw a LoRes scene; smooth-scroll it horizontally.
 

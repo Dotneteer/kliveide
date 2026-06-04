@@ -2,35 +2,427 @@ import { Callout } from 'nextra/components'
 
 # Palettes and Colour on the Next
 
-<Callout type="warning" emoji="🚧">
-This chapter is a placeholder. The full text is being written.
+The original Spectrum screen gives you colours through attributes: INK, PAPER, BRIGHT, FLASH, and a border colour. The Next keeps that world intact, but underneath it adds a modern palette system. That is the quiet piece of hardware that makes ULANext, LoRes, Layer 2, Tilemap, and Sprites feel like one machine instead of a pile of unrelated video tricks.
+
+A **palette** is a lookup table. A pixel, tile, sprite, or ULA attribute does not always carry a final red/green/blue value. Often it carries a small number, and the palette turns that number into a colour. Change the palette, and the same screen memory suddenly looks different.
+
+That is the magic trick this chapter is about: changing colour without redrawing pixels.
+
+> **What this chapter assumes.** You should already be comfortable writing NextRegs from [I/O Ports and NextRegs](./02-io-and-nextregs.mdx), and you should know how the standard ULA bitmap and attributes work from [The ULA Screen and Border](./08-ula-screen.mdx). Later video chapters reuse the same palette machinery, so this chapter deliberately starts with ULA-based examples that work before you learn Layer 2 or Sprites.
+
+## The Palette Model
+
+The Next has separate palettes for the main video families:
+
+| Palette Family | Entries | Used By |
+|----------------|---------|---------|
+| ULA first / second | 256 each | Standard ULA, ULANext, ULA+, Timex ULA-family modes |
+| Layer 2 first / second | 256 each | Layer 2 bitmap pixels |
+| Sprites first / second | 256 each | Hardware sprites |
+| Tilemap first / second | 256 each | Tilemap layer |
+
+Each entry is a 9-bit RGB colour:
+
+```text
+RRR GGG BBB
+```
+
+Three bits per channel gives eight intensity levels for red, green, and blue. That is `8 × 8 × 8 = 512` possible colours. A 256-entry palette cannot show all 512 at once, but it can choose any 256 of them.
+
+The "first" and "second" palettes are not a different format. They are two banks for the same layer. You can prepare both, then switch which one is active. That is useful for instant theme changes, palette animation, damage flashes, day/night shifts, and the sort of colour trick that feels far more expensive than it is.
+
+## The Registers
+
+Four NextRegs do most of the palette work:
+
+| NextReg | Name | Purpose |
+|---------|------|---------|
+| `$40` | Palette Index | Selects the palette entry to read or write |
+| `$41` | Palette Value, 8-bit | Writes one `RRRGGGBB` colour byte |
+| `$43` | Palette Control | Selects the palette being edited, active first/second palettes, and auto-increment |
+| `$44` | Palette Value, 9-bit | Writes full 9-bit colour in two writes |
+
+The usual write flow is:
+
+```z80klive
+    nextreg $43,%00000000   ; edit ULA first palette, auto-increment on
+    nextreg $40,16          ; start at palette entry 16
+    nextreg $41,$e0         ; write red, index becomes 17
+    nextreg $41,$1c         ; write green, index becomes 18
+    nextreg $41,$03         ; write blue, index becomes 19
+```
+
+That auto-increment is a big deal. Loading a run of palette entries becomes a tight loop: write the starting index once, then stream colour bytes through `$41`.
+
+### Palette Control, NextReg `$43`
+
+NextReg `$43` does two related jobs: it selects which palette you are editing, and it selects which first/second palette bank some layers are currently displaying.
+
+Bits 6–4 select the palette target for `$40`, `$41`, and `$44`:
+
+| Bits 6–4 | Palette Edited |
+|----------|----------------|
+| `000` | ULA first palette |
+| `001` | ULA second palette |
+| `010` | Layer 2 first palette |
+| `011` | Layer 2 second palette |
+| `100` | Sprites first palette |
+| `101` | Sprites second palette |
+| `110` | Tilemap first palette |
+| `111` | Tilemap second palette |
+
+The low bits choose active display behaviour:
+
+| Bit | Purpose |
+|-----|---------|
+| 7 | Disable palette write auto-increment when set |
+| 3 | Select active sprite palette: `0` first, `1` second |
+| 2 | Select active Layer 2 palette: `0` first, `1` second |
+| 1 | Select active ULA palette: `0` first, `1` second |
+| 0 | Enable ULANext mode |
+
+Tilemap palette selection is controlled by the tilemap registers rather than this low-bit group, but `$43` still selects which Tilemap palette you are editing.
+
+Two habits will save you from strange bugs:
+
+- Keep auto-increment enabled for table uploads; disable it only when you deliberately want to rewrite the same entry.
+- Preserve low display-selection bits when changing only the edit target in a larger program. In these small demos we write the whole register because we control the whole screen.
+
+## Writing 8-Bit Colours
+
+NextReg `$41` accepts an 8-bit colour in this format:
+
+```text
+RRR GGG BB
+```
+
+That is RGB332: three red bits, three green bits, and two blue bits. The hardware expands the missing blue bit for you. In practice, `$41` is the convenient fast path. It is good enough for most palette work and perfect for streaming tables.
+
+Some useful values:
+
+| Colour | `$41` Value | Meaning |
+|--------|-------------|---------|
+| Black | `$00` | red 0, green 0, blue 0 |
+| Bright red | `$E0` | red 7, green 0, blue 0 |
+| Bright green | `$1C` | red 0, green 7, blue 0 |
+| Bright blue | `$03` | red 0, green 0, blue 3 |
+| Yellow | `$FC` | red 7, green 7, blue 0 |
+| White | `$FF` | red 7, green 7, blue 3 |
+
+The two-bit blue channel may look unfair. Blue, apparently, had to sit at the small table. If you need the exact ninth bit, use `$44`.
+
+## Writing Full 9-Bit Colours
+
+NextReg `$44` writes one palette entry in two steps:
+
+```z80klive
+    nextreg $43,%00000000   ; edit ULA first palette
+    nextreg $40,16          ; palette entry 16
+
+    nextreg $44,$02         ; first write: RRRGGGBB
+    nextreg $44,$01         ; second write: bit 0 = blue bit 0
+```
+
+The first write supplies the top eight bits. The second write supplies the low blue bit in bit 0.
+
+For Layer 2 palette entries, the second write also has a priority flag in bit 7. A Layer 2 pixel whose palette entry has that priority bit set can jump above other layers during composition. That belongs properly in [Compositing](./15-compositing.mdx), but it is worth knowing why `$44` is not merely "the fancier colour register."
+
+Use `$44` when:
+
+- You need exact RGB333 values.
+- You are setting Layer 2 priority colours.
+- You are building tooling that should preserve palette data exactly.
+
+Use `$41` when:
+
+- You are writing tables by hand.
+- You want compact, readable demo code.
+- You do not care about that final blue bit.
+
+## Standard ULA Palette Entries
+
+In standard ULA mode, the attribute byte still behaves like a Spectrum attribute byte. The palette sits underneath that behaviour.
+
+| ULA Palette Indices | Meaning |
+|---------------------|---------|
+| `0`–`7` | Normal INK colours |
+| `8`–`15` | Bright INK colours |
+| `16`–`23` | Normal PAPER colours |
+| `24`–`31` | Bright PAPER colours |
+
+So if an attribute byte says "blue PAPER, white INK, bright off", the ULA uses PAPER palette entry `16 + blue` and INK palette entry `white`. If you change palette entry `17`, every normal blue PAPER cell changes colour without touching the attribute bytes.
+
+That is the mental model: attributes still choose slots; the palette decides what those slots look like.
+
+## Demo: Cycling ULA PAPER Colours
+
+The first demo paints eight horizontal PAPER bands using ordinary ULA attributes. Then it changes palette entries `16`–`23` once per frame. The screen memory stays still; the colours move.
+
+```z80klive
+.module PaletteDemo
+
+ULA_PORT        .equ $fe
+
+SCREEN_PIXELS   .equ $4000
+SCREEN_ATTRS    .equ $5800
+
+NR_PALETTE_INDEX .equ $40
+NR_PALETTE_VALUE .equ $41
+NR_PALETTE_9BIT  .equ $44
+NR_PALETTE_CTRL  .equ $43
+
+PAL_ULA_FIRST   .equ %00000000
+PAL_ULA_SECOND  .equ %00010000
+PAL_USE_ULA_2ND .equ %00000010
+
+ATTR_BLACK_ON_WHITE .equ attr(Color.Black, Color.White)
+```
+
+The constants keep the palette writes readable. `PAL_ULA_FIRST` selects the first ULA palette as the edit target, and `PAL_ULA_SECOND` selects the second ULA palette as the edit target. `PAL_USE_ULA_2ND` is the display-selection bit that makes the ULA use its second palette.
+
+### The UlaPaperCycle Method
+
+```z80klive
+;==========================================================
+; Animate the standard ULA PAPER colours by changing palette entries
+;==========================================================
+UlaPaperCycle
+    call @ResetPaletteState
+    call @ClearScreenMemory
+
+    Display.PrintTitle(@Title_Cycle)
+    Display.PrintText(@Instr_Cycle)
+    call @PaintPaperBands
+    call @LoadDefaultUlaFirst
+
+    xor a
+    ld (@CycleOffset),a
+    ei
+`loop
+    halt
+    call @RotatePaperPalette
+    ld a,$7f                    ; Space exits
+    in a,(ULA_PORT)
+    bit 0,a
+    jr nz,`loop
+
+    call @RestoreDefaultPalettes
+    ret
+```
+
+`HALT` waits for the next frame interrupt, so the palette rotation happens at a steady screen-friendly rhythm. The demo exits when Space is pressed, then restores the default ULA palette so later examples do not inherit its colour mischief.
+
+### Drawing the Bands
+
+The bitmap is cleared to zero, so PAPER pixels are visible everywhere unless text has set INK pixels. The band routine writes only attributes:
+
+```z80klive
+@PaintPaperBands
+    ; Paint eight horizontal bands. The bitmap is clear, so PAPER is visible.
+    ld hl,SCREEN_ATTRS + 8 * 32
+    ld d,0
+`band
+    ld a,d
+    rlca
+    rlca
+    rlca
+    ld c,a                      ; PAPER = band number
+    ld b,2
+`row
+    push bc
+    push hl
+    ld b,24
+`col
+    ld (hl),c
+    inc hl
+    djnz `col
+    pop hl
+    add hl,32
+    pop bc
+    djnz `row
+    inc d
+    ld a,d
+    cp 8
+    jr nz,`band
+    ret
+```
+
+Each band is two attribute rows tall and 24 columns wide. The attribute value is `paper << 3`, with black INK left in bits 2–0. There is no pixel drawing here. The visible colour comes from the PAPER palette entries.
+
+### Rotating the Palette
+
+```z80klive
+@RotatePaperPalette
+    ; Rotate standard ULA PAPER entries 16..23.
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
+    nextreg NR_PALETTE_INDEX,16
+
+    ld a,(@CycleOffset)
+    inc a
+    and $0f
+    ld (@CycleOffset),a
+    ld e,a
+    ld b,8
+`loop
+    push bc
+    ld a,e
+    and $0f
+    ld c,a
+    ld b,0
+    ld hl,@CycleColours
+    add hl,bc
+    ld a,(hl)
+    nextreg NR_PALETTE_VALUE,a
+    inc e
+    pop bc
+    djnz `loop
+    ret
+```
+
+The routine selects the ULA first palette, starts writing at index `16`, and streams eight colour bytes through `$41`. Auto-increment advances the palette index after each write, so the loop does not touch `$40` again.
+
+```z80klive
+@CycleColours
+    .db $e0,$e8,$f0,$f8,$fc,$bc,$7c,$3c
+    .db $1c,$1f,$17,$0f,$07,$03,$43,$83
+```
+
+The table is longer than the eight entries being written. `@CycleOffset` chooses where the eight-colour window starts, and the `and $0f` wraps it around the 16-byte table.
+
+<Callout type="info" emoji="💡">
+Try the `PaletteDemo.UlaPaperCycle` example.
 </Callout>
 
-## Synopsis
+## Demo: Swapping First and Second ULA Palettes
 
-Every video layer that comes after this chapter — LoRes, Layer 2, Tilemap, Sprites — uses the same palette mechanism. The Next has **eight 256-entry palettes** (ULA "first" and "second", Layer 2 "first" and "second", Sprites "first" and "second", Tilemap "first" and "second"), each entry is 9 bits wide (RRRGGGBBB plus an optional priority bit), and they all funnel through the same two NextRegs. We cover it once, here, and every later chapter just says *"set up its palette as in [Palettes](./09-palettes.mdx)"*.
+The second demo uses the same attribute bands, but it preloads two complete ULA palette banks. Pressing Space switches which bank the ULA displays.
 
-Topics:
+```z80klive
+;==========================================================
+; Load two ULA palettes and switch between them instantly
+;==========================================================
+UlaPaletteSwap
+    call @ResetPaletteState
+    call @ClearScreenMemory
 
-- **The 9-bit colour space.** RRR-GGG-BBB layout, the "extra blue bit" trick (NextReg `$44`), and why 9 bits gives you 512 colours instead of 8.
-- **The palette banks.** All eight, what each one feeds, and why "first" vs "second" exists (live-swap without redrawing).
-- **Selecting a palette to edit.** NextReg `$43` — bits selecting which of the eight palettes is the current target for the index/value registers.
-- **Writing palette entries.** NextReg `$40` (palette index, auto-increment), `$41` (8-bit colour value), and `$44` (the 9th bit + priority bit). The auto-increment lets you upload a whole 256-entry palette in one tight loop.
-- **Per-pixel priority.** The priority bit on a per-entry basis, and how it interacts with the layer compositing rules covered later in [Compositing](./15-compositing.mdx).
-- **The transparency colour.** NextReg `$14` (global) and `$4A` (sprite/tilemap-specific) — pixel values that get treated as see-through.
-- **ULA palette mode.** Switching the ULA from its hardwired colours to a programmable palette via NextReg `$43`.
+    Display.PrintTitle(@Title_Swap)
+    Display.PrintText(@Instr_Swap)
+    call @PaintPaperBands
+    call @LoadSwapPalettes
 
-## What you should know first
+    call @WaitSpace
+    nextreg NR_PALETTE_CTRL,PAL_USE_ULA_2ND
 
-- [I/O and NextRegs](./02-io-and-nextregs.mdx).
-- [The ULA Screen and Border](./08-ula-screen.mdx) — gives you a "before" picture so the palette swap exercise is visually striking.
+    call @WaitSpace
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
 
-## What this chapter unlocks
+    call @WaitSpace
+    call @RestoreDefaultPalettes
+    ret
+```
 
-- Every chapter in Part V from here on.
+The important part is that the switch is one register write. Screen memory does not move. Attribute memory does not move. The ULA simply starts looking up the same attribute choices in a different palette bank.
 
-## Planned exercises
+```z80klive
+@LoadSwapPalettes
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
+    ld hl,@WarmUla32
+    call @LoadUla32
 
-- **Palette shift.** Take a ULA screen and rotate its 16 palette entries every frame — animated colour without touching screen memory.
-- **512-colour gradient.** Fill the entire palette with a smooth gradient and display it on Layer 2 (uses [Layer 2](./11-layer2.mdx)).
-- **Palette swap.** Build the same scene twice — once in palette "first", once in palette "second" — and toggle between them on key press to demonstrate instant theme switching.
+    nextreg NR_PALETTE_CTRL,PAL_ULA_SECOND
+    ld hl,@CoolUla32
+    call @LoadUla32
+
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
+    ret
+```
+
+`@LoadSwapPalettes` edits the first ULA palette, then the second ULA palette. The active display palette remains the first one until `UlaPaletteSwap` writes `PAL_USE_ULA_2ND`.
+
+```z80klive
+@LoadUla32
+    ; IN: HL = 32 RRRGGGBB bytes for ULA entries 0..31
+    nextreg NR_PALETTE_INDEX,0
+    ld b,32
+`loop
+    ld a,(hl)
+    nextreg NR_PALETTE_VALUE,a
+    inc hl
+    djnz `loop
+    ret
+```
+
+Only entries `0`–`31` are loaded because standard ULA attributes use those for normal/bright INK and PAPER. ULANext can use a much wider range of the ULA palette, so a ULANext program often initializes more entries.
+
+```z80klive
+@WarmUla32
+    .db $00,$02,$a0,$a2,$14,$16,$b4,$b6
+    .db $00,$03,$e0,$e3,$1c,$1f,$fc,$ff
+    .db $20,$60,$a0,$e0,$e8,$f0,$f8,$ff
+    .db $20,$60,$a0,$e0,$e8,$f0,$f8,$ff
+
+@CoolUla32
+    .db $00,$02,$a0,$a2,$14,$16,$b4,$b6
+    .db $00,$03,$e0,$e3,$1c,$1f,$fc,$ff
+    .db $01,$03,$07,$0b,$0f,$17,$1f,$7f
+    .db $01,$03,$07,$0b,$0f,$17,$1f,$7f
+```
+
+The first two lines preserve familiar INK colours. The last two lines replace PAPER entries with warm or cool ramps. Because the demo screen is mostly PAPER, the swap is obvious.
+
+<Callout type="info" emoji="💡">
+Try the `PaletteDemo.UlaPaletteSwap` example.
+</Callout>
+
+## Restoring the Palette
+
+Palette changes are global video state. If you leave them behind, the next demo may look haunted. Restore what you changed before returning:
+
+```z80klive
+@RestoreDefaultPalettes
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
+    ld hl,@DefaultUla32
+    call @LoadUla32
+
+    nextreg NR_PALETTE_CTRL,PAL_ULA_SECOND
+    ld hl,@DefaultUla32
+    call @LoadUla32
+
+    nextreg NR_PALETTE_CTRL,PAL_ULA_FIRST
+    ret
+```
+
+For a game, you normally own the whole visual state and do not need to restore the Spectrum defaults every frame. For book demos, tools, and routines that return to a caller, restoration is kindness.
+
+## Transparency and Priority
+
+Palettes also feed the compositor, the hardware block that decides which layer wins at each pixel. Two ideas show up repeatedly in later chapters:
+
+- **Transparency:** some pixel values or palette results mean "let the layer behind show through."
+- **Priority:** some pixels can be promoted above the usual layer order.
+
+NextReg `$14` holds the global transparency colour used by Layer 2 and ULA-style colour comparisons. It is an 8-bit RGB332 value. If a palette output matches that value in the compared bits, the pixel can become transparent.
+
+Sprites and Tilemap also have their own transparent index controls. For those layers, the pixel index often matters more than the final RGB colour. That is why the later chapters discuss transparency again in context; palette theory is the shared background, but each layer has its own little personality.
+
+Layer 2 has one extra trick: when you write a palette entry through `$44`, bit 7 of the second write can mark that entry as a priority colour. Pixels using that entry can appear above other layers even when Layer 2 would normally be behind them. This is extremely useful for HUDs, masks, and foreground highlights. We will use it when the compositor has the stage in [Compositing](./15-compositing.mdx).
+
+## Common Traps
+
+**Editing the wrong palette.** If `$43` still selects the sprite palette and you stream ULA colours into `$41`, nothing useful happens to the ULA. Set `$43` deliberately before palette uploads.
+
+**Confusing edit selection with display selection.** Bits 6–4 choose the palette you are editing. Bits 3–1 choose which first/second palette some layers display. Loading the ULA second palette does not automatically make the ULA display it.
+
+**Forgetting auto-increment state.** If bit 7 of `$43` is set, repeated writes to `$41` overwrite the same entry. That is useful for a very specific job and deeply confusing everywhere else.
+
+**Assuming `$41` and `$44` are interchangeable.** `$41` is fast RGB332 with hardware blue expansion. `$44` is full RGB333 and, for Layer 2, priority metadata. Choose the one that matches the job.
+
+**Leaving palette state behind.** A palette is not local to your routine. If you are writing demos that return to a menu or to another example, restore the entries or reload the next screen's palette explicitly.
+
+## Where Next
+
+[The ULA Screen and Border](./08-ula-screen.mdx) introduced the ULA attributes that select the palette entries this chapter manipulates.
+
+[LoRes Mode](./10-lores.mdx), [Layer 2](./11-layer2.mdx), [The Tilemap](./12-tilemap.mdx), and [Hardware Sprites](./13-sprites.mdx) all build directly on the palette machinery here. The pixel formats differ, but the palette upload pattern remains familiar.
+
+[Compositing](./15-compositing.mdx) picks up the transparency and priority side of palettes: once every layer can produce a colour, the next question is who gets to be seen.

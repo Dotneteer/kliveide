@@ -323,7 +323,7 @@ Bits 5:4 select the display resolution:
 - `01` — **320×256, 8bpp** (requires 80KB; uses more banks)
 - `10` — **640×256, 4bpp** (doubled horizontal, 80KB)
 
-The standard 256×192 mode fits neatly into three consecutive 16KB banks. The high-resolution modes need five banks and offer more screen area—340×256 fills a 16:10 display beautifully.
+The standard 256×192 mode fits neatly into three consecutive 16KB banks. The high-resolution modes need five banks and offer more screen area; 320×256 fills a 5:4 display area, while 640×256 trades colour depth for horizontal detail.
 
 Bits 3:0 are the **palette offset**: this shifts which palette entries Layer 2 uses. The full Layer 2 palette has 256 entries, but you can bias the lookup by this offset, cycling through different color ranges for palette animation effects.
 
@@ -371,11 +371,11 @@ A collection of ULA-level settings:
 
 **Register `0x6A` — LoRes Control**
 
-LoRes is a lower-resolution ULA mode: 128×96 pixels with 2 colors per 4×8 pixel block instead of the normal 8×8. Same memory as the ULA (so you can't have both simultaneously), but tighter attribute coverage.
+LoRes is a lower-resolution ULA-family mode. Standard LoRes is 128×96 with one 8-bit palette index per pixel, stored as two 6 KB halves at `$4000` and `$6000`. It uses the same display path as the ULA, so you cannot display standard ULA and LoRes simultaneously.
 
-- **Bit 5**: Enable **Radastan mode** — a 128×96 display using 4bpp (16 colors per pixel instead of per block), requiring 6144 bytes. Raw color without attribute clash.
+- **Bit 5**: Enable **Radastan mode** — a 128×96 display using 4bpp, requiring 6144 bytes.
 - **Bit 4**: Radastan Timex display file XOR — toggles which display file drives LoRes in Radastan mode.
-- **Bits 3:0**: Palette offset for LoRes rendering.
+- **Bits 3:0**: Palette offset for LoRes rendering. In standard LoRes, the offset is added to the high nibble of the 8-bit pixel value.
 
 **Registers `0x32`/`0x33` — LoRes X/Y Scroll**
 
@@ -552,17 +552,20 @@ Bits 6:4 select which palette's entries you're editing:
 | Bits 6:4 | Palette |
 |----------|---------|
 | `000` | ULA first palette |
-| `001` | Layer 2 first palette |
-| `010` | Sprites first palette |
-| `011` | Tilemap first palette |
-| `100` | ULA second palette |
-| `101` | Layer 2 second palette |
-| `110` | Sprites second palette |
+| `001` | ULA second palette |
+| `010` | Layer 2 first palette |
+| `011` | Layer 2 second palette |
+| `100` | Sprites first palette |
+| `101` | Sprites second palette |
+| `110` | Tilemap first palette |
 | `111` | Tilemap second palette |
 
-Each layer has **two palettes**. You load both, then use bits 3:1 of this register to instantly switch which palette each layer uses. This is palette animation without touching palette data: preload a sunset in palette A and a moonlit version in palette B, then toggle bit 2 once per frame.
+Each layer has **two palettes**. You load both, then switch which one a layer uses without touching palette data: preload a sunset in palette A and a moonlit version in palette B, then toggle the layer's palette-select bit once per frame.
 
 - Bit 7: Disable auto-increment of palette index after writes. Useful when you want to write the same index multiple times without the index wandering off.
+- Bit 3: Select the active sprite palette (`0` = first, `1` = second).
+- Bit 2: Select the active Layer 2 palette (`0` = first, `1` = second).
+- Bit 1: Select the active ULA palette (`0` = first, `1` = second).
 - Bit 0: Enable **ULANext mode** — an extended ULA color system where the attribute byte drives more than just 8-color INK/PAPER.
 
 ### ULANext (`0x42`)

@@ -96,7 +96,7 @@ The screen types have different sizes:
 - **Layer 2 (standard)**: 49,152 bytes (48KB) - 256×192, 256 colors
 - **Layer 2 (extended)**: 81,920 bytes (80KB) - 320×256×8 or 640×256×4
 - **ULA**: 6,912 bytes (6KB + 768 bytes attrs) - classic Spectrum screen
-- **LoRes**: 12,288 bytes (12KB) - 128×96 with enhanced color attributes
+- **LoRes**: 12,288 bytes (12KB) - 128×96 with 8-bit palette pixels
 - **Timex HiRes**: 12,288 bytes (12KB) - 512×192 monochrome
 - **Timex HiCol**: 12,288 bytes (12KB) - 256×192 with 8×1 color cells
 

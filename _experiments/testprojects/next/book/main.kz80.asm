@@ -31,6 +31,9 @@
 #include "06_zxndma/compare.asm"
 #include "06_zxndma/interrupt.asm"
 #include "08_ula/ula.asm"
+#include "09_palettes/palettes.asm"
+#include "10_lores/lores.asm"
+#include "11_layer2/layer2.asm"
 
 ; We keep 64 bytes for the stack
 STACK
@@ -96,6 +99,18 @@ Main
     call UlaDemo.StandardScreen
     // call UlaDemo.HiColor
     // call UlaDemo.HiRes
+
+    // --- 09: Palettes and Colour
+    // call PaletteDemo.UlaPaperCycle
+    // call PaletteDemo.UlaPaletteSwap
+
+    // --- 10: LoRes Mode
+    // call LoResDemo.ColourField
+    // call LoResDemo.HardwareScroll
+
+    // --- 11: Layer 2
+    // call Layer2Demo.Gradient
+    // call Layer2Demo.HardwareScroll
 
 ; When the example ends, we keep in infinite loop.
 ; You can reset or restart the machine.

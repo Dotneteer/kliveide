@@ -2,35 +2,412 @@ import { Callout } from 'nextra/components'
 
 # Layer 2: True-Colour Bitmap
 
-<Callout type="warning" emoji="🚧">
-This chapter is a placeholder. The full text is being written.
+Layer 2 is the Next's straight-ahead bitmap layer: one byte per pixel, one palette lookup per byte, no ULA attributes, no colour clash, no folded screen address. If LoRes is the chunky low-cost colour mode, Layer 2 is the comfortable full-colour canvas.
+
+The standard mode is 256×192 with 256 palette colours. That means the framebuffer is:
+
+```text
+256 × 192 × 1 byte = 49,152 bytes = 48 KB
+```
+
+That is three 16 KB banks. The Z80 still has only a 64 KB address space, so the first Layer 2 lesson is not how to plot a pixel. It is how to get at the framebuffer without stepping on your code, stack, ROM calls, and sense of peace.
+
+> **What this chapter assumes.** You should know the MMU and Layer 2 mapping priority from [Memory Architecture](./03-memory.mdx), especially the Layer 2 mapping section. You should also know how palettes are loaded from [Palettes and Colour on the Next](./09-palettes.mdx). This chapter uses standard 256×192 Layer 2 first; the wide modes come after the basic path is solid.
+
+## What Layer 2 Gives You
+
+Layer 2 has three display modes:
+
+| Mode | Pixels | Colour Depth | Framebuffer |
+|------|--------|--------------|-------------|
+| Standard | 256×192 | 8 bpp, 256 palette entries | 48 KB |
+| Wide 8 bpp | 320×256 | 8 bpp, 256 palette entries | 80 KB |
+| Wide 4 bpp | 640×256 | 4 bpp, 16 palette entries per offset band | 80 KB |
+
+The standard mode is the everyday workhorse. The address formula is friendly:
+
+```text
+offset = y * 256 + x
+```
+
+Pixel `(0,0)` is offset `0`. Pixel `(10,2)` is offset `2 * 256 + 10`. No bitmap thirds, no scanline interleave, no attribute grid. Slightly luxurious, really.
+
+Layer 2 is not stored in Bank 5 like the ULA. It lives in ordinary RAM banks selected by NextRegs:
+
+| NextReg | Purpose |
+|---------|---------|
+| `$12` | Active Layer 2 starting 16 KB bank |
+| `$13` | Shadow Layer 2 starting 16 KB bank |
+
+In standard 256×192 mode, the active image occupies three consecutive banks starting at `$12`. If `$12 = 8`, the visible framebuffer uses banks 8, 9, and 10.
+
+## Mapping the Framebuffer
+
+You can draw into Layer 2 by mapping its banks with the MMU, but the Next gives you a dedicated shortcut: port `$123B`.
+
+When bit 4 is clear, port `$123B` controls Layer 2 mapping:
+
+| Bits | Meaning |
+|------|---------|
+| 7–6 | Which 16 KB segment maps at the bottom of Z80 space |
+| 3 | `0` active buffer, `1` shadow buffer |
+| 2 | Enable read mapping |
+| 1 | Enable Layer 2 display |
+| 0 | Enable write mapping |
+
+For the demos, we use **write-only mapping** one 16 KB third at a time:
+
+```z80klive
+L2_MAP_WRITE_0  .equ %00000001   ; first 16 KB at $0000-$3FFF
+L2_MAP_WRITE_1  .equ %01000001   ; second 16 KB at $0000-$3FFF
+L2_MAP_WRITE_2  .equ %10000001   ; third 16 KB at $0000-$3FFF
+L2_DISPLAY_ON   .equ %00000010
+```
+
+Write-only mapping is the civilised version. Writes to `$0000`–`$3FFF` go to Layer 2 RAM, but reads still see the normal memory underneath. That means instruction fetches, ROM reads, and ordinary data reads are much less likely to surprise you.
+
+The demos map only the bottom 16 KB. Code runs at `$8000`, and the stack lives outside the mapped window, so the drawing loops can stream pixels safely.
+
+## Demo: Layer 2 Gradient
+
+The first demo fills a 256×192 Layer 2 framebuffer with a diagonal colour field, loads a simple palette, enables Layer 2, and waits for Space.
+
+```z80klive
+.module Layer2Demo
+
+LAYER2_PORT     .equ $123b
+ULA_PORT        .equ $fe
+
+NR_TRANSPARENT  .equ $14
+NR_PRIORITY     .equ $15
+NR_LAYER2_X     .equ $16
+NR_LAYER2_Y     .equ $17
+NR_CLIP_L2      .equ $18
+NR_CLIP_CTRL    .equ $1c
+NR_PALETTE_INDEX .equ $40
+NR_PALETTE_VALUE .equ $41
+NR_PALETTE_CTRL  .equ $43
+NR_DISPLAY_CTRL1 .equ $69
+NR_LAYER2_RES    .equ $70
+NR_LAYER2_X_MSB  .equ $71
+NR_LAYER2_ACTIVE .equ $12
+NR_LAYER2_SHADOW .equ $13
+
+PAL_LAYER2_FIRST .equ %00100000
+
+L2_MAP_WRITE_0  .equ %00000001
+L2_MAP_WRITE_1  .equ %01000001
+L2_MAP_WRITE_2  .equ %10000001
+L2_DISPLAY_ON   .equ %00000010
+```
+
+`PAL_LAYER2_FIRST` selects the first Layer 2 palette as the target for `$40`/`$41`. The three mapping constants select which third of the 48 KB framebuffer receives writes.
+
+### The Gradient Method
+
+```z80klive
+;==========================================================
+; Draw a 256x192 Layer 2 gradient
+;==========================================================
+Gradient
+    call @ResetLayer2State
+    call @ClearUlaBehind
+    call @LoadLinearLayer2Palette
+    call @DrawGradient
+    call @EnableLayer2
+    call @WaitSpace
+    call @RestoreAfterLayer2
+    ret
+```
+
+The sequence is the same habit you saw in LoRes: prepare the pixels while the layer is off, then enable the display when the image is ready.
+
+`@ClearUlaBehind` makes the ULA black. The demo sets the global transparency colour to `$00`, so any transparent Layer 2 pixels reveal black rather than an old text screen.
+
+### Loading the Layer 2 Palette
+
+```z80klive
+@LoadLinearLayer2Palette
+    nextreg NR_PALETTE_CTRL,PAL_LAYER2_FIRST
+    nextreg NR_PALETTE_INDEX,0
+    ld b,0
+    xor a
+`loop
+    nextreg NR_PALETTE_VALUE,a
+    inc a
+    djnz `loop
+    ret
+```
+
+This is the same `$40`/`$41` auto-increment pattern from the palette chapter. `B=0` gives 256 loop iterations, so the demo initializes every Layer 2 palette entry.
+
+### Drawing the Three Thirds
+
+The 48 KB framebuffer is easiest to handle as three 16 KB thirds:
+
+```z80klive
+@DrawGradient
+    ld a,L2_MAP_WRITE_0
+    ld d,0
+    call @DrawGradientThird
+
+    ld a,L2_MAP_WRITE_1
+    ld d,64
+    call @DrawGradientThird
+
+    ld a,L2_MAP_WRITE_2
+    ld d,128
+    jp @DrawGradientThird
+```
+
+Each third is 64 rows because `64 * 256 = 16,384` bytes. `D` holds the first screen row for that third.
+
+```z80klive
+@DrawGradientThird
+    ; IN: A=Layer 2 mapping value, D=first row in this 16K third
+    ld bc,LAYER2_PORT
+    out (c),a
+    ld hl,0
+    ld c,64
+`row
+    ld e,0
+    ld b,0
+`col
+    ld a,e
+    add a,d
+    ld (hl),a
+    inc hl
+    inc e
+    djnz `col
+    inc d
+    dec c
+    jr nz,`row
+    jp @UnmapLayer2
+```
+
+Once the mapping is enabled, writes to `$0000`–`$3FFF` land in the selected Layer 2 third. The code writes 256 bytes per row. `E` acts as `x`, `D` acts as `y`, and `x + y` becomes the palette index.
+
+The routine does not use the stack while the bottom 16 KB is mapped. That is intentional. Keep mapped windows boring.
+
+```z80klive
+@UnmapLayer2
+    ld bc,LAYER2_PORT
+    xor a
+    out (c),a
+    ret
+```
+
+Always unmap when the transfer is done. A forgotten Layer 2 write window is a wonderful way to spend an afternoon wondering why writes to one address appear somewhere completely different.
+
+### Enabling Layer 2
+
+```z80klive
+@EnableLayer2
+    nextreg NR_LAYER2_ACTIVE,8
+    nextreg NR_LAYER2_SHADOW,11
+    nextreg NR_LAYER2_RES,0
+    nextreg NR_LAYER2_X,0
+    nextreg NR_LAYER2_Y,0
+    nextreg NR_LAYER2_X_MSB,0
+    nextreg NR_TRANSPARENT,0
+    nextreg NR_PRIORITY,0
+    nextreg NR_DISPLAY_CTRL1,$80
+    ld bc,LAYER2_PORT
+    ld a,L2_DISPLAY_ON
+    out (c),a
+    ret
+```
+
+`$12 = 8` means the active 48 KB image starts at bank 8. `$70 = 0` selects standard 256×192 mode. `$15 = 0` leaves the default priority order: sprites in front, then Layer 2, then ULA.
+
+Layer 2 can be enabled through NextReg `$69` bit 7 or port `$123B` bit 1. The demo writes both so the intended state is explicit.
+
+<Callout type="info" emoji="💡">
+Try the `Layer2Demo.Gradient` example.
 </Callout>
 
-## Synopsis
+## Demo: Hardware Scrolling
 
-Layer 2 is what the original Spectrum should have been. A linear bitmap, one byte per pixel, every pixel independently coloured from a 256-entry palette. Photographic-quality images. Hardware scrolling. And it sits *next to* the ULA screen, not on top of it — they cohabit, with priority decided by the compositor.
+Layer 2 has hardware scroll registers:
 
-Topics:
+| NextReg | Purpose |
+|---------|---------|
+| `$16` | X scroll low byte |
+| `$17` | Y scroll |
+| `$71` bit 0 | X scroll high bit for wide modes |
 
-- **Three resolutions.**
-  - 256×192, 256 colours per pixel (the default — 48 KB).
-  - 320×256, 256 colours per pixel (80 KB).
-  - 640×256, 16 colours per pixel (80 KB, packed nibbles).
-- **The Layer 2 memory window.** How the page lives in the 2 MB pool but only becomes visible to the Z80 when you map it via NextRegs `$12` (active page) and `$13` (shadow page). The "draw on shadow, swap to active" pattern.
-- **Enabling Layer 2.** NextReg `$15` (priority bits) and `$69` (display enable plus paging shortcut for the 16 KB write window at `$0000`–`$3FFF`).
-- **Scrolling.** NextRegs `$16` (X-scroll low), `$17` (Y-scroll), and `$71` (X-scroll high bit for 320/640 modes).
-- **The clipping window.** NextRegs `$18`–`$1B` — Layer 2 only renders inside this rectangle, which is also what makes split-screen and HUD overlays cheap.
-- **Priority over ULA.** The seven priority modes from NextReg `$15`, the per-pixel priority bit (from [Palettes](./09-palettes.mdx)), and the transparency colour (NextReg `$14`).
+In 256×192 mode, `$16` is enough for horizontal wrapping across the 256-pixel width. The second demo draws a repeating pattern once and then changes only `$16` each frame.
 
-## What you should know first
+```z80klive
+;==========================================================
+; Scroll a Layer 2 image in hardware
+;==========================================================
+HardwareScroll
+    call @ResetLayer2State
+    call @ClearUlaBehind
+    call @LoadLinearLayer2Palette
+    call @DrawScrollPattern
+    call @EnableLayer2
 
-- [Memory Architecture](./03-memory.mdx) — Layer 2 lives in pageable RAM.
-- [Interrupts](./04-interrupts.mdx) — needed for the line-interrupt split-screen exercise.
-- [Palettes](./09-palettes.mdx).
+    xor a
+    ld (@ScrollX),a
+    ei
+`loop
+    halt
+    ld a,(@ScrollX)
+    inc a
+    ld (@ScrollX),a
+    nextreg NR_LAYER2_X,a
+    ld a,$7f                    ; Space exits
+    in a,(ULA_PORT)
+    bit 0,a
+    jr nz,`loop
 
-## Planned exercises
+    call @RestoreAfterLayer2
+    ret
+```
 
-- **Image viewer.** Load a 256×192 Layer 2 image from the example pack and display it.
-- **DMA back-buffer update.** Copy a rectangular or page-sized block from regular RAM into a Layer 2 memory page using zxnDMA. Start with a coarse transfer, such as copying an 8 KB chunk, before later evolving into rectangle-oriented updates. The visible result should be an immediate change in the Layer 2 image after enabling DMA, and the explanation should make clear which memory page is mapped for the destination.
-- **Smooth scroller.** A pre-drawn 512-pixel-wide Layer 2 image that scrolls horizontally using NextReg `$16`.
-- **Top/bottom split.** Use the line interrupt to swap palettes mid-screen — sky on top, ground below — without changing pixel data.
+`HALT` waits for the frame interrupt, then the code increments the X scroll register. No pixels move in memory. The compositor simply samples the framebuffer from a different X origin.
+
+The pattern is generated with the same three-third mapping approach:
+
+```z80klive
+@DrawScrollPattern
+    ld a,L2_MAP_WRITE_0
+    ld d,0
+    call @DrawPatternThird
+
+    ld a,L2_MAP_WRITE_1
+    ld d,64
+    call @DrawPatternThird
+
+    ld a,L2_MAP_WRITE_2
+    ld d,128
+    jp @DrawPatternThird
+```
+
+```z80klive
+@DrawPatternThird
+    ; IN: A=Layer 2 mapping value, D=first row in this 16K third
+    ld bc,LAYER2_PORT
+    out (c),a
+    ld hl,0
+    ld c,64
+`row
+    ld e,0
+    ld b,0
+`col
+    ld a,e
+    xor d
+    add a,32
+    ld (hl),a
+    inc hl
+    inc e
+    djnz `col
+    inc d
+    dec c
+    jr nz,`row
+    jp @UnmapLayer2
+```
+
+The formula is intentionally cheap: `x xor y + 32`. The exact pattern does not matter; what matters is that once it exists, scrolling is one register write per frame.
+
+<Callout type="info" emoji="💡">
+Try the `Layer2Demo.HardwareScroll` example.
+</Callout>
+
+## Clipping, Transparency, and Priority
+
+Layer 2 participates in the same compositor as the ULA, LoRes, Tilemap, and Sprites. Three pieces of state matter often:
+
+**Transparency:** NextReg `$14` is the global transparency colour. In 8 bpp Layer 2 modes, a pixel whose palette-adjusted index matches this value is transparent, so layers behind it can show through.
+
+**Priority order:** NextReg `$15` bits 4–2 decide the broad layer order. The default order is sprites, then Layer 2, then ULA. That is why the demos can leave `$15` at zero and still cover the ULA.
+
+**Per-entry priority:** Layer 2 palette entries written through `$44` can carry a priority bit. Pixels using those entries can jump forward in the compositor. The palette chapter introduced this; [Compositing](./15-compositing.mdx) is where it becomes a full tool.
+
+Layer 2 also has a clip window controlled by NextReg `$18`. The write sequence is `X1`, `X2`, `Y1`, `Y2`, and NextReg `$1C` bit 0 resets the Layer 2 clip-write index to `X1`:
+
+```z80klive
+    nextreg $1c,%00000001   ; reset Layer 2 clip index
+    nextreg $18,0           ; X1
+    nextreg $18,255         ; X2
+    nextreg $18,0           ; Y1
+    nextreg $18,191         ; Y2
+```
+
+The demos reset the full 256×192 window. Later, clipping becomes handy for HUDs, split screens, and reveal effects.
+
+## Wide Modes
+
+NextReg `$70` bits 5–4 select the Layer 2 resolution:
+
+| Bits 5–4 | Mode |
+|----------|------|
+| `00` | 256×192, 8 bpp |
+| `01` | 320×256, 8 bpp |
+| `10` | 640×256, 4 bpp |
+
+The wide modes use 80 KB, so they need five consecutive 16 KB banks. Their address layout is different from the standard mode: it is optimized around the wider X coordinate. In 320×256 and 640×256 modes, treat the framebuffer as its own topic rather than assuming the 256×192 formula still applies.
+
+That is why the demos stay in standard mode. First learn the Layer 2 control surface. Then the wide modes are a change in geometry, not a new machine.
+
+## Restoring State
+
+Layer 2 state is global. A demo that returns should disable the display, unmap the write window, reset scroll, and leave the palette in a predictable state.
+
+```z80klive
+@DisableLayer2
+    nextreg NR_DISPLAY_CTRL1,0
+    nextreg NR_LAYER2_X,0
+    nextreg NR_LAYER2_Y,0
+    nextreg NR_LAYER2_X_MSB,0
+    nextreg NR_LAYER2_RES,0
+    ld bc,LAYER2_PORT
+    xor a
+    out (c),a
+    ret
+
+@RestoreAfterLayer2
+    call @DisableLayer2
+    call @RestoreDefaultLayer2Palette
+    Display.ClearScreen()
+    Display.PrintTitle(@Title_Done)
+    Display.PrintText(@Text_Done)
+    ret
+```
+
+`@RestoreDefaultLayer2Palette` reloads the same RGB332 ramp used by the demos. In a game you would normally load your own palette for the next scene instead of pretending there is a universal default.
+
+```z80klive
+@ScrollX
+    .db 0
+
+@Title_Done
+    .defn "Layer 2 restored"
+
+@Text_Done
+    .defn "Layer 2 is off again.\x0d"
+
+.endmodule
+```
+
+## Common Traps
+
+**Leaving the mapping window enabled.** Port `$123B` mapping overrides the normal memory map for the selected range. Turn it off as soon as the transfer is done.
+
+**Using the full 48 KB mapping casually.** Mapping all three thirds at `$0000`–`$BFFF` is fast, but writes to your code or stack range can hit Layer 2 instead. It is powerful, not polite.
+
+**Forgetting that transparency is global.** `$14` affects Layer 2, ULA, and LoRes style transparency checks. Pick a value deliberately.
+
+**Changing `$15` without thinking about priority.** `$15` is not only a Layer 2 switchboard. It also controls sprite enable, sprite border behaviour, LoRes enable, and layer order.
+
+**Assuming wide modes are just bigger 256×192.** The memory layout changes. Treat 320×256 and 640×256 as separate formats.
+
+## Where Next
+
+[The Tilemap](./12-tilemap.mdx) gives you a very different way to build colourful backgrounds: reusable patterns and a map instead of a full bitmap.
+
+[Hardware Sprites](./13-sprites.mdx) is the natural companion to Layer 2. Let Layer 2 carry the background, and let sprites handle moving objects.
+
+[Compositing](./15-compositing.mdx) pulls the thread tight: Layer 2, ULA, LoRes, Tilemap, and Sprites all have to share the final pixel.

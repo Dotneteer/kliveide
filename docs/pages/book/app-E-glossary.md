@@ -24,6 +24,9 @@ The Z80's vectored interrupt mode. The interrupt source provides a byte that, co
 ### Layer 2
 The Next's true-colour bitmap layer. 256 colours per pixel at 256×192 or 320×256 resolution; 16 colours per pixel at 640×256. Stored in pageable RAM (not Bank 5), composited with ULA, Tilemap, and Sprites by the priority logic. See [Layer 2](./11-layer2.mdx).
 
+### LoRes
+A ULA-family low-resolution display mode. Standard LoRes uses two 6 KB display halves at `$4000` and `$6000` to show a 128×96 image with one 8-bit ULA-palette index per pixel. It is chunky, colourful, and shares the ULA display path, so it replaces the standard ULA image while enabled. See [LoRes Mode](./10-lores.mdx).
+
 ### MMU (Memory Management Unit)
 The hardware that translates the Z80's 16-bit addresses into 21-bit physical addresses on the Next. Divides the 64 KB Z80 address space into eight 8 KB **slots**, each of which can independently point to any 8 KB **page** in the 2 MB physical pool. Configured via NextRegs `$50`–`$57`. See [Memory Architecture](./03-memory.mdx).
 
@@ -36,8 +39,17 @@ A register inside the Next's FPGA, accessed through ports `$243B` (select) and `
 ### Page
 An 8 KB unit of physical memory that the MMU can map into any **slot**. There are 256 pages in the Next's 2 MB pool. Pages are smaller than the traditional 16 KB **bank** — a single bank consists of two pages. See also: **Slot**, **Region**.
 
+### Palette
+A lookup table that turns a small pixel or attribute value into a real RGB colour. The Next has separate first and second palettes for ULA, Layer 2, Sprites, and Tilemap, and most entries are 9-bit RGB333 colours. Changing a palette can recolour a whole screen without changing the screen memory. See [Palettes and Colour on the Next](./09-palettes.mdx).
+
 ### Region
 A 64 KB chunk of physical address space, selected by physical address bits A20:A16 — there are 32 of them in the 2 MB pool. The MMU's address translation formula uses the top three bits of the MMU register as a region selector (with a +1 offset). See [Memory Architecture](./03-memory.mdx).
+
+### RGB332
+An 8-bit colour format with three red bits, three green bits, and two blue bits. NextReg `$41` accepts colours in this format and expands the missing blue bit in hardware, making it the convenient fast path for palette uploads.
+
+### RGB333
+A 9-bit colour format with three bits each for red, green, and blue. It gives the Next 512 possible colours, from which each 256-entry palette can choose. See also: **Palette**.
 
 ### Slot
 One of eight 8 KB divisions of the Z80's 64 KB address space. Slot 0 is `$0000`–`$1FFF`, Slot 1 is `$2000`–`$3FFF`, and so on through Slot 7 at `$E000`–`$FFFF`. Each slot is independently mapped to a physical **page** by one of the MMU registers (`$50`–`$57`). See also: **Page**, **Bank**, **Region**.
