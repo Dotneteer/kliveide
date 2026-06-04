@@ -1,0 +1,93 @@
+{
+  "name": "klive-ide",
+  "productName": "Klive IDE",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
+  "author": {
+    "name": "Istvan Novak",
+    "email": "dotneteer@hotmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dotneteer/kliveide.git"
+  },
+  "keywords": [
+    "ZX Spectrum",
+    "ZX Spectrum Next",
+    "Cambridge Z88",
+    "Z80",
+    "Z80N",
+    "Emulator"
+  ],
+  "bugs": "https://github.com/Dotneteer/kliveide/issues",
+  "homepage": "https://github.com/Dotneteer/kliveide",
+  "main": "out/main/main.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "npm run build:app && electron-builder",
+    "build:app": "npm run typecheck && electron-vite build",
+    "build:win": "npm run build:app && electron-builder --win --x64",
+    "build:mac": "npm run build:app && electron-builder --mac --x64",
+    "build:mac:arm64": "npm run build:app && electron-builder --mac --arm64",
+    "build:linux": "npm run build:app && electron-builder --linux --x64",
+    "build:linux:arm64": "npm run build:app && electron-builder --linux --arm64",
+    "test": "vitest run --config build/vitest.config.ts",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "electron": "^31.1.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3",
+    "vitest": "^4.1.8",
+    "xmlui": "^0.12.29"
+  },
+  "build": {
+    "appId": "dotneteer.kliveide",
+    "productName": "Klive IDE",
+    "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}",
+    "directories": {
+      "output": "artifacts/"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "mac": {
+      "target": "pkg",
+      "icon": "public/images/klive-logo.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "asar": false,
+      "icon": "public/images/klive-logo.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/images/512x512.png"
+    },
+    "dmg": {
+      "backgroundColor": "#00b4cc",
+      "window": {
+        "width": 512,
+        "height": 380
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+dist-electron/
+out/
+artifacts/
+.DS_Store
+npm-debug.log*
