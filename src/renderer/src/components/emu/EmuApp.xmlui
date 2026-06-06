@@ -1,0 +1,28 @@
+<Component name="EmuApp">
+  <AppState id="demoState" />
+  <VStack height="100%" verticalAlignment="center" horizontalAlignment="center" gap="16px">
+    <H1 value="Emulator Window" />
+    <Hello />
+    <Text value="{demoState.value.status}" />
+    <Text value="Redux theme: {demoState.value.theme}" />
+    <HStack gap="8px">
+      <Button label="Open IDE" size="lg" onClick="window.electronShell.openIde()" />
+      <Button
+        label="Read Main File"
+        size="lg"
+        onClick="demoState.update({ status: window.kliveDemo.readMainPublicFile() })" />
+      <Button
+        label="Ask IDE Memory"
+        size="lg"
+        onClick="demoState.update({ status: window.kliveDemo.askIdeToShowMemory() })" />
+      <Button
+        label="Toggle Theme"
+        size="lg"
+        onClick="demoState.update({ status: window.kliveDemo.toggleTheme(), theme: window.kliveDemo.getTheme() })" />
+      <Button
+        label="Refresh Status"
+        size="lg"
+        onClick="demoState.update({ status: window.kliveDemo.getLatestStatus(), theme: window.kliveDemo.getTheme() })" />
+    </HStack>
+  </VStack>
+</Component>

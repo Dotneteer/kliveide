@@ -1,6 +1,12 @@
 import { app, BrowserWindow, ipcMain, type Event as ElectronEvent } from "electron";
 import path from "node:path";
+import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
+import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
+import { type Channel, type RequestMessage } from "../common/messaging/messages-core";
+import { emuLoadedAction, ideLoadedAction } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
+import { mainStore } from "./main-store";
+import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
 
 const SAVE_BEFORE_CLOSE_TIMEOUT_MS = 1000;
@@ -17,11 +23,15 @@ function getPreloadPath(): string {
 
 async function loadRenderer(window: BrowserWindow, page: "emulator" | "ide"): Promise<void> {
   if (process.env.ELECTRON_RENDERER_URL) {
-    await window.loadURL(`${process.env.ELECTRON_RENDERER_URL}/${page}.html`);
+    const rendererUrl = new URL(process.env.ELECTRON_RENDERER_URL);
+    rendererUrl.searchParams.set("window", page);
+    await window.loadURL(rendererUrl.toString());
     return;
   }
 
-  await window.loadFile(path.join(__dirname, "../renderer", `${page}.html`));
+  await window.loadFile(path.join(__dirname, "../renderer/index.html"), {
+    query: { window: page }
+  });
 }
 
 function requestRendererSaveBeforeClose(window: BrowserWindow | null): Promise<void> {
@@ -120,8 +130,10 @@ async function createEmulatorWindow(): Promise<void> {
   });
 
   emuWindowStateManager.manage(emuWindow);
+  registerMainToEmuMessenger(emuWindow);
 
   await loadRenderer(emuWindow, "emulator");
+  mainStore.dispatch(emuLoadedAction());
 }
 
 async function createIdeWindow(): Promise<void> {
@@ -164,12 +176,37 @@ async function createIdeWindow(): Promise<void> {
   });
 
   ideWindowStateManager.manage(ideWindow);
+  registerMainToIdeMessenger(ideWindow);
 
   await loadRenderer(ideWindow, "ide");
+  mainStore.dispatch(ideLoadedAction());
+}
+
+function registerRendererToMainIpc(): void {
+  registerRendererToMainChannel("EmuToMain", "EmuToMainResponse");
+  registerRendererToMainChannel("IdeToMain", "IdeToMainResponse");
+}
+
+function registerRendererToMainChannel(requestChannel: Channel, responseChannel: Channel): void {
+  ipcMain.on(requestChannel, async (event, message: RequestMessage) => {
+    const window = BrowserWindow.fromWebContents(event.sender);
+    const response = window
+      ? await processRendererToMainMessages(message, window)
+      : {
+          type: "ErrorResponse" as const,
+          message: "Sender window is not available."
+        };
+
+    event.sender.send(responseChannel, {
+      ...response,
+      correlationId: message.correlationId
+    });
+  });
 }
 
 app.whenReady().then(async () => {
   loadAppSettings();
+  registerRendererToMainIpc();
   ipcMain.handle("ide:open", createIdeWindow);
   await createEmulatorWindow();
 

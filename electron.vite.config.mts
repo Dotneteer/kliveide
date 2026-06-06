@@ -1,36 +1,44 @@
+import { cpSync, existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import { defineConfig } from "electron-vite";
 import { type PluginOption } from "vite";
 import viteXmluiPlugin from "xmlui/vite-xmlui-plugin";
 
 const xmluiPlugin = viteXmluiPlugin() as unknown as PluginOption;
+const mainPublicSourceDir = resolve(import.meta.dirname, "src/public");
+const mainPublicOutputDir = resolve(import.meta.dirname, "out/public");
 
-export default defineConfig({
+function copyMainPublicResourcesPlugin(): PluginOption {
+  return {
+    name: "copy-main-public-resources",
+    apply: "build",
+    closeBundle() {
+      rmSync(mainPublicOutputDir, { recursive: true, force: true });
+      if (existsSync(mainPublicSourceDir)) {
+        cpSync(mainPublicSourceDir, mainPublicOutputDir, { recursive: true });
+      }
+    }
+  };
+}
+
+export default {
   main: {
+    plugins: [copyMainPublicResourcesPlugin()],
     build: {
-      rollupOptions: {
-        input: resolve(import.meta.dirname, "src/electron/main.ts")
+      lib: {
+        entry: resolve(import.meta.dirname, "src/main/main.ts"),
+        formats: ["cjs"]
       }
     }
   },
   preload: {
     build: {
-      rollupOptions: {
-        input: resolve(import.meta.dirname, "src/electron/preload.ts")
+      lib: {
+        entry: resolve(import.meta.dirname, "src/preload/preload.ts"),
+        formats: ["cjs"]
       }
     }
   },
   renderer: {
-    root: import.meta.dirname,
-    base: "./",
-    plugins: [xmluiPlugin],
-    build: {
-      rollupOptions: {
-        input: {
-          emulator: resolve(import.meta.dirname, "emulator.html"),
-          ide: resolve(import.meta.dirname, "ide.html")
-        }
-      }
-    }
+    plugins: [xmluiPlugin]
   }
-});
+};

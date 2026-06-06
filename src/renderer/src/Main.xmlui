@@ -1,0 +1,10 @@
+<App layout="desktop" name="Klive IDE" var.isEmu="{window.location.search.endsWith('emulator')}">
+  <AppState
+    id="demoState"
+    initialValue="{{
+      status: window.kliveDemo.getWindowKind().toUpperCase() + ' window is ready.',
+      theme: window.kliveDemo.getTheme() ?? 'dark'
+    }}" />
+  <EmuApp when="{isEmu}" demoState="{demoState}" />
+  <IdeApp when="{!isEmu}" demoState="{demoState}" />
+</App>

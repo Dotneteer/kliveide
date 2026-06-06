@@ -22,3 +22,16 @@ contextBridge.exposeInMainWorld("electronShell", {
     };
   }
 });
+
+contextBridge.exposeInMainWorld("electron", {
+  ipcRenderer: {
+    send: (channel: string, ...args: unknown[]) => ipcRenderer.send(channel, ...args),
+    on: (channel: string, listener: (...args: unknown[]) => void) => {
+      const wrappedListener = (_event: Electron.IpcRendererEvent, ...args: unknown[]) =>
+        listener(_event, ...args);
+      ipcRenderer.on(channel, wrappedListener);
+
+      return () => ipcRenderer.removeListener(channel, wrappedListener);
+    }
+  }
+});

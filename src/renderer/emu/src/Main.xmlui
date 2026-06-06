@@ -1,6 +1,0 @@
-<App layout="desktop" name="Emulator">
-  <VStack height="100%" verticalAlignment="center" horizontalAlignment="center" gap="24px">
-    <H1 value="Emulator Window" />
-    <Button label="Open IDE Window" size="lg" onClick="window.electronShell.openIde()" />
-  </VStack>
-</App>

@@ -1,5 +1,0 @@
-<App layout="desktop" name="IDE">
-  <VStack height="100%" verticalAlignment="center" horizontalAlignment="center">
-    <H1 value="IDE Window" />
-  </VStack>
-</App>
