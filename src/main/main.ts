@@ -3,11 +3,33 @@ import path from "node:path";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
 import { type Channel, type RequestMessage } from "../common/messaging/messages-core";
-import { emuLoadedAction, ideLoadedAction } from "../common/state/actions";
+import {
+  emuFocusedAction,
+  emuLoadedAction,
+  emuSynchedAction,
+  ideFocusedAction,
+  ideLoadedAction,
+  initGlobalSettingsAction,
+  isWindowsAction,
+  setAppPathAction,
+  dimMenuAction
+} from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
+import {
+  startApplicationMenu,
+  stopApplicationMenu,
+  updateApplicationMenuWindows
+} from "./app-menu";
 import { mainStore } from "./main-store";
 import { processRendererToMainMessages } from "./RendererToMainProcessor";
-import { appSettings, loadAppSettings, saveAppSettings } from "./settings";
+import {
+  appSettings,
+  applyPersistedSettingsToStore,
+  loadAppSettings,
+  saveAppSettings,
+  startSettingsPersistence,
+  stopSettingsPersistence
+} from "./settings";
 
 const SAVE_BEFORE_CLOSE_TIMEOUT_MS = 1000;
 
@@ -22,16 +44,30 @@ function getPreloadPath(): string {
 }
 
 async function loadRenderer(window: BrowserWindow, page: "emulator" | "ide"): Promise<void> {
+  const appPath = app.isPackaged ? process.resourcesPath : app.getAppPath();
+
   if (process.env.ELECTRON_RENDERER_URL) {
     const rendererUrl = new URL(process.env.ELECTRON_RENDERER_URL);
     rendererUrl.searchParams.set("window", page);
+    rendererUrl.searchParams.set("apppath", appPath);
     await window.loadURL(rendererUrl.toString());
     return;
   }
 
   await window.loadFile(path.join(__dirname, "../renderer/index.html"), {
-    query: { window: page }
+    query: { window: page, apppath: appPath }
   });
+}
+
+function dispatchMainOwnedState(): void {
+  const state = mainStore.getState();
+
+  mainStore.dispatch(setAppPathAction(app.isPackaged ? process.resourcesPath : app.getAppPath()));
+  mainStore.dispatch(isWindowsAction(process.platform === "win32"));
+  mainStore.dispatch(initGlobalSettingsAction(state.globalSettings ?? {}));
+  mainStore.dispatch(dimMenuAction(state.dimMenu ?? false));
+  mainStore.dispatch(emuFocusedAction(emuWindow?.isFocused() ?? false));
+  mainStore.dispatch(ideFocusedAction(ideWindow?.isFocused() ?? false));
 }
 
 function requestRendererSaveBeforeClose(window: BrowserWindow | null): Promise<void> {
@@ -125,15 +161,28 @@ async function createEmulatorWindow(): Promise<void> {
 
   emuWindow.on("close", handleWindowClose);
 
+  emuWindow.on("focus", () => {
+    mainStore.dispatch(emuFocusedAction(true), "main");
+  });
+
+  emuWindow.on("blur", () => {
+    mainStore.dispatch(emuFocusedAction(false), "main");
+  });
+
   emuWindow.on("closed", () => {
+    mainStore.dispatch(emuFocusedAction(false), "main");
     emuWindow = null;
+    updateApplicationMenuWindows(emuWindow, ideWindow);
   });
 
   emuWindowStateManager.manage(emuWindow);
   registerMainToEmuMessenger(emuWindow);
+  updateApplicationMenuWindows(emuWindow, ideWindow);
 
   await loadRenderer(emuWindow, "emulator");
   mainStore.dispatch(emuLoadedAction());
+  dispatchMainOwnedState();
+  mainStore.dispatch(emuSynchedAction());
 }
 
 async function createIdeWindow(): Promise<void> {
@@ -171,15 +220,27 @@ async function createIdeWindow(): Promise<void> {
 
   ideWindow.on("close", handleWindowClose);
 
+  ideWindow.on("focus", () => {
+    mainStore.dispatch(ideFocusedAction(true), "main");
+  });
+
+  ideWindow.on("blur", () => {
+    mainStore.dispatch(ideFocusedAction(false), "main");
+  });
+
   ideWindow.on("closed", () => {
+    mainStore.dispatch(ideFocusedAction(false), "main");
     ideWindow = null;
+    updateApplicationMenuWindows(emuWindow, ideWindow);
   });
 
   ideWindowStateManager.manage(ideWindow);
   registerMainToIdeMessenger(ideWindow);
+  updateApplicationMenuWindows(emuWindow, ideWindow);
 
   await loadRenderer(ideWindow, "ide");
   mainStore.dispatch(ideLoadedAction());
+  dispatchMainOwnedState();
 }
 
 function registerRendererToMainIpc(): void {
@@ -206,9 +267,14 @@ function registerRendererToMainChannel(requestChannel: Channel, responseChannel:
 
 app.whenReady().then(async () => {
   loadAppSettings();
+  applyPersistedSettingsToStore();
+  startSettingsPersistence();
   registerRendererToMainIpc();
   ipcMain.handle("ide:open", createIdeWindow);
   await createEmulatorWindow();
+  if (emuWindow) {
+    startApplicationMenu(emuWindow, () => ideWindow, createIdeWindow);
+  }
 
   app.on("activate", async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -217,8 +283,15 @@ app.whenReady().then(async () => {
   });
 });
 
+app.on("before-quit", () => {
+  saveAppSettings();
+  stopApplicationMenu();
+  stopSettingsPersistence();
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
+    saveAppSettings();
     app.quit();
   }
 });

@@ -13,6 +13,9 @@ export function appStateFlagsReducer (
     case "UNLOAD_WINDOWS":
       return { ...state, emuLoaded: false, ideLoaded: false };
 
+    case "SET_APP_PATH":
+      return { ...state, appPath: payload?.value };
+
     case "EMU_LOADED":
       return { ...state, emuLoaded: true, emuStateSynched: false };
 

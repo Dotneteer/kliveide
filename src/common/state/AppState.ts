@@ -21,10 +21,13 @@ export type AppState = {
  */
 export const initialAppState: AppState = {
   emuLoaded: false,
+  emuStateSynched: false,
   ideLoaded: false,
+  ideStateSynched: false,
   isWindows: false,
   theme: "dark",
   emuFocused: false,
   ideFocused: false,
+  dimMenu: false,
   globalSettings: {},
 };

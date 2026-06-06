@@ -1,4 +1,4 @@
-import { set } from "lodash";
+import { cloneDeep, set } from "lodash";
 import { Action } from "./Action";
 
 /**
@@ -13,7 +13,7 @@ export function globalSettingsReducer(
       if (!payload?.id) {
         return state;
       }
-      const oldSettings = state || {};
+      const oldSettings = cloneDeep(state || {});
       const newSettings = set(oldSettings, payload.id, payload.value);
       return {
         ...newSettings

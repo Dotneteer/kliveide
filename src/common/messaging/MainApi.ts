@@ -19,6 +19,18 @@ class MainApiImpl {
   async readTextFile(_path: string, _encoding?: string, _resolveIn?: string): Promise<string> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  async getSettingValue(_id: string): Promise<unknown> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  async setSettingValue(_id: string, _value: unknown): Promise<unknown> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  async getAllSettingValues(): Promise<Record<string, unknown>> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 export type MainApi = MainApiImpl;

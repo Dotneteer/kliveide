@@ -3,7 +3,6 @@ import { EmuToMainMessenger } from "../common/messaging/EmuToMainMessenger";
 import { createIdeApi } from "../common/messaging/IdeApi";
 import { IdeToMainMessenger } from "../common/messaging/IdeToMainMessenger";
 import { createMainApi } from "../common/messaging/MainApi";
-import type { MessengerBase } from "../common/messaging/MessengerBase";
 import {
   defaultResponse,
   errorResponse,
@@ -13,25 +12,19 @@ import {
   type ResponseMessage
 } from "../common/messaging/messages-core";
 import { setThemeAction, setGlobalSettingAction } from "../common/state/actions";
-import createAppStore from "../common/state/store";
+import {
+  dispatchSharedAction,
+  getSharedState,
+  setMainApi,
+  setRendererActionForwarder,
+  windowKind
+} from "./shared-store";
 
-type DemoWindowKind = "emu" | "ide";
-
-const windowKind = getWindowKind();
 const messenger = windowKind === "emu" ? new EmuToMainMessenger() : new IdeToMainMessenger();
-const store = createAppStore(windowKind, async (action, source) => {
-  if (source !== windowKind) {
-    return;
-  }
-
-  await messenger.sendMessage({
-    type: "ForwardAction",
-    action,
-    sourceId: windowKind
-  });
-});
+setRendererActionForwarder((message) => messenger.sendMessage(message));
 
 const mainApi = createMainApi(messenger);
+setMainApi(mainApi);
 const emuApi = createEmuApi(messenger);
 const ideApi = createIdeApi(messenger);
 
@@ -45,7 +38,7 @@ registerMainToRendererChannel(
 window.kliveDemo = {
   getWindowKind: () => windowKind,
   getLatestStatus: () => latestStatus,
-  getTheme: () => store.getState().theme,
+  getTheme: () => getSharedState().theme,
   readMainPublicFile: async () => {
     const text = await mainApi.readTextFile("demo-message.txt", "utf8", "public");
     return rememberStatus(`MainApi.readTextFile returned: ${text.trim()}`);
@@ -60,8 +53,8 @@ window.kliveDemo = {
     return rememberStatus("Sent EmuApi.setMachineType(...) through the main process.");
   },
   toggleTheme: () => {
-    const nextTheme = store.getState().theme === "dark" ? "light" : "dark";
-    store.dispatch(setThemeAction(nextTheme), windowKind);
+    const nextTheme = getSharedState().theme === "dark" ? "light" : "dark";
+    dispatchSharedAction(setThemeAction(nextTheme));
     return rememberStatus(`Dispatched SET_THEME(${nextTheme}) from ${windowKind.toUpperCase()}.`);
   }
 };
@@ -83,7 +76,7 @@ function registerMainToRendererChannel(requestChannel: Channel, responseChannel:
 async function processMainToRendererMessage(message: RequestMessage): Promise<ResponseMessage> {
   switch (message.type) {
     case "ForwardAction":
-      store.dispatch(message.action, message.sourceId);
+      dispatchSharedAction(message.action, message.sourceId);
       rememberStatus(
         `Received forwarded Redux action ${message.action.type} from ${message.sourceId}.`
       );
@@ -117,7 +110,7 @@ async function processApiMethodRequest(message: ApiMethodRequest): Promise<Respo
 
 class EmuMessageProcessor {
   async setMachineType(machineId: string, modelId?: string, config?: Record<string, unknown>) {
-    store.dispatch(
+    dispatchSharedAction(
       setGlobalSettingAction("demo.emuMachine", { machineId, modelId, config }),
       "main"
     );
@@ -129,13 +122,9 @@ class EmuMessageProcessor {
 
 class IdeMessageProcessor {
   async showMemory(show: boolean) {
-    store.dispatch(setGlobalSettingAction("demo.ideMemoryVisible", show), "main");
+    dispatchSharedAction(setGlobalSettingAction("demo.ideMemoryVisible", show), "main");
     rememberStatus(`IdeApi.showMemory received show=${show}.`);
   }
-}
-
-function getWindowKind(): DemoWindowKind {
-  return new URLSearchParams(window.location.search).get("window") === "ide" ? "ide" : "emu";
 }
 
 function rememberStatus(status: string): string {

@@ -11,6 +11,11 @@ import {
 } from "../common/messaging/messages-core";
 import { mainStore } from "./main-store";
 import { getMainPublicPath } from "./publicResources";
+import {
+  getAllSettingValues,
+  getSettingValue,
+  setSettingValue
+} from "./settings";
 
 class MainMessageProcessor {
   constructor(private readonly window: BrowserWindow) {}
@@ -28,6 +33,19 @@ class MainMessageProcessor {
     return fs.readFileSync(fullPath, {
       encoding: (encoding ?? "utf8") as BufferEncoding
     });
+  }
+
+  getSettingValue(id: string): unknown {
+    return getSettingValue(id);
+  }
+
+  setSettingValue(id: string, value: unknown): unknown {
+    setSettingValue(id, value);
+    return getSettingValue(id);
+  }
+
+  getAllSettingValues(): Record<string, unknown> {
+    return getAllSettingValues();
   }
 }
 

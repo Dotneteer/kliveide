@@ -5,6 +5,11 @@ export const initGlobalSettingsAction: ActionCreator = (value: Record<string, an
   payload: { value }
 });
 
+export const setAppPathAction: ActionCreator = (value: string) => ({
+  type: "SET_APP_PATH",
+  payload: { value }
+});
+
 export const setGlobalSettingAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_GLOBAL_SETTING",
   payload: { id, value }
