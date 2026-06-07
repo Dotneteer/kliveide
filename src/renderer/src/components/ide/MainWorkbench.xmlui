@@ -1,0 +1,14 @@
+<Component name="MainWorkbench">
+    <HStack height="*" gap="0">
+      <HSplitter
+        width="*"
+        initialPrimarySize="-200px"
+        minPrimarySize="100px"
+        maxPrimarySize="-100px"
+        floating
+      >
+        <Workbench height="100%" />
+        <SideBar width="100%" />
+      </HSplitter>
+    </HStack>
+</Component>

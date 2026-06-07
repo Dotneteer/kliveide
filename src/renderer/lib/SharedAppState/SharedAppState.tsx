@@ -7,7 +7,19 @@ const COMP = "SharedAppState";
 export const SharedAppStateMd: ComponentMetadata = createMetadata({
   status: "experimental",
   description: "Exposes the shared Redux-style AppState to XMLUI components.",
-  props: {},
+  props: {
+    fireDidChangeOnInit: {
+      description: "When true, fires didChange after the initial shared state is set.",
+      valueType: "boolean",
+      defaultValue: true
+    }
+  },
+  events: {
+    didChange: {
+      description: "Fires when the shared application state changes.",
+      signature: "didChange(appState: AppState, previousAppState?: AppState): void"
+    }
+  },
   apis: {
     dispatch: {
       description: "Dispatches a reducer action into the shared application store.",
@@ -20,6 +32,10 @@ export const SharedAppStateMd: ComponentMetadata = createMetadata({
     dispatchSetGlobalSetting: {
       description: "Dispatches SET_GLOBAL_SETTING into the shared application store.",
       signature: "dispatchSetGlobalSetting(key: string, value: any): AppState"
+    },
+    globalSettings: {
+      description: "Reads a global setting from the current shared application state.",
+      signature: "globalSettings(key: string, defaultValue?: any): any"
     },
     getSettingValue: {
       description: "Reads a defined persisted setting through the main process.",
@@ -45,5 +61,9 @@ export const sharedAppStateComponentRenderer = wrapComponent(
   COMP,
   SharedAppStateReact,
   SharedAppStateMd,
-  { exposeRegisterApi: true, stateful: true }
+  {
+    exposeRegisterApi: true,
+    stateful: true,
+    events: { didChange: "onDidChange" }
+  }
 );

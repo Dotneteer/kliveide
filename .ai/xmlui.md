@@ -20,6 +20,13 @@ These notes summarize XMLUI lessons learned while wiring the Klive IDE Electron 
 <Button onClick="shared.dispatchSetTheme('light')" />
 ```
 
+- For custom component events that pass arguments, prefer an explicit arrow parameter when it improves clarity:
+
+```xmlui
+<SharedAppState onDidChange="arg => currentTheme = arg.theme" />
+```
+
+- This avoids ambiguity around event argument names and makes it clear which value the handler reads.
 - Event handlers are parsed by XMLUI's own scripting engine, not by `eval`.
 - Binding expressions in props are synchronous. Do not call async functions in bindings; use events or data/action components instead.
 - Event handlers are async and Promise-aware. State writes are processed statement by statement, so later statements can see earlier state changes.
@@ -89,6 +96,21 @@ registerComponentApi({
 <Button onClick="shared.dispatchSetGlobalSetting('ideNote', 'IDE updated this')" />
 ```
 
+- Use `id="state"` for the app-level `SharedAppState` instance in this project.
+- `SharedAppState` exposes `didChange` as `onDidChange`; the event receives the new `AppState` as its first argument and the previous `AppState` as its second argument.
+- `SharedAppState` can fire `didChange` when it publishes its initial value. The `fireDidChangeOnInit` property controls this behavior and defaults to `true`.
+- Fire initial custom events from a post-mount effect, not from the same layout effect that first calls `updateState`. XMLUI may not have supplied the event handler during the earliest state publication.
+- A top-level theme synchronization example:
+
+```xmlui
+<App var.currentTheme="" defaultTone="{currentTheme}">
+  <SharedAppState
+    id="state"
+    onDidChange="arg => currentTheme = arg.theme" />
+</App>
+```
+
+- In React-backed XMLUI components, keep event handlers such as `onDidChange` and XMLUI callbacks such as `updateState` in refs if they are used by stable effects. Otherwise, handler identity changes can accidentally retrigger state publication and create React maximum-update-depth loops.
 - React components should access shared state through hooks in `src/renderer/shared-store.ts`, such as:
   - `useStore`
   - `useSharedState`

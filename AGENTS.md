@@ -16,6 +16,7 @@ This project is an Electron shell built with TypeScript, electron-vite, XMLUI, a
 - Do not run `npm install` automatically. The user prefers to run installs manually.
 - Do not run `npm run dev` unless explicitly requested. The user usually starts and tests the app manually.
 - Before changing XMLUI code, read `.ai/xmlui.md`.
+- Before changing IPC, process APIs, reducer forwarding, settings propagation, or `SharedAppState`, read `.ai/messaging-and-state.md`.
 
 ## Verification
 
@@ -34,6 +35,7 @@ The build may emit third-party XMLUI/Rollup warnings about Sass legacy APIs, `"u
 - Keep API messaging and shared state management separate.
 - API messaging is for process-to-process commands through the main process.
 - Shared state is reducer-driven and forwarded among the main, emulator, and IDE processes.
+- Concise implementation details live in `.ai/messaging-and-state.md`; prefer that over re-scanning the source tree.
 - Renderer React components should access shared store management through renderer-side hooks such as `useStore`, `useSharedState`, and `useDispatch`.
 - XMLUI markup should access shared state through the `SharedAppState` component API, not through globals on `window`.
 
@@ -42,4 +44,3 @@ The build may emit third-party XMLUI/Rollup warnings about Sass legacy APIs, `"u
 - Renderer code must not import Electron or Node modules directly.
 - Use the preload bridge for renderer-safe APIs.
 - Packaged renderer URLs differ from dev URLs; keep dev and packaged loading paths separate in main-process window loading logic.
-

@@ -3,6 +3,7 @@ import path from "node:path";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
 import { type Channel, type RequestMessage } from "../common/messaging/messages-core";
+import { SETTING_IDE_CLOSE_EMU } from "../common/settings/setting-const";
 import {
   emuFocusedAction,
   emuLoadedAction,
@@ -12,7 +13,8 @@ import {
   initGlobalSettingsAction,
   isWindowsAction,
   setAppPathAction,
-  dimMenuAction
+  dimMenuAction,
+  setThemeAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
@@ -25,6 +27,7 @@ import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import {
   appSettings,
   applyPersistedSettingsToStore,
+  getSettingValue,
   loadAppSettings,
   saveAppSettings,
   startSettingsPersistence,
@@ -32,15 +35,29 @@ import {
 } from "./settings";
 
 const SAVE_BEFORE_CLOSE_TIMEOUT_MS = 1000;
+const EMULATOR_WINDOW_TITLE = "Klive Retro-Computer Emulator";
+const IDE_WINDOW_TITLE = "Klive IDE";
 
 let emuWindow: BrowserWindow | null = null;
 let ideWindow: BrowserWindow | null = null;
 let closeRequestStarted = false;
 let closeAllWindowsAllowed = false;
+let closeIdeWindowAllowed = false;
+let ideStartupVisibilityHandledForQuit = false;
 let saveRequestId = 0;
+let emuWindowStateManager: ReturnType<typeof createWindowStateManager> | null = null;
+let ideWindowStateManager: ReturnType<typeof createWindowStateManager> | null = null;
 
 function getPreloadPath(): string {
   return path.join(__dirname, "../preload/preload.js");
+}
+
+function keepWindowTitle(window: BrowserWindow, title: string): void {
+  window.setTitle(title);
+  window.on("page-title-updated", (event) => {
+    event.preventDefault();
+    window.setTitle(title);
+  });
 }
 
 async function loadRenderer(window: BrowserWindow, page: "emulator" | "ide"): Promise<void> {
@@ -64,10 +81,22 @@ function dispatchMainOwnedState(): void {
 
   mainStore.dispatch(setAppPathAction(app.isPackaged ? process.resourcesPath : app.getAppPath()));
   mainStore.dispatch(isWindowsAction(process.platform === "win32"));
+  mainStore.dispatch(setThemeAction(state.theme ?? "dark"));
   mainStore.dispatch(initGlobalSettingsAction(state.globalSettings ?? {}));
   mainStore.dispatch(dimMenuAction(state.dimMenu ?? false));
   mainStore.dispatch(emuFocusedAction(emuWindow?.isFocused() ?? false));
   mainStore.dispatch(ideFocusedAction(ideWindow?.isFocused() ?? false));
+}
+
+function rememberIdeStartupVisibility(isVisible: boolean): void {
+  appSettings.windowStates ??= {};
+  appSettings.windowStates.showIdeOnStartup = isVisible;
+  saveAppSettings();
+}
+
+function saveManagedWindowStates(): void {
+  emuWindowStateManager?.saveState(emuWindow ?? undefined);
+  ideWindowStateManager?.saveState(ideWindow ?? undefined);
 }
 
 function requestRendererSaveBeforeClose(window: BrowserWindow | null): Promise<void> {
@@ -99,7 +128,7 @@ function requestRendererSaveBeforeClose(window: BrowserWindow | null): Promise<v
   });
 }
 
-async function closeAllWindows(): Promise<void> {
+async function closeAllWindows(restoreIdeOnNextStart = !!ideWindow && !ideWindow.isDestroyed()): Promise<void> {
   if (closeRequestStarted) {
     return;
   }
@@ -111,6 +140,9 @@ async function closeAllWindows(): Promise<void> {
     requestRendererSaveBeforeClose(ideWindow)
   ]);
 
+  rememberIdeStartupVisibility(restoreIdeOnNextStart);
+  ideStartupVisibilityHandledForQuit = true;
+  saveManagedWindowStates();
   closeAllWindowsAllowed = true;
 
   for (const window of [emuWindow, ideWindow]) {
@@ -122,7 +154,20 @@ async function closeAllWindows(): Promise<void> {
   app.quit();
 }
 
-function handleWindowClose(event: ElectronEvent): void {
+async function closeIdeWindowOnly(): Promise<void> {
+  if (!ideWindow || ideWindow.isDestroyed()) {
+    return;
+  }
+
+  await requestRendererSaveBeforeClose(ideWindow);
+  ideWindowStateManager?.saveState(ideWindow);
+  rememberIdeStartupVisibility(false);
+  closeIdeWindowAllowed = true;
+  ideWindow.close();
+  closeIdeWindowAllowed = false;
+}
+
+function handleEmuWindowClose(event: ElectronEvent): void {
   if (closeAllWindowsAllowed) {
     return;
   }
@@ -131,8 +176,23 @@ function handleWindowClose(event: ElectronEvent): void {
   void closeAllWindows();
 }
 
+function handleIdeWindowClose(event: ElectronEvent): void {
+  if (closeAllWindowsAllowed || closeIdeWindowAllowed) {
+    return;
+  }
+
+  event.preventDefault();
+
+  if (getSettingValue(SETTING_IDE_CLOSE_EMU) !== false) {
+    void closeAllWindows(true);
+    return;
+  }
+
+  void closeIdeWindowOnly();
+}
+
 async function createEmulatorWindow(): Promise<void> {
-  const emuWindowStateManager = createWindowStateManager(appSettings.windowStates?.emuWindow, {
+  emuWindowStateManager = createWindowStateManager(appSettings.windowStates?.emuWindow, {
     defaultWidth: 720,
     defaultHeight: 540,
     maximize: true,
@@ -151,15 +211,16 @@ async function createEmulatorWindow(): Promise<void> {
     height: emuWindowStateManager.height,
     minWidth: 640,
     minHeight: 480,
-    title: "Emulator",
+    title: EMULATOR_WINDOW_TITLE,
     webPreferences: {
       preload: getPreloadPath(),
       contextIsolation: true,
       nodeIntegration: false
     }
   });
+  keepWindowTitle(emuWindow, EMULATOR_WINDOW_TITLE);
 
-  emuWindow.on("close", handleWindowClose);
+  emuWindow.on("close", handleEmuWindowClose);
 
   emuWindow.on("focus", () => {
     mainStore.dispatch(emuFocusedAction(true), "main");
@@ -172,6 +233,7 @@ async function createEmulatorWindow(): Promise<void> {
   emuWindow.on("closed", () => {
     mainStore.dispatch(emuFocusedAction(false), "main");
     emuWindow = null;
+    emuWindowStateManager = null;
     updateApplicationMenuWindows(emuWindow, ideWindow);
   });
 
@@ -191,7 +253,7 @@ async function createIdeWindow(): Promise<void> {
     return;
   }
 
-  const ideWindowStateManager = createWindowStateManager(appSettings.windowStates?.ideWindow, {
+  ideWindowStateManager = createWindowStateManager(appSettings.windowStates?.ideWindow, {
     defaultWidth: 640,
     defaultHeight: 480,
     maximize: false,
@@ -210,15 +272,17 @@ async function createIdeWindow(): Promise<void> {
     height: ideWindowStateManager.height,
     minWidth: 640,
     minHeight: 480,
-    title: "IDE",
+    title: IDE_WINDOW_TITLE,
     webPreferences: {
       preload: getPreloadPath(),
       contextIsolation: true,
       nodeIntegration: false
     }
   });
+  keepWindowTitle(ideWindow, IDE_WINDOW_TITLE);
 
-  ideWindow.on("close", handleWindowClose);
+  rememberIdeStartupVisibility(true);
+  ideWindow.on("close", handleIdeWindowClose);
 
   ideWindow.on("focus", () => {
     mainStore.dispatch(ideFocusedAction(true), "main");
@@ -231,6 +295,7 @@ async function createIdeWindow(): Promise<void> {
   ideWindow.on("closed", () => {
     mainStore.dispatch(ideFocusedAction(false), "main");
     ideWindow = null;
+    ideWindowStateManager = null;
     updateApplicationMenuWindows(emuWindow, ideWindow);
   });
 
@@ -272,6 +337,9 @@ app.whenReady().then(async () => {
   registerRendererToMainIpc();
   ipcMain.handle("ide:open", createIdeWindow);
   await createEmulatorWindow();
+  if (appSettings.windowStates?.showIdeOnStartup) {
+    await createIdeWindow();
+  }
   if (emuWindow) {
     startApplicationMenu(emuWindow, () => ideWindow, createIdeWindow);
   }
@@ -284,6 +352,10 @@ app.whenReady().then(async () => {
 });
 
 app.on("before-quit", () => {
+  if (!ideStartupVisibilityHandledForQuit) {
+    rememberIdeStartupVisibility(!!ideWindow && !ideWindow.isDestroyed());
+  }
+  saveManagedWindowStates();
   saveAppSettings();
   stopApplicationMenu();
   stopSettingsPersistence();

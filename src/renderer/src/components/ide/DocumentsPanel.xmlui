@@ -1,0 +1,10 @@
+<Component name="DocumentsPanel">
+   <VStack
+     verticalAlignment="center"
+     backgroundColor="$backgroundColor-DocumentsPanel"
+     overflowX="hidden"
+     height="100%"
+   >
+     <H2>DocumentsPanel</H2>
+   </VStack>
+</Component>

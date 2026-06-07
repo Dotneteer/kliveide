@@ -1,0 +1,11 @@
+<Component name="EmuStatusBar">
+  <HStack
+    verticalAlignment="center"
+    backgroundColor="$backgroundColor-EmuStatusBar"
+    height="48px"
+  >
+    <H2>
+      Emu Status bar
+    </H2>
+  </HStack>
+</Component>

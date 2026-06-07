@@ -1,0 +1,10 @@
+<Component name="SideBar">
+   <VStack
+     verticalAlignment="center"
+     backgroundColor="$backgroundColor-SideBar"
+     overflowX="hidden"
+     height="100%"
+   >
+     <H2>SideBarPanel</H2>
+   </VStack>
+</Component>

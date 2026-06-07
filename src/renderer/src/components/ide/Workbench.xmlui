@@ -1,0 +1,14 @@
+<Component name="Workbench">
+    <VStack width="100%" gap="0">
+      <VSplitter
+        width="*"
+        initialPrimarySize="-200px"
+        minPrimarySize="100px"
+        maxPrimarySize="-100px"
+        floating
+      >
+        <DocumentsPanel width="100%" />
+        <ToolsArea width="100%" />
+      </VSplitter>
+    </VStack>
+</Component>

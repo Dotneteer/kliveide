@@ -1,0 +1,12 @@
+<Component name="ActivityBar">
+   <VStack
+     verticalAlignment="center"
+     backgroundColor="$backgroundColor-ActivityBar"
+     height="100%"
+     width="48px"
+   >
+     <H2>
+       AB
+     </H2>
+   </VStack>
+</Component>

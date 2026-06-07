@@ -1,23 +1,20 @@
 <Component name="IdeApp">
-  <SharedAppState id="shared" />
-  <VStack height="100%" verticalAlignment="center" horizontalAlignment="center" gap="16px">
-    <H1 value="IDE Window" />
-    <Text value="Shared theme: {shared.value.theme}" />
-    <Text value="EMU note: {shared.value.globalSettings.emuNote ?? '(none)'}" />
-    <Text value="IDE note: {shared.value.globalSettings.ideNote ?? '(none)'}" />
-    <HStack gap="8px">
-      <Button
-        label="Set Dark"
-        size="lg"
-        onClick="shared.dispatchSetTheme('dark')" />
-      <Button
-        label="Set IDE Note"
-        size="lg"
-        onClick="shared.setSettingValue('ideNote', 'IDE saved this setting')" />
-      <Button
-        label="Clear EMU Note"
-        size="lg"
-        onClick="shared.setSettingValue('emuNote', '')" />
+  <SharedAppState id="state" />
+  <VStack height="100%" gap="0">
+    <Toolbar when="{state.globalSettings('showToolbar', true)}" />
+    <HStack height="*" gap="0">
+      <ActivityBar />
+      <HSplitter
+        width="*"
+        initialPrimarySize="200px"
+        minPrimarySize="100px"
+        maxPrimarySize="-100px"
+        floating
+      >
+        <SideBar width="100%" />
+        <MainWorkbench height="100%" />
+      </HSplitter>
     </HStack>
+    <IdeStatusBar when="{state.globalSettings('showStatusBar', true)}" />
   </VStack>
 </Component>

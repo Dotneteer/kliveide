@@ -1,0 +1,11 @@
+<Component name="IdeStatusBar">
+  <HStack
+    verticalAlignment="center"
+    backgroundColor="$backgroundColor-IdeStatusBar"
+    height="48px"
+  >
+    <H2>
+      IDE Status bar
+    </H2>
+  </HStack>
+</Component>
