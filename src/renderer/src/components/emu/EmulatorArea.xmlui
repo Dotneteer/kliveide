@@ -1,0 +1,8 @@
+<Component name="EmulatorArea">
+  <VStack backgroundColor="$color-surface-400">
+    <SharedAppState id="state" />
+    <H2>
+      Emulator Area
+    </H2>
+  </VStack>
+</Component>

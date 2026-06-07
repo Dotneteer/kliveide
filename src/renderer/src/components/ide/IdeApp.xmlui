@@ -1,0 +1,20 @@
+<Component name="IdeApp">
+  <SharedAppState id="state" />
+  <VStack height="100%" gap="0">
+    <Toolbar when="{state.globalSettings('showToolbar', true)}" />
+    <HStack height="*" gap="0">
+      <ActivityBar />
+      <HSplitter
+        width="*"
+        initialPrimarySize="200px"
+        minPrimarySize="100px"
+        maxPrimarySize="-100px"
+        floating
+      >
+        <SideBar width="100%" />
+        <MainWorkbench height="100%" />
+      </HSplitter>
+    </HStack>
+    <IdeStatusBar when="{state.globalSettings('showStatusBar', true)}" />
+  </VStack>
+</Component>

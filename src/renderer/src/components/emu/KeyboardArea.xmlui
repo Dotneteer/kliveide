@@ -1,0 +1,8 @@
+<Component name="KeyboardArea">
+  <VStack backgroundColor="$backgroundColor-KeyboardArea">
+    <SharedAppState id="state" />
+    <H2>
+      Keyboard Area
+    </H2>
+  </VStack>
+</Component>

@@ -1,0 +1,16 @@
+<Component name="EmuApp">
+  <SharedAppState id="state" />
+  <VStack height="100%" gap="0">
+    <Toolbar when="{state.globalSettings('showToolbar', true)}" />
+    <VSplitter
+      height="*"
+      minPrimarySize="100px"
+      maxPrimarySize="-100px"
+      floating
+    >
+      <EmulatorArea height="100%" />
+      <KeyboardArea height="100%" />
+    </VSplitter>
+    <EmuStatusBar when="{state.globalSettings('showStatusBar', true)}" />
+  </VStack>
+</Component>

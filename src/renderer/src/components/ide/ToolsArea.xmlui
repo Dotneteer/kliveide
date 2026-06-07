@@ -1,0 +1,10 @@
+<Component name="ToolsArea">
+   <VStack
+     verticalAlignment="center"
+     backgroundColor="$backgroundColor-ToolsArea"
+     overflowX="hidden"
+     height="100%"
+   >
+     <H2>ToolsArea</H2>
+   </VStack>
+</Component>

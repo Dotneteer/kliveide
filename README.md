@@ -20,9 +20,10 @@ The app starts with an Emulator window. The Emulator window has a button that op
 
 ## Windows
 
-- `emulator.html` hosts the Emulator renderer.
-- `ide.html` hosts the IDE renderer.
-- `src/electron/main.ts` creates and coordinates the Electron browser windows.
-- `src/electron/preload.ts` exposes the renderer-safe Electron bridge.
-- `src/renderer/emu/src/Main.xmlui` defines the Emulator UI.
-- `src/renderer/ide/src/Main.xmlui` defines the IDE UI.
+- `src/renderer/index.html` hosts the XMLUI renderer entry.
+- `src/main/main.ts` creates and coordinates the Electron browser windows.
+- `src/preload/preload.ts` exposes the renderer-safe Electron bridge.
+- `src/renderer/src/Main.xmlui` defines the current sample UI.
+- `src/public` hosts static resources for the main process, such as images and emulator ROM files.
+- `src/main/publicResources.ts` resolves those resources in dev and built/package modes.
+- `public` stores packaging assets, such as installer icons referenced by Electron Builder.

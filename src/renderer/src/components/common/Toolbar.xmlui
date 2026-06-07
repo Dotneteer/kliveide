@@ -1,0 +1,11 @@
+<Component name="Toolbar">
+  <HStack
+    verticalAlignment="center"
+    backgroundColor="$backgroundColor-Toolbar"
+    height="48px"
+  >
+    <H2>
+      Toolbar
+    </H2>
+  </HStack>
+</Component>

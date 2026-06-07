@@ -4,12 +4,12 @@
     "module": "CommonJS",
     "lib": ["ESNext"],
     "outDir": "dist-electron",
-    "rootDir": "src/electron",
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "moduleResolution": "Node10",
     "skipLibCheck": true,
     "types": ["node", "electron-vite/node"]
   },
-  "include": ["src/electron"]
+  "include": ["src/main", "src/preload"]
 }
