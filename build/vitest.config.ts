@@ -2,6 +2,12 @@ import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@abstractions": resolve(__dirname, "../src/common/abstractions"),
+      "@emu": resolve(__dirname, "../src/emu")
+    }
+  },
   test: {
     root: resolve(__dirname, ".."),
     include: ["./test/**/*.test.ts", "./test/**/*.test.tsx"],

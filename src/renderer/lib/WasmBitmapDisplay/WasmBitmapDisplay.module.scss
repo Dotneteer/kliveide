@@ -1,0 +1,28 @@
+.host {
+  align-items: center;
+  background: #1a1a1d;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+.canvas {
+  aspect-ratio: 4 / 3;
+  background: #050507;
+  border: 1px solid #3a3a40;
+  box-shadow: 0 0 0 1px #050507;
+  image-rendering: pixelated;
+  max-height: calc(100% - 32px);
+  max-width: calc(100% - 32px);
+  width: min(100%, 768px);
+}
+
+.error {
+  color: #ffb4a8;
+  font: 13px system-ui, sans-serif;
+  max-width: 640px;
+  padding: 16px;
+}

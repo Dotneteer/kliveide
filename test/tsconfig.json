@@ -1,19 +1,28 @@
 {
-  "compilerOptions": {
+    "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "module": "commonjs",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "target": "ESNext",
     "noImplicitAny": true,
     "noImplicitThis": true,
     "strictNullChecks": false,
+    "skipLibCheck": true,
     "sourceMap": true,
     "outDir": "dist",
     "rootDir": "..",
-    "baseUrl": "..",
-    "downlevelIteration": true,
+    "paths": {
+      "@abstractions/*": ["../src/common/abstractions/*"],
+      "@emu/*": ["../src/emu/*"]
+    },
     "resolveJsonModule": true,
     "types": ["vitest/globals", "node"]
   },
-  "include": ["./**/*", "../src/**/*"],
+  "include": [
+    "./dummy.test.ts",
+    "./z80/**/*.ts",
+    "../src/emu/**/*.ts",
+    "../src/common/abstractions/**/*.ts"
+  ],
   "exclude": ["node_modules", "**/build/*", "**/*.d.ts"]
 }
