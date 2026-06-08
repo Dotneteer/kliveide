@@ -1,11 +1,138 @@
-<Component name="Toolbar">
+<Component
+  name="Toolbar"
+  var.isEmu="{window.location.search.indexOf('window=emulator') >= 0}"
+  var.machineState="{state.globalSettings('demo.machineState', 'stopped')}"
+  var.isRunning="{machineState === 'running'}"
+  var.isPaused="{machineState === 'paused'}"
+  var.keyboardVisible="{state.globalSettings('demo.keyboardVisible', true)}"
+  var.instantScreenVisible="{state.globalSettings('demo.instantScreenVisible', false)}"
+  var.muted="{state.globalSettings('demo.soundMuted', false)}"
+  var.syncSourceBreakpoints="{state.globalSettings('ide.syncSourceBreakpoints', false)}"
+  var.memoryPanelVisible="{state.globalSettings('demo.ideMemoryVisible', false)}"
+  var.disassemblyPanelVisible="{state.globalSettings('demo.ideDisassemblyVisible', false)}"
+>
   <HStack
+    height="38px"
+    width="100%"
+    gap="0"
+    paddingHorizontal="4px"
+    paddingVertical="2px"
     verticalAlignment="center"
-    backgroundColor="$backgroundColor-Toolbar"
-    height="48px"
+    backgroundColor="#383838"
   >
-    <H2>
-      Toolbar
-    </H2>
+    <ToolbarButton
+      iconName="play"
+      title="{isEmu ? 'Run Machine (F5)' : 'Run Project (F5)'}"
+      fill="green"
+      enable="{!isRunning}"
+      onClick="
+        state.dispatchSetGlobalSetting('demo.machineState', 'running');
+        state.dispatchSetGlobalSetting('demo.lastMachineCommand', 'start')
+      "
+    />
+    <ToolbarButton
+      iconName="pause"
+      title="Pause (Shift+F5)"
+      fill="blue"
+      enable="{isRunning || isPaused}"
+      onClick="
+        state.dispatchSetGlobalSetting('demo.machineState', 'paused');
+        state.dispatchSetGlobalSetting('demo.lastMachineCommand', 'pause')
+      "
+    />
+    <ToolbarButton
+      iconName="stop"
+      title="Stop (F4)"
+      fill="red"
+      enable="{isRunning || isPaused}"
+      onClick="
+        state.dispatchSetGlobalSetting('demo.machineState', 'stopped');
+        state.dispatchSetGlobalSetting('demo.lastMachineCommand', 'stop')
+      "
+    />
+    <ToolbarButton
+      iconName="restart"
+      title="Restart (Shift+F4)"
+      fill="green"
+      enable="{isRunning || isPaused}"
+      onClick="
+        state.dispatchSetGlobalSetting('demo.machineState', 'running');
+        state.dispatchSetGlobalSetting('demo.lastMachineCommand', 'restart')
+      "
+    />
+    <ToolbarSeparator />
+    <ToolbarButton
+      iconName="step-into"
+      title="Step Into"
+      fill="blue"
+      enable="{isPaused}"
+      onClick="state.dispatchSetGlobalSetting('demo.lastMachineCommand', 'stepInto')"
+    />
+    <ToolbarButton
+      iconName="step-over"
+      title="Step Over"
+      fill="blue"
+      enable="{isPaused}"
+      onClick="state.dispatchSetGlobalSetting('demo.lastMachineCommand', 'stepOver')"
+    />
+    <ToolbarButton
+      iconName="step-out"
+      title="Step Out"
+      fill="blue"
+      enable="{isPaused}"
+      onClick="state.dispatchSetGlobalSetting('demo.lastMachineCommand', 'stepOut')"
+    />
+
+    <ToolbarSeparator when="{isEmu}" />
+    <ToolbarButton
+      when="{isEmu}"
+      iconName="vm"
+      title="Turn on/off instant screen"
+      selected="{instantScreenVisible}"
+      onClick="state.dispatchSetGlobalSetting('demo.instantScreenVisible', !instantScreenVisible)"
+    />
+    <ToolbarSeparator when="{isEmu}" />
+    <ToolbarButton
+      when="{isEmu}"
+      iconName="keyboard"
+      title="Show/Hide keyboard"
+      selected="{keyboardVisible}"
+      onClick="state.dispatchSetGlobalSetting('demo.keyboardVisible', !keyboardVisible)"
+    />
+    <ToolbarSeparator when="{isEmu}" />
+    <ToolbarButton
+      when="{isEmu}"
+      iconName="{muted ? 'mute' : 'unmute'}"
+      title="{muted ? 'Unmute Sound' : 'Mute Sound'}"
+      selected="{muted}"
+      onClick="state.dispatchSetGlobalSetting('demo.soundMuted', !muted)"
+    />
+
+    <ToolbarSeparator when="{!isEmu}" />
+    <ToolbarButton
+      when="{!isEmu}"
+      iconName="sync-ignored"
+      title="Sync the source with the current breakpoint"
+      fill="orange"
+      selected="{syncSourceBreakpoints}"
+      onClick="state.dispatchSetGlobalSetting('ide.syncSourceBreakpoints', !syncSourceBreakpoints)"
+    />
+    <ToolbarSeparator when="{!isEmu}" />
+    <ToolbarButton
+      when="{!isEmu}"
+      iconName="memory-icon"
+      title="Show Memory Panel"
+      fill="orange"
+      selected="{memoryPanelVisible}"
+      onClick="state.dispatchSetGlobalSetting('demo.ideMemoryVisible', !memoryPanelVisible)"
+    />
+    <ToolbarButton
+      when="{!isEmu}"
+      iconName="disassembly-icon"
+      title="Show Disassembly Panel"
+      fill="orange"
+      selected="{disassemblyPanelVisible}"
+      onClick="state.dispatchSetGlobalSetting('demo.ideDisassemblyVisible', !disassemblyPanelVisible)"
+    />
   </HStack>
 </Component>

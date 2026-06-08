@@ -3,7 +3,7 @@ import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 import { IZ80Cpu } from "@emu/abstractions/IZ80Cpu";
 import { OpCodePrefix } from "@emu/abstractions/OpCodePrefix";
 import { LiteEvent } from "@emu/utils/lite-event";
-import { Z80Cpu } from "@emu/z80/Z80Cpu";
+import { getZ80Memory, Z80Cpu } from "@emu/z80/Z80Cpu";
 import { Z80NCpu } from "@emu/z80/Z80NCpu";
 
 /**
@@ -111,7 +111,7 @@ export class Z80TestMachine {
   /**
    * The operative memory of the test machine
    */
-  readonly memory: number[];
+  readonly memory: Uint8Array;
 
   /**
    * The address where the code execution ends.
@@ -194,8 +194,8 @@ export class Z80TestMachine {
     public readonly runMode: RunMode = RunMode.Normal,
     public readonly allowExtendedInstructions = false
   ) {
-    this.memory = [];
-    for (let i = 0; i < 0x1_0000; i++) this.memory[i] = 0x00;
+    this.memory = getZ80Memory();
+    this.memory.fill(0x00);
     this.memoryAccessLog = [];
     this.ioAccessLog = [];
     this.ioInputSequence = [];
@@ -212,6 +212,7 @@ export class Z80TestMachine {
    */
   initCode (programCode?: number[], codeAddress = 0, startAddress = 0): void {
     // --- Initialize the code
+    this.memory.fill(0x00);
     if (programCode != null) {
       for (const op of programCode) {
         this.memory[codeAddress++] = op;
@@ -704,7 +705,7 @@ class Z80RegisterSnapshot {
   readonly sp: number;
   readonly wz: number;
 
-  constructor (cpu: IZ80Cpu) {
+  constructor (cpu: Z80Cpu) {
     this.af = cpu.af;
     this.bc = cpu.bc;
     this.de = cpu.de;

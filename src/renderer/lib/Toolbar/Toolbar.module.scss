@@ -1,0 +1,84 @@
+.toolbar {
+  align-items: center;
+  background: var(--bgcolor-toolbar, #383838);
+  border-bottom: 1px solid #1f1f1f;
+  display: flex;
+  flex: 0 0 auto;
+  height: 38px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 4px;
+  width: 100%;
+}
+
+.button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-toolbarbutton, #ffffff);
+  display: inline-flex;
+  flex: 0 0 40px;
+  height: 34px;
+  justify-content: center;
+  padding: 0;
+  width: 40px;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--bgcolor-toolbarbutton-hover, #ffffff10);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-toolbarbutton-selected, #007acc);
+  outline-offset: 1px;
+}
+
+.button:disabled {
+  color: var(--bgcolor-toolbarbutton-disabled, #d0d0d0);
+  cursor: default;
+  opacity: 0.5;
+}
+
+.selected {
+  border-color: var(--color-toolbarbutton-selected, #007acc);
+}
+
+.green {
+  color: var(--color-toolbarbutton-green, lightgreen);
+}
+
+.blue {
+  color: var(--color-toolbarbutton-blue, cyan);
+}
+
+.orange {
+  color: var(--color-toolbarbutton-orange, orange);
+}
+
+.red {
+  color: var(--color-toolbarbutton-red, red);
+}
+
+.icon {
+  display: inline-flex;
+  height: 24px;
+  width: 24px;
+}
+
+.icon svg {
+  display: block;
+  height: 24px;
+  width: 24px;
+}
+
+.fallbackIcon {
+  font: 600 12px/1 system-ui, sans-serif;
+}
+
+.separator {
+  align-self: stretch;
+  border-left: 2px solid var(--color-toolbar-separator, #777777);
+  flex: 0 0 2px;
+  height: 26px;
+  margin: 4px 6px;
+}

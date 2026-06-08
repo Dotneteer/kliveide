@@ -1,5 +1,6 @@
 import type { StandaloneAppDescription } from "xmlui";
 import KliveTheme from "./themes/klive";
+import { getLocalIcons } from "./icons";
 
 const App: StandaloneAppDescription = {
   name: "XMLUI",
@@ -7,6 +8,7 @@ const App: StandaloneAppDescription = {
   themes: [
     KliveTheme,
   ],
+  icons: getLocalIcons(),
   resources: {
     logo: "/resources/logo.svg",
     "logo-dark": "/resources/logo-dark.svg",
