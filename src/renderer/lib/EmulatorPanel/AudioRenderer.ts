@@ -1,8 +1,10 @@
-import samplingWorklet from "./Sampling.worklet.js?url";
+import samplingWorkletSource from "./Sampling.worklet.js?raw";
 import type { Sp48AudioSample } from "../../../emu/sp48/WasmZxSpectrum48Machine";
 
 let beeperAudioContext: AudioContext | undefined;
 let beeperWorklet: AudioWorkletNode | undefined;
+let beeperContextPromise: Promise<AudioRendererInfo> | undefined;
+let samplingWorkletUrl: string | undefined;
 
 export type AudioRendererInfo = {
   context: AudioContext;
@@ -15,38 +17,99 @@ export async function getBeeperContext(
   tactsInFrame: number,
   baseClockFrequency: number
 ): Promise<AudioRendererInfo> {
-  if (!beeperAudioContext) {
-    beeperAudioContext = new AudioContext({ latencyHint: 0.01 });
-    await beeperAudioContext.suspend();
-    await beeperAudioContext.audioWorklet.addModule(samplingWorklet);
-    beeperWorklet = new AudioWorkletNode(beeperAudioContext, "sampling-generator", {
-      outputChannelCount: [2]
-    });
-    beeperWorklet.connect(beeperAudioContext.destination);
-  }
+  const audioInfo = await getOrCreateBeeperContext();
 
-  if (!beeperWorklet) {
-    throw new Error("Cannot initialize beeper audio worklet.");
-  }
-
-  const sampleRate = beeperAudioContext.sampleRate;
+  const sampleRate = audioInfo.sampleRate;
   const samplesPerFrame = (tactsInFrame * sampleRate) / baseClockFrequency;
-  beeperWorklet.port.postMessage({ initialize: samplesPerFrame });
+  audioInfo.worklet.port.postMessage({ initialize: samplesPerFrame });
 
   return {
-    context: beeperAudioContext,
-    worklet: beeperWorklet,
+    context: audioInfo.context,
+    worklet: audioInfo.worklet,
     samplesPerFrame,
     sampleRate
   };
 }
 
 export async function releaseBeeperContext(): Promise<void> {
+  await beeperContextPromise;
   if (beeperAudioContext) {
     await beeperAudioContext.close();
   }
   beeperAudioContext = undefined;
   beeperWorklet = undefined;
+  beeperContextPromise = undefined;
+}
+
+async function getOrCreateBeeperContext(): Promise<AudioRendererInfo> {
+  if (beeperAudioContext && beeperWorklet) {
+    return {
+      context: beeperAudioContext,
+      worklet: beeperWorklet,
+      samplesPerFrame: 0,
+      sampleRate: beeperAudioContext.sampleRate
+    };
+  }
+
+  beeperContextPromise ??= createBeeperContext().catch((err) => {
+    beeperContextPromise = undefined;
+    throw err;
+  });
+  return beeperContextPromise;
+}
+
+async function createBeeperContext(): Promise<AudioRendererInfo> {
+  try {
+    return await createBeeperContextCore(false);
+  } catch (err) {
+    await closePendingBeeperContext();
+    if (!isMissingProcessorError(err)) {
+      throw err;
+    }
+    return createBeeperContextCore(true);
+  }
+}
+
+async function createBeeperContextCore(forceFreshWorkletUrl: boolean): Promise<AudioRendererInfo> {
+  beeperAudioContext = new AudioContext({ latencyHint: 0.01 });
+  await beeperAudioContext.suspend();
+  await beeperAudioContext.audioWorklet.addModule(getSamplingWorkletUrl(forceFreshWorkletUrl));
+  beeperWorklet = new AudioWorkletNode(beeperAudioContext, "sampling-generator", {
+    outputChannelCount: [2]
+  });
+  beeperWorklet.connect(beeperAudioContext.destination);
+
+  return {
+    context: beeperAudioContext,
+    worklet: beeperWorklet,
+    samplesPerFrame: 0,
+    sampleRate: beeperAudioContext.sampleRate
+  };
+}
+
+async function closePendingBeeperContext(): Promise<void> {
+  const context = beeperAudioContext;
+  beeperAudioContext = undefined;
+  beeperWorklet = undefined;
+  beeperContextPromise = undefined;
+  if (context && context.state !== "closed") {
+    await context.close();
+  }
+}
+
+function getSamplingWorkletUrl(forceFresh = false): string {
+  if (forceFresh && samplingWorkletUrl) {
+    URL.revokeObjectURL(samplingWorkletUrl);
+    samplingWorkletUrl = undefined;
+  }
+  samplingWorkletUrl ??= URL.createObjectURL(
+    new Blob([samplingWorkletSource], { type: "text/javascript" })
+  );
+  return samplingWorkletUrl;
+}
+
+function isMissingProcessorError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes("sampling-generator");
 }
 
 export class AudioRenderer {

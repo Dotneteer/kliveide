@@ -17,6 +17,7 @@ export type Sp48MachineState = MachineControllerState;
 export type Sp48FrameCompletedEvent = {
   frames: number;
   tacts: number;
+  executionTimeInMs: number;
   audioSampleCount: number;
   audioSamples: Sp48AudioSample[];
   pixelBuffer: Uint32Array;
@@ -174,10 +175,13 @@ export class Sp48MachineController {
   }
 
   private executeFrame(): void {
+    const startedAt = performance.now();
     this.machine.executeMachineFrame();
+    const executionTimeInMs = performance.now() - startedAt;
     this.frameCompletedEmitter.fire({
       frames: this.machine.frames,
       tacts: this.machine.tacts,
+      executionTimeInMs,
       audioSampleCount: this.machine.getAudioSampleCount(),
       audioSamples: this.machine.getAudioSamples(),
       pixelBuffer: this.machine.getPixelBuffer()
@@ -185,6 +189,7 @@ export class Sp48MachineController {
   }
 
   private executeDebugFrameSlice(): void {
+    const startedAt = performance.now();
     const frameEndTact = this.machine.getNextFrameStartTact() + this.machine.tactsInFrame;
     const maxInstructions = 100_000;
     let instructions = 0;
@@ -200,9 +205,11 @@ export class Sp48MachineController {
       }
     }
     if (this.machine.getFrameCompleted()) {
+      const executionTimeInMs = performance.now() - startedAt;
       this.frameCompletedEmitter.fire({
         frames: this.machine.frames,
         tacts: this.machine.tacts,
+        executionTimeInMs,
         audioSampleCount: this.machine.getAudioSampleCount(),
         audioSamples: this.machine.getAudioSamples(),
         pixelBuffer: this.machine.getPixelBuffer()

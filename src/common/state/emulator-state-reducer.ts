@@ -5,6 +5,18 @@ import type { EmulatorState } from "./AppState";
 
 export function emulatorStateReducer(state: EmulatorState, { type, payload }: Action): EmulatorState {
   switch (type) {
+    case "SET_MACHINE_TYPE":
+      return {
+        ...state,
+        machineId: payload?.id,
+        modelId: payload?.nextId,
+        config: payload?.value ?? {},
+        machineState: MachineControllerState.None,
+        pcValue: 0,
+        isDebugging: false,
+        sp48FrameInfo: undefined
+      };
+
     case "SET_MACHINE_STATE":
       return {
         ...state,

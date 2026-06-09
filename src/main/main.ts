@@ -14,7 +14,8 @@ import {
   isWindowsAction,
   setAppPathAction,
   dimMenuAction,
-  setThemeAction
+  setThemeAction,
+  setMachineTypeAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
@@ -83,6 +84,15 @@ function dispatchMainOwnedState(): void {
   mainStore.dispatch(isWindowsAction(process.platform === "win32"));
   mainStore.dispatch(setThemeAction(state.theme ?? "dark"));
   mainStore.dispatch(initGlobalSettingsAction(state.globalSettings ?? {}));
+  if (state.emulatorState?.machineId) {
+    mainStore.dispatch(
+      setMachineTypeAction(
+        state.emulatorState.machineId,
+        state.emulatorState.modelId,
+        state.emulatorState.config
+      )
+    );
+  }
   mainStore.dispatch(dimMenuAction(state.dimMenu ?? false));
   mainStore.dispatch(emuFocusedAction(emuWindow?.isFocused() ?? false));
   mainStore.dispatch(ideFocusedAction(ideWindow?.isFocused() ?? false));

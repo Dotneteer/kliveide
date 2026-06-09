@@ -142,12 +142,15 @@ export type Sp48BusAccess = {
 
 export class WasmZxSpectrum48Machine {
   readonly romId = "sp48";
-  readonly screenWidthInPixels: number;
-  readonly screenHeightInPixels: number;
 
-  constructor(private readonly wasm: Sp48WasmExports) {
-    this.screenWidthInPixels = wasm.sp48GetScreenWidth();
-    this.screenHeightInPixels = wasm.sp48GetScreenHeight();
+  constructor(private readonly wasm: Sp48WasmExports) {}
+
+  get screenWidthInPixels(): number {
+    return this.wasm.sp48GetScreenWidth();
+  }
+
+  get screenHeightInPixels(): number {
+    return this.wasm.sp48GetScreenHeight();
   }
 
   get frames(): number {

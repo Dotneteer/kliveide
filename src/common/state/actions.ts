@@ -1,6 +1,7 @@
 import { ActionCreator } from "./Action";
 import type { MachineCommand } from "../abstractions/MachineCommand";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
+import type { MachineConfigSet } from "../machines/info-types";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -30,8 +31,25 @@ export const setMachineStateAction: ActionCreator = (
   payload: { state, numValue }
 });
 
+export const setMachineTypeAction: ActionCreator = (
+  machineId: string,
+  modelId?: string,
+  config?: MachineConfigSet
+) => ({
+  type: "SET_MACHINE_TYPE",
+  payload: { id: machineId, nextId: modelId, value: config ?? {} }
+});
+
 export const setSp48FrameInfoAction: ActionCreator = (
-  value: { frames: number; tacts: number; audioSampleCount: number }
+  value: {
+    frames: number;
+    tacts: number;
+    audioSampleCount: number;
+    lastFrameTimeInMs: number;
+    avgFrameTimeInMs: number;
+    pc: number;
+    baseClockFrequency: number;
+  }
 ) => ({
   type: "SET_SP48_FRAME_INFO",
   payload: { value }

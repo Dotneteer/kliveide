@@ -40,6 +40,8 @@ export const KliveTheme: ThemeDefinition = {
     "backgroundColor-Toolbar": "$color-surface-50",
     "backgroundColor-EmuStatusBar": "#007acc",
     "backgroundColor-IdeStatusBar": "#007acc",
+    "textColor-EmuStatusBar": "#ffffff",
+    "textColor-IdeStatusBar": "#ffffff",
     "backgroundColor-resizer-Splitter": "#007acc",
     "backgroundColor-KeyboardArea": "$color-surface-0",
     "backgroundColor-EmuKeyboard": "#181818",
@@ -60,6 +62,10 @@ export const KliveTheme: ThemeDefinition = {
   tones: {
     light: {
       themeVars: {
+        "backgroundColor-EmuStatusBar": "#61a4d0",
+        "backgroundColor-IdeStatusBar": "#61a4d0",
+        "textColor-EmuStatusBar": "#000000",
+        "textColor-IdeStatusBar": "#000000",
         "backgroundColor-EmuKeyboard": "#202020",
         "backgroundColor-key-EmuKeyboard": "#707070",
         "backgroundColor-highlightedKey-EmuKeyboard": "orangered",
@@ -73,6 +79,10 @@ export const KliveTheme: ThemeDefinition = {
     },
     dark: {
       themeVars: {
+        "backgroundColor-EmuStatusBar": "#007acc",
+        "backgroundColor-IdeStatusBar": "#007acc",
+        "textColor-EmuStatusBar": "#ffffff",
+        "textColor-IdeStatusBar": "#ffffff",
         "backgroundColor-EmuKeyboard": "#181818",
         "backgroundColor-key-EmuKeyboard": "#707070",
         "backgroundColor-highlightedKey-EmuKeyboard": "#0B486B",

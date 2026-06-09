@@ -14,8 +14,9 @@ import {
 } from "../common/messaging/messages-core";
 import {
   issueMachineCommandAction,
-  setThemeAction,
-  setGlobalSettingAction
+  setGlobalSettingAction,
+  setMachineTypeAction,
+  setThemeAction
 } from "../common/state/actions";
 import {
   dispatchSharedAction,
@@ -115,10 +116,7 @@ async function processApiMethodRequest(message: ApiMethodRequest): Promise<Respo
 
 class EmuMessageProcessor {
   async setMachineType(machineId: string, modelId?: string, config?: Record<string, unknown>) {
-    dispatchSharedAction(
-      setGlobalSettingAction("demo.emuMachine", { machineId, modelId, config }),
-      "main"
-    );
+    dispatchSharedAction(setMachineTypeAction(machineId, modelId, config), "emu");
     rememberStatus(
       `EmuApi.setMachineType received machine=${machineId}, model=${modelId ?? "(none)"}.`
     );

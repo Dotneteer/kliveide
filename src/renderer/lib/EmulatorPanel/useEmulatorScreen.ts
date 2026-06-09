@@ -1,15 +1,25 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import type { Sp48MachineController } from "../../../emu/sp48/Sp48MachineController";
+import { SETTING_EMU_SCANLINE_EFFECT } from "../../../common/settings/setting-const";
+import { useSharedState } from "../../shared-store";
+import {
+  applyScanlineEffectToCanvas,
+  type ScanlineIntensity
+} from "./scanlineEffect";
 
 export function useEmulatorScreen(
   hostElement: MutableRefObject<HTMLDivElement | null>,
   controllerRef: MutableRefObject<Sp48MachineController | null>
 ) {
+  const sharedState = useSharedState();
+  const scanlineEffect = readGlobalSetting(
+    sharedState.globalSettings,
+    SETTING_EMU_SCANLINE_EFFECT,
+    "off"
+  ) as ScanlineIntensity;
   const screenElement = useRef<HTMLCanvasElement | null>(null);
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
-  const [nativeCanvasWidth, setNativeCanvasWidth] = useState(0);
-  const [nativeCanvasHeight, setNativeCanvasHeight] = useState(0);
   const shadowCanvasWidth = useRef(0);
   const shadowCanvasHeight = useRef(0);
   const xRatio = useRef(1);
@@ -20,6 +30,13 @@ export function useEmulatorScreen(
   const screenCtxRef = useRef<CanvasRenderingContext2D | null>(null);
   const screenImageDataRef = useRef<ImageData | null>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const currentScanlineEffect = useRef<ScanlineIntensity>("off");
+
+  useEffect(() => {
+    currentScanlineEffect.current = scanlineEffect || "off";
+    calculateDimensions();
+    displayScreenData();
+  }, [scanlineEffect]);
 
   useEffect(() => {
     const host = hostElement.current;
@@ -55,11 +72,11 @@ export function useEmulatorScreen(
     const clientHeight = host.offsetHeight;
     const width = shadowCanvasWidth.current || 1;
     const height = shadowCanvasHeight.current || 1;
-    let widthRatio = Math.floor((clientWidth - 8) / width) / xRatio.current;
+    let widthRatio = Math.floor((clientWidth - 8) / width / xRatio.current);
     if (widthRatio < 1) {
       widthRatio = 1;
     }
-    let heightRatio = Math.floor((clientHeight - 8) / height) / yRatio.current;
+    let heightRatio = Math.floor((clientHeight - 8) / height / yRatio.current);
     if (heightRatio < 1) {
       heightRatio = 1;
     }
@@ -80,8 +97,6 @@ export function useEmulatorScreen(
       xRatio.current = 1;
       yRatio.current = 1;
     }
-    setNativeCanvasWidth(shadowCanvasWidth.current);
-    setNativeCanvasHeight(shadowCanvasHeight.current);
     configureScreen();
     calculateDimensions();
   }
@@ -129,16 +144,16 @@ export function useEmulatorScreen(
     if (!tempCanvas) {
       return;
     }
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) {
-      return;
-    }
-    tempCtx.imageSmoothingEnabled = false;
-    tempCtx.putImageData(screenImageData, 0, 0);
     screenCtx.imageSmoothingEnabled = false;
-    screenCtx.globalCompositeOperation = "copy";
-    screenCtx.drawImage(tempCanvas, 0, 0, screenEl.width, screenEl.height);
-    screenCtx.globalCompositeOperation = "source-over";
+    applyScanlineEffectToCanvas(
+      screenCtx,
+      screenEl,
+      screenImageData,
+      shadowCanvasWidth.current,
+      shadowCanvasHeight.current,
+      currentScanlineEffect.current,
+      tempCanvas
+    );
   }
 
   function paintStoppedScreen(): void {
@@ -169,10 +184,23 @@ export function useEmulatorScreen(
     screenElement,
     canvasWidth,
     canvasHeight,
-    nativeCanvasWidth,
-    nativeCanvasHeight,
     displayScreenData,
     paintStoppedScreen,
     updateScreenDimensions
   };
+}
+
+function readGlobalSetting(
+  globalSettings: Record<string, unknown> | undefined,
+  path: string,
+  defaultValue: unknown
+): unknown {
+  let value: unknown = globalSettings;
+  for (const segment of path.split(".")) {
+    if (!value || typeof value !== "object") {
+      return defaultValue;
+    }
+    value = (value as Record<string, unknown>)[segment];
+  }
+  return value ?? defaultValue;
 }

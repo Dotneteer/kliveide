@@ -1,5 +1,7 @@
 import type { MachineCommand } from "../abstractions/MachineCommand";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
+import { MI_SPECTRUM_48 } from "../machines/constants";
+import type { MachineConfigSet } from "../machines/info-types";
 
 /**
  * Represents the state of the entire application
@@ -21,6 +23,9 @@ export type AppState = {
 };
 
 export type EmulatorState = {
+  machineId?: string;
+  modelId?: string;
+  config?: MachineConfigSet;
   machineState?: MachineControllerState;
   pcValue?: number;
   isDebugging?: boolean;
@@ -33,6 +38,10 @@ export type EmulatorState = {
     frames: number;
     tacts: number;
     audioSampleCount: number;
+    lastFrameTimeInMs: number;
+    avgFrameTimeInMs: number;
+    pc: number;
+    baseClockFrequency: number;
   };
 };
 
@@ -51,6 +60,9 @@ export const initialAppState: AppState = {
   dimMenu: false,
   globalSettings: {},
   emulatorState: {
+    machineId: MI_SPECTRUM_48,
+    modelId: "pal",
+    config: {},
     machineState: MachineControllerState.None,
     soundLevel: 0.8,
     soundMuted: false,

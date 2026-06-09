@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { MachineControllerState } from "../../../common/abstractions/MachineControllerState";
+import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "../../../common/machines/constants";
+import {
+  resolveMachineSelection,
+  type MachineSelection
+} from "../../../common/machines/machine-registry";
 import { setMachineStateAction, setSp48FrameInfoAction } from "../../../common/state/actions";
 import {
   createSp48MachineController,
@@ -19,49 +24,13 @@ import styles from "./EmulatorPanel.module.scss";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorScreen } from "./useEmulatorScreen";
 
-type MachineDiagnostics = {
-  lines: number[];
-  portFe: number;
-  portFeOut: number;
-  border: number;
-  ear: boolean;
-  mic: boolean;
-  beeperLevel: number;
-  frameTact: number;
-  nextFrameStartTact: number;
-  frameCompleted: boolean;
-  interruptsRaised: number;
-  interruptLineActive: boolean;
-  renderingPhase: number;
-  contention: number;
-  contentionDelay: number;
-  cpuPc: number;
-  cpuAf: number;
-  cpuInstructions: number;
-  cpuFrameSliceInstructions: number;
-  lastKey?: Sp48KeyEventDetail;
-};
+let cachedController: Sp48MachineController | null = null;
+let cachedControllerKey = "";
+let cachedControllerPromise: Promise<ControllerSetup> | null = null;
 
-const initialDiagnostics: MachineDiagnostics = {
-  lines: Array(8).fill(0),
-  portFe: 0xff,
-  portFeOut: 0,
-  border: 7,
-  ear: false,
-  mic: false,
-  beeperLevel: 0,
-  frameTact: 0,
-  nextFrameStartTact: 0,
-  frameCompleted: false,
-  interruptsRaised: 0,
-  interruptLineActive: false,
-  renderingPhase: 0,
-  contention: 0,
-  contentionDelay: 0,
-  cpuPc: 0,
-  cpuAf: 0xffff,
-  cpuInstructions: 0,
-  cpuFrameSliceInstructions: 0
+type ControllerSetup = {
+  controller: Sp48MachineController;
+  created: boolean;
 };
 
 export const EmulatorPanelReact = () => {
@@ -69,15 +38,21 @@ export const EmulatorPanelReact = () => {
   const controllerRef = useRef<Sp48MachineController | null>(null);
   const lastCommandSequenceRef = useRef(0);
   const renderInstantScreenRef = useRef<(() => void) | null>(null);
+  const avgFrameTimeRef = useRef(0);
   const [overlay, setOverlay] = useState<string | null>("Loading machine...");
   const [showOverlay, setShowOverlay] = useState(true);
   const [error, setError] = useState<string>();
-  const [diagnostics, setDiagnostics] = useState<MachineDiagnostics>(initialDiagnostics);
   const sharedState = useSharedState();
   const dispatch = useDispatch();
   const commandSequence = sharedState.emulatorState?.machineCommandSequence ?? 0;
   const lastMachineCommand = sharedState.emulatorState?.lastMachineCommand as Sp48MachineCommand | undefined;
   const soundLevel = sharedState.emulatorState?.soundLevel ?? 0.8;
+  const machineSelection = resolveMachineSelection(
+    sharedState.emulatorState?.machineId,
+    sharedState.emulatorState?.modelId,
+    sharedState.emulatorState?.config
+  );
+  const machineKey = getMachineSelectionKey(machineSelection);
   const soundLevelRef = useRef(soundLevel);
   const { beeperRenderer, initAudio } = useEmulatorAudio();
 
@@ -85,8 +60,6 @@ export const EmulatorPanelReact = () => {
     screenElement,
     canvasWidth,
     canvasHeight,
-    nativeCanvasWidth,
-    nativeCanvasHeight,
     displayScreenData,
     paintStoppedScreen,
     updateScreenDimensions
@@ -103,7 +76,6 @@ export const EmulatorPanelReact = () => {
     dispatch(setMachineStateAction(machineState, controller.machine.getCpuPc()));
     updateOverlayForState(machineState);
     updateAudioForState(machineState);
-    updateDiagnostics();
     renderInstantScreenRef.current?.();
   }, [commandSequence, dispatch, lastMachineCommand]);
 
@@ -118,29 +90,30 @@ export const EmulatorPanelReact = () => {
 
     async function run() {
       try {
-        const controller = await createSp48MachineController(readBinaryFile);
+        const { controller, created } = await getOrCreateController(machineSelection, machineKey);
         const { machine } = controller;
         const audioSampleRate = await initAudio(machine.tactsInFrame, machine.baseClockFrequency);
         machine.setAudioSampleRate(audioSampleRate);
         controllerRef.current = controller;
 
         if (disposed) {
-          controller.release();
           return;
         }
 
         updateScreenDimensions();
-        updateDiagnostics();
-        displayScreenData();
-        setOverlay("Not yet started. Press F5 to start machine.");
+        if (created) {
+          lastCommandSequenceRef.current = commandSequence;
+          dispatch(setMachineStateAction(MachineControllerState.None, machine.getCpuPc()));
+          setOverlay("Not yet started. Press F5 to start machine.");
+          paintStoppedScreen();
+          window.requestAnimationFrame(() => paintStoppedScreen());
+        } else {
+          updateOverlayForState(controller.machineState);
+          paintPixels();
+        }
 
-        const setSp48KeyStatus = (
-          key: number,
-          down: boolean,
-          source: Sp48KeyEventDetail["source"]
-        ) => {
+        const setSp48KeyStatus = (key: number, down: boolean) => {
           controller.setKeyStatus(key, down);
-          updateDiagnostics({ key, down, source });
           renderInstantScreenRef.current?.();
         };
 
@@ -176,7 +149,7 @@ export const EmulatorPanelReact = () => {
           if (!detail) {
             return;
           }
-          setSp48KeyStatus(detail.key, detail.down, detail.source);
+          setSp48KeyStatus(detail.key, detail.down);
         };
 
         window.addEventListener("keydown", handleKeyDown);
@@ -187,10 +160,19 @@ export const EmulatorPanelReact = () => {
           if (!event) {
             return;
           }
+          const lastFrameTimeInMs = event.executionTimeInMs;
+          avgFrameTimeRef.current =
+            avgFrameTimeRef.current === 0
+              ? lastFrameTimeInMs
+              : avgFrameTimeRef.current * 0.9 + lastFrameTimeInMs * 0.1;
           dispatch(setSp48FrameInfoAction({
             frames: event.frames,
             tacts: event.tacts,
-            audioSampleCount: event.audioSampleCount
+            audioSampleCount: event.audioSampleCount,
+            lastFrameTimeInMs,
+            avgFrameTimeInMs: avgFrameTimeRef.current,
+            pc: controller.machine.getCpuPc(),
+            baseClockFrequency: controller.machine.baseClockFrequency
           }));
           beeperRenderer.current?.storeSamples(event.audioSamples, soundLevelRef.current);
           beeperRenderer.current?.play();
@@ -216,7 +198,6 @@ export const EmulatorPanelReact = () => {
           }
 
           if (controller.tickFrame()) {
-            updateDiagnostics();
             paintPixels();
           }
 
@@ -233,7 +214,6 @@ export const EmulatorPanelReact = () => {
           window.removeEventListener(SP48_KEY_EVENT, handleVirtualKey);
           controller.frameCompleted.off(publishFrameCompleted);
           beeperRenderer.current?.suspend();
-          controller.release();
           renderInstantScreenRef.current = null;
           controllerRef.current = null;
         };
@@ -255,7 +235,7 @@ export const EmulatorPanelReact = () => {
       cleanup?.();
       window.clearTimeout(machineLoopTimer);
     };
-  }, []);
+  }, [machineKey]);
 
   function paintPixels(): void {
     const controller = controllerRef.current;
@@ -263,42 +243,14 @@ export const EmulatorPanelReact = () => {
       return;
     }
 
-    if (controller.machineState === MachineControllerState.Stopped) {
+    if (
+      controller.machineState === MachineControllerState.Stopped ||
+      controller.machineState === MachineControllerState.None
+    ) {
       paintStoppedScreen();
     } else {
       displayScreenData();
     }
-  }
-
-  function updateDiagnostics(lastKey?: Sp48KeyEventDetail): void {
-    const machine = controllerRef.current?.machine;
-    if (!machine) {
-      return;
-    }
-
-    const frameTact = machine.getCurrentFrameTact();
-    setDiagnostics({
-      lines: Array.from(machine.getKeyboardLines()),
-      portFe: machine.readPort(0x00fe),
-      portFeOut: machine.getPortFeValue(),
-      border: machine.getBorderColor(),
-      ear: machine.getEarBit(),
-      mic: machine.getMicBit(),
-      beeperLevel: machine.getBeeperLevel(),
-      frameTact,
-      nextFrameStartTact: machine.getNextFrameStartTact(),
-      frameCompleted: machine.getFrameCompleted(),
-      interruptsRaised: machine.getInterruptsRaised(),
-      interruptLineActive: machine.getInterruptLineActive(),
-      renderingPhase: machine.getRenderingPhase(frameTact),
-      contention: machine.getContentionValue(frameTact),
-      contentionDelay: machine.getTotalContentionDelaySinceStart(),
-      cpuPc: machine.getCpuPc(),
-      cpuAf: machine.getCpuAf(),
-      cpuInstructions: machine.getCpuInstructionsExecuted(),
-      cpuFrameSliceInstructions: machine.getCpuFrameSliceInstructions(),
-      lastKey
-    });
   }
 
   function updateOverlayForState(machineState: MachineControllerState): void {
@@ -346,47 +298,83 @@ export const EmulatorPanelReact = () => {
         <canvas
           ref={screenElement}
           className={styles.screen}
-          width={nativeCanvasWidth}
-          height={nativeCanvasHeight}
+          width={toCanvasSize(canvasWidth)}
+          height={toCanvasSize(canvasHeight)}
           style={{ width: `${canvasWidth}px`, height: `${canvasHeight}px` }}
         />
-        <div className={styles.diagnostics}>
-          <span>KB</span>
-          <span>{diagnostics.lines.map(toHexByte).join(" ")}</span>
-          <span>IN {toHexByte(diagnostics.portFe)}</span>
-          <span>OUT {toHexByte(diagnostics.portFeOut)}</span>
-          <span>B{diagnostics.border}</span>
-          <span>E{diagnostics.ear ? 1 : 0}</span>
-          <span>M{diagnostics.mic ? 1 : 0}</span>
-          <span>L{diagnostics.beeperLevel}</span>
-          <span>T{diagnostics.frameTact}</span>
-          <span>N{diagnostics.nextFrameStartTact}</span>
-          <span>F{diagnostics.frameCompleted ? 1 : 0}</span>
-          <span>IRQ{diagnostics.interruptsRaised}</span>
-          <span>I{diagnostics.interruptLineActive ? 1 : 0}</span>
-          <span>PH{diagnostics.renderingPhase}</span>
-          <span>C{diagnostics.contention}</span>
-          <span>CD{diagnostics.contentionDelay}</span>
-          <span>PC {toHexWord(diagnostics.cpuPc)}</span>
-          <span>A {toHexByte(diagnostics.cpuAf >> 8)}</span>
-          <span>CPU {diagnostics.cpuInstructions}</span>
-          <span>SL {diagnostics.cpuFrameSliceInstructions}</span>
-          {diagnostics.lastKey ? (
-            <span>
-              {diagnostics.lastKey.down ? "DOWN" : "UP"} {diagnostics.lastKey.key}
-            </span>
-          ) : null}
-        </div>
       </div>
       {error ? <div className={styles.error}>{error}</div> : null}
     </div>
   );
 };
 
-function toHexByte(value: number): string {
-  return (value & 0xff).toString(16).padStart(2, "0").toUpperCase();
-}
-
 function toHexWord(value: number): string {
   return (value & 0xffff).toString(16).padStart(4, "0").toUpperCase();
+}
+
+function toCanvasSize(value: number): number {
+  return Math.max(1, Math.round(value || 0));
+}
+
+async function getOrCreateController(
+  selection: MachineSelection,
+  machineKey: string
+): Promise<ControllerSetup> {
+  if (cachedController && cachedControllerKey === machineKey) {
+    return { controller: cachedController, created: false };
+  }
+
+  if (cachedControllerPromise && cachedControllerKey === machineKey) {
+    return cachedControllerPromise;
+  }
+
+  if (cachedController?.machineState === MachineControllerState.Running) {
+    cachedController.issueMachineCommand("stop");
+  }
+  cachedController?.release();
+  cachedController = null;
+  cachedControllerKey = machineKey;
+  cachedControllerPromise = createSp48MachineController(readBinaryFile, {
+    is16k: selection.config[MC_MEM_SIZE] === 16,
+    isNtsc: selection.config[MC_SCREEN_FREQ] === "ntsc"
+  }).then((controller) => {
+    if (cachedControllerKey === machineKey) {
+      cachedController = controller;
+      cachedControllerPromise = null;
+    } else {
+      controller.release();
+    }
+    return { controller, created: true };
+  }).catch((err) => {
+    if (cachedControllerKey === machineKey) {
+      cachedControllerPromise = null;
+      cachedControllerKey = "";
+    }
+    throw err;
+  });
+
+  return cachedControllerPromise;
+}
+
+function getMachineSelectionKey(selection: MachineSelection): string {
+  return stableJson({
+    machineId: selection.machineId,
+    modelId: selection.modelId,
+    config: selection.config
+  });
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableJson).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }

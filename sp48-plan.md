@@ -579,6 +579,13 @@ Implementation note:
 - `EmulatorPanelReact` dispatches the real Wasm CPU PC in `setMachineStateAction` after machine commands, so shared state has a usable debug location.
 - `test/sp48/sp48-debug.test.ts` covers instruction stepping, step-over/out around CALL/RET, breakpoint stop behavior, CPU snapshots, and memory/port event logs.
 
+Refactoring note:
+
+- The SP48 C implementation has been split into included device files while keeping the build target as `src/emu/sp48/sp48.c`.
+- `sp48.c` remains the Wasm entry point, Z80 integration point, frame runner, and ABI export file.
+- `sp48-memory.c`, `sp48-ula.c`, `sp48-keyboard.c`, `sp48-beeper.c`, and `sp48-ports.c` hold the device-specific implementation.
+- C and TypeScript files intentionally remain together in `src/emu/sp48` so the C ABI and the TypeScript adapter/controller stay close while the SP48 core is still evolving.
+
 ## Test Strategy
 
 Use three layers of tests:

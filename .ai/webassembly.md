@@ -34,11 +34,18 @@ The repository does not install this automatically. On macOS, Homebrew LLVM clan
   - Source: `src/emu/z80/z80.c`
   - Generated artifact: `public/wasm/z80.wasm`
 - The current ZX Spectrum 48K skeleton target is:
-  - Source: `src/emu/sp48/sp48.c`
+  - Source/coordinator: `src/emu/sp48/sp48.c`
+  - Included device files:
+    - `src/emu/sp48/sp48-memory.c`
+    - `src/emu/sp48/sp48-ula.c`
+    - `src/emu/sp48/sp48-keyboard.c`
+    - `src/emu/sp48/sp48-beeper.c`
+    - `src/emu/sp48/sp48-ports.c`
   - Generated artifact: `public/wasm/sp48.wasm`
   - TypeScript adapter: `src/emu/sp48/WasmZxSpectrum48Machine.ts`
   - Controller adapter: `src/emu/sp48/Sp48MachineController.ts`
   - Active renderer integration: `src/renderer/lib/EmulatorPanel/EmulatorPanelReact.tsx`
+- Keep C device files and TypeScript adapter/controller files together under `src/emu/sp48` for ABI locality. Do not split C and TypeScript into separate top-level folders unless multiple machine families make that worthwhile.
 - ZX Spectrum ROM resources used by the main process live under `src/public/roms`. The default 48K ROM is `src/public/roms/sp48.rom`, copied from the reference workspace.
 - `public/wasm` is the renderer static-asset location. Electron Vite copies it to `out/renderer/wasm` for packaged/preview builds.
 - Do not put generated `.wasm` files under `src/renderer/src`; Vite may try to module-load them instead of serving them as static assets.
@@ -139,6 +146,14 @@ machine.hardReset();
 
 `src/emu/z80/z80.c` is still the single Z80 CPU implementation. It builds as standalone `z80.wasm` for CPU tests, and `src/emu/sp48/sp48.c` also includes it directly with `Z80_EXTERNAL_BUS` defined.
 
+`src/emu/sp48/sp48.c` is the SP48 Wasm entry point and machine coordinator. It intentionally includes internal device `.c` files instead of compiling separate objects, keeping the freestanding Wasm build simple while making devices navigable:
+
+- `sp48-memory.c`: ROM/RAM map, ROM upload, raw memory access, CPU memory bus logging
+- `sp48-ula.c`: PAL/NTSC timing tables, contention, display rendering, floating bus
+- `sp48-keyboard.c`: keyboard matrix state and key status exports
+- `sp48-beeper.c`: EAR/MIC transitions and beeper sample generation
+- `sp48-ports.c`: port `$FE` reads/writes, border, EAR/MIC state updates
+
 When embedded in `sp48.c`, the Z80 core is configured with macros:
 
 - memory reads/writes use the SP48 ROM/RAM map
@@ -156,7 +171,7 @@ The frame-start INT line is recalculated before every `sp48ExecuteInstruction()`
 
 ## Current SP48 Display Rendering
 
-The fake SP48 display pattern has been removed. `src/emu/sp48/sp48.c` renders the Spectrum screen into an original-style border-inclusive static buffer:
+The fake SP48 display pattern has been removed. `src/emu/sp48/sp48-ula.c`, included by `sp48.c`, renders the Spectrum screen into an original-style border-inclusive static buffer:
 
 - bitmap bytes are read from `$4000-$57ff`
 - attribute bytes are read from `$5800-$5aff`
@@ -172,7 +187,7 @@ The fake SP48 display pattern has been removed. `src/emu/sp48/sp48.c` renders th
 
 ## Current SP48 Beeper Audio
 
-The fake SP48 audio pattern has been removed. `src/emu/sp48/sp48.c` prepares audio samples from the `$FE` EAR/MIC state:
+The fake SP48 audio pattern has been removed. `src/emu/sp48/sp48-beeper.c` prepares audio samples from the `$FE` EAR/MIC state:
 
 - `$FE` writes record fixed-size, static transition entries with absolute tacts
 - left channel is EAR and right channel is MIC, matching the current reference beeper model
