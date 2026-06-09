@@ -85,8 +85,11 @@ export class AudioRenderer {
 
     const stereoSamples: number[] = [];
     for (const sample of samples) {
-      stereoSamples.push(normalizeSample(sample.left) * soundLevel);
-      stereoSamples.push(normalizeSample(sample.right) * soundLevel);
+      const ear = normalizeSample(sample.left);
+      const mic = normalizeSample(sample.right);
+      const speaker = (ear * 0.66 + mic * 0.33) * soundLevel;
+      stereoSamples.push(speaker);
+      stereoSamples.push(speaker);
     }
     this.worklet.port.postMessage({ samples: stereoSamples });
   }

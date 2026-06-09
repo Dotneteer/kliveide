@@ -4,6 +4,7 @@ export const SETTING_IDE_NOTE = "ideNote";
 export const SETTING_EMU_SHOW_TOOLBAR = "emuViewOptions.showToolbar";
 export const SETTING_EMU_SHOW_STATUS_BAR = "emuViewOptions.showStatusBar";
 export const SETTING_EMU_SHOW_KEYBOARD = "emuViewOptions.showKeyboard";
+export const SETTING_EMU_KEYBOARD_SPLITTER_POSITION = "emuViewOptions.keyboardSplitterPosition";
 export const SETTING_EMU_SHOW_INSTANT_SCREEN = "emuViewOptions.showInstantScreen";
 export const SETTING_EMU_SCANLINE_EFFECT = "emuOptions.scanlineEffect";
 export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";

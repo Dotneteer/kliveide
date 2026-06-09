@@ -165,6 +165,13 @@ registerComponentApi({
 - `onUnmount` must be synchronous. Use `onBeforeDispose` for async cleanup with a timeout budget.
 - Use the non-visual `<Lifecycle>` component when setup/cleanup must re-arm as a value changes.
 
+## Splitter Notes
+
+- `Splitter`/`VSplitter` `initialPrimarySize`, `minPrimarySize`, and `maxPrimarySize` expect CSS size strings such as `520px`, `60%`, or `-100px`.
+- Although the Splitter docs describe the `resize` event primary value as pixels, the XMLUI 0.12.29 implementation emits pixels during initialization and percentages during actual drag movement. When persisting a dragged splitter position, save values `<= 100` as percentages and larger values as pixels.
+- Do not persist splitter resize values back into shared state on every `onResize` event. Persisting continuously can feed reactive setting changes back into `initialPrimarySize` and disturb live dragging. Prefer local XMLUI state while dragging, then persist after release.
+- XMLUI event handlers can be asynchronous. If a DOM-level `pointerup`/`mouseup` helper reads a value updated by an XMLUI resize handler, defer the read with `setTimeout(..., 0)` so the last XMLUI assignment can land first.
+
 ## Theming And Styling
 
 - XMLUI themes compile to CSS custom properties with the `--xmlui-*` prefix.

@@ -40,6 +40,9 @@ type Props = {
 
 const DEFAULT_WIDTH = 10 * 104 + 130;
 const DEFAULT_HEIGHT = 4 * (128 + 16);
+const C_SHIFT = 0;
+const S_SHIFT = 36;
+const SEQUENCE_STEP_MS = 35;
 
 const keyRows: Sp48KeyDef[][] = [
   [
@@ -112,9 +115,38 @@ export function Sp48KeyboardReact({ width, height }: Props) {
     };
   }, []);
 
-  const handleKeyAction = ({ code, down }: KeyboardButtonClickArgs) => {
-    updatePressedKeys(code, down);
-    dispatchSp48KeyStatus(code, down, "virtual");
+  const handleKeyAction = ({ code, keyCategory, button, down }: KeyboardButtonClickArgs) => {
+    switch (keyCategory) {
+      case "main":
+        setKeyStatus(down, code, button === 0 ? undefined : C_SHIFT);
+        break;
+
+      case "symbol":
+        setKeyStatus(down, code, S_SHIFT);
+        break;
+
+      case "topNum":
+        setKeyStatus(down, code, C_SHIFT);
+        break;
+
+      case "above":
+        if (down) {
+          dispatchVirtualKeySequence([
+            [C_SHIFT, S_SHIFT],
+            [code]
+          ]);
+        }
+        break;
+
+      case "below":
+        if (down) {
+          dispatchVirtualKeySequence([
+            [C_SHIFT, S_SHIFT],
+            [code, S_SHIFT]
+          ]);
+        }
+        break;
+    }
   };
 
   const updatePressedKeys = (code: number, down: boolean) => {
@@ -126,6 +158,28 @@ export function Sp48KeyboardReact({ width, height }: Props) {
         next.delete(code);
       }
       return next;
+    });
+  };
+
+  const setKeyStatus = (down: boolean, primary: number, secondary?: number) => {
+    dispatchSp48KeyStatus(primary, down, "virtual");
+    if (secondary !== undefined) {
+      dispatchSp48KeyStatus(secondary, down, "virtual");
+    }
+  };
+
+  const dispatchVirtualKeySequence = (steps: number[][]) => {
+    steps.forEach((keys, index) => {
+      window.setTimeout(() => {
+        for (const key of keys) {
+          dispatchSp48KeyStatus(key, true, "virtual");
+        }
+      }, index * SEQUENCE_STEP_MS * 2);
+      window.setTimeout(() => {
+        for (const key of keys) {
+          dispatchSp48KeyStatus(key, false, "virtual");
+        }
+      }, index * SEQUENCE_STEP_MS * 2 + SEQUENCE_STEP_MS);
     });
   };
 
@@ -232,6 +286,50 @@ const Sp48Key = memo(function Sp48Key({
         cursor={cursor}
         {...mouseHandlers("main")}
       />
+      {symbol || symbolWord ? (
+        <rect
+          x={topNum ? 36 : 44}
+          y={(topNum ? 70 : 34) + heightOffset}
+          width={topNum ? 58 : 54}
+          height={topNum ? 28 : 40}
+          fill="transparent"
+          cursor={cursor}
+          {...mouseHandlers("symbol")}
+        />
+      ) : null}
+      {above || aboveIcon ? (
+        <rect
+          x="0"
+          y={heightOffset}
+          width={normalWidth}
+          height="28"
+          fill="transparent"
+          cursor={cursor}
+          {...mouseHandlers(topNum ? "topNum" : "above")}
+        />
+      ) : null}
+      {below ? (
+        <rect
+          x="0"
+          y={100 + heightOffset}
+          width={normalWidth}
+          height="28"
+          fill="transparent"
+          cursor={cursor}
+          {...mouseHandlers("below")}
+        />
+      ) : null}
+      {topNum ? (
+        <rect
+          x="0"
+          y="0"
+          width={normalWidth}
+          height="20"
+          fill="transparent"
+          cursor={cursor}
+          {...mouseHandlers("above")}
+        />
+      ) : null}
       {main ? (
         <text x="12" y={70 + heightOffset} fontFamily={fonts.family} fontSize={fonts.main} textAnchor="start" fill={mainColor} cursor={cursor} {...mouseHandlers("main")}>
           {main}
@@ -287,7 +385,7 @@ const Sp48Key = memo(function Sp48Key({
         </text>
       ) : null}
       {topNum ? (
-        <text x="0" y="18" fontFamily={fonts.family} fontSize={fonts.topNumber} textAnchor="start" fill={isHot("topNum") ? colors.highlight : topNumColor ?? colors.main} cursor={cursor} {...mouseHandlers("topNum")}>
+        <text x="0" y="18" fontFamily={fonts.family} fontSize={fonts.topNumber} textAnchor="start" fill={isHot("above") ? colors.highlight : topNumColor ?? colors.main} cursor={cursor} {...mouseHandlers("above")}>
           {topNum}
         </text>
       ) : null}

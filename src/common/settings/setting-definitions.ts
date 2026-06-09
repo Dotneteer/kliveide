@@ -14,6 +14,7 @@ import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_KEYBOARD_HEIGHT,
   SETTING_EMU_KEYBOARD_LAYOUT,
+  SETTING_EMU_KEYBOARD_SPLITTER_POSITION,
   SETTING_EMU_NOTE,
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
@@ -87,6 +88,15 @@ const settingDefinitions: Setting[] = [
     description: "Show or hide the virtual keyboard in the Emulator view.",
     type: "boolean",
     defaultValue: false,
+    persist: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_KEYBOARD_SPLITTER_POSITION,
+    title: "(Virtual keyboard splitter position)",
+    type: "string",
+    defaultValue: "520px",
     persist: true,
     saveWithIde: true,
     boundTo: "emu"
