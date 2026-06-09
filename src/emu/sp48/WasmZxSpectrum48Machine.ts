@@ -8,11 +8,18 @@ export type Sp48WasmExports = {
   sp48HardReset: (is16k: number, isNtsc: number) => void;
   sp48ExecuteFrame: () => number;
   sp48ExecuteInstruction: () => number;
+  sp48DelayAddressBusAccess: (address: number) => void;
+  sp48DelayPortAccess: (address: number) => void;
+  sp48DelayPortRead: (address: number) => void;
+  sp48DelayPortWrite: (address: number) => void;
+  sp48ResetContentionCounters: () => void;
+  sp48SetTacts: (value: number) => void;
   sp48UploadRomByte: (offset: number, value: number) => void;
   sp48ReadMemory: (address: number) => number;
   sp48WriteMemory: (address: number, value: number) => void;
   sp48SetKeyStatus: (key: number, down: number) => void;
   sp48ReadPort: (address: number) => number;
+  sp48WritePort: (address: number, value: number) => void;
   sp48SetAudioSampleRate: (rate: number) => void;
   sp48GetScreenWidth: () => number;
   sp48GetScreenHeight: () => number;
@@ -26,7 +33,45 @@ export type Sp48WasmExports = {
   sp48GetBaseClockFrequency: () => number;
   sp48GetFrames: () => number;
   sp48GetTacts: () => number;
+  sp48GetCurrentFrameTact: () => number;
+  sp48GetRasterLines: () => number;
+  sp48GetScreenLineTime: () => number;
+  sp48GetTimingScreenWidth: () => number;
+  sp48GetTimingScreenLines: () => number;
+  sp48GetFirstDisplayLine: () => number;
+  sp48GetFirstVisibleLine: () => number;
+  sp48GetFirstVisibleBorderTact: () => number;
+  sp48GetContentionValue: (tact: number) => number;
+  sp48GetRenderingPhase: (tact: number) => number;
+  sp48GetRenderingPixelAddress: (tact: number) => number;
+  sp48GetRenderingAttributeAddress: (tact: number) => number;
+  sp48GetRenderingPixelIndex: (tact: number) => number;
+  sp48GetTotalContentionDelaySinceStart: () => number;
+  sp48GetContentionDelaySincePause: () => number;
+  sp48GetCpuInstructionsExecuted: () => number;
+  sp48GetCpuFrameSliceInstructions: () => number;
+  sp48GetCpuTacts: () => number;
+  sp48GetCpuAf: () => number;
+  sp48SetCpuAf: (value: number) => void;
+  sp48GetCpuBc: () => number;
+  sp48SetCpuBc: (value: number) => void;
+  sp48GetCpuDe: () => number;
+  sp48SetCpuDe: (value: number) => void;
+  sp48GetCpuHl: () => number;
+  sp48SetCpuHl: (value: number) => void;
+  sp48GetCpuPc: () => number;
+  sp48SetCpuPc: (value: number) => void;
+  sp48GetCpuSp: () => number;
+  sp48SetCpuSp: (value: number) => void;
+  sp48GetCpuHalted: () => number;
   sp48GetKeyboardLine: (line: number) => number;
+  sp48GetPortFeValue: () => number;
+  sp48GetBorderColor: () => number;
+  sp48GetEarBit: () => number;
+  sp48GetMicBit: () => number;
+  sp48GetBeeperLevel: () => number;
+  sp48GetEarBitChangedFrom0Tacts: () => number;
+  sp48GetEarBitChangedFrom1Tacts: () => number;
   sp48GetDiagnosticFlags: () => number;
 };
 
@@ -39,14 +84,10 @@ export class WasmZxSpectrum48Machine {
   readonly romId = "sp48";
   readonly screenWidthInPixels: number;
   readonly screenHeightInPixels: number;
-  readonly tactsInFrame: number;
-  readonly baseClockFrequency: number;
 
   constructor(private readonly wasm: Sp48WasmExports) {
     this.screenWidthInPixels = wasm.sp48GetScreenWidth();
     this.screenHeightInPixels = wasm.sp48GetScreenHeight();
-    this.tactsInFrame = wasm.sp48GetTactsInFrame();
-    this.baseClockFrequency = wasm.sp48GetBaseClockFrequency();
   }
 
   get frames(): number {
@@ -55,6 +96,14 @@ export class WasmZxSpectrum48Machine {
 
   get tacts(): number {
     return this.wasm.sp48GetTacts();
+  }
+
+  get tactsInFrame(): number {
+    return this.wasm.sp48GetTactsInFrame();
+  }
+
+  get baseClockFrequency(): number {
+    return this.wasm.sp48GetBaseClockFrequency();
   }
 
   reset(): void {
@@ -71,6 +120,30 @@ export class WasmZxSpectrum48Machine {
 
   executeInstruction(): number {
     return this.wasm.sp48ExecuteInstruction();
+  }
+
+  delayAddressBusAccess(address: number): void {
+    this.wasm.sp48DelayAddressBusAccess(address);
+  }
+
+  delayPortAccess(address: number): void {
+    this.wasm.sp48DelayPortAccess(address);
+  }
+
+  delayPortRead(address: number): void {
+    this.wasm.sp48DelayPortRead(address);
+  }
+
+  delayPortWrite(address: number): void {
+    this.wasm.sp48DelayPortWrite(address);
+  }
+
+  resetContentionCounters(): void {
+    this.wasm.sp48ResetContentionCounters();
+  }
+
+  setTacts(value: number): void {
+    this.wasm.sp48SetTacts(value);
   }
 
   async setup(
@@ -120,6 +193,10 @@ export class WasmZxSpectrum48Machine {
     return this.wasm.sp48ReadPort(address);
   }
 
+  writePort(address: number, value: number): void {
+    this.wasm.sp48WritePort(address, value);
+  }
+
   setAudioSampleRate(rate: number): void {
     this.wasm.sp48SetAudioSampleRate(rate);
   }
@@ -134,6 +211,158 @@ export class WasmZxSpectrum48Machine {
 
   getKeyboardLine(line: number): number {
     return this.wasm.sp48GetKeyboardLine(line);
+  }
+
+  getCurrentFrameTact(): number {
+    return this.wasm.sp48GetCurrentFrameTact();
+  }
+
+  getRasterLines(): number {
+    return this.wasm.sp48GetRasterLines();
+  }
+
+  getScreenLineTime(): number {
+    return this.wasm.sp48GetScreenLineTime();
+  }
+
+  getTimingScreenWidth(): number {
+    return this.wasm.sp48GetTimingScreenWidth();
+  }
+
+  getTimingScreenLines(): number {
+    return this.wasm.sp48GetTimingScreenLines();
+  }
+
+  getFirstDisplayLine(): number {
+    return this.wasm.sp48GetFirstDisplayLine();
+  }
+
+  getFirstVisibleLine(): number {
+    return this.wasm.sp48GetFirstVisibleLine();
+  }
+
+  getFirstVisibleBorderTact(): number {
+    return this.wasm.sp48GetFirstVisibleBorderTact();
+  }
+
+  getContentionValue(tact: number): number {
+    return this.wasm.sp48GetContentionValue(tact);
+  }
+
+  getRenderingPhase(tact: number): number {
+    return this.wasm.sp48GetRenderingPhase(tact);
+  }
+
+  getRenderingPixelAddress(tact: number): number {
+    return this.wasm.sp48GetRenderingPixelAddress(tact);
+  }
+
+  getRenderingAttributeAddress(tact: number): number {
+    return this.wasm.sp48GetRenderingAttributeAddress(tact);
+  }
+
+  getRenderingPixelIndex(tact: number): number {
+    return this.wasm.sp48GetRenderingPixelIndex(tact);
+  }
+
+  getTotalContentionDelaySinceStart(): number {
+    return this.wasm.sp48GetTotalContentionDelaySinceStart();
+  }
+
+  getContentionDelaySincePause(): number {
+    return this.wasm.sp48GetContentionDelaySincePause();
+  }
+
+  getCpuInstructionsExecuted(): number {
+    return this.wasm.sp48GetCpuInstructionsExecuted();
+  }
+
+  getCpuFrameSliceInstructions(): number {
+    return this.wasm.sp48GetCpuFrameSliceInstructions();
+  }
+
+  getCpuTacts(): number {
+    return this.wasm.sp48GetCpuTacts();
+  }
+
+  getCpuAf(): number {
+    return this.wasm.sp48GetCpuAf();
+  }
+
+  setCpuAf(value: number): void {
+    this.wasm.sp48SetCpuAf(value);
+  }
+
+  getCpuBc(): number {
+    return this.wasm.sp48GetCpuBc();
+  }
+
+  setCpuBc(value: number): void {
+    this.wasm.sp48SetCpuBc(value);
+  }
+
+  getCpuDe(): number {
+    return this.wasm.sp48GetCpuDe();
+  }
+
+  setCpuDe(value: number): void {
+    this.wasm.sp48SetCpuDe(value);
+  }
+
+  getCpuHl(): number {
+    return this.wasm.sp48GetCpuHl();
+  }
+
+  setCpuHl(value: number): void {
+    this.wasm.sp48SetCpuHl(value);
+  }
+
+  getCpuPc(): number {
+    return this.wasm.sp48GetCpuPc();
+  }
+
+  setCpuPc(value: number): void {
+    this.wasm.sp48SetCpuPc(value);
+  }
+
+  getCpuSp(): number {
+    return this.wasm.sp48GetCpuSp();
+  }
+
+  setCpuSp(value: number): void {
+    this.wasm.sp48SetCpuSp(value);
+  }
+
+  getCpuHalted(): boolean {
+    return this.wasm.sp48GetCpuHalted() !== 0;
+  }
+
+  getPortFeValue(): number {
+    return this.wasm.sp48GetPortFeValue();
+  }
+
+  getBorderColor(): number {
+    return this.wasm.sp48GetBorderColor();
+  }
+
+  getEarBit(): boolean {
+    return this.wasm.sp48GetEarBit() !== 0;
+  }
+
+  getMicBit(): boolean {
+    return this.wasm.sp48GetMicBit() !== 0;
+  }
+
+  getBeeperLevel(): number {
+    return this.wasm.sp48GetBeeperLevel();
+  }
+
+  getEarBitChangedFrom0Tacts(): number {
+    return this.wasm.sp48GetEarBitChangedFrom0Tacts();
+  }
+
+  getEarBitChangedFrom1Tacts(): number {
+    return this.wasm.sp48GetEarBitChangedFrom1Tacts();
   }
 
   getPixelBuffer(): Uint32Array {

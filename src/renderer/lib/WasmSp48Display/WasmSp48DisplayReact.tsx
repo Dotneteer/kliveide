@@ -19,6 +19,19 @@ import {
 type KeyboardIndicator = {
   lines: number[];
   portFe: number;
+  portFeOut: number;
+  border: number;
+  ear: boolean;
+  mic: boolean;
+  beeperLevel: number;
+  frameTact: number;
+  renderingPhase: number;
+  contention: number;
+  contentionDelay: number;
+  cpuPc: number;
+  cpuAf: number;
+  cpuInstructions: number;
+  cpuFrameSliceInstructions: number;
   lastKey?: Sp48KeyEventDetail;
 };
 
@@ -30,7 +43,20 @@ export const WasmSp48DisplayReact = () => {
   const [error, setError] = useState<string>();
   const [keyboardIndicator, setKeyboardIndicator] = useState<KeyboardIndicator>({
     lines: Array(8).fill(0),
-    portFe: 0xff
+    portFe: 0xff,
+    portFeOut: 0,
+    border: 7,
+    ear: false,
+    mic: false,
+    beeperLevel: 0,
+    frameTact: 0,
+    renderingPhase: 0,
+    contention: 0,
+    contentionDelay: 0,
+    cpuPc: 0,
+    cpuAf: 0xffff,
+    cpuInstructions: 0,
+    cpuFrameSliceInstructions: 0
   });
   const sharedState = useSharedState();
   const dispatch = useDispatch();
@@ -79,9 +105,23 @@ export const WasmSp48DisplayReact = () => {
         context.imageSmoothingEnabled = false;
 
         const updateKeyboardIndicator = (lastKey?: Sp48KeyEventDetail) => {
+          const frameTact = machine.getCurrentFrameTact();
           setKeyboardIndicator({
             lines: Array.from(machine.getKeyboardLines()),
             portFe: machine.readPort(0x00fe),
+            portFeOut: machine.getPortFeValue(),
+            border: machine.getBorderColor(),
+            ear: machine.getEarBit(),
+            mic: machine.getMicBit(),
+            beeperLevel: machine.getBeeperLevel(),
+            frameTact,
+            renderingPhase: machine.getRenderingPhase(frameTact),
+            contention: machine.getContentionValue(frameTact),
+            contentionDelay: machine.getTotalContentionDelaySinceStart(),
+            cpuPc: machine.getCpuPc(),
+            cpuAf: machine.getCpuAf(),
+            cpuInstructions: machine.getCpuInstructionsExecuted(),
+            cpuFrameSliceInstructions: machine.getCpuFrameSliceInstructions(),
             lastKey
           });
         };
@@ -171,6 +211,7 @@ export const WasmSp48DisplayReact = () => {
           }
 
           if (controller.tickFrame()) {
+            updateKeyboardIndicator();
             paintPixels();
           }
           animationFrame = requestAnimationFrame(render);
@@ -213,7 +254,20 @@ export const WasmSp48DisplayReact = () => {
       <div className={styles.keyboardMatrix}>
         <span>KB</span>
         <span>{keyboardIndicator.lines.map(toHexByte).join(" ")}</span>
-        <span>FE {toHexByte(keyboardIndicator.portFe)}</span>
+        <span>IN {toHexByte(keyboardIndicator.portFe)}</span>
+        <span>OUT {toHexByte(keyboardIndicator.portFeOut)}</span>
+        <span>B{keyboardIndicator.border}</span>
+        <span>E{keyboardIndicator.ear ? 1 : 0}</span>
+        <span>M{keyboardIndicator.mic ? 1 : 0}</span>
+        <span>L{keyboardIndicator.beeperLevel}</span>
+        <span>T{keyboardIndicator.frameTact}</span>
+        <span>PH{keyboardIndicator.renderingPhase}</span>
+        <span>C{keyboardIndicator.contention}</span>
+        <span>CD{keyboardIndicator.contentionDelay}</span>
+        <span>PC {toHexWord(keyboardIndicator.cpuPc)}</span>
+        <span>A {toHexByte(keyboardIndicator.cpuAf >> 8)}</span>
+        <span>CPU {keyboardIndicator.cpuInstructions}</span>
+        <span>SL {keyboardIndicator.cpuFrameSliceInstructions}</span>
         {keyboardIndicator.lastKey ? (
           <span>
             {keyboardIndicator.lastKey.down ? "DOWN" : "UP"} {keyboardIndicator.lastKey.key}
@@ -227,4 +281,8 @@ export const WasmSp48DisplayReact = () => {
 
 function toHexByte(value: number): string {
   return (value & 0xff).toString(16).padStart(2, "0").toUpperCase();
+}
+
+function toHexWord(value: number): string {
+  return (value & 0xffff).toString(16).padStart(4, "0").toUpperCase();
 }

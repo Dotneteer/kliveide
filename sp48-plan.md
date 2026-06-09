@@ -299,6 +299,14 @@ Done when:
 - Basic I/O behavior works without screen or audio generation.
 - The placeholder display can use the real border color state before the real ULA renderer exists.
 
+Implementation note:
+
+- `sp48WritePort(address, value)` now handles even-address `$FE` writes and ignores odd-address writes.
+- The C core tracks the last `$FE` output byte, border color bits `0..2`, MIC bit `3`, EAR bit `4`, a 2-bit beeper level index, and EAR transition tacts for 0->1 and 1->0 changes.
+- `sp48ReadPort(address)` now merges the keyboard matrix with passive EAR bit-6 sensing, matching the reference analog EAR timing shape used before tape load support is migrated.
+- The fake display uses the real border color as an 8-pixel frame around the placeholder bitmap, giving a UI-visible smoke test for `$FE` border writes before ULA rendering is implemented.
+- The temporary Wasm display overlay now reports `$FE` input, `$FE` output, border, EAR, MIC, and beeper level diagnostics.
+
 ### Step 6 - Tacts, Frame Timing, And Contention Tables
 
 Port the `CommonScreenDevice` PAL/NTSC screen configuration calculations into C using fixed arrays:
@@ -321,6 +329,16 @@ Done when:
 - Z80 memory/port delays are machine-accurate enough to run ROM timing-sensitive code.
 - The fake `sp48ExecuteFrame()` uses the real frame length and frame counters.
 
+Implementation note:
+
+- `sp48.c` now allocates static PAL-sized timing tables for contention values, rendering phases, display pixel addresses, attribute addresses, and timing-screen pixel indexes. No dynamic allocation is used.
+- PAL timing is initialized to 312 raster lines, 224 tacts per line, 69,888 tacts per frame, a 352-pixel timing width, 288 timing lines, first visible line 15, and first display line 64.
+- NTSC timing is initialized to 264 raster lines, 224 tacts per line, 59,136 tacts per frame, a 352-pixel timing width, 240 timing lines, first visible line 23, and first display line 48.
+- Rendering phase numeric values mirror the original `RenderingPhase` enum so later ULA/floating-bus code can use the same phase meanings.
+- The C core exports timing-table accessors plus `sp48DelayAddressBusAccess`, `sp48DelayPortAccess`, `sp48DelayPortRead`, and `sp48DelayPortWrite`. Memory contention only delays `0x4000-0x7fff`; I/O contention follows the reference `C:1`, `C:3`, and `N:4` patterns.
+- `WasmZxSpectrum48Machine.tactsInFrame` and `baseClockFrequency` are live getters. This matters because `sp48HardReset(..., isNtsc)` can change the current frame length after instantiation.
+- `sp48SetTacts` is exported as a narrow diagnostic/control hook for tests and for the future instruction runner integration.
+
 ### Step 7 - Integrate Existing Wasm Z80 Into Sp48
 
 Move or share the current `z80.c` CPU implementation so `sp48.c` can own memory and I/O behavior directly. Avoid a design where TypeScript preloads every memory/port access during a frame; full frame execution must stay inside Wasm.
@@ -341,6 +359,15 @@ Done when:
 
 - `sp48ExecuteInstruction()` can execute instructions with Spectrum memory and port semantics.
 - The UI still runs; the fake frame runner may still be used until the real frame loop is complete.
+
+Implementation note:
+
+- `z80.c` remains the single CPU implementation. It still builds as standalone `z80.wasm`, but it can now also be included by a machine core with `Z80_EXTERNAL_BUS` and bus/tact macros.
+- `sp48.c` includes the existing Z80 core and maps Z80 memory reads/writes to the SP48 ROM/RAM map, port reads/writes to the SP48 `$FE` implementation, and memory/port delays to the SP48 contention tables.
+- `sp48ExecuteInstruction()` now executes one real Z80 CPU cycle inside `sp48.wasm`; no TypeScript preloading is needed for SP48 memory or ports.
+- The temporary `sp48ExecuteFrame()` still preserves the UI skeleton contract by advancing exactly one frame, but it executes a small CPU slice first so PC/instruction diagnostics visibly move before the full frame runner is migrated.
+- The Wasm display overlay shows Step 5 `$FE`/keyboard/border/EAR/MIC state, Step 6 frame tact/rendering phase/contention diagnostics, and Step 7 CPU PC/A/instruction counters.
+- Focused tests prove ROM fetch, RAM write, `$FE` port write, and contended RAM read behavior through the embedded CPU bus.
 
 ### Step 8 - No-Debug Frame Runner In C
 

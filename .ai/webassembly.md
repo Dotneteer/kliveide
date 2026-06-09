@@ -134,6 +134,21 @@ machine.hardReset();
 
 `WasmZxSpectrum48Machine.setup()` maps the default `romId` (`"sp48"`) to `roms/sp48.rom` and calls `readBinaryFile(path, "public")`.
 
+## Current SP48 CPU Integration
+
+`src/emu/z80/z80.c` is still the single Z80 CPU implementation. It builds as standalone `z80.wasm` for CPU tests, and `src/emu/sp48/sp48.c` also includes it directly with `Z80_EXTERNAL_BUS` defined.
+
+When embedded in `sp48.c`, the Z80 core is configured with macros:
+
+- memory reads/writes use the SP48 ROM/RAM map
+- port reads/writes use the SP48 port implementation, currently `$FE`
+- base tacts are mirrored into both the Z80 CPU counter and the SP48 machine tact counter
+- memory and I/O delays apply the SP48 contention tables
+
+Keep this single-source pattern when expanding the machine core. Do not fork instruction implementations into `sp48.c`; add new bus/timing hooks to `z80.c` only when they keep standalone `z80.wasm` behavior unchanged by default.
+
+The SP48 adapter exposes CPU diagnostics such as PC, AF/HL, CPU tacts, and instruction counters. These are used by tests and by the temporary UI overlay to prove that Step 7 is active before the full frame runner and debugger are migrated.
+
 ## Sass Warning Note
 
 Renderer SCSS is configured to use Dart Sass's modern JS API in `electron.vite.config.mts`:

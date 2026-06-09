@@ -84,7 +84,9 @@ typedef struct Z80State {
 // -----------------------------------------------------------------------------
 
 static Z80State cpu;
+#ifndef Z80_EXTERNAL_BUS
 static uint8_t memory[0x10000];
+#endif
 
 #define AF cpu.af.word
 #define BC cpu.bc.word
@@ -121,7 +123,11 @@ static inline RegisterPair *activeIndexPair(void) {
 }
 
 static inline void tactPlusN(uint32_t value) {
+#ifdef Z80_TACT_PLUS_N
+  Z80_TACT_PLUS_N(value);
+#else
   cpu.tacts += value;
+#endif
 }
 
 static inline void tactPlus1WithAddress(uint16_t address) {
@@ -164,23 +170,39 @@ static inline void tactPlus7WithAddress(uint16_t address) {
 }
 
 static inline void delayMemoryRead(uint16_t address) {
+#ifdef Z80_DELAY_MEMORY_READ
+  Z80_DELAY_MEMORY_READ(address);
+#else
   (void)address;
   tactPlusN(3);
+#endif
 }
 
 static inline void delayMemoryWrite(uint16_t address) {
+#ifdef Z80_DELAY_MEMORY_WRITE
+  Z80_DELAY_MEMORY_WRITE(address);
+#else
   (void)address;
   tactPlusN(3);
+#endif
 }
 
 static inline void delayPortRead(uint16_t address) {
+#ifdef Z80_DELAY_PORT_READ
+  Z80_DELAY_PORT_READ(address);
+#else
   (void)address;
   tactPlusN(4);
+#endif
 }
 
 static inline void delayPortWrite(uint16_t address) {
+#ifdef Z80_DELAY_PORT_WRITE
+  Z80_DELAY_PORT_WRITE(address);
+#else
   (void)address;
   tactPlusN(4);
+#endif
 }
 
 static inline void refreshMemory(void) {
@@ -196,25 +218,45 @@ static inline void removeFromHaltedState(void) {
 
 static inline uint8_t readMemory(uint16_t address) {
   delayMemoryRead(address);
+#ifdef Z80_READ_MEMORY
+  return Z80_READ_MEMORY(address);
+#else
   return memory[address];
+#endif
 }
 
 static inline void writeMemory(uint16_t address, uint8_t value) {
   delayMemoryWrite(address);
+#ifdef Z80_WRITE_MEMORY
+  Z80_WRITE_MEMORY(address, value);
+#else
   memory[address] = value;
+#endif
 }
 
 static inline uint8_t readPort(uint16_t address) {
   delayPortRead(address);
+#ifdef Z80_READ_PORT
+  uint8_t value = Z80_READ_PORT(address);
+  cpu.lastPortAddress = address;
+  cpu.lastPortValue = value;
+  cpu.lastPortIsWrite = 0;
+  cpu.hasPortEvent = 1;
+  return value;
+#else
   cpu.lastPortAddress = address;
   cpu.lastPortValue = cpu.portReadValue;
   cpu.lastPortIsWrite = 0;
   cpu.hasPortEvent = 1;
   return cpu.portReadValue;
+#endif
 }
 
 static inline void writePort(uint16_t address, uint8_t value) {
   delayPortWrite(address);
+#ifdef Z80_WRITE_PORT
+  Z80_WRITE_PORT(address, value);
+#endif
   cpu.lastPortAddress = address;
   cpu.lastPortValue = value;
   cpu.lastPortIsWrite = 1;
@@ -642,7 +684,11 @@ void z80Reset(void) {
 }
 
 uint8_t *z80MemoryPtr(void) {
+#ifdef Z80_EXTERNAL_BUS
+  return Z80_MEMORY_PTR();
+#else
   return memory;
+#endif
 }
 
 typedef void (*Z80Operation)(void);
@@ -3044,8 +3090,20 @@ uint32_t z80GetRetnExecuted(void) { return cpu.retnExecuted; }
 void z80SetRetnExecuted(uint32_t value) { cpu.retnExecuted = value != 0; }
 void z80TactPlusN(uint32_t value) { tactPlusN(value); }
 
-uint32_t z80PeekMemory(uint32_t address) { return memory[address & 0xffff]; }
-void z80PokeMemory(uint32_t address, uint32_t value) { memory[address & 0xffff] = (uint8_t)value; }
+uint32_t z80PeekMemory(uint32_t address) {
+#ifdef Z80_READ_MEMORY
+  return Z80_READ_MEMORY(address & 0xffff);
+#else
+  return memory[address & 0xffff];
+#endif
+}
+void z80PokeMemory(uint32_t address, uint32_t value) {
+#ifdef Z80_POKE_MEMORY
+  Z80_POKE_MEMORY(address & 0xffff, value);
+#else
+  memory[address & 0xffff] = (uint8_t)value;
+#endif
+}
 uint32_t z80GetLastMemAddress(void) { return 0; }
 uint32_t z80GetLastMemValue(void) { return 0; }
 uint32_t z80GetLastMemIsWrite(void) { return 0; }
