@@ -391,7 +391,12 @@ static inline uint8_t shouldRaiseInterrupt(void) {
   return currentFrameTact() < 32u ? 1u : 0u;
 }
 
+static inline uint8_t readScreenMemoryOffset(uint32_t offset) {
+  return sp48Memory[0x4000u + (offset & 0x3fffu)];
+}
+
 uint32_t sp48ReadPort(uint32_t address);
+uint32_t sp48ReadFloatingBus(void);
 void sp48WritePort(uint32_t address, uint32_t value);
 uint32_t sp48ExecuteInstruction(void);
 
@@ -775,6 +780,10 @@ void sp48WriteMemory(uint32_t address, uint32_t value) {
   }
 }
 
+uint32_t sp48ReadScreenMemoryOffset(uint32_t offset) {
+  return readScreenMemoryOffset(offset);
+}
+
 void sp48SetKeyStatus(uint32_t key, uint32_t down) {
   if (key >= 40u) {
     return;
@@ -791,7 +800,7 @@ void sp48SetKeyStatus(uint32_t key, uint32_t down) {
 
 uint32_t sp48ReadPort(uint32_t address) {
   if ((address & 0x0001u) != 0u) {
-    return 0xffu;
+    return sp48ReadFloatingBus();
   }
 
   uint8_t status = 0u;
@@ -813,6 +822,25 @@ uint32_t sp48ReadPort(uint32_t address) {
 
   const uint32_t bit6Value = bit4Sensed != 0u ? 0x40u : 0x00u;
   return (portValue & 0xbfu) | bit6Value;
+}
+
+uint32_t sp48ReadFloatingBus(void) {
+  const uint32_t currentTactIndex =
+    (currentFrameTact() + sp48TactsInFrame - 5u) % sp48TactsInFrame;
+  const uint8_t phase = sp48RenderingPhase[currentTactIndex];
+
+  switch (phase) {
+    case SP48_RENDER_PHASE_BORDER_FETCH_PIXEL:
+    case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_B2:
+    case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_B1:
+      return readScreenMemoryOffset(sp48RenderingPixelAddress[currentTactIndex]);
+    case SP48_RENDER_PHASE_BORDER_FETCH_ATTR:
+    case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_A2:
+    case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_A1:
+      return readScreenMemoryOffset(sp48RenderingAttributeAddress[currentTactIndex]);
+    default:
+      return 0xffu;
+  }
 }
 
 void sp48WritePort(uint32_t address, uint32_t value) {

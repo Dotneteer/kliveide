@@ -1,9 +1,9 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
-import type { Sp48FakeMachineController } from "../../../emu/sp48/Sp48FakeMachineController";
+import type { Sp48MachineController } from "../../../emu/sp48/Sp48MachineController";
 
 export function useEmulatorScreen(
   hostElement: MutableRefObject<HTMLDivElement | null>,
-  controllerRef: MutableRefObject<Sp48FakeMachineController | null>
+  controllerRef: MutableRefObject<Sp48MachineController | null>
 ) {
   const screenElement = useRef<HTMLCanvasElement | null>(null);
   const [canvasWidth, setCanvasWidth] = useState(0);

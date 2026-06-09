@@ -2,17 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { MachineControllerState } from "../../../common/abstractions/MachineControllerState";
 import { setMachineStateAction, setSp48FrameInfoAction } from "../../../common/state/actions";
 import {
-  Sp48FakeMachineController,
+  createSp48MachineController,
+  Sp48MachineController,
   type Sp48FrameCompletedEvent,
   type Sp48MachineCommand
-} from "../../../emu/sp48/Sp48FakeMachineController";
+} from "../../../emu/sp48/Sp48MachineController";
 import {
   SP48_KEY_EVENT,
   dispatchSp48KeyStatus,
   mapPhysicalKeyToSp48Keys,
   type Sp48KeyEventDetail
 } from "../../../emu/sp48/sp48-keyboard";
-import { loadWasmZxSpectrum48Machine } from "../../../emu/sp48/WasmZxSpectrum48Machine";
 import { readBinaryFile, useDispatch, useSharedState } from "../../shared-store";
 import { EmulatorOverlay } from "./EmulatorOverlay";
 import styles from "./EmulatorPanel.module.scss";
@@ -66,7 +66,7 @@ const initialDiagnostics: MachineDiagnostics = {
 
 export const EmulatorPanelReact = () => {
   const hostElement = useRef<HTMLDivElement | null>(null);
-  const controllerRef = useRef<Sp48FakeMachineController | null>(null);
+  const controllerRef = useRef<Sp48MachineController | null>(null);
   const lastCommandSequenceRef = useRef(0);
   const renderInstantScreenRef = useRef<(() => void) | null>(null);
   const [overlay, setOverlay] = useState<string | null>("Loading machine...");
@@ -117,12 +117,10 @@ export const EmulatorPanelReact = () => {
 
     async function run() {
       try {
-        const machine = await loadWasmZxSpectrum48Machine();
-        await machine.setup(readBinaryFile);
-        machine.hardReset();
+        const controller = await createSp48MachineController(readBinaryFile);
+        const { machine } = controller;
         const audioSampleRate = await initAudio(machine.tactsInFrame, machine.baseClockFrequency);
         machine.setAudioSampleRate(audioSampleRate);
-        const controller = new Sp48FakeMachineController(machine);
         controllerRef.current = controller;
 
         if (disposed) {

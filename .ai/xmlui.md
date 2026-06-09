@@ -168,7 +168,7 @@ registerComponentApi({
 ## Splitter Notes
 
 - `Splitter`/`VSplitter` `initialPrimarySize`, `minPrimarySize`, and `maxPrimarySize` expect CSS size strings such as `520px`, `60%`, or `-100px`.
-- Although the Splitter docs describe the `resize` event primary value as pixels, the XMLUI 0.12.29 implementation emits pixels during initialization and percentages during actual drag movement. When persisting a dragged splitter position, save values `<= 100` as percentages and larger values as pixels.
+- XMLUI 0.12.30 and later emit a single numeric pixel value for the Splitter `resize` event. Persist this value as a CSS pixel string, for example `primarySize + 'px'`.
 - Do not persist splitter resize values back into shared state on every `onResize` event. Persisting continuously can feed reactive setting changes back into `initialPrimarySize` and disturb live dragging. Prefer local XMLUI state while dragging, then persist after release.
 - XMLUI event handlers can be asynchronous. If a DOM-level `pointerup`/`mouseup` helper reads a value updated by an XMLUI resize handler, defer the read with `setTimeout(..., 0)` so the last XMLUI assignment can land first.
 

@@ -484,6 +484,50 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.getTotalContentionDelaySinceStart()).toBe(1);
   });
 
+  it("reads the ZX Spectrum 48K floating bus from ULA screen fetches", async () => {
+    const machine = await createMachine();
+
+    machine.hardReset();
+    machine.writeMemory(0x4001, 0x5a);
+    machine.writeMemory(0x5801, 0xa5);
+
+    const firstDisplayTact = machine.getFirstDisplayLine() * machine.getScreenLineTime();
+
+    expect(machine.readScreenMemoryOffset(0x0001)).toBe(0x5a);
+    expect(machine.readScreenMemoryOffset(0x1801)).toBe(0xa5);
+
+    machine.setTacts(0);
+
+    expect(machine.readFloatingBus()).toBe(0xff);
+    expect(machine.readPort(0xffff)).toBe(0xff);
+
+    machine.setTacts(firstDisplayTact + 5);
+
+    expect(machine.getRenderingPhase(firstDisplayTact)).toBe(RenderingPhase.DisplayB1FetchB2);
+    expect(machine.readFloatingBus()).toBe(0x5a);
+    expect(machine.readPort(0xffff)).toBe(0x5a);
+
+    machine.setTacts(firstDisplayTact + 6);
+
+    expect(machine.getRenderingPhase(firstDisplayTact + 1)).toBe(RenderingPhase.DisplayB1FetchA2);
+    expect(machine.readFloatingBus()).toBe(0xa5);
+    expect(machine.readPort(0xffff)).toBe(0xa5);
+  });
+
+  it("keeps port $FE keyboard reads separate from the floating bus", async () => {
+    const machine = await createMachine();
+
+    machine.hardReset();
+    machine.writeMemory(0x4001, 0x00);
+    machine.setKeyStatus(10, true);
+
+    const firstDisplayTact = machine.getFirstDisplayLine() * machine.getScreenLineTime();
+    machine.setTacts(firstDisplayTact + 5);
+
+    expect(machine.readFloatingBus()).toBe(0x00);
+    expect(machine.readPort(0xfbfe)).toBe(0xbe);
+  });
+
   it("runs a complete no-debug frame loop in C", async () => {
     const machine = await createMachine();
 

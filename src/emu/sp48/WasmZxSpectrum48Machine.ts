@@ -18,8 +18,10 @@ export type Sp48WasmExports = {
   sp48UploadRomByte: (offset: number, value: number) => void;
   sp48ReadMemory: (address: number) => number;
   sp48WriteMemory: (address: number, value: number) => void;
+  sp48ReadScreenMemoryOffset: (offset: number) => number;
   sp48SetKeyStatus: (key: number, down: number) => void;
   sp48ReadPort: (address: number) => number;
+  sp48ReadFloatingBus: () => number;
   sp48WritePort: (address: number, value: number) => void;
   sp48SetAudioSampleRate: (rate: number) => void;
   sp48GetScreenWidth: () => number;
@@ -199,12 +201,20 @@ export class WasmZxSpectrum48Machine {
     this.wasm.sp48WriteMemory(address, value);
   }
 
+  readScreenMemoryOffset(offset: number): number {
+    return this.wasm.sp48ReadScreenMemoryOffset(offset);
+  }
+
   setKeyStatus(key: number, down: boolean): void {
     this.wasm.sp48SetKeyStatus(key, down ? 1 : 0);
   }
 
   readPort(address: number): number {
     return this.wasm.sp48ReadPort(address);
+  }
+
+  readFloatingBus(): number {
+    return this.wasm.sp48ReadFloatingBus();
   }
 
   writePort(address: number, value: number): void {

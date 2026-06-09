@@ -2,17 +2,22 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { Sp48FakeMachineController } from "@emu/sp48/Sp48FakeMachineController";
-import { instantiateWasmZxSpectrum48Machine } from "@emu/sp48/WasmZxSpectrum48Machine";
+import { createSp48MachineController } from "@emu/sp48/Sp48MachineController";
 
 async function createController() {
   const wasmPath = resolve(process.cwd(), "public/wasm/sp48.wasm");
-  const machine = await instantiateWasmZxSpectrum48Machine(readFileSync(wasmPath));
-  machine.hardReset();
-  return new Sp48FakeMachineController(machine);
+  return createSp48MachineController(async (path) => {
+    if (path === "roms/sp48.rom") {
+      return new Uint8Array(readFileSync(resolve(process.cwd(), "src/public/roms/sp48.rom")));
+    }
+    return new Uint8Array(readFileSync(resolve(process.cwd(), path)));
+  }, {
+    audioSampleRate: 44_100,
+    wasmBytes: readFileSync(wasmPath)
+  });
 }
 
-describe("Sp48 fake machine lifecycle", () => {
+describe("SP48 Wasm machine lifecycle", () => {
   it("does not advance frames while stopped", async () => {
     const controller = await createController();
 
@@ -21,7 +26,7 @@ describe("Sp48 fake machine lifecycle", () => {
     expect(controller.machine.frames).toBe(0);
   });
 
-  it("starts, emits frame completion, and submits fake audio metadata", async () => {
+  it("starts, emits frame completion, and submits Wasm audio metadata", async () => {
     const controller = await createController();
     const events: number[] = [];
     let audioSampleCount = 0;
@@ -36,7 +41,8 @@ describe("Sp48 fake machine lifecycle", () => {
     expect(controller.machineState).toBe(MachineControllerState.Running);
     expect(controller.tickFrame()).toBe(true);
     expect(controller.machine.frames).toBe(1);
-    expect(controller.machine.tacts).toBe(69_888);
+    expect(controller.machine.tacts).toBeGreaterThanOrEqual(controller.machine.tactsInFrame);
+    expect(controller.machine.getNextFrameStartTact()).toBe(controller.machine.tactsInFrame);
     expect(events).toEqual([1]);
     expect(audioSampleCount).toBeGreaterThan(0);
   });
@@ -58,7 +64,7 @@ describe("Sp48 fake machine lifecycle", () => {
     expect(controller.machine.frames).toBe(2);
   });
 
-  it("stops and restarts the fake machine", async () => {
+  it("stops and restarts the Wasm machine", async () => {
     const controller = await createController();
 
     controller.issueMachineCommand("start");

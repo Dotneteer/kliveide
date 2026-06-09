@@ -16,10 +16,6 @@ export const PersistedSettingOnReleaseMd: ComponentMetadata = createMetadata({
     value: {
       description: "The value to persist.",
       valueType: "string"
-    },
-    selector: {
-      description: "The DOM selector used to locate the measured element.",
-      valueType: "string"
     }
   },
   events: {},

@@ -216,12 +216,12 @@ Done when:
 
 Implementation note:
 
-- The current workspace does not yet have the full reference `MachineController`; Step 2 introduces `Sp48FakeMachineController` as the temporary controller-facing lifecycle boundary.
+- The current workspace does not yet have the full reference `MachineController`; Step 2 introduced the controller-facing lifecycle boundary that Step 12 later promoted to `Sp48MachineController`.
 - Toolbar and menu commands are XMLUI/shared-state driven through `emulatorState.lastMachineCommand` and `emulatorState.machineCommandSequence`, not through `globalSettings.demo`.
 - Machine lifecycle state is published as `emulatorState.machineState`, using the shared `MachineControllerState` enum so toolbar and menu enablement follow the same pattern as the original app.
 - API commands received by the emulator renderer must be dispatched with source `"emu"` after local processing, otherwise the main store will not receive controller state changes and menu enablement becomes stale.
 - XMLUI component files that bind shared state need a `SharedAppState id="state"` in their own component scope; a `SharedAppState` declared in a parent component is not visible inside separately declared component files.
-- `WasmSp48DisplayReact` owns the temporary controller instance, observes shared-state commands, and advances frames only while the fake controller is running.
+- `EmulatorPanelReact` owns the SP48 controller instance, observes shared-state commands, and advances frames only while the controller is running.
 - Frame completion events publish lightweight diagnostics under `emulatorState.sp48FrameInfo` with frame count, tact count, and audio sample count.
 - `stop` hard-resets the skeleton and leaves it stopped; `restart` hard-resets and starts it; paused step commands execute one fake frame so display/audio/frame-completion plumbing remains visible.
 - A stopped machine paints a homogeneous dark gray bitmap so the UI visibly distinguishes stopped state from a paused animated frame.
@@ -482,6 +482,16 @@ Done when:
 
 - Port reads from odd addresses match the current TS floating bus behavior.
 
+Implementation note:
+
+- `sp48ReadFloatingBus()` now mirrors `ZxSpectrum48FloatingBusDevice`: it samples the rendering table at `(currentFrameTact - 5 + tactsInFrame) % tactsInFrame`.
+- Pixel-fetch phases (`BorderFetchPixel`, `DisplayB1FetchB2`, `DisplayB2FetchB1`) return the fetched bitmap byte from screen memory offset `$0000-$17ff`.
+- Attribute-fetch phases (`BorderFetchAttr`, `DisplayB1FetchA2`, `DisplayB2FetchA1`) return the fetched attribute byte from screen memory offset `$1800-$1aff`.
+- Non-fetch phases return `$ff`.
+- `sp48ReadPort()` now keeps even-address `$FE` reads on the keyboard/EAR path and routes odd-address reads to the floating bus, matching the reference 48K machine.
+- The Wasm ABI exports `sp48ReadScreenMemoryOffset()` and `sp48ReadFloatingBus()` for focused diagnostics/tests.
+- Focused tests cover direct screen-memory offset reads, non-fetch `$ff`, bitmap fetch, attribute fetch, odd-port floating-bus reads, and even-port keyboard reads staying separate from the floating bus.
+
 ### Step 12 - Promote Wasm Machine Adapter
 
 Introduce a feature-selectable `WasmZxSpectrum48Machine`:
@@ -500,6 +510,14 @@ Tests:
 Done when:
 
 - The UI can run the Wasm-backed machine without renderer-specific changes.
+
+Implementation note:
+
+- The temporary fake controller has been promoted to `src/emu/sp48/Sp48MachineController.ts`.
+- Renderer code creates the SP48 machine through `createSp48MachineController(readBinaryFile)`, so ROM loading still goes through the main-process resource API and renderer code does not read files directly.
+- `EmulatorPanelReact`, `useEmulatorScreen`, `useEmulatorAudio`, and `useEmulatorKeyboard` now work through the promoted controller and `WasmZxSpectrum48Machine` methods.
+- The old `WasmSp48Display` proof component has been removed; the active emulator panel is the only display path for the Wasm-backed SP48 core.
+- Focused lifecycle tests instantiate the promoted controller with in-memory Wasm bytes and the real `sp48.rom`, then verify start, pause, stop, restart, and frame-step behavior.
 
 ### Step 13 - ROM Boot And Smoke Tests
 

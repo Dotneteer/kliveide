@@ -37,7 +37,8 @@ The repository does not install this automatically. On macOS, Homebrew LLVM clan
   - Source: `src/emu/sp48/sp48.c`
   - Generated artifact: `public/wasm/sp48.wasm`
   - TypeScript adapter: `src/emu/sp48/WasmZxSpectrum48Machine.ts`
-  - Renderer proof: `src/renderer/lib/WasmSp48Display/WasmSp48DisplayReact.tsx`
+  - Controller adapter: `src/emu/sp48/Sp48MachineController.ts`
+  - Active renderer integration: `src/renderer/lib/EmulatorPanel/EmulatorPanelReact.tsx`
 - ZX Spectrum ROM resources used by the main process live under `src/public/roms`. The default 48K ROM is `src/public/roms/sp48.rom`, copied from the reference workspace.
 - `public/wasm` is the renderer static-asset location. Electron Vite copies it to `out/renderer/wasm` for packaged/preview builds.
 - Do not put generated `.wasm` files under `src/renderer/src`; Vite may try to module-load them instead of serving them as static assets.
@@ -185,6 +186,17 @@ Do not introduce dynamic allocation for future audio work. If the sample ABI cha
 Renderer playback for the emulator panel lives in `src/renderer/lib/EmulatorPanel/AudioRenderer.ts`, `useEmulatorAudio.ts`, and `Sampling.worklet.js`. The panel creates the `AudioContext`, reads its actual `sampleRate`, configures the Wasm machine with that same rate, resumes the context when the machine enters `Running`, suspends it on pause/stop, normalizes the current int16 Wasm samples to WebAudio's `[-1, 1]` range, mixes the diagnostic EAR/MIC channels into the mono Spectrum speaker level (`0.66 * EAR + 0.33 * MIC`), applies `emulatorState.soundLevel`, and posts that same speaker sample to both left and right worklet channels. Do not hardcode 44.1 kHz; many Electron/WebAudio devices run at 48 kHz, and a producer/consumer sample-rate mismatch creates audible periodic gaps.
 
 Keep Wasm audio scheduling aligned with the reference `AudioDeviceBase`: `_audioSampleLength = baseClockFrequency / sampleRate`, `_audioNextSampleTact` is continuous across frames, and `onNewFrame()` clears the current frame's sample list without resetting the next sample tact. A sample is emitted only after machine tacts advance past `_audioNextSampleTact`; do not create zero-width samples at exact frame/sample boundaries. Render the frame's beeper samples through the actual CPU tact after the instruction that crosses the frame boundary, not merely through the nominal frame-end tact, so no overshoot tacts are lost. Frame sample counts therefore vary naturally, for example 48 kHz PAL starts `958, 958, 959, 958...` samples. Do not force `sampleRate / 50` or a fixed `ceil(tactsInFrame * sampleRate / baseClockFrequency)` count every frame. The emulator panel must pace machine frames with a timed machine loop based on `tactsInFrame / baseClockFrequency`, not `requestAnimationFrame`; a 60 Hz repaint loop cannot evenly submit 50 Hz Spectrum audio chunks.
+
+## Current SP48 Floating Bus
+
+`src/emu/sp48/sp48.c` implements the ZX Spectrum 48K floating bus through the static rendering phase/address tables:
+
+- `sp48ReadFloatingBus()` samples `(currentFrameTact - 5 + tactsInFrame) % tactsInFrame`, matching the reference `ZxSpectrum48FloatingBusDevice`.
+- bitmap fetch phases return `sp48Memory[0x4000 + pixelAddress]`
+- attribute fetch phases return `sp48Memory[0x4000 + attributeAddress]`
+- non-fetch phases return `0xff`
+- `sp48ReadPort()` routes even-address `$FE` reads to keyboard/EAR and odd-address reads to the floating bus
+- diagnostic exports include `sp48ReadScreenMemoryOffset(offset)` and `sp48ReadFloatingBus()`
 
 ## Sass Warning Note
 
