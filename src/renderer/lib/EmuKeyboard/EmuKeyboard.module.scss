@@ -1,0 +1,56 @@
+@use "xmlui/themes.scss" as t;
+
+$themeVars: ();
+@function createThemeVar($componentVariable) {
+  $themeVars: t.appendThemeVar($themeVars, $componentVariable) !global;
+  @return t.getThemeVar($themeVars, $componentVariable);
+}
+
+$component: "EmuKeyboard";
+$backgroundColor-EmuKeyboard: createThemeVar("backgroundColor-#{$component}");
+$backgroundColor-key-EmuKeyboard: createThemeVar("backgroundColor-key-#{$component}");
+$backgroundColor-highlightedKey-EmuKeyboard: createThemeVar("backgroundColor-highlightedKey-#{$component}");
+$color-mainKey-EmuKeyboard: createThemeVar("color-mainKey-#{$component}");
+$color-symbolKey-EmuKeyboard: createThemeVar("color-symbolKey-#{$component}");
+$color-aboveKey-EmuKeyboard: createThemeVar("color-aboveKey-#{$component}");
+$color-belowKey-EmuKeyboard: createThemeVar("color-belowKey-#{$component}");
+$color-highlightKey-EmuKeyboard: createThemeVar("color-highlightKey-#{$component}");
+$fontFamily-EmuKeyboard: createThemeVar("fontFamily-#{$component}");
+$fontSize-mainKey-EmuKeyboard: createThemeVar("fontSize-mainKey-#{$component}");
+$fontSize-keywordKey-EmuKeyboard: createThemeVar("fontSize-keywordKey-#{$component}");
+$fontSize-symbolKey-EmuKeyboard: createThemeVar("fontSize-symbolKey-#{$component}");
+$fontSize-topSymbolKey-EmuKeyboard: createThemeVar("fontSize-topSymbolKey-#{$component}");
+$fontSize-symbolWordKey-EmuKeyboard: createThemeVar("fontSize-symbolWordKey-#{$component}");
+$fontSize-aboveKey-EmuKeyboard: createThemeVar("fontSize-aboveKey-#{$component}");
+$fontSize-belowKey-EmuKeyboard: createThemeVar("fontSize-belowKey-#{$component}");
+$fontSize-centerKey-EmuKeyboard: createThemeVar("fontSize-centerKey-#{$component}");
+$fontSize-shiftKey-EmuKeyboard: createThemeVar("fontSize-shiftKey-#{$component}");
+$fontSize-topNumberKey-EmuKeyboard: createThemeVar("fontSize-topNumberKey-#{$component}");
+
+.keyboard {
+  align-items: flex-start;
+  background: $backgroundColor-EmuKeyboard;
+  box-sizing: border-box;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 12px;
+  width: 100%;
+  font-family: $fontFamily-EmuKeyboard;
+}
+
+.fallback {
+  align-items: center;
+  color: $color-mainKey-EmuKeyboard;
+  display: flex;
+  font: 13px/1.4 $fontFamily-EmuKeyboard;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+:export {
+  themeVars: t.json-stringify($themeVars);
+}

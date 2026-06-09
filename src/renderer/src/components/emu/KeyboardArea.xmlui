@@ -1,8 +1,6 @@
 <Component name="KeyboardArea">
-  <VStack backgroundColor="$backgroundColor-KeyboardArea">
+  <VStack backgroundColor="$backgroundColor-KeyboardArea" height="100%" gap="0">
     <SharedAppState id="state" />
-    <H2>
-      Keyboard Area
-    </H2>
+    <EmuKeyboard machineType="sp48" />
   </VStack>
 </Component>

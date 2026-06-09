@@ -1,5 +1,22 @@
 import type { ThemeDefinition } from "xmlui";
 
+const kliveShellFontFamily =
+  "-apple-system, BlinkMacSystemFont, Helvetica, Neue-Light, Ubuntu, Droid Sans, sans-serif";
+
+const sp48KeyboardFontThemeVars = {
+  "fontFamily-EmuKeyboard": kliveShellFontFamily,
+  "fontSize-mainKey-EmuKeyboard": "36px",
+  "fontSize-keywordKey-EmuKeyboard": "22px",
+  "fontSize-symbolKey-EmuKeyboard": "28px",
+  "fontSize-topSymbolKey-EmuKeyboard": "24px",
+  "fontSize-symbolWordKey-EmuKeyboard": "18px",
+  "fontSize-aboveKey-EmuKeyboard": "20px",
+  "fontSize-belowKey-EmuKeyboard": "20px",
+  "fontSize-centerKey-EmuKeyboard": "28px",
+  "fontSize-shiftKey-EmuKeyboard": "20px",
+  "fontSize-topNumberKey-EmuKeyboard": "20px"
+};
+
 export const KliveTheme: ThemeDefinition = {
   id: "klive-theme",
   name: "Klive IDE Theme",
@@ -25,11 +42,48 @@ export const KliveTheme: ThemeDefinition = {
     "backgroundColor-IdeStatusBar": "#007acc",
     "backgroundColor-resizer-Splitter": "#007acc",
     "backgroundColor-KeyboardArea": "$color-surface-0",
+    "backgroundColor-EmuKeyboard": "#181818",
+    "backgroundColor-key-EmuKeyboard": "#707070",
+    "backgroundColor-highlightedKey-EmuKeyboard": "#0B486B",
+    "color-mainKey-EmuKeyboard": "#e0e0e0",
+    "color-symbolKey-EmuKeyboard": "#c00000",
+    "color-aboveKey-EmuKeyboard": "#00a000",
+    "color-belowKey-EmuKeyboard": "#d02000",
+    "color-highlightKey-EmuKeyboard": "#0048c0",
+    ...sp48KeyboardFontThemeVars,
 
     "backgroundColor-ActivityBar": "$color-surface-200",
     "backgroundColor-SideBar": "$color-surface-100",
     "backgroundColor-DocumentsPanel": "$color-surface-50",
     "backgroundColor-ToolsArea": "$color-surface-0",
+  },
+  tones: {
+    light: {
+      themeVars: {
+        "backgroundColor-EmuKeyboard": "#202020",
+        "backgroundColor-key-EmuKeyboard": "#707070",
+        "backgroundColor-highlightedKey-EmuKeyboard": "orangered",
+        "color-mainKey-EmuKeyboard": "#e0e0e0",
+        "color-symbolKey-EmuKeyboard": "#c00000",
+        "color-aboveKey-EmuKeyboard": "#00a000",
+        "color-belowKey-EmuKeyboard": "#d02000",
+        "color-highlightKey-EmuKeyboard": "#0048c0",
+        ...sp48KeyboardFontThemeVars
+      }
+    },
+    dark: {
+      themeVars: {
+        "backgroundColor-EmuKeyboard": "#181818",
+        "backgroundColor-key-EmuKeyboard": "#707070",
+        "backgroundColor-highlightedKey-EmuKeyboard": "#0B486B",
+        "color-mainKey-EmuKeyboard": "#e0e0e0",
+        "color-symbolKey-EmuKeyboard": "#c00000",
+        "color-aboveKey-EmuKeyboard": "#00a000",
+        "color-belowKey-EmuKeyboard": "#d02000",
+        "color-highlightKey-EmuKeyboard": "#0048c0",
+        ...sp48KeyboardFontThemeVars
+      }
+    }
   },
   resources: {},
 };

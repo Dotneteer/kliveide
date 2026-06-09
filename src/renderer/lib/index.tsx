@@ -1,3 +1,4 @@
+import { emuKeyboardComponentRenderer } from "./EmuKeyboard/EmuKeyboard";
 import { emuMachineCommandsComponentRenderer } from "./EmuMachineCommands/EmuMachineCommands";
 import { helloComponentRenderer } from "./Hello/Hello";
 import { sharedAppStateComponentRenderer } from "./SharedAppState/SharedAppState";
@@ -9,6 +10,7 @@ import { wasmSp48DisplayComponentRenderer } from "./WasmSp48Display/WasmSp48Disp
 export default {
   namespace: "XMLUIExtensions",
   components: [
+    emuKeyboardComponentRenderer,
     emuMachineCommandsComponentRenderer,
     helloComponentRenderer,
     sharedAppStateComponentRenderer,

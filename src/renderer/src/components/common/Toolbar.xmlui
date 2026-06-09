@@ -4,7 +4,7 @@
   var.machineState="{state.value.emulatorState.machineState ?? 0}"
   var.isRunning="{machineState === 1}"
   var.isPaused="{machineState === 3}"
-  var.keyboardVisible="{state.value.globalSettings.demo.keyboardVisible ?? true}"
+  var.keyboardVisible="{state.value.globalSettings.emuViewOptions.showKeyboard ?? false}"
   var.instantScreenVisible="{state.value.globalSettings.demo.instantScreenVisible ?? false}"
   var.muted="{state.value.emulatorState.soundMuted ?? false}"
   var.syncSourceBreakpoints="{state.value.globalSettings.ide.syncSourceBreakpoints ?? false}"
@@ -87,7 +87,7 @@
       iconName="keyboard"
       title="Show/Hide keyboard"
       selected="{keyboardVisible}"
-      onClick="state.dispatchSetGlobalSetting('demo.keyboardVisible', !keyboardVisible)"
+      onClick="state.dispatchSetGlobalSetting('emuViewOptions.showKeyboard', !keyboardVisible)"
     />
     <ToolbarSeparator when="{isEmu}" />
     <ToolbarButton

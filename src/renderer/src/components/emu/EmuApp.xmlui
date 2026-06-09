@@ -9,7 +9,7 @@
       floating
     >
       <EmulatorArea height="100%" />
-      <KeyboardArea height="100%" />
+      <KeyboardArea when="{state.value.globalSettings.emuViewOptions.showKeyboard ?? false}" height="100%" />
     </VSplitter>
     <EmuStatusBar when="{state.globalSettings('showStatusBar', true)}" />
   </VStack>
