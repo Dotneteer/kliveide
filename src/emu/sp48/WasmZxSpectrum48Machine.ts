@@ -8,6 +8,7 @@ export type Sp48WasmExports = {
   sp48HardReset: (is16k: number, isNtsc: number) => void;
   sp48ExecuteFrame: () => number;
   sp48ExecuteInstruction: () => number;
+  sp48RenderInstantScreen: () => void;
   sp48DelayAddressBusAccess: (address: number) => void;
   sp48DelayPortAccess: (address: number) => void;
   sp48DelayPortRead: (address: number) => void;
@@ -128,6 +129,11 @@ export class WasmZxSpectrum48Machine {
 
   executeInstruction(): number {
     return this.wasm.sp48ExecuteInstruction();
+  }
+
+  renderInstantScreen(): Uint32Array {
+    this.wasm.sp48RenderInstantScreen();
+    return this.getPixelBuffer();
   }
 
   delayAddressBusAccess(address: number): void {
@@ -406,12 +412,12 @@ export class WasmZxSpectrum48Machine {
   }
 
   getPixelBuffer(): Uint32Array {
-    const length = this.screenWidthInPixels * this.screenHeightInPixels;
+    const length = this.screenWidthInPixels * (this.screenHeightInPixels + 4);
     return new Uint32Array(this.wasm.memory.buffer, this.wasm.sp48PixelBufferPtr(), length);
   }
 
   getPixelBufferBytes(): Uint8ClampedArray {
-    const byteLength = this.screenWidthInPixels * this.screenHeightInPixels * 4;
+    const byteLength = this.screenWidthInPixels * (this.screenHeightInPixels + 4) * 4;
     return new Uint8ClampedArray(this.wasm.memory.buffer, this.wasm.sp48PixelBufferPtr(), byteLength);
   }
 

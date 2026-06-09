@@ -8,6 +8,8 @@ export function useEmulatorScreen(
   const screenElement = useRef<HTMLCanvasElement | null>(null);
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
+  const [nativeCanvasWidth, setNativeCanvasWidth] = useState(0);
+  const [nativeCanvasHeight, setNativeCanvasHeight] = useState(0);
   const shadowCanvasWidth = useRef(0);
   const shadowCanvasHeight = useRef(0);
   const xRatio = useRef(1);
@@ -78,6 +80,8 @@ export function useEmulatorScreen(
       xRatio.current = 1;
       yRatio.current = 1;
     }
+    setNativeCanvasWidth(shadowCanvasWidth.current);
+    setNativeCanvasHeight(shadowCanvasHeight.current);
     configureScreen();
     calculateDimensions();
   }
@@ -129,7 +133,9 @@ export function useEmulatorScreen(
     if (!tempCtx) {
       return;
     }
+    tempCtx.imageSmoothingEnabled = false;
     tempCtx.putImageData(screenImageData, 0, 0);
+    screenCtx.imageSmoothingEnabled = false;
     screenCtx.globalCompositeOperation = "copy";
     screenCtx.drawImage(tempCanvas, 0, 0, screenEl.width, screenEl.height);
     screenCtx.globalCompositeOperation = "source-over";
@@ -163,6 +169,8 @@ export function useEmulatorScreen(
     screenElement,
     canvasWidth,
     canvasHeight,
+    nativeCanvasWidth,
+    nativeCanvasHeight,
     displayScreenData,
     paintStoppedScreen,
     updateScreenDimensions

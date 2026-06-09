@@ -102,6 +102,7 @@ const wasmTargets = [
       "sp48HardReset",
       "sp48ExecuteFrame",
       "sp48ExecuteInstruction",
+      "sp48RenderInstantScreen",
       "sp48DelayAddressBusAccess",
       "sp48DelayPortAccess",
       "sp48DelayPortRead",

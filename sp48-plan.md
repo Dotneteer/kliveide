@@ -421,6 +421,15 @@ Done when:
 - The current renderer can display the Wasm pixel buffer without conversion.
 - The fake pattern path can remain behind a debug export until real rendering is trusted, then be removed.
 
+Implementation note:
+
+- The fake display path has been replaced with `renderUlaDisplay()` in `src/emu/sp48/sp48.c`.
+- The current Wasm screen buffer follows the original border-inclusive screen shape. PAL exposes a 352x288 renderer surface and a one-row pixel buffer start offset.
+- The renderer uses the same Spectrum palette values and bitmap/attribute memory layout as `CommonScreenDevice`: pixel bytes at `$4000-$57ff`, attributes at `$5800-$5aff`, 8 pixels per bitmap byte, the original non-linear Spectrum row address calculation, and the original display offset inside the border.
+- Border pixels are filled from the current `$FE` border color, so `BORDER 3` is visible as magenta around the display.
+- `sp48RenderInstantScreen()` is exported so TypeScript can redraw the visible screen immediately after RAM writes without running a frame.
+- Focused tests write known screen bytes and attributes into Wasm RAM, call `renderInstantScreen()`, and verify selected output pixels including bright attributes, the Spectrum row mapping, the border-inclusive buffer dimensions, and `$FE` border painting.
+
 ### Step 10 - Replace Fake Audio With Beeper Audio
 
 Port `SpectrumBeeperDevice` and the relevant `AudioDeviceBase` behavior:

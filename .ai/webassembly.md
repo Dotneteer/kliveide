@@ -149,9 +149,25 @@ Keep this single-source pattern when expanding the machine core. Do not fork ins
 
 The SP48 adapter exposes CPU diagnostics such as PC, AF/HL, CPU tacts, and instruction counters. These are used by tests and by the temporary UI overlay to prove that Step 7 is active before the full frame runner and debugger are migrated.
 
-`sp48ExecuteFrame()` currently implements the no-debug frame loop in C. It executes complete embedded Z80 cycles until `sp48Tacts` crosses `sp48NextFrameStartTact + sp48TactsInFrame`, then marks the frame complete, advances `sp48NextFrameStartTact`, renders the temporary fake display/audio buffers, and returns normal termination mode `0`. It deliberately does not snap `sp48Tacts` to the frame boundary; the final instruction can overshoot, matching the original machine runner shape.
+`sp48ExecuteFrame()` currently implements the no-debug frame loop in C. It executes complete embedded Z80 cycles until `sp48Tacts` crosses `sp48NextFrameStartTact + sp48TactsInFrame`, then marks the frame complete, advances `sp48NextFrameStartTact`, renders the ULA display buffer plus temporary fake audio samples, and returns normal termination mode `0`. It deliberately does not snap `sp48Tacts` to the frame boundary; the final instruction can overshoot, matching the original machine runner shape.
 
 The frame-start INT line is recalculated before every `sp48ExecuteInstruction()` call with `currentFrameTact() < 32`. SP48 exposes `sp48GetInterruptsRaised()` and `sp48GetInterruptLineActive()` as diagnostics. Keep debug stepping, breakpoints, code injection, and queued-keystroke frame commands outside this C loop until those features are migrated deliberately.
+
+## Current SP48 Display Rendering
+
+The fake SP48 display pattern has been removed. `src/emu/sp48/sp48.c` renders the Spectrum screen into an original-style border-inclusive static buffer:
+
+- bitmap bytes are read from `$4000-$57ff`
+- attribute bytes are read from `$5800-$5aff`
+- Spectrum's non-linear bitmap row layout is mirrored from the original `CommonScreenDevice`
+- color values use the original 16-entry normal/bright palette
+- FLASH swaps ink and paper based on `frames / 16`
+- the PAL screen shape exposed to the renderer is `352x288`
+- `sp48GetPixelBufferStartOffset()` returns one screen row (`352` for PAL), matching the original panel copy offset
+- the 256x192 display is placed within the buffer at the same border offset as the original screen device
+- border pixels are currently filled from the latest `$FE` border color
+
+`sp48RenderInstantScreen()` is exported for UI and tests that need to repaint the screen immediately after memory or border-color writes. The backing pixel buffer is taller than the displayed height by a few guard rows, just like the TypeScript screen device allocation pattern; TypeScript consumers should copy from `getPixelBufferStartOffset()` for `screenWidthInPixels * screenHeightInPixels` pixels.
 
 ## Sass Warning Note
 

@@ -1,9 +1,13 @@
 #include <stdint.h>
 
 #define SP48_MEMORY_SIZE 0x10000u
-#define SP48_SCREEN_WIDTH 256u
-#define SP48_SCREEN_HEIGHT 192u
-#define SP48_PIXEL_COUNT (SP48_SCREEN_WIDTH * SP48_SCREEN_HEIGHT)
+#define SP48_DISPLAY_WIDTH 256u
+#define SP48_DISPLAY_HEIGHT 192u
+#define SP48_SCREEN_BUFFER_WIDTH_MAX 352u
+#define SP48_SCREEN_BUFFER_LINES_MAX 288u
+#define SP48_PIXEL_BUFFER_GUARD_LINES 4u
+#define SP48_PIXEL_BUFFER_WORDS_MAX \
+  (SP48_SCREEN_BUFFER_WIDTH_MAX * (SP48_SCREEN_BUFFER_LINES_MAX + SP48_PIXEL_BUFFER_GUARD_LINES))
 #define SP48_TACTS_PER_FRAME_PAL 69888u
 #define SP48_TACTS_PER_FRAME_MAX SP48_TACTS_PER_FRAME_PAL
 #define SP48_BASE_CLOCK_FREQUENCY_PAL 3500000u
@@ -53,7 +57,7 @@ static uint8_t sp48RenderingPhase[SP48_TACTS_PER_FRAME_MAX];
 static uint16_t sp48RenderingPixelAddress[SP48_TACTS_PER_FRAME_MAX];
 static uint16_t sp48RenderingAttributeAddress[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48RenderingPixelIndex[SP48_TACTS_PER_FRAME_MAX];
-static uint32_t sp48PixelBuffer[SP48_PIXEL_COUNT];
+static uint32_t sp48PixelBuffer[SP48_PIXEL_BUFFER_WORDS_MAX];
 static Sp48AudioSample sp48AudioSamples[SP48_AUDIO_SAMPLE_CAPACITY];
 
 static uint32_t sp48Frames;
@@ -66,6 +70,8 @@ static uint32_t sp48TimingScreenLines;
 static uint32_t sp48FirstDisplayLine;
 static uint32_t sp48FirstVisibleLine;
 static uint32_t sp48FirstVisibleBorderTact;
+static uint32_t sp48DisplayLeftPixel;
+static uint32_t sp48DisplayTopLine;
 static uint32_t sp48BaseClockFrequency = SP48_BASE_CLOCK_FREQUENCY_PAL;
 static uint32_t sp48AudioSampleRate = SP48_DEFAULT_SAMPLE_RATE;
 static uint32_t sp48AudioSampleCount;
@@ -88,15 +94,23 @@ static uint8_t sp48BeeperLevel;
 static uint32_t sp48EarBitChangedFrom0Tacts;
 static uint32_t sp48EarBitChangedFrom1Tacts;
 
-static const uint32_t sp48SpectrumColors[8] = {
+static const uint32_t sp48SpectrumColors[16] = {
   0xff000000u,
-  0xffcd0000u,
-  0xff0000cdu,
-  0xffcd00cdu,
-  0xff00cd00u,
-  0xffcdcd00u,
-  0xff00cdcdu,
-  0xffcdcdcdu
+  0xffaa0000u,
+  0xff0000aau,
+  0xffaa00aau,
+  0xff00aa00u,
+  0xffaaaa00u,
+  0xff00aaaau,
+  0xffaaaaaau,
+  0xff000000u,
+  0xffff0000u,
+  0xff0000ffu,
+  0xffff00ffu,
+  0xff00ff00u,
+  0xffffff00u,
+  0xff00ffffu,
+  0xffffffffu
 };
 
 static const Sp48ScreenConfig sp48PalConfig = {
@@ -122,10 +136,6 @@ static inline uint32_t clampAudioSampleCount(uint32_t sampleRate) {
   return count;
 }
 
-static inline uint32_t rgbaWord(uint8_t r, uint8_t g, uint8_t b) {
-  return 0xff000000u | ((uint32_t)b << 16u) | ((uint32_t)g << 8u) | (uint32_t)r;
-}
-
 static inline uint8_t keyboardSignature(void) {
   uint8_t value = 0u;
   for (uint32_t i = 0u; i < 8u; i++) {
@@ -134,8 +144,48 @@ static inline uint8_t keyboardSignature(void) {
   return value;
 }
 
+static inline uint32_t currentScreenWidth(void) {
+  return sp48TimingScreenWidth == 0u ? SP48_SCREEN_BUFFER_WIDTH_MAX : sp48TimingScreenWidth;
+}
+
+static inline uint32_t currentScreenHeight(void) {
+  return sp48TimingScreenLines == 0u ? SP48_SCREEN_BUFFER_LINES_MAX : sp48TimingScreenLines;
+}
+
+static inline uint32_t pixelBufferWordCount(void) {
+  return currentScreenWidth() * (currentScreenHeight() + SP48_PIXEL_BUFFER_GUARD_LINES);
+}
+
+static inline uint32_t pixelBufferStartOffset(void) {
+  return currentScreenWidth();
+}
+
 static inline uint32_t getBorderPixel(void) {
   return sp48SpectrumColors[sp48BorderColor & 0x07u];
+}
+
+static inline uint8_t flashFlag(void) {
+  return ((sp48Frames / 16u) & 0x01u) == 0u ? 1u : 0u;
+}
+
+static inline uint16_t screenPixelAddress(uint32_t y, uint32_t xByte) {
+  return (uint16_t)(0x4000u + ((y & 0xc0u) << 5u) + ((y & 0x07u) << 8u) + ((y & 0x38u) << 2u) + xByte);
+}
+
+static inline uint16_t screenAttributeAddress(uint32_t y, uint32_t xByte) {
+  return (uint16_t)(0x5800u + ((y >> 3u) << 5u) + xByte);
+}
+
+static inline uint32_t getUlaPixelColor(uint8_t pixelSet, uint8_t attr) {
+  uint8_t bright = (attr & 0x40u) >> 3u;
+  uint8_t ink = (uint8_t)((attr & 0x07u) | bright);
+  uint8_t paper = (uint8_t)(((attr >> 3u) & 0x07u) | bright);
+  if ((attr & 0x80u) != 0u && flashFlag() != 0u) {
+    uint8_t temp = ink;
+    ink = paper;
+    paper = temp;
+  }
+  return sp48SpectrumColors[pixelSet != 0u ? ink : paper];
 }
 
 static inline uint32_t currentFrameTact(void) {
@@ -197,11 +247,13 @@ static void initializeTimingTables(const Sp48ScreenConfig *config) {
     sp48FirstDisplayLine + config->displayLines + config->borderBottomLines + config->nonVisibleBorderBottomLines;
   sp48TimingScreenLines = config->borderTopLines + config->displayLines + config->borderBottomLines - 1u;
   sp48TimingScreenWidth = 2u * (config->borderLeftTime + config->displayLineTime + config->borderRightTime);
+  sp48DisplayLeftPixel = 2u * config->borderLeftTime;
   sp48ScreenLineTime =
     config->borderLeftTime + config->displayLineTime + config->borderRightTime +
     config->nonVisibleBorderRightTime + config->horizontalBlankingTime;
   sp48TactsInFrame = sp48RasterLines * sp48ScreenLineTime;
   sp48FirstVisibleLine = config->verticalSyncLines + config->nonVisibleBorderTopLines;
+  sp48DisplayTopLine = sp48FirstDisplayLine - sp48FirstVisibleLine;
   const uint32_t lastVisibleLine = sp48RasterLines - config->nonVisibleBorderBottomLines;
   sp48FirstVisibleBorderTact = sp48ScreenLineTime - config->borderLeftTime;
   const uint32_t lastVisibleLineTact = config->displayLineTime + config->borderRightTime;
@@ -438,36 +490,22 @@ static void resetPortFe(void) {
   sp48EarBitChangedFrom1Tacts = 0u;
 }
 
-static void renderFakeDisplay(void) {
-  const uint8_t keyMix = keyboardSignature();
-  const uint32_t framePhase = sp48Frames & 0xffu;
-  const uint8_t romR = (uint8_t)(sp48RomChecksum & 0xffu);
-  const uint8_t romG = (uint8_t)((sp48RomChecksum >> 8u) & 0xffu);
-  const uint8_t romB = (uint8_t)((sp48RomChecksum >> 16u) & 0xffu);
+static void renderUlaDisplay(void) {
+  const uint32_t screenWidth = currentScreenWidth();
+  const uint32_t words = pixelBufferWordCount();
+  const uint32_t borderPixel = getBorderPixel();
+  for (uint32_t i = 0u; i < words; i++) {
+    sp48PixelBuffer[i] = borderPixel;
+  }
 
-  for (uint32_t y = 0u; y < SP48_SCREEN_HEIGHT; y++) {
-    for (uint32_t x = 0u; x < SP48_SCREEN_WIDTH; x++) {
-      const uint32_t index = y * SP48_SCREEN_WIDTH + x;
-      if (x < 8u || x >= SP48_SCREEN_WIDTH - 8u || y < 8u || y >= SP48_SCREEN_HEIGHT - 8u) {
-        sp48PixelBuffer[index] = getBorderPixel();
-        continue;
+  for (uint32_t y = 0u; y < SP48_DISPLAY_HEIGHT; y++) {
+    for (uint32_t xByte = 0u; xByte < 32u; xByte++) {
+      uint8_t pixelByte = sp48Memory[screenPixelAddress(y, xByte)];
+      uint8_t attr = sp48Memory[screenAttributeAddress(y, xByte)];
+      uint32_t index = (sp48DisplayTopLine + y) * screenWidth + sp48DisplayLeftPixel + xByte * 8u;
+      for (uint32_t bit = 0u; bit < 8u; bit++) {
+        sp48PixelBuffer[index + bit] = getUlaPixelColor(pixelByte & (0x80u >> bit), attr);
       }
-      if (sp48RomUploadCount >= 0x4000u && y >= 8u && y < 16u) {
-        const uint32_t segment = x >> 5u;
-        sp48PixelBuffer[index] = segment < 3u
-          ? rgbaWord(
-              segment == 0u ? romR : 0x20u,
-              segment == 1u ? romG : 0x20u,
-              segment == 2u ? romB : 0x20u)
-          : rgbaWord(0x20u, 0xe0u, 0x60u);
-        continue;
-      }
-
-      const uint32_t checker = ((x >> 4u) ^ (y >> 4u) ^ (sp48Frames >> 3u) ^ keyMix) & 0x01u;
-      const uint8_t r = (uint8_t)(checker ? (x + framePhase + keyMix) : (framePhase + (y >> 1u)));
-      const uint8_t g = (uint8_t)(checker ? (y + framePhase * 2u) : (x ^ keyMix));
-      const uint8_t b = (uint8_t)(checker ? (0xe0u ^ keyMix) : (x + y + framePhase));
-      sp48PixelBuffer[index] = rgbaWord(r, g, b);
     }
   }
 }
@@ -507,7 +545,7 @@ void sp48Reset(void) {
   sp48InterruptsRaised = 0u;
   sp48InterruptLineActive = 0u;
   sp48AudioSampleCount = clampAudioSampleCount(sp48AudioSampleRate);
-  renderFakeDisplay();
+  renderUlaDisplay();
   renderFakeAudio();
 }
 
@@ -533,9 +571,13 @@ uint32_t sp48ExecuteFrame(void) {
   sp48FrameCompleted = 1u;
   sp48NextFrameStartTact += sp48TactsInFrame;
   sp48Frames++;
-  renderFakeDisplay();
+  renderUlaDisplay();
   renderFakeAudio();
   return 0u;
+}
+
+void sp48RenderInstantScreen(void) {
+  renderUlaDisplay();
 }
 
 uint32_t sp48ExecuteInstruction(void) {
@@ -721,15 +763,15 @@ uint8_t *sp48KeyboardLinesPtr(void) {
 // Shape, counters, and diagnostics
 
 uint32_t sp48GetScreenWidth(void) {
-  return SP48_SCREEN_WIDTH;
+  return currentScreenWidth();
 }
 
 uint32_t sp48GetScreenHeight(void) {
-  return SP48_SCREEN_HEIGHT;
+  return currentScreenHeight();
 }
 
 uint32_t sp48GetPixelBufferStartOffset(void) {
-  return 0u;
+  return pixelBufferStartOffset();
 }
 
 uint32_t sp48GetRomSize(void) {

@@ -208,8 +208,10 @@ export const WasmSp48DisplayReact = () => {
           }
 
           const pixels = machine.getPixelBufferBytes();
-          const imagePixels = new Uint8ClampedArray(pixels.byteLength);
-          imagePixels.set(pixels);
+          const startByteOffset = machine.getPixelBufferStartOffset() * 4;
+          const imageByteLength = machine.screenWidthInPixels * machine.screenHeightInPixels * 4;
+          const imagePixels = new Uint8ClampedArray(imageByteLength);
+          imagePixels.set(pixels.subarray(startByteOffset, startByteOffset + imageByteLength));
           context.putImageData(new ImageData(imagePixels, machine.screenWidthInPixels, machine.screenHeightInPixels), 0, 0);
         };
 

@@ -81,6 +81,8 @@ export const EmulatorPanelReact = () => {
     screenElement,
     canvasWidth,
     canvasHeight,
+    nativeCanvasWidth,
+    nativeCanvasHeight,
     displayScreenData,
     paintStoppedScreen,
     updateScreenDimensions
@@ -308,8 +310,9 @@ export const EmulatorPanelReact = () => {
         <canvas
           ref={screenElement}
           className={styles.screen}
-          width={canvasWidth}
-          height={canvasHeight}
+          width={nativeCanvasWidth}
+          height={nativeCanvasHeight}
+          style={{ width: `${canvasWidth}px`, height: `${canvasHeight}px` }}
         />
         <div className={styles.diagnostics}>
           <span>KB</span>

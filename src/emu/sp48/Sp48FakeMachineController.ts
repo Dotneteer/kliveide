@@ -73,7 +73,7 @@ export class Sp48FakeMachineController {
   }
 
   renderInstantScreen(): Uint32Array {
-    return this.machine.getPixelBuffer();
+    return this.machine.renderInstantScreen();
   }
 
   setKeyStatus(key: number, down: boolean): void {

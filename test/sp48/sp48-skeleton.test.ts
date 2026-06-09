@@ -19,6 +19,26 @@ const RenderingPhase = {
   DisplayB2FetchA1: 9
 } as const;
 
+const SpectrumColors = {
+  Black: 0xff000000,
+  Blue: 0xff0000aa,
+  Magenta: 0xffaa00aa,
+  White: 0xffaaaaaa,
+  BrightWhite: 0xffffffff
+} as const;
+
+type Sp48TestMachine = Awaited<ReturnType<typeof createMachine>>;
+
+function visiblePixelIndex(machine: Sp48TestMachine, x: number, y: number): number {
+  return machine.getPixelBufferStartOffset() + y * machine.screenWidthInPixels + x;
+}
+
+function displayPixelIndex(machine: Sp48TestMachine, x: number, y: number): number {
+  const displayLeft = (machine.screenWidthInPixels - 256) / 2;
+  const displayTop = machine.getFirstDisplayLine() - machine.getFirstVisibleLine() - 1;
+  return visiblePixelIndex(machine, displayLeft + x, displayTop + y);
+}
+
 describe("Wasm ZX Spectrum 48K skeleton", () => {
   it("exports stable static buffers and machine shape", async () => {
     const machine = await createMachine();
@@ -31,15 +51,15 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     const audioWords = machine.getAudioSampleWords();
 
     expect(memory.byteLength).toBe(0x10000);
-    expect(pixels.length).toBe(256 * 192);
-    expect(pixelBytes.byteLength).toBe(256 * 192 * 4);
+    expect(pixels.length).toBe(352 * (288 + 4));
+    expect(pixelBytes.byteLength).toBe(352 * (288 + 4) * 4);
     expect(keyboard.length).toBe(8);
     expect(audioWords.length).toBe(machine.getAudioSampleCount() * 2);
-    expect(machine.screenWidthInPixels).toBe(256);
-    expect(machine.screenHeightInPixels).toBe(192);
+    expect(machine.screenWidthInPixels).toBe(352);
+    expect(machine.screenHeightInPixels).toBe(288);
     expect(machine.tactsInFrame).toBe(69888);
     expect(machine.baseClockFrequency).toBe(3_500_000);
-    expect(machine.getPixelBufferStartOffset()).toBe(0);
+    expect(machine.getPixelBufferStartOffset()).toBe(352);
 
     const memoryBuffer = memory.buffer;
     const pixelBuffer = pixels.buffer;
@@ -54,11 +74,11 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.getAudioSampleWords().buffer).toBe(audioBuffer);
   });
 
-  it("advances frames and changes the placeholder display", async () => {
+  it("advances frames and keeps blank screen memory rendered as black", async () => {
     const machine = await createMachine();
     machine.reset();
 
-    const sampleIndex = 16 * machine.screenWidthInPixels + 16;
+    const sampleIndex = displayPixelIndex(machine, 16, 16);
     const before = machine.getPixelBuffer()[sampleIndex];
     const result = machine.executeMachineFrame();
     const after = machine.getPixelBuffer()[sampleIndex];
@@ -66,7 +86,48 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(result).toBe(0);
     expect(machine.frames).toBe(1);
     expect(machine.tacts).toBe(69888);
-    expect(after).not.toBe(before);
+    expect(before).toBe(SpectrumColors.Black);
+    expect(after).toBe(SpectrumColors.Black);
+  });
+
+  it("renders Spectrum ULA pixels from screen and attribute memory", async () => {
+    const machine = await createMachine();
+    machine.hardReset();
+
+    machine.writeMemory(0x4000, 0x80);
+    machine.writeMemory(0x5800, 0x07);
+    machine.renderInstantScreen();
+
+    const pixels = machine.getPixelBuffer();
+    const firstDisplayPixel = displayPixelIndex(machine, 0, 0);
+
+    expect(pixels[firstDisplayPixel]).toBe(SpectrumColors.White);
+    expect(pixels[firstDisplayPixel + 1]).toBe(SpectrumColors.Black);
+    expect(pixels[firstDisplayPixel + 7]).toBe(SpectrumColors.Black);
+
+    machine.writeMemory(0x4000, 0x80);
+    machine.writeMemory(0x5800, 0x47);
+    machine.renderInstantScreen();
+
+    expect(machine.getPixelBuffer()[firstDisplayPixel]).toBe(SpectrumColors.BrightWhite);
+  });
+
+  it("uses the Spectrum bitmap line layout while rendering the visible display", async () => {
+    const machine = await createMachine();
+    machine.hardReset();
+
+    machine.writeMemory(0x4020, 0xff);
+    machine.writeMemory(0x5820, 0x02);
+    machine.renderInstantScreen();
+
+    const firstDisplayPixel = displayPixelIndex(machine, 0, 0);
+    const row8 = displayPixelIndex(machine, 0, 8);
+
+    expect(machine.getPixelBuffer()[firstDisplayPixel]).toBe(SpectrumColors.Black);
+    expect(machine.getPixelBuffer()[row8]).toBe(SpectrumColors.Blue);
+    expect(machine.getPixelBuffer()[row8 + 7]).toBe(SpectrumColors.Blue);
+    expect(machine.readMemory(0x4020)).toBe(0xff);
+    expect(machine.readMemory(0x5820)).toBe(0x02);
   });
 
   it("produces deterministic placeholder audio samples", async () => {
@@ -84,19 +145,16 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.getDiagnosticFlags()).toBe(0);
   });
 
-  it("records keyboard state in static Wasm memory and affects the fake display", async () => {
+  it("records keyboard state in static Wasm memory", async () => {
     const machine = await createMachine();
     machine.reset();
 
-    const sampleIndex = 16 * machine.screenWidthInPixels + 16;
-    const before = machine.getPixelBuffer()[sampleIndex];
     machine.setKeyStatus(10, true);
     machine.executeMachineFrame();
 
     expect(machine.getKeyboardLine(2)).toBe(0x01);
     expect(machine.getKeyboardLines()[2]).toBe(0x01);
     expect(machine.readPort(0xfbfe)).toBe(0xbe);
-    expect(machine.getPixelBuffer()[sampleIndex]).not.toBe(before);
 
     machine.setKeyStatus(10, false);
     expect(machine.getKeyboardLine(2)).toBe(0x00);
@@ -136,7 +194,6 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.getMicBit()).toBe(false);
     expect(machine.getBeeperLevel()).toBe(0);
 
-    const before = machine.getPixelBuffer()[0];
     machine.writePort(0x00fe, 0x1b);
     machine.executeMachineFrame();
 
@@ -146,7 +203,7 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.getMicBit()).toBe(true);
     expect(machine.getBeeperLevel()).toBe(3);
     expect(machine.readPort(0x00fe)).toBe(0xff);
-    expect(machine.getPixelBuffer()[0]).not.toBe(before);
+    expect(machine.getPixelBuffer()[visiblePixelIndex(machine, 0, 0)]).toBe(SpectrumColors.Magenta);
 
     machine.writePort(0x00ff, 0x00);
 
@@ -189,13 +246,12 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
 
     expect(machine.getRomSize()).toBe(0x4000);
 
-    const topLeftBeforeRom = machine.getPixelBuffer()[0];
     machine.uploadRomBytes(rom);
     machine.hardReset();
 
     expect(machine.getRomUploadCount()).toBe(0x4000);
     expect(machine.getRomChecksum()).not.toBe(0);
-    expect(machine.getPixelBuffer()[0]).not.toBe(topLeftBeforeRom);
+    expect(machine.getPixelBuffer()[displayPixelIndex(machine, 0, 0)]).toBe(SpectrumColors.Black);
 
     machine.writeMemory(0x0000, rom[0] ^ 0xff);
     machine.writeMemory(0x4000, 0x5a);
