@@ -149,6 +149,10 @@ Keep this single-source pattern when expanding the machine core. Do not fork ins
 
 The SP48 adapter exposes CPU diagnostics such as PC, AF/HL, CPU tacts, and instruction counters. These are used by tests and by the temporary UI overlay to prove that Step 7 is active before the full frame runner and debugger are migrated.
 
+`sp48ExecuteFrame()` currently implements the no-debug frame loop in C. It executes complete embedded Z80 cycles until `sp48Tacts` crosses `sp48NextFrameStartTact + sp48TactsInFrame`, then marks the frame complete, advances `sp48NextFrameStartTact`, renders the temporary fake display/audio buffers, and returns normal termination mode `0`. It deliberately does not snap `sp48Tacts` to the frame boundary; the final instruction can overshoot, matching the original machine runner shape.
+
+The frame-start INT line is recalculated before every `sp48ExecuteInstruction()` call with `currentFrameTact() < 32`. SP48 exposes `sp48GetInterruptsRaised()` and `sp48GetInterruptLineActive()` as diagnostics. Keep debug stepping, breakpoints, code injection, and queued-keystroke frame commands outside this C loop until those features are migrated deliberately.
+
 ## Sass Warning Note
 
 Renderer SCSS is configured to use Dart Sass's modern JS API in `electron.vite.config.mts`:

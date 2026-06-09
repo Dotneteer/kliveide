@@ -1,0 +1,53 @@
+.emulatorPanel {
+  align-items: center;
+  background: #1a1a1d;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  min-height: 0;
+  outline: none;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+  width: 100%;
+}
+
+.display {
+  background-color: #050507;
+  border: 1px solid #3a3a40;
+  box-shadow: 0 0 0 1px #050507;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.screen {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.diagnostics {
+  align-items: center;
+  background: rgb(0 0 0 / 72%);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 4px;
+  bottom: 10px;
+  color: #d8f7ff;
+  display: flex;
+  flex-wrap: wrap;
+  font: 11px/1.2 Menlo, Monaco, "Courier New", monospace;
+  gap: 8px;
+  left: 10px;
+  max-width: calc(100% - 20px);
+  padding: 4px 6px;
+  position: absolute;
+  user-select: none;
+}
+
+.error {
+  color: #ffb4a8;
+  font: 13px system-ui, sans-serif;
+  max-width: 640px;
+  padding: 16px;
+}

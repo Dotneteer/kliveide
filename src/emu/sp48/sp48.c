@@ -74,6 +74,10 @@ static uint32_t sp48TotalContentionDelaySinceStart;
 static uint32_t sp48ContentionDelaySincePause;
 static uint32_t sp48CpuInstructionsExecuted;
 static uint32_t sp48CpuFrameSliceInstructions;
+static uint32_t sp48NextFrameStartTact;
+static uint32_t sp48FrameCompleted;
+static uint32_t sp48InterruptsRaised;
+static uint8_t sp48InterruptLineActive;
 static uint32_t sp48RomUploadCount;
 static uint32_t sp48RomChecksum;
 static uint8_t sp48PortFeValue;
@@ -322,6 +326,10 @@ static inline uint8_t isContendedIoAddress(uint32_t address) {
   return (address & 0xc000u) == 0x4000u;
 }
 
+static inline uint8_t shouldRaiseInterrupt(void) {
+  return currentFrameTact() < 32u ? 1u : 0u;
+}
+
 uint32_t sp48ReadPort(uint32_t address);
 void sp48WritePort(uint32_t address, uint32_t value);
 uint32_t sp48ExecuteInstruction(void);
@@ -494,6 +502,10 @@ void sp48Reset(void) {
   sp48ContentionDelaySincePause = 0u;
   sp48CpuInstructionsExecuted = 0u;
   sp48CpuFrameSliceInstructions = 0u;
+  sp48NextFrameStartTact = 0u;
+  sp48FrameCompleted = 0u;
+  sp48InterruptsRaised = 0u;
+  sp48InterruptLineActive = 0u;
   sp48AudioSampleCount = clampAudioSampleCount(sp48AudioSampleRate);
   renderFakeDisplay();
   renderFakeAudio();
@@ -508,16 +520,18 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
 }
 
 uint32_t sp48ExecuteFrame(void) {
-  const uint32_t frameEndTact = sp48Tacts + sp48TactsInFrame;
+  if (sp48FrameCompleted != 0u) {
+    sp48FrameCompleted = 0u;
+  }
+
+  const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInFrame;
   sp48CpuFrameSliceInstructions = 0u;
-  for (uint32_t i = 0u; i < 16u && sp48Tacts < frameEndTact; i++) {
+  while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
     sp48CpuFrameSliceInstructions++;
   }
-  if (sp48Tacts < frameEndTact) {
-    sp48Tacts = frameEndTact;
-    z80SetTacts(sp48Tacts);
-  }
+  sp48FrameCompleted = 1u;
+  sp48NextFrameStartTact += sp48TactsInFrame;
   sp48Frames++;
   renderFakeDisplay();
   renderFakeAudio();
@@ -525,10 +539,17 @@ uint32_t sp48ExecuteFrame(void) {
 }
 
 uint32_t sp48ExecuteInstruction(void) {
+  const uint8_t intActive = shouldRaiseInterrupt();
+  if (intActive != 0u && sp48InterruptLineActive == 0u) {
+    sp48InterruptsRaised++;
+  }
+  sp48InterruptLineActive = intActive;
+  z80SetSigInt(intActive);
   z80SetTacts(sp48Tacts);
   z80ExecuteCpuCycle();
   sp48Tacts = z80GetTacts();
   sp48CpuInstructionsExecuted++;
+  sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInFrame ? 1u : 0u;
   return 0u;
 }
 
@@ -807,6 +828,22 @@ uint32_t sp48GetContentionDelaySincePause(void) {
   return sp48ContentionDelaySincePause;
 }
 
+uint32_t sp48GetNextFrameStartTact(void) {
+  return sp48NextFrameStartTact;
+}
+
+uint32_t sp48GetFrameCompleted(void) {
+  return sp48FrameCompleted;
+}
+
+uint32_t sp48GetInterruptsRaised(void) {
+  return sp48InterruptsRaised;
+}
+
+uint32_t sp48GetInterruptLineActive(void) {
+  return sp48InterruptLineActive;
+}
+
 uint32_t sp48GetCpuInstructionsExecuted(void) {
   return sp48CpuInstructionsExecuted;
 }
@@ -869,6 +906,22 @@ void sp48SetCpuSp(uint32_t value) {
 
 uint32_t sp48GetCpuHalted(void) {
   return z80GetHalted();
+}
+
+uint32_t sp48GetCpuIff1(void) {
+  return z80GetIff1();
+}
+
+void sp48SetCpuIff1(uint32_t value) {
+  z80SetIff1(value);
+}
+
+uint32_t sp48GetCpuInterruptMode(void) {
+  return z80GetInterruptMode();
+}
+
+void sp48SetCpuInterruptMode(uint32_t value) {
+  z80SetInterruptMode(value);
 }
 
 uint32_t sp48GetKeyboardLine(uint32_t line) {

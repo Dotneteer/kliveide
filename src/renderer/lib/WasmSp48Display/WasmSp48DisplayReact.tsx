@@ -25,6 +25,10 @@ type KeyboardIndicator = {
   mic: boolean;
   beeperLevel: number;
   frameTact: number;
+  nextFrameStartTact: number;
+  frameCompleted: boolean;
+  interruptsRaised: number;
+  interruptLineActive: boolean;
   renderingPhase: number;
   contention: number;
   contentionDelay: number;
@@ -50,6 +54,10 @@ export const WasmSp48DisplayReact = () => {
     mic: false,
     beeperLevel: 0,
     frameTact: 0,
+    nextFrameStartTact: 0,
+    frameCompleted: false,
+    interruptsRaised: 0,
+    interruptLineActive: false,
     renderingPhase: 0,
     contention: 0,
     contentionDelay: 0,
@@ -115,6 +123,10 @@ export const WasmSp48DisplayReact = () => {
             mic: machine.getMicBit(),
             beeperLevel: machine.getBeeperLevel(),
             frameTact,
+            nextFrameStartTact: machine.getNextFrameStartTact(),
+            frameCompleted: machine.getFrameCompleted(),
+            interruptsRaised: machine.getInterruptsRaised(),
+            interruptLineActive: machine.getInterruptLineActive(),
             renderingPhase: machine.getRenderingPhase(frameTact),
             contention: machine.getContentionValue(frameTact),
             contentionDelay: machine.getTotalContentionDelaySinceStart(),
@@ -261,6 +273,10 @@ export const WasmSp48DisplayReact = () => {
         <span>M{keyboardIndicator.mic ? 1 : 0}</span>
         <span>L{keyboardIndicator.beeperLevel}</span>
         <span>T{keyboardIndicator.frameTact}</span>
+        <span>N{keyboardIndicator.nextFrameStartTact}</span>
+        <span>F{keyboardIndicator.frameCompleted ? 1 : 0}</span>
+        <span>IRQ{keyboardIndicator.interruptsRaised}</span>
+        <span>I{keyboardIndicator.interruptLineActive ? 1 : 0}</span>
         <span>PH{keyboardIndicator.renderingPhase}</span>
         <span>C{keyboardIndicator.contention}</span>
         <span>CD{keyboardIndicator.contentionDelay}</span>

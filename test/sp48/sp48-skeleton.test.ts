@@ -391,6 +391,60 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.getTotalContentionDelaySinceStart()).toBe(1);
   });
 
+  it("runs a complete no-debug frame loop in C", async () => {
+    const machine = await createMachine();
+
+    machine.hardReset();
+    machine.executeMachineFrame();
+
+    expect(machine.frames).toBe(1);
+    expect(machine.getFrameCompleted()).toBe(true);
+    expect(machine.getNextFrameStartTact()).toBe(machine.tactsInFrame);
+    expect(machine.tacts).toBe(machine.tactsInFrame);
+    expect(machine.getCurrentFrameTact()).toBe(0);
+    expect(machine.getCpuFrameSliceInstructions()).toBe(machine.tactsInFrame / 4);
+    expect(machine.getCpuInstructionsExecuted()).toBe(machine.tactsInFrame / 4);
+    expect(machine.getCpuPc()).toBe(machine.tactsInFrame / 4);
+    expect(machine.getInterruptsRaised()).toBe(1);
+    expect(machine.getInterruptLineActive()).toBe(false);
+  });
+
+  it("completes a frame after the instruction crossing the frame boundary", async () => {
+    const machine = await createMachine();
+    const rom = new Uint8Array(0x4000);
+    rom.fill(0x34); // INC (HL), 11 tacts when HL points to uncontended RAM
+
+    machine.uploadRomBytes(rom);
+    machine.hardReset();
+    machine.setCpuHl(0x8000);
+    machine.executeMachineFrame();
+
+    expect(machine.frames).toBe(1);
+    expect(machine.getFrameCompleted()).toBe(true);
+    expect(machine.getCpuFrameSliceInstructions()).toBe(6354);
+    expect(machine.tacts).toBe(69_894);
+    expect(machine.getCurrentFrameTact()).toBe(6);
+    expect(machine.getNextFrameStartTact()).toBe(69_888);
+  });
+
+  it("raises the frame-start interrupt line for the embedded Z80", async () => {
+    const machine = await createMachine();
+
+    machine.hardReset();
+    machine.setCpuSp(0x8000);
+    machine.setCpuInterruptMode(1);
+    machine.setCpuIff1(true);
+    machine.executeInstruction();
+
+    expect(machine.getInterruptsRaised()).toBe(1);
+    expect(machine.getCpuIff1()).toBe(false);
+    expect(machine.getCpuPc()).toBe(0x0038);
+    expect(machine.getCpuSp()).toBe(0x7ffe);
+    expect(machine.readMemory(0x7ffe)).toBe(0x00);
+    expect(machine.readMemory(0x7fff)).toBe(0x00);
+    expect(machine.tacts).toBe(13);
+  });
+
   it("does not export allocator functions", async () => {
     const wasmPath = resolve(process.cwd(), "public/wasm/sp48.wasm");
     const module = new WebAssembly.Module(readFileSync(wasmPath));

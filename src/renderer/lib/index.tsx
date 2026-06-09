@@ -1,5 +1,6 @@
 import { emuKeyboardComponentRenderer } from "./EmuKeyboard/EmuKeyboard";
 import { emuMachineCommandsComponentRenderer } from "./EmuMachineCommands/EmuMachineCommands";
+import { emulatorPanelComponentRenderer } from "./EmulatorPanel/EmulatorPanel";
 import { helloComponentRenderer } from "./Hello/Hello";
 import { sharedAppStateComponentRenderer } from "./SharedAppState/SharedAppState";
 import { toolbarButtonComponentRenderer } from "./Toolbar/ToolbarButton";
@@ -12,6 +13,7 @@ export default {
   components: [
     emuKeyboardComponentRenderer,
     emuMachineCommandsComponentRenderer,
+    emulatorPanelComponentRenderer,
     helloComponentRenderer,
     sharedAppStateComponentRenderer,
     toolbarButtonComponentRenderer,

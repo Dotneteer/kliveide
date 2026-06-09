@@ -48,6 +48,10 @@ export type Sp48WasmExports = {
   sp48GetRenderingPixelIndex: (tact: number) => number;
   sp48GetTotalContentionDelaySinceStart: () => number;
   sp48GetContentionDelaySincePause: () => number;
+  sp48GetNextFrameStartTact: () => number;
+  sp48GetFrameCompleted: () => number;
+  sp48GetInterruptsRaised: () => number;
+  sp48GetInterruptLineActive: () => number;
   sp48GetCpuInstructionsExecuted: () => number;
   sp48GetCpuFrameSliceInstructions: () => number;
   sp48GetCpuTacts: () => number;
@@ -64,6 +68,10 @@ export type Sp48WasmExports = {
   sp48GetCpuSp: () => number;
   sp48SetCpuSp: (value: number) => void;
   sp48GetCpuHalted: () => number;
+  sp48GetCpuIff1: () => number;
+  sp48SetCpuIff1: (value: number) => void;
+  sp48GetCpuInterruptMode: () => number;
+  sp48SetCpuInterruptMode: (value: number) => void;
   sp48GetKeyboardLine: (line: number) => number;
   sp48GetPortFeValue: () => number;
   sp48GetBorderColor: () => number;
@@ -273,6 +281,22 @@ export class WasmZxSpectrum48Machine {
     return this.wasm.sp48GetContentionDelaySincePause();
   }
 
+  getNextFrameStartTact(): number {
+    return this.wasm.sp48GetNextFrameStartTact();
+  }
+
+  getFrameCompleted(): boolean {
+    return this.wasm.sp48GetFrameCompleted() !== 0;
+  }
+
+  getInterruptsRaised(): number {
+    return this.wasm.sp48GetInterruptsRaised();
+  }
+
+  getInterruptLineActive(): boolean {
+    return this.wasm.sp48GetInterruptLineActive() !== 0;
+  }
+
   getCpuInstructionsExecuted(): number {
     return this.wasm.sp48GetCpuInstructionsExecuted();
   }
@@ -335,6 +359,22 @@ export class WasmZxSpectrum48Machine {
 
   getCpuHalted(): boolean {
     return this.wasm.sp48GetCpuHalted() !== 0;
+  }
+
+  getCpuIff1(): boolean {
+    return this.wasm.sp48GetCpuIff1() !== 0;
+  }
+
+  setCpuIff1(value: boolean): void {
+    this.wasm.sp48SetCpuIff1(value ? 1 : 0);
+  }
+
+  getCpuInterruptMode(): number {
+    return this.wasm.sp48GetCpuInterruptMode();
+  }
+
+  setCpuInterruptMode(value: number): void {
+    this.wasm.sp48SetCpuInterruptMode(value);
   }
 
   getPortFeValue(): number {

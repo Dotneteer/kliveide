@@ -365,7 +365,6 @@ Implementation note:
 - `z80.c` remains the single CPU implementation. It still builds as standalone `z80.wasm`, but it can now also be included by a machine core with `Z80_EXTERNAL_BUS` and bus/tact macros.
 - `sp48.c` includes the existing Z80 core and maps Z80 memory reads/writes to the SP48 ROM/RAM map, port reads/writes to the SP48 `$FE` implementation, and memory/port delays to the SP48 contention tables.
 - `sp48ExecuteInstruction()` now executes one real Z80 CPU cycle inside `sp48.wasm`; no TypeScript preloading is needed for SP48 memory or ports.
-- The temporary `sp48ExecuteFrame()` still preserves the UI skeleton contract by advancing exactly one frame, but it executes a small CPU slice first so PC/instruction diagnostics visibly move before the full frame runner is migrated.
 - The Wasm display overlay shows Step 5 `$FE`/keyboard/border/EAR/MIC state, Step 6 frame tact/rendering phase/contention diagnostics, and Step 7 CPU PC/A/instruction counters.
 - Focused tests prove ROM fetch, RAM write, `$FE` port write, and contended RAM read behavior through the embedded CPU bus.
 
@@ -391,6 +390,14 @@ Done when:
 
 - `sp48ExecuteFrame()` advances exactly one frame and returns a normal termination mode.
 - The UI skeleton now advances through real CPU work, while fake display/audio can remain in place.
+
+Implementation note:
+
+- `sp48ExecuteFrame()` now runs complete embedded Z80 cycles in C until the current frame boundary is crossed. It does not snap `tacts` to the exact frame length; like the TypeScript runner, the last instruction may overshoot the boundary.
+- The C core keeps `sp48NextFrameStartTact`, `sp48FrameCompleted`, per-frame CPU instruction count, total CPU instruction count, and IRQ diagnostics.
+- The frame-start interrupt line follows the Spectrum rule `currentFrameTact < 32`. `sp48ExecuteInstruction()` updates the embedded Z80 `sigINT` before each CPU cycle.
+- Focused tests cover an exact NOP frame, a non-dividing 11-tact instruction stream that overshoots the frame boundary, and IM 1 interrupt acknowledge at frame start.
+- The UI overlay now reports next-frame start, frame-completed state, interrupt pulse count, and current interrupt-line state in addition to Step 5-7 diagnostics.
 
 ### Step 9 - Replace Fake Display With ULA Rendering
 
