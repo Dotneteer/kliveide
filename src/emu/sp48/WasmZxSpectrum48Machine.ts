@@ -66,15 +66,34 @@ export type Sp48WasmExports = {
   sp48SetCpuDe: (value: number) => void;
   sp48GetCpuHl: () => number;
   sp48SetCpuHl: (value: number) => void;
+  sp48GetCpuIx: () => number;
+  sp48SetCpuIx: (value: number) => void;
+  sp48GetCpuIy: () => number;
+  sp48SetCpuIy: (value: number) => void;
+  sp48GetCpuAfAlt: () => number;
+  sp48GetCpuBcAlt: () => number;
+  sp48GetCpuDeAlt: () => number;
+  sp48GetCpuHlAlt: () => number;
+  sp48GetCpuIr: () => number;
+  sp48GetCpuWz: () => number;
   sp48GetCpuPc: () => number;
   sp48SetCpuPc: (value: number) => void;
   sp48GetCpuSp: () => number;
   sp48SetCpuSp: (value: number) => void;
   sp48GetCpuHalted: () => number;
+  sp48GetCpuPrefix: () => number;
   sp48GetCpuIff1: () => number;
   sp48SetCpuIff1: (value: number) => void;
   sp48GetCpuInterruptMode: () => number;
   sp48SetCpuInterruptMode: (value: number) => void;
+  sp48GetCpuRetExecuted: () => number;
+  sp48GetCpuRetnExecuted: () => number;
+  sp48GetLastMemoryAddress: () => number;
+  sp48GetLastMemoryValue: () => number;
+  sp48GetLastMemoryIsWrite: () => number;
+  sp48GetLastPortAddress: () => number;
+  sp48GetLastPortValue: () => number;
+  sp48GetLastPortIsWrite: () => number;
   sp48GetKeyboardLine: (line: number) => number;
   sp48GetPortFeValue: () => number;
   sp48GetBorderColor: () => number;
@@ -89,6 +108,36 @@ export type Sp48WasmExports = {
 export type Sp48AudioSample = {
   left: number;
   right: number;
+};
+
+export type Sp48CpuState = {
+  af: number;
+  bc: number;
+  de: number;
+  hl: number;
+  afAlt: number;
+  bcAlt: number;
+  deAlt: number;
+  hlAlt: number;
+  ix: number;
+  iy: number;
+  ir: number;
+  wz: number;
+  pc: number;
+  sp: number;
+  tacts: number;
+  prefix: number;
+  halted: boolean;
+  iff1: boolean;
+  interruptMode: number;
+  retExecuted: boolean;
+  retnExecuted: boolean;
+};
+
+export type Sp48BusAccess = {
+  address: number;
+  value: number;
+  isWrite: boolean;
 };
 
 export class WasmZxSpectrum48Machine {
@@ -357,6 +406,46 @@ export class WasmZxSpectrum48Machine {
     this.wasm.sp48SetCpuHl(value);
   }
 
+  getCpuIx(): number {
+    return this.wasm.sp48GetCpuIx();
+  }
+
+  setCpuIx(value: number): void {
+    this.wasm.sp48SetCpuIx(value);
+  }
+
+  getCpuIy(): number {
+    return this.wasm.sp48GetCpuIy();
+  }
+
+  setCpuIy(value: number): void {
+    this.wasm.sp48SetCpuIy(value);
+  }
+
+  getCpuAfAlt(): number {
+    return this.wasm.sp48GetCpuAfAlt();
+  }
+
+  getCpuBcAlt(): number {
+    return this.wasm.sp48GetCpuBcAlt();
+  }
+
+  getCpuDeAlt(): number {
+    return this.wasm.sp48GetCpuDeAlt();
+  }
+
+  getCpuHlAlt(): number {
+    return this.wasm.sp48GetCpuHlAlt();
+  }
+
+  getCpuIr(): number {
+    return this.wasm.sp48GetCpuIr();
+  }
+
+  getCpuWz(): number {
+    return this.wasm.sp48GetCpuWz();
+  }
+
   getCpuPc(): number {
     return this.wasm.sp48GetCpuPc();
   }
@@ -377,6 +466,10 @@ export class WasmZxSpectrum48Machine {
     return this.wasm.sp48GetCpuHalted() !== 0;
   }
 
+  getCpuPrefix(): number {
+    return this.wasm.sp48GetCpuPrefix();
+  }
+
   getCpuIff1(): boolean {
     return this.wasm.sp48GetCpuIff1() !== 0;
   }
@@ -391,6 +484,56 @@ export class WasmZxSpectrum48Machine {
 
   setCpuInterruptMode(value: number): void {
     this.wasm.sp48SetCpuInterruptMode(value);
+  }
+
+  getCpuRetExecuted(): boolean {
+    return this.wasm.sp48GetCpuRetExecuted() !== 0;
+  }
+
+  getCpuRetnExecuted(): boolean {
+    return this.wasm.sp48GetCpuRetnExecuted() !== 0;
+  }
+
+  getCpuState(): Sp48CpuState {
+    return {
+      af: this.getCpuAf(),
+      bc: this.getCpuBc(),
+      de: this.getCpuDe(),
+      hl: this.getCpuHl(),
+      afAlt: this.getCpuAfAlt(),
+      bcAlt: this.getCpuBcAlt(),
+      deAlt: this.getCpuDeAlt(),
+      hlAlt: this.getCpuHlAlt(),
+      ix: this.getCpuIx(),
+      iy: this.getCpuIy(),
+      ir: this.getCpuIr(),
+      wz: this.getCpuWz(),
+      pc: this.getCpuPc(),
+      sp: this.getCpuSp(),
+      tacts: this.getCpuTacts(),
+      prefix: this.getCpuPrefix(),
+      halted: this.getCpuHalted(),
+      iff1: this.getCpuIff1(),
+      interruptMode: this.getCpuInterruptMode(),
+      retExecuted: this.getCpuRetExecuted(),
+      retnExecuted: this.getCpuRetnExecuted()
+    };
+  }
+
+  getLastMemoryAccess(): Sp48BusAccess {
+    return {
+      address: this.wasm.sp48GetLastMemoryAddress(),
+      value: this.wasm.sp48GetLastMemoryValue(),
+      isWrite: this.wasm.sp48GetLastMemoryIsWrite() !== 0
+    };
+  }
+
+  getLastPortAccess(): Sp48BusAccess {
+    return {
+      address: this.wasm.sp48GetLastPortAddress(),
+      value: this.wasm.sp48GetLastPortValue(),
+      isWrite: this.wasm.sp48GetLastPortIsWrite() !== 0
+    };
   }
 
   getPortFeValue(): number {

@@ -100,9 +100,10 @@ export const EmulatorPanelReact = () => {
 
     lastCommandSequenceRef.current = commandSequence;
     const machineState = controller.issueMachineCommand(lastMachineCommand);
-    dispatch(setMachineStateAction(machineState, 0));
+    dispatch(setMachineStateAction(machineState, controller.machine.getCpuPc()));
     updateOverlayForState(machineState);
     updateAudioForState(machineState);
+    updateDiagnostics();
     renderInstantScreenRef.current?.();
   }, [commandSequence, dispatch, lastMachineCommand]);
 

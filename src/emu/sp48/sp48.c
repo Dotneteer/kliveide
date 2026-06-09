@@ -112,6 +112,10 @@ static uint8_t sp48MicBit;
 static uint8_t sp48BeeperLevel;
 static uint32_t sp48EarBitChangedFrom0Tacts;
 static uint32_t sp48EarBitChangedFrom1Tacts;
+static uint16_t sp48LastMemoryAddress;
+static uint8_t sp48LastMemoryValue;
+static uint8_t sp48LastMemoryIsWrite;
+static uint8_t sp48HasMemoryEvent;
 
 static const uint32_t sp48SpectrumColors[16] = {
   0xff000000u,
@@ -395,6 +399,27 @@ static inline uint8_t readScreenMemoryOffset(uint32_t offset) {
   return sp48Memory[0x4000u + (offset & 0x3fffu)];
 }
 
+static uint8_t sp48CpuReadMemory(uint32_t address) {
+  const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
+  const uint8_t value = sp48Memory[maskedAddress];
+  sp48LastMemoryAddress = maskedAddress;
+  sp48LastMemoryValue = value;
+  sp48LastMemoryIsWrite = 0u;
+  sp48HasMemoryEvent = 1u;
+  return value;
+}
+
+static void sp48CpuWriteMemory(uint32_t address, uint32_t value) {
+  const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
+  sp48LastMemoryAddress = maskedAddress;
+  sp48LastMemoryValue = (uint8_t)value;
+  sp48LastMemoryIsWrite = 1u;
+  sp48HasMemoryEvent = 1u;
+  if (maskedAddress >= 0x4000u) {
+    sp48Memory[maskedAddress] = (uint8_t)value;
+  }
+}
+
 uint32_t sp48ReadPort(uint32_t address);
 uint32_t sp48ReadFloatingBus(void);
 void sp48WritePort(uint32_t address, uint32_t value);
@@ -402,14 +427,8 @@ uint32_t sp48ExecuteInstruction(void);
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() sp48Memory
-#define Z80_READ_MEMORY(address) sp48Memory[((uint32_t)(address)) & 0xffffu]
-#define Z80_WRITE_MEMORY(address, value) \
-  do { \
-    const uint32_t z80Sp48Address = ((uint32_t)(address)) & 0xffffu; \
-    if (z80Sp48Address >= 0x4000u) { \
-      sp48Memory[z80Sp48Address] = (uint8_t)(value); \
-    } \
-  } while (0)
+#define Z80_READ_MEMORY(address) sp48CpuReadMemory((uint32_t)(address))
+#define Z80_WRITE_MEMORY(address, value) sp48CpuWriteMemory((uint32_t)(address), (uint32_t)(value))
 #define Z80_POKE_MEMORY(address, value) sp48Memory[((uint32_t)(address)) & 0xffffu] = (uint8_t)(value)
 #define Z80_READ_PORT(address) ((uint8_t)sp48ReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) sp48WritePort((uint32_t)(address), (uint32_t)(value))
@@ -689,6 +708,8 @@ void sp48RenderInstantScreen(void) {
 }
 
 uint32_t sp48ExecuteInstruction(void) {
+  sp48HasMemoryEvent = 0u;
+  z80ClearBusEvents();
   const uint8_t intActive = shouldRaiseInterrupt();
   if (intActive != 0u && sp48InterruptLineActive == 0u) {
     sp48InterruptsRaised++;
@@ -1067,6 +1088,46 @@ void sp48SetCpuHl(uint32_t value) {
   z80SetHl(value);
 }
 
+uint32_t sp48GetCpuIx(void) {
+  return z80GetIx();
+}
+
+void sp48SetCpuIx(uint32_t value) {
+  z80SetIx(value);
+}
+
+uint32_t sp48GetCpuIy(void) {
+  return z80GetIy();
+}
+
+void sp48SetCpuIy(uint32_t value) {
+  z80SetIy(value);
+}
+
+uint32_t sp48GetCpuAfAlt(void) {
+  return z80GetAfAlt();
+}
+
+uint32_t sp48GetCpuBcAlt(void) {
+  return z80GetBcAlt();
+}
+
+uint32_t sp48GetCpuDeAlt(void) {
+  return z80GetDeAlt();
+}
+
+uint32_t sp48GetCpuHlAlt(void) {
+  return z80GetHlAlt();
+}
+
+uint32_t sp48GetCpuIr(void) {
+  return z80GetIr();
+}
+
+uint32_t sp48GetCpuWz(void) {
+  return z80GetWz();
+}
+
 uint32_t sp48GetCpuPc(void) {
   return z80GetPc();
 }
@@ -1087,6 +1148,10 @@ uint32_t sp48GetCpuHalted(void) {
   return z80GetHalted();
 }
 
+uint32_t sp48GetCpuPrefix(void) {
+  return z80GetPrefix();
+}
+
 uint32_t sp48GetCpuIff1(void) {
   return z80GetIff1();
 }
@@ -1101,6 +1166,38 @@ uint32_t sp48GetCpuInterruptMode(void) {
 
 void sp48SetCpuInterruptMode(uint32_t value) {
   z80SetInterruptMode(value);
+}
+
+uint32_t sp48GetCpuRetExecuted(void) {
+  return z80GetRetExecuted();
+}
+
+uint32_t sp48GetCpuRetnExecuted(void) {
+  return z80GetRetnExecuted();
+}
+
+uint32_t sp48GetLastMemoryAddress(void) {
+  return sp48HasMemoryEvent != 0u ? sp48LastMemoryAddress : 0u;
+}
+
+uint32_t sp48GetLastMemoryValue(void) {
+  return sp48HasMemoryEvent != 0u ? sp48LastMemoryValue : 0u;
+}
+
+uint32_t sp48GetLastMemoryIsWrite(void) {
+  return sp48HasMemoryEvent != 0u ? sp48LastMemoryIsWrite : 0u;
+}
+
+uint32_t sp48GetLastPortAddress(void) {
+  return z80GetLastPortAddress();
+}
+
+uint32_t sp48GetLastPortValue(void) {
+  return z80GetLastPortValue();
+}
+
+uint32_t sp48GetLastPortIsWrite(void) {
+  return z80GetLastPortIsWrite();
 }
 
 uint32_t sp48GetKeyboardLine(uint32_t line) {

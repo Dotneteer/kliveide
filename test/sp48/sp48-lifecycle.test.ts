@@ -58,10 +58,14 @@ describe("SP48 Wasm machine lifecycle", () => {
     expect(controller.tickFrame()).toBe(false);
     expect(controller.machine.frames).toBe(1);
 
+    const previousPc = controller.machine.getCpuPc();
+    const previousInstructions = controller.machine.getCpuInstructionsExecuted();
     controller.issueMachineCommand("stepInto");
 
     expect(controller.machineState).toBe(MachineControllerState.Paused);
-    expect(controller.machine.frames).toBe(2);
+    expect(controller.machine.frames).toBe(1);
+    expect(controller.machine.getCpuInstructionsExecuted()).toBe(previousInstructions + 1);
+    expect(controller.machine.getCpuPc()).not.toBe(previousPc);
   });
 
   it("stops and restarts the Wasm machine", async () => {

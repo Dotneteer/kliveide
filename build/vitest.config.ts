@@ -12,7 +12,9 @@ export default defineConfig({
     root: resolve(__dirname, ".."),
     include: [
       "./test/dummy.test.ts",
+      "./test/sp48/sp48-debug.test.ts",
       "./test/sp48/sp48-lifecycle.test.ts",
+      "./test/sp48/sp48-rom-boot.test.ts",
       "./test/sp48/sp48-skeleton.test.ts",
       "./test/z80/interrupts.test.ts",
       "./test/z80/bit-ops-00.test.ts",

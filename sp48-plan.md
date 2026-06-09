@@ -537,6 +537,15 @@ Done when:
 
 - Wasm `sp48` can boot and respond to keyboard input.
 
+Implementation note:
+
+- `test/sp48/sp48-rom-boot.test.ts` boots the real `src/public/roms/sp48.rom` through `public/wasm/sp48.wasm`.
+- The ROM reaches the initialized BASIC loop at frame 83 with `IY == $5C3A`, `PC == $0E5D`, `SP == $FF4A`, white border, and initialized permanent/current attribute variables.
+- Holding the SP48 `Q` key after boot is visible to the ROM: keyboard line 2 sets bit 0, port `$FBFE` reads `$BE`, `LAST_K` at `$5C08` becomes `$F6`, and FLAGS at `$5C3B` marks a new key.
+- A tiny injected RAM program at `$8000` verifies the same Wasm machine can execute injected code through the SP48 bus, write port `$FE`, update border color, write display RAM, and halt.
+- The SP48 Wasm ABI now exposes IX/IY through `sp48GetCpuIx`, `sp48SetCpuIx`, `sp48GetCpuIy`, and `sp48SetCpuIy`; the TypeScript adapter mirrors these as `getCpuIx`, `setCpuIx`, `getCpuIy`, and `setCpuIy`.
+- `build/vitest.config.ts` explicitly includes the ROM boot smoke test so `npm test` runs it with the rest of the migrated Z80/SP48 coverage.
+
 ### Step 14 - Debug And Tooling Compatibility
 
 Only after normal frame execution is stable, migrate or adapt:
@@ -558,6 +567,17 @@ Tests:
 Done when:
 
 - The IDE debugging workflow behaves like the TS machine.
+
+Implementation note:
+
+- `Sp48MachineController` now provides the first debugger-compatible surface around the Wasm SP48 machine: instruction-level `stepInto`, `stepOver`, `stepOut`, breakpoint registration, CPU snapshots, and last memory/port access accessors.
+- `debug` mode runs through the controller breakpoint set; if no breakpoints are registered it enters the paused state immediately so toolbar/menu stepping is available.
+- `stepInto` executes exactly one Z80 instruction. The previous temporary behavior of running a whole frame while paused was replaced.
+- `stepOver` and `stepOut` stay in TypeScript and inspect opcodes/register flags from Wasm, mirroring the original TS Z80 wrapper pattern instead of moving debugger policy into C.
+- The SP48 Wasm ABI now exports debugger/tooling state: alternate registers, IR, WZ, prefix, RET/RETN flags, last CPU memory access, and last CPU port access.
+- CPU memory accesses are logged through static C state in `sp48.c`; ROM write protection remains in the SP48 memory write helper.
+- `EmulatorPanelReact` dispatches the real Wasm CPU PC in `setMachineStateAction` after machine commands, so shared state has a usable debug location.
+- `test/sp48/sp48-debug.test.ts` covers instruction stepping, step-over/out around CALL/RET, breakpoint stop behavior, CPU snapshots, and memory/port event logs.
 
 ## Test Strategy
 
