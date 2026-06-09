@@ -20,6 +20,15 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  /**
+   * Reads a binary file from disk and returns its contents as a byte array.
+   * @param _path The file path to read.
+   * @param _resolveIn Optional base path context.
+   */
+  async readBinaryFile(_path: string, _resolveIn?: string): Promise<Uint8Array> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   async getSettingValue(_id: string): Promise<unknown> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }

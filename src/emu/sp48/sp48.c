@@ -29,6 +29,8 @@ static uint32_t sp48BaseClockFrequency = SP48_BASE_CLOCK_FREQUENCY_PAL;
 static uint32_t sp48AudioSampleRate = SP48_DEFAULT_SAMPLE_RATE;
 static uint32_t sp48AudioSampleCount;
 static uint32_t sp48DiagnosticFlags;
+static uint32_t sp48RomUploadCount;
+static uint32_t sp48RomChecksum;
 
 // ----------------------------------------------------------------------------
 // Helpers
@@ -57,9 +59,9 @@ static inline uint8_t keyboardSignature(void) {
   return value;
 }
 
-static void clearMemory(void) {
-  for (uint32_t i = 0u; i < SP48_MEMORY_SIZE; i++) {
-    sp48Memory[i] = 0u;
+static void clearRam(uint32_t is16k) {
+  for (uint32_t i = 0x4000u; i < SP48_MEMORY_SIZE; i++) {
+    sp48Memory[i] = is16k != 0u && i >= 0x8000u ? 0xffu : 0u;
   }
 }
 
@@ -72,10 +74,24 @@ static void resetKeyboard(void) {
 static void renderFakeDisplay(void) {
   const uint8_t keyMix = keyboardSignature();
   const uint32_t framePhase = sp48Frames & 0xffu;
+  const uint8_t romR = (uint8_t)(sp48RomChecksum & 0xffu);
+  const uint8_t romG = (uint8_t)((sp48RomChecksum >> 8u) & 0xffu);
+  const uint8_t romB = (uint8_t)((sp48RomChecksum >> 16u) & 0xffu);
 
   for (uint32_t y = 0u; y < SP48_SCREEN_HEIGHT; y++) {
     for (uint32_t x = 0u; x < SP48_SCREEN_WIDTH; x++) {
       const uint32_t index = y * SP48_SCREEN_WIDTH + x;
+      if (sp48RomUploadCount >= 0x4000u && y < 8u) {
+        const uint32_t segment = x >> 5u;
+        sp48PixelBuffer[index] = segment < 3u
+          ? rgbaWord(
+              segment == 0u ? romR : 0x20u,
+              segment == 1u ? romG : 0x20u,
+              segment == 2u ? romB : 0x20u)
+          : rgbaWord(0x20u, 0xe0u, 0x60u);
+        continue;
+      }
+
       const uint32_t checker = ((x >> 4u) ^ (y >> 4u) ^ (sp48Frames >> 3u) ^ keyMix) & 0x01u;
       const uint8_t r = (uint8_t)(checker ? (x + framePhase + keyMix) : (framePhase + (y >> 1u)));
       const uint8_t g = (uint8_t)(checker ? (y + framePhase * 2u) : (x ^ keyMix));
@@ -101,7 +117,6 @@ static void renderFakeAudio(void) {
 // Lifecycle and execution
 
 void sp48Reset(void) {
-  clearMemory();
   resetKeyboard();
   sp48Frames = 0u;
   sp48Tacts = 0u;
@@ -116,6 +131,7 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
   (void)isNtsc;
   sp48TactsInFrame = SP48_TACTS_PER_FRAME_PAL;
   sp48BaseClockFrequency = SP48_BASE_CLOCK_FREQUENCY_PAL;
+  clearRam(is16k);
   sp48Reset();
 }
 
@@ -133,7 +149,30 @@ uint32_t sp48ExecuteInstruction(void) {
 }
 
 // ----------------------------------------------------------------------------
-// Input and configuration
+// Memory, input, and configuration
+
+void sp48UploadRomByte(uint32_t offset, uint32_t value) {
+  if (offset < 0x4000u) {
+    sp48Memory[offset] = (uint8_t)value;
+    if (offset == 0u) {
+      sp48RomUploadCount = 0u;
+      sp48RomChecksum = 0u;
+    }
+    sp48RomUploadCount++;
+    sp48RomChecksum = ((sp48RomChecksum << 5u) | (sp48RomChecksum >> 27u)) ^ ((uint8_t)value + offset);
+  }
+}
+
+uint32_t sp48ReadMemory(uint32_t address) {
+  return sp48Memory[address & 0xffffu];
+}
+
+void sp48WriteMemory(uint32_t address, uint32_t value) {
+  const uint32_t maskedAddress = address & 0xffffu;
+  if (maskedAddress >= 0x4000u) {
+    sp48Memory[maskedAddress] = (uint8_t)value;
+  }
+}
 
 void sp48SetKeyStatus(uint32_t key, uint32_t down) {
   const uint32_t line = (key >> 3u) & 0x07u;
@@ -182,6 +221,18 @@ uint32_t sp48GetScreenHeight(void) {
 
 uint32_t sp48GetPixelBufferStartOffset(void) {
   return 0u;
+}
+
+uint32_t sp48GetRomSize(void) {
+  return 0x4000u;
+}
+
+uint32_t sp48GetRomUploadCount(void) {
+  return sp48RomUploadCount;
+}
+
+uint32_t sp48GetRomChecksum(void) {
+  return sp48RomChecksum;
 }
 
 uint32_t sp48GetAudioSampleCount(void) {

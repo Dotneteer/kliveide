@@ -8,6 +8,7 @@ Read this before changing C/WebAssembly emulator code, Wasm build wiring, or ren
 - C code is compiled directly to `wasm32` with `clang`; no Emscripten runtime is used.
 - Wasm modules are freestanding:
   - compiled with `-nostdlib`
+  - compiled with `-fno-builtin` so Clang does not lower simple loops to libc calls such as `memset`
   - no start function: `-Wl,--no-entry`
   - exported linear memory: `-Wl,--export-memory`
   - explicit exported C functions per target
@@ -32,6 +33,12 @@ The repository does not install this automatically. On macOS, Homebrew LLVM clan
 - The current Z80 migration target is:
   - Source: `src/emu/z80/z80.c`
   - Generated artifact: `public/wasm/z80.wasm`
+- The current ZX Spectrum 48K skeleton target is:
+  - Source: `src/emu/sp48/sp48.c`
+  - Generated artifact: `public/wasm/sp48.wasm`
+  - TypeScript adapter: `src/emu/sp48/WasmZxSpectrum48Machine.ts`
+  - Renderer proof: `src/renderer/lib/WasmSp48Display/WasmSp48DisplayReact.tsx`
+- ZX Spectrum ROM resources used by the main process live under `src/public/roms`. The default 48K ROM is `src/public/roms/sp48.rom`, copied from the reference workspace.
 - `public/wasm` is the renderer static-asset location. Electron Vite copies it to `out/renderer/wasm` for packaged/preview builds.
 - Do not put generated `.wasm` files under `src/renderer/src`; Vite may try to module-load them instead of serving them as static assets.
 
@@ -106,6 +113,26 @@ Renderer loading/rendering is in:
 - `src/renderer/lib/WasmBitmapDisplay/WasmBitmapDisplayReact.tsx`
 
 The TypeScript side fetches `wasm/bitmap-demo.wasm` relative to the renderer page URL, instantiates it, calls `render_frame`, reads `memory.buffer` at `bitmap_ptr()`, and paints an `ImageData` to a canvas.
+
+## Current SP48 ROM And Memory ABI
+
+`sp48.wasm` keeps a single static 64K memory array. The first 16K is ROM and the rest is RAM:
+
+- `sp48UploadRomByte(offset, value)` writes a byte only while `offset < 0x4000`.
+- `sp48ReadMemory(address)` reads the 16-bit address space.
+- `sp48WriteMemory(address, value)` ignores writes below `0x4000` and writes RAM at `0x4000-0xffff`.
+- `sp48Reset()` resets runtime counters/devices without clearing memory.
+- `sp48HardReset(is16k, isNtsc)` preserves uploaded ROM and clears RAM. In 16K mode, `0x8000-0xffff` is initialized to `0xff`.
+
+Renderer code must load ROM bytes through the main API, not Node or Electron imports. The current adapter setup path is:
+
+```ts
+const machine = await loadWasmZxSpectrum48Machine();
+await machine.setup(readBinaryFile);
+machine.hardReset();
+```
+
+`WasmZxSpectrum48Machine.setup()` maps the default `romId` (`"sp48"`) to `roms/sp48.rom` and calls `readBinaryFile(path, "public")`.
 
 ## Sass Warning Note
 

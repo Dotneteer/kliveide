@@ -1,4 +1,6 @@
 import { ActionCreator } from "./Action";
+import type { MachineCommand } from "../abstractions/MachineCommand";
+import { MachineControllerState } from "../abstractions/MachineControllerState";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -13,6 +15,31 @@ export const setAppPathAction: ActionCreator = (value: string) => ({
 export const setGlobalSettingAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_GLOBAL_SETTING",
   payload: { id, value }
+});
+
+export const issueMachineCommandAction: ActionCreator = (id: MachineCommand) => ({
+  type: "ISSUE_MACHINE_COMMAND",
+  payload: { id }
+});
+
+export const setMachineStateAction: ActionCreator = (
+  state: MachineControllerState,
+  numValue = 0
+) => ({
+  type: "SET_MACHINE_STATE",
+  payload: { state, numValue }
+});
+
+export const setSp48FrameInfoAction: ActionCreator = (
+  value: { frames: number; tacts: number; audioSampleCount: number }
+) => ({
+  type: "SET_SP48_FRAME_INFO",
+  payload: { value }
+});
+
+export const muteSoundAction: ActionCreator = (flag: boolean) => ({
+  type: "MUTE_SOUND",
+  payload: { flag }
 });
 
 export const unloadWindowsAction: ActionCreator = () => ({

@@ -1,4 +1,5 @@
 import { createEmuApi } from "../common/messaging/EmuApi";
+import type { EmuMachineCommand } from "../common/messaging/EmuApi";
 import { EmuToMainMessenger } from "../common/messaging/EmuToMainMessenger";
 import { createIdeApi } from "../common/messaging/IdeApi";
 import { IdeToMainMessenger } from "../common/messaging/IdeToMainMessenger";
@@ -11,7 +12,11 @@ import {
   type RequestMessage,
   type ResponseMessage
 } from "../common/messaging/messages-core";
-import { setThemeAction, setGlobalSettingAction } from "../common/state/actions";
+import {
+  issueMachineCommandAction,
+  setThemeAction,
+  setGlobalSettingAction
+} from "../common/state/actions";
 import {
   dispatchSharedAction,
   getSharedState,
@@ -118,6 +123,11 @@ class EmuMessageProcessor {
       `EmuApi.setMachineType received machine=${machineId}, model=${modelId ?? "(none)"}.`
     );
   }
+
+  async issueMachineCommand(command: EmuMachineCommand) {
+    issueDemoMachineCommand(command, "emu");
+    rememberStatus(`EmuApi.issueMachineCommand received command=${command}.`);
+  }
 }
 
 class IdeMessageProcessor {
@@ -131,4 +141,8 @@ function rememberStatus(status: string): string {
   latestStatus = status;
   console.info(`[${windowKind}] ${status}`);
   return status;
+}
+
+function issueDemoMachineCommand(command: EmuMachineCommand, source: "main" | "emu" = "emu"): void {
+  dispatchSharedAction(issueMachineCommandAction(command), source);
 }

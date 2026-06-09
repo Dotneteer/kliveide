@@ -103,13 +103,14 @@ registerComponentApi({
 - A top-level theme synchronization example:
 
 ```xmlui
-<App var.currentTheme="" defaultTone="{currentTheme}">
+<App var.currentTheme="dark" defaultTone="{currentTheme}">
   <SharedAppState
     id="state"
-    onDidChange="arg => currentTheme = arg.theme" />
+    onDidChange="arg => currentTheme = (arg.theme === 'light' || arg.theme === 'dark') ? arg.theme : currentTheme" />
 </App>
 ```
 
+- `App.defaultTone` accepts only `"light"` or `"dark"`. Do not initialize a bound tone variable to `""`, and guard shared-state event assignments so partial or malformed event payloads cannot pass an invalid tone into `App`.
 - In React-backed XMLUI components, keep event handlers such as `onDidChange` and XMLUI callbacks such as `updateState` in refs if they are used by stable effects. Otherwise, handler identity changes can accidentally retrigger state publication and create React maximum-update-depth loops.
 - React components should access shared state through hooks in `src/renderer/shared-store.ts`, such as:
   - `useStore`

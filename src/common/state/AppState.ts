@@ -1,3 +1,6 @@
+import type { MachineCommand } from "../abstractions/MachineCommand";
+import { MachineControllerState } from "../abstractions/MachineControllerState";
+
 /**
  * Represents the state of the entire application
  */
@@ -14,6 +17,23 @@ export type AppState = {
   dimMenu?: boolean;
   theme?: string;
   globalSettings?: Record<string, any>;
+  emulatorState?: EmulatorState;
+};
+
+export type EmulatorState = {
+  machineState?: MachineControllerState;
+  pcValue?: number;
+  isDebugging?: boolean;
+  soundLevel?: number;
+  soundMuted?: boolean;
+  savedSoundLevel?: number;
+  lastMachineCommand?: MachineCommand;
+  machineCommandSequence: number;
+  sp48FrameInfo?: {
+    frames: number;
+    tacts: number;
+    audioSampleCount: number;
+  };
 };
 
 /**
@@ -30,4 +50,11 @@ export const initialAppState: AppState = {
   ideFocused: false,
   dimMenu: false,
   globalSettings: {},
+  emulatorState: {
+    machineState: MachineControllerState.None,
+    soundLevel: 0.8,
+    soundMuted: false,
+    savedSoundLevel: 0.8,
+    machineCommandSequence: 0
+  }
 };

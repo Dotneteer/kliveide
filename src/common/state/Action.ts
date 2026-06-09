@@ -1,4 +1,5 @@
 import { ActionTypes } from "./ActionTypes";
+import type { MachineControllerState } from "../abstractions/MachineControllerState";
 
 /**
  * Available action types you can use with state manangement
@@ -31,6 +32,7 @@ export type Payload = {
   text: string;
   failed: string;
   value: any;
+  state: MachineControllerState;
   watch: any;
   symbol: string;
 };

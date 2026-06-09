@@ -38,6 +38,9 @@ import {
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
 import { dimMenuAction, setThemeAction } from "../common/state/actions";
+import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
+import type { EmuMachineCommand } from "../common/messaging/EmuApi";
+import { MachineControllerState } from "../common/abstractions/MachineControllerState";
 import { mainStore } from "./main-store";
 import {
   appSettings,
@@ -381,6 +384,14 @@ function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
 }
 
 function createMachineMenu(): MenuItemConstructorOptions {
+  const machineState = mainStore.getState().emulatorState?.machineState ?? MachineControllerState.None;
+  const isRunning = machineState === MachineControllerState.Running;
+  const isPaused = machineState === MachineControllerState.Paused;
+  const canStart = !isRunning;
+  const canPause = isRunning;
+  const canStopOrRestart = isRunning || isPaused;
+  const canStep = isPaused;
+
   return {
     label: "Machine",
     submenu: [
@@ -400,71 +411,58 @@ function createMachineMenu(): MenuItemConstructorOptions {
         id: "start",
         label: "Start",
         accelerator: "F5",
-        click: notImplemented("Start machine", `
-          await getEmuApi().issueMachineCommand("start");
-        `)
+        enabled: canStart,
+        click: issueMachineCommand("start")
       },
       {
         id: "pause",
         label: "Pause",
         accelerator: "Shift+F5",
-        click: notImplemented("Pause machine", `
-          await getEmuApi().issueMachineCommand("pause");
-        `)
+        enabled: canPause,
+        click: issueMachineCommand("pause")
       },
       {
         id: "stop",
         label: "Stop",
         accelerator: "F4",
-        click: notImplemented("Stop machine", `
-          await getEmuApi().issueMachineCommand("stop");
-        `)
+        enabled: canStopOrRestart,
+        click: issueMachineCommand("stop")
       },
       {
         id: "restart",
         label: "Restart",
         accelerator: "Shift+F4",
-        click: notImplemented("Restart machine", `
-          if (appState.ideFocused && appState.project.isKliveProject) {
-            getIdeApi().executeCommand("outp build");
-            getIdeApi().executeCommand(appState.emulatorState?.isDebugging ? "debug" : "run");
-          } else {
-            await getEmuApi().issueMachineCommand("restart");
-          }
-        `)
+        enabled: canStopOrRestart,
+        click: issueMachineCommand("restart")
       },
       { type: "separator" },
       {
         id: "debug",
         label: "Start with Debugging",
         accelerator: "Ctrl+F5",
-        click: notImplemented("Start with Debugging", `
-          await getEmuApi().issueMachineCommand("debug");
-        `)
+        enabled: canStart,
+        click: issueMachineCommand("debug")
       },
       {
         id: "step_into",
         label: "Step Into",
         accelerator: process.platform === "darwin" ? "F12" : "F11",
-        click: notImplemented("Step Into", `
-          await getEmuApi().issueMachineCommand("stepInto");
-        `)
+        enabled: canStep,
+        click: issueMachineCommand("stepInto")
       },
       {
         id: "step_over",
         label: "Step Over",
         accelerator: "F10",
-        click: notImplemented("Step Over", `
-          await getEmuApi().issueMachineCommand("stepOver");
-        `)
+        enabled: canStep,
+        click: issueMachineCommand("stepOver")
       },
       {
         id: "step_out",
         label: "Step Out",
         accelerator: process.platform === "darwin" ? "Shift+F12" : "Shift+F11",
-        click: notImplemented("Step Out", `
-          await getEmuApi().issueMachineCommand("stepOut");
-        `)
+        enabled: canStep,
+        click: issueMachineCommand("stepOut")
       },
       { type: "separator" },
       {
@@ -693,6 +691,24 @@ function createOptionMenu(
       setSettingValue(settingsId, value);
     }
   }));
+}
+
+function issueMachineCommand(command: EmuMachineCommand): () => Promise<void> {
+  return async () => {
+    mainStore.dispatch(dimMenuAction(true), "main");
+    try {
+      await getEmuApi().issueMachineCommand(command);
+    } catch (err) {
+      await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+        type: "error",
+        title: "Machine command failed",
+        message: `Could not issue machine command: ${command}`,
+        detail: err instanceof Error ? err.message : String(err)
+      });
+    } finally {
+      mainStore.dispatch(dimMenuAction(false), "main");
+    }
+  };
 }
 
 function notImplemented(label: string, _originalHandler: string): () => Promise<void> {

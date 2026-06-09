@@ -8,11 +8,17 @@ export type Sp48WasmExports = {
   sp48HardReset: (is16k: number, isNtsc: number) => void;
   sp48ExecuteFrame: () => number;
   sp48ExecuteInstruction: () => number;
+  sp48UploadRomByte: (offset: number, value: number) => void;
+  sp48ReadMemory: (address: number) => number;
+  sp48WriteMemory: (address: number, value: number) => void;
   sp48SetKeyStatus: (key: number, down: number) => void;
   sp48SetAudioSampleRate: (rate: number) => void;
   sp48GetScreenWidth: () => number;
   sp48GetScreenHeight: () => number;
   sp48GetPixelBufferStartOffset: () => number;
+  sp48GetRomSize: () => number;
+  sp48GetRomUploadCount: () => number;
+  sp48GetRomChecksum: () => number;
   sp48GetAudioSampleCount: () => number;
   sp48GetAudioSampleCapacity: () => number;
   sp48GetTactsInFrame: () => number;
@@ -29,6 +35,7 @@ export type Sp48AudioSample = {
 };
 
 export class WasmZxSpectrum48Machine {
+  readonly romId = "sp48";
   readonly screenWidthInPixels: number;
   readonly screenHeightInPixels: number;
   readonly tactsInFrame: number;
@@ -65,6 +72,45 @@ export class WasmZxSpectrum48Machine {
     return this.wasm.sp48ExecuteInstruction();
   }
 
+  async setup(
+    readBinaryFile: (path: string, resolveIn?: string) => Promise<Uint8Array>,
+    romName = this.romId
+  ): Promise<void> {
+    const romContents = await this.loadRomFromResource(readBinaryFile, romName);
+    this.uploadRomBytes(romContents);
+  }
+
+  async loadRomFromResource(
+    readBinaryFile: (path: string, resolveIn?: string) => Promise<Uint8Array>,
+    romName: string,
+    page = -1
+  ): Promise<Uint8Array> {
+    const isAbsolutePath = romName.startsWith("/") || /^[A-Za-z]:[\\/]/.test(romName);
+    const filename = isAbsolutePath
+      ? romName
+      : `roms/${romName}${page === -1 ? "" : "-" + page}.rom`;
+    return readBinaryFile(filename, isAbsolutePath ? undefined : "public");
+  }
+
+  uploadRomBytes(data: Uint8Array): void {
+    const romSize = this.getRomSize();
+    if (data.length !== romSize) {
+      throw new Error(`Invalid ZX Spectrum 48K ROM size: ${data.length}. Expected ${romSize}.`);
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      this.wasm.sp48UploadRomByte(i, data[i]);
+    }
+  }
+
+  readMemory(address: number): number {
+    return this.wasm.sp48ReadMemory(address);
+  }
+
+  writeMemory(address: number, value: number): void {
+    this.wasm.sp48WriteMemory(address, value);
+  }
+
   setKeyStatus(key: number, down: boolean): void {
     this.wasm.sp48SetKeyStatus(key, down ? 1 : 0);
   }
@@ -90,6 +136,11 @@ export class WasmZxSpectrum48Machine {
     return new Uint32Array(this.wasm.memory.buffer, this.wasm.sp48PixelBufferPtr(), length);
   }
 
+  getPixelBufferBytes(): Uint8ClampedArray {
+    const byteLength = this.screenWidthInPixels * this.screenHeightInPixels * 4;
+    return new Uint8ClampedArray(this.wasm.memory.buffer, this.wasm.sp48PixelBufferPtr(), byteLength);
+  }
+
   getAudioSampleWords(): Int16Array {
     return new Int16Array(this.wasm.memory.buffer, this.wasm.sp48AudioSamplesPtr(), this.getAudioSampleCount() * 2);
   }
@@ -113,6 +164,18 @@ export class WasmZxSpectrum48Machine {
 
   getPixelBufferStartOffset(): number {
     return this.wasm.sp48GetPixelBufferStartOffset();
+  }
+
+  getRomSize(): number {
+    return this.wasm.sp48GetRomSize();
+  }
+
+  getRomUploadCount(): number {
+    return this.wasm.sp48GetRomUploadCount();
+  }
+
+  getRomChecksum(): number {
+    return this.wasm.sp48GetRomChecksum();
   }
 
   getDiagnosticFlags(): number {

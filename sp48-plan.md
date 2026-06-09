@@ -157,6 +157,10 @@ When adding React-backed XMLUI primitives:
 
 This pattern keeps application behavior visible in XMLUI markup while still allowing React to encapsulate low-level rendering details.
 
+## Freestanding C Toolchain Notes
+
+The Wasm build uses `-nostdlib` and must not accidentally introduce libc dependencies. Even hand-written clearing loops can be optimized by Clang into calls such as `memset`, so the shared Wasm build flags include `-fno-builtin`. Keep this flag for all freestanding emulator targets unless a target deliberately provides its own runtime functions.
+
 ## Migration Steps
 
 ### Step 1 - UI-Connected Static Sp48 Skeleton
@@ -210,13 +214,30 @@ Done when:
 
 - The UI integration is real enough that future hardware slices are internal swaps, not new UI plumbing.
 
+Implementation note:
+
+- The current workspace does not yet have the full reference `MachineController`; Step 2 introduces `Sp48FakeMachineController` as the temporary controller-facing lifecycle boundary.
+- Toolbar and menu commands are XMLUI/shared-state driven through `emulatorState.lastMachineCommand` and `emulatorState.machineCommandSequence`, not through `globalSettings.demo`.
+- Machine lifecycle state is published as `emulatorState.machineState`, using the shared `MachineControllerState` enum so toolbar and menu enablement follow the same pattern as the original app.
+- API commands received by the emulator renderer must be dispatched with source `"emu"` after local processing, otherwise the main store will not receive controller state changes and menu enablement becomes stale.
+- XMLUI component files that bind shared state need a `SharedAppState id="state"` in their own component scope; a `SharedAppState` declared in a parent component is not visible inside separately declared component files.
+- `WasmSp48DisplayReact` owns the temporary controller instance, observes shared-state commands, and advances frames only while the fake controller is running.
+- Frame completion events publish lightweight diagnostics under `emulatorState.sp48FrameInfo` with frame count, tact count, and audio sample count.
+- `stop` hard-resets the skeleton and leaves it stopped; `restart` hard-resets and starts it; paused step commands execute one fake frame so display/audio/frame-completion plumbing remains visible.
+- A stopped machine paints a homogeneous dark gray bitmap so the UI visibly distinguishes stopped state from a paused animated frame.
+
 ### Step 3 - ROM And Memory Map
 
 Mirror `ZxSpectrum48Machine` memory behavior:
 
+- The default Spectrum 48 ROM resource lives at `src/public/roms/sp48.rom`, matching the original `roms/sp48.rom` resource name.
+- Renderer code loads ROM bytes through `MainApi.readBinaryFile("roms/sp48.rom", "public")`; renderer code must not read the file system directly.
+- `WasmZxSpectrum48Machine.setup()` follows the original resource naming convention: `romName` becomes `roms/{romName}.rom`, while absolute ROM paths are passed through.
+- The adapter validates that the uploaded Spectrum 48 ROM is exactly 16K before copying it into Wasm memory.
 - `0x0000-0x3fff` is ROM.
 - `0x4000-0xffff` is RAM for 48K.
 - 16K mode writes only to `0x4000-0x7fff`; `0x8000-0xffff` reads as initialized `0xff` after hard reset.
+- `sp48Reset()` resets runtime state/devices but does not clear memory; `sp48HardReset()` clears RAM while preserving uploaded ROM bytes.
 
 Tests:
 

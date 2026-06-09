@@ -15,11 +15,13 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
 
     const memory = machine.getMemory();
     const pixels = machine.getPixelBuffer();
+    const pixelBytes = machine.getPixelBufferBytes();
     const keyboard = machine.getKeyboardLines();
     const audioWords = machine.getAudioSampleWords();
 
     expect(memory.byteLength).toBe(0x10000);
     expect(pixels.length).toBe(256 * 192);
+    expect(pixelBytes.byteLength).toBe(256 * 192 * 4);
     expect(keyboard.length).toBe(8);
     expect(audioWords.length).toBe(machine.getAudioSampleCount() * 2);
     expect(machine.screenWidthInPixels).toBe(256);
@@ -84,6 +86,50 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
 
     machine.setKeyStatus(10, false);
     expect(machine.getKeyboardLine(1)).toBe(0xff);
+  });
+
+  it("uploads the 48K ROM and protects ROM bytes through the memory map", async () => {
+    const machine = await createMachine();
+    const romPath = resolve(process.cwd(), "src/public/roms/sp48.rom");
+    const rom = new Uint8Array(readFileSync(romPath));
+
+    expect(machine.getRomSize()).toBe(0x4000);
+
+    const topLeftBeforeRom = machine.getPixelBuffer()[0];
+    machine.uploadRomBytes(rom);
+    machine.hardReset();
+
+    expect(machine.getRomUploadCount()).toBe(0x4000);
+    expect(machine.getRomChecksum()).not.toBe(0);
+    expect(machine.getPixelBuffer()[0]).not.toBe(topLeftBeforeRom);
+
+    machine.writeMemory(0x0000, rom[0] ^ 0xff);
+    machine.writeMemory(0x4000, 0x5a);
+    machine.writeMemory(0xffff, 0xa5);
+
+    expect(machine.readMemory(0x0000)).toBe(rom[0]);
+    expect(machine.readMemory(0x3fff)).toBe(rom[0x3fff]);
+    expect(machine.readMemory(0x4000)).toBe(0x5a);
+    expect(machine.readMemory(0xffff)).toBe(0xa5);
+
+    machine.hardReset();
+
+    expect(machine.readMemory(0x0000)).toBe(rom[0]);
+    expect(machine.readMemory(0x3fff)).toBe(rom[0x3fff]);
+    expect(machine.readMemory(0x4000)).toBe(0x00);
+    expect(machine.readMemory(0xffff)).toBe(0x00);
+  });
+
+  it("initializes upper memory as unavailable in 16K mode", async () => {
+    const machine = await createMachine();
+
+    machine.writeMemory(0x8000, 0x5a);
+    machine.hardReset(true);
+
+    expect(machine.readMemory(0x4000)).toBe(0x00);
+    expect(machine.readMemory(0x7fff)).toBe(0x00);
+    expect(machine.readMemory(0x8000)).toBe(0xff);
+    expect(machine.readMemory(0xffff)).toBe(0xff);
   });
 
   it("does not export allocator functions", async () => {

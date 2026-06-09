@@ -181,8 +181,10 @@ state.globalSettings('ideViewOptions.showToolbar', true)
 ## Common Pitfalls
 
 - Do not mix API command messaging with shared-state reducer forwarding.
+- When the emulator renderer receives a main-to-emulator API command that changes emulator-owned state, dispatch the resulting reducer action with source `"emu"`. Dispatching it as `"main"` updates the emulator renderer locally but the renderer forwarder will intentionally not send it back to the main store, leaving menu state stale.
 - Do not directly mutate `AppState` or `globalSettings`; XMLUI can freeze objects and reducers must be immutable.
 - Do not import Electron/Node modules from renderer code.
 - Do not forward received renderer actions back to main from renderer; only forward locally-originated actions.
 - Do not expose `value` through `registerComponentApi` in `SharedAppState`.
 - For startup-visible XMLUI state, ensure main forwards the corresponding state after renderer load.
+- A `SharedAppState` declared in a parent XMLUI component is not visible inside a separate component file. Add a local `SharedAppState id="state"` in component files that bind `state.value` or call `state.*` APIs.

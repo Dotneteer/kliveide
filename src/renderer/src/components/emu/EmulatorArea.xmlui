@@ -1,6 +1,6 @@
 <Component name="EmulatorArea">
   <VStack backgroundColor="$color-surface-400" gap="0">
     <SharedAppState id="state" />
-    <WasmBitmapDisplay height="100%" />
+    <WasmSp48Display height="100%" />
   </VStack>
 </Component>
