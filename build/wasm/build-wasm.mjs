@@ -106,6 +106,7 @@ const wasmTargets = [
       "sp48ReadMemory",
       "sp48WriteMemory",
       "sp48SetKeyStatus",
+      "sp48ReadPort",
       "sp48SetAudioSampleRate",
       "sp48GetScreenWidth",
       "sp48GetScreenHeight",

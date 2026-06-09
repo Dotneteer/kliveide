@@ -270,6 +270,14 @@ Done when:
 - The existing keyboard tests can be adapted to use the Wasm module without changing test expectations.
 - The UI keyboard path still reaches Wasm through `machine.setKeyStatus()`.
 
+Implementation note:
+
+- `sp48KeyboardLines[8]` now mirrors the original TypeScript `SpectrumKeyboardDevice`: each byte stores pressed bits in the lower five bits; released state is `0x00`.
+- `sp48SetKeyStatus(key, down)` maps keys with `line = key / 5` and `mask = 1 << (key % 5)`, using the same `SpectrumKeyCode` ordering as the reference app.
+- `sp48ReadPort(address)` handles port `$FE`-style reads by OR-ing the selected keyboard lines from `~(address >> 8)` and returning the inverted status byte.
+- `src/emu/sp48/sp48-keyboard.ts` centralizes the current Spectrum key codes and default physical keyboard mapping for both the display controller and the virtual keyboard.
+- The temporary UI diagnostic overlay on the Wasm display shows the eight matrix bytes, the all-lines `$FE` read value, and the last key action. This gives a visual smoke test for physical and virtual key press/release while the real ROM/CPU path is still incomplete.
+
 ### Step 5 - Port `$FE` Write, Border, EAR/MIC State
 
 Mirror `ZxSpectrumBase.writePort0xFE`:

@@ -67,7 +67,7 @@ static void clearRam(uint32_t is16k) {
 
 static void resetKeyboard(void) {
   for (uint32_t i = 0u; i < 8u; i++) {
-    sp48KeyboardLines[i] = 0xffu;
+    sp48KeyboardLines[i] = 0u;
   }
 }
 
@@ -175,13 +175,32 @@ void sp48WriteMemory(uint32_t address, uint32_t value) {
 }
 
 void sp48SetKeyStatus(uint32_t key, uint32_t down) {
-  const uint32_t line = (key >> 3u) & 0x07u;
-  const uint8_t mask = (uint8_t)(1u << (key & 0x07u));
-  if (down != 0u) {
-    sp48KeyboardLines[line] = (uint8_t)(sp48KeyboardLines[line] & (uint8_t)~mask);
-  } else {
-    sp48KeyboardLines[line] = (uint8_t)(sp48KeyboardLines[line] | mask);
+  if (key >= 40u) {
+    return;
   }
+
+  const uint32_t line = key / 5u;
+  const uint8_t mask = (uint8_t)(1u << (key % 5u));
+  if (down != 0u) {
+    sp48KeyboardLines[line] = (uint8_t)((sp48KeyboardLines[line] | mask) & 0x1fu);
+  } else {
+    sp48KeyboardLines[line] = (uint8_t)(sp48KeyboardLines[line] & (uint8_t)~mask & 0x1fu);
+  }
+}
+
+uint32_t sp48ReadPort(uint32_t address) {
+  if ((address & 0x0001u) != 0u) {
+    return 0xffu;
+  }
+
+  uint8_t status = 0u;
+  const uint32_t selectedLines = (~(address >> 8u)) & 0xffu;
+  for (uint32_t line = 0u; line < 8u; line++) {
+    if ((selectedLines & (1u << line)) != 0u) {
+      status |= sp48KeyboardLines[line];
+    }
+  }
+  return ((uint32_t)~status) & 0xffu;
 }
 
 void sp48SetAudioSampleRate(uint32_t rate) {

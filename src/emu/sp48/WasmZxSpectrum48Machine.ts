@@ -12,6 +12,7 @@ export type Sp48WasmExports = {
   sp48ReadMemory: (address: number) => number;
   sp48WriteMemory: (address: number, value: number) => void;
   sp48SetKeyStatus: (key: number, down: number) => void;
+  sp48ReadPort: (address: number) => number;
   sp48SetAudioSampleRate: (rate: number) => void;
   sp48GetScreenWidth: () => number;
   sp48GetScreenHeight: () => number;
@@ -113,6 +114,10 @@ export class WasmZxSpectrum48Machine {
 
   setKeyStatus(key: number, down: boolean): void {
     this.wasm.sp48SetKeyStatus(key, down ? 1 : 0);
+  }
+
+  readPort(address: number): number {
+    return this.wasm.sp48ReadPort(address);
   }
 
   setAudioSampleRate(rate: number): void {

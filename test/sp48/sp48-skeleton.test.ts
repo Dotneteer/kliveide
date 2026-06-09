@@ -80,12 +80,37 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     machine.setKeyStatus(10, true);
     machine.executeMachineFrame();
 
-    expect(machine.getKeyboardLine(1)).toBe(0xfb);
-    expect(machine.getKeyboardLines()[1]).toBe(0xfb);
+    expect(machine.getKeyboardLine(2)).toBe(0x01);
+    expect(machine.getKeyboardLines()[2]).toBe(0x01);
+    expect(machine.readPort(0xfbfe)).toBe(0xfe);
     expect(machine.getPixelBuffer()[0]).not.toBe(before);
 
     machine.setKeyStatus(10, false);
-    expect(machine.getKeyboardLine(1)).toBe(0xff);
+    expect(machine.getKeyboardLine(2)).toBe(0x00);
+    expect(machine.readPort(0xfbfe)).toBe(0xff);
+  });
+
+  it("reads the real keyboard matrix through port $FE", async () => {
+    const machine = await createMachine();
+    machine.reset();
+
+    expect(machine.readPort(0x00fe)).toBe(0xff);
+
+    machine.setKeyStatus(10, true); // Q, line 2 bit 0
+    machine.setKeyStatus(14, true); // T, line 2 bit 4
+    machine.setKeyStatus(5, true);  // A, line 1 bit 0
+
+    expect(machine.getKeyboardLine(2)).toBe(0x11);
+    expect(machine.getKeyboardLine(1)).toBe(0x01);
+    expect(machine.readPort(0xfbfe)).toBe(0xee);
+    expect(machine.readPort(0xfdfe)).toBe(0xfe);
+    expect(machine.readPort(0xf9fe)).toBe(0xee);
+    expect(machine.readPort(0xffff)).toBe(0xff);
+
+    machine.setKeyStatus(14, false);
+
+    expect(machine.getKeyboardLine(2)).toBe(0x01);
+    expect(machine.readPort(0xfbfe)).toBe(0xfe);
   });
 
   it("uploads the 48K ROM and protects ROM bytes through the memory map", async () => {

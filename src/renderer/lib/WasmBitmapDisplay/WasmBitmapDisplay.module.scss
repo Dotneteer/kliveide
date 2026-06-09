@@ -6,6 +6,7 @@
   justify-content: center;
   min-height: 0;
   overflow: hidden;
+  position: relative;
   width: 100%;
 }
 
@@ -25,4 +26,20 @@
   font: 13px system-ui, sans-serif;
   max-width: 640px;
   padding: 16px;
+}
+
+.keyboardMatrix {
+  align-items: center;
+  background: rgb(0 0 0 / 72%);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 4px;
+  bottom: 10px;
+  color: #d8f7ff;
+  display: flex;
+  font: 11px/1.2 Menlo, Monaco, "Courier New", monospace;
+  gap: 8px;
+  left: 10px;
+  padding: 4px 6px;
+  position: absolute;
+  user-select: none;
 }

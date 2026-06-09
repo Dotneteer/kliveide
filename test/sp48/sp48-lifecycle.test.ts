@@ -81,7 +81,8 @@ describe("Sp48 fake machine lifecycle", () => {
 
     controller.setKeyStatus(10, true);
 
-    expect(controller.machine.getKeyboardLine(1)).toBe(0xfb);
+    expect(controller.machine.getKeyboardLine(2)).toBe(0x01);
+    expect(controller.machine.readPort(0xfbfe)).toBe(0xfe);
     expect(controller.renderInstantScreen().length).toBe(256 * 192);
   });
 });

@@ -9,6 +9,18 @@ import { loadWasmZxSpectrum48Machine } from "../../../emu/sp48/WasmZxSpectrum48M
 import { MachineControllerState } from "../../../common/abstractions/MachineControllerState";
 import { setMachineStateAction, setSp48FrameInfoAction } from "../../../common/state/actions";
 import { readBinaryFile, useDispatch, useSharedState } from "../../shared-store";
+import {
+  SP48_KEY_EVENT,
+  dispatchSp48KeyStatus,
+  mapPhysicalKeyToSp48Keys,
+  type Sp48KeyEventDetail
+} from "../../../emu/sp48/sp48-keyboard";
+
+type KeyboardIndicator = {
+  lines: number[];
+  portFe: number;
+  lastKey?: Sp48KeyEventDetail;
+};
 
 export const WasmSp48DisplayReact = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -16,6 +28,10 @@ export const WasmSp48DisplayReact = () => {
   const lastCommandSequenceRef = useRef(0);
   const renderInstantScreenRef = useRef<(() => void) | null>(null);
   const [error, setError] = useState<string>();
+  const [keyboardIndicator, setKeyboardIndicator] = useState<KeyboardIndicator>({
+    lines: Array(8).fill(0),
+    portFe: 0xff
+  });
   const sharedState = useSharedState();
   const dispatch = useDispatch();
   const commandSequence = sharedState.emulatorState?.machineCommandSequence ?? 0;
@@ -36,7 +52,7 @@ export const WasmSp48DisplayReact = () => {
   useEffect(() => {
     let disposed = false;
     let animationFrame = 0;
-    const pressedKeys = new Map<string, number>();
+    const pressedPhysicalKeys = new Map<string, number[]>();
 
     async function run() {
       try {
@@ -62,26 +78,58 @@ export const WasmSp48DisplayReact = () => {
         canvas.height = machine.screenHeightInPixels;
         context.imageSmoothingEnabled = false;
 
+        const updateKeyboardIndicator = (lastKey?: Sp48KeyEventDetail) => {
+          setKeyboardIndicator({
+            lines: Array.from(machine.getKeyboardLines()),
+            portFe: machine.readPort(0x00fe),
+            lastKey
+          });
+        };
+
+        const setSp48KeyStatus = (key: number, down: boolean, source: Sp48KeyEventDetail["source"]) => {
+          controller.setKeyStatus(key, down);
+          updateKeyboardIndicator({ key, down, source });
+          renderInstantScreenRef.current?.();
+        };
+
         const handleKeyDown = (event: KeyboardEvent) => {
-          if (pressedKeys.has(event.code)) {
+          if (pressedPhysicalKeys.has(event.code)) {
             return;
           }
-          const key = getSkeletonKeyIndex(event.code);
-          pressedKeys.set(event.code, key);
-          controller.setKeyStatus(key, true);
+          const keys = mapPhysicalKeyToSp48Keys(event.code);
+          if (keys.length === 0) {
+            return;
+          }
+          event.preventDefault();
+          pressedPhysicalKeys.set(event.code, keys);
+          for (const key of keys) {
+            dispatchSp48KeyStatus(key, true, "physical");
+          }
         };
 
         const handleKeyUp = (event: KeyboardEvent) => {
-          const key = pressedKeys.get(event.code);
-          if (key === undefined) {
+          const keys = pressedPhysicalKeys.get(event.code);
+          if (!keys) {
             return;
           }
-          pressedKeys.delete(event.code);
-          controller.setKeyStatus(key, false);
+          event.preventDefault();
+          pressedPhysicalKeys.delete(event.code);
+          for (const key of keys) {
+            dispatchSp48KeyStatus(key, false, "physical");
+          }
+        };
+
+        const handleVirtualKey = (event: Event) => {
+          const detail = (event as CustomEvent<Sp48KeyEventDetail>).detail;
+          if (!detail) {
+            return;
+          }
+          setSp48KeyStatus(detail.key, detail.down, detail.source);
         };
 
         window.addEventListener("keydown", handleKeyDown);
         window.addEventListener("keyup", handleKeyUp);
+        window.addEventListener(SP48_KEY_EVENT, handleVirtualKey);
 
         const publishFrameCompleted = (event?: Sp48FrameCompletedEvent) => {
           if (!event) {
@@ -114,6 +162,7 @@ export const WasmSp48DisplayReact = () => {
         };
 
         renderInstantScreenRef.current = paintPixels;
+        updateKeyboardIndicator();
         paintPixels();
 
         const render = () => {
@@ -132,6 +181,7 @@ export const WasmSp48DisplayReact = () => {
         return () => {
           window.removeEventListener("keydown", handleKeyDown);
           window.removeEventListener("keyup", handleKeyUp);
+          window.removeEventListener(SP48_KEY_EVENT, handleVirtualKey);
           controller.frameCompleted.off(publishFrameCompleted);
           controller.release();
           renderInstantScreenRef.current = null;
@@ -160,15 +210,21 @@ export const WasmSp48DisplayReact = () => {
   return (
     <div className={styles.host}>
       <canvas ref={canvasRef} className={styles.canvas} />
+      <div className={styles.keyboardMatrix}>
+        <span>KB</span>
+        <span>{keyboardIndicator.lines.map(toHexByte).join(" ")}</span>
+        <span>FE {toHexByte(keyboardIndicator.portFe)}</span>
+        {keyboardIndicator.lastKey ? (
+          <span>
+            {keyboardIndicator.lastKey.down ? "DOWN" : "UP"} {keyboardIndicator.lastKey.key}
+          </span>
+        ) : null}
+      </div>
       {error ? <div className={styles.error}>{error}</div> : null}
     </div>
   );
 };
 
-function getSkeletonKeyIndex(code: string): number {
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) {
-    hash = (hash * 33 + code.charCodeAt(i)) & 0xff;
-  }
-  return hash & 0x3f;
+function toHexByte(value: number): string {
+  return (value & 0xff).toString(16).padStart(2, "0").toUpperCase();
 }

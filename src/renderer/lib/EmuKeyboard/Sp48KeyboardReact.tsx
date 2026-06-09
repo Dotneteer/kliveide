@@ -1,4 +1,9 @@
-import { memo, useMemo, useState, type MouseEvent } from "react";
+import { memo, useEffect, useMemo, useState, type MouseEvent } from "react";
+import {
+  SP48_KEY_EVENT,
+  dispatchSp48KeyStatus,
+  type Sp48KeyEventDetail
+} from "../../../emu/sp48/sp48-keyboard";
 
 type KeyCategory = "main" | "symbol" | "above" | "below" | "topNum";
 type ArrowIcon = "left" | "right" | "up" | "down";
@@ -92,7 +97,27 @@ export function Sp48KeyboardReact({ width, height }: Props) {
   const [pressedKeys, setPressedKeys] = useState(() => new Set<number>());
   const rowShifts = [0, 80 * zoom, 110 * zoom, 0];
 
+  useEffect(() => {
+    const handleKeyStatus = (event: Event) => {
+      const detail = (event as CustomEvent<Sp48KeyEventDetail>).detail;
+      if (!detail) {
+        return;
+      }
+      updatePressedKeys(detail.key, detail.down);
+    };
+
+    window.addEventListener(SP48_KEY_EVENT, handleKeyStatus);
+    return () => {
+      window.removeEventListener(SP48_KEY_EVENT, handleKeyStatus);
+    };
+  }, []);
+
   const handleKeyAction = ({ code, down }: KeyboardButtonClickArgs) => {
+    updatePressedKeys(code, down);
+    dispatchSp48KeyStatus(code, down, "virtual");
+  };
+
+  const updatePressedKeys = (code: number, down: boolean) => {
     setPressedKeys((current) => {
       const next = new Set(current);
       if (down) {
