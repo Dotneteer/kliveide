@@ -29,6 +29,10 @@ const SpectrumColors = {
 
 type Sp48TestMachine = Awaited<ReturnType<typeof createMachine>>;
 
+function expectedAudioSampleCount(machine: Sp48TestMachine, sampleRate: number): number {
+  return Math.floor((machine.tactsInFrame * sampleRate) / machine.baseClockFrequency);
+}
+
 function visiblePixelIndex(machine: Sp48TestMachine, x: number, y: number): number {
   return machine.getPixelBufferStartOffset() + y * machine.screenWidthInPixels + x;
 }
@@ -130,18 +134,51 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.readMemory(0x5820)).toBe(0x02);
   });
 
-  it("produces deterministic placeholder audio samples", async () => {
+  it("produces silent beeper samples when EAR and MIC stay low", async () => {
     const machine = await createMachine();
     machine.setAudioSampleRate(48_000);
     machine.executeMachineFrame();
 
     const samples = machine.getAudioSamples();
+    const expectedSamples = expectedAudioSampleCount(machine, 48_000);
 
-    expect(machine.getAudioSampleCount()).toBe(960);
-    expect(machine.getAudioSampleCapacity()).toBeGreaterThanOrEqual(960);
-    expect(samples.length).toBe(960);
+    expect(machine.getAudioSampleCount()).toBe(expectedSamples);
+    expect(machine.getAudioSampleCapacity()).toBeGreaterThanOrEqual(expectedSamples);
+    expect(samples.length).toBe(expectedSamples);
     expect(samples[0].left).toBe(samples[0].right);
+    expect(samples.every((sample) => sample.left === 0 && sample.right === 0)).toBe(true);
+    expect(machine.getDiagnosticFlags()).toBe(0);
+  });
+
+  it("renders beeper samples from port $FE EAR and MIC output", async () => {
+    const machine = await createMachine();
+
+    machine.setAudioSampleRate(48_000);
+    machine.writePort(0x00fe, 0x18);
+    machine.executeMachineFrame();
+
+    const samples = machine.getAudioSamples();
+    const expectedSamples = expectedAudioSampleCount(machine, 48_000);
+
+    expect(machine.getAudioSampleCount()).toBe(expectedSamples);
     expect(samples.some((sample) => sample.left !== 0)).toBe(true);
+    expect(samples.some((sample) => sample.right !== 0)).toBe(true);
+    expect(samples[0].left).toBeGreaterThan(0);
+    expect(samples[0].right).toBeGreaterThan(0);
+    expect(machine.getDiagnosticFlags()).toBe(0);
+  });
+
+  it("keeps the beeper sample scheduler continuous across frame boundaries", async () => {
+    const machine = await createMachine();
+    const counts: number[] = [];
+
+    machine.setAudioSampleRate(48_000);
+    for (let i = 0; i < 6; i++) {
+      machine.executeMachineFrame();
+      counts.push(machine.getAudioSampleCount());
+    }
+
+    expect(counts).toEqual([958, 958, 959, 958, 959, 958]);
     expect(machine.getDiagnosticFlags()).toBe(0);
   });
 

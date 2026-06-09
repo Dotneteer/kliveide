@@ -16,6 +16,7 @@ import { loadWasmZxSpectrum48Machine } from "../../../emu/sp48/WasmZxSpectrum48M
 import { readBinaryFile, useDispatch, useSharedState } from "../../shared-store";
 import { EmulatorOverlay } from "./EmulatorOverlay";
 import styles from "./EmulatorPanel.module.scss";
+import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorScreen } from "./useEmulatorScreen";
 
 type MachineDiagnostics = {
@@ -76,6 +77,9 @@ export const EmulatorPanelReact = () => {
   const dispatch = useDispatch();
   const commandSequence = sharedState.emulatorState?.machineCommandSequence ?? 0;
   const lastMachineCommand = sharedState.emulatorState?.lastMachineCommand as Sp48MachineCommand | undefined;
+  const soundLevel = sharedState.emulatorState?.soundLevel ?? 0.8;
+  const soundLevelRef = useRef(soundLevel);
+  const { beeperRenderer, initAudio } = useEmulatorAudio();
 
   const {
     screenElement,
@@ -98,12 +102,17 @@ export const EmulatorPanelReact = () => {
     const machineState = controller.issueMachineCommand(lastMachineCommand);
     dispatch(setMachineStateAction(machineState, 0));
     updateOverlayForState(machineState);
+    updateAudioForState(machineState);
     renderInstantScreenRef.current?.();
   }, [commandSequence, dispatch, lastMachineCommand]);
 
   useEffect(() => {
+    soundLevelRef.current = soundLevel;
+  }, [soundLevel]);
+
+  useEffect(() => {
     let disposed = false;
-    let animationFrame = 0;
+    let machineLoopTimer = 0;
     const pressedPhysicalKeys = new Map<string, number[]>();
 
     async function run() {
@@ -111,7 +120,8 @@ export const EmulatorPanelReact = () => {
         const machine = await loadWasmZxSpectrum48Machine();
         await machine.setup(readBinaryFile);
         machine.hardReset();
-        machine.setAudioSampleRate(44_100);
+        const audioSampleRate = await initAudio(machine.tactsInFrame, machine.baseClockFrequency);
+        machine.setAudioSampleRate(audioSampleRate);
         const controller = new Sp48FakeMachineController(machine);
         controllerRef.current = controller;
 
@@ -183,6 +193,8 @@ export const EmulatorPanelReact = () => {
             tacts: event.tacts,
             audioSampleCount: event.audioSampleCount
           }));
+          beeperRenderer.current?.storeSamples(event.audioSamples, soundLevelRef.current);
+          beeperRenderer.current?.play();
         };
 
         controller.frameCompleted.on(publishFrameCompleted);
@@ -190,8 +202,17 @@ export const EmulatorPanelReact = () => {
         renderInstantScreenRef.current = paintPixels;
         paintPixels();
 
-        const render = () => {
+        const frameDurationMs = (machine.tactsInFrame / machine.baseClockFrequency) * 1000;
+        let nextFrameTime = performance.now() + frameDurationMs;
+
+        const machineLoop = () => {
           if (disposed) {
+            return;
+          }
+
+          if (controller.machineState !== MachineControllerState.Running) {
+            nextFrameTime = performance.now() + frameDurationMs;
+            machineLoopTimer = window.setTimeout(machineLoop, 16);
             return;
           }
 
@@ -199,16 +220,20 @@ export const EmulatorPanelReact = () => {
             updateDiagnostics();
             paintPixels();
           }
-          animationFrame = requestAnimationFrame(render);
+
+          const toWait = Math.floor(nextFrameTime - performance.now());
+          nextFrameTime += frameDurationMs;
+          machineLoopTimer = window.setTimeout(machineLoop, Math.max(0, toWait - 2));
         };
 
-        animationFrame = requestAnimationFrame(render);
+        machineLoopTimer = window.setTimeout(machineLoop, 0);
 
         return () => {
           window.removeEventListener("keydown", handleKeyDown);
           window.removeEventListener("keyup", handleKeyUp);
           window.removeEventListener(SP48_KEY_EVENT, handleVirtualKey);
           controller.frameCompleted.off(publishFrameCompleted);
+          beeperRenderer.current?.suspend();
           controller.release();
           renderInstantScreenRef.current = null;
           controllerRef.current = null;
@@ -229,7 +254,7 @@ export const EmulatorPanelReact = () => {
     return () => {
       disposed = true;
       cleanup?.();
-      cancelAnimationFrame(animationFrame);
+      window.clearTimeout(machineLoopTimer);
     };
   }, []);
 
@@ -291,6 +316,18 @@ export const EmulatorPanelReact = () => {
         break;
       default:
         setOverlay("Not yet started. Press F5 to start machine.");
+        break;
+    }
+  }
+
+  function updateAudioForState(machineState: MachineControllerState): void {
+    switch (machineState) {
+      case MachineControllerState.Running:
+        beeperRenderer.current?.play();
+        break;
+      case MachineControllerState.Paused:
+      case MachineControllerState.Stopped:
+        beeperRenderer.current?.suspend();
         break;
     }
   }

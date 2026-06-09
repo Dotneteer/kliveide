@@ -13,6 +13,8 @@
 #define SP48_BASE_CLOCK_FREQUENCY_PAL 3500000u
 #define SP48_DEFAULT_SAMPLE_RATE 44100u
 #define SP48_AUDIO_SAMPLE_CAPACITY 2048u
+#define SP48_AUDIO_TRANSITION_CAPACITY 4096u
+#define SP48_AUDIO_SAMPLE_SCALE 12000.0
 
 #define SP48_RENDER_PHASE_NONE 0u
 #define SP48_RENDER_PHASE_BORDER 1u
@@ -47,6 +49,12 @@ typedef struct Sp48AudioSample {
   int16_t right;
 } Sp48AudioSample;
 
+typedef struct Sp48AudioTransition {
+  uint32_t tact;
+  uint8_t earBit;
+  uint8_t micBit;
+} Sp48AudioTransition;
+
 // ----------------------------------------------------------------------------
 // Static machine state
 
@@ -59,6 +67,7 @@ static uint16_t sp48RenderingAttributeAddress[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48RenderingPixelIndex[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48PixelBuffer[SP48_PIXEL_BUFFER_WORDS_MAX];
 static Sp48AudioSample sp48AudioSamples[SP48_AUDIO_SAMPLE_CAPACITY];
+static Sp48AudioTransition sp48AudioTransitions[SP48_AUDIO_TRANSITION_CAPACITY];
 
 static uint32_t sp48Frames;
 static uint32_t sp48Tacts;
@@ -75,6 +84,16 @@ static uint32_t sp48DisplayTopLine;
 static uint32_t sp48BaseClockFrequency = SP48_BASE_CLOCK_FREQUENCY_PAL;
 static uint32_t sp48AudioSampleRate = SP48_DEFAULT_SAMPLE_RATE;
 static uint32_t sp48AudioSampleCount;
+static uint32_t sp48AudioTransitionCount;
+static uint32_t sp48AudioFrameStartTact;
+static uint8_t sp48AudioFrameStartEarBit;
+static uint8_t sp48AudioFrameStartMicBit;
+static double sp48AudioSampleLength;
+static double sp48AudioNextSampleTact;
+static double sp48DcFilterPrevInputLeft;
+static double sp48DcFilterPrevInputRight;
+static double sp48DcFilterPrevOutputLeft;
+static double sp48DcFilterPrevOutputRight;
 static uint32_t sp48DiagnosticFlags;
 static uint32_t sp48TotalContentionDelaySinceStart;
 static uint32_t sp48ContentionDelaySincePause;
@@ -124,26 +143,6 @@ static const Sp48ScreenConfig sp48NtscConfig = {
 // ----------------------------------------------------------------------------
 // Helpers
 
-static inline uint32_t clampAudioSampleCount(uint32_t sampleRate) {
-  uint32_t count = sampleRate / 50u;
-  if (count == 0u) {
-    count = 1u;
-  }
-  if (count > SP48_AUDIO_SAMPLE_CAPACITY) {
-    sp48DiagnosticFlags |= 0x00000001u;
-    count = SP48_AUDIO_SAMPLE_CAPACITY;
-  }
-  return count;
-}
-
-static inline uint8_t keyboardSignature(void) {
-  uint8_t value = 0u;
-  for (uint32_t i = 0u; i < 8u; i++) {
-    value ^= (uint8_t)(sp48KeyboardLines[i] << (i & 0x03u));
-  }
-  return value;
-}
-
 static inline uint32_t currentScreenWidth(void) {
   return sp48TimingScreenWidth == 0u ? SP48_SCREEN_BUFFER_WIDTH_MAX : sp48TimingScreenWidth;
 }
@@ -190,6 +189,16 @@ static inline uint32_t getUlaPixelColor(uint8_t pixelSet, uint8_t attr) {
 
 static inline uint32_t currentFrameTact(void) {
   return sp48TactsInFrame == 0u ? 0u : sp48Tacts % sp48TactsInFrame;
+}
+
+static inline int16_t clampAudioWord(double value) {
+  if (value > 32767.0) {
+    return 32767;
+  }
+  if (value < -32768.0) {
+    return -32768;
+  }
+  return (int16_t)value;
 }
 
 static inline uint16_t calcPixelAddress(uint32_t line, uint32_t tactInLine) {
@@ -490,6 +499,112 @@ static void resetPortFe(void) {
   sp48EarBitChangedFrom1Tacts = 0u;
 }
 
+static void resetAudio(void) {
+  sp48AudioSampleCount = 0u;
+  sp48AudioTransitionCount = 0u;
+  sp48AudioFrameStartTact = sp48Tacts;
+  sp48AudioFrameStartEarBit = sp48EarBit;
+  sp48AudioFrameStartMicBit = sp48MicBit;
+  sp48AudioSampleLength = (double)sp48BaseClockFrequency / (double)sp48AudioSampleRate;
+  sp48AudioNextSampleTact = 0.0;
+  sp48DcFilterPrevInputLeft = 0.0;
+  sp48DcFilterPrevInputRight = 0.0;
+  sp48DcFilterPrevOutputLeft = 0.0;
+  sp48DcFilterPrevOutputRight = 0.0;
+  for (uint32_t i = 0u; i < SP48_AUDIO_SAMPLE_CAPACITY; i++) {
+    sp48AudioSamples[i].left = 0;
+    sp48AudioSamples[i].right = 0;
+  }
+}
+
+static void beginAudioFrame(void) {
+  sp48AudioSampleCount = 0u;
+  sp48AudioTransitionCount = 0u;
+  sp48AudioFrameStartTact = sp48Tacts;
+  sp48AudioFrameStartEarBit = sp48EarBit;
+  sp48AudioFrameStartMicBit = sp48MicBit;
+}
+
+static void recordAudioTransition(uint32_t tact, uint8_t earBit, uint8_t micBit) {
+  if (sp48AudioTransitionCount >= SP48_AUDIO_TRANSITION_CAPACITY) {
+    sp48DiagnosticFlags |= 0x00000002u;
+    return;
+  }
+
+  Sp48AudioTransition *transition = &sp48AudioTransitions[sp48AudioTransitionCount++];
+  transition->tact = tact;
+  transition->earBit = earBit;
+  transition->micBit = micBit;
+}
+
+static void renderBeeperAudio(uint32_t frameStartTact, uint32_t frameEndTact) {
+  uint32_t transitionIndex = 0u;
+  uint8_t currentEar = sp48AudioFrameStartEarBit;
+  uint8_t currentMic = sp48AudioFrameStartMicBit;
+
+  double sampleWindowStart = (double)frameStartTact;
+  sp48AudioSampleCount = 0u;
+  while (sp48AudioNextSampleTact <= sampleWindowStart) {
+    sp48AudioNextSampleTact += sp48AudioSampleLength;
+  }
+
+  while ((double)frameEndTact > sp48AudioNextSampleTact) {
+    if (sp48AudioSampleCount >= SP48_AUDIO_SAMPLE_CAPACITY) {
+      sp48DiagnosticFlags |= 0x00000001u;
+      break;
+    }
+
+    double sampleWindowEnd = sp48AudioNextSampleTact;
+    if (sampleWindowEnd > (double)frameEndTact) {
+      sampleWindowEnd = (double)frameEndTact;
+    }
+
+    double totalEar = 0.0;
+    double totalMic = 0.0;
+    double position = sampleWindowStart;
+
+    while (
+      transitionIndex < sp48AudioTransitionCount &&
+      (double)sp48AudioTransitions[transitionIndex].tact <= sampleWindowEnd
+    ) {
+      const double transitionTact = (double)sp48AudioTransitions[transitionIndex].tact;
+      const double segmentEnd = transitionTact > position ? transitionTact : position;
+      const double duration = segmentEnd - position;
+      if (duration > 0.0) {
+        totalEar += (currentEar != 0u ? 1.0 : 0.0) * duration;
+        totalMic += (currentMic != 0u ? 1.0 : 0.0) * duration;
+      }
+      currentEar = sp48AudioTransitions[transitionIndex].earBit;
+      currentMic = sp48AudioTransitions[transitionIndex].micBit;
+      position = transitionTact > position ? transitionTact : position;
+      transitionIndex++;
+    }
+
+    const double finalDuration = sampleWindowEnd - position;
+    if (finalDuration > 0.0) {
+      totalEar += (currentEar != 0u ? 1.0 : 0.0) * finalDuration;
+      totalMic += (currentMic != 0u ? 1.0 : 0.0) * finalDuration;
+    }
+
+    const double windowDuration = sampleWindowEnd - sampleWindowStart;
+    const double rawLeft = windowDuration > 0.0 ? totalEar / windowDuration : (currentEar != 0u ? 1.0 : 0.0);
+    const double rawRight = windowDuration > 0.0 ? totalMic / windowDuration : (currentMic != 0u ? 1.0 : 0.0);
+    const double outLeft = rawLeft - sp48DcFilterPrevInputLeft + 0.995 * sp48DcFilterPrevOutputLeft;
+    const double outRight = rawRight - sp48DcFilterPrevInputRight + 0.995 * sp48DcFilterPrevOutputRight;
+
+    sp48DcFilterPrevInputLeft = rawLeft;
+    sp48DcFilterPrevInputRight = rawRight;
+    sp48DcFilterPrevOutputLeft = outLeft;
+    sp48DcFilterPrevOutputRight = outRight;
+    sp48AudioSamples[sp48AudioSampleCount].left = clampAudioWord(outLeft * SP48_AUDIO_SAMPLE_SCALE);
+    sp48AudioSamples[sp48AudioSampleCount].right = clampAudioWord(outRight * SP48_AUDIO_SAMPLE_SCALE);
+    sp48AudioSampleCount++;
+
+    sampleWindowStart = sampleWindowEnd;
+    sp48AudioNextSampleTact += sp48AudioSampleLength;
+  }
+}
+
 static void renderUlaDisplay(void) {
   const uint32_t screenWidth = currentScreenWidth();
   const uint32_t words = pixelBufferWordCount();
@@ -507,19 +622,6 @@ static void renderUlaDisplay(void) {
         sp48PixelBuffer[index + bit] = getUlaPixelColor(pixelByte & (0x80u >> bit), attr);
       }
     }
-  }
-}
-
-static void renderFakeAudio(void) {
-  sp48AudioSampleCount = clampAudioSampleCount(sp48AudioSampleRate);
-  const uint8_t keyMix = keyboardSignature();
-  const int16_t baseLevel = (int16_t)(sp48BeeperLevel * 700);
-
-  for (uint32_t i = 0u; i < sp48AudioSampleCount; i++) {
-    const uint32_t phase = (i + sp48Frames * 19u + keyMix) & 0x3fu;
-    const int16_t level = (int16_t)((phase < 32u ? 700 : -700) + baseLevel);
-    sp48AudioSamples[i].left = level;
-    sp48AudioSamples[i].right = level;
   }
 }
 
@@ -544,9 +646,8 @@ void sp48Reset(void) {
   sp48FrameCompleted = 0u;
   sp48InterruptsRaised = 0u;
   sp48InterruptLineActive = 0u;
-  sp48AudioSampleCount = clampAudioSampleCount(sp48AudioSampleRate);
+  resetAudio();
   renderUlaDisplay();
-  renderFakeAudio();
 }
 
 void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
@@ -562,7 +663,9 @@ uint32_t sp48ExecuteFrame(void) {
     sp48FrameCompleted = 0u;
   }
 
+  const uint32_t frameStartTact = sp48Tacts;
   const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInFrame;
+  beginAudioFrame();
   sp48CpuFrameSliceInstructions = 0u;
   while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
@@ -572,7 +675,7 @@ uint32_t sp48ExecuteFrame(void) {
   sp48NextFrameStartTact += sp48TactsInFrame;
   sp48Frames++;
   renderUlaDisplay();
-  renderFakeAudio();
+  renderBeeperAudio(frameStartTact, sp48Tacts);
   return 0u;
 }
 
@@ -719,9 +822,13 @@ void sp48WritePort(uint32_t address, uint32_t value) {
 
   sp48PortFeValue = (uint8_t)value;
   sp48BorderColor = (uint8_t)(value & 0x07u);
-  sp48MicBit = (value & 0x08u) != 0u ? 1u : 0u;
 
+  const uint8_t nextMicBit = (value & 0x08u) != 0u ? 1u : 0u;
   const uint8_t nextEarBit = (value & 0x10u) != 0u ? 1u : 0u;
+  if (nextEarBit != sp48EarBit || nextMicBit != sp48MicBit) {
+    recordAudioTransition(sp48Tacts, nextEarBit, nextMicBit);
+  }
+  sp48MicBit = nextMicBit;
   sp48BeeperLevel = (uint8_t)((sp48MicBit != 0u ? 1u : 0u) | (nextEarBit != 0u ? 2u : 0u));
 
   if (sp48EarBit != 0u) {
@@ -737,7 +844,9 @@ void sp48WritePort(uint32_t address, uint32_t value) {
 
 void sp48SetAudioSampleRate(uint32_t rate) {
   sp48AudioSampleRate = rate == 0u ? SP48_DEFAULT_SAMPLE_RATE : rate;
-  sp48AudioSampleCount = clampAudioSampleCount(sp48AudioSampleRate);
+  sp48AudioSampleLength = (double)sp48BaseClockFrequency / (double)sp48AudioSampleRate;
+  sp48AudioNextSampleTact = 0.0;
+  sp48AudioSampleCount = 0u;
 }
 
 // ----------------------------------------------------------------------------

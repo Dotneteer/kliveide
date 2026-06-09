@@ -452,6 +452,17 @@ Done when:
 - `EmulatorPanel.machineFrameCompleted` can submit samples prepared by Wasm.
 - The placeholder audio generator is removed or kept only as a diagnostic mode.
 
+Implementation note:
+
+- The fake audio waveform has been removed from `src/emu/sp48/sp48.c`.
+- `$FE` writes record static EAR/MIC transitions with absolute tacts into a fixed-size transition buffer; overflow sets diagnostic flag bit `0x00000002`.
+- At frame completion, C renders `Sp48AudioSample { int16_t left; int16_t right; }` samples at the configured sample rate. This keeps the current TypeScript adapter ABI stable.
+- Sample generation mirrors the reference beeper model: left channel represents EAR, right channel represents MIC, both are transition-time-weighted within each audio sample window, and a MAME-style DC high-pass filter (`alpha = 0.995`) is applied.
+- Silence now produces zero-valued samples. A constant EAR/MIC-high frame produces the expected filtered transient and decay rather than the old placeholder square wave.
+- The emulator panel now owns an `AudioRenderer`/`Sampling.worklet.js` pair, creates the `AudioContext`, configures the Wasm machine with that context's actual sample rate, resumes it when the machine runs, suspends it on pause/stop, and posts completed-frame samples with `emulatorState.soundLevel`. Do not hardcode 44.1 kHz; Electron/WebAudio often runs at 48 kHz.
+- Wasm audio uses the reference-style continuous sample scheduler: `audioSampleLength = baseClockFrequency / sampleRate`, `audioNextSampleTact` persists across frames, and each frame emits however many samples fall before the actual CPU tact reached by the frame-ending instruction. Samples are emitted only after machine tacts advance past the next sample tact, avoiding artificial zero-width boundary samples and lost overshoot tacts. At 48 kHz PAL this starts `958, 958, 959, 958...` samples instead of forcing a fixed count. The renderer paces machine frames with a timed machine loop based on the emulated frame duration, not `requestAnimationFrame`, because a 60 Hz repaint loop submits 50 Hz Spectrum audio chunks unevenly.
+- Focused tests cover silence, sample count, diagnostic flags, and `$FE` EAR/MIC output producing non-zero channel samples.
+
 ### Step 11 - Floating Bus
 
 Port `ZxSpectrum48FloatingBusDevice`:

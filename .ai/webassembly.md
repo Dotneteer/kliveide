@@ -149,7 +149,7 @@ Keep this single-source pattern when expanding the machine core. Do not fork ins
 
 The SP48 adapter exposes CPU diagnostics such as PC, AF/HL, CPU tacts, and instruction counters. These are used by tests and by the temporary UI overlay to prove that Step 7 is active before the full frame runner and debugger are migrated.
 
-`sp48ExecuteFrame()` currently implements the no-debug frame loop in C. It executes complete embedded Z80 cycles until `sp48Tacts` crosses `sp48NextFrameStartTact + sp48TactsInFrame`, then marks the frame complete, advances `sp48NextFrameStartTact`, renders the ULA display buffer plus temporary fake audio samples, and returns normal termination mode `0`. It deliberately does not snap `sp48Tacts` to the frame boundary; the final instruction can overshoot, matching the original machine runner shape.
+`sp48ExecuteFrame()` currently implements the no-debug frame loop in C. It executes complete embedded Z80 cycles until `sp48Tacts` crosses `sp48NextFrameStartTact + sp48TactsInFrame`, then marks the frame complete, advances `sp48NextFrameStartTact`, renders the ULA display buffer plus beeper audio samples, and returns normal termination mode `0`. It deliberately does not snap `sp48Tacts` to the frame boundary; the final instruction can overshoot, matching the original machine runner shape.
 
 The frame-start INT line is recalculated before every `sp48ExecuteInstruction()` call with `currentFrameTact() < 32`. SP48 exposes `sp48GetInterruptsRaised()` and `sp48GetInterruptLineActive()` as diagnostics. Keep debug stepping, breakpoints, code injection, and queued-keystroke frame commands outside this C loop until those features are migrated deliberately.
 
@@ -168,6 +168,23 @@ The fake SP48 display pattern has been removed. `src/emu/sp48/sp48.c` renders th
 - border pixels are currently filled from the latest `$FE` border color
 
 `sp48RenderInstantScreen()` is exported for UI and tests that need to repaint the screen immediately after memory or border-color writes. The backing pixel buffer is taller than the displayed height by a few guard rows, just like the TypeScript screen device allocation pattern; TypeScript consumers should copy from `getPixelBufferStartOffset()` for `screenWidthInPixels * screenHeightInPixels` pixels.
+
+## Current SP48 Beeper Audio
+
+The fake SP48 audio pattern has been removed. `src/emu/sp48/sp48.c` prepares audio samples from the `$FE` EAR/MIC state:
+
+- `$FE` writes record fixed-size, static transition entries with absolute tacts
+- left channel is EAR and right channel is MIC, matching the current reference beeper model
+- each output sample uses transition-weighted averaging over its sample window
+- a DC high-pass filter with `alpha = 0.995` is applied
+- output samples currently use the workspace ABI `Sp48AudioSample { int16_t left; int16_t right; }`
+- transition-buffer overflow sets diagnostic flag `0x00000002`
+
+Do not introduce dynamic allocation for future audio work. If the sample ABI changes to floats later, update both the C struct and `WasmZxSpectrum48Machine` typed-array view together.
+
+Renderer playback for the emulator panel lives in `src/renderer/lib/EmulatorPanel/AudioRenderer.ts`, `useEmulatorAudio.ts`, and `Sampling.worklet.js`. The panel creates the `AudioContext`, reads its actual `sampleRate`, configures the Wasm machine with that same rate, resumes the context when the machine enters `Running`, suspends it on pause/stop, normalizes the current int16 Wasm samples to WebAudio's `[-1, 1]` range, applies `emulatorState.soundLevel`, and posts interleaved left/right samples to the worklet. Do not hardcode 44.1 kHz; many Electron/WebAudio devices run at 48 kHz, and a producer/consumer sample-rate mismatch creates audible periodic gaps.
+
+Keep Wasm audio scheduling aligned with the reference `AudioDeviceBase`: `_audioSampleLength = baseClockFrequency / sampleRate`, `_audioNextSampleTact` is continuous across frames, and `onNewFrame()` clears the current frame's sample list without resetting the next sample tact. A sample is emitted only after machine tacts advance past `_audioNextSampleTact`; do not create zero-width samples at exact frame/sample boundaries. Render the frame's beeper samples through the actual CPU tact after the instruction that crosses the frame boundary, not merely through the nominal frame-end tact, so no overshoot tacts are lost. Frame sample counts therefore vary naturally, for example 48 kHz PAL starts `958, 958, 959, 958...` samples. Do not force `sampleRate / 50` or a fixed `ceil(tactsInFrame * sampleRate / baseClockFrequency)` count every frame. The emulator panel must pace machine frames with a timed machine loop based on `tactsInFrame / baseClockFrequency`, not `requestAnimationFrame`; a 60 Hz repaint loop cannot evenly submit 50 Hz Spectrum audio chunks.
 
 ## Sass Warning Note
 
