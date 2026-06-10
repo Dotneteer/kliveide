@@ -4,7 +4,14 @@ import path from "node:path";
 import { cloneDeep, get, set } from "lodash";
 import type { Setting } from "../common/settings/Setting";
 import { KliveGlobalSettings, getDefaultGlobalSettings } from "../common/settings/setting-definitions";
-import { setGlobalSettingAction, initGlobalSettingsAction, setThemeAction } from "../common/state/actions";
+import { SETTING_EMU_MACHINE_TYPE } from "../common/settings/setting-const";
+import { resolveMachineSelection } from "../common/machines/machine-registry";
+import {
+  setGlobalSettingAction,
+  initGlobalSettingsAction,
+  setThemeAction,
+  setMachineTypeAction
+} from "../common/state/actions";
 import type { WindowState } from "./WindowState";
 import { mainStore } from "./main-store";
 
@@ -56,9 +63,20 @@ export function saveAppSettings(): void {
 }
 
 export function applyPersistedSettingsToStore(): void {
+  const globalSettings = normalizeGlobalSettings(appSettings.globalSettings ?? {});
+  const machineSelection = getMachineSelectionFromSettings(globalSettings);
+
   mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"), "main");
-  mainStore.dispatch(initGlobalSettingsAction(appSettings.globalSettings ?? getDefaultGlobalSettings()), "main");
-  lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(appSettings.globalSettings ?? {}));
+  mainStore.dispatch(initGlobalSettingsAction(globalSettings), "main");
+  mainStore.dispatch(
+    setMachineTypeAction(
+      machineSelection.machineId,
+      machineSelection.modelId,
+      machineSelection.config
+    ),
+    "main"
+  );
+  lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(globalSettings));
 }
 
 export function startSettingsPersistence(): void {
@@ -158,6 +176,20 @@ function normalizeGlobalSettings(globalSettings: Record<string, unknown>): Recor
   }
 
   return normalized;
+}
+
+function getMachineSelectionFromSettings(globalSettings: Record<string, unknown>) {
+  const value = get(globalSettings, SETTING_EMU_MACHINE_TYPE);
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return resolveMachineSelection();
+  }
+
+  const selection = value as {
+    machineId?: string;
+    modelId?: string;
+    config?: Record<string, unknown>;
+  };
+  return resolveMachineSelection(selection.machineId, selection.modelId, selection.config);
 }
 
 function validateSettingValue(setting: Setting, value: unknown): void {

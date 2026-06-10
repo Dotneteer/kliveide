@@ -21,6 +21,7 @@ import {
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_TABSIZE,
   SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_MACHINE_TYPE,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_SHOW_STATUS_BAR,
@@ -38,6 +39,15 @@ import {
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
 import { dimMenuAction, setThemeAction } from "../common/state/actions";
+import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
+import type { EmuMachineCommand } from "../common/messaging/EmuApi";
+import { MachineControllerState } from "../common/abstractions/MachineControllerState";
+import { MF_ALLOW_SCAN_LINES } from "../common/machines/constants";
+import {
+  getMachineInfo,
+  machineRegistry,
+  resolveMachineSelection
+} from "../common/machines/machine-registry";
 import { mainStore } from "./main-store";
 import {
   appSettings,
@@ -58,6 +68,7 @@ let currentIdeWindow: BrowserWindow | null = null;
 let openIdeWindow: (() => Promise<void> | void) | null = null;
 let unsubscribeMenuRefresh: (() => void) | undefined;
 let menuRefreshQueued = false;
+let lastMenuRefreshSignature = "";
 
 export function startApplicationMenu(
   emuWindow: BrowserWindow,
@@ -69,6 +80,7 @@ export function startApplicationMenu(
   openIdeWindow = openIdeWindowHandler;
 
   refreshApplicationMenu();
+  lastMenuRefreshSignature = getMenuRefreshSignature();
   unsubscribeMenuRefresh?.();
   unsubscribeMenuRefresh = mainStore.subscribe(queueMenuRefresh);
 }
@@ -89,6 +101,12 @@ export function stopApplicationMenu(): void {
 }
 
 function queueMenuRefresh(): void {
+  const nextSignature = getMenuRefreshSignature();
+  if (nextSignature === lastMenuRefreshSignature) {
+    return;
+  }
+  lastMenuRefreshSignature = nextSignature;
+
   if (menuRefreshQueued) {
     return;
   }
@@ -381,90 +399,81 @@ function createViewMenu(context: MenuContext): MenuItemConstructorOptions {
 }
 
 function createMachineMenu(): MenuItemConstructorOptions {
+  const appState = mainStore.getState();
+  const machineState = appState.emulatorState?.machineState ?? MachineControllerState.None;
+  const isRunning = machineState === MachineControllerState.Running;
+  const isPaused = machineState === MachineControllerState.Paused;
+  const canStart = !isRunning;
+  const canPause = isRunning;
+  const canStopOrRestart = isRunning || isPaused;
+  const canStep = isPaused;
+  const machineTypesMenu = createMachineTypesMenu();
+
   return {
     label: "Machine",
     submenu: [
       {
         id: "machine_types",
         label: "Machine type",
-        submenu: [
-          {
-            id: "machine_placeholder",
-            label: "No machine registry yet",
-            enabled: false
-          }
-        ]
+        submenu: machineTypesMenu
       },
       { type: "separator" },
       {
         id: "start",
         label: "Start",
         accelerator: "F5",
-        click: notImplemented("Start machine", `
-          await getEmuApi().issueMachineCommand("start");
-        `)
+        enabled: canStart,
+        click: issueMachineCommand("start")
       },
       {
         id: "pause",
         label: "Pause",
         accelerator: "Shift+F5",
-        click: notImplemented("Pause machine", `
-          await getEmuApi().issueMachineCommand("pause");
-        `)
+        enabled: canPause,
+        click: issueMachineCommand("pause")
       },
       {
         id: "stop",
         label: "Stop",
         accelerator: "F4",
-        click: notImplemented("Stop machine", `
-          await getEmuApi().issueMachineCommand("stop");
-        `)
+        enabled: canStopOrRestart,
+        click: issueMachineCommand("stop")
       },
       {
         id: "restart",
         label: "Restart",
         accelerator: "Shift+F4",
-        click: notImplemented("Restart machine", `
-          if (appState.ideFocused && appState.project.isKliveProject) {
-            getIdeApi().executeCommand("outp build");
-            getIdeApi().executeCommand(appState.emulatorState?.isDebugging ? "debug" : "run");
-          } else {
-            await getEmuApi().issueMachineCommand("restart");
-          }
-        `)
+        enabled: canStopOrRestart,
+        click: issueMachineCommand("restart")
       },
       { type: "separator" },
       {
         id: "debug",
         label: "Start with Debugging",
         accelerator: "Ctrl+F5",
-        click: notImplemented("Start with Debugging", `
-          await getEmuApi().issueMachineCommand("debug");
-        `)
+        enabled: canStart,
+        click: issueMachineCommand("debug")
       },
       {
         id: "step_into",
         label: "Step Into",
         accelerator: process.platform === "darwin" ? "F12" : "F11",
-        click: notImplemented("Step Into", `
-          await getEmuApi().issueMachineCommand("stepInto");
-        `)
+        enabled: canStep,
+        click: issueMachineCommand("stepInto")
       },
       {
         id: "step_over",
         label: "Step Over",
         accelerator: "F10",
-        click: notImplemented("Step Over", `
-          await getEmuApi().issueMachineCommand("stepOver");
-        `)
+        enabled: canStep,
+        click: issueMachineCommand("stepOver")
       },
       {
         id: "step_out",
         label: "Step Out",
         accelerator: process.platform === "darwin" ? "Shift+F12" : "Shift+F11",
-        click: notImplemented("Step Out", `
-          await getEmuApi().issueMachineCommand("stepOut");
-        `)
+        enabled: canStep,
+        click: issueMachineCommand("stepOut")
       },
       { type: "separator" },
       {
@@ -560,6 +569,75 @@ function createMachineMenu(): MenuItemConstructorOptions {
       }
     ]
   };
+}
+
+function createMachineTypesMenu(): MenuItemConstructorOptions[] {
+  const appState = mainStore.getState();
+  const currentMachineId = appState.emulatorState?.machineId;
+  const currentModelId = appState.emulatorState?.modelId;
+  const machineTypesMenu: MenuItemConstructorOptions[] = [];
+
+  for (const machine of machineRegistry) {
+    if (!machine.models?.length) {
+      machineTypesMenu.push({
+        id: `machine_${machine.machineId}`,
+        label: machine.displayName,
+        type: "radio",
+        enabled: true,
+        checked: currentMachineId === machine.machineId,
+        click: () => handleSelectMachineType(machine.machineId)
+      });
+    } else {
+      for (const model of machine.models) {
+        machineTypesMenu.push({
+          id: `machine_${machine.machineId}_${model.modelId}`,
+          label: model.displayName,
+          type: "radio",
+          enabled: true,
+          checked: currentMachineId === machine.machineId && currentModelId === model.modelId,
+          click: () => handleSelectMachineType(machine.machineId, model.modelId)
+        });
+      }
+    }
+    machineTypesMenu.push({ type: "separator" });
+  }
+
+  if (machineTypesMenu.at(-1)?.type === "separator") {
+    machineTypesMenu.pop();
+  }
+
+  return machineTypesMenu;
+}
+
+function handleSelectMachineType(machineId: string, modelId?: string): void {
+  void selectMachineType(machineId, modelId).catch(async (err) => {
+    await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+      type: "error",
+      title: "Machine type change failed",
+      message: "Could not change the selected machine type.",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  });
+}
+
+async function selectMachineType(machineId: string, modelId?: string): Promise<void> {
+  const machine = getMachineInfo(machineId);
+  const selection = resolveMachineSelection(machineId, modelId);
+  const current = mainStore.getState().emulatorState;
+  if (
+    current?.machineId === selection.machineId &&
+    current?.modelId === selection.modelId &&
+    stableJson(current?.config ?? {}) === stableJson(selection.config)
+  ) {
+    return;
+  }
+
+  setSettingValue(SETTING_EMU_MACHINE_TYPE, selection);
+  await getEmuApi().setMachineType(selection.machineId, selection.modelId, selection.config);
+
+  if (machine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
+    setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
+  }
 }
 
 function createIdeMenu(context: MenuContext): MenuItemConstructorOptions {
@@ -695,6 +773,24 @@ function createOptionMenu(
   }));
 }
 
+function issueMachineCommand(command: EmuMachineCommand): () => Promise<void> {
+  return async () => {
+    mainStore.dispatch(dimMenuAction(true), "main");
+    try {
+      await getEmuApi().issueMachineCommand(command);
+    } catch (err) {
+      await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+        type: "error",
+        title: "Machine command failed",
+        message: `Could not issue machine command: ${command}`,
+        detail: err instanceof Error ? err.message : String(err)
+      });
+    } finally {
+      mainStore.dispatch(dimMenuAction(false), "main");
+    }
+  };
+}
+
 function notImplemented(label: string, _originalHandler: string): () => Promise<void> {
   // The original handler body is intentionally passed by each caller and kept in
   // source as a nearby comment string until the corresponding shell subsystem exists.
@@ -755,4 +851,33 @@ function visitMenu(
 
 function filterVisibleItems(items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] {
   return items.filter((item) => item.visible !== false);
+}
+
+function getMenuRefreshSignature(): string {
+  const state = mainStore.getState();
+  return stableJson({
+    dimMenu: state.dimMenu,
+    emuFocused: state.emuFocused,
+    ideFocused: state.ideFocused,
+    theme: state.theme,
+    machineId: state.emulatorState?.machineId,
+    modelId: state.emulatorState?.modelId,
+    machineState: state.emulatorState?.machineState,
+    globalSettings: state.globalSettings
+  });
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableJson).join(",")}]`;
+  }
+
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
 }

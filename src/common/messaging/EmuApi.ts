@@ -1,7 +1,10 @@
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
+import type { MachineCommand } from "../abstractions/MachineCommand";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
+
+export type EmuMachineCommand = MachineCommand;
 
 /**
  * This class defines the shape of the Emu process API that can be called from
@@ -19,6 +22,14 @@ class EmuApiImpl {
     _modelId?: string,
     _config?: Record<string, any>
   ): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Issues a command to the active emulator machine controller.
+   * @param _command Machine command to issue.
+   */
+  async issueMachineCommand(_command: EmuMachineCommand): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 }

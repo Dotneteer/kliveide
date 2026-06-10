@@ -1,5 +1,5 @@
 <Component name="MainWorkbench">
-    <HStack height="*" gap="0">
+    <HStack height="100%" gap="0">
       <HSplitter
         width="*"
         initialPrimarySize="-200px"
@@ -8,7 +8,7 @@
         floating
       >
         <Workbench height="100%" />
-        <SideBar width="100%" />
+        <SideBar />
       </HSplitter>
     </HStack>
 </Component>

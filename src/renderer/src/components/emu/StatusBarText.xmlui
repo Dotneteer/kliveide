@@ -1,0 +1,10 @@
+<Component name="StatusBarText">
+  <Text
+    variant="mono"
+    color="$textColor-EmuStatusBar"
+    paddingTop="4px"
+    fontSize="0.75em"
+    value="{$props.value}"
+  />
+
+</Component>

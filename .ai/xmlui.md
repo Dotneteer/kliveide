@@ -103,13 +103,14 @@ registerComponentApi({
 - A top-level theme synchronization example:
 
 ```xmlui
-<App var.currentTheme="" defaultTone="{currentTheme}">
+<App var.currentTheme="dark" defaultTone="{currentTheme}">
   <SharedAppState
     id="state"
-    onDidChange="arg => currentTheme = arg.theme" />
+    onDidChange="arg => currentTheme = (arg.theme === 'light' || arg.theme === 'dark') ? arg.theme : currentTheme" />
 </App>
 ```
 
+- `App.defaultTone` accepts only `"light"` or `"dark"`. Do not initialize a bound tone variable to `""`, and guard shared-state event assignments so partial or malformed event payloads cannot pass an invalid tone into `App`.
 - In React-backed XMLUI components, keep event handlers such as `onDidChange` and XMLUI callbacks such as `updateState` in refs if they are used by stable effects. Otherwise, handler identity changes can accidentally retrigger state publication and create React maximum-update-depth loops.
 - React components should access shared state through hooks in `src/renderer/shared-store.ts`, such as:
   - `useStore`
@@ -154,6 +155,14 @@ registerComponentApi({
 - UDCs can expose slots with `<Slot />`; named slots must end with `Template`.
 - UDCs can emit events with `emitEvent('eventName', data)`.
 - UDCs are compound components. Built-in behaviors such as tooltip/label/variant are skipped on the compound wrapper; apply them to built-in components inside the UDC template when needed.
+- Prefer tiny UDCs for repeated visual atoms in XMLUI-only surfaces. For example, the EMU status bar keeps its repeated icon/text styling in:
+  - `src/renderer/src/components/emu/StatusBarIcon.xmlui`
+  - `src/renderer/src/components/emu/StatusBarText.xmlui`
+- Keep those helper UDCs beside the feature component that owns them unless they are reused across multiple feature areas. This keeps XMLUI markup local and avoids unnecessary React wrappers.
+- For UDC props, pass values through `$props`, for example `name="{$props.name}"` or `value="{$props.value}"`.
+- Use XMLUI's built-in `<Icon>` with the local icon registry configured in `src/renderer/src/config.ts`; icons are loaded from the repository `icons` folder by `getLocalIcons()`. Prefer existing Klive icon names such as `vm-running` and `window` over text labels when matching the original app.
+- Prefer theme variables for UDC colors and sizing that should follow tones. The EMU status bar uses `$backgroundColor-EmuStatusBar` and `$textColor-EmuStatusBar`, with light/dark values in `src/renderer/src/themes/klive.ts`.
+- When a user has just refactored XMLUI markup, preserve their markup structure. Learn the UDC pattern and update docs or supporting code only when requested.
 
 ## Visibility And Lifecycle
 
@@ -163,6 +172,13 @@ registerComponentApi({
 - Prefer `onMount` and `onUnmount` over legacy aliases.
 - `onUnmount` must be synchronous. Use `onBeforeDispose` for async cleanup with a timeout budget.
 - Use the non-visual `<Lifecycle>` component when setup/cleanup must re-arm as a value changes.
+
+## Splitter Notes
+
+- `Splitter`/`VSplitter` `initialPrimarySize`, `minPrimarySize`, and `maxPrimarySize` expect CSS size strings such as `520px`, `60%`, or `-100px`.
+- XMLUI 0.12.30 and later emit a single numeric pixel value for the Splitter `resize` event. Persist this value as a CSS pixel string, for example `primarySize + 'px'`.
+- Do not persist splitter resize values back into shared state on every `onResize` event. Persisting continuously can feed reactive setting changes back into `initialPrimarySize` and disturb live dragging. Prefer local XMLUI state while dragging, then persist after release.
+- XMLUI event handlers can be asynchronous. If a DOM-level `pointerup`/`mouseup` helper reads a value updated by an XMLUI resize handler, defer the read with `setTimeout(..., 0)` so the last XMLUI assignment can land first.
 
 ## Theming And Styling
 

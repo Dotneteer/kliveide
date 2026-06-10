@@ -35,6 +35,19 @@ class MainMessageProcessor {
     });
   }
 
+  readBinaryFile(filePath: string, resolveIn?: string): Uint8Array {
+    if (typeof filePath !== "string" || !filePath.trim()) {
+      throw new Error("Invalid file path");
+    }
+
+    const fullPath = resolveMessagePath(filePath, resolveIn);
+    if (!fs.existsSync(fullPath)) {
+      throw new Error(`File does not exist: ${fullPath}`);
+    }
+
+    return new Uint8Array(fs.readFileSync(fullPath));
+  }
+
   getSettingValue(id: string): unknown {
     return getSettingValue(id);
   }

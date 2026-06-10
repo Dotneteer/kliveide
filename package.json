@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.1.0",
+  "version": "0.100.0",
   "private": true,
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
@@ -24,16 +24,17 @@
   "homepage": "https://github.com/Dotneteer/kliveide",
   "main": "out/main/main.js",
   "scripts": {
+    "build:wasm": "node build/wasm/build-wasm.mjs",
     "dev": "electron-vite dev",
     "start": "electron-vite preview",
     "build": "npm run build:app && electron-builder",
-    "build:app": "npm run typecheck && electron-vite build",
+    "build:app": "npm run build:wasm && npm run typecheck && electron-vite build",
     "build:win": "npm run build:app && electron-builder --win --x64",
     "build:mac": "npm run build:app && electron-builder --mac --x64",
     "build:mac:arm64": "npm run build:app && electron-builder --mac --arm64",
     "build:linux": "npm run build:app && electron-builder --linux --x64",
     "build:linux:arm64": "npm run build:app && electron-builder --linux --arm64",
-    "test": "vitest run --config build/vitest.config.ts",
+    "test": "npm run build:wasm && vitest run --config build/vitest.config.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
   },
   "devDependencies": {
@@ -46,7 +47,7 @@
     "typescript": "^5.5.3",
     "vite": "^5.3.3",
     "vitest": "^4.1.8",
-    "xmlui": "^0.12.29"
+    "xmlui": "^0.12.30"
   },
   "build": {
     "appId": "dotneteer.kliveide",

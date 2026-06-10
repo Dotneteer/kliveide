@@ -1,0 +1,38 @@
+.recordingOverlay {
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: 0;
+  left: 8px;
+  position: relative;
+  top: 40px;
+}
+
+.pill {
+  align-items: center;
+  background-color: #303030;
+  border-radius: 4px;
+  display: inline-flex;
+  font-size: 0.9em;
+  gap: 6px;
+  opacity: 0.85;
+  padding: 3px 10px 3px 8px;
+}
+
+.icon {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.75em;
+  line-height: 1;
+}
+
+.armed {
+  color: #ffd700;
+}
+
+.recording {
+  color: #ff4444;
+}
+
+.paused {
+  color: #ff8800;
+}

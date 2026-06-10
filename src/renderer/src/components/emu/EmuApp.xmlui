@@ -1,16 +1,30 @@
 <Component name="EmuApp">
   <SharedAppState id="state" />
-  <VStack height="100%" gap="0">
-    <Toolbar when="{state.globalSettings('showToolbar', true)}" />
-    <VSplitter
-      height="*"
-      minPrimarySize="100px"
-      maxPrimarySize="-100px"
-      floating
-    >
-      <EmulatorArea height="100%" />
-      <KeyboardArea height="100%" />
-    </VSplitter>
-    <EmuStatusBar when="{state.globalSettings('showStatusBar', true)}" />
+  <VStack
+    height="100%"
+    gap="0"
+    var.initialKeyboardSplitterPosition="{state.value.globalSettings.emuViewOptions.keyboardSplitterPosition + ''}"
+    var.liveKeyboardSplitterPosition="{initialKeyboardSplitterPosition}"
+  >
+    <PersistedSettingOnRelease
+      settingId="emuViewOptions.keyboardSplitterPosition"
+      value="{liveKeyboardSplitterPosition}"
+    />
+    <Toolbar when="{state.value.globalSettings.emuViewOptions.showToolbar ?? true}" />
+    <VStack height="*" gap="0">
+      <VSplitter
+        when="{state.value.globalSettings.emuViewOptions.keyboardSplitterPosition != undefined}"
+        height="100%"
+        minPrimarySize="100px"
+        maxPrimarySize="-100px"
+        initialPrimarySize="{initialKeyboardSplitterPosition.indexOf('px') >= 0 || initialKeyboardSplitterPosition.indexOf('%') >= 0 ? initialKeyboardSplitterPosition : initialKeyboardSplitterPosition + 'px'}"
+        onResize="primarySize => liveKeyboardSplitterPosition = primarySize + 'px'"
+        floating
+      >
+        <EmulatorArea height="100%" />
+        <KeyboardArea when="{state.value.globalSettings.emuViewOptions.showKeyboard ?? false}" height="100%" />
+      </VSplitter>
+    </VStack>
+    <EmuStatusBar when="{state.value.globalSettings.emuViewOptions.showStatusBar ?? true}" />
   </VStack>
 </Component>

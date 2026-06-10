@@ -1,11 +1,62 @@
-<Component name="EmuStatusBar">
+<Component
+  name="EmuStatusBar"
+  var.frameInfo="{state.value.emulatorState.sp48FrameInfo}"
+  var.modelId="{state.value.emulatorState.modelId}"
+  var.machineName="{modelId === 'ntsc' ? 'ZX Spectrum 48K (NTSC)' : modelId === 'pal-16k' ? 'ZX Spectrum 16K' : 'ZX Spectrum 48K'}"
+  var.frameCount="{frameInfo.frames ?? 0}"
+  var.lastFrameTime="{frameInfo.lastFrameTimeInMs ?? 0}"
+  var.avgFrameTime="{frameInfo.avgFrameTimeInMs ?? 0}"
+  var.pc="{frameInfo.pc ?? state.value.emulatorState.pcValue ?? 0}"
+  var.frequency="{frameInfo.baseClockFrequency ?? (modelId === 'ntsc' ? 3527500 : 3500000)}"
+>
+  <SharedAppState id="state" />
   <HStack
+    width="100%"
     verticalAlignment="center"
     backgroundColor="$backgroundColor-EmuStatusBar"
-    height="48px"
+    gap="0"
+    paddingHorizontal="$space-normal"
   >
-    <H2>
-      Emu Status bar
-    </H2>
+    <HStack gap="$space-tight" paddingVertical="2px" verticalAlignment="center">
+      <StatusBarIcon name="vm-running" />
+      <StatusBarText
+        value="{lastFrameTime.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3, minimumIntegerDigits: 2 })}"
+      />
+      <StatusBarText value="/" />
+      <StatusBarText
+        value="{avgFrameTime.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3, minimumIntegerDigits: 2 })}"
+      />
+    </HStack>
+    <Stack width="16px" />
+    <HStack gap="4px" verticalAlignment="center" width="auto" height="18px">
+      <StatusBarIcon name="window" />
+      <StatusBarText
+        value="{frameCount.toLocaleString(undefined, { maximumFractionDigits: 0 })}"
+      />
+    </HStack>
+    <Stack width="16px" />
+    <HStack gap="4px" verticalAlignment="center">
+      <StatusBarText value="PC:" />
+      <StatusBarText
+        value="{(pc & 0xffff).toString(16).toUpperCase().padStart(4, '0')}"
+      />
+    </HStack>
+    <SpaceFiller />
+    <HStack gap="4px">
+    <Text
+      variant="small"
+      color="$textColor-EmuStatusBar"
+      fontSize="13px"
+      lineHeight="16px"
+      value="{machineName}"
+    />
+    <Text
+      variant="small"
+      color="$textColor-EmuStatusBar"
+      fontSize="13px"
+      lineHeight="16px"
+      value="{'(' + (frequency / 1000000).toFixed(3) + ' MHz)'}"
+    />
+    </HStack>
   </HStack>
 </Component>

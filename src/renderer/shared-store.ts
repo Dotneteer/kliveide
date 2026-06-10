@@ -63,6 +63,10 @@ export async function readSettingValue(id: string): Promise<unknown> {
   return getMainApi().getSettingValue(id);
 }
 
+export async function readBinaryFile(path: string, resolveIn?: string): Promise<Uint8Array> {
+  return getMainApi().readBinaryFile(path, resolveIn);
+}
+
 export async function updateSettingValue(id: string, value: unknown): Promise<unknown> {
   return getMainApi().setSettingValue(id, value);
 }

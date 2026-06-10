@@ -1,0 +1,630 @@
+# ZX Spectrum 48K WebAssembly Migration Plan
+
+This plan migrates the ZX Spectrum 48K machine from TypeScript to C/WebAssembly in small, testable steps. The end state is a Wasm-backed `sp48` machine that runs complete machine frames in C, writes display and audio output into static linear-memory buffers, and keeps the existing renderer contract for pixels, sound, and keyboard input.
+
+The migration should be UI-first. The first useful Wasm milestone is not an accurate emulator; it is a visible, controllable machine skeleton wired into the emulator UI. Even before the real ULA, beeper, keyboard matrix, memory contention, and CPU frame loop are complete, the Wasm module should produce an animated bitmap pattern, placeholder audio samples, and observable input state. After that, each fake subsystem is replaced with the accurate implementation behind the same ABI.
+
+## Goals
+
+- Move deterministic ZX Spectrum 48K frame execution into C/Wasm:
+  - Z80 CPU execution
+  - 64K memory map, including ROM and 48K RAM writes
+  - ULA contention and frame timing
+  - port `$FE` keyboard, border, EAR/MIC output, tape interaction hooks
+  - floating bus behavior
+  - screen pixel generation
+  - beeper audio sample generation
+- Keep renderer-facing behavior compatible with the current TypeScript app:
+  - `machine.getPixelBuffer()` returns a `Uint32Array`
+  - `machine.getAudioSamples()` returns per-frame audio samples
+  - `machine.setKeyStatus(code, down)` updates the emulated keyboard matrix
+  - `screenWidthInPixels`, `screenHeightInPixels`, `tactsInFrame`, `baseClockFrequency`, and frame events keep their current meaning
+- Use static memory only in C/Wasm. No `malloc`, `calloc`, `realloc`, `free`, dynamic collections, or runtime-sized buffers.
+- Preserve the existing TypeScript implementation as the reference until each migrated slice has tests.
+- Get a Wasm-backed machine skeleton into the UI as early as possible:
+  - fake display returns a changing color/checker/raster pattern every frame
+  - fake audio returns deterministic per-frame samples
+  - fake input records keyboard state and visibly affects the pattern or exported diagnostics
+  - the adapter exercises the same `EmulatorPanel`, screen, audio, and keyboard hooks that the final machine will use
+
+## Reference Code To Mirror
+
+- Machine shell: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/zxSpectrum48/ZxSpectrum48Machine.ts`
+- Shared Spectrum behavior: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/ZxSpectrumBase.ts`
+- Frame loop: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/MachineFrameRunner.ts`
+- Controller/UI timing: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/MachineController.ts`
+- ULA screen device: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/CommonScreenDevice.ts`
+- Beeper/audio: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/BeeperDevice.ts` and `/Users/dotneteer/source/kliveide-ref/src/emu/machines/AudioDeviceBase.ts`
+- Keyboard matrix: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/zxSpectrum/SpectrumKeyboardDevice.ts`
+- Floating bus: `/Users/dotneteer/source/kliveide-ref/src/emu/machines/zxSpectrum48/ZxSpectrum48FloatingBusDevice.ts`
+- Renderer screen: `/Users/dotneteer/source/kliveide-ref/src/renderer/appEmu/EmulatorArea/useEmulatorScreen.ts`
+- Renderer audio: `/Users/dotneteer/source/kliveide-ref/src/renderer/appEmu/EmulatorArea/useEmulatorAudio.ts`
+- Renderer keyboard: `/Users/dotneteer/source/kliveide-ref/src/renderer/appEmu/EmulatorArea/useEmulatorKeyboard.ts`
+- Renderer machine panel: `/Users/dotneteer/source/kliveide-ref/src/renderer/appEmu/EmulatorArea/EmulatorPanel.tsx`
+
+## Static Memory Model
+
+The C/Wasm module must declare every runtime buffer at compile time:
+
+- `uint8_t sp48Memory[0x10000]`
+- `uint8_t sp48KeyboardLines[8]`
+- `uint8_t sp48Contention[SP48_TACTS_PER_FRAME_MAX]`
+- `uint8_t sp48RenderingPhase[SP48_TACTS_PER_FRAME_MAX]`
+- `uint16_t sp48RenderingPixelAddress[SP48_TACTS_PER_FRAME_MAX]`
+- `uint16_t sp48RenderingAttributeAddress[SP48_TACTS_PER_FRAME_MAX]`
+- `uint32_t sp48RenderingPixelIndex[SP48_TACTS_PER_FRAME_MAX]`
+- `uint32_t sp48PixelBuffer[SP48_PIXEL_BUFFER_WORDS_MAX]`
+- `Sp48AudioSample sp48AudioSamples[SP48_AUDIO_SAMPLES_PER_FRAME_MAX]`
+- fixed-size debug/event buffers if and when debugging moves into Wasm
+
+Initial constants can be sized for the larger 48K PAL/NTSC cases:
+
+- PAL tacts per frame: `69888`
+- NTSC tacts per frame: calculated from the current NTSC configuration
+- pixel buffer: enough for the current `CommonScreenDevice` visible buffer, including the existing start offset behavior
+- audio sample capacity: enough for 44.1/48 kHz at the lowest frame rate, with headroom; overflow must clamp and set an exported diagnostic flag
+
+Do not use C library allocation. Keep the existing freestanding build style: `clang --target=wasm32 -nostdlib -Wl,--no-entry -Wl,--export-memory`.
+
+## Proposed Wasm ABI
+
+Create a new target, probably `sp48.wasm`, under `src/emu/machines/zxSpectrum48/sp48.c` or `src/emu/sp48/sp48.c`.
+
+Core exports:
+
+- `sp48Reset()`
+- `sp48HardReset(is16k: uint32_t, isNtsc: uint32_t)`
+- `sp48UploadRom(ptr/byte API or byte setter)`
+- `sp48ExecuteFrame() -> terminationMode`
+- `sp48ExecuteInstruction() -> terminationMode`
+- `sp48SetKeyStatus(key: uint32_t, down: uint32_t)`
+- `sp48SetAudioSampleRate(rate: uint32_t)`
+- `sp48SetFastLoad(enabled: uint32_t)` later, if tape stays integrated
+
+Pointer exports:
+
+- `sp48MemoryPtr()`
+- `sp48PixelBufferPtr()`
+- `sp48AudioSamplesPtr()`
+- `sp48KeyboardLinesPtr()`
+
+Shape/count exports:
+
+- `sp48GetScreenWidth()`
+- `sp48GetScreenHeight()`
+- `sp48GetPixelBufferStartOffset()`
+- `sp48GetAudioSampleCount()`
+- `sp48GetTactsInFrame()`
+- `sp48GetBaseClockFrequency()`
+- `sp48GetFrames()`
+- `sp48GetTacts()`
+
+CPU/debug exports:
+
+- Reuse or wrap the current Z80 register accessors.
+- Add `sp48GetCpuState`-style accessors only after the non-debug frame path works.
+- Keep step/breakpoint support in TypeScript initially unless it becomes impossible to maintain.
+
+## Adapter Strategy
+
+Add a TypeScript wrapper class, for example `WasmZxSpectrum48Machine`, that implements the same renderer-facing surface as the current machine:
+
+- It instantiates `sp48.wasm`.
+- It exposes `getPixelBuffer()` as a `Uint32Array` view over `sp48PixelBufferPtr()`.
+- It exposes `getAudioSamples()` either as:
+  - a lightweight object array copied from the static Wasm sample buffer, to satisfy current `AudioRenderer.storeSamples`, or
+  - a later typed-array audio path after the UI is stable.
+- It forwards `setKeyStatus()` to `sp48SetKeyStatus()`.
+- It keeps ROM loading in TypeScript and copies ROM bytes into the static Wasm memory before reset.
+- It preserves `screenWidthInPixels`, `screenHeightInPixels`, `tactsInFrame`, `baseClockFrequency`, `uiFrameFrequency`, and frame completion semantics.
+
+This adapter lets `EmulatorPanel`, `useEmulatorScreen`, `useEmulatorAudio`, and `useEmulatorKeyboard` keep working while the implementation underneath changes.
+
+The adapter should exist from the first milestone. It can initially be deliberately fake:
+
+- `executeMachineFrame()` calls `sp48ExecuteFrame()`, which only increments `frames` and fills static output buffers.
+- `getPixelBuffer()` returns the animated Wasm pattern buffer.
+- `getAudioSamples()` returns copied placeholder samples from the static Wasm audio buffer.
+- `setKeyStatus()` forwards to `sp48SetKeyStatus()`, and the fake screen pattern can encode key state so input is visibly proven.
+- `pc`, `tacts`, and CPU state accessors can return stable placeholder values until the Z80 core is wired in.
+
+This keeps the UI path honest from day one. The plan then becomes a sequence of replacing fakes with real hardware behavior without changing the renderer contract.
+
+## UI-First Milestone Policy
+
+Every migration step should keep the Wasm-backed machine runnable through the UI. If a subsystem is not accurate yet, provide a deterministic placeholder:
+
+- Display missing: render an animated pattern into `sp48PixelBuffer`.
+- Audio missing: generate a low-volume deterministic waveform or silence with a visible non-zero sample count.
+- Keyboard missing: store key matrix bits and expose them; optionally modulate the fake display pattern with the current key state.
+- CPU missing: advance `frames` and `tacts` as if a frame elapsed.
+- Tape/debug missing: return neutral values and keep the TypeScript path as the reference.
+
+No step should require waiting for the full CPU, screen, and audio implementation before the UI can show that the Wasm machine is alive.
+
+## Renderer Shell And XMLUI Notes
+
+Keep renderer shell composition in XMLUI wherever practical. For toolbar-like UI, prefer a `.xmlui` component that composes small XMLUI primitives instead of a large React-backed pane. Use React-backed components only for focused primitives that XMLUI cannot render by itself, such as the migrated SVG-backed `ToolbarButton` and pixel-perfect `ToolbarSeparator`.
+
+When adding React-backed XMLUI primitives:
+
+- Register each primitive in `src/renderer/lib/index.tsx`.
+- Provide metadata for every public prop and event; XMLUI type-contract diagnostics are useful and should remain clean.
+- Use `valueType`, default values, and `availableValues` so XMLUI tooling understands the component contract.
+- Wire events through `wrapComponent(..., { events: { click: "onClick" } })` and call shared state APIs from XMLUI markup, such as `state.dispatchSetGlobalSetting(...)`.
+- Avoid passing arbitrary DOM props to built-in XMLUI components unless their metadata declares them; for example, `HStack` rejects raw `role` and `aria-label` props.
+- Load local migrated SVG icons with a renderer-bundle-relative glob (`../../../icons/**/*.svg` from `src/renderer/src/icons.ts`), not an absolute `/icons` glob.
+
+This pattern keeps application behavior visible in XMLUI markup while still allowing React to encapsulate low-level rendering details.
+
+## Freestanding C Toolchain Notes
+
+The Wasm build uses `-nostdlib` and must not accidentally introduce libc dependencies. Even hand-written clearing loops can be optimized by Clang into calls such as `memset`, so the shared Wasm build flags include `-fno-builtin`. Keep this flag for all freestanding emulator targets unless a target deliberately provides its own runtime functions.
+
+## Migration Steps
+
+### Step 1 - UI-Connected Static Sp48 Skeleton
+
+Create `sp48.c` with static memory, keyboard lines, pixel buffer, audio buffer, and exported shape/accessor functions. Do not execute CPU instructions yet.
+
+Implement fake frame output immediately:
+
+- `sp48ExecuteFrame()` increments `frames`.
+- `sp48ExecuteFrame()` advances `tacts` by the configured frame length.
+- `sp48ExecuteFrame()` fills `sp48PixelBuffer` with a frame-changing pattern.
+- `sp48ExecuteFrame()` fills `sp48AudioSamples` with deterministic placeholder samples or silence with a valid count.
+- `sp48SetKeyStatus()` updates `sp48KeyboardLines`, and the fake display pattern should change when keys are down so input is visibly proven.
+
+Add a `WasmZxSpectrum48Machine` adapter immediately and wire it behind a feature flag or temporary machine id, so the existing `EmulatorPanel` can render the fake Wasm display and play/store fake audio.
+
+Tests:
+
+- Instantiate `sp48.wasm`.
+- Verify all pointers are non-zero and stable across reset.
+- Verify buffer sizes and dimensions for PAL 48K.
+- Verify no exported allocator exists.
+- Call `sp48ExecuteFrame()` twice and verify the pixel buffer changes.
+- Set a key through the adapter and verify the Wasm keyboard line state changes.
+- Verify `getPixelBuffer()` and `getAudioSamples()` return values consumable by the existing renderer hooks.
+
+Done when:
+
+- `npm run build:wasm` builds `sp48.wasm`.
+- A tiny TypeScript test can read and write the static memory.
+- The emulator UI can select/start the Wasm skeleton and show an animated pattern.
+- Keyboard events reach Wasm, even if they only affect fake diagnostics/patterns.
+
+### Step 2 - Fake Machine Lifecycle In The Existing Controller
+
+Make the skeleton behave like a normal machine from the controller's perspective:
+
+- `start`, `pause`, `stop`, and frame-completed notifications work.
+- `screenWidthInPixels`, `screenHeightInPixels`, `tactsInFrame`, `baseClockFrequency`, and `uiFrameFrequency` return stable values.
+- `machineFrameCompleted` submits fake audio samples through the current audio path.
+- `renderInstantScreen()` can redraw or return the latest fake buffer.
+
+Tests:
+
+- Instantiate the adapter through the machine creation path or a focused test helper.
+- Execute a frame through the machine/controller-facing method.
+- Verify frame count and pixel/audio buffers update.
+- Verify `setKeyStatus()` survives reset and release cycles as designed.
+
+Done when:
+
+- The UI integration is real enough that future hardware slices are internal swaps, not new UI plumbing.
+
+Implementation note:
+
+- The current workspace does not yet have the full reference `MachineController`; Step 2 introduced the controller-facing lifecycle boundary that Step 12 later promoted to `Sp48MachineController`.
+- Toolbar and menu commands are XMLUI/shared-state driven through `emulatorState.lastMachineCommand` and `emulatorState.machineCommandSequence`, not through `globalSettings.demo`.
+- Machine lifecycle state is published as `emulatorState.machineState`, using the shared `MachineControllerState` enum so toolbar and menu enablement follow the same pattern as the original app.
+- API commands received by the emulator renderer must be dispatched with source `"emu"` after local processing, otherwise the main store will not receive controller state changes and menu enablement becomes stale.
+- XMLUI component files that bind shared state need a `SharedAppState id="state"` in their own component scope; a `SharedAppState` declared in a parent component is not visible inside separately declared component files.
+- `EmulatorPanelReact` owns the SP48 controller instance, observes shared-state commands, and advances frames only while the controller is running.
+- Frame completion events publish lightweight diagnostics under `emulatorState.sp48FrameInfo` with frame count, tact count, and audio sample count.
+- `stop` hard-resets the skeleton and leaves it stopped; `restart` hard-resets and starts it; paused step commands execute one fake frame so display/audio/frame-completion plumbing remains visible.
+- A stopped machine paints a homogeneous dark gray bitmap so the UI visibly distinguishes stopped state from a paused animated frame.
+
+### Step 3 - ROM And Memory Map
+
+Mirror `ZxSpectrum48Machine` memory behavior:
+
+- The default Spectrum 48 ROM resource lives at `src/public/roms/sp48.rom`, matching the original `roms/sp48.rom` resource name.
+- Renderer code loads ROM bytes through `MainApi.readBinaryFile("roms/sp48.rom", "public")`; renderer code must not read the file system directly.
+- `WasmZxSpectrum48Machine.setup()` follows the original resource naming convention: `romName` becomes `roms/{romName}.rom`, while absolute ROM paths are passed through.
+- The adapter validates that the uploaded Spectrum 48 ROM is exactly 16K before copying it into Wasm memory.
+- `0x0000-0x3fff` is ROM.
+- `0x4000-0xffff` is RAM for 48K.
+- 16K mode writes only to `0x4000-0x7fff`; `0x8000-0xffff` reads as initialized `0xff` after hard reset.
+- `sp48Reset()` resets runtime state/devices but does not clear memory; `sp48HardReset()` clears RAM while preserving uploaded ROM bytes.
+
+Tests:
+
+- Port memory-map tests from the TypeScript machine.
+- Verify ROM writes are ignored.
+- Verify RAM writes persist.
+- Verify 16K model behavior.
+
+Done when:
+
+- The static Wasm memory model matches the TS memory model byte-for-byte.
+- The fake UI skeleton still runs and can optionally visualize RAM or ROM state in its placeholder pattern.
+
+### Step 4 - Real Keyboard Matrix And Port `$FE` Read
+
+Move `SpectrumKeyboardDevice` behavior into C:
+
+- `sp48KeyboardLines[8]` stores pressed bits.
+- `sp48SetKeyStatus(key, down)` updates the line/mask.
+- `sp48ReadPort(0xfe-like address)` returns `~OR(selected lines)`.
+
+Tests:
+
+- Use existing Spectrum key mapping constants from TS.
+- Verify single-key, multi-key, and multi-line reads.
+- Verify renderer-style `setKeyStatus(code, down)` changes the Wasm port result.
+
+Done when:
+
+- The existing keyboard tests can be adapted to use the Wasm module without changing test expectations.
+- The UI keyboard path still reaches Wasm through `machine.setKeyStatus()`.
+
+Implementation note:
+
+- `sp48KeyboardLines[8]` now mirrors the original TypeScript `SpectrumKeyboardDevice`: each byte stores pressed bits in the lower five bits; released state is `0x00`.
+- `sp48SetKeyStatus(key, down)` maps keys with `line = key / 5` and `mask = 1 << (key % 5)`, using the same `SpectrumKeyCode` ordering as the reference app.
+- `sp48ReadPort(address)` handles port `$FE`-style reads by OR-ing the selected keyboard lines from `~(address >> 8)` and returning the inverted status byte.
+- `src/emu/sp48/sp48-keyboard.ts` centralizes the current Spectrum key codes and default physical keyboard mapping for both the display controller and the virtual keyboard.
+- The migrated SP48 virtual keyboard must preserve the original multi-region key behavior: the main key area sends the base key, symbol labels send `SShift + key`, top number legends send extended-mode sequences, labels above number keys send `CShift + key`, and lower labels send extended-mode plus `SShift + key`. Do not collapse each visual key to a single click action.
+- The temporary UI diagnostic overlay on the Wasm display shows the eight matrix bytes, the all-lines `$FE` read value, and the last key action. This gives a visual smoke test for physical and virtual key press/release while the real ROM/CPU path is still incomplete.
+
+### Step 5 - Port `$FE` Write, Border, EAR/MIC State
+
+Mirror `ZxSpectrumBase.writePort0xFE`:
+
+- bits `0..2` update border color
+- bit `3` is MIC
+- bit `4` is EAR
+- track bit 4 transition tacts for read-side analog EAR behavior
+- expose border color and current EAR/MIC state for tests
+
+Tests:
+
+- Write `$FE` values and verify border color.
+- Verify EAR/MIC output level state transitions.
+- Verify bit 6 read behavior for passive tape mode.
+
+Done when:
+
+- Basic I/O behavior works without screen or audio generation.
+- The placeholder display can use the real border color state before the real ULA renderer exists.
+
+Implementation note:
+
+- `sp48WritePort(address, value)` now handles even-address `$FE` writes and ignores odd-address writes.
+- The C core tracks the last `$FE` output byte, border color bits `0..2`, MIC bit `3`, EAR bit `4`, a 2-bit beeper level index, and EAR transition tacts for 0->1 and 1->0 changes.
+- `sp48ReadPort(address)` now merges the keyboard matrix with passive EAR bit-6 sensing, matching the reference analog EAR timing shape used before tape load support is migrated.
+- The fake display uses the real border color as an 8-pixel frame around the placeholder bitmap, giving a UI-visible smoke test for `$FE` border writes before ULA rendering is implemented.
+- The temporary Wasm display overlay now reports `$FE` input, `$FE` output, border, EAR, MIC, and beeper level diagnostics.
+
+### Step 6 - Tacts, Frame Timing, And Contention Tables
+
+Port the `CommonScreenDevice` PAL/NTSC screen configuration calculations into C using fixed arrays:
+
+- Calculate `tactsInFrame`.
+- Fill static contention table.
+- Fill static rendering phase/address/index tables.
+- Add `currentFrameTact = tacts % tactsInCurrentFrame`.
+- Apply memory and I/O contention exactly as `ZxSpectrumBase` does.
+
+Tests:
+
+- Compare PAL `tactsInFrame` with TypeScript.
+- Spot-check contention values across visible display tacts.
+- Verify contended memory read/write delays.
+- Verify contended I/O delay patterns for low-bit set/reset cases.
+
+Done when:
+
+- Z80 memory/port delays are machine-accurate enough to run ROM timing-sensitive code.
+- The fake `sp48ExecuteFrame()` uses the real frame length and frame counters.
+
+Implementation note:
+
+- `sp48.c` now allocates static PAL-sized timing tables for contention values, rendering phases, display pixel addresses, attribute addresses, and timing-screen pixel indexes. No dynamic allocation is used.
+- PAL timing is initialized to 312 raster lines, 224 tacts per line, 69,888 tacts per frame, a 352-pixel timing width, 288 timing lines, first visible line 15, and first display line 64.
+- NTSC timing is initialized to 264 raster lines, 224 tacts per line, 59,136 tacts per frame, a 352-pixel timing width, 240 timing lines, first visible line 23, and first display line 48.
+- Rendering phase numeric values mirror the original `RenderingPhase` enum so later ULA/floating-bus code can use the same phase meanings.
+- The C core exports timing-table accessors plus `sp48DelayAddressBusAccess`, `sp48DelayPortAccess`, `sp48DelayPortRead`, and `sp48DelayPortWrite`. Memory contention only delays `0x4000-0x7fff`; I/O contention follows the reference `C:1`, `C:3`, and `N:4` patterns.
+- `WasmZxSpectrum48Machine.tactsInFrame` and `baseClockFrequency` are live getters. This matters because `sp48HardReset(..., isNtsc)` can change the current frame length after instantiation.
+- `sp48SetTacts` is exported as a narrow diagnostic/control hook for tests and for the future instruction runner integration.
+
+### Step 7 - Integrate Existing Wasm Z80 Into Sp48
+
+Move or share the current `z80.c` CPU implementation so `sp48.c` can own memory and I/O behavior directly. Avoid a design where TypeScript preloads every memory/port access during a frame; full frame execution must stay inside Wasm.
+
+Recommended approach:
+
+- Refactor `z80.c` into CPU core functions with static callbacks/macros for memory and port operations.
+- Build one `sp48.wasm` that includes the Z80 core and the Spectrum machine callbacks.
+- Keep `z80.wasm` tests alive for CPU-only regression coverage.
+
+Tests:
+
+- Run a small Z80 program inside `sp48.wasm`.
+- Verify memory writes, port writes, tacts, PC, and interrupt handling.
+- Reuse existing Z80 instruction tests where practical through a CPU-only test harness.
+
+Done when:
+
+- `sp48ExecuteInstruction()` can execute instructions with Spectrum memory and port semantics.
+- The UI still runs; the fake frame runner may still be used until the real frame loop is complete.
+
+Implementation note:
+
+- `z80.c` remains the single CPU implementation. It still builds as standalone `z80.wasm`, but it can now also be included by a machine core with `Z80_EXTERNAL_BUS` and bus/tact macros.
+- `sp48.c` includes the existing Z80 core and maps Z80 memory reads/writes to the SP48 ROM/RAM map, port reads/writes to the SP48 `$FE` implementation, and memory/port delays to the SP48 contention tables.
+- `sp48ExecuteInstruction()` now executes one real Z80 CPU cycle inside `sp48.wasm`; no TypeScript preloading is needed for SP48 memory or ports.
+- The Wasm display overlay shows Step 5 `$FE`/keyboard/border/EAR/MIC state, Step 6 frame tact/rendering phase/contention diagnostics, and Step 7 CPU PC/A/instruction counters.
+- Focused tests prove ROM fetch, RAM write, `$FE` port write, and contended RAM read behavior through the embedded CPU bus.
+
+### Step 8 - No-Debug Frame Runner In C
+
+Port the no-debug path of `MachineFrameRunner.executeMachineLoopWithNoDebug`:
+
+- initialize new frames
+- emulate queued keystrokes later, or keep queued keystrokes in TypeScript initially
+- run complete Z80 instructions
+- process interrupt window: `currentFrameTact < 32`
+- stop when `frameCompleted`
+
+Leave debug stepping, breakpoints, frame commands, and code injection in TypeScript for the first full-frame milestone.
+
+Tests:
+
+- Execute NOP loops until one frame completes.
+- Verify `frames`, `tacts`, `frameCompleted`, and interrupt behavior.
+- Compare against the TypeScript machine for deterministic short programs.
+
+Done when:
+
+- `sp48ExecuteFrame()` advances exactly one frame and returns a normal termination mode.
+- The UI skeleton now advances through real CPU work, while fake display/audio can remain in place.
+
+Implementation note:
+
+- `sp48ExecuteFrame()` now runs complete embedded Z80 cycles in C until the current frame boundary is crossed. It does not snap `tacts` to the exact frame length; like the TypeScript runner, the last instruction may overshoot the boundary.
+- The C core keeps `sp48NextFrameStartTact`, `sp48FrameCompleted`, per-frame CPU instruction count, total CPU instruction count, and IRQ diagnostics.
+- The frame-start interrupt line follows the Spectrum rule `currentFrameTact < 32`. `sp48ExecuteInstruction()` updates the embedded Z80 `sigINT` before each CPU cycle.
+- Focused tests cover an exact NOP frame, a non-dividing 11-tact instruction stream that overshoots the frame boundary, and IM 1 interrupt acknowledge at frame start.
+- The UI overlay now reports next-frame start, frame-completed state, interrupt pulse count, and current interrupt-line state in addition to Step 5-7 diagnostics.
+
+### Step 9 - Replace Fake Display With ULA Rendering
+
+Port `CommonScreenDevice` rendering into C:
+
+- static ARGB palette
+- static ink/paper flash tables
+- static rendering tact table generated at reset/config time
+- `renderTact` called during tact increments
+- `sp48PixelBuffer` uses the same ARGB `uint32_t` format expected by `useEmulatorScreen`
+- preserve `getBufferStartOffset()` behavior
+
+Tests:
+
+- Write known bytes/attributes to screen memory.
+- Run `sp48RenderInstantScreen()` and compare selected pixels with TypeScript output.
+- Run a frame with border color changes and verify border pixels.
+
+Done when:
+
+- The current renderer can display the Wasm pixel buffer without conversion.
+- The fake pattern path can remain behind a debug export until real rendering is trusted, then be removed.
+
+Implementation note:
+
+- The fake display path has been replaced with `renderUlaDisplay()` in `src/emu/sp48/sp48.c`.
+- The current Wasm screen buffer follows the original border-inclusive screen shape. PAL exposes a 352x288 renderer surface and a one-row pixel buffer start offset.
+- The renderer uses the same Spectrum palette values and bitmap/attribute memory layout as `CommonScreenDevice`: pixel bytes at `$4000-$57ff`, attributes at `$5800-$5aff`, 8 pixels per bitmap byte, the original non-linear Spectrum row address calculation, and the original display offset inside the border.
+- Border pixels are filled from the current `$FE` border color, so `BORDER 3` is visible as magenta around the display.
+- `sp48RenderInstantScreen()` is exported so TypeScript can redraw the visible screen immediately after RAM writes without running a frame.
+- Focused tests write known screen bytes and attributes into Wasm RAM, call `renderInstantScreen()`, and verify selected output pixels including bright attributes, the Spectrum row mapping, the border-inclusive buffer dimensions, and `$FE` border painting.
+
+### Step 10 - Replace Fake Audio With Beeper Audio
+
+Port `SpectrumBeeperDevice` and the relevant `AudioDeviceBase` behavior:
+
+- static `Sp48AudioSample { float left; float right; } sp48AudioSamples[]`
+- `sp48AudioSampleCount`
+- fixed sample-rate configuration
+- transition-weighted EAR/MIC averaging
+- DC high-pass filter state
+- overflow flag if sample buffer capacity is exceeded
+
+Tests:
+
+- Set sample rate and verify sample count for one frame.
+- Generate constant silence and transitions.
+- Compare a simple port `$FE` toggling program with TypeScript sample values within tolerance.
+
+Done when:
+
+- `EmulatorPanel.machineFrameCompleted` can submit samples prepared by Wasm.
+- The placeholder audio generator is removed or kept only as a diagnostic mode.
+
+Implementation note:
+
+- The fake audio waveform has been removed from `src/emu/sp48/sp48.c`.
+- `$FE` writes record static EAR/MIC transitions with absolute tacts into a fixed-size transition buffer; overflow sets diagnostic flag bit `0x00000002`.
+- At frame completion, C renders `Sp48AudioSample { int16_t left; int16_t right; }` samples at the configured sample rate. This keeps the current TypeScript adapter ABI stable.
+- Sample generation mirrors the reference beeper model: left channel represents EAR, right channel represents MIC, both are transition-time-weighted within each audio sample window, and a MAME-style DC high-pass filter (`alpha = 0.995`) is applied.
+- Silence now produces zero-valued samples. A constant EAR/MIC-high frame produces the expected filtered transient and decay rather than the old placeholder square wave.
+- The emulator panel now owns an `AudioRenderer`/`Sampling.worklet.js` pair, creates the `AudioContext`, configures the Wasm machine with that context's actual sample rate, resumes it when the machine runs, suspends it on pause/stop, mixes the diagnostic EAR/MIC sample channels into the mono Spectrum speaker level (`0.66 * EAR + 0.33 * MIC`), and posts the same speaker sample to both output channels with `emulatorState.soundLevel`. Do not hardcode 44.1 kHz; Electron/WebAudio often runs at 48 kHz.
+- Wasm audio uses the reference-style continuous sample scheduler: `audioSampleLength = baseClockFrequency / sampleRate`, `audioNextSampleTact` persists across frames, and each frame emits however many samples fall before the actual CPU tact reached by the frame-ending instruction. Samples are emitted only after machine tacts advance past the next sample tact, avoiding artificial zero-width boundary samples and lost overshoot tacts. At 48 kHz PAL this starts `958, 958, 959, 958...` samples instead of forcing a fixed count. The renderer paces machine frames with a timed machine loop based on the emulated frame duration, not `requestAnimationFrame`, because a 60 Hz repaint loop submits 50 Hz Spectrum audio chunks unevenly.
+- Focused tests cover silence, sample count, diagnostic flags, and `$FE` EAR/MIC output producing non-zero channel samples.
+
+### Step 11 - Floating Bus
+
+Port `ZxSpectrum48FloatingBusDevice`:
+
+- use `currentFrameTact - 5`
+- inspect static rendering phase table
+- return pixel/attribute fetch values from screen memory
+- return `0xff` otherwise
+
+Tests:
+
+- Spot-check known floating bus values at display fetch tacts.
+- Verify non-fetch tacts return `0xff`.
+
+Done when:
+
+- Port reads from odd addresses match the current TS floating bus behavior.
+
+Implementation note:
+
+- `sp48ReadFloatingBus()` now mirrors `ZxSpectrum48FloatingBusDevice`: it samples the rendering table at `(currentFrameTact - 5 + tactsInFrame) % tactsInFrame`.
+- Pixel-fetch phases (`BorderFetchPixel`, `DisplayB1FetchB2`, `DisplayB2FetchB1`) return the fetched bitmap byte from screen memory offset `$0000-$17ff`.
+- Attribute-fetch phases (`BorderFetchAttr`, `DisplayB1FetchA2`, `DisplayB2FetchA1`) return the fetched attribute byte from screen memory offset `$1800-$1aff`.
+- Non-fetch phases return `$ff`.
+- `sp48ReadPort()` now keeps even-address `$FE` reads on the keyboard/EAR path and routes odd-address reads to the floating bus, matching the reference 48K machine.
+- The Wasm ABI exports `sp48ReadScreenMemoryOffset()` and `sp48ReadFloatingBus()` for focused diagnostics/tests.
+- Focused tests cover direct screen-memory offset reads, non-fetch `$ff`, bitmap fetch, attribute fetch, odd-port floating-bus reads, and even-port keyboard reads staying separate from the floating bus.
+
+### Step 12 - Promote Wasm Machine Adapter
+
+Introduce a feature-selectable `WasmZxSpectrum48Machine`:
+
+- Keep it behind a config flag until ROM boot and basic UI behavior are stable.
+- Keep `EmulatorPanel` unchanged.
+- Ensure `useEmulatorScreen`, `useEmulatorAudio`, and `useEmulatorKeyboard` work through the existing machine methods.
+
+Tests:
+
+- Instantiate the machine through the registry.
+- Load ROM bytes.
+- Run one frame.
+- Verify the returned pixel/audio buffers are non-empty and stable.
+
+Done when:
+
+- The UI can run the Wasm-backed machine without renderer-specific changes.
+
+Implementation note:
+
+- The temporary fake controller has been promoted to `src/emu/sp48/Sp48MachineController.ts`.
+- Renderer code creates the SP48 machine through `createSp48MachineController(readBinaryFile)`, so ROM loading still goes through the main-process resource API and renderer code does not read files directly.
+- `EmulatorPanelReact`, `useEmulatorScreen`, `useEmulatorAudio`, and `useEmulatorKeyboard` now work through the promoted controller and `WasmZxSpectrum48Machine` methods.
+- The old `WasmSp48Display` proof component has been removed; the active emulator panel is the only display path for the Wasm-backed SP48 core.
+- Focused lifecycle tests instantiate the promoted controller with in-memory Wasm bytes and the real `sp48.rom`, then verify start, pause, stop, restart, and frame-step behavior.
+
+### Step 13 - ROM Boot And Smoke Tests
+
+Run the real 48K ROM through the Wasm machine:
+
+- boot until the known ROM initialized state, such as `IY == 0x5c3a`
+- verify screen memory and system variables against the TS machine at comparable checkpoints
+- verify a queued or renderer-simulated key press changes ROM behavior
+
+Tests:
+
+- Boot smoke test.
+- BASIC cursor/input smoke test.
+- Simple code injection smoke test.
+
+Done when:
+
+- Wasm `sp48` can boot and respond to keyboard input.
+
+Implementation note:
+
+- `test/sp48/sp48-rom-boot.test.ts` boots the real `src/public/roms/sp48.rom` through `public/wasm/sp48.wasm`.
+- The ROM reaches the initialized BASIC loop at frame 83 with `IY == $5C3A`, `PC == $0E5D`, `SP == $FF4A`, white border, and initialized permanent/current attribute variables.
+- Holding the SP48 `Q` key after boot is visible to the ROM: keyboard line 2 sets bit 0, port `$FBFE` reads `$BE`, `LAST_K` at `$5C08` becomes `$F6`, and FLAGS at `$5C3B` marks a new key.
+- A tiny injected RAM program at `$8000` verifies the same Wasm machine can execute injected code through the SP48 bus, write port `$FE`, update border color, write display RAM, and halt.
+- The SP48 Wasm ABI now exposes IX/IY through `sp48GetCpuIx`, `sp48SetCpuIx`, `sp48GetCpuIy`, and `sp48SetCpuIy`; the TypeScript adapter mirrors these as `getCpuIx`, `setCpuIx`, `getCpuIy`, and `setCpuIy`.
+- `build/vitest.config.ts` explicitly includes the ROM boot smoke test so `npm test` runs it with the rest of the migrated Z80/SP48 coverage.
+
+### Step 14 - Debug And Tooling Compatibility
+
+Only after normal frame execution is stable, migrate or adapt:
+
+- debug stepping
+- breakpoints
+- memory read/write event logs
+- I/O read/write event logs
+- code injection flow helpers
+- call stack/step-out support
+
+Keep these in TypeScript as long as possible by reading exported CPU and memory state from Wasm.
+
+Tests:
+
+- Existing debugger tests, if present.
+- New tests for step into/over/out around Wasm CPU state.
+
+Done when:
+
+- The IDE debugging workflow behaves like the TS machine.
+
+Implementation note:
+
+- `Sp48MachineController` now provides the first debugger-compatible surface around the Wasm SP48 machine: instruction-level `stepInto`, `stepOver`, `stepOut`, breakpoint registration, CPU snapshots, and last memory/port access accessors.
+- `debug` mode runs through the controller breakpoint set; if no breakpoints are registered it enters the paused state immediately so toolbar/menu stepping is available.
+- `stepInto` executes exactly one Z80 instruction. The previous temporary behavior of running a whole frame while paused was replaced.
+- `stepOver` and `stepOut` stay in TypeScript and inspect opcodes/register flags from Wasm, mirroring the original TS Z80 wrapper pattern instead of moving debugger policy into C.
+- The SP48 Wasm ABI now exports debugger/tooling state: alternate registers, IR, WZ, prefix, RET/RETN flags, last CPU memory access, and last CPU port access.
+- CPU memory accesses are logged through static C state in `sp48.c`; ROM write protection remains in the SP48 memory write helper.
+- `EmulatorPanelReact` dispatches the real Wasm CPU PC in `setMachineStateAction` after machine commands, so shared state has a usable debug location.
+- `test/sp48/sp48-debug.test.ts` covers instruction stepping, step-over/out around CALL/RET, breakpoint stop behavior, CPU snapshots, and memory/port event logs.
+
+Refactoring note:
+
+- The SP48 C implementation has been split into included device files while keeping the build target as `src/emu/sp48/sp48.c`.
+- `sp48.c` remains the Wasm entry point, Z80 integration point, frame runner, and ABI export file.
+- `sp48-memory.c`, `sp48-ula.c`, `sp48-keyboard.c`, `sp48-beeper.c`, and `sp48-ports.c` hold the device-specific implementation.
+- C and TypeScript files intentionally remain together in `src/emu/sp48` so the C ABI and the TypeScript adapter/controller stay close while the SP48 core is still evolving.
+
+## Test Strategy
+
+Use three layers of tests:
+
+- C/Wasm ABI tests: instantiate `.wasm`, read static buffers, call exported functions.
+- Machine equivalence tests: run the same small program on TS `ZxSpectrum48Machine` and Wasm `WasmZxSpectrum48Machine`, then compare CPU state, memory slices, tacts, border, selected pixels, and audio count.
+- Renderer contract tests: verify the current screen/audio/keyboard hooks can consume the Wasm-backed machine with no special cases.
+
+Prefer tiny deterministic programs over full-ROM tests early. Full ROM boot should come after memory, ports, contention, and interrupts are already covered.
+
+## Static Allocation Rules For C
+
+- No `malloc`, `calloc`, `realloc`, `free`.
+- No variable-length arrays.
+- No recursion.
+- No standard library dependency beyond freestanding integer types.
+- All runtime buffers are file-scope `static`.
+- All capacities are compile-time constants.
+- Every exported pointer remains stable for the lifetime of the Wasm instance.
+- If a buffer would overflow, clamp, set an exported overflow flag, and keep running deterministically.
+- TypeScript may create views and copy data for UI compatibility, but C/Wasm must not allocate dynamically.
+
+## Suggested First Implementation Milestone
+
+The first useful vertical slice should be UI-visible:
+
+1. Build `sp48.wasm`.
+2. Expose static memory, pixel, audio, and keyboard buffers.
+3. Implement `sp48ExecuteFrame()` as a fake frame generator.
+4. Implement `sp48SetKeyStatus()` and make key state affect the fake pattern or diagnostics.
+5. Add the TypeScript Wasm machine adapter.
+6. Wire the adapter into the existing emulator UI behind a flag or temporary machine id.
+7. Verify the UI shows a changing bitmap and the audio path receives samples.
+
+That gives us a real Wasm machine boundary quickly, with the existing TypeScript machine still available for comparison. Accuracy then improves by replacing the fake memory, I/O, CPU, ULA, and beeper paths one at a time.
+
+## Open Questions To Settle During Implementation
+
+- Whether `sp48.wasm` should include its own copy of the Z80 core or whether `z80.c` should be refactored into shared include files used by both `z80.wasm` and `sp48.wasm`.
+- Whether renderer audio should remain object-array based initially or move to typed-array samples once the Wasm path is stable.
+- Whether tape loading/saving should be inside Wasm immediately or bridged later through TypeScript events.
+- Whether debug support should be implemented as exported trace buffers or stay as TypeScript-side state reads for the first release.

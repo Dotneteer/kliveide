@@ -1,6 +1,7 @@
 import { Action } from "./Action";
 import { AppState, initialAppState } from "./AppState";
 import { appStateFlagsReducer } from "./app-state-flags-reducer";
+import { emulatorStateReducer } from "./emulator-state-reducer";
 import { ActionForwarder, createStore, Reducer } from "./redux-light";
 import { globalSettingsReducer } from "./global-settings-reducer";
 
@@ -13,6 +14,7 @@ import { globalSettingsReducer } from "./global-settings-reducer";
 function appReducer(state: AppState, action: Action): AppState {
   state = appStateFlagsReducer(state, action);
   invokeReducer(state.globalSettings, globalSettingsReducer, (a, n) => (a.globalSettings = n));
+  invokeReducer(state.emulatorState, emulatorStateReducer, (a, n) => (a.emulatorState = n));
   return state;
 
   /**

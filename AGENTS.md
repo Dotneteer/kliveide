@@ -17,6 +17,7 @@ This project is an Electron shell built with TypeScript, electron-vite, XMLUI, a
 - Do not run `npm run dev` unless explicitly requested. The user usually starts and tests the app manually.
 - Before changing XMLUI code, read `.ai/xmlui.md`.
 - Before changing IPC, process APIs, reducer forwarding, settings propagation, or `SharedAppState`, read `.ai/messaging-and-state.md`.
+- Before changing C/WebAssembly emulator code, Wasm build scripts, or renderer Wasm loading/rendering, read `.ai/webassembly.md`.
 
 ## Verification
 

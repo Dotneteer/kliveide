@@ -14,6 +14,8 @@ import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_KEYBOARD_HEIGHT,
   SETTING_EMU_KEYBOARD_LAYOUT,
+  SETTING_EMU_KEYBOARD_SPLITTER_POSITION,
+  SETTING_EMU_MACHINE_TYPE,
   SETTING_EMU_NOTE,
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
@@ -92,6 +94,15 @@ const settingDefinitions: Setting[] = [
     boundTo: "emu"
   },
   {
+    id: SETTING_EMU_KEYBOARD_SPLITTER_POSITION,
+    title: "(Virtual keyboard splitter position)",
+    type: "string",
+    defaultValue: "520px",
+    persist: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
     id: SETTING_EMU_SHOW_INSTANT_SCREEN,
     title: "Show the Instant Screen",
     description: "Show or hide the instant screen in the Emulator view.",
@@ -127,6 +138,19 @@ const settingDefinitions: Setting[] = [
     description: "Allows the emulator to stay on top of other windows.",
     type: "boolean",
     defaultValue: true,
+    persist: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_MACHINE_TYPE,
+    title: "Machine Type",
+    description: "Selected emulator machine and model.",
+    type: "object",
+    defaultValue: {
+      machineId: "sp48",
+      modelId: "pal"
+    },
     persist: true,
     saveWithIde: true,
     boundTo: "emu"

@@ -1,4 +1,7 @@
 import { ActionCreator } from "./Action";
+import type { MachineCommand } from "../abstractions/MachineCommand";
+import { MachineControllerState } from "../abstractions/MachineControllerState";
+import type { MachineConfigSet } from "../machines/info-types";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -13,6 +16,48 @@ export const setAppPathAction: ActionCreator = (value: string) => ({
 export const setGlobalSettingAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_GLOBAL_SETTING",
   payload: { id, value }
+});
+
+export const issueMachineCommandAction: ActionCreator = (id: MachineCommand) => ({
+  type: "ISSUE_MACHINE_COMMAND",
+  payload: { id }
+});
+
+export const setMachineStateAction: ActionCreator = (
+  state: MachineControllerState,
+  numValue = 0
+) => ({
+  type: "SET_MACHINE_STATE",
+  payload: { state, numValue }
+});
+
+export const setMachineTypeAction: ActionCreator = (
+  machineId: string,
+  modelId?: string,
+  config?: MachineConfigSet
+) => ({
+  type: "SET_MACHINE_TYPE",
+  payload: { id: machineId, nextId: modelId, value: config ?? {} }
+});
+
+export const setSp48FrameInfoAction: ActionCreator = (
+  value: {
+    frames: number;
+    tacts: number;
+    audioSampleCount: number;
+    lastFrameTimeInMs: number;
+    avgFrameTimeInMs: number;
+    pc: number;
+    baseClockFrequency: number;
+  }
+) => ({
+  type: "SET_SP48_FRAME_INFO",
+  payload: { value }
+});
+
+export const muteSoundAction: ActionCreator = (flag: boolean) => ({
+  type: "MUTE_SOUND",
+  payload: { flag }
 });
 
 export const unloadWindowsAction: ActionCreator = () => ({

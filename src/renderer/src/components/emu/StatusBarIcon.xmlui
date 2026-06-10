@@ -1,0 +1,8 @@
+<Component name="StatusBarIcon">
+  <Icon
+    name="{$props.name}"
+    color="$textColor-EmuStatusBar"
+    width="16px"
+    height="16px"
+  />
+</Component>
