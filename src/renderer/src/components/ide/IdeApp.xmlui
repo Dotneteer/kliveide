@@ -11,8 +11,8 @@
         maxPrimarySize="-100px"
         floating
       >
-        <SideBar width="100%" />
-        <MainWorkbench height="100%" />
+        <SideBar />
+        <MainWorkbench />
       </HSplitter>
     </HStack>
     <IdeStatusBar when="{state.globalSettings('showStatusBar', true)}" />

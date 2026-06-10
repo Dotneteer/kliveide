@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.1.0",
+  "version": "0.100.0",
   "private": true,
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {

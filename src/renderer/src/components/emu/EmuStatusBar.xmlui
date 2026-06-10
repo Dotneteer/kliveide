@@ -1,7 +1,6 @@
 <Component
   name="EmuStatusBar"
   var.frameInfo="{state.value.emulatorState.sp48FrameInfo}"
-  var.machineState="{state.value.emulatorState.machineState ?? 0}"
   var.modelId="{state.value.emulatorState.modelId}"
   var.machineName="{modelId === 'ntsc' ? 'ZX Spectrum 48K (NTSC)' : modelId === 'pal-16k' ? 'ZX Spectrum 16K' : 'ZX Spectrum 48K'}"
   var.frameCount="{frameInfo.frames ?? 0}"
