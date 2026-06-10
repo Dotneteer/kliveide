@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { createTapeDataBlock } from "@emu/tape/tape-parser";
 import {
   instantiateWasmZxSpectrum48Machine,
+  Sp48TapeMode,
   type WasmZxSpectrum48Machine
 } from "@emu/sp48/WasmZxSpectrum48Machine";
 
@@ -89,4 +91,63 @@ describe("SP48 ROM boot smoke tests", () => {
     expect(machine.readMemory(0x4000)).toBe(0x03);
     expect(machine.getCpuHalted()).toBe(true);
   });
+
+  it("loads a small data block through the real ROM normal-load routine", async () => {
+    const machine = await createMachine();
+    const payload = new Uint8Array([0x3c, 0x5a, 0xa5, 0xc3]);
+    const targetAddress = 0x8000;
+    const block = createTapeDataBlock(createTapBlock(0xff, payload));
+
+    machine.uploadTape([block], "normal-rom-load.tap");
+    machine.setTapeFastLoad(false);
+    machine.setCpuAf(0xff01);
+    machine.setCpuIx(targetAddress);
+    machine.setCpuDe(payload.length);
+    machine.setCpuSp(0xff00);
+    machine.setCpuPc(0x0556);
+
+    const loaded = runFramesUntil(machine, 260, () =>
+      payload.every((byte, index) => machine.readMemory(targetAddress + index) === byte)
+    );
+    machine.writeMemory(0x9000, 0x76);
+    machine.setCpuPc(0x9000);
+    const tapeCompleted = runFramesUntil(machine, 120, () =>
+      machine.getTapeMode() === Sp48TapeMode.Passive && machine.isTapeEof()
+    );
+
+    expect(loaded).toBe(true);
+    expect(tapeCompleted).toBe(true);
+    expect([...payload].map((_, index) => machine.readMemory(targetAddress + index))).toEqual([...payload]);
+    expect(machine.getTapeFastLoad()).toBe(false);
+    expect(machine.getTapeLoadStartCount()).toBeGreaterThan(0);
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Passive);
+    expect(machine.isTapeEof()).toBe(true);
+    expect(machine.getTapeCurrentBlockIndex()).toBe(1);
+  });
 });
+
+function runFramesUntil(
+  machine: WasmZxSpectrum48Machine,
+  maxFrames: number,
+  condition: () => boolean
+): boolean {
+  for (let i = 0; i < maxFrames; i++) {
+    if (condition()) {
+      return true;
+    }
+    machine.executeMachineFrame();
+  }
+  return condition();
+}
+
+function createTapBlock(flag: number, payload: Uint8Array): Uint8Array {
+  const data = new Uint8Array(payload.length + 2);
+  data[0] = flag & 0xff;
+  data.set(payload, 1);
+  let checksum = data[0];
+  for (const byte of payload) {
+    checksum ^= byte;
+  }
+  data[data.length - 1] = checksum;
+  return data;
+}

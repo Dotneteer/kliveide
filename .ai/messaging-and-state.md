@@ -125,6 +125,7 @@ if (source !== windowKind || !rendererActionForwarder) return;
 - Persisted global settings are stored under `AppState.globalSettings`.
 - `setSettingValue(id, value)` validates and dispatches `SET_GLOBAL_SETTING` from source `"main"`.
 - `startSettingsPersistence()` subscribes to `mainStore`; persisted, non-volatile global settings save immediately when changed.
+- Tape media is persisted separately from `globalSettings` under `AppSettings.media`. The selected tape file path and parsed metadata are saved, while transient playback state is restored as rewound. Main dispatches persisted media through `SET_TAPE_MEDIA` during startup state sync, then `restorePersistedTapeFile()` reads file bytes and sends `EmuApi.setTapeFile(...)` so the EMU renderer can parse and upload to Wasm. Renderer-side tape upload is queued in `sp48-session.ts` if the active `Sp48MachineController` is not registered yet.
 - XMLUI should update persisted settings through:
 
 ```xmlui

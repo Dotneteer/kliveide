@@ -15,10 +15,13 @@ import {
   setAppPathAction,
   dimMenuAction,
   setThemeAction,
-  setMachineTypeAction
+  setMachineTypeAction,
+  setTapeMediaAction,
+  clearTapeMediaAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
+  restorePersistedTapeFile,
   startApplicationMenu,
   stopApplicationMenu,
   updateApplicationMenuWindows
@@ -92,6 +95,11 @@ function dispatchMainOwnedState(): void {
         state.emulatorState.config
       )
     );
+  }
+  if (state.media?.tape?.fileName) {
+    mainStore.dispatch(setTapeMediaAction(state.media.tape));
+  } else {
+    mainStore.dispatch(clearTapeMediaAction());
   }
   mainStore.dispatch(dimMenuAction(state.dimMenu ?? false));
   mainStore.dispatch(emuFocusedAction(emuWindow?.isFocused() ?? false));
@@ -255,6 +263,7 @@ async function createEmulatorWindow(): Promise<void> {
   mainStore.dispatch(emuLoadedAction());
   dispatchMainOwnedState();
   mainStore.dispatch(emuSynchedAction());
+  await restorePersistedTapeFile();
 }
 
 async function createIdeWindow(): Promise<void> {

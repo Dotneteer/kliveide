@@ -42,7 +42,7 @@ import {
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
-import { dimMenuAction, setThemeAction } from "../common/state/actions";
+import { clearTapeMediaAction, dimMenuAction, setTapeMediaAction, setThemeAction } from "../common/state/actions";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
 import type { EmuMachineCommand } from "../common/messaging/EmuApi";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -61,6 +61,7 @@ import {
   setSettingValue
 } from "./settings";
 import { MEDIA_TAPE } from "../common/structs/project-const";
+import { parseTapeFile } from "../emu/tape/tape-parser";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -704,6 +705,20 @@ async function setSelectedTapeFile(fileName: string): Promise<void> {
   mainStore.dispatch(dimMenuAction(true), "main");
   try {
     const contents = new Uint8Array(fs.readFileSync(fileName));
+    const parsed = parseTapeFile(contents);
+    mainStore.dispatch(
+      setTapeMediaAction({
+        fileName,
+        displayName: path.basename(fileName),
+        size: contents.byteLength,
+        blockCount: parsed.blocks.length,
+        currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        status: parsed.blocks.length > 0 ? "rewound" : undefined,
+        sourceFormat: parsed.format,
+        warnings: parsed.warnings
+      }),
+      "main"
+    );
     appSettings.folders ??= {};
     appSettings.folders[TAPE_FILE_FOLDER] = path.dirname(fileName);
     saveAppSettings();
@@ -717,6 +732,36 @@ async function setSelectedTapeFile(fileName: string): Promise<void> {
     });
   } finally {
     mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
+export async function restorePersistedTapeFile(): Promise<void> {
+  const fileName = appSettings.media?.[MEDIA_TAPE]?.fileName;
+  if (!fileName) {
+    return;
+  }
+
+  try {
+    const contents = new Uint8Array(fs.readFileSync(fileName));
+    const parsed = parseTapeFile(contents);
+    mainStore.dispatch(
+      setTapeMediaAction({
+        fileName,
+        displayName: path.basename(fileName),
+        size: contents.byteLength,
+        blockCount: parsed.blocks.length,
+        currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        status: parsed.blocks.length > 0 ? "rewound" : undefined,
+        sourceFormat: parsed.format,
+        warnings: parsed.warnings
+      }),
+      "main"
+    );
+    await getEmuApi().setTapeFile(fileName, contents, false, true);
+  } catch {
+    mainStore.dispatch(clearTapeMediaAction(), "main");
+    appSettings.media = {};
+    saveAppSettings();
   }
 }
 
@@ -737,6 +782,9 @@ async function ejectTape(): Promise<void> {
 
   mainStore.dispatch(dimMenuAction(true), "main");
   try {
+    mainStore.dispatch(clearTapeMediaAction(), "main");
+    appSettings.media = {};
+    saveAppSettings();
     await getEmuApi().setTapeFile("", new Uint8Array(0));
   } catch (err) {
     await showMessageBox(window, {

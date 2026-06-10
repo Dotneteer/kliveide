@@ -13,10 +13,12 @@ export default defineConfig({
     include: [
       "./test/dummy.test.ts",
       "./test/common/media-state.test.ts",
+      "./test/tape/tape-parser.test.ts",
       "./test/sp48/sp48-debug.test.ts",
       "./test/sp48/sp48-lifecycle.test.ts",
       "./test/sp48/sp48-rom-boot.test.ts",
       "./test/sp48/sp48-skeleton.test.ts",
+      "./test/sp48/sp48-tape-upload.test.ts",
       "./test/z80/interrupts.test.ts",
       "./test/z80/bit-ops-00.test.ts",
       "./test/z80/bit-ops-10.test.ts",

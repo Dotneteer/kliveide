@@ -10,8 +10,11 @@ import {
   setGlobalSettingAction,
   initGlobalSettingsAction,
   setThemeAction,
-  setMachineTypeAction
+  setMachineTypeAction,
+  setTapeMediaAction,
+  clearTapeMediaAction
 } from "../common/state/actions";
+import type { MediaState } from "../common/state/AppState";
 import type { WindowState } from "./WindowState";
 import { mainStore } from "./main-store";
 
@@ -27,6 +30,7 @@ export type AppSettings = {
   folders?: Record<string, string>;
   theme?: string;
   globalSettings?: Record<string, unknown>;
+  media?: MediaState;
 };
 
 export let appSettings: AppSettings = {};
@@ -69,6 +73,11 @@ export function applyPersistedSettingsToStore(): void {
 
   mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"), "main");
   mainStore.dispatch(initGlobalSettingsAction(globalSettings), "main");
+  if (appSettings.media?.tape?.fileName) {
+    mainStore.dispatch(setTapeMediaAction(appSettings.media.tape), "main");
+  } else {
+    mainStore.dispatch(clearTapeMediaAction(), "main");
+  }
   mainStore.dispatch(
     setMachineTypeAction(
       machineSelection.machineId,
@@ -143,7 +152,8 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
   return {
     ...settings,
     theme: settings.theme ?? "dark",
-    globalSettings: normalizeGlobalSettings(settings.globalSettings ?? {})
+    globalSettings: normalizeGlobalSettings(settings.globalSettings ?? {}),
+    media: selectPersistedMedia(settings.media ?? {})
   };
 }
 
@@ -151,6 +161,7 @@ function refreshAppSettingsFromStore(): void {
   const state = mainStore.getState();
   appSettings.theme = state.theme;
   appSettings.globalSettings = selectPersistedGlobalSettings(state.globalSettings ?? {});
+  appSettings.media = selectPersistedMedia(state.media ?? {});
 }
 
 function selectPersistedGlobalSettings(globalSettings: Record<string, unknown>): Record<string, unknown> {
@@ -177,6 +188,25 @@ function normalizeGlobalSettings(globalSettings: Record<string, unknown>): Recor
   }
 
   return normalized;
+}
+
+function selectPersistedMedia(media: MediaState): MediaState {
+  if (!media.tape?.fileName) {
+    return {};
+  }
+
+  return {
+    tape: {
+      fileName: media.tape.fileName,
+      displayName: media.tape.displayName,
+      size: media.tape.size,
+      blockCount: media.tape.blockCount,
+      sourceFormat: media.tape.sourceFormat,
+      currentBlockIndex: 0,
+      status: "rewound",
+      warnings: media.tape.warnings
+    }
+  };
 }
 
 function getMachineSelectionFromSettings(globalSettings: Record<string, unknown>) {

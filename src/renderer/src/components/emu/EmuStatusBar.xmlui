@@ -9,7 +9,15 @@
   var.pc="{frameInfo.pc ?? state.value.emulatorState.pcValue ?? 0}"
   var.frequency="{frameInfo.baseClockFrequency ?? (modelId === 'ntsc' ? 3527500 : 3500000)}"
   var.tape="{state.value.media.tape}"
-  var.tapeText="{tape.displayName ?? 'No tape'}"
+  var.tapeBlockCount="{tape.blockCount ?? 0}"
+  var.tapeBlockNo="{tapeBlockCount > 0 ? Math.min((tape.currentBlockIndex ?? 0) + 1, tapeBlockCount) : 0}"
+  var.tapeBlockText="{tapeBlockCount > 0 ? tapeBlockNo + '/' + tapeBlockCount : ''}"
+  var.tapeLoaded="{!!tape.displayName}"
+  var.tapeEof="{tapeLoaded && tape.status === 'eof'}"
+  var.tapeRewound="{tapeLoaded && ((tape.currentBlockIndex ?? 0) === 0) && (tape.status === 'rewound' || !tape.status || tape.status === 'ready')}"
+  var.tapeIcon="{!tapeLoaded ? 'circle-slash' : tapeEof ? 'check' : tapeRewound ? 'reverse-tape' : 'play'}"
+  var.tapeTooltip="{!tapeLoaded ? 'No Tape' : tapeEof ? tapeBlockText : tapeRewound ? 'Tape loaded and rewound' : tapeBlockText}"
+  var.tapeText="{tape.displayName ?? ''}"
 >
   <SharedAppState id="state" />
   <HStack
@@ -45,7 +53,7 @@
     </HStack>
     <Stack width="16px" />
     <HStack gap="4px" verticalAlignment="center">
-      <StatusBarIcon name="reverse-tape" />
+      <StatusBarIcon name="{tapeIcon}" tooltip="{tapeTooltip}" />
       <StatusBarText value="{tapeText}" />
     </HStack>
     <SpaceFiller />

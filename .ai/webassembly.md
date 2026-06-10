@@ -41,6 +41,7 @@ The repository does not install this automatically. On macOS, Homebrew LLVM clan
     - `src/emu/sp48/sp48-keyboard.c`
     - `src/emu/sp48/sp48-beeper.c`
     - `src/emu/sp48/sp48-ports.c`
+    - `src/emu/sp48/sp48-tape.c`
   - Generated artifact: `public/wasm/sp48.wasm`
   - TypeScript adapter: `src/emu/sp48/WasmZxSpectrum48Machine.ts`
   - Controller adapter: `src/emu/sp48/Sp48MachineController.ts`
@@ -212,6 +213,34 @@ Keep Wasm audio scheduling aligned with the reference `AudioDeviceBase`: `_audio
 - non-fetch phases return `0xff`
 - `sp48ReadPort()` routes even-address `$FE` reads to keyboard/EAR and odd-address reads to the floating bus
 - diagnostic exports include `sp48ReadScreenMemoryOffset(offset)` and `sp48ReadFloatingBus()`
+
+## Current SP48 Tape Upload ABI
+
+`src/emu/tape/tape-parser.ts` keeps TAP/TZX parsing in TypeScript for now and normalizes supported files into `Sp48TapeBlock` objects. The parser currently supports TAP blocks and TZX blocks `$10`, `$11`, `$14`, and `$20`, while safely skipping a small set of metadata-only TZX blocks.
+
+`src/emu/sp48/sp48-tape.c` owns static tape media storage inside `sp48.wasm`:
+
+- `SP48_TAPE_MAX_BLOCKS`: 512
+- `SP48_TAPE_DATA_CAPACITY`: 4 MiB
+- `SP48_TAPE_FILENAME_CAPACITY`: 260 bytes
+
+There is no dynamic allocation. Tape upload uses:
+
+- `sp48TapeClear()`
+- `sp48TapeSetFileNameByte(index, value)`
+- `sp48TapeBeginUpload(blockCount, totalDataLength)`
+- `sp48TapeSetBlock(...)`
+- `sp48TapeWriteData(offset, value)`
+- `sp48TapeFinishUpload()`
+- `sp48TapeRewind()`
+
+Diagnostics and inspection exports include block/data capacities, loaded/eof/upload-active flags, current block index, block metadata getters, `sp48TapeDataPtr()`, and `sp48TapeFileNamePtr()`. `WasmZxSpectrum48Machine.uploadTape(blocks, fileName)` is the preferred TypeScript adapter entry point; avoid hand-writing byte loops elsewhere.
+
+`sp48Reset()` and `sp48HardReset()` preserve uploaded tape bytes and metadata, but reset playback position through `resetTapePlayback()`. `sp48TapeClear()` is the eject path and clears filename, metadata, loaded state, and playback flags.
+
+The current UI connection is in `src/renderer/messaging.ts`: `EmuApi.setTapeFile(...)` parses bytes with `parseTapeFile`, uploads the normalized blocks through the active `Sp48MachineController`, and only then dispatches `SET_TAPE_MEDIA` with filename, size, format, warnings, and block count. Invalid files and upload failures leave the previous media state intact. `src/emu/sp48/sp48-session.ts` exposes the active controller set by `EmulatorPanelReact`; keep this bridge small and renderer-only.
+
+Normal tape load playback is implemented in `sp48-tape.c`. `sp48ExecuteInstruction()` calls `updateTapeMode()` after each instruction; entering ROM PC `$056C` switches to load mode and starts the next tape block. In load mode, `sp48ReadPort()` routes `$FE` bit 6 from `sp48TapeGetEarBit()` and records EAR transitions for beeper audio. Exported diagnostics include tape mode, play phase, current EAR bit, data index, bit mask, and start tact. `EmulatorPanelReact` publishes Wasm tape mode/block progress back to shared media state so the EMU status bar can switch from rewound to loading/EOF indications.
 
 ## Sass Warning Note
 

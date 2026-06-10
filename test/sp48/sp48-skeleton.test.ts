@@ -21,6 +21,8 @@ const RenderingPhase = {
 
 const SpectrumColors = {
   Black: 0xff000000,
+  Color1: 0xffaa0000,
+  Color2: 0xff0000aa,
   Blue: 0xff0000aa,
   Magenta: 0xffaa00aa,
   White: 0xffaaaaaa,
@@ -246,6 +248,26 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
 
     expect(machine.getPortFeValue()).toBe(0x1b);
     expect(machine.getBorderColor()).toBe(3);
+  });
+
+  it("renders border color changes within a frame", async () => {
+    const machine = await createMachine();
+    const rom = new Uint8Array(0x4000);
+    const program = [
+      0x3e, 0x01, 0xd3, 0xfe,
+      ...new Array(4_000).fill(0x00),
+      0x3e, 0x02, 0xd3, 0xfe,
+      0x76
+    ];
+    rom.set(program);
+
+    machine.uploadRomBytes(rom);
+    machine.hardReset();
+    machine.executeMachineFrame();
+
+    expect(machine.getBorderColor()).toBe(2);
+    expect(machine.getPixelBuffer()[visiblePixelIndex(machine, 0, 0)]).toBe(SpectrumColors.Color1);
+    expect(machine.getPixelBuffer()[visiblePixelIndex(machine, 0, 100)]).toBe(SpectrumColors.Color2);
   });
 
   it("tracks EAR transition tacts for passive port $FE reads", async () => {

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { createSp48MachineController } from "@emu/sp48/Sp48MachineController";
+import { createTapeDataBlock } from "@emu/tape/tape-parser";
 
 async function createController() {
   const wasmPath = resolve(process.cwd(), "public/wasm/sp48.wasm");
@@ -94,5 +95,26 @@ describe("SP48 Wasm machine lifecycle", () => {
     expect(controller.machine.getKeyboardLine(2)).toBe(0x01);
     expect(controller.machine.readPort(0xfbfe)).toBe(0xbe);
     expect(controller.renderInstantScreen().length).toBe(352 * (288 + 4));
+  });
+
+  it("routes tape media upload and eject through the controller", async () => {
+    const controller = await createController();
+    const block = createTapeDataBlock(new Uint8Array([0x00, 0x03, 0x13, 0x37]));
+
+    controller.setTape([block], "controller.tap");
+
+    expect(controller.machine.isTapeLoaded()).toBe(true);
+    expect(controller.machine.getTapeBlockCount()).toBe(1);
+    expect(controller.machine.getTapeDataLength()).toBe(4);
+    expect([...controller.machine.getTapeData().slice(0, 4)]).toEqual([0x00, 0x03, 0x13, 0x37]);
+
+    controller.issueMachineCommand("rewind");
+
+    expect(controller.machine.getTapeCurrentBlockIndex()).toBe(0);
+
+    controller.clearTape();
+
+    expect(controller.machine.isTapeLoaded()).toBe(false);
+    expect(controller.machine.getTapeBlockCount()).toBe(0);
   });
 });

@@ -28,6 +28,10 @@ export type TapeMediaState = {
   displayName?: string;
   size?: number;
   blockCount?: number;
+  currentBlockIndex?: number;
+  status?: "ready" | "rewound" | "loading" | "paused" | "eof";
+  sourceFormat?: "tap" | "tzx";
+  warnings?: string[];
   error?: string;
 };
 

@@ -11,11 +11,15 @@ static inline int16_t clampAudioWord(double value) {
   return (int16_t)value;
 }
 
+static inline uint8_t effectiveAudioEarBit(void) {
+  return sp48TapeMode == SP48_TAPE_MODE_LOAD ? sp48TapeEarBit : sp48EarBit;
+}
+
 static void resetAudio(void) {
   sp48AudioSampleCount = 0u;
   sp48AudioTransitionCount = 0u;
   sp48AudioFrameStartTact = sp48Tacts;
-  sp48AudioFrameStartEarBit = sp48EarBit;
+  sp48AudioFrameStartEarBit = effectiveAudioEarBit();
   sp48AudioFrameStartMicBit = sp48MicBit;
   sp48AudioSampleLength = (double)sp48BaseClockFrequency / (double)sp48AudioSampleRate;
   sp48AudioNextSampleTact = 0.0;
@@ -33,7 +37,7 @@ static void beginAudioFrame(void) {
   sp48AudioSampleCount = 0u;
   sp48AudioTransitionCount = 0u;
   sp48AudioFrameStartTact = sp48Tacts;
-  sp48AudioFrameStartEarBit = sp48EarBit;
+  sp48AudioFrameStartEarBit = effectiveAudioEarBit();
   sp48AudioFrameStartMicBit = sp48MicBit;
 }
 

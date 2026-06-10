@@ -1,12 +1,13 @@
 <Component
   name="Toolbar"
-  var.isEmu="{window.location.search.indexOf('window=emulator') >= 0}"
+  var.isEmu="{state.isEmulatorWindow()}"
   var.machineState="{state.value.emulatorState.machineState ?? 0}"
   var.isRunning="{machineState === 1}"
   var.isPaused="{machineState === 3}"
   var.keyboardVisible="{state.value.globalSettings.emuViewOptions.showKeyboard ?? false}"
   var.instantScreenVisible="{state.value.globalSettings.demo.instantScreenVisible ?? false}"
   var.fastLoad="{state.value.globalSettings.emuOptions.fastLoad ?? true}"
+  var.hasTape="{!!state.value.media.tape.displayName}"
   var.muted="{state.value.emulatorState.soundMuted ?? false}"
   var.syncSourceBreakpoints="{state.value.globalSettings.ide.syncSourceBreakpoints ?? false}"
   var.memoryPanelVisible="{state.value.globalSettings.demo.ideMemoryVisible ?? false}"
@@ -105,6 +106,13 @@
       title="Fast LOAD mode"
       selected="{fastLoad}"
       onClick="state.setSettingValue('emuOptions.fastLoad', !fastLoad)"
+    />
+    <ToolbarButton
+      when="{isEmu}"
+      iconName="reverse-tape"
+      title="Rewind Tape"
+      enable="{hasTape}"
+      onClick="emuCommands.issueMachineCommand('rewind')"
     />
 
     <ToolbarSeparator when="{!isEmu}" />

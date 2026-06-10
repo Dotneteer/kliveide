@@ -5,19 +5,25 @@ import {
   resolveMachineSelection,
   type MachineSelection
 } from "../../../common/machines/machine-registry";
-import { setMachineStateAction, setSp48FrameInfoAction } from "../../../common/state/actions";
+import {
+  setMachineStateAction,
+  setSp48FrameInfoAction,
+  setTapeMediaAction
+} from "../../../common/state/actions";
 import {
   createSp48MachineController,
   Sp48MachineController,
   type Sp48FrameCompletedEvent,
   type Sp48MachineCommand
 } from "../../../emu/sp48/Sp48MachineController";
+import { Sp48TapeMode } from "../../../emu/sp48/WasmZxSpectrum48Machine";
 import {
   SP48_KEY_EVENT,
   dispatchSp48KeyStatus,
   mapPhysicalKeyToSp48Keys,
   type Sp48KeyEventDetail
 } from "../../../emu/sp48/sp48-keyboard";
+import { getActiveSp48Controller, setActiveSp48Controller } from "../../../emu/sp48/sp48-session";
 import { readBinaryFile, useDispatch, useSharedState } from "../../shared-store";
 import { EmulatorOverlay } from "./EmulatorOverlay";
 import styles from "./EmulatorPanel.module.scss";
@@ -39,14 +45,17 @@ export const EmulatorPanelReact = () => {
   const lastCommandSequenceRef = useRef(0);
   const renderInstantScreenRef = useRef<(() => void) | null>(null);
   const avgFrameTimeRef = useRef(0);
+  const tapeStatusSignatureRef = useRef("");
   const [overlay, setOverlay] = useState<string | null>("Loading machine...");
   const [showOverlay, setShowOverlay] = useState(true);
   const [error, setError] = useState<string>();
   const sharedState = useSharedState();
+  const tapeMediaRef = useRef(sharedState.media?.tape);
   const dispatch = useDispatch();
   const commandSequence = sharedState.emulatorState?.machineCommandSequence ?? 0;
   const lastMachineCommand = sharedState.emulatorState?.lastMachineCommand as Sp48MachineCommand | undefined;
   const soundLevel = sharedState.emulatorState?.soundLevel ?? 0.8;
+  const fastLoad = sharedState.globalSettings?.emuOptions?.fastLoad ?? true;
   const machineSelection = resolveMachineSelection(
     sharedState.emulatorState?.machineId,
     sharedState.emulatorState?.modelId,
@@ -54,6 +63,7 @@ export const EmulatorPanelReact = () => {
   );
   const machineKey = getMachineSelectionKey(machineSelection);
   const soundLevelRef = useRef(soundLevel);
+  const fastLoadRef = useRef(fastLoad);
   const { beeperRenderer, initAudio } = useEmulatorAudio();
 
   const {
@@ -84,6 +94,15 @@ export const EmulatorPanelReact = () => {
   }, [soundLevel]);
 
   useEffect(() => {
+    tapeMediaRef.current = sharedState.media?.tape;
+  }, [sharedState.media?.tape]);
+
+  useEffect(() => {
+    fastLoadRef.current = fastLoad;
+    controllerRef.current?.setTapeFastLoad(fastLoad);
+  }, [fastLoad]);
+
+  useEffect(() => {
     let disposed = false;
     let machineLoopTimer = 0;
     const pressedPhysicalKeys = new Map<string, number[]>();
@@ -94,11 +113,14 @@ export const EmulatorPanelReact = () => {
         const { machine } = controller;
         const audioSampleRate = await initAudio(machine.tactsInFrame, machine.baseClockFrequency);
         machine.setAudioSampleRate(audioSampleRate);
-        controllerRef.current = controller;
 
         if (disposed) {
           return;
         }
+
+        controllerRef.current = controller;
+        controller.setTapeFastLoad(fastLoadRef.current);
+        setActiveSp48Controller(controller);
 
         updateScreenDimensions();
         if (created) {
@@ -174,6 +196,7 @@ export const EmulatorPanelReact = () => {
             pc: controller.machine.getCpuPc(),
             baseClockFrequency: controller.machine.baseClockFrequency
           }));
+          publishTapeStatus(controller);
           beeperRenderer.current?.storeSamples(event.audioSamples, soundLevelRef.current);
           beeperRenderer.current?.play();
         };
@@ -216,6 +239,9 @@ export const EmulatorPanelReact = () => {
           beeperRenderer.current?.suspend();
           renderInstantScreenRef.current = null;
           controllerRef.current = null;
+          if (getActiveSp48Controller() === controller) {
+            setActiveSp48Controller(null);
+          }
         };
       } catch (ex) {
         if (!disposed) {
@@ -281,6 +307,37 @@ export const EmulatorPanelReact = () => {
         beeperRenderer.current?.suspend();
         break;
     }
+  }
+
+  function publishTapeStatus(controller: Sp48MachineController): void {
+    const tape = tapeMediaRef.current;
+    if (!tape?.displayName) {
+      tapeStatusSignatureRef.current = "";
+      return;
+    }
+
+    const blockCount = tape.blockCount ?? 0;
+    const rawBlockIndex = controller.machine.getTapeCurrentBlockIndex();
+    const currentBlockIndex =
+      blockCount > 0 ? Math.min(rawBlockIndex, blockCount - 1) : rawBlockIndex;
+    const status = controller.machine.isTapeEof()
+      ? "eof"
+      : controller.machine.getTapeMode() === Sp48TapeMode.Load
+        ? "loading"
+        : currentBlockIndex === 0
+          ? "rewound"
+          : "ready";
+    const signature = `${status}:${currentBlockIndex}:${blockCount}`;
+    if (signature === tapeStatusSignatureRef.current) {
+      return;
+    }
+
+    tapeStatusSignatureRef.current = signature;
+    dispatch(setTapeMediaAction({
+      ...tape,
+      currentBlockIndex,
+      status
+    }));
   }
 
   return (

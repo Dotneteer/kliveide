@@ -68,7 +68,7 @@ export const KliveTheme: ThemeDefinition = {
         "textColor-IdeStatusBar": "#000000",
         "backgroundColor-EmuKeyboard": "#202020",
         "backgroundColor-key-EmuKeyboard": "#707070",
-        "backgroundColor-highlightedKey-EmuKeyboard": "orangered",
+        "backgroundColor-highlightedKey-EmuKeyboard": "#ff4500",
         "color-mainKey-EmuKeyboard": "#e0e0e0",
         "color-symbolKey-EmuKeyboard": "#c00000",
         "color-aboveKey-EmuKeyboard": "#00a000",

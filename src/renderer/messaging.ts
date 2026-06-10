@@ -21,6 +21,12 @@ import {
   setThemeAction
 } from "../common/state/actions";
 import {
+  clearQueuedSp48Tape,
+  getActiveSp48Controller,
+  uploadTapeToActiveSp48ControllerOrQueue
+} from "../emu/sp48/sp48-session";
+import { parseTapeFile } from "../emu/tape/tape-parser";
+import {
   dispatchSharedAction,
   getSharedState,
   setMainApi,
@@ -136,8 +142,35 @@ class EmuMessageProcessor {
     _suppressError?: boolean
   ) {
     if (!file || contents.byteLength === 0) {
+      clearQueuedSp48Tape();
+      getActiveSp48Controller()?.clearTape();
       dispatchSharedAction(clearTapeMediaAction(), "emu");
       rememberStatus("EmuApi.setTapeFile ejected tape.");
+      return;
+    }
+
+    let parsed: ReturnType<typeof parseTapeFile>;
+    try {
+      parsed = parseTapeFile(contents);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      if (!_suppressError) {
+        rememberStatus(`Tape file error: ${error}`);
+      }
+      return;
+    }
+
+    try {
+      const uploadResult = uploadTapeToActiveSp48ControllerOrQueue(parsed.blocks, file);
+      console.info(
+        `[sp48-tape] emu-api-set-tape file="${getFileName(file)}" format=${parsed.format.toUpperCase()} ` +
+          `blocks=${parsed.blocks.length} bytes=${contents.byteLength} result=${uploadResult}`
+      );
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      if (!_suppressError) {
+        rememberStatus(`Tape upload error: ${error}`);
+      }
       return;
     }
 
@@ -146,11 +179,18 @@ class EmuMessageProcessor {
         fileName: file,
         displayName: getFileName(file),
         size: contents.byteLength,
-        blockCount: 0
+        blockCount: parsed.blocks.length,
+        currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        status: parsed.blocks.length > 0 ? "rewound" : undefined,
+        sourceFormat: parsed.format,
+        warnings: parsed.warnings
       }),
       "emu"
     );
-    rememberStatus(`EmuApi.setTapeFile received ${getFileName(file)} (${contents.byteLength} bytes).`);
+    rememberStatus(
+      `EmuApi.setTapeFile parsed ${getFileName(file)} as ${parsed.format.toUpperCase()} ` +
+        `(${parsed.blocks.length} blocks, ${contents.byteLength} bytes).`
+    );
   }
 }
 
@@ -163,15 +203,32 @@ class IdeMessageProcessor {
 
 function rememberStatus(status: string): string {
   latestStatus = status;
-  console.info(`[${windowKind}] ${status}`);
   return status;
 }
 
 function issueDemoMachineCommand(command: EmuMachineCommand, source: "main" | "emu" = "emu"): void {
   dispatchSharedAction(issueMachineCommandAction(command), source);
+  if (command === "rewind") {
+    markTapeRewound(source);
+  }
 }
 
 function getFileName(file: string): string {
   const normalized = file.replace(/\\/g, "/");
   return normalized.slice(normalized.lastIndexOf("/") + 1) || file;
+}
+
+function markTapeRewound(source: "main" | "emu"): void {
+  const tape = getSharedState().media?.tape;
+  if (!tape?.displayName) {
+    return;
+  }
+  dispatchSharedAction(
+    setTapeMediaAction({
+      ...tape,
+      currentBlockIndex: 0,
+      status: "rewound"
+    }),
+    source
+  );
 }
