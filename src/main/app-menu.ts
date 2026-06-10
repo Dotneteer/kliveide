@@ -27,6 +27,7 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_FAST_LOAD,
   SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_MAXIMIZE_TOOLS,
   SETTING_IDE_OPEN_LAST_PROJECT,
@@ -38,11 +39,16 @@ import {
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
-import { dimMenuAction, setThemeAction } from "../common/state/actions";
+import {
+  clearTapeMediaAction,
+  dimMenuAction,
+  setTapeMediaAction,
+  setThemeAction
+} from "../common/state/actions";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
 import type { EmuMachineCommand } from "../common/messaging/EmuApi";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
-import { MF_ALLOW_SCAN_LINES } from "../common/machines/constants";
+import { MF_ALLOW_SCAN_LINES, MF_TAPE_SUPPORT } from "../common/machines/constants";
 import {
   getMachineInfo,
   machineRegistry,
@@ -56,6 +62,7 @@ import {
   saveAppSettings,
   setSettingValue
 } from "./settings";
+import { MEDIA_TAPE } from "../common/structs/project-const";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
@@ -408,6 +415,10 @@ function createMachineMenu(): MenuItemConstructorOptions {
   const canStopOrRestart = isRunning || isPaused;
   const canStep = isPaused;
   const machineTypesMenu = createMachineTypesMenu();
+  const machineInfo = getMachineInfo(appState.emulatorState?.machineId);
+  const supportsTape = !!machineInfo?.features?.[MF_TAPE_SUPPORT];
+  const tapeMedia = appState.media?.[MEDIA_TAPE];
+  const hasTape = !!tapeMedia?.displayName;
 
   return {
     label: "Machine",
@@ -446,6 +457,29 @@ function createMachineMenu(): MenuItemConstructorOptions {
         enabled: canStopOrRestart,
         click: issueMachineCommand("restart")
       },
+      ...(supportsTape
+        ? [
+            { type: "separator" as const },
+            createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD, "emu"),
+            {
+              id: "rewind_tape",
+              label: "Rewind Tape",
+              enabled: hasTape,
+              click: issueMachineCommand("rewind")
+            },
+            {
+              id: "select_tape_file",
+              label: "Select Tape File...",
+              click: selectTapeFileSkeleton
+            },
+            {
+              id: "eject_tape",
+              label: "Eject Tape",
+              enabled: hasTape,
+              click: ejectTapeSkeleton
+            }
+          ]
+        : []),
       { type: "separator" },
       {
         id: "debug",
@@ -638,6 +672,22 @@ async function selectMachineType(machineId: string, modelId?: string): Promise<v
   if (machine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
     setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
   }
+}
+
+async function selectTapeFileSkeleton(): Promise<void> {
+  mainStore.dispatch(
+    setTapeMediaAction({
+      fileName: "__tape_ui_skeleton__",
+      displayName: "Tape UI skeleton",
+      size: 0,
+      blockCount: 0
+    }),
+    "main"
+  );
+}
+
+async function ejectTapeSkeleton(): Promise<void> {
+  mainStore.dispatch(clearTapeMediaAction(), "main");
 }
 
 function createIdeMenu(context: MenuContext): MenuItemConstructorOptions {
@@ -863,6 +913,7 @@ function getMenuRefreshSignature(): string {
     machineId: state.emulatorState?.machineId,
     modelId: state.emulatorState?.modelId,
     machineState: state.emulatorState?.machineState,
+    media: state.media,
     globalSettings: state.globalSettings
   });
 }

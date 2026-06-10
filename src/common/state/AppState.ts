@@ -20,6 +20,19 @@ export type AppState = {
   theme?: string;
   globalSettings?: Record<string, any>;
   emulatorState?: EmulatorState;
+  media?: MediaState;
+};
+
+export type TapeMediaState = {
+  fileName?: string;
+  displayName?: string;
+  size?: number;
+  blockCount?: number;
+  error?: string;
+};
+
+export type MediaState = {
+  tape?: TapeMediaState;
 };
 
 export type EmulatorState = {
@@ -59,6 +72,7 @@ export const initialAppState: AppState = {
   ideFocused: false,
   dimMenu: false,
   globalSettings: {},
+  media: {},
   emulatorState: {
     machineId: MI_SPECTRUM_48,
     modelId: "pal",

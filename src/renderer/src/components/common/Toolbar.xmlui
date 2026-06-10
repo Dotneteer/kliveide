@@ -6,6 +6,7 @@
   var.isPaused="{machineState === 3}"
   var.keyboardVisible="{state.value.globalSettings.emuViewOptions.showKeyboard ?? false}"
   var.instantScreenVisible="{state.value.globalSettings.demo.instantScreenVisible ?? false}"
+  var.fastLoad="{state.value.globalSettings.emuOptions.fastLoad ?? true}"
   var.muted="{state.value.emulatorState.soundMuted ?? false}"
   var.syncSourceBreakpoints="{state.value.globalSettings.ide.syncSourceBreakpoints ?? false}"
   var.memoryPanelVisible="{state.value.globalSettings.demo.ideMemoryVisible ?? false}"
@@ -96,6 +97,14 @@
       title="{muted ? 'Unmute Sound' : 'Mute Sound'}"
       selected="{muted}"
       onClick="state.dispatch({ type: 'MUTE_SOUND', payload: { flag: !muted } })"
+    />
+    <ToolbarSeparator when="{isEmu}" />
+    <ToolbarButton
+      when="{isEmu}"
+      iconName="rocket"
+      title="Fast LOAD mode"
+      selected="{fastLoad}"
+      onClick="state.setSettingValue('emuOptions.fastLoad', !fastLoad)"
     />
 
     <ToolbarSeparator when="{!isEmu}" />

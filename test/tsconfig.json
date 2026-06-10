@@ -20,6 +20,7 @@
   },
   "include": [
     "./dummy.test.ts",
+    "./common/media-state.test.ts",
     "./sp48/sp48-lifecycle.test.ts",
     "./sp48/sp48-skeleton.test.ts",
     "./z80/interrupts.test.ts",

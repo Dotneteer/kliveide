@@ -2,6 +2,7 @@ import { ActionCreator } from "./Action";
 import type { MachineCommand } from "../abstractions/MachineCommand";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import type { MachineConfigSet } from "../machines/info-types";
+import type { TapeMediaState } from "./AppState";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -53,6 +54,15 @@ export const setSp48FrameInfoAction: ActionCreator = (
 ) => ({
   type: "SET_SP48_FRAME_INFO",
   payload: { value }
+});
+
+export const setTapeMediaAction: ActionCreator = (value: TapeMediaState) => ({
+  type: "SET_TAPE_MEDIA",
+  payload: { value }
+});
+
+export const clearTapeMediaAction: ActionCreator = () => ({
+  type: "CLEAR_TAPE_MEDIA"
 });
 
 export const muteSoundAction: ActionCreator = (flag: boolean) => ({

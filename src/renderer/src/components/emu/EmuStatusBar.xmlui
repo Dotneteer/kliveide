@@ -8,6 +8,8 @@
   var.avgFrameTime="{frameInfo.avgFrameTimeInMs ?? 0}"
   var.pc="{frameInfo.pc ?? state.value.emulatorState.pcValue ?? 0}"
   var.frequency="{frameInfo.baseClockFrequency ?? (modelId === 'ntsc' ? 3527500 : 3500000)}"
+  var.tape="{state.value.media.tape}"
+  var.tapeText="{tape.displayName ?? 'No tape'}"
 >
   <SharedAppState id="state" />
   <HStack
@@ -40,6 +42,11 @@
       <StatusBarText
         value="{(pc & 0xffff).toString(16).toUpperCase().padStart(4, '0')}"
       />
+    </HStack>
+    <Stack width="16px" />
+    <HStack gap="4px" verticalAlignment="center">
+      <StatusBarIcon name="reverse-tape" />
+      <StatusBarText value="{tapeText}" />
     </HStack>
     <SpaceFiller />
     <HStack gap="4px">

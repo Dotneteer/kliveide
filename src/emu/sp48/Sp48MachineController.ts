@@ -105,6 +105,9 @@ export class Sp48MachineController {
           this.executeStepOut();
         }
         break;
+
+      case "rewind":
+        break;
     }
     return this.state;
   }
