@@ -24,6 +24,7 @@ export type AppSettings = {
     ideWindow?: WindowState;
     showIdeOnStartup?: boolean;
   };
+  folders?: Record<string, string>;
   theme?: string;
   globalSettings?: Record<string, unknown>;
 };

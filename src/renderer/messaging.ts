@@ -13,9 +13,11 @@ import {
   type ResponseMessage
 } from "../common/messaging/messages-core";
 import {
+  clearTapeMediaAction,
   issueMachineCommandAction,
   setGlobalSettingAction,
   setMachineTypeAction,
+  setTapeMediaAction,
   setThemeAction
 } from "../common/state/actions";
 import {
@@ -126,6 +128,30 @@ class EmuMessageProcessor {
     issueDemoMachineCommand(command, "emu");
     rememberStatus(`EmuApi.issueMachineCommand received command=${command}.`);
   }
+
+  async setTapeFile(
+    file: string,
+    contents: Uint8Array,
+    _confirm?: boolean,
+    _suppressError?: boolean
+  ) {
+    if (!file || contents.byteLength === 0) {
+      dispatchSharedAction(clearTapeMediaAction(), "emu");
+      rememberStatus("EmuApi.setTapeFile ejected tape.");
+      return;
+    }
+
+    dispatchSharedAction(
+      setTapeMediaAction({
+        fileName: file,
+        displayName: getFileName(file),
+        size: contents.byteLength,
+        blockCount: 0
+      }),
+      "emu"
+    );
+    rememberStatus(`EmuApi.setTapeFile received ${getFileName(file)} (${contents.byteLength} bytes).`);
+  }
 }
 
 class IdeMessageProcessor {
@@ -143,4 +169,9 @@ function rememberStatus(status: string): string {
 
 function issueDemoMachineCommand(command: EmuMachineCommand, source: "main" | "emu" = "emu"): void {
   dispatchSharedAction(issueMachineCommandAction(command), source);
+}
+
+function getFileName(file: string): string {
+  const normalized = file.replace(/\\/g, "/");
+  return normalized.slice(normalized.lastIndexOf("/") + 1) || file;
 }

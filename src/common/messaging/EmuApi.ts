@@ -32,6 +32,22 @@ class EmuApiImpl {
   async issueMachineCommand(_command: EmuMachineCommand): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Sets the tape file for the emulator.
+   * @param _file The tape file name.
+   * @param _contents The tape file contents as Uint8Array.
+   * @param _confirm Optional flag to show confirmation.
+   * @param _suppressError Optional flag to suppress errors.
+   */
+  async setTapeFile(
+    _file: string,
+    _contents: Uint8Array,
+    _confirm?: boolean,
+    _suppressError?: boolean
+  ): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 export type EmuApi = EmuApiImpl;

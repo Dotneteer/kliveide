@@ -6,9 +6,12 @@ import {
   shell,
   type MessageBoxOptions,
   type MessageBoxReturnValue,
-  type MenuItemConstructorOptions
+  type MenuItemConstructorOptions,
+  type OpenDialogOptions
 } from "electron";
+import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
 import {
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
   SETTING_EDITOR_AUTOCOMPLETE,
@@ -39,12 +42,7 @@ import {
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
-import {
-  clearTapeMediaAction,
-  dimMenuAction,
-  setTapeMediaAction,
-  setThemeAction
-} from "../common/state/actions";
+import { dimMenuAction, setThemeAction } from "../common/state/actions";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
 import type { EmuMachineCommand } from "../common/messaging/EmuApi";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -69,6 +67,7 @@ export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 type MenuContext = "emu" | "ide";
 
 const SYSTEM_MENU_ID = "system_menu";
+const TAPE_FILE_FOLDER = "tapeFileFolder";
 
 let currentEmuWindow: BrowserWindow | null = null;
 let currentIdeWindow: BrowserWindow | null = null;
@@ -470,13 +469,13 @@ function createMachineMenu(): MenuItemConstructorOptions {
             {
               id: "select_tape_file",
               label: "Select Tape File...",
-              click: selectTapeFileSkeleton
+              click: selectTapeFile
             },
             {
               id: "eject_tape",
               label: "Eject Tape",
               enabled: hasTape,
-              click: ejectTapeSkeleton
+              click: ejectTape
             }
           ]
         : []),
@@ -674,20 +673,81 @@ async function selectMachineType(machineId: string, modelId?: string): Promise<v
   }
 }
 
-async function selectTapeFileSkeleton(): Promise<void> {
-  mainStore.dispatch(
-    setTapeMediaAction({
-      fileName: "__tape_ui_skeleton__",
-      displayName: "Tape UI skeleton",
-      size: 0,
-      blockCount: 0
-    }),
-    "main"
-  );
+async function selectTapeFile(): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  const currentTape = mainStore.getState().media?.[MEDIA_TAPE]?.fileName;
+  const defaultPath =
+    appSettings.folders?.[TAPE_FILE_FOLDER] ||
+    (currentTape ? path.dirname(currentTape) : app.getPath("home"));
+  const dialogOptions: OpenDialogOptions = {
+    title: "Select Tape File",
+    defaultPath,
+    filters: [
+      { name: "Tape Files", extensions: ["tap", "tzx"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  };
+  const dialogResult = window
+    ? await dialog.showOpenDialog(window, dialogOptions)
+    : await dialog.showOpenDialog(dialogOptions);
+
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) {
+    return;
+  }
+
+  await setSelectedTapeFile(dialogResult.filePaths[0]);
 }
 
-async function ejectTapeSkeleton(): Promise<void> {
-  mainStore.dispatch(clearTapeMediaAction(), "main");
+async function setSelectedTapeFile(fileName: string): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    const contents = new Uint8Array(fs.readFileSync(fileName));
+    appSettings.folders ??= {};
+    appSettings.folders[TAPE_FILE_FOLDER] = path.dirname(fileName);
+    saveAppSettings();
+    await getEmuApi().setTapeFile(fileName, contents);
+  } catch (err) {
+    await showMessageBox(window, {
+      type: "error",
+      title: "Tape file error",
+      message: "Could not read the selected tape file.",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
+async function ejectTape(): Promise<void> {
+  const window = currentEmuWindow ?? BrowserWindow.getFocusedWindow();
+  const result = await showMessageBox(window, {
+    type: "question",
+    buttons: ["Yes", "No"],
+    defaultId: 1,
+    cancelId: 1,
+    title: "Eject Tape",
+    message: "Are you sure you want to eject the tape?"
+  });
+
+  if (result.response !== 0) {
+    return;
+  }
+
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    await getEmuApi().setTapeFile("", new Uint8Array(0));
+  } catch (err) {
+    await showMessageBox(window, {
+      type: "error",
+      title: "Tape eject failed",
+      message: "Could not eject the tape.",
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
 }
 
 function createIdeMenu(context: MenuContext): MenuItemConstructorOptions {
