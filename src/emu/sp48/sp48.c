@@ -14,7 +14,6 @@
 #define SP48_BASE_CLOCK_FREQUENCY_NTSC 3527500u
 #define SP48_DEFAULT_SAMPLE_RATE 44100u
 #define SP48_AUDIO_SAMPLE_CAPACITY 2048u
-#define SP48_BORDER_TRANSITION_CAPACITY 4096u
 #define SP48_AUDIO_SAMPLE_SCALE 32767.0
 #define SP48_TAPE_MAX_BLOCKS 512u
 #define SP48_TAPE_DATA_CAPACITY 0x400000u
@@ -39,7 +38,6 @@
 #define SP48_DIAGNOSTIC_TAPE_BLOCK_OVERFLOW 0x00000004u
 #define SP48_DIAGNOSTIC_TAPE_DATA_OVERFLOW 0x00000008u
 #define SP48_DIAGNOSTIC_TAPE_UPLOAD_INCOMPLETE 0x00000010u
-#define SP48_DIAGNOSTIC_BORDER_TRANSITION_OVERFLOW 0x00000020u
 #define SP48_DIAGNOSTIC_TAPE_SAVE_DATA_OVERFLOW 0x00000040u
 #define SP48_DIAGNOSTIC_TAPE_SAVE_BLOCK_OVERFLOW 0x00000080u
 #define SP48_DIAGNOSTIC_TAPE_SAVE_MALFORMED_PULSE 0x00000100u
@@ -106,11 +104,6 @@ typedef struct Sp48AudioSample {
   int16_t right;
 } Sp48AudioSample;
 
-typedef struct Sp48BorderTransition {
-  uint32_t tact;
-  uint8_t color;
-} Sp48BorderTransition;
-
 typedef struct Sp48TapeBlock {
   uint32_t offset;
   uint32_t length;
@@ -142,7 +135,6 @@ static uint16_t sp48RenderingAttributeAddress[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48RenderingPixelIndex[SP48_TACTS_PER_FRAME_MAX];
 static uint32_t sp48PixelBuffer[SP48_PIXEL_BUFFER_WORDS_MAX];
 static Sp48AudioSample sp48AudioSamples[SP48_AUDIO_SAMPLE_CAPACITY];
-static Sp48BorderTransition sp48BorderTransitions[SP48_BORDER_TRANSITION_CAPACITY];
 static Sp48TapeBlock sp48TapeBlocks[SP48_TAPE_MAX_BLOCKS];
 static Sp48SavedTapeBlock sp48SavedTapeBlocks[SP48_TAPE_SAVE_MAX_BLOCKS];
 static uint8_t sp48TapeData[SP48_TAPE_DATA_CAPACITY];
@@ -187,9 +179,12 @@ static uint32_t sp48RomUploadCount;
 static uint32_t sp48RomChecksum;
 static uint8_t sp48PortFeValue;
 static uint8_t sp48BorderColor;
-static uint8_t sp48BorderFrameStartColor;
 static uint32_t sp48BorderFrameStartTact;
-static uint32_t sp48BorderTransitionCount;
+static uint32_t sp48LastRenderedFrameTact;
+static uint8_t sp48PixelByte1;
+static uint8_t sp48PixelByte2;
+static uint8_t sp48AttrByte1;
+static uint8_t sp48AttrByte2;
 static uint8_t sp48EarBit;
 static uint8_t sp48MicBit;
 static uint8_t sp48BeeperLevel;
@@ -241,6 +236,7 @@ static uint32_t sp48TapeSaveCurrentBlockOffset;
 static uint32_t sp48TapeSaveCurrentBlockLength;
 
 static void setNextAudioSample(void);
+static void renderUlaUntilCurrentTact(void);
 
 #include "sp48-memory.c"
 #include "sp48-ula.c"
@@ -388,7 +384,7 @@ uint32_t sp48ExecuteFrame(void) {
   sp48FrameCompleted = 1u;
   sp48NextFrameStartTact += sp48TactsInFrame;
   sp48Frames++;
-  renderUlaDisplay();
+  renderUlaUntilCurrentTact();
   return 0u;
 }
 

@@ -52,14 +52,6 @@ static inline uint8_t flashFlag(void) {
   return ((sp48Frames / 16u) & 0x01u) == 0u ? 1u : 0u;
 }
 
-static inline uint16_t screenPixelAddress(uint32_t y, uint32_t xByte) {
-  return (uint16_t)(0x4000u + ((y & 0xc0u) << 5u) + ((y & 0x07u) << 8u) + ((y & 0x38u) << 2u) + xByte);
-}
-
-static inline uint16_t screenAttributeAddress(uint32_t y, uint32_t xByte) {
-  return (uint16_t)(0x5800u + ((y >> 3u) << 5u) + xByte);
-}
-
 static inline uint32_t getUlaPixelColor(uint8_t pixelSet, uint8_t attr) {
   uint8_t bright = (attr & 0x40u) >> 3u;
   uint8_t ink = (uint8_t)((attr & 0x07u) | bright);
@@ -269,72 +261,116 @@ static inline uint8_t shouldRaiseInterrupt(void) {
 
 static void beginBorderFrame(uint32_t frameStartTact) {
   sp48BorderFrameStartTact = frameStartTact;
-  sp48BorderFrameStartColor = sp48BorderColor;
-  sp48BorderTransitionCount = 0u;
+  sp48LastRenderedFrameTact = 0u;
+  sp48PixelByte1 = 0u;
+  sp48PixelByte2 = 0u;
+  sp48AttrByte1 = 0u;
+  sp48AttrByte2 = 0u;
 }
 
-static void recordBorderTransition(uint32_t tact, uint8_t color) {
-  if (sp48BorderTransitionCount >= SP48_BORDER_TRANSITION_CAPACITY) {
-    sp48DiagnosticFlags |= SP48_DIAGNOSTIC_BORDER_TRANSITION_OVERFLOW;
+static inline void renderBorderPixelsAt(uint32_t index) {
+  if (index + 1u >= pixelBufferWordCount()) {
+    return;
+  }
+  const uint32_t pixel = getBorderPixel(sp48BorderColor);
+  sp48PixelBuffer[index] = pixel;
+  sp48PixelBuffer[index + 1u] = pixel;
+}
+
+static inline void renderByte1PixelsAt(uint32_t index) {
+  if (index + 1u >= pixelBufferWordCount()) {
+    return;
+  }
+  sp48PixelBuffer[index] = getUlaPixelColor(sp48PixelByte1 & 0x80u, sp48AttrByte1);
+  sp48PixelBuffer[index + 1u] = getUlaPixelColor(sp48PixelByte1 & 0x40u, sp48AttrByte1);
+  sp48PixelByte1 = (uint8_t)(sp48PixelByte1 << 2u);
+}
+
+static inline void renderByte2PixelsAt(uint32_t index) {
+  if (index + 1u >= pixelBufferWordCount()) {
+    return;
+  }
+  sp48PixelBuffer[index] = getUlaPixelColor(sp48PixelByte2 & 0x80u, sp48AttrByte2);
+  sp48PixelBuffer[index + 1u] = getUlaPixelColor(sp48PixelByte2 & 0x40u, sp48AttrByte2);
+  sp48PixelByte2 = (uint8_t)(sp48PixelByte2 << 2u);
+}
+
+static void renderUlaTact(uint32_t tact) {
+  if (tact >= sp48TactsInFrame) {
     return;
   }
 
-  sp48BorderTransitions[sp48BorderTransitionCount].tact = tact;
-  sp48BorderTransitions[sp48BorderTransitionCount].color = color;
-  sp48BorderTransitionCount++;
+  const uint32_t index = sp48RenderingPixelIndex[tact];
+  switch (sp48RenderingPhase[tact]) {
+    case SP48_RENDER_PHASE_BORDER:
+      renderBorderPixelsAt(index);
+      break;
+
+    case SP48_RENDER_PHASE_BORDER_FETCH_PIXEL:
+      renderBorderPixelsAt(index);
+      sp48PixelByte1 = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
+      break;
+
+    case SP48_RENDER_PHASE_BORDER_FETCH_ATTR:
+      renderBorderPixelsAt(index);
+      sp48AttrByte1 = readScreenMemoryOffset(sp48RenderingAttributeAddress[tact]);
+      break;
+
+    case SP48_RENDER_PHASE_DISPLAY_B1:
+      renderByte1PixelsAt(index);
+      break;
+
+    case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_B2:
+      renderByte1PixelsAt(index);
+      sp48PixelByte2 = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
+      break;
+
+    case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_A2:
+      renderByte1PixelsAt(index);
+      sp48AttrByte2 = readScreenMemoryOffset(sp48RenderingAttributeAddress[tact]);
+      break;
+
+    case SP48_RENDER_PHASE_DISPLAY_B2:
+      renderByte2PixelsAt(index);
+      break;
+
+    case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_B1:
+      renderByte2PixelsAt(index);
+      sp48PixelByte1 = readScreenMemoryOffset(sp48RenderingPixelAddress[tact]);
+      break;
+
+    case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_A1:
+      renderByte2PixelsAt(index);
+      sp48AttrByte1 = readScreenMemoryOffset(sp48RenderingAttributeAddress[tact]);
+      break;
+  }
 }
 
-static inline uint8_t isVisibleBorderPhase(uint8_t phase) {
-  return phase == SP48_RENDER_PHASE_BORDER ||
-    phase == SP48_RENDER_PHASE_BORDER_FETCH_PIXEL ||
-    phase == SP48_RENDER_PHASE_BORDER_FETCH_ATTR;
-}
+static void renderUlaUntilCurrentTact(void) {
+  uint32_t machineTact = sp48Tacts - sp48BorderFrameStartTact;
+  if (machineTact >= sp48TactsInFrame) {
+    machineTact = sp48TactsInFrame - 1u;
+  }
 
-static void renderBorderTransitions(void) {
-  uint32_t transitionIndex = 0u;
-  uint8_t color = sp48BorderFrameStartColor;
-  for (uint32_t tact = 0u; tact < sp48TactsInFrame; tact++) {
-    const uint32_t absoluteTact = sp48BorderFrameStartTact + tact;
-    while (
-      transitionIndex < sp48BorderTransitionCount &&
-      sp48BorderTransitions[transitionIndex].tact <= absoluteTact
-    ) {
-      color = sp48BorderTransitions[transitionIndex].color;
-      transitionIndex++;
-    }
-
-    if (isVisibleBorderPhase(sp48RenderingPhase[tact]) == 0u) {
-      continue;
-    }
-
-    const uint32_t index = sp48RenderingPixelIndex[tact];
-    if (index + 1u < pixelBufferWordCount()) {
-      const uint32_t pixel = getBorderPixel(color);
-      sp48PixelBuffer[index] = pixel;
-      sp48PixelBuffer[index + 1u] = pixel;
-    }
+  while (sp48LastRenderedFrameTact <= machineTact && sp48LastRenderedFrameTact < sp48TactsInFrame) {
+    renderUlaTact(sp48LastRenderedFrameTact);
+    sp48LastRenderedFrameTact++;
   }
 }
 
 static void renderUlaDisplay(void) {
-  const uint32_t screenWidth = currentScreenWidth();
   const uint32_t words = pixelBufferWordCount();
   const uint32_t borderPixel = getBorderPixel(sp48BorderColor);
   for (uint32_t i = 0u; i < words; i++) {
     sp48PixelBuffer[i] = borderPixel;
   }
 
-  renderBorderTransitions();
-
-  for (uint32_t y = 0u; y < SP48_DISPLAY_HEIGHT; y++) {
-    for (uint32_t xByte = 0u; xByte < 32u; xByte++) {
-      uint8_t pixelByte = sp48Memory[screenPixelAddress(y, xByte)];
-      uint8_t attr = sp48Memory[screenAttributeAddress(y, xByte)];
-      uint32_t index = (sp48DisplayTopLine + y) * screenWidth + sp48DisplayLeftPixel + xByte * 8u;
-      for (uint32_t bit = 0u; bit < 8u; bit++) {
-        sp48PixelBuffer[index + bit] = getUlaPixelColor(pixelByte & (0x80u >> bit), attr);
-      }
-    }
+  sp48PixelByte1 = 0u;
+  sp48PixelByte2 = 0u;
+  sp48AttrByte1 = 0u;
+  sp48AttrByte2 = 0u;
+  for (uint32_t tact = 0u; tact < sp48TactsInFrame; tact++) {
+    renderUlaTact(tact);
   }
 }
 

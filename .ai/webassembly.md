@@ -182,7 +182,7 @@ The fake SP48 display pattern has been removed. `src/emu/sp48/sp48-ula.c`, inclu
 - the PAL screen shape exposed to the renderer is `352x288`
 - `sp48GetPixelBufferStartOffset()` returns one screen row (`352` for PAL), matching the original panel copy offset
 - the 256x192 display is placed within the buffer at the same border offset as the original screen device
-- border pixels are currently filled from the latest `$FE` border color
+- visible border and display pixels are rendered with the same tact actions as the original `CommonScreenDevice.renderTact(...)`; for performance, the C core catches ULA rendering up to the current tact at visible-state boundaries (screen RAM writes, border color changes, and frame completion) rather than on every tact increment
 
 `sp48RenderInstantScreen()` is exported for UI and tests that need to repaint the screen immediately after memory or border-color writes. The backing pixel buffer is taller than the displayed height by a few guard rows, just like the TypeScript screen device allocation pattern; TypeScript consumers should copy from `getPixelBufferStartOffset()` for `screenWidthInPixels * screenHeightInPixels` pixels.
 
