@@ -16,14 +16,21 @@ import {
   type Sp48FrameCompletedEvent,
   type Sp48MachineCommand
 } from "../../../emu/sp48/Sp48MachineController";
-import { Sp48TapeMode, Sp48TapePlayPhase } from "../../../emu/sp48/WasmZxSpectrum48Machine";
+import {
+  Sp48TapeMode,
+  Sp48TapePlayPhase,
+  Sp48TapeSavePhase
+} from "../../../emu/sp48/WasmZxSpectrum48Machine";
 import {
   SP48_KEY_EVENT,
   dispatchSp48KeyStatus,
   mapPhysicalKeyToSp48Keys,
   type Sp48KeyEventDetail
 } from "../../../emu/sp48/sp48-keyboard";
-import { getActiveSp48Controller, setActiveSp48Controller } from "../../../emu/sp48/sp48-session";
+import {
+  getActiveSp48Controller,
+  setActiveSp48Controller
+} from "../../../emu/sp48/sp48-session";
 import {
   readBinaryFile,
   saveGeneratedTapeFile,
@@ -32,6 +39,7 @@ import {
 } from "../../shared-store";
 import { EmulatorOverlay } from "./EmulatorOverlay";
 import styles from "./EmulatorPanel.module.scss";
+import { attachGeneratedTapeFile } from "./generatedTapeAttach";
 import { createGeneratedTapeSaveQueue } from "./generatedTapeSave";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorScreen } from "./useEmulatorScreen";
@@ -91,6 +99,13 @@ export const EmulatorPanelReact = () => {
           setError(`Could not save generated tape file "${status.defaultName}". ${status.error}`);
           break;
       }
+    }, (fileName, contents) => {
+      const result = attachGeneratedTapeFile(fileName, contents);
+      console.info(
+        `[sp48-tape] attached generated tape file="${result.fileName}" ` +
+          `format=${result.format.toUpperCase()} blocks=${result.blockCount} ` +
+          `result=${result.uploadResult}`
+      );
     })
   );
   const { beeperRenderer, initAudio } = useEmulatorAudio();
@@ -345,36 +360,52 @@ export const EmulatorPanelReact = () => {
 
   function publishTapeStatus(controller: Sp48MachineController): void {
     const tape = tapeMediaRef.current;
-    if (!tape?.displayName) {
+    const rawTapeMode = controller.machine.getTapeMode();
+    const isSaving = rawTapeMode === Sp48TapeMode.Save;
+
+    if (!tape?.displayName && !isSaving) {
       tapeStatusSignatureRef.current = "";
       return;
     }
 
-    const blockCount = tape.blockCount ?? 0;
+    const currentTape = tape ?? {};
+    const blockCount = currentTape.blockCount ?? 0;
     const rawBlockIndex = controller.machine.getTapeCurrentBlockIndex();
     const currentBlockIndex =
       blockCount > 0 ? Math.min(rawBlockIndex, blockCount - 1) : rawBlockIndex;
-    const tapeMode = toTapeModeName(controller.machine.getTapeMode());
+    const tapeMode = toTapeModeName(rawTapeMode);
     const tapePhase = toTapePhaseName(controller.machine.getTapePlayPhase());
+    const savePhase = toTapeSavePhaseName(controller.machine.getTapeSavePhase());
+    const savePilotPulseCount = controller.machine.getTapeSavePilotPulseCount();
+    const savedBlockCount = controller.machine.getSavedTapeBlockCount();
+    const savedDataLength = controller.machine.getSavedTapeDataLength();
     const status = controller.machine.isTapeEof()
       ? "eof"
-      : controller.machine.getTapeMode() === Sp48TapeMode.Load
+      : rawTapeMode === Sp48TapeMode.Load
         ? "loading"
+        : isSaving
+          ? "saving"
         : currentBlockIndex === 0
           ? "rewound"
           : "ready";
-    const signature = `${status}:${currentBlockIndex}:${blockCount}:${tapeMode}:${tapePhase}`;
+    const signature =
+      `${status}:${currentBlockIndex}:${blockCount}:${tapeMode}:${tapePhase}` +
+      `:${savePhase}:${savePilotPulseCount}:${savedBlockCount}:${savedDataLength}`;
     if (signature === tapeStatusSignatureRef.current) {
       return;
     }
 
     tapeStatusSignatureRef.current = signature;
     dispatch(setTapeMediaAction({
-      ...tape,
+      ...currentTape,
       currentBlockIndex,
       mode: tapeMode,
       phase: tapePhase,
-      status
+      status,
+      savePhase,
+      savePilotPulseCount,
+      savedBlockCount,
+      savedDataLength
     }));
   }
 
@@ -438,6 +469,25 @@ function toTapePhaseName(
       return "pause";
     case Sp48TapePlayPhase.Completed:
       return "completed";
+    default:
+      return "none";
+  }
+}
+
+function toTapeSavePhaseName(
+  phase: number
+): "none" | "pilot" | "sync1" | "sync2" | "data" | "error" {
+  switch (phase) {
+    case Sp48TapeSavePhase.Pilot:
+      return "pilot";
+    case Sp48TapeSavePhase.Sync1:
+      return "sync1";
+    case Sp48TapeSavePhase.Sync2:
+      return "sync2";
+    case Sp48TapeSavePhase.Data:
+      return "data";
+    case Sp48TapeSavePhase.Error:
+      return "error";
     default:
       return "none";
   }

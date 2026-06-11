@@ -20,7 +20,8 @@ import {
 
 const TapeDiagnosticFlags = {
   DataOverflow: 0x00000008,
-  SaveBlockOverflow: 0x00000080
+  SaveBlockOverflow: 0x00000080,
+  SaveMalformedPulse: 0x00000100
 } as const;
 
 const FLAG_C = 0x0001;
@@ -382,6 +383,67 @@ describe("SP48 Wasm tape upload ABI", () => {
     expect(machine.getSavedTapeRevision()).toBe(maxBlocks);
     expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Error);
     expect(machine.getDiagnosticFlags() & TapeDiagnosticFlags.SaveBlockOverflow).not.toBe(0);
+  });
+
+  it("leaves SAVE mode after a too-long pause", async () => {
+    const machine = await createMachine();
+
+    enterSaveMode(machine);
+    writeProgram(machine, 0x9000, [0x00]);
+    machine.setCpuPc(0x9000);
+    machine.setTacts(machine.getTapeSaveLastMicBitTact() + 3_500_001);
+
+    machine.executeInstruction();
+
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Passive);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.None);
+    expect(machine.getTapeLastModeChangePc()).toBe(0x9000);
+  });
+
+  it("sets a diagnostic flag when SAVE pulses are malformed", async () => {
+    const machine = await createMachine();
+
+    enterSaveMode(machine);
+    const pulse = createSavePulseEmitter(machine);
+    for (let i = 0; i < MIN_SAVE_PILOT_COUNT; i++) {
+      pulse(PILOT_PL);
+    }
+
+    pulse(BIT_0_PL);
+
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Error);
+    expect(machine.getDiagnosticFlags() & TapeDiagnosticFlags.SaveMalformedPulse).not.toBe(0);
+    expect(machine.getSavedTapeBlockCount()).toBe(0);
+  });
+
+  it("starts a clean SAVE capture after a previous SAVE error", async () => {
+    const machine = await createMachine();
+
+    enterSaveMode(machine);
+    const badPulse = createSavePulseEmitter(machine);
+    for (let i = 0; i < MIN_SAVE_PILOT_COUNT; i++) {
+      badPulse(PILOT_PL);
+    }
+    badPulse(BIT_0_PL);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Error);
+
+    writeProgram(machine, 0x9000, [0xc3, 0x08, 0x00]);
+    machine.setCpuPc(0x9000);
+    machine.executeInstruction();
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Passive);
+
+    enterSaveMode(machine);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.None);
+    expect(machine.getSavedTapeBlockCount()).toBe(0);
+    expect(machine.getSavedTapeDataLength()).toBe(0);
+
+    const goodPulse = createSavePulseEmitter(machine);
+    emitSaveBlock(goodPulse, [0x5a]);
+
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.None);
+    expect(machine.getSavedTapeBlockCount()).toBe(1);
+    expect(machine.getSavedTapeDataLength()).toBe(1);
+    expect(machine.getTapeSaveData()[0]).toBe(0x5a);
   });
 
   it("leaves LOAD mode after an instruction branches to the ROM error restart", async () => {

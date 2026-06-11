@@ -20,6 +20,8 @@ import {
 } from "./settings";
 import { createGeneratedTapeSaveDefaultPath } from "./generated-tape-save";
 import { TAPE_FILE_FOLDER } from "./tape-folders";
+import { setTapeMediaAction } from "../common/state/actions";
+import { parseTapeFile } from "../emu/tape/tape-parser";
 
 class MainMessageProcessor {
   constructor(private readonly window: BrowserWindow) {}
@@ -78,7 +80,23 @@ class MainMessageProcessor {
       return {};
     }
 
+    const parsed = parseTapeFile(contents);
     fs.writeFileSync(dialogResult.filePath, Buffer.from(contents));
+    mainStore.dispatch(
+      setTapeMediaAction({
+        fileName: dialogResult.filePath,
+        displayName: path.basename(dialogResult.filePath),
+        size: contents.byteLength,
+        blockCount: parsed.blocks.length,
+        currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        mode: "passive",
+        phase: "none",
+        status: parsed.blocks.length > 0 ? "rewound" : undefined,
+        sourceFormat: parsed.format,
+        warnings: parsed.warnings
+      }),
+      "main"
+    );
     appSettings.folders ??= {};
     appSettings.folders[TAPE_FILE_FOLDER] = path.dirname(dialogResult.filePath);
     saveAppSettings();

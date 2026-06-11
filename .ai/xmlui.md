@@ -160,6 +160,7 @@ registerComponentApi({
   - `src/renderer/src/components/emu/StatusBarText.xmlui`
 - Keep those helper UDCs beside the feature component that owns them unless they are reused across multiple feature areas. This keeps XMLUI markup local and avoids unnecessary React wrappers.
 - Keep EMU status bar tape diagnostics compact. The visible tape area shows only the tape icon and file name; block/mode/phase/Fast LOAD details are exposed through the tape icon tooltip so the bar does not lose horizontal space.
+- SAVE diagnostics follow the same compact status-bar pattern. While saving, `EmuStatusBar.xmlui` switches the tape icon to `floppy` and keeps phase, pilot count, saved block count, and saved byte count in the icon tooltip instead of adding more visible text.
 - For UDC props, pass values through `$props`, for example `name="{$props.name}"` or `value="{$props.value}"`.
 - Use XMLUI's built-in `<Icon>` with the local icon registry configured in `src/renderer/src/config.ts`; icons are loaded from the repository `icons` folder by `getLocalIcons()`. Prefer existing Klive icon names such as `vm-running` and `window` over text labels when matching the original app.
 - Prefer theme variables for UDC colors and sizing that should follow tones. The EMU status bar uses `$backgroundColor-EmuStatusBar` and `$textColor-EmuStatusBar`, with light/dark values in `src/renderer/src/themes/klive.ts`.

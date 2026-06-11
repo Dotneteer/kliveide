@@ -6,6 +6,8 @@ type Sp48QueuedTape = {
   fileName: string;
 };
 
+export type Sp48TapeUploadResult = "uploaded" | "queued";
+
 let activeController: Sp48MachineController | null = null;
 let selectedTape: Sp48QueuedTape | null = null;
 let pendingTape: Sp48QueuedTape | null = null;
@@ -30,7 +32,7 @@ export function getActiveSp48Controller(): Sp48MachineController | null {
 export function uploadTapeToActiveSp48ControllerOrQueue(
   blocks: Sp48TapeBlock[],
   fileName: string
-): "uploaded" | "queued" {
+): Sp48TapeUploadResult {
   selectedTape = { blocks, fileName };
   pendingTape = selectedTape;
   selectedTapeController = null;

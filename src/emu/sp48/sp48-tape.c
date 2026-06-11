@@ -181,6 +181,7 @@ void sp48TapeProcessMicBit(uint32_t micBit) {
   sp48TapeSaveLastMicBitTact = sp48Tacts;
   sp48TapeSaveLastPulse = (uint8_t)pulse;
 
+  const uint32_t diagnosticFlagsBefore = sp48DiagnosticFlags;
   uint8_t nextPhase = SP48_TAPE_SAVE_PHASE_ERROR;
   switch (sp48TapeSavePhase) {
     case SP48_TAPE_SAVE_PHASE_NONE:
@@ -236,6 +237,10 @@ void sp48TapeProcessMicBit(uint32_t micBit) {
       break;
   }
 
+  if (nextPhase == SP48_TAPE_SAVE_PHASE_ERROR &&
+      diagnosticFlagsBefore == sp48DiagnosticFlags) {
+    sp48DiagnosticFlags |= SP48_DIAGNOSTIC_TAPE_SAVE_MALFORMED_PULSE;
+  }
   sp48TapeSavePhase = nextPhase;
 }
 

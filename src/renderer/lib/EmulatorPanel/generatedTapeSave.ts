@@ -24,9 +24,15 @@ export type GeneratedTapeSaveFunction = (
   contents: Uint8Array
 ) => Promise<{ fileName?: string }>;
 
+export type GeneratedTapeSavedFileHandler = (
+  fileName: string,
+  contents: Uint8Array
+) => void | Promise<void>;
+
 export function createGeneratedTapeSaveQueue(
   saveGeneratedTapeFile: GeneratedTapeSaveFunction,
-  onStatus: (status: GeneratedTapeSaveStatus) => void = () => undefined
+  onStatus: (status: GeneratedTapeSaveStatus) => void = () => undefined,
+  onSavedFile: GeneratedTapeSavedFileHandler = () => undefined
 ) {
   let saveChain = Promise.resolve();
 
@@ -41,6 +47,7 @@ export function createGeneratedTapeSaveQueue(
     try {
       const result = await saveGeneratedTapeFile(file.name, file.contents);
       if (result.fileName) {
+        await onSavedFile(result.fileName, file.contents);
         onStatus({
           kind: "saved",
           defaultName: file.name,
