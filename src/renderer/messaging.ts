@@ -161,11 +161,7 @@ class EmuMessageProcessor {
     }
 
     try {
-      const uploadResult = uploadTapeToActiveSp48ControllerOrQueue(parsed.blocks, file);
-      console.info(
-        `[sp48-tape] emu-api-set-tape file="${getFileName(file)}" format=${parsed.format.toUpperCase()} ` +
-          `blocks=${parsed.blocks.length} bytes=${contents.byteLength} result=${uploadResult}`
-      );
+      uploadTapeToActiveSp48ControllerOrQueue(parsed.blocks, file);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       if (!_suppressError) {

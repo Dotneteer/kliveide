@@ -47,6 +47,7 @@ These notes capture lessons from migrating the original TypeScript ZX Spectrum 4
 - Render samples through the actual CPU tact after the instruction that crosses the frame boundary so overshoot tacts are included.
 - Keep output scheduling in the renderer audio worklet path. The C core prepares static per-frame sample buffers; TypeScript normalizes, applies volume/mute, and submits to the worklet.
 - For the current Spectrum speaker path, post the EAR/loudspeaker signal to both left and right channels so playback is centered. Keep MIC transitions available for SAVE capture and diagnostics, but do not make MIC-only cassette output audible through the internal speaker path.
+- The temporary BEEP sample recorder has been removed from `AudioRenderer.ts`; do not reintroduce long-running audio diagnostics unless explicitly requested.
 
 ## Keyboard And Ports
 

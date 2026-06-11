@@ -19,9 +19,6 @@ export function setActiveSp48Controller(controller: Sp48MachineController | null
   }
 
   activeController = controller;
-  if (controller && pendingTape) {
-    console.info(`[sp48-tape] uploading-queued ${describePendingTape()}`);
-  }
   uploadSelectedTapeToActiveController();
 }
 
@@ -37,9 +34,6 @@ export function uploadTapeToActiveSp48ControllerOrQueue(
   pendingTape = selectedTape;
   selectedTapeController = null;
   const result = uploadSelectedTapeToActiveController() ? "uploaded" : "queued";
-  console.info(
-    `[sp48-tape] tape-${result} file="${fileName}" blocks=${blocks.length} bytes=${getTapeDataLength(blocks)}`
-  );
   return result;
 }
 
@@ -64,18 +58,4 @@ function uploadSelectedTapeToActiveController(): boolean {
   pendingTape = null;
   selectedTapeController = activeController;
   return true;
-}
-
-function describePendingTape(): string {
-  const tape = pendingTape ?? selectedTape;
-  if (!tape) {
-    return "none";
-  }
-  return `"${tape.fileName}" blocks=${tape.blocks.length} bytes=${getTapeDataLength(
-    tape.blocks
-  )}`;
-}
-
-function getTapeDataLength(blocks: Sp48TapeBlock[]): number {
-  return blocks.reduce((sum, block) => sum + block.data.length, 0);
 }

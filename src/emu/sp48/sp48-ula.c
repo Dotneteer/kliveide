@@ -256,6 +256,7 @@ static inline void applyContentionDelay(void) {
   sp48Tacts += delay;
   sp48TotalContentionDelaySinceStart += delay;
   sp48ContentionDelaySincePause += delay;
+  setNextAudioSample();
 }
 
 static inline uint8_t isContendedIoAddress(uint32_t address) {

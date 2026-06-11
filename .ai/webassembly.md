@@ -190,12 +190,13 @@ The fake SP48 display pattern has been removed. `src/emu/sp48/sp48-ula.c`, inclu
 
 The fake SP48 audio pattern has been removed. `src/emu/sp48/sp48-beeper.c` prepares audio samples from the `$FE` EAR/MIC state:
 
-- `$FE` writes record fixed-size, static transition entries with absolute tacts
+- `$FE` writes update EAR/MIC accumulation before changing to the new output level
 - left channel is EAR and right channel is MIC, matching the current reference beeper model
-- each output sample uses transition-weighted averaging over its sample window
-- a DC high-pass filter with `alpha = 0.995` is applied
+- sample emission follows the original `AudioDeviceBase` timing model: every tact increment path calls `setNextAudioSample()`, and one sample is emitted when machine tacts pass `_audioNextSampleTact`
+- each output sample uses transition-weighted averaging since the previous emitted sample
+- a DC high-pass filter with `alpha = 0.995` is applied, matching the reference base audio device
 - output samples currently use the workspace ABI `Sp48AudioSample { int16_t left; int16_t right; }`
-- transition-buffer overflow sets diagnostic flag `0x00000002`
+- audio sample capacity overflow sets diagnostic flag `0x00000001`
 
 Do not introduce dynamic allocation for future audio work. If the sample ABI changes to floats later, update both the C struct and `WasmZxSpectrum48Machine` typed-array view together.
 

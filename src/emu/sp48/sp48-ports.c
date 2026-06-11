@@ -57,7 +57,7 @@ void sp48WritePort(uint32_t address, uint32_t value) {
   const uint8_t nextMicBit = (value & 0x08u) != 0u ? 1u : 0u;
   const uint8_t nextEarBit = (value & 0x10u) != 0u ? 1u : 0u;
   if (nextEarBit != sp48EarBit || nextMicBit != sp48MicBit) {
-    recordAudioTransition(sp48Tacts, nextEarBit, nextMicBit);
+    recordAudioTransition(sp48Tacts);
   }
   sp48MicBit = nextMicBit;
   sp48TapeProcessMicBit(sp48MicBit);

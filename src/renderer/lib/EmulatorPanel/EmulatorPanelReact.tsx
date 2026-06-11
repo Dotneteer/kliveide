@@ -88,24 +88,15 @@ export const EmulatorPanelReact = () => {
       switch (status.kind) {
         case "saved":
           setError(undefined);
-          console.info(
-            `[sp48-tape] saved generated tape default="${status.defaultName}" file="${status.fileName}"`
-          );
           break;
         case "cancelled":
-          console.info(`[sp48-tape] generated tape save cancelled default="${status.defaultName}"`);
           break;
         case "failed":
           setError(`Could not save generated tape file "${status.defaultName}". ${status.error}`);
           break;
       }
     }, (fileName, contents) => {
-      const result = attachGeneratedTapeFile(fileName, contents);
-      console.info(
-        `[sp48-tape] attached generated tape file="${result.fileName}" ` +
-          `format=${result.format.toUpperCase()} blocks=${result.blockCount} ` +
-          `result=${result.uploadResult}`
-      );
+      attachGeneratedTapeFile(fileName, contents);
     })
   );
   const { beeperRenderer, initAudio } = useEmulatorAudio();
@@ -126,11 +117,13 @@ export const EmulatorPanelReact = () => {
     }
 
     lastCommandSequenceRef.current = commandSequence;
-    const machineState = controller.issueMachineCommand(lastMachineCommand);
-    dispatch(setMachineStateAction(machineState, controller.machine.getCpuPc()));
-    updateOverlayForState(machineState);
-    updateAudioForState(machineState);
-    renderInstantScreenRef.current?.();
+    void (async () => {
+      const machineState = controller.issueMachineCommand(lastMachineCommand);
+      await updateAudioForState(machineState);
+      dispatch(setMachineStateAction(machineState, controller.machine.getCpuPc()));
+      updateOverlayForState(machineState);
+      renderInstantScreenRef.current?.();
+    })();
   }, [commandSequence, dispatch, lastMachineCommand]);
 
   useEffect(() => {
@@ -223,30 +216,34 @@ export const EmulatorPanelReact = () => {
         window.addEventListener("keyup", handleKeyUp);
         window.addEventListener(SP48_KEY_EVENT, handleVirtualKey);
 
-        const publishFrameCompleted = (event?: Sp48FrameCompletedEvent) => {
+        const publishFrameCompleted = async (event?: Sp48FrameCompletedEvent) => {
           if (!event) {
             return;
+          }
+          if (beeperRenderer.current) {
+            beeperRenderer.current.storeSamples(event.audioSamples, soundLevelRef.current);
+            await beeperRenderer.current.play();
           }
           const lastFrameTimeInMs = event.executionTimeInMs;
           avgFrameTimeRef.current =
             avgFrameTimeRef.current === 0
               ? lastFrameTimeInMs
               : avgFrameTimeRef.current * 0.9 + lastFrameTimeInMs * 0.1;
-          dispatch(setSp48FrameInfoAction({
-            frames: event.frames,
-            tacts: event.tacts,
-            audioSampleCount: event.audioSampleCount,
-            lastFrameTimeInMs,
-            avgFrameTimeInMs: avgFrameTimeRef.current,
-            pc: controller.machine.getCpuPc(),
-            baseClockFrequency: controller.machine.baseClockFrequency
-          }));
-          publishTapeStatus(controller);
+          if (event.frames % 10 === 0) {
+            dispatch(setSp48FrameInfoAction({
+              frames: event.frames,
+              tacts: event.tacts,
+              audioSampleCount: event.audioSampleCount,
+              lastFrameTimeInMs,
+              avgFrameTimeInMs: avgFrameTimeRef.current,
+              pc: controller.machine.getCpuPc(),
+              baseClockFrequency: controller.machine.baseClockFrequency
+            }));
+            publishTapeStatus(controller);
+          }
           if (event.savedTapeFileInfo) {
             void generatedTapeSaveQueueRef.current.enqueue(event.savedTapeFileInfo);
           }
-          beeperRenderer.current?.storeSamples(event.audioSamples, soundLevelRef.current);
-          beeperRenderer.current?.play();
         };
 
         controller.frameCompleted.on(publishFrameCompleted);
@@ -255,29 +252,33 @@ export const EmulatorPanelReact = () => {
         paintPixels();
 
         const frameDurationMs = (machine.tactsInFrame / machine.baseClockFrequency) * 1000;
-        let nextFrameTime = performance.now() + frameDurationMs;
 
-        const machineLoop = () => {
-          if (disposed) {
-            return;
+        const delay = (milliseconds: number): Promise<void> =>
+          new Promise<void>((resolve) => {
+            machineLoopTimer = window.setTimeout(resolve, Math.max(0, milliseconds));
+          });
+
+        const machineLoop = async () => {
+          let nextFrameTime = performance.now() + frameDurationMs;
+
+          while (!disposed) {
+            if (controller.machineState !== MachineControllerState.Running) {
+              nextFrameTime = performance.now() + frameDurationMs;
+              await delay(16);
+              continue;
+            }
+
+            if (controller.tickFrame()) {
+              paintPixels();
+            }
+
+            const toWait = Math.floor(nextFrameTime - performance.now());
+            await delay(toWait - 2);
+            nextFrameTime += frameDurationMs;
           }
-
-          if (controller.machineState !== MachineControllerState.Running) {
-            nextFrameTime = performance.now() + frameDurationMs;
-            machineLoopTimer = window.setTimeout(machineLoop, 16);
-            return;
-          }
-
-          if (controller.tickFrame()) {
-            paintPixels();
-          }
-
-          const toWait = Math.floor(nextFrameTime - performance.now());
-          nextFrameTime += frameDurationMs;
-          machineLoopTimer = window.setTimeout(machineLoop, Math.max(0, toWait - 2));
         };
 
-        machineLoopTimer = window.setTimeout(machineLoop, 0);
+        void machineLoop();
 
         return () => {
           window.removeEventListener("keydown", handleKeyDown);
@@ -346,14 +347,14 @@ export const EmulatorPanelReact = () => {
     }
   }
 
-  function updateAudioForState(machineState: MachineControllerState): void {
+  async function updateAudioForState(machineState: MachineControllerState): Promise<void> {
     switch (machineState) {
       case MachineControllerState.Running:
-        beeperRenderer.current?.play();
+        await beeperRenderer.current?.play();
         break;
       case MachineControllerState.Paused:
       case MachineControllerState.Stopped:
-        beeperRenderer.current?.suspend();
+        await beeperRenderer.current?.suspend();
         break;
     }
   }

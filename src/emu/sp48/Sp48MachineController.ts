@@ -52,9 +52,6 @@ export class Sp48MachineController {
   private readonly stepOutStack: number[] = [];
   private state: Sp48MachineState = MachineControllerState.None;
   private isDebugging = false;
-  private lastLoggedTapeMode = -1;
-  private lastLoggedLoadStartCount = 0;
-  private noTapeLoadWarningLogged = false;
   private retainedSavedTapeHeaderBlock?: Uint8Array;
   private retainedSavedTapeName = "";
   private lastConsumedSavedTapeRevision = 0;
@@ -76,7 +73,6 @@ export class Sp48MachineController {
       case "start":
         this.isDebugging = false;
         this.state = MachineControllerState.Running;
-        this.logTapeStart();
         break;
 
       case "debug":
@@ -233,19 +229,11 @@ export class Sp48MachineController {
 
   setTape(blocks: Sp48TapeBlock[], fileName: string): void {
     this.machine.uploadTape(blocks, fileName);
-    this.noTapeLoadWarningLogged = false;
-    console.info(
-      `[sp48-tape] uploaded file="${fileName}" blocks=${blocks.length} ` +
-        `bytes=${blocks.reduce((sum, block) => sum + block.data.length, 0)} ` +
-        `loaded=${this.machine.isTapeLoaded()} eof=${this.machine.isTapeEof()} ` +
-        `wasmBlocks=${this.machine.getTapeBlockCount()}`
-    );
+    void fileName;
   }
 
   clearTape(): void {
     this.machine.clearTape();
-    this.noTapeLoadWarningLogged = false;
-    console.info("[sp48-tape] cleared");
   }
 
   setTapeFastLoad(enabled: boolean): void {
@@ -259,7 +247,6 @@ export class Sp48MachineController {
   private executeFrame(): void {
     const startedAt = performance.now();
     this.machine.executeMachineFrame();
-    this.logTapeRuntimeChanges();
     this.syncSavedTapeBlocks();
     const executionTimeInMs = performance.now() - startedAt;
     this.frameCompletedEmitter.fire(this.createFrameCompletedEvent(executionTimeInMs));
@@ -276,7 +263,6 @@ export class Sp48MachineController {
         break;
       }
       this.executeInstructionStep();
-      this.logTapeRuntimeChanges();
       this.syncSavedTapeBlocks();
       instructions++;
       if (instructions >= maxInstructions || this.machine.getFrameCompleted()) {
@@ -312,50 +298,6 @@ export class Sp48MachineController {
       contents: createSavedTapeTzx(pending.headerBlock, pending.dataBlock),
       blockCount: 2
     };
-  }
-
-  private logTapeStart(): void {
-    console.info(
-      `[sp48-tape] start loaded=${this.machine.isTapeLoaded()} ` +
-        `eof=${this.machine.isTapeEof()} blocks=${this.machine.getTapeBlockCount()} ` +
-        `fast=${this.machine.getTapeFastLoad() ? 1 : 0} pc=$${toHexWord(this.machine.getCpuPc())}`
-    );
-  }
-
-  private logTapeRuntimeChanges(): void {
-    const loadStartCount = this.machine.getTapeLoadStartCount();
-    if (loadStartCount !== this.lastLoggedLoadStartCount) {
-      this.lastLoggedLoadStartCount = loadStartCount;
-      if (!this.machine.isTapeLoaded()) {
-        if (!this.noTapeLoadWarningLogged) {
-          this.noTapeLoadWarningLogged = true;
-          console.warn(
-            `[sp48-tape] load-sensed-without-tape pc=$${toHexWord(
-              this.machine.getTapeLastModeChangePc()
-            )} loadStarts=${loadStartCount} blocks=${this.machine.getTapeBlockCount()}`
-          );
-        }
-      } else {
-        console.info(
-          `[sp48-tape] load-sensed pc=$${toHexWord(this.machine.getTapeLastModeChangePc())} ` +
-            `mode=${this.machine.getTapeMode()} phase=${this.machine.getTapePlayPhase()} ` +
-            `block=${this.machine.getTapeCurrentBlockIndex()}/${this.machine.getTapeBlockCount()} ` +
-            `fast=${this.machine.getTapeFastLoad() ? 1 : 0}`
-        );
-      }
-    }
-
-    const mode = this.machine.getTapeMode();
-    if (mode !== this.lastLoggedTapeMode) {
-      this.lastLoggedTapeMode = mode;
-      if (mode !== 0 || this.machine.isTapeEof()) {
-        console.info(
-          `[sp48-tape] mode=${mode} phase=${this.machine.getTapePlayPhase()} ` +
-            `loaded=${this.machine.isTapeLoaded()} eof=${this.machine.isTapeEof()} ` +
-            `block=${this.machine.getTapeCurrentBlockIndex()}/${this.machine.getTapeBlockCount()}`
-        );
-      }
-    }
   }
 
   private processSavedTapeBlock(data: Uint8Array): void {
@@ -473,10 +415,6 @@ export class Sp48MachineController {
   private isCFlagSet(): boolean {
     return (this.machine.getCpuAf() & 0x0001) !== 0;
   }
-}
-
-function toHexWord(value: number): string {
-  return (value & 0xffff).toString(16).padStart(4, "0").toUpperCase();
 }
 
 function extractSpectrumTapeHeaderName(headerBlock: Uint8Array): string {
