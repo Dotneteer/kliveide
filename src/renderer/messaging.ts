@@ -181,6 +181,8 @@ class EmuMessageProcessor {
         size: contents.byteLength,
         blockCount: parsed.blocks.length,
         currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        mode: "passive",
+        phase: "none",
         status: parsed.blocks.length > 0 ? "rewound" : undefined,
         sourceFormat: parsed.format,
         warnings: parsed.warnings
@@ -227,6 +229,8 @@ function markTapeRewound(source: "main" | "emu"): void {
     setTapeMediaAction({
       ...tape,
       currentBlockIndex: 0,
+      mode: "passive",
+      phase: "none",
       status: "rewound"
     }),
     source

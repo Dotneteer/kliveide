@@ -16,7 +16,7 @@ import {
   type Sp48FrameCompletedEvent,
   type Sp48MachineCommand
 } from "../../../emu/sp48/Sp48MachineController";
-import { Sp48TapeMode } from "../../../emu/sp48/WasmZxSpectrum48Machine";
+import { Sp48TapeMode, Sp48TapePlayPhase } from "../../../emu/sp48/WasmZxSpectrum48Machine";
 import {
   SP48_KEY_EVENT,
   dispatchSp48KeyStatus,
@@ -24,9 +24,15 @@ import {
   type Sp48KeyEventDetail
 } from "../../../emu/sp48/sp48-keyboard";
 import { getActiveSp48Controller, setActiveSp48Controller } from "../../../emu/sp48/sp48-session";
-import { readBinaryFile, useDispatch, useSharedState } from "../../shared-store";
+import {
+  readBinaryFile,
+  saveGeneratedTapeFile,
+  useDispatch,
+  useSharedState
+} from "../../shared-store";
 import { EmulatorOverlay } from "./EmulatorOverlay";
 import styles from "./EmulatorPanel.module.scss";
+import { createGeneratedTapeSaveQueue } from "./generatedTapeSave";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorScreen } from "./useEmulatorScreen";
 
@@ -46,6 +52,7 @@ export const EmulatorPanelReact = () => {
   const renderInstantScreenRef = useRef<(() => void) | null>(null);
   const avgFrameTimeRef = useRef(0);
   const tapeStatusSignatureRef = useRef("");
+  const disposedRef = useRef(false);
   const [overlay, setOverlay] = useState<string | null>("Loading machine...");
   const [showOverlay, setShowOverlay] = useState(true);
   const [error, setError] = useState<string>();
@@ -64,6 +71,28 @@ export const EmulatorPanelReact = () => {
   const machineKey = getMachineSelectionKey(machineSelection);
   const soundLevelRef = useRef(soundLevel);
   const fastLoadRef = useRef(fastLoad);
+  const generatedTapeSaveQueueRef = useRef(
+    createGeneratedTapeSaveQueue(saveGeneratedTapeFile, (status) => {
+      if (disposedRef.current) {
+        return;
+      }
+
+      switch (status.kind) {
+        case "saved":
+          setError(undefined);
+          console.info(
+            `[sp48-tape] saved generated tape default="${status.defaultName}" file="${status.fileName}"`
+          );
+          break;
+        case "cancelled":
+          console.info(`[sp48-tape] generated tape save cancelled default="${status.defaultName}"`);
+          break;
+        case "failed":
+          setError(`Could not save generated tape file "${status.defaultName}". ${status.error}`);
+          break;
+      }
+    })
+  );
   const { beeperRenderer, initAudio } = useEmulatorAudio();
 
   const {
@@ -106,6 +135,7 @@ export const EmulatorPanelReact = () => {
     let disposed = false;
     let machineLoopTimer = 0;
     const pressedPhysicalKeys = new Map<string, number[]>();
+    disposedRef.current = false;
 
     async function run() {
       try {
@@ -197,6 +227,9 @@ export const EmulatorPanelReact = () => {
             baseClockFrequency: controller.machine.baseClockFrequency
           }));
           publishTapeStatus(controller);
+          if (event.savedTapeFileInfo) {
+            void generatedTapeSaveQueueRef.current.enqueue(event.savedTapeFileInfo);
+          }
           beeperRenderer.current?.storeSamples(event.audioSamples, soundLevelRef.current);
           beeperRenderer.current?.play();
         };
@@ -258,6 +291,7 @@ export const EmulatorPanelReact = () => {
 
     return () => {
       disposed = true;
+      disposedRef.current = true;
       cleanup?.();
       window.clearTimeout(machineLoopTimer);
     };
@@ -320,6 +354,8 @@ export const EmulatorPanelReact = () => {
     const rawBlockIndex = controller.machine.getTapeCurrentBlockIndex();
     const currentBlockIndex =
       blockCount > 0 ? Math.min(rawBlockIndex, blockCount - 1) : rawBlockIndex;
+    const tapeMode = toTapeModeName(controller.machine.getTapeMode());
+    const tapePhase = toTapePhaseName(controller.machine.getTapePlayPhase());
     const status = controller.machine.isTapeEof()
       ? "eof"
       : controller.machine.getTapeMode() === Sp48TapeMode.Load
@@ -327,7 +363,7 @@ export const EmulatorPanelReact = () => {
         : currentBlockIndex === 0
           ? "rewound"
           : "ready";
-    const signature = `${status}:${currentBlockIndex}:${blockCount}`;
+    const signature = `${status}:${currentBlockIndex}:${blockCount}:${tapeMode}:${tapePhase}`;
     if (signature === tapeStatusSignatureRef.current) {
       return;
     }
@@ -336,6 +372,8 @@ export const EmulatorPanelReact = () => {
     dispatch(setTapeMediaAction({
       ...tape,
       currentBlockIndex,
+      mode: tapeMode,
+      phase: tapePhase,
       status
     }));
   }
@@ -371,6 +409,38 @@ function toHexWord(value: number): string {
 
 function toCanvasSize(value: number): number {
   return Math.max(1, Math.round(value || 0));
+}
+
+function toTapeModeName(mode: number): "passive" | "load" | "save" {
+  switch (mode) {
+    case Sp48TapeMode.Load:
+      return "load";
+    case Sp48TapeMode.Save:
+      return "save";
+    default:
+      return "passive";
+  }
+}
+
+function toTapePhaseName(
+  phase: number
+): "none" | "pilot" | "sync" | "data" | "termSync" | "pause" | "completed" {
+  switch (phase) {
+    case Sp48TapePlayPhase.Pilot:
+      return "pilot";
+    case Sp48TapePlayPhase.Sync:
+      return "sync";
+    case Sp48TapePlayPhase.Data:
+      return "data";
+    case Sp48TapePlayPhase.TermSync:
+      return "termSync";
+    case Sp48TapePlayPhase.Pause:
+      return "pause";
+    case Sp48TapePlayPhase.Completed:
+      return "completed";
+    default:
+      return "none";
+  }
 }
 
 async function getOrCreateController(

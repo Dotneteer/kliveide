@@ -60,6 +60,7 @@ void sp48WritePort(uint32_t address, uint32_t value) {
     recordAudioTransition(sp48Tacts, nextEarBit, nextMicBit);
   }
   sp48MicBit = nextMicBit;
+  sp48TapeProcessMicBit(sp48MicBit);
   sp48BeeperLevel = (uint8_t)((sp48MicBit != 0u ? 1u : 0u) | (nextEarBit != 0u ? 2u : 0u));
 
   if (sp48EarBit != 0u) {

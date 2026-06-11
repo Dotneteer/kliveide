@@ -2,6 +2,7 @@ import type { ILiteEvent } from "../../common/abstractions/ILiteEvent";
 import type { MachineCommand } from "../../common/abstractions/MachineCommand";
 import { MachineControllerState } from "../../common/abstractions/MachineControllerState";
 import type { Sp48TapeBlock } from "../tape/tape-parser";
+import { createSavedTapeTzx } from "../tape/tape-save";
 import { LiteEvent } from "../utils/lite-event";
 import {
   instantiateWasmZxSpectrum48Machine,
@@ -22,6 +23,19 @@ export type Sp48FrameCompletedEvent = {
   audioSampleCount: number;
   audioSamples: Sp48AudioSample[];
   pixelBuffer: Uint32Array;
+  savedTapeFileInfo?: Sp48SavedTapeFileInfo;
+};
+
+export type Sp48PendingSavedTapeFile = {
+  name: string;
+  headerBlock: Uint8Array;
+  dataBlock: Uint8Array;
+};
+
+export type Sp48SavedTapeFileInfo = {
+  name: string;
+  contents: Uint8Array;
+  blockCount: number;
 };
 
 export type Sp48MachineControllerOptions = {
@@ -41,6 +55,11 @@ export class Sp48MachineController {
   private lastLoggedTapeMode = -1;
   private lastLoggedLoadStartCount = 0;
   private noTapeLoadWarningLogged = false;
+  private retainedSavedTapeHeaderBlock?: Uint8Array;
+  private retainedSavedTapeName = "";
+  private lastConsumedSavedTapeRevision = 0;
+  private lastConsumedSavedTapeBlockIndex = 0;
+  private pendingSavedTapeFile?: Sp48PendingSavedTapeFile;
 
   constructor(readonly machine: WasmZxSpectrum48Machine) {}
 
@@ -142,6 +161,39 @@ export class Sp48MachineController {
     return this.machine.getLastPortAccess();
   }
 
+  getRetainedSavedTapeName(): string {
+    return this.retainedSavedTapeName;
+  }
+
+  getPendingSavedTapeFile(): Sp48PendingSavedTapeFile | undefined {
+    return copyPendingSavedTapeFile(this.pendingSavedTapeFile);
+  }
+
+  consumePendingSavedTapeFile(): Sp48PendingSavedTapeFile | undefined {
+    const pending = this.getPendingSavedTapeFile();
+    this.pendingSavedTapeFile = undefined;
+    return pending;
+  }
+
+  syncSavedTapeBlocks(): void {
+    const revision = this.machine.getSavedTapeRevision();
+    if (revision === this.lastConsumedSavedTapeRevision) {
+      return;
+    }
+
+    const blockCount = this.machine.getSavedTapeBlockCount();
+    if (blockCount < this.lastConsumedSavedTapeBlockIndex) {
+      this.lastConsumedSavedTapeBlockIndex = 0;
+    }
+
+    for (let i = this.lastConsumedSavedTapeBlockIndex; i < blockCount; i++) {
+      this.processSavedTapeBlock(this.machine.getSavedTapeBlock(i).data);
+    }
+
+    this.lastConsumedSavedTapeBlockIndex = blockCount;
+    this.lastConsumedSavedTapeRevision = revision;
+  }
+
   addBreakpoint(address: number): void {
     this.breakpoints.add(address & 0xffff);
   }
@@ -208,15 +260,9 @@ export class Sp48MachineController {
     const startedAt = performance.now();
     this.machine.executeMachineFrame();
     this.logTapeRuntimeChanges();
+    this.syncSavedTapeBlocks();
     const executionTimeInMs = performance.now() - startedAt;
-    this.frameCompletedEmitter.fire({
-      frames: this.machine.frames,
-      tacts: this.machine.tacts,
-      executionTimeInMs,
-      audioSampleCount: this.machine.getAudioSampleCount(),
-      audioSamples: this.machine.getAudioSamples(),
-      pixelBuffer: this.machine.getPixelBuffer()
-    });
+    this.frameCompletedEmitter.fire(this.createFrameCompletedEvent(executionTimeInMs));
   }
 
   private executeDebugFrameSlice(): void {
@@ -231,6 +277,7 @@ export class Sp48MachineController {
       }
       this.executeInstructionStep();
       this.logTapeRuntimeChanges();
+      this.syncSavedTapeBlocks();
       instructions++;
       if (instructions >= maxInstructions || this.machine.getFrameCompleted()) {
         break;
@@ -238,15 +285,33 @@ export class Sp48MachineController {
     }
     if (this.machine.getFrameCompleted()) {
       const executionTimeInMs = performance.now() - startedAt;
-      this.frameCompletedEmitter.fire({
-        frames: this.machine.frames,
-        tacts: this.machine.tacts,
-        executionTimeInMs,
-        audioSampleCount: this.machine.getAudioSampleCount(),
-        audioSamples: this.machine.getAudioSamples(),
-        pixelBuffer: this.machine.getPixelBuffer()
-      });
+      this.frameCompletedEmitter.fire(this.createFrameCompletedEvent(executionTimeInMs));
     }
+  }
+
+  private createFrameCompletedEvent(executionTimeInMs: number): Sp48FrameCompletedEvent {
+    return {
+      frames: this.machine.frames,
+      tacts: this.machine.tacts,
+      executionTimeInMs,
+      audioSampleCount: this.machine.getAudioSampleCount(),
+      audioSamples: this.machine.getAudioSamples(),
+      pixelBuffer: this.machine.getPixelBuffer(),
+      savedTapeFileInfo: this.consumeSavedTapeFileInfo()
+    };
+  }
+
+  private consumeSavedTapeFileInfo(): Sp48SavedTapeFileInfo | undefined {
+    const pending = this.consumePendingSavedTapeFile();
+    if (!pending) {
+      return undefined;
+    }
+
+    return {
+      name: pending.name,
+      contents: createSavedTapeTzx(pending.headerBlock, pending.dataBlock),
+      blockCount: 2
+    };
   }
 
   private logTapeStart(): void {
@@ -290,6 +355,22 @@ export class Sp48MachineController {
             `block=${this.machine.getTapeCurrentBlockIndex()}/${this.machine.getTapeBlockCount()}`
         );
       }
+    }
+  }
+
+  private processSavedTapeBlock(data: Uint8Array): void {
+    if (data.length === 0x13 && data[0] === 0x00) {
+      this.retainedSavedTapeHeaderBlock = new Uint8Array(data);
+      this.retainedSavedTapeName = extractSpectrumTapeHeaderName(data);
+      return;
+    }
+
+    if (data.length > 0 && data[0] === 0xff && this.retainedSavedTapeHeaderBlock) {
+      this.pendingSavedTapeFile = {
+        name: `${this.retainedSavedTapeName}.tzx`,
+        headerBlock: new Uint8Array(this.retainedSavedTapeHeaderBlock),
+        dataBlock: new Uint8Array(data)
+      };
     }
   }
 
@@ -396,6 +477,23 @@ export class Sp48MachineController {
 
 function toHexWord(value: number): string {
   return (value & 0xffff).toString(16).padStart(4, "0").toUpperCase();
+}
+
+function extractSpectrumTapeHeaderName(headerBlock: Uint8Array): string {
+  return String.fromCharCode(...headerBlock.slice(2, 12)).trimEnd();
+}
+
+function copyPendingSavedTapeFile(
+  file: Sp48PendingSavedTapeFile | undefined
+): Sp48PendingSavedTapeFile | undefined {
+  if (!file) {
+    return undefined;
+  }
+  return {
+    name: file.name,
+    headerBlock: new Uint8Array(file.headerBlock),
+    dataBlock: new Uint8Array(file.dataBlock)
+  };
 }
 
 export async function createSp48MachineController(

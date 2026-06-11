@@ -29,6 +29,13 @@ class MainApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  async saveGeneratedTapeFile(
+    _defaultName: string,
+    _contents: Uint8Array
+  ): Promise<{ fileName?: string }> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   async getSettingValue(_id: string): Promise<unknown> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }

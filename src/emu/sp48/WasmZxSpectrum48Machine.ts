@@ -7,6 +7,7 @@ export type Sp48WasmExports = {
   sp48AudioSamplesPtr: () => number;
   sp48KeyboardLinesPtr: () => number;
   sp48TapeDataPtr: () => number;
+  sp48TapeSaveDataPtr: () => number;
   sp48TapeFileNamePtr: () => number;
   sp48Reset: () => void;
   sp48HardReset: (is16k: number, isNtsc: number) => void;
@@ -75,6 +76,7 @@ export type Sp48WasmExports = {
   sp48GetCpuIy: () => number;
   sp48SetCpuIy: (value: number) => void;
   sp48GetCpuAfAlt: () => number;
+  sp48SetCpuAfAlt: (value: number) => void;
   sp48GetCpuBcAlt: () => number;
   sp48GetCpuDeAlt: () => number;
   sp48GetCpuHlAlt: () => number;
@@ -127,6 +129,20 @@ export type Sp48WasmExports = {
   sp48TapeGetLastModeChangePc: () => number;
   sp48TapeGetLoadStartCount: () => number;
   sp48TapeGetSaveStartCount: () => number;
+  sp48TapeClassifySavePulse: (length: number) => number;
+  sp48TapeGetSavePhase: () => number;
+  sp48TapeGetSaveLastPulse: () => number;
+  sp48TapeGetSaveMicBit: () => number;
+  sp48TapeGetSaveLastMicBitTact: () => number;
+  sp48TapeGetSavePilotPulseCount: () => number;
+  sp48TapeGetSavedBlockCount: () => number;
+  sp48TapeGetSavedDataLength: () => number;
+  sp48TapeGetSavedRevision: () => number;
+  sp48TapeGetSaveDataCapacity: () => number;
+  sp48TapeGetSaveMaxBlocks: () => number;
+  sp48TapeGetSavedBlockOffset: (index: number) => number;
+  sp48TapeGetSavedBlockLength: (index: number) => number;
+  sp48TapeClearSavedBlocks: () => void;
   sp48TapeGetEarBit: () => number;
   sp48TapeGetBlockOffset: (index: number) => number;
   sp48TapeGetBlockLength: (index: number) => number;
@@ -213,6 +229,12 @@ export type Sp48TapeBlockInfo = {
   pilotPulseCount: number;
 };
 
+export type Sp48SavedTapeBlock = {
+  offset: number;
+  length: number;
+  data: Uint8Array;
+};
+
 export const Sp48TapeMode = {
   Passive: 0,
   Load: 1,
@@ -227,6 +249,27 @@ export const Sp48TapePlayPhase = {
   TermSync: 4,
   Pause: 5,
   Completed: 6
+} as const;
+
+export const Sp48TapeSavePhase = {
+  None: 0,
+  Pilot: 1,
+  Sync1: 2,
+  Sync2: 3,
+  Data: 4,
+  Error: 5
+} as const;
+
+export const Sp48TapeMicPulse = {
+  None: 0,
+  TooShort: 1,
+  TooLong: 2,
+  Pilot: 3,
+  Sync1: 4,
+  Sync2: 5,
+  Bit0: 6,
+  Bit1: 7,
+  TermSync: 8
 } as const;
 
 export class WasmZxSpectrum48Machine {
@@ -534,6 +577,10 @@ export class WasmZxSpectrum48Machine {
     return this.wasm.sp48GetCpuAfAlt();
   }
 
+  setCpuAfAlt(value: number): void {
+    this.wasm.sp48SetCpuAfAlt(value);
+  }
+
   getCpuBcAlt(): number {
     return this.wasm.sp48GetCpuBcAlt();
   }
@@ -679,6 +726,79 @@ export class WasmZxSpectrum48Machine {
 
   getTapeSaveStartCount(): number {
     return this.wasm.sp48TapeGetSaveStartCount();
+  }
+
+  classifyTapeSavePulse(length: number): number {
+    return this.wasm.sp48TapeClassifySavePulse(length);
+  }
+
+  getTapeSavePhase(): number {
+    return this.wasm.sp48TapeGetSavePhase();
+  }
+
+  getTapeSaveLastPulse(): number {
+    return this.wasm.sp48TapeGetSaveLastPulse();
+  }
+
+  getTapeSaveMicBit(): boolean {
+    return this.wasm.sp48TapeGetSaveMicBit() !== 0;
+  }
+
+  getTapeSaveLastMicBitTact(): number {
+    return this.wasm.sp48TapeGetSaveLastMicBitTact();
+  }
+
+  getTapeSavePilotPulseCount(): number {
+    return this.wasm.sp48TapeGetSavePilotPulseCount();
+  }
+
+  getSavedTapeBlockCount(): number {
+    return this.wasm.sp48TapeGetSavedBlockCount();
+  }
+
+  getSavedTapeDataLength(): number {
+    return this.wasm.sp48TapeGetSavedDataLength();
+  }
+
+  getSavedTapeRevision(): number {
+    return this.wasm.sp48TapeGetSavedRevision();
+  }
+
+  clearSavedTapeBlocks(): void {
+    this.wasm.sp48TapeClearSavedBlocks();
+  }
+
+  getTapeSaveDataCapacity(): number {
+    return this.wasm.sp48TapeGetSaveDataCapacity();
+  }
+
+  getTapeSaveMaxBlocks(): number {
+    return this.wasm.sp48TapeGetSaveMaxBlocks();
+  }
+
+  getSavedTapeBlockInfo(index: number): { offset: number; length: number } {
+    return {
+      offset: this.wasm.sp48TapeGetSavedBlockOffset(index),
+      length: this.wasm.sp48TapeGetSavedBlockLength(index)
+    };
+  }
+
+  getSavedTapeBlock(index: number): Sp48SavedTapeBlock {
+    const { offset, length } = this.getSavedTapeBlockInfo(index);
+    const saveData = this.getTapeSaveData();
+    return {
+      offset,
+      length,
+      data: new Uint8Array(saveData.slice(offset, offset + length))
+    };
+  }
+
+  getTapeSaveData(): Uint8Array {
+    return new Uint8Array(
+      this.wasm.memory.buffer,
+      this.wasm.sp48TapeSaveDataPtr(),
+      this.getTapeSaveDataCapacity()
+    );
   }
 
   getTapeMaxBlocks(): number {

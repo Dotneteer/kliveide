@@ -11,14 +11,24 @@ import {
 } from "@emu/tape/tape-const";
 import { createTapeDataBlock } from "@emu/tape/tape-parser";
 import {
+  Sp48TapeMicPulse,
   Sp48TapeMode,
   Sp48TapePlayPhase,
+  Sp48TapeSavePhase,
   instantiateWasmZxSpectrum48Machine
 } from "@emu/sp48/WasmZxSpectrum48Machine";
 
 const TapeDiagnosticFlags = {
-  DataOverflow: 0x00000008
+  DataOverflow: 0x00000008,
+  SaveBlockOverflow: 0x00000080
 } as const;
+
+const FLAG_C = 0x0001;
+const LOAD_BYTES_ROUTINE = 0x056c;
+const LOAD_BYTES_INVALID_HEADER_ROUTINE = 0x05b6;
+const LOAD_BYTES_RESUME_ROUTINE = 0x05e2;
+const SAVE_BYTES_ROUTINE = 0x04c2;
+const MIN_SAVE_PILOT_COUNT = 3000;
 
 async function createMachine() {
   const wasmPath = resolve(process.cwd(), "public/wasm/sp48.wasm");
@@ -224,6 +234,7 @@ describe("SP48 Wasm tape upload ABI", () => {
     const block = createTapeDataBlock(new Uint8Array([0x00]));
 
     machine.uploadTape([block], "rom-load.tap");
+    machine.setTapeFastLoad(false);
     machine.setCpuPc(0x056c);
     machine.executeInstruction();
 
@@ -266,6 +277,113 @@ describe("SP48 Wasm tape upload ABI", () => {
     expect(machine.getTapeLastModeChangePc()).toBe(0x04c2);
   });
 
+  it("classifies SAVE MIC pulse widths with reference tolerances", async () => {
+    const machine = await createMachine();
+
+    expect(machine.classifyTapeSavePulse(BIT_0_PL)).toBe(Sp48TapeMicPulse.Bit0);
+    expect(machine.classifyTapeSavePulse(BIT_1_PL)).toBe(Sp48TapeMicPulse.Bit1);
+    expect(machine.classifyTapeSavePulse(PILOT_PL)).toBe(Sp48TapeMicPulse.Pilot);
+    expect(machine.classifyTapeSavePulse(SYNC_1_PL)).toBe(Sp48TapeMicPulse.Sync1);
+    expect(machine.classifyTapeSavePulse(SYNC_2_PL)).toBe(Sp48TapeMicPulse.Sync2);
+    expect(machine.classifyTapeSavePulse(TERM_SYNC)).toBe(Sp48TapeMicPulse.TermSync);
+    expect(machine.classifyTapeSavePulse(SYNC_1_PL - 25)).toBe(Sp48TapeMicPulse.TooShort);
+    expect(machine.classifyTapeSavePulse(PILOT_PL + 49)).toBe(Sp48TapeMicPulse.TooLong);
+  });
+
+  it("captures a standard-speed SAVE data block from MIC pulses", async () => {
+    const machine = await createMachine();
+
+    writeProgram(machine, 0x8000, [0xc3, SAVE_BYTES_ROUTINE & 0xff, SAVE_BYTES_ROUTINE >> 8]);
+    machine.setCpuPc(0x8000);
+    machine.executeInstruction();
+
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Save);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.None);
+    expect(machine.getTapeSaveMicBit()).toBe(true);
+
+    const pulse = createSavePulseEmitter(machine);
+    for (let i = 0; i < MIN_SAVE_PILOT_COUNT; i++) {
+      pulse(PILOT_PL);
+    }
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Pilot);
+    expect(machine.getTapeSavePilotPulseCount()).toBe(MIN_SAVE_PILOT_COUNT);
+
+    pulse(SYNC_1_PL);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Sync1);
+
+    pulse(SYNC_2_PL);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Sync2);
+
+    emitSaveByte(pulse, 0xa5);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Data);
+
+    pulse(TERM_SYNC);
+
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.None);
+    expect(machine.getSavedTapeBlockCount()).toBe(1);
+    expect(machine.getSavedTapeDataLength()).toBe(1);
+    expect(machine.getSavedTapeRevision()).toBe(1);
+    expect(machine.getSavedTapeBlockInfo(0)).toEqual({ offset: 0, length: 1 });
+    expect(machine.getTapeSaveData()[0]).toBe(0xa5);
+  });
+
+  it("records multiple SAVE blocks with stable offsets and one revision per block", async () => {
+    const machine = await createMachine();
+
+    enterSaveMode(machine);
+    const pulse = createSavePulseEmitter(machine);
+
+    emitSaveBlock(pulse, [0x12, 0x34]);
+    emitSaveBlock(pulse, [0xab]);
+
+    expect(machine.getSavedTapeBlockCount()).toBe(2);
+    expect(machine.getSavedTapeDataLength()).toBe(3);
+    expect(machine.getSavedTapeRevision()).toBe(2);
+    expect(machine.getSavedTapeBlockInfo(0)).toEqual({ offset: 0, length: 2 });
+    expect(machine.getSavedTapeBlockInfo(1)).toEqual({ offset: 2, length: 1 });
+    expect([...machine.getTapeSaveData().slice(0, 3)]).toEqual([0x12, 0x34, 0xab]);
+  });
+
+  it("clears captured SAVE blocks without disturbing the SAVE pulse classifier state", async () => {
+    const machine = await createMachine();
+
+    enterSaveMode(machine);
+    const pulse = createSavePulseEmitter(machine);
+    emitSaveBlock(pulse, [0x5a]);
+
+    expect(machine.getSavedTapeBlockCount()).toBe(1);
+    expect(machine.getSavedTapeRevision()).toBe(1);
+
+    machine.clearSavedTapeBlocks();
+
+    expect(machine.getSavedTapeBlockCount()).toBe(0);
+    expect(machine.getSavedTapeDataLength()).toBe(0);
+    expect(machine.getSavedTapeRevision()).toBe(1);
+    expect(machine.getSavedTapeBlockInfo(0)).toEqual({ offset: 0, length: 0 });
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Save);
+  });
+
+  it("sets a diagnostic flag when SAVE block capacity is exceeded", async () => {
+    const machine = await createMachine();
+
+    enterSaveMode(machine);
+    const pulse = createSavePulseEmitter(machine);
+    const maxBlocks = machine.getTapeSaveMaxBlocks();
+
+    for (let i = 0; i < maxBlocks; i++) {
+      emitSaveBlock(pulse, []);
+    }
+    expect(machine.getSavedTapeBlockCount()).toBe(maxBlocks);
+    expect(machine.getSavedTapeRevision()).toBe(maxBlocks);
+
+    emitSaveBlock(pulse, []);
+
+    expect(machine.getSavedTapeBlockCount()).toBe(maxBlocks);
+    expect(machine.getSavedTapeRevision()).toBe(maxBlocks);
+    expect(machine.getTapeSavePhase()).toBe(Sp48TapeSavePhase.Error);
+    expect(machine.getDiagnosticFlags() & TapeDiagnosticFlags.SaveBlockOverflow).not.toBe(0);
+  });
+
   it("leaves LOAD mode after an instruction branches to the ROM error restart", async () => {
     const machine = await createMachine();
     const block = createTapeDataBlock(new Uint8Array([0x00]));
@@ -305,6 +423,119 @@ describe("SP48 Wasm tape upload ABI", () => {
 
     expect(machine.getAudioSamples().some((sample) => sample.left !== 0)).toBe(true);
   });
+
+  it("fast-loads a data block through the ROM load hook", async () => {
+    const machine = await createMachine();
+    const payload = new Uint8Array([0x3c, 0x5a, 0xa5, 0x18]);
+    const targetAddress = 0x9000;
+
+    machine.uploadTape([createTapeDataBlock(createTapBlock(0xff, payload))], "fast.tap");
+    machine.setTapeFastLoad(true);
+    machine.setCpuAfAlt(0xff01);
+    machine.setCpuIx(targetAddress);
+    machine.setCpuDe(payload.length);
+    writeProgram(machine, 0x8000, [0xc3, LOAD_BYTES_ROUTINE & 0xff, LOAD_BYTES_ROUTINE >> 8]);
+    machine.setCpuPc(0x8000);
+
+    machine.executeInstruction();
+
+    expect([...payload].map((_, index) => machine.readMemory(targetAddress + index))).toEqual([...payload]);
+    expect(machine.getCpuPc()).toBe(LOAD_BYTES_RESUME_ROUTINE);
+    expect(machine.getCpuIx()).toBe(targetAddress + payload.length);
+    expect(machine.getCpuDe()).toBe(0);
+    expect(machine.getCpuAf() & FLAG_C).toBe(FLAG_C);
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Passive);
+    expect(machine.getTapeCurrentBlockIndex()).toBe(1);
+    expect(machine.isTapeEof()).toBe(true);
+  });
+
+  it("fast-load verify succeeds when target bytes match", async () => {
+    const machine = await createMachine();
+    const payload = new Uint8Array([0x10, 0x20, 0x30]);
+    const targetAddress = 0x9100;
+
+    payload.forEach((byte, index) => machine.writeMemory(targetAddress + index, byte));
+    machine.uploadTape([createTapeDataBlock(createTapBlock(0xff, payload))], "verify.tap");
+    machine.setTapeFastLoad(true);
+    machine.setCpuAfAlt(0xff00);
+    machine.setCpuIx(targetAddress);
+    machine.setCpuDe(payload.length);
+    writeProgram(machine, 0x8000, [0xc3, LOAD_BYTES_ROUTINE & 0xff, LOAD_BYTES_ROUTINE >> 8]);
+    machine.setCpuPc(0x8000);
+
+    machine.executeInstruction();
+
+    expect(machine.getCpuPc()).toBe(LOAD_BYTES_RESUME_ROUTINE);
+    expect(machine.getCpuAf() & FLAG_C).toBe(FLAG_C);
+    expect([...payload].map((_, index) => machine.readMemory(targetAddress + index))).toEqual([...payload]);
+    expect(machine.isTapeEof()).toBe(true);
+  });
+
+  it("fast-load branches to the invalid-header routine for a wrong block type", async () => {
+    const machine = await createMachine();
+    const payload = new Uint8Array([0x55, 0xaa]);
+
+    machine.uploadTape([createTapeDataBlock(createTapBlock(0x00, payload))], "wrong-type.tap");
+    machine.setTapeFastLoad(true);
+    machine.setCpuAfAlt(0xff01);
+    machine.setCpuHl(0x1234);
+    machine.setCpuIx(0x9200);
+    machine.setCpuDe(payload.length);
+    writeProgram(machine, 0x8000, [0xc3, LOAD_BYTES_ROUTINE & 0xff, LOAD_BYTES_ROUTINE >> 8]);
+    machine.setCpuPc(0x8000);
+
+    machine.executeInstruction();
+
+    expect(machine.getCpuPc()).toBe(LOAD_BYTES_INVALID_HEADER_ROUTINE);
+    expect(machine.getCpuAf() & FLAG_C).toBe(0);
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Passive);
+    expect(machine.getTapeCurrentBlockIndex()).toBe(1);
+    expect(machine.isTapeEof()).toBe(true);
+  });
+
+  it("fast-load reports checksum errors through carry clear", async () => {
+    const machine = await createMachine();
+    const payload = new Uint8Array([0xde, 0xad, 0xbe, 0xef]);
+    const block = createTapBlock(0xff, payload);
+    block[block.length - 1] ^= 0x01;
+
+    machine.uploadTape([createTapeDataBlock(block)], "bad-checksum.tap");
+    machine.setTapeFastLoad(true);
+    machine.setCpuAfAlt(0xff01);
+    machine.setCpuIx(0x9300);
+    machine.setCpuDe(payload.length);
+    writeProgram(machine, 0x8000, [0xc3, LOAD_BYTES_ROUTINE & 0xff, LOAD_BYTES_ROUTINE >> 8]);
+    machine.setCpuPc(0x8000);
+
+    machine.executeInstruction();
+
+    expect(machine.getCpuPc()).toBe(LOAD_BYTES_RESUME_ROUTINE);
+    expect(machine.getCpuAf() & FLAG_C).toBe(0);
+    expect(machine.getTapeMode()).toBe(Sp48TapeMode.Passive);
+    expect(machine.isTapeEof()).toBe(true);
+  });
+
+  it("fast-load uses the machine memory map and does not write into ROM", async () => {
+    const machine = await createMachine();
+    const rom = new Uint8Array(0x4000).fill(0x42);
+    const payload = new Uint8Array([0x11, 0x22, 0x33]);
+
+    machine.uploadRomBytes(rom);
+    machine.uploadTape([createTapeDataBlock(createTapBlock(0xff, payload))], "rom-target.tap");
+    machine.setTapeFastLoad(true);
+    machine.setCpuAfAlt(0xff01);
+    machine.setCpuIx(0x0000);
+    machine.setCpuDe(payload.length);
+    writeProgram(machine, 0x8000, [0xc3, LOAD_BYTES_ROUTINE & 0xff, LOAD_BYTES_ROUTINE >> 8]);
+    machine.setCpuPc(0x8000);
+
+    machine.executeInstruction();
+
+    expect(machine.getCpuPc()).toBe(LOAD_BYTES_RESUME_ROUTINE);
+    expect(machine.getCpuAf() & FLAG_C).toBe(FLAG_C);
+    expect([...payload].map((_, index) => machine.readMemory(index))).toEqual([0x42, 0x42, 0x42]);
+    expect(machine.isTapeEof()).toBe(true);
+  });
 });
 
 function readCString(bytes: Uint8Array): string {
@@ -314,4 +545,56 @@ function readCString(bytes: Uint8Array): string {
 
 function writeProgram(machine: Awaited<ReturnType<typeof createMachine>>, address: number, bytes: number[]): void {
   bytes.forEach((byte, index) => machine.writeMemory(address + index, byte));
+}
+
+function enterSaveMode(machine: Awaited<ReturnType<typeof createMachine>>): void {
+  writeProgram(machine, 0x8000, [0xc3, SAVE_BYTES_ROUTINE & 0xff, SAVE_BYTES_ROUTINE >> 8]);
+  machine.setCpuPc(0x8000);
+  machine.executeInstruction();
+  expect(machine.getTapeMode()).toBe(Sp48TapeMode.Save);
+}
+
+function createSavePulseEmitter(machine: Awaited<ReturnType<typeof createMachine>>) {
+  let micBit = true;
+  let tacts = machine.tacts;
+  return (length: number) => {
+    tacts += length;
+    micBit = !micBit;
+    machine.setTacts(tacts);
+    machine.writePort(0x00fe, micBit ? 0x08 : 0x00);
+  };
+}
+
+function emitSaveBlock(pulse: (length: number) => void, bytes: number[]): void {
+  for (let i = 0; i < MIN_SAVE_PILOT_COUNT; i++) {
+    pulse(PILOT_PL);
+  }
+  pulse(SYNC_1_PL);
+  pulse(SYNC_2_PL);
+  if (bytes.length === 0) {
+    pulse(BIT_0_PL);
+  } else {
+    bytes.forEach((byte) => emitSaveByte(pulse, byte));
+  }
+  pulse(TERM_SYNC);
+}
+
+function emitSaveByte(pulse: (length: number) => void, value: number): void {
+  for (let bit = 7; bit >= 0; bit--) {
+    const length = (value & (1 << bit)) === 0 ? BIT_0_PL : BIT_1_PL;
+    pulse(length);
+    pulse(length);
+  }
+}
+
+function createTapBlock(flag: number, payload: Uint8Array): Uint8Array {
+  let checksum = flag & 0xff;
+  const block = new Uint8Array(payload.length + 2);
+  block[0] = flag & 0xff;
+  payload.forEach((byte, index) => {
+    block[index + 1] = byte;
+    checksum ^= byte;
+  });
+  block[block.length - 1] = checksum;
+  return block;
 }

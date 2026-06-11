@@ -30,6 +30,8 @@ export type TapeMediaState = {
   blockCount?: number;
   currentBlockIndex?: number;
   status?: "ready" | "rewound" | "loading" | "paused" | "eof";
+  mode?: "passive" | "load" | "save";
+  phase?: "none" | "pilot" | "sync" | "data" | "termSync" | "pause" | "completed";
   sourceFormat?: "tap" | "tzx";
   warnings?: string[];
   error?: string;

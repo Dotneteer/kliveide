@@ -20,14 +20,29 @@
 #define SP48_TAPE_MAX_BLOCKS 512u
 #define SP48_TAPE_DATA_CAPACITY 0x400000u
 #define SP48_TAPE_FILENAME_CAPACITY 260u
+#define SP48_TAPE_SAVE_MAX_BLOCKS 64u
+#define SP48_TAPE_SAVE_DATA_CAPACITY 0x100000u
 #define SP48_TAPE_HEADER_PILOT_COUNT 8063u
 #define SP48_TAPE_DATA_PILOT_COUNT 3223u
+#define SP48_TAPE_MIN_SAVE_PILOT_PULSE_COUNT 3000u
+#define SP48_TAPE_SAVE_PULSE_TOLERANCE 24u
+#define SP48_TAPE_TOO_LONG_SAVE_PAUSE 3500000u
+#define SP48_TAPE_PILOT_PULSE_LENGTH 2168u
+#define SP48_TAPE_SYNC1_PULSE_LENGTH 667u
+#define SP48_TAPE_SYNC2_PULSE_LENGTH 735u
+#define SP48_TAPE_BIT0_PULSE_LENGTH 855u
+#define SP48_TAPE_BIT1_PULSE_LENGTH 1710u
+#define SP48_TAPE_TERM_SYNC_PULSE_LENGTH 947u
 #define SP48_TAPE_LOAD_BYTES_ROUTINE 0x056cu
+#define SP48_TAPE_LOAD_BYTES_INVALID_HEADER_ROUTINE 0x05b6u
+#define SP48_TAPE_LOAD_BYTES_RESUME_ROUTINE 0x05e2u
 #define SP48_TAPE_SAVE_BYTES_ROUTINE 0x04c2u
 #define SP48_DIAGNOSTIC_TAPE_BLOCK_OVERFLOW 0x00000004u
 #define SP48_DIAGNOSTIC_TAPE_DATA_OVERFLOW 0x00000008u
 #define SP48_DIAGNOSTIC_TAPE_UPLOAD_INCOMPLETE 0x00000010u
 #define SP48_DIAGNOSTIC_BORDER_TRANSITION_OVERFLOW 0x00000020u
+#define SP48_DIAGNOSTIC_TAPE_SAVE_DATA_OVERFLOW 0x00000040u
+#define SP48_DIAGNOSTIC_TAPE_SAVE_BLOCK_OVERFLOW 0x00000080u
 
 #define SP48_TAPE_MODE_PASSIVE 0u
 #define SP48_TAPE_MODE_LOAD 1u
@@ -40,6 +55,23 @@
 #define SP48_TAPE_PHASE_TERM_SYNC 4u
 #define SP48_TAPE_PHASE_PAUSE 5u
 #define SP48_TAPE_PHASE_COMPLETED 6u
+
+#define SP48_TAPE_SAVE_PHASE_NONE 0u
+#define SP48_TAPE_SAVE_PHASE_PILOT 1u
+#define SP48_TAPE_SAVE_PHASE_SYNC1 2u
+#define SP48_TAPE_SAVE_PHASE_SYNC2 3u
+#define SP48_TAPE_SAVE_PHASE_DATA 4u
+#define SP48_TAPE_SAVE_PHASE_ERROR 5u
+
+#define SP48_TAPE_MIC_PULSE_NONE 0u
+#define SP48_TAPE_MIC_PULSE_TOO_SHORT 1u
+#define SP48_TAPE_MIC_PULSE_TOO_LONG 2u
+#define SP48_TAPE_MIC_PULSE_PILOT 3u
+#define SP48_TAPE_MIC_PULSE_SYNC1 4u
+#define SP48_TAPE_MIC_PULSE_SYNC2 5u
+#define SP48_TAPE_MIC_PULSE_BIT0 6u
+#define SP48_TAPE_MIC_PULSE_BIT1 7u
+#define SP48_TAPE_MIC_PULSE_TERM_SYNC 8u
 
 #define SP48_RENDER_PHASE_NONE 0u
 #define SP48_RENDER_PHASE_BORDER 1u
@@ -99,6 +131,11 @@ typedef struct Sp48TapeBlock {
   uint32_t pilotPulseCount;
 } Sp48TapeBlock;
 
+typedef struct Sp48SavedTapeBlock {
+  uint32_t offset;
+  uint32_t length;
+} Sp48SavedTapeBlock;
+
 // ----------------------------------------------------------------------------
 // Static machine state
 
@@ -114,8 +151,10 @@ static Sp48AudioSample sp48AudioSamples[SP48_AUDIO_SAMPLE_CAPACITY];
 static Sp48AudioTransition sp48AudioTransitions[SP48_AUDIO_TRANSITION_CAPACITY];
 static Sp48BorderTransition sp48BorderTransitions[SP48_BORDER_TRANSITION_CAPACITY];
 static Sp48TapeBlock sp48TapeBlocks[SP48_TAPE_MAX_BLOCKS];
+static Sp48SavedTapeBlock sp48SavedTapeBlocks[SP48_TAPE_SAVE_MAX_BLOCKS];
 static uint8_t sp48TapeData[SP48_TAPE_DATA_CAPACITY];
 static uint8_t sp48TapeFileName[SP48_TAPE_FILENAME_CAPACITY];
+static uint8_t sp48TapeSaveData[SP48_TAPE_SAVE_DATA_CAPACITY];
 
 static uint32_t sp48Frames;
 static uint32_t sp48Tacts;
@@ -194,6 +233,19 @@ static uint32_t sp48TapeLastModeChangePc;
 static uint32_t sp48TapeLoadStartCount;
 static uint32_t sp48TapeSaveStartCount;
 static uint8_t sp48TapeFastLoad = 1u;
+static uint8_t sp48TapeSaveMicBit;
+static uint8_t sp48TapeSavePhase;
+static uint8_t sp48TapeSavePreviousDataPulse;
+static uint8_t sp48TapeSaveLastPulse;
+static uint8_t sp48TapeSaveBitOffset;
+static uint8_t sp48TapeSaveDataByte;
+static uint32_t sp48TapeSaveLastMicBitTact;
+static uint32_t sp48TapeSavePilotPulseCount;
+static uint32_t sp48TapeSavedBlockCount;
+static uint32_t sp48TapeSavedDataLength;
+static uint32_t sp48TapeSavedRevision;
+static uint32_t sp48TapeSaveCurrentBlockOffset;
+static uint32_t sp48TapeSaveCurrentBlockLength;
 
 #include "sp48-memory.c"
 #include "sp48-ula.c"
@@ -202,6 +254,7 @@ uint32_t sp48ReadPort(uint32_t address);
 uint32_t sp48ReadFloatingBus(void);
 void sp48WritePort(uint32_t address, uint32_t value);
 uint32_t sp48TapeGetEarBit(void);
+void sp48TapeProcessMicBit(uint32_t micBit);
 uint32_t sp48ExecuteInstruction(void);
 
 #define Z80_EXTERNAL_BUS 1
@@ -625,6 +678,10 @@ void sp48SetCpuIy(uint32_t value) {
 
 uint32_t sp48GetCpuAfAlt(void) {
   return z80GetAfAlt();
+}
+
+void sp48SetCpuAfAlt(uint32_t value) {
+  z80SetAfAlt(value);
 }
 
 uint32_t sp48GetCpuBcAlt(void) {

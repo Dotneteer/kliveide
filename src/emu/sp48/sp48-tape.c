@@ -24,6 +24,37 @@ static void clearTapeBlocks(void) {
 }
 
 static uint8_t sp48TapeGetEarBitInternal(void);
+static void setTapeEarBit(uint8_t value);
+void sp48TapeProcessMicBit(uint32_t micBit);
+
+void sp48TapeClearSavedBlocks(void) {
+  sp48TapeSavedBlockCount = 0u;
+  sp48TapeSavedDataLength = 0u;
+  sp48TapeSaveCurrentBlockOffset = 0u;
+  sp48TapeSaveCurrentBlockLength = 0u;
+  for (uint32_t i = 0u; i < SP48_TAPE_SAVE_MAX_BLOCKS; i++) {
+    sp48SavedTapeBlocks[i].offset = 0u;
+    sp48SavedTapeBlocks[i].length = 0u;
+  }
+}
+
+static void resetTapeSaveCapture(void) {
+  sp48TapeSaveMicBit = 1u;
+  sp48TapeSavePhase = SP48_TAPE_SAVE_PHASE_NONE;
+  sp48TapeSavePreviousDataPulse = SP48_TAPE_MIC_PULSE_NONE;
+  sp48TapeSaveLastPulse = SP48_TAPE_MIC_PULSE_NONE;
+  sp48TapeSaveBitOffset = 0u;
+  sp48TapeSaveDataByte = 0u;
+  sp48TapeSaveLastMicBitTact = sp48Tacts;
+  sp48TapeSavePilotPulseCount = 0u;
+  sp48TapeSavedRevision = 0u;
+  sp48TapeClearSavedBlocks();
+}
+
+static void beginTapeSaveCapture(void) {
+  resetTapeSaveCapture();
+  sp48TapeSaveLastMicBitTact = sp48Tacts;
+}
 
 static void resetTapePlayback(void) {
   sp48TapeCurrentBlockIndex = 0u;
@@ -41,6 +72,8 @@ static void resetTapePlayback(void) {
   sp48TapeTermEndPos = 0u;
   sp48TapePauseEndPos = 0u;
   sp48TapeEarBit = 1u;
+  sp48TapeSavePhase = SP48_TAPE_SAVE_PHASE_NONE;
+  sp48TapeSaveLastPulse = SP48_TAPE_MIC_PULSE_NONE;
 }
 
 void sp48TapeClear(void) {
@@ -55,8 +88,155 @@ void sp48TapeClear(void) {
   sp48TapeMode = SP48_TAPE_MODE_PASSIVE;
   sp48TapePlayPhase = SP48_TAPE_PHASE_NONE;
   sp48TapeEarBit = 1u;
+  resetTapeSaveCapture();
   clearTapeFileName();
   clearTapeBlocks();
+}
+
+uint32_t sp48TapeClassifySavePulse(uint32_t length) {
+  if (length >= SP48_TAPE_BIT0_PULSE_LENGTH - SP48_TAPE_SAVE_PULSE_TOLERANCE &&
+      length <= SP48_TAPE_BIT0_PULSE_LENGTH + SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_BIT0;
+  }
+  if (length >= SP48_TAPE_BIT1_PULSE_LENGTH - SP48_TAPE_SAVE_PULSE_TOLERANCE &&
+      length <= SP48_TAPE_BIT1_PULSE_LENGTH + SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_BIT1;
+  }
+  if (length >= SP48_TAPE_PILOT_PULSE_LENGTH - SP48_TAPE_SAVE_PULSE_TOLERANCE &&
+      length <= SP48_TAPE_PILOT_PULSE_LENGTH + SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_PILOT;
+  }
+  if (length >= SP48_TAPE_SYNC1_PULSE_LENGTH - SP48_TAPE_SAVE_PULSE_TOLERANCE &&
+      length <= SP48_TAPE_SYNC1_PULSE_LENGTH + SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_SYNC1;
+  }
+  if (length >= SP48_TAPE_SYNC2_PULSE_LENGTH - SP48_TAPE_SAVE_PULSE_TOLERANCE &&
+      length <= SP48_TAPE_SYNC2_PULSE_LENGTH + SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_SYNC2;
+  }
+  if (length >= SP48_TAPE_TERM_SYNC_PULSE_LENGTH - SP48_TAPE_SAVE_PULSE_TOLERANCE &&
+      length <= SP48_TAPE_TERM_SYNC_PULSE_LENGTH + SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_TERM_SYNC;
+  }
+  if (length < SP48_TAPE_SYNC1_PULSE_LENGTH - SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_TOO_SHORT;
+  }
+  if (length > SP48_TAPE_PILOT_PULSE_LENGTH + 2u * SP48_TAPE_SAVE_PULSE_TOLERANCE) {
+    return SP48_TAPE_MIC_PULSE_TOO_LONG;
+  }
+  return SP48_TAPE_MIC_PULSE_NONE;
+}
+
+static void beginTapeSaveDataBlock(uint32_t firstPulse) {
+  sp48TapeSavePreviousDataPulse = (uint8_t)firstPulse;
+  sp48TapeSaveBitOffset = 0u;
+  sp48TapeSaveDataByte = 0u;
+  sp48TapeSaveCurrentBlockOffset = sp48TapeSavedDataLength;
+  sp48TapeSaveCurrentBlockLength = 0u;
+}
+
+static void finishTapeSaveDataBlock(void) {
+  if (sp48TapeSavedBlockCount >= SP48_TAPE_SAVE_MAX_BLOCKS) {
+    sp48DiagnosticFlags |= SP48_DIAGNOSTIC_TAPE_SAVE_BLOCK_OVERFLOW;
+    sp48TapeSavePhase = SP48_TAPE_SAVE_PHASE_ERROR;
+    return;
+  }
+
+  sp48SavedTapeBlocks[sp48TapeSavedBlockCount].offset = sp48TapeSaveCurrentBlockOffset;
+  sp48SavedTapeBlocks[sp48TapeSavedBlockCount].length = sp48TapeSaveCurrentBlockLength;
+  sp48TapeSavedBlockCount++;
+  sp48TapeSavedRevision++;
+}
+
+static void appendTapeSaveBit(uint32_t pulse) {
+  sp48TapeSaveBitOffset++;
+  sp48TapeSaveDataByte = (uint8_t)((sp48TapeSaveDataByte * 2u +
+    (pulse == SP48_TAPE_MIC_PULSE_BIT0 ? 0u : 1u)) & 0xffu);
+
+  if (sp48TapeSaveBitOffset != 8u) {
+    return;
+  }
+
+  if (sp48TapeSavedDataLength >= SP48_TAPE_SAVE_DATA_CAPACITY) {
+    sp48DiagnosticFlags |= SP48_DIAGNOSTIC_TAPE_SAVE_DATA_OVERFLOW;
+    sp48TapeSavePhase = SP48_TAPE_SAVE_PHASE_ERROR;
+    return;
+  }
+
+  sp48TapeSaveData[sp48TapeSavedDataLength++] = sp48TapeSaveDataByte;
+  sp48TapeSaveCurrentBlockLength++;
+  sp48TapeSaveDataByte = 0u;
+  sp48TapeSaveBitOffset = 0u;
+}
+
+void sp48TapeProcessMicBit(uint32_t micBit) {
+  const uint8_t nextMicBit = micBit != 0u ? 1u : 0u;
+  if (sp48TapeMode != SP48_TAPE_MODE_SAVE || sp48TapeSaveMicBit == nextMicBit) {
+    return;
+  }
+
+  const uint32_t length = sp48Tacts - sp48TapeSaveLastMicBitTact;
+  const uint32_t pulse = sp48TapeClassifySavePulse(length);
+  sp48TapeSaveMicBit = nextMicBit;
+  sp48TapeSaveLastMicBitTact = sp48Tacts;
+  sp48TapeSaveLastPulse = (uint8_t)pulse;
+
+  uint8_t nextPhase = SP48_TAPE_SAVE_PHASE_ERROR;
+  switch (sp48TapeSavePhase) {
+    case SP48_TAPE_SAVE_PHASE_NONE:
+      if (pulse == SP48_TAPE_MIC_PULSE_TOO_SHORT || pulse == SP48_TAPE_MIC_PULSE_TOO_LONG) {
+        nextPhase = SP48_TAPE_SAVE_PHASE_NONE;
+      } else if (pulse == SP48_TAPE_MIC_PULSE_PILOT) {
+        sp48TapeSavePilotPulseCount = 1u;
+        nextPhase = SP48_TAPE_SAVE_PHASE_PILOT;
+      }
+      break;
+
+    case SP48_TAPE_SAVE_PHASE_PILOT:
+      if (pulse == SP48_TAPE_MIC_PULSE_PILOT) {
+        sp48TapeSavePilotPulseCount++;
+        nextPhase = SP48_TAPE_SAVE_PHASE_PILOT;
+      } else if (pulse == SP48_TAPE_MIC_PULSE_SYNC1 &&
+                 sp48TapeSavePilotPulseCount >= SP48_TAPE_MIN_SAVE_PILOT_PULSE_COUNT) {
+        nextPhase = SP48_TAPE_SAVE_PHASE_SYNC1;
+      }
+      break;
+
+    case SP48_TAPE_SAVE_PHASE_SYNC1:
+      if (pulse == SP48_TAPE_MIC_PULSE_SYNC2) {
+        nextPhase = SP48_TAPE_SAVE_PHASE_SYNC2;
+      }
+      break;
+
+    case SP48_TAPE_SAVE_PHASE_SYNC2:
+      if (pulse == SP48_TAPE_MIC_PULSE_BIT0 || pulse == SP48_TAPE_MIC_PULSE_BIT1) {
+        beginTapeSaveDataBlock(pulse);
+        nextPhase = SP48_TAPE_SAVE_PHASE_DATA;
+      }
+      break;
+
+    case SP48_TAPE_SAVE_PHASE_DATA:
+      if (pulse == SP48_TAPE_MIC_PULSE_BIT0 || pulse == SP48_TAPE_MIC_PULSE_BIT1) {
+        if (sp48TapeSavePreviousDataPulse == SP48_TAPE_MIC_PULSE_NONE) {
+          sp48TapeSavePreviousDataPulse = (uint8_t)pulse;
+          nextPhase = SP48_TAPE_SAVE_PHASE_DATA;
+        } else if (sp48TapeSavePreviousDataPulse == pulse) {
+          sp48TapeSavePreviousDataPulse = SP48_TAPE_MIC_PULSE_NONE;
+          appendTapeSaveBit(pulse);
+          nextPhase = sp48TapeSavePhase == SP48_TAPE_SAVE_PHASE_ERROR
+            ? SP48_TAPE_SAVE_PHASE_ERROR
+            : SP48_TAPE_SAVE_PHASE_DATA;
+        }
+      } else if (pulse == SP48_TAPE_MIC_PULSE_TERM_SYNC) {
+        finishTapeSaveDataBlock();
+        nextPhase = sp48TapeSavePhase == SP48_TAPE_SAVE_PHASE_ERROR
+          ? SP48_TAPE_SAVE_PHASE_ERROR
+          : SP48_TAPE_SAVE_PHASE_NONE;
+      }
+      break;
+  }
+
+  sp48TapeSavePhase = nextPhase;
 }
 
 void sp48TapeSetFileNameByte(uint32_t index, uint32_t value) {
@@ -227,6 +407,79 @@ static void nextTapeBlock(void) {
   }
 }
 
+static void completeFastLoadBlock(void) {
+  sp48TapeCurrentBlockIndex++;
+  if (sp48TapeCurrentBlockIndex >= sp48TapeBlockCount) {
+    sp48TapeEof = 1u;
+    sp48TapePlayPhase = SP48_TAPE_PHASE_COMPLETED;
+    setTapeEarBit(1u);
+    return;
+  }
+
+  sp48TapePlayPhase = SP48_TAPE_PHASE_NONE;
+  sp48TapeDataIndex = 0u;
+  sp48TapeBitMask = 0x80u;
+  sp48TapeEarBit = 1u;
+}
+
+static void fastLoadCurrentTapeBlock(void) {
+  if (currentTapeBlockAvailable() == 0u) {
+    return;
+  }
+
+  Sp48TapeBlock *block = currentTapeBlock();
+  const uint32_t blockEnd = block->offset + block->length;
+  uint32_t dataIndex = block->offset;
+
+  AF = AF_ALT;
+  const uint8_t isVerify = (AF & 0xff01u) == 0xff00u ? 1u : 0u;
+
+  if (dataIndex >= blockEnd || sp48TapeData[dataIndex] != A) {
+    A ^= L;
+    F &= 0xbeu;
+    cpu.pc = SP48_TAPE_LOAD_BYTES_INVALID_HEADER_ROUTINE;
+    completeFastLoadBlock();
+    return;
+  }
+
+  H = A;
+  dataIndex++;
+
+  while (DE > 0u) {
+    if (dataIndex >= blockEnd) {
+      F &= 0xfeu;
+      cpu.pc = SP48_TAPE_LOAD_BYTES_RESUME_ROUTINE;
+      completeFastLoadBlock();
+      return;
+    }
+
+    L = sp48TapeData[dataIndex];
+    if (isVerify != 0u && sp48CpuReadMemory(IX) != L) {
+      F &= 0xbeu;
+      cpu.pc = SP48_TAPE_LOAD_BYTES_INVALID_HEADER_ROUTINE;
+      return;
+    }
+
+    sp48CpuWriteMemory(IX, L);
+
+    H ^= L;
+    dataIndex++;
+    IX = (uint16_t)(IX + 1u);
+    DE = (uint16_t)(DE - 1u);
+  }
+
+  if (dataIndex > blockEnd - 1u) {
+    F &= 0xfeu;
+  } else if (sp48TapeData[dataIndex] != H) {
+    F &= 0xfeu;
+  } else {
+    F |= 0x01u;
+  }
+
+  cpu.pc = SP48_TAPE_LOAD_BYTES_RESUME_ROUTINE;
+  completeFastLoadBlock();
+}
+
 void sp48TapeSetMode(uint32_t mode) {
   if (mode > SP48_TAPE_MODE_SAVE) {
     mode = SP48_TAPE_MODE_PASSIVE;
@@ -251,9 +504,14 @@ static void updateTapeMode(void) {
       setTapeModeInternal(SP48_TAPE_MODE_LOAD);
       sp48TapeLoadStartCount++;
       nextTapeBlock();
+      if (sp48TapeFastLoad != 0u) {
+        fastLoadCurrentTapeBlock();
+        setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
+      }
     } else if (z80GetPc() == SP48_TAPE_SAVE_BYTES_ROUTINE) {
       setTapeModeInternal(SP48_TAPE_MODE_SAVE);
       sp48TapeSaveStartCount++;
+      beginTapeSaveCapture();
     }
     return;
   }
@@ -266,8 +524,11 @@ static void updateTapeMode(void) {
     return;
   }
 
-  if (sp48TapeMode == SP48_TAPE_MODE_SAVE && z80GetPc() == 0x0008u) {
-    setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
+  if (sp48TapeMode == SP48_TAPE_MODE_SAVE) {
+    if (z80GetPc() == 0x0008u ||
+        sp48Tacts - sp48TapeSaveLastMicBitTact > SP48_TAPE_TOO_LONG_SAVE_PAUSE) {
+      setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
+    }
   }
 }
 
@@ -482,6 +743,58 @@ uint32_t sp48TapeGetLoadStartCount(void) {
 
 uint32_t sp48TapeGetSaveStartCount(void) {
   return sp48TapeSaveStartCount;
+}
+
+uint32_t sp48TapeGetSavePhase(void) {
+  return sp48TapeSavePhase;
+}
+
+uint32_t sp48TapeGetSaveLastPulse(void) {
+  return sp48TapeSaveLastPulse;
+}
+
+uint32_t sp48TapeGetSaveMicBit(void) {
+  return sp48TapeSaveMicBit;
+}
+
+uint32_t sp48TapeGetSaveLastMicBitTact(void) {
+  return sp48TapeSaveLastMicBitTact;
+}
+
+uint32_t sp48TapeGetSavePilotPulseCount(void) {
+  return sp48TapeSavePilotPulseCount;
+}
+
+uint32_t sp48TapeGetSavedBlockCount(void) {
+  return sp48TapeSavedBlockCount;
+}
+
+uint32_t sp48TapeGetSavedDataLength(void) {
+  return sp48TapeSavedDataLength;
+}
+
+uint32_t sp48TapeGetSavedRevision(void) {
+  return sp48TapeSavedRevision;
+}
+
+uint32_t sp48TapeGetSaveDataCapacity(void) {
+  return SP48_TAPE_SAVE_DATA_CAPACITY;
+}
+
+uint32_t sp48TapeGetSaveMaxBlocks(void) {
+  return SP48_TAPE_SAVE_MAX_BLOCKS;
+}
+
+uint32_t sp48TapeGetSavedBlockOffset(uint32_t index) {
+  return index < sp48TapeSavedBlockCount ? sp48SavedTapeBlocks[index].offset : 0u;
+}
+
+uint32_t sp48TapeGetSavedBlockLength(uint32_t index) {
+  return index < sp48TapeSavedBlockCount ? sp48SavedTapeBlocks[index].length : 0u;
+}
+
+uint8_t *sp48TapeSaveDataPtr(void) {
+  return sp48TapeSaveData;
 }
 
 uint32_t sp48TapeGetBlockOffset(uint32_t index) {

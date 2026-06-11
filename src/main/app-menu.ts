@@ -62,13 +62,13 @@ import {
 } from "./settings";
 import { MEDIA_TAPE } from "../common/structs/project-const";
 import { parseTapeFile } from "../emu/tape/tape-parser";
+import { TAPE_FILE_FOLDER } from "./tape-folders";
 
 export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 
 type MenuContext = "emu" | "ide";
 
 const SYSTEM_MENU_ID = "system_menu";
-const TAPE_FILE_FOLDER = "tapeFileFolder";
 
 let currentEmuWindow: BrowserWindow | null = null;
 let currentIdeWindow: BrowserWindow | null = null;
@@ -713,6 +713,8 @@ async function setSelectedTapeFile(fileName: string): Promise<void> {
         size: contents.byteLength,
         blockCount: parsed.blocks.length,
         currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        mode: "passive",
+        phase: "none",
         status: parsed.blocks.length > 0 ? "rewound" : undefined,
         sourceFormat: parsed.format,
         warnings: parsed.warnings
@@ -751,6 +753,8 @@ export async function restorePersistedTapeFile(): Promise<void> {
         size: contents.byteLength,
         blockCount: parsed.blocks.length,
         currentBlockIndex: parsed.blocks.length > 0 ? 0 : undefined,
+        mode: "passive",
+        phase: "none",
         status: parsed.blocks.length > 0 ? "rewound" : undefined,
         sourceFormat: parsed.format,
         warnings: parsed.warnings

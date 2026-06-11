@@ -61,6 +61,7 @@ setMainApi(mainApi);
   - `getSettingValue(id)`
   - `setSettingValue(id, value)`
   - `getAllSettingValues()`
+  - `saveGeneratedTapeFile(defaultName, contents)`
 - To add a new API command:
   - Add method shape to the relevant `*Api.ts`.
   - Implement processing method in the receiving process processor.
@@ -126,6 +127,8 @@ if (source !== windowKind || !rendererActionForwarder) return;
 - `setSettingValue(id, value)` validates and dispatches `SET_GLOBAL_SETTING` from source `"main"`.
 - `startSettingsPersistence()` subscribes to `mainStore`; persisted, non-volatile global settings save immediately when changed.
 - Tape media is persisted separately from `globalSettings` under `AppSettings.media`. The selected tape file path and parsed metadata are saved, while transient playback state is restored as rewound. Main dispatches persisted media through `SET_TAPE_MEDIA` during startup state sync, then `restorePersistedTapeFile()` reads file bytes and sends `EmuApi.setTapeFile(...)` so the EMU renderer can parse and upload to Wasm. Renderer-side tape upload is queued in `sp48-session.ts` if the active `Sp48MachineController` is not registered yet.
+- Generated SAVE output uses `MainApi.saveGeneratedTapeFile(defaultName, contents)`. The main process opens an Electron save dialog, defaults to the last tape folder stored under `appSettings.folders.tapeFileFolder`, writes the TZX bytes, then updates that folder setting. Renderer code must call this API rather than importing Node or Electron file APIs.
+- `EmulatorPanelReact` handles `Sp48FrameCompletedEvent.savedTapeFileInfo` through `createGeneratedTapeSaveQueue(...)` in `src/renderer/lib/EmulatorPanel/generatedTapeSave.ts`. The queue serializes save dialogs so multiple generated SAVE events cannot overlap. Success/cancel are logged; failure is surfaced through the panel's existing error display. Generated saves do not update selected tape media state unless the user explicitly loads the saved file.
 - XMLUI should update persisted settings through:
 
 ```xmlui
