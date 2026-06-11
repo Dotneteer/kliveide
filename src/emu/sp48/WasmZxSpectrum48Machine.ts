@@ -38,6 +38,10 @@ export type Sp48WasmExports = {
   sp48GetAudioSampleCount: () => number;
   sp48GetAudioSampleCapacity: () => number;
   sp48GetTactsInFrame: () => number;
+  sp48SetTargetClockMultiplier: (value: number) => void;
+  sp48GetClockMultiplier: () => number;
+  sp48GetTargetClockMultiplier: () => number;
+  sp48GetTactsInCurrentFrame: () => number;
   sp48GetBaseClockFrequency: () => number;
   sp48GetFrames: () => number;
   sp48GetTacts: () => number;
@@ -297,8 +301,24 @@ export class WasmZxSpectrum48Machine {
     return this.wasm.sp48GetTactsInFrame();
   }
 
+  get clockMultiplier(): number {
+    return this.wasm.sp48GetClockMultiplier();
+  }
+
+  get targetClockMultiplier(): number {
+    return this.wasm.sp48GetTargetClockMultiplier();
+  }
+
+  get tactsInCurrentFrame(): number {
+    return this.wasm.sp48GetTactsInCurrentFrame();
+  }
+
   get baseClockFrequency(): number {
     return this.wasm.sp48GetBaseClockFrequency();
+  }
+
+  setTargetClockMultiplier(value: number): void {
+    this.wasm.sp48SetTargetClockMultiplier(value);
   }
 
   reset(): void {

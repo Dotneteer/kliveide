@@ -55,6 +55,7 @@ export type EmulatorState = {
   soundLevel?: number;
   soundMuted?: boolean;
   savedSoundLevel?: number;
+  clockMultiplier?: number;
   lastMachineCommand?: MachineCommand;
   machineCommandSequence: number;
   sp48FrameInfo?: {
@@ -65,6 +66,7 @@ export type EmulatorState = {
     avgFrameTimeInMs: number;
     pc: number;
     baseClockFrequency: number;
+    clockMultiplier: number;
   };
 };
 
@@ -91,6 +93,7 @@ export const initialAppState: AppState = {
     soundLevel: 0.8,
     soundMuted: false,
     savedSoundLevel: 0.8,
+    clockMultiplier: 1,
     machineCommandSequence: 0
   }
 };

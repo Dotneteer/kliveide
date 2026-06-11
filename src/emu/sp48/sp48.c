@@ -144,6 +144,9 @@ static uint8_t sp48TapeSaveData[SP48_TAPE_SAVE_DATA_CAPACITY];
 static uint32_t sp48Frames;
 static uint32_t sp48Tacts;
 static uint32_t sp48TactsInFrame = SP48_TACTS_PER_FRAME_PAL;
+static uint32_t sp48ClockMultiplier = 1u;
+static uint32_t sp48TargetClockMultiplier = 1u;
+static uint32_t sp48TactsInCurrentFrame = SP48_TACTS_PER_FRAME_PAL;
 static uint32_t sp48RasterLines;
 static uint32_t sp48ScreenLineTime;
 static uint32_t sp48TimingScreenWidth;
@@ -237,6 +240,7 @@ static uint32_t sp48TapeSaveCurrentBlockLength;
 
 static void setNextAudioSample(void);
 static void renderUlaUntilCurrentTact(void);
+static uint32_t normalizeClockMultiplier(uint32_t value);
 
 #include "sp48-memory.c"
 #include "sp48-ula.c"
@@ -334,6 +338,29 @@ uint32_t sp48ExecuteInstruction(void);
 // ----------------------------------------------------------------------------
 // Lifecycle and execution
 
+static uint32_t normalizeClockMultiplier(uint32_t value) {
+  switch (value) {
+    case 1u:
+    case 2u:
+    case 4u:
+    case 6u:
+    case 8u:
+    case 10u:
+    case 12u:
+    case 16u:
+    case 20u:
+    case 24u:
+    case 32u:
+    case 40u:
+    case 48u:
+    case 56u:
+    case 64u:
+      return value;
+    default:
+      return 1u;
+  }
+}
+
 void sp48Reset(void) {
   if (sp48ScreenLineTime == 0u) {
     initializeTimingTables(&sp48PalConfig);
@@ -343,6 +370,8 @@ void sp48Reset(void) {
   resetPortFe();
   sp48Frames = 0u;
   sp48Tacts = 0u;
+  sp48ClockMultiplier = 1u;
+  sp48TactsInCurrentFrame = sp48TactsInFrame;
   sp48DiagnosticFlags = 0u;
   sp48TotalContentionDelaySinceStart = 0u;
   sp48ContentionDelaySincePause = 0u;
@@ -372,8 +401,13 @@ uint32_t sp48ExecuteFrame(void) {
     sp48FrameCompleted = 0u;
   }
 
-  const uint32_t frameStartTact = sp48Tacts;
-  const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInFrame;
+  if (sp48ClockMultiplier != sp48TargetClockMultiplier) {
+    sp48ClockMultiplier = sp48TargetClockMultiplier;
+    sp48TactsInCurrentFrame = sp48TactsInFrame * sp48ClockMultiplier;
+  }
+
+  const uint32_t frameStartTact = sp48NextFrameStartTact;
+  const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
   beginAudioFrame();
   beginBorderFrame(frameStartTact);
   sp48CpuFrameSliceInstructions = 0u;
@@ -382,7 +416,7 @@ uint32_t sp48ExecuteFrame(void) {
     sp48CpuFrameSliceInstructions++;
   }
   sp48FrameCompleted = 1u;
-  sp48NextFrameStartTact += sp48TactsInFrame;
+  sp48NextFrameStartTact += sp48TactsInCurrentFrame;
   sp48Frames++;
   renderUlaUntilCurrentTact();
   return 0u;
@@ -407,7 +441,7 @@ uint32_t sp48ExecuteInstruction(void) {
   sp48Tacts = z80GetTacts();
   sp48CpuInstructionsExecuted++;
   updateTapeMode();
-  sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInFrame ? 1u : 0u;
+  sp48FrameCompleted = sp48Tacts >= sp48NextFrameStartTact + sp48TactsInCurrentFrame ? 1u : 0u;
   return 0u;
 }
 
@@ -527,6 +561,22 @@ uint32_t sp48GetAudioSampleCapacity(void) {
 
 uint32_t sp48GetTactsInFrame(void) {
   return sp48TactsInFrame;
+}
+
+void sp48SetTargetClockMultiplier(uint32_t value) {
+  sp48TargetClockMultiplier = normalizeClockMultiplier(value);
+}
+
+uint32_t sp48GetClockMultiplier(void) {
+  return sp48ClockMultiplier;
+}
+
+uint32_t sp48GetTargetClockMultiplier(void) {
+  return sp48TargetClockMultiplier;
+}
+
+uint32_t sp48GetTactsInCurrentFrame(void) {
+  return sp48TactsInCurrentFrame;
 }
 
 uint32_t sp48GetBaseClockFrequency(void) {

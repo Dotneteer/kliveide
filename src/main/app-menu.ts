@@ -42,7 +42,13 @@ import {
   SETTING_IDE_SYNC_BREAKPOINTS,
   SETTING_IDE_TOOLS_ON_TOP
 } from "../common/settings/setting-const";
-import { clearTapeMediaAction, dimMenuAction, setTapeMediaAction, setThemeAction } from "../common/state/actions";
+import {
+  clearTapeMediaAction,
+  dimMenuAction,
+  setClockMultiplierAction,
+  setTapeMediaAction,
+  setThemeAction
+} from "../common/state/actions";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
 import type { EmuMachineCommand } from "../common/messaging/EmuApi";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
@@ -69,6 +75,7 @@ export const KLIVE_GITHUB_PAGES = "https://dotneteer.github.io/kliveide";
 type MenuContext = "emu" | "ide";
 
 const SYSTEM_MENU_ID = "system_menu";
+const CLOCK_MULTIPLIER_VALUES = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64];
 
 let currentEmuWindow: BrowserWindow | null = null;
 let currentIdeWindow: BrowserWindow | null = null;
@@ -419,6 +426,7 @@ function createMachineMenu(): MenuItemConstructorOptions {
   const supportsTape = !!machineInfo?.features?.[MF_TAPE_SUPPORT];
   const tapeMedia = appState.media?.[MEDIA_TAPE];
   const hasTape = !!tapeMedia?.displayName;
+  const clockMultiplier = appState.emulatorState?.clockMultiplier ?? 1;
 
   return {
     label: "Machine",
@@ -513,17 +521,13 @@ function createMachineMenu(): MenuItemConstructorOptions {
       {
         id: "clock_mult",
         label: "Clock Multiplier",
-        submenu: ["Normal", "2x", "4x", "6x", "8x", "10x", "12x", "16x", "20x", "24x"].map(
-          (label) => ({
-            label,
-            type: "checkbox" as const,
-            click: notImplemented(`Clock Multiplier ${label}`, `
-              mainStore.dispatch(setClockMultiplierAction(v));
-              await logEmuEvent(\`Clock multiplier set to \${v}\`);
-              await saveKliveProject();
-            `)
-          })
-        )
+        submenu: CLOCK_MULTIPLIER_VALUES.map((value) => ({
+          id: `clock_mult_${value}`,
+          label: value === 1 ? "Normal" : `${value}x`,
+          type: "checkbox" as const,
+          checked: clockMultiplier === value,
+          click: () => setClockMultiplier(value)
+        }))
       },
       {
         id: "sound_level",
@@ -953,6 +957,24 @@ function issueMachineCommand(command: EmuMachineCommand): () => Promise<void> {
   };
 }
 
+async function setClockMultiplier(value: number): Promise<void> {
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    mainStore.dispatch(setClockMultiplierAction(value), "main");
+    saveAppSettings();
+    await getEmuApi().setClockMultiplier(value);
+  } catch (err) {
+    await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+      type: "error",
+      title: "Clock multiplier failed",
+      message: `Could not set clock multiplier to ${value}x.`,
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
 function notImplemented(label: string, _originalHandler: string): () => Promise<void> {
   // The original handler body is intentionally passed by each caller and kept in
   // source as a nearby comment string until the corresponding shell subsystem exists.
@@ -1025,6 +1047,7 @@ function getMenuRefreshSignature(): string {
     machineId: state.emulatorState?.machineId,
     modelId: state.emulatorState?.modelId,
     machineState: state.emulatorState?.machineState,
+    clockMultiplier: state.emulatorState?.clockMultiplier,
     media: state.media,
     globalSettings: state.globalSettings
   });

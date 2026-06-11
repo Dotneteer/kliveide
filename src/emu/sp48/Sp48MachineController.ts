@@ -23,6 +23,8 @@ export type Sp48FrameCompletedEvent = {
   audioSampleCount: number;
   audioSamples: Sp48AudioSample[];
   pixelBuffer: Uint32Array;
+  clockMultiplier: number;
+  targetClockMultiplier: number;
   savedTapeFileInfo?: Sp48SavedTapeFileInfo;
 };
 
@@ -240,6 +242,10 @@ export class Sp48MachineController {
     this.machine.setTapeFastLoad(enabled);
   }
 
+  setTargetClockMultiplier(value: number): void {
+    this.machine.setTargetClockMultiplier(value);
+  }
+
   release(): void {
     this.frameCompletedEmitter.release();
   }
@@ -254,7 +260,7 @@ export class Sp48MachineController {
 
   private executeDebugFrameSlice(): void {
     const startedAt = performance.now();
-    const frameEndTact = this.machine.getNextFrameStartTact() + this.machine.tactsInFrame;
+    const frameEndTact = this.machine.getNextFrameStartTact() + this.machine.tactsInCurrentFrame;
     const maxInstructions = 100_000;
     let instructions = 0;
     while (this.state === MachineControllerState.Running && this.machine.tacts < frameEndTact) {
@@ -283,6 +289,8 @@ export class Sp48MachineController {
       audioSampleCount: this.machine.getAudioSampleCount(),
       audioSamples: this.machine.getAudioSamples(),
       pixelBuffer: this.machine.getPixelBuffer(),
+      clockMultiplier: this.machine.clockMultiplier,
+      targetClockMultiplier: this.machine.targetClockMultiplier,
       savedTapeFileInfo: this.consumeSavedTapeFileInfo()
     };
   }

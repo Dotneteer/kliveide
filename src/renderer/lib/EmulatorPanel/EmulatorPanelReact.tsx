@@ -70,6 +70,7 @@ export const EmulatorPanelReact = () => {
   const commandSequence = sharedState.emulatorState?.machineCommandSequence ?? 0;
   const lastMachineCommand = sharedState.emulatorState?.lastMachineCommand as Sp48MachineCommand | undefined;
   const soundLevel = sharedState.emulatorState?.soundLevel ?? 0.8;
+  const clockMultiplier = sharedState.emulatorState?.clockMultiplier ?? 1;
   const fastLoad = sharedState.globalSettings?.emuOptions?.fastLoad ?? true;
   const machineSelection = resolveMachineSelection(
     sharedState.emulatorState?.machineId,
@@ -78,6 +79,7 @@ export const EmulatorPanelReact = () => {
   );
   const machineKey = getMachineSelectionKey(machineSelection);
   const soundLevelRef = useRef(soundLevel);
+  const clockMultiplierRef = useRef(clockMultiplier);
   const fastLoadRef = useRef(fastLoad);
   const generatedTapeSaveQueueRef = useRef(
     createGeneratedTapeSaveQueue(saveGeneratedTapeFile, (status) => {
@@ -131,6 +133,11 @@ export const EmulatorPanelReact = () => {
   }, [soundLevel]);
 
   useEffect(() => {
+    clockMultiplierRef.current = clockMultiplier;
+    controllerRef.current?.setTargetClockMultiplier(clockMultiplier);
+  }, [clockMultiplier]);
+
+  useEffect(() => {
     tapeMediaRef.current = sharedState.media?.tape;
   }, [sharedState.media?.tape]);
 
@@ -158,6 +165,7 @@ export const EmulatorPanelReact = () => {
 
         controllerRef.current = controller;
         controller.setTapeFastLoad(fastLoadRef.current);
+        controller.setTargetClockMultiplier(clockMultiplierRef.current);
         setActiveSp48Controller(controller);
 
         updateScreenDimensions();
@@ -237,7 +245,8 @@ export const EmulatorPanelReact = () => {
               lastFrameTimeInMs,
               avgFrameTimeInMs: avgFrameTimeRef.current,
               pc: controller.machine.getCpuPc(),
-              baseClockFrequency: controller.machine.baseClockFrequency
+              baseClockFrequency: controller.machine.baseClockFrequency,
+              clockMultiplier: event.clockMultiplier
             }));
             publishTapeStatus(controller);
           }
@@ -268,6 +277,7 @@ export const EmulatorPanelReact = () => {
               continue;
             }
 
+            controller.setTargetClockMultiplier(clockMultiplierRef.current);
             if (controller.tickFrame()) {
               paintPixels();
             }

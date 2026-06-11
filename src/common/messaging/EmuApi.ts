@@ -34,6 +34,14 @@ class EmuApiImpl {
   }
 
   /**
+   * Sets the emulator clock multiplier.
+   * @param _value Clock multiplier value.
+   */
+  async setClockMultiplier(_value: number): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets the tape file for the emulator.
    * @param _file The tape file name.
    * @param _contents The tape file contents as Uint8Array.

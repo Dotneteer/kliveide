@@ -50,6 +50,7 @@ export const setSp48FrameInfoAction: ActionCreator = (
     avgFrameTimeInMs: number;
     pc: number;
     baseClockFrequency: number;
+    clockMultiplier: number;
   }
 ) => ({
   type: "SET_SP48_FRAME_INFO",
@@ -68,6 +69,11 @@ export const clearTapeMediaAction: ActionCreator = () => ({
 export const muteSoundAction: ActionCreator = (flag: boolean) => ({
   type: "MUTE_SOUND",
   payload: { flag }
+});
+
+export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
+  type: "SET_CLOCK_MULTIPLIER",
+  payload: { numValue }
 });
 
 export const unloadWindowsAction: ActionCreator = () => ({

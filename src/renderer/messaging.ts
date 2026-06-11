@@ -15,6 +15,7 @@ import {
 import {
   clearTapeMediaAction,
   issueMachineCommandAction,
+  setClockMultiplierAction,
   setGlobalSettingAction,
   setMachineTypeAction,
   setTapeMediaAction,
@@ -133,6 +134,11 @@ class EmuMessageProcessor {
   async issueMachineCommand(command: EmuMachineCommand) {
     issueDemoMachineCommand(command, "emu");
     rememberStatus(`EmuApi.issueMachineCommand received command=${command}.`);
+  }
+
+  async setClockMultiplier(value: number) {
+    dispatchSharedAction(setClockMultiplierAction(value), "emu");
+    rememberStatus(`EmuApi.setClockMultiplier received value=${value}.`);
   }
 
   async setTapeFile(

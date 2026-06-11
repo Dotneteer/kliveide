@@ -12,7 +12,8 @@ import {
   setThemeAction,
   setMachineTypeAction,
   setTapeMediaAction,
-  clearTapeMediaAction
+  clearTapeMediaAction,
+  setClockMultiplierAction
 } from "../common/state/actions";
 import type { MediaState } from "../common/state/AppState";
 import type { WindowState } from "./WindowState";
@@ -31,6 +32,9 @@ export type AppSettings = {
   theme?: string;
   globalSettings?: Record<string, unknown>;
   media?: MediaState;
+  emulatorState?: {
+    clockMultiplier?: number;
+  };
 };
 
 export let appSettings: AppSettings = {};
@@ -73,6 +77,10 @@ export function applyPersistedSettingsToStore(): void {
 
   mainStore.dispatch(setThemeAction(appSettings.theme ?? "dark"), "main");
   mainStore.dispatch(initGlobalSettingsAction(globalSettings), "main");
+  mainStore.dispatch(
+    setClockMultiplierAction(normalizeClockMultiplier(appSettings.emulatorState?.clockMultiplier)),
+    "main"
+  );
   if (appSettings.media?.tape?.fileName) {
     mainStore.dispatch(setTapeMediaAction(appSettings.media.tape), "main");
   } else {
@@ -153,7 +161,10 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     ...settings,
     theme: settings.theme ?? "dark",
     globalSettings: normalizeGlobalSettings(settings.globalSettings ?? {}),
-    media: selectPersistedMedia(settings.media ?? {})
+    media: selectPersistedMedia(settings.media ?? {}),
+    emulatorState: {
+      clockMultiplier: normalizeClockMultiplier(settings.emulatorState?.clockMultiplier)
+    }
   };
 }
 
@@ -162,6 +173,9 @@ function refreshAppSettingsFromStore(): void {
   appSettings.theme = state.theme;
   appSettings.globalSettings = selectPersistedGlobalSettings(state.globalSettings ?? {});
   appSettings.media = selectPersistedMedia(state.media ?? {});
+  appSettings.emulatorState = {
+    clockMultiplier: normalizeClockMultiplier(state.emulatorState?.clockMultiplier)
+  };
 }
 
 function selectPersistedGlobalSettings(globalSettings: Record<string, unknown>): Record<string, unknown> {
@@ -221,6 +235,12 @@ function getMachineSelectionFromSettings(globalSettings: Record<string, unknown>
     config?: Record<string, unknown>;
   };
   return resolveMachineSelection(selection.machineId, selection.modelId, selection.config);
+}
+
+function normalizeClockMultiplier(value: unknown): number {
+  return typeof value === "number" && [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64].includes(value)
+    ? value
+    : 1;
 }
 
 function validateSettingValue(setting: Setting, value: unknown): void {

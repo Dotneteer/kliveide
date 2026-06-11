@@ -3,6 +3,8 @@ import type { MachineCommand } from "../abstractions/MachineCommand";
 import type { Action } from "./Action";
 import type { EmulatorState } from "./AppState";
 
+const CLOCK_MULTIPLIER_VALUES = new Set([1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64]);
+
 export function emulatorStateReducer(state: EmulatorState, { type, payload }: Action): EmulatorState {
   switch (type) {
     case "SET_MACHINE_TYPE":
@@ -48,6 +50,17 @@ export function emulatorStateReducer(state: EmulatorState, { type, payload }: Ac
         soundLevel: payload?.flag ? 0.0 : state.savedSoundLevel,
         savedSoundLevel: payload?.flag ? state.soundLevel : state.savedSoundLevel
       };
+
+    case "SET_CLOCK_MULTIPLIER": {
+      const multiplier = payload?.numValue;
+      return {
+        ...state,
+        clockMultiplier:
+          typeof multiplier === "number" && CLOCK_MULTIPLIER_VALUES.has(multiplier)
+            ? multiplier
+            : 1
+      };
+    }
 
     default:
       return state;

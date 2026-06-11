@@ -64,8 +64,15 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.screenWidthInPixels).toBe(352);
     expect(machine.screenHeightInPixels).toBe(288);
     expect(machine.tactsInFrame).toBe(69888);
+    expect(machine.tactsInCurrentFrame).toBe(69888);
+    expect(machine.clockMultiplier).toBe(1);
+    expect(machine.targetClockMultiplier).toBe(1);
     expect(machine.baseClockFrequency).toBe(3_500_000);
     expect(machine.getPixelBufferStartOffset()).toBe(352);
+
+    machine.setTargetClockMultiplier(2);
+    expect(machine.targetClockMultiplier).toBe(2);
+    expect(machine.clockMultiplier).toBe(1);
 
     const memoryBuffer = memory.buffer;
     const pixelBuffer = pixels.buffer;
@@ -94,6 +101,24 @@ describe("Wasm ZX Spectrum 48K skeleton", () => {
     expect(machine.tacts).toBe(69888);
     expect(before).toBe(SpectrumColors.Black);
     expect(after).toBe(SpectrumColors.Black);
+  });
+
+  it("applies the target clock multiplier at the next executed frame", async () => {
+    const machine = await createMachine();
+    machine.reset();
+
+    machine.setTargetClockMultiplier(2);
+    expect(machine.clockMultiplier).toBe(1);
+    expect(machine.tactsInCurrentFrame).toBe(69888);
+
+    machine.executeMachineFrame();
+
+    expect(machine.clockMultiplier).toBe(2);
+    expect(machine.targetClockMultiplier).toBe(2);
+    expect(machine.tactsInCurrentFrame).toBe(139776);
+    expect(machine.frames).toBe(1);
+    expect(machine.tacts).toBeGreaterThanOrEqual(139776);
+    expect(machine.tacts).toBeLessThan(139800);
   });
 
   it("renders Spectrum ULA pixels from screen and attribute memory", async () => {

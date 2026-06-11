@@ -65,7 +65,18 @@ static inline uint32_t getUlaPixelColor(uint8_t pixelSet, uint8_t attr) {
 }
 
 static inline uint32_t currentFrameTact(void) {
-  return sp48TactsInFrame == 0u ? 0u : sp48Tacts % sp48TactsInFrame;
+  if (sp48TactsInFrame == 0u) {
+    return 0u;
+  }
+
+  const uint32_t elapsedTacts =
+    sp48Tacts >= sp48NextFrameStartTact ? sp48Tacts - sp48NextFrameStartTact : 0u;
+  const uint32_t multiplier = sp48ClockMultiplier == 0u ? 1u : sp48ClockMultiplier;
+  uint32_t tact = elapsedTacts / multiplier;
+  if (tact >= sp48TactsInFrame) {
+    tact = sp48TactsInFrame - 1u;
+  }
+  return tact;
 }
 
 static inline uint16_t calcPixelAddress(uint32_t line, uint32_t tactInLine) {
@@ -347,7 +358,10 @@ static void renderUlaTact(uint32_t tact) {
 }
 
 static void renderUlaUntilCurrentTact(void) {
-  uint32_t machineTact = sp48Tacts - sp48BorderFrameStartTact;
+  const uint32_t elapsedTacts =
+    sp48Tacts >= sp48BorderFrameStartTact ? sp48Tacts - sp48BorderFrameStartTact : 0u;
+  const uint32_t multiplier = sp48ClockMultiplier == 0u ? 1u : sp48ClockMultiplier;
+  uint32_t machineTact = elapsedTacts / multiplier;
   if (machineTact >= sp48TactsInFrame) {
     machineTact = sp48TactsInFrame - 1u;
   }

@@ -17,7 +17,8 @@ import {
   setThemeAction,
   setMachineTypeAction,
   setTapeMediaAction,
-  clearTapeMediaAction
+  clearTapeMediaAction,
+  setClockMultiplierAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
@@ -96,6 +97,7 @@ function dispatchMainOwnedState(): void {
       )
     );
   }
+  mainStore.dispatch(setClockMultiplierAction(state.emulatorState?.clockMultiplier ?? 1));
   if (state.media?.tape?.fileName) {
     mainStore.dispatch(setTapeMediaAction(state.media.tape));
   } else {

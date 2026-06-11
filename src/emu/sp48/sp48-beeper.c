@@ -94,7 +94,7 @@ static void setNextAudioSample(void) {
   sp48AudioSamples[sp48AudioSampleCount].left = clampAudioWord(outLeft * SP48_AUDIO_SAMPLE_SCALE);
   sp48AudioSamples[sp48AudioSampleCount].right = clampAudioWord(outRight * SP48_AUDIO_SAMPLE_SCALE);
   sp48AudioSampleCount++;
-  sp48AudioNextSampleTact += sp48AudioSampleLength;
+  sp48AudioNextSampleTact += sp48AudioSampleLength * (double)sp48ClockMultiplier;
 }
 
 void sp48SetAudioSampleRate(uint32_t rate) {
