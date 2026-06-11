@@ -148,9 +148,7 @@ export class AudioRenderer {
 
     const stereoSamples: number[] = [];
     for (const sample of samples) {
-      const ear = normalizeSample(sample.left);
-      const mic = normalizeSample(sample.right);
-      const speaker = (ear * 0.66 + mic * 0.33) * soundLevel;
+      const speaker = normalizeSample(sample.left) * soundLevel;
       stereoSamples.push(speaker);
       stereoSamples.push(speaker);
     }

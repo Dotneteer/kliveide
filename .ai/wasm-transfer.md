@@ -46,7 +46,7 @@ These notes capture lessons from migrating the original TypeScript ZX Spectrum 4
 - The frame's sample count can vary naturally, for example around `958, 958, 959...` at 48 kHz PAL.
 - Render samples through the actual CPU tact after the instruction that crosses the frame boundary so overshoot tacts are included.
 - Keep output scheduling in the renderer audio worklet path. The C core prepares static per-frame sample buffers; TypeScript normalizes, applies volume/mute, and submits to the worklet.
-- For the current Spectrum speaker path, post the mixed speaker signal to both left and right channels so playback is centered.
+- For the current Spectrum speaker path, post the EAR/loudspeaker signal to both left and right channels so playback is centered. Keep MIC transitions available for SAVE capture and diagnostics, but do not make MIC-only cassette output audible through the internal speaker path.
 
 ## Keyboard And Ports
 

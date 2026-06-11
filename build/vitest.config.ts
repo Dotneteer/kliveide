@@ -14,6 +14,7 @@ export default defineConfig({
       "./test/dummy.test.ts",
       "./test/common/media-state.test.ts",
       "./test/main/generated-tape-save.test.ts",
+      "./test/renderer/audio-renderer.test.ts",
       "./test/renderer/generated-tape-save.test.ts",
       "./test/tape/tape-parser.test.ts",
       "./test/tape/tape-save.test.ts",
