@@ -18,7 +18,8 @@ import {
   setMachineTypeAction,
   setTapeMediaAction,
   clearTapeMediaAction,
-  setClockMultiplierAction
+  setClockMultiplierAction,
+  setSoundLevelAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
@@ -98,6 +99,12 @@ function dispatchMainOwnedState(): void {
     );
   }
   mainStore.dispatch(setClockMultiplierAction(state.emulatorState?.clockMultiplier ?? 1));
+  mainStore.dispatch(
+    setSoundLevelAction(
+      state.emulatorState?.soundLevel ?? 0.8,
+      state.emulatorState?.savedSoundLevel ?? 0.8
+    )
+  );
   if (state.media?.tape?.fileName) {
     mainStore.dispatch(setTapeMediaAction(state.media.tape));
   } else {

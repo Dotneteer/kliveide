@@ -12,6 +12,7 @@ export default defineConfig({
     root: resolve(__dirname, ".."),
     include: [
       "./test/dummy.test.ts",
+      "./test/common/emulator-state-reducer.test.ts",
       "./test/common/media-state.test.ts",
       "./test/main/generated-tape-save.test.ts",
       "./test/renderer/audio-renderer.test.ts",

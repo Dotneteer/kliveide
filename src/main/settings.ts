@@ -13,7 +13,8 @@ import {
   setMachineTypeAction,
   setTapeMediaAction,
   clearTapeMediaAction,
-  setClockMultiplierAction
+  setClockMultiplierAction,
+  setSoundLevelAction
 } from "../common/state/actions";
 import type { MediaState } from "../common/state/AppState";
 import type { WindowState } from "./WindowState";
@@ -34,11 +35,14 @@ export type AppSettings = {
   media?: MediaState;
   emulatorState?: {
     clockMultiplier?: number;
+    soundLevel?: number;
+    savedSoundLevel?: number;
   };
 };
 
 export let appSettings: AppSettings = {};
 let lastSavedGlobalSettings = "";
+let lastSavedEmulatorState = "";
 let unsubscribeSettingsPersistence: (() => void) | undefined;
 
 export function loadAppSettings(): void {
@@ -66,6 +70,7 @@ export function saveAppSettings(): void {
     fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
     fs.writeFileSync(settingsPath, JSON.stringify(appSettings, null, 2));
     lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(appSettings.globalSettings ?? {}));
+    lastSavedEmulatorState = stableJson(selectPersistedEmulatorState(appSettings.emulatorState ?? {}));
   } catch {
     // Settings persistence is best-effort; window closing should never fail on it.
   }
@@ -79,6 +84,13 @@ export function applyPersistedSettingsToStore(): void {
   mainStore.dispatch(initGlobalSettingsAction(globalSettings), "main");
   mainStore.dispatch(
     setClockMultiplierAction(normalizeClockMultiplier(appSettings.emulatorState?.clockMultiplier)),
+    "main"
+  );
+  mainStore.dispatch(
+    setSoundLevelAction(
+      normalizeSoundLevel(appSettings.emulatorState?.soundLevel),
+      normalizeSavedSoundLevel(appSettings.emulatorState?.savedSoundLevel)
+    ),
     "main"
   );
   if (appSettings.media?.tape?.fileName) {
@@ -95,19 +107,28 @@ export function applyPersistedSettingsToStore(): void {
     "main"
   );
   lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(globalSettings));
+  lastSavedEmulatorState = stableJson(selectPersistedEmulatorState(appSettings.emulatorState ?? {}));
 }
 
 export function startSettingsPersistence(): void {
   unsubscribeSettingsPersistence?.();
   lastSavedGlobalSettings = stableJson(selectPersistedGlobalSettings(mainStore.getState().globalSettings ?? {}));
+  lastSavedEmulatorState = stableJson(selectPersistedEmulatorState(mainStore.getState().emulatorState ?? {}));
 
   unsubscribeSettingsPersistence = mainStore.subscribe(() => {
-    const nextGlobalSettings = mainStore.getState().globalSettings ?? {};
+    const state = mainStore.getState();
+    const nextGlobalSettings = state.globalSettings ?? {};
     const nextPersistedGlobalSettings = selectPersistedGlobalSettings(nextGlobalSettings);
-    const nextSignature = stableJson(nextPersistedGlobalSettings);
+    const nextGlobalSignature = stableJson(nextPersistedGlobalSettings);
+    const nextPersistedEmulatorState = selectPersistedEmulatorState(state.emulatorState ?? {});
+    const nextEmulatorSignature = stableJson(nextPersistedEmulatorState);
 
-    if (nextSignature !== lastSavedGlobalSettings) {
+    if (
+      nextGlobalSignature !== lastSavedGlobalSettings ||
+      nextEmulatorSignature !== lastSavedEmulatorState
+    ) {
       appSettings.globalSettings = nextPersistedGlobalSettings;
+      appSettings.emulatorState = nextPersistedEmulatorState;
       saveAppSettings();
     }
   });
@@ -163,7 +184,9 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     globalSettings: normalizeGlobalSettings(settings.globalSettings ?? {}),
     media: selectPersistedMedia(settings.media ?? {}),
     emulatorState: {
-      clockMultiplier: normalizeClockMultiplier(settings.emulatorState?.clockMultiplier)
+      clockMultiplier: normalizeClockMultiplier(settings.emulatorState?.clockMultiplier),
+      soundLevel: normalizeSoundLevel(settings.emulatorState?.soundLevel),
+      savedSoundLevel: normalizeSavedSoundLevel(settings.emulatorState?.savedSoundLevel)
     }
   };
 }
@@ -173,9 +196,7 @@ function refreshAppSettingsFromStore(): void {
   appSettings.theme = state.theme;
   appSettings.globalSettings = selectPersistedGlobalSettings(state.globalSettings ?? {});
   appSettings.media = selectPersistedMedia(state.media ?? {});
-  appSettings.emulatorState = {
-    clockMultiplier: normalizeClockMultiplier(state.emulatorState?.clockMultiplier)
-  };
+  appSettings.emulatorState = selectPersistedEmulatorState(state.emulatorState ?? {});
 }
 
 function selectPersistedGlobalSettings(globalSettings: Record<string, unknown>): Record<string, unknown> {
@@ -223,6 +244,14 @@ function selectPersistedMedia(media: MediaState): MediaState {
   };
 }
 
+function selectPersistedEmulatorState(emulatorState: AppSettings["emulatorState"]): NonNullable<AppSettings["emulatorState"]> {
+  return {
+    clockMultiplier: normalizeClockMultiplier(emulatorState?.clockMultiplier),
+    soundLevel: normalizeSoundLevel(emulatorState?.soundLevel),
+    savedSoundLevel: normalizeSavedSoundLevel(emulatorState?.savedSoundLevel)
+  };
+}
+
 function getMachineSelectionFromSettings(globalSettings: Record<string, unknown>) {
   const value = get(globalSettings, SETTING_EMU_MACHINE_TYPE);
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -241,6 +270,18 @@ function normalizeClockMultiplier(value: unknown): number {
   return typeof value === "number" && [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64].includes(value)
     ? value
     : 1;
+}
+
+function normalizeSoundLevel(value: unknown): number {
+  return typeof value === "number" && [0.0, 0.2, 0.4, 0.8, 1.0].includes(value)
+    ? value
+    : 0.8;
+}
+
+function normalizeSavedSoundLevel(value: unknown): number {
+  return typeof value === "number" && [0.2, 0.4, 0.8, 1.0].includes(value)
+    ? value
+    : 0.8;
 }
 
 function validateSettingValue(setting: Setting, value: unknown): void {

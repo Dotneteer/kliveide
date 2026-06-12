@@ -47,9 +47,23 @@ export function emulatorStateReducer(state: EmulatorState, { type, payload }: Ac
       return {
         ...state,
         soundMuted: payload?.flag,
-        soundLevel: payload?.flag ? 0.0 : state.savedSoundLevel,
-        savedSoundLevel: payload?.flag ? state.soundLevel : state.savedSoundLevel
+        soundLevel: payload?.flag ? 0.0 : normalizeSavedSoundLevel(state.savedSoundLevel),
+        savedSoundLevel: payload?.flag
+          ? getLastUnmutedSoundLevel(state.soundLevel, state.savedSoundLevel)
+          : normalizeSavedSoundLevel(state.savedSoundLevel)
       };
+
+    case "SET_SOUND_LEVEL": {
+      const soundLevel = normalizeSoundLevel(payload?.numValue);
+      return {
+        ...state,
+        soundLevel,
+        soundMuted: soundLevel === 0.0,
+        savedSoundLevel: soundLevel === 0.0
+          ? getLastUnmutedSoundLevel(state.soundLevel, state.savedSoundLevel, payload?.value)
+          : soundLevel
+      };
+    }
 
     case "SET_CLOCK_MULTIPLIER": {
       const multiplier = payload?.numValue;
@@ -65,4 +79,28 @@ export function emulatorStateReducer(state: EmulatorState, { type, payload }: Ac
     default:
       return state;
   }
+}
+
+function normalizeSoundLevel(value: unknown): number {
+  return typeof value === "number" && [0.0, 0.2, 0.4, 0.8, 1.0].includes(value)
+    ? value
+    : 0.8;
+}
+
+function normalizeSavedSoundLevel(value: unknown): number {
+  return typeof value === "number" && [0.2, 0.4, 0.8, 1.0].includes(value)
+    ? value
+    : 0.8;
+}
+
+function getLastUnmutedSoundLevel(
+  soundLevel: unknown,
+  savedSoundLevel: unknown,
+  fallbackSoundLevel?: unknown
+): number {
+  return typeof fallbackSoundLevel === "number" && fallbackSoundLevel > 0.0
+    ? normalizeSavedSoundLevel(fallbackSoundLevel)
+    : typeof soundLevel === "number" && soundLevel > 0.0
+    ? normalizeSavedSoundLevel(soundLevel)
+    : normalizeSavedSoundLevel(savedSoundLevel);
 }

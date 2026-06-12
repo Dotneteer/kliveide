@@ -71,6 +71,11 @@ export const muteSoundAction: ActionCreator = (flag: boolean) => ({
   payload: { flag }
 });
 
+export const setSoundLevelAction: ActionCreator = (numValue: number, savedSoundLevel?: number) => ({
+  type: "SET_SOUND_LEVEL",
+  payload: { numValue, value: savedSoundLevel }
+});
+
 export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
   type: "SET_CLOCK_MULTIPLIER",
   payload: { numValue }

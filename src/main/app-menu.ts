@@ -46,6 +46,7 @@ import {
   clearTapeMediaAction,
   dimMenuAction,
   setClockMultiplierAction,
+  setSoundLevelAction,
   setTapeMediaAction,
   setThemeAction
 } from "../common/state/actions";
@@ -76,6 +77,13 @@ type MenuContext = "emu" | "ide";
 
 const SYSTEM_MENU_ID = "system_menu";
 const CLOCK_MULTIPLIER_VALUES = [1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64];
+const SOUND_LEVEL_VALUES = [
+  { value: 0.0, label: "Mute" },
+  { value: 0.2, label: "Low" },
+  { value: 0.4, label: "Medium" },
+  { value: 0.8, label: "High" },
+  { value: 1.0, label: "Highest" }
+];
 
 let currentEmuWindow: BrowserWindow | null = null;
 let currentIdeWindow: BrowserWindow | null = null;
@@ -427,6 +435,7 @@ function createMachineMenu(): MenuItemConstructorOptions {
   const tapeMedia = appState.media?.[MEDIA_TAPE];
   const hasTape = !!tapeMedia?.displayName;
   const clockMultiplier = appState.emulatorState?.clockMultiplier ?? 1;
+  const soundLevel = appState.emulatorState?.soundLevel ?? 0.8;
 
   return {
     label: "Machine",
@@ -532,14 +541,12 @@ function createMachineMenu(): MenuItemConstructorOptions {
       {
         id: "sound_level",
         label: "Sound Level",
-        submenu: ["Mute", "Low", "Medium", "High", "Highest"].map((label) => ({
+        submenu: SOUND_LEVEL_VALUES.map(({ value, label }) => ({
+          id: `sound_level_${value}`,
           label,
           type: "checkbox" as const,
-          click: notImplemented(`Sound Level ${label}`, `
-            mainStore.dispatch(setSoundLevelAction(v.value));
-            await logEmuEvent(\`Sound level set to \${v.label} (\${v.value})\`);
-            await saveKliveProject();
-          `)
+          checked: soundLevel === value,
+          click: () => setSoundLevel(value)
         }))
       },
       { type: "separator" },
@@ -975,6 +982,24 @@ async function setClockMultiplier(value: number): Promise<void> {
   }
 }
 
+async function setSoundLevel(value: number): Promise<void> {
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    mainStore.dispatch(setSoundLevelAction(value), "main");
+    saveAppSettings();
+    await getEmuApi().setSoundLevel(value);
+  } catch (err) {
+    await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+      type: "error",
+      title: "Sound level failed",
+      message: `Could not set sound level to ${value}.`,
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
 function notImplemented(label: string, _originalHandler: string): () => Promise<void> {
   // The original handler body is intentionally passed by each caller and kept in
   // source as a nearby comment string until the corresponding shell subsystem exists.
@@ -1048,6 +1073,8 @@ function getMenuRefreshSignature(): string {
     modelId: state.emulatorState?.modelId,
     machineState: state.emulatorState?.machineState,
     clockMultiplier: state.emulatorState?.clockMultiplier,
+    soundLevel: state.emulatorState?.soundLevel,
+    soundMuted: state.emulatorState?.soundMuted,
     media: state.media,
     globalSettings: state.globalSettings
   });

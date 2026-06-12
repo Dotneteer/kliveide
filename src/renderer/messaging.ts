@@ -18,6 +18,7 @@ import {
   setClockMultiplierAction,
   setGlobalSettingAction,
   setMachineTypeAction,
+  setSoundLevelAction,
   setTapeMediaAction,
   setThemeAction
 } from "../common/state/actions";
@@ -139,6 +140,11 @@ class EmuMessageProcessor {
   async setClockMultiplier(value: number) {
     dispatchSharedAction(setClockMultiplierAction(value), "emu");
     rememberStatus(`EmuApi.setClockMultiplier received value=${value}.`);
+  }
+
+  async setSoundLevel(value: number) {
+    dispatchSharedAction(setSoundLevelAction(value), "emu");
+    rememberStatus(`EmuApi.setSoundLevel received value=${value}.`);
   }
 
   async setTapeFile(
