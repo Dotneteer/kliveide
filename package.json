@@ -37,6 +37,9 @@
     "test": "npm run build:wasm && vitest run --config build/vitest.config.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
   },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0"
+  },
   "devDependencies": {
     "@types/lodash": "^4.17.24",
     "@types/node": "^20.14.10",
@@ -53,11 +56,14 @@
     "appId": "dotneteer.kliveide",
     "productName": "Klive IDE",
     "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}",
+    "asar": false,
     "directories": {
       "output": "artifacts/"
     },
     "files": [
-      "out/**/*"
+      "out/**/*",
+      "package.json",
+      "node_modules/@ffmpeg-installer/**/*"
     ],
     "mac": {
       "target": "pkg",

@@ -2,7 +2,13 @@ import { ActionCreator } from "./Action";
 import type { MachineCommand } from "../abstractions/MachineCommand";
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import type { MachineConfigSet } from "../machines/info-types";
-import type { TapeMediaState } from "./AppState";
+import type {
+  RecordingFormat,
+  RecordingFps,
+  RecordingQuality,
+  ScreenRecordingState,
+  TapeMediaState
+} from "./AppState";
 
 export const initGlobalSettingsAction: ActionCreator = (value: Record<string, any>) => ({
   type: "INIT_GLOBAL_SETTINGS",
@@ -79,6 +85,30 @@ export const setSoundLevelAction: ActionCreator = (numValue: number, savedSoundL
 export const setClockMultiplierAction: ActionCreator = (numValue: number) => ({
   type: "SET_CLOCK_MULTIPLIER",
   payload: { numValue }
+});
+
+export const setScreenRecordingAvailableAction: ActionCreator = (available: boolean) => ({
+  type: "SET_SCREEN_RECORDING_AVAILABLE",
+  payload: { flag: available }
+});
+
+export const setScreenRecordingStateAction: ActionCreator = (
+  recordingState: ScreenRecordingState,
+  file?: string,
+  fps?: RecordingFps
+) => ({
+  type: "SET_SCREEN_RECORDING_STATE",
+  payload: { id: recordingState, value: file, text: fps }
+});
+
+export const setScreenRecordingQualityAction: ActionCreator = (quality: RecordingQuality) => ({
+  type: "SET_SCREEN_RECORDING_QUALITY",
+  payload: { id: quality }
+});
+
+export const setScreenRecordingFormatAction: ActionCreator = (format: RecordingFormat) => ({
+  type: "SET_SCREEN_RECORDING_FORMAT",
+  payload: { id: format }
 });
 
 export const unloadWindowsAction: ActionCreator = () => ({

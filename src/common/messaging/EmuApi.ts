@@ -5,6 +5,19 @@ import type { MachineCommand } from "../abstractions/MachineCommand";
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
 export type EmuMachineCommand = MachineCommand;
+export type EmuRecordingCommand =
+  | "set-fps-native"
+  | "set-fps-half"
+  | "set-quality-lossless"
+  | "set-quality-high"
+  | "set-quality-good"
+  | "set-format-mp4"
+  | "set-format-webm"
+  | "set-format-mkv"
+  | "start-recording"
+  | "disarm"
+  | "pause-recording"
+  | "resume-recording";
 
 /**
  * This class defines the shape of the Emu process API that can be called from
@@ -30,6 +43,14 @@ class EmuApiImpl {
    * @param _command Machine command to issue.
    */
   async issueMachineCommand(_command: EmuMachineCommand): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Issues a recording command to the emulator renderer.
+   * @param _command Recording command to issue.
+   */
+  async issueRecordingCommand(_command: EmuRecordingCommand): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

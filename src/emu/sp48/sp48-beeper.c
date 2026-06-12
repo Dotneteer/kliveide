@@ -25,7 +25,7 @@ static void resetAudioAccumulator(void) {
 static void resetAudio(void) {
   sp48AudioSampleCount = 0u;
   sp48AudioSampleLength = (double)sp48BaseClockFrequency / (double)sp48AudioSampleRate;
-  sp48AudioNextSampleTact = 0.0;
+  sp48AudioNextSampleTact = sp48AudioSampleLength * (double)sp48ClockMultiplier;
   sp48DcFilterPrevInputLeft = 0.0;
   sp48DcFilterPrevInputRight = 0.0;
   sp48DcFilterPrevOutputLeft = 0.0;
@@ -100,6 +100,6 @@ static void setNextAudioSample(void) {
 void sp48SetAudioSampleRate(uint32_t rate) {
   sp48AudioSampleRate = rate == 0u ? SP48_DEFAULT_SAMPLE_RATE : rate;
   sp48AudioSampleLength = (double)sp48BaseClockFrequency / (double)sp48AudioSampleRate;
-  sp48AudioNextSampleTact = 0.0;
+  sp48AudioNextSampleTact = sp48AudioSampleLength * (double)sp48ClockMultiplier;
   sp48AudioSampleCount = 0u;
 }

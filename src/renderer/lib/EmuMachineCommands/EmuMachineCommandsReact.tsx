@@ -1,10 +1,12 @@
 import { useEffect, useMemo } from "react";
-import type { EmuMachineCommand } from "../../../common/messaging/EmuApi";
+import type { EmuMachineCommand, EmuRecordingCommand } from "../../../common/messaging/EmuApi";
 import { issueMachineCommandAction, setTapeMediaAction } from "../../../common/state/actions";
 import { useDispatch, useSharedState } from "../../shared-store";
+import { issueRecordingCommandToActiveManager } from "../recording/recording-session";
 
 type EmuMachineCommandsApi = {
   issueMachineCommand: (command: EmuMachineCommand) => void;
+  issueRecordingCommand: (command: EmuRecordingCommand) => void;
 };
 
 type Props = {
@@ -28,6 +30,9 @@ export function EmuMachineCommandsReact({ registerComponentApi }: Props) {
             })
           );
         }
+      },
+      issueRecordingCommand(command) {
+        void issueRecordingCommandToActiveManager(command);
       }
     }),
     [dispatch, sharedState.media?.tape]

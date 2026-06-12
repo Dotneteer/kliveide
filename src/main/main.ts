@@ -3,7 +3,7 @@ import path from "node:path";
 import { registerMainToEmuMessenger } from "../common/messaging/MainToEmuMessenger";
 import { registerMainToIdeMessenger } from "../common/messaging/MainToIdeMessenger";
 import { type Channel, type RequestMessage } from "../common/messaging/messages-core";
-import { SETTING_IDE_CLOSE_EMU } from "../common/settings/setting-const";
+import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "../common/settings/setting-const";
 import {
   emuFocusedAction,
   emuLoadedAction,
@@ -19,7 +19,8 @@ import {
   setTapeMediaAction,
   clearTapeMediaAction,
   setClockMultiplierAction,
-  setSoundLevelAction
+  setSoundLevelAction,
+  setScreenRecordingAvailableAction
 } from "../common/state/actions";
 import { createWindowStateManager } from "./WindowStateManager";
 import {
@@ -39,6 +40,7 @@ import {
   startSettingsPersistence,
   stopSettingsPersistence
 } from "./settings";
+import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 
 const SAVE_BEFORE_CLOSE_TIMEOUT_MS = 1000;
 const EMULATOR_WINDOW_TITLE = "Klive Retro-Computer Emulator";
@@ -53,6 +55,7 @@ let ideStartupVisibilityHandledForQuit = false;
 let saveRequestId = 0;
 let emuWindowStateManager: ReturnType<typeof createWindowStateManager> | null = null;
 let ideWindowStateManager: ReturnType<typeof createWindowStateManager> | null = null;
+let lastStayOnTopValue: boolean | undefined;
 
 function getPreloadPath(): string {
   return path.join(__dirname, "../preload/preload.js");
@@ -105,6 +108,7 @@ function dispatchMainOwnedState(): void {
       state.emulatorState?.savedSoundLevel ?? 0.8
     )
   );
+  mainStore.dispatch(setScreenRecordingAvailableAction(isFFmpegAvailable()));
   if (state.media?.tape?.fileName) {
     mainStore.dispatch(setTapeMediaAction(state.media.tape));
   } else {
@@ -113,6 +117,18 @@ function dispatchMainOwnedState(): void {
   mainStore.dispatch(dimMenuAction(state.dimMenu ?? false));
   mainStore.dispatch(emuFocusedAction(emuWindow?.isFocused() ?? false));
   mainStore.dispatch(ideFocusedAction(ideWindow?.isFocused() ?? false));
+}
+
+function applyEmulatorStayOnTop(force = false): void {
+  if (!emuWindow || emuWindow.isDestroyed()) {
+    return;
+  }
+  const stayOnTop = !!getSettingValue(SETTING_EMU_STAY_ON_TOP);
+  if (!force && lastStayOnTopValue === stayOnTop) {
+    return;
+  }
+  lastStayOnTopValue = stayOnTop;
+  emuWindow.setAlwaysOnTop(stayOnTop, process.platform === "linux" ? "normal" : undefined);
 }
 
 function rememberIdeStartupVisibility(isVisible: boolean): void {
@@ -251,6 +267,9 @@ async function createEmulatorWindow(): Promise<void> {
 
   emuWindow.on("focus", () => {
     mainStore.dispatch(emuFocusedAction(true), "main");
+    if (process.platform === "linux") {
+      applyEmulatorStayOnTop(true);
+    }
   });
 
   emuWindow.on("blur", () => {
@@ -261,10 +280,12 @@ async function createEmulatorWindow(): Promise<void> {
     mainStore.dispatch(emuFocusedAction(false), "main");
     emuWindow = null;
     emuWindowStateManager = null;
+    lastStayOnTopValue = undefined;
     updateApplicationMenuWindows(emuWindow, ideWindow);
   });
 
   emuWindowStateManager.manage(emuWindow);
+  applyEmulatorStayOnTop(true);
   registerMainToEmuMessenger(emuWindow);
   updateApplicationMenuWindows(emuWindow, ideWindow);
 
@@ -362,6 +383,7 @@ app.whenReady().then(async () => {
   loadAppSettings();
   applyPersistedSettingsToStore();
   startSettingsPersistence();
+  mainStore.subscribe(() => applyEmulatorStayOnTop());
   registerRendererToMainIpc();
   ipcMain.handle("ide:open", createIdeWindow);
   await createEmulatorWindow();

@@ -45,6 +45,11 @@ export type MediaState = {
   tape?: TapeMediaState;
 };
 
+export type RecordingFps = "native" | "half";
+export type RecordingQuality = "lossless" | "high" | "good";
+export type RecordingFormat = "mp4" | "webm" | "mkv";
+export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
+
 export type EmulatorState = {
   machineId?: string;
   modelId?: string;
@@ -56,6 +61,12 @@ export type EmulatorState = {
   soundMuted?: boolean;
   savedSoundLevel?: number;
   clockMultiplier?: number;
+  screenRecordingAvailable?: boolean;
+  screenRecordingState?: ScreenRecordingState;
+  screenRecordingFile?: string;
+  screenRecordingFps?: RecordingFps;
+  screenRecordingQuality?: RecordingQuality;
+  screenRecordingFormat?: RecordingFormat;
   lastMachineCommand?: MachineCommand;
   machineCommandSequence: number;
   sp48FrameInfo?: {
@@ -94,6 +105,11 @@ export const initialAppState: AppState = {
     soundMuted: false,
     savedSoundLevel: 0.8,
     clockMultiplier: 1,
+    screenRecordingAvailable: true,
+    screenRecordingState: "idle",
+    screenRecordingFps: "native",
+    screenRecordingQuality: "good",
+    screenRecordingFormat: "mp4",
     machineCommandSequence: 0
   }
 };

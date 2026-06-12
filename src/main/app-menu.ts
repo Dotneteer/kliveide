@@ -51,8 +51,14 @@ import {
   setThemeAction
 } from "../common/state/actions";
 import { getEmuApi } from "../common/messaging/MainToEmuMessenger";
-import type { EmuMachineCommand } from "../common/messaging/EmuApi";
+import type { EmuMachineCommand, EmuRecordingCommand } from "../common/messaging/EmuApi";
 import { MachineControllerState } from "../common/abstractions/MachineControllerState";
+import type {
+  RecordingFormat,
+  RecordingFps,
+  RecordingQuality,
+  ScreenRecordingState
+} from "../common/state/AppState";
 import { MF_ALLOW_SCAN_LINES, MF_TAPE_SUPPORT } from "../common/machines/constants";
 import {
   getMachineInfo,
@@ -436,6 +442,14 @@ function createMachineMenu(): MenuItemConstructorOptions {
   const hasTape = !!tapeMedia?.displayName;
   const clockMultiplier = appState.emulatorState?.clockMultiplier ?? 1;
   const soundLevel = appState.emulatorState?.soundLevel ?? 0.8;
+  const recordingAvailable = appState.emulatorState?.screenRecordingAvailable ?? true;
+  const recordingState = appState.emulatorState?.screenRecordingState ?? "idle";
+  const recordingFps = appState.emulatorState?.screenRecordingFps ?? "native";
+  const recordingQuality = appState.emulatorState?.screenRecordingQuality ?? "good";
+  const recordingFormat = appState.emulatorState?.screenRecordingFormat ?? "mp4";
+  const recordingIdle = recordingState === "idle";
+  const recordingActive = recordingState === "recording" || recordingState === "paused";
+  const recordingPreferenceEnabled = recordingState === "idle" || recordingState === "armed";
 
   return {
     label: "Machine",
@@ -581,34 +595,81 @@ function createMachineMenu(): MenuItemConstructorOptions {
       {
         id: "recording_menu",
         label: "Recording",
+        enabled: recordingAvailable,
         submenu: [
           {
             id: "recording_half_fps",
             label: "Half fps",
             type: "checkbox",
-            click: notImplemented("Recording Half fps", `
-              await getEmuApi().issueRecordingCommand(
-                appState?.emulatorState?.screenRecordingFps === "half"
-                  ? "set-fps-native"
-                  : "set-fps-half"
-              );
-            `)
+            checked: recordingFps === "half",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFps(recordingFps === "half" ? "native" : "half")
           },
           { type: "separator" },
           {
             id: "recording_quality_lossless",
             label: "Highest (lossless) quality",
             type: "checkbox",
-            click: notImplemented("Recording Quality", `
-              await getEmuApi().issueRecordingCommand("set-quality-lossless");
-            `)
+            checked: recordingQuality === "lossless",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingQuality("lossless")
+          },
+          {
+            id: "recording_quality_high",
+            label: "High quality",
+            type: "checkbox",
+            checked: recordingQuality === "high",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingQuality("high")
+          },
+          {
+            id: "recording_quality_good",
+            label: "Good quality",
+            type: "checkbox",
+            checked: recordingQuality === "good",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingQuality("good")
+          },
+          { type: "separator" },
+          {
+            id: "recording_format_mp4",
+            label: "MP4",
+            type: "checkbox",
+            checked: recordingFormat === "mp4",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFormat("mp4")
+          },
+          {
+            id: "recording_format_webm",
+            label: "WebM",
+            type: "checkbox",
+            checked: recordingFormat === "webm",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFormat("webm")
+          },
+          {
+            id: "recording_format_mkv",
+            label: "MKV",
+            type: "checkbox",
+            checked: recordingFormat === "mkv",
+            enabled: recordingPreferenceEnabled,
+            click: () => setRecordingFormat("mkv")
+          },
+          { type: "separator" },
+          {
+            id: "recording_pause_resume",
+            label: recordingState === "paused" ? "Resume recording" : "Pause recording",
+            enabled: recordingActive,
+            click: () => setRecordingState(recordingState === "paused" ? "recording" : "paused")
           },
           {
             id: "recording_start_stop",
-            label: "Start recording",
-            click: notImplemented("Start recording", `
-              await getEmuApi().issueRecordingCommand(isRecordingIdle ? "start-recording" : "disarm");
-            `)
+            label: recordingIdle
+              ? "Start recording"
+              : recordingState === "armed"
+                ? "Cancel recording"
+                : "Stop recording",
+            click: () => setRecordingState(recordingIdle ? "armed" : "idle")
           }
         ]
       }
@@ -1000,6 +1061,54 @@ async function setSoundLevel(value: number): Promise<void> {
   }
 }
 
+function setRecordingFps(value: RecordingFps): void {
+  void issueRecordingCommand(value === "half" ? "set-fps-half" : "set-fps-native");
+}
+
+function setRecordingQuality(value: RecordingQuality): void {
+  const command: EmuRecordingCommand =
+    value === "lossless"
+      ? "set-quality-lossless"
+      : value === "high"
+        ? "set-quality-high"
+        : "set-quality-good";
+  void issueRecordingCommand(command);
+}
+
+function setRecordingFormat(value: RecordingFormat): void {
+  const command: EmuRecordingCommand =
+    value === "webm" ? "set-format-webm" : value === "mkv" ? "set-format-mkv" : "set-format-mp4";
+  void issueRecordingCommand(command);
+}
+
+function setRecordingState(value: ScreenRecordingState): void {
+  const command: EmuRecordingCommand =
+    value === "idle"
+      ? "disarm"
+      : value === "paused"
+        ? "pause-recording"
+        : value === "recording"
+          ? "resume-recording"
+          : "start-recording";
+  void issueRecordingCommand(command);
+}
+
+async function issueRecordingCommand(command: EmuRecordingCommand): Promise<void> {
+  mainStore.dispatch(dimMenuAction(true), "main");
+  try {
+    await getEmuApi().issueRecordingCommand(command);
+  } catch (err) {
+    await showMessageBox(currentEmuWindow ?? BrowserWindow.getFocusedWindow(), {
+      type: "error",
+      title: "Recording command failed",
+      message: `Could not issue recording command: ${command}`,
+      detail: err instanceof Error ? err.message : String(err)
+    });
+  } finally {
+    mainStore.dispatch(dimMenuAction(false), "main");
+  }
+}
+
 function notImplemented(label: string, _originalHandler: string): () => Promise<void> {
   // The original handler body is intentionally passed by each caller and kept in
   // source as a nearby comment string until the corresponding shell subsystem exists.
@@ -1075,6 +1184,11 @@ function getMenuRefreshSignature(): string {
     clockMultiplier: state.emulatorState?.clockMultiplier,
     soundLevel: state.emulatorState?.soundLevel,
     soundMuted: state.emulatorState?.soundMuted,
+    screenRecordingAvailable: state.emulatorState?.screenRecordingAvailable,
+    screenRecordingState: state.emulatorState?.screenRecordingState,
+    screenRecordingFps: state.emulatorState?.screenRecordingFps,
+    screenRecordingQuality: state.emulatorState?.screenRecordingQuality,
+    screenRecordingFormat: state.emulatorState?.screenRecordingFormat,
     media: state.media,
     globalSettings: state.globalSettings
   });

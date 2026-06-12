@@ -14,11 +14,13 @@ import {
   setTapeMediaAction,
   clearTapeMediaAction,
   setClockMultiplierAction,
-  setSoundLevelAction
+  setSoundLevelAction,
+  setScreenRecordingAvailableAction
 } from "../common/state/actions";
 import type { MediaState } from "../common/state/AppState";
 import type { WindowState } from "./WindowState";
 import { mainStore } from "./main-store";
+import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 
 export const KLIVE_HOME_FOLDER = "Klive";
 export const SETTINGS_FILE_NAME = "klive2.settings";
@@ -93,6 +95,7 @@ export function applyPersistedSettingsToStore(): void {
     ),
     "main"
   );
+  mainStore.dispatch(setScreenRecordingAvailableAction(isFFmpegAvailable()), "main");
   if (appSettings.media?.tape?.fileName) {
     mainStore.dispatch(setTapeMediaAction(appSettings.media.tape), "main");
   } else {

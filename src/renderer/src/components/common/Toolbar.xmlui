@@ -7,8 +7,12 @@
   var.keyboardVisible="{state.value.globalSettings.emuViewOptions.showKeyboard ?? false}"
   var.instantScreenVisible="{state.value.globalSettings.demo.instantScreenVisible ?? false}"
   var.fastLoad="{state.value.globalSettings.emuOptions.fastLoad ?? true}"
+  var.stayOnTop="{state.value.globalSettings.emuOptions.stayOnTop ?? true}"
   var.hasTape="{!!state.value.media.tape.displayName}"
   var.muted="{state.value.emulatorState.soundMuted ?? false}"
+  var.recordingAvailable="{state.value.emulatorState.screenRecordingAvailable ?? true}"
+  var.recordingState="{state.value.emulatorState.screenRecordingState ?? 'idle'}"
+  var.recordingActive="{recordingState !== 'idle'}"
   var.syncSourceBreakpoints="{state.value.globalSettings.ide.syncSourceBreakpoints ?? false}"
   var.memoryPanelVisible="{state.value.globalSettings.demo.ideMemoryVisible ?? false}"
   var.disassemblyPanelVisible="{state.value.globalSettings.demo.ideDisassemblyVisible ?? false}"
@@ -86,6 +90,14 @@
     <ToolbarSeparator when="{isEmu}" />
     <ToolbarButton
       when="{isEmu}"
+      iconName="{stayOnTop ? 'pinned' : 'pin'}"
+      title="{stayOnTop ? 'Keep Emulator on Top: On' : 'Keep Emulator on Top: Off'}"
+      selected="{stayOnTop}"
+      onClick="state.setSettingValue('emuOptions.stayOnTop', !stayOnTop)"
+    />
+    <ToolbarSeparator when="{isEmu}" />
+    <ToolbarButton
+      when="{isEmu}"
       iconName="keyboard"
       title="Show/Hide keyboard"
       selected="{keyboardVisible}"
@@ -113,6 +125,16 @@
       title="Rewind Tape"
       enable="{hasTape}"
       onClick="emuCommands.issueMachineCommand('rewind')"
+    />
+    <ToolbarSeparator when="{isEmu}" />
+    <ToolbarButton
+      when="{isEmu}"
+      iconName="{recordingActive ? 'record-stop' : 'record'}"
+      title="{!recordingAvailable ? 'Recording requires FFmpeg' : recordingState === 'idle' ? 'Start recording' : recordingState === 'armed' ? 'Cancel recording' : 'Stop recording'}"
+      fill="white"
+      selected="{recordingActive}"
+      enable="{recordingAvailable}"
+      onClick="emuCommands.issueRecordingCommand(recordingActive ? 'disarm' : 'start-recording')"
     />
 
     <ToolbarSeparator when="{!isEmu}" />

@@ -123,7 +123,7 @@ function getAppPath(): string | undefined {
   return appPath ?? undefined;
 }
 
-function getMainApi(): MainApi {
+export function getMainApi(): MainApi {
   if (!mainApi) {
     throw new Error("Main API is not ready.");
   }

@@ -1,5 +1,5 @@
 import { createEmuApi } from "../common/messaging/EmuApi";
-import type { EmuMachineCommand } from "../common/messaging/EmuApi";
+import type { EmuMachineCommand, EmuRecordingCommand } from "../common/messaging/EmuApi";
 import { EmuToMainMessenger } from "../common/messaging/EmuToMainMessenger";
 import { createIdeApi } from "../common/messaging/IdeApi";
 import { IdeToMainMessenger } from "../common/messaging/IdeToMainMessenger";
@@ -35,6 +35,7 @@ import {
   setRendererActionForwarder,
   windowKind
 } from "./shared-store";
+import { issueRecordingCommandToActiveManager } from "./lib/recording/recording-session";
 
 const messenger = windowKind === "emu" ? new EmuToMainMessenger() : new IdeToMainMessenger();
 setRendererActionForwarder((message) => messenger.sendMessage(message));
@@ -135,6 +136,11 @@ class EmuMessageProcessor {
   async issueMachineCommand(command: EmuMachineCommand) {
     issueDemoMachineCommand(command, "emu");
     rememberStatus(`EmuApi.issueMachineCommand received command=${command}.`);
+  }
+
+  async issueRecordingCommand(command: EmuRecordingCommand) {
+    await issueRecordingCommandToActiveManager(command);
+    rememberStatus(`EmuApi.issueRecordingCommand received command=${command}.`);
   }
 
   async setClockMultiplier(value: number) {

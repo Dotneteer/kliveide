@@ -1,7 +1,13 @@
 import { MachineControllerState } from "../abstractions/MachineControllerState";
 import type { MachineCommand } from "../abstractions/MachineCommand";
 import type { Action } from "./Action";
-import type { EmulatorState } from "./AppState";
+import type {
+  EmulatorState,
+  RecordingFormat,
+  RecordingFps,
+  RecordingQuality,
+  ScreenRecordingState
+} from "./AppState";
 
 const CLOCK_MULTIPLIER_VALUES = new Set([1, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64]);
 
@@ -76,6 +82,34 @@ export function emulatorStateReducer(state: EmulatorState, { type, payload }: Ac
       };
     }
 
+    case "SET_SCREEN_RECORDING_AVAILABLE":
+      return {
+        ...state,
+        screenRecordingAvailable: !!payload?.flag
+      };
+
+    case "SET_SCREEN_RECORDING_STATE":
+      return {
+        ...state,
+        screenRecordingState: normalizeScreenRecordingState(payload?.id),
+        screenRecordingFile:
+          typeof payload?.value === "string" ? payload.value : state.screenRecordingFile,
+        screenRecordingFps:
+          payload?.text !== undefined ? normalizeRecordingFps(payload.text) : state.screenRecordingFps
+      };
+
+    case "SET_SCREEN_RECORDING_QUALITY":
+      return {
+        ...state,
+        screenRecordingQuality: normalizeRecordingQuality(payload?.id)
+      };
+
+    case "SET_SCREEN_RECORDING_FORMAT":
+      return {
+        ...state,
+        screenRecordingFormat: normalizeRecordingFormat(payload?.id)
+      };
+
     default:
       return state;
   }
@@ -103,4 +137,20 @@ function getLastUnmutedSoundLevel(
     : typeof soundLevel === "number" && soundLevel > 0.0
     ? normalizeSavedSoundLevel(soundLevel)
     : normalizeSavedSoundLevel(savedSoundLevel);
+}
+
+function normalizeScreenRecordingState(value: unknown): ScreenRecordingState {
+  return value === "armed" || value === "recording" || value === "paused" ? value : "idle";
+}
+
+function normalizeRecordingFps(value: unknown): RecordingFps {
+  return value === "half" ? "half" : "native";
+}
+
+function normalizeRecordingQuality(value: unknown): RecordingQuality {
+  return value === "lossless" || value === "high" ? value : "good";
+}
+
+function normalizeRecordingFormat(value: unknown): RecordingFormat {
+  return value === "webm" || value === "mkv" ? value : "mp4";
 }
