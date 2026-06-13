@@ -1,0 +1,19 @@
+<Component name="ActivityButton">
+  <HStack
+    width="52px"
+    height="46px"
+    verticalAlignment="center"
+    horizontalAlignment="center"
+    backgroundColor="{$props.active ? '$backgroundColor-ActivityBar--active' : '$backgroundColor-ActivityBar'}"
+    borderLeft="{$props.active ? '3px solid $borderColor-ActivityBar--active' : '3px solid transparent'}"
+  >
+    <Icon
+      name="{$props.icon}"
+      tooltip="{$props.title}"
+      color="{$props.active ? '$textColor-ActivityBar--active' : '$textColor-ActivityBar'}"
+      width="24px"
+      height="24px"
+      onClick="emitEvent('select', $props.id)"
+    />
+  </HStack>
+</Component>

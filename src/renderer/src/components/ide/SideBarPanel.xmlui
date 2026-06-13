@@ -1,0 +1,34 @@
+<Component name="SideBarPanel">
+  <VStack gap="0" width="100%">
+    <HStack
+      height="26px"
+      paddingHorizontal="8px"
+      verticalAlignment="center"
+      borderBottom="1px solid $borderColor-SideBarPanel"
+      backgroundColor="$backgroundColor-SideBarPanelHeader"
+    >
+      <Icon
+        name="{$props.expanded ? 'chevron-down' : 'chevron-right'}"
+        tooltip="{$props.expanded ? 'Collapse ' + $props.title : 'Expand ' + $props.title}"
+        color="$textColor-SideBarPanelHeader"
+        width="14px"
+        height="14px"
+        onClick="emitEvent('toggle')"
+      />
+      <Text
+        value="{$props.title}"
+        fontSize="12px"
+        fontWeight="600"
+        color="$textColor-SideBarPanelHeader"
+      />
+    </HStack>
+    <VStack
+      when="{$props.expanded}"
+      padding="$space-3"
+      gap="$space-2"
+      borderBottom="1px solid $borderColor-SideBarPanel"
+    >
+      <Slot />
+    </VStack>
+  </VStack>
+</Component>

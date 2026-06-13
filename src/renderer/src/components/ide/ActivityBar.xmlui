@@ -7,15 +7,41 @@
     paddingTop="6px"
     horizontalAlignment="center"
   >
-    <Icon name="files" tooltip="Explorer" color="$textColor-ActivityBar--active" width="24px" height="24px" />
-    <Stack height="12px" />
-    <Icon name="debug-alt" tooltip="Debug" color="$textColor-ActivityBar" width="24px" height="24px" />
-    <Stack height="12px" />
-    <Icon name="output" tooltip="Machine info" color="$textColor-ActivityBar" width="24px" height="24px" />
-    <Stack height="12px" />
-    <Icon name="symbol-event" tooltip="Scripting" color="$textColor-ActivityBar" width="24px" height="24px" />
-    <Stack height="12px" />
-    <Icon name="beaker" tooltip="Testing" color="$textColor-ActivityBar" width="24px" height="24px" />
+    <ActivityButton
+      id="explorer"
+      icon="files"
+      title="Explorer"
+      active="{($props.activeActivity ?? 'explorer') === 'explorer'}"
+      onSelect="activity => emitEvent('selectActivity', activity)"
+    />
+    <ActivityButton
+      id="debug"
+      icon="debug-alt"
+      title="Debug"
+      active="{$props.activeActivity === 'debug'}"
+      onSelect="activity => emitEvent('selectActivity', activity)"
+    />
+    <ActivityButton
+      id="machine"
+      icon="output"
+      title="Machine info"
+      active="{$props.activeActivity === 'machine'}"
+      onSelect="activity => emitEvent('selectActivity', activity)"
+    />
+    <ActivityButton
+      id="scripting"
+      icon="symbol-event"
+      title="Scripting"
+      active="{$props.activeActivity === 'scripting'}"
+      onSelect="activity => emitEvent('selectActivity', activity)"
+    />
+    <ActivityButton
+      id="testing"
+      icon="beaker"
+      title="Testing"
+      active="{$props.activeActivity === 'testing'}"
+      onSelect="activity => emitEvent('selectActivity', activity)"
+    />
     <SpaceFiller />
     <Icon name="settings-gear" tooltip="Settings" color="$textColor-ActivityBar" width="22px" height="22px" />
     <Stack height="10px" />

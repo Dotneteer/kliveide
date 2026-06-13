@@ -1,0 +1,85 @@
+<Component
+  name="DocumentView"
+  var.kind="{$props.kind ?? 'unknown'}"
+  var.title="{kind === 'code' ? 'Code editor placeholder' : kind === 'memory' ? 'Memory view placeholder' : kind === 'disassembly' ? 'Disassembly view placeholder' : kind === 'output' ? 'Output transcript placeholder' : kind === 'image' ? 'Image viewer placeholder' : kind === 'binary' ? 'Binary document placeholder' : kind === 'markdown' ? 'Markdown document placeholder' : 'Unknown document placeholder'}"
+  var.icon="{kind === 'code' ? ($props.icon ?? 'file-code') : kind === 'memory' ? 'memory-icon' : kind === 'disassembly' ? 'disassembly-icon' : kind === 'output' ? 'output' : kind === 'image' ? 'sprite' : kind === 'binary' ? ($props.icon ?? 'dump') : kind === 'markdown' ? 'note' : 'unknown'}"
+>
+  <VStack width="100%" height="100%" gap="0" backgroundColor="$backgroundColor-EditorGroup">
+    <DocumentCommandStrip documentName="{$props.name}" />
+    <VStack height="*" padding="$space-4" gap="$space-3">
+      <HStack gap="$space-2" verticalAlignment="center">
+        <Icon name="{icon}" width="20px" height="20px" color="$textColor-Editor" />
+        <Text
+          value="{title}"
+          fontSize="18px"
+          fontWeight="600"
+          color="$textColor-Editor"
+        />
+      </HStack>
+      <Text
+        value="{$props.name}"
+        fontSize="13px"
+        color="$textColor-EditorSubtle"
+      />
+      <VStack
+        when="{kind === 'code'}"
+        gap="$space-1"
+        padding="$space-3"
+        backgroundColor="$backgroundColor-DocumentPreview"
+        border="1px solid $borderColor-EditorGroup"
+      >
+        <Text value="org #8000" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+        <Text value="start: ld a, 2" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+        <Text value="       out (#fe), a" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+      </VStack>
+      <VStack
+        when="{kind === 'memory'}"
+        gap="$space-1"
+        padding="$space-3"
+        backgroundColor="$backgroundColor-DocumentPreview"
+        border="1px solid $borderColor-EditorGroup"
+      >
+        <Text value="#8000  3E 02 D3 FE 18 FE 00 00" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+        <Text value="#8008  21 00 40 11 00 58 01 00" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+      </VStack>
+      <VStack
+        when="{kind === 'disassembly'}"
+        gap="$space-1"
+        padding="$space-3"
+        backgroundColor="$backgroundColor-DocumentPreview"
+        border="1px solid $borderColor-EditorGroup"
+      >
+        <Text value="8000  LD A,02" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+        <Text value="8002  OUT (FE),A" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+        <Text value="8004  JR 8004" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+      </VStack>
+      <VStack
+        when="{kind === 'output'}"
+        gap="$space-1"
+        padding="$space-3"
+        backgroundColor="$backgroundColor-DocumentPreview"
+        border="1px solid $borderColor-EditorGroup"
+      >
+        <Text value="[build] assembling main.asm" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+        <Text value="[build] 0 errors, 0 warnings" fontFamily="$fontFamily-monospace" fontSize="13px" color="$textColor-Editor" />
+      </VStack>
+      <HStack
+        when="{kind === 'image'}"
+        width="192px"
+        height="144px"
+        verticalAlignment="center"
+        horizontalAlignment="center"
+        backgroundColor="$backgroundColor-DocumentPreview"
+        border="1px solid $borderColor-EditorGroup"
+      >
+        <Icon name="sprite" width="42px" height="42px" color="$textColor-EditorSubtle" />
+      </HStack>
+      <Text
+        when="{kind === 'binary' || kind === 'markdown' || kind === 'unknown'}"
+        value="A dedicated renderer will replace this placeholder when the document hub starts creating typed document/view instances."
+        fontSize="13px"
+        color="$textColor-EditorSubtle"
+      />
+    </VStack>
+  </VStack>
+</Component>

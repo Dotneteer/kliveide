@@ -1,4 +1,21 @@
-<Component name="SideBar">
+<Component
+  name="SideBar"
+  var.activity="{$props.activity ?? 'explorer'}"
+  var.isSecondary="{$props.kind === 'secondary'}"
+  var.title="{isSecondary ? 'SECONDARY SIDE BAR' : activity === 'debug' ? 'DEBUG' : activity === 'machine' ? 'MACHINE INFO' : activity === 'scripting' ? 'SCRIPTING' : activity === 'testing' ? 'TESTING' : 'EXPLORER'}"
+  var.explorerProjectExpanded="{true}"
+  var.debugCpuExpanded="{true}"
+  var.debugCallStackExpanded="{true}"
+  var.debugWatchExpanded="{true}"
+  var.debugBreakpointsExpanded="{true}"
+  var.machineSysVarsExpanded="{true}"
+  var.machineUlaExpanded="{true}"
+  var.machinePsgExpanded="{false}"
+  var.scriptingHistoryExpanded="{true}"
+  var.testingTestsExpanded="{true}"
+  var.secondaryOutlineExpanded="{true}"
+  var.secondaryMemoryExpanded="{true}"
+>
   <VStack
     backgroundColor="$backgroundColor-SideBar"
     overflowX="hidden"
@@ -13,39 +30,117 @@
       borderBottom="1px solid $borderColor-SideBarPanel"
     >
       <Text
-        value="{$props.kind === 'secondary' ? 'SECONDARY SIDE BAR' : 'EXPLORER'}"
+        value="{title}"
         fontSize="12px"
         fontWeight="600"
         color="$textColor-SideBarHeader"
       />
     </HStack>
-    <VStack gap="0" height="*">
-      <HStack
-        height="26px"
-        paddingHorizontal="8px"
-        verticalAlignment="center"
-        borderBottom="1px solid $borderColor-SideBarPanel"
+    <VStack gap="0" height="*" overflowY="auto">
+      <SideBarPanel
+        when="{!isSecondary && activity === 'explorer'}"
+        title="KLIVE PROJECT"
+        expanded="{explorerProjectExpanded}"
+        onToggle="explorerProjectExpanded = !explorerProjectExpanded"
       >
-        <Icon name="chevron-right" color="$textColor-SideBarPanelHeader" width="14px" height="14px" />
-        <Text
-          value="{$props.kind === 'secondary' ? 'OUTLINE' : 'KLIVE PROJECT'}"
-          fontSize="12px"
-          fontWeight="600"
-          color="$textColor-SideBarPanelHeader"
-        />
-      </HStack>
-      <VStack padding="$space-3" gap="$space-2" height="*">
-        <Text
-          value="{$props.kind === 'secondary' ? 'Portable view placeholder' : 'Project tree placeholder'}"
-          fontSize="13px"
-          color="$textColor-SideBar"
-        />
-        <Text
-          value="{$props.kind === 'secondary' ? 'Memory, outline, and watch views can live here independently.' : 'Explorer, Debug, Machine info, Scripting, and Testing will switch through the Activity Bar.'}"
-          fontSize="12px"
-          color="$textColor-SideBarSubtle"
-        />
-      </VStack>
+        <ExplorerPanel onOpenDocument="document => emitEvent('openDocument', document)" />
+      </SideBarPanel>
+
+      <SideBarPanel
+        when="{!isSecondary && activity === 'debug'}"
+        title="CPU AND DEBUGGER"
+        expanded="{debugCpuExpanded}"
+        onToggle="debugCpuExpanded = !debugCpuExpanded"
+      >
+        <Text value="CPU registers placeholder" fontSize="13px" color="$textColor-SideBar" />
+        <Text value="AF BC DE HL IX IY SP PC" fontSize="12px" color="$textColor-SideBarSubtle" />
+      </SideBarPanel>
+      <SideBarPanel
+        when="{!isSecondary && activity === 'debug'}"
+        title="CALL STACK"
+        expanded="{debugCallStackExpanded}"
+        onToggle="debugCallStackExpanded = !debugCallStackExpanded"
+      >
+        <Text value="No active debug session" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+      <SideBarPanel
+        when="{!isSecondary && activity === 'debug'}"
+        title="WATCH"
+        expanded="{debugWatchExpanded}"
+        onToggle="debugWatchExpanded = !debugWatchExpanded"
+      >
+        <Text value="Watch expressions placeholder" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+      <SideBarPanel
+        when="{!isSecondary && activity === 'debug'}"
+        title="BREAKPOINTS"
+        expanded="{debugBreakpointsExpanded}"
+        onToggle="debugBreakpointsExpanded = !debugBreakpointsExpanded"
+      >
+        <Text value="No breakpoints" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+
+      <SideBarPanel
+        when="{!isSecondary && activity === 'machine'}"
+        title="SYSTEM VARIABLES"
+        expanded="{machineSysVarsExpanded}"
+        onToggle="machineSysVarsExpanded = !machineSysVarsExpanded"
+      >
+        <Text value="System variables placeholder" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+      <SideBarPanel
+        when="{!isSecondary && activity === 'machine'}"
+        title="ULA AND I/O"
+        expanded="{machineUlaExpanded}"
+        onToggle="machineUlaExpanded = !machineUlaExpanded"
+      >
+        <Text value="Border, beam, and port diagnostics placeholder" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+      <SideBarPanel
+        when="{!isSecondary && activity === 'machine'}"
+        title="PSG"
+        expanded="{machinePsgExpanded}"
+        onToggle="machinePsgExpanded = !machinePsgExpanded"
+      >
+        <Text value="AY register placeholder" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+
+      <SideBarPanel
+        when="{!isSecondary && activity === 'scripting'}"
+        title="SCRIPTING HISTORY"
+        expanded="{scriptingHistoryExpanded}"
+        onToggle="scriptingHistoryExpanded = !scriptingHistoryExpanded"
+      >
+        <Text value="Command and script history placeholder" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+
+      <SideBarPanel
+        when="{!isSecondary && activity === 'testing'}"
+        title="TESTS"
+        expanded="{testingTestsExpanded}"
+        onToggle="testingTestsExpanded = !testingTestsExpanded"
+      >
+        <Text value="Test discovery placeholder" fontSize="13px" color="$textColor-SideBar" />
+      </SideBarPanel>
+
+      <SideBarPanel
+        when="{isSecondary}"
+        title="OUTLINE"
+        expanded="{secondaryOutlineExpanded}"
+        onToggle="secondaryOutlineExpanded = !secondaryOutlineExpanded"
+      >
+        <Text value="Portable view placeholder" fontSize="13px" color="$textColor-SideBar" />
+        <Text value="This side bar is independent from Activity Bar selection." fontSize="12px" color="$textColor-SideBarSubtle" />
+      </SideBarPanel>
+      <SideBarPanel
+        when="{isSecondary}"
+        title="MEMORY"
+        expanded="{secondaryMemoryExpanded}"
+        onToggle="secondaryMemoryExpanded = !secondaryMemoryExpanded"
+      >
+        <Text value="Memory view placeholder" fontSize="13px" color="$textColor-SideBar" />
+        <Text value="Reusable views can later move between side bars, editor groups, and tools." fontSize="12px" color="$textColor-SideBarSubtle" />
+      </SideBarPanel>
     </VStack>
   </VStack>
 </Component>

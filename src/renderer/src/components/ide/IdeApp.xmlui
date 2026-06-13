@@ -1,20 +1,58 @@
-<Component name="IdeApp">
+<Component
+  name="IdeApp"
+  var.activeActivity="explorer"
+  var.activeDocumentName="main.asm"
+  var.activeDocumentIcon="file-code"
+  var.activeDocumentKind="code"
+  var.showToolbar="{state.globalSettings('ideViewOptions.showToolbar', true)}"
+  var.showStatusBar="{state.globalSettings('ideViewOptions.showStatusBar', true)}"
+  var.showPrimarySideBar="{state.globalSettings('ideViewOptions.showPrimarySideBar', state.globalSettings('ideViewOptions.showSidebar', true))}"
+  var.initialPrimarySideBarWidth="{(state.globalSettings('ideViewOptions.primarySideBarWidth', state.globalSettings('ideViewOptions.sideBarWidth', '260px')) ?? '260px') + ''}"
+  var.livePrimarySideBarWidth="{initialPrimarySideBarWidth}"
+>
   <SharedAppState id="state" />
   <VStack height="100%" gap="0">
-    <Toolbar when="{state.globalSettings('showToolbar', true)}" />
+    <PersistedSettingOnRelease
+      settingId="ideViewOptions.primarySideBarWidth"
+      value="{livePrimarySideBarWidth}"
+    />
+    <Toolbar when="{showToolbar}" />
     <HStack height="*" gap="0">
-      <ActivityBar />
+      <ActivityBar
+        activeActivity="{activeActivity}"
+        onSelectActivity="activity => activeActivity = activity"
+      />
       <HSplitter
+        when="{showPrimarySideBar}"
         width="*"
-        initialPrimarySize="260px"
+        initialPrimarySize="{initialPrimarySideBarWidth.indexOf('px') >= 0 || initialPrimarySideBarWidth.indexOf('%') >= 0 ? initialPrimarySideBarWidth : initialPrimarySideBarWidth + 'px'}"
         minPrimarySize="160px"
         maxPrimarySize="-420px"
+        onResize="primarySize => livePrimarySideBarWidth = primarySize + 'px'"
         floating
       >
-        <SideBar kind="primary" />
-        <MainWorkbench />
+        <SideBar
+          kind="primary"
+          activity="{activeActivity}"
+          onOpenDocument="document => {
+            activeDocumentName = document.name;
+            activeDocumentIcon = document.icon;
+            activeDocumentKind = document.kind;
+          }"
+        />
+        <MainWorkbench
+          activeDocumentName="{activeDocumentName}"
+          activeDocumentIcon="{activeDocumentIcon}"
+          activeDocumentKind="{activeDocumentKind}"
+        />
       </HSplitter>
+      <MainWorkbench
+        when="{!showPrimarySideBar}"
+        activeDocumentName="{activeDocumentName}"
+        activeDocumentIcon="{activeDocumentIcon}"
+        activeDocumentKind="{activeDocumentKind}"
+      />
     </HStack>
-    <IdeStatusBar when="{state.globalSettings('showStatusBar', true)}" />
+    <IdeStatusBar when="{showStatusBar}" />
   </VStack>
 </Component>

@@ -1,12 +1,45 @@
-<Component name="EditorGrid">
-  <HStack
+<Component
+  name="EditorGrid"
+  var.splitMode="right"
+>
+  <VStack
     width="100%"
     height="100%"
     gap="0"
     backgroundColor="$backgroundColor-Editor"
   >
+    <HStack
+      height="30px"
+      paddingHorizontal="$space-2"
+      gap="$space-1"
+      verticalAlignment="center"
+      backgroundColor="$backgroundColor-EditorGridToolbar"
+      borderBottom="1px solid $borderColor-EditorGroup"
+    >
+      <Text value="Documents" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
+      <SpaceFiller />
+      <Icon name="layout-panel" tooltip="Show split right" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'right'" />
+      <Icon name="layers" tooltip="Show split down" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'down'" />
+      <Icon name="window" tooltip="Show grid splits" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'grid'" />
+      <Icon name="combine" tooltip="Close placeholder splits" color="$textColor-DocumentTab" width="15px" height="15px" onClick="splitMode = 'single'" />
+    </HStack>
+
+    <EditorGroup
+      when="{splitMode === 'single'}"
+      title="Group 1"
+      activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
+      activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+      activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+      secondaryDocument="memory"
+      mode="code"
+      onSplitRight="splitMode = 'right'"
+      onSplitDown="splitMode = 'down'"
+    />
+
     <HSplitter
+      when="{splitMode === 'right'}"
       width="100%"
+      height="*"
       initialPrimarySize="58%"
       minPrimarySize="240px"
       maxPrimarySize="-240px"
@@ -14,16 +47,124 @@
     >
       <EditorGroup
         title="Group 1"
-        activeDocument="main.asm"
+        activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
+        activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+        activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
         secondaryDocument="memory"
         mode="code"
+        onSplitRight="splitMode = 'right'"
+        onSplitDown="splitMode = 'down'"
+        onCloseGroup="splitMode = 'single'"
       />
       <EditorGroup
         title="Group 2"
-        activeDocument="disassembly"
+        activeDocument="Disassembly"
+        activeDocumentIcon="disassembly-icon"
+        activeDocumentKind="disassembly"
         secondaryDocument="README.md"
         mode="debug"
+        onSplitRight="splitMode = 'right'"
+        onSplitDown="splitMode = 'down'"
+        onCloseGroup="splitMode = 'single'"
       />
     </HSplitter>
-  </HStack>
+
+    <VSplitter
+      when="{splitMode === 'down'}"
+      width="100%"
+      height="*"
+      initialPrimarySize="58%"
+      minPrimarySize="180px"
+      maxPrimarySize="-180px"
+      floating
+    >
+      <EditorGroup
+        title="Group 1"
+        activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
+        activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+        activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+        secondaryDocument="memory"
+        mode="code"
+        onSplitRight="splitMode = 'right'"
+        onSplitDown="splitMode = 'down'"
+        onCloseGroup="splitMode = 'single'"
+      />
+      <EditorGroup
+        title="Group 2"
+        activeDocument="Build Output"
+        activeDocumentIcon="output"
+        activeDocumentKind="output"
+        secondaryDocument="screen.scr"
+        mode="tools"
+        onSplitRight="splitMode = 'right'"
+        onSplitDown="splitMode = 'down'"
+        onCloseGroup="splitMode = 'single'"
+      />
+    </VSplitter>
+
+    <HSplitter
+      when="{splitMode === 'grid'}"
+      width="100%"
+      height="*"
+      initialPrimarySize="50%"
+      minPrimarySize="260px"
+      maxPrimarySize="-260px"
+      floating
+    >
+      <VSplitter
+        width="100%"
+        height="100%"
+        initialPrimarySize="50%"
+        minPrimarySize="160px"
+        maxPrimarySize="-160px"
+        floating
+      >
+        <EditorGroup
+          title="Group 1"
+          activeDocument="{$props.activeDocumentName ?? 'main.asm'}"
+          activeDocumentIcon="{$props.activeDocumentIcon ?? 'file-code'}"
+          activeDocumentKind="{$props.activeDocumentKind ?? 'code'}"
+          secondaryDocument="memory"
+          mode="code"
+          onCloseGroup="splitMode = 'single'"
+        />
+        <EditorGroup
+          title="Group 3"
+          activeDocument="Memory"
+          activeDocumentIcon="memory-icon"
+          activeDocumentKind="memory"
+          secondaryDocument="disassembly"
+          mode="debug"
+          onCloseGroup="splitMode = 'single'"
+        />
+      </VSplitter>
+      <VSplitter
+        width="100%"
+        height="100%"
+        initialPrimarySize="50%"
+        minPrimarySize="160px"
+        maxPrimarySize="-160px"
+        floating
+      >
+        <EditorGroup
+          title="Group 2"
+          activeDocument="Disassembly"
+          activeDocumentIcon="disassembly-icon"
+          activeDocumentKind="disassembly"
+          secondaryDocument="README.md"
+          mode="debug"
+          onCloseGroup="splitMode = 'single'"
+        />
+        <EditorGroup
+          title="Group 4"
+          activeDocument="screen.scr"
+          activeDocumentIcon="sprite"
+          activeDocumentKind="image"
+          secondaryDocument="unknown.bin"
+          mode="image"
+          onCloseGroup="splitMode = 'single'"
+        />
+      </VSplitter>
+    </HSplitter>
+  </VStack>
 </Component>

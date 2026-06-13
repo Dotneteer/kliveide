@@ -1,4 +1,7 @@
-<Component name="EditorGroup">
+<Component
+  name="EditorGroup"
+  var.activeTab="{0}"
+>
   <VStack
     width="100%"
     height="100%"
@@ -7,53 +10,48 @@
     borderRight="1px solid $borderColor-EditorGroup"
   >
     <HStack
-      height="34px"
-      gap="0"
+      height="28px"
+      paddingHorizontal="$space-2"
+      gap="$space-1"
       verticalAlignment="center"
-      backgroundColor="$backgroundColor-DocumentTabStrip"
-      borderBottom="1px solid $borderColor-DocumentTab"
+      backgroundColor="$backgroundColor-EditorGroupHeader"
+      borderBottom="1px solid $borderColor-EditorGroup"
     >
-      <HStack
-        height="34px"
-        width="180px"
-        paddingHorizontal="10px"
-        gap="6px"
-        verticalAlignment="center"
-        backgroundColor="$backgroundColor-DocumentTab--active"
-        borderRight="1px solid $borderColor-DocumentTab"
-      >
-        <Icon name="{($props.mode === 'debug') ? 'disassembly-icon' : 'file-code'}" color="$textColor-DocumentTab--active" width="15px" height="15px" />
-        <Text value="{$props.activeDocument}" color="$textColor-DocumentTab--active" fontSize="13px" />
-      </HStack>
-      <HStack
-        height="34px"
-        width="150px"
-        paddingHorizontal="10px"
-        gap="6px"
-        verticalAlignment="center"
-        backgroundColor="$backgroundColor-DocumentTab"
-        borderRight="1px solid $borderColor-DocumentTab"
-      >
-        <Icon name="{($props.secondaryDocument === 'memory') ? 'memory-icon' : 'note'}" color="$textColor-DocumentTab" width="15px" height="15px" />
-        <Text value="{$props.secondaryDocument}" color="$textColor-DocumentTab" fontSize="13px" />
-      </HStack>
-      <SpaceFiller />
-      <Icon name="layout-panel" tooltip="Split editor" color="$textColor-DocumentTab" width="16px" height="16px" />
-      <Stack width="10px" />
-    </HStack>
-    <VStack height="*" padding="$space-4" gap="$space-3">
       <Text value="{$props.title}" fontSize="12px" fontWeight="600" color="$textColor-EditorSubtle" />
-      <Text
-        value="{($props.mode === 'debug') ? 'Disassembly and memory view placeholder' : 'Code editor placeholder'}"
-        fontSize="18px"
-        fontWeight="600"
-        color="$textColor-Editor"
-      />
-      <Text
-        value="Split editor groups are part of the initial shell. Real document/view instances will replace this placeholder."
-        fontSize="13px"
-        color="$textColor-EditorSubtle"
-      />
-    </VStack>
+      <SpaceFiller />
+      <Icon name="layout-panel" tooltip="Split right" color="$textColor-DocumentTab" width="15px" height="15px" onClick="emitEvent('splitRight')" />
+      <Icon name="layers" tooltip="Split down" color="$textColor-DocumentTab" width="15px" height="15px" onClick="emitEvent('splitDown')" />
+      <Icon name="combine" tooltip="Close placeholder split" color="$textColor-DocumentTab" width="15px" height="15px" onClick="emitEvent('closeGroup')" />
+    </HStack>
+    <Tabs
+      width="100%"
+      height="*"
+      gap="0"
+      activeTab="{activeTab}"
+      onDidChange="newIndex => activeTab = newIndex"
+    >
+      <TabItem id="active-document" label="{$props.activeDocument}">
+        <DocumentView
+          name="{$props.activeDocument}"
+          icon="{$props.activeDocumentIcon ?? 'file-code'}"
+          kind="{$props.activeDocumentKind ?? 'code'}"
+        />
+      </TabItem>
+      <TabItem id="memory" label="Memory">
+        <DocumentView name="Memory #8000" icon="memory-icon" kind="memory" />
+      </TabItem>
+      <TabItem id="disassembly" label="Disassembly">
+        <DocumentView name="Disassembly" icon="disassembly-icon" kind="disassembly" />
+      </TabItem>
+      <TabItem id="output" label="Build Output">
+        <DocumentView name="Build Output" icon="output" kind="output" />
+      </TabItem>
+      <TabItem id="image" label="screen.scr">
+        <DocumentView name="screen.scr" icon="sprite" kind="image" />
+      </TabItem>
+      <TabItem id="unknown" label="unknown.bin">
+        <DocumentView name="unknown.bin" icon="unknown" kind="unknown" />
+      </TabItem>
+    </Tabs>
   </VStack>
 </Component>

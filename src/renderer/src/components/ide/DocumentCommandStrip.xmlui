@@ -1,0 +1,21 @@
+<Component name="DocumentCommandStrip">
+  <HStack
+    height="34px"
+    paddingHorizontal="$space-2"
+    gap="$space-1"
+    verticalAlignment="center"
+    backgroundColor="$backgroundColor-DocumentCommandStrip"
+    borderBottom="1px solid $borderColor-EditorGroup"
+  >
+    <Button label="Compile" icon="gear" size="sm" enabled="{false}" />
+    <Button label="Inject" icon="inject" size="sm" enabled="{false}" />
+    <Button label="Run" icon="play" size="sm" enabled="{false}" />
+    <Button label="Debug" icon="debug-start" size="sm" enabled="{false}" />
+    <SpaceFiller />
+    <Text
+      value="{$props.documentName}"
+      fontSize="12px"
+      color="$textColor-EditorSubtle"
+    />
+  </HStack>
+</Component>
